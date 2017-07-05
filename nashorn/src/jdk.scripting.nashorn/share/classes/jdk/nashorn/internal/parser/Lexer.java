@@ -46,6 +46,7 @@ import static jdk.nashorn.internal.parser.TokenType.RPAREN;
 import static jdk.nashorn.internal.parser.TokenType.STRING;
 import static jdk.nashorn.internal.parser.TokenType.XML;
 
+import java.io.Serializable;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
@@ -1717,7 +1718,9 @@ public class Lexer extends Scanner {
      * Helper class for Lexer tokens, e.g XML or RegExp tokens.
      * This is the abstract superclass
      */
-    public static abstract class LexerToken {
+    public static abstract class LexerToken implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         private final String expression;
 
         /**
@@ -1741,6 +1744,8 @@ public class Lexer extends Scanner {
      * Temporary container for regular expressions.
      */
     public static class RegexToken extends LexerToken {
+        private static final long serialVersionUID = 1L;
+
         /** Options. */
         private final String options;
 
@@ -1773,6 +1778,7 @@ public class Lexer extends Scanner {
      * Temporary container for XML expression.
      */
     public static class XMLToken extends LexerToken {
+        private static final long serialVersionUID = 1L;
 
         /**
          * Constructor.

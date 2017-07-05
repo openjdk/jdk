@@ -51,6 +51,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.className;
 import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.security.AccessController;
@@ -64,7 +65,6 @@ import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.util.TraceClassVisitor;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.debug.NashornClassReader;
 import jdk.nashorn.internal.ir.debug.NashornTextifier;
 import jdk.nashorn.internal.runtime.Context;
@@ -474,12 +474,6 @@ public class ClassEmitter implements Emitter {
     void endMethod(final MethodEmitter method) {
         assert methodsStarted.contains(method);
         methodsStarted.remove(method);
-    }
-
-    SplitMethodEmitter method(final SplitNode splitNode, final String methodName, final Class<?> rtype, final Class<?>... ptypes) {
-        methodCount++;
-        methodNames.add(methodName);
-        return new SplitMethodEmitter(this, methodVisitor(EnumSet.of(Flag.PUBLIC, Flag.STATIC), methodName, rtype, ptypes), splitNode);
     }
 
     /**

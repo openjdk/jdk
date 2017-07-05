@@ -3826,6 +3826,110 @@ void GraphKit::write_barrier_post(Node* oop_store,
   // Final sync IdealKit and GraphKit.
   final_sync(ideal);
 }
+/*
+ * Determine if the G1 pre-barrier can be removed. The pre-barrier is
+ * required by SATB to make sure all objects live at the start of the
+ * marking are kept alive, all reference updates need to any previous
+ * reference stored before writing.
+ *
+ * If the previous value is NULL there is no need to save the old value.
+ * References that are NULL are filtered during runtime by the barrier
+ * code to avoid unnecessary queuing.
+ *
+ * However in the case of newly allocated objects it might be possible to
+ * prove that the reference about to be overwritten is NULL during compile
+ * time and avoid adding the barrier code completely.
+ *
+ * The compiler needs to determine that the object in which a field is about
+ * to be written is newly allocated, and that no prior store to the same field
+ * has happened since the allocation.
+ *
+ * Returns true if the pre-barrier can be removed
+ */
+bool GraphKit::g1_can_remove_pre_barrier(PhaseTransform* phase, Node* adr,
+                                         BasicType bt, uint adr_idx) {
+  intptr_t offset = 0;
+  Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);
+  AllocateNode* alloc = AllocateNode::Ideal_allocation(base, phase);
+
+  if (offset == Type::OffsetBot) {
+    return false; // cannot unalias unless there are precise offsets
+  }
+
+  if (alloc == NULL) {
+    return false; // No allocation found
+  }
+
+  intptr_t size_in_bytes = type2aelembytes(bt);
+
+  Node* mem = memory(adr_idx); // start searching here...
+
+  for (int cnt = 0; cnt < 50; cnt++) {
+
+    if (mem->is_Store()) {
+
+      Node* st_adr = mem->in(MemNode::Address);
+      intptr_t st_offset = 0;
+      Node* st_base = AddPNode::Ideal_base_and_offset(st_adr, phase, st_offset);
+
+      if (st_base == NULL) {
+        break; // inscrutable pointer
+      }
+
+      // Break we have found a store with same base and offset as ours so break
+      if (st_base == base && st_offset == offset) {
+        break;
+      }
+
+      if (st_offset != offset && st_offset != Type::OffsetBot) {
+        const int MAX_STORE = BytesPerLong;
+        if (st_offset >= offset + size_in_bytes ||
+            st_offset <= offset - MAX_STORE ||
+            st_offset <= offset - mem->as_Store()->memory_size()) {
+          // Success:  The offsets are provably independent.
+          // (You may ask, why not just test st_offset != offset and be done?
+          // The answer is that stores of different sizes can co-exist
+          // in the same sequence of RawMem effects.  We sometimes initialize
+          // a whole 'tile' of array elements with a single jint or jlong.)
+          mem = mem->in(MemNode::Memory);
+          continue; // advance through independent store memory
+        }
+      }
+
+      if (st_base != base
+          && MemNode::detect_ptr_independence(base, alloc, st_base,
+                                              AllocateNode::Ideal_allocation(st_base, phase),
+                                              phase)) {
+        // Success:  The bases are provably independent.
+        mem = mem->in(MemNode::Memory);
+        continue; // advance through independent store memory
+      }
+    } else if (mem->is_Proj() && mem->in(0)->is_Initialize()) {
+
+      InitializeNode* st_init = mem->in(0)->as_Initialize();
+      AllocateNode* st_alloc = st_init->allocation();
+
+      // Make sure that we are looking at the same allocation site.
+      // The alloc variable is guaranteed to not be null here from earlier check.
+      if (alloc == st_alloc) {
+        // Check that the initialization is storing NULL so that no previous store
+        // has been moved up and directly write a reference
+        Node* captured_store = st_init->find_captured_store(offset,
+                                                            type2aelembytes(T_OBJECT),
+                                                            phase);
+        if (captured_store == NULL || captured_store == st_init->zero_memory()) {
+          return true;
+        }
+      }
+    }
+
+    // Unless there is an explicit 'continue', we must bail out here,
+    // because 'mem' is an inscrutable memory state (e.g., a call).
+    break;
+  }
+
+  return false;
+}
 
 // G1 pre/post barriers
 void GraphKit::g1_write_barrier_pre(bool do_load,
@@ -3846,6 +3950,12 @@ void GraphKit::g1_write_barrier_pre(bool do_load,
     assert(adr != NULL, "where are loading from?");
     assert(pre_val == NULL, "loaded already?");
     assert(val_type != NULL, "need a type");
+
+    if (use_ReduceInitialCardMarks()
+        && g1_can_remove_pre_barrier(&_gvn, adr, bt, alias_idx)) {
+      return;
+    }
+
   } else {
     // In this case both val_type and alias_idx are unused.
     assert(pre_val != NULL, "must be loaded already");
@@ -3927,6 +4037,65 @@ void GraphKit::g1_write_barrier_pre(bool do_load,
   final_sync(ideal);
 }
 
+/*
+ * G1 similar to any GC with a Young Generation requires a way to keep track of
+ * references from Old Generation to Young Generation to make sure all live
+ * objects are found. G1 also requires to keep track of object references
+ * between different regions to enable evacuation of old regions, which is done
+ * as part of mixed collections. References are tracked in remembered sets and
+ * is continuously updated as reference are written to with the help of the
+ * post-barrier.
+ *
+ * To reduce the number of updates to the remembered set the post-barrier
+ * filters updates to fields in objects located in the Young Generation,
+ * the same region as the reference, when the NULL is being written or
+ * if the card is already marked as dirty by an earlier write.
+ *
+ * Under certain circumstances it is possible to avoid generating the
+ * post-barrier completely if it is possible during compile time to prove
+ * the object is newly allocated and that no safepoint exists between the
+ * allocation and the store.
+ *
+ * In the case of slow allocation the allocation code must handle the barrier
+ * as part of the allocation in the case the allocated object is not located
+ * in the nursery, this would happen for humongous objects. This is similar to
+ * how CMS is required to handle this case, see the comments for the method
+ * CollectedHeap::new_store_pre_barrier and OptoRuntime::new_store_pre_barrier.
+ * A deferred card mark is required for these objects and handled in the above
+ * mentioned methods.
+ *
+ * Returns true if the post barrier can be removed
+ */
+bool GraphKit::g1_can_remove_post_barrier(PhaseTransform* phase, Node* store,
+                                          Node* adr) {
+  intptr_t      offset = 0;
+  Node*         base   = AddPNode::Ideal_base_and_offset(adr, phase, offset);
+  AllocateNode* alloc  = AllocateNode::Ideal_allocation(base, phase);
+
+  if (offset == Type::OffsetBot) {
+    return false; // cannot unalias unless there are precise offsets
+  }
+
+  if (alloc == NULL) {
+     return false; // No allocation found
+  }
+
+  // Start search from Store node
+  Node* mem = store->in(MemNode::Control);
+  if (mem->is_Proj() && mem->in(0)->is_Initialize()) {
+
+    InitializeNode* st_init = mem->in(0)->as_Initialize();
+    AllocateNode*  st_alloc = st_init->allocation();
+
+    // Make sure we are looking at the same allocation
+    if (alloc == st_alloc) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 //
 // Update the card table and add card address to the queue
 //
@@ -3976,6 +4145,20 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
     const Type* t = val->bottom_type();
     assert(t == Type::TOP || t == TypePtr::NULL_PTR, "must be NULL");
     // No post barrier if writing NULLx
+    return;
+  }
+
+  if (use_ReduceInitialCardMarks() && obj == just_allocated_object(control())) {
+    // We can skip marks on a freshly-allocated object in Eden.
+    // Keep this code in sync with new_store_pre_barrier() in runtime.cpp.
+    // That routine informs GC to take appropriate compensating steps,
+    // upon a slow-path allocation, so as to make this card-mark
+    // elision safe.
+    return;
+  }
+
+  if (use_ReduceInitialCardMarks()
+      && g1_can_remove_post_barrier(&_gvn, oop_store, adr)) {
     return;
   }
 

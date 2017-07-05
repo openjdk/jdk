@@ -37,7 +37,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Implementation of {@link ArrayData} as soon as an Object has been
  * written to the array
  */
-final class ObjectArrayData extends ContinuousArrayData {
+final class ObjectArrayData extends ContinuousArrayData implements AnyElements {
 
     /**
      * The wrapped array
@@ -49,19 +49,34 @@ final class ObjectArrayData extends ContinuousArrayData {
      * @param array an int array
      * @param length a length, not necessarily array.length
      */
-    ObjectArrayData(final Object array[], final int length) {
+    ObjectArrayData(final Object[] array, final int length) {
         super(length);
         assert array.length >= length;
         this.array  = array;
     }
 
     @Override
-    public Class<?> getElementType() {
+    public final Class<?> getElementType() {
         return Object.class;
     }
 
     @Override
-    public ArrayData copy() {
+    public final Class<?> getBoxedElementType() {
+        return getElementType();
+    }
+
+    @Override
+    public final int getElementWeight() {
+        return 4;
+    }
+
+    @Override
+    public final ContinuousArrayData widest(final ContinuousArrayData otherData) {
+        return otherData instanceof NumericElements ? this : otherData;
+    }
+
+    @Override
+    public ObjectArrayData copy() {
         return new ObjectArrayData(array.clone(), (int)length);
     }
 
@@ -79,7 +94,7 @@ final class ObjectArrayData extends ContinuousArrayData {
     }
 
     @Override
-    public ArrayData convert(final Class<?> type) {
+    public ObjectArrayData convert(final Class<?> type) {
         return this;
     }
 
@@ -324,5 +339,27 @@ final class ObjectArrayData extends ContinuousArrayData {
         }
 
         return returnValue;
+    }
+
+    @Override
+    public ContinuousArrayData fastConcat(final ContinuousArrayData otherData) {
+        final int   otherLength = (int)otherData.length;
+        final int   thisLength  = (int)length;
+        assert otherLength > 0 && thisLength > 0;
+
+        final Object[] otherArray = ((ObjectArrayData)otherData).array;
+        final int      newLength  = otherLength + thisLength;
+        final Object[] newArray   = new Object[ArrayData.alignUp(newLength)];
+
+        System.arraycopy(array, 0, newArray, 0, thisLength);
+        System.arraycopy(otherArray, 0, newArray, thisLength, otherLength);
+
+        return new ObjectArrayData(newArray, newLength);
+    }
+
+    @Override
+    public String toString() {
+        assert length <= array.length : length + " > " + array.length;
+        return getClass().getSimpleName() + ':' + Arrays.toString(Arrays.copyOf(array, (int)length));
     }
 }

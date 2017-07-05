@@ -71,7 +71,6 @@ ACCEPTED_BIN_DIFF="
 ./jre/lib/i386/libverify.so
 ./jre/lib/i386/server/libjvm.so
 ./bin/appletviewer
-./bin/extcheck
 ./bin/idlj
 ./bin/jar
 ./bin/jarsigner
@@ -159,7 +158,6 @@ ACCEPTED_BIN_DIFF="
 ./jre/lib/amd64/server/libjsig.so
 ./jre/lib/amd64/server/libjvm.so
 ./bin/appletviewer
-./bin/extcheck
 ./bin/idlj
 ./bin/jar
 ./bin/jarsigner
@@ -302,7 +300,6 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/lib/i386/server/libjvm_db.so
 ./jre/lib/i386/server/libjvm_dtrace.so
 ./bin/appletviewer
-./bin/extcheck
 ./bin/idlj
 ./bin/jar
 ./bin/jarsigner
@@ -443,7 +440,6 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/lib/amd64/server/libjvm_db.so
 ./jre/lib/amd64/server/libjvm_dtrace.so
 ./bin/amd64/appletviewer
-./bin/amd64/extcheck
 ./bin/amd64/idlj
 ./bin/amd64/jar
 ./bin/amd64/jarsigner
@@ -601,7 +597,6 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/plugin/sparc/ns7/libjavaplugin_oji.so
 ./jre/lib/sparc/server/libjvm.so
 ./bin/appletviewer
-./bin/extcheck
 ./bin/idlj
 ./bin/jar
 ./bin/jarsigner
@@ -747,7 +742,6 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/lib/sparcv9/libzip.so
 ./jre/lib/sparcv9/server/libjvm.so
 ./bin/sparcv9/appletviewer
-./bin/sparcv9/extcheck
 ./bin/sparcv9/idlj
 ./bin/sparcv9/jar
 ./bin/sparcv9/jarsigner
@@ -827,7 +821,6 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/bin/jsoundds.dll
 ./jre/bin/server/jvm.dll
 ./bin/appletviewer.exe
-./bin/extcheck.exe
 ./bin/idlj.exe
 ./bin/jar.exe
 ./bin/jarsigner.exe
@@ -924,7 +917,6 @@ KNOWN_BIN_DIFF="
 
 ACCEPTED_BIN_DIFF="
 ./bin/appletviewer
-./bin/extcheck
 ./bin/idlj
 ./bin/jar
 ./bin/jarsigner

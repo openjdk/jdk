@@ -154,9 +154,9 @@ $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/_the.services: \
 	(cd $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM && \
 	$(MKDIR) -p _the.tmp/META-INF/services && \
 	$(CP) $(DEMO_SHARE_SRC)/jfc/CodePointIM/java.awt.im.spi.InputMethodDescriptor _the.tmp/META-INF/services && \
-	cd _the.tmp && \
+	cd ./_the.tmp && \
 	$(JAR) uf $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/CodePointIM.jar META-INF/services/java.awt.im.spi.InputMethodDescriptor && \
-	cd META-INF/services && \
+	cd ./META-INF/services && \
 	$(JAR) uf $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/CodePointIM.jar java.awt.im.spi.InputMethodDescriptor)
 	$(RM) -r $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/_the.tmp
 	$(TOUCH) $@

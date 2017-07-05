@@ -72,7 +72,7 @@ import jdk.nashorn.internal.ir.PropertyNode;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
-import jdk.nashorn.internal.ir.SplitNode;
+import jdk.nashorn.internal.ir.SplitReturn;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
@@ -361,10 +361,6 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     // Synthetic return node that we must insert at the end of the function if it's end is reachable.
     private ReturnNode syntheticReturn;
 
-    // Topmost current split node (if any)
-    private SplitNode topSplit;
-    private boolean split;
-
     private boolean alreadyEnteredTopLevelFunction;
 
     // LvarType and conversion information gathered during the top-down pass; applied to nodes in the bottom-up pass.
@@ -477,22 +473,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             return false;
         }
         final BreakableNode target = jump.getTarget(lc);
-        return splitAwareJumpToLabel(jump, target, jump.getTargetLabel(target));
-    }
-
-    private boolean splitAwareJumpToLabel(final JumpStatement jumpStatement, final BreakableNode target, final Label targetLabel) {
-        final JoinPredecessor jumpOrigin;
-        if(topSplit != null && lc.isExternalTarget(topSplit, target)) {
-            // If the jump target is outside the topmost split node, then we'll create a synthetic jump origin in the
-            // split node.
-            jumpOrigin = new JoinPredecessorExpression();
-            topSplit.addJump(jumpOrigin, targetLabel);
-        } else {
-            // Otherwise, the original jump statement is the jump origin
-            jumpOrigin = jumpStatement;
-        }
-
-        jumpToLabel(jumpOrigin, targetLabel, getBreakTargetTypes(target));
+        jumpToLabel(jump, jump.getTargetLabel(target), getBreakTargetTypes(target));
         doesNotContinueSequentially();
         return false;
     }
@@ -703,18 +684,9 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     }
 
     @Override
-    public boolean enterSplitNode(final SplitNode splitNode) {
-        if(!reachable) {
-            return false;
-        }
-        // Need to visit inside of split nodes. While it's true that they don't have local variables, we need to visit
-        // breaks, continues, and returns in them.
-        if(topSplit == null) {
-            topSplit = splitNode;
-        }
-        split = true;
-        setType(getCompilerConstantSymbol(lc.getCurrentFunction(), CompilerConstants.RETURN), LvarType.UNDEFINED);
-        return true;
+    public boolean enterSplitReturn(final SplitReturn splitReturn) {
+        doesNotContinueSequentially();
+        return false;
     }
 
     @Override
@@ -1115,15 +1087,6 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         // where we can return void functions.
         if(returnType.isUnknown()) {
             returnType = Type.OBJECT;
-        }
-
-        if(split) {
-            // If the function is split, the ":return" symbol is used and needs a slot. Note we can't mark the return
-            // symbol as used in enterSplitNode, as we don't know the final return type of the function earlier than
-            // here.
-            final Symbol retSymbol = getCompilerConstantSymbol(lc.getCurrentFunction(), CompilerConstants.RETURN);
-            retSymbol.setHasSlotFor(returnType);
-            retSymbol.setNeedsSlot(true);
         }
     }
 

@@ -78,7 +78,8 @@ public class ParallelTestRunner {
     // ParallelTestRunner-specific
     private static final String    TEST_JS_THREADS     = "test.js.threads";
     private static final String    TEST_JS_REPORT_FILE = "test.js.report.file";
-    private static final int       THREADS             = Integer.getInteger(TEST_JS_THREADS, Runtime.getRuntime().availableProcessors());
+    // test262 does a lot of eval's and the JVM hates multithreaded class definition, so lower thread count is usually faster.
+    private static final int       THREADS = Integer.getInteger(TEST_JS_THREADS, Runtime.getRuntime().availableProcessors() > 4 ? 4 : 2);
 
     private final List<ScriptRunnable> tests    = new ArrayList<>();
     private final Set<String>      orphans  = new TreeSet<>();

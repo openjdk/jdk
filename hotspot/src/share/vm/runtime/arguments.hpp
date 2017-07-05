@@ -326,6 +326,9 @@ class Arguments : AllStatic {
   static bool _ClipInlining;
   static bool _CIDynamicCompilePriority;
 
+  // Scale compile thresholds
+  static intx get_scaled_compile_threshold(intx threshold);
+  static intx get_scaled_freq_log(intx freq_log);
   // Tiered
   static void set_tiered_flags();
   static int  get_min_number_of_compiler_threads();

@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -34,7 +35,18 @@ import jdk.nashorn.internal.parser.TokenType;
 /**
  * Nodes are used to compose Abstract Syntax Trees.
  */
-public abstract class Node implements Cloneable {
+public abstract class Node implements Cloneable, Serializable {
+    private static final long serialVersionUID = 1L;
+
+    /** Constant used for synthetic AST nodes that have no line number. */
+    public static final int NO_LINE_NUMBER = -1;
+
+    /** Constant used for synthetic AST nodes that have no token. */
+    public static final long NO_TOKEN = 0L;
+
+    /** Constant used for synthetic AST nodes that have no finish. */
+    public static final int NO_FINISH = 0;
+
     /** Start of source range. */
     protected final int start;
 

@@ -37,6 +37,8 @@ import jdk.nashorn.internal.parser.TokenType;
  */
 @Immutable
 public final class TernaryNode extends Expression {
+    private static final long serialVersionUID = 1L;
+
     private final Expression test;
     private final JoinPredecessorExpression trueExpr;
     private final JoinPredecessorExpression falseExpr;

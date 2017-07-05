@@ -42,6 +42,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public class Block extends Node implements BreakableNode, Terminal, Flags<Block> {
+    private static final long serialVersionUID = 1L;
+
     /** List of statements */
     protected final List<Statement> statements;
 

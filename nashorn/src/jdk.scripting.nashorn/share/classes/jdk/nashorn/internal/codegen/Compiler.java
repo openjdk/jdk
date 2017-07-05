@@ -32,15 +32,16 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
 import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
+
 import java.io.File;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -159,119 +160,147 @@ public final class Compiler implements Loggable {
      */
     private static final int COMPILE_UNIT_NAME_BUFFER_SIZE = 32;
 
+    private final Map<Integer, byte[]> serializedAsts = new HashMap<>();
+
     /**
      * Compilation phases that a compilation goes through
      */
     public static class CompilationPhases implements Iterable<CompilationPhase> {
 
-        /** Singleton that describes a standard eager compilation - this includes code installation */
-        public final static CompilationPhases COMPILE_ALL = new CompilationPhases(
-                "Compile all",
-                new CompilationPhase[] {
-                        CompilationPhase.CONSTANT_FOLDING_PHASE,
-                        CompilationPhase.LOWERING_PHASE,
-                        CompilationPhase.PROGRAM_POINT_PHASE,
-                        CompilationPhase.TRANSFORM_BUILTINS_PHASE,
-                        CompilationPhase.SPLITTING_PHASE,
-                        CompilationPhase.SYMBOL_ASSIGNMENT_PHASE,
-                        CompilationPhase.SCOPE_DEPTH_COMPUTATION_PHASE,
-                        CompilationPhase.OPTIMISTIC_TYPE_ASSIGNMENT_PHASE,
-                        CompilationPhase.LOCAL_VARIABLE_TYPE_CALCULATION_PHASE,
-                        CompilationPhase.BYTECODE_GENERATION_PHASE,
-                        CompilationPhase.INSTALL_PHASE
-                });
+        /**
+         * Singleton that describes compilation up to the phase where a function can be serialized.
+         */
+        private final static CompilationPhases COMPILE_UPTO_SERIALIZABLE = new CompilationPhases(
+                "Common initial phases",
+                CompilationPhase.CONSTANT_FOLDING_PHASE,
+                CompilationPhase.LOWERING_PHASE,
+                CompilationPhase.TRANSFORM_BUILTINS_PHASE,
+                CompilationPhase.SPLITTING_PHASE,
+                CompilationPhase.PROGRAM_POINT_PHASE,
+                CompilationPhase.SERIALIZE_SPLIT_PHASE
+                );
 
-        /** Compile all for a rest of method */
-        public final static CompilationPhases COMPILE_ALL_RESTOF =
-                COMPILE_ALL.setDescription("Compile all, rest of").addAfter(CompilationPhase.LOCAL_VARIABLE_TYPE_CALCULATION_PHASE, CompilationPhase.REUSE_COMPILE_UNITS_PHASE);
+        private final static CompilationPhases COMPILE_SERIALIZABLE_UPTO_BYTECODE = new CompilationPhases(
+                "After common phases, before bytecode generator",
+                CompilationPhase.SYMBOL_ASSIGNMENT_PHASE,
+                CompilationPhase.SCOPE_DEPTH_COMPUTATION_PHASE,
+                CompilationPhase.OPTIMISTIC_TYPE_ASSIGNMENT_PHASE,
+                CompilationPhase.LOCAL_VARIABLE_TYPE_CALCULATION_PHASE
+                );
 
-        /** Singleton that describes a standard eager compilation, but no installation, for example used by --compile-only */
-        public final static CompilationPhases COMPILE_ALL_NO_INSTALL =
-                COMPILE_ALL.
-                removeLast().
-                setDescription("Compile without install");
-
-        /** Singleton that describes compilation up to the CodeGenerator, but not actually generating code */
-        public final static CompilationPhases COMPILE_UPTO_BYTECODE =
-                COMPILE_ALL.
-                removeLast().
-                removeLast().
-                setDescription("Compile upto bytecode");
+        /**
+         * Singleton that describes additional steps to be taken after deserializing, all the way up to (but not
+         * including) generating and installing code.
+         */
+        public final static CompilationPhases RECOMPILE_SERIALIZED_UPTO_BYTECODE = new CompilationPhases(
+                "Recompile serialized function up to bytecode",
+                CompilationPhase.REINITIALIZE_SERIALIZED,
+                COMPILE_SERIALIZABLE_UPTO_BYTECODE
+                );
 
         /**
          * Singleton that describes back end of method generation, given that we have generated the normal
          * method up to CodeGenerator as in {@link CompilationPhases#COMPILE_UPTO_BYTECODE}
          */
-        public final static CompilationPhases COMPILE_FROM_BYTECODE = new CompilationPhases(
+        public final static CompilationPhases GENERATE_BYTECODE_AND_INSTALL = new CompilationPhases(
                 "Generate bytecode and install",
-                new CompilationPhase[] {
-                        CompilationPhase.BYTECODE_GENERATION_PHASE,
-                        CompilationPhase.INSTALL_PHASE
-                });
+                CompilationPhase.BYTECODE_GENERATION_PHASE,
+                CompilationPhase.INSTALL_PHASE
+                );
+
+        /** Singleton that describes compilation up to the CodeGenerator, but not actually generating code */
+        public final static CompilationPhases COMPILE_UPTO_BYTECODE = new CompilationPhases(
+                "Compile upto bytecode",
+                COMPILE_UPTO_SERIALIZABLE,
+                COMPILE_SERIALIZABLE_UPTO_BYTECODE);
+
+        /** Singleton that describes a standard eager compilation, but no installation, for example used by --compile-only */
+        public final static CompilationPhases COMPILE_ALL_NO_INSTALL = new CompilationPhases(
+                "Compile without install",
+                COMPILE_UPTO_BYTECODE,
+                CompilationPhase.BYTECODE_GENERATION_PHASE);
+
+        /** Singleton that describes a standard eager compilation - this includes code installation */
+        public final static CompilationPhases COMPILE_ALL = new CompilationPhases(
+                "Full eager compilation",
+                COMPILE_UPTO_BYTECODE,
+                GENERATE_BYTECODE_AND_INSTALL);
+
+        /** Singleton that describes a full compilation - this includes code installation - from serialized state*/
+        public final static CompilationPhases COMPILE_ALL_SERIALIZED = new CompilationPhases(
+                "Eager compilation from serializaed state",
+                RECOMPILE_SERIALIZED_UPTO_BYTECODE,
+                GENERATE_BYTECODE_AND_INSTALL);
 
         /**
          * Singleton that describes restOf method generation, given that we have generated the normal
          * method up to CodeGenerator as in {@link CompilationPhases#COMPILE_UPTO_BYTECODE}
          */
-        public final static CompilationPhases COMPILE_FROM_BYTECODE_RESTOF =
-                COMPILE_FROM_BYTECODE.
-                addFirst(CompilationPhase.REUSE_COMPILE_UNITS_PHASE).
-                setDescription("Generate bytecode and install - RestOf method");
+        public final static CompilationPhases GENERATE_BYTECODE_AND_INSTALL_RESTOF = new CompilationPhases(
+                "Generate bytecode and install - RestOf method",
+                CompilationPhase.REUSE_COMPILE_UNITS_PHASE,
+                GENERATE_BYTECODE_AND_INSTALL);
+
+        /** Compile all for a rest of method */
+        public final static CompilationPhases COMPILE_ALL_RESTOF = new CompilationPhases(
+                "Compile all, rest of",
+                COMPILE_UPTO_BYTECODE,
+                GENERATE_BYTECODE_AND_INSTALL_RESTOF);
+
+        /** Compile from serialized for a rest of method */
+        public final static CompilationPhases COMPILE_SERIALIZED_RESTOF = new CompilationPhases(
+                "Compile serialized, rest of",
+                RECOMPILE_SERIALIZED_UPTO_BYTECODE,
+                GENERATE_BYTECODE_AND_INSTALL_RESTOF);
 
         private final List<CompilationPhase> phases;
 
         private final String desc;
 
         private CompilationPhases(final String desc, final CompilationPhase... phases) {
-            this.desc = desc;
+            this(desc, Arrays.asList(phases));
+        }
 
-            final List<CompilationPhase> newPhases = new LinkedList<>();
-            newPhases.addAll(Arrays.asList(phases));
-            this.phases = Collections.unmodifiableList(newPhases);
+        private CompilationPhases(final String desc, final CompilationPhases base, final CompilationPhase... phases) {
+            this(desc, concat(base.phases, Arrays.asList(phases)));
+        }
+
+        private CompilationPhases(final String desc, final CompilationPhase first, final CompilationPhases rest) {
+            this(desc, concat(Collections.singletonList(first), rest.phases));
+        }
+
+        private CompilationPhases(final String desc, final CompilationPhases base) {
+            this(desc, base.phases);
+        }
+
+        private CompilationPhases(final String desc, final CompilationPhases... bases) {
+            this(desc, concatPhases(bases));
+        }
+
+        private CompilationPhases(final String desc, final List<CompilationPhase> phases) {
+            this.desc = desc;
+            this.phases = phases;
+        }
+
+        private static List<CompilationPhase> concatPhases(final CompilationPhases[] bases) {
+            final ArrayList<CompilationPhase> l = new ArrayList<>();
+            for(final CompilationPhases base: bases) {
+                l.addAll(base.phases);
+            }
+            l.trimToSize();
+            return l;
+        }
+
+        private static <T> List<T> concat(final List<T> l1, final List<T> l2) {
+            final ArrayList<T> l = new ArrayList<>(l1);
+            l.addAll(l2);
+            l.trimToSize();
+            return l;
         }
 
         @Override
         public String toString() {
             return "'" + desc + "' " + phases.toString();
-        }
-
-        private CompilationPhases setDescription(final String desc) {
-            return new CompilationPhases(desc, phases.toArray(new CompilationPhase[phases.size()]));
-        }
-
-        private CompilationPhases removeLast() {
-            final LinkedList<CompilationPhase> list = new LinkedList<>(phases);
-            list.removeLast();
-            return new CompilationPhases(desc, list.toArray(new CompilationPhase[list.size()]));
-        }
-
-        private CompilationPhases addFirst(final CompilationPhase phase) {
-            if (phases.contains(phase)) {
-                return this;
-            }
-            final LinkedList<CompilationPhase> list = new LinkedList<>(phases);
-            list.addFirst(phase);
-            return new CompilationPhases(desc, list.toArray(new CompilationPhase[list.size()]));
-        }
-
-        @SuppressWarnings("unused") //TODO I'll use this soon
-        private CompilationPhases replace(final CompilationPhase phase, final CompilationPhase newPhase) {
-            final LinkedList<CompilationPhase> list = new LinkedList<>();
-            for (final CompilationPhase p : phases) {
-                list.add(p == phase ? newPhase : p);
-            }
-            return new CompilationPhases(desc, list.toArray(new CompilationPhase[list.size()]));
-        }
-
-        private CompilationPhases addAfter(final CompilationPhase phase, final CompilationPhase newPhase) {
-            final LinkedList<CompilationPhase> list = new LinkedList<>();
-            for (final CompilationPhase p : phases) {
-                list.add(p);
-                if (p == phase) {
-                    list.add(newPhase);
-                }
-            }
-            return new CompilationPhases(desc, list.toArray(new CompilationPhase[list.size()]));
         }
 
         boolean contains(final CompilationPhase phase) {
@@ -284,7 +313,7 @@ public final class Compiler implements Loggable {
         }
 
         boolean isRestOfCompilation() {
-            return this == COMPILE_ALL_RESTOF || this == COMPILE_FROM_BYTECODE_RESTOF;
+            return this == COMPILE_ALL_RESTOF || this == GENERATE_BYTECODE_AND_INSTALL_RESTOF || this == COMPILE_SERIALIZED_RESTOF;
         }
 
         String getDesc() {
@@ -749,6 +778,14 @@ public final class Compiler implements Loggable {
         compileUnits.addAll(newUnits);
     }
 
+    void serializeAst(final FunctionNode fn) {
+        serializedAsts.put(fn.getId(), AstSerializer.serialize(fn));
+    }
+
+    byte[] removeSerializedAst(final int fnId) {
+        return serializedAsts.remove(fnId);
+    }
+
     CompileUnit findUnit(final long weight) {
         for (final CompileUnit unit : compileUnits) {
             if (unit.canHold(weight)) {
@@ -771,7 +808,10 @@ public final class Compiler implements Loggable {
     }
 
     RecompilableScriptFunctionData getScriptFunctionData(final int functionId) {
-        return compiledFunction == null ? null : compiledFunction.getScriptFunctionData(functionId);
+        assert compiledFunction != null;
+        final RecompilableScriptFunctionData fn = compiledFunction.getScriptFunctionData(functionId);
+        assert fn != null : functionId;
+        return fn;
     }
 
     boolean isGlobalSymbol(final FunctionNode fn, final String name) {

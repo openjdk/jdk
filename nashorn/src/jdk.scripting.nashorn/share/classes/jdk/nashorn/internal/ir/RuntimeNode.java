@@ -42,6 +42,7 @@ import jdk.nashorn.internal.parser.TokenType;
  */
 @Immutable
 public class RuntimeNode extends Expression implements Optimistic {
+    private static final long serialVersionUID = 1L;
 
     /**
      * Request enum used for meta-information about the runtime request

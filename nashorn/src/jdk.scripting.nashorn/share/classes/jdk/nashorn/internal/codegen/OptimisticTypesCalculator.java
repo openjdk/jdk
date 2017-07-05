@@ -30,7 +30,6 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 import java.util.ArrayDeque;
 import java.util.BitSet;
 import java.util.Deque;
-import jdk.nashorn.internal.IntDeque;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.CallNode;
@@ -49,7 +48,6 @@ import jdk.nashorn.internal.ir.LoopNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Optimistic;
 import jdk.nashorn.internal.ir.PropertyNode;
-import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
@@ -70,8 +68,6 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
 
     // Per-function bit set of program points that must never be optimistic.
     final Deque<BitSet> neverOptimistic = new ArrayDeque<>();
-    // Per-function depth of split nodes
-    final IntDeque splitDepth = new IntDeque();
 
     OptimisticTypesCalculator(final Compiler compiler) {
         super(new LexicalContext());
@@ -155,7 +151,6 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
             return false;
         }
         neverOptimistic.push(new BitSet());
-        splitDepth.push(0);
         return true;
     }
 
@@ -190,19 +185,6 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
     }
 
     @Override
-    public boolean enterSplitNode(final SplitNode splitNode) {
-        splitDepth.getAndIncrement();
-        return true;
-    }
-
-    @Override
-    public Node leaveSplitNode(final SplitNode splitNode) {
-        final int depth = splitDepth.decrementAndGet();
-        assert depth >= 0;
-        return splitNode;
-    }
-
-    @Override
     public boolean enterVarNode(final VarNode varNode) {
         tagNeverOptimistic(varNode.getName());
         return true;
@@ -226,16 +208,11 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
         neverOptimistic.pop();
-        final int lastSplitDepth = splitDepth.pop();
-        assert lastSplitDepth == 0;
         return functionNode.setState(lc, CompilationState.OPTIMISTIC_TYPES_ASSIGNED);
     }
 
     @Override
     public Node leaveIdentNode(final IdentNode identNode) {
-        if(inSplitNode()) {
-            return identNode;
-        }
         final Symbol symbol = identNode.getSymbol();
         if(symbol == null) {
             assert identNode.isPropertyName();
@@ -256,7 +233,7 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
 
     private Expression leaveOptimistic(final Optimistic opt) {
         final int pp = opt.getProgramPoint();
-        if(isValid(pp) && !inSplitNode() && !neverOptimistic.peek().get(pp)) {
+        if(isValid(pp) && !neverOptimistic.peek().get(pp)) {
             return (Expression)opt.setType(compiler.getOptimisticType(opt));
         }
         return (Expression)opt;
@@ -276,9 +253,5 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
         if(test != null) {
             tagNeverOptimistic(test.getExpression());
         }
-    }
-
-    private boolean inSplitNode() {
-        return splitDepth.peek() > 0;
     }
 }
