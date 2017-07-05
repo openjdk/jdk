@@ -87,12 +87,6 @@ void GCTaskThread::print_task_time_stamps() {
   _time_stamp_index = 0;
 }
 
-void GCTaskThread::print_on(outputStream* st) const {
-  st->print("\"%s\" ", name());
-  Thread::print_on(st);
-  st->cr();
-}
-
 // GC workers get tasks from the GCTaskManager and execute
 // them in this method.  If there are no tasks to execute,
 // the GC workers wait in the GCTaskManager's get_task()

@@ -97,7 +97,8 @@ jdk_io = \
 
 jdk_nio = \
     java/nio \
-    sun/nio
+    sun/nio \
+    jdk/nio
 
 jdk_net = \
     java/net \
@@ -203,7 +204,6 @@ jdk_other = \
     com/sun/jndi \
     com/sun/corba \
     lib/testlibrary \
-    jdk/nio/zipfs \
     sample
 
 #

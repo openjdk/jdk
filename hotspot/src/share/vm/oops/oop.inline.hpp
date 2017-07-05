@@ -38,7 +38,8 @@
 #include "oops/klass.inline.hpp"
 #include "oops/markOop.inline.hpp"
 #include "oops/oop.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 #ifdef TARGET_ARCH_x86

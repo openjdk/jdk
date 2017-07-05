@@ -1,7 +1,39 @@
+// permissions required by each component
+grant codeBase "file:${java.home}/lib/ext/zipfs.jar" {
+        permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete";
+        permission java.lang.RuntimePermission "fileSystemProvider";
+        permission java.util.PropertyPermission "*", "read";
+};
 
-// Standard extensions get all permissions by default
+grant codeBase "file:${java.home}/lib/ext/cldrdata.jar" {
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.text.*";
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.util.*";
+        permission java.util.PropertyPermission "*", "read";
+};
 
-grant codeBase "file:${{java.ext.dirs}}/*" {
+grant codeBase "file:${java.home}/lib/ext/localedata.jar" {
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.text.*";
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.util.*";
+        permission java.util.PropertyPermission "*", "read";
+};
+
+grant codeBase "file:${java.home}/lib/ext/dnsns.jar" {
+        permission java.security.AllPermission;
+};
+
+grant codeBase "file:${java.home}/lib/ext/nashorn.jar" {
+        permission java.security.AllPermission;
+};
+
+grant codeBase "file:${java.home}/lib/ext/sunec.jar" {
+        permission java.security.AllPermission;
+};
+
+grant codeBase "file:${java.home}/lib/ext/sunjce_provider.jar" {
+        permission java.security.AllPermission;
+};
+
+grant codeBase "file:${java.home}/lib/ext/sunpkcs11.jar" {
         permission java.security.AllPermission;
 };
 

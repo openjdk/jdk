@@ -3152,10 +3152,12 @@ void MacroAssembler::fast_pow() {
   // if fast computation is not possible, result is NaN. Requires
   // fallback from user of this macro.
   // increase precision for intermediate steps of the computation
+  BLOCK_COMMENT("fast_pow {");
   increase_precision();
   fyl2x();                 // Stack: (Y*log2(X)) ...
   pow_exp_core_encoding(); // Stack: exp(X) ...
   restore_precision();
+  BLOCK_COMMENT("} fast_pow");
 }
 
 void MacroAssembler::fast_exp() {

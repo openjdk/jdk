@@ -26,7 +26,7 @@
 #ifndef CPU_PPC_VM_INTERP_MASM_PPC_64_HPP
 #define CPU_PPC_VM_INTERP_MASM_PPC_64_HPP
 
-#include "assembler_ppc.inline.hpp"
+#include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
 
 // This file specializes the assembler with interpreter-specific macros.

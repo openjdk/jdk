@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspace.hpp"
+#include "runtime/orderAccess.hpp"
 
 // correct linkage required to compile w/o warnings
 // (must be on file level - cannot be local)
