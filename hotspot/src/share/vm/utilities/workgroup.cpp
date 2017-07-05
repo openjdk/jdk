@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,28 +53,52 @@ WorkGang::WorkGang(const char* name,
                    int         workers,
                    bool        are_GC_task_threads,
                    bool        are_ConcurrentGC_threads) :
-  AbstractWorkGang(name, are_GC_task_threads, are_ConcurrentGC_threads)
-{
+  AbstractWorkGang(name, are_GC_task_threads, are_ConcurrentGC_threads) {
   // Save arguments.
   _total_workers = workers;
+}
+
+GangWorker* WorkGang::allocate_worker(int which) {
+  GangWorker* new_worker = new GangWorker(this, which);
+  return new_worker;
+}
+
+// The current implementation will exit if the allocation
+// of any worker fails.  Still, return a boolean so that
+// a future implementation can possibly do a partial
+// initialization of the workers and report such to the
+// caller.
+bool WorkGang::initialize_workers() {
 
   if (TraceWorkGang) {
-    tty->print_cr("Constructing work gang %s with %d threads", name, workers);
+    tty->print_cr("Constructing work gang %s with %d threads",
+                  name(),
+                  total_workers());
   }
-  _gang_workers = NEW_C_HEAP_ARRAY(GangWorker*, workers);
+  _gang_workers = NEW_C_HEAP_ARRAY(GangWorker*, total_workers());
   if (gang_workers() == NULL) {
     vm_exit_out_of_memory(0, "Cannot create GangWorker array.");
+    return false;
+  }
+  os::ThreadType worker_type;
+  if (are_ConcurrentGC_threads()) {
+    worker_type = os::cgc_thread;
+  } else {
+    worker_type = os::pgc_thread;
   }
   for (int worker = 0; worker < total_workers(); worker += 1) {
-    GangWorker* new_worker = new GangWorker(this, worker);
+    GangWorker* new_worker = allocate_worker(worker);
     assert(new_worker != NULL, "Failed to allocate GangWorker");
     _gang_workers[worker] = new_worker;
-    if (new_worker == NULL || !os::create_thread(new_worker, os::pgc_thread))
+    if (new_worker == NULL || !os::create_thread(new_worker, worker_type)) {
       vm_exit_out_of_memory(0, "Cannot create worker GC thread. Out of system resources.");
+      return false;
+    }
     if (!DisableStartThread) {
       os::start_thread(new_worker);
     }
   }
+  return true;
 }
 
 AbstractWorkGang::~AbstractWorkGang() {
@@ -383,7 +407,7 @@ bool SubTasksDone::valid() {
   return _tasks != NULL;
 }
 
-void SubTasksDone::set_par_threads(int t) {
+void SubTasksDone::set_n_threads(int t) {
 #ifdef ASSERT
   assert(_claimed == 0 || _threads_completed == _n_threads,
          "should not be called while tasks are being processed!");

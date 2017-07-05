@@ -1682,23 +1682,23 @@ class MacroAssembler: public Assembler {
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
 
+  void load_heap_oop(Register dst, Address src);
+  void store_heap_oop(Address dst, Register src);
+
+  // Used for storing NULL. All other oop constants should be
+  // stored using routines that take a jobject.
+  void store_heap_oop_null(Address dst);
+
   void load_prototype_header(Register dst, Register src);
 
 #ifdef _LP64
   void store_klass_gap(Register dst, Register src);
-
-  void load_heap_oop(Register dst, Address src);
-  void store_heap_oop(Address dst, Register src);
 
   // This dummy is to prevent a call to store_heap_oop from
   // converting a zero (like NULL) into a Register by giving
   // the compiler two choices it can't resolve
 
   void store_heap_oop(Address dst, void* dummy);
-
-  // Used for storing NULL. All other oop constants should be
-  // stored using routines that take a jobject.
-  void store_heap_oop_null(Address dst);
 
   void encode_heap_oop(Register r);
   void decode_heap_oop(Register r);
@@ -1927,7 +1927,7 @@ class MacroAssembler: public Assembler {
 
   void untested()                                { stop("untested"); }
 
-  void unimplemented(const char* what = "")      { char* b = new char[1024];  jio_snprintf(b, sizeof(b), "unimplemented: %s", what);  stop(b); }
+  void unimplemented(const char* what = "")      { char* b = new char[1024];  jio_snprintf(b, 1024, "unimplemented: %s", what);  stop(b); }
 
   void should_not_reach_here()                   { stop("should not reach here"); }
 
