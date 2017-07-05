@@ -95,7 +95,7 @@ KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
     }
     elt = elt->next();
   }
-  elt = new KlassInfoEntry(k, list());
+  elt = new (std::nothrow) KlassInfoEntry(k, list());
   // We may be out of space to allocate the new entry.
   if (elt != NULL) {
     set_list(elt);
@@ -127,13 +127,15 @@ void KlassInfoTable::AllClassesFinder::do_klass(Klass* k) {
   _table->lookup(k);
 }
 
-KlassInfoTable::KlassInfoTable(int size, HeapWord* ref,
-                               bool need_class_stats) {
+KlassInfoTable::KlassInfoTable(bool need_class_stats) {
+  _size_of_instances_in_words = 0;
   _size = 0;
-  _ref = ref;
-  _buckets = NEW_C_HEAP_ARRAY(KlassInfoBucket, size, mtInternal);
+  _ref = (HeapWord*) Universe::boolArrayKlassObj();
+  _buckets =
+    (KlassInfoBucket*)  AllocateHeap(sizeof(KlassInfoBucket) * _num_buckets,
+                                            mtInternal, 0, AllocFailStrategy::RETURN_NULL);
   if (_buckets != NULL) {
-    _size = size;
+    _size = _num_buckets;
     for (int index = 0; index < _size; index++) {
       _buckets[index].initialize();
     }
@@ -179,6 +181,7 @@ bool KlassInfoTable::record_instance(const oop obj) {
   if (elt != NULL) {
     elt->set_count(elt->count() + 1);
     elt->set_words(elt->words() + obj->size());
+    _size_of_instances_in_words += obj->size();
     return true;
   } else {
     return false;
@@ -192,14 +195,18 @@ void KlassInfoTable::iterate(KlassInfoClosure* cic) {
   }
 }
 
+size_t KlassInfoTable::size_of_instances_in_words() const {
+  return _size_of_instances_in_words;
+}
+
 int KlassInfoHisto::sort_helper(KlassInfoEntry** e1, KlassInfoEntry** e2) {
   return (*e1)->compare(*e1,*e2);
 }
 
-KlassInfoHisto::KlassInfoHisto(KlassInfoTable* cit, const char* title, int estimatedCount) :
+KlassInfoHisto::KlassInfoHisto(KlassInfoTable* cit, const char* title) :
   _cit(cit),
   _title(title) {
-  _elements = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<KlassInfoEntry*>(estimatedCount,true);
+  _elements = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<KlassInfoEntry*>(_histo_initial_size, true);
 }
 
 KlassInfoHisto::~KlassInfoHisto() {
@@ -444,25 +451,37 @@ class RecordInstanceClosure : public ObjectClosure {
  private:
   KlassInfoTable* _cit;
   size_t _missed_count;
+  BoolObjectClosure* _filter;
  public:
-  RecordInstanceClosure(KlassInfoTable* cit) :
-    _cit(cit), _missed_count(0) {}
+  RecordInstanceClosure(KlassInfoTable* cit, BoolObjectClosure* filter) :
+    _cit(cit), _missed_count(0), _filter(filter) {}
 
   void do_object(oop obj) {
-    if (!_cit->record_instance(obj)) {
-      _missed_count++;
+    if (should_visit(obj)) {
+      if (!_cit->record_instance(obj)) {
+        _missed_count++;
+      }
     }
   }
 
   size_t missed_count() { return _missed_count; }
+
+ private:
+  bool should_visit(oop obj) {
+    return _filter == NULL || _filter->do_object_b(obj);
+  }
 };
 
-void HeapInspection::heap_inspection(outputStream* st, bool need_prologue) {
+size_t HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *filter) {
   ResourceMark rm;
-  // Get some random number for ref (the hash key)
-  HeapWord* ref = (HeapWord*) Universe::boolArrayKlassObj();
-  CollectedHeap* heap = Universe::heap();
-  bool is_shared_heap = false;
+
+  RecordInstanceClosure ric(cit, filter);
+  Universe::heap()->object_iterate(&ric);
+  return ric.missed_count();
+}
+
+void HeapInspection::heap_inspection(outputStream* st) {
+  ResourceMark rm;
 
   if (_print_help) {
     for (int c=0; c<KlassSizeStats::_num_columns; c++) {
@@ -482,39 +501,30 @@ void HeapInspection::heap_inspection(outputStream* st, bool need_prologue) {
     return;
   }
 
-  // Collect klass instance info
-  KlassInfoTable cit(KlassInfoTable::cit_size, ref, _print_class_stats);
+  KlassInfoTable cit(_print_class_stats);
   if (!cit.allocation_failed()) {
-    // Iterate over objects in the heap
-    RecordInstanceClosure ric(&cit);
-    Universe::heap()->object_iterate(&ric);
-
-    // Report if certain classes are not counted because of
-    // running out of C-heap for the histogram.
-    size_t missed_count = ric.missed_count();
+    size_t missed_count = populate_table(&cit);
     if (missed_count != 0) {
       st->print_cr("WARNING: Ran out of C-heap; undercounted " SIZE_FORMAT
                    " total instances in data below",
                    missed_count);
     }
+
     // Sort and print klass instance info
     const char *title = "\n"
               " num     #instances         #bytes  class name\n"
               "----------------------------------------------";
-    KlassInfoHisto histo(&cit, title, KlassInfoHisto::histo_initial_size);
+    KlassInfoHisto histo(&cit, title);
     HistoClosure hc(&histo);
+
     cit.iterate(&hc);
+
     histo.sort();
     histo.print_histo_on(st, _print_class_stats, _csv_format, _columns);
   } else {
     st->print_cr("WARNING: Ran out of C-heap; histogram not generated");
   }
   st->flush();
-
-  if (need_prologue && is_shared_heap) {
-    SharedHeap* sh = (SharedHeap*)heap;
-    sh->gc_epilogue(false /* !full */); // release all acquired locks, etc.
-  }
 }
 
 class FindInstanceClosure : public ObjectClosure {

@@ -36,6 +36,9 @@
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
+#include "gc_implementation/shared/gcTimer.hpp"
+#include "gc_implementation/shared/gcTrace.hpp"
+#include "gc_implementation/shared/gcTraceTime.hpp"
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
@@ -1342,6 +1345,9 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   _remark_times.add((now - start) * 1000.0);
 
   g1p->record_concurrent_mark_remark_end();
+
+  G1CMIsAliveClosure is_alive(g1h);
+  g1h->gc_tracer_cm()->report_object_count_after_gc(&is_alive);
 }
 
 // Base class of the closures that finalize and verify the
@@ -2129,6 +2135,7 @@ void ConcurrentMark::cleanup() {
   }
 
   g1h->verify_region_sets_optional();
+  g1h->trace_heap_after_concurrent_cycle();
 }
 
 void ConcurrentMark::completeCleanup() {
@@ -2439,7 +2446,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     if (G1Log::finer()) {
       gclog_or_tty->put(' ');
     }
-    TraceTime t("GC ref-proc", G1Log::finer(), false, gclog_or_tty);
+    GCTraceTime t("GC ref-proc", G1Log::finer(), false, g1h->gc_timer_cm());
 
     ReferenceProcessor* rp = g1h->ref_processor_cm();
 
@@ -2491,10 +2498,13 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     rp->set_active_mt_degree(active_workers);
 
     // Process the weak references.
-    rp->process_discovered_references(&g1_is_alive,
-                                      &g1_keep_alive,
-                                      &g1_drain_mark_stack,
-                                      executor);
+    const ReferenceProcessorStats& stats =
+        rp->process_discovered_references(&g1_is_alive,
+                                          &g1_keep_alive,
+                                          &g1_drain_mark_stack,
+                                          executor,
+                                          g1h->gc_timer_cm());
+    g1h->gc_tracer_cm()->report_gc_reference_stats(stats);
 
     // The do_oop work routines of the keep_alive and drain_marking_stack
     // oop closures will set the has_overflown flag if we overflow the
@@ -3227,6 +3237,9 @@ void ConcurrentMark::abort() {
   satb_mq_set.set_active_all_threads(
                                  false, /* new active value */
                                  satb_mq_set.is_active() /* expected_active */);
+
+  _g1h->trace_heap_after_concurrent_cycle();
+  _g1h->register_concurrent_cycle_end();
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,
