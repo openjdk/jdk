@@ -79,4 +79,7 @@ abstract public class Metadata extends VMObject {
   }
 
   abstract public void printValueOn(PrintStream tty);
+  public void dumpReplayData(PrintStream out) {
+      out.println("# Unknown Metadata");
+  }
 }

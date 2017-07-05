@@ -42,6 +42,10 @@
 
 typedef BinaryTreeDictionary<Metablock, FreeList> BlockTreeDictionary;
 typedef BinaryTreeDictionary<Metachunk, FreeList> ChunkTreeDictionary;
+// Define this macro to enable slow integrity checking of
+// the free chunk lists
+const bool metaspace_slow_verify = false;
+
 
 // Parameters for stress mode testing
 const uint metadata_deallocate_a_lot_block = 10;
@@ -161,7 +165,17 @@ class ChunkManager VALUE_OBJ_CLASS_SPEC {
   size_t sum_free_chunks_count();
 
   void locked_verify_free_chunks_total();
+  void slow_locked_verify_free_chunks_total() {
+    if (metaspace_slow_verify) {
+      locked_verify_free_chunks_total();
+    }
+  }
   void locked_verify_free_chunks_count();
+  void slow_locked_verify_free_chunks_count() {
+    if (metaspace_slow_verify) {
+      locked_verify_free_chunks_count();
+    }
+  }
   void verify_free_chunks_count();
 
  public:
@@ -201,7 +215,17 @@ class ChunkManager VALUE_OBJ_CLASS_SPEC {
 
   // Debug support
   void verify();
+  void slow_verify() {
+    if (metaspace_slow_verify) {
+      verify();
+    }
+  }
   void locked_verify();
+  void slow_locked_verify() {
+    if (metaspace_slow_verify) {
+      locked_verify();
+    }
+  }
   void verify_free_chunks_total();
 
   void locked_print_free_chunks(outputStream* st);
@@ -1507,7 +1531,7 @@ size_t ChunkManager::free_chunks_total() {
   if (!UseConcMarkSweepGC && !SpaceManager::expand_lock()->is_locked()) {
     MutexLockerEx cl(SpaceManager::expand_lock(),
                      Mutex::_no_safepoint_check_flag);
-    locked_verify_free_chunks_total();
+    slow_locked_verify_free_chunks_total();
   }
 #endif
   return _free_chunks_total;
@@ -1524,10 +1548,10 @@ size_t ChunkManager::free_chunks_count() {
                      Mutex::_no_safepoint_check_flag);
     // This lock is only needed in debug because the verification
     // of the _free_chunks_totals walks the list of free chunks
-    locked_verify_free_chunks_count();
+    slow_locked_verify_free_chunks_count();
   }
 #endif
-    return _free_chunks_count;
+  return _free_chunks_count;
 }
 
 void ChunkManager::locked_verify_free_chunks_total() {
@@ -1561,14 +1585,9 @@ void ChunkManager::verify_free_chunks_count() {
 }
 
 void ChunkManager::verify() {
-#ifdef ASSERT
-  if (!UseConcMarkSweepGC) {
-    MutexLockerEx cl(SpaceManager::expand_lock(),
-                       Mutex::_no_safepoint_check_flag);
-    locked_verify_free_chunks_total();
-    locked_verify_free_chunks_count();
-  }
-#endif
+  MutexLockerEx cl(SpaceManager::expand_lock(),
+                     Mutex::_no_safepoint_check_flag);
+  locked_verify();
 }
 
 void ChunkManager::locked_verify() {
@@ -1642,7 +1661,7 @@ void ChunkManager::free_chunks_put(Metachunk* chunk) {
   free_list->set_head(chunk);
   // chunk is being returned to the chunk free list
   inc_free_chunks_total(chunk->capacity_word_size());
-  locked_verify();
+  slow_locked_verify();
 }
 
 void ChunkManager::chunk_freelist_deallocate(Metachunk* chunk) {
@@ -1650,8 +1669,8 @@ void ChunkManager::chunk_freelist_deallocate(Metachunk* chunk) {
   // manangement code for a Metaspace and does not hold the
   // lock.
   assert(chunk != NULL, "Deallocating NULL");
-  // MutexLockerEx fcl(SpaceManager::expand_lock(), Mutex::_no_safepoint_check_flag);
-  locked_verify();
+  assert_lock_strong(SpaceManager::expand_lock());
+  slow_locked_verify();
   if (TraceMetadataChunkAllocation) {
     tty->print_cr("ChunkManager::chunk_freelist_deallocate: chunk "
                   PTR_FORMAT "  size " SIZE_FORMAT,
@@ -1663,7 +1682,7 @@ void ChunkManager::chunk_freelist_deallocate(Metachunk* chunk) {
 Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
   assert_lock_strong(SpaceManager::expand_lock());
 
-  locked_verify();
+  slow_locked_verify();
 
   Metachunk* chunk = NULL;
   if (!SpaceManager::is_humongous(word_size)) {
@@ -1708,13 +1727,13 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
 #endif
     }
   }
-  locked_verify();
+  slow_locked_verify();
   return chunk;
 }
 
 Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
   assert_lock_strong(SpaceManager::expand_lock());
-  locked_verify();
+  slow_locked_verify();
 
   // Take from the beginning of the list
   Metachunk* chunk = free_chunks_get(word_size);
@@ -1959,7 +1978,7 @@ SpaceManager::~SpaceManager() {
 
   ChunkManager* chunk_manager = vs_list()->chunk_manager();
 
-  chunk_manager->locked_verify();
+  chunk_manager->slow_locked_verify();
 
   if (TraceMetadataChunkAllocation && Verbose) {
     gclog_or_tty->print_cr("~SpaceManager(): " PTR_FORMAT, this);
@@ -2015,7 +2034,7 @@ SpaceManager::~SpaceManager() {
     humongous_chunks = next_humongous_chunks;
   }
   set_chunks_in_use(HumongousIndex, NULL);
-  chunk_manager->locked_verify();
+  chunk_manager->slow_locked_verify();
 }
 
 void SpaceManager::deallocate(MetaWord* p, size_t word_size) {
@@ -2330,8 +2349,7 @@ size_t MetaspaceAux::free_chunks_total(Metaspace::MetadataType mdtype) {
   ChunkManager* chunk = (mdtype == Metaspace::ClassType) ?
                             Metaspace::class_space_list()->chunk_manager() :
                             Metaspace::space_list()->chunk_manager();
-
-  chunk->verify_free_chunks_total();
+  chunk->slow_verify();
   return chunk->free_chunks_total();
 }
 
@@ -2433,6 +2451,11 @@ void MetaspaceAux::dump(outputStream* out) {
   out->print("data space: "); print_on(out, Metaspace::NonClassType);
   out->print("class space: "); print_on(out, Metaspace::ClassType);
   print_waste(out);
+}
+
+void MetaspaceAux::verify_free_chunks() {
+  Metaspace::space_list()->chunk_manager()->verify();
+  Metaspace::class_space_list()->chunk_manager()->verify();
 }
 
 // Metaspace methods

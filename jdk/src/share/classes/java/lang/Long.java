@@ -1021,7 +1021,20 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @return  a hash code value for this object.
      */
+    @Override
     public int hashCode() {
+        return Long.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code long} value; compatible with
+     * {@code Long.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code long} value.
+     */
+    public static int hashCode(long value) {
         return (int)(value ^ (value >>> 32));
     }
 
@@ -1305,6 +1318,14 @@ public final class Long extends Number implements Comparable<Long> {
      * @since 1.5
      */
     public static final int SIZE = 64;
+
+    /**
+     * The number of bytes used to represent a {@code long} value in two's
+     * complement binary form.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
 
     /**
      * Returns a {@code long} value with at most a single one-bit, in the

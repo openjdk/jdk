@@ -255,7 +255,7 @@ public class XRUtils {
                            : (x < Short.MIN_VALUE ? Short.MIN_VALUE : x));
     }
 
-    public static short clampToUShort(int x) {
-        return (short) (x > 65535 ? 65535 : (x < 0) ? 0 : x);
+    public static int clampToUShort(int x) {
+        return (x > 65535 ? 65535 : (x < 0) ? 0 : x);
     }
 }

@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -87,5 +87,20 @@ public class ciMethod extends ciMetadata {
     Method method = method();
     st.printf(" %s::%s", method.getMethodHolder().getName().asString().replace('/', '.'),
               method.getName().asString());
+  }
+
+  public void dumpReplayData(PrintStream out) {
+      Method method = (Method)getMetadata();
+      NMethod nm = method.getNativeMethod();
+      Klass holder = method.getMethodHolder();
+      out.println("ciMethod " +
+                  holder.getName().asString() + " " +
+                  OopUtilities.escapeString(method.getName().asString()) + " " +
+                  method.getSignature().asString() + " " +
+                  method.getInvocationCounter() + " " +
+                  method.getBackedgeCounter() + " " +
+                  interpreterInvocationCount() + " " +
+                  interpreterThrowoutCount() + " " +
+                  instructionsSize());
   }
 }

@@ -437,7 +437,10 @@ fi
 # full debug symbols are enabled.
 if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
     AC_CHECK_TOOLS(OBJCOPY, [gobjcopy objcopy])
-    BASIC_FIXUP_EXECUTABLE(OBJCOPY)
+    # Only call fixup if objcopy was found.
+    if test -n "$OBJCOPY"; then
+        BASIC_FIXUP_EXECUTABLE(OBJCOPY)
+    fi
 fi
 
 AC_CHECK_TOOLS(OBJDUMP, [gobjdump objdump])
@@ -935,9 +938,18 @@ else
         fi
     fi
     LDFLAGS_JDKLIB="${LDFLAGS_JDK} $SHARED_LIBRARY_FLAGS \
-                    -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server \
-                    -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/client \
                     -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}"
+
+    # On some platforms (mac) the linker warns about non existing -L dirs.
+    # Add server first if available. Linking aginst client does not always produce the same results.
+    # Only add client dir if client is being built. Default to server for other variants.
+    if test "x$JVM_VARIANT_SERVER" = xtrue; then
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server"
+    elif test "x$JVM_VARIANT_CLIENT" = xtrue; then
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/client"
+    else
+        LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server"
+    fi
 
     LDFLAGS_JDKLIB_SUFFIX="-ljava -ljvm"
     if test "x$COMPILER_NAME" = xossc; then
