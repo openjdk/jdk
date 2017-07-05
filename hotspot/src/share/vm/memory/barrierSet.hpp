@@ -160,7 +160,7 @@ public:
   // (For efficiency reasons, this operation is specialized for certain
   // barrier types.  Semantically, it should be thought of as a call to the
   // virtual "_work" function below, which must implement the barrier.)
-  inline void write_region(MemRegion mr);
+  void write_region(MemRegion mr);
 protected:
   virtual void write_region_work(MemRegion mr) = 0;
 public:

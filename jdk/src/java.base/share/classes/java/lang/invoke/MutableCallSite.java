@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -275,7 +276,7 @@ public class MutableCallSite extends CallSite {
         if (sites.length == 0)  return;
         STORE_BARRIER.lazySet(0);
         for (MutableCallSite site : sites) {
-            site.getClass();  // trigger NPE on first null
+            Objects.requireNonNull(site); // trigger NPE on first null
         }
         // FIXME: NYI
     }

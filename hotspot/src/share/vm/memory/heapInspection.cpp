@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -38,6 +40,19 @@
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // HeapInspection
+
+inline KlassInfoEntry::~KlassInfoEntry() {
+  if (_subclasses != NULL) {
+    delete _subclasses;
+  }
+}
+
+inline void KlassInfoEntry::add_subclass(KlassInfoEntry* cie) {
+  if (_subclasses == NULL) {
+    _subclasses = new  (ResourceObj::C_HEAP, mtInternal) GrowableArray<KlassInfoEntry*>(4, true);
+  }
+  _subclasses->append(cie);
+}
 
 int KlassInfoEntry::compare(KlassInfoEntry* e1, KlassInfoEntry* e2) {
   if(e1->_instance_words > e2->_instance_words) {
@@ -129,7 +144,7 @@ void KlassInfoTable::AllClassesFinder::do_klass(Klass* k) {
   _table->lookup(k);
 }
 
-KlassInfoTable::KlassInfoTable(bool need_class_stats) {
+KlassInfoTable::KlassInfoTable(bool add_all_classes) {
   _size_of_instances_in_words = 0;
   _size = 0;
   _ref = (HeapWord*) Universe::boolArrayKlassObj();
@@ -141,7 +156,7 @@ KlassInfoTable::KlassInfoTable(bool need_class_stats) {
     for (int index = 0; index < _size; index++) {
       _buckets[index].initialize();
     }
-    if (need_class_stats) {
+    if (add_all_classes) {
       AllClassesFinder finder(this);
       ClassLoaderDataGraph::classes_do(&finder);
     }
@@ -299,6 +314,191 @@ PRAGMA_DIAG_POP
   st->cr();
 }
 
+class HierarchyClosure : public KlassInfoClosure {
+private:
+  GrowableArray<KlassInfoEntry*> *_elements;
+public:
+  HierarchyClosure(GrowableArray<KlassInfoEntry*> *_elements) : _elements(_elements) {}
+
+  void do_cinfo(KlassInfoEntry* cie) {
+    // ignore array classes
+    if (cie->klass()->oop_is_instance()) {
+      _elements->append(cie);
+    }
+  }
+};
+
+void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfaces,
+                                           bool print_subclasses, char* classname) {
+  ResourceMark rm;
+  Stack <KlassInfoEntry*, mtClass> class_stack;
+  GrowableArray<KlassInfoEntry*> elements;
+
+  // Add all classes to the KlassInfoTable, which allows for quick lookup.
+  // A KlassInfoEntry will be created for each class.
+  KlassInfoTable cit(true);
+  if (cit.allocation_failed()) {
+    st->print_cr("ERROR: Ran out of C-heap; hierarchy not generated");
+    return;
+  }
+
+  // Add all created KlassInfoEntry instances to the elements array for easy
+  // iteration, and to allow each KlassInfoEntry instance to have a unique index.
+  HierarchyClosure hc(&elements);
+  cit.iterate(&hc);
+
+  for(int i = 0; i < elements.length(); i++) {
+    KlassInfoEntry* cie = elements.at(i);
+    const InstanceKlass* k = (InstanceKlass*)cie->klass();
+    Klass* super = ((InstanceKlass*)k)->java_super();
+
+    // Set the index for the class.
+    cie->set_index(i + 1);
+
+    // Add the class to the subclass array of its superclass.
+    if (super != NULL) {
+      KlassInfoEntry* super_cie = cit.lookup(super);
+      assert(super_cie != NULL, "could not lookup superclass");
+      super_cie->add_subclass(cie);
+    }
+  }
+
+  // Set the do_print flag for each class that should be printed.
+  for(int i = 0; i < elements.length(); i++) {
+    KlassInfoEntry* cie = elements.at(i);
+    if (classname == NULL) {
+      // We are printing all classes.
+      cie->set_do_print(true);
+    } else {
+      // We are only printing the hierarchy of a specific class.
+      if (strcmp(classname, cie->klass()->external_name()) == 0) {
+        KlassHierarchy::set_do_print_for_class_hierarchy(cie, &cit, print_subclasses);
+      }
+    }
+  }
+
+  // Now we do a depth first traversal of the class hierachry. The class_stack will
+  // maintain the list of classes we still need to process. Start things off
+  // by priming it with java.lang.Object.
+  KlassInfoEntry* jlo_cie = cit.lookup(SystemDictionary::Object_klass());
+  assert(jlo_cie != NULL, "could not lookup java.lang.Object");
+  class_stack.push(jlo_cie);
+
+  // Repeatedly pop the top item off the stack, print its class info,
+  // and push all of its subclasses on to the stack. Do this until there
+  // are no classes left on the stack.
+  while (!class_stack.is_empty()) {
+    KlassInfoEntry* curr_cie = class_stack.pop();
+    if (curr_cie->do_print()) {
+      print_class(st, curr_cie, print_interfaces);
+      if (curr_cie->subclasses() != NULL) {
+        // Current class has subclasses, so push all of them onto the stack.
+        for (int i = 0; i < curr_cie->subclasses()->length(); i++) {
+          KlassInfoEntry* cie = curr_cie->subclasses()->at(i);
+          if (cie->do_print()) {
+            class_stack.push(cie);
+          }
+        }
+      }
+    }
+  }
+
+  st->flush();
+}
+
+// Sets the do_print flag for every superclass and subclass of the specified class.
+void KlassHierarchy::set_do_print_for_class_hierarchy(KlassInfoEntry* cie, KlassInfoTable* cit,
+                                                      bool print_subclasses) {
+  // Set do_print for all superclasses of this class.
+  Klass* super = ((InstanceKlass*)cie->klass())->java_super();
+  while (super != NULL) {
+    KlassInfoEntry* super_cie = cit->lookup(super);
+    super_cie->set_do_print(true);
+    super = super->super();
+  }
+
+  // Set do_print for this class and all of its subclasses.
+  Stack <KlassInfoEntry*, mtClass> class_stack;
+  class_stack.push(cie);
+  while (!class_stack.is_empty()) {
+    KlassInfoEntry* curr_cie = class_stack.pop();
+    curr_cie->set_do_print(true);
+    if (print_subclasses && curr_cie->subclasses() != NULL) {
+      // Current class has subclasses, so push all of them onto the stack.
+      for (int i = 0; i < curr_cie->subclasses()->length(); i++) {
+        KlassInfoEntry* cie = curr_cie->subclasses()->at(i);
+        class_stack.push(cie);
+      }
+    }
+  }
+}
+
+static void print_indent(outputStream* st, int indent) {
+  while (indent != 0) {
+    st->print("|");
+    indent--;
+    if (indent != 0) {
+      st->print("  ");
+    }
+  }
+}
+
+// Print the class name and its unique ClassLoader identifer.
+static void print_classname(outputStream* st, Klass* klass) {
+  oop loader_oop = klass->class_loader_data()->class_loader();
+  st->print("%s/", klass->external_name());
+  if (loader_oop == NULL) {
+    st->print("null");
+  } else {
+    st->print(INTPTR_FORMAT, klass->class_loader_data());
+  }
+}
+
+static void print_interface(outputStream* st, Klass* intf_klass, const char* intf_type, int indent) {
+  print_indent(st, indent);
+  st->print("  implements ");
+  print_classname(st, intf_klass);
+  st->print(" (%s intf)\n", intf_type);
+}
+
+void KlassHierarchy::print_class(outputStream* st, KlassInfoEntry* cie, bool print_interfaces) {
+  ResourceMark rm;
+  InstanceKlass* klass = (InstanceKlass*)cie->klass();
+  int indent = 0;
+
+  // Print indentation with proper indicators of superclass.
+  Klass* super = klass->super();
+  while (super != NULL) {
+    super = super->super();
+    indent++;
+  }
+  print_indent(st, indent);
+  if (indent != 0) st->print("--");
+
+  // Print the class name, its unique ClassLoader identifer, and if it is an interface.
+  print_classname(st, klass);
+  if (klass->is_interface()) {
+    st->print(" (intf)");
+  }
+  st->print("\n");
+
+  // Print any interfaces the class has.
+  if (print_interfaces) {
+    Array<Klass*>* local_intfs = klass->local_interfaces();
+    Array<Klass*>* trans_intfs = klass->transitive_interfaces();
+    for (int i = 0; i < local_intfs->length(); i++) {
+      print_interface(st, local_intfs->at(i), "declared", indent);
+    }
+    for (int i = 0; i < trans_intfs->length(); i++) {
+      Klass* trans_interface = trans_intfs->at(i);
+      // Only print transitive interfaces if they are not also declared.
+      if (!local_intfs->contains(trans_interface)) {
+        print_interface(st, trans_interface, "inherited", indent);
+      }
+    }
+  }
+}
+
 void KlassInfoHisto::print_class_stats(outputStream* st,
                                       bool csv_format, const char *columns) {
   ResourceMark rm;
@@ -320,6 +520,8 @@ void KlassInfoHisto::print_class_stats(outputStream* st,
     elements()->at(i)->set_index(i+1);
   }
 
+  // First iteration is for accumulating stats totals in colsum_table[].
+  // Second iteration is for printing stats for each class.
   for (int pass=1; pass<=2; pass++) {
     if (pass == 2) {
       print_title(st, csv_format, selected, width_table, name_table);
@@ -328,6 +530,7 @@ void KlassInfoHisto::print_class_stats(outputStream* st,
       KlassInfoEntry* e = (KlassInfoEntry*)elements()->at(i);
       const Klass* k = e->klass();
 
+      // Get the stats for this class.
       memset(&sz, 0, sizeof(sz));
       sz._inst_count = e->count();
       sz._inst_bytes = HeapWordSize * e->words();
@@ -335,11 +538,13 @@ void KlassInfoHisto::print_class_stats(outputStream* st,
       sz._total_bytes = sz._ro_bytes + sz._rw_bytes;
 
       if (pass == 1) {
+        // Add the stats for this class to the overall totals.
         for (int c=0; c<KlassSizeStats::_num_columns; c++) {
           colsum_table[c] += col_table[c];
         }
       } else {
         int super_index = -1;
+        // Print the stats for this class.
         if (k->oop_is_instance()) {
           Klass* super = ((InstanceKlass*)k)->java_super();
           if (super) {
@@ -373,6 +578,8 @@ void KlassInfoHisto::print_class_stats(outputStream* st,
     }
 
     if (pass == 1) {
+      // Calculate the minimum width needed for the column by accounting for the
+      // column header width and the width of the largest value in the column.
       for (int c=0; c<KlassSizeStats::_num_columns; c++) {
         width_table[c] = col_width(colsum_table[c], name_table[c]);
       }
@@ -381,6 +588,7 @@ void KlassInfoHisto::print_class_stats(outputStream* st,
 
   sz_sum._inst_size = 0;
 
+  // Print the column totals.
   if (csv_format) {
     st->print(",");
     for (int c=0; c<KlassSizeStats::_num_columns; c++) {
@@ -514,6 +722,7 @@ void HeapInspection::heap_inspection(outputStream* st) {
 
   KlassInfoTable cit(_print_class_stats);
   if (!cit.allocation_failed()) {
+    // populate table with object allocation info
     size_t missed_count = populate_table(&cit);
     if (missed_count != 0) {
       st->print_cr("WARNING: Ran out of C-heap; undercounted " SIZE_FORMAT
@@ -533,7 +742,7 @@ void HeapInspection::heap_inspection(outputStream* st) {
     histo.sort();
     histo.print_histo_on(st, _print_class_stats, _csv_format, _columns);
   } else {
-    st->print_cr("WARNING: Ran out of C-heap; histogram not generated");
+    st->print_cr("ERROR: Ran out of C-heap; histogram not generated");
   }
   st->flush();
 }

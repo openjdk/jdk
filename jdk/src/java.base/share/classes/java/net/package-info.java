@@ -143,13 +143,11 @@
  * a similar URL will try to instantiate the handler for the specified protocol;
  * if it doesn't exist an exception will be thrown.
  * <p>By default the protocol handlers are loaded dynamically from the default
- *    location. It is, however, possible to add to the search path by setting
- *    the {@code java.protocol.handler.pkgs} system property. For instance if
- *    it is set to {@code myapp.protocols}, then the URL code will try, in the
- *    case of http, first to load {@code myapp.protocols.http.Handler}, then,
- *    if this fails, {@code http.Handler} from the default location.
- * <p>Note that the Handler class <b>has to</b> be a subclass of the abstract
- *    class {@link java.net.URLStreamHandler}.</p>
+ *    location. It is, however, possible to deploy additional protocols handlers
+ *    as {@link java.util.ServiceLoader services}. Service providers of type
+ *    {@linkplain java.net.spi.URLStreamHandlerProvider} are located at
+ *    runtime, as specified in the {@linkplain
+ *    java.net.URL#URL(String,String,int,String) URL constructor}.
  * <h2>Additional Specification</h2>
  * <ul>
  *       <li><a href="doc-files/net-properties.html">
