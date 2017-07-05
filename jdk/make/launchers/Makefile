@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ..
-MODULE  = tools
 PACKAGE = launchers
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
@@ -38,7 +37,6 @@ include $(BUILDDIR)/common/Defs.gmk
 define make-corba-launcher
 $(CD) $(BUILDDIR)/launchers && \
 $(MAKE) -f Makefile.launcher \
-        MODULE=corba \
         PROGRAM=$(strip $1) \
         MAIN_CLASS=$(strip $2) \
         MAIN_JAVA_ARGS="$(strip $3)" \

@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../..
-MODULE  = applet
 PACKAGE = sun.applet
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

@@ -38,7 +38,6 @@ import java.util.StringTokenizer;
 import java.util.Set;
 import java.util.Vector;
 import java.security.AccessController;
-import java.security.AllPermission;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.security.AccessControlContext;
@@ -115,18 +114,6 @@ public class Launcher {
      */
     public ClassLoader getClassLoader() {
         return loader;
-    }
-
-    public static void addURLToAppClassLoader(URL u) {
-        AccessController.checkPermission(new AllPermission());
-        ClassLoader loader = Launcher.getLauncher().getClassLoader();
-        ((Launcher.AppClassLoader) loader).addAppURL(u);
-    }
-
-    public static void addURLToExtClassLoader(URL u) {
-        AccessController.checkPermission(new AllPermission());
-        ClassLoader loader = Launcher.getLauncher().getClassLoader();
-        ((Launcher.ExtClassLoader) loader.getParent()).addExtURL(u);
     }
 
     /*
@@ -247,11 +234,6 @@ public class Launcher {
             return null;
         }
 
-        protected Class findClass(String name) throws ClassNotFoundException {
-            BootClassLoaderHook.preLoadClass(name);
-            return super.findClass(name);
-        }
-
         private static AccessControlContext getContext(File[] dirs)
             throws IOException
         {
@@ -316,7 +298,6 @@ public class Launcher {
         public Class loadClass(String name, boolean resolve)
             throws ClassNotFoundException
         {
-            BootClassLoaderHook.preLoadClass(name);
             int i = name.lastIndexOf('.');
             if (i != -1) {
                 SecurityManager sm = System.getSecurityManager();
@@ -373,10 +354,6 @@ public class Launcher {
 
             return acc;
         }
-
-        void addAppURL(URL url) {
-            super.addURL(url);
-        }
     }
 
     private static class BootClassPathHolder {
@@ -413,11 +390,7 @@ public class Launcher {
     }
 
     public static URLClassPath getBootstrapClassPath() {
-        URLClassPath bcp = BootClassPathHolder.bcp;
-        // if DownloadManager is installed, return the bootstrap class path
-        // maintained by the Java kernel
-        BootClassLoaderHook hook = BootClassLoaderHook.getHook();
-        return hook == null ? bcp : hook.getBootstrapClassPath(bcp, factory);
+        return BootClassPathHolder.bcp;
     }
 
     private static URL[] pathToURLs(File[] path) {

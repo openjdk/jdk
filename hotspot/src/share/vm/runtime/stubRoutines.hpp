@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,12 +164,12 @@ class StubRoutines: AllStatic {
   static address _jshort_arraycopy;
   static address _jint_arraycopy;
   static address _jlong_arraycopy;
-  static address _oop_arraycopy;
+  static address _oop_arraycopy, _oop_arraycopy_uninit;
   static address _jbyte_disjoint_arraycopy;
   static address _jshort_disjoint_arraycopy;
   static address _jint_disjoint_arraycopy;
   static address _jlong_disjoint_arraycopy;
-  static address _oop_disjoint_arraycopy;
+  static address _oop_disjoint_arraycopy, _oop_disjoint_arraycopy_uninit;
 
   // arraycopy operands aligned on zero'th element boundary
   // These are identical to the ones aligned aligned on an
@@ -179,15 +179,15 @@ class StubRoutines: AllStatic {
   static address _arrayof_jshort_arraycopy;
   static address _arrayof_jint_arraycopy;
   static address _arrayof_jlong_arraycopy;
-  static address _arrayof_oop_arraycopy;
+  static address _arrayof_oop_arraycopy, _arrayof_oop_arraycopy_uninit;
   static address _arrayof_jbyte_disjoint_arraycopy;
   static address _arrayof_jshort_disjoint_arraycopy;
   static address _arrayof_jint_disjoint_arraycopy;
   static address _arrayof_jlong_disjoint_arraycopy;
-  static address _arrayof_oop_disjoint_arraycopy;
+  static address _arrayof_oop_disjoint_arraycopy, _arrayof_oop_disjoint_arraycopy_uninit;
 
   // these are recommended but optional:
-  static address _checkcast_arraycopy;
+  static address _checkcast_arraycopy, _checkcast_arraycopy_uninit;
   static address _unsafe_arraycopy;
   static address _generic_arraycopy;
 
@@ -286,26 +286,36 @@ class StubRoutines: AllStatic {
   static address jshort_arraycopy() { return _jshort_arraycopy; }
   static address jint_arraycopy()   { return _jint_arraycopy; }
   static address jlong_arraycopy()  { return _jlong_arraycopy; }
-  static address oop_arraycopy()    { return _oop_arraycopy; }
+  static address oop_arraycopy(bool dest_uninitialized = false) {
+    return dest_uninitialized ? _oop_arraycopy_uninit : _oop_arraycopy;
+  }
   static address jbyte_disjoint_arraycopy()  { return _jbyte_disjoint_arraycopy; }
   static address jshort_disjoint_arraycopy() { return _jshort_disjoint_arraycopy; }
   static address jint_disjoint_arraycopy()   { return _jint_disjoint_arraycopy; }
   static address jlong_disjoint_arraycopy()  { return _jlong_disjoint_arraycopy; }
-  static address oop_disjoint_arraycopy()    { return _oop_disjoint_arraycopy; }
+  static address oop_disjoint_arraycopy(bool dest_uninitialized = false) {
+    return dest_uninitialized ?  _oop_disjoint_arraycopy_uninit : _oop_disjoint_arraycopy;
+  }
 
   static address arrayof_jbyte_arraycopy()  { return _arrayof_jbyte_arraycopy; }
   static address arrayof_jshort_arraycopy() { return _arrayof_jshort_arraycopy; }
   static address arrayof_jint_arraycopy()   { return _arrayof_jint_arraycopy; }
   static address arrayof_jlong_arraycopy()  { return _arrayof_jlong_arraycopy; }
-  static address arrayof_oop_arraycopy()    { return _arrayof_oop_arraycopy; }
+  static address arrayof_oop_arraycopy(bool dest_uninitialized = false) {
+    return dest_uninitialized ? _arrayof_oop_arraycopy_uninit : _arrayof_oop_arraycopy;
+  }
 
   static address arrayof_jbyte_disjoint_arraycopy()  { return _arrayof_jbyte_disjoint_arraycopy; }
   static address arrayof_jshort_disjoint_arraycopy() { return _arrayof_jshort_disjoint_arraycopy; }
   static address arrayof_jint_disjoint_arraycopy()   { return _arrayof_jint_disjoint_arraycopy; }
   static address arrayof_jlong_disjoint_arraycopy()  { return _arrayof_jlong_disjoint_arraycopy; }
-  static address arrayof_oop_disjoint_arraycopy()    { return _arrayof_oop_disjoint_arraycopy; }
+  static address arrayof_oop_disjoint_arraycopy(bool dest_uninitialized = false) {
+    return dest_uninitialized ? _arrayof_oop_disjoint_arraycopy_uninit : _arrayof_oop_disjoint_arraycopy;
+  }
 
-  static address checkcast_arraycopy()     { return _checkcast_arraycopy; }
+  static address checkcast_arraycopy(bool dest_uninitialized = false) {
+    return dest_uninitialized ? _checkcast_arraycopy_uninit : _checkcast_arraycopy;
+  }
   static address unsafe_arraycopy()        { return _unsafe_arraycopy; }
   static address generic_arraycopy()       { return _generic_arraycopy; }
 
@@ -352,17 +362,19 @@ class StubRoutines: AllStatic {
   // Default versions of the above arraycopy functions for platforms which do
   // not have specialized versions
   //
-  static void jbyte_copy (jbyte*  src, jbyte*  dest, size_t count);
-  static void jshort_copy(jshort* src, jshort* dest, size_t count);
-  static void jint_copy  (jint*   src, jint*   dest, size_t count);
-  static void jlong_copy (jlong*  src, jlong*  dest, size_t count);
-  static void oop_copy   (oop*    src, oop*    dest, size_t count);
+  static void jbyte_copy     (jbyte*  src, jbyte*  dest, size_t count);
+  static void jshort_copy    (jshort* src, jshort* dest, size_t count);
+  static void jint_copy      (jint*   src, jint*   dest, size_t count);
+  static void jlong_copy     (jlong*  src, jlong*  dest, size_t count);
+  static void oop_copy       (oop*    src, oop*    dest, size_t count);
+  static void oop_copy_uninit(oop*    src, oop*    dest, size_t count);
 
-  static void arrayof_jbyte_copy (HeapWord* src, HeapWord* dest, size_t count);
-  static void arrayof_jshort_copy(HeapWord* src, HeapWord* dest, size_t count);
-  static void arrayof_jint_copy  (HeapWord* src, HeapWord* dest, size_t count);
-  static void arrayof_jlong_copy (HeapWord* src, HeapWord* dest, size_t count);
-  static void arrayof_oop_copy   (HeapWord* src, HeapWord* dest, size_t count);
+  static void arrayof_jbyte_copy     (HeapWord* src, HeapWord* dest, size_t count);
+  static void arrayof_jshort_copy    (HeapWord* src, HeapWord* dest, size_t count);
+  static void arrayof_jint_copy      (HeapWord* src, HeapWord* dest, size_t count);
+  static void arrayof_jlong_copy     (HeapWord* src, HeapWord* dest, size_t count);
+  static void arrayof_oop_copy       (HeapWord* src, HeapWord* dest, size_t count);
+  static void arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count);
 };
 
 #endif // SHARE_VM_RUNTIME_STUBROUTINES_HPP

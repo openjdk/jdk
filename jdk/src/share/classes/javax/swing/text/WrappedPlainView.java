@@ -239,11 +239,9 @@ public class WrappedPlainView extends BoxView implements TabExpander {
                                                 tabBase, tabBase + currentWidth,
                                                 this, p0);
         } else {
-            int offset = Utilities.getTabbedTextOffset(segment, metrics,
-                    tabBase, tabBase + currentWidth, this, p0, false);
-            offset = Utilities.adjustOffsetForFractionalMetrics(
-                    segment, metrics, offset, currentWidth);
-            p = p0 + offset;
+            p = p0 + Utilities.getTabbedTextOffset(segment, metrics,
+                                                   tabBase, tabBase + currentWidth,
+                                                   this, p0, false);
         }
         SegmentCache.releaseSharedSegment(segment);
         return p;

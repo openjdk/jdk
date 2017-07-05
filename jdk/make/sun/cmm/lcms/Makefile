@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../../..
-MODULE  = java2d
 PACKAGE = sun.java2d.cmm.lcms
 LIBRARY = lcms
 PRODUCT = sun

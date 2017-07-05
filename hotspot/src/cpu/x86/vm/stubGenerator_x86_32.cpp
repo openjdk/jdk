@@ -439,10 +439,6 @@ class StubGenerator: public StubCodeGenerator {
     // Verify that there is really a valid exception in RAX.
     __ verify_oop(exception_oop);
 
-    // Restore SP from BP if the exception PC is a MethodHandle call site.
-    __ cmpl(Address(thread, JavaThread::is_method_handle_return_offset()), 0);
-    __ cmovptr(Assembler::notEqual, rsp, rbp);
-
     // continue at exception handler (return address removed)
     // rax: exception
     // rbx: exception handler
@@ -733,18 +729,19 @@ class StubGenerator: public StubCodeGenerator {
   //  Input:
   //     start   -  starting address
   //     count   -  element count
-  void  gen_write_ref_array_pre_barrier(Register start, Register count) {
+  void  gen_write_ref_array_pre_barrier(Register start, Register count, bool uninitialized_target) {
     assert_different_registers(start, count);
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
       case BarrierSet::G1SATBCT:
       case BarrierSet::G1SATBCTLogging:
-        {
-          __ pusha();                      // push registers
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre),
-                          start, count);
-          __ popa();
-        }
+        // With G1, don't generate the call if we statically know that the target in uninitialized
+        if (!uninitialized_target) {
+           __ pusha();                      // push registers
+           __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre),
+                           start, count);
+           __ popa();
+         }
         break;
       case BarrierSet::CardTableModRef:
       case BarrierSet::CardTableExtension:
@@ -923,7 +920,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_disjoint_copy(BasicType t, bool aligned,
                                  Address::ScaleFactor sf,
-                                 address* entry, const char *name) {
+                                 address* entry, const char *name,
+                                 bool dest_uninitialized = false) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -945,15 +943,18 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(from , Address(rsp, 12+ 4));
     __ movptr(to   , Address(rsp, 12+ 8));
     __ movl(count, Address(rsp, 12+ 12));
+
+    if (entry != NULL) {
+      *entry = __ pc(); // Entry point from conjoint arraycopy stub.
+      BLOCK_COMMENT("Entry:");
+    }
+
     if (t == T_OBJECT) {
       __ testl(count, count);
       __ jcc(Assembler::zero, L_0_count);
-      gen_write_ref_array_pre_barrier(to, count);
+      gen_write_ref_array_pre_barrier(to, count, dest_uninitialized);
       __ mov(saved_to, to);          // save 'to'
     }
-
-    *entry = __ pc(); // Entry point from conjoint arraycopy stub.
-    BLOCK_COMMENT("Entry:");
 
     __ subptr(to, from); // to --> to_from
     __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
@@ -1085,7 +1086,8 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_copy(BasicType t, bool aligned,
                                  Address::ScaleFactor sf,
                                  address nooverlap_target,
-                                 address* entry, const char *name) {
+                                 address* entry, const char *name,
+                                 bool dest_uninitialized = false) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1108,29 +1110,29 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(src  , Address(rsp, 12+ 4));   // from
     __ movptr(dst  , Address(rsp, 12+ 8));   // to
     __ movl2ptr(count, Address(rsp, 12+12)); // count
-    if (t == T_OBJECT) {
-       gen_write_ref_array_pre_barrier(dst, count);
-    }
 
     if (entry != NULL) {
       *entry = __ pc(); // Entry point from generic arraycopy stub.
       BLOCK_COMMENT("Entry:");
     }
 
-    if (t == T_OBJECT) {
-      __ testl(count, count);
-      __ jcc(Assembler::zero, L_0_count);
-    }
+    // nooverlap_target expects arguments in rsi and rdi.
     __ mov(from, src);
     __ mov(to  , dst);
 
-    // arrays overlap test
+    // arrays overlap test: dispatch to disjoint stub if necessary.
     RuntimeAddress nooverlap(nooverlap_target);
     __ cmpptr(dst, src);
     __ lea(end, Address(src, count, sf, 0)); // src + count * elem_size
     __ jump_cc(Assembler::belowEqual, nooverlap);
     __ cmpptr(dst, end);
     __ jump_cc(Assembler::aboveEqual, nooverlap);
+
+    if (t == T_OBJECT) {
+      __ testl(count, count);
+      __ jcc(Assembler::zero, L_0_count);
+      gen_write_ref_array_pre_barrier(dst, count, dest_uninitialized);
+    }
 
     // copy from high to low
     __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
@@ -1416,7 +1418,7 @@ class StubGenerator: public StubCodeGenerator {
   //    rax, ==  0  -  success
   //    rax, == -1^K - failure, where K is partial transfer count
   //
-  address generate_checkcast_copy(const char *name, address* entry) {
+  address generate_checkcast_copy(const char *name, address* entry, bool dest_uninitialized = false) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1451,8 +1453,10 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(to,         to_arg);
     __ movl2ptr(length, length_arg);
 
-    *entry = __ pc(); // Entry point from generic arraycopy stub.
-    BLOCK_COMMENT("Entry:");
+    if (entry != NULL) {
+      *entry = __ pc(); // Entry point from generic arraycopy stub.
+      BLOCK_COMMENT("Entry:");
+    }
 
     //---------------------------------------------------------------
     // Assembler stub will be used for this call to arraycopy
@@ -1475,7 +1479,7 @@ class StubGenerator: public StubCodeGenerator {
     Address elem_klass_addr(elem, oopDesc::klass_offset_in_bytes());
 
     // Copy from low to high addresses, indexed from the end of each array.
-    gen_write_ref_array_pre_barrier(to, count);
+    gen_write_ref_array_pre_barrier(to, count, dest_uninitialized);
     __ lea(end_from, end_from_addr);
     __ lea(end_to,   end_to_addr);
     assert(length == count, "");        // else fix next line:
@@ -2038,6 +2042,15 @@ class StubGenerator: public StubCodeGenerator {
         generate_conjoint_copy(T_OBJECT, true, Address::times_ptr,  entry,
                                &entry_oop_arraycopy, "oop_arraycopy");
 
+    StubRoutines::_oop_disjoint_arraycopy_uninit =
+        generate_disjoint_copy(T_OBJECT, true, Address::times_ptr, &entry,
+                               "oop_disjoint_arraycopy_uninit",
+                               /*dest_uninitialized*/true);
+    StubRoutines::_oop_arraycopy_uninit =
+        generate_conjoint_copy(T_OBJECT, true, Address::times_ptr,  entry,
+                               NULL, "oop_arraycopy_uninit",
+                               /*dest_uninitialized*/true);
+
     StubRoutines::_jlong_disjoint_arraycopy =
         generate_disjoint_long_copy(&entry, "jlong_disjoint_arraycopy");
     StubRoutines::_jlong_arraycopy =
@@ -2051,20 +2064,20 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
     StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
 
-    StubRoutines::_arrayof_jint_disjoint_arraycopy  =
-        StubRoutines::_jint_disjoint_arraycopy;
-    StubRoutines::_arrayof_oop_disjoint_arraycopy   =
-        StubRoutines::_oop_disjoint_arraycopy;
-    StubRoutines::_arrayof_jlong_disjoint_arraycopy =
-        StubRoutines::_jlong_disjoint_arraycopy;
+    StubRoutines::_arrayof_jint_disjoint_arraycopy       = StubRoutines::_jint_disjoint_arraycopy;
+    StubRoutines::_arrayof_oop_disjoint_arraycopy        = StubRoutines::_oop_disjoint_arraycopy;
+    StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit = StubRoutines::_oop_disjoint_arraycopy_uninit;
+    StubRoutines::_arrayof_jlong_disjoint_arraycopy      = StubRoutines::_jlong_disjoint_arraycopy;
 
-    StubRoutines::_arrayof_jint_arraycopy  = StubRoutines::_jint_arraycopy;
-    StubRoutines::_arrayof_oop_arraycopy   = StubRoutines::_oop_arraycopy;
-    StubRoutines::_arrayof_jlong_arraycopy = StubRoutines::_jlong_arraycopy;
+    StubRoutines::_arrayof_jint_arraycopy       = StubRoutines::_jint_arraycopy;
+    StubRoutines::_arrayof_oop_arraycopy        = StubRoutines::_oop_arraycopy;
+    StubRoutines::_arrayof_oop_arraycopy_uninit = StubRoutines::_oop_arraycopy_uninit;
+    StubRoutines::_arrayof_jlong_arraycopy      = StubRoutines::_jlong_arraycopy;
 
     StubRoutines::_checkcast_arraycopy =
-        generate_checkcast_copy("checkcast_arraycopy",
-                                  &entry_checkcast_arraycopy);
+        generate_checkcast_copy("checkcast_arraycopy", &entry_checkcast_arraycopy);
+    StubRoutines::_checkcast_arraycopy_uninit =
+        generate_checkcast_copy("checkcast_arraycopy_uninit", NULL, /*dest_uninitialized*/true);
 
     StubRoutines::_unsafe_arraycopy =
         generate_unsafe_copy("unsafe_arraycopy",

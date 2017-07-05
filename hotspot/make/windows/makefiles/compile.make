@@ -207,6 +207,9 @@ LINK_FLAGS = /manifest $(LINK_FLAGS)
 # Manifest Tool - used in VS2005 and later to adjust manifests stored
 # as resources inside build artifacts.
 MT=mt.exe
+!if "$(BUILDARCH)" == "i486"
+LINK_FLAGS = /SAFESEH $(LINK_FLAGS)
+!endif
 !endif
 
 # Compile for space above time.
