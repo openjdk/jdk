@@ -710,6 +710,21 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Support for intptr_t get_previous_sp()
+  //
+  // This routine is used to find the previous stack pointer for the
+  // caller.
+  address generate_get_previous_sp() {
+    StubCodeMark mark(this, "StubRoutines", "get_previous_sp");
+    address start = __ pc();
+
+    __ movptr(rax, rsp);
+    __ addptr(rax, 8); // return address is at the top of the stack.
+    __ ret(0);
+
+    return start;
+  }
+
   //----------------------------------------------------------------------------------------------------
   // Support for void verify_mxcsr()
   //
@@ -3060,6 +3075,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // platform dependent
     StubRoutines::x86::_get_previous_fp_entry = generate_get_previous_fp();
+    StubRoutines::x86::_get_previous_sp_entry = generate_get_previous_sp();
 
     StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
 

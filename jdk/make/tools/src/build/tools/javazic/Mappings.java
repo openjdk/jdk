@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package build.tools.javazic;
 
 import  java.util.ArrayList;
+import  java.util.HashMap;
 import  java.util.LinkedList;
 import  java.util.List;
 import  java.util.Map;
@@ -162,6 +163,20 @@ class Mappings {
         for (String key : toBeRemoved) {
             aliases.remove(key);
         }
+        // Eliminate any alias-to-alias mappings. For example, if
+        // there are A->B and B->C, A->B is changed to A->C.
+        Map<String, String> newMap = new HashMap<String, String>();
+        for (String key : aliases.keySet()) {
+            String realid = aliases.get(key);
+            String leaf = realid;
+            while (aliases.get(leaf) != null) {
+                leaf = aliases.get(leaf);
+            }
+            if (!realid.equals(leaf)) {
+                newMap.put(key, leaf);
+            }
+        }
+        aliases.putAll(newMap);
     }
 
     Map<String,String> getAliases() {
