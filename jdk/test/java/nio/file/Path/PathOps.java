@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333
+ * @bug 4313887 6838333 6925932
  * @summary Unit test for java.nio.file.Path path operations
  */
 
@@ -614,17 +614,34 @@ public class PathOps {
         test("/foo")
             .ends("foo")
             .ends("/foo")
-            .notEnds("/");
+            .notEnds("fool");
         test("/foo/bar")
             .ends("bar")
             .ends("foo/bar")
             .ends("/foo/bar")
-            .notEnds("/bar");
+            .notEnds("ar")
+            .notEnds("barack")
+            .notEnds("/bar")
+            .notEnds("o/bar");
         test("foo")
-            .ends("foo");
+            .ends("foo")
+            .notEnds("oo")
+            .notEnds("oola");
         test("foo/bar")
             .ends("bar")
-            .ends("foo/bar");
+            .ends("foo/bar")
+            .notEnds("r")
+            .notEnds("barmaid")
+            .notEnds("/bar");
+        test("foo/bar/gus")
+            .ends("gus")
+            .ends("bar/gus")
+            .ends("foo/bar/gus")
+            .notEnds("g")
+            .notEnds("/gus")
+            .notEnds("r/gus")
+            .notEnds("barack/gus")
+            .notEnds("bar/gust");
 
         // elements
         test("a/b/c")

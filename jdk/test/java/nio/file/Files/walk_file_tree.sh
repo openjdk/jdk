@@ -61,12 +61,20 @@ find "$ROOT" > out2
 diff out1 out2
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
-# repeat test following links (use -follow instead of -L
-# to allow running on older systems)
-$JAVA PrintFileTree -L "$ROOT" > out1
-find "$ROOT" -follow > out2
+# repeat test following links. Some versions of find(1) output
+# cycles (sym links to ancestor directories), other versions do
+# not. For that reason we run PrintFileTree with the -printCycles
+# option when the output without this option differs to find(1).
+find "$ROOT" -follow > out1
+$JAVA PrintFileTree -follow "$ROOT" > out2
 diff out1 out2
-if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
+if [ $? != 0 ];
+  then 
+    # re-run printing cycles to stdout
+    $JAVA PrintFileTree -follow -printCycles "$ROOT" > out2
+    diff out1 out2
+    if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
+  fi
 
 # test SKIP_SIBLINGS
 $JAVA SkipSiblings "$ROOT"
