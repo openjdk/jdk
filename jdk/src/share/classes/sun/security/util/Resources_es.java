@@ -47,7 +47,8 @@ public class Resources_es extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-        {".OPTION.", " [OPTION]..."},
+// "Option" should be translated.
+        {".OPTION.", " [Opci\u00F3n]..."},
         {"Options.", "Opciones:"},
         {"Use.keytool.help.for.all.available.commands",
                  "Utilice\"keytool -help\" para todos los comandos disponibles"},
@@ -67,6 +68,7 @@ public class Resources_es extends java.util.ListResourceBundle {
                 "Exporta el certificado"}, //-exportcert
         {"Generates.a.key.pair",
                 "Genera un par de claves"}, //-genkeypair
+// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "Genera un clave secreta"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -112,7 +114,7 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"destination.keystore.type",
                 "tipo de almac\u00E9n de claves de destino"}, //-deststoretype
         {"distinguished.name",
-                "nombre distinguido"}, //-dname
+                "nombre distintivo"}, //-dname
         {"X.509.extension",
                 "extensi\u00F3n X.509"}, //-ext
         {"output.file.name",
@@ -304,8 +306,6 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"Certificate.chain.length.", "Longitud de la Cadena de Certificado: "},
         {"Certificate.i.1.", "Certificado[{0,number,integer}]:"},
         {"Certificate.fingerprint.SHA1.", "Huella Digital de Certificado (SHA1): "},
-        {"Entry.type.trustedCertEntry.", "Tipo de Entrada: trustedCertEntry\n"},
-        {"trustedCertEntry.", "trustedCertEntry,"},
         {"Keystore.type.", "Tipo de Almac\u00E9n de Claves: "},
         {"Keystore.provider.", "Proveedor de Almac\u00E9n de Claves: "},
         {"Your.keystore.contains.keyStore.size.entry",
@@ -331,7 +331,7 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"Do.you.still.want.to.add.it.to.your.own.keystore.no.",
                 "\u00BFA\u00FAn desea agregarlo a su propio almac\u00E9n de claves? [no]:  "},
         {"Trust.this.certificate.no.", "\u00BFConfiar en este certificado? [no]:  "},
-        {"YES", "S\u00CD"},
+        {"YES", "S\u00ED"},
         {"New.prompt.", "Nuevo {0}: "},
         {"Passwords.must.differ", "Las contrase\u00F1as deben ser distintas"},
         {"Re.enter.new.prompt.", "Vuelva a escribir el nuevo {0}: "},
@@ -368,7 +368,7 @@ public class Resources_es extends java.util.ListResourceBundle {
                  "El alias <{0}> hace referencia a un tipo de entrada que no es una clave privada. El comando -keyclone s\u00F3lo permite la clonaci\u00F3n de entradas de claves privadas"},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  WARNING WARNING WARNING  *****************"},
+            "*****************  Advertencia Advertencia Advertencia  *****************"},
         {"Signer.d.", "#%d de Firmante:"},
         {"Timestamp.", "Registro de Hora:"},
         {"Signature.", "Firma:"},
@@ -378,20 +378,10 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"No.certificate.from.the.SSL.server",
                 "Ning\u00FAn certificado del servidor SSL"},
 
-        // Translators of the following 5 pairs, ATTENTION:
-        // the next 5 string pairs are meant to be combined into 2 paragraphs,
-        // 1+3+4 and 2+3+5. make sure your translation also does.
         {".The.integrity.of.the.information.stored.in.your.keystore.",
-            "* La integridad de la informaci\u00F3n almacenada en su almac\u00E9n de claves  *"},
+            "* La integridad de la informaci\u00F3n almacenada en el almac\u00E9n de claves  *\n* NO se ha comprobado.  Para comprobar dicha integridad, *\n* debe proporcionar la contrase\u00F1a del almac\u00E9n de claves.                  *"},
         {".The.integrity.of.the.information.stored.in.the.srckeystore.",
-            "* La totalidad de la informaci\u00F3n almacenada en srckeystore*"},
-        {".has.NOT.been.verified.In.order.to.verify.its.integrity.",
-            "* NO se ha comprobado. Para comprobar dicha integridad, *"},
-        {".you.must.provide.your.keystore.password.",
-            "* deber\u00E1 proporcionar su contrase\u00F1a de almac\u00E9n de claves.                  *"},
-        {".you.must.provide.the.srckeystore.password.",
-            "* deber\u00E1 indicar la contrase\u00F1a de srckeystore.                *"},
-
+            "* La integridad de la informaci\u00F3n almacenada en srckeystore*\n* NO se ha comprobado.  Para comprobar dicha integridad, *\n* debe proporcionar la contrase\u00F1a de srckeystore.                *"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
                 "La respuesta de certificado no contiene una clave p\u00FAblica para <{0}>"},
@@ -403,7 +393,7 @@ public class Resources_es extends java.util.ListResourceBundle {
                 "Certificado de nivel superior en la respuesta:\n"},
         {".is.not.trusted.", "... no es de confianza. "},
         {"Install.reply.anyway.no.", "\u00BFInstalar respuesta de todos modos? [no]:  "},
-        {"NO", "NO"},
+        {"NO", "No"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "Las claves p\u00FAblicas en la respuesta y en el almac\u00E9n de claves no coinciden"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",

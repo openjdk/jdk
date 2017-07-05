@@ -1,4 +1,4 @@
-." Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH wsimport 1 "02 Jun 2010"
+.TH wsimport 1 "10 May 2011"
 .SH "Name"
 wsimport \- Java(TM) API for XML Web Services (JAX\-WS) 2.0
 .LP
@@ -685,14 +685,295 @@ Multiple JAX\-WS and JAXB binding files can be specified using \f2\-b\fP option 
 .fi
 https://jax\-ws.dev.java.net/nonav/2.1.1/docs/customizations.html.
 .LP
+The following table lists \f2wsimport\fP non\-standard options:
+.LP
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Map headers not bound to request or response message to Java method parameters.
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+WSDL URI that specifies the file that contains authorization information; this URI is in the following format: http://\f2<user name>\fP:\f2<password>\fP@\f2<host name>\fP/\f2<Web service name>\fP?wsdl
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Print debugging information.
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 80
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(80 .ll \n(80u
+.in 0
+\f3\-Xno\-addressing\-databinding\fP
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Enable binding of W3C \f2EndpointReferenceType\fP to Java.
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Do not compile generated Java files.
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \w\f3Option\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\-XadditionalHeaders\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\-Xauthfile <file>\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\-Xdebug\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\-Xnocompile\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 38 \n(d-
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 193 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Option\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\-XadditionalHeaders\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\-Xauthfile <file>\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\-Xdebug\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.ne \n(e|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(40u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\-Xnocompile\fP\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-26
+
+.LP
 .SH "Example"
 .nf
 \f3
 .fl
-\fP\f3wsimport \-p stockquote http://stockquote.xyz/quote?wsdl\fP
+\fP\f3wsimport \-p stockquote http://stockquote.example.com/quote?wsdl\fP
 .fl
 .fi
 .LP
-This will generate the Java artifacts and compile them by importing the \f2http://stockquote.xyz/quote?wsdl\fP.
+This will generate the Java artifacts and compile them by importing the \f2http://stockquote.example.com/quote?wsdl\fP.
 .br
  

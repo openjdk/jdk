@@ -26,7 +26,7 @@
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
- *      4947220 7018606
+ *      4947220 7018606 7034570
  * @summary Basic tests for Process and Environment Variable code
  * @run main/othervm/timeout=300 Basic
  * @author Martin Buchholz
@@ -1440,16 +1440,32 @@ public class Basic {
         // Check for sort order of environment variables on Windows.
         //----------------------------------------------------------------
         try {
+            String systemRoot = "SystemRoot=" + System.getenv("SystemRoot");
             // '+' < 'A' < 'Z' < '_' < 'a' < 'z' < '~'
             String[]envp = {"FOO=BAR","BAZ=GORP","QUUX=",
-                            "+=+", "_=_", "~=~"};
+                            "+=+", "_=_", "~=~", systemRoot};
             String output = nativeEnv(envp);
-            String expected = "+=+\nBAZ=GORP\nFOO=BAR\nQUUX=\n_=_\n~=~\n";
+            String expected = "+=+\nBAZ=GORP\nFOO=BAR\nQUUX=\n"+systemRoot+"\n_=_\n~=~\n";
             // On Windows, Java must keep the environment sorted.
             // Order is random on Unix, so this test does the sort.
             if (! Windows.is())
                 output = sortByLinesWindowsly(output);
             equal(output, expected);
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Test Runtime.exec(...envp...)
+        // and check SystemRoot gets set automatically on Windows
+        //----------------------------------------------------------------
+        try {
+            if (Windows.is()) {
+                String systemRoot = "SystemRoot=" + System.getenv("SystemRoot");
+                String[]envp = {"FOO=BAR","BAZ=GORP","QUUX=",
+                                "+=+", "_=_", "~=~"};
+                String output = nativeEnv(envp);
+                String expected = "+=+\nBAZ=GORP\nFOO=BAR\nQUUX=\n"+systemRoot+"\n_=_\n~=~\n";
+                equal(output, expected);
+            }
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------

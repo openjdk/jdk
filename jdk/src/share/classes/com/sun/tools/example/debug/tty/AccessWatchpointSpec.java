@@ -38,6 +38,7 @@ class AccessWatchpointSpec extends WatchpointSpec {
     /**
      * The 'refType' is known to match, return the EventRequest.
      */
+    @Override
     EventRequest resolveEventRequest(ReferenceType refType)
                                       throws NoSuchFieldException {
         Field field = refType.fieldByName(fieldId);
@@ -48,6 +49,7 @@ class AccessWatchpointSpec extends WatchpointSpec {
         return wp;
     }
 
+    @Override
     public String toString() {
         return MessageOutput.format("watch accesses of",
                                     new Object [] {refSpec.toString(),

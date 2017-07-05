@@ -45,7 +45,7 @@ import java.util.Set;
 
 /**
  * @test
- * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504
+ * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603 7044019
  * @summary test API changes to Locale
  * @compile LocaleEnhanceTest.java
  * @run main/othervm -esa LocaleEnhanceTest
@@ -616,11 +616,9 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
         assertEquals("latn US", "Latin", latnLocale.getDisplayScript());
         assertEquals("hans US", "Simplified Han", hansLocale.getDisplayScript());
 
-        // note, no localization data yet other than US
-        // this should break when we have localization data for DE
         Locale.setDefault(Locale.GERMANY);
-        assertEquals("latn DE", "Latin", latnLocale.getDisplayScript());
-        assertEquals("hans DE", "Simplified Han", hansLocale.getDisplayScript());
+        assertEquals("latn DE", "Lateinisch", latnLocale.getDisplayScript());
+        assertEquals("hans DE", "Vereinfachte Chinesische Schrift", hansLocale.getDisplayScript());
 
         Locale.setDefault(oldLocale);
     }
@@ -632,10 +630,8 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
         assertEquals("latn US", "Latin", latnLocale.getDisplayScript(Locale.US));
         assertEquals("hans US", "Simplified Han", hansLocale.getDisplayScript(Locale.US));
 
-        // note, no localization data yet other than US
-        // this should break when we have localization data for DE
-        assertEquals("latn DE", "Latin", latnLocale.getDisplayScript(Locale.GERMANY));
-        assertEquals("hans DE", "Simplified Han", hansLocale.getDisplayScript(Locale.GERMANY));
+        assertEquals("latn DE", "Lateinisch", latnLocale.getDisplayScript(Locale.GERMANY));
+        assertEquals("hans DE", "Vereinfachte Chinesische Schrift", hansLocale.getDisplayScript(Locale.GERMANY));
     }
 
     public void testGetDisplayName() {

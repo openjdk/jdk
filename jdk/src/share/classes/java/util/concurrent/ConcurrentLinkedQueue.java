@@ -72,7 +72,14 @@ import java.util.Queue;
  * <p>Beware that, unlike in most collections, the {@code size} method
  * is <em>NOT</em> a constant-time operation. Because of the
  * asynchronous nature of these queues, determining the current number
- * of elements requires a traversal of the elements.
+ * of elements requires a traversal of the elements, and so may report
+ * inaccurate results if this collection is modified during traversal.
+ * Additionally, the bulk operations {@code addAll},
+ * {@code removeAll}, {@code retainAll}, {@code containsAll},
+ * {@code equals}, and {@code toArray} are <em>not</em> guaranteed
+ * to be performed atomically. For example, an iterator operating
+ * concurrently with an {@code addAll} operation might view only some
+ * of the added elements.
  *
  * <p>This class and its iterator implement all of the <em>optional</em>
  * methods of the {@link Queue} and {@link Iterator} interfaces.

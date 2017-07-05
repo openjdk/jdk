@@ -1870,11 +1870,15 @@ public abstract class Toolkit {
 
     /**
      * Adds the specified property change listener for the named desktop
-     * property.
-     * If pcl is null, no exception is thrown and no action is performed.
+     * property. When a {@link PropertyChangeListenerProxy} object is added,
+     * its property name is ignored, and the wrapped listener is added.
+     * If {@code name} is {@code null} or {@code pcl} is {@code null},
+     * no exception is thrown and no action is performed.
      *
      * @param   name The name of the property to listen for
      * @param   pcl The property change listener
+     * @see PropertyChangeSupport#addPropertyChangeListener(String,
+                PropertyChangeListener)
      * @since   1.2
      */
     public void addPropertyChangeListener(String name, PropertyChangeListener pcl) {
@@ -1883,11 +1887,16 @@ public abstract class Toolkit {
 
     /**
      * Removes the specified property change listener for the named
-     * desktop property.
-     * If pcl is null, no exception is thrown and no action is performed.
+     * desktop property. When a {@link PropertyChangeListenerProxy} object
+     * is removed, its property name is ignored, and
+     * the wrapped listener is removed.
+     * If {@code name} is {@code null} or {@code pcl} is {@code null},
+     * no exception is thrown and no action is performed.
      *
      * @param   name The name of the property to remove
      * @param   pcl The property change listener
+     * @see PropertyChangeSupport#removePropertyChangeListener(String,
+                PropertyChangeListener)
      * @since   1.2
      */
     public void removePropertyChangeListener(String name, PropertyChangeListener pcl) {
@@ -1896,12 +1905,15 @@ public abstract class Toolkit {
 
     /**
      * Returns an array of all the property change listeners
-     * registered on this toolkit.
+     * registered on this toolkit. The returned array
+     * contains {@code PropertyChangeListenerProxy} objects
+     * that associate listeners with the names of desktop properties.
      *
-     * @return all of this toolkit's <code>PropertyChangeListener</code>s
-     *         or an empty array if no property change
-     *         listeners are currently registered
+     * @return all of this toolkit's {@ code PropertyChangeListener}
+     *         objects wrapped in {@code PropertyChangeListenerProxy} objects
+     *         or an empty array  if no listeners are added
      *
+     * @see PropertyChangeSupport#getPropertyChangeListeners()
      * @since 1.4
      */
     public PropertyChangeListener[] getPropertyChangeListeners() {
@@ -1909,13 +1921,15 @@ public abstract class Toolkit {
     }
 
     /**
-     * Returns an array of all the <code>PropertyChangeListener</code>s
-     * associated with the named property.
+     * Returns an array of all property change listeners
+     * associated with the specified name of a desktop property.
      *
      * @param  propertyName the named property
-     * @return all of the <code>PropertyChangeListener</code>s associated with
-     *         the named property or an empty array if no such listeners have
-     *         been added
+     * @return all of the {@code PropertyChangeListener} objects
+     *         associated with the specified name of a desktop property
+     *         or an empty array if no such listeners are added
+     *
+     * @see PropertyChangeSupport#getPropertyChangeListeners(String)
      * @since 1.4
      */
     public PropertyChangeListener[] getPropertyChangeListeners(String propertyName) {

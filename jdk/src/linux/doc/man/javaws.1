@@ -1,4 +1,4 @@
-." Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,18 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH javaws 1 "02 Jun 2010"
+.TH javaws 1 "10 May 2011"
 
 .LP
 .SH "Name"
 \f2javaws\fP Command Line
 .LP
-.LP
-\ 
-.LP
-.SS 
-NAME
-.LP
-.RS 3
-
+.SH "NAME"
 .LP
 .LP
 \f2javaws\fP \- Java Web Start launcher command
 .LP
-.RE
-.SS 
-SYNOPSIS
-.LP
-.RS 3
-
+.SH "SYNOPSIS"
 .LP
 .LP
 \f2javaws [run\-options] <jnlp>\fP
@@ -50,49 +38,27 @@ SYNOPSIS
 .LP
 \f2javaws [control\-options]\fP
 .LP
-.RE
-.SS 
-PARAMETERS
-.LP
-.RS 3
-
+.SH "PARAMETERS"
 .LP
 .LP
 \f2[run\-options]\fP
 .LP
-.RS 3
-
-.LP
 .LP
 Command\-line run\-options. run\-options may be in any order. For a discussion of the various run\-options, see RUN\-OPTIONS below.
 .LP
-.RE
 .LP
 \f2<jnlp>\fP
-.LP
-.RS 3
-
 .LP
 .LP
 This can be either the path of, or the Uniform Resource Locater (URL) of the JNLP (Java Network Launching Protocol) file.
 .LP
-.RE
 .LP
 \f2[control\-options]\fP
-.LP
-.RS 3
-
 .LP
 .LP
 Command\-line control\-options. control\-options may be in any order. For a discussion of the various control\-options, see CONTROL\-OPTIONS below.
 .LP
-.RE
-.RE
-.SS 
-DESCRIPTION
-.LP
-.RS 3
-
+.SH "DESCRIPTION"
 .LP
 .LP
 The \f2javaws\fP command launches Java Web Start, which is the reference implementation of the Java Network Launching Protocol (JNLP). Java Web Start launches Java applications/applets hosted on a network.
@@ -103,256 +69,154 @@ If a JNLP file is specified, \f2javaws\fP will launch the Java application/apple
 .LP
 The \f2javaws\fP launcher has a set of options that are supported in the current release. However, the options may be removed in a future release.
 .LP
-.RE
-.SS 
-RUN\-OPTIONS
-.LP
-.RS 3
-
+.SH "RUN\-OPTIONS"
 .LP
 .LP
 \f2\-offline\fP
 .LP
-.RS 3
-
 .LP
+Run Java Web Start in offline mode.
 .LP
-run Java Web Start in offline mode.
-.LP
-.RE
 .LP
 \f2\-Xnosplash\fP
 .LP
-.RS 3
-
 .LP
+Do not display the initial splash screen.
 .LP
-disable the display of the initial splash screen.
-.LP
-.RE
 .LP
 \f2\-open <arguments>\fP
-.LP
-.RS 3
-
 .LP
 .LP
 If specified, replaces the arguments in the jnlp file with \f2\-open <arguments>\fP.
 .LP
-.RE
 .LP
 \f2\-print <arguments>\fP
-.LP
-.RS 3
-
 .LP
 .LP
 If specified, replaces the arguments in the jnlp file with \f2\-print <arguments>\fP.
 .LP
-.RE
 .LP
 \f2\-online\fP
 .LP
-.RS 3
-
 .LP
+Use online mode (default behavior).
 .LP
-run in online mode (default behavior).
-.LP
-.RE
 .LP
 \f2\-wait\fP
 .LP
-.RS 3
-
 .LP
+If specified, the \f2javaws\fP process will not exit until the application exits. This option does not function as described on Windows platforms.
 .LP
-If specified, the \f2javaws\fP process will not exit until the application exits.
-.LP
-.RE
 .LP
 \f2\-verbose\fP
 .LP
-.RS 3
-
 .LP
+Display additional output.
 .LP
-display additional output.
-.LP
-.RE
 .LP
 \f2\-J<option>\fP
 .LP
-.RS 3
-
 .LP
+Supply options to the VM.
 .LP
-supply options to the vm.
-.LP
-.RE
 .LP
 \f2\-system\fP
 .LP
-.RS 3
-
 .LP
+Run the application from the system cache only.
 .LP
-run the application from the system cache only.
-.LP
-.RE
-.RE
-.SS 
-CONTROL\-OPTIONS
-.LP
-.RS 3
-
+.SH "CONTROL\-OPTIONS"
 .LP
 .LP
 \f2\-viewer\fP
 .LP
-.RS 3
-
+.LP
+Show the Cache Viewer in the Java Control Panel.
 .LP
 .LP
-show the Cache Viewer in the java control panel
+\f2\-clearcache\fP
 .LP
-.RE
+.LP
+Remove all non\-installed applications from the cache.
+.LP
 .LP
 \f2\-userConfig <property name>\fP
 .LP
-.RS 3
-
 .LP
+Clear the specified deployment property.
 .LP
-clear the specified deployment property.
-.LP
-.RE
 .LP
 \f2\-userConfig <property name> <property value>\fP
 .LP
-.RS 3
-
 .LP
+Set the specified deployment property to the specified value.
 .LP
-set the specified deployment property to the specified value.
-.LP
-.RE
 .LP
 \f2\-uninstall\fP
 .LP
-.RS 3
-
 .LP
+Remove all applications from the cache.
 .LP
-remove all applications from the cache.
-.LP
-.RE
 .LP
 \f2\-uninstall <jnlp>\fP
 .LP
-.RS 3
-
 .LP
+Remove the application from the cache.
 .LP
-remove the application from the cache.
-.LP
-.RE
 .LP
 \f2\-import [import\-options] <jnlp>\fP
 .LP
-.RS 3
-
 .LP
+Import the application to the cache.
 .LP
-import the application to the cache.
-.LP
-.RE
-\f3IMPORT\-OPTIONS\fP
+.SH "IMPORT\-OPTIONS"
 .LP
 .LP
 \f2\-silent\fP
 .LP
-.RS 3
-
 .LP
+Import silently (with no user interface).
 .LP
-import silently (with no user interface).
-.LP
-.RE
 .LP
 \f2\-system\fP
 .LP
-.RS 3
-
 .LP
+Import application to the system cache.
 .LP
-import application to the system cache.
-.LP
-.RE
 .LP
 \f2\-codebase <url>\fP
 .LP
-.RS 3
-
 .LP
+Retrieve resources from the given codebase.
 .LP
-retrieve resources from the given codebase.
-.LP
-.RE
 .LP
 \f2\-shortcut\fP
 .LP
-.RS 3
-
 .LP
+Install shortcuts as if user allowed prompt. This option has no effect unless \f2\-silent\fP option is also used.
 .LP
-install shortcuts as if user allowed prompt. This option has no effect unless \f2\-silent\fP option is also used.
-.LP
-.RE
 .LP
 \f2\-association\fP
 .LP
-.RS 3
-
 .LP
+Install associations as if user allowed prompt. This option has no effect unless \f2\-silent\fP option is also used.
 .LP
-install associations as if user allowed prompt. This option has no effect unless \f2\-silent\fP option is also used.
-.LP
-.RE
-.RE
-.SS 
-FILES
-.LP
-.RS 3
-
+.SH "FILES"
 .LP
 .LP
 For information about the user and system cache and deployment.properties files, see 
 .na
 \f2System\- and User\-Level Properties\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/deployment/deployment\-guide/properties.html.
+http://download.oracle.com/javase/7/docs/technotes/guides/deployment/deployment\-guide/properties.html.
 .LP
-.RE
-.SS 
-MORE INFORMATION
-.LP
-.RS 3
-
+.SH "MORE INFORMATION"
 .LP
 .LP
 For more information about Java Web Start, see 
 .na
 \f2Java Web Start\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/javaws/index.html.
+http://download.oracle.com/javase/7/docs/technotes/guides/javaws/index.html.
 .LP
-.RS 3
-
-.LP
-.LP
-\ 
-.LP
-.RE
-.RE
  

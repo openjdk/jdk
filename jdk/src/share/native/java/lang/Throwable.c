@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
  * `this' so you can write 'throw e.fillInStackTrace();'
  */
 JNIEXPORT jobject JNICALL
-Java_java_lang_Throwable_fillInStackTrace(JNIEnv *env, jobject throwable)
+Java_java_lang_Throwable_fillInStackTrace(JNIEnv *env, jobject throwable, int dummy)
 {
     JVM_FillInStackTrace(env, throwable);
     return throwable;

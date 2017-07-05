@@ -46,6 +46,7 @@ class ThreadIterator implements Iterator<ThreadReference> {
         tgi = new ThreadGroupIterator();
     }
 
+    @Override
     public boolean hasNext() {
         while (it == null || !it.hasNext()) {
             if (!tgi.hasNext()) {
@@ -56,6 +57,7 @@ class ThreadIterator implements Iterator<ThreadReference> {
         return true;
     }
 
+    @Override
     public ThreadReference next() {
         return it.next();
     }
@@ -64,6 +66,7 @@ class ThreadIterator implements Iterator<ThreadReference> {
         return next();
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

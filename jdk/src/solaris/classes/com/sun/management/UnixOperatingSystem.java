@@ -50,6 +50,8 @@ class UnixOperatingSystem
     public native long getTotalPhysicalMemorySize();
     public native long getOpenFileDescriptorCount();
     public native long getMaxFileDescriptorCount();
+    public native double getSystemCpuLoad();
+    public native double getProcessCpuLoad();
 
     static {
         initialize();

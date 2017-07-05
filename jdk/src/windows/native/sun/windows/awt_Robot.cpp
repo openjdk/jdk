@@ -353,8 +353,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WRobotPeer__1dispose(
 {
     TRY_NO_VERIFY;
 
-    PDATA pData = JNI_GET_PDATA(self);
-    AwtObject::_Dispose(pData);
+    AwtObject::_Dispose(self);
 
     CATCH_BAD_ALLOC;
 }

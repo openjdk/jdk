@@ -475,7 +475,10 @@ public:
   void verify();
   void verify_guard();
 
-  void verify_clean_region(MemRegion mr) PRODUCT_RETURN;
+  // val_equals -> it will check that all cards covered by mr equal val
+  // !val_equals -> it will check that all cards covered by mr do not equal val
+  void verify_region(MemRegion mr, jbyte val, bool val_equals) PRODUCT_RETURN;
+  void verify_not_dirty_region(MemRegion mr) PRODUCT_RETURN;
   void verify_dirty_region(MemRegion mr) PRODUCT_RETURN;
 
   static size_t par_chunk_heapword_alignment() {
