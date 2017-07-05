@@ -2021,10 +2021,14 @@ Java_sun_awt_X11GraphicsDevice_enumDisplayModes
                                  X11GD_AddDisplayMode(env, arrayList,
                                         mode->width, mode->height,
                                               BIT_DEPTH_MULTI, (int)(rate +.2));
+                                 if ((*env)->ExceptionCheck(env)) {
+                                     goto ret0;
+                                 }
                                  break;
                             }
                         }
                     }
+ret0:
                     awt_XRRFreeOutputInfo(output_info);
                 }
             }
@@ -2052,12 +2056,12 @@ Java_sun_awt_X11GraphicsDevice_enumDisplayModes
                                              BIT_DEPTH_MULTI,
                                              rates[j]);
                         if ((*env)->ExceptionCheck(env)) {
-                            break;
+                            goto ret1;
                         }
                     }
                 }
             }
-
+ret1:
             awt_XRRFreeScreenConfigInfo(config);
         }
     }

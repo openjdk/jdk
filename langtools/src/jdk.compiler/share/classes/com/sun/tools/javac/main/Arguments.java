@@ -598,9 +598,6 @@ public class Arguments {
                     && !fm.hasLocation(StandardLocation.CLASS_OUTPUT)) {
                 log.error(Errors.NoOutputDir);
             }
-            if (options.isSet(Option.XMODULE)) {
-                log.error(Errors.XmoduleNoModuleSourcepath);
-            }
         }
 
         if (fm.hasLocation(StandardLocation.ANNOTATION_PROCESSOR_MODULE_PATH) &&
@@ -617,6 +614,7 @@ public class Arguments {
         validateAddModules(sv);
         validateAddReads(sv);
         validateLimitModules(sv);
+        validateDefaultModuleForCreatedFiles(sv);
 
         if (lintOptions && options.isSet(Option.ADD_OPENS)) {
             log.warning(LintCategory.OPTIONS, Warnings.AddopensIgnored);
@@ -750,6 +748,17 @@ public class Arguments {
                         }
                         break;
                 }
+            }
+        }
+    }
+
+    private void validateDefaultModuleForCreatedFiles(SourceVersion sv) {
+        String moduleName = options.get(Option.DEFAULT_MODULE_FOR_CREATED_FILES);
+        if (moduleName != null) {
+            if (!SourceVersion.isName(moduleName, sv)) {
+                // syntactically invalid module name:  e.g. --default-module-for-created-files m!
+                log.error(Errors.BadNameForOption(Option.DEFAULT_MODULE_FOR_CREATED_FILES,
+                                                  moduleName));
             }
         }
     }
