@@ -279,6 +279,10 @@
   <target name="generate-policy-file" depends="prepare">
     <echo file="${build.dir}/nashorn.policy">
 
+grant codeBase "file:/${toString:nashorn.ext.path}/nashorn.jar" {
+    permission java.security.AllPermission;
+};
+
 grant codeBase "file:/${basedir}/${nashorn.internal.tests.jar}" {
     permission java.security.AllPermission;
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,20 @@ abstract public class TestAESBase {
   int msgSize = Integer.getInteger("msgSize", 646);
   boolean checkOutput = Boolean.getBoolean("checkOutput");
   boolean noReinit = Boolean.getBoolean("noReinit");
+  boolean testingMisalignment;
+  private static final int ALIGN = 8;
+  int encInputOffset = Integer.getInteger("encInputOffset", 0) % ALIGN;
+  int encOutputOffset = Integer.getInteger("encOutputOffset", 0) % ALIGN;
+  int decOutputOffset = Integer.getInteger("decOutputOffset", 0) % ALIGN;
+  int lastChunkSize = Integer.getInteger("lastChunkSize", 32);
   int keySize = Integer.getInteger("keySize", 128);
+  int inputLength;
+  int encodeLength;
+  int decodeLength;
+  int decodeMsgSize;
   String algorithm = System.getProperty("algorithm", "AES");
   String mode = System.getProperty("mode", "CBC");
+  String paddingStr = System.getProperty("paddingStr", "PKCS5Padding");
   byte[] input;
   byte[] encode;
   byte[] expectedEncode;
@@ -51,7 +62,6 @@ abstract public class TestAESBase {
   Random random = new Random(0);
   Cipher cipher;
   Cipher dCipher;
-  String paddingStr = "PKCS5Padding";
   AlgorithmParameters algParams;
   SecretKey key;
 
@@ -67,7 +77,10 @@ abstract public class TestAESBase {
 
   public void prepare() {
     try {
-    System.out.println("\nalgorithm=" + algorithm + ", mode=" + mode + ", msgSize=" + msgSize + ", keySize=" + keySize + ", noReinit=" + noReinit + ", checkOutput=" + checkOutput);
+    System.out.println("\nalgorithm=" + algorithm + ", mode=" + mode + ", paddingStr=" + paddingStr + ", msgSize=" + msgSize + ", keySize=" + keySize + ", noReinit=" + noReinit + ", checkOutput=" + checkOutput + ", encInputOffset=" + encInputOffset + ", encOutputOffset=" + encOutputOffset + ", decOutputOffset=" + decOutputOffset + ", lastChunkSize=" +lastChunkSize );
+
+      if (encInputOffset % ALIGN != 0 || encOutputOffset % ALIGN != 0 || decOutputOffset % ALIGN !=0 )
+        testingMisalignment = true;
 
       int keyLenBytes = (keySize == 0 ? 16 : keySize/8);
       byte keyBytes[] = new byte[keyLenBytes];
@@ -80,10 +93,6 @@ abstract public class TestAESBase {
       if (threadId == 0) {
         System.out.println("Algorithm: " + key.getAlgorithm() + "("
                            + key.getEncoded().length * 8 + "bit)");
-      }
-      input = new byte[msgSize];
-      for (int i=0; i<input.length; i++) {
-        input[i] = (byte) (i & 0xff);
       }
 
       cipher = Cipher.getInstance(algorithm + "/" + mode + "/" + paddingStr, "SunJCE");
@@ -103,10 +112,35 @@ abstract public class TestAESBase {
         childShowCipher();
       }
 
+      inputLength = msgSize + encInputOffset;
+      if (testingMisalignment) {
+        encodeLength = cipher.getOutputSize(msgSize - lastChunkSize) + encOutputOffset;
+        encodeLength += cipher.getOutputSize(lastChunkSize);
+        decodeLength = dCipher.getOutputSize(encodeLength - lastChunkSize) + decOutputOffset;
+        decodeLength += dCipher.getOutputSize(lastChunkSize);
+      } else {
+        encodeLength = cipher.getOutputSize(msgSize) + encOutputOffset;
+        decodeLength = dCipher.getOutputSize(encodeLength) + decOutputOffset;
+      }
+
+      input = new byte[inputLength];
+      for (int i=encInputOffset, j=0; i<inputLength; i++, j++) {
+        input[i] = (byte) (j & 0xff);
+      }
+
       // do one encode and decode in preparation
-      // this will also create the encode buffer and decode buffer
-      encode = cipher.doFinal(input);
-      decode = dCipher.doFinal(encode);
+      encode = new byte[encodeLength];
+      decode = new byte[decodeLength];
+      if (testingMisalignment) {
+        decodeMsgSize = cipher.update(input, encInputOffset, (msgSize - lastChunkSize), encode, encOutputOffset);
+        decodeMsgSize += cipher.doFinal(input, (encInputOffset + msgSize - lastChunkSize), lastChunkSize, encode, (encOutputOffset + decodeMsgSize));
+
+        int tempSize = dCipher.update(encode, encOutputOffset, (decodeMsgSize - lastChunkSize), decode, decOutputOffset);
+        dCipher.doFinal(encode, (encOutputOffset + decodeMsgSize - lastChunkSize), lastChunkSize, decode, (decOutputOffset + tempSize));
+      } else {
+        decodeMsgSize = cipher.doFinal(input, encInputOffset, msgSize, encode, encOutputOffset);
+        dCipher.doFinal(encode, encOutputOffset, decodeMsgSize, decode, decOutputOffset);
+      }
       if (checkOutput) {
         expectedEncode = (byte[]) encode.clone();
         expectedDecode = (byte[]) decode.clone();

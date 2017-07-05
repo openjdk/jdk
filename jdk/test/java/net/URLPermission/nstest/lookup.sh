@@ -26,7 +26,7 @@
 # @library /lib/testlibrary
 # @compile -XDignore.symbol.file=true SimpleNameService.java
 #            LookupTest.java SimpleNameServiceDescriptor.java
-# @build jdk.testlibrary.Utils
+# @build jdk.testlibrary.*
 # @run shell/timeout=50 lookup.sh
 #
 

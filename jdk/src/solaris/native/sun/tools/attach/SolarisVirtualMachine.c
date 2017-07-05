@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,14 +161,14 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_SolarisVirtualMachine_read
         len = remaining;
     }
 
-    RESTARTABLE(read(fd, buf+off, len), n);
+    RESTARTABLE(read(fd, buf, len), n);
     if (n == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "read");
     } else {
         if (n == 0) {
             n = -1;     // EOF
         } else {
-            (*env)->SetByteArrayRegion(env, ba, off, (jint)n, (jbyte *)(buf+off));
+            (*env)->SetByteArrayRegion(env, ba, off, (jint)n, (jbyte *)(buf));
         }
     }
     return n;

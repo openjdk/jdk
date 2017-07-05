@@ -26,6 +26,7 @@
  * @summary BufferedInputStream calculates negative array size with large
  *          streams and mark
  * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
  * @run main/othervm LargeCopyWithMark
  */
 

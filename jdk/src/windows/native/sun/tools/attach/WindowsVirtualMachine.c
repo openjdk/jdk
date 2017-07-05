@@ -343,7 +343,7 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_WindowsVirtualMachine_readPipe
         if (nread == 0) {
             return (jint)-1;        // EOF
         } else {
-            (*env)->SetByteArrayRegion(env, ba, off, (jint)nread, (jbyte *)(buf+off));
+            (*env)->SetByteArrayRegion(env, ba, off, (jint)nread, (jbyte *)(buf));
         }
     }
 

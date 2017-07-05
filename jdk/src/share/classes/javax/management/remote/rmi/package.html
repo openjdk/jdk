@@ -2,7 +2,7 @@
 <head>
     <title>RMI connector</title>
 <!--
-Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -240,12 +240,12 @@ questions.
       that the RMI registry only allows registration from the local
       host.  So, in this case, <code>myhost</code> must be the name
       (or a name) of the host that the connector server is running
-      on.</p>
+      on.
 
     <p>In this <code>JMXServiceURL</code>, the first <code>rmi:</code>
       specifies the RMI
       connector, while the second <code>rmi:</code> specifies the RMI
-      registry.</p>
+      registry.
 
     <p>As another example, if the <code>JMXServiceURL</code> is:
 
@@ -262,7 +262,7 @@ questions.
       </pre>
 
       which means entry <code>cn=this,ou=that</code> in the LDAP
-      directory running on port 9999 of host <code>dirhost</code>.</p>
+      directory running on port 9999 of host <code>dirhost</code>.
 
     <p>If the <code>JMXServiceURL</code> is:
 
@@ -280,7 +280,7 @@ questions.
 
       For this case to work, the JNDI API must have been configured
       appropriately to supply the information about what directory to
-      use.</p>
+      use.
 
     <p>In these examples, the host name <code>ignoredhost</code> is
       not used by the connector server or its clients.  It can be

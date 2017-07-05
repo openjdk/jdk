@@ -302,29 +302,30 @@ void os::print_register_info(outputStream *st, void *context) {
   if (context == NULL) return;
 
   ucontext_t *uc = (ucontext_t*)context;
+  sigcontext* sc = (sigcontext*)context;
   intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
 
   st->print_cr("Register to memory mapping:");
   st->cr();
 
   // this is only for the "general purpose" registers
-  st->print("G1="); print_location(st, SIG_REGS(sc).u_regs[CON__G1]);
-  st->print("G2="); print_location(st, SIG_REGS(sc).u_regs[CON__G2]);
-  st->print("G3="); print_location(st, SIG_REGS(sc).u_regs[CON__G3]);
-  st->print("G4="); print_location(st, SIG_REGS(sc).u_regs[CON__G4]);
-  st->print("G5="); print_location(st, SIG_REGS(sc).u_regs[CON__G5]);
-  st->print("G6="); print_location(st, SIG_REGS(sc).u_regs[CON__G6]);
-  st->print("G7="); print_location(st, SIG_REGS(sc).u_regs[CON__G7]);
+  st->print("G1="); print_location(st, SIG_REGS(sc).u_regs[CON_G1]);
+  st->print("G2="); print_location(st, SIG_REGS(sc).u_regs[CON_G2]);
+  st->print("G3="); print_location(st, SIG_REGS(sc).u_regs[CON_G3]);
+  st->print("G4="); print_location(st, SIG_REGS(sc).u_regs[CON_G4]);
+  st->print("G5="); print_location(st, SIG_REGS(sc).u_regs[CON_G5]);
+  st->print("G6="); print_location(st, SIG_REGS(sc).u_regs[CON_G6]);
+  st->print("G7="); print_location(st, SIG_REGS(sc).u_regs[CON_G7]);
   st->cr();
 
-  st->print("O0="); print_location(st, SIG_REGS(sc).u_regs[CON__O0]);
-  st->print("O1="); print_location(st, SIG_REGS(sc).u_regs[CON__O1]);
-  st->print("O2="); print_location(st, SIG_REGS(sc).u_regs[CON__O2]);
-  st->print("O3="); print_location(st, SIG_REGS(sc).u_regs[CON__O3]);
-  st->print("O4="); print_location(st, SIG_REGS(sc).u_regs[CON__O4]);
-  st->print("O5="); print_location(st, SIG_REGS(sc).u_regs[CON__O5]);
-  st->print("O6="); print_location(st, SIG_REGS(sc).u_regs[CON__O6]);
-  st->print("O7="); print_location(st, SIG_REGS(sc).u_regs[CON__O7]);
+  st->print("O0="); print_location(st, SIG_REGS(sc).u_regs[CON_O0]);
+  st->print("O1="); print_location(st, SIG_REGS(sc).u_regs[CON_O1]);
+  st->print("O2="); print_location(st, SIG_REGS(sc).u_regs[CON_O2]);
+  st->print("O3="); print_location(st, SIG_REGS(sc).u_regs[CON_O3]);
+  st->print("O4="); print_location(st, SIG_REGS(sc).u_regs[CON_O4]);
+  st->print("O5="); print_location(st, SIG_REGS(sc).u_regs[CON_O5]);
+  st->print("O6="); print_location(st, SIG_REGS(sc).u_regs[CON_O6]);
+  st->print("O7="); print_location(st, SIG_REGS(sc).u_regs[CON_O7]);
   st->cr();
 
   st->print("L0="); print_location(st, sp[L0->sp_offset_in_saved_window()]);
@@ -516,7 +517,7 @@ inline static bool checkICMiss(sigcontext* uc, address* pc, address* stub) {
   if (nativeInstruction_at(*pc)->is_ic_miss_trap()) {
 #ifdef ASSERT
 #ifdef TIERED
-    CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+    CodeBlob* cb = CodeCache::find_blob_unsafe(*pc);
     assert(cb->is_compiled_by_c2(), "Wrong compiler");
 #endif // TIERED
 #endif // ASSERT

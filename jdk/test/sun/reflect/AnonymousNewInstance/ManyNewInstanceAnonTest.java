@@ -28,6 +28,7 @@
  * @author  Robert Field
  * @library /lib/testlibrary
  * @compile -XDignore.symbol.file ManyNewInstanceAnonTest.java
+ * @build jdk.testlibrary.*
  * @run main ClassFileInstaller ManyNewInstanceAnonTest
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all ManyNewInstanceAnonTest
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all -Dsun.reflection.noInflation=true ManyNewInstanceAnonTest
