@@ -60,8 +60,8 @@ import static sun.security.ssl.CipherSuite.KeyExchange.*;
 final class ClientHandshaker extends Handshaker {
 
     // constants for subject alt names of type DNS and IP
-    private final static int ALTNAME_DNS = 2;
-    private final static int ALTNAME_IP  = 7;
+    private static final int ALTNAME_DNS = 2;
+    private static final int ALTNAME_IP  = 7;
 
     // the server's public key from its certificate.
     private PublicKey serverKey;
@@ -98,7 +98,7 @@ final class ClientHandshaker extends Handshaker {
     private ProtocolVersion maxProtocolVersion;
 
     // To switch off the SNI extension.
-    private final static boolean enableSNIExtension =
+    private static final boolean enableSNIExtension =
             Debug.getBooleanProperty("jsse.enableSNIExtension", true);
 
     /*
@@ -144,11 +144,11 @@ final class ClientHandshaker extends Handshaker {
      * If the system property is set to "true" explicitly, the restriction on
      * server certificate change in renegotiation is disabled.
      */
-    private final static boolean allowUnsafeServerCertChange =
+    private static final boolean allowUnsafeServerCertChange =
         Debug.getBooleanProperty("jdk.tls.allowUnsafeServerCertChange", false);
 
     // To switch off the max_fragment_length extension.
-    private final static boolean enableMFLExtension =
+    private static final boolean enableMFLExtension =
             Debug.getBooleanProperty("jsse.enableMFLExtension", false);
 
     private List<SNIServerName> requestedServerNames =

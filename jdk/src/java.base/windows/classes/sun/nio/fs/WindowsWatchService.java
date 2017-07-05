@@ -48,7 +48,7 @@ import static sun.nio.fs.WindowsConstants.*;
 class WindowsWatchService
     extends AbstractWatchService
 {
-    private final static int WAKEUP_COMPLETION_KEY = 0;
+    private static final int WAKEUP_COMPLETION_KEY = 0;
 
     // background thread to service I/O completion port
     private final Poller poller;
@@ -242,7 +242,7 @@ class WindowsWatchService
      * Background thread to service I/O completion port.
      */
     private static class Poller extends AbstractPoller {
-        private final static Unsafe UNSAFE = Unsafe.getUnsafe();
+        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
         /*
          * typedef struct _OVERLAPPED {

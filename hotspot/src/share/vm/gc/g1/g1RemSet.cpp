@@ -26,6 +26,7 @@
 #include "gc/g1/concurrentG1Refine.hpp"
 #include "gc/g1/concurrentG1RefineThread.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc/g1/g1CodeBlobClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
@@ -228,12 +229,15 @@ public:
 };
 
 void G1RemSet::scanRS(G1ParPushHeapRSClosure* oc,
-                      CodeBlobClosure* code_root_cl,
+                      OopClosure* non_heap_roots,
                       uint worker_i) {
   double rs_time_start = os::elapsedTime();
+
+  G1CodeBlobClosure code_root_cl(non_heap_roots);
+
   HeapRegion *startRegion = _g1->start_cset_region_for_worker(worker_i);
 
-  ScanRSClosure scanRScl(oc, code_root_cl, worker_i);
+  ScanRSClosure scanRScl(oc, &code_root_cl, worker_i);
 
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
   scanRScl.set_try_claimed();
@@ -295,7 +299,7 @@ void G1RemSet::cleanupHRRS() {
 }
 
 void G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* oc,
-                                           CodeBlobClosure* code_root_cl,
+                                           OopClosure* non_heap_roots,
                                            uint worker_i) {
 #if CARD_REPEAT_HISTO
   ct_freq_update_histo_and_reset();
@@ -318,7 +322,7 @@ void G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* oc,
   DirtyCardQueue into_cset_dcq(&_g1->into_cset_dirty_card_queue_set());
 
   updateRS(&into_cset_dcq, worker_i);
-  scanRS(oc, code_root_cl, worker_i);
+  scanRS(oc, non_heap_roots, worker_i);
 
   // We now clear the cached values of _cset_rs_update_cl for this worker
   _cset_rs_update_cl[worker_i] = NULL;

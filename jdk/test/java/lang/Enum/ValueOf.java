@@ -219,7 +219,7 @@ public class ValueOf {
         FOO {
             public void foo() {}
         };
-        abstract public void foo();
+        public abstract void foo();
     };
 
 }

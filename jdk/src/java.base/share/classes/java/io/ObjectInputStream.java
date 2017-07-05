@@ -1079,7 +1079,7 @@ public class ObjectInputStream
     /**
      * Provide access to the persistent fields read from the input stream.
      */
-    public static abstract class GetField {
+    public abstract static class GetField {
 
         /**
          * Get the ObjectStreamClass that describes the fields in the stream.

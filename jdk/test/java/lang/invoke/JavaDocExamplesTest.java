@@ -75,14 +75,14 @@ public class JavaDocExamplesTest {
 
 
 {}
-static final private Lookup LOOKUP = lookup();
+private static final Lookup LOOKUP = lookup();
 // static final private MethodHandle CONCAT_1 = LOOKUP.findVirtual(String.class,
 //     "concat", methodType(String.class, String.class));
 // static final private MethodHandle HASHCODE_1 = LOOKUP.findVirtual(Object.class,
 //     "hashCode", methodType(int.class));
 
 // form required if ReflectiveOperationException is intercepted:
-    static final private MethodHandle CONCAT_2, HASHCODE_2, ADD_2, SUB_2;
+    private static final MethodHandle CONCAT_2, HASHCODE_2, ADD_2, SUB_2;
 static {
   try {
     Class<?> THIS_CLASS = LOOKUP.lookupClass();

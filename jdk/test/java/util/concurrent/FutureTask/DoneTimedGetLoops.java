@@ -44,7 +44,7 @@ public class DoneTimedGetLoops {
     final long testDurationMillis;
 
     static class PublicFutureTask extends FutureTask<Boolean> {
-        final static Runnable noop = new Runnable() { public void run() {} };
+        static final Runnable noop = new Runnable() { public void run() {} };
         PublicFutureTask() { super(noop, null); }
         public void set(Boolean v) { super.set(v); }
         public void setException(Throwable t) { super.setException(t); }
@@ -81,7 +81,7 @@ public class DoneTimedGetLoops {
             protected boolean quittingTime(long i) {
                 return (i % 1024) == 0 && quittingTime();
             }
-            abstract protected void realRun() throws Exception;
+            protected abstract void realRun() throws Exception;
             public void run() {
                 try { realRun(); } catch (Throwable t) { unexpected(t); }
             }

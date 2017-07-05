@@ -76,7 +76,7 @@ public class X509CRLEntryImpl extends X509CRLEntry
     private byte[] revokedCert = null;
     private X500Principal certIssuer;
 
-    private final static boolean isExplicit = false;
+    private static final boolean isExplicit = false;
     private static final long YR_2050 = 2524636800000L;
 
     /**

@@ -59,7 +59,7 @@ public final class RC2Parameters extends AlgorithmParametersSpi {
 
     // TABLE[EKB] from section 6 of RFC 2268, used to convert effective key
     // size to/from encoded version number
-    private final static int[] EKB_TABLE = new int[] {
+    private static final int[] EKB_TABLE = new int[] {
         0xbd, 0x56, 0xea, 0xf2, 0xa2, 0xf1, 0xac, 0x2a,
         0xb0, 0x93, 0xd1, 0x9c, 0x1b, 0x33, 0xfd, 0xd0,
         0x30, 0x04, 0xb6, 0xdc, 0x7d, 0xdf, 0x32, 0x4b,

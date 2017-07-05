@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public class AquaTextAreaUI extends BasicTextAreaUI {
     }
 
     AquaFocusHandler handler;
+    @Override
     protected void installListeners() {
         super.installListeners();
 
@@ -53,6 +54,7 @@ public class AquaTextAreaUI extends BasicTextAreaUI {
         AquaUtilControlSize.addSizePropertyListener(c);
     }
 
+    @Override
     protected void uninstallListeners() {
         final JTextComponent c = getComponent();
 
@@ -66,6 +68,7 @@ public class AquaTextAreaUI extends BasicTextAreaUI {
     }
 
     boolean oldDragState = false;
+    @Override
     protected void installDefaults() {
         if (!GraphicsEnvironment.isHeadless()) {
             oldDragState = getComponent().getDragEnabled();
@@ -74,6 +77,7 @@ public class AquaTextAreaUI extends BasicTextAreaUI {
         super.installDefaults();
     }
 
+    @Override
     protected void uninstallDefaults() {
         if (!GraphicsEnvironment.isHeadless()) {
             getComponent().setDragEnabled(oldDragState);
@@ -81,7 +85,9 @@ public class AquaTextAreaUI extends BasicTextAreaUI {
         super.uninstallDefaults();
     }
 
-    // Install a default keypress action which handles Cmd and Option keys properly
+    // Install a default keypress action which handles Cmd and Option keys
+    // properly
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
         AquaKeyBindings bindings = AquaKeyBindings.instance();
@@ -90,13 +96,12 @@ public class AquaTextAreaUI extends BasicTextAreaUI {
         bindings.installAquaUpDownActions(c);
     }
 
+    @Override
     protected Caret createCaret() {
-        final JTextComponent c = getComponent();
-        final Window owningWindow = SwingUtilities.getWindowAncestor(c);
-        final AquaCaret returnValue = new AquaCaret(owningWindow, c);
-        return returnValue;
+        return new AquaCaret();
     }
 
+    @Override
     protected Highlighter createHighlighter() {
         return new AquaHighlighter();
     }

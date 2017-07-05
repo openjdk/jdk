@@ -173,11 +173,11 @@ final class SupportedEllipticCurvesExtension extends HelloExtension {
         return null;
     }
 
-    private final static int ARBITRARY_PRIME = 0xff01;
-    private final static int ARBITRARY_CHAR2 = 0xff02;
+    private static final int ARBITRARY_PRIME = 0xff01;
+    private static final int ARBITRARY_CHAR2 = 0xff02;
 
     // See sun.security.util.NamedCurve for the OIDs
-    private final static String[] NAMED_CURVE_OID_TABLE = new String[] {
+    private static final String[] NAMED_CURVE_OID_TABLE = new String[] {
         null,                   //  (0) unused
         "1.3.132.0.1",          //  (1) sect163k1, NIST K-163
         "1.3.132.0.2",          //  (2) sect163r1
@@ -206,7 +206,7 @@ final class SupportedEllipticCurvesExtension extends HelloExtension {
         "1.3.132.0.35",         // (25) secp521r1, NIST P-521
     };
 
-    private final static Map<String,Integer> curveIndices;
+    private static final Map<String,Integer> curveIndices;
 
     static {
         curveIndices = new HashMap<String,Integer>();

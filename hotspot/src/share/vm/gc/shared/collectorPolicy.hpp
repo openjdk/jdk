@@ -111,13 +111,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   size_t max_heap_byte_size()     { return _max_heap_byte_size; }
   size_t min_heap_byte_size()     { return _min_heap_byte_size; }
 
-  enum Name {
-    CollectorPolicyKind,
-    GenCollectorPolicyKind,
-    ConcurrentMarkSweepPolicyKind,
-    G1CollectorPolicyKind
-  };
-
   AdaptiveSizePolicy* size_policy() { return _size_policy; }
   bool should_clear_all_soft_refs() { return _should_clear_all_soft_refs; }
   void set_should_clear_all_soft_refs(bool v) { _should_clear_all_soft_refs = v; }
@@ -150,8 +143,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 #endif // INCLUDE_ALL_GCS
 
 
-  virtual BarrierSet::Name barrier_set_name() = 0;
-
   virtual GenRemSet* create_rem_set(MemRegion reserved);
 
   // This method controls how a collector satisfies a request
@@ -180,10 +171,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   // don't have associated counters, and we complain if this is invoked.
   virtual void initialize_gc_policy_counters() {
     ShouldNotReachHere();
-  }
-
-  virtual CollectorPolicy::Name kind() {
-    return CollectorPolicy::CollectorPolicyKind;
   }
 
   // Do any updates required to global flags that are due to heap initialization
@@ -297,12 +284,6 @@ class GenCollectorPolicy : public CollectorPolicy {
 
   virtual void post_heap_initialize() {
     assert(_max_young_size == MaxNewSize, "Should be taken care of by initialize_size_info");
-  }
-
-  BarrierSet::Name barrier_set_name()  { return BarrierSet::CardTableModRef; }
-
-  virtual CollectorPolicy::Name kind() {
-    return CollectorPolicy::GenCollectorPolicyKind;
   }
 };
 

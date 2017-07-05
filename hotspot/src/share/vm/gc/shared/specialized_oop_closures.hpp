@@ -42,6 +42,8 @@ class OopsInGenClosure;
 class ScanClosure;
 class FastScanClosure;
 class FilteringClosure;
+// MarkSweep
+class MarkAndPushClosure;
 // ParNew
 class ParScanWithBarrierClosure;
 class ParScanWithoutBarrierClosure;
@@ -87,6 +89,9 @@ class NoHeaderExtendedOopClosure;
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_S(f)             \
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_P(f)
 
+#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_MS(f)      \
+  f(MarkAndPushClosure,_nv)
+
 #if INCLUDE_ALL_GCS
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_CMS(f)     \
   f(MarkRefsIntoAndScanClosure,_nv)                     \
@@ -101,10 +106,12 @@ class NoHeaderExtendedOopClosure;
 
 #if INCLUDE_ALL_GCS
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)       \
+  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_MS(f)            \
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_CMS(f)           \
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f)
 #else  // INCLUDE_ALL_GCS
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)
+#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)       \
+  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_MS(f)
 #endif // INCLUDE_ALL_GCS
 
 

@@ -2181,8 +2181,8 @@ void JvmtiExport::oops_do(OopClosure* f) {
   JvmtiVMObjectAllocEventCollector::oops_do_for_all_threads(f);
 }
 
-void JvmtiExport::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
-  JvmtiTagMap::weak_oops_do(is_alive, f);
+size_t JvmtiExport::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
+  return JvmtiTagMap::weak_oops_do(is_alive, f);
 }
 
 void JvmtiExport::gc_epilogue() {

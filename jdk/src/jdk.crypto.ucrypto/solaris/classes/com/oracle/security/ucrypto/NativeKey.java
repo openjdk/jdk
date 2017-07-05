@@ -94,7 +94,8 @@ abstract class NativeKey implements Key {
                 pKey = nativeInit(NativeKey.getMagnitude(mod),
                                   NativeKey.getMagnitude(privateExp));
             } else {
-                throw new InvalidKeySpecException("Only supports RSAPrivateKeySpec");
+                throw new InvalidKeySpecException("Only supports RSAPrivateKeySpec." +
+                    " Received: " + keySpec.getClass().getName());
             }
             if (pKey == 0L) {
                 throw new UcryptoException("Error constructing RSA PrivateKey");
@@ -141,7 +142,8 @@ abstract class NativeKey implements Key {
                                   NativeKey.getMagnitude(primeExpQ),
                                   NativeKey.getMagnitude(crtCoeff));
             } else {
-                throw new InvalidKeySpecException("Only supports RSAPrivateCrtKeySpec");
+                throw new InvalidKeySpecException("Only supports RSAPrivateCrtKeySpec."
+                    + " Received: " + keySpec.getClass().getName());
             }
             if (pKey == 0L) {
                 throw new UcryptoException("Error constructing RSA PrivateCrtKey");
@@ -184,7 +186,8 @@ abstract class NativeKey implements Key {
                 pKey = nativeInit(NativeKey.getMagnitude(mod),
                                   NativeKey.getMagnitude(publicExp));
             } else {
-                throw new InvalidKeySpecException("Only supports RSAPublicKeySpec");
+                throw new InvalidKeySpecException("Only supports RSAPublicKeySpec." +
+                    " Received: " + keySpec.getClass().getName());
             }
             if (pKey == 0L) {
                 throw new UcryptoException("Error constructing RSA PublicKey");

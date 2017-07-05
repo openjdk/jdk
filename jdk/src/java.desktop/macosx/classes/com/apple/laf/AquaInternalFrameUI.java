@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     protected Color fNotSelectedTextColor;
 
     AquaInternalFrameBorder fAquaBorder;
+    private ResizeBox resizeBox;
 
     // for button tracking
     boolean fMouseOverPressedButton;
@@ -96,6 +97,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     /// Inherit  (but be careful to check everything they call):
+    @Override
     public void installUI(final JComponent c) {
 //        super.installUI(c);  // Swing 1.1.1 has a bug in installUI - it doesn't check for null northPane
         frame = (JInternalFrame)c;
@@ -125,12 +127,14 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         c.setBorder(new CompoundUIBorder(fIsPallet ? paletteWindowShadow.get() : documentWindowShadow.get(), c.getBorder()));
     }
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
         fSelectedTextColor = UIManager.getColor("InternalFrame.activeTitleForeground");
         fNotSelectedTextColor = UIManager.getColor("InternalFrame.inactiveTitleForeground");
     }
 
+    @Override
     public void setSouthPane(final JComponent c) {
         if (southPane != null) {
             frame.remove(southPane);
@@ -144,6 +148,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     static final RecyclableSingleton<Icon> closeIcon = new RecyclableSingleton<Icon>() {
+        @Override
         protected Icon getInstance() {
             return new AquaInternalFrameButtonIcon(Widget.TITLE_BAR_CLOSE_BOX);
         }
@@ -153,6 +158,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     static final RecyclableSingleton<Icon> minimizeIcon = new RecyclableSingleton<Icon>() {
+        @Override
         protected Icon getInstance() {
             return new AquaInternalFrameButtonIcon(Widget.TITLE_BAR_COLLAPSE_BOX);
         }
@@ -162,6 +168,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     static final RecyclableSingleton<Icon> zoomIcon = new RecyclableSingleton<Icon>() {
+        @Override
         protected Icon getInstance() {
             return new AquaInternalFrameButtonIcon(Widget.TITLE_BAR_ZOOM_BOX);
         }
@@ -175,6 +182,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             painter.state.set(widget);
         }
 
+        @Override
         public void paintIcon(final Component c, final Graphics g, final int x, final int y) {
             painter.state.set(getStateFor(c));
             super.paintIcon(c, g, x, y);
@@ -184,28 +192,24 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             return State.ROLLOVER;
         }
 
+        @Override
         public int getIconWidth() {
             return 19;
         }
 
+        @Override
         public int getIconHeight() {
             return 19;
         }
     }
 
+    @Override
     protected void installKeyboardActions() {
     } //$ Not Mac-ish - should we support?
 
-    protected ResizeBox resizeBox;
+    @Override
     protected void installComponents() {
         final JLayeredPane layeredPane = frame.getLayeredPane();
-        if (resizeBox != null) {
-            resizeBox.removeListeners();
-            layeredPane.removeComponentListener(resizeBox);
-            layeredPane.remove(resizeBox);
-            resizeBox = null;
-        }
-
         resizeBox = new ResizeBox(layeredPane);
         resizeBox.repositionResizeBox();
 
@@ -218,6 +222,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     /// Inherit all the listeners - that's the main reason we subclass Basic!
+    @Override
     protected void installListeners() {
         fPropertyListener = new PropertyListener();
         frame.addPropertyChangeListener(fPropertyListener);
@@ -225,22 +230,36 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     // uninstallDefaults
-    // uninstallComponents
+
+    @Override
+    protected void uninstallComponents() {
+        super.uninstallComponents();
+        final JLayeredPane layeredPane = frame.getLayeredPane();
+        resizeBox.removeListeners();
+        layeredPane.removeComponentListener(resizeBox);
+        layeredPane.remove(resizeBox);
+        resizeBox = null;
+    }
+
+    @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
         frame.removePropertyChangeListener(fPropertyListener);
     }
 
+    @Override
     protected void uninstallKeyboardActions() {
     }
 
     // Called when a DesktopIcon replaces an InternalFrame & vice versa
     //protected void replacePane(JComponent currentPane, JComponent newPane) {}
+    @Override
     protected void installMouseHandlers(final JComponent c) {
         c.addMouseListener(borderListener);
         c.addMouseMotionListener(borderListener);
     }
 
+    @Override
     protected void deinstallMouseHandlers(final JComponent c) {
         c.removeMouseListener(borderListener);
         c.removeMouseMotionListener(borderListener);
@@ -256,6 +275,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         return map;
     }
 
+    @Override
     public Dimension getPreferredSize(JComponent x) {
         Dimension preferredSize = super.getPreferredSize(x);
         Dimension minimumSize = frame.getMinimumSize();
@@ -268,6 +288,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         return preferredSize;
     }
 
+    @Override
     public void setNorthPane(final JComponent c) {
         replacePane(northPane, c);
         northPane = c;
@@ -278,6 +299,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
      * and adds it to the frame.
      * Reverse process for the <code>currentPane</code>.
      */
+    @Override
     protected void replacePane(final JComponent currentPane, final JComponent newPane) {
         if (currentPane != null) {
             deinstallMouseHandlers(currentPane);
@@ -290,6 +312,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     // Our "Border" listener is shared by the AquaDesktopIcon
+    @Override
     protected MouseInputAdapter createBorderListener(final JInternalFrame w) {
         return new AquaBorderListener();
     }
@@ -374,6 +397,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         protected final int RESIZE_NONE = 0;
         private boolean discardRelease = false;
 
+        @Override
         public void mouseClicked(final MouseEvent e) {
             if (didForwardEvent(e)) return;
 
@@ -406,6 +430,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             fAquaBorder.repaintButtonArea(frame);
         }
 
+        @Override
         public void mouseReleased(final MouseEvent e) {
             if (didForwardEvent(e)) return;
 
@@ -461,6 +486,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             resizeDir = RESIZE_NONE;
         }
 
+        @Override
         public void mousePressed(final MouseEvent e) {
             if (didForwardEvent(e)) return;
 
@@ -527,6 +553,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             return true;
         }
 
+        @Override
         public void mouseDragged(final MouseEvent e) {
 // do not forward drags
 //            if (didForwardEvent(e)) return;
@@ -576,6 +603,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             return;
         }
 
+        @Override
         public void mouseMoved(final MouseEvent e) {
             if (didForwardEvent(e)) return;
             updateRollover(e);
@@ -614,7 +642,11 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             if (hitComponent == null || hitComponent == frame) return false;
 
             final Point hitComponentPoint = SwingUtilities.convertPoint(pane, parentPoint, hitComponent);
-            hitComponent.dispatchEvent(new MouseEvent(hitComponent, e.getID(), e.getWhen(), e.getModifiers(), hitComponentPoint.x, hitComponentPoint.y, e.getClickCount(), e.isPopupTrigger(), e.getButton()));
+            hitComponent.dispatchEvent(
+                    new MouseEvent(hitComponent, e.getID(), e.getWhen(),
+                                   e.getModifiers(), hitComponentPoint.x,
+                                   hitComponentPoint.y, e.getClickCount(),
+                                   e.isPopupTrigger(), e.getButton()));
             return true;
         }
 
@@ -668,6 +700,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     class PropertyListener implements PropertyChangeListener {
+        @Override
         public void propertyChange(final PropertyChangeEvent e) {
             final String name = e.getPropertyName();
             if (FRAME_TYPE.equals(name)) {
@@ -704,14 +737,17 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     } // end class PaletteListener
 
     static final InternalFrameShadow documentWindowShadow = new InternalFrameShadow() {
+        @Override
         Border getForegroundShadowBorder() {
             return new AquaUtils.SlicedShadowBorder(new Painter() {
+                @Override
                 public void paint(final Graphics g, final int x, final int y, final int w, final int h) {
                     g.setColor(new Color(0, 0, 0, 196));
                     g.fillRoundRect(x, y, w, h, 16, 16);
                     g.fillRect(x, y + h - 16, w, 16);
                 }
             }, new Painter() {
+                @Override
                 public void paint(final Graphics g, int x, int y, int w, int h) {
                     g.setColor(new Color(0, 0, 0, 64));
                     g.drawLine(x + 2, y - 8, x + w - 2, y - 8);
@@ -720,14 +756,17 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             0, 7, 1.1f, 1.0f, 24, 51, 51, 25, 25, 25, 25);
         }
 
+        @Override
         Border getBackgroundShadowBorder() {
             return new AquaUtils.SlicedShadowBorder(new Painter() {
+                @Override
                 public void paint(final Graphics g, final int x, final int y, final int w, final int h) {
                     g.setColor(new Color(0, 0, 0, 128));
                     g.fillRoundRect(x - 3, y - 8, w + 6, h, 16, 16);
                     g.fillRect(x - 3, y + h - 20, w + 6, 19);
                 }
             }, new Painter() {
+                @Override
                 public void paint(final Graphics g, int x, int y, int w, int h) {
                     g.setColor(new Color(0, 0, 0, 32));
                     g.drawLine(x, y - 11, x + w - 1, y - 11);
@@ -738,8 +777,10 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     };
 
     static final InternalFrameShadow paletteWindowShadow = new InternalFrameShadow() {
+        @Override
         Border getForegroundShadowBorder() {
             return new AquaUtils.SlicedShadowBorder(new Painter() {
+                @Override
                 public void paint(final Graphics g, final int x, final int y, final int w, final int h) {
                     g.setColor(new Color(0, 0, 0, 128));
                     g.fillRect(x, y + 3, w, h - 3);
@@ -748,6 +789,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             0, 3, 1.0f, 1.0f, 10, 25, 25, 12, 12, 12, 12);
         }
 
+        @Override
         Border getBackgroundShadowBorder() {
             return getForegroundShadowBorder();
         }
@@ -762,19 +804,23 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         abstract Border getForegroundShadowBorder();
         abstract Border getBackgroundShadowBorder();
 
+        @Override
         protected Border getInstance() {
             final Border fgShadow = getForegroundShadowBorder();
             final Border bgShadow = getBackgroundShadowBorder();
 
             return new Border() {
+                @Override
                 public Insets getBorderInsets(final Component c) {
                     return fgShadow.getBorderInsets(c);
                 }
 
+                @Override
                 public boolean isBorderOpaque() {
                     return false;
                 }
 
+                @Override
                 public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int w, final int h) {
                     if (((JInternalFrame)c).isSelected()) {
                         fgShadow.paintBorder(c, g, x, y, w, h);
@@ -790,6 +836,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         @Override
         protected Icon getInstance() {
             return new AquaIcon.ScalingJRSUIIcon(11, 11) {
+                @Override
                 public void initIconPainter(final AquaPainter<JRSUIState> iconState) {
                     iconState.state.set(Widget.GROW_BOX_TEXTURED);
                     iconState.state.set(WindowType.UTILITY);
@@ -799,12 +846,15 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     };
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class ResizeBox extends JLabel implements MouseListener, MouseMotionListener, MouseWheelListener, ComponentListener, PropertyChangeListener, UIResource {
-        final JLayeredPane layeredPane;
-        Dimension originalSize;
-        Point originalLocation;
+    private final class ResizeBox extends JLabel
+            implements MouseListener, MouseMotionListener, MouseWheelListener,
+            ComponentListener, PropertyChangeListener, UIResource {
 
-        public ResizeBox(final JLayeredPane layeredPane) {
+        private final JLayeredPane layeredPane;
+        private Dimension originalSize;
+        private Point originalLocation;
+
+        ResizeBox(final JLayeredPane layeredPane) {
             super(RESIZE_ICON.get());
             setSize(11, 11);
             this.layeredPane = layeredPane;
@@ -895,14 +945,18 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             return c;
         }
 
+        @Override
         public void mouseClicked(final MouseEvent e) {
             forwardEventToFrame(e);
         }
 
+        @Override
         public void mouseEntered(final MouseEvent e) { }
 
+        @Override
         public void mouseExited(final MouseEvent e) { }
 
+        @Override
         public void mousePressed(final MouseEvent e) {
             if (frame == null) return;
 
@@ -916,6 +970,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             forwardEventToFrame(e);
         }
 
+        @Override
         public void mouseReleased(final MouseEvent e) {
             if (originalLocation != null) {
                 resizeInternalFrame(e.getPoint());
@@ -927,13 +982,16 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             forwardEventToFrame(e);
         }
 
+        @Override
         public void mouseDragged(final MouseEvent e) {
             resizeInternalFrame(e.getPoint());
             repositionResizeBox();
         }
 
+        @Override
         public void mouseMoved(final MouseEvent e) { }
 
+        @Override
         public void mouseWheelMoved(final MouseWheelEvent e) {
             final Point pt = new Point();
             final Component c = getComponentToForwardTo(e, pt);
@@ -945,20 +1003,25 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
                     e.getPreciseWheelRotation()));
         }
 
+        @Override
         public void componentResized(final ComponentEvent e) {
             repositionResizeBox();
         }
 
+        @Override
         public void componentShown(final ComponentEvent e) {
             repositionResizeBox();
         }
 
+        @Override
         public void componentMoved(final ComponentEvent e) {
             repositionResizeBox();
         }
 
+        @Override
         public void componentHidden(final ComponentEvent e) { }
 
+        @Override
         public void propertyChange(final PropertyChangeEvent evt) {
             if (!"resizable".equals(evt.getPropertyName())) return;
             setVisible(Boolean.TRUE.equals(evt.getNewValue()));

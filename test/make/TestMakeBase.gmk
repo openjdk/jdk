@@ -73,6 +73,37 @@ $(ESCAPE_DOLLAR_DIR)/_escape_dollar: $(DEPS)
 TEST_TARGETS += $(ESCAPE_DOLLAR_DIR)/_escape_dollar
 
 ################################################################################
+# Test containing and not-containing
+
+CONT_LIST := foo bar baz foobar foobaz
+
+# Param 1 - string to look for
+# Param 2 - expected result
+define TestContaining
+  value := $$(call containing, $1, $(CONT_LIST))
+  ifneq ($$(value), $2)
+    $$(info (call containing, $1, $(CONT_LIST)))
+    $$(error result >$$(value)<, expected >$2<)
+  endif
+endef
+
+$(eval $(call TestContaining,bar,bar foobar))
+$(eval $(call TestContaining,foo bar,foo bar foobar foobaz))
+
+# Param 1 - string to look for
+# Param 2 - expected result
+define TestNotContaining
+  value := $$(call not-containing, $1, $(CONT_LIST))
+  ifneq ($$(value), $2)
+    $$(info (call not-containing, $1, $(CONT_LIST)))
+    $$(error result >$$(value)<, expected >$2<)
+  endif
+endef
+
+$(eval $(call TestNotContaining,bar,foo baz foobaz))
+$(eval $(call TestNotContaining,foo bar,baz))
+
+################################################################################
 # Test Equals
 
 EQUALS_VALUE1 := value1$(SPACE)

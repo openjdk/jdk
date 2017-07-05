@@ -469,8 +469,8 @@ public final class Class<T> implements java.io.Serializable,
             return null;
         }
     }
-    private volatile transient Constructor<T> cachedConstructor;
-    private volatile transient Class<?>       newInstanceCallerCache;
+    private transient volatile Constructor<T> cachedConstructor;
+    private transient volatile Class<?>       newInstanceCallerCache;
 
 
     /**
@@ -1123,7 +1123,7 @@ public final class Class<T> implements java.io.Serializable,
         }
     }
 
-    private final static class EnclosingMethodInfo {
+    private static final class EnclosingMethodInfo {
         private Class<?> enclosingClass;
         private String name;
         private String descriptor;
@@ -2514,11 +2514,11 @@ public final class Class<T> implements java.io.Serializable,
         }
     }
 
-    private volatile transient SoftReference<ReflectionData<T>> reflectionData;
+    private transient volatile SoftReference<ReflectionData<T>> reflectionData;
 
     // Incremented by the VM on each call to JVM TI RedefineClasses()
     // that redefines this class or a superclass.
-    private volatile transient int classRedefinedCount = 0;
+    private transient volatile int classRedefinedCount = 0;
 
     // Lazily create and cache ReflectionData
     private ReflectionData<T> reflectionData() {
@@ -2561,7 +2561,7 @@ public final class Class<T> implements java.io.Serializable,
     private native String getGenericSignature0();
 
     // Generic info repository; lazily initialized
-    private volatile transient ClassRepository genericInfo;
+    private transient volatile ClassRepository genericInfo;
 
     // accessor for factory
     private GenericsFactory getFactory() {
@@ -3353,7 +3353,7 @@ public final class Class<T> implements java.io.Serializable,
         }
         return enumConstants;
     }
-    private volatile transient T[] enumConstants = null;
+    private transient volatile T[] enumConstants = null;
 
     /**
      * Returns a map from simple name to enum constant.  This package-private
@@ -3375,7 +3375,7 @@ public final class Class<T> implements java.io.Serializable,
         }
         return enumConstantDirectory;
     }
-    private volatile transient Map<String, T> enumConstantDirectory = null;
+    private transient volatile Map<String, T> enumConstantDirectory = null;
 
     /**
      * Casts an object to the class or interface represented
@@ -3523,7 +3523,7 @@ public final class Class<T> implements java.io.Serializable,
 
     // Annotations cache
     @SuppressWarnings("UnusedDeclaration")
-    private volatile transient AnnotationData annotationData;
+    private transient volatile AnnotationData annotationData;
 
     private AnnotationData annotationData() {
         while (true) { // retry loop
@@ -3578,7 +3578,7 @@ public final class Class<T> implements java.io.Serializable,
     // Annotation types cache their internal (AnnotationType) form
 
     @SuppressWarnings("UnusedDeclaration")
-    private volatile transient AnnotationType annotationType;
+    private transient volatile AnnotationType annotationType;
 
     boolean casAnnotationType(AnnotationType oldType, AnnotationType newType) {
         return Atomic.casAnnotationType(this, oldType, newType);

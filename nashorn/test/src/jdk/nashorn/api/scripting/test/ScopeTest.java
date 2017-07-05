@@ -26,6 +26,7 @@ package jdk.nashorn.api.scripting.test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 import javax.script.Bindings;
@@ -819,5 +820,39 @@ public class ScopeTest {
     @Test
     public void recursiveEvalCallScriptContextTest() throws ScriptException {
         new RecursiveEval().program();
+    }
+
+    private static final String VAR_NAME = "myvar";
+
+    private static boolean lookupVar(final ScriptEngine engine, final String varName) {
+        try {
+            engine.eval(varName);
+            return true;
+        } catch (final ScriptException se) {
+            return false;
+        }
+    }
+
+    // @bug 8136544: Call site switching to megamorphic causes incorrect property read
+    @Test
+    public void megamorphicPropertyReadTest() throws ScriptException {
+        final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+        final ScriptEngine engine = factory.getScriptEngine();
+        final Bindings scope = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+        boolean ret;
+
+        // Why 16 is the upper limit of this loop? The default nashorn dynalink megamorphic threshold is 16.
+        // See jdk.nashorn.internal.runtime.linker.Bootstrap.NASHORN_DEFAULT_UNSTABLE_RELINK_THRESHOLD
+        // We do, 'eval' of the same in this loop twice. So, 16*2 = 32 times that callsite in the script
+        // is exercised - much beyond the default megamorphic threshold.
+
+        for (int i = 0; i < 16; i++) {
+            scope.remove(VAR_NAME);
+            ret = lookupVar(engine, VAR_NAME);
+            assertFalse(ret, "Expected false in iteration " + i);
+            scope.put(VAR_NAME, "foo");
+            ret = lookupVar(engine, VAR_NAME);
+            assertTrue(ret, "Expected true in iteration " + i);
+        }
     }
 }

@@ -61,7 +61,7 @@ public class KeyManagerFactory {
      *
      * @see java.security.Security security properties
      */
-    public final static String getDefaultAlgorithm() {
+    public static final String getDefaultAlgorithm() {
         String type;
         type = AccessController.doPrivileged(new PrivilegedAction<>() {
             public String run() {

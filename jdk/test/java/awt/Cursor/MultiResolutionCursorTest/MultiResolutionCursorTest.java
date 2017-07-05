@@ -25,19 +25,16 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dialog;
 import java.awt.Frame;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Label;
 import java.awt.Point;
 import java.awt.TextArea;
 import java.awt.Toolkit;
+import java.awt.image.BaseMultiResolutionImage;
 import java.awt.image.BufferedImage;
-import java.util.LinkedList;
-import java.util.List;
 import javax.swing.JApplet;
 import jdk.testlibrary.OSInfo;
-import sun.awt.image.MultiResolutionImage;
 
 /**
  * @test
@@ -52,7 +49,7 @@ import sun.awt.image.MultiResolutionImage;
 public class MultiResolutionCursorTest extends JApplet {
     //Declare things used in the test, like buttons and labels here
 
-    static final int sizes[] = {16, 32, 128};
+    static final int sizes[] = {8, 16, 32, 128};
     static final Color colors[] = {Color.WHITE, Color.RED, Color.GREEN, Color.BLUE};
 
     public void init() {
@@ -87,7 +84,12 @@ public class MultiResolutionCursorTest extends JApplet {
         setVisible(true);
         validate();
 
-        final Image image = new MultiResolutionCursor();
+        final Image image = new BaseMultiResolutionImage(
+                createResolutionVariant(0),
+                createResolutionVariant(1),
+                createResolutionVariant(2),
+                createResolutionVariant(3)
+        );
 
         int center = sizes[0] / 2;
         Cursor cursor = Toolkit.getDefaultToolkit().createCustomCursor(
@@ -101,53 +103,14 @@ public class MultiResolutionCursorTest extends JApplet {
         frame.setVisible(true);
     }// start()
 
-
-    static class MultiResolutionCursor extends BufferedImage implements MultiResolutionImage {
-
-        List<Image> highResolutionImages;
-
-        public MultiResolutionCursor() {
-            super(sizes[0], sizes[0], BufferedImage.TYPE_INT_RGB);
-
-            draw(getGraphics(), 0);
-            highResolutionImages = new LinkedList<>();
-            highResolutionImages.add(this);
-
-            for (int i = 1; i < sizes.length; i++) {
-                BufferedImage highResolutionImage =
-                        new BufferedImage(sizes[i], sizes[i], BufferedImage.TYPE_INT_RGB);
-                draw(highResolutionImage.getGraphics(), i);
-                highResolutionImages.add(highResolutionImage);
-            }
-        }
-
-        @Override
-        public Image getResolutionVariant(int width, int height) {
-
-            for (int i = 0; i < sizes.length; i++) {
-                Image image = highResolutionImages.get(i);
-                int w = image.getWidth(null);
-                int h = image.getHeight(null);
-
-                if (width <= w && height <= h) {
-                    return image;
-                }
-            }
-
-            return highResolutionImages.get(highResolutionImages.size() - 1);
-        }
-
-        void draw(Graphics graphics, int index) {
-            Graphics2D g2 = (Graphics2D) graphics;
-            Color color = colors[index];
-            g2.setColor(color);
-            g2.fillRect(0, 0, sizes[index], sizes[index]);
-        }
-
-        @Override
-        public List<Image> getResolutionVariants() {
-            return highResolutionImages;
-        }
+    static BufferedImage createResolutionVariant(int i) {
+        BufferedImage resolutionVariant = new BufferedImage(sizes[i], sizes[i],
+                BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2 = resolutionVariant.createGraphics();
+        g2.setColor(colors[i]);
+        g2.fillRect(0, 0, sizes[i], sizes[i]);
+        g2.dispose();
+        return resolutionVariant;
     }
 }// class BlockedWindowTest
 

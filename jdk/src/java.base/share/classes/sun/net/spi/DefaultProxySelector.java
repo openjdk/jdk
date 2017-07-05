@@ -72,7 +72,7 @@ public class DefaultProxySelector extends ProxySelector {
      *
      * Note that the socksProxy should *always* be the last on the list
      */
-    final static String[][] props = {
+    static final String[][] props = {
         /*
          * protocol, Property prefix 1, Property prefix 2, ...
          */
@@ -353,7 +353,7 @@ public class DefaultProxySelector extends ProxySelector {
         }
     }
 
-    private native static boolean init();
+    private static native boolean init();
     private synchronized native Proxy getSystemProxy(String protocol, String host);
 
     /**

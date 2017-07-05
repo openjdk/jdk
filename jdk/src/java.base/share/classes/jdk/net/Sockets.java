@@ -58,7 +58,7 @@ import sun.net.ExtendedOptionsImpl;
 @jdk.Exported
 public class Sockets {
 
-    private final static HashMap<Class<?>,Set<SocketOption<?>>>
+    private static final HashMap<Class<?>,Set<SocketOption<?>>>
         options = new HashMap<>();
 
     static {

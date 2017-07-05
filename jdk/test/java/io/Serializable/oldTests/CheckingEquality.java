@@ -181,7 +181,7 @@ class Thirdpsio extends Secondpsio {
 
     private static int seven[];
     protected byte eight = (byte)9;
-    final static byte dcare = (byte) 128;
+    static final byte dcare = (byte) 128;
     private short nine = 8888;
     long ten;
     java.util.Enumeration zero;

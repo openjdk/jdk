@@ -37,8 +37,8 @@ import java.util.ResourceBundle;
  */
 public class TestGetBaseBundleName {
 
-    final static String PROPERTY_BUNDLE_NAME = "resources/PropertyBundle";
-    final static String LIST_BUNDLE_NAME = "resources.ListBundle";
+    static final String PROPERTY_BUNDLE_NAME = "resources/PropertyBundle";
+    static final String LIST_BUNDLE_NAME = "resources.ListBundle";
 
     public static String getBaseName(ResourceBundle bundle) {
         return bundle == null ? null : bundle.getBaseBundleName();

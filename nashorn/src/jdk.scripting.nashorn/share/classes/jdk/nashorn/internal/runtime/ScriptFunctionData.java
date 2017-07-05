@@ -389,9 +389,10 @@ public abstract class ScriptFunctionData implements Serializable {
     /**
      * Get the property map to use for objects allocated by this function.
      *
+     * @param prototype the prototype of the allocated object
      * @return the property map for allocated objects.
      */
-    PropertyMap getAllocatorMap() {
+    PropertyMap getAllocatorMap(final ScriptObject prototype) {
         return null;
     }
 

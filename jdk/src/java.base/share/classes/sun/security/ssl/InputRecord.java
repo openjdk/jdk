@@ -123,7 +123,7 @@ class InputRecord implements Record, Closeable {
      * and flag the record as holding no data.
      */
     @Override
-    synchronized public void close() throws IOException {
+    public synchronized void close() throws IOException {
         if (!isClosed) {
             isClosed = true;
             readCipher.dispose();

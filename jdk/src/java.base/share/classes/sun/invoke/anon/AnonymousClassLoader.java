@@ -192,7 +192,7 @@ public class AnonymousClassLoader {
     private static sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
     // preceding line requires that this class be on the boot class path
 
-    static private final Method defineAnonymousClass;
+    private static final Method defineAnonymousClass;
     static {
         Method dac = null;
         Class<? extends sun.misc.Unsafe> unsafeClass = unsafe.getClass();

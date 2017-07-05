@@ -32,7 +32,6 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueType.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"

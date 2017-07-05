@@ -34,8 +34,8 @@ public class SharedStringsWb {
             return;
         }
 
-        // The string "java" is known to be interened and added to CDS archive
-        String s = "java";
+        // The string below is known to be added to CDS archive
+        String s = "<init>";
         String internedS = s.intern();
 
         if (wb.isShared(internedS)) {
