@@ -51,7 +51,7 @@ final class ResourcePoolConfiguration {
         ModuleDescriptor md = mod.descriptor();
 
         // drop hashes
-        ModuleDescriptor.Builder builder = ModuleDescriptor.module(md.name());
+        ModuleDescriptor.Builder builder = ModuleDescriptor.newModule(md.name());
         md.requires().stream()
           .forEach(builder::requires);
         md.exports().stream()
@@ -62,12 +62,7 @@ final class ResourcePoolConfiguration {
           .forEach(builder::uses);
         md.provides().stream()
           .forEach(builder::provides);
-
-        // build the proper concealed packages
-        Set<String> concealed = new HashSet<>(mod.packages());
-        md.exports().stream().map(ModuleDescriptor.Exports::source).forEach(concealed::remove);
-        md.opens().stream().map(ModuleDescriptor.Opens::source).forEach(concealed::remove);
-        concealed.stream().forEach(builder::contains);
+        builder.packages(md.packages());
 
         md.version().ifPresent(builder::version);
         md.mainClass().ifPresent(builder::mainClass);
@@ -102,7 +97,9 @@ final class ResourcePoolConfiguration {
             ModuleDescriptor desc = m.descriptor();
             if (!desc.packages().equals(m.packages())) {
                 throw new RuntimeException("Module " + m.name() +
-                   "'s descriptor returns inconsistent package set");
+                   "'s descriptor indicates the set of packages is : " +
+                   desc.packages() + ", but module contains packages: " +
+                   m.packages());
             }
         });
     }
@@ -124,7 +121,7 @@ final class ResourcePoolConfiguration {
             }
         };
 
-        return Configuration.empty().resolveRequires(
+        return Configuration.empty().resolve(
             finder, ModuleFinder.of(), nameToModRef.keySet());
     }
 }

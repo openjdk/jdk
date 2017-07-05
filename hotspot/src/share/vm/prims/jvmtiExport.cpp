@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1230,8 +1230,12 @@ void JvmtiExport::post_class_unload(Klass* klass) {
     assert(thread->is_VM_thread(), "wrong thread");
 
     // get JavaThread for whom we are proxy
-    JavaThread *real_thread =
-        (JavaThread *)((VMThread *)thread)->vm_operation()->calling_thread();
+    Thread *calling_thread = ((VMThread *)thread)->vm_operation()->calling_thread();
+    if (!calling_thread->is_Java_thread()) {
+      // cannot post an event to a non-JavaThread
+      return;
+    }
+    JavaThread *real_thread = (JavaThread *)calling_thread;
 
     JvmtiEnvIterator it;
     for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
