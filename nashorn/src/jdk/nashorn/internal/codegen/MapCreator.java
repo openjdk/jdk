@@ -25,13 +25,15 @@
 
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndex;
+import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
+
 import java.util.ArrayList;
 import java.util.List;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 
 /**
  * Class that creates PropertyMap sent to script object constructors.
@@ -76,7 +78,7 @@ public class MapCreator {
             final String key    = keys.get(i);
             final Symbol symbol = symbols.get(i);
 
-            if (symbol != null && !ArrayIndex.isIntArrayIndex(key)) {
+            if (symbol != null && !isValidArrayIndex(getArrayIndex(key))) {
                 properties.add(new AccessorProperty(key, getPropertyFlags(symbol, hasArguments), structure, symbol.getFieldIndex()));
             }
         }
@@ -93,7 +95,7 @@ public class MapCreator {
             final String key    = keys.get(i);
             final Symbol symbol = symbols.get(i);
 
-            if (symbol != null && !ArrayIndex.isIntArrayIndex(key)) {
+            if (symbol != null && !isValidArrayIndex(getArrayIndex(key))) {
                 properties.add(new AccessorProperty(key, getPropertyFlags(symbol, hasArguments), spillIndex++));
             }
         }

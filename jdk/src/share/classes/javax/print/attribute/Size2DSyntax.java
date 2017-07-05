@@ -38,8 +38,8 @@ import java.io.Serializable;
  * values are measured. Methods are provided to return a two-dimensional size
  * attribute's values, indicating the units in which the values are to be
  * returned. The two most common size units are inches (in) and millimeters
- * (mm), and exported constants {@link #INCH <CODE>INCH</CODE>} and {@link #MM
- * <CODE>MM</CODE>} are provided for indicating those units.
+ * (mm), and exported constants {@link #INCH INCH} and {@link #MM
+ * MM} are provided for indicating those units.
  * <P>
  * Once constructed, a two-dimensional size attribute's value is immutable.
  * <P>
@@ -66,9 +66,9 @@ import java.io.Serializable;
  * units, you have to search for a media size of 215.9 x 279.4 mm; rounding off
  * to an integral 216 x 279 mm will not match.
  * <P>
- * The exported constant {@link #INCH <CODE>INCH</CODE>} is actually the
+ * The exported constant {@link #INCH INCH} is actually the
  * conversion factor by which to multiply a value in inches to get the value in
- * &#181;m. Likewise, the exported constant {@link #MM <CODE>MM</CODE>} is the
+ * &#181;m. Likewise, the exported constant {@link #MM MM} is the
  * conversion factor by which to multiply a value in mm to get the value in
  * &#181;m. A client can specify a resolution value in units other than inches
  * or mm by supplying its own conversion factor. However, since the internal
@@ -117,12 +117,12 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * @param  x  X dimension.
      * @param  y  Y dimension.
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or
+     *     {@link #MM MM}.
      *
      * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if <CODE>x</CODE> < 0 or <CODE>y</CODE>
-     *     < 0 or <CODE>units</CODE> < 1.
+     *     (Unchecked exception) Thrown if {@code x < 0} or {@code y < 0} or
+     *     {@code units < 1}.
      */
     protected Size2DSyntax(float x, float y, int units) {
         if (x < 0.0f) {
@@ -145,12 +145,12 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * @param  x  X dimension.
      * @param  y  Y dimension.
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or
+     *     {@link #MM MM}.
      *
      * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if <CODE>x</CODE> < 0 or <CODE>y</CODE>
-     *    < 0 or <CODE>units</CODE> < 1.
+     *   (Unchecked exception) Thrown if {@code x < 0} or {@code y < 0}
+     *    or {@code units < 1}.
      */
     protected Size2DSyntax(int x, int y, int units) {
         if (x < 0) {
@@ -193,14 +193,13 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * as floating-point values.
      *
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or {@link #MM MM}.
      *
      * @return  A two-element array with the X dimension at index 0 and the Y
      *          dimension at index 1.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public float[] getSize(int units) {
         return new float[] {getX(units), getY(units)};
@@ -211,13 +210,12 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * units as a floating-point value.
      *
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or {@link #MM MM}.
      *
      * @return  X dimension.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public float getX(int units) {
         return convertFromMicrometers(x, units);
@@ -228,13 +226,12 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * units as a floating-point value.
      *
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or {@link #MM MM}.
      *
      * @return  Y dimension.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public float getY(int units) {
         return convertFromMicrometers(y, units);
@@ -248,16 +245,16 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * floating point.
      *
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or {@link #MM MM}.
+     *
      * @param  unitsName
-     *     Units name string, e.g. <CODE>"in"</CODE> or <CODE>"mm"</CODE>. If
+     *     Units name string, e.g. {@code in} or {@code mm}. If
      *     null, no units name is appended to the result.
      *
      * @return  String version of this two-dimensional size attribute.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public String toString(int units, String unitsName) {
         StringBuffer result = new StringBuffer();

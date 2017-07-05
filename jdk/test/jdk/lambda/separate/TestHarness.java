@@ -119,7 +119,7 @@ public class TestHarness {
         Class stub = new Class(specimen.getName(), cm);
 
         String params =
-            Arrays.asList(args).stream().collect(Collectors.toStringJoiner(", ")).toString();
+            Arrays.asList(args).stream().collect(Collectors.joining(", ")).toString();
 
         ConcreteMethod sm = new ConcreteMethod(
             method.getReturnType(), method.getName(),
@@ -150,7 +150,7 @@ public class TestHarness {
             null, Arrays.asList((Method)method));
         Class cstub = new Class(specimen.getName());
 
-        String params = Arrays.asList(args).stream().collect(Collectors.toStringJoiner(", ")).toString();
+        String params = Arrays.asList(args).stream().collect(Collectors.joining(", ")).toString();
 
         ConcreteMethod sm = new ConcreteMethod(
             "int", SourceModel.stdMethodName,

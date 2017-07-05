@@ -84,11 +84,11 @@ public final class PrinterResolution    extends ResolutionSyntax
      *     Feed direction resolution.
      * @param  units
      *    Unit conversion factor, e.g. <code>ResolutionSyntax.DPI</CODE>
-     * or <code>ResolutionSyntax.>DPCM</CODE>.
+     * or <code>ResolutionSyntax.DPCM</CODE>.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>crossFeedResolution</CODE> <
-     *     1 or <CODE>feedResolution</CODE> < 1 or <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code crossFeedResolution < 1} or
+     *     {@code feedResolution < 1} or {@code units < 1}.
      */
     public PrinterResolution(int crossFeedResolution, int feedResolution,
                              int units) {

@@ -1143,6 +1143,7 @@ public class Collections {
         public boolean removeIf(Predicate<? super E> filter) {
             throw new UnsupportedOperationException();
         }
+        @SuppressWarnings("unchecked")
         @Override
         public Spliterator<E> spliterator() {
             return (Spliterator<E>)c.spliterator();
@@ -1900,7 +1901,7 @@ public class Collections {
 
             private static final long serialVersionUID = -2239321462712562324L;
 
-            EmptyNavigableMap()                       { super(new TreeMap()); }
+            EmptyNavigableMap()                       { super(new TreeMap<K,V>()); }
 
             @Override
             public NavigableSet<K> navigableKeySet()
@@ -1928,46 +1929,52 @@ public class Collections {
         public K ceilingKey(K key)               { return nm.ceilingKey(key); }
         public K higherKey(K key)                 { return nm.higherKey(key); }
 
+        @SuppressWarnings("unchecked")
         public Entry<K, V> lowerEntry(K key) {
             Entry<K,V> lower = (Entry<K, V>) nm.lowerEntry(key);
             return (null != lower)
-                ? new UnmodifiableEntrySet.UnmodifiableEntry(lower)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry<>(lower)
                 : null;
         }
 
+        @SuppressWarnings("unchecked")
         public Entry<K, V> floorEntry(K key) {
             Entry<K,V> floor = (Entry<K, V>) nm.floorEntry(key);
             return (null != floor)
-                ? new UnmodifiableEntrySet.UnmodifiableEntry(floor)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry<>(floor)
                 : null;
         }
 
+        @SuppressWarnings("unchecked")
         public Entry<K, V> ceilingEntry(K key) {
             Entry<K,V> ceiling = (Entry<K, V>) nm.ceilingEntry(key);
             return (null != ceiling)
-                ? new UnmodifiableEntrySet.UnmodifiableEntry(ceiling)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry<>(ceiling)
                 : null;
         }
 
 
+        @SuppressWarnings("unchecked")
         public Entry<K, V> higherEntry(K key) {
             Entry<K,V> higher = (Entry<K, V>) nm.higherEntry(key);
             return (null != higher)
-                ? new UnmodifiableEntrySet.UnmodifiableEntry(higher)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry<>(higher)
                 : null;
         }
 
+        @SuppressWarnings("unchecked")
         public Entry<K, V> firstEntry() {
             Entry<K,V> first = (Entry<K, V>) nm.firstEntry();
             return (null != first)
-                ? new UnmodifiableEntrySet.UnmodifiableEntry(first)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry<>(first)
                 : null;
         }
 
+        @SuppressWarnings("unchecked")
         public Entry<K, V> lastEntry() {
             Entry<K,V> last = (Entry<K, V>) nm.lastEntry();
             return (null != last)
-                ? new UnmodifiableEntrySet.UnmodifiableEntry(last)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry<>(last)
                 : null;
         }
 
@@ -2360,7 +2367,7 @@ public class Collections {
         }
         public NavigableSet<E> tailSet(E fromElement) {
             synchronized (mutex) {
-                return new SynchronizedNavigableSet(ns.tailSet(fromElement, true), mutex);
+                return new SynchronizedNavigableSet<>(ns.tailSet(fromElement, true), mutex);
             }
         }
 
@@ -2925,7 +2932,7 @@ public class Collections {
         public NavigableMap<K, V> descendingMap() {
             synchronized (mutex) {
                 return
-                    new SynchronizedNavigableMap(nm.descendingMap(), mutex);
+                    new SynchronizedNavigableMap<>(nm.descendingMap(), mutex);
             }
         }
 
@@ -2935,13 +2942,13 @@ public class Collections {
 
         public NavigableSet<K> navigableKeySet() {
             synchronized (mutex) {
-                return new SynchronizedNavigableSet(nm.navigableKeySet(), mutex);
+                return new SynchronizedNavigableSet<>(nm.navigableKeySet(), mutex);
             }
         }
 
         public NavigableSet<K> descendingKeySet() {
             synchronized (mutex) {
-                return new SynchronizedNavigableSet(nm.descendingKeySet(), mutex);
+                return new SynchronizedNavigableSet<>(nm.descendingKeySet(), mutex);
             }
         }
 
@@ -2959,27 +2966,27 @@ public class Collections {
         }
         public SortedMap<K,V> tailMap(K fromKey) {
             synchronized (mutex) {
-               return new SynchronizedNavigableMap<>(nm.tailMap(fromKey, true),mutex);
+        return new SynchronizedNavigableMap<>(nm.tailMap(fromKey, true),mutex);
             }
         }
 
         public NavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
             synchronized (mutex) {
-                return new SynchronizedNavigableMap(
+                return new SynchronizedNavigableMap<>(
                     nm.subMap(fromKey, fromInclusive, toKey, toInclusive), mutex);
             }
         }
 
         public NavigableMap<K, V> headMap(K toKey, boolean inclusive) {
             synchronized (mutex) {
-                return new SynchronizedNavigableMap(
+                return new SynchronizedNavigableMap<>(
                         nm.headMap(toKey, inclusive), mutex);
             }
         }
 
         public NavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
             synchronized (mutex) {
-                return new SynchronizedNavigableMap(
+                return new SynchronizedNavigableMap<>(
                     nm.tailMap(fromKey, inclusive), mutex);
             }
         }
@@ -4081,7 +4088,7 @@ public class Collections {
         public Entry<K, V> lowerEntry(K key) {
             Entry<K,V> lower = nm.lowerEntry(key);
             return (null != lower)
-                ? new CheckedMap.CheckedEntrySet.CheckedEntry(lower, valueType)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry<>(lower, valueType)
                 : null;
         }
 
@@ -4090,7 +4097,7 @@ public class Collections {
         public Entry<K, V> floorEntry(K key) {
             Entry<K,V> floor = nm.floorEntry(key);
             return (null != floor)
-                ? new CheckedMap.CheckedEntrySet.CheckedEntry(floor, valueType)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry<>(floor, valueType)
                 : null;
         }
 
@@ -4099,7 +4106,7 @@ public class Collections {
         public Entry<K, V> ceilingEntry(K key) {
             Entry<K,V> ceiling = nm.ceilingEntry(key);
             return (null != ceiling)
-                ? new CheckedMap.CheckedEntrySet.CheckedEntry(ceiling, valueType)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry<>(ceiling, valueType)
                 : null;
         }
 
@@ -4108,7 +4115,7 @@ public class Collections {
         public Entry<K, V> higherEntry(K key) {
             Entry<K,V> higher = nm.higherEntry(key);
             return (null != higher)
-                ? new CheckedMap.CheckedEntrySet.CheckedEntry(higher, valueType)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry<>(higher, valueType)
                 : null;
         }
 
@@ -4117,14 +4124,14 @@ public class Collections {
         public Entry<K, V> firstEntry() {
             Entry<K,V> first = nm.firstEntry();
             return (null != first)
-                ? new CheckedMap.CheckedEntrySet.CheckedEntry(first, valueType)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry<>(first, valueType)
                 : null;
         }
 
         public Entry<K, V> lastEntry() {
             Entry<K,V> last = nm.lastEntry();
             return (null != last)
-                ? new CheckedMap.CheckedEntrySet.CheckedEntry(last, valueType)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry<>(last, valueType)
                 : null;
         }
 
@@ -4132,14 +4139,14 @@ public class Collections {
             Entry<K,V> entry = nm.pollFirstEntry();
             return (null == entry)
                 ? null
-                : new CheckedMap.CheckedEntrySet.CheckedEntry(entry, valueType);
+                : new CheckedMap.CheckedEntrySet.CheckedEntry<>(entry, valueType);
         }
 
         public Entry<K, V> pollLastEntry() {
             Entry<K,V> entry = nm.pollLastEntry();
             return (null == entry)
                 ? null
-                : new CheckedMap.CheckedEntrySet.CheckedEntry(entry, valueType);
+                : new CheckedMap.CheckedEntrySet.CheckedEntry<>(entry, valueType);
         }
 
         public NavigableMap<K, V> descendingMap() {

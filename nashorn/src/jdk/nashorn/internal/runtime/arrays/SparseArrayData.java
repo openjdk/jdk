@@ -41,22 +41,26 @@ class SparseArrayData extends ArrayData {
     private ArrayData underlying;
 
     /** Maximum length to be stored in the array. */
-
     private final long maxDenseLength;
 
     /** Sparse elements. */
-    private TreeMap<Long, Object> sparseMap = new TreeMap<>();
+    private TreeMap<Long, Object> sparseMap;
 
-    SparseArrayData(final ArrayData underlying) {
-        super(underlying.length());
-        this.underlying = underlying;
-        this.maxDenseLength = Math.max(MAX_DENSE_LENGTH, underlying.length());
+    SparseArrayData(final ArrayData underlying, final long length) {
+        this(underlying, length, new TreeMap<Long, Object>());
     }
 
-    SparseArrayData(final ArrayData array, final long length) {
-        this(array);
-        assert array.length() <= length;
-        super.setLength(length);
+    SparseArrayData(final ArrayData underlying, final long length, final TreeMap<Long, Object> sparseMap) {
+        super(length);
+        assert underlying.length() <= length;
+        this.underlying = underlying;
+        this.maxDenseLength = Math.max(MAX_DENSE_LENGTH, underlying.length());
+        this.sparseMap = sparseMap;
+    }
+
+    @Override
+    public ArrayData copy() {
+        return new SparseArrayData(underlying.copy(), length(), new TreeMap<Long, Object>(sparseMap));
     }
 
     @Override

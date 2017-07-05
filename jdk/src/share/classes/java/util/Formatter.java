@@ -626,12 +626,11 @@ import sun.misc.FormattedFloatingDecimal;
  * <p> For general argument types, the precision is the maximum number of
  * characters to be written to the output.
  *
- * <p> For the floating-point conversions {@code 'e'}, {@code 'E'}, and
- * {@code 'f'} the precision is the number of digits after the decimal
- * separator.  If the conversion is {@code 'g'} or {@code 'G'}, then the
+ * <p> For the floating-point conversions {@code 'a'}, {@code 'A'}, {@code 'e'},
+ * {@code 'E'}, and {@code 'f'} the precision is the number of digits after the
+ * radix point.  If the conversion is {@code 'g'} or {@code 'G'}, then the
  * precision is the total number of digits in the resulting magnitude after
- * rounding.  If the conversion is {@code 'a'} or {@code 'A'}, then the
- * precision must not be specified.
+ * rounding.
  *
  * <p> For character, integral, and date/time argument types and the percent
  * and line separator conversions, the precision is not applicable; if a
@@ -1297,14 +1296,21 @@ import sun.misc.FormattedFloatingDecimal;
  *     of the significand as a fraction.  The exponent is represented by
  *     {@code 'p'} (<tt>'&#92;u0070'</tt>) followed by a decimal string of the
  *     unbiased exponent as if produced by invoking {@link
- *     Integer#toString(int) Integer.toString} on the exponent value.
+ *     Integer#toString(int) Integer.toString} on the exponent value.  If the
+ *     precision is specified, the value is rounded to the given number of
+ *     hexadecimal digits.
  *
  *     <li> If <i>m</i> is a {@code double} value with a subnormal
- *     representation then the significand is represented by the characters
- *     {@code '0x0.'} followed by the hexadecimal representation of the rest
- *     of the significand as a fraction.  The exponent is represented by
- *     {@code 'p-1022'}.  Note that there must be at least one nonzero digit
- *     in a subnormal significand.
+ *     representation then, unless the precision is specified to be in the range
+ *     1 through 12, inclusive, the significand is represented by the characters
+ *     {@code '0x0.'} followed by the hexadecimal representation of the rest of
+ *     the significand as a fraction, and the exponent represented by
+ *     {@code 'p-1022'}.  If the precision is in the interval
+ *     [1,&nbsp;12], the subnormal value is normalized such that it
+ *     begins with the characters {@code '0x1.'}, rounded to the number of
+ *     hexadecimal digits of precision, and the exponent adjusted
+ *     accordingly.  Note that there must be at least one nonzero digit in a
+ *     subnormal significand.
  *
  *     </ul>
  *
@@ -1367,7 +1373,7 @@ import sun.misc.FormattedFloatingDecimal;
  * {@code 1}.
  *
  * <p> If the conversion is {@code 'a'} or {@code 'A'}, then the precision
- * is the number of hexadecimal digits after the decimal separator.  If the
+ * is the number of hexadecimal digits after the radix point.  If the
  * precision is not provided, then all of the digits as returned by {@link
  * Double#toHexString(double)} will be output.
  *

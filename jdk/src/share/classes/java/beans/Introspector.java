@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,8 +93,17 @@ import sun.reflect.misc.ReflectUtil;
 public class Introspector {
 
     // Flags that can be used to control getBeanInfo:
+    /**
+     * Flag to indicate to use of all beaninfo.
+     */
     public final static int USE_ALL_BEANINFO           = 1;
+    /**
+     * Flag to indicate to ignore immediate beaninfo.
+     */
     public final static int IGNORE_IMMEDIATE_BEANINFO  = 2;
+    /**
+     * Flag to indicate to ignore all beaninfo.
+     */
     public final static int IGNORE_ALL_BEANINFO        = 3;
 
     // Static Caches to speed up introspection.
@@ -202,7 +211,7 @@ public class Introspector {
      * If the BeanInfo class for a Java Bean has been previously Introspected
      * based on the same arguments, then the BeanInfo class is retrieved
      * from the BeanInfo cache.
-     *
+     * @return the BeanInfo for the bean
      * @param beanClass The bean class to be analyzed.
      * @param stopClass The baseclass at which to stop the analysis.  Any
      *    methods/properties/events in the stopClass or in its baseclasses
