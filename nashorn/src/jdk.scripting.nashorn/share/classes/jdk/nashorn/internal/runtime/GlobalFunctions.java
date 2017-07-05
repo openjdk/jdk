@@ -42,11 +42,29 @@ public final class GlobalFunctions {
     /** Methodhandle (specialized) to implementation of ECMA 15.1.2.2, parseInt */
     public static final MethodHandle PARSEINT_OI = findOwnMH("parseInt", double.class, Object.class, Object.class, int.class);
 
+    /** ParseInt - NaN for booleans (thru string conversion to number conversion) */
+    public static final MethodHandle PARSEINT_Z = MH.dropArguments(MH.dropArguments(MH.constant(double.class, Double.NaN), 0, boolean.class), 0, Object.class);
+
+    /** ParseInt - identity for ints */
+    public static final MethodHandle PARSEINT_I = MH.dropArguments(MH.identity(int.class), 0, Object.class);
+
+    /** ParseInt - identity for longs */
+    public static final MethodHandle PARSEINT_J = MH.dropArguments(MH.identity(long.class), 0, Object.class);
+
     /** Methodhandle (specialized) to implementation of ECMA 15.1.2.2, parseInt */
     public static final MethodHandle PARSEINT_O = findOwnMH("parseInt", double.class, Object.class, Object.class);
 
     /** Methodhandle to implementation of ECMA 15.1.2.3, parseFloat */
     public static final MethodHandle PARSEFLOAT = findOwnMH("parseFloat", double.class, Object.class, Object.class);
+
+    /** isNan for integers - always false */
+    public static final MethodHandle IS_NAN_I = MH.dropArguments(MH.constant(boolean.class, false), 0, Object.class);
+
+    /** isNan for longs - always false */
+    public static final MethodHandle IS_NAN_J = MH.dropArguments(MH.constant(boolean.class, false), 0, Object.class);
+
+    /** IsNan for doubles - use Double.isNaN */
+    public static final MethodHandle IS_NAN_D = MH.dropArguments(MH.findStatic(MethodHandles.lookup(), Double.class, "isNaN", MH.type(boolean.class, double.class)), 0, Object.class);
 
     /** Methodhandle to implementation of ECMA 15.1.2.4, isNaN */
     public static final MethodHandle IS_NAN = findOwnMH("isNaN",      boolean.class, Object.class, Object.class);

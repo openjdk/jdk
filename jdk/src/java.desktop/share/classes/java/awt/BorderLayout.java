@@ -74,7 +74,7 @@ import java.util.Hashtable;
  * For example, if you add components using both the <code>NORTH</code>
  * and <code>PAGE_START</code> constants in a container whose
  * orientation is <code>LEFT_TO_RIGHT</code>, only the
- * <code>PAGE_START</code> will be layed out.
+ * <code>PAGE_START</code> will be laid out.
  * <p>
  * NOTE: Currently (in the Java 2 platform v1.2),
  * <code>BorderLayout</code> does not support vertical
@@ -211,7 +211,7 @@ public class BorderLayout implements LayoutManager2,
      * For example, if you add components using both the <code>NORTH</code>
      * and <code>BEFORE_FIRST_LINE</code> constants in a container whose
      * orientation is <code>LEFT_TO_RIGHT</code>, only the
-     * <code>BEFORE_FIRST_LINE</code> will be layed out.
+     * <code>BEFORE_FIRST_LINE</code> will be laid out.
      * This will be the same for lastLine, firstItem, lastItem.
      * @serial
      */

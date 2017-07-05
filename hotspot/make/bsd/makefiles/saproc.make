@@ -122,7 +122,7 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	  echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
 	  exit 1; \
 	fi
-	@echo Making SA debugger back-end...
+	@echo $(LOG_INFO) Making SA debugger back-end...
 	$(QUIETLY) $(CC) -D$(BUILDARCH) -D_GNU_SOURCE                   \
 	           $(SA_SYSROOT_FLAGS)                                  \
 	           $(SYMFLAG) $(SAARCH) $(SHARED_FLAG) $(PICFLAG)       \

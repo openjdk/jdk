@@ -31,6 +31,7 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -228,11 +229,11 @@ abstract class ArrayBufferView extends ScriptObject {
     private static void copyElements(final ArrayBufferView dest, final int length, final ScriptObject source, final int offset) {
         if (!dest.isFloatArray()) {
             for (int i = 0, j = offset; i < length; i++, j++) {
-                dest.set(j, source.getInt(i, INVALID_PROGRAM_POINT), false);
+                dest.set(j, source.getInt(i, INVALID_PROGRAM_POINT), 0);
             }
         } else {
             for (int i = 0, j = offset; i < length; i++, j++) {
-                dest.set(j, source.getDouble(i, INVALID_PROGRAM_POINT), false);
+                dest.set(j, source.getDouble(i, INVALID_PROGRAM_POINT), 0);
             }
         }
     }

@@ -876,7 +876,7 @@ public class CSS implements Serializable {
         int size = getFontSize(a, defaultSize, ss);
 
         /*
-         * If the vertical alignment is set to either superscirpt or
+         * If the vertical alignment is set to either superscript or
          * subscript we reduce the font size by 2 points.
          */
         StringValue vAlignV = (StringValue)a.getAttribute

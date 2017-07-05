@@ -48,7 +48,6 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
-import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
 import jdk.nashorn.internal.scripts.JO;
 
@@ -250,146 +249,146 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     @Override
-    public void set(final Object key, final int value, final boolean strict) {
+    public void set(final Object key, final int value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final Object key, final long value, final boolean strict) {
+    public void set(final Object key, final long value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final Object key, final double value, final boolean strict) {
+    public void set(final Object key, final double value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final Object key, final Object value, final boolean strict) {
+    public void set(final Object key, final Object value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final double key, final int value, final boolean strict) {
+    public void set(final double key, final int value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final double key, final long value, final boolean strict) {
+    public void set(final double key, final long value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final double key, final double value, final boolean strict) {
+    public void set(final double key, final double value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final double key, final Object value, final boolean strict) {
+    public void set(final double key, final Object value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final long key, final int value, final boolean strict) {
+    public void set(final long key, final int value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final long key, final long value, final boolean strict) {
+    public void set(final long key, final long value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final long key, final double value, final boolean strict) {
+    public void set(final long key, final double value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final long key, final Object value, final boolean strict) {
+    public void set(final long key, final Object value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final int key, final int value, final boolean strict) {
+    public void set(final int key, final int value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final int key, final long value, final boolean strict) {
+    public void set(final int key, final long value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final int key, final double value, final boolean strict) {
+    public void set(final int key, final double value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 
     @Override
-    public void set(final int key, final Object value, final boolean strict) {
+    public void set(final int key, final Object value, final int flags) {
         if (overrides && super.hasOwnProperty(key)) {
-            super.set(key, value, strict);
+            super.set(key, value, flags);
         } else {
-            callAdaptee(__put__, key, value, strict);
+            callAdaptee(__put__, key, value, flags);
         }
     }
 

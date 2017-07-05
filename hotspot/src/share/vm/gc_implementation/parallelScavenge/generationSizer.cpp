@@ -66,9 +66,10 @@ void GenerationSizer::initialize_flags() {
 
 void GenerationSizer::initialize_size_info() {
   trace_gen_sizes("ps heap raw");
-  const size_t page_sz = os::page_size_for_region(_min_heap_byte_size,
-                                                  _max_heap_byte_size,
-                                                  8);
+  const size_t max_page_sz = os::page_size_for_region(_max_heap_byte_size, 8);
+  const size_t min_pages = 4; // 1 for eden + 1 for each survivor + 1 for old
+  const size_t min_page_sz = os::page_size_for_region(_min_heap_byte_size, min_pages);
+  const size_t page_sz = MIN2(max_page_sz, min_page_sz);
 
   // Can a page size be something else than a power of two?
   assert(is_power_of_2((intptr_t)page_sz), "must be a power of 2");

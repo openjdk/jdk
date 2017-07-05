@@ -172,14 +172,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   POLICY_SRC_LIST += $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/conf/security/java.policy
 endif
 ifndef OPENJDK
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-    ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
-      POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/conf/security/java.policy-win32
-    else
-      POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/conf/security/java.policy-win64
-    endif
-  endif
-  ifeq ($(OPENJDK_TARGET_OS), solaris)
+  # if $(OPENJDK_TARGET_OS) is windows or solaris
+  ifneq ($(findstring $(OPENJDK_TARGET_OS), windows solaris), )
     POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/conf/security/java.policy
   endif
 endif

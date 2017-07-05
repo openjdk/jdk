@@ -98,6 +98,19 @@ public final class StrictMath {
     public static final double PI = 3.14159265358979323846;
 
     /**
+     * Constant by which to multiply an angular value in degrees to obtain an
+     * angular value in radians.
+     */
+    private static final double DEGREES_TO_RADIANS = 0.017453292519943295;
+
+    /**
+     * Constant by which to multiply an angular value in radians to obtain an
+     * angular value in degrees.
+     */
+
+    private static final double RADIANS_TO_DEGREES = 57.29577951308232;
+
+    /**
      * Returns the trigonometric sine of an angle. Special cases:
      * <ul><li>If the argument is NaN or an infinity, then the
      * result is NaN.
@@ -179,7 +192,7 @@ public final class StrictMath {
     public static strictfp double toRadians(double angdeg) {
         // Do not delegate to Math.toRadians(angdeg) because
         // this method has the strictfp modifier.
-        return angdeg / 180.0 * PI;
+        return angdeg * DEGREES_TO_RADIANS;
     }
 
     /**
@@ -196,7 +209,7 @@ public final class StrictMath {
     public static strictfp double toDegrees(double angrad) {
         // Do not delegate to Math.toDegrees(angrad) because
         // this method has the strictfp modifier.
-        return angrad * 180.0 / PI;
+        return angrad * RADIANS_TO_DEGREES;
     }
 
     /**

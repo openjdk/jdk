@@ -111,7 +111,7 @@ public class SwingUtilities implements SwingConstants
      *
      * @return {@code true} if @{code a} contains {@code b}
      */
-    public static boolean isRectangleContainingRectangle(Rectangle a,Rectangle b) {
+    public static final boolean isRectangleContainingRectangle(Rectangle a,Rectangle b) {
         return b.x >= a.x && (b.x + b.width) <= (a.x + a.width) &&
                 b.y >= a.y && (b.y + b.height) <= (a.y + a.height);
     }

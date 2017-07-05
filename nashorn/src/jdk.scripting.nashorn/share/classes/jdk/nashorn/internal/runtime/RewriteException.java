@@ -45,6 +45,7 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
 import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**
  * Used to signal to the linker to relink the callee
@@ -161,7 +162,7 @@ public final class RewriteException extends Exception {
                 assert runtimeScope == null;
                 runtimeScope = (ScriptObject)value;
             } else if(name != null) {
-                locals.set(name, value, true);
+                locals.set(name, value, NashornCallSiteDescriptor.CALLSITE_STRICT);
             }
         }
         locals.setProto(runtimeScope);

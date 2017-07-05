@@ -453,7 +453,7 @@ public class DropTarget implements DropTargetListener, Serializable {
 
         if (dtListener != null && active)
             dtListener.drop(dtde);
-        else { // we should'nt get here ...
+        else { // we shouldn't get here ...
             dtde.rejectDrop();
         }
     }

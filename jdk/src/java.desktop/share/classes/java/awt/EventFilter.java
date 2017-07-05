@@ -32,7 +32,7 @@ interface EventFilter {
      */
     static enum FilterAction {
         /**
-         * ACCEPT means that this filter do not filter the event and allowes other
+         * ACCEPT means that this filter do not filter the event and allows other
          * active filters to proceed it. If all the active filters accept the event, it
          * is dispatched by the <code>EventDispatchThread</code>
          * @see EventDispatchThread#pumpEventsForFilter

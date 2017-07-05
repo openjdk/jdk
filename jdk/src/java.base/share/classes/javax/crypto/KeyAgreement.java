@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,11 @@ public class KeyAgreement {
 
     private static final Debug debug =
                         Debug.getInstance("jca", "KeyAgreement");
+
+    private static final Debug pdebug =
+                        Debug.getInstance("provider", "Provider");
+    private static final boolean skipDebug =
+        Debug.isOn("engine=") && !Debug.isOn("keyagreement");
 
     // The provider
     private Provider provider;
@@ -468,6 +473,11 @@ public class KeyAgreement {
                 throw new InvalidKeyException(e);
             }
         }
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("KeyAgreement." + algorithm + " algorithm from: " +
+                this.provider.getName());
+        }
     }
 
     /**
@@ -523,6 +533,11 @@ public class KeyAgreement {
             spi.engineInit(key, params, random);
         } else {
             chooseProvider(I_PARAMS, key, params, random);
+        }
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("KeyAgreement." + algorithm + " algorithm from: " +
+                this.provider.getName());
         }
     }
 

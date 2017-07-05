@@ -66,7 +66,7 @@ all:
 	fi
 
 $(GENERATED)/sa-jdi.jar: $(AGENT_FILES)
-	$(QUIETLY) echo "Making $@"
+	$(QUIETLY) echo $(LOG_INFO) "Making $@"
 	$(QUIETLY) if [ "$(BOOT_JAVA_HOME)" = "" ]; then \
 	  echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
 	  exit 1; \

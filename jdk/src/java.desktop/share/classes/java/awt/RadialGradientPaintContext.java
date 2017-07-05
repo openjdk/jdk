@@ -33,7 +33,7 @@ import java.awt.image.ColorModel;
 
 /**
  * Provides the actual implementation for the RadialGradientPaint.
- * This is where the pixel processing is done.  A RadialGradienPaint
+ * This is where the pixel processing is done.  A RadialGradientPaint
  * only supports circular gradients, but it should be possible to scale
  * the circle to look approximately elliptical, by means of a
  * gradient transform passed into the RadialGradientPaint constructor.
@@ -133,7 +133,7 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
         this.isSimpleFocus = (focusX == centerX) && (focusY == centerY);
         this.isNonCyclic = (cycleMethod == CycleMethod.NO_CYCLE);
 
-        // for use in the quadractic equation
+        // for use in the quadratic equation
         radiusSq = radius * radius;
 
         float dX = focusX - centerX;

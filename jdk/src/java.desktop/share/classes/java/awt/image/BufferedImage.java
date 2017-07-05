@@ -856,7 +856,7 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Returns the {@link WritableRaster}.
-     * @return the <code>WriteableRaster</code> of this
+     * @return the <code>WritableRaster</code> of this
      *  <code>BufferedImage</code>.
      */
     public WritableRaster getRaster() {

@@ -30,7 +30,6 @@ import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
@@ -38,7 +37,7 @@ import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
-import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
+import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.parser.DateParser;
 import jdk.nashorn.internal.runtime.ConsString;
@@ -155,7 +154,7 @@ public final class NativeDate extends ScriptObject {
      * @param self  self references
      * @return Date representing now
      */
-    @SpecializedConstructor
+    @SpecializedFunction(isConstructor=true)
     public static Object construct(final boolean isNew, final Object self) {
         final NativeDate result = new NativeDate();
         return isNew ? result : toStringImpl(result, FORMAT_DATE_TIME);

@@ -1,0 +1,15 @@
+setting prop1: 1
+prop 1: 1
+TypeError
+global toString 1
+[object Object]
+false
+true
+global toString 2
+[object Object]
+false
+true
+global toString 3
+[object Object]
+false
+true
