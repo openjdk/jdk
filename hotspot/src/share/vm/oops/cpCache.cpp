@@ -32,6 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/macros.hpp"
@@ -286,7 +287,9 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
 
-  MonitorLockerEx ml(cpool->lock());
+  // Use the lock from the metaspace for this, which cannot stop for safepoint.
+  Mutex* metaspace_lock = cpool->pool_holder()->class_loader_data()->metaspace_lock();
+  MutexLockerEx ml(metaspace_lock,  Mutex::_no_safepoint_check_flag);
   if (!is_f1_null()) {
     return;
   }

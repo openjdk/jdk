@@ -59,13 +59,10 @@ public class PackageVersionTest {
         }
 
         File out = new File("test.pack");
-        createClassFile("Test5");
         createClassFile("Test6");
         createClassFile("Test7");
 
         verify6991164();
-        verifyPack("Test5.class", JAVA5_PACKAGE_MAJOR_VERSION,
-                JAVA5_PACKAGE_MINOR_VERSION);
 
         verifyPack("Test6.class", JAVA6_PACKAGE_MAJOR_VERSION,
                 JAVA6_PACKAGE_MINOR_VERSION);
@@ -98,7 +95,7 @@ public class PackageVersionTest {
         String target = name.substring(name.length() - 1);
         String javacCmds[] = {
             "-source",
-            "5",
+            "6",
             "-target",
             name.substring(name.length() - 1),
             name + ".java"

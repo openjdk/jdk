@@ -26,6 +26,7 @@
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "gc_implementation/g1/satbQueue.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/thread.inline.hpp"

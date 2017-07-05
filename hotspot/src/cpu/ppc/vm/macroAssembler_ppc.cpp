@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -3099,7 +3099,7 @@ const char* stop_types[] = {
 };
 
 static void stop_on_request(int tp, const char* msg) {
-  tty->print("PPC assembly code requires stop: (%s) %s\n", (void *)stop_types[tp%/*stop_end*/4], msg);
+  tty->print("PPC assembly code requires stop: (%s) %s\n", stop_types[tp%/*stop_end*/4], msg);
   guarantee(false, err_msg("PPC assembly code requires stop: %s", msg));
 }
 

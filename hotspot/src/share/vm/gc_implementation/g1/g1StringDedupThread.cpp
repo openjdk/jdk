@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/g1StringDedupTable.hpp"
 #include "gc_implementation/g1/g1StringDedupThread.hpp"
 #include "gc_implementation/g1/g1StringDedupQueue.hpp"
+#include "runtime/atomic.inline.hpp"
 
 G1StringDedupThread* G1StringDedupThread::_thread = NULL;
 

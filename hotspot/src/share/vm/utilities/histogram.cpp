@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "utilities/histogram.hpp"
 
 #ifdef ASSERT
