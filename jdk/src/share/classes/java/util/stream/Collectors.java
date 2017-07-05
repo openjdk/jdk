@@ -62,37 +62,35 @@ import java.util.function.ToLongFunction;
  * operations, such as accumulating elements into collections, summarizing
  * elements according to various criteria, etc.
  *
- * <p>The following are examples of using the predefined {@code Collector}
- * implementations in {@link Collectors} with the {@code Stream} API to perform
- * mutable reduction tasks:
+ * <p>The following are examples of using the predefined collectors to perform
+ * common mutable reduction tasks:
  *
  * <pre>{@code
  *     // Accumulate names into a List
  *     List<String> list = people.stream().map(Person::getName).collect(Collectors.toList());
  *
  *     // Accumulate names into a TreeSet
- *     Set<String> list = people.stream().map(Person::getName).collect(Collectors.toCollection(TreeSet::new));
+ *     Set<String> set = people.stream().map(Person::getName).collect(Collectors.toCollection(TreeSet::new));
  *
  *     // Convert elements to strings and concatenate them, separated by commas
  *     String joined = things.stream()
  *                           .map(Object::toString)
  *                           .collect(Collectors.joining(", "));
  *
- *     // Find highest-paid employee
- *     Employee highestPaid = employees.stream()
- *                                     .collect(Collectors.maxBy(Comparator.comparing(Employee::getSalary)))
- *                                     .get();
+ *     // Compute sum of salaries of employee
+ *     int total = employees.stream()
+ *                          .collect(Collectors.summingInt(Employee::getSalary)));
  *
  *     // Group employees by department
  *     Map<Department, List<Employee>> byDept
  *         = employees.stream()
  *                    .collect(Collectors.groupingBy(Employee::getDepartment));
  *
- *     // Find highest-paid employee by department
- *     Map<Department, Optional<Employee>> highestPaidByDept
+ *     // Compute sum of salaries by department
+ *     Map<Department, Integer> totalByDept
  *         = employees.stream()
  *                    .collect(Collectors.groupingBy(Employee::getDepartment,
- *                                                   Collectors.maxBy(Comparator.comparing(Employee::getSalary))));
+ *                                                   Collectors.summingInt(Employee::getSalary)));
  *
  *     // Partition students into passing and failing
  *     Map<Boolean, List<Student>> passingFailing =
@@ -100,8 +98,6 @@ import java.util.function.ToLongFunction;
  *                 .collect(Collectors.partitioningBy(s -> s.getGrade() >= PASS_THRESHOLD));
  *
  * }</pre>
- *
- * TODO explanation of parallel collection
  *
  * @since 1.8
  */
@@ -222,7 +218,8 @@ public final class Collectors {
     /**
      * Returns a {@code Collector} that accumulates the input elements into a
      * new {@code List}. There are no guarantees on the type, mutability,
-     * serializability, or thread-safety of the {@code List} returned.
+     * serializability, or thread-safety of the {@code List} returned; if more
+     * control over the returned {@code List} is required, use {@link #toCollection(Supplier)}.
      *
      * @param <T> the type of the input elements
      * @return a {@code Collector} which collects all the input elements into a
@@ -238,7 +235,9 @@ public final class Collectors {
     /**
      * Returns a {@code Collector} that accumulates the input elements into a
      * new {@code Set}. There are no guarantees on the type, mutability,
-     * serializability, or thread-safety of the {@code Set} returned.
+     * serializability, or thread-safety of the {@code Set} returned; if more
+     * control over the returned {@code Set} is required, use
+     * {@link #toCollection(Supplier)}.
      *
      * <p>This is an {@link Collector.Characteristics#UNORDERED unordered}
      * Collector.
@@ -903,7 +902,7 @@ public final class Collectors {
      * where the city names are sorted:
      * <pre>{@code
      *     ConcurrentMap<City, Set<String>> namesByCity
-     *         = people.stream().collect(groupingByConcurrent(Person::getCity, ConcurrentSkipListMap::new,
+     *         = people.stream().collect(groupingByConcurrent(Person::getCity,
      *                                                        mapping(Person::getLastName, toSet())));
      * }</pre>
      *

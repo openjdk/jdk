@@ -21,11 +21,16 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4969459
  * @summary Delegated tasks are not reflecting the subclasses of SSLException
- *
+ * @run main/othervm DelegatedTaskWrongException
  */
 
 import javax.net.ssl.*;

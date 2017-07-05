@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     8020983
+ * @bug     8020983 8024697
  * @summary Test verifies that jpeg writer instances are collected
  *          even if destroy() or reset() methods is not invoked.
  *

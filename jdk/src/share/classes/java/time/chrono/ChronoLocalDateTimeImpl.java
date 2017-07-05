@@ -94,7 +94,7 @@ import java.util.Objects;
  *
  * @implSpec
  * This class is immutable and thread-safe.
- *
+ * @serial
  * @param <D> the concrete type for the date of this date-time
  * @since 1.8
  */
@@ -157,11 +157,11 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
     /**
      * The date part.
      */
-    private final D date;
+    private final transient D date;
     /**
      * The time part.
      */
-    private final LocalTime time;
+    private final transient LocalTime time;
 
     //-----------------------------------------------------------------------
     /**
@@ -402,6 +402,18 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Writes the ChronoLocalDateTime using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(2);              // identifies a ChronoLocalDateTime
+     *  out.writeObject(toLocalDate());
+     *  out.witeObject(toLocalTime());
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
     private Object writeReplace() {
         return new Ser(Ser.CHRONO_LOCAL_DATE_TIME_TYPE, this);
     }
@@ -411,7 +423,7 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

@@ -591,7 +591,14 @@ GetJavaProperties(JNIEnv *env)
     {
         struct passwd *pwent = getpwuid(getuid());
         sprops.user_name = pwent ? strdup(pwent->pw_name) : "?";
-        sprops.user_home = pwent ? strdup(pwent->pw_dir) : "?";
+#ifdef MACOSX
+        setUserHome(&sprops);
+#else
+        sprops.user_home = pwent ? strdup(pwent->pw_dir) : NULL;
+#endif
+        if (sprops.user_home == NULL) {
+            sprops.user_home = "?";
+        }
     }
 
     /* User TIMEZONE */

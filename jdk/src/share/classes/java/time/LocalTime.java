@@ -74,7 +74,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -1595,8 +1595,11 @@ public final class LocalTime
     /**
      * Writes the object using a
      * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * @serialData
+     * A twos-complement value indicates the remaining values are not in the stream
+     * and should be set to zero.
      * <pre>
-     *  out.writeByte(4);  // identifies this as a LocalTime
+     *  out.writeByte(4);  // identifies a LocalTime
      *  if (nano == 0) {
      *    if (second == 0) {
      *      if (minute == 0) {
@@ -1629,7 +1632,7 @@ public final class LocalTime
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

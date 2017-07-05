@@ -69,7 +69,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInput;
-import java.io.ObjectStreamException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -2192,9 +2192,10 @@ public final class ZonedDateTime
     /**
      * Writes the object using a
      * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * @serialData
      * <pre>
-     *  out.writeByte(6);  // identifies this as a ZonedDateTime
-     *  // the <a href="../../serialized-form.html#java.time.LocalDateTime">date-time</a> excluding the one byte header
+     *  out.writeByte(6);  // identifies a ZonedDateTime
+     *  // the <a href="../../serialized-form.html#java.time.LocalDateTime">dateTime</a> excluding the one byte header
      *  // the <a href="../../serialized-form.html#java.time.ZoneOffset">offset</a> excluding the one byte header
      *  // the <a href="../../serialized-form.html#java.time.ZoneId">zone ID</a> excluding the one byte header
      * </pre>
@@ -2210,7 +2211,7 @@ public final class ZonedDateTime
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

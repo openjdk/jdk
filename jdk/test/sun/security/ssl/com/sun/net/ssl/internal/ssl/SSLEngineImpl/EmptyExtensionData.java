@@ -21,10 +21,16 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 6728126
  * @summary Parsing Extensions in Client Hello message is done in a wrong way
+ * @run main/othervm EmptyExtensionData
  */
 
 import javax.net.ssl.*;

@@ -1,0 +1,199 @@
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "ThisExpression"
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "Identifier",
+                "name": "foo"
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "Literal",
+                "value": null
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "Literal",
+                "value": true
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "Literal",
+                "value": false
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "Literal",
+                "value": 33
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "Literal",
+                "value": 3.14
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "BinaryExpression",
+                "operator": "*",
+                "left": {
+                    "type": "BinaryExpression",
+                    "operator": "+",
+                    "left": {
+                        "type": "Literal",
+                        "value": 10
+                    },
+                    "right": {
+                        "type": "Literal",
+                        "value": 3
+                    }
+                },
+                "right": {
+                    "type": "Literal",
+                    "value": 2
+                }
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "ObjectExpression",
+                "properties": []
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "ObjectExpression",
+                "properties": [
+                    {
+                        "key": {
+                            "type": "Identifier",
+                            "name": "x"
+                        },
+                        "value": {
+                            "type": "Literal",
+                            "value": 3
+                        },
+                        "kind": "init"
+                    }
+                ]
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "ArrayExpression",
+                "elements": []
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "ArrayExpression",
+                "elements": [
+                    null,
+                    null
+                ]
+            }
+        }
+    ]
+}
+{
+    "type": "Program",
+    "body": [
+        {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "ArrayExpression",
+                "elements": [
+                    {
+                        "type": "Literal",
+                        "value": 4
+                    },
+                    {
+                        "type": "Literal",
+                        "value": 5
+                    },
+                    {
+                        "type": "Literal",
+                        "value": 5
+                    }
+                ]
+            }
+        }
+    ]
+}

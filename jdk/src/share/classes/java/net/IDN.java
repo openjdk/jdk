@@ -292,13 +292,17 @@ public final class IDN {
         if (useSTD3ASCIIRules) {
             for (int i = 0; i < dest.length(); i++) {
                 int c = dest.charAt(i);
-                if (!isLDHChar(c)) {
-                    throw new IllegalArgumentException("Contains non-LDH characters");
+                if (isNonLDHAsciiCodePoint(c)) {
+                    throw new IllegalArgumentException(
+                        "Contains non-LDH ASCII characters");
                 }
             }
 
-            if (dest.charAt(0) == '-' || dest.charAt(dest.length() - 1) == '-') {
-                throw new IllegalArgumentException("Has leading or trailing hyphen");
+            if (dest.charAt(0) == '-' ||
+                dest.charAt(dest.length() - 1) == '-') {
+
+                throw new IllegalArgumentException(
+                        "Has leading or trailing hyphen");
             }
         }
 
@@ -401,25 +405,19 @@ public final class IDN {
     //
     // LDH stands for "letter/digit/hyphen", with characters restricted to the
     // 26-letter Latin alphabet <A-Z a-z>, the digits <0-9>, and the hyphen
-    // <->
-    // non-LDH = 0..0x2C, 0x2E..0x2F, 0x3A..0x40, 0x56..0x60, 0x7B..0x7F
+    // <->.
+    // Non LDH refers to characters in the ASCII range, but which are not
+    // letters, digits or the hypen.
     //
-    private static boolean isLDHChar(int ch){
-        // high runner case
-        if(ch > 0x007A){
-            return false;
-        }
-        //['-' '0'..'9' 'A'..'Z' 'a'..'z']
-        if((ch == 0x002D) ||
-           (0x0030 <= ch && ch <= 0x0039) ||
-           (0x0041 <= ch && ch <= 0x005A) ||
-           (0x0061 <= ch && ch <= 0x007A)
-          ){
-            return true;
-        }
-        return false;
+    // non-LDH = 0..0x2C, 0x2E..0x2F, 0x3A..0x40, 0x5B..0x60, 0x7B..0x7F
+    //
+    private static boolean isNonLDHAsciiCodePoint(int ch){
+        return (0x0000 <= ch && ch <= 0x002C) ||
+               (0x002E <= ch && ch <= 0x002F) ||
+               (0x003A <= ch && ch <= 0x0040) ||
+               (0x005B <= ch && ch <= 0x0060) ||
+               (0x007B <= ch && ch <= 0x007F);
     }
-
 
     //
     // search dots in a string and return the index of that character;

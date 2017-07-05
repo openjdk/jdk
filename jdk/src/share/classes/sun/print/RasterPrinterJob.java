@@ -903,6 +903,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
         int x = bounds.x+bounds.width/3;
         int y = bounds.y+bounds.height/3;
         PrintService newService;
+        // temporarily add an attribute pointing back to this job.
+        PrinterJobWrapper jobWrapper = new PrinterJobWrapper(this);
+        attributes.add(jobWrapper);
         try {
             newService =
             ServiceUI.printDialog(gc, x, y,
@@ -915,6 +918,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                                   DocFlavor.SERVICE_FORMATTED.PAGEABLE,
                                   attributes);
         }
+        attributes.remove(PrinterJobWrapper.class);
 
         if (newService == null) {
             return false;

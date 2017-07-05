@@ -104,53 +104,53 @@ public class CMSManager {
             cName = tcmm.getClass().getName();
         }
 
-        public long loadProfile(byte[] data) {
+        public Profile loadProfile(byte[] data) {
             System.err.print(cName + ".loadProfile");
-            long profileID = tcmm.loadProfile(data);
-            System.err.printf("(ID=%x)\n", profileID);
-            return profileID;
+            Profile p = tcmm.loadProfile(data);
+            System.err.printf("(ID=%s)\n", p.toString());
+            return p;
         }
 
-        public void freeProfile(long profileID) {
-            System.err.printf(cName + ".freeProfile(ID=%x)\n", profileID);
-            tcmm.freeProfile(profileID);
+        public void freeProfile(Profile p) {
+            System.err.printf(cName + ".freeProfile(ID=%s)\n", p.toString());
+            tcmm.freeProfile(p);
         }
 
-        public int getProfileSize(long profileID) {
-            System.err.print(cName + ".getProfileSize(ID=" + profileID + ")");
-            int size = tcmm.getProfileSize(profileID);
+        public int getProfileSize(Profile p) {
+            System.err.print(cName + ".getProfileSize(ID=" + p + ")");
+            int size = tcmm.getProfileSize(p);
             System.err.println("=" + size);
             return size;
         }
 
-        public void getProfileData(long profileID, byte[] data) {
-            System.err.print(cName + ".getProfileData(ID=" + profileID + ") ");
+        public void getProfileData(Profile p, byte[] data) {
+            System.err.print(cName + ".getProfileData(ID=" + p + ") ");
             System.err.println("requested " + data.length + " byte(s)");
-            tcmm.getProfileData(profileID, data);
+            tcmm.getProfileData(p, data);
         }
 
-        public int getTagSize(long profileID, int tagSignature) {
+        public int getTagSize(Profile p, int tagSignature) {
             System.err.printf(cName + ".getTagSize(ID=%x, TagSig=%s)",
-                              profileID, signatureToString(tagSignature));
-            int size = tcmm.getTagSize(profileID, tagSignature);
+                              p, signatureToString(tagSignature));
+            int size = tcmm.getTagSize(p, tagSignature);
             System.err.println("=" + size);
             return size;
         }
 
-        public void getTagData(long profileID, int tagSignature,
+        public void getTagData(Profile p, int tagSignature,
                                byte[] data) {
             System.err.printf(cName + ".getTagData(ID=%x, TagSig=%s)",
-                              profileID, signatureToString(tagSignature));
+                              p, signatureToString(tagSignature));
             System.err.println(" requested " + data.length + " byte(s)");
-            tcmm.getTagData(profileID, tagSignature, data);
+            tcmm.getTagData(p, tagSignature, data);
         }
 
-        public void setTagData(long profileID, int tagSignature,
+        public void setTagData(Profile p, int tagSignature,
                                byte[] data) {
-            System.err.print(cName + ".setTagData(ID=" + profileID +
+            System.err.print(cName + ".setTagData(ID=" + p +
                              ", TagSig=" + tagSignature + ")");
             System.err.println(" sending " + data.length + " byte(s)");
-            tcmm.setTagData(profileID, tagSignature, data);
+            tcmm.setTagData(p, tagSignature, data);
         }
 
         /* methods for creating ColorTransforms */

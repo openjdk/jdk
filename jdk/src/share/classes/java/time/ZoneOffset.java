@@ -70,7 +70,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
@@ -740,12 +740,13 @@ public final class ZoneOffset
     /**
      * Writes the object using a
      * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * @serialData
      * <pre>
-     *  out.writeByte(8);  // identifies this as a ZoneOffset
+     *  out.writeByte(8);                  // identifies a ZoneOffset
      *  int offsetByte = totalSeconds % 900 == 0 ? totalSeconds / 900 : 127;
      *  out.writeByte(offsetByte);
      *  if (offsetByte == 127) {
-     *    out.writeInt(totalSeconds);
+     *      out.writeInt(totalSeconds);
      *  }
      * </pre>
      *
@@ -760,7 +761,7 @@ public final class ZoneOffset
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

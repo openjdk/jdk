@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import jdk.internal.dynalink.beans.StaticClass;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.ir.debug.JSONWriter;
@@ -190,8 +191,8 @@ public final class ScriptRuntime {
         case FUNCTION:
             if (self instanceof ScriptObject) {
                 className = ((ScriptObject)self).getClassName();
-            } else if (self instanceof ScriptObjectMirror) {
-                className = ((ScriptObjectMirror)self).getClassName();
+            } else if (self instanceof JSObject) {
+                className = ((JSObject)self).getClassName();
             } else {
                 className = self.getClass().getName();
             }
@@ -245,8 +246,8 @@ public final class ScriptRuntime {
             return new RangeIterator(Array.getLength(obj));
         }
 
-        if (obj instanceof ScriptObjectMirror) {
-            return ((ScriptObjectMirror)obj).keySet().iterator();
+        if (obj instanceof JSObject) {
+            return ((JSObject)obj).keySet().iterator();
         }
 
         if (obj instanceof List) {
@@ -323,8 +324,8 @@ public final class ScriptRuntime {
             };
         }
 
-        if (obj instanceof ScriptObjectMirror) {
-            return ((ScriptObjectMirror)obj).values().iterator();
+        if (obj instanceof JSObject) {
+            return ((JSObject)obj).values().iterator();
         }
 
         if (obj instanceof Map) {
@@ -352,35 +353,6 @@ public final class ScriptRuntime {
     }
 
     /**
-     * Check that the target function is associated with current Context. And also make sure that 'self', if
-     * ScriptObject, is from current context.
-     *
-     * Call a function given self and args. If the number of the arguments is known in advance, you can likely achieve
-     * better performance by {@link Bootstrap#createDynamicInvoker(String, Class, Class...) creating a dynamic invoker}
-     * for operation {@code "dyn:call"}, then using its {@link MethodHandle#invokeExact(Object...)} method instead.
-     *
-     * @param target ScriptFunction object.
-     * @param self   Receiver in call.
-     * @param args   Call arguments.
-     * @return Call result.
-     */
-    public static Object checkAndApply(final ScriptFunction target, final Object self, final Object... args) {
-        final ScriptObject global = Context.getGlobalTrusted();
-        assert (global instanceof GlobalObject): "No current global set";
-
-        if (target.getContext() != global.getContext()) {
-            throw new IllegalArgumentException("'target' function is not from current Context");
-        }
-
-        if (self instanceof ScriptObject && ((ScriptObject)self).getContext() != global.getContext()) {
-            throw new IllegalArgumentException("'self' object is not from current Context");
-        }
-
-        // all in order - call real 'apply'
-        return apply(target, self, args);
-    }
-
-    /**
      * Call a function given self and args. If the number of the arguments is known in advance, you can likely achieve
      * better performance by {@link Bootstrap#createDynamicInvoker(String, Class, Class...) creating a dynamic invoker}
      * for operation {@code "dyn:call"}, then using its {@link MethodHandle#invokeExact(Object...)} method instead.
@@ -398,28 +370,6 @@ public final class ScriptRuntime {
         } catch (final Throwable t) {
             throw new RuntimeException(t);
         }
-    }
-
-    /**
-     * Check that the target function is associated with current Context.
-     * And also make sure that 'self', if ScriptObject, is from current context.
-     *
-     * Call a function as a constructor given args.
-     *
-     * @param target ScriptFunction object.
-     * @param args   Call arguments.
-     * @return Constructor call result.
-     */
-    public static Object checkAndConstruct(final ScriptFunction target, final Object... args) {
-        final ScriptObject global = Context.getGlobalTrusted();
-        assert (global instanceof GlobalObject): "No current global set";
-
-        if (target.getContext() != global.getContext()) {
-            throw new IllegalArgumentException("'target' function is not from current Context");
-        }
-
-        // all in order - call real 'construct'
-        return construct(target, args);
     }
 
     /**
@@ -520,9 +470,12 @@ public final class ScriptRuntime {
             throw typeError(global, "cant.apply.with.to.null");
         }
 
-        final ScriptObject withObject = new WithObject(scope, JSType.toScriptObject(global, expression));
+        final Object wrappedExpr = JSType.toScriptObject(global, expression);
+        if (wrappedExpr instanceof ScriptObject) {
+            return new WithObject(scope, (ScriptObject)wrappedExpr);
+        }
 
-        return withObject;
+        throw typeError(global, "cant.apply.with.to.non.scriptobject");
     }
 
     /**
@@ -534,7 +487,7 @@ public final class ScriptRuntime {
      */
     public static ScriptObject closeWith(final ScriptObject scope) {
         if (scope instanceof WithObject) {
-            return scope.getProto();
+            return ((WithObject)scope).getParentScope();
         }
         return scope;
     }
@@ -619,8 +572,8 @@ public final class ScriptRuntime {
                 throw typeError("cant.get.property", safeToString(property), "null");
             } else if (JSType.isPrimitive(obj)) {
                 obj = ((ScriptObject)JSType.toScriptObject(obj)).get(property);
-            } else if (obj instanceof ScriptObjectMirror) {
-                obj = ((ScriptObjectMirror)obj).getMember(property.toString());
+            } else if (obj instanceof JSObject) {
+                obj = ((JSObject)obj).getMember(property.toString());
             } else {
                 obj = UNDEFINED;
             }
@@ -670,6 +623,11 @@ public final class ScriptRuntime {
 
         if (JSType.isPrimitive(obj)) {
             return ((ScriptObject) JSType.toScriptObject(obj)).delete(property, Boolean.TRUE.equals(strict));
+        }
+
+        if (obj instanceof JSObject) {
+            ((JSObject)obj).removeMember(Objects.toString(property));
+            return true;
         }
 
         // if object is not reference type, vacuously delete is successful.
@@ -863,6 +821,10 @@ public final class ScriptRuntime {
                 return ((ScriptObject)obj).has(property);
             }
 
+            if (obj instanceof JSObject) {
+                return ((JSObject)obj).hasMember(Objects.toString(property));
+            }
+
             return false;
         }
 
@@ -889,11 +851,13 @@ public final class ScriptRuntime {
             return ((StaticClass)clazz).getRepresentedClass().isInstance(obj);
         }
 
-        if (clazz instanceof ScriptObjectMirror) {
-            if (obj instanceof ScriptObjectMirror) {
-                return ((ScriptObjectMirror)clazz).isInstance((ScriptObjectMirror)obj);
-            }
-            return false;
+        if (clazz instanceof JSObject) {
+            return ((JSObject)clazz).isInstance(obj);
+        }
+
+        // provide for reverse hook
+        if (obj instanceof JSObject) {
+            return ((JSObject)obj).isInstanceOf(clazz);
         }
 
         throw typeError("instanceof.on.non.object");

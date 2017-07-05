@@ -1753,6 +1753,7 @@ public class KeyStore {
         /**
          * Returns the KeyStore described by this object.
          *
+         * @return the {@code KeyStore} described by this object
          * @exception KeyStoreException if an error occured during the
          *   operation, for example if the KeyStore could not be
          *   instantiated or loaded
