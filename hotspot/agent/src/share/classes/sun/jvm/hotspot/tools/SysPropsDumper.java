@@ -58,7 +58,6 @@ public class SysPropsDumper extends Tool {
 
    public static void main(String[] args) {
       SysPropsDumper pd = new SysPropsDumper();
-      pd.start(args);
-      pd.stop();
+      pd.execute(args);
    }
 }

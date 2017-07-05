@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/vtableStubs.hpp"
-#include "interp_masm_x86_32.hpp"
+#include "interp_masm_x86.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"

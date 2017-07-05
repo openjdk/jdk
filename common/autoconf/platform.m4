@@ -327,6 +327,13 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
   fi
   AC_SUBST(OPENJDK_TARGET_OS_API_DIR)
 
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      OPENJDK_TARGET_OS_EXPORT_DIR=macosx
+  else
+      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_API_DIR}
+  fi
+  AC_SUBST(OPENJDK_TARGET_OS_EXPORT_DIR)
+
   if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
     A_LP64="LP64:="
     # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in

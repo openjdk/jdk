@@ -100,7 +100,7 @@ public class JDKToolLauncher {
      * @return The JDKToolLauncher instance
      */
     public JDKToolLauncher addVMArg(String arg) {
-        vmArgs.add("-J" + arg);
+        vmArgs.add(arg);
         return this;
     }
 
@@ -124,7 +124,10 @@ public class JDKToolLauncher {
     public String[] getCommand() {
         List<String> command = new ArrayList<String>();
         command.add(executable);
-        command.addAll(vmArgs);
+        // Add -J in front of all vmArgs
+        for (String arg : vmArgs) {
+            command.add("-J" + arg);
+        }
         command.addAll(toolArgs);
         return command.toArray(new String[command.size()]);
     }

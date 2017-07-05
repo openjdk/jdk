@@ -424,6 +424,11 @@ class Compile : public Phase {
   static int cmp_expensive_nodes(Node** n1, Node** n2);
   // Expensive nodes list already sorted?
   bool expensive_nodes_sorted() const;
+  // Remove the speculative part of types and clean up the graph
+  void remove_speculative_types(PhaseIterGVN &igvn);
+
+  // Are we within a PreserveJVMState block?
+  int _preserve_jvm_state;
 
  public:
 
@@ -820,7 +825,9 @@ class Compile : public Phase {
 
   // Decide how to build a call.
   // The profile factor is a discount to apply to this site's interp. profile.
-  CallGenerator*    call_generator(ciMethod* call_method, int vtable_index, bool call_does_dispatch, JVMState* jvms, bool allow_inline, float profile_factor, bool allow_intrinsics = true, bool delayed_forbidden = false);
+  CallGenerator*    call_generator(ciMethod* call_method, int vtable_index, bool call_does_dispatch,
+                                   JVMState* jvms, bool allow_inline, float profile_factor, ciKlass* speculative_receiver_type = NULL,
+                                   bool allow_intrinsics = true, bool delayed_forbidden = false);
   bool should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
     return should_delay_string_inlining(call_method, jvms) ||
            should_delay_boxing_inlining(call_method, jvms);
@@ -1156,6 +1163,21 @@ class Compile : public Phase {
 
   // Auxiliary method for randomized fuzzing/stressing
   static bool randomized_select(int count);
+
+  // enter a PreserveJVMState block
+  void inc_preserve_jvm_state() {
+    _preserve_jvm_state++;
+  }
+
+  // exit a PreserveJVMState block
+  void dec_preserve_jvm_state() {
+    _preserve_jvm_state--;
+    assert(_preserve_jvm_state >= 0, "_preserve_jvm_state shouldn't be negative");
+  }
+
+  bool has_preserve_jvm_state() const {
+    return _preserve_jvm_state > 0;
+  }
 };
 
 #endif // SHARE_VM_OPTO_COMPILE_HPP
