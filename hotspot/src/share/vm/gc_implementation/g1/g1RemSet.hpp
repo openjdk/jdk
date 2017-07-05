@@ -33,15 +33,12 @@ class ConcurrentG1Refine;
 class G1RemSet: public CHeapObj {
 protected:
   G1CollectedHeap* _g1;
-
-  unsigned _conc_refine_traversals;
   unsigned _conc_refine_cards;
-
   size_t n_workers();
 
 public:
   G1RemSet(G1CollectedHeap* g1) :
-    _g1(g1), _conc_refine_traversals(0), _conc_refine_cards(0)
+    _g1(g1), _conc_refine_cards(0)
   {}
 
   // Invoke "blk->do_oop" on all pointers into the CS in object in regions
@@ -81,18 +78,10 @@ public:
   virtual void scrub_par(BitMap* region_bm, BitMap* card_bm,
                          int worker_num, int claim_val) = 0;
 
-  // Do any "refinement" activity that might be appropriate to the given
-  // G1RemSet.  If "refinement" has iterateive "passes", do one pass.
-  // If "t" is non-NULL, it is the thread performing the refinement.
-  // Default implementation does nothing.
-  virtual void concurrentRefinementPass(ConcurrentG1Refine* cg1r) {}
-
   // Refine the card corresponding to "card_ptr".  If "sts" is non-NULL,
   // join and leave around parts that must be atomic wrt GC.  (NULL means
   // being done at a safepoint.)
   virtual void concurrentRefineOneCard(jbyte* card_ptr, int worker_i) {}
-
-  unsigned conc_refine_cards() { return _conc_refine_cards; }
 
   // Print any relevant summary info.
   virtual void print_summary_info() {}
@@ -153,7 +142,7 @@ protected:
   // progress.  If so, then cards added to remembered sets should also have
   // their references into the collection summarized in "_new_refs".
   bool _par_traversal_in_progress;
-  void set_par_traversal(bool b);
+  void set_par_traversal(bool b) { _par_traversal_in_progress = b; }
   GrowableArray<oop*>** _new_refs;
   void new_refs_iterate(OopClosure* cl);
 
@@ -194,7 +183,6 @@ public:
   void scrub_par(BitMap* region_bm, BitMap* card_bm,
                  int worker_num, int claim_val);
 
-  virtual void concurrentRefinementPass(ConcurrentG1Refine* t);
   virtual void concurrentRefineOneCard(jbyte* card_ptr, int worker_i);
 
   virtual void print_summary_info();
