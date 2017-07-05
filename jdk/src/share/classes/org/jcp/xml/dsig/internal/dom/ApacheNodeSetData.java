@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: ApacheNodeSetData.java 1203890 2011-11-18 22:47:56Z mullan $
@@ -47,7 +47,7 @@ public class ApacheNodeSetData implements ApacheData, NodeSetData {
         this.xi = xi;
     }
 
-    public Iterator iterator() {
+    public Iterator<Node> iterator() {
         // If nodefilters are set, must execute them first to create node-set
         if (xi.getNodeFilters() != null && !xi.getNodeFilters().isEmpty()) {
             return Collections.unmodifiableSet

@@ -30,7 +30,7 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g LineNumberInfo.java ControlFlow.java
  *
- *  @run main LineNumberInfo
+ *  @run driver LineNumberInfo
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

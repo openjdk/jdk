@@ -33,7 +33,7 @@
  *  @run compile -g InnerTarg.java
  *  @run build UnpreparedClasses
  *
- *  @run main UnpreparedClasses InnerTarg
+ *  @run driver UnpreparedClasses InnerTarg
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

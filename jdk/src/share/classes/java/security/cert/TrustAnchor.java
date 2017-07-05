@@ -317,7 +317,7 @@ public class TrustAnchor {
      * @return a formatted string describing the {@code TrustAnchor}
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("[\n");
         if (pubKey != null) {
             sb.append("  Trusted CA Public Key: " + pubKey.toString() + "\n");

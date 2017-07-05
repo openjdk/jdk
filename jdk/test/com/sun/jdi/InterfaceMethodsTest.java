@@ -28,7 +28,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run build InterfaceMethodsTest
- *  @run main InterfaceMethodsTest
+ *  @run driver InterfaceMethodsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

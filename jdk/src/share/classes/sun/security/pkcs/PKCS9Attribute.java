@@ -790,26 +790,26 @@ public class PKCS9Attribute implements DerEncoder {
      * Returns a string representation of this attribute.
      */
     public String toString() {
-        StringBuffer buf = new StringBuffer(100);
+        StringBuilder sb = new StringBuilder(100);
 
-        buf.append("[");
+        sb.append("[");
 
         if (index == -1) {
-            buf.append(oid.toString());
+            sb.append(oid.toString());
         } else {
-            buf.append(OID_NAME_TABLE.get(PKCS9_OIDS[index]));
+            sb.append(OID_NAME_TABLE.get(PKCS9_OIDS[index]));
         }
-        buf.append(": ");
+        sb.append(": ");
 
         if (index == -1 || SINGLE_VALUED[index]) {
             if (value instanceof byte[]) { // special case for octet string
                 HexDumpEncoder hexDump = new HexDumpEncoder();
-                buf.append(hexDump.encodeBuffer((byte[]) value));
+                sb.append(hexDump.encodeBuffer((byte[]) value));
             } else {
-                buf.append(value.toString());
+                sb.append(value.toString());
             }
-            buf.append("]");
-            return buf.toString();
+            sb.append("]");
+            return sb.toString();
         } else { // multi-valued
             boolean first = true;
             Object[] values = (Object[]) value;
@@ -818,11 +818,11 @@ public class PKCS9Attribute implements DerEncoder {
                 if (first)
                     first = false;
                 else
-                    buf.append(", ");
+                    sb.append(", ");
 
-                buf.append(values[j].toString());
+                sb.append(values[j].toString());
             }
-            return buf.toString();
+            return sb.toString();
         }
     }
 
@@ -857,7 +857,7 @@ public class PKCS9Attribute implements DerEncoder {
     private void throwTagException(Byte tag)
     throws IOException {
         Byte[] expectedTags = PKCS9_VALUE_TAGS[index];
-        StringBuffer msg = new StringBuffer(100);
+        StringBuilder msg = new StringBuilder(100);
         msg.append("Value of attribute ");
         msg.append(oid.toString());
         msg.append(" (");

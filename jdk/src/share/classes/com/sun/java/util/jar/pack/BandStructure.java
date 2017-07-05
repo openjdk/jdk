@@ -628,7 +628,7 @@ class BandStructure {
             }
             if (metaCoding.length > 0
                 && (verbose > 2 || verbose > 1 && metaCoding.length > 1)) {
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < metaCoding.length; i++) {
                     if (i == 1)  sb.append(" /");
                     sb.append(" ").append(metaCoding[i] & 0xFF);
@@ -756,7 +756,7 @@ class BandStructure {
                          " size="+outputSize()+
                          irr+" coding="+bandCoding);
                 if (metaCoding != noMetaCoding) {
-                    StringBuffer sb = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < metaCoding.length; i++) {
                         if (i == 1)  sb.append(" /");
                         sb.append(" ").append(metaCoding[i] & 0xFF);

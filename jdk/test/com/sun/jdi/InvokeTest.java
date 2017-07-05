@@ -31,7 +31,7 @@
  *  @library ..
  *  @run build  TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g InvokeTest.java
- *  @run main InvokeTest
+ *  @run driver InvokeTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

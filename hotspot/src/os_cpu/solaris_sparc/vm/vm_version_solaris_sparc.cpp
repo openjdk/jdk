@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,21 @@ int VM_Version::platform_features(int features) {
 #define AV_SPARC_AES 0x00020000  /* aes instrs supported */
 #endif
     if (av & AV_SPARC_AES)       features |= aes_instructions_m;
+
+#ifndef AV_SPARC_SHA1
+#define AV_SPARC_SHA1   0x00400000  /* sha1 instruction supported */
+#endif
+    if (av & AV_SPARC_SHA1)         features |= sha1_instruction_m;
+
+#ifndef AV_SPARC_SHA256
+#define AV_SPARC_SHA256 0x00800000  /* sha256 instruction supported */
+#endif
+    if (av & AV_SPARC_SHA256)       features |= sha256_instruction_m;
+
+#ifndef AV_SPARC_SHA512
+#define AV_SPARC_SHA512 0x01000000  /* sha512 instruction supported */
+#endif
+    if (av & AV_SPARC_SHA512)       features |= sha512_instruction_m;
 
   } else {
     // getisax(2) failed, use the old legacy code.

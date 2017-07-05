@@ -919,18 +919,18 @@ class MemberDefinition implements Constants {
         if (isInitializer()) {
             return isStatic() ? "static {}" : "instance {}";
         } else if (isConstructor()) {
-            StringBuffer buf = new StringBuffer();
-            buf.append(name);
-            buf.append('(');
+            StringBuilder sb = new StringBuilder();
+            sb.append(name);
+            sb.append('(');
             Type argTypes[] = getType().getArgumentTypes();
             for (int i = 0 ; i < argTypes.length ; i++) {
                 if (i > 0) {
-                    buf.append(',');
+                    sb.append(',');
                 }
-                buf.append(argTypes[i].toString());
+                sb.append(argTypes[i].toString());
             }
-            buf.append(')');
-            return buf.toString();
+            sb.append(')');
+            return sb.toString();
         } else if (isInnerClass()) {
             return getInnerClass().toString();
         }

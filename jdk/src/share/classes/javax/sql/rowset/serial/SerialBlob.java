@@ -58,6 +58,7 @@ import java.util.Arrays;
  * should be controlled by appropriate synchronization.
  *
  * @author Jonathan Bruce
+ * @since 1.5
  */
 public class SerialBlob implements Blob, Serializable, Cloneable {
 

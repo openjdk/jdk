@@ -46,7 +46,7 @@
  *  assure that launching on uncaught exception works
  *
  *  @author Robert Field
- *  @run main/othervm JITDebug
+ *  @run driver JITDebug
  */
 
 import com.sun.jdi.*;

@@ -30,9 +30,9 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g SourceNameFilterTest.java
- *  @run main SourceNameFilterTest
+ *  @run driver SourceNameFilterTest
  *  @run compile -g:none SourceNameFilterTest.java
- *  @run main SourceNameFilterTest
+ *  @run driver SourceNameFilterTest
  */
 // The compile -g:none suppresses the lineNumber table to trigger bug 6646613.
 

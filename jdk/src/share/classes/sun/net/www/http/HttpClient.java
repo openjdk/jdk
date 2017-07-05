@@ -558,7 +558,7 @@ public class HttpClient extends NetworkClient {
             // Do not use URLStreamHandler.toExternalForm as the fragment
             // should not be part of the RequestURI. It should be an
             // absolute URI which does not have a fragment part.
-            StringBuffer result = new StringBuffer(128);
+            StringBuilder result = new StringBuilder(128);
             result.append(url.getProtocol());
             result.append(":");
             if (url.getAuthority() != null && url.getAuthority().length() > 0) {

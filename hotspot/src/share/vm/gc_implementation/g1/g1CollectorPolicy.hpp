@@ -38,10 +38,10 @@ class HeapRegion;
 class CollectionSetChooser;
 class G1GCPhaseTimes;
 
-// TraceGen0Time collects data on _both_ young and mixed evacuation pauses
+// TraceYoungGenTime collects data on _both_ young and mixed evacuation pauses
 // (the latter may contain non-young regions - i.e. regions that are
-// technically in Gen1) while TraceGen1Time collects data about full GCs.
-class TraceGen0TimeData : public CHeapObj<mtGC> {
+// technically in old) while TraceOldGenTime collects data about full GCs.
+class TraceYoungGenTimeData : public CHeapObj<mtGC> {
  private:
   unsigned  _young_pause_num;
   unsigned  _mixed_pause_num;
@@ -66,7 +66,7 @@ class TraceGen0TimeData : public CHeapObj<mtGC> {
   void print_summary_sd(const char* str, const NumberSeq* seq) const;
 
 public:
-   TraceGen0TimeData() : _young_pause_num(0), _mixed_pause_num(0) {};
+   TraceYoungGenTimeData() : _young_pause_num(0), _mixed_pause_num(0) {};
   void record_start_collection(double time_to_stop_the_world_ms);
   void record_yield_time(double yield_time_ms);
   void record_end_collection(double pause_time_ms, G1GCPhaseTimes* phase_times);
@@ -75,7 +75,7 @@ public:
   void print() const;
 };
 
-class TraceGen1TimeData : public CHeapObj<mtGC> {
+class TraceOldGenTimeData : public CHeapObj<mtGC> {
  private:
   NumberSeq _all_full_gc_times;
 
@@ -187,8 +187,8 @@ private:
   TruncatedSeq* _concurrent_mark_remark_times_ms;
   TruncatedSeq* _concurrent_mark_cleanup_times_ms;
 
-  TraceGen0TimeData _trace_gen0_time_data;
-  TraceGen1TimeData _trace_gen1_time_data;
+  TraceYoungGenTimeData _trace_young_gen_time_data;
+  TraceOldGenTimeData   _trace_old_gen_time_data;
 
   double _stop_world_start;
 
@@ -202,20 +202,20 @@ private:
   // locker is active. This should be >= _young_list_target_length;
   uint _young_list_max_length;
 
-  bool                  _last_gc_was_young;
+  bool _last_gc_was_young;
 
-  bool                  _during_marking;
-  bool                  _in_marking_window;
-  bool                  _in_marking_window_im;
+  bool _during_marking;
+  bool _in_marking_window;
+  bool _in_marking_window_im;
 
-  SurvRateGroup*        _short_lived_surv_rate_group;
-  SurvRateGroup*        _survivor_surv_rate_group;
+  SurvRateGroup* _short_lived_surv_rate_group;
+  SurvRateGroup* _survivor_surv_rate_group;
   // add here any more surv rate groups
 
-  double                _gc_overhead_perc;
+  double _gc_overhead_perc;
 
   double _reserve_factor;
-  uint _reserve_regions;
+  uint   _reserve_regions;
 
   bool during_marking() {
     return _during_marking;

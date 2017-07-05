@@ -261,18 +261,18 @@ class MethodSet {
      */
     public String toString() {
         int len = size();
-        StringBuffer buf = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Iterator all = iterator();
-        buf.append("{");
+        sb.append("{");
 
         while (all.hasNext()) {
-            buf.append(all.next().toString());
+            sb.append(all.next().toString());
             len--;
             if (len > 0) {
-                buf.append(", ");
+                sb.append(", ");
             }
         }
-        buf.append("}");
-        return buf.toString();
+        sb.append("}");
+        return sb.toString();
     }
 }

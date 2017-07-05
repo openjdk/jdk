@@ -121,7 +121,7 @@ public class Trace {
             usage();
             System.exit(1);
         }
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(args[inx]);
         for (++inx; inx < args.length; ++inx) {
             sb.append(' ');
