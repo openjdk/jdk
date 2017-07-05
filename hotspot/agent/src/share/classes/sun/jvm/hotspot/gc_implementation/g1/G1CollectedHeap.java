@@ -45,8 +45,8 @@ import sun.jvm.hotspot.types.TypeDataBase;
 public class G1CollectedHeap extends SharedHeap {
     // HeapRegionSeq _seq;
     static private long hrsFieldOffset;
-    // MemRegion _g1_committed;
-    static private long g1CommittedFieldOffset;
+    // MemRegion _g1_reserved;
+    static private long g1ReservedFieldOffset;
     // size_t _summary_bytes_used;
     static private CIntegerField summaryBytesUsedField;
     // G1MonitoringSupport* _g1mm;
@@ -68,7 +68,6 @@ public class G1CollectedHeap extends SharedHeap {
         Type type = db.lookupType("G1CollectedHeap");
 
         hrsFieldOffset = type.getField("_hrs").getOffset();
-        g1CommittedFieldOffset = type.getField("_g1_committed").getOffset();
         summaryBytesUsedField = type.getCIntegerField("_summary_bytes_used");
         g1mmField = type.getAddressField("_g1mm");
         oldSetFieldOffset = type.getField("_old_set").getOffset();
@@ -76,9 +75,7 @@ public class G1CollectedHeap extends SharedHeap {
     }
 
     public long capacity() {
-        Address g1CommittedAddr = addr.addOffsetTo(g1CommittedFieldOffset);
-        MemRegion g1Committed = new MemRegion(g1CommittedAddr);
-        return g1Committed.byteSize();
+        return hrs().capacity();
     }
 
     public long used() {

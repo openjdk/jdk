@@ -75,6 +75,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
+import jdk.nashorn.internal.AssertsEnabled;
 import jdk.nashorn.internal.IntDeque;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -236,11 +237,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     /** From what size should we use spill instead of fields for JavaScript objects? */
     private static final int OBJECT_SPILL_THRESHOLD = Options.getIntProperty("nashorn.spill.threshold", 256);
-
-    private static boolean assertsEnabled = false;
-    static {
-        assert assertsEnabled = true; // Intentional side effect
-    }
 
     private final Set<String> emittedMethods = new HashSet<>();
 
@@ -4316,7 +4312,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         }
                     } else {
                         final Type storeType = assignNode.getType();
-                        method.convert(storeType);
+                        if (symbol.hasSlotFor(storeType)) {
+                            // Only emit a convert for a store known to be live; converts for dead stores can
+                            // give us an unnecessary ClassCastException.
+                            method.convert(storeType);
+                        }
                         storeIdentWithCatchConversion(node, storeType);
                     }
                     return false;
@@ -5239,7 +5239,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
             lvarIndex = nextLvarIndex;
         }
-        if(assertsEnabled) {
+        if (AssertsEnabled.assertsEnabled()) {
             method.load(arrayIndex);
             method.invoke(RewriteException.ASSERT_ARRAY_LENGTH);
         } else {

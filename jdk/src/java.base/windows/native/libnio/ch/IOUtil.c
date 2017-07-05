@@ -56,7 +56,6 @@ Java_sun_nio_ch_IOUtil_initIDs(JNIEnv *env, jclass clazz)
     CHECK_NULL(clazz = (*env)->FindClass(env, "java/io/FileDescriptor"));
     CHECK_NULL(fd_fdID = (*env)->GetFieldID(env, clazz, "fd", "I"));
     CHECK_NULL(handle_fdID = (*env)->GetFieldID(env, clazz, "handle", "J"));
-    initInetAddressIDs(env);
 }
 
 /**************************************************************

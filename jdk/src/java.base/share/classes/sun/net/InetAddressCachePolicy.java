@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public final class InetAddressCachePolicy {
      * caching. For security reasons, this caching is made forever when
      * a security manager is set.
      */
-    private static int cachePolicy = FOREVER;
+    private static volatile int cachePolicy = FOREVER;
 
     /* The Java-level namelookup cache policy for negative lookups:
      *
@@ -66,7 +66,7 @@ public final class InetAddressCachePolicy {
      * default value is 0. It can be set to some other value for
      * performance reasons.
      */
-    private static int negativeCachePolicy = NEVER;
+    private static volatile int negativeCachePolicy = NEVER;
 
     /*
      * Whether or not the cache policy for successful lookups was set
@@ -110,10 +110,7 @@ public final class InetAddressCachePolicy {
           });
 
         if (tmp != null) {
-            cachePolicy = tmp.intValue();
-            if (cachePolicy < 0) {
-                cachePolicy = FOREVER;
-            }
+            cachePolicy = tmp < 0 ? FOREVER : tmp;
             propertySet = true;
         } else {
             /* No properties defined for positive caching. If there is no
@@ -148,19 +145,16 @@ public final class InetAddressCachePolicy {
           });
 
         if (tmp != null) {
-            negativeCachePolicy = tmp.intValue();
-            if (negativeCachePolicy < 0) {
-                negativeCachePolicy = FOREVER;
-            }
+            negativeCachePolicy = tmp < 0 ? FOREVER : tmp;
             propertyNegativeSet = true;
         }
     }
 
-    public static synchronized int get() {
+    public static int get() {
         return cachePolicy;
     }
 
-    public static synchronized int getNegative() {
+    public static int getNegative() {
         return negativeCachePolicy;
     }
 
@@ -190,7 +184,7 @@ public final class InetAddressCachePolicy {
      * @param newPolicy the value in seconds for how long the lookup
      * should be cached
      */
-    public static synchronized void setNegativeIfNotSet(int newPolicy) {
+    public static void setNegativeIfNotSet(int newPolicy) {
         /*
          * When setting the new value we may want to signal that the
          * cache should be flushed, though this doesn't seem strictly
@@ -200,7 +194,8 @@ public final class InetAddressCachePolicy {
             // Negative caching does not seem to have any security
             // implications.
             // checkValue(newPolicy, negativeCachePolicy);
-            negativeCachePolicy = newPolicy;
+            // but we should normalize negative policy
+            negativeCachePolicy = newPolicy < 0 ? FOREVER : newPolicy;
         }
     }
 

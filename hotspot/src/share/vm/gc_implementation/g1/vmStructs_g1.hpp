@@ -43,10 +43,9 @@
   nonstatic_field(G1HeapRegionTable, _shift_by,         uint)                 \
                                                                               \
   nonstatic_field(HeapRegionSeq,   _regions,            G1HeapRegionTable)    \
-  nonstatic_field(HeapRegionSeq,   _committed_length,   uint)                 \
+  nonstatic_field(HeapRegionSeq,   _num_committed,      uint)                 \
                                                                               \
   nonstatic_field(G1CollectedHeap, _hrs,                HeapRegionSeq)        \
-  nonstatic_field(G1CollectedHeap, _g1_committed,       MemRegion)            \
   nonstatic_field(G1CollectedHeap, _summary_bytes_used, size_t)               \
   nonstatic_field(G1CollectedHeap, _g1mm,               G1MonitoringSupport*) \
   nonstatic_field(G1CollectedHeap, _old_set,            HeapRegionSetBase)    \

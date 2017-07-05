@@ -24,6 +24,8 @@
 /**
  * @test
  * @bug 6270015
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.SimpleSSLContext
  * @run main/othervm Test13
  * @summary  Light weight HTTP server
  */
@@ -34,8 +36,8 @@ import java.util.concurrent.*;
 import java.util.logging.*;
 import java.io.*;
 import java.net.*;
-
 import javax.net.ssl.*;
+import jdk.testlibrary.SimpleSSLContext;
 
 /* basic http/s connectivity test
  * Tests:
@@ -71,7 +73,7 @@ public class Test13 extends Test {
             executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s2.setExecutor (executor);
-            ctx = new SimpleSSLContext(System.getProperty("test.src")).get();
+            ctx = new SimpleSSLContext().get();
             s2.setHttpsConfigurator(new HttpsConfigurator (ctx));
             s1.start();
             s2.start();

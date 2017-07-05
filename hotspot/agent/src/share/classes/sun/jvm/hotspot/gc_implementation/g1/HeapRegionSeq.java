@@ -43,7 +43,7 @@ public class HeapRegionSeq extends VMObject {
     // G1HeapRegionTable _regions
     static private long regionsFieldOffset;
     // uint _committed_length
-    static private CIntegerField committedLengthField;
+    static private CIntegerField numCommittedField;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -57,7 +57,7 @@ public class HeapRegionSeq extends VMObject {
         Type type = db.lookupType("HeapRegionSeq");
 
         regionsFieldOffset = type.getField("_regions").getOffset();
-        committedLengthField = type.getCIntegerField("_committed_length");
+        numCommittedField = type.getCIntegerField("_num_committed");
     }
 
     private G1HeapRegionTable regions() {
@@ -66,16 +66,20 @@ public class HeapRegionSeq extends VMObject {
                                                              regionsAddr);
     }
 
+    public long capacity() {
+        return length() * HeapRegion.grainBytes();
+    }
+
     public long length() {
         return regions().length();
     }
 
     public long committedLength() {
-        return committedLengthField.getValue(addr);
+        return numCommittedField.getValue(addr);
     }
 
     public Iterator<HeapRegion> heapRegionIterator() {
-        return regions().heapRegionIterator(committedLength());
+        return regions().heapRegionIterator(length());
     }
 
     public HeapRegionSeq(Address addr) {
