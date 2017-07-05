@@ -36,6 +36,10 @@
 #import "QuartzSurfaceData.h"
 #include "AWTStrike.h"
 
+/* Use THIS_FILE when it is available. */
+#ifndef THIS_FILE
+    #define THIS_FILE __FILE__
+#endif
 
 static const CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 };
 
@@ -488,7 +492,7 @@ static inline void doDrawGlyphsPipe_getGlyphVectorLengthAndAlloc
         if (glyphs == NULL || advances == NULL)
         {
             (*env)->DeleteLocalRef(env, glyphsArray);
-            [NSException raise:NSMallocException format:@"%s-%s:%d", __FILE__, __FUNCTION__, __LINE__];
+            [NSException raise:NSMallocException format:@"%s-%s:%d", THIS_FILE, __FUNCTION__, __LINE__];
             return;
         }
 

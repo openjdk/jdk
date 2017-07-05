@@ -96,8 +96,13 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
      */
     @SuppressWarnings("deprecation")
     protected void parseKeyBits() throws InvalidKeyException {
+        AlgorithmParameters algParams = this.algid.getParameters();
+        if (algParams == null) {
+            throw new InvalidKeyException("EC domain parameters must be " +
+                "encoded in the algorithm identifier");
+        }
+
         try {
-            AlgorithmParameters algParams = this.algid.getParameters();
             params = algParams.getParameterSpec(ECParameterSpec.class);
             w = ECParameters.decodePoint(key, params.getCurve());
         } catch (IOException e) {

@@ -199,7 +199,7 @@ endif # LIBRARY
 $(OBJDIR)/$(LIBRARY).lcf: $(OBJDIR)/$(LIBRARY).res $(COMPILE_FILES_o) $(FILES_m)
 	@$(prep-target)
 	@$(MKDIR) -p $(TEMPDIR)
-	@$(ECHO) $(FILES_o) > $@ 
+	@$(ECHO) $(sort $(FILES_o)) > $@ 
 ifndef LOCAL_RESOURCE_FILE
 	@$(ECHO) $(OBJDIR)/$(LIBRARY).res >> $@
 endif
@@ -256,9 +256,9 @@ $(ACTUAL_LIBRARY):: $(COMPILE_FILES_o) $(FILES_m) $(FILES_reorder)
 	@$(ECHO) "STATS: LIBRARY=$(LIBRARY), PRODUCT=$(PRODUCT), OPTIMIZATION_LEVEL=$(OPTIMIZATION_LEVEL)"
 	@$(ECHO) "Rebuilding $@ because of $?"
 ifeq ($(LIBRARY), fdlibm)
-	$(AR) $(ARFLAGS) $@ $(FILES_o)
+	$(AR) $(ARFLAGS) $@ $(sort $(FILES_o))
 else # LIBRARY
-	$(LINKER) $(SHARED_LIBRARY_FLAG) -o $@ $(FILES_o) $(LDLIBS)
+	$(LINKER) $(SHARED_LIBRARY_FLAG) -o $@ $(sort $(FILES_o)) $(LDLIBS)
 	@$(call binary_file_verification,$@)
 ifeq ($(WRITE_LIBVERSION),true)
 	$(MCS) -d -a "$(FULL_VERSION)" $@

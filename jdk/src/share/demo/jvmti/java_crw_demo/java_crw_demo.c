@@ -70,12 +70,20 @@
 
 /* Macros over error functions to capture line numbers */
 
-#define CRW_FATAL(ci, message) fatal_error(ci, message, __FILE__, __LINE__)
+/* Fatal error used in all builds. */
+
+/* Use THIS_FILE when it is available. */
+#ifndef THIS_FILE
+    #define THIS_FILE "java_crw.demo.c" /* Never use __FILE__ */
+#endif
+
+#define CRW_FATAL(ci, message) fatal_error(ci, message, THIS_FILE, __LINE__)
 
 #if defined(DEBUG) || !defined(NDEBUG)
 
+  /* This assert macro is only used in the debug builds. */
   #define CRW_ASSERT(ci, cond) \
-        ((cond)?(void)0:assert_error(ci, #cond, __FILE__, __LINE__))
+        ((cond)?(void)0:assert_error(ci, #cond, THIS_FILE, __LINE__))
 
 #else
 
