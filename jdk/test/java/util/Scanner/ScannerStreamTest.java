@@ -46,7 +46,7 @@ import static org.testng.Assert.*;
  * @test
  * @bug 8072722
  * @summary Tests of stream support in java.util.Scanner
- * @library ../stream/bootlib
+ * @library ../stream/bootlib/java.base
  * @build java.util.stream.OpTestCase
  * @run testng/othervm ScannerStreamTest
  */

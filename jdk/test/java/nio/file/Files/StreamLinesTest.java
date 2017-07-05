@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8072773
- * @library /lib/testlibrary/ ../../../util/stream/bootlib
+ * @library /lib/testlibrary/ ../../../util/stream/bootlib/java.base
  * @build java.util.stream.OpTestCase
  * @build jdk.testlibrary.RandomFactory
  * @run testng/othervm StreamLinesTest

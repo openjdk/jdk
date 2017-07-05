@@ -26,7 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/g1/satbQueue.hpp"
+#include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
@@ -186,21 +186,6 @@ G1SATBCardTableLoggingModRefBS::write_ref_field_work(void* field,
       _dcqs.shared_dirty_card_queue()->enqueue(byte);
     }
   }
-}
-
-void
-G1SATBCardTableLoggingModRefBS::write_ref_field_static(void* field,
-                                                       oop new_val) {
-  uintptr_t field_uint = (uintptr_t)field;
-  uintptr_t new_val_uint = cast_from_oop<uintptr_t>(new_val);
-  uintptr_t comb = field_uint ^ new_val_uint;
-  comb = comb >> HeapRegion::LogOfHRGrainBytes;
-  if (comb == 0) return;
-  if (new_val == NULL) return;
-  // Otherwise, log it.
-  G1SATBCardTableLoggingModRefBS* g1_bs =
-    barrier_set_cast<G1SATBCardTableLoggingModRefBS>(G1CollectedHeap::heap()->barrier_set());
-  g1_bs->write_ref_field_work(field, new_val, false);
 }
 
 void

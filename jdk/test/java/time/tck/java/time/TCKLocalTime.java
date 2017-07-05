@@ -102,6 +102,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.Period;
+import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -137,6 +138,7 @@ import org.testng.annotations.Test;
 public class TCKLocalTime extends AbstractDateTimeTest {
 
     private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
+    private static final ZoneOffset OFFSET_MTWO = ZoneOffset.ofHours(-2);
     private static final ZoneId ZONE_PARIS = ZoneId.of("Europe/Paris");
 
     private LocalTime TEST_12_30_40_987654321;
@@ -419,6 +421,38 @@ public class TCKLocalTime extends AbstractDateTimeTest {
     public void factory_time_4ints_nanoTooHigh() {
         LocalTime.of(0, 0, 0, 1000000000);
     }
+
+     //-----------------------------------------------------------------------
+     // ofInstant()
+     //-----------------------------------------------------------------------
+     @DataProvider(name="instantFactory")
+     Object[][] data_instantFactory() {
+         return new Object[][] {
+                 {Instant.ofEpochSecond(86400 + 3600 + 120 + 4, 500), ZONE_PARIS, LocalTime.of(2, 2, 4, 500)},
+                 {Instant.ofEpochSecond(86400 + 3600 + 120 + 4, 500), OFFSET_MTWO, LocalTime.of(23, 2, 4, 500)},
+                 {Instant.ofEpochSecond(-86400 + 4, 500), OFFSET_PTWO, LocalTime.of(2, 0, 4, 500)},
+                 {OffsetDateTime.of(LocalDateTime.of(Year.MIN_VALUE, 1, 1, 0, 0), ZoneOffset.UTC).toInstant(),
+                         ZoneOffset.UTC, LocalTime.MIN},
+                 {OffsetDateTime.of(LocalDateTime.of(Year.MAX_VALUE, 12, 31, 23, 59, 59, 999_999_999), ZoneOffset.UTC).toInstant(),
+                         ZoneOffset.UTC, LocalTime.MAX},
+         };
+     }
+
+     @Test(dataProvider="instantFactory")
+     public void factory_ofInstant(Instant instant, ZoneId zone, LocalTime expected) {
+         LocalTime test = LocalTime.ofInstant(instant, zone);
+         assertEquals(test, expected);
+     }
+
+     @Test(expectedExceptions=NullPointerException.class)
+     public void factory_ofInstant_nullInstant() {
+         LocalTime.ofInstant((Instant) null, ZONE_PARIS);
+     }
+
+     @Test(expectedExceptions=NullPointerException.class)
+     public void factory_ofInstant_nullZone() {
+         LocalTime.ofInstant(Instant.EPOCH, (ZoneId) null);
+     }
 
     //-----------------------------------------------------------------------
     // ofSecondOfDay(long)

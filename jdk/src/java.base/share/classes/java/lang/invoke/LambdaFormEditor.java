@@ -541,7 +541,7 @@ class LambdaFormEditor {
         assert(pos > 0);  // cannot spread the MH arg itself
 
         Name spreadParam = new Name(L_TYPE);
-        Name checkSpread = new Name(MethodHandleImpl.Lazy.NF_checkSpreadArgument, spreadParam, arrayLength);
+        Name checkSpread = new Name(MethodHandleImpl.NF_checkSpreadArgument, spreadParam, arrayLength);
 
         // insert the new expressions
         int exprPos = lambdaForm.arity();

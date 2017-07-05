@@ -361,17 +361,18 @@ class G1BlockOffsetArrayContigSpace: public G1BlockOffsetArray {
   // implementation, that's true because NULL is represented as 0, and thus
   // never exceeds the "_next_offset_threshold".
   void alloc_block(HeapWord* blk_start, HeapWord* blk_end) {
-    if (blk_end > _next_offset_threshold)
+    if (blk_end > _next_offset_threshold) {
       alloc_block_work1(blk_start, blk_end);
+    }
   }
   void alloc_block(HeapWord* blk, size_t size) {
-     alloc_block(blk, blk+size);
+    alloc_block(blk, blk+size);
   }
 
   HeapWord* block_start_unsafe(const void* addr);
   HeapWord* block_start_unsafe_const(const void* addr) const;
 
-  void set_for_starts_humongous(HeapWord* new_top);
+  void set_for_starts_humongous(HeapWord* obj_top);
 
   virtual void print_on(outputStream* out) PRODUCT_RETURN;
 };

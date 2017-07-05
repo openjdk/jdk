@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,14 @@
 #define OS_SOLARIS_VM_OS_SOLARIS_HPP
 
 // Solaris_OS defines the interface to Solaris operating systems
+
+// see thr_setprio(3T) for the basis of these numbers
+#define MinimumPriority 0
+#define NormalPriority  64
+#define MaximumPriority 127
+
+// FX/60 is critical thread class/priority on T4
+#define FXCriticalPriority 60
 
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return true; }
@@ -114,16 +122,13 @@ class Solaris {
   static void save_preinstalled_handler(int, struct sigaction&);
   static void check_signal_handler(int sig);
   // For overridable signals
-  static int _SIGinterrupt;                  // user-overridable INTERRUPT_SIGNAL
   static int _SIGasync;                      // user-overridable ASYNC_SIGNAL
-  static void set_SIGinterrupt(int newsig) { _SIGinterrupt = newsig; }
   static void set_SIGasync(int newsig) { _SIGasync = newsig; }
 
  public:
   // Large Page Support--ISM.
   static bool largepage_range(char* addr, size_t size);
 
-  static int SIGinterrupt() { return _SIGinterrupt; }
   static int SIGasync() { return _SIGasync; }
   static address handler_start, handler_end; // start and end pc of thr_sighndlrinfo
 

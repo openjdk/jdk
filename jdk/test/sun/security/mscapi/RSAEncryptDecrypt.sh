@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 # @test
 # @bug 6457422 6931562
+# @requires os.family == "windows"
 # @run shell RSAEncryptDecrypt.sh
 # @summary Confirm that plaintext can be encrypted and then decrypted using the
 #	   RSA cipher in the SunMSCAPI crypto provider. NOTE: The RSA cipher is 

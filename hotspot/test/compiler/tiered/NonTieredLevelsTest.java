@@ -25,7 +25,7 @@ import java.util.function.IntPredicate;
 
 /**
  * @test NonTieredLevelsTest
- * @library /testlibrary /../../test/lib /compiler/whitebox
+ * @library /testlibrary /test/lib /compiler/whitebox
  * @modules java.management
  * @build NonTieredLevelsTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

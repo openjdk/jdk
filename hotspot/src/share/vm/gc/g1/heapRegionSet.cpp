@@ -29,12 +29,6 @@
 
 uint FreeRegionList::_unrealistically_long_length = 0;
 
-void HeapRegionSetBase::fill_in_ext_msg(hrs_ext_msg* msg, const char* message) {
-  msg->append("[%s] %s ln: %u cy: " SIZE_FORMAT,
-              name(), message, length(), total_capacity_bytes());
-  fill_in_ext_msg_extra(msg);
-}
-
 #ifndef PRODUCT
 void HeapRegionSetBase::verify_region(HeapRegion* hr) {
   assert(hr->containing_set() == this, "Inconsistent containing set for %u", hr->hrm_index());
@@ -55,16 +49,15 @@ void HeapRegionSetBase::verify() {
   // verification might fail and send us on a wild goose chase.
   check_mt_safety();
 
-  guarantee(( is_empty() && length() == 0 && total_capacity_bytes() == 0) ||
-            (!is_empty() && length() > 0  && total_capacity_bytes() > 0) ,
-            "%s", hrs_ext_msg(this, "invariant").buffer());
+  guarantee_heap_region_set(( is_empty() && length() == 0 && total_capacity_bytes() == 0) ||
+                            (!is_empty() && length() > 0  && total_capacity_bytes() > 0) ,
+                            "invariant");
 }
 
 void HeapRegionSetBase::verify_start() {
   // See comment in verify() about MT safety and verification.
   check_mt_safety();
-  assert(!_verify_in_progress,
-         "%s", hrs_ext_msg(this, "verification should not be in progress").buffer());
+  assert_heap_region_set(!_verify_in_progress, "verification should not be in progress");
 
   // Do the basic verification first before we do the checks over the regions.
   HeapRegionSetBase::verify();
@@ -75,8 +68,7 @@ void HeapRegionSetBase::verify_start() {
 void HeapRegionSetBase::verify_end() {
   // See comment in verify() about MT safety and verification.
   check_mt_safety();
-  assert(_verify_in_progress,
-         "%s", hrs_ext_msg(this, "verification should be in progress").buffer());
+  assert_heap_region_set(_verify_in_progress, "verification should be in progress");
 
   _verify_in_progress = false;
 }
@@ -102,10 +94,6 @@ HeapRegionSetBase::HeapRegionSetBase(const char* name, bool humongous, bool free
 void FreeRegionList::set_unrealistically_long_length(uint len) {
   guarantee(_unrealistically_long_length == 0, "should only be set once");
   _unrealistically_long_length = len;
-}
-
-void FreeRegionList::fill_in_ext_msg_extra(hrs_ext_msg* msg) {
-  msg->append(" hd: " PTR_FORMAT " tl: " PTR_FORMAT, p2i(_head), p2i(_tail));
 }
 
 void FreeRegionList::remove_all() {
@@ -151,7 +139,7 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
   #endif // ASSERT
 
   if (is_empty()) {
-    assert(length() == 0 && _tail == NULL, "%s", hrs_ext_msg(this, "invariant").buffer());
+    assert_free_region_list(length() == 0 && _tail == NULL, "invariant");
     _head = from_list->_head;
     _tail = from_list->_tail;
   } else {
@@ -198,8 +186,8 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
 
 void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
   check_mt_safety();
-  assert(num_regions >= 1, "%s", hrs_ext_msg(this, "pre-condition").buffer());
-  assert(!is_empty(), "%s", hrs_ext_msg(this, "pre-condition").buffer());
+  assert_free_region_list(num_regions >= 1, "pre-condition");
+  assert_free_region_list(!is_empty(), "pre-condition");
 
   verify_optional();
   DEBUG_ONLY(uint old_length = length();)
@@ -212,25 +200,25 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
     HeapRegion* prev = curr->prev();
 
     assert(count < num_regions,
-           "%s", hrs_err_msg("[%s] should not come across more regions "
-                             "pending for removal than num_regions: %u",
-                             name(), num_regions).buffer());
+           "[%s] should not come across more regions "
+           "pending for removal than num_regions: %u",
+           name(), num_regions);
 
     if (prev == NULL) {
-      assert(_head == curr, "%s", hrs_ext_msg(this, "invariant").buffer());
+      assert_free_region_list(_head == curr, "invariant");
       _head = next;
     } else {
-      assert(_head != curr, "%s", hrs_ext_msg(this, "invariant").buffer());
+      assert_free_region_list(_head != curr, "invariant");
       prev->set_next(next);
     }
     if (next == NULL) {
-      assert(_tail == curr, "%s", hrs_ext_msg(this, "invariant").buffer());
+      assert_free_region_list(_tail == curr, "invariant");
       _tail = prev;
     } else {
-      assert(_tail != curr, "%s", hrs_ext_msg(this, "invariant").buffer());
+      assert_free_region_list(_tail != curr, "invariant");
       next->set_prev(prev);
     }
-    if (_last = curr) {
+    if (_last == curr) {
       _last = NULL;
     }
 
@@ -243,12 +231,12 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
   }
 
   assert(count == num_regions,
-         "%s", hrs_err_msg("[%s] count: %u should be == num_regions: %u",
-                           name(), count, num_regions).buffer());
+         "[%s] count: %u should be == num_regions: %u",
+         name(), count, num_regions);
   assert(length() + num_regions == old_length,
-         "%s", hrs_err_msg("[%s] new length should be consistent "
-                           "new length: %u old length: %u num_regions: %u",
-                           name(), length(), old_length, num_regions).buffer());
+         "[%s] new length should be consistent "
+         "new length: %u old length: %u num_regions: %u",
+         name(), length(), old_length, num_regions);
 
   verify_optional();
 }
@@ -305,8 +293,8 @@ void FreeRegionList::verify_list() {
 
     count++;
     guarantee(count < _unrealistically_long_length,
-        "%s", hrs_err_msg("[%s] the calculated length: %u seems very long, is there maybe a cycle? curr: " PTR_FORMAT " prev0: " PTR_FORMAT " " "prev1: " PTR_FORMAT " length: %u",
-              name(), count, p2i(curr), p2i(prev0), p2i(prev1), length()).buffer());
+              "[%s] the calculated length: %u seems very long, is there maybe a cycle? curr: " PTR_FORMAT " prev0: " PTR_FORMAT " " "prev1: " PTR_FORMAT " length: %u",
+              name(), count, p2i(curr), p2i(prev0), p2i(prev1), length());
 
     if (curr->next() != NULL) {
       guarantee(curr->next()->prev() == curr, "Next or prev pointers messed up");
