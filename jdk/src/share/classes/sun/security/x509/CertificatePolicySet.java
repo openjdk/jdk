@@ -87,7 +87,7 @@ public class CertificatePolicySet {
         DerOutputStream tmp = new DerOutputStream();
 
         for (int i = 0; i < ids.size(); i++) {
-            ((CertificatePolicyId)ids.elementAt(i)).encode(tmp);
+            ids.elementAt(i).encode(tmp);
         }
         out.write(DerValue.tag_Sequence,tmp);
     }

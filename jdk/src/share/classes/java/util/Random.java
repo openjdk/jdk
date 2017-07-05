@@ -504,7 +504,7 @@ class Random implements java.io.Serializable {
 
         // The seed is read in as {@code long} for
         // historical reasons, but it is converted to an AtomicLong.
-        long seedVal = (long) fields.get("seed", -1L);
+        long seedVal = fields.get("seed", -1L);
         if (seedVal < 0)
           throw new java.io.StreamCorruptedException(
                               "Random: invalid seed");

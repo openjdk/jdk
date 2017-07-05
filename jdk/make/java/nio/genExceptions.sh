@@ -41,7 +41,7 @@ gen() {
   echo '-->' $DST/$ID.java
   out=$DST/${ID}.java
 
-  $SHELL addNotices.sh "$COPYRIGHT_YEARS" > $out
+  $SH ./addNotices.sh "$COPYRIGHT_YEARS" > $out
 
 cat >>$out <<__END__
 

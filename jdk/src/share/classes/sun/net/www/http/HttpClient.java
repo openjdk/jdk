@@ -230,9 +230,9 @@ public class HttpClient extends NetworkClient {
         setConnectTimeout(to);
 
         // get the cookieHandler if there is any
-        cookieHandler = (CookieHandler)java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-                public Object run() {
+        cookieHandler = java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<CookieHandler>() {
+                public CookieHandler run() {
                     return CookieHandler.getDefault();
                 }
             });
@@ -297,7 +297,7 @@ public class HttpClient extends NetworkClient {
         HttpClient ret = null;
         /* see if one's already around */
         if (useCache) {
-            ret = (HttpClient) kac.get(url, null);
+            ret = kac.get(url, null);
             if (ret != null) {
                 if ((ret.proxy != null && ret.proxy.equals(p)) ||
                     (ret.proxy == null && p == null)) {
@@ -389,7 +389,7 @@ public class HttpClient extends NetworkClient {
      * cache).
      */
     public void closeIdleConnection() {
-        HttpClient http = (HttpClient) kac.get(url, null);
+        HttpClient http = kac.get(url, null);
         if (http != null) {
             http.closeServer();
         }
@@ -447,8 +447,8 @@ public class HttpClient extends NetworkClient {
     {
         try {
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction() {
-                public Object run() throws IOException {
+                new java.security.PrivilegedExceptionAction<Void>() {
+                    public Void run() throws IOException {
                     openServer(server.getHostString(), server.getPort());
                     return null;
                 }
@@ -477,9 +477,8 @@ public class HttpClient extends NetworkClient {
     {
         try {
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction() {
-                public Object run() throws IOException
-                {
+                new java.security.PrivilegedExceptionAction<Void>() {
+                    public Void run() throws IOException {
                     superOpenServer(proxyHost, proxyPort);
                     return null;
                 }
@@ -686,7 +685,7 @@ public class HttpClient extends NetworkClient {
                     // So we do put the cast in as a workaround until
                     // it is resolved.
                     if (uri != null)
-                        cookieHandler.put(uri, (Map<java.lang.String,java.util.List<java.lang.String>>)responses.getHeaders());
+                        cookieHandler.put(uri, responses.getHeaders());
                 }
 
                 /* decide if we're keeping alive:

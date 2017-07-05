@@ -1040,11 +1040,12 @@ public class Config {
      * Check if need to use DNS to locate Kerberos services
      */
     public boolean useDNS(String name) {
-        boolean value = getDefaultBooleanValue(name, "libdefaults");
-        if (value == false) {
-            value = getDefaultBooleanValue("dns_fallback", "libdefaults");
+        String value = getDefault(name, "libdefaults");
+        if (value == null) {
+            return getDefaultBooleanValue("dns_fallback", "libdefaults");
+        } else {
+            return value.equalsIgnoreCase("true");
         }
-        return value;
     }
 
     /**

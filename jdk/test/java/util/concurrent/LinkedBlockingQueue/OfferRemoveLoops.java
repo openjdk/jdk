@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6316155
+ * @bug 6316155 6595669
  * @summary Test concurrent offer vs. remove
  * @author Martin Buchholz
  */
@@ -50,15 +50,18 @@ public class OfferRemoveLoops {
     private static void testQueue(final BlockingQueue<String> q) throws Throwable {
         System.out.println(q.getClass());
         final int count = 10000;
+        final long quittingTime = System.nanoTime() + 1L * 1000L * 1000L * 1000L;
         Thread t1 = new ControlledThread() {
                 protected void realRun() {
                     for (int i = 0, j = 0; i < count; i++)
-                        while (! q.remove(String.valueOf(i)))
+                        while (! q.remove(String.valueOf(i))
+                               && System.nanoTime() - quittingTime < 0)
                             Thread.yield();}};
         Thread t2 = new ControlledThread() {
                 protected void realRun() {
                     for (int i = 0, j = 0; i < count; i++)
-                        while (! q.offer(String.valueOf(i)))
+                        while (! q.offer(String.valueOf(i))
+                               && System.nanoTime() - quittingTime < 0)
                             Thread.yield();}};
         t1.setDaemon(true); t2.setDaemon(true);
         t1.start(); t2.start();

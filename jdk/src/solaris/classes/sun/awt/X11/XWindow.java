@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,16 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     SurfaceData surfaceData;
 
     XRepaintArea paintArea;
+
     // fallback default font object
-    final static Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
+    private static Font defaultFont;
+
+    static synchronized Font getDefaultFont() {
+        if (null == defaultFont) {
+            defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
+        }
+        return defaultFont;
+    }
 
     /*
      * Keeps all buttons which were pressed at the time of the last mouse
@@ -333,7 +341,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
         Font font = afont;
         if (font == null) {
-            font = defaultFont;
+            font = XWindow.getDefaultFont();
         }
         return new SunGraphics2D(surfData, fgColor, bgColor, font);
     }
@@ -902,12 +910,10 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
 
         super.handleConfigureNotifyEvent(xev);
         insLog.log(Level.FINER, "Configure, {0}, event disabled: {1}",
-                   new Object[] {xev, isEventDisabled(xev)});
+                   new Object[] {xev.get_xconfigure(), isEventDisabled(xev)});
         if (isEventDisabled(xev)) {
             return;
         }
-
-        long eventWindow = xev.get_xany().get_window();
 
 //  if ( Check if it's a resize, a move, or a stacking order change )
 //  {
@@ -982,7 +988,6 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     // called directly from this package, unlike handleKeyRelease.
     // un-final it if you need to override it in a subclass.
     final void handleKeyPress(XKeyEvent ev) {
-        int keycode = java.awt.event.KeyEvent.VK_UNDEFINED;
         long keysym[] = new long[2];
         char unicodeKey = 0;
         keysym[0] = NoSymbol;
@@ -1066,7 +1071,6 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
     // un-private it if you need to call it from elsewhere
     private void handleKeyRelease(XKeyEvent ev) {
-        int keycode = java.awt.event.KeyEvent.VK_UNDEFINED;
         long keysym[] = new long[2];
         char unicodeKey = 0;
         keysym[0] = NoSymbol;

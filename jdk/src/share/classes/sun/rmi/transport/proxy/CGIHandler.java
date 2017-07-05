@@ -89,8 +89,8 @@ public final class CGIHandler {
 
     static {
         java.security.AccessController.doPrivileged(
-                            new java.security.PrivilegedAction() {
-            public Object run() {
+            new java.security.PrivilegedAction<Void>() {
+            public Void run() {
                 ContentLength =
                     Integer.getInteger("CONTENT_LENGTH", 0).intValue();
                 QueryString = System.getProperty("QUERY_STRING", "");

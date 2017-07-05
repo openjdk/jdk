@@ -58,12 +58,12 @@ public class LineBreakpointSpec extends BreakpointSpec {
                                             LineNotFoundException {
         Location location = null;
         try {
-            List locs = clazz.locationsOfLine(lineNumber());
+            List<Location> locs = clazz.locationsOfLine(lineNumber());
             if (locs.size() == 0) {
                 throw new LineNotFoundException();
             }
             // TODO handle multiple locations
-            location = (Location)locs.get(0);
+            location = locs.get(0);
             if (location.method() == null) {
                 throw new LineNotFoundException();
             }

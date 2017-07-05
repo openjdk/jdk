@@ -30,9 +30,9 @@ import java.io.Serializable;
 
 
 /**
- * <p>Represents relational constraints that can be used in database
- * query "where clauses".  Instances of QueryExp are returned by the
- * static methods of the {@link Query} class.</p>
+ * <p>Represents relational constraints similar to database query "where
+ * clauses". Instances of QueryExp are returned by the static methods of the
+ * {@link Query} class.</p>
  *
  * <p>It is possible, but not
  * recommended, to create custom queries by implementing this
@@ -40,6 +40,7 @@ import java.io.Serializable;
  * QueryEval} class than to implement the interface directly, so that
  * the {@link #setMBeanServer} method works correctly.
  *
+ * @see MBeanServer#queryNames MBeanServer.queryNames
  * @since 1.5
  */
 public interface QueryExp extends Serializable {

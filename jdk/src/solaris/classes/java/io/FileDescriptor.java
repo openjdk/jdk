@@ -152,11 +152,19 @@ public final class FileDescriptor {
                 public int get(FileDescriptor obj) {
                     return obj.fd;
                 }
+
+                public void setHandle(FileDescriptor obj, long handle) {
+                    throw new UnsupportedOperationException();
+                }
+
+                public long getHandle(FileDescriptor obj) {
+                    throw new UnsupportedOperationException();
+                }
             }
         );
     }
 
-    // pacakge private methods used by FIS,FOS and RAF
+    // package private methods used by FIS, FOS and RAF
 
     int incrementAndGetUseCount() {
         return useCount.incrementAndGet();

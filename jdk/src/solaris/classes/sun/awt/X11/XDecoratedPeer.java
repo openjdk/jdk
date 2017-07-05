@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 import sun.awt.ComponentAccessor;
 import sun.awt.SunToolkit;
 
-class XDecoratedPeer extends XWindowPeer {
+abstract class XDecoratedPeer extends XWindowPeer {
     private static final Logger log = Logger.getLogger("sun.awt.X11.XDecoratedPeer");
     private static final Logger insLog = Logger.getLogger("sun.awt.X11.insets.XDecoratedPeer");
     private static final Logger focusLog = Logger.getLogger("sun.awt.X11.focus.XDecoratedPeer");
@@ -98,8 +98,7 @@ class XDecoratedPeer extends XWindowPeer {
         // happen after the X window is created.
         initResizability();
         updateSizeHints(dimensions);
-        content = createContent(dimensions);
-        content.initialize();
+        content = XContentWindow.createContent(this);
         if (warningWindow != null) {
             warningWindow.toFront();
         }
@@ -158,20 +157,6 @@ class XDecoratedPeer extends XWindowPeer {
                 }
             }
         }
-    }
-
-    XContentWindow createContent(WindowDimensions dims) {
-        Rectangle rec = dims.getBounds();
-        // Fix for  - set the location of the content window to the (-left inset, -top inset)
-        Insets ins = dims.getInsets();
-        if (ins != null) {
-            rec.x = -ins.left;
-            rec.y = -ins.top;
-        } else {
-            rec.x = 0;
-            rec.y = 0;
-        }
-        return new XContentWindow(this, rec);
     }
 
     XFocusProxyWindow createFocusProxy() {
@@ -286,7 +271,7 @@ class XDecoratedPeer extends XWindowPeer {
                 return;
             }
             Component t = (Component)target;
-            if (getDecorations() == winAttr.AWT_DECOR_NONE) {
+            if (getDecorations() == XWindowAttributesData.AWT_DECOR_NONE) {
                 setReparented(true);
                 insets_corrected = true;
                 reshape(dimensions, SET_SIZE, false);
@@ -471,6 +456,15 @@ class XDecoratedPeer extends XWindowPeer {
         if (insLog.isLoggable(Level.FINE)) {
             insLog.fine("Reshaping " + this + " to " + newDimensions + " op " + op + " user reshape " + userReshape);
         }
+        if (userReshape) {
+            // We handle only userReshape == true cases. It means that
+            // if the window manager or any other part of the windowing
+            // system sets inappropriate size for this window, we can
+            // do nothing but accept it.
+            Rectangle reqBounds = newDimensions.getBounds();
+            Rectangle newBounds = constrainBounds(reqBounds.x, reqBounds.y, reqBounds.width, reqBounds.height);
+            newDimensions = new WindowDimensions(newBounds, newDimensions.getInsets(), newDimensions.isClientSizeSet());
+        }
         XToolkit.awtLock();
         try {
             if (!isReparented() || !isVisible()) {
@@ -586,6 +580,49 @@ class XDecoratedPeer extends XWindowPeer {
         reshape(dims, operation, userReshape);
     }
 
+    // This method gets overriden in XFramePeer & XDialogPeer.
+    abstract boolean isTargetUndecorated();
+
+    @Override
+    Rectangle constrainBounds(int x, int y, int width, int height) {
+        // We don't restrict the setBounds() operation if the code is trusted.
+        if (!hasWarningWindow()) {
+            return new Rectangle(x, y, width, height);
+        }
+
+        // If it's undecorated or is not currently visible,
+        // apply the same constraints as for the Window.
+        if (!isVisible() || isTargetUndecorated()) {
+            return super.constrainBounds(x, y, width, height);
+        }
+
+        // If it's visible & decorated, constraint the size only
+        int newX = x;
+        int newY = y;
+        int newW = width;
+        int newH = height;
+
+        GraphicsConfiguration gc = ((Window)target).getGraphicsConfiguration();
+        Rectangle sB = gc.getBounds();
+        Insets sIn = ((Window)target).getToolkit().getScreenInsets(gc);
+
+        Rectangle curBounds = getBounds();
+
+        int maxW = Math.max(sB.width - sIn.left - sIn.right, curBounds.width);
+        int maxH = Math.max(sB.height - sIn.top - sIn.bottom, curBounds.height);
+
+        // First make sure the size is withing the visible part of the screen
+        if (newW > maxW) {
+            newW = maxW;
+        }
+
+        if (newH > maxH) {
+            newH = maxH;
+        }
+
+        return new Rectangle(newX, newY, newW, newH);
+    }
+
     /**
      * @see java.awt.peer.ComponentPeer#setBounds
      */
@@ -651,12 +688,12 @@ class XDecoratedPeer extends XWindowPeer {
         }
         if (!isReparented() && isVisible() && runningWM != XWM.NO_WM
                 &&  !XWM.isNonReparentingWM()
-                && getDecorations() != winAttr.AWT_DECOR_NONE) {
+                && getDecorations() != XWindowAttributesData.AWT_DECOR_NONE) {
             insLog.fine("- visible but not reparented, skipping");
             return;
         }
         //Last chance to correct insets
-        if (!insets_corrected && getDecorations() != winAttr.AWT_DECOR_NONE) {
+        if (!insets_corrected && getDecorations() != XWindowAttributesData.AWT_DECOR_NONE) {
             long parent = XlibUtil.getParentWindow(window);
             Insets correctWM = (parent != -1) ? XWM.getWM().getInsets(this, window, parent) : null;
             if (insLog.isLoggable(Level.FINER)) {
@@ -824,7 +861,7 @@ class XDecoratedPeer extends XWindowPeer {
                 fs &= ~(MWM_FUNC_RESIZE | MWM_FUNC_MAXIMIZE);
             }
             winAttr.functions = fs;
-            XWM.setShellNotResizable(this, dimensions, dimensions.getScreenBounds(), false);
+            XWM.setShellNotResizable(this, dimensions, dimensions.getBounds(), false);
         }
     }
 
@@ -870,7 +907,7 @@ class XDecoratedPeer extends XWindowPeer {
         return getSize().height;
     }
 
-    public WindowDimensions getDimensions() {
+    final public WindowDimensions getDimensions() {
         return dimensions;
     }
 

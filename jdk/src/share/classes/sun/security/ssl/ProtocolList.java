@@ -98,7 +98,7 @@ final class ProtocolList {
                 protocolNames[i++] = version.name;
             }
         }
-        return (String[])protocolNames.clone();
+        return protocolNames.clone();
     }
 
     public String toString() {
