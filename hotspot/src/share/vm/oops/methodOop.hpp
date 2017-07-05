@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,6 +403,8 @@ class methodOopDesc : public oopDesc {
     native_bind_event_is_interesting = true
   };
   address native_function() const                { return *(native_function_addr()); }
+  address critical_native_function();
+
   // Must specify a real function (not NULL).
   // Use clear_native_function() to unregister.
   void set_native_function(address function, bool post_event_flag);

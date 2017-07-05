@@ -39,6 +39,7 @@ public class OSInfo {
         WINDOWS,
         LINUX,
         SOLARIS,
+        MACOSX,
         UNKNOWN
     }
 
@@ -98,6 +99,10 @@ public class OSInfo {
 
             if (osName.contains("Solaris") || osName.contains("SunOS")) {
                 return SOLARIS;
+            }
+
+            if (osName.startsWith("Mac OS X")) {
+                return MACOSX;
             }
 
             // determine another OS here

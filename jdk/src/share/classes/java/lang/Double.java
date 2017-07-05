@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public final class Double extends Number implements Comparable<Double> {
      * <li>Otherwise, the result is a string that represents the sign and
      * magnitude (absolute value) of the argument. If the sign is negative,
      * the first character of the result is '{@code -}'
-     * (<code>'&#92;u002D'</code>); if the sign is positive, no sign character
+     * ({@code '\u005Cu002D'}); if the sign is positive, no sign character
      * appears in the result. As for the magnitude <i>m</i>:
      * <ul>
      * <li>If <i>m</i> is infinity, it is represented by the characters
@@ -156,7 +156,7 @@ public final class Double extends Number implements Comparable<Double> {
      * <li>If <i>m</i> is greater than or equal to 10<sup>-3</sup> but less
      * than 10<sup>7</sup>, then it is represented as the integer part of
      * <i>m</i>, in decimal form with no leading zeroes, followed by
-     * '{@code .}' (<code>'&#92;u002E'</code>), followed by one or
+     * '{@code .}' ({@code '\u005Cu002E'}), followed by one or
      * more decimal digits representing the fractional part of <i>m</i>.
      *
      * <li>If <i>m</i> is less than 10<sup>-3</sup> or greater than or
@@ -168,9 +168,9 @@ public final class Double extends Number implements Comparable<Double> {
      * 10<sup><i>n</i></sup> so that 1 &le; <i>a</i> {@literal <} 10. The
      * magnitude is then represented as the integer part of <i>a</i>,
      * as a single decimal digit, followed by '{@code .}'
-     * (<code>'&#92;u002E'</code>), followed by decimal digits
+     * ({@code '\u005Cu002E'}), followed by decimal digits
      * representing the fractional part of <i>a</i>, followed by the
-     * letter '{@code E}' (<code>'&#92;u0045'</code>), followed
+     * letter '{@code E}' ({@code '\u005Cu0045'}), followed
      * by a representation of <i>n</i> as a decimal integer, as
      * produced by the method {@link Integer#toString(int)}.
      * </ul>
@@ -208,7 +208,7 @@ public final class Double extends Number implements Comparable<Double> {
      * <li>Otherwise, the result is a string that represents the sign
      * and magnitude of the argument. If the sign is negative, the
      * first character of the result is '{@code -}'
-     * (<code>'&#92;u002D'</code>); if the sign is positive, no sign
+     * ({@code '\u005Cu002D'}); if the sign is positive, no sign
      * character appears in the result. As for the magnitude <i>m</i>:
      *
      * <ul>

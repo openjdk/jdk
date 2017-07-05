@@ -310,7 +310,7 @@ static int ParseLocale(int cat, char ** std_language, char ** std_script,
 }
 
 #ifdef JAVASE_EMBEDDED
-/* Determine the default embedded toolkit based on whether lib/xawt/
+/* Determine the default embedded toolkit based on whether libawt_xawt
  * exists in the JRE. This can still be overridden by -Dawt.toolkit=XXX
  */
 static char* getEmbeddedToolkit() {
@@ -325,8 +325,8 @@ static char* getEmbeddedToolkit() {
     realpath((char *)dlinfo.dli_fname, buf);
     len = strlen(buf);
     p = strrchr(buf, '/');
-    /* Default AWT Toolkit on Linux and Solaris is XAWT. */
-    strncpy(p, "/xawt/", MAXPATHLEN-len-1);
+    /* Default AWT Toolkit on Linux and Solaris is XAWT (libawt_xawt.so). */
+    strncpy(p, "/libawt_xawt.so", MAXPATHLEN-len-1);
     /* Check if it exists */
     if (stat(buf, &statbuf) == -1 && errno == ENOENT) {
         /* No - this is a reduced-headless-jre so use special HToolkit */

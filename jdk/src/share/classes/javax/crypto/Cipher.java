@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package javax.crypto;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.*;
 
 
@@ -389,16 +391,15 @@ public class Cipher {
             return matches(regexp, value) ? S_YES : S_NO;
         }
 
-        // Map<String,Pattern> for previously compiled patterns
-        // XXX use ConcurrentHashMap once available
-        private final static Map<String, Pattern> patternCache =
-            Collections.synchronizedMap(new HashMap<String, Pattern>());
+        // ConcurrentMap<String,Pattern> for previously compiled patterns
+        private final static ConcurrentMap<String, Pattern> patternCache =
+            new ConcurrentHashMap<String, Pattern>();
 
         private static boolean matches(String regexp, String str) {
             Pattern pattern = patternCache.get(regexp);
             if (pattern == null) {
                 pattern = Pattern.compile(regexp);
-                patternCache.put(regexp, pattern);
+                patternCache.putIfAbsent(regexp, pattern);
             }
             return pattern.matcher(str.toUpperCase(Locale.ENGLISH)).matches();
         }
