@@ -66,6 +66,7 @@ public class Statement {
     Object target;
     String methodName;
     Object[] arguments;
+    ClassLoader loader;
 
     /**
      * Creates a new <code>Statement</code> object with a <code>target</code>,
@@ -157,7 +158,7 @@ public class Statement {
         // of core from a class inside core. Special
         // case this method.
         if (target == Class.class && methodName.equals("forName")) {
-            return ClassFinder.resolveClass((String)arguments[0]);
+            return ClassFinder.resolveClass((String)arguments[0], this.loader);
         }
         Class[] argClasses = new Class[arguments.length];
         for(int i = 0; i < arguments.length; i++) {

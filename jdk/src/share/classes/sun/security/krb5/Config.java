@@ -123,7 +123,7 @@ public class Config {
             java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction
                     ("java.security.krb5.kdc"));
-         defaultRealm =
+        defaultRealm =
             java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction
                     ("java.security.krb5.realm"));
@@ -134,6 +134,16 @@ public class Config {
                  "java.security.krb5.realm both must be set or " +
                  "neither must be set.");
         }
+
+        // Read the Kerberos configuration file
+        try {
+            Vector<String> configFile;
+            configFile = loadConfigFile();
+            stanzaTable = parseStanzaTable(configFile);
+        } catch (IOException ioe) {
+            // No krb5.conf, no problem. We'll use DNS etc.
+        }
+
         if (kdchost != null) {
             /*
              * If configuration information is only specified by
@@ -141,22 +151,19 @@ public class Config {
              * java.security.krb5.realm, we put both in the hashtable
              * under [libdefaults].
              */
-            Hashtable<String,String> kdcs = new Hashtable<String,String> ();
+            if (stanzaTable == null) {
+                stanzaTable = new Hashtable<String,Object> ();
+            }
+            Hashtable<String,String> kdcs =
+                    (Hashtable<String,String>)stanzaTable.get("libdefaults");
+            if (kdcs == null) {
+                kdcs = new Hashtable<String,String> ();
+                stanzaTable.put("libdefaults", kdcs);
+            }
             kdcs.put("default_realm", defaultRealm);
             // The user can specify a list of kdc hosts separated by ":"
             kdchost = kdchost.replace(':', ' ');
             kdcs.put("kdc", kdchost);
-            stanzaTable = new Hashtable<String,Object> ();
-            stanzaTable.put("libdefaults", kdcs);
-        } else {
-            // Read the Kerberos configuration file
-            try {
-                Vector<String> configFile;
-                configFile = loadConfigFile();
-                stanzaTable = parseStanzaTable(configFile);
-            } catch (IOException ioe) {
-                // No krb5.conf, no problem. We'll use DNS etc.
-            }
         }
     }
 
@@ -294,7 +301,7 @@ public class Config {
          * hashtable.
          */
         if (name.equalsIgnoreCase("kdc") &&
-            (!section.equalsIgnoreCase("libdefaults")) &&
+            (section.equalsIgnoreCase(getDefault("default_realm", "libdefaults"))) &&
             (java.security.AccessController.doPrivileged(
                 new sun.security.action.
                 GetPropertyAction("java.security.krb5.kdc")) != null)) {

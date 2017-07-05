@@ -91,8 +91,8 @@ import java.util.Set;
  *      iterate over the entries in the directory. </p></li>
  *   <li><p> Files can be {@link #copyTo(Path,CopyOption[]) copied} or
  *     {@link #moveTo(Path,CopyOption[]) moved}. </p></li>
- *   <li><p> Symbolic-links may be {@link #createSymbolicLink created}, or the
- *     target of a link may be {@link #readSymbolicLink read}. </p></li>
+ *   <li><p> Symbolic links may be {@link #createSymbolicLink created}, or the
+ *     target of a symbolic link may be {@link #readSymbolicLink read}. </p></li>
  *   <li><p> The {@link #toRealPath real} path of an existing file may be
  *     obtained. </li></p>
  * </ul>
@@ -403,12 +403,12 @@ public abstract class Path
      *   <i>p</i><tt>.relativize(</tt><i>p</i><tt>.resolve(</tt><i>q</i><tt>)).equals(</tt><i>q</i><tt>)</tt>
      * </blockquote>
      *
-     * <p> When symbolic-links are supported, then whether the resulting path,
+     * <p> When symbolic links are supported, then whether the resulting path,
      * when resolved against this path, yields a path that can be used to locate
      * the {@link #isSameFile same} file as {@code other} is implementation
      * dependent. For example, if this path is  {@code "/a/b"} and the given
      * path is {@code "/a/x"} then the resulting relative path may be {@code
-     * "../x"}. If {@code "b"} is a symbolic-link then is implementation
+     * "../x"}. If {@code "b"} is a symbolic link then is implementation
      * dependent if {@code "a/b/../x"} would locate the same file as {@code "/a/x"}.
      *
      * @param   other
@@ -430,8 +430,8 @@ public abstract class Path
      *
      * <p> An implementation may require to examine the file to determine if the
      * file is a directory. Consequently this method may not be atomic with respect
-     * to other file system operations.  If the file is a symbolic-link then the
-     * link is deleted and not the final target of the link.
+     * to other file system operations.  If the file is a symbolic link then the
+     * symbolic link itself, not the final target of the link, is deleted.
      *
      * <p> If the file is a directory then the directory must be empty. In some
      * implementations a directory has entries for special files or links that
@@ -459,11 +459,11 @@ public abstract class Path
     /**
      * Deletes the file located by this path, if it exists.
      *
-     * <p> As with the {@link #delete delete()} method, an implementation
-     * may require to examine the file to determine if the file is a directory.
+     * <p> As with the {@link #delete delete()} method, an implementation may
+     * need to examine the file to determine if the file is a directory.
      * Consequently this method may not be atomic with respect to other file
-     * system operations.  If the file is a symbolic-link then the link is
-     * deleted and not the final target of the link.
+     * system operations.  If the file is a symbolic link, then the symbolic
+     * link itself, not the final target of the link, is deleted.
      *
      * <p> If the file is a directory then the directory must be empty. In some
      * implementations a directory has entries for special files or links that
@@ -507,7 +507,7 @@ public abstract class Path
      * create symbolic links, in which case this method may throw {@code IOException}.
      *
      * @param   target
-     *          the target of the link
+     *          the target of the symbolic link
      * @param   attrs
      *          the array of attributes to set atomically when creating the
      *          symbolic link
@@ -573,9 +573,9 @@ public abstract class Path
      * Reads the target of a symbolic link <i>(optional operation)</i>.
      *
      * <p> If the file system supports <a href="package-summary.html#links">symbolic
-     * links</a> then this method is used read the target of the link, failing
-     * if the file is not a link. The target of the link need not exist. The
-     * returned {@code Path} object will be associated with the same file
+     * links</a> then this method is used to read the target of the link, failing
+     * if the file is not a symbolic link. The target of the link need not exist.
+     * The returned {@code Path} object will be associated with the same file
      * system as this {@code Path}.
      *
      * @return  a {@code Path} object representing the target of the link
@@ -584,7 +584,7 @@ public abstract class Path
      *          if the implementation does not support symbolic links
      * @throws  NotLinkException
      *          if the target could otherwise not be read because the file
-     *          is not a link <i>(optional specific exception)</i>
+     *          is not a symbolic link <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
@@ -724,8 +724,8 @@ public abstract class Path
      * exists, except if the source and target are the {@link #isSameFile same}
      * file, in which case this method has no effect. File attributes are not
      * required to be copied to the target file. If symbolic links are supported,
-     * and the file is a link, then the final target of the link is copied. If
-     * the file is a directory then it creates an empty directory in the target
+     * and the file is a symbolic link, then the final target of the link is copied.
+     * If the file is a directory then it creates an empty directory in the target
      * location (entries in the directory are not copied). This method can be
      * used with the {@link Files#walkFileTree Files.walkFileTree} utility
      * method to copy a directory and all entries in the directory, or an entire
@@ -740,8 +740,8 @@ public abstract class Path
      *   <td> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </td>
      *   <td> If the target file exists, then the target file is replaced if it
      *     is not a non-empty directory. If the target file exists and is a
-     *     symbolic-link then the symbolic-link is replaced (not the target of
-     *     the link. </td>
+     *     symbolic link, then the symbolic link itself, not the target of
+     *     the link, is replaced. </td>
      * </tr>
      * <tr>
      *   <td> {@link StandardCopyOption#COPY_ATTRIBUTES COPY_ATTRIBUTES} </td>
@@ -755,11 +755,11 @@ public abstract class Path
      * </tr>
      * <tr>
      *   <td> {@link LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} </td>
-     *   <td> Symbolic-links are not followed. If the file, located by this path,
-     *     is a symbolic-link then the link is copied rather than the target of
-     *     the link. It is implementation specific if file attributes can be
-     *     copied to the new link. In other words, the {@code COPY_ATTRIBUTES}
-     *     option may be ignored when copying a link. </td>
+     *   <td> Symbolic links are not followed. If the file, located by this path,
+     *     is a symbolic link, then the symbolic link itself, not the target of
+     *     the link, is copied. It is implementation specific if file attributes
+     *     can be copied to the new link. In other words, the {@code
+     *     COPY_ATTRIBUTES} option may be ignored when copying a symbolic link. </td>
      * </tr>
      * </table>
      *
@@ -807,18 +807,19 @@ public abstract class Path
      * <p> By default, this method attempts to move the file to the target
      * location, failing if the target file exists except if the source and
      * target are the {@link #isSameFile same} file, in which case this method
-     * has no effect. If the file is a symbolic link then the link is moved and
-     * not the target of the link. This method may be invoked to move an empty
-     * directory. In some implementations a directory has entries for special
-     * files or links that are created when the directory is created. In such
-     * implementations a directory is considered empty when only the special
-     * entries exist. When invoked to move a directory that is not empty then the
-     * directory is moved if it does not require moving the entries in the directory.
-     * For example, renaming a directory on the same {@link FileStore} will usually
-     * not require moving the entries in the directory. When moving a directory
-     * requires that its entries be moved then this method fails (by throwing
-     * an {@code IOException}). To move a <i>file tree</i> may involve copying
-     * rather than moving directories and this can be done using the {@link
+     * has no effect. If the file is a symbolic link then the symbolic link
+     * itself, not the target of the link, is moved. This method may be
+     * invoked to move an empty directory. In some implementations a directory
+     * has entries for special files or links that are created when the
+     * directory is created. In such implementations a directory is considered
+     * empty when only the special entries exist. When invoked to move a
+     * directory that is not empty then the directory is moved if it does not
+     * require moving the entries in the directory.  For example, renaming a
+     * directory on the same {@link FileStore} will usually not require moving
+     * the entries in the directory. When moving a directory requires that its
+     * entries be moved then this method fails (by throwing an {@code
+     * IOException}). To move a <i>file tree</i> may involve copying rather
+     * than moving directories and this can be done using the {@link
      * #copyTo copyTo} method in conjunction with the {@link
      * Files#walkFileTree Files.walkFileTree} utility method.
      *
@@ -831,8 +832,8 @@ public abstract class Path
      *   <td> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </td>
      *   <td> If the target file exists, then the target file is replaced if it
      *     is not a non-empty directory. If the target file exists and is a
-     *     symbolic-link then the symbolic-link is replaced and not the target of
-     *     the link. </td>
+     *     symbolic link, then the symbolic link itself, not the target of
+     *     the link, is replaced. </td>
      * </tr>
      * <tr>
      *   <td> {@link StandardCopyOption#ATOMIC_MOVE ATOMIC_MOVE} </td>
@@ -1495,7 +1496,7 @@ public abstract class Path
      *
      * <p> Where a file is registered with a watch service by means of a symbolic
      * link then it is implementation specific if the watch continues to depend
-     * on the existence of the link after it is registered.
+     * on the existence of the symbolic link after it is registered.
      *
      * @param   watcher
      *          the watch service to which this object is to be registered
