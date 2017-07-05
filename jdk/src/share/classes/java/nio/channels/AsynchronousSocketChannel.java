@@ -110,7 +110,8 @@ import java.nio.ByteBuffer;
  * state of the {@link ByteBuffer}, or the sequence of buffers, for the I/O
  * operation is not defined. Buffers should be discarded or at least care must
  * be taken to ensure that the buffers are not accessed while the channel remains
- * open.
+ * open. All methods that accept timeout parameters treat values less than or
+ * equal to zero to mean that the I/O operation does not timeout.
  *
  * @since 1.7
  */
@@ -367,7 +368,7 @@ public abstract class AsynchronousSocketChannel
      * @param   dst
      *          The buffer into which bytes are to be transferred
      * @param   timeout
-     *          The timeout, or {@code 0L} for no timeout
+     *          The maximum time for the I/O operation to complete
      * @param   unit
      *          The time unit of the {@code timeout} argument
      * @param   attachment
@@ -376,8 +377,7 @@ public abstract class AsynchronousSocketChannel
      *          The handler for consuming the result
      *
      * @throws  IllegalArgumentException
-     *          If the {@code timeout} parameter is negative or the buffer is
-     *          read-only
+     *          If the buffer is read-only
      * @throws  ReadPendingException
      *          If a read operation is already in progress on this channel
      * @throws  NotYetConnectedException
@@ -471,7 +471,7 @@ public abstract class AsynchronousSocketChannel
      *          The maximum number of buffers to be accessed; must be non-negative
      *          and no larger than {@code dsts.length - offset}
      * @param   timeout
-     *          The timeout, or {@code 0L} for no timeout
+     *          The maximum time for the I/O operation to complete
      * @param   unit
      *          The time unit of the {@code timeout} argument
      * @param   attachment
@@ -483,8 +483,7 @@ public abstract class AsynchronousSocketChannel
      *          If the pre-conditions for the {@code offset}  and {@code length}
      *          parameter aren't met
      * @throws  IllegalArgumentException
-     *          If the {@code timeout} parameter is negative, or a buffer is
-     *          read-only
+     *          If the buffer is read-only
      * @throws  ReadPendingException
      *          If a read operation is already in progress on this channel
      * @throws  NotYetConnectedException
@@ -524,7 +523,7 @@ public abstract class AsynchronousSocketChannel
      * @param   src
      *          The buffer from which bytes are to be retrieved
      * @param   timeout
-     *          The timeout, or {@code 0L} for no timeout
+     *          The maximum time for the I/O operation to complete
      * @param   unit
      *          The time unit of the {@code timeout} argument
      * @param   attachment
@@ -532,8 +531,6 @@ public abstract class AsynchronousSocketChannel
      * @param   handler
      *          The handler for consuming the result
      *
-     * @throws  IllegalArgumentException
-     *          If the {@code timeout} parameter is negative
      * @throws  WritePendingException
      *          If a write operation is already in progress on this channel
      * @throws  NotYetConnectedException
@@ -623,7 +620,7 @@ public abstract class AsynchronousSocketChannel
      *          The maximum number of buffers to be accessed; must be non-negative
      *          and no larger than {@code srcs.length - offset}
      * @param   timeout
-     *          The timeout, or {@code 0L} for no timeout
+     *          The maximum time for the I/O operation to complete
      * @param   unit
      *          The time unit of the {@code timeout} argument
      * @param   attachment
@@ -634,8 +631,6 @@ public abstract class AsynchronousSocketChannel
      * @throws  IndexOutOfBoundsException
      *          If the pre-conditions for the {@code offset}  and {@code length}
      *          parameter aren't met
-     * @throws  IllegalArgumentException
-     *          If the {@code timeout} parameter is negative
      * @throws  WritePendingException
      *          If a write operation is already in progress on this channel
      * @throws  NotYetConnectedException

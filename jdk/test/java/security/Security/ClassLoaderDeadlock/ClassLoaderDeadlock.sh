@@ -68,11 +68,10 @@ case "$OS" in
     ;;
 esac
 
-# remove old class files
 cd ${TESTCLASSES}${FILESEP}
-rm -f ClassLoaderDeadlock.class
-rm -rf provider
-mkdir provider
+if [ ! -d provider ] ; then
+    mkdir provider
+fi
 
 # compile the test program
 ${TESTJAVA}${FILESEP}bin${FILESEP}javac \
@@ -88,4 +87,11 @@ ${TESTJAVA}${FILESEP}bin${FILESEP}java \
 	-classpath "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}Deadlock.jar" \
 	ClassLoaderDeadlock
 
-exit $?
+STATUS=$?
+
+# clean up
+rm -f 'ClassLoaderDeadlock.class' 'ClassLoaderDeadlock$1.class' \
+'ClassLoaderDeadlock$DelayClassLoader.class' \
+provider${FILESEP}HashProvider.class
+
+exit $STATUS

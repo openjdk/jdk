@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,7 +262,23 @@ public final class NumericShaper implements java.io.Serializable {
         /**
          * The Cham range with the Cham digits.
          */
-        CHAM            ('\uaa50', '\uaa00', '\uaa60');
+        CHAM            ('\uaa50', '\uaa00', '\uaa60'),
+        /**
+         * The Tai Tham Hora range with the Tai Tham Hora digits.
+         */
+        TAI_THAM_HORA   ('\u1a80', '\u1a20', '\u1ab0'),
+        /**
+         * The Tai Tham Tham range with the Tai Tham Tham digits.
+         */
+        TAI_THAM_THAM   ('\u1a90', '\u1a20', '\u1ab0'),
+        /**
+         * The Javanese range with the Javanese digits.
+         */
+        JAVANESE        ('\ua9d0', '\ua980', '\ua9e0'),
+        /**
+         * The Meetei Mayek range with the Meetei Mayek digits.
+         */
+        MEETEI_MAYEK    ('\uabf0', '\uabc0', '\uac00');
 
         private static int toRangeIndex(Range script) {
             int index = script.ordinal();
@@ -592,10 +608,16 @@ public final class NumericShaper implements java.io.Serializable {
         0x07a6, 0x07b1,
         0x07eb, 0x07f4,
         0x07f6, 0x07fa,
-        0x0901, 0x0903,
+        0x0816, 0x081a,
+        0x081b, 0x0824,
+        0x0825, 0x0828,
+        0x0829, 0x0830,
+        0x0859, 0x085e,
+        0x0900, 0x0903,
+        0x093a, 0x093b,
         0x093c, 0x093d,
         0x0941, 0x0949,
-        0x094d, 0x0950,
+        0x094d, 0x094e,
         0x0951, 0x0958,
         0x0962, 0x0964,
         0x0981, 0x0982,
@@ -604,7 +626,7 @@ public final class NumericShaper implements java.io.Serializable {
         0x09cd, 0x09ce,
         0x09e2, 0x09e6,
         0x09f2, 0x09f4,
-        0x0a01, 0x0a03,
+        0x09fb, 0x0a03,
         0x0a3c, 0x0a3e,
         0x0a41, 0x0a59,
         0x0a70, 0x0a72,
@@ -630,9 +652,8 @@ public final class NumericShaper implements java.io.Serializable {
         0x0cbc, 0x0cbd,
         0x0ccc, 0x0cd5,
         0x0ce2, 0x0ce6,
-        0x0cf1, 0x0d02,
         0x0d41, 0x0d46,
-        0x0d4d, 0x0d57,
+        0x0d4d, 0x0d4e,
         0x0d62, 0x0d66,
         0x0dca, 0x0dcf,
         0x0dd2, 0x0dd8,
@@ -649,7 +670,7 @@ public final class NumericShaper implements java.io.Serializable {
         0x0f71, 0x0f7f,
         0x0f80, 0x0f85,
         0x0f86, 0x0f88,
-        0x0f90, 0x0fbe,
+        0x0f8d, 0x0fbe,
         0x0fc6, 0x0fc7,
         0x102d, 0x1031,
         0x1032, 0x1038,
@@ -661,8 +682,10 @@ public final class NumericShaper implements java.io.Serializable {
         0x1082, 0x1083,
         0x1085, 0x1087,
         0x108d, 0x108e,
-        0x135f, 0x1360,
+        0x109d, 0x109e,
+        0x135d, 0x1360,
         0x1390, 0x13a0,
+        0x1400, 0x1401,
         0x1680, 0x1681,
         0x169b, 0x16a0,
         0x1712, 0x1720,
@@ -682,6 +705,11 @@ public final class NumericShaper implements java.io.Serializable {
         0x1939, 0x1946,
         0x19de, 0x1a00,
         0x1a17, 0x1a19,
+        0x1a56, 0x1a57,
+        0x1a58, 0x1a61,
+        0x1a62, 0x1a63,
+        0x1a65, 0x1a6d,
+        0x1a73, 0x1a80,
         0x1b00, 0x1b04,
         0x1b34, 0x1b35,
         0x1b36, 0x1b3b,
@@ -691,8 +719,16 @@ public final class NumericShaper implements java.io.Serializable {
         0x1b80, 0x1b82,
         0x1ba2, 0x1ba6,
         0x1ba8, 0x1baa,
+        0x1be6, 0x1be7,
+        0x1be8, 0x1bea,
+        0x1bed, 0x1bee,
+        0x1bef, 0x1bf2,
         0x1c2c, 0x1c34,
         0x1c36, 0x1c3b,
+        0x1cd0, 0x1cd3,
+        0x1cd4, 0x1ce1,
+        0x1ce2, 0x1ce9,
+        0x1ced, 0x1cee,
         0x1dc0, 0x1e00,
         0x1fbd, 0x1fbe,
         0x1fbf, 0x1fc2,
@@ -716,14 +752,16 @@ public final class NumericShaper implements java.io.Serializable {
         0x213a, 0x213c,
         0x2140, 0x2145,
         0x214a, 0x214e,
-        0x2153, 0x2160,
-        0x2190, 0x2336,
+        0x2150, 0x2160,
+        0x2189, 0x2336,
         0x237b, 0x2395,
         0x2396, 0x249c,
         0x24ea, 0x26ac,
         0x26ad, 0x2800,
         0x2900, 0x2c00,
-        0x2ce5, 0x2d00,
+        0x2ce5, 0x2ceb,
+        0x2cef, 0x2d00,
+        0x2d7f, 0x2d80,
         0x2de0, 0x3005,
         0x3008, 0x3021,
         0x302a, 0x3031,
@@ -742,25 +780,40 @@ public final class NumericShaper implements java.io.Serializable {
         0x33de, 0x33e0,
         0x33ff, 0x3400,
         0x4dc0, 0x4e00,
-        0xa490, 0xa500,
+        0xa490, 0xa4d0,
         0xa60d, 0xa610,
         0xa66f, 0xa680,
+        0xa6f0, 0xa6f2,
         0xa700, 0xa722,
         0xa788, 0xa789,
         0xa802, 0xa803,
         0xa806, 0xa807,
         0xa80b, 0xa80c,
         0xa825, 0xa827,
-        0xa828, 0xa840,
+        0xa828, 0xa830,
+        0xa838, 0xa840,
         0xa874, 0xa880,
         0xa8c4, 0xa8ce,
+        0xa8e0, 0xa8f2,
         0xa926, 0xa92e,
         0xa947, 0xa952,
+        0xa980, 0xa983,
+        0xa9b3, 0xa9b4,
+        0xa9b6, 0xa9ba,
+        0xa9bc, 0xa9bd,
         0xaa29, 0xaa2f,
         0xaa31, 0xaa33,
         0xaa35, 0xaa40,
         0xaa43, 0xaa44,
         0xaa4c, 0xaa4d,
+        0xaab0, 0xaab1,
+        0xaab2, 0xaab5,
+        0xaab7, 0xaab9,
+        0xaabe, 0xaac0,
+        0xaac1, 0xaac2,
+        0xabe5, 0xabe6,
+        0xabe8, 0xabe9,
+        0xabed, 0xabf0,
         0xfb1e, 0xfb1f,
         0xfb29, 0xfb2a,
         0xfd3e, 0xfd50,
@@ -775,12 +828,28 @@ public final class NumericShaper implements java.io.Serializable {
         0x1091f, 0x10920,
         0x10a01, 0x10a10,
         0x10a38, 0x10a40,
+        0x10b39, 0x10b40,
+        0x10e60, 0x11000,
+        0x11001, 0x11002,
+        0x11038, 0x11047,
+        0x11052, 0x11066,
+        0x11080, 0x11082,
+        0x110b3, 0x110b7,
+        0x110b9, 0x110bb,
         0x1d167, 0x1d16a,
         0x1d173, 0x1d183,
         0x1d185, 0x1d18c,
         0x1d1aa, 0x1d1ae,
         0x1d200, 0x1d360,
-        0x1d7ce, 0x20000,
+        0x1d6db, 0x1d6dc,
+        0x1d715, 0x1d716,
+        0x1d74f, 0x1d750,
+        0x1d789, 0x1d78a,
+        0x1d7c3, 0x1d7c4,
+        0x1d7ce, 0x1f110,
+        0x1f300, 0x1f48c,
+        0x1f48d, 0x1f524,
+        0x1f525, 0x20000,
         0xe0001, 0xf0000,
         0x10fffe, 0x10ffff // sentinel
     };
@@ -947,6 +1016,14 @@ public final class NumericShaper implements java.io.Serializable {
             && rangeSet.contains(Range.ARABIC)) {
             rangeSet.remove(Range.ARABIC);
         }
+
+        // As well as the above case, give precedance to TAI_THAM_THAM if both
+        // TAI_THAM_HORA and TAI_THAM_THAM are specified.
+        if (rangeSet.contains(Range.TAI_THAM_THAM)
+            && rangeSet.contains(Range.TAI_THAM_HORA)) {
+            rangeSet.remove(Range.TAI_THAM_HORA);
+        }
+
         rangeArray = rangeSet.toArray(new Range[rangeSet.size()]);
         if (rangeArray.length > BSEARCH_THRESHOLD) {
             // sort rangeArray for binary search

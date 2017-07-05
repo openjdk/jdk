@@ -273,7 +273,11 @@ class PushbackInputStream extends FilterInputStream {
      */
     public int available() throws IOException {
         ensureOpen();
-        return (buf.length - pos) + super.available();
+        int n = buf.length - pos;
+        int avail = super.available();
+        return n > (Integer.MAX_VALUE - avail)
+                    ? Integer.MAX_VALUE
+                    : n + avail;
     }
 
     /**
