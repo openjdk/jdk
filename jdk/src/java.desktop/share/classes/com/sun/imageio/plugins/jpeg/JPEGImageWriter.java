@@ -1104,6 +1104,11 @@ public class JPEGImageWriter extends ImageWriter {
         currentImage++;  // After a successful write
     }
 
+    @Override
+    public boolean canWriteSequence() {
+        return true;
+    }
+
     public void prepareWriteSequence(IIOMetadata streamMetadata)
         throws IOException {
         setThreadLock();

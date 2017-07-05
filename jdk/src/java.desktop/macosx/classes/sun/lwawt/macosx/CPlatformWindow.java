@@ -488,6 +488,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         } else {
             deliverZoom(true);
 
+            // We need an up to date size of the peer, so we flush the native events
+            // to be sure that there are no setBounds requests in the queue.
+            LWCToolkit.flushNativeSelectors();
             this.normalBounds = peer.getBounds();
 
             GraphicsConfiguration config = getPeer().getGraphicsConfiguration();

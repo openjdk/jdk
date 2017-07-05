@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,7 +310,7 @@ implements java.io.Serializable
 
     /**
      * Checks two UnresolvedPermission objects for equality.
-     * Checks that <i>obj</i> is an UnresolvedPermission, and has
+     * Checks that {@code obj} is an UnresolvedPermission, and has
      * the same type (class) name, permission name, actions, and
      * certificates as this object.
      *
@@ -491,7 +491,7 @@ implements java.io.Serializable
     /**
      * Returns a new PermissionCollection object for storing
      * UnresolvedPermission  objects.
-     * <p>
+     *
      * @return a new PermissionCollection object suitable for
      * storing UnresolvedPermissions.
      */

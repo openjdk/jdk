@@ -51,6 +51,9 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
   private static final int C_INT32_SIZE = 4;
   private static final int C_INT64_SIZE = 8;
   private static int pointerSize = UNINITIALIZED_SIZE;
+  // Counter to ensure read loops terminate:
+  private static final int MAX_DUPLICATE_DEFINITIONS = 100;
+  private int duplicateDefCount = 0;
 
   private static final boolean DEBUG;
   static {
@@ -166,6 +169,10 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
     typeEntrySizeOffset           = getLongValueFromProcess("gHotSpotVMTypeEntrySizeOffset");
     typeEntryArrayStride          = getLongValueFromProcess("gHotSpotVMTypeEntryArrayStride");
 
+    if (typeEntryArrayStride == 0L) {
+      throw new RuntimeException("zero stride: cannot read types.");
+    }
+
     // Start iterating down it until we find an entry with no name
     Address typeNameAddr = null;
     do {
@@ -192,7 +199,11 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
       }
 
       entryAddr = entryAddr.addOffsetTo(typeEntryArrayStride);
-    } while (typeNameAddr != null);
+    } while (typeNameAddr != null && duplicateDefCount < MAX_DUPLICATE_DEFINITIONS);
+
+    if (duplicateDefCount >= MAX_DUPLICATE_DEFINITIONS) {
+      throw new RuntimeException("too many duplicate definitions");
+    }
   }
 
   private void initializePrimitiveTypes() {
@@ -395,6 +406,10 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
     structEntryAddressOffset      = getLongValueFromProcess("gHotSpotVMStructEntryAddressOffset");
     structEntryArrayStride        = getLongValueFromProcess("gHotSpotVMStructEntryArrayStride");
 
+    if (structEntryArrayStride == 0L) {
+      throw new RuntimeException("zero stride: cannot read types.");
+    }
+
     // Fetch the address of the VMStructEntry*
     Address entryAddr = lookupInProcess("gHotSpotVMStructs");
     // Dereference this once to get the pointer to the first VMStructEntry
@@ -472,6 +487,11 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
     intConstantEntryValueOffset = getLongValueFromProcess("gHotSpotVMIntConstantEntryValueOffset");
     intConstantEntryArrayStride = getLongValueFromProcess("gHotSpotVMIntConstantEntryArrayStride");
 
+    if (intConstantEntryArrayStride == 0L) {
+      throw new RuntimeException("zero stride: cannot read types.");
+    }
+
+
     // Fetch the address of the VMIntConstantEntry*
     Address entryAddr = lookupInProcess("gHotSpotVMIntConstants");
     // Dereference this once to get the pointer to the first VMIntConstantEntry
@@ -501,12 +521,17 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
           } else {
             System.err.println("Warning: the int constant \"" + name + "\" (declared in the remote VM in VMStructs::localHotSpotVMIntConstants) " +
                                "had its value declared as " + value + " twice. Continuing.");
+            duplicateDefCount++;
           }
         }
       }
 
       entryAddr = entryAddr.addOffsetTo(intConstantEntryArrayStride);
-    } while (nameAddr != null);
+    } while (nameAddr != null && duplicateDefCount < MAX_DUPLICATE_DEFINITIONS);
+
+    if (duplicateDefCount >= MAX_DUPLICATE_DEFINITIONS) {
+      throw new RuntimeException("too many duplicate definitions");
+    }
   }
 
   private void readVMLongConstants() {
@@ -518,6 +543,10 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
     longConstantEntryNameOffset  = getLongValueFromProcess("gHotSpotVMLongConstantEntryNameOffset");
     longConstantEntryValueOffset = getLongValueFromProcess("gHotSpotVMLongConstantEntryValueOffset");
     longConstantEntryArrayStride = getLongValueFromProcess("gHotSpotVMLongConstantEntryArrayStride");
+
+    if (longConstantEntryArrayStride == 0L) {
+      throw new RuntimeException("zero stride: cannot read types.");
+    }
 
     // Fetch the address of the VMLongConstantEntry*
     Address entryAddr = lookupInProcess("gHotSpotVMLongConstants");
@@ -548,12 +577,17 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
           } else {
             System.err.println("Warning: the long constant \"" + name + "\" (declared in the remote VM in VMStructs::localHotSpotVMLongConstants) " +
                                "had its value declared as " + value + " twice. Continuing.");
+            duplicateDefCount++;
           }
         }
       }
 
       entryAddr = entryAddr.addOffsetTo(longConstantEntryArrayStride);
-    } while (nameAddr != null);
+    } while (nameAddr != null && duplicateDefCount < MAX_DUPLICATE_DEFINITIONS);
+
+    if (duplicateDefCount >= MAX_DUPLICATE_DEFINITIONS) {
+      throw new RuntimeException("too many duplicate definitions.");
+    }
   }
 
   private BasicType lookupOrFail(String typeName) {
@@ -740,9 +774,10 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
             }
 
             if (!typeNameIsPointerType(typeName)) {
-            System.err.println("Warning: the type \"" + typeName + "\" (declared in the remote VM in VMStructs::localHotSpotVMTypes) " +
-                               "had its size declared as " + size + " twice. Continuing.");
-        }
+                System.err.println("Warning: the type \"" + typeName + "\" (declared in the remote VM in VMStructs::localHotSpotVMTypes) " +
+                                   "had its size declared as " + size + " twice. Continuing.");
+                duplicateDefCount++;
+            }
         }
 
     }

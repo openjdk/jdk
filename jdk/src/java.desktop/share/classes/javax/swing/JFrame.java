@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,16 +127,6 @@ public class JFrame  extends Frame implements WindowConstants,
                                               RootPaneContainer,
                               TransferHandler.HasGetTransferHandler
 {
-    /**
-     * The exit application default window close operation. If a window
-     * has this set as the close operation and is closed in an applet,
-     * a <code>SecurityException</code> may be thrown.
-     * It is recommended you only use this in an application.
-     *
-     * @since 1.3
-     */
-    public static final int EXIT_ON_CLOSE = 3;
-
     /**
      * Key into the AppContext, used to check if should provide decorations
      * by default.
@@ -352,7 +342,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * objects.
      *
      * <li><code>EXIT_ON_CLOSE</code>
-     * (defined in <code>JFrame</code>):
+     * (defined in <code>WindowConstants</code>):
      * Exit the application using the <code>System</code>
      * <code>exit</code> method.  Use this only in applications.
      * </ul>
@@ -393,7 +383,9 @@ public class JFrame  extends Frame implements WindowConstants,
             operation != HIDE_ON_CLOSE &&
             operation != DISPOSE_ON_CLOSE &&
             operation != EXIT_ON_CLOSE) {
-            throw new IllegalArgumentException("defaultCloseOperation must be one of: DO_NOTHING_ON_CLOSE, HIDE_ON_CLOSE, DISPOSE_ON_CLOSE, or EXIT_ON_CLOSE");
+            throw new IllegalArgumentException("defaultCloseOperation must be"
+                    + " one of: DO_NOTHING_ON_CLOSE, HIDE_ON_CLOSE,"
+                    + " DISPOSE_ON_CLOSE, or EXIT_ON_CLOSE");
         }
 
         if (operation == EXIT_ON_CLOSE) {
@@ -861,7 +853,7 @@ public class JFrame  extends Frame implements WindowConstants,
             defaultCloseOperationString = "DISPOSE_ON_CLOSE";
         } else if (defaultCloseOperation == DO_NOTHING_ON_CLOSE) {
             defaultCloseOperationString = "DO_NOTHING_ON_CLOSE";
-        } else if (defaultCloseOperation == 3) {
+        } else if (defaultCloseOperation == EXIT_ON_CLOSE) {
             defaultCloseOperationString = "EXIT_ON_CLOSE";
         } else defaultCloseOperationString = "";
         String rootPaneString = (rootPane != null ?
