@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.Locale;
 
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
@@ -371,7 +372,7 @@ public class TimestampCheck {
     static void jarsigner(String cmd, int path, boolean expected)
             throws Exception {
         System.err.println("Test " + path);
-        Process p = Runtime.getRuntime().exec(String.format(cmd, path, path));
+        Process p = Runtime.getRuntime().exec(String.format(Locale.ROOT,cmd, path, path));
         BufferedReader reader = new BufferedReader(
                 new InputStreamReader(p.getErrorStream()));
         while (true) {

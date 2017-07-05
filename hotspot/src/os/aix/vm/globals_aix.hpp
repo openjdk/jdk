@@ -35,6 +35,7 @@
                          product, \
                          product_pd, \
                          diagnostic, \
+                         diagnostic_pd, \
                          notproduct, \
                          range, \
                          constraint, \

@@ -28,7 +28,6 @@ import java.net.http.WSOutgoingMessage.Binary;
 import java.net.http.WSOutgoingMessage.Close;
 import java.net.http.WSOutgoingMessage.Ping;
 import java.net.http.WSOutgoingMessage.Pong;
-import java.net.http.WSOutgoingMessage.StreamedText;
 import java.net.http.WSOutgoingMessage.Text;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -40,7 +39,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.net.http.Pair.pair;
@@ -81,11 +79,6 @@ final class WSTransmitter {
     CompletableFuture<WebSocket> sendText(CharSequence message, boolean isLast) {
         checkAndUpdateText(isLast);
         return acceptMessage(new Text(isLast, message));
-    }
-
-    CompletableFuture<WebSocket> sendText(Stream<? extends CharSequence> message) {
-        checkAndUpdateText(true);
-        return acceptMessage(new StreamedText(message));
     }
 
     CompletableFuture<WebSocket> sendBinary(ByteBuffer message, boolean isLast) {

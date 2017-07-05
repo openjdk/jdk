@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -73,6 +73,7 @@ public class CipherTestUtils {
     private static final List<TestParameters> TESTS = new ArrayList<>(3);
     private static final List<Exception> EXCEPTIONS
             = Collections.synchronizedList(new ArrayList<>(1));
+
     private static final String CLIENT_PUBLIC_KEY
         = "-----BEGIN CERTIFICATE-----\n"
         + "MIICtTCCAh4CCQDkYJ46DMcGRjANBgkqhkiG9w0BAQUFADCBnDELMAkGA1UEBhMC\n"
@@ -191,7 +192,7 @@ public class CipherTestUtils {
     private final X509TrustManager clientTrustManager;
     private final X509TrustManager serverTrustManager;
 
-    static abstract class Server implements Runnable {
+    static abstract class Server implements Runnable, AutoCloseable {
 
         final CipherTestUtils cipherTest;
 
@@ -240,12 +241,11 @@ public class CipherTestUtils {
 
     public static class TestParameters {
 
-        String cipherSuite;
-        String protocol;
-        String clientAuth;
+        final String cipherSuite;
+        final String protocol;
+        final String clientAuth;
 
-        TestParameters(String cipherSuite, String protocol,
-                String clientAuth) {
+        TestParameters(String cipherSuite, String protocol, String clientAuth) {
             this.cipherSuite = cipherSuite;
             this.protocol = protocol;
             this.clientAuth = clientAuth;
@@ -267,10 +267,7 @@ public class CipherTestUtils {
 
     private static volatile CipherTestUtils instance = null;
 
-    public static CipherTestUtils getInstance() throws IOException,
-            FileNotFoundException, KeyStoreException,
-            NoSuchAlgorithmException, CertificateException,
-            UnrecoverableKeyException, InvalidKeySpecException {
+    public static CipherTestUtils getInstance() throws Exception {
         if (instance == null) {
             synchronized (CipherTestUtils.class) {
                 if (instance == null) {
@@ -281,21 +278,10 @@ public class CipherTestUtils {
         return instance;
     }
 
-    public static void setTestedArguments(String testedProtocol,
-            String testedCipherSuite) {
-
-        TestParameters testedParams;
-
-        String cipherSuite = testedCipherSuite.trim();
-        if (cipherSuite.startsWith("SSL_")) {
-            testedParams =
-                new TestParameters(cipherSuite, testedProtocol, null);
-            TESTS.add(testedParams);
-
-        } else {
-            System.out.println("Your input Cipher suites is not correct, "
-                    + "please try another one .");
-        }
+    public static void setTestedArguments(String protocol, String ciphersuite) {
+        ciphersuite = ciphersuite.trim();
+        TestParameters params = new TestParameters(ciphersuite, protocol, null);
+        TESTS.add(params);
     }
 
     public X509ExtendedKeyManager getClientKeyManager() {
@@ -318,10 +304,7 @@ public class CipherTestUtils {
         EXCEPTIONS.add(e);
     }
 
-    private CipherTestUtils()
-            throws IOException, FileNotFoundException, KeyStoreException,
-            NoSuchAlgorithmException, CertificateException,
-            UnrecoverableKeyException, InvalidKeySpecException {
+    private CipherTestUtils() throws Exception {
         factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
         KeyStore serverKeyStore = createServerKeyStore(SERVER_PUBLIC_KEY,
                 SERVER_PRIVATE_KEY);
@@ -329,12 +312,11 @@ public class CipherTestUtils {
                 CA_PRIVATE_KEY);
 
         if (serverKeyStore != null) {
-            KeyManagerFactory keyFactory1
-                    = KeyManagerFactory.getInstance(
+            KeyManagerFactory keyFactory = KeyManagerFactory.getInstance(
                             KeyManagerFactory.getDefaultAlgorithm());
-            keyFactory1.init(serverKeyStore, PASSWORD);
-            serverKeyManager = (X509ExtendedKeyManager) keyFactory1.
-                    getKeyManagers()[0];
+            keyFactory.init(serverKeyStore, PASSWORD);
+            serverKeyManager = (X509ExtendedKeyManager)
+                    keyFactory.getKeyManagers()[0];
         } else {
             serverKeyManager = null;
         }
@@ -346,12 +328,11 @@ public class CipherTestUtils {
         clientKeyStore =
                 createServerKeyStore(CLIENT_PUBLIC_KEY,CLIENT_PRIVATE_KEY);
         if (clientKeyStore != null) {
-            KeyManagerFactory keyFactory
-                    = KeyManagerFactory.getInstance(
+            KeyManagerFactory keyFactory = KeyManagerFactory.getInstance(
                             KeyManagerFactory.getDefaultAlgorithm());
             keyFactory.init(clientKeyStore, PASSWORD);
-            clientKeyManager = (X509ExtendedKeyManager) keyFactory.
-                    getKeyManagers()[0];
+            clientKeyManager = (X509ExtendedKeyManager)
+                    keyFactory.getKeyManagers()[0];
         } else {
             clientKeyManager = null;
         }
@@ -395,8 +376,8 @@ public class CipherTestUtils {
             this.cipherTest = cipherTest;
         }
 
-        Client(CipherTestUtils cipherTest,
-                String testedCipherSuite) throws Exception {
+        Client(CipherTestUtils cipherTest, String testedCipherSuite)
+                throws Exception {
             this.cipherTest = cipherTest;
         }
 
@@ -417,7 +398,7 @@ public class CipherTestUtils {
                     CipherTestUtils.addFailure(e);
                     System.out.println("** Failed " + params
                             + "**, got exception:");
-                    e.printStackTrace(System.err);
+                    e.printStackTrace(System.out);
                 }
             });
         }
@@ -448,11 +429,7 @@ public class CipherTestUtils {
     }
 
     public static void printStringArray(String[] stringArray) {
-        System.out.print(stringArray.length + " : ");
-        for (String stringArray1 : stringArray) {
-            System.out.print(stringArray1);
-            System.out.print(",");
-        }
+        System.out.println(Arrays.toString(stringArray));
         System.out.println();
     }
 
@@ -496,15 +473,15 @@ public class CipherTestUtils {
         System.out.println("-----------------------");
     }
 
-    private static KeyStore createServerKeyStore(String publicKeyStr,
+    private static KeyStore createServerKeyStore(String publicKey,
             String keySpecStr) throws KeyStoreException, IOException,
             NoSuchAlgorithmException, CertificateException,
             InvalidKeySpecException {
 
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, null);
-        if (publicKeyStr == null || keySpecStr == null) {
-            throw new IllegalArgumentException("publicKeyStr or "
+        if (publicKey == null || keySpecStr == null) {
+            throw new IllegalArgumentException("publicKey or "
                     + "keySpecStr cannot be null");
         }
         String strippedPrivateKey = keySpecStr.substring(
@@ -518,8 +495,7 @@ public class CipherTestUtils {
                 = (RSAPrivateKey) kf.generatePrivate(priKeySpec);
 
         // generate certificate chain
-        try (InputStream is =
-                new ByteArrayInputStream(publicKeyStr.getBytes())) {
+        try (InputStream is = new ByteArrayInputStream(publicKey.getBytes())) {
             // generate certificate from cert string
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             Certificate keyCert = cf.generateCertificate(is);
@@ -530,10 +506,9 @@ public class CipherTestUtils {
         return ks;
     }
 
-    public static int mainServer(PeerFactory peerFactory,
+    public static Server mainServer(PeerFactory peerFactory,
             String expectedException) throws Exception {
 
-        long time = System.currentTimeMillis();
         setTestedArguments(peerFactory.getTestedProtocol(),
                 peerFactory.getTestedCipher());
 
@@ -542,14 +517,11 @@ public class CipherTestUtils {
         secureRandom.nextInt();
 
         CipherTestUtils cipherTest = CipherTestUtils.getInstance();
-        Server server = peerFactory.newServer(cipherTest, PeerFactory.FREE_PORT);
-        Thread serverThread = new Thread(server, "Server");
+        Server srv = peerFactory.newServer(cipherTest, PeerFactory.FREE_PORT);
+        Thread serverThread = new Thread(srv, "Server");
         serverThread.start();
 
-        time = System.currentTimeMillis() - time;
-        System.out.println("Elapsed time " + time);
-
-        return server.getPort();
+        return srv;
     }
 
     public static void mainClient(PeerFactory peerFactory, int port,
@@ -566,7 +538,6 @@ public class CipherTestUtils {
         CipherTestUtils cipherTest = CipherTestUtils.getInstance();
         peerFactory.newClient(cipherTest, port).run();
         cipherTest.checkResult(expectedException);
-        JSSEServer.closeServer = true;
 
         time = System.currentTimeMillis() - time;
         System.out.println("Elapsed time " + time);
@@ -582,9 +553,11 @@ public class CipherTestUtils {
 
         abstract String getTestedCipher();
 
-        abstract Client newClient(CipherTestUtils cipherTest, int testPort) throws Exception;
+        abstract Client newClient(CipherTestUtils cipherTest, int testPort)
+                throws Exception;
 
-        abstract Server newServer(CipherTestUtils cipherTest, int testPort) throws Exception;
+        abstract Server newServer(CipherTestUtils cipherTest, int testPort)
+                throws Exception;
 
         boolean isSupported(String cipherSuite) {
             return true;
@@ -618,7 +591,7 @@ class AlwaysTrustManager implements X509TrustManager {
         try {
             trustManager.checkClientTrusted(chain, authType);
         } catch (CertificateException excep) {
-            System.out.println("ERROR in client trust manager");
+            System.out.println("ERROR in client trust manager: " + excep);
         }
     }
 
@@ -628,7 +601,7 @@ class AlwaysTrustManager implements X509TrustManager {
         try {
             trustManager.checkServerTrusted(chain, authType);
         } catch (CertificateException excep) {
-            System.out.println("ERROR in server Trust manger");
+            System.out.println("ERROR in server trust manager: " + excep);
         }
     }
 
