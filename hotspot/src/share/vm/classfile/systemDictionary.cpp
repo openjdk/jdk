@@ -2417,6 +2417,8 @@ Handle SystemDictionary::make_dynamic_call_site(KlassHandle caller,
                          vmSymbols::makeSite_name(), vmSymbols::makeSite_signature(),
                          &args, CHECK_(empty));
   oop call_site_oop = (oop) result.get_jobject();
+  assert(call_site_oop->is_oop()
+         /*&& sun_dyn_CallSiteImpl::is_instance(call_site_oop)*/, "must be sane");
   sun_dyn_CallSiteImpl::set_vmmethod(call_site_oop, mh_invdyn());
   if (TraceMethodHandles) {
     tty->print_cr("Linked invokedynamic bci=%d site="INTPTR_FORMAT":", caller_bci, call_site_oop);
@@ -2453,6 +2455,8 @@ Handle SystemDictionary::find_bootstrap_method(KlassHandle caller,
   oop boot_method_oop = (oop) result.get_jobject();
 
   if (boot_method_oop != NULL) {
+    assert(boot_method_oop->is_oop()
+           && java_dyn_MethodHandle::is_instance(boot_method_oop), "must be sane");
     // probably no race conditions, but let's be careful:
     if (Atomic::cmpxchg_ptr(boot_method_oop, ik->adr_bootstrap_method(), NULL) == NULL)
       ik->set_bootstrap_method(boot_method_oop);

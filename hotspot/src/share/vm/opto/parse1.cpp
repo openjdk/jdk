@@ -229,7 +229,9 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     }
   }
 
-  MethodLivenessResult live_locals = method()->liveness_at_bci(osr_bci());
+  // Use the raw liveness computation to make sure that unexpected
+  // values don't propagate into the OSR frame.
+  MethodLivenessResult live_locals = method()->raw_liveness_at_bci(osr_bci());
   if (!live_locals.is_valid()) {
     // Degenerate or breakpointed method.
     C->record_method_not_compilable("OSR in empty or breakpointed method");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,28 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
-// Implementation of all inlined member functions defined in oop.hpp
-// We need a separate file to avoid circular references
+/**
+ * @test
+ * @bug 6875866
+ * @summary Intrinsic for String.indexOf() is broken on x86 with SSE4.2
+ *
+ * @run main/othervm -Xcomp Test
+ */
 
-// Separate this out to break dependency.
-inline bool oopDesc::is_perm() const {
-  return Universe::heap()->is_in_permanent(this);
-}
+public class Test {
 
-// Check for NULL also.
-inline bool oopDesc::is_perm_or_null() const {
-  return this == NULL || is_perm();
-}
+  static int IndexOfTest(String str) {
+    return str.indexOf("11111xx1x");
+  }
 
-inline bool oopDesc::is_scavengable() const {
-  return Universe::heap()->is_scavengable(this);
+  public static void main(String args[]) {
+    String str = "11111xx11111xx1x";
+    int idx = IndexOfTest(str);
+    System.out.println("IndexOf = " + idx);
+    if (idx != 7) {
+      System.exit(97);
+    }
+  }
 }

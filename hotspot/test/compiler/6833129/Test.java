@@ -25,7 +25,7 @@
  * @test
  * @bug 6833129
  * @summary Object.clone() and Arrays.copyOf ignore coping with -XX:+DeoptimizeALot
- * @run main/othervm -Xbatch -XX:+DeoptimizeALot Test
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+DeoptimizeALot Test
  */
 
 public class Test{
