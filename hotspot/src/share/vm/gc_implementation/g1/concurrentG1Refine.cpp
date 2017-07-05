@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc_implementation/g1/concurrentG1RefineThread.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1GCPhaseTimes.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
 #include "memory/space.inline.hpp"
@@ -500,11 +501,11 @@ bool ConcurrentG1Refine::expand_card_count_cache(int cache_size_idx) {
 }
 
 void ConcurrentG1Refine::clear_and_record_card_counts() {
-  if (G1ConcRSLogCacheSize == 0) return;
+  if (G1ConcRSLogCacheSize == 0) {
+    return;
+  }
 
-#ifndef PRODUCT
   double start = os::elapsedTime();
-#endif
 
   if (_expand_card_counts) {
     int new_idx = _cache_size_index + 1;
@@ -523,11 +524,8 @@ void ConcurrentG1Refine::clear_and_record_card_counts() {
   assert((this_epoch+1) <= max_jint, "to many periods");
   // Update epoch
   _n_periods++;
-
-#ifndef PRODUCT
-  double elapsed = os::elapsedTime() - start;
-  _g1h->g1_policy()->record_cc_clear_time(elapsed * 1000.0);
-#endif
+  double cc_clear_time_ms = (os::elapsedTime() - start) * 1000;
+  _g1h->g1_policy()->phase_times()->record_cc_clear_time_ms(cc_clear_time_ms);
 }
 
 void ConcurrentG1Refine::print_worker_threads_on(outputStream* st) const {
