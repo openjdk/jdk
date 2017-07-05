@@ -106,6 +106,7 @@ SUNWprivate_1.1 {
                 Java_sun_nio_ch_ServerSocketChannelImpl_accept0;
                 Java_sun_nio_ch_ServerSocketChannelImpl_initIDs;
                 Java_sun_nio_ch_SocketChannelImpl_checkConnect;
+		Java_sun_nio_ch_SocketChannelImpl_sendOutOfBandData;
 		Java_sun_nio_ch_UnixAsynchronousServerSocketChannelImpl_accept0;
 		Java_sun_nio_ch_UnixAsynchronousServerSocketChannelImpl_initIDs;
 		Java_sun_nio_ch_UnixAsynchronousSocketChannelImpl_checkConnect;

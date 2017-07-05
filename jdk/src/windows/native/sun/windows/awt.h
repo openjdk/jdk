@@ -310,24 +310,32 @@ typedef JLocalRef<jclass>  JLClass;
  * Class to encapsulate the extraction of the java string contents
  * into a buffer and the cleanup of the buffer
  */
- class JavaStringBuffer
+class JavaStringBuffer
 {
 protected:
     LPWSTR m_pStr;
     jsize  m_dwSize;
+    LPWSTR getNonEmptyString() {
+        return (NULL==m_pStr)
+                ? L""
+                : m_pStr;
+    }
 
 public:
     JavaStringBuffer(jsize cbTCharCount) {
         m_dwSize = cbTCharCount;
-        m_pStr = (LPWSTR)safe_Malloc( (m_dwSize+1)*sizeof(WCHAR) );
+        m_pStr = (0 == m_dwSize)
+            ? NULL
+            : (LPWSTR)safe_Malloc( (m_dwSize+1)*sizeof(WCHAR) );
     }
 
     JavaStringBuffer(JNIEnv *env, jstring text) {
-        if (NULL == text) {
-            m_pStr = L"";
-            m_dwSize = 0;
+        m_dwSize = (NULL == text)
+            ? 0
+            : env->GetStringLength(text);
+        if (0 == m_dwSize) {
+            m_pStr = NULL;
         } else {
-            m_dwSize = env->GetStringLength(text);
             m_pStr = (LPWSTR)safe_Malloc( (m_dwSize+1)*sizeof(WCHAR) );
             env->GetStringRegion(text, 0, m_dwSize, reinterpret_cast<jchar *>(m_pStr));
             m_pStr[m_dwSize] = 0;
@@ -341,12 +349,16 @@ public:
 
     void Resize(jsize cbTCharCount) {
         m_dwSize = cbTCharCount;
+        //It is ok to have non-null terminated string here.
+        //The function is used only for space reservation in staff buffer for
+        //followed data copying process. And that is the reason why we ignore
+        //the special case m_dwSize==0 here.
         m_pStr = (LPWSTR)safe_Realloc(m_pStr, (m_dwSize+1)*sizeof(WCHAR) );
     }
     //we are in UNICODE now, so LPWSTR:=:LPTSTR
-    operator LPWSTR() { return m_pStr; }
-    operator LPARAM() { return (LPARAM)m_pStr; }
-    void *GetData() { return (void *)m_pStr; }
+    operator LPWSTR() { return getNonEmptyString(); }
+    operator LPARAM() { return (LPARAM)getNonEmptyString(); }
+    void *GetData() { return (void *)getNonEmptyString(); }
     jsize  GetSize() { return m_dwSize; }
 };
 

@@ -32,29 +32,14 @@ import java.net.Socket;
 import java.net.ServerSocket;
 
 public class SetReceiveBufferSize {
-    class Server extends Thread {
-        private ServerSocket ss;
-        public Server(ServerSocket ss) {
-            this.ss = ss;
-        }
-
-        public void run() {
-            try {
-                ss.accept();
-            } catch (Exception e) {
-            }
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         SetReceiveBufferSize s = new SetReceiveBufferSize();
     }
 
     public SetReceiveBufferSize() throws Exception {
         ServerSocket ss = new ServerSocket(0);
-        Server serv = new Server(ss);
-        serv.start();
         Socket s = new Socket("localhost", ss.getLocalPort());
+        Socket accepted = ss.accept();
         try {
             s.setReceiveBufferSize(0);
         } catch (IllegalArgumentException e) {
@@ -62,6 +47,8 @@ public class SetReceiveBufferSize {
         } catch (Exception ex) {
         } finally {
             ss.close();
+            s.close();
+            accepted.close();
         }
         throw new RuntimeException("IllegalArgumentException not thrown!");
     }

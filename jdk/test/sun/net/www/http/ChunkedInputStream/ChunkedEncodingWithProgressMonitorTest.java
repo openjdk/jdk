@@ -30,9 +30,7 @@
  * @summary ChunkedEncoding unit test; MeteredStream/ProgressData problem
  */
 
-import java.io.*;
 import java.net.*;
-import java.security.*;
 import java.util.BitSet;
 import sun.net.ProgressMeteringPolicy;
 import sun.net.ProgressMonitor;
@@ -42,8 +40,10 @@ import sun.net.ProgressEvent;
 public class ChunkedEncodingWithProgressMonitorTest {
     public static void main (String[] args) throws Exception {
         ProgressMonitor.setMeteringPolicy(new MyProgressMeteringPolicy());
-        ProgressMonitor.getDefault().addProgressListener(new MyProgressListener());
+        ProgressListener listener = new MyProgressListener();
+        ProgressMonitor.getDefault().addProgressListener(listener);
         ChunkedEncodingTest.test();
+        ProgressMonitor.getDefault().removeProgressListener(listener);
 
         if (flag.cardinality() != 3) {
             throw new RuntimeException("All three methods in ProgressListener"+

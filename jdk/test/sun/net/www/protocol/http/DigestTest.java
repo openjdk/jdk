@@ -95,10 +95,11 @@ class DigestServer extends Thread {
                 os.write (reply.getBytes());
                 Thread.sleep (2000);
                 s1.close ();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             System.out.println (e);
             e.printStackTrace();
+        } finally {
+            try { s.close(); } catch (IOException unused) {}
         }
     }
 
@@ -204,15 +205,12 @@ public class DigestTest {
 
 
     public static void main(String[] args) throws Exception {
-        int nLoops = 1;
-        int nSize = 10;
-        int port, n =0;
-        byte b[] = new byte[nSize];
+        int port;
         DigestServer server;
         ServerSocket sock;
 
         try {
-            sock = new ServerSocket (5000);
+            sock = new ServerSocket (0);
             port = sock.getLocalPort ();
         }
         catch (Exception e) {
@@ -225,21 +223,18 @@ public class DigestTest {
         boolean passed = false;
 
         try  {
-
             Authenticator.setDefault (new MyAuthenticator ());
             String s = "http://localhost:" + port + DigestServer.uri;
             URL url = new URL(s);
             java.net.URLConnection conURL =  url.openConnection();
 
             InputStream in = conURL.getInputStream();
-            int c;
-            while ((c = in.read ()) != -1) {
-            }
+            while (in.read () != -1) {}
             in.close ();
-        }
-        catch(ProtocolException e) {
+        } catch(ProtocolException e) {
             passed = true;
         }
+
         if (!passed) {
             throw new RuntimeException ("Expected a ProtocolException from wrong password");
         }

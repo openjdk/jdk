@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,11 @@
 # @run shell ParseTest.sh
 
 . ${TESTSRC}/../common/CommonSetup.sh
-. ${TESTSRC}/../common/ApplicationSetup.sh
+
+# all return statuses are checked in this test
+set +e
+
+failed=0
 
 DUMPFILE="minimal.bin"
 

@@ -81,7 +81,7 @@ public class LingerTest {
         public void run() {
             System.out.println ("Another starts");
             try {
-                Thread.currentThread().sleep(delay);
+                Thread.sleep(delay);
                 Socket s = new Socket("localhost", port);
                 synchronized (this) {
                     connected = true;
@@ -105,7 +105,6 @@ public class LingerTest {
         Socket s1 = new Socket("localhost", ss.getLocalPort());
         Socket s2 = ss.accept();
 
-
         // setup conditions for untransmitted data and lengthy
             // linger interval
             s1.setSendBufferSize(128*1024);
@@ -122,14 +121,15 @@ public class LingerTest {
         thr.start();
 
         // give sender time to queue the data
-            Thread.currentThread().sleep(1000);
+            Thread.sleep(1000);
 
         // close the socket asynchronously
             (new Thread(new Closer(s1))).start();
 
         // give another time to run
-            Thread.currentThread().sleep(10000);
+            Thread.sleep(10000);
 
+        ss.close();
         // check that another is done
             if (!another.connected()) {
             throw new RuntimeException("Another thread is blocked");

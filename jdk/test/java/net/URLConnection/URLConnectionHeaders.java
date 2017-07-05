@@ -70,8 +70,10 @@ public class URLConnectionHeaders {
                 w.newLine();
                 w.flush();
                 s.close ();
-                srv.close (); // or else the HTTPURLConnection will retry
-            } catch (IOException e) { e.printStackTrace();}
+            } catch (IOException e) { e.printStackTrace();
+            } finally {
+                try { srv.close(); } catch (IOException unused) {}
+            }
         }
     }
 

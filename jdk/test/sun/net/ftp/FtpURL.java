@@ -438,8 +438,9 @@ public class FtpURL {
                     client = server.accept();
                     (new FtpServerHandler(client)).run();
                 }
-                server.close();
             } catch(Exception e) {
+            } finally {
+                try { server.close(); } catch (IOException unused) {}
             }
         }
     }
@@ -448,10 +449,9 @@ public class FtpURL {
     }
 
     public FtpURL() throws Exception {
-        FtpServer server = null;
+        FtpServer server = new FtpServer(0);
         BufferedReader in = null;
         try {
-            server = new FtpServer(0);
             server.start();
             int port = server.getPort();
 
@@ -497,17 +497,14 @@ public class FtpURL {
                 throw new RuntimeException("Incorrect filename received");
             if (! "/usr".equals(server.pwd()))
                 throw new RuntimeException("Incorrect pwd received");
-            in.close();
             // We're done!
 
         } catch (Exception e) {
-            try {
-                in.close();
-                server.terminate();
-                server.interrupt();
-            } catch(Exception ex) {
-            }
             throw new RuntimeException("FTP support error: " + e.getMessage());
+        } finally {
+            try { in.close(); } catch (IOException unused) {}
+            server.terminate();
+            server.server.close();
         }
     }
 }
