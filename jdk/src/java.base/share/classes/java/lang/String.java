@@ -203,7 +203,7 @@ public final class String
      * Class String is special cased within the Serialization Stream Protocol.
      *
      * A String instance is written into an ObjectOutputStream according to
-     * <a href="{@docRoot}/../platform/serialization/spec/output.html">
+     * <a href="{@docRoot}/../specs/serialization/protocol.html#stream-elements">
      * Object Serialization Specification, Section 6.2, "Stream Elements"</a>
      */
     private static final ObjectStreamField[] serialPersistentFields =
@@ -335,7 +335,7 @@ public final class String
      * subarray.
      *
      * <p> Each {@code byte} in the subarray is converted to a {@code char} as
-     * specified in the method above.
+     * specified in the {@link #String(byte[],int) String(byte[],int)} constructor.
      *
      * @deprecated This method does not properly convert bytes into characters.
      * As of JDK&nbsp;1.1, the preferred way to do this is via the
@@ -390,7 +390,7 @@ public final class String
 
     /**
      * Allocates a new {@code String} containing characters constructed from
-     * an array of 8-bit integer values. Each character <i>c</i>in the
+     * an array of 8-bit integer values. Each character <i>c</i> in the
      * resulting string is constructed from the corresponding component
      * <i>b</i> in the byte array such that:
      *
@@ -2203,12 +2203,16 @@ public final class String
      * <p> The string {@code "boo:and:foo"}, for example, yields the
      * following results with these parameters:
      *
-     * <blockquote><table cellpadding=1 cellspacing=0 summary="Split example showing regex, limit, and result">
+     * <blockquote><table class="plain">
+     * <caption style="display:none">Split example showing regex, limit, and result</caption>
+     * <thead>
      * <tr>
      *     <th>Regex</th>
      *     <th>Limit</th>
      *     <th>Result</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr><td style="text-align:center">:</td>
      *     <td style="text-align:center">2</td>
      *     <td>{@code { "boo", "and:foo" }}</td></tr>
@@ -2227,6 +2231,7 @@ public final class String
      * <tr><td style="text-align:center">o</td>
      *     <td style="text-align:center">0</td>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
+     * </tbody>
      * </table></blockquote>
      *
      * <p> An invocation of this method of the form
@@ -2326,15 +2331,20 @@ public final class String
      * <p> The string {@code "boo:and:foo"}, for example, yields the following
      * results with these expressions:
      *
-     * <blockquote><table cellpadding=1 cellspacing=0 summary="Split examples showing regex and result">
+     * <blockquote><table class="plain">
+     * <caption style="display:none">Split examples showing regex and result</caption>
+     * <thead>
      * <tr>
      *  <th>Regex</th>
      *  <th>Result</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr><td style="text-align:center">:</td>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
      * <tr><td style="text-align:center">o</td>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
+     * </tbody>
      * </table></blockquote>
      *
      *
@@ -2445,13 +2455,17 @@ public final class String
      * {@code String} may be a different length than the original {@code String}.
      * <p>
      * Examples of lowercase  mappings are in the following table:
-     * <table border="1" summary="Lowercase mapping examples showing language code of locale, upper case, lower case, and description">
+     * <table class="plain">
+     * <caption style="display:none">Lowercase mapping examples showing language code of locale, upper case, lower case, and description</caption>
+     * <thead>
      * <tr>
      *   <th>Language Code of Locale</th>
      *   <th>Upper Case</th>
      *   <th>Lower Case</th>
      *   <th>Description</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *   <td>tr (Turkish)</td>
      *   <td>&#92;u0130</td>
@@ -2480,6 +2494,7 @@ public final class String
      *       <img src="doc-files/sigma1.gif" alt="sigma"></td>
      *   <td>lowercased all chars in String</td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * @param locale use the case transformation rules for this locale
@@ -2526,13 +2541,17 @@ public final class String
      * <p>
      * Examples of locale-sensitive and 1:M case mappings are in the following table.
      *
-     * <table border="1" summary="Examples of locale-sensitive and 1:M case mappings. Shows Language code of locale, lower case, upper case, and description.">
+     * <table class="plain">
+     * <caption style="display:none">Examples of locale-sensitive and 1:M case mappings. Shows Language code of locale, lower case, upper case, and description.</caption>
+     * <thead>
      * <tr>
      *   <th>Language Code of Locale</th>
      *   <th>Lower Case</th>
      *   <th>Upper Case</th>
      *   <th>Description</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *   <td>tr (Turkish)</td>
      *   <td>&#92;u0069</td>
@@ -2557,6 +2576,7 @@ public final class String
      *   <td>FAHRVERGN&Uuml;GEN</td>
      *   <td></td>
      * </tr>
+     * </tbody>
      * </table>
      * @param locale use the case transformation rules for this locale
      * @return the {@code String}, converted to uppercase.

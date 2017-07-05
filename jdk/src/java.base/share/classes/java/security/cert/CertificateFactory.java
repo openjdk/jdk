@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,11 +101,11 @@ import sun.security.jca.GetInstance.Instance;
  * <li>{@code PkiPath}</li>
  * </ul>
  * The type and encodings are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertificateFactory">
+ * "{@docRoot}/../specs/security/standard-names.html#certificatefactory-types">
  * CertificateFactory section</a> and the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathEncodings">
+ * "{@docRoot}/../specs/security/standard-names.html#certpath-encodings">
  * CertPath Encodings section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other types or encodings are supported.
  *
@@ -172,8 +172,8 @@ public class CertificateFactory {
      *
      * @param type the name of the requested certificate type.
      * See the CertificateFactory section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertificateFactory">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#certificatefactory-types">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard certificate types.
      *
      * @return a certificate factory object for the specified type
@@ -213,8 +213,8 @@ public class CertificateFactory {
      *
      * @param type the certificate type.
      * See the CertificateFactory section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertificateFactory">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#certificatefactory-types">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard certificate types.
      *
      * @param provider the name of the provider.
@@ -260,8 +260,8 @@ public class CertificateFactory {
      *
      * @param type the certificate type.
      * See the CertificateFactory section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertificateFactory">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#certificatefactory-types">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard certificate types.
      * @param provider the provider.
      *
@@ -359,8 +359,8 @@ public class CertificateFactory {
      * Returns an iteration of the {@code CertPath} encodings supported
      * by this certificate factory, with the default encoding first. See
      * the CertPath Encodings section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathEncodings">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#certpath-encodings">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard encoding names and their formats.
      * <p>
      * Attempts to modify the returned {@code Iterator} via its
@@ -399,8 +399,8 @@ public class CertificateFactory {
      * the data read from the {@code InputStream} inStream. The data
      * is assumed to be in the specified encoding. See
      * the CertPath Encodings section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathEncodings">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#certpath-encodings">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard encoding names and their formats.
      *
      * @param inStream an {@code InputStream} containing the data

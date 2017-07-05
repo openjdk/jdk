@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
  * @test
  * @bug 8031572
  * @summary jarsigner -verify exits with 0 when a jar file is not properly signed
- * @library /lib/testlibrary
  * @modules java.base/sun.security.tools.keytool
  *          jdk.jartool/sun.security.tools.jarsigner
  *          jdk.jartool/sun.tools.jar
- * @build jdk.testlibrary.IOUtils
  * @run main EntriesOrder
  */
 
@@ -44,8 +42,6 @@ import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import jdk.testlibrary.IOUtils;
 
 public class EntriesOrder {
 
@@ -114,7 +110,7 @@ public class EntriesOrder {
                 Enumeration<JarEntry> jes = jf.entries();
                 while (jes.hasMoreElements()) {
                     JarEntry je = jes.nextElement();
-                    IOUtils.readFully(jf.getInputStream(je));
+                    jf.getInputStream(je).readAllBytes();
                     Certificate[] certs = je.getCertificates();
                     if (certs != null && certs.length > 0) {
                         cc++;
@@ -146,7 +142,7 @@ public class EntriesOrder {
                 while (true) {
                     JarEntry je = jis.getNextJarEntry();
                     if (je == null) break;
-                    IOUtils.readFully(jis);
+                    jis.readAllBytes();
                     Certificate[] certs = je.getCertificates();
                     if (certs != null && certs.length > 0) {
                         cc++;

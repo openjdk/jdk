@@ -29,17 +29,17 @@
  * @author  Mandy Chung
  * @author  Jaroslav Bachorik
  *
- * @library /lib/testlibrary
+ * @library /test/lib
  *
- * @build jdk.testlibrary.*
  * @run main/othervm Locks
  */
 import java.lang.management.*;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Phaser;
 import java.util.function.Predicate;
-import jdk.testlibrary.LockFreeLogManager;
+import jdk.test.lib.LockFreeLogger;
 
 public class Locks {
 
@@ -47,7 +47,7 @@ public class Locks {
     private static final Object OBJB = new Object();
     private static final EnhancedWaiter OBJC = new EnhancedWaiter();
     private static final ThreadMXBean TM = ManagementFactory.getThreadMXBean();
-    private static final LockFreeLogManager LOGGER = new LockFreeLogManager();
+    private static final LockFreeLogger LOGGER = new LockFreeLogger();
 
     private static String getLockName(Object lock) {
         if (lock == null) return null;
@@ -60,12 +60,12 @@ public class Locks {
         if (t == null) {
             return;
         }
-        Optional<ThreadInfo> result = Arrays.asList(
-                TM.getThreadInfo(TM.getAllThreadIds(), true, true)).
-                stream().
-                filter(tInfo -> (tInfo != null && tInfo.getLockOwnerName() != null)
-                        ? tInfo.getLockOwnerName().equals(t.getName()) : false).
-                findAny();
+        String name = t.getName();
+        Optional<ThreadInfo> result = Arrays.stream(
+                TM.getThreadInfo(TM.getAllThreadIds(), true, true))
+                                            .filter(Objects::nonNull)
+                                            .filter(i -> name.equals(i.getLockOwnerName()))
+                                            .findAny();
         if (result.isPresent()) {
             throw new RuntimeException("Thread " + t.getName() + " is not "
                     + "supposed to be hold any lock. Currently owning lock : "

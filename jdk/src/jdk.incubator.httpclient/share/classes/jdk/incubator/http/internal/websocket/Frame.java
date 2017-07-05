@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package jdk.incubator.http.internal.websocket;
+
+import jdk.internal.vm.annotation.Stable;
 
 import java.nio.ByteBuffer;
 
@@ -58,6 +60,7 @@ final class Frame {
         CONTROL_0xE    (0xE),
         CONTROL_0xF    (0xF);
 
+        @Stable
         private static final Opcode[] opcodes;
 
         static {
