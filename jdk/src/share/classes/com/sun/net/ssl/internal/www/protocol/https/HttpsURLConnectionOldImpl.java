@@ -497,6 +497,10 @@ public class HttpsURLConnectionOldImpl
         delegate.setFixedLengthStreamingMode(contentLength);
     }
 
+    public void setFixedLengthStreamingMode(long contentLength) {
+        delegate.setFixedLengthStreamingMode(contentLength);
+    }
+
     public void setChunkedStreamingMode (int chunklen) {
         delegate.setChunkedStreamingMode(chunklen);
     }

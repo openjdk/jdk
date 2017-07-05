@@ -51,6 +51,7 @@ import javax.management.namespace.JMXDomain;
 import javax.management.namespace.JMXNamespace;
 import javax.management.namespace.JMXNamespaces;
 import javax.management.remote.JMXConnectorServer;
+import javax.management.ClientContext;
 
 /**
  *

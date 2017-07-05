@@ -30,7 +30,7 @@ PtrQueue::PtrQueue(PtrQueueSet* qset_, bool perm) :
   _perm(perm), _lock(NULL)
 {}
 
-PtrQueue::~PtrQueue() {
+void PtrQueue::flush() {
   if (!_perm && _buf != NULL) {
     if (_index == _sz) {
       // No work to do.
@@ -41,8 +41,9 @@ PtrQueue::~PtrQueue() {
         _buf[byte_index_to_index((int)i)] = NULL;
       }
       qset()->enqueue_complete_buffer(_buf);
-      _buf = NULL;
     }
+    _buf = NULL;
+    _index = 0;
   }
 }
 
