@@ -1522,7 +1522,10 @@ int os::current_process_id() {
 
 const char* os::dll_file_extension() { return ".so"; }
 
-const char* os::get_temp_directory() { return "/tmp/"; }
+const char* os::get_temp_directory() {
+  const char *prop = Arguments::get_property("java.io.tmpdir");
+  return prop == NULL ? "/tmp" : prop;
+}
 
 static bool file_exists(const char* filename) {
   struct stat statbuf;
@@ -2305,7 +2308,8 @@ void linux_wrap_code(char* base, size_t size) {
   char buf[40];
   int num = Atomic::add(1, &cnt);
 
-  sprintf(buf, "/tmp/hs-vm-%d-%d", os::current_process_id(), num);
+  snprintf(buf, sizeof(buf), "%s/hs-vm-%d-%d",
+           os::get_temp_directory(), os::current_process_id(), num);
   unlink(buf);
 
   int fd = open(buf, O_CREAT | O_RDWR, S_IRWXU);

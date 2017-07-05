@@ -206,7 +206,6 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
 
   // Update the invocation counter
   if ((UseCompiler || CountCompiledCalls) && !method->is_synchronized()) {
-    thread->set_do_not_unlock();
     InvocationCounter *counter = method->invocation_counter();
     counter->increment();
     if (counter->reached_InvocationLimit()) {
@@ -215,7 +214,6 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
       if (HAS_PENDING_EXCEPTION)
         goto unwind_and_return;
     }
-    thread->clr_do_not_unlock();
   }
 
   // Lock if necessary
