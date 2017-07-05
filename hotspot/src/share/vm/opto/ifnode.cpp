@@ -817,19 +817,78 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
   BoolTest::mask hi_test = this_bool->_test._test;
   BoolTest::mask cond = hi_test;
 
+  // convert:
+  //
+  //          dom_bool = x {<,<=,>,>=} a
+  //                           / \
+  //     proj = {True,False}  /   \ otherproj = {False,True}
+  //                         /
+  //        this_bool = x {<,<=} b
+  //                       / \
+  //  fail = {True,False} /   \ success = {False,True}
+  //                     /
+  //
+  // (Second test guaranteed canonicalized, first one may not have
+  // been canonicalized yet)
+  //
+  // into:
+  //
+  // cond = (x - lo) {<u,<=u,>u,>=u} adjusted_lim
+  //                       / \
+  //                 fail /   \ success
+  //                     /
+  //
+
   // Figure out which of the two tests sets the upper bound and which
   // sets the lower bound if any.
+  Node* adjusted_lim = NULL;
   if (hi_type->_lo > lo_type->_hi && hi_type->_hi == max_jint && lo_type->_lo == min_jint) {
-
     assert((dom_bool->_test.is_less() && !proj->_con) ||
            (dom_bool->_test.is_greater() && proj->_con), "incorrect test");
     // this test was canonicalized
     assert(this_bool->_test.is_less() && fail->_con, "incorrect test");
 
+    // this_bool = <
+    //   dom_bool = >= (proj = True) or dom_bool = < (proj = False)
+    //     x in [a, b[ on the fail (= True) projection, b > a-1 (because of hi_type->_lo > lo_type->_hi test above):
+    //     lo = a, hi = b, adjusted_lim = b-a, cond = <u
+    //   dom_bool = > (proj = True) or dom_bool = <= (proj = False)
+    //     x in ]a, b[ on the fail (= True) projection, b > a:
+    //     lo = a+1, hi = b, adjusted_lim = b-a-1, cond = <u
+    // this_bool = <=
+    //   dom_bool = >= (proj = True) or dom_bool = < (proj = False)
+    //     x in [a, b] on the fail (= True) projection, b+1 > a-1:
+    //     lo = a, hi = b, adjusted_lim = b-a, cond = <=u
+    //   dom_bool = > (proj = True) or dom_bool = <= (proj = False)
+    //     x in ]a, b] on the fail (= True) projection b+1 > a:
+    //     lo = a+1, hi = b, adjusted_lim = b-a, cond = <u
+    //     lo = a+1, hi = b, adjusted_lim = b-a-1, cond = <=u doesn't work because a = b is possible, then hi-lo = -1
+
     if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
+      if (hi_test == BoolTest::le) {
+        adjusted_lim = igvn->transform(new SubINode(hi, lo));
+        cond = BoolTest::lt;
+      }
       lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
     }
   } else if (lo_type->_lo > hi_type->_hi && lo_type->_hi == max_jint && hi_type->_lo == min_jint) {
+
+    // this_bool = <
+    //   dom_bool = < (proj = True) or dom_bool = >= (proj = False)
+    //     x in [b, a[ on the fail (= False) projection, a > b-1 (because of lo_type->_lo > hi_type->_hi above):
+    //     lo = b, hi = a, adjusted_lim = a-b, cond = >=u
+    //   dom_bool = <= (proj = True) or dom_bool = > (proj = False)
+    //     x in [b, a] on the fail (= False) projection, a+1 > b-1:
+    //     lo = b, hi = a, adjusted_lim = a-b, cond = >u
+    // this_bool = <=
+    //   dom_bool = < (proj = True) or dom_bool = >= (proj = False)
+    //     x in ]b, a[ on the fail (= False) projection, a > b:
+    //     lo = b+1, hi = a, adjusted_lim = a-b-1, cond = >=u
+    //   dom_bool = <= (proj = True) or dom_bool = > (proj = False)
+    //     x in ]b, a] on the fail (= False) projection, a+1 > b:
+    //     lo = b+1, hi = a, adjusted_lim = a-b, cond = >=u
+    //     lo = b+1, hi = a, adjusted_lim = a-b-1, cond = >u doesn't work because a = b is possible, then hi-lo = -1
+
     swap(lo, hi);
     swap(lo_type, hi_type);
     swap(lo_test, hi_test);
@@ -842,6 +901,10 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     cond = (hi_test == BoolTest::le || hi_test == BoolTest::gt) ? BoolTest::gt : BoolTest::ge;
 
     if (lo_test == BoolTest::le) {
+      if (cond == BoolTest::gt) {
+        adjusted_lim = igvn->transform(new SubINode(hi, lo));
+        cond = BoolTest::ge;
+      }
       lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
     }
 
@@ -860,7 +923,6 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
         }
       }
     }
-
     lo = NULL;
     hi = NULL;
   }
@@ -868,12 +930,13 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
   if (lo && hi) {
     // Merge the two compares into a single unsigned compare by building (CmpU (n - lo) (hi - lo))
     Node* adjusted_val = igvn->transform(new SubINode(n,  lo));
-    Node* adjusted_lim = igvn->transform(new SubINode(hi, lo));
+    if (adjusted_lim == NULL) {
+      adjusted_lim = igvn->transform(new SubINode(hi, lo));
+    }
     Node* newcmp = igvn->transform(new CmpUNode(adjusted_val, adjusted_lim));
     Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
 
-    igvn->is_IterGVN()->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
-    igvn->hash_delete(this);
+    igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
     set_req(1, newbool);
 
     return true;
