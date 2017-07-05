@@ -52,11 +52,15 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_quit
 {
     if (dialog != NULL)
     {
+        fp_gdk_threads_enter();
+
         fp_gtk_widget_hide (dialog);
         fp_gtk_widget_destroy (dialog);
 
         fp_gtk_main_quit ();
         dialog = NULL;
+
+        fp_gdk_threads_leave();
     }
 }
 
@@ -162,7 +166,6 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
         (*env)->GetJavaVM(env, &jvm);
     }
 
-    fp_gdk_threads_init();
     fp_gdk_threads_enter();
 
     const char *title = (*env)->GetStringUTFChars(env, jtitle, 0);

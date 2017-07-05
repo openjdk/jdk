@@ -62,9 +62,21 @@ public class Pending {
             trace = true;
         }
 
-        // Turn on verbose:gc to track GC
-        mbean.setVerbose(true);
+        try {
+            if (trace) {
+                // Turn on verbose:gc to track GC
+                mbean.setVerbose(true);
+            }
+            test();
+        } finally {
+            if (trace) {
+                mbean.setVerbose(false);
+            }
+        }
+        System.out.println("Test passed.");
+    }
 
+    private static void test() throws Exception {
         // Clean the memory and remove all objects that are pending
         // finalization
         System.gc();
@@ -130,7 +142,6 @@ public class Pending {
                                      + " end = " + snapshot);
         }
 
-        System.out.println("Test passed.");
     }
 
     private static void checkFinalizerCount(int expectedTotal, int curFinalized)

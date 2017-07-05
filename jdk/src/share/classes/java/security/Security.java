@@ -678,7 +678,7 @@ public final class Security {
             spiMap.put(type, clazz);
             return clazz;
         } catch (ClassNotFoundException e) {
-            throw (Error)new AssertionError("Spi class not found").initCause(e);
+            throw new AssertionError("Spi class not found", e);
         }
     }
 

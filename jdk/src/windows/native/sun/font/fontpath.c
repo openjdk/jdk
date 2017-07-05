@@ -154,7 +154,7 @@ static int CALLBACK EnumFontFacesInFamilyProcA(
     fullname = JNU_NewStringPlatform(env, lpelfe->elfFullName);
     fullnameLC = (*env)->CallObjectMethod(env, fullname,
                                           fmi->toLowerCaseMID, fmi->locale);
-    (*env)->CallObjectMethod(env, fmi->list, fmi->addMID, fullname);
+    (*env)->CallBooleanMethod(env, fmi->list, fmi->addMID, fullname);
     (*env)->CallObjectMethod(env, fmi->fontToFamilyMap,
                              fmi->putMID, fullnameLC, fmi->family);
     return 1;
@@ -238,7 +238,7 @@ static int CALLBACK EnumFontFacesInFamilyProcW(
                                  wcslen((LPWSTR)lpelfe->elfFullName));
     fullnameLC = (*env)->CallObjectMethod(env, fullname,
                                           fmi->toLowerCaseMID, fmi->locale);
-    (*env)->CallObjectMethod(env, fmi->list, fmi->addMID, fullname);
+    (*env)->CallBooleanMethod(env, fmi->list, fmi->addMID, fullname);
     (*env)->CallObjectMethod(env, fmi->fontToFamilyMap,
                              fmi->putMID, fullnameLC, fmi->family);
     return 1;

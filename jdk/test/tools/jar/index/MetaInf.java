@@ -62,7 +62,13 @@ public class MetaInf {
 
     static boolean contains(File jarFile, String entryName)
         throws IOException {
-        return new ZipFile(jarFile).getEntry(entryName) != null;
+        ZipFile zf = new ZipFile(jarFile);
+        if ( zf != null ) {
+            boolean result = zf.getEntry(entryName) != null;
+            zf.close();
+            return result;
+        }
+        return false;
     }
 
     static void checkContains(File jarFile, String entryName)
@@ -94,9 +100,13 @@ public class MetaInf {
         String line;
         while ((line = index.readLine()) != null) {
             if (line.equals(SERVICES)) {
+                index.close();
+                f.close();
                 return;
             }
         }
+        index.close();
+        f.close();
         throw new Error(SERVICES + " not indexed.");
     }
 

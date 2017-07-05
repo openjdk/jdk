@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 4313882 4981129
  * @summary Unit test for datagram-socket-channel adaptors
  * @library ..
  */
@@ -93,6 +94,11 @@ public class AdaptDatagramSocket {
             if (ip.getData()[ip.getOffset() + i]
                 != op.getData()[op.getOffset() + i])
                 throw new Exception("Incorrect data received");
+
+        if (!(ip.getSocketAddress().equals(dst))) {
+            throw new Exception("Incorrect sender address, expected: " + dst
+                + " actual: " + ip.getSocketAddress());
+        }
     }
 
     static void test(InetSocketAddress dst,

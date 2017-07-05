@@ -56,8 +56,17 @@ public class FindServiceTags {
     private static int expectedUrnCount = 3;
 
     public static void main(String[] argv) throws Exception {
-        registry = Util.getSvcTagClientRegistry();
+        try {
+            registry = Util.getSvcTagClientRegistry();
+            runTest();
+        } finally {
+            // restore empty registry file
+            Util.emptyRegistryFile();
+        }
+        System.out.println("Test passed.");
+    }
 
+    public static void runTest() throws Exception {
         for (String filename : files) {
             File f = new File(servicetagDir, filename);
             ServiceTag svcTag = Util.newServiceTag(f);
@@ -95,7 +104,6 @@ public class FindServiceTags {
                 tags.size());
         }
 
-        System.out.println("Test passed.");
     }
 
     private static void findServiceTags(String productUrn) throws Exception {

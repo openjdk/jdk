@@ -342,20 +342,20 @@ public class KrbAsReq extends KrbKdcReq {
         }
 
         princName = cname;
-
-        EncryptionKey key = null;
-        int[] tktETypes = EType.getDefaults("default_tkt_enctypes");
-        if (pa_exists && pa_etype != EncryptedData.ETYPE_NULL) {
-            if (DEBUG) {
-                System.out.println("Pre-Authenticaton: find key for etype = " + pa_etype);
-            }
-            key = EncryptionKey.findKey(pa_etype, keys);
-        } else {
-            key = EncryptionKey.findKey(tktETypes[0], keys);
-        }
-
+        int[] tktETypes = EType.getDefaults("default_tkt_enctypes", keys);
         PAData[] paData = null;
         if (PA_ENC_TIMESTAMP_REQUIRED) {
+            EncryptionKey key = null;
+            if (pa_etype != EncryptedData.ETYPE_NULL) {
+                if (DEBUG) {
+                    System.out.println("Pre-Authenticaton: find key for etype = " + pa_etype);
+                }
+                key = EncryptionKey.findKey(pa_etype, keys);
+            } else {
+                if (tktETypes.length > 0) {
+                    key = EncryptionKey.findKey(tktETypes[0], keys);
+                }
+            }
             if (DEBUG) {
                 System.out.println("AS-REQ: Add PA_ENC_TIMESTAMP now");
             }
