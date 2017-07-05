@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "utilities/macros.hpp"
 #include "gc_implementation/shared/allocationStats.hpp"
 #include "memory/binaryTreeDictionary.hpp"
 #include "memory/freeList.hpp"
@@ -31,12 +32,13 @@
 #include "memory/metachunk.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/ostream.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/adaptiveFreeList.hpp"
 #include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
 #include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 ////////////////////////////////////////////////////////////////////////////////
 // A binary tree based search structure for free blocks.
@@ -118,7 +120,7 @@ TreeList<Chunk_t, FreeList_t>::as_TreeList(HeapWord* addr, size_t size) {
 }
 
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 // Specialize for AdaptiveFreeList which tries to avoid
 // splitting a chunk of a size that is under populated in favor of
 // an over populated size.  The general get_better_list() just returns
@@ -160,7 +162,7 @@ TreeList<FreeChunk, AdaptiveFreeList>::get_better_list(
   }
   return curTL;
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 template <class Chunk_t, template <class> class FreeList_t>
 TreeList<Chunk_t, FreeList_t>*
@@ -871,9 +873,9 @@ size_t BinaryTreeDictionary<Chunk_t, FreeList_t>::total_nodes_in_tree(TreeList<C
 template <class Chunk_t, template <class> class FreeList_t>
 void BinaryTreeDictionary<Chunk_t, FreeList_t>::dict_census_update(size_t size, bool split, bool birth){}
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 template <>
-void BinaryTreeDictionary<FreeChunk, AdaptiveFreeList>::dict_census_update(size_t size, bool split, bool birth){
+void AFLBinaryTreeDictionary::dict_census_update(size_t size, bool split, bool birth){
   TreeList<FreeChunk, AdaptiveFreeList>* nd = find_list(size);
   if (nd) {
     if (split) {
@@ -900,7 +902,7 @@ void BinaryTreeDictionary<FreeChunk, AdaptiveFreeList>::dict_census_update(size_
   //   This is a birth associated with a LinAB.  The chunk
   //     for the LinAB is not in the dictionary.
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 template <class Chunk_t, template <class> class FreeList_t>
 bool BinaryTreeDictionary<Chunk_t, FreeList_t>::coal_dict_over_populated(size_t size) {
@@ -909,9 +911,9 @@ bool BinaryTreeDictionary<Chunk_t, FreeList_t>::coal_dict_over_populated(size_t 
   return true;
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 template <>
-bool BinaryTreeDictionary<FreeChunk, AdaptiveFreeList>::coal_dict_over_populated(size_t size) {
+bool AFLBinaryTreeDictionary::coal_dict_over_populated(size_t size) {
   if (FLSAlwaysCoalesceLarge) return true;
 
   TreeList<FreeChunk, AdaptiveFreeList>* list_of_size = find_list(size);
@@ -919,7 +921,7 @@ bool BinaryTreeDictionary<FreeChunk, AdaptiveFreeList>::coal_dict_over_populated
   return list_of_size == NULL || list_of_size->coal_desired() <= 0 ||
          list_of_size->count() > list_of_size->coal_desired();
 }
-#endif  // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 // Closures for walking the binary tree.
 //   do_list() walks the free list in a node applying the closure
@@ -979,7 +981,7 @@ class BeginSweepClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t> {
 
   void do_list(FreeList<Chunk_t>* fl) {}
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   void do_list(AdaptiveFreeList<Chunk_t>* fl) {
     double coalSurplusPercent = _percentage;
     fl->compute_desired(_inter_sweep_current, _inter_sweep_estimate, _intra_sweep_estimate);
@@ -987,7 +989,7 @@ class BeginSweepClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t> {
     fl->set_before_sweep(fl->count());
     fl->set_bfr_surp(fl->surplus());
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 };
 
 // Used to search the tree until a condition is met.
@@ -1134,13 +1136,13 @@ class setTreeSurplusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t
   setTreeSurplusClosure(double v) { percentage = v; }
   void do_list(FreeList<Chunk_t>* fl) {}
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   void do_list(AdaptiveFreeList<Chunk_t>* fl) {
     double splitSurplusPercent = percentage;
     fl->set_surplus(fl->count() -
                    (ssize_t)((double)fl->desired() * splitSurplusPercent));
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 };
 
 template <class Chunk_t, template <class> class FreeList_t>
@@ -1157,7 +1159,7 @@ class setTreeHintsClosure : public DescendTreeCensusClosure<Chunk_t, FreeList_t>
   setTreeHintsClosure(size_t v) { hint = v; }
   void do_list(FreeList<Chunk_t>* fl) {}
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   void do_list(AdaptiveFreeList<Chunk_t>* fl) {
     fl->set_hint(hint);
     assert(fl->hint() == 0 || fl->hint() > fl->size(),
@@ -1166,7 +1168,7 @@ class setTreeHintsClosure : public DescendTreeCensusClosure<Chunk_t, FreeList_t>
       hint = fl->size();
     }
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 };
 
 template <class Chunk_t, template <class> class FreeList_t>
@@ -1180,7 +1182,7 @@ template <class Chunk_t, template <class> class FreeList_t>
 class clearTreeCensusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t> {
   void do_list(FreeList<Chunk_t>* fl) {}
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   void do_list(AdaptiveFreeList<Chunk_t>* fl) {
     fl->set_prev_sweep(fl->count());
     fl->set_coal_births(0);
@@ -1188,7 +1190,7 @@ class clearTreeCensusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_
     fl->set_split_births(0);
     fl->set_split_deaths(0);
   }
-#endif  // SERIALGC
+#endif // INCLUDE_ALL_GCS
 };
 
 template <class Chunk_t, template <class> class FreeList_t>
@@ -1252,7 +1254,7 @@ class PrintTreeCensusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_
     total()->set_count(      total()->count()       + fl->count()      );
   }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   void do_list(AdaptiveFreeList<Chunk_t>* fl) {
     if (++_print_line >= 40) {
       FreeList_t<Chunk_t>::print_labels_on(gclog_or_tty, "size");
@@ -1271,7 +1273,7 @@ class PrintTreeCensusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_
     total()->set_split_births(total()->split_births() + fl->split_births());
     total()->set_split_deaths(total()->split_deaths() + fl->split_deaths());
   }
-#endif  // SERIALGC
+#endif // INCLUDE_ALL_GCS
 };
 
 template <class Chunk_t, template <class> class FreeList_t>
@@ -1286,9 +1288,9 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::print_dict_census(void) const {
   FreeList_t<Chunk_t>::print_labels_on(gclog_or_tty, " ");
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 template <>
-void BinaryTreeDictionary<FreeChunk, AdaptiveFreeList>::print_dict_census(void) const {
+void AFLBinaryTreeDictionary::print_dict_census(void) const {
 
   gclog_or_tty->print("\nBinaryTree\n");
   AdaptiveFreeList<FreeChunk>::print_labels_on(gclog_or_tty, "size");
@@ -1308,7 +1310,7 @@ void BinaryTreeDictionary<FreeChunk, AdaptiveFreeList>::print_dict_census(void) 
              (double)(total->desired() - total->count())
              /(total->desired() != 0 ? (double)total->desired() : 1.0));
 }
-#endif  // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 template <class Chunk_t, template <class> class FreeList_t>
 class PrintFreeListsClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t> {
@@ -1414,10 +1416,10 @@ template class BinaryTreeDictionary<Metachunk, FreeList>;
 template class TreeChunk<Metachunk, FreeList>;
 
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 // Explicitly instantiate these types for FreeChunk.
 template class TreeList<FreeChunk, AdaptiveFreeList>;
 template class BinaryTreeDictionary<FreeChunk, AdaptiveFreeList>;
 template class TreeChunk<FreeChunk, AdaptiveFreeList>;
 
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS

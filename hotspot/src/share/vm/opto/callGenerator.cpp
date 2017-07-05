@@ -305,11 +305,13 @@ class LateInlineCallGenerator : public DirectCallGenerator {
 void LateInlineCallGenerator::do_late_inline() {
   // Can't inline it
   if (call_node() == NULL || call_node()->outcnt() == 0 ||
-      call_node()->in(0) == NULL || call_node()->in(0)->is_top())
+      call_node()->in(0) == NULL || call_node()->in(0)->is_top()) {
     return;
+  }
 
+  const TypeTuple *r = call_node()->tf()->domain();
   for (int i1 = 0; i1 < method()->arg_size(); i1++) {
-    if (call_node()->in(TypeFunc::Parms + i1)->is_top()) {
+    if (call_node()->in(TypeFunc::Parms + i1)->is_top() && r->field_at(TypeFunc::Parms + i1) != Type::HALF) {
       assert(Compile::current()->inlining_incrementally(), "shouldn't happen during parsing");
       return;
     }

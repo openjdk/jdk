@@ -34,6 +34,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/macros.hpp"
 
 #ifndef CC_INTERP
 #define __ _masm->
@@ -53,7 +54,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
   assert(tmp != val && tmp != base && tmp != index, "register collision");
   assert(index == noreg || offset == 0, "only one offset");
   switch (barrier) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
       {
@@ -82,7 +83,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
         }
       }
       break;
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
     case BarrierSet::CardTableModRef:
     case BarrierSet::CardTableExtension:
       {
