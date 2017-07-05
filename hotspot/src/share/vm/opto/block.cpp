@@ -357,6 +357,9 @@ PhaseCFG::PhaseCFG( Arena *a, RootNode *r, Matcher &m ) :
 #ifndef PRODUCT
   , _trace_opto_pipelining(TraceOptoPipelining || C->method_has_option("TraceOptoPipelining"))
 #endif
+#ifdef ASSERT
+  , _raw_oops(a)
+#endif
 {
   ResourceMark rm;
   // I'll need a few machine-specific GotoNodes.  Make an Ideal GotoNode,

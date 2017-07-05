@@ -371,7 +371,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
   }
   __ move(value.result(), array_addr, null_check_info);
   if (obj_store) {
-    // Is this precise?
+    // Precise card mark
     post_barrier(LIR_OprFact::address(array_addr), value.result());
   }
 }
@@ -685,11 +685,8 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   LIR_Opr result = rlock_result(x);
   __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0), result);
   if (type == objectType) {  // Write-barrier needed for Object fields.
-#ifdef PRECISE_CARDMARK
+    // Precise card mark since could either be object or array
     post_barrier(addr, val.result());
-#else
-    post_barrier(obj.result(), val.result());
-#endif // PRECISE_CARDMARK
   }
 }
 
