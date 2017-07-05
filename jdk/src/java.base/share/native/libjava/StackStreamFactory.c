@@ -45,7 +45,6 @@ JNIEXPORT jboolean JNICALL Java_java_lang_StackStreamFactory_checkStackWalkModes
   (JNIEnv *env, jclass dummy)
 {
    return JVM_STACKWALK_FILL_CLASS_REFS_ONLY == java_lang_StackStreamFactory_FILL_CLASS_REFS_ONLY &&
-          JVM_STACKWALK_FILTER_FILL_IN_STACK_TRACE == java_lang_StackStreamFactory_FILTER_FILL_IN_STACKTRACE &&
           JVM_STACKWALK_SHOW_HIDDEN_FRAMES == java_lang_StackStreamFactory_SHOW_HIDDEN_FRAMES &&
           JVM_STACKWALK_FILL_LIVE_STACK_FRAMES == java_lang_StackStreamFactory_FILL_LIVE_STACK_FRAMES;
 }
@@ -53,26 +52,26 @@ JNIEXPORT jboolean JNICALL Java_java_lang_StackStreamFactory_checkStackWalkModes
 /*
  * Class:     java_lang_StackStreamFactory_AbstractStackWalker
  * Method:    callStackWalk
- * Signature: (JIII[Ljava/lang/Class;[Ljava/lang/StackWalker/StackFrame;)Ljava/lang/Object;
+ * Signature: (JIII[Ljava/lang/Object;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_java_lang_StackStreamFactory_00024AbstractStackWalker_callStackWalk
   (JNIEnv *env, jobject stackstream, jlong mode, jint skipFrames, jint batchSize, jint startIndex,
-   jobjectArray classes, jobjectArray frames)
+   jobjectArray frames)
 {
     return JVM_CallStackWalk(env, stackstream, mode, skipFrames, batchSize,
-                             startIndex, classes, frames);
+                             startIndex, frames);
 }
 
 /*
  * Class:     java_lang_StackStreamFactory_AbstractStackWalker
  * Method:    fetchStackFrames
- * Signature: (JJII[Ljava/lang/Class;[Ljava/lang/StackWalker/StackFrame;)I
+ * Signature: (JJII[Ljava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL Java_java_lang_StackStreamFactory_00024AbstractStackWalker_fetchStackFrames
   (JNIEnv *env, jobject stackstream, jlong mode, jlong anchor,
    jint batchSize, jint startIndex,
-   jobjectArray classes, jobjectArray frames)
+   jobjectArray frames)
 {
     return JVM_MoreStackWalk(env, stackstream, mode, anchor, batchSize,
-                             startIndex, classes, frames);
+                             startIndex, frames);
 }

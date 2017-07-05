@@ -96,7 +96,7 @@ class typeArrayOopDesc : public arrayOopDesc {
   void byte_at_put(int which, jbyte contents)     { *byte_at_addr(which) = contents; }
 
   jboolean bool_at(int which) const               { return *bool_at_addr(which); }
-  void bool_at_put(int which, jboolean contents)  { *bool_at_addr(which) = contents; }
+  void bool_at_put(int which, jboolean contents)  { *bool_at_addr(which) = (((jint)contents) & 1); }
 
   jchar char_at(int which) const                  { return *char_at_addr(which); }
   void char_at_put(int which, jchar contents)     { *char_at_addr(which) = contents; }

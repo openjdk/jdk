@@ -32,6 +32,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "logging/logStream.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
@@ -505,10 +506,13 @@ void CompactibleFreeListSpace::reportFreeListStatistics(const char* title) const
     return;
   }
   log.debug("%s", title);
-  _dictionary->report_statistics(log.debug_stream());
+
+  LogStream out(log.debug());
+  _dictionary->report_statistics(&out);
+
   if (log.is_trace()) {
-    ResourceMark rm;
-    reportIndexedFreeListStatistics(log.trace_stream());
+    LogStream trace_out(log.trace());
+    reportIndexedFreeListStatistics(&trace_out);
     size_t total_size = totalSizeInIndexedFreeLists() +
                        _dictionary->total_chunk_size(DEBUG_ONLY(freelistLock()));
     log.trace(" free=" SIZE_FORMAT " frag=%1.4f", total_size, flsFrag());
@@ -2834,6 +2838,11 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
 
   // Otherwise, we'll split a block from the dictionary.
   par_get_chunk_of_blocks_dictionary(word_sz, n, fl);
+}
+
+const size_t CompactibleFreeListSpace::max_flag_size_for_task_size() const {
+  const size_t ergo_max = _old_gen->reserved().word_size() / (CardTableModRefBS::card_size_in_words * BitsPerWord);
+  return ergo_max;
 }
 
 // Set up the space's par_seq_tasks structure for work claiming

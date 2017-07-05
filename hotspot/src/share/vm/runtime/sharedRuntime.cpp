@@ -38,6 +38,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/klass.hpp"
@@ -1788,7 +1789,7 @@ void SharedRuntime::check_member_name_argument_is_last_argument(const methodHand
 IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address caller_pc))
   Method* moop(method);
 
-  address entry_point = moop->from_compiled_entry();
+  address entry_point = moop->from_compiled_entry_no_trampoline();
 
   // It's possible that deoptimization can occur at a call site which hasn't
   // been resolved yet, in which case this function will be called from
@@ -2351,12 +2352,15 @@ class AdapterHandlerTable : public BasicHashtable<mtCode> {
 
  public:
   AdapterHandlerTable()
-    : BasicHashtable<mtCode>(293, sizeof(AdapterHandlerEntry)) { }
+    : BasicHashtable<mtCode>(293, (DumpSharedSpaces ? sizeof(CDSAdapterHandlerEntry) : sizeof(AdapterHandlerEntry))) { }
 
   // Create a new entry suitable for insertion in the table
   AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry, address c2i_unverified_entry) {
     AdapterHandlerEntry* entry = (AdapterHandlerEntry*)BasicHashtable<mtCode>::new_entry(fingerprint->compute_hash());
     entry->init(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry);
+    if (DumpSharedSpaces) {
+      ((CDSAdapterHandlerEntry*)entry)->init();
+    }
     return entry;
   }
 
@@ -2519,6 +2523,28 @@ AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* finger
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& method) {
+  AdapterHandlerEntry* entry = get_adapter0(method);
+  if (method->is_shared()) {
+    MutexLocker mu(AdapterHandlerLibrary_lock);
+    if (method->adapter() == NULL) {
+      method->update_adapter_trampoline(entry);
+    }
+    address trampoline = method->from_compiled_entry();
+    if (*(int*)trampoline == 0) {
+      CodeBuffer buffer(trampoline, (int)SharedRuntime::trampoline_size());
+      MacroAssembler _masm(&buffer);
+      SharedRuntime::generate_trampoline(&_masm, entry->get_c2i_entry());
+
+      if (PrintInterpreter) {
+        Disassembler::decode(buffer.insts_begin(), buffer.insts_end());
+      }
+    }
+  }
+
+  return entry;
+}
+
+AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter0(const methodHandle& method) {
   // Use customized signature handler.  Need to lock around updates to
   // the AdapterHandlerTable (it is not safe for concurrent readers
   // and a single writer: this could be fixed if it becomes a
@@ -2535,7 +2561,9 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     // make sure data structure is initialized
     initialize();
 
-    if (CodeCacheExtensions::skip_compiler_support()) {
+    // during dump time, always generate adapters, even if the
+    // compiler has been turned off.
+    if (!DumpSharedSpaces && CodeCacheExtensions::skip_compiler_support()) {
       // adapters are useless and should not be used, including the
       // abstract_method_handler. However, some callers check that
       // an adapter was installed.
@@ -3016,6 +3044,17 @@ void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
                p2i(get_i2c_entry()), p2i(get_c2i_entry()), p2i(get_c2i_unverified_entry()));
 
 }
+
+#if INCLUDE_CDS
+
+void CDSAdapterHandlerEntry::init() {
+  assert(DumpSharedSpaces, "used during dump time only");
+  _c2i_entry_trampoline = (address)MetaspaceShared::misc_data_space_alloc(SharedRuntime::trampoline_size());
+  _adapter_trampoline = (AdapterHandlerEntry**)MetaspaceShared::misc_data_space_alloc(sizeof(AdapterHandlerEntry*));
+};
+
+#endif // INCLUDE_CDS
+
 
 #ifndef PRODUCT
 

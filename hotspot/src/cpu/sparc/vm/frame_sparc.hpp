@@ -26,7 +26,6 @@
 #define CPU_SPARC_VM_FRAME_SPARC_HPP
 
 #include "runtime/synchronizer.hpp"
-#include "utilities/top.hpp"
 
 // A frame represents a physical stack frame (an activation).  Frames can be
 // C or Java frames, and the Java frames can be interpreted or compiled.

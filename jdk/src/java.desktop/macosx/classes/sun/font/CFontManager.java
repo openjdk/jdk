@@ -42,7 +42,6 @@ import sun.awt.FontConfiguration;
 import sun.awt.HeadlessToolkit;
 import sun.awt.util.ThreadGroupUtils;
 import sun.lwawt.macosx.*;
-import sun.misc.ManagedLocalsThread;
 
 public final class CFontManager extends SunFontManager {
     private static Hashtable<String, Font2D> genericFonts = new Hashtable<String, Font2D>();

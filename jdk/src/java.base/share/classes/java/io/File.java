@@ -31,7 +31,6 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.ArrayList;
-import java.security.AccessController;
 import java.security.SecureRandom;
 import java.nio.file.Path;
 import java.nio.file.FileSystems;
@@ -1896,8 +1895,8 @@ public class File
         private TempDirectory() { }
 
         // temporary directory location
-        private static final File tmpdir = new File(AccessController
-            .doPrivileged(new GetPropertyAction("java.io.tmpdir")));
+        private static final File tmpdir = new File(
+                GetPropertyAction.getProperty("java.io.tmpdir"));
         static File location() {
             return tmpdir;
         }

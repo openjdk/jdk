@@ -25,7 +25,8 @@
 #ifndef SHARE_VM_RUNTIME_TASK_HPP
 #define SHARE_VM_RUNTIME_TASK_HPP
 
-#include "utilities/top.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/timer.hpp"
 
 // A PeriodicTask has the sole purpose of executing its task
 // function with regular intervals.

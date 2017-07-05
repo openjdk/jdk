@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_INIT_HPP
 #define SHARE_VM_RUNTIME_INIT_HPP
 
-#include "utilities/top.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // init_globals replaces C++ global objects so we can use the standard linker
 // to link Delta (which is at least twice as fast as using the GNU C++ linker).

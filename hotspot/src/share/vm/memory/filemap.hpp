@@ -107,6 +107,8 @@ public:
     int     _narrow_klass_shift;      // save narrow klass base and shift
     address _narrow_klass_base;
     char*   _misc_data_patching_start;
+    address _cds_i2i_entry_code_buffers;
+    size_t  _cds_i2i_entry_code_buffers_size;
 
     struct space_info {
       int    _crc;           // crc checksum of the current space
@@ -195,6 +197,19 @@ public:
   char* misc_data_patching_start()            { return _header->_misc_data_patching_start; }
   void set_misc_data_patching_start(char* p)  { _header->_misc_data_patching_start = p; }
 
+  address cds_i2i_entry_code_buffers() {
+    return _header->_cds_i2i_entry_code_buffers;
+  }
+  void set_cds_i2i_entry_code_buffers(address addr) {
+    _header->_cds_i2i_entry_code_buffers = addr;
+  }
+  size_t cds_i2i_entry_code_buffers_size() {
+    return _header->_cds_i2i_entry_code_buffers_size;
+  }
+  void set_cds_i2i_entry_code_buffers_size(size_t s) {
+    _header->_cds_i2i_entry_code_buffers_size = s;
+  }
+
   static FileMapInfo* current_info() {
     CDS_ONLY(return _current_info;)
     NOT_CDS(return NULL;)
@@ -234,6 +249,7 @@ public:
 
   // Return true if given address is in the mapped shared space.
   bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
+  bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
   void print_shared_spaces() NOT_CDS_RETURN;
 
   static size_t shared_spaces_size() {

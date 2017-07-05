@@ -51,10 +51,11 @@ HS_BUILD_ID=$(HOTSPOT_VERSION_STRING)
 # Force resources to be rebuilt every time
 $(Res_Files): FORCE
 
+# NOTE: Changes in this file was just to give a proper command line when linking
+# for use when developing the new build, and should not be integrated.
 $(AOUT): $(Res_Files) $(Obj_Files) vm.def
-	$(LD) @<<
-  $(LD_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)
-<<
+	$(LD) $(LD_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)
+
 !if "$(MT)" != ""
 # The previous link command created a .manifest file that we want to
 # insert into the linked artifact so we do not need to track it

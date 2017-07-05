@@ -63,11 +63,7 @@ public class JImageToolTest {
             String jimage = jimagePath.toAbsolutePath().toString();
             String bootimage = modulesimagePath.toAbsolutePath().toString();
             String extractDir = Paths.get(".", "extract").toAbsolutePath().toString();
-            String recreateImage = Paths.get(".", "recreate").toAbsolutePath().toString();
-            String relativeRecreateImage = Paths.get(".", "recreate2").toString();
             jimage("extract", "--dir", extractDir, bootimage);
-            jimage("recreate", "--dir", extractDir, recreateImage);
-            jimage("recreate", "--dir", extractDir, relativeRecreateImage);
             System.out.println("Test successful");
          } else {
             System.out.println("Test skipped, not an images build");

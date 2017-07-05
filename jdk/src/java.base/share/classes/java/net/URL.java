@@ -42,6 +42,7 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 import sun.security.util.SecurityConstants;
+import sun.security.action.GetPropertyAction;
 
 /**
  * Class {@code URL} represents a Uniform Resource
@@ -1210,12 +1211,8 @@ public final class URL implements java.io.Serializable {
     }
 
     private static URLStreamHandler lookupViaProperty(String protocol) {
-        String packagePrefixList = java.security.AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public String run() {
-                        return System.getProperty(protocolPathProp, null);
-                    }
-                });
+        String packagePrefixList =
+                GetPropertyAction.getProperty(protocolPathProp);
         if (packagePrefixList == null) {
             // not set
             return null;

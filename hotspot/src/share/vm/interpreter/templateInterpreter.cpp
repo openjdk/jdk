@@ -89,8 +89,9 @@ void TemplateInterpreter::initialize() {
 // Implementation of EntryPoint
 
 EntryPoint::EntryPoint() {
-  assert(number_of_states == 9, "check the code below");
+  assert(number_of_states == 10, "check the code below");
   _entry[btos] = NULL;
+  _entry[ztos] = NULL;
   _entry[ctos] = NULL;
   _entry[stos] = NULL;
   _entry[atos] = NULL;
@@ -102,9 +103,10 @@ EntryPoint::EntryPoint() {
 }
 
 
-EntryPoint::EntryPoint(address bentry, address centry, address sentry, address aentry, address ientry, address lentry, address fentry, address dentry, address ventry) {
-  assert(number_of_states == 9, "check the code below");
+EntryPoint::EntryPoint(address bentry, address zentry, address centry, address sentry, address aentry, address ientry, address lentry, address fentry, address dentry, address ventry) {
+  assert(number_of_states == 10, "check the code below");
   _entry[btos] = bentry;
+  _entry[ztos] = zentry;
   _entry[ctos] = centry;
   _entry[stos] = sentry;
   _entry[atos] = aentry;
@@ -155,6 +157,7 @@ EntryPoint DispatchTable::entry(int i) const {
   return
     EntryPoint(
       _table[btos][i],
+      _table[ztos][i],
       _table[ctos][i],
       _table[stos][i],
       _table[atos][i],
@@ -169,8 +172,9 @@ EntryPoint DispatchTable::entry(int i) const {
 
 void DispatchTable::set_entry(int i, EntryPoint& entry) {
   assert(0 <= i && i < length, "index out of bounds");
-  assert(number_of_states == 9, "check the code below");
+  assert(number_of_states == 10, "check the code below");
   _table[btos][i] = entry.entry(btos);
+  _table[ztos][i] = entry.entry(ztos);
   _table[ctos][i] = entry.entry(ctos);
   _table[stos][i] = entry.entry(stos);
   _table[atos][i] = entry.entry(atos);

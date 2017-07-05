@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_VM_UTILITIES_BITMAP_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/top.hpp"
 
 // Forward decl;
 class BitMapClosure;
@@ -135,10 +134,18 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   // use the same value for "in_resource_area".)
   void resize(idx_t size_in_bits, bool in_resource_area = true);
 
+  // Pretouch the entire range of memory this BitMap covers.
+  void pretouch();
+
   // Accessing
   idx_t size() const                    { return _size; }
+  idx_t size_in_bytes() const           { return size_in_words() * BytesPerWord; }
   idx_t size_in_words() const           {
-    return word_index(size() + BitsPerWord - 1);
+    return calc_size_in_words(size());
+  }
+
+  static idx_t calc_size_in_words(size_t size_in_bits) {
+    return word_index(size_in_bits + BitsPerWord - 1);
   }
 
   bool at(idx_t index) const {
