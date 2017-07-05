@@ -989,7 +989,7 @@ Klass* ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
   assert(changes.involves_context(context_type), "irrelevant dependency");
   Klass* new_type = changes.new_type();
 
-  count_find_witness_calls();
+  (void)count_find_witness_calls();
   NOT_PRODUCT(deps_find_witness_singles++);
 
   // Current thread must be in VM (not native mode, as in CI):

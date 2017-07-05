@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -963,7 +963,7 @@ public:
   inline void sub(Register s1, RegisterOrConstant s2, Register d, int offset = 0);
 
   using Assembler::swap;
-  inline void swap(Address& a, Register d, int offset = 0);
+  inline void swap(const Address& a, Register d, int offset = 0);
 
   // address pseudos: make these names unlike instruction names to avoid confusion
   inline intptr_t load_pc_address( Register reg, int bytes_to_skip );
@@ -1056,13 +1056,6 @@ public:
 
   void breakpoint_trap();
   void breakpoint_trap(Condition c, CC cc);
-  void flush_windows_trap();
-  void clean_windows_trap();
-  void get_psr_trap();
-  void set_psr_trap();
-
-  // V8/V9 flush_windows
-  void flush_windows();
 
   // Support for serializing memory accesses between threads
   void serialize_memory(Register thread, Register tmp1, Register tmp2);
@@ -1070,14 +1063,6 @@ public:
   // Stack frame creation/removal
   void enter();
   void leave();
-
-  // V8/V9 integer multiply
-  void mult(Register s1, Register s2, Register d);
-  void mult(Register s1, int simm13a, Register d);
-
-  // V8/V9 read and write of condition codes.
-  void read_ccr(Register d);
-  void write_ccr(Register s);
 
   // Manipulation of C++ bools
   // These are idioms to flag the need for care with accessing bools but on
@@ -1161,21 +1146,6 @@ public:
   // if call_VM_base was called with check_exceptions=false, then call
   // check_and_forward_exception to handle exceptions when it is safe
   void check_and_forward_exception(Register scratch_reg);
-
- private:
-  // For V8
-  void read_ccr_trap(Register ccr_save);
-  void write_ccr_trap(Register ccr_save1, Register scratch1, Register scratch2);
-
-#ifdef ASSERT
-  // For V8 debugging.  Uses V8 instruction sequence and checks
-  // result with V9 insturctions rdccr and wrccr.
-  // Uses Gscatch and Gscatch2
-  void read_ccr_v8_assert(Register ccr_save);
-  void write_ccr_v8_assert(Register ccr_save);
-#endif // ASSERT
-
- public:
 
   // Write to card table for - register is destroyed afterwards.
   void card_table_write(jbyte* byte_map_base, Register tmp, Register obj);
@@ -1314,19 +1284,8 @@ public:
                   FloatRegister Fa, FloatRegister Fb,
                   Register Rresult);
 
-  void fneg( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
-  void fneg( FloatRegisterImpl::Width w, FloatRegister sd ) { Assembler::fneg(w, sd); }
-  void fmov( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
-  void fabs( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d);
-
   void save_all_globals_into_locals();
   void restore_globals_from_locals();
-
-  void casx_under_lock(Register top_ptr_reg, Register top_reg, Register ptr_reg,
-    address lock_addr=0, bool use_call_vm=false);
-  void cas_under_lock(Register top_ptr_reg, Register top_reg, Register ptr_reg,
-    address lock_addr=0, bool use_call_vm=false);
-  void casn (Register addr_reg, Register cmp_reg, Register set_reg) ;
 
   // These set the icc condition code to equal if the lock succeeded
   // and notEqual if it failed and requires a slow case
