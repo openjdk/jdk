@@ -772,9 +772,20 @@ else
   BANNED_DLLS=msvcp100[.]dll|msvcr100d[.]dll|msvcrtd[.]dll
 endif
 
-# Macro to check it's input file for banned dependencies and verify the
-#   binary was built properly. Relies on process exit code.
-define binary_file_verification # binary_file
+# Check for /safeseh (only used on 32bit)
+define binary_file_safeseh_verification # binary_file
+( \
+  $(ECHO) "Checking for /SAFESEH usage in: $1" && \
+  if [ "`$(DUMPBIN) /loadconfig $1 | $(EGREP) -i 'Safe Exception Handler Table'`" = "" ] ; then \
+    $(ECHO) "ERROR: Did not find 'Safe Exception Handler Table' in loadconfig: $1" ; \
+    $(DUMPBIN) /loadconfig $1 ; \
+    exit 6 ; \
+  fi ; \
+)
+endef
+
+# Check for /NXCOMPAT usage
+define binary_file_nxcompat_verification # binary_file
 ( \
   $(ECHO) "Checking for /NXCOMPAT usage in: $1" && \
   if [ "`$(DUMPBIN) /headers $1 | $(EGREP) -i 'NX compatible'`" = "" ] ; then \
@@ -782,12 +793,24 @@ define binary_file_verification # binary_file
     $(DUMPBIN) /headers $1 ; \
     exit 7 ; \
   fi ; \
+)
+endef
+
+# Check for /DYNAMICBASE usage
+define binary_file_dynamicbase_verification # binary_file
+( \
   $(ECHO) "Checking for /DYNAMICBASE usage in: $1" && \
   if [ "`$(DUMPBIN) /headers $1 | $(EGREP) -i 'Dynamic base'`" = "" ] ; then \
     $(ECHO) "ERROR: Did not find 'Dynamic base' in headers: $1" ; \
     $(DUMPBIN) /headers $1 ; \
     exit 8 ; \
   fi ; \
+)
+endef
+
+# Check for banned dll usage
+define binary_file_dll_verification # binary_file
+( \
   $(ECHO) "Checking for banned dependencies in: $1" && \
   if [ "`$(DUMPBIN) /dependents $1 | $(EGREP) -i '$(BANNED_DLLS)'`" != "" ] ; then \
     $(ECHO) "ERROR: Found use of $(BANNED_DLLS)"; \
@@ -796,6 +819,27 @@ define binary_file_verification # binary_file
   fi ; \
 )
 endef
+
+# Macro to check it's input file for properly built executables.
+#   Relies on process exit code. Different for 32bit vs 64bit.
+ifeq ($(ARCH_DATA_MODEL),32)
+define binary_file_verification # binary_file
+( \
+  $(call binary_file_safeseh_verification,$1); \
+  $(call binary_file_nxcompat_verification,$1); \
+  $(call binary_file_dynamicbase_verification,$1); \
+  $(call binary_file_dll_verification,$1); \
+)
+endef
+else
+define binary_file_verification # binary_file
+( \
+  $(call binary_file_nxcompat_verification,$1); \
+  $(call binary_file_dynamicbase_verification,$1); \
+  $(call binary_file_dll_verification,$1); \
+)
+endef
+endif
 
 else
 
