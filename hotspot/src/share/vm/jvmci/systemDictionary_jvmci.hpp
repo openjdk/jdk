@@ -49,6 +49,7 @@
   do_klass(HotSpotJVMCIMetaAccessContext_klass,          jdk_vm_ci_hotspot_HotSpotJVMCIMetaAccessContext,       Jvmci) \
   do_klass(HotSpotJVMCIRuntime_klass,                    jdk_vm_ci_hotspot_HotSpotJVMCIRuntime,                 Jvmci) \
   do_klass(HotSpotSpeculationLog_klass,                  jdk_vm_ci_hotspot_HotSpotSpeculationLog,               Jvmci) \
+  do_klass(HotSpotSymbol_klass,                          jdk_vm_ci_hotspot_HotSpotSymbol,                       Jvmci) \
   do_klass(Assumptions_ConcreteMethod_klass,             jdk_vm_ci_meta_Assumptions_ConcreteMethod,             Jvmci) \
   do_klass(Assumptions_NoFinalizableSubclass_klass,      jdk_vm_ci_meta_Assumptions_NoFinalizableSubclass,      Jvmci) \
   do_klass(Assumptions_ConcreteSubtype_klass,            jdk_vm_ci_meta_Assumptions_ConcreteSubtype,            Jvmci) \

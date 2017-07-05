@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  * @test
  * @summary Test of diagnostic command Thread.print
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor

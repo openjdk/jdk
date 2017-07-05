@@ -25,7 +25,6 @@
  * @test
  * @bug 8072611
  * @summary ProcessBuilder Redirect to file appending on Windows should work with long file names
- * @modules java.base/sun.misc
  * @author Thomas Stuefe
  */
 

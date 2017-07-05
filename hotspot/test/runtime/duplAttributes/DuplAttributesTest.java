@@ -26,7 +26,7 @@
  * @bug 8040292
  * @library /testlibrary
  * @summary Throw exceptions when duplicate attributes are detected.
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main DuplAttributesTest
  */

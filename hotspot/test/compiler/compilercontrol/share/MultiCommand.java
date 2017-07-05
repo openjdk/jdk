@@ -72,6 +72,7 @@ public class MultiCommand extends AbstractTestBase {
     @Override
     public void test() {
         Scenario.Builder builder = Scenario.getBuilder();
+        builder.addFlag("-Xmixed");
         for (CompileCommand cc : testCases) {
             cc.print();
             builder.add(cc);

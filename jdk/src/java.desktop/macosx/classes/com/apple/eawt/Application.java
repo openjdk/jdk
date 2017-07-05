@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 package com.apple.eawt;
 
 import java.awt.Image;
-import java.awt.Point;
 import java.awt.PopupMenu;
 import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.desktop.*;
 import java.beans.Beans;
 
 import javax.swing.JMenuBar;
@@ -104,38 +104,38 @@ public class Application {
     }
 
     /**
-     * Adds sub-types of {@link AppEventListener} to listen for notifications from the native Mac OS X system.
+     * Adds sub-types of {@link SystemEventListener} to listen for notifications from the native Mac OS X system.
      *
      * @see AppForegroundListener
      * @see AppHiddenListener
      * @see AppReOpenedListener
-     * @see ScreenSleepListener
-     * @see SystemSleepListener
-     * @see UserSessionListener
+     * @see AppScreenSleepListener
+     * @see AppSystemSleepListener
+     * @see AppUserSessionListener
      *
      * @param listener
      * @since Java for Mac OS X 10.6 Update 3
      * @since Java for Mac OS X 10.5 Update 8
      */
-    public void addAppEventListener(final AppEventListener listener) {
+    public void addAppEventListener(final SystemEventListener listener) {
         eventHandler.addListener(listener);
     }
 
     /**
-     * Removes sub-types of {@link AppEventListener} from listening for notifications from the native Mac OS X system.
+     * Removes sub-types of {@link SystemEventListener} from listening for notifications from the native Mac OS X system.
      *
      * @see AppForegroundListener
      * @see AppHiddenListener
      * @see AppReOpenedListener
-     * @see ScreenSleepListener
-     * @see SystemSleepListener
-     * @see UserSessionListener
+     * @see AppScreenSleepListener
+     * @see AppSystemSleepListener
+     * @see AppUserSessionListener
      *
      * @param listener
      * @since Java for Mac OS X 10.6 Update 3
      * @since Java for Mac OS X 10.5 Update 8
      */
-    public void removeAppEventListener(final AppEventListener listener) {
+    public void removeAppEventListener(final SystemEventListener listener) {
         eventHandler.removeListener(listener);
     }
 
@@ -368,6 +368,17 @@ public class Application {
     }
 
     /**
+     * Displays a progress bar to this application's Dock icon.
+     * Acceptable values are from 0 to 100, any other disables progress indication.
+     *
+     * @param value progress value
+     * @since 1.9
+     */
+    public void setDockIconProgress(final int value) {
+        iconHandler.setDockIconProgress(value);
+    }
+
+    /**
      * Sets the default menu bar to use when there are no active frames.
      * Only used when the system property "apple.laf.useScreenMenuBar" is "true", and
      * the Aqua Look and Feel is active.
@@ -397,168 +408,4 @@ public class Application {
         ((CPlatformWindow)platformWindow).toggleFullScreen();
     }
 
-
-    // -- DEPRECATED API --
-
-    /**
-     * Adds the specified ApplicationListener as a receiver of callbacks from this class.
-     * This method throws a RuntimeException if the newer About, Preferences, Quit, etc handlers are installed.
-     *
-     * @param listener an implementation of ApplicationListener that handles ApplicationEvents
-     *
-     * @deprecated register individual handlers for each task (About, Preferences, Open, Print, Quit, etc)
-     * @since 1.4
-     */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    public void addApplicationListener(final ApplicationListener listener) {
-        eventHandler.legacyHandler.addLegacyAppListener(listener);
-    }
-
-    /**
-     * Removes the specified ApplicationListener from being a receiver of callbacks from this class.
-     * This method throws a RuntimeException if the newer About, Preferences, Quit, etc handlers are installed.
-     *
-     * @param listener an implementation of ApplicationListener that had previously been registered to handle ApplicationEvents
-     *
-     * @deprecated unregister individual handlers for each task (About, Preferences, Open, Print, Quit, etc)
-     * @since 1.4
-     */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    public void removeApplicationListener(final ApplicationListener listener) {
-        eventHandler.legacyHandler.removeLegacyAppListener(listener);
-    }
-
-    /**
-     * Enables the Preferences item in the application menu. The ApplicationListener receives a callback for
-     * selection of the Preferences item in the application menu only if this is set to {@code true}.
-     *
-     * If a Preferences item isn't present, this method adds and enables it.
-     *
-     * @param enable specifies whether the Preferences item in the application menu should be enabled ({@code true}) or not ({@code false})
-     *
-     * @deprecated no replacement
-     * @since 1.4
-     */
-    @Deprecated
-    public void setEnabledPreferencesMenu(final boolean enable) {
-        menuBarHandler.setPreferencesMenuItemVisible(true);
-        menuBarHandler.setPreferencesMenuItemEnabled(enable);
-    }
-
-    /**
-     * Enables the About item in the application menu. The ApplicationListener receives a callback for
-     * selection of the About item in the application menu only if this is set to {@code true}. Because AWT supplies
-     * a standard About window when an application may not, by default this is set to {@code true}.
-     *
-     * If the About item isn't present, this method adds and enables it.
-     *
-     * @param enable specifies whether the About item in the application menu should be enabled ({@code true}) or not ({@code false})
-     *
-     * @deprecated no replacement
-     * @since 1.4
-     */
-    @Deprecated
-    public void setEnabledAboutMenu(final boolean enable) {
-        menuBarHandler.setAboutMenuItemEnabled(enable);
-    }
-
-    /**
-     * Determines if the Preferences item of the application menu is enabled.
-     *
-     * @deprecated no replacement
-     * @since 1.4
-     */
-    @Deprecated
-    public boolean getEnabledPreferencesMenu() {
-        return menuBarHandler.isPreferencesMenuItemEnabled();
-    }
-
-    /**
-     * Determines if the About item of the application menu is enabled.
-     *
-     * @deprecated no replacement
-     * @since 1.4
-     */
-    @Deprecated
-    public boolean getEnabledAboutMenu() {
-        return menuBarHandler.isAboutMenuItemEnabled();
-    }
-
-    /**
-     * Determines if the About item of the application menu is present.
-     *
-     * @deprecated no replacement
-     * @since 1.4
-     */
-    @Deprecated
-    public boolean isAboutMenuItemPresent() {
-        return menuBarHandler.isAboutMenuItemVisible();
-    }
-
-    /**
-     * Adds the About item to the application menu if the item is not already present.
-     *
-     * @deprecated use {@link #setAboutHandler(AboutHandler)} with a non-null {@link AboutHandler} parameter
-     * @since 1.4
-     */
-    @Deprecated
-    public void addAboutMenuItem() {
-        menuBarHandler.setAboutMenuItemVisible(true);
-    }
-
-    /**
-     * Removes the About item from the application menu if  the item is present.
-     *
-     * @deprecated use {@link #setAboutHandler(AboutHandler)} with a null parameter
-     * @since 1.4
-     */
-    @Deprecated
-    public void removeAboutMenuItem() {
-        menuBarHandler.setAboutMenuItemVisible(false);
-    }
-
-    /**
-     * Determines if the About Preferences of the application menu is present. By default there is no Preferences menu item.
-     *
-     * @deprecated no replacement
-     * @since 1.4
-     */
-    @Deprecated
-    public boolean isPreferencesMenuItemPresent() {
-        return menuBarHandler.isPreferencesMenuItemVisible();
-    }
-
-    /**
-     * Adds the Preferences item to the application menu if the item is not already present.
-     *
-     * @deprecated use {@link #setPreferencesHandler(PreferencesHandler)} with a non-null {@link PreferencesHandler} parameter
-     * @since 1.4
-     */
-    @Deprecated
-    public void addPreferencesMenuItem() {
-        menuBarHandler.setPreferencesMenuItemVisible(true);
-    }
-
-    /**
-     * Removes the Preferences item from the application menu if that item is present.
-     *
-     * @deprecated use {@link #setPreferencesHandler(PreferencesHandler)} with a null parameter
-     * @since 1.4
-     */
-    @Deprecated
-    public void removePreferencesMenuItem() {
-        menuBarHandler.setPreferencesMenuItemVisible(false);
-    }
-
-    /**
-     * @deprecated Use {@code java.awt.MouseInfo.getPointerInfo().getLocation()}.
-     *
-     * @since 1.4
-     */
-    @Deprecated
-    public static Point getMouseLocationOnScreen() {
-        return java.awt.MouseInfo.getPointerInfo().getLocation();
-    }
 }

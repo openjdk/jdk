@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ public abstract class SampleModel
             throw new IllegalArgumentException("Width ("+w+") and height ("+
                                                h+") must be > 0");
         }
-        if (size >= Integer.MAX_VALUE) {
+        if (size > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("Dimensions (width="+w+
                                                " height="+h+") are too large");
         }

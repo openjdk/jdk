@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,7 +357,7 @@ public class SynthButtonUI extends BasicButtonUI implements
      * This method will return the icon that should be used for a button.  We
      * only want to use the synth icon defined by the style if the specific
      * icon has not been defined for the button state and the backup icon is a
-     * UIResource (we set it, not the developer).
+     * UIResource (we set it, not the developer) or {@code null}.
      *
      * @param b button
      * @param specificIcon icon returned from the button for the specific state
@@ -368,7 +368,7 @@ public class SynthButtonUI extends BasicButtonUI implements
             int state) {
         Icon icon = specificIcon;
         if (icon == null) {
-            if (defaultIcon instanceof UIResource) {
+            if (defaultIcon == null || defaultIcon instanceof UIResource) {
                 icon = getSynthIcon(b, state);
                 if (icon == null) {
                     icon = defaultIcon;
@@ -398,11 +398,16 @@ public class SynthButtonUI extends BasicButtonUI implements
 
     private Icon getRolloverIcon(AbstractButton b, Icon defaultIcon) {
         ButtonModel model = b.getModel();
-        Icon icon;
+        Icon icon = null;
         if (model.isSelected()) {
-            icon = getIcon(b, b.getRolloverSelectedIcon(), defaultIcon,
+            icon = getIcon(b, b.getRolloverSelectedIcon(), null,
                     SynthConstants.MOUSE_OVER | SynthConstants.SELECTED);
-        } else {
+            if (icon == null) {
+                icon = getIcon(b, b.getSelectedIcon(), null,
+                        SynthConstants.SELECTED);
+            }
+        }
+        if (icon == null) {
             icon = getIcon(b, b.getRolloverIcon(), defaultIcon,
                     SynthConstants.MOUSE_OVER);
         }
@@ -416,11 +421,16 @@ public class SynthButtonUI extends BasicButtonUI implements
 
     private Icon getSynthDisabledIcon(AbstractButton b, Icon defaultIcon) {
         ButtonModel model = b.getModel();
-        Icon icon;
+        Icon icon = null;
         if (model.isSelected()) {
-            icon = getIcon(b, b.getDisabledSelectedIcon(), defaultIcon,
+            icon = getIcon(b, b.getDisabledSelectedIcon(), null,
                     SynthConstants.DISABLED | SynthConstants.SELECTED);
-        } else {
+            if (icon == null) {
+                icon = getIcon(b, b.getSelectedIcon(), null,
+                        SynthConstants.SELECTED);
+            }
+        }
+        if (icon == null) {
             icon = getIcon(b, b.getDisabledIcon(), defaultIcon,
                     SynthConstants.DISABLED);
         }

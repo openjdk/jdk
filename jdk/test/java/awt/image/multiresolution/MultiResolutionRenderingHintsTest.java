@@ -47,6 +47,7 @@ import sun.java2d.loops.SurfaceType;
  * @author Alexander Scherbatiy
  * @summary Custom MultiResolution image support on HiDPI displays
  * @modules java.desktop/sun.java2d
+ * @modules java.desktop/sun.java2d.loops
  * @run main MultiResolutionRenderingHintsTest
  */
 public class MultiResolutionRenderingHintsTest {

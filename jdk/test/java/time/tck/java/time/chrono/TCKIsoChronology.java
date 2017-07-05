@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,16 @@ import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.OffsetDateTime;
+import java.time.Year;
 import java.time.ZonedDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.chrono.Chronology;
+import java.time.chrono.Era;
+import java.time.chrono.HijrahEra;
 import java.time.chrono.IsoChronology;
+import java.time.chrono.IsoEra;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
@@ -87,6 +93,8 @@ import org.testng.annotations.Test;
 public class TCKIsoChronology {
     // Can only work with IsoChronology here
     // others may be in separate module
+    private static final ZoneOffset OFFSET_P0100 = ZoneOffset.ofHours(1);
+    private static final ZoneOffset OFFSET_M0100 = ZoneOffset.ofHours(-1);
 
     @Test
     public void factory_from_TemporalAccessor_dateWithChronlogy() {
@@ -675,9 +683,114 @@ public class TCKIsoChronology {
         }
     }
 
+    @DataProvider(name = "epochSecond_dataProvider")
+    Object[][] data_epochSecond() {
+        return new Object[][] {
+                {2008, 3, 3, 1, 2, 2, OFFSET_P0100},
+                {2008, 3, 3, 1, 2, 2, OFFSET_M0100},
+                {2008, 2, 28, 1, 2, 2, OFFSET_P0100},
+                {2009, 3, 3, 1, 2, 2, OFFSET_P0100},
+                {2009, 3, 3, 1, 2, 2, OFFSET_M0100},
+                {2009, 2, 28, 1, 2, 2, OFFSET_P0100},
+                {1968, 3, 3, 1, 2, 2, OFFSET_P0100},
+                {1968, 3, 3, 1, 2, 2, OFFSET_M0100},
+                {1968, 2, 28, 1, 2, 2, OFFSET_P0100},
+                {1969, 3, 3 , 1, 2, 2, OFFSET_P0100},
+                {1969, 3, 3, 1, 2, 2, OFFSET_M0100},
+                {1969, 2, 28, 1, 2, 2, OFFSET_P0100},
+                {1970, 1, 1, 1, 2, 2, OFFSET_P0100},
+                {1970, 1, 1, 1, 2, 2, OFFSET_M0100},
+                {-4, 3, 3 , 1, 2, 2, OFFSET_P0100},
+                {-1, 3, 3 , 1, 2, 2, OFFSET_P0100},
+        };
+    }
+
+    @Test(dataProvider = "epochSecond_dataProvider")
+    public void test_epochSecond_1(int y, int m, int d, int h , int min, int s, ZoneOffset offset) {
+        assertEquals(IsoChronology.INSTANCE.epochSecond(y, m, d, h, min, s, offset),
+                     OffsetDateTime.of(y, m, d, h, min, s, 0, offset).toEpochSecond());
+    }
+
+    @Test
+    public void test_epochSecond_2() {
+        assertEquals(IsoChronology.INSTANCE.epochSecond(2008, 3, 3, 1, 2, 2, OFFSET_P0100),
+                     ZonedDateTime.of(2008, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond());
+        assertEquals(IsoChronology.INSTANCE.epochSecond(1969, 3, 3, 1, 2, 2, OFFSET_P0100),
+                     ZonedDateTime.of(1969, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond());
+    }
+
+    @Test
+    public void test_epochSecond_max() {
+        assertEquals(IsoChronology.INSTANCE.epochSecond(Year.MAX_VALUE, 12, 31, 23, 59, 59, ZoneOffset.MIN),
+                     OffsetDateTime.of(Year.MAX_VALUE, 12, 31, 23, 59, 59, 0, ZoneOffset.MIN).toEpochSecond());
+    }
+
+    @Test
+    public void test_epochSecond_min() {
+        assertEquals(IsoChronology.INSTANCE.epochSecond(Year.MIN_VALUE, 1, 1, 0, 0, 0, ZoneOffset.MAX),
+                     OffsetDateTime.of(Year.MIN_VALUE, 1, 1, 0, 0, 0, 0, ZoneOffset.MAX).toEpochSecond());
+    }
+
+    @DataProvider(name = "bad_epochSecond_dataProvider")
+    Object[][]  bad_data_epochSecond() {
+        return new Object[][] {
+            {2009, 13, 1, 1, 1, 1, OFFSET_P0100},
+            {2009, 2, 29, 1, 1, 1, OFFSET_P0100},
+            {2009, 1, 1, 25, 1, 1, OFFSET_P0100},
+            {2009, 1, 1, 1, 60, 1, OFFSET_P0100},
+            {2009, 1, 1, 1, 1, -11, OFFSET_P0100},
+        };
+    }
+    @Test(dataProvider = "bad_epochSecond_dataProvider", expectedExceptions = DateTimeException.class)
+    public void test_epochSecond_bad(int y, int m, int d, int h , int min, int s, ZoneOffset offset) {
+        IsoChronology.INSTANCE.epochSecond(y, m, d, h, min, s, offset);
+    }
+
+    @DataProvider(name = "era_epochSecond_dataProvider")
+    Object[][] data_era_epochSecond() {
+        return new Object[][] {
+                {IsoEra.CE, 2008, 3, 3, 1, 2, 2, OFFSET_P0100},
+                {IsoEra.CE, 2008, 3, 3, 1, 2, 2, OFFSET_M0100},
+                {IsoEra.CE, 2008, 2, 28, 1, 2, 2, OFFSET_P0100},
+                {IsoEra.CE, 2009, 3, 3, 1, 2, 2, OFFSET_P0100},
+                {IsoEra.CE, 2009, 3, 3, 1, 2, 2, OFFSET_M0100},
+                {IsoEra.CE, 2009, 2, 28, 1, 2, 2, OFFSET_P0100},
+                {IsoEra.CE, 1968, 3, 3, 1, 2, 2, OFFSET_P0100},
+                {IsoEra.CE, 1968, 3, 3, 1, 2, 2, OFFSET_M0100},
+                {IsoEra.CE, 1968, 2, 28, 1, 2, 2, OFFSET_P0100},
+                {IsoEra.CE, 1969, 3, 3 , 1, 2, 2, OFFSET_P0100},
+                {IsoEra.CE, 1969, 3, 3, 1, 2, 2, OFFSET_M0100},
+                {IsoEra.CE, 1969, 2, 28, 1, 2, 2, OFFSET_P0100},
+                {IsoEra.CE, 1970, 1, 1, 1, 2, 2, OFFSET_P0100},
+                {IsoEra.CE, 1970, 1, 1, 1, 2, 2, OFFSET_M0100},
+                {IsoEra.BCE, 5, 3, 3 , 1, 2, 2, OFFSET_P0100},
+                {IsoEra.BCE, 2, 3, 3 , 1, 2, 2, OFFSET_P0100},
+        };
+    }
+
+    @Test(dataProvider = "era_epochSecond_dataProvider")
+    public void test_era_epochSecond_1(Era era, int y, int m, int d, int h , int min, int s, ZoneOffset offset) {
+        assertEquals(IsoChronology.INSTANCE.epochSecond(era, y, m, d, h, min, s, offset),
+                     OffsetDateTime.of(IsoChronology.INSTANCE.date(era, y, m, d), LocalTime.of(h, min, s), offset)
+                                   .toEpochSecond());
+    }
+
+    @Test
+    public void test_era_epochSecond_2() {
+        assertEquals(IsoChronology.INSTANCE.epochSecond(IsoEra.CE, 2008, 3, 3, 1, 2, 2, OFFSET_P0100),
+                     ZonedDateTime.of(2008, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond());
+        assertEquals(IsoChronology.INSTANCE.epochSecond(IsoEra.CE, 1969, 3, 3, 1, 2, 2, OFFSET_P0100),
+                     ZonedDateTime.of(1969, 3, 3, 1, 2, 2, 0, ZoneId.of("+01:00")).toEpochSecond());
+    }
+
+    @Test(expectedExceptions = ClassCastException.class)
+    public void test_era_epochSecond_bad() {
+        IsoChronology.INSTANCE.epochSecond(HijrahEra.AH, 2009, 2, 29, 1, 2, 2, OFFSET_P0100);
+    }
+
+
     //-----------------------------------------------------------------------
     private static LocalDate date(int y, int m, int d) {
         return LocalDate.of(y, m, d);
     }
-
 }

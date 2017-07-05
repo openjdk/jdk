@@ -656,6 +656,9 @@ class PhaseIdealLoop : public PhaseTransform {
   bool cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop);
 
 public:
+
+  static bool is_canonical_main_loop_entry(CountedLoopNode* cl);
+
   bool has_node( Node* n ) const {
     guarantee(n != NULL, "No Node.");
     return _nodes[n->_idx] != NULL;

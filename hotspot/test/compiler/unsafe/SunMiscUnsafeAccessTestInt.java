@@ -25,7 +25,7 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for int
- * @modules java.base/sun.misc
+ * @modules jdk.unsupported/sun.misc
  * @run testng/othervm -Diters=100   -Xint                   SunMiscUnsafeAccessTestInt
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 SunMiscUnsafeAccessTestInt
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  SunMiscUnsafeAccessTestInt
@@ -164,6 +164,8 @@ public class SunMiscUnsafeAccessTestInt {
         }
 
 
+
+
         UNSAFE.putInt(base, offset, 1);
 
         // Compare
@@ -180,6 +182,8 @@ public class SunMiscUnsafeAccessTestInt {
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 2, "failing compareAndSwap int value");
         }
+
+
 
         // Compare set and get
         {
@@ -209,3 +213,5 @@ public class SunMiscUnsafeAccessTestInt {
         }
     }
 }
+
+

@@ -28,7 +28,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
 /**
  * @test ConstantGettersTransitionsTest
  * @library /testlibrary /test/lib /compiler/whitebox /
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TransitionsTestExecutor ConstantGettersTransitionsTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission

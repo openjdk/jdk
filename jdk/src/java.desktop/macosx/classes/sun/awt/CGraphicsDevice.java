@@ -32,7 +32,7 @@ import java.awt.GraphicsDevice;
 import java.awt.Insets;
 import java.awt.Window;
 import java.util.Objects;
-
+import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.opengl.CGLGraphicsConfig;
 
 public final class CGraphicsDevice extends GraphicsDevice
@@ -140,7 +140,7 @@ public final class CGraphicsDevice extends GraphicsDevice
     public void displayChanged() {
         xResolution = nativeGetXResolution(displayID);
         yResolution = nativeGetYResolution(displayID);
-        scale = (int) nativeGetScaleFactor(displayID);
+        initScaleFactor();
         //TODO configs/fullscreenWindow/modes?
     }
 
@@ -247,6 +247,17 @@ public final class CGraphicsDevice extends GraphicsDevice
     @Override
     public DisplayMode[] getDisplayModes() {
         return nativeGetDisplayModes(displayID);
+    }
+
+    private void initScaleFactor() {
+        if (SunGraphicsEnvironment.isUIScaleEnabled()) {
+            double debugScale = SunGraphicsEnvironment.getDebugScale();
+            scale = (int) (debugScale >= 1
+                    ? Math.round(debugScale)
+                    : nativeGetScaleFactor(displayID));
+        } else {
+            scale = 1;
+        }
     }
 
     private static native double nativeGetScaleFactor(int displayID);

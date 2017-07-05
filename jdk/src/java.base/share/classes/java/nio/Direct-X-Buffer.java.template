@@ -140,6 +140,7 @@ class Direct$Type$Buffer$RW$$BO$
         att = null;
 #else[rw]
         super(cap);
+        this.isReadOnly = true;
 #end[rw]
     }
 
@@ -180,6 +181,7 @@ class Direct$Type$Buffer$RW$$BO$
         att = null;
 #else[rw]
         super(cap, addr, fd, unmapper);
+        this.isReadOnly = true;
 #end[rw]
     }
 
@@ -200,6 +202,7 @@ class Direct$Type$Buffer$RW$$BO$
         att = db;
 #else[rw]
         super(db, mark, pos, lim, cap, off);
+        this.isReadOnly = true;
 #end[rw]
     }
 
@@ -212,6 +215,15 @@ class Direct$Type$Buffer$RW$$BO$
         assert (off >= 0);
         return new Direct$Type$Buffer$RW$$BO$(this, -1, 0, rem, rem, off);
     }
+
+#if[byte]
+    public $Type$Buffer slice(int pos, int lim) {
+        assert (pos >= 0);
+        assert (pos <= lim);
+        int rem = lim - pos;
+        return new Direct$Type$Buffer$RW$$BO$(this, -1, 0, rem, rem, pos);
+    }
+#end[byte]
 
     public $Type$Buffer duplicate() {
         return new Direct$Type$Buffer$RW$$BO$(this,
