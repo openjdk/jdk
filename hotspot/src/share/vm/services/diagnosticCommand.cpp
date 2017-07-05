@@ -42,6 +42,21 @@
 #include "utilities/macros.hpp"
 #include "oops/objArrayOop.inline.hpp"
 
+
+static void loadAgentModule(TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  JavaValue result(T_OBJECT);
+  Handle h_module_name = java_lang_String::create_from_str("jdk.management.agent", CHECK);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::module_Modules_klass(),
+                         vmSymbols::loadModule_name(),
+                         vmSymbols::loadModule_signature(),
+                         h_module_name,
+                         THREAD);
+}
+
 void DCmdRegistrant::register_dcmds(){
   // Registration of the diagnostic commands
   // First argument specifies which interfaces will export the command
@@ -753,6 +768,7 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
     // the remote management server.
     // throw java.lang.NoSuchMethodError if the method doesn't exist
 
+    loadAgentModule(CHECK);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
     instanceKlassHandle ik (THREAD, k);
@@ -826,6 +842,7 @@ void JMXStartLocalDCmd::execute(DCmdSource source, TRAPS) {
     // the local management server
     // throw java.lang.NoSuchMethodError if method doesn't exist
 
+    loadAgentModule(CHECK);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
     instanceKlassHandle ik (THREAD, k);
@@ -843,6 +860,7 @@ void JMXStopRemoteDCmd::execute(DCmdSource source, TRAPS) {
     // management server
     // throw java.lang.NoSuchMethodError if method doesn't exist
 
+    loadAgentModule(CHECK);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
     instanceKlassHandle ik (THREAD, k);
@@ -864,6 +882,7 @@ void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
   // invoke getManagementAgentStatus() method to generate the status info
   // throw java.lang.NoSuchMethodError if method doesn't exist
 
+  loadAgentModule(CHECK);
   Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
   instanceKlassHandle ik (THREAD, k);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class ModuleStressGC {
         // test's, defined to module jdk.translet, export list at
         // GC safepoints.
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:modules=trace",
+            "-Xlog:module=trace",
             "-p", MODS_DIR.toString(),
             "-m", "jdk.test/test.MainGC");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());

@@ -10,20 +10,20 @@
 /**
  * Invalid use of uses in class documentation.
  *
- * @uses ProvidesTest
+ * @uses NotFound
  */
 public class UsesTest {
     /**
      * Invalid use of uses in field documentation
      *
-     * @uses ProvidesTest Test description.
+     * @uses NotFound Test description.
      */
     public int invalid_param;
 
     /**
      * Invalid use of uses in method documentation
      *
-     * @uses ProvidesTest Test description.
+     * @uses NotFound Test description.
      */
     public class InvalidParam { }
 }

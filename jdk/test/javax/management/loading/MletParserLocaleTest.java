@@ -26,7 +26,7 @@
  * @bug 7065236
  * @summary Checking MletParser for Locale insensitive strings
  * @author Harsha Wardhana B
- * @modules java.management
+ *
  * @run clean MletParserLocaleTest
  * @run build MletParserLocaleTest
  * @run main/othervm/timeout=5 MletParserLocaleTest mlet4.html

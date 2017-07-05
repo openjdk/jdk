@@ -42,9 +42,9 @@ import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
 public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements Sizeable {
-    protected static RecyclableSizingIcon regularIcon = new RecyclableSizingIcon(18);
-    protected static RecyclableSizingIcon smallIcon = new RecyclableSizingIcon(16);
-    protected static RecyclableSizingIcon miniIcon = new RecyclableSizingIcon(14);
+    private static final RecyclableSizingIcon regularIcon = new RecyclableSizingIcon(18);
+    private static final RecyclableSizingIcon smallIcon = new RecyclableSizingIcon(16);
+    private static final RecyclableSizingIcon miniIcon = new RecyclableSizingIcon(14);
 
     protected static class RecyclableSizingIcon extends RecyclableSingleton<Icon> {
         final int iconSize;

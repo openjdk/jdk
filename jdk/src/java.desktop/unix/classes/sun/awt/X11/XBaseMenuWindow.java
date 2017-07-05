@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,15 @@
 package sun.awt.X11;
 
 import java.awt.*;
-import java.awt.peer.*;
 import java.awt.event.*;
-import java.awt.image.ColorModel;
 
 import sun.awt.*;
 
+import java.awt.peer.ComponentPeer;
 import java.util.ArrayList;
 import java.util.Vector;
 import sun.util.logging.PlatformLogger;
 import sun.java2d.SurfaceData;
-import sun.java2d.SunGraphics2D;
 
 /**
  * The abstract class XBaseMenuWindow is the superclass
@@ -656,28 +654,37 @@ public abstract class XBaseMenuWindow extends XWindow {
      *
      ************************************************/
 
+    GraphicsConfiguration getCurrentGraphicsConfiguration() {
+        Component hw = SunToolkit.getHeavyweightComponent(target);
+        XWindow peer = AWTAccessor.getComponentAccessor().getPeer(hw);
+        if (peer != null && peer.graphicsConfig != null) {
+            return peer.graphicsConfig;
+        }
+        return graphicsConfig;
+    }
+
     /**
      * Checks if window fits below specified item
      * returns rectangle that the window fits to or null.
      * @param itemBounds rectangle of item in global coordinates
      * @param windowSize size of submenu window to fit
-     * @param screenSize size of screen
+     * @param screenBounds size of screen
      */
-    Rectangle fitWindowBelow(Rectangle itemBounds, Dimension windowSize, Dimension screenSize) {
+    Rectangle fitWindowBelow(Rectangle itemBounds, Dimension windowSize, Rectangle screenBounds) {
         int width = windowSize.width;
         int height = windowSize.height;
         //Fix for 6267162: PIT: Popup Menu gets hidden below the screen when opened
         //near the periphery of the screen, XToolkit
         //Window should be moved if it's outside top-left screen bounds
-        int x = (itemBounds.x > 0) ? itemBounds.x : 0;
-        int y = (itemBounds.y + itemBounds.height > 0) ? itemBounds.y + itemBounds.height : 0;
-        if (y + height <= screenSize.height) {
+        int x = (itemBounds.x > screenBounds.x) ? itemBounds.x : screenBounds.x;
+        int y = (itemBounds.y + itemBounds.height > screenBounds.y) ? itemBounds.y + itemBounds.height : screenBounds.y;
+        if (y + height <= screenBounds.y + screenBounds.height) {
             //move it to the left if needed
-            if (width > screenSize.width) {
-                width = screenSize.width;
+            if (width > screenBounds.width) {
+                width = screenBounds.width;
             }
-            if (x + width > screenSize.width) {
-                x = screenSize.width - width;
+            if (x + width > screenBounds.x + screenBounds.width) {
+                x = screenBounds.x + screenBounds.width - width;
             }
             return new Rectangle(x, y, width, height);
         } else {
@@ -690,23 +697,23 @@ public abstract class XBaseMenuWindow extends XWindow {
      * returns rectangle that the window fits to or null.
      * @param itemBounds rectangle of item in global coordinates
      * @param windowSize size of submenu window to fit
-     * @param screenSize size of screen
+     * @param screenBounds size of screen
      */
-    Rectangle fitWindowAbove(Rectangle itemBounds, Dimension windowSize, Dimension screenSize) {
+    Rectangle fitWindowAbove(Rectangle itemBounds, Dimension windowSize, Rectangle screenBounds) {
         int width = windowSize.width;
         int height = windowSize.height;
         //Fix for 6267162: PIT: Popup Menu gets hidden below the screen when opened
         //near the periphery of the screen, XToolkit
         //Window should be moved if it's outside bottom-left screen bounds
-        int x = (itemBounds.x > 0) ? itemBounds.x : 0;
-        int y = (itemBounds.y > screenSize.height) ? screenSize.height - height : itemBounds.y - height;
-        if (y >= 0) {
+        int x = (itemBounds.x > screenBounds.x) ? itemBounds.x : screenBounds.x;
+        int y = (itemBounds.y > screenBounds.y + screenBounds.height) ? screenBounds.y + screenBounds.height - height : itemBounds.y - height;
+        if (y >= screenBounds.y) {
             //move it to the left if needed
-            if (width > screenSize.width) {
-                width = screenSize.width;
+            if (width > screenBounds.width) {
+                width = screenBounds.width;
             }
-            if (x + width > screenSize.width) {
-                x = screenSize.width - width;
+            if (x + width > screenBounds.x + screenBounds.width) {
+                x = screenBounds.x + screenBounds.width - width;
             }
             return new Rectangle(x, y, width, height);
         } else {
@@ -719,23 +726,23 @@ public abstract class XBaseMenuWindow extends XWindow {
      * returns rectangle that the window fits to or null.
      * @param itemBounds rectangle of item in global coordinates
      * @param windowSize size of submenu window to fit
-     * @param screenSize size of screen
+     * @param screenBounds size of screen
      */
-    Rectangle fitWindowRight(Rectangle itemBounds, Dimension windowSize, Dimension screenSize) {
+    Rectangle fitWindowRight(Rectangle itemBounds, Dimension windowSize, Rectangle screenBounds) {
         int width = windowSize.width;
         int height = windowSize.height;
         //Fix for 6267162: PIT: Popup Menu gets hidden below the screen when opened
         //near the periphery of the screen, XToolkit
         //Window should be moved if it's outside top-left screen bounds
-        int x = (itemBounds.x + itemBounds.width > 0) ? itemBounds.x + itemBounds.width : 0;
-        int y = (itemBounds.y > 0) ? itemBounds.y : 0;
-        if (x + width <= screenSize.width) {
+        int x = (itemBounds.x + itemBounds.width > screenBounds.x) ? itemBounds.x + itemBounds.width : screenBounds.x;
+        int y = (itemBounds.y > screenBounds.y) ? itemBounds.y : screenBounds.y;
+        if (x + width <= screenBounds.x + screenBounds.width) {
             //move it to the top if needed
-            if (height > screenSize.height) {
-                height = screenSize.height;
+            if (height > screenBounds.height) {
+                height = screenBounds.height;
             }
-            if (y + height > screenSize.height) {
-                y = screenSize.height - height;
+            if (y + height > screenBounds.y + screenBounds.height) {
+                y = screenBounds.y + screenBounds.height - height;
             }
             return new Rectangle(x, y, width, height);
         } else {
@@ -748,23 +755,23 @@ public abstract class XBaseMenuWindow extends XWindow {
      * returns rectangle that the window fits to or null.
      * @param itemBounds rectangle of item in global coordinates
      * @param windowSize size of submenu window to fit
-     * @param screenSize size of screen
+     * @param screenBounds size of screen
      */
-    Rectangle fitWindowLeft(Rectangle itemBounds, Dimension windowSize, Dimension screenSize) {
+    Rectangle fitWindowLeft(Rectangle itemBounds, Dimension windowSize, Rectangle screenBounds) {
         int width = windowSize.width;
         int height = windowSize.height;
         //Fix for 6267162: PIT: Popup Menu gets hidden below the screen when opened
         //near the periphery of the screen, XToolkit
         //Window should be moved if it's outside top-right screen bounds
-        int x = (itemBounds.x < screenSize.width) ? itemBounds.x - width : screenSize.width - width;
-        int y = (itemBounds.y > 0) ? itemBounds.y : 0;
-        if (x >= 0) {
+        int x = (itemBounds.x < screenBounds.x + screenBounds.width) ? itemBounds.x - width : screenBounds.x + screenBounds.width - width;
+        int y = (itemBounds.y > screenBounds.y) ? itemBounds.y : screenBounds.y;
+        if (x >= screenBounds.x) {
             //move it to the top if needed
-            if (height > screenSize.height) {
-                height = screenSize.height;
+            if (height > screenBounds.height) {
+                height = screenBounds.height;
             }
-            if (y + height > screenSize.height) {
-                y = screenSize.height - height;
+            if (y + height > screenBounds.y + screenBounds.height) {
+                y = screenBounds.y + screenBounds.height - height;
             }
             return new Rectangle(x, y, width, height);
         } else {
@@ -777,12 +784,12 @@ public abstract class XBaseMenuWindow extends XWindow {
      * to fit it on screen - move it to the
      * top-left edge and cut by screen dimensions
      * @param windowSize size of submenu window to fit
-     * @param screenSize size of screen
+     * @param screenBounds size of screen
      */
-    Rectangle fitWindowToScreen(Dimension windowSize, Dimension screenSize) {
-        int width = (windowSize.width < screenSize.width) ? windowSize.width : screenSize.width;
-        int height = (windowSize.height < screenSize.height) ? windowSize.height : screenSize.height;
-        return new Rectangle(0, 0, width, height);
+    Rectangle fitWindowToScreen(Dimension windowSize, Rectangle screenBounds) {
+        int width = (windowSize.width < screenBounds.width) ? windowSize.width : screenBounds.width;
+        int height = (windowSize.height < screenBounds.height) ? windowSize.height : screenBounds.height;
+        return new Rectangle(screenBounds.x, screenBounds.y, width, height);
     }
 
 
@@ -1087,7 +1094,9 @@ public abstract class XBaseMenuWindow extends XWindow {
                       }
                   } else {
                       //Invoke action event
-                      item.action(mouseEvent.getWhen(), mouseEvent.getModifiers());
+                      @SuppressWarnings("deprecation")
+                      final int modifiers = mouseEvent.getModifiers();
+                      item.action(mouseEvent.getWhen(), modifiers);
                       ungrabInput();
                   }
               } else {
@@ -1200,7 +1209,9 @@ public abstract class XBaseMenuWindow extends XWindow {
               if (citem instanceof XMenuPeer) {
                   cwnd.selectItem(citem, true);
               } else if (citem != null) {
-                  citem.action(event.getWhen(), event.getModifiers());
+                  @SuppressWarnings("deprecation")
+                  final int modifiers = event.getModifiers();
+                  citem.action(event.getWhen(), modifiers);
                   ungrabInput();
               }
               break;
