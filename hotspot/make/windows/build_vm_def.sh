@@ -52,6 +52,7 @@ UNIQ="$MKS_HOME/uniq.exe"
 CAT="$MKS_HOME/cat.exe"
 RM="$MKS_HOME/rm.exe"
 DUMPBIN="link.exe /dump"
+export VS_UNICODE_OUTPUT= 
 
 if [ "$1" = "-nosa" ]; then
     echo EXPORTS > vm.def

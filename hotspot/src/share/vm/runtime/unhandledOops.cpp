@@ -31,8 +31,6 @@
 #include "runtime/unhandledOops.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #ifdef CHECK_UNHANDLED_OOPS
 const int free_list_size = 256;
 
@@ -52,7 +50,7 @@ UnhandledOops::~UnhandledOops() {
 void UnhandledOops::dump_oops(UnhandledOops *list) {
   for (int k = 0; k < list->_oop_list->length(); k++) {
     UnhandledOopEntry entry = list->_oop_list->at(k);
-    tty->print(" " INTPTR_FORMAT, entry._oop_ptr);
+    tty->print(" " INTPTR_FORMAT, p2i(entry._oop_ptr));
   }
   tty->cr();
 }
@@ -68,7 +66,7 @@ void UnhandledOops::register_unhandled_oop(oop* op, address pc) {
   _level ++;
   if (unhandled_oop_print) {
     for (int i=0; i<_level; i++) tty->print(" ");
-    tty->print_cr("r " INTPTR_FORMAT, op);
+    tty->print_cr("r " INTPTR_FORMAT, p2i(op));
   }
   UnhandledOopEntry entry(op, pc);
   _oop_list->push(entry);
@@ -105,7 +103,7 @@ void UnhandledOops::unregister_unhandled_oop(oop* op) {
   _level --;
   if (unhandled_oop_print) {
     for (int i=0; i<_level; i++) tty->print(" ");
-    tty->print_cr("u " INTPTR_FORMAT, op);
+    tty->print_cr("u " INTPTR_FORMAT, p2i(op));
   }
 
   int i = _oop_list->find_from_end(op, match_oop_entry);
@@ -122,9 +120,9 @@ void UnhandledOops::clear_unhandled_oops() {
     // anymore, it must not have gotten unregistered properly and it's a bug
     // in the unhandled oop generator.
     if(!_thread->is_in_stack((address)entry._oop_ptr)) {
-      tty->print_cr("oop_ptr is " INTPTR_FORMAT, (address)entry._oop_ptr);
+      tty->print_cr("oop_ptr is " INTPTR_FORMAT, p2i(entry._oop_ptr));
       tty->print_cr("thread is " INTPTR_FORMAT " from pc " INTPTR_FORMAT,
-                     (address)_thread, (address)entry._pc);
+                     p2i(_thread), p2i(entry._pc));
       assert(false, "heap is corrupted by the unhandled oop detector");
     }
     // Set unhandled oops to a pattern that will crash distinctively

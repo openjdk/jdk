@@ -44,6 +44,14 @@
 #define RUNTIME_PD_DEVELOP_FLAG_MEMBER(type, name, doc)          FLAG_MEMBER(name),
 #define RUNTIME_NOTPRODUCT_FLAG_MEMBER(type, name, value, doc)   FLAG_MEMBER(name),
 
+#define JVMCI_PRODUCT_FLAG_MEMBER(type, name, value, doc)        FLAG_MEMBER(name),
+#define JVMCI_PD_PRODUCT_FLAG_MEMBER(type, name, doc)            FLAG_MEMBER(name),
+#define JVMCI_DEVELOP_FLAG_MEMBER(type, name, value, doc)        FLAG_MEMBER(name),
+#define JVMCI_PD_DEVELOP_FLAG_MEMBER(type, name, doc)            FLAG_MEMBER(name),
+#define JVMCI_DIAGNOSTIC_FLAG_MEMBER(type, name, value, doc)     FLAG_MEMBER(name),
+#define JVMCI_EXPERIMENTAL_FLAG_MEMBER(type, name, value, doc)   FLAG_MEMBER(name),
+#define JVMCI_NOTPRODUCT_FLAG_MEMBER(type, name, value, doc)     FLAG_MEMBER(name),
+
 #ifdef _LP64
 #define RUNTIME_LP64_PRODUCT_FLAG_MEMBER(type, name, value, doc) FLAG_MEMBER(name),
 #else
@@ -105,6 +113,17 @@ typedef enum {
           IGNORE_RANGE, \
           IGNORE_CONSTRAINT)
 #endif // INCLUDE_ALL_GCS
+#if INCLUDE_JVMCI
+ JVMCI_FLAGS(JVMCI_DEVELOP_FLAG_MEMBER, \
+             JVMCI_PD_DEVELOP_FLAG_MEMBER, \
+             JVMCI_PRODUCT_FLAG_MEMBER, \
+             JVMCI_PD_PRODUCT_FLAG_MEMBER, \
+             JVMCI_DIAGNOSTIC_FLAG_MEMBER, \
+             JVMCI_EXPERIMENTAL_FLAG_MEMBER, \
+             JVMCI_NOTPRODUCT_FLAG_MEMBER, \
+             IGNORE_RANGE, \
+             IGNORE_CONSTRAINT)
+#endif // INCLUDE_JVMCI
 #ifdef COMPILER1
  C1_FLAGS(C1_DEVELOP_FLAG_MEMBER, \
           C1_PD_DEVELOP_FLAG_MEMBER, \
@@ -150,6 +169,14 @@ typedef enum {
 #define RUNTIME_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)      FLAG_MEMBER_WITH_TYPE(name,type),
 #define RUNTIME_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, doc)          FLAG_MEMBER_WITH_TYPE(name,type),
 #define RUNTIME_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)   FLAG_MEMBER_WITH_TYPE(name,type),
+
+#define JVMCI_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)        FLAG_MEMBER_WITH_TYPE(name,type),
+#define JVMCI_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, doc)            FLAG_MEMBER_WITH_TYPE(name,type),
+#define JVMCI_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)        FLAG_MEMBER_WITH_TYPE(name,type),
+#define JVMCI_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, doc)            FLAG_MEMBER_WITH_TYPE(name,type),
+#define JVMCI_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)     FLAG_MEMBER_WITH_TYPE(name,type),
+#define JVMCI_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)   FLAG_MEMBER_WITH_TYPE(name,type),
+#define JVMCI_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)     FLAG_MEMBER_WITH_TYPE(name,type),
 
 #define C1_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)           FLAG_MEMBER_WITH_TYPE(name,type),
 #define C1_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, doc)               FLAG_MEMBER_WITH_TYPE(name,type),
@@ -212,6 +239,17 @@ typedef enum {
           IGNORE_RANGE,
           IGNORE_CONSTRAINT)
 #endif // INCLUDE_ALL_GCS
+#if INCLUDE_JVMCI
+ JVMCI_FLAGS(JVMCI_DEVELOP_FLAG_MEMBER_WITH_TYPE,
+             JVMCI_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE,
+             JVMCI_PRODUCT_FLAG_MEMBER_WITH_TYPE,
+             JVMCI_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
+             JVMCI_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
+             JVMCI_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
+             JVMCI_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
+             IGNORE_RANGE,
+             IGNORE_CONSTRAINT)
+#endif // INCLUDE_JVMCI
 #ifdef COMPILER1
  C1_FLAGS(C1_DEVELOP_FLAG_MEMBER_WITH_TYPE,
           C1_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE,

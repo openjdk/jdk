@@ -30,8 +30,6 @@
 #include "prims/privilegedStack.hpp"
 #include "runtime/vframe.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 void PrivilegedElement::initialize(vframeStream* vfst, oop context, PrivilegedElement* next, TRAPS) {
   Method* method        = vfst->method();
   _klass                = method->method_holder();
@@ -65,7 +63,7 @@ void PrivilegedElement::classes_do(KlassClosure* f) {
 #ifndef PRODUCT
 
 void PrivilegedElement::print_on(outputStream* st) const {
-  st->print("   0x%lx ", _frame_id);
+  st->print("   " PTR_FORMAT " ", p2i(_frame_id));
   _klass->print_value_on(st);
   if (protection_domain() != NULL) {
     st->print("   ");

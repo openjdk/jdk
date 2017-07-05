@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compileTask.hpp"
 #include "runtime/advancedThresholdPolicy.hpp"
 #include "runtime/simpleThresholdPolicy.inline.hpp"
 
@@ -162,6 +163,9 @@ bool AdvancedThresholdPolicy::is_method_profiled(Method* method) {
 
 // Called with the queue locked and with at least one element
 CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
+#if INCLUDE_JVMCI
+  CompileTask *max_non_jvmci_task = NULL;
+#endif
   CompileTask *max_task = NULL;
   Method* max_method = NULL;
   jlong t = os::javaTimeMillis();
@@ -179,6 +183,7 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
         if (PrintTieredEvents) {
           print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel)task->comp_level());
         }
+        task->log_task_dequeued("stale");
         compile_queue->remove_and_mark_stale(task);
         method->clear_queued_for_compilation();
         task = next_task;
@@ -193,6 +198,15 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
     }
     task = next_task;
   }
+
+#if INCLUDE_JVMCI
+  if (UseJVMCICompiler) {
+    if (max_non_jvmci_task != NULL) {
+      max_task = max_non_jvmci_task;
+      max_method = max_task->method();
+    }
+  }
+#endif
 
   if (max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile
       && is_method_profiled(max_method)) {
@@ -354,6 +368,14 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, Method* method, CompLevel
       if (common(p, method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
         next_level = CompLevel_full_optimization;
       } else if ((this->*p)(i, b, cur_level, method)) {
+#if INCLUDE_JVMCI
+        if (UseJVMCICompiler) {
+          // Since JVMCI takes a while to warm up, its queue inevitably backs up during
+          // early VM execution.
+          next_level = CompLevel_full_profile;
+          break;
+        }
+#endif
         // C1-generated fully profiled code is about 30% slower than the limited profile
         // code that has only invocation and backedge counters. The observation is that
         // if C2 queue is large enough we can spend too much time in the fully profiled code
@@ -362,7 +384,7 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, Method* method, CompLevel
         // we choose to compile a limited profiled version and then recompile with full profiling
         // when the load on C2 goes down.
         if (!disable_feedback && CompileBroker::queue_size(CompLevel_full_optimization) >
-                                 Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
+            Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
           next_level = CompLevel_limited_profile;
         } else {
           next_level = CompLevel_full_profile;

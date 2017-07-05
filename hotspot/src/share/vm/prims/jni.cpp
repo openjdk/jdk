@@ -81,6 +81,10 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif // INCLUDE_ALL_GCS
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciCompiler.hpp"
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 
 static jint CurrentVersion = JNI_VERSION_1_8;
 
@@ -3870,6 +3874,7 @@ void TestBufferingOopClosure_test();
 void TestCodeCacheRemSet_test();
 void FreeRegionList_test();
 void test_memset_with_concurrent_readers();
+void TestPredictions_test();
 #endif
 
 void execute_internal_vm_tests() {
@@ -3912,6 +3917,7 @@ void execute_internal_vm_tests() {
       run_unit_test(FreeRegionList_test());
     }
     run_unit_test(test_memset_with_concurrent_readers());
+    run_unit_test(TestPredictions_test());
 #endif
     tty->print_cr("All internal VM tests passed");
   }
@@ -3985,6 +3991,19 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     /* thread is thread_in_vm here */
     *vm = (JavaVM *)(&main_vm);
     *(JNIEnv**)penv = thread->jni_environment();
+
+#if INCLUDE_JVMCI
+    if (EnableJVMCI) {
+      if (UseJVMCICompiler) {
+        // JVMCI is initialized on a CompilerThread
+        if (BootstrapJVMCI) {
+          JavaThread* THREAD = thread;
+          JVMCICompiler* compiler = JVMCICompiler::instance(CATCH);
+          compiler->bootstrap();
+        }
+      }
+    }
+#endif
 
     // Tracks the time application was running before GC
     RuntimeService::record_application_start();

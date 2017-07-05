@@ -27,6 +27,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#include "crc32c.h"
 
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
@@ -130,3 +131,107 @@ juint StubRoutines::x86::_crc_table[] =
     0x5d681b02UL, 0x2a6f2b94UL, 0xb40bbe37UL, 0xc30c8ea1UL, 0x5a05df1bUL,
     0x2d02ef8dUL
 };
+
+#define D 32
+#define P 0x82F63B78 // Reflection of Castagnoli (0x11EDC6F41)
+
+#define TILL_CYCLE 31
+uint32_t _crc32c_pow_2k_table[TILL_CYCLE]; // because _crc32c_pow_2k_table[TILL_CYCLE == 31] == _crc32c_pow_2k_table[0]
+
+// A. Kadatch and B. Jenkins / Everything we know about CRC but afraid to forget September 3, 2010 8
+// Listing 1: Multiplication of normalized polynomials
+// "a" and "b" occupy D least significant bits.
+uint32_t crc32c_multiply(uint32_t a, uint32_t b) {
+  uint32_t product = 0;
+  uint32_t b_pow_x_table[D + 1]; // b_pow_x_table[k] = (b * x**k) mod P
+  b_pow_x_table[0] = b;
+  for (int k = 0; k < D; ++k) {
+    // If "a" has non-zero coefficient at x**k,/ add ((b * x**k) mod P) to the result.
+    if ((a & (uint64_t)(1 << (D - 1 - k))) != 0) product ^= b_pow_x_table[k];
+
+    // Compute b_pow_x_table[k+1] = (b ** x**(k+1)) mod P.
+    if (b_pow_x_table[k] & 1) {
+      // If degree of (b_pow_x_table[k] * x) is D, then
+      // degree of (b_pow_x_table[k] * x - P) is less than D.
+      b_pow_x_table[k + 1] = (b_pow_x_table[k] >> 1) ^ P;
+    }
+    else {
+      b_pow_x_table[k + 1] = b_pow_x_table[k] >> 1;
+    }
+  }
+  return product;
+}
+#undef D
+#undef P
+
+// A. Kadatch and B. Jenkins / Everything we know about CRC but afraid to forget September 3, 2010 9
+void crc32c_init_pow_2k(void) {
+  // _crc32c_pow_2k_table(0) =
+  // x^(2^k) mod P(x) = x mod P(x) = x
+  // Since we are operating on a reflected values
+  // x = 10b, reflect(x) = 0x40000000
+  _crc32c_pow_2k_table[0] = 0x40000000;
+
+  for (int k = 1; k < TILL_CYCLE; k++) {
+    // _crc32c_pow_2k_table(k+1) = _crc32c_pow_2k_table(k-1)^2 mod P(x)
+    uint32_t tmp = _crc32c_pow_2k_table[k - 1];
+    _crc32c_pow_2k_table[k] = crc32c_multiply(tmp, tmp);
+  }
+}
+
+// x^N mod P(x)
+uint32_t crc32c_f_pow_n(uint32_t n) {
+  //            result = 1 (polynomial)
+  uint32_t one, result = 0x80000000, i = 0;
+
+  while (one = (n & 1), (n == 1 || n - one > 0)) {
+    if (one) {
+      result = crc32c_multiply(result, _crc32c_pow_2k_table[i]);
+    }
+    n >>= 1;
+    i++;
+  }
+
+  return result;
+}
+
+juint *StubRoutines::x86::_crc32c_table;
+
+void StubRoutines::x86::generate_CRC32C_table(bool is_pclmulqdq_table_supported) {
+
+  static juint pow_n[CRC32C_NUM_PRECOMPUTED_CONSTANTS];
+
+  crc32c_init_pow_2k();
+
+  pow_n[0] = crc32c_f_pow_n(CRC32C_HIGH * 8);      // 8N * 8 = 64N
+  pow_n[1] = crc32c_f_pow_n(CRC32C_HIGH * 8 * 2);  // 128N
+
+  pow_n[2] = crc32c_f_pow_n(CRC32C_MIDDLE * 8);
+  pow_n[3] = crc32c_f_pow_n(CRC32C_MIDDLE * 8 * 2);
+
+  pow_n[4] = crc32c_f_pow_n(CRC32C_LOW * 8);
+  pow_n[CRC32C_NUM_PRECOMPUTED_CONSTANTS - 1] =
+            crc32c_f_pow_n(CRC32C_LOW * 8 * 2);
+
+  if (is_pclmulqdq_table_supported) {
+    _crc32c_table = pow_n;
+  } else {
+    static julong pclmulqdq_table[CRC32C_NUM_PRECOMPUTED_CONSTANTS * 256];
+
+    for (int j = 0; j < CRC32C_NUM_PRECOMPUTED_CONSTANTS; j++) {
+      static juint X_CONST = pow_n[j];
+      for (int64_t i = 0; i < 256; i++) { // to force 64 bit wide computations
+      // S. Gueron / Information Processing Letters 112 (2012) 184
+      // Algorithm 3: Generating a carry-less multiplication lookup table.
+      // Input: A 32-bit constant, X_CONST.
+      // Output: A table of 256 entries, each one is a 64-bit quadword,
+      // that can be used for computing "byte" * X_CONST, for a given byte.
+        pclmulqdq_table[j * 256 + i] =
+          ((i & 1) * X_CONST) ^ ((i & 2) * X_CONST) ^ ((i & 4) * X_CONST) ^
+          ((i & 8) * X_CONST) ^ ((i & 16) * X_CONST) ^ ((i & 32) * X_CONST) ^
+          ((i & 64) * X_CONST) ^ ((i & 128) * X_CONST);
+      }
+    }
+    _crc32c_table = (juint*)pclmulqdq_table;
+  }
+}

@@ -43,7 +43,7 @@ non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
                                      uint n_threads) {
   assert(n_threads > 0, "expected n_threads > 0");
   assert(n_threads <= ParallelGCThreads,
-         err_msg("n_threads: %u > ParallelGCThreads: %u", n_threads, ParallelGCThreads));
+         "n_threads: %u > ParallelGCThreads: %u", n_threads, ParallelGCThreads);
 
   // Make sure the LNC array is valid for the space.
   jbyte**   lowest_non_clean;
@@ -370,18 +370,18 @@ process_chunk_boundaries(Space* sp,
                                               - lowest_non_clean_base_chunk_index;
         if (last_chunk_index_to_check > last_chunk_index) {
           assert(last_block + last_block_size > used.end(),
-                 err_msg("Inconsistency detected: last_block [" PTR_FORMAT "," PTR_FORMAT "]"
-                         " does not exceed used.end() = " PTR_FORMAT ","
-                         " yet last_chunk_index_to_check " INTPTR_FORMAT
-                         " exceeds last_chunk_index " INTPTR_FORMAT,
-                         p2i(last_block), p2i(last_block + last_block_size),
-                         p2i(used.end()),
-                         last_chunk_index_to_check, last_chunk_index));
+                 "Inconsistency detected: last_block [" PTR_FORMAT "," PTR_FORMAT "]"
+                 " does not exceed used.end() = " PTR_FORMAT ","
+                 " yet last_chunk_index_to_check " INTPTR_FORMAT
+                 " exceeds last_chunk_index " INTPTR_FORMAT,
+                 p2i(last_block), p2i(last_block + last_block_size),
+                 p2i(used.end()),
+                 last_chunk_index_to_check, last_chunk_index);
           assert(sp->used_region().end() > used.end(),
-                 err_msg("Expansion did not happen: "
-                         "[" PTR_FORMAT "," PTR_FORMAT ") -> [" PTR_FORMAT "," PTR_FORMAT ")",
-                         p2i(sp->used_region().start()), p2i(sp->used_region().end()),
-                         p2i(used.start()), p2i(used.end())));
+                 "Expansion did not happen: "
+                 "[" PTR_FORMAT "," PTR_FORMAT ") -> [" PTR_FORMAT "," PTR_FORMAT ")",
+                 p2i(sp->used_region().start()), p2i(sp->used_region().end()),
+                 p2i(used.start()), p2i(used.end()));
           NOISY(tty->print_cr(" process_chunk_boundary: heap expanded; explicitly bounding last_chunk");)
           last_chunk_index_to_check = last_chunk_index;
         }

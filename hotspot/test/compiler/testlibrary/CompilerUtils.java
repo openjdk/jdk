@@ -21,6 +21,8 @@
  * questions.
  */
 
+package compiler.testlibrary;
+
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import java.util.stream.IntStream;

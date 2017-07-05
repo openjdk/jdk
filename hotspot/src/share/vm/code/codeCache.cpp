@@ -365,7 +365,7 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool strict) {
   // Possibly wakes up the sweeper thread.
   NMethodSweeper::notify(code_blob_type);
   assert_locked_or_safepoint(CodeCache_lock);
-  assert(size > 0, err_msg_res("Code cache allocation request must be > 0 but is %d", size));
+  assert(size > 0, "Code cache allocation request must be > 0 but is %d", size);
   if (size <= 0) {
     return NULL;
   }
@@ -817,7 +817,7 @@ double CodeCache::reverse_free_ratio(int code_blob_type) {
   double max_capacity = (double)heap->max_capacity();
   double result = max_capacity / unallocated_capacity;
   assert (max_capacity >= unallocated_capacity, "Must be");
-  assert (result >= 1.0, err_msg_res("reverse_free_ratio must be at least 1. It is %f", result));
+  assert (result >= 1.0, "reverse_free_ratio must be at least 1. It is %f", result);
   return result;
 }
 

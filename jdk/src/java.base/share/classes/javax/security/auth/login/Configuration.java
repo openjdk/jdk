@@ -311,6 +311,13 @@ public abstract class Configuration {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.provider.preferred} property to determine
+     * the preferred provider order for the specified algorithm. This
+     * may be different than the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.
+     *
      * @param type the specified Configuration type.  See the Configuration
      *    section in the <a href=
      *    "{@docRoot}/../technotes/guides/security/StandardNames.html#Configuration">

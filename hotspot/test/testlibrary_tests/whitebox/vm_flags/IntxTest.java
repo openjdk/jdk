@@ -29,7 +29,7 @@
  * @build IntxTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI IntxTest
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-ProfileInterpreter IntxTest
  * @summary testing of WB::set/getIntxVMFlag()
  * @author igor.ignatyev@oracle.com
  */
@@ -37,8 +37,7 @@
 public class IntxTest {
     private static final String FLAG_NAME = "OnStackReplacePercentage";
     private static final String FLAG_DEBUG_NAME = "InlineFrequencyCount";
-    private static final Long[] TESTS = {0L, 100L, -1L,
-            (long) Integer.MAX_VALUE, (long) Integer.MIN_VALUE};
+    private static final Long[] TESTS = {0L, 100L, (long) Integer.MAX_VALUE};
 
     public static void main(String[] args) throws Exception {
         VmFlagTest.runTest(FLAG_NAME, TESTS,

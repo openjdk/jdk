@@ -52,19 +52,27 @@ define_pd_global(intx, OptoLoopAlignment,     16);  // = 4*wordSize
 define_pd_global(intx, InlineFrequencyCount,  50);  // we can use more inlining on the SPARC
 define_pd_global(intx, InlineSmallCode,       1500);
 
+#define DEFAULT_STACK_YELLOW_PAGES (2)
+#define DEFAULT_STACK_RED_PAGES (1)
+
 #ifdef _LP64
 // Stack slots are 2X larger in LP64 than in the 32 bit VM.
 define_pd_global(intx, ThreadStackSize,       1024);
 define_pd_global(intx, VMThreadStackSize,     1024);
-define_pd_global(intx, StackShadowPages, 10 DEBUG_ONLY(+1));
+#define DEFAULT_STACK_SHADOW_PAGES (10 DEBUG_ONLY(+1))
 #else
 define_pd_global(intx, ThreadStackSize,       512);
 define_pd_global(intx, VMThreadStackSize,     512);
-define_pd_global(intx, StackShadowPages, 3 DEBUG_ONLY(+1));
-#endif
+#define DEFAULT_STACK_SHADOW_PAGES (3 DEBUG_ONLY(+1))
+#endif // _LP64
 
-define_pd_global(intx, StackYellowPages, 2);
-define_pd_global(intx, StackRedPages, 1);
+#define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES
+#define MIN_STACK_RED_PAGES DEFAULT_STACK_RED_PAGES
+#define MIN_STACK_SHADOW_PAGES DEFAULT_STACK_SHADOW_PAGES
+
+define_pd_global(intx, StackYellowPages, DEFAULT_STACK_YELLOW_PAGES);
+define_pd_global(intx, StackRedPages, DEFAULT_STACK_RED_PAGES);
+define_pd_global(intx, StackShadowPages, DEFAULT_STACK_SHADOW_PAGES);
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
@@ -82,6 +90,7 @@ define_pd_global(uintx, TypeProfileLevel, 111);
                                                                             \
   product(intx, UseVIS, 99,                                                 \
           "Highest supported VIS instructions set on Sparc")                \
+          range(0, 99)                                                      \
                                                                             \
   product(bool, UseCBCond, false,                                           \
           "Use compare and branch instruction on SPARC")                    \
@@ -91,12 +100,14 @@ define_pd_global(uintx, TypeProfileLevel, 111);
                                                                             \
   product(intx, BlockZeroingLowLimit, 2048,                                 \
           "Minimum size in bytes when block zeroing will be used")          \
+          range(1, max_jint)                                                \
                                                                             \
   product(bool, UseBlockCopy, false,                                        \
           "Use special cpu instructions for block copy")                    \
                                                                             \
   product(intx, BlockCopyLowLimit, 2048,                                    \
           "Minimum size in bytes when block copy will be used")             \
+          range(1, max_jint)                                                \
                                                                             \
   develop(bool, UseV8InstrsOnly, false,                                     \
           "Use SPARC-V8 Compliant instruction subset")                      \
@@ -108,9 +119,11 @@ define_pd_global(uintx, TypeProfileLevel, 111);
           "Do not use swap instructions, but only CAS (in a loop) on SPARC")\
                                                                             \
   product(uintx,  ArraycopySrcPrefetchDistance, 0,                          \
-          "Distance to prefetch source array in arracopy")                  \
+          "Distance to prefetch source array in arraycopy")                 \
+          constraint(ArraycopySrcPrefetchDistanceConstraintFunc, AfterErgo) \
                                                                             \
   product(uintx,  ArraycopyDstPrefetchDistance, 0,                          \
-          "Distance to prefetch destination array in arracopy")             \
+          "Distance to prefetch destination array in arraycopy")            \
+          constraint(ArraycopyDstPrefetchDistanceConstraintFunc, AfterErgo) \
 
 #endif // CPU_SPARC_VM_GLOBALS_SPARC_HPP

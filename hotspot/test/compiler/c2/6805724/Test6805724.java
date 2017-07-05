@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 /**
  * @test
  * @bug 6805724
- * @summary ModLNode::Ideal() generates functionally incorrect graph when divisor is any (2^k-1) constant.
- *
+ * @summary ModLNode::Ideal() generates functionally incorrect graph
+ *          when divisor is any (2^k-1) constant.
+ * @library /testlibrary
  * @run main/othervm -Xcomp -XX:CompileOnly=Test6805724.fcomp Test6805724
  */
 
-import java.net.URLClassLoader;
+import jdk.test.lib.Utils;
 
 public class Test6805724 implements Runnable {
     // Initialize DIVISOR so that it is final in this class.
@@ -65,13 +66,14 @@ public class Test6805724 implements Runnable {
 
     public static void main(String args[]) throws Exception {
         Class cl = Class.forName("Test6805724");
-        URLClassLoader apploader = (URLClassLoader) cl.getClassLoader();
+        ClassLoader apploader = cl.getClassLoader();
 
         // Iterate over all 2^k-1 divisors.
         for (int k = 1; k < Long.SIZE; k++) {
             long divisor = (1L << k) - 1;
             System.setProperty("divisor", "" + divisor);
-            ClassLoader loader = new URLClassLoader(apploader.getURLs(), apploader.getParent());
+            ClassLoader loader
+                    = Utils.getTestClassPathURLClassLoader(apploader.getParent());
             Class c = loader.loadClass("Test6805724");
             Runnable r = (Runnable) c.newInstance();
             r.run();

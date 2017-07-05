@@ -640,7 +640,8 @@ DependOnVariableHelper = \
           $(if $(findstring $(LOG_LEVEL), trace), \
               $(info NewVariable $1: >$(strip $($1))<) \
               $(info OldVariable $1: >$(strip $($1_old))<)) \
-          $(call WriteFile, $1_old:=$($1), $(call DependOnVariableFileName, $1, $2))) \
+          $(call WriteFile, $1_old:=$(call DoubleDollar,$($1)), \
+              $(call DependOnVariableFileName, $1, $2))) \
         $(call DependOnVariableFileName, $1, $2) \
     )
 

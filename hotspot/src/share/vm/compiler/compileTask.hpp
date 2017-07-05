@@ -133,6 +133,7 @@ public:
 
   void         log_task(xmlStream* log);
   void         log_task_queued();
+  void         log_task_dequeued(const char* comment);
   void         log_task_start(CompileLog* log);
   void         log_task_done(CompileLog* log);
 

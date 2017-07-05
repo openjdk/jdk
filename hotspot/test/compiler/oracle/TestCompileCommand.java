@@ -40,7 +40,7 @@ public class TestCompileCommand {
 
     private static final String[][] ARGUMENTS = {
         {
-            "-XX:CompileCommand=print,*01234567890123456789012345678901234567890123456789,*0123456789012345678901234567890123456789",
+            "-XX:CompileCommand=print,*01234567890123456789012345678901234567890123456789.*0123456789012345678901234567890123456789",
             "-version"
         }
     };

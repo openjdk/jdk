@@ -59,6 +59,8 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_safept_entry_for(TosState state, address runtime_entry);
   void    generate_throw_exception();
 
+  void lock_method();
+
   // Instruction generation
   void generate_and_dispatch (Template* t, TosState tos_out = ilgl);
   void set_vtos_entry_points (Template* t, address& bep, address& cep, address& sep, address& aep, address& iep, address& lep, address& fep, address& dep, address& vep);

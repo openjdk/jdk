@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -140,7 +141,7 @@ public:
     _end_semaphore->wait();
 
     // No workers are allowed to read the state variables after the coordinator has been signaled.
-    assert(_not_finished == 0, err_msg("%d not finished workers?", _not_finished));
+    assert(_not_finished == 0, "%d not finished workers?", _not_finished);
     _task    = NULL;
     _started = 0;
 
@@ -328,6 +329,7 @@ void GangWorker::print_task_done(WorkData data) {
 void GangWorker::run_task(WorkData data) {
   print_task_started(data);
 
+  GCIdMark gc_id_mark(data._task->gc_id());
   data._task->work(data._worker_id);
 
   print_task_done(data);

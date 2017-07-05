@@ -1569,6 +1569,11 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                 && OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_VISTA) >= 0;
     }
 
+    static boolean isOnWindows7() {
+        return OSInfo.getOSType() == OSInfo.OSType.WINDOWS
+                && OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_7) >= 0;
+    }
+
     private void initVistaComponentDefaults(UIDefaults table) {
         if (! isOnVista()) {
             return;
@@ -1638,28 +1643,30 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
         table.putDefaults(menuDefaults);
 
-        /* no margins */
-        InsetsUIResource insets = new InsetsUIResource(0, 0, 0, 0);
-        for (int i = 0, j = 0; i < menuClasses.length; i++) {
-            String key = menuClasses[i] + ".margin";
-            Object oldValue = table.get(key);
-            menuDefaults[j++] = key;
-            menuDefaults[j++] = new XPValue(insets, oldValue);
-        }
-        table.putDefaults(menuDefaults);
+        /*For Windows7 margin and checkIconOffset should be greater than 0 */
+        if (!isOnWindows7()) {
+            /* no margins */
+            InsetsUIResource insets = new InsetsUIResource(0, 0, 0, 0);
+            for (int i = 0, j = 0; i < menuClasses.length; i++) {
+                String key = menuClasses[i] + ".margin";
+                Object oldValue = table.get(key);
+                menuDefaults[j++] = key;
+                menuDefaults[j++] = new XPValue(insets, oldValue);
+            }
+            table.putDefaults(menuDefaults);
 
-        /* set checkIcon offset */
-        Integer checkIconOffsetInteger =
-            Integer.valueOf(0);
-        for (int i = 0, j = 0; i < menuClasses.length; i++) {
-            String key = menuClasses[i] + ".checkIconOffset";
-            Object oldValue = table.get(key);
-            menuDefaults[j++] = key;
-            menuDefaults[j++] =
-                new XPValue(checkIconOffsetInteger, oldValue);
+            /* set checkIcon offset */
+            Integer checkIconOffsetInteger =
+                Integer.valueOf(0);
+            for (int i = 0, j = 0; i < menuClasses.length; i++) {
+                String key = menuClasses[i] + ".checkIconOffset";
+                Object oldValue = table.get(key);
+                menuDefaults[j++] = key;
+                menuDefaults[j++] =
+                    new XPValue(checkIconOffsetInteger, oldValue);
+            }
+            table.putDefaults(menuDefaults);
         }
-        table.putDefaults(menuDefaults);
-
         /* set width of the gap after check icon */
         Integer afterCheckIconGap = WindowsPopupMenuUI.getSpanBeforeGutter()
                 + WindowsPopupMenuUI.getGutterWidth()

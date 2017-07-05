@@ -29,6 +29,8 @@ import com.sun.beans.util.Cache;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.beans.Transient;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -276,9 +278,6 @@ import sun.swing.SwingAccessor;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *     attribute: isContainer false
- *
  * @author  Timothy Prinzing
  * @author Igor Kushnirskiy (printing support)
  * @see Document
@@ -291,6 +290,8 @@ import sun.swing.SwingAccessor;
  * @see View
  * @see ViewFactory
  */
+@JavaBean(defaultProperty = "UI")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class JTextComponent extends JComponent implements Scrollable, Accessible
 {
@@ -375,6 +376,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public CaretListener[] getCaretListeners() {
         return listenerList.getListeners(CaretListener.class);
     }
@@ -409,11 +411,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @param doc  the document to display/edit
      * @see #getDocument
-     * @beaninfo
-     *  description: the text document model
-     *        bound: true
-     *       expert: true
      */
+    @BeanProperty(expert = true, description
+            = "the text document model")
     public void setDocument(Document doc) {
         Document old = model;
 
@@ -496,6 +496,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @return the command list
      */
+    @BeanProperty(bound = false)
     public Action[] getActions() {
         return getUI().getEditorKit(this).getActions();
     }
@@ -511,10 +512,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * A PropertyChange event ("margin") is sent to all listeners.
      *
      * @param m the space between the border and the text
-     * @beaninfo
-     *  description: desired space between the border and text area
-     *        bound: true
      */
+    @BeanProperty(description
+            = "desired space between the border and text area")
     public void setMargin(Insets m) {
         Insets old = margin;
         margin = m;
@@ -576,11 +576,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @param c the caret
      * @see #getCaret
-     * @beaninfo
-     *  description: the caret used to select/navigate
-     *        bound: true
-     *       expert: true
      */
+    @BeanProperty(expert = true, description
+            = "the caret used to select/navigate")
     public void setCaret(Caret c) {
         if (caret != null) {
             caret.removeChangeListener(caretEvent);
@@ -614,11 +612,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @param h the highlighter
      * @see #getHighlighter
-     * @beaninfo
-     *  description: object responsible for background highlights
-     *        bound: true
-     *       expert: true
      */
+    @BeanProperty(expert = true, description
+            = "object responsible for background highlights")
     public void setHighlighter(Highlighter h) {
         if (highlighter != null) {
             highlighter.deinstall(this);
@@ -640,10 +636,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @param map the keymap
      * @see #getKeymap
-     * @beaninfo
-     *  description: set of key event to action bindings to use
-     *        bound: true
      */
+    @BeanProperty(description
+            = "set of key event to action bindings to use")
     public void setKeymap(Keymap map) {
         Keymap old = keymap;
         keymap = map;
@@ -679,11 +674,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @see #setTransferHandler
      * @see TransferHandler
      * @since 1.4
-     *
-     * @beaninfo
-     *  description: determines whether automatic drag handling is enabled
-     *        bound: false
      */
+    @BeanProperty(bound = false, description
+            = "determines whether automatic drag handling is enabled")
     public void setDragEnabled(boolean b) {
         checkDragEnabled(b);
         dragEnabled = b;
@@ -955,6 +948,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @see TransferHandler#canImport(TransferHandler.TransferSupport)
      * @since 1.6
      */
+    @BeanProperty(bound = false)
     public final DropLocation getDropLocation() {
         return dropLocation;
     }
@@ -1220,11 +1214,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @param c the color
      * @see #getCaretColor
-     * @beaninfo
-     *  description: the color used to render the caret
-     *        bound: true
-     *    preferred: true
      */
+    @BeanProperty(preferred = true, description
+            = "the color used to render the caret")
     public void setCaretColor(Color c) {
         Color old = caretColor;
         caretColor = c;
@@ -1249,11 +1241,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @param c the color
      * @see #getSelectionColor
-     * @beaninfo
-     *  description: color used to render selection background
-     *        bound: true
-     *    preferred: true
      */
+    @BeanProperty(preferred = true, description
+            = "color used to render selection background")
     public void setSelectionColor(Color c) {
         Color old = selectionColor;
         selectionColor = c;
@@ -1278,11 +1268,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @param c the color
      * @see #getSelectedTextColor
-     * @beaninfo
-     *  description: color used to render selected text
-     *        bound: true
-     *    preferred: true
      */
+    @BeanProperty(preferred = true, description
+            = "color used to render selected text")
     public void setSelectedTextColor(Color c) {
         Color old = selectedTextColor;
         selectedTextColor = c;
@@ -1306,11 +1294,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @param c the color
      * @see #getDisabledTextColor
-     * @beaninfo
-     *  description: color used to render disabled text
-     *        bound: true
-     *    preferred: true
      */
+    @BeanProperty(preferred = true, description
+            = "color used to render disabled text")
     public void setDisabledTextColor(Color c) {
         Color old = disabledTextColor;
         disabledTextColor = c;
@@ -1535,10 +1521,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @param aKey the key
      * @see #getFocusAccelerator
-     * @beaninfo
-     *  description: accelerator character used to grab focus
-     *        bound: true
      */
+    @BeanProperty(description
+            = "accelerator character used to grab focus")
     public void setFocusAccelerator(char aKey) {
         aKey = Character.toUpperCase(aKey);
         char old = focusAccelerator;
@@ -1632,9 +1617,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @exception    IllegalArgumentException if the value supplied
      *               for <code>position</code> is less than zero or greater
      *               than the component's text length
-     * @beaninfo
-     * description: the caret position
      */
+    @BeanProperty(bound = false, description
+            = "the caret position")
     public void setCaretPosition(int position) {
         Document doc = getDocument();
         if (doc != null) {
@@ -1672,9 +1657,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @param t the new text to be set
      * @see #getText
      * @see DefaultCaret
-     * @beaninfo
-     * description: the text of this component
      */
+    @BeanProperty(bound = false, description
+            = "the text of this component")
     public void setText(String t) {
         try {
             Document doc = getDocument();
@@ -1724,6 +1709,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *  have a valid mapping into the document for some reason
      * @see #setText
      */
+    @BeanProperty(bound = false)
     public String getSelectedText() {
         String txt = null;
         int p0 = Math.min(caret.getDot(), caret.getMark());
@@ -1758,10 +1744,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @param b the boolean to be set
      * @see #isEditable
-     * @beaninfo
-     * description: specifies if the text can be edited
-     *       bound: true
      */
+    @BeanProperty(description
+            = "specifies if the text can be edited")
     public void setEditable(boolean b) {
         if (b != editable) {
             boolean oldVal = editable;
@@ -1795,9 +1780,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * implementation which is where the actual selection is maintained.
      *
      * @param selectionStart the start position of the text &ge; 0
-     * @beaninfo
-     * description: starting location of the selection.
      */
+    @BeanProperty(bound = false, description
+            = "starting location of the selection.")
     public void setSelectionStart(int selectionStart) {
         /* Route through select method to enforce consistent policy
          * between selectionStart and selectionEnd.
@@ -1828,9 +1813,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * implementation which is where the actual selection is maintained.
      *
      * @param selectionEnd the end position of the text &ge; 0
-     * @beaninfo
-     * description: ending location of the selection.
      */
+    @BeanProperty(bound = false, description
+            = "ending location of the selection.")
     public void setSelectionEnd(int selectionEnd) {
         /* Route through select method to enforce consistent policy
          * between selectionStart and selectionEnd.
@@ -1946,6 +1931,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @return the <code>preferredSize</code> of a <code>JViewport</code>
      * whose view is this <code>Scrollable</code>
      */
+    @BeanProperty(bound = false)
     public Dimension getPreferredScrollableViewportSize() {
         return getPreferredSize();
     }
@@ -2029,6 +2015,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @return true if a viewport should force the <code>Scrollable</code>s
      *   width to match its own
      */
+    @BeanProperty(bound = false)
     public boolean getScrollableTracksViewportWidth() {
         Container parent = SwingUtilities.getUnwrappedParent(this);
         if (parent instanceof JViewport) {
@@ -2050,6 +2037,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @return true if a viewport should force the Scrollables height
      *   to match its own
      */
+    @BeanProperty(bound = false)
     public boolean getScrollableTracksViewportHeight() {
         Container parent = SwingUtilities.getUnwrappedParent(this);
         if (parent instanceof JViewport) {
@@ -2484,6 +2472,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *         <code>AccessibleContext</code> of this
      *         <code>JTextComponent</code>
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJTextComponent();
@@ -4539,6 +4528,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     //
     // Overrides this method to become an active input method client.
     //
+    @BeanProperty(bound = false)
     public InputMethodRequests getInputMethodRequests() {
         if (inputMethodRequestsHandler == null) {
             inputMethodRequestsHandler = new InputMethodRequestsHandler();

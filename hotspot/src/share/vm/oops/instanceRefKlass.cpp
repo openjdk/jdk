@@ -33,8 +33,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
   // Clear the nonstatic oop-map entries corresponding to referent
   // and nextPending field.  They are treated specially by the

@@ -153,10 +153,10 @@ class TestBufferingOopClosure {
 
     boc.done();
 
-    #define assert_testCount(got, expected)                                     \
-       assert((got) == (expected),                                              \
-           err_msg("Expected: %d, got: %d, when running testCount(%d, %d, %d)", \
-               (got), (expected), num_narrow, num_full, do_oop_order))
+    #define assert_testCount(got, expected)                                \
+       assert((got) == (expected),                                         \
+              "Expected: %d, got: %d, when running testCount(%d, %d, %d)", \
+              (got), (expected), num_narrow, num_full, do_oop_order)
 
     assert_testCount(num_narrow, coc.narrow_oop_count());
     assert_testCount(num_full, coc.full_oop_count());
@@ -190,11 +190,11 @@ class TestBufferingOopClosure {
 
     fr.oops_do(&boc, 0);
 
-    #define assert_testIsBufferEmptyOrFull(got, expected)                             \
-        assert((got) == (expected),                                                   \
-            err_msg("Expected: %d, got: %d. testIsBufferEmptyOrFull(%d, %d, %s, %s)", \
-                (got), (expected), num_narrow, num_full,                              \
-                BOOL_TO_STR(expect_empty), BOOL_TO_STR(expect_full)))
+    #define assert_testIsBufferEmptyOrFull(got, expected)                        \
+        assert((got) == (expected),                                              \
+               "Expected: %d, got: %d. testIsBufferEmptyOrFull(%d, %d, %s, %s)", \
+               (got), (expected), num_narrow, num_full,                          \
+               BOOL_TO_STR(expect_empty), BOOL_TO_STR(expect_full))
 
     assert_testIsBufferEmptyOrFull(expect_empty, boc.is_buffer_empty());
     assert_testIsBufferEmptyOrFull(expect_full, boc.is_buffer_full());
@@ -232,8 +232,8 @@ class TestBufferingOopClosure {
     boc.done();
 
     assert(boc.is_buffer_empty(),
-        err_msg("Should be empty after call to done(). testEmptyAfterDone(%d, %d)",
-            num_narrow, num_full));
+           "Should be empty after call to done(). testEmptyAfterDone(%d, %d)",
+           num_narrow, num_full);
   }
 
   static void testEmptyAfterDone() {
