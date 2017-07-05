@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,6 @@ public class BasicColorChooserUI extends ColorChooserUI
             previewPanelHolder.setBorder(new TitledBorder(previewString));
         }
         previewPanelHolder.setInheritsPopupMenu(true);
-        chooser.add(previewPanelHolder, BorderLayout.SOUTH);
 
         installPreviewPanel();
         chooser.applyComponentOrientation(c.getComponentOrientation());
@@ -126,12 +125,8 @@ public class BasicColorChooserUI extends ColorChooserUI
 
         uninstallDefaultChoosers();
         uninstallListeners();
+        uninstallPreviewPanel();
         uninstallDefaults();
-
-        previewPanelHolder.remove(previewPanel);
-        if (previewPanel instanceof UIResource) {
-            chooser.setPreviewPanel(null);
-        }
 
         previewPanelHolder = null;
         previewPanel = null;
@@ -143,29 +138,37 @@ public class BasicColorChooserUI extends ColorChooserUI
     }
 
     protected void installPreviewPanel() {
-        if (previewPanel != null) {
-            previewPanelHolder.remove(previewPanel);
-            previewPanel.removeMouseListener(getHandler());
+        JComponent previewPanel = this.chooser.getPreviewPanel();
+        if (previewPanel == null) {
+            previewPanel = ColorChooserComponentFactory.getPreviewPanel();
         }
-
-        previewPanel = chooser.getPreviewPanel();
-        Dimension layoutSize = new Dimension(); // fix for bug 4759306
-        if (previewPanel != null) {
-            layoutSize = new BorderLayout().minimumLayoutSize(previewPanel);
-            if ((previewPanelHolder != null) && (chooser != null) &&
-            (layoutSize.getWidth() + layoutSize.getHeight() == 0)) {
-              chooser.remove(previewPanelHolder);
-              return;
+        else {
+            Dimension size = new BorderLayout().minimumLayoutSize(previewPanel);
+            if ((size.width == 0) && (size.height == 0)) {
+                previewPanel = null;
             }
         }
-        if (previewPanel == null || previewPanel instanceof UIResource) {
-          previewPanel = ColorChooserComponentFactory.getPreviewPanel(); // get from table?
-            chooser.setPreviewPanel(previewPanel);
+        this.previewPanel = previewPanel;
+        if (previewPanel != null) {
+            chooser.add(previewPanelHolder, BorderLayout.SOUTH);
+            previewPanel.setForeground(chooser.getColor());
+            previewPanelHolder.add(previewPanel);
+            previewPanel.addMouseListener(getHandler());
+            previewPanel.setInheritsPopupMenu(true);
         }
-        previewPanel.setForeground(chooser.getColor());
-        previewPanelHolder.add(previewPanel);
-        previewPanel.addMouseListener(getHandler());
-        previewPanel.setInheritsPopupMenu(true);
+    }
+
+    /**
+     * Removes installed preview panel from the UI delegate.
+     *
+     * @since 1.7
+     */
+    protected void uninstallPreviewPanel() {
+        if (this.previewPanel != null) {
+            this.previewPanel.removeMouseListener(getHandler());
+            this.previewPanelHolder.remove(this.previewPanel);
+        }
+        this.chooser.remove(this.previewPanelHolder);
     }
 
     protected void installDefaults() {
@@ -209,7 +212,6 @@ public class BasicColorChooserUI extends ColorChooserUI
         chooser.removePropertyChangeListener( propertyChangeListener );
         chooser.getSelectionModel().removeChangeListener(previewListener);
         previewListener = null;
-        previewPanel.removeMouseListener(getHandler());
     }
 
     private void selectionChanged(ColorSelectionModel model) {
@@ -312,9 +314,8 @@ public class BasicColorChooserUI extends ColorChooserUI
                 }
             }
             else if (prop == JColorChooser.PREVIEW_PANEL_PROPERTY) {
-                if (evt.getNewValue() != previewPanel) {
-                    installPreviewPanel();
-                }
+                uninstallPreviewPanel();
+                installPreviewPanel();
             }
             else if (prop == JColorChooser.SELECTION_MODEL_PROPERTY) {
                 ColorSelectionModel oldModel = (ColorSelectionModel) evt.getOldValue();
@@ -352,5 +353,4 @@ public class BasicColorChooserUI extends ColorChooserUI
             super("color");
         }
     }
-
 }

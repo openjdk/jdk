@@ -43,6 +43,9 @@ public class B6558853 implements Runnable {
         InetAddress dest = null;
         while (l.hasMoreElements() && dest == null) {
             NetworkInterface nif = l.nextElement();
+            if (!nif.isUp())
+                continue;
+
             for (InterfaceAddress a : nif.getInterfaceAddresses()) {
                 if (a.getAddress() instanceof Inet6Address) {
                     Inet6Address a6 = (Inet6Address) a.getAddress();
@@ -53,6 +56,7 @@ public class B6558853 implements Runnable {
                 }
             }
         }
+        System.out.println("Using " + dest);
         if (dest != null) {
             B6558853 test = new B6558853(dest, port);
             Thread thread = new Thread(test);

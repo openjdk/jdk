@@ -58,6 +58,8 @@ public class B6521014 {
         Enumeration e = NetworkInterface.getNetworkInterfaces();
         while (e.hasMoreElements()) {
             NetworkInterface ifc = (NetworkInterface) e.nextElement();
+            if (!ifc.isUp())
+                continue;
             Enumeration addrs = ifc.getInetAddresses();
             while (addrs.hasMoreElements()) {
                 InetAddress a = (InetAddress)addrs.nextElement();

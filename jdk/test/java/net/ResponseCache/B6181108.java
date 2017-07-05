@@ -67,9 +67,10 @@ public class B6181108 implements Runnable {
             out.flush();
 
             s.close();
-            ss.close();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            try { ss.close(); } catch (IOException unused) {}
         }
     }
 
@@ -100,6 +101,7 @@ public class B6181108 implements Runnable {
         URLConnection urlc = url.openConnection();
         int i = ((HttpURLConnection)(urlc)).getResponseCode();
         System.out.println ("response code = " + i);
+        ResponseCache.setDefault(null);
     }
 
     public static void main(String args[]) throws Exception {

@@ -31,8 +31,8 @@
 #include <stdlib.h>
 
 JNIEXPORT jboolean JNICALL
-Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj,
-                                        jlong address, jlong len)
+Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj, jlong address,
+                                         jlong len, jint numPages)
 {
     jboolean loaded = JNI_FALSE;
     /* Information not available?
@@ -43,22 +43,11 @@ Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj,
     return loaded;
 }
 
-JNIEXPORT jint JNICALL
+JNIEXPORT void JNICALL
 Java_java_nio_MappedByteBuffer_load0(JNIEnv *env, jobject obj, jlong address,
-                                     jlong len, jint pageSize)
+                                     jlong len)
 {
-    int *ptr = (int *) jlong_to_ptr(address);
-    int pageIncrement = pageSize / sizeof(int);
-    jlong numPages = (len + pageSize - 1) / pageSize;
-    int i = 0;
-    int j = 0;
-
-    /* touch every page */
-    for (i=0; i<numPages; i++) {
-        j += *((volatile int *)ptr);
-        ptr += pageIncrement;
-    }
-    return j;
+    // no madvise available
 }
 
 JNIEXPORT void JNICALL

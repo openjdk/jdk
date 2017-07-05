@@ -91,9 +91,10 @@ public class KeepAliveTimerThread {
                 out.flush();
 
                 s.close();
-                server.close();
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                try { server.close(); } catch (IOException unused) {}
             }
         }
     }
@@ -118,6 +119,8 @@ public class KeepAliveTimerThread {
         if (grp.activeCount() > 0) {
             throw new RuntimeException("Keep-alive thread started in wrong thread group");
         }
+
+        grp.destroy();
     }
 
 }
