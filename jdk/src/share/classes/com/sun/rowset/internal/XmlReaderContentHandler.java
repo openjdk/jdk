@@ -764,6 +764,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
                     rs.next();
                     rs.setOriginalRow();
                     applyUpdates();
+                    rs.deleteRow();
                 } catch (SQLException ex) {
                     throw new SAXException(MessageFormat.format(resBundle.handleGetObject("xmlrch.errdel").toString() , ex.getMessage()));
                 }

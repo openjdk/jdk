@@ -151,7 +151,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
 
     VOID        *pInput = 0;
     DWORD            inputLen;
-    CHAR         buffOut[512];
+    CHAR         buffOut[1024];
     jboolean         isCopy;
     SECURITY_STATUS      ss;
     SecBufferDesc        OutBuffDesc;
@@ -178,7 +178,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
     OutBuffDesc.cBuffers  = 1;
     OutBuffDesc.pBuffers  = &OutSecBuff;
 
-    OutSecBuff.cbBuffer   = 512;
+    OutSecBuff.cbBuffer   = 1024;
     OutSecBuff.BufferType = SECBUFFER_TOKEN;
     OutSecBuff.pvBuffer   = buffOut;
 

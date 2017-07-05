@@ -269,13 +269,11 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * differ in lower or upper bits.
      */
     private int hash(Object k) {
-       int h = hashSeed;
-
         if (k instanceof String) {
             return ((String) k).hash32();
         }
 
-        h ^= k.hashCode();
+        int h = hashSeed ^ k.hashCode();
 
         // Spread bits to regularize both segment and index locations,
         // using variant of single-word Wang/Jenkins hash.
