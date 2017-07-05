@@ -335,7 +335,7 @@ void Parse::do_anewarray() {
 
   const TypeKlassPtr* array_klass_type = TypeKlassPtr::make(array_klass);
   Node* count_val = pop();
-  Node* obj = new_array(makecon(array_klass_type), count_val);
+  Node* obj = new_array(makecon(array_klass_type), count_val, 1);
   push(obj);
 }
 
@@ -345,17 +345,17 @@ void Parse::do_newarray(BasicType elem_type) {
 
   Node*   count_val = pop();
   const TypeKlassPtr* array_klass = TypeKlassPtr::make(ciTypeArrayKlass::make(elem_type));
-  Node*   obj = new_array(makecon(array_klass), count_val);
+  Node*   obj = new_array(makecon(array_klass), count_val, 1);
   // Push resultant oop onto stack
   push(obj);
 }
 
 // Expand simple expressions like new int[3][5] and new Object[2][nonConLen].
 // Also handle the degenerate 1-dimensional case of anewarray.
-Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, int ndimensions) {
+Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, int ndimensions, int nargs) {
   Node* length = lengths[0];
   assert(length != NULL, "");
-  Node* array = new_array(makecon(TypeKlassPtr::make(array_klass)), length);
+  Node* array = new_array(makecon(TypeKlassPtr::make(array_klass)), length, nargs);
   if (ndimensions > 1) {
     jint length_con = find_int_con(length, -1);
     guarantee(length_con >= 0, "non-constant multianewarray");
@@ -364,7 +364,7 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
     const Type*    elemtype = _gvn.type(array)->is_aryptr()->elem();
     const intptr_t header   = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     for (jint i = 0; i < length_con; i++) {
-      Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1);
+      Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1, nargs);
       intptr_t offset = header + ((intptr_t)i << LogBytesPerHeapOop);
       Node*    eaddr  = basic_plus_adr(array, offset);
       store_oop_to_array(control(), array, eaddr, adr_type, elem, elemtype, T_OBJECT);
@@ -419,7 +419,7 @@ void Parse::do_multianewarray() {
   // Can use multianewarray instead of [a]newarray if only one dimension,
   // or if all non-final dimensions are small constants.
   if (expand_count == 1 || (1 <= expand_count && expand_count <= expand_limit)) {
-    Node* obj = expand_multianewarray(array_klass, &length[0], ndimensions);
+    Node* obj = expand_multianewarray(array_klass, &length[0], ndimensions, ndimensions);
     push(obj);
     return;
   }

@@ -68,6 +68,7 @@
                             </li>
                             <li><a href="#zip">Zip and Unzip</a> </li>
                             <li><a href="#freetype">FreeType2 Fonts</a> </li>
+                            <li><a href="#jibx">JIBX Libraries</a> </li>
                             <li>Linux and Solaris:
                                 <ul>
                                     <li><a href="#cups">CUPS Include files</a> </li>
@@ -586,6 +587,11 @@
                     package</a>.
                 </li>
                 <li>
+                    Install the
+                    <a href="#jibx">JIBX Libraries</a>, set
+                    <tt><a href="#ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt>.
+                </li>
+                <li>
                     Install
                     <a href="#ant">Ant</a>, 
                     make sure it is in your PATH.
@@ -649,6 +655,11 @@
                     Install the
                     <a href="#cups">CUPS Include files</a>, set
                     <tt><a href="#ALT_CUPS_HEADERS_PATH">ALT_CUPS_HEADERS_PATH</a></tt>.
+                </li>
+                <li>
+                    Install the
+                    <a href="#jibx">JIBX Libraries</a>, set
+                    <tt><a href="#ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt>.
                 </li>
                 <li>
                     Install
@@ -744,6 +755,11 @@
                 <li>
                     Install 
                     <a href="#dxsdk">Microsoft DirectX SDK</a>.
+                </li>
+                <li>
+                    Install the
+                    <a href="#jibx">JIBX Libraries</a>, set
+                    <tt><a href="#ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt>.
                 </li>
                 <li>
                     Install
@@ -872,6 +888,27 @@
                 cacerts file that will get placed in your build.
                 By default an empty cacerts file is provided and that should be
                 fine for most JDK developers.
+            </blockquote>
+            <!-- ------------------------------------------------------ -->
+            <h4><a name="jibx">JIBX</a></h4>
+            <blockquote>
+                JIBX libraries version 1.1.5 is required for building the OpenJDK.
+                Namely, the following JAR files from the JIBX distribution package
+                are required:
+                <ul>
+                    <li>bcel.jar
+                    <li>jibx-bind.jar
+                    <li>jibx-run.jar
+                    <li>xpp3.jar
+                </ul>
+                <p>
+                You can download the package from the
+                <a href="http://jibx.sourceforge.net" target="_blank">JIBX site</a>.
+                <p>
+                You will need to set the
+                <tt><a href="#ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt>
+                environment variable to refer to place where the JAR files,
+                above, are located.
             </blockquote>
             <!-- ------------------------------------------------------ -->
             <h4><a name="compilers">Compilers</a></h4>
@@ -1424,6 +1461,12 @@
                     The location of the <a href="#cacerts">cacerts</a> file.
                     The default will refer to 
                     <tt>jdk/src/share/lib/security/cacerts</tt>.
+                </dd>
+                <dt><tt><a name="ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt></dt>
+                <dd>
+                    The location of the <a href="#jibx">JIBX libraries</a> file.
+                    The default value is
+                    <tt>$(ALT_SLASH_JAVA)/devtools/share/jibx/lib</tt>.
                 </dd>
                 <dt><a name="ALT_CUPS_HEADERS_PATH"><tt>ALT_CUPS_HEADERS_PATH</tt></a> </dt>
                 <dd>

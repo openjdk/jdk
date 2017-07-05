@@ -1951,6 +1951,16 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
     // Skip the rest of the method handle classes, if MethodHandle is not loaded.
     scan = WKID(meth_group_end+1);
   }
+  WKID indy_group_start = WK_KLASS_ENUM_NAME(Linkage_klass);
+  WKID indy_group_end   = WK_KLASS_ENUM_NAME(Dynamic_klass);
+  initialize_wk_klasses_until(indy_group_start, scan, CHECK);
+  if (EnableInvokeDynamic) {
+    initialize_wk_klasses_through(indy_group_start, scan, CHECK);
+  }
+  if (_well_known_klasses[indy_group_start] == NULL) {
+    // Skip the rest of the dynamic typing classes, if Linkage is not loaded.
+    scan = WKID(indy_group_end+1);
+  }
 
   initialize_wk_klasses_until(WKID_LIMIT, scan, CHECK);
 
@@ -2366,6 +2376,76 @@ Handle SystemDictionary::compute_method_handle_type(symbolHandle signature,
   return Handle(THREAD, (oop) result.get_jobject());
 }
 
+
+// Ask Java code to find or construct a java.dyn.CallSite for the given
+// name and signature, as interpreted relative to the given class loader.
+Handle SystemDictionary::make_dynamic_call_site(KlassHandle caller,
+                                                int caller_method_idnum,
+                                                int caller_bci,
+                                                symbolHandle name,
+                                                methodHandle mh_invdyn,
+                                                TRAPS) {
+  Handle empty;
+  // call sun.dyn.CallSiteImpl::makeSite(caller, name, mtype, cmid, cbci)
+  oop name_str_oop = StringTable::intern(name(), CHECK_(empty)); // not a handle!
+  JavaCallArguments args(Handle(THREAD, caller->java_mirror()));
+  args.push_oop(name_str_oop);
+  args.push_oop(mh_invdyn->method_handle_type());
+  args.push_int(caller_method_idnum);
+  args.push_int(caller_bci);
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::CallSiteImpl_klass(),
+                         vmSymbols::makeSite_name(), vmSymbols::makeSite_signature(),
+                         &args, CHECK_(empty));
+  oop call_site_oop = (oop) result.get_jobject();
+  sun_dyn_CallSiteImpl::set_vmmethod(call_site_oop, mh_invdyn());
+  if (TraceMethodHandles) {
+    tty->print_cr("Linked invokedynamic bci=%d site="INTPTR_FORMAT":", caller_bci, call_site_oop);
+    call_site_oop->print();
+    tty->cr();
+  }
+  return call_site_oop;
+}
+
+Handle SystemDictionary::find_bootstrap_method(KlassHandle caller,
+                                               KlassHandle search_bootstrap_klass,
+                                               TRAPS) {
+  Handle empty;
+  if (!caller->oop_is_instance())  return empty;
+
+  instanceKlassHandle ik(THREAD, caller());
+
+  if (ik->bootstrap_method() != NULL) {
+    return Handle(THREAD, ik->bootstrap_method());
+  }
+
+  // call java.dyn.Linkage::findBootstrapMethod(caller, sbk)
+  JavaCallArguments args(Handle(THREAD, ik->java_mirror()));
+  if (search_bootstrap_klass.is_null())
+    args.push_oop(Handle());
+  else
+    args.push_oop(search_bootstrap_klass->java_mirror());
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::Linkage_klass(),
+                         vmSymbols::findBootstrapMethod_name(),
+                         vmSymbols::findBootstrapMethod_signature(),
+                         &args, CHECK_(empty));
+  oop boot_method_oop = (oop) result.get_jobject();
+
+  if (boot_method_oop != NULL) {
+    // probably no race conditions, but let's be careful:
+    if (Atomic::cmpxchg_ptr(boot_method_oop, ik->adr_bootstrap_method(), NULL) == NULL)
+      ik->set_bootstrap_method(boot_method_oop);
+    else
+      boot_method_oop = ik->bootstrap_method();
+  } else {
+    boot_method_oop = ik->bootstrap_method();
+  }
+
+  return Handle(THREAD, boot_method_oop);
+}
 
 // Since the identity hash code for symbols changes when the symbols are
 // moved from the regular perm gen (hash in the mark word) to the shared
