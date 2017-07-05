@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,8 @@ public class AltSecurityManager implements Runnable {
     static final String ACTIVATION = "sun.rmi.server.Activation";
 
     // children should exit in at least this time.
-    static long TIME_OUT = 15000;
+    private static final long TIME_OUT =
+            (long)(15000 * TestLibrary.getTimeoutFactor());
 
     public AltSecurityManager(int port) {
         if (port <= 0) {

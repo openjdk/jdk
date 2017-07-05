@@ -32,6 +32,7 @@ import java.security.cert.*;
 import javax.net.ssl.*;
 
 import sun.security.validator.Validator;
+import sun.security.validator.TrustStoreUtil;
 
 abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
 
@@ -47,7 +48,7 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
     protected void engineInit(KeyStore ks) throws KeyStoreException {
         if (ks == null) {
             try {
-                ks = getCacertsKeyStore("trustmanager");
+                trustManager = getInstance(TrustStoreManager.getTrustedCerts());
             } catch (SecurityException se) {
                 // eat security exceptions but report other throwables
                 if (debug != null && Debug.isOn("trustmanager")) {
@@ -72,14 +73,17 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
                         "SunX509: skip default keystore: " + e);
                 }
                 throw new KeyStoreException(
-                    "problem accessing trust store" + e);
+                    "problem accessing trust store", e);
             }
+        } else {
+            trustManager = getInstance(TrustStoreUtil.getTrustedCerts(ks));
         }
-        trustManager = getInstance(ks);
+
         isInitialized = true;
     }
 
-    abstract X509TrustManager getInstance(KeyStore ks) throws KeyStoreException;
+    abstract X509TrustManager getInstance(
+            Collection<X509Certificate> trustedCerts);
 
     abstract X509TrustManager getInstance(ManagerFactoryParameters spec)
             throws InvalidAlgorithmParameterException;
@@ -126,126 +130,14 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
                 });
     }
 
-    /**
-     * Returns the keystore with the configured CA certificates.
-     */
-    static KeyStore getCacertsKeyStore(String dbgname) throws Exception
-    {
-        String storeFileName = null;
-        File storeFile = null;
-        FileInputStream fis = null;
-        String defaultTrustStoreType;
-        String defaultTrustStoreProvider;
-        final HashMap<String,String> props = new HashMap<>();
-        final String sep = File.separator;
-        KeyStore ks = null;
-
-        AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-            @Override
-            public Void run() throws Exception {
-                props.put("trustStore", System.getProperty(
-                                "javax.net.ssl.trustStore"));
-                props.put("javaHome", System.getProperty(
-                                        "java.home"));
-                props.put("trustStoreType", System.getProperty(
-                                "javax.net.ssl.trustStoreType",
-                                KeyStore.getDefaultType()));
-                props.put("trustStoreProvider", System.getProperty(
-                                "javax.net.ssl.trustStoreProvider", ""));
-                props.put("trustStorePasswd", System.getProperty(
-                                "javax.net.ssl.trustStorePassword", ""));
-                return null;
-            }
-        });
-
-        /*
-         * Try:
-         *      javax.net.ssl.trustStore  (if this variable exists, stop)
-         *      jssecacerts
-         *      cacerts
-         *
-         * If none exists, we use an empty keystore.
-         */
-
-        try {
-            storeFileName = props.get("trustStore");
-            if (!"NONE".equals(storeFileName)) {
-                if (storeFileName != null) {
-                    storeFile = new File(storeFileName);
-                    fis = getFileInputStream(storeFile);
-                } else {
-                    String javaHome = props.get("javaHome");
-                    storeFile = new File(javaHome + sep + "lib" + sep
-                                                    + "security" + sep +
-                                                    "jssecacerts");
-                    if ((fis = getFileInputStream(storeFile)) == null) {
-                        storeFile = new File(javaHome + sep + "lib" + sep
-                                                    + "security" + sep +
-                                                    "cacerts");
-                        fis = getFileInputStream(storeFile);
-                    }
-                }
-
-                if (fis != null) {
-                    storeFileName = storeFile.getPath();
-                } else {
-                    storeFileName = "No File Available, using empty keystore.";
-                }
-            }
-
-            defaultTrustStoreType = props.get("trustStoreType");
-            defaultTrustStoreProvider = props.get("trustStoreProvider");
-            if (debug != null && Debug.isOn(dbgname)) {
-                System.out.println("trustStore is: " + storeFileName);
-                System.out.println("trustStore type is : " +
-                                    defaultTrustStoreType);
-                System.out.println("trustStore provider is : " +
-                                    defaultTrustStoreProvider);
-            }
-
-            /*
-             * Try to initialize trust store.
-             */
-            if (defaultTrustStoreType.length() != 0) {
-                if (debug != null && Debug.isOn(dbgname)) {
-                    System.out.println("init truststore");
-                }
-                if (defaultTrustStoreProvider.length() == 0) {
-                    ks = KeyStore.getInstance(defaultTrustStoreType);
-                } else {
-                    ks = KeyStore.getInstance(defaultTrustStoreType,
-                                            defaultTrustStoreProvider);
-                }
-                char[] passwd = null;
-                String defaultTrustStorePassword =
-                        props.get("trustStorePasswd");
-                if (defaultTrustStorePassword.length() != 0)
-                    passwd = defaultTrustStorePassword.toCharArray();
-
-                // if trustStore is NONE, fis will be null
-                ks.load(fis, passwd);
-
-                // Zero out the temporary password storage
-                if (passwd != null) {
-                    for (int i = 0; i < passwd.length; i++) {
-                        passwd[i] = (char)0;
-                    }
-                }
-            }
-        } finally {
-            if (fis != null) {
-                fis.close();
-            }
-        }
-
-        return ks;
-    }
-
     public static final class SimpleFactory extends TrustManagerFactoryImpl {
         @Override
-        X509TrustManager getInstance(KeyStore ks) throws KeyStoreException {
-            return new X509TrustManagerImpl(Validator.TYPE_SIMPLE, ks);
+        X509TrustManager getInstance(
+                Collection<X509Certificate> trustedCerts) {
+            return new X509TrustManagerImpl(
+                    Validator.TYPE_SIMPLE, trustedCerts);
         }
+
         @Override
         X509TrustManager getInstance(ManagerFactoryParameters spec)
                 throws InvalidAlgorithmParameterException {
@@ -253,13 +145,15 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
                 ("SunX509 TrustManagerFactory does not use "
                 + "ManagerFactoryParameters");
         }
-   }
+    }
 
     public static final class PKIXFactory extends TrustManagerFactoryImpl {
         @Override
-        X509TrustManager getInstance(KeyStore ks) throws KeyStoreException {
-            return new X509TrustManagerImpl(Validator.TYPE_PKIX, ks);
+        X509TrustManager getInstance(
+                Collection<X509Certificate> trustedCerts) {
+            return new X509TrustManagerImpl(Validator.TYPE_PKIX, trustedCerts);
         }
+
         @Override
         X509TrustManager getInstance(ManagerFactoryParameters spec)
                 throws InvalidAlgorithmParameterException {

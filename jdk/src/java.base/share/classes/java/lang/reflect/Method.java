@@ -290,6 +290,11 @@ public final class Method extends Executable {
       } else { return getReturnType();}
     }
 
+    @Override
+    Class<?>[] getSharedParameterTypes() {
+        return parameterTypes;
+    }
+
     /**
      * {@inheritDoc}
      */

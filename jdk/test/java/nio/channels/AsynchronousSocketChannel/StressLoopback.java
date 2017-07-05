@@ -26,7 +26,7 @@
  * @summary Stress test connections through the loopback interface
  * @run main StressLoopback
  * @run main/othervm -Djdk.net.useFastTcpLoopback StressLoopback
- * @key randomness
+ * @key randomness intermittent
  */
 
 import java.nio.ByteBuffer;
