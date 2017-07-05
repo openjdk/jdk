@@ -25,6 +25,7 @@
  * @test
  * @bug 6582946
  * @summary Test the primitive wrappers compare and compareTo methods
+ * @key randomness
  */
 
 import java.util.Random;

@@ -24,6 +24,7 @@
 /* @test
  * @summary Test selectors and socketchannels
  * @library ..
+ * @key randomness
  */
 
 import java.io.*;

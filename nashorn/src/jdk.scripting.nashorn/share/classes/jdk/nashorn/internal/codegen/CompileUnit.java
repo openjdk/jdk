@@ -26,10 +26,16 @@
 package jdk.nashorn.internal.codegen;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import jdk.nashorn.internal.ir.CompileUnitHolder;
+import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 
 /**
   * Used to track split class compilation. Note that instances of the class are serializable, but all fields are
@@ -49,6 +55,8 @@ public final class CompileUnit implements Comparable<CompileUnit>, Serializable 
     private transient long weight;
 
     private transient Class<?> clazz;
+
+    private transient Map<FunctionNode, RecompilableScriptFunctionData> functions = new IdentityHashMap<>();
 
     private transient boolean isUsed;
 
@@ -119,6 +127,32 @@ public final class CompileUnit implements Comparable<CompileUnit>, Serializable 
         // Revisit this - refactor to avoid null-ed out non-final fields
         // null out emitter
         this.classEmitter = null;
+    }
+
+    void addFunctionInitializer(final RecompilableScriptFunctionData data, final FunctionNode functionNode) {
+        functions.put(functionNode, data);
+    }
+
+    /**
+     * Returns true if this compile unit is responsible for initializing the specified function data with specified
+     * function node.
+     * @param data the function data to check
+     * @param functionNode the function node to check
+     * @return true if this unit is responsible for initializing the function data with the function node, otherwise
+     * false
+     */
+    public boolean isInitializing(final RecompilableScriptFunctionData data, final FunctionNode functionNode) {
+        return functions.get(functionNode) == data;
+    }
+
+    void initializeFunctionsCode() {
+        for(final Map.Entry<FunctionNode, RecompilableScriptFunctionData> entry : functions.entrySet()) {
+            entry.getValue().initializeCode(entry.getKey());
+        }
+    }
+
+    Collection<FunctionNode> getFunctionNodes() {
+        return Collections.unmodifiableCollection(functions.keySet());
     }
 
     /**

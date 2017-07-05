@@ -28,6 +28,7 @@
  * @summary SunJCE depends on sun.security.provider.SignatureImpl
  * behaviour, BC can't load into 1st slot.
  * @author Brad R. Wetmore
+ * @key randomness
  */
 
 import java.security.*;

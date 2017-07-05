@@ -265,7 +265,7 @@ public abstract class Signature extends SignatureSpi {
     private final static Map<String,Boolean> signatureInfo;
 
     static {
-        signatureInfo = new ConcurrentHashMap<String,Boolean>();
+        signatureInfo = new ConcurrentHashMap<>();
         Boolean TRUE = Boolean.TRUE;
         // pre-initialize with values for our SignatureSpi implementations
         signatureInfo.put("sun.security.provider.DSA$RawDSA", TRUE);

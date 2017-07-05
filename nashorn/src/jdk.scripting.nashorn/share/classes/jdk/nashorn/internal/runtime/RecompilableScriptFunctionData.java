@@ -32,7 +32,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -503,7 +502,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
             if (script != null) {
                 Compiler.updateCompilationId(script.getCompilationId());
-                return installStoredScript(script, newInstaller);
+                return script.installFunction(this, newInstaller);
             }
         }
 
@@ -516,56 +515,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             compiler.persistClassInfo(cacheKey, compiledFn);
         }
         return new FunctionInitializer(compiledFn, compiler.getInvalidatedProgramPoints());
-    }
-
-    private static Map<String, Class<?>> installStoredScriptClasses(final StoredScript script, final CodeInstaller<ScriptEnvironment> installer) {
-        final Map<String, Class<?>> installedClasses = new HashMap<>();
-        final Map<String, byte[]>   classBytes       = script.getClassBytes();
-        final String   mainClassName   = script.getMainClassName();
-        final byte[]   mainClassBytes  = classBytes.get(mainClassName);
-
-        final Class<?> mainClass       = installer.install(mainClassName, mainClassBytes);
-
-        installedClasses.put(mainClassName, mainClass);
-
-        for (final Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
-            final String className = entry.getKey();
-            final byte[] bytecode = entry.getValue();
-
-            if (className.equals(mainClassName)) {
-                continue;
-            }
-
-            installedClasses.put(className, installer.install(className, bytecode));
-        }
-        return installedClasses;
-    }
-
-    /**
-     * Install this script using the given {@code installer}.
-     *
-     * @param script the compiled script
-     * @return the function initializer
-     */
-    private FunctionInitializer installStoredScript(final StoredScript script, final CodeInstaller<ScriptEnvironment> newInstaller) {
-        final Map<String, Class<?>> installedClasses = installStoredScriptClasses(script, newInstaller);
-
-        final Map<Integer, FunctionInitializer> initializers = script.getInitializers();
-        assert initializers != null;
-        assert initializers.size() == 1;
-        final FunctionInitializer initializer = initializers.values().iterator().next();
-
-        final Object[] constants = script.getConstants();
-        for (int i = 0; i < constants.length; i++) {
-            if (constants[i] instanceof RecompilableScriptFunctionData) {
-                // replace deserialized function data with the ones we already have
-                constants[i] = getScriptFunctionData(((RecompilableScriptFunctionData) constants[i]).getFunctionNodeId());
-            }
-        }
-
-        newInstaller.initialize(installedClasses.values(), source, constants);
-        initializer.setCode(installedClasses.get(initializer.getClassName()));
-        return initializer;
     }
 
     boolean usePersistentCodeCache() {
@@ -645,13 +594,21 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * by the compiler internals in Nashorn and is public for implementation reasons only. Attempting to invoke it
      * externally will result in an exception.
      *
-     * @param initializer FunctionInitializer for this data
+     * @param functionNode FunctionNode for this data
      */
-    public void initializeCode(final FunctionInitializer initializer) {
+    public void initializeCode(final FunctionNode functionNode) {
         // Since the method is public, we double-check that we aren't invoked with an inappropriate compile unit.
-        if(!code.isEmpty()) {
+        if (!code.isEmpty() || functionNode.getId() != functionNodeId || !functionNode.getCompileUnit().isInitializing(this, functionNode)) {
             throw new IllegalStateException(name);
         }
+        addCode(lookup(functionNode), null, null, functionNode.getFlags());
+    }
+
+    /**
+     * Initializes this function with the given function code initializer.
+     * @param initializer function code initializer
+     */
+    void initializeCode(final FunctionInitializer initializer) {
         addCode(lookup(initializer, true), null, null, initializer.getFlags());
     }
 

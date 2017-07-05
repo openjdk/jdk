@@ -25,6 +25,7 @@
  * @bug 4770745 6234507 6303183 8048990
  * @summary test a variety of zip file entries
  * @author Martin Buchholz
+ * @key randomness
  */
 
 import java.util.*;

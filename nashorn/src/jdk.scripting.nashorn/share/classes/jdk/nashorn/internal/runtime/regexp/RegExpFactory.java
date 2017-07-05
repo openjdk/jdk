@@ -26,7 +26,7 @@
 package jdk.nashorn.internal.runtime.regexp;
 
 import java.util.Collections;
-import java.util.Set;
+import java.util.Map;
 import java.util.WeakHashMap;
 import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.options.Options;
@@ -45,11 +45,10 @@ public class RegExpFactory {
     /** Weak cache of already validated regexps - when reparsing, we don't, for example
      *  need to recompile (reverify) all regexps that have previously been parsed by this
      *  RegExpFactory in a previous compilation. This saves significant time in e.g. avatar
-     *  startup */
-    private static final Set<String> VALID_CACHE_SET =
-            Collections.newSetFromMap(
-                    Collections.synchronizedMap(
-                            new WeakHashMap<String, Boolean>()));
+     *  startup
+     */
+    private static final Map<String, RegExp> REGEXP_CACHE =
+            Collections.synchronizedMap(new WeakHashMap<String, RegExp>());
 
     static {
         final String impl = Options.getStringProperty("nashorn.regexp.impl", JONI);
@@ -87,7 +86,13 @@ public class RegExpFactory {
      * @throws ParserException if invalid source or flags
      */
     public static RegExp create(final String pattern, final String flags) {
-        return instance.compile(pattern,  flags);
+        final String key = pattern + "/" + flags;
+        RegExp regexp = REGEXP_CACHE.get(key);
+        if (regexp == null) {
+            regexp = instance.compile(pattern,  flags);
+            REGEXP_CACHE.put(key, regexp);
+        }
+        return regexp;
     }
 
     /**
@@ -98,11 +103,8 @@ public class RegExpFactory {
      *
      * @throws ParserException if invalid source or flags
      */
-    // @SuppressWarnings({"unused"})
     public static void validate(final String pattern, final String flags) throws ParserException {
-        if (VALID_CACHE_SET.add(pattern + flags)) {
-            instance.compile(pattern, flags);
-        }
+        create(pattern, flags);
     }
 
     /**

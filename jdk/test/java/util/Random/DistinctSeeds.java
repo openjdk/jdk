@@ -35,6 +35,7 @@
  * @test
  * @bug 4949279 6937857
  * @summary Independent instantiations of Random() have distinct seeds.
+ * @key randomness
  */
 
 import java.util.ArrayList;

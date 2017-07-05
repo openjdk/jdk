@@ -65,22 +65,22 @@ public interface Field extends TypeComponent, Comparable<Field> {
      *    short s;
      *    Date d;
      *    byte[] ba;</PRE>
-     * And the JDI client defines these <CODE>Field</CODE> objects:
+     * And the JDI client defines these {@code Field} objects:
      * <PRE>
      *    Field sField = targetClass.fieldByName("s");
      *    Field dField = targetClass.fieldByName("d");
      *    Field baField = targetClass.fieldByName("ba");</PRE>
-     * to mirror the corresponding fields, then <CODE>sField.type()</CODE>
-     * is a {@link ShortType}, <CODE>dField.type()</CODE> is the
-     * {@link ReferenceType} for <CODE>java.util.Date</CODE> and
-     * <CODE>((ArrayType)(baField.type())).componentType()</CODE> is a
+     * to mirror the corresponding fields, then {@code sField.type()}
+     * is a {@link ShortType}, {@code dField.type()} is the
+     * {@link ReferenceType} for {@code java.util.Date} and
+     * {@code ((ArrayType)(baField.type())).componentType()} is a
      * {@link ByteType}.
      * <P>
      * Note: if the type of this field is a reference type (class,
      * interface, or array) and it has not been created or loaded
      * by the declaring type's class loader - that is,
-     * {@link TypeComponent#declaringType <CODE>declaringType()</CODE>}
-     * <CODE>.classLoader()</CODE>,
+     * {@link TypeComponent#declaringType declaringType()}
+     * {@code .classLoader()},
      * then ClassNotLoadedException will be thrown.
      * Also, a reference type may have been loaded but not yet prepared,
      * in which case the type will be returned
@@ -100,28 +100,28 @@ public interface Field extends TypeComponent, Comparable<Field> {
     /**
      * Determine if this is a transient field.
      *
-     * @return <code>true</code> if this field is transient; false otherwise.
+     * @return {@code true} if this field is transient; {@code false} otherwise.
      */
     boolean isTransient();
 
     /**
      * Determine if this is a volatile field.
      *
-     * @return <code>true</code> if this field is volatile; false otherwise.
+     * @return {@code true} if this field is volatile; {@code false} otherwise.
      */
     boolean isVolatile();
 
     /**
      * Determine if this is a field that represents an enum constant.
-     * @return <code>true</code> if this field represents an enum constant;
-     * false otherwise.
+     * @return {@code true} if this field represents an enum constant;
+     * {@code false} otherwise.
      */
     boolean isEnumConstant();
 
     /**
      * Compares the specified Object with this field for equality.
      *
-     * @return true if the Object is a Field and if both
+     * @return {@code true} if the Object is a Field and if both
      * mirror the same field (declared in the same class or interface, in
      * the same VM).
      */
@@ -130,7 +130,7 @@ public interface Field extends TypeComponent, Comparable<Field> {
     /**
      * Returns the hash code value for this Field.
      *
-     * @return the integer hash code
+     * @return the integer hash code.
      */
     int hashCode();
 }

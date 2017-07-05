@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,13 @@
 
 /*
  * @test
- * @bug 4347132 4939441
- * @summary Tests for {Math, StrictMath}.cbrt
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.*
+ * @run main CubeRootTests
+ * @bug 4347132 4939441 8078672
+ * @summary Tests for {Math, StrictMath}.cbrt (use -Dseed=X to set PRNG seed)
  * @author Joseph D. Darcy
+ * @key randomness
  */
 
 public class CubeRootTests {
@@ -35,7 +39,7 @@ public class CubeRootTests {
     static final double NaNd = Double.NaN;
 
     // Initialize shared random number generator
-    static java.util.Random rand = new java.util.Random();
+    static java.util.Random rand = RandomFactory.getRandom();
 
     static int testCubeRootCase(double input, double expected) {
         int failures=0;

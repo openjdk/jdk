@@ -74,7 +74,7 @@ class IdentityScope extends Identity {
     private static void initializeSystemScope() {
 
         String classname = AccessController.doPrivileged(
-                                new PrivilegedAction<String>() {
+                                new PrivilegedAction<>() {
             public String run() {
                 return Security.getProperty("system.scope");
             }

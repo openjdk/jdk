@@ -27,6 +27,7 @@
  * @summary Verify that AES cipher.doFinal method does NOT need more
  *      than necessary bytes in decrypt mode
  * @author Valerie Peng
+ * @key randomness
  */
 import java.io.PrintStream;
 import java.security.*;
