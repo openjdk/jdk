@@ -78,17 +78,50 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     /**
+     * Increases the capacity if necessary to ensure that it can hold
+     * at least the number of elements specified by the minimum
+     * capacity argument.
+     *
+     * @param minCapacity the desired minimum capacity
+     * @throws OutOfMemoryError if {@code minCapacity < 0}.  This is
+     * interpreted as a request for the unsatisfiably large capacity
+     * {@code (long) Integer.MAX_VALUE + (minCapacity - Integer.MAX_VALUE)}.
+     */
+    private void ensureCapacity(int minCapacity) {
+        // overflow-conscious code
+        if (minCapacity - buf.length > 0)
+            grow(minCapacity);
+    }
+
+    /**
+     * Increases the capacity to ensure that it can hold at least the
+     * number of elements specified by the minimum capacity argument.
+     *
+     * @param minCapacity the desired minimum capacity
+     */
+    private void grow(int minCapacity) {
+        // overflow-conscious code
+        int oldCapacity = buf.length;
+        int newCapacity = oldCapacity << 1;
+        if (newCapacity - minCapacity < 0)
+            newCapacity = minCapacity;
+        if (newCapacity < 0) {
+            if (minCapacity < 0) // overflow
+                throw new OutOfMemoryError();
+            newCapacity = Integer.MAX_VALUE;
+        }
+        buf = Arrays.copyOf(buf, newCapacity);
+    }
+
+    /**
      * Writes the specified byte to this byte array output stream.
      *
      * @param   b   the byte to be written.
      */
     public synchronized void write(int b) {
-        int newcount = count + 1;
-        if (newcount > buf.length) {
-            buf = Arrays.copyOf(buf, Math.max(buf.length << 1, newcount));
-        }
-        buf[count] = (byte)b;
-        count = newcount;
+        ensureCapacity(count + 1);
+        buf[count] = (byte) b;
+        count += 1;
     }
 
     /**
@@ -101,17 +134,12 @@ public class ByteArrayOutputStream extends OutputStream {
      */
     public synchronized void write(byte b[], int off, int len) {
         if ((off < 0) || (off > b.length) || (len < 0) ||
-            ((off + len) > b.length) || ((off + len) < 0)) {
+            ((off + len) - b.length > 0)) {
             throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
-            return;
         }
-        int newcount = count + len;
-        if (newcount > buf.length) {
-            buf = Arrays.copyOf(buf, Math.max(buf.length << 1, newcount));
-        }
+        ensureCapacity(count + len);
         System.arraycopy(b, off, buf, count, len);
-        count = newcount;
+        count += len;
     }
 
     /**

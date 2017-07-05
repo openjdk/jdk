@@ -731,26 +731,29 @@ ciMethod* ciEnv::get_method_by_index_impl(constantPoolHandle cpool,
 // ciEnv::get_fake_invokedynamic_method_impl
 ciMethod* ciEnv::get_fake_invokedynamic_method_impl(constantPoolHandle cpool,
                                                     int index, Bytecodes::Code bc) {
+  // Compare the following logic with InterpreterRuntime::resolve_invokedynamic.
   assert(bc == Bytecodes::_invokedynamic, "must be invokedynamic");
 
-  // Get the CallSite from the constant pool cache.
-  ConstantPoolCacheEntry* cpc_entry = cpool->cache()->secondary_entry_at(index);
-  assert(cpc_entry != NULL && cpc_entry->is_secondary_entry(), "sanity");
-  Handle call_site = cpc_entry->f1();
+  bool is_resolved = cpool->cache()->main_entry_at(index)->is_resolved(bc);
+  if (is_resolved && (oop) cpool->cache()->secondary_entry_at(index)->f1() == NULL)
+    // FIXME: code generation could allow for null (unlinked) call site
+    is_resolved = false;
 
-  // Call site might not be linked yet.
-  if (call_site.is_null()) {
+  // Call site might not be resolved yet.  We could create a real invoker method from the
+  // compiler, but it is simpler to stop the code path here with an unlinked method.
+  if (!is_resolved) {
     ciInstanceKlass* mh_klass = get_object(SystemDictionary::MethodHandle_klass())->as_instance_klass();
-    ciSymbol*       sig_sym   = get_object(cpool->signature_ref_at(index))->as_symbol();
-    return get_unloaded_method(mh_klass, ciSymbol::invoke_name(), sig_sym);
+    ciSymbol*        sig_sym  = get_object(cpool->signature_ref_at(index))->as_symbol();
+    return get_unloaded_method(mh_klass, ciSymbol::invokeExact_name(), sig_sym);
   }
 
-  // Get the methodOop from the CallSite.
-  methodOop method_oop = (methodOop) java_dyn_CallSite::vmmethod(call_site());
-  assert(method_oop != NULL, "sanity");
-  assert(method_oop->is_method_handle_invoke(), "consistent");
+  // Get the invoker methodOop from the constant pool.
+  intptr_t f2_value = cpool->cache()->main_entry_at(index)->f2();
+  methodOop signature_invoker = methodOop(f2_value);
+  assert(signature_invoker != NULL && signature_invoker->is_method() && signature_invoker->is_method_handle_invoke(),
+         "correct result from LinkResolver::resolve_invokedynamic");
 
-  return get_object(method_oop)->as_method();
+  return get_object(signature_invoker)->as_method();
 }
 
 

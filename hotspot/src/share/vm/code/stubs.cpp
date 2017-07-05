@@ -62,7 +62,9 @@ StubQueue::StubQueue(StubInterface* stub_interface, int buffer_size,
                      Mutex* lock, const char* name) : _mutex(lock) {
   intptr_t size = round_to(buffer_size, 2*BytesPerWord);
   BufferBlob* blob = BufferBlob::create(name, size);
-  if( blob == NULL ) vm_exit_out_of_memory1(size, "CodeCache: no room for %s", name);
+  if( blob == NULL) {
+    vm_exit_out_of_memory(size, err_msg("CodeCache: no room for %s", name));
+  }
   _stub_interface  = stub_interface;
   _buffer_size     = blob->instructions_size();
   _buffer_limit    = blob->instructions_size();

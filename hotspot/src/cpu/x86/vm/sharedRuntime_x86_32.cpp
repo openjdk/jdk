@@ -503,34 +503,9 @@ static void patch_callers_callsite(MacroAssembler *masm) {
 }
 
 
-// Helper function to put tags in interpreter stack.
-static void  tag_stack(MacroAssembler *masm, const BasicType sig, int st_off) {
-  if (TaggedStackInterpreter) {
-    int tag_offset = st_off + Interpreter::expr_tag_offset_in_bytes(0);
-    if (sig == T_OBJECT || sig == T_ARRAY) {
-      __ movptr(Address(rsp, tag_offset), frame::TagReference);
-    } else if (sig == T_LONG || sig == T_DOUBLE) {
-      int next_tag_offset = st_off + Interpreter::expr_tag_offset_in_bytes(1);
-      __ movptr(Address(rsp, next_tag_offset), frame::TagValue);
-      __ movptr(Address(rsp, tag_offset), frame::TagValue);
-    } else {
-      __ movptr(Address(rsp, tag_offset), frame::TagValue);
-    }
-  }
-}
-
-// Double and long values with Tagged stacks are not contiguous.
 static void move_c2i_double(MacroAssembler *masm, XMMRegister r, int st_off) {
-  int next_off = st_off - Interpreter::stackElementSize();
-  if (TaggedStackInterpreter) {
-   __ movdbl(Address(rsp, next_off), r);
-   // Move top half up and put tag in the middle.
-   __ movl(rdi, Address(rsp, next_off+wordSize));
-   __ movl(Address(rsp, st_off), rdi);
-   tag_stack(masm, T_DOUBLE, next_off);
-  } else {
-   __ movdbl(Address(rsp, next_off), r);
-  }
+  int next_off = st_off - Interpreter::stackElementSize;
+  __ movdbl(Address(rsp, next_off), r);
 }
 
 static void gen_c2i_adapter(MacroAssembler *masm,
@@ -560,7 +535,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   // Since all args are passed on the stack, total_args_passed * interpreter_
   // stack_element_size  is the
   // space we need.
-  int extraspace = total_args_passed * Interpreter::stackElementSize();
+  int extraspace = total_args_passed * Interpreter::stackElementSize;
 
   // Get return address
   __ pop(rax);
@@ -578,8 +553,8 @@ static void gen_c2i_adapter(MacroAssembler *masm,
     }
 
     // st_off points to lowest address on stack.
-    int st_off = ((total_args_passed - 1) - i) * Interpreter::stackElementSize();
-    int next_off = st_off - Interpreter::stackElementSize();
+    int st_off = ((total_args_passed - 1) - i) * Interpreter::stackElementSize;
+    int next_off = st_off - Interpreter::stackElementSize;
 
     // Say 4 args:
     // i   st_off
@@ -601,7 +576,6 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       if (!r_2->is_valid()) {
         __ movl(rdi, Address(rsp, ld_off));
         __ movptr(Address(rsp, st_off), rdi);
-        tag_stack(masm, sig_bt[i], st_off);
       } else {
 
         // ld_off == LSW, ld_off+VMRegImpl::stack_slot_size == MSW
@@ -619,13 +593,11 @@ static void gen_c2i_adapter(MacroAssembler *masm,
         __ movptr(Address(rsp, st_off), rax);
 #endif /* ASSERT */
 #endif // _LP64
-        tag_stack(masm, sig_bt[i], next_off);
       }
     } else if (r_1->is_Register()) {
       Register r = r_1->as_Register();
       if (!r_2->is_valid()) {
         __ movl(Address(rsp, st_off), r);
-        tag_stack(masm, sig_bt[i], st_off);
       } else {
         // long/double in gpr
         NOT_LP64(ShouldNotReachHere());
@@ -639,17 +611,14 @@ static void gen_c2i_adapter(MacroAssembler *masm,
           __ movptr(Address(rsp, st_off), rax);
 #endif /* ASSERT */
           __ movptr(Address(rsp, next_off), r);
-          tag_stack(masm, sig_bt[i], next_off);
         } else {
           __ movptr(Address(rsp, st_off), r);
-          tag_stack(masm, sig_bt[i], st_off);
         }
       }
     } else {
       assert(r_1->is_XMMRegister(), "");
       if (!r_2->is_valid()) {
         __ movflt(Address(rsp, st_off), r_1->as_XMMRegister());
-        tag_stack(masm, sig_bt[i], st_off);
       } else {
         assert(sig_bt[i] == T_DOUBLE || sig_bt[i] == T_LONG, "wrong type");
         move_c2i_double(masm, r_1->as_XMMRegister(), st_off);
@@ -665,20 +634,9 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 }
 
 
-// For tagged stacks, double or long value aren't contiguous on the stack
-// so get them contiguous for the xmm load
 static void move_i2c_double(MacroAssembler *masm, XMMRegister r, Register saved_sp, int ld_off) {
-  int next_val_off = ld_off - Interpreter::stackElementSize();
-  if (TaggedStackInterpreter) {
-    // use tag slot temporarily for MSW
-    __ movptr(rsi, Address(saved_sp, ld_off));
-    __ movptr(Address(saved_sp, next_val_off+wordSize), rsi);
-    __ movdbl(r, Address(saved_sp, next_val_off));
-    // restore tag
-    __ movptr(Address(saved_sp, next_val_off+wordSize), frame::TagValue);
-  } else {
-    __ movdbl(r, Address(saved_sp, next_val_off));
-  }
+  int next_val_off = ld_off - Interpreter::stackElementSize;
+  __ movdbl(r, Address(saved_sp, next_val_off));
 }
 
 static void gen_i2c_adapter(MacroAssembler *masm,
@@ -797,9 +755,9 @@ static void gen_i2c_adapter(MacroAssembler *masm,
     assert(!regs[i].second()->is_valid() || regs[i].first()->next() == regs[i].second(),
             "scrambled load targets?");
     // Load in argument order going down.
-    int ld_off = (total_args_passed - i)*Interpreter::stackElementSize() + Interpreter::value_offset_in_bytes();
+    int ld_off = (total_args_passed - i) * Interpreter::stackElementSize;
     // Point to interpreter value (vs. tag)
-    int next_off = ld_off - Interpreter::stackElementSize();
+    int next_off = ld_off - Interpreter::stackElementSize;
     //
     //
     //
@@ -2322,7 +2280,7 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(
 // this function returns the adjust size (in number of words) to a c2i adapter
 // activation for use during deoptimization
 int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals ) {
-  return (callee_locals - callee_parameters) * Interpreter::stackElementWords();
+  return (callee_locals - callee_parameters) * Interpreter::stackElementWords;
 }
 
 

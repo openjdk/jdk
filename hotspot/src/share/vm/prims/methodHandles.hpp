@@ -163,7 +163,7 @@ class MethodHandles: AllStatic {
     default: ShouldNotReachHere();
     }
     // Return the size of the stack slots to move in bytes.
-    swap_bytes = swap_slots * Interpreter::stackElementSize();
+    swap_bytes = swap_slots * Interpreter::stackElementSize;
   }
 
   static int get_ek_adapter_opt_spread_info(EntryKind ek) {
@@ -216,10 +216,13 @@ class MethodHandles: AllStatic {
     return (conv >> CONV_VMINFO_SHIFT) & CONV_VMINFO_MASK;
   }
 
+  // Bit mask of conversion_op values.  May vary by platform.
+  static int adapter_conversion_ops_supported_mask();
+
   // Offset in words that the interpreter stack pointer moves when an argument is pushed.
   // The stack_move value must always be a multiple of this.
   static int stack_move_unit() {
-    return frame::interpreter_frame_expression_stack_direction() * Interpreter::stackElementWords();
+    return frame::interpreter_frame_expression_stack_direction() * Interpreter::stackElementWords;
   }
 
   enum { CONV_VMINFO_SIGN_FLAG = 0x80 };
@@ -262,8 +265,9 @@ class MethodHandles: AllStatic {
   // working with member names
   static void resolve_MemberName(Handle mname, TRAPS); // compute vmtarget/vmindex from name/type
   static void expand_MemberName(Handle mname, int suppress, TRAPS);  // expand defc/name/type if missing
+  static Handle new_MemberName(TRAPS);  // must be followed by init_MemberName
   static void init_MemberName(oop mname_oop, oop target); // compute vmtarget/vmindex from target
-  static void init_MemberName(oop mname_oop, methodOop m, bool do_dispatch);
+  static void init_MemberName(oop mname_oop, methodOop m, bool do_dispatch = true);
   static void init_MemberName(oop mname_oop, klassOop field_holder, AccessFlags mods, int offset);
   static int find_MemberNames(klassOop k, symbolOop name, symbolOop sig,
                               int mflags, klassOop caller,
@@ -300,6 +304,7 @@ class MethodHandles: AllStatic {
     // format of query to getConstant:
     GC_JVM_PUSH_LIMIT = 0,
     GC_JVM_STACK_MOVE_UNIT = 1,
+    GC_CONV_OP_IMPLEMENTED_MASK = 2,
 
     // format of result from getTarget / encode_target:
     ETF_HANDLE_OR_METHOD_NAME = 0, // all available data (immediate MH or method)
@@ -310,6 +315,11 @@ class MethodHandles: AllStatic {
   static int get_named_constant(int which, Handle name_box, TRAPS);
   static oop encode_target(Handle mh, int format, TRAPS); // report vmtarget (to Java code)
   static bool class_cast_needed(klassOop src, klassOop dst);
+
+  static instanceKlassHandle resolve_instance_klass(oop    java_mirror_oop, TRAPS);
+  static instanceKlassHandle resolve_instance_klass(jclass java_mirror_jh,  TRAPS) {
+    return resolve_instance_klass(JNIHandles::resolve(java_mirror_jh), THREAD);
+  }
 
  private:
   // These checkers operate on a pair of whole MethodTypes:
@@ -430,12 +440,12 @@ class MethodHandles: AllStatic {
                                RegisterOrConstant arg_slots,
                                int arg_mask,
                                Register argslot_reg,
-                               Register temp_reg, Register temp2_reg);
+                               Register temp_reg, Register temp2_reg, Register temp3_reg = noreg);
 
   static void remove_arg_slots(MacroAssembler* _masm,
                                RegisterOrConstant arg_slots,
                                Register argslot_reg,
-                               Register temp_reg, Register temp2_reg);
+                               Register temp_reg, Register temp2_reg, Register temp3_reg = noreg);
 };
 
 

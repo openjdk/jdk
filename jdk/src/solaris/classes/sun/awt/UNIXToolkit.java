@@ -314,4 +314,27 @@ public abstract class UNIXToolkit extends SunToolkit
         }
         return new RenderingHints(KEY_TEXT_ANTIALIASING, aaHint);
     }
+
+    private native boolean gtkCheckVersionImpl(int major, int minor,
+        int micro);
+
+    /**
+     * Returns {@code true} if the GTK+ library is compatible with the given
+     * version.
+     *
+     * @param major
+     *            The required major version.
+     * @param minor
+     *            The required minor version.
+     * @param micro
+     *            The required micro version.
+     * @return {@code true} if the GTK+ library is compatible with the given
+     *         version.
+     */
+    public boolean checkGtkVersion(int major, int minor, int micro) {
+        if (loadGTK()) {
+            return gtkCheckVersionImpl(major, minor, micro);
+        }
+        return false;
+    }
 }
