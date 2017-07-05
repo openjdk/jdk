@@ -1209,3 +1209,26 @@ IRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* threa
                        size_of_arguments * Interpreter::stackElementSize);
 IRT_END
 #endif
+
+#if INCLUDE_JVMTI
+// This is a support of the JVMTI PopFrame interface.
+// Make sure it is an invokestatic of a polymorphic intrinsic that has a member_name argument
+// and return it as a vm_result so that it can be reloaded in the list of invokestatic parameters.
+// The dmh argument is a reference to a DirectMethoHandle that has a member name field.
+IRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* thread, address dmh,
+                                                            Method* method, address bcp))
+  Bytecodes::Code code = Bytecodes::code_at(method, bcp);
+  if (code != Bytecodes::_invokestatic) {
+    return;
+  }
+  ConstantPool* cpool = method->constants();
+  int cp_index = Bytes::get_native_u2(bcp + 1) + ConstantPool::CPCACHE_INDEX_TAG;
+  Symbol* cname = cpool->klass_name_at(cpool->klass_ref_index_at(cp_index));
+  Symbol* mname = cpool->name_ref_at(cp_index);
+
+  if (MethodHandles::has_member_arg(cname, mname)) {
+    oop member_name = java_lang_invoke_DirectMethodHandle::member((oop)dmh);
+    thread->set_vm_result(member_name);
+  }
+IRT_END
+#endif // INCLUDE_JVMTI
