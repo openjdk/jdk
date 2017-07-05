@@ -33,7 +33,10 @@ import java.util.Set;
  * treat objects of such classes just like nashorn script objects. Usual nashorn
  * operations like obj[i], obj.foo, obj.func(), delete obj.foo will be glued
  * to appropriate method call of this interface.
+ *
+ * @since 1.8u40
  */
+@jdk.Exported
 public interface JSObject {
     /**
      * Call this object as a JavaScript function. This is equivalent to

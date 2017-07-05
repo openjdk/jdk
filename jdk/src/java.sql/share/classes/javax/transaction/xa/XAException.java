@@ -30,21 +30,20 @@ package javax.transaction.xa;
  * Transaction Manager of an error encountered by the involved transaction.
  *
  */
-public class XAException extends java.lang.Exception {
+public class XAException extends Exception {
+    //private static final long serialVersionUID = -8249683284832867751L;
 
     /**
-    * The error code with which to create the SystemException.
-    *
-    * @serial The error code for the exception
+     * The error code with which to create the SystemException.
+     *
+     * @serial The error code for the exception
      */
-
     public int errorCode;
 
     /**
      * Create an XAException.
      */
-    public XAException()
-    {
+    public XAException() {
         super();
     }
 
@@ -54,8 +53,7 @@ public class XAException extends java.lang.Exception {
      * @param s The <code>String</code> object containing the exception
      *          message.
      */
-    public XAException(String s)
-    {
+    public XAException(String s) {
         super(s);
     }
 
@@ -64,8 +62,7 @@ public class XAException extends java.lang.Exception {
      *
      * @param errcode The error code identifying the exception.
      */
-    public XAException(int errcode)
-    {
+    public XAException(int errcode) {
         super();
         errorCode = errcode;
     }
@@ -196,6 +193,4 @@ public class XAException extends java.lang.Exception {
      * The resource manager is doing work outside a global transaction.
      */
     public final static int XAER_OUTSIDE = -9;
-
-
 }
