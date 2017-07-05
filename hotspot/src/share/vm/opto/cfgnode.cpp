@@ -802,7 +802,7 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
   Compile *C = igvn->C;
   Arena *a = Thread::current()->resource_area();
   Node_Array node_map = new Node_Array(a);
-  Node_Stack stack(a, C->unique() >> 4);
+  Node_Stack stack(a, C->live_nodes() >> 4);
   PhiNode *nphi = slice_memory(at);
   igvn->register_new_node_with_optimizer( nphi );
   node_map.map(_idx, nphi);

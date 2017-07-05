@@ -38,10 +38,14 @@ extern "C" Thread*   get_thread();
 extern "C" uintptr_t _raw_thread_id();
 
 class ThreadLocalStorage : AllStatic {
+
+ // Exported API
  public:
   static void    set_thread(Thread* thread);
   static Thread* get_thread_slow();
   static void    invalidate_all() { pd_invalidate_all(); }
+  static void    init();
+  static bool    is_initialized();
 
   // Machine dependent stuff
 #ifdef TARGET_OS_ARCH_linux_x86
@@ -81,16 +85,11 @@ class ThreadLocalStorage : AllStatic {
 # include "threadLS_bsd_zero.hpp"
 #endif
 
-
+#ifndef SOLARIS
  public:
   // Accessor
   static inline int  thread_index()              { return _thread_index; }
   static inline void set_thread_index(int index) { _thread_index = index; }
-
-  // Initialization
-  // Called explicitly from VMThread::activate_system instead of init_globals.
-  static void init();
-  static bool is_initialized();
 
  private:
   static int     _thread_index;
@@ -100,6 +99,9 @@ class ThreadLocalStorage : AllStatic {
   // Processor dependent parts of set_thread and initialization
   static void pd_set_thread(Thread* thread);
   static void pd_init();
+
+#endif // SOLARIS
+
   // Invalidate any thread cacheing or optimization schemes.
   static void pd_invalidate_all();
 
