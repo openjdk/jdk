@@ -1,0 +1,234 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include NativeCompilation.gmk
+
+# Prepare the find cache.
+$(eval $(call FillCacheFind, $(JDK_TOPDIR)/src/java.base/share/native/launcher))
+
+# Build tools
+include Tools.gmk
+
+# When building a legacy overlay image (on solaris 64 bit), the launchers
+# need to be built with a different rpath and a different output dir.
+ifeq ($(OVERLAY_IMAGES), true)
+  ORIGIN_ROOT := /../..
+  OUTPUT_SUBDIR := $(OPENJDK_TARGET_CPU_ISADIR)
+else
+  ORIGIN_ROOT := /..
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN)
+else
+  ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN,$(ORIGIN_ROOT)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/jli)
+endif
+
+#
+# Applications expect to be able to link against libjawt without invoking
+# System.loadLibrary("jawt") first. This was the behaviour described in the
+# devloper documentation of JAWT and what worked with OpenJDK6.
+#
+ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
+  ORIGIN_ARG += $(call SET_EXECUTABLE_ORIGIN,$(ORIGIN_ROOT)/lib$(OPENJDK_TARGET_CPU_LIBDIR))
+endif
+
+LAUNCHER_SRC := $(JDK_TOPDIR)/src/java.base/share/native/launcher
+LAUNCHER_CFLAGS := -I$(JDK_TOPDIR)/src/java.base/share/native/launcher \
+    -I$(JDK_TOPDIR)/src/java.base/share/native/libjli \
+    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjli \
+    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli \
+    #
+GLOBAL_VERSION_INFO_RESOURCE := $(JDK_TOPDIR)/src/java.base/windows/native/common/version.rc
+JAVA_VERSION_INFO_RESOURCE := $(JDK_TOPDIR)/src/java.base/windows/native/launcher/java.rc
+MACOSX_PLIST_DIR := $(JDK_TOPDIR)/src/java.base/macosx/native/launcher
+# Until the shuffle is permanent, we can't add this in configure
+CFLAGS_JDKEXE := $(filter-out %javavm/export, $(CFLAGS_JDKEXE))
+CFLAGS_JDKEXE += -I$(JDK_TOPDIR)/src/java.base/share/native/include \
+    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/include
+CXXFLAGS_JDKEXE := $(filter-out %javavm/export, $(CXXFLAGS_JDKEXE))
+CXXFLAGS_JDKEXE += -I$(JDK_TOPDIR)/src/java.base/share/native/include \
+    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/include
+JAVA_MANIFEST := $(JDK_TOPDIR)/src/java.base/windows/native/launcher/java.manifest
+
+define SetupLauncher
+  # TODO: Fix mapfile on solaris. Won't work with ld as linker.
+  # Parameter 1 is the name of the launcher (java, javac, jar...)
+  # Parameter 2 is extra CFLAGS
+  # Parameter 3 is extra LDFLAGS
+  # Parameter 4 is extra LDFLAGS_SUFFIX_posix
+  # Parameter 5 is extra LDFLAGS_SUFFIX_windows
+  # Parameter 6 is optional Windows JLI library (full path)
+  # Parameter 7 is optional Windows resource (RC) flags
+  # Parameter 8 is optional Windows version resource file (.rc)
+  # Parameter 9 is different output dir
+  # Parameter 10 if set, link statically with c runtime on windows.
+  # Parameter 11 if set, override plist file on macosx.
+  $(call LogSetupMacroEntry,SetupLauncher($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11))
+  $(if $(13),$(error Internal makefile error: Too many arguments to SetupLauncher, please update CompileLaunchers.gmk))
+
+  $1_WINDOWS_JLI_LIB := $(JDK_OUTPUTDIR)/objs/libjli/jli.lib
+  ifneq ($6, )
+    $1_WINDOWS_JLI_LIB := $6
+  endif
+  $1_VERSION_INFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE)
+  ifneq ($8, )
+    $1_VERSION_INFO_RESOURCE := $8
+  endif
+
+  $1_LDFLAGS := $3
+  $1_LDFLAGS_SUFFIX :=
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    $1_PLIST_FILE := Info-cmdline.plist
+    ifneq ($(11), )
+      $1_PLIST_FILE := $(11)
+      ifneq ($$(findstring privileged, $$($1_PLIST_FILE)), )
+        $1_CODESIGN := true
+      endif
+    endif
+
+    $1_LDFLAGS += -Wl,-all_load $(JDK_OUTPUTDIR)/objs/libjli_static.a \
+        -framework Cocoa -framework Security -framework ApplicationServices \
+        -sectcreate __TEXT __info_plist $(MACOSX_PLIST_DIR)/$$($1_PLIST_FILE)
+        $1_LDFLAGS_SUFFIX += -pthread
+  endif
+
+  ifeq ($(OPENJDK_TARGET_OS), aix)
+    $1_LDFLAGS_SUFFIX += -L$(JDK_OUTPUTDIR)/objs -ljli_static
+  endif
+
+  ifeq ($(USE_EXTERNAL_LIBZ), true)
+    $1_LDFLAGS_SUFFIX += -lz
+  endif
+
+  $1_OUTPUT_DIR_ARG := $9
+  ifeq (, $$($1_OUTPUT_DIR_ARG))
+    $1_OUTPUT_DIR_ARG := $(JDK_OUTPUTDIR)/bin
+  endif
+
+  # TODO: maybe it's better to move this if-statement out of this function
+  ifeq ($1, java)
+    $1_OPTIMIZATION_ARG := HIGH
+    $1_LDFLAGS_solaris := -R$(OPENWIN_HOME)/lib$(OPENJDK_TARGET_CPU_ISADIR)
+  else
+  $1_OPTIMIZATION_ARG := LOW
+  endif
+
+  $1_CFLAGS := $(CFLAGS_JDKEXE)
+  ifeq ($(10), true)
+    $1_CFLAGS := $(filter-out -MD, $(CFLAGS_JDKEXE))
+  endif
+
+  # The linker on older SuSE distros (e.g. on SLES 10) complains with:
+  # "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
+  # if feeded with a version script which contains named tags.
+  ifeq ($(USING_BROKEN_SUSE_LD),yes)
+    ifneq ($(wildcard $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous), )
+      $1_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous
+    else
+      $1_MAPFILE :=
+    endif
+  else
+    ifneq ($(wildcard $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)), )
+      $1_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)
+    else
+      $1_MAPFILE :=
+    endif
+  endif
+
+  $(call SetupNativeCompilation,BUILD_LAUNCHER_$1, \
+      SRC := $(LAUNCHER_SRC), \
+      INCLUDE_FILES := main.c, \
+      LANG := C, \
+      OPTIMIZATION := $$($1_OPTIMIZATION_ARG), \
+      CFLAGS := $$($1_CFLAGS) \
+          $(LAUNCHER_CFLAGS) \
+          -DFULL_VERSION='"$(FULL_VERSION)"' \
+          -DJDK_MAJOR_VERSION='"$(JDK_MAJOR_VERSION)"' \
+          -DJDK_MINOR_VERSION='"$(JDK_MINOR_VERSION)"' \
+          -DLAUNCHER_NAME='"$(LAUNCHER_NAME)"' \
+          -DPROGNAME='"$1"' $(DPACKAGEPATH) \
+          $2, \
+      CFLAGS_linux := -fPIC, \
+      CFLAGS_solaris := -KPIC -DHAVE_GETHRTIME, \
+      LDFLAGS := $(LDFLAGS_JDKEXE) \
+          $(ORIGIN_ARG) \
+          $$($1_LDFLAGS), \
+      LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_NAME,$1), \
+      LDFLAGS_linux := -lpthread \
+          $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)), \
+      LDFLAGS_solaris := $$($1_LDFLAGS_solaris) \
+          $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)), \
+      MAPFILE := $$($1_MAPFILE), \
+      LDFLAGS_SUFFIX := $(LDFLAGS_JDKEXE_SUFFIX) $$($1_LDFLAGS_SUFFIX), \
+      LDFLAGS_SUFFIX_posix := $4, \
+      LDFLAGS_SUFFIX_windows := $$($1_WINDOWS_JLI_LIB) \
+          $(JDK_OUTPUTDIR)/objs/libjava/java.lib advapi32.lib $5, \
+      LDFLAGS_SUFFIX_linux := -L$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/jli -ljli $(LIBDL) -lc, \
+      LDFLAGS_SUFFIX_solaris := -L$(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/jli -ljli -lthread $(LIBDL) -lc, \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/$1_objs$(OUTPUT_SUBDIR), \
+      OUTPUT_DIR := $$($1_OUTPUT_DIR_ARG)$(OUTPUT_SUBDIR), \
+      PROGRAM := $1, \
+      DEBUG_SYMBOLS := true, \
+      VERSIONINFO_RESOURCE := $$($1_VERSION_INFO_RESOURCE), \
+      RC_FLAGS := $(RC_FLAGS) \
+          -D "JDK_FNAME=$1$(EXE_SUFFIX)" \
+          -D "JDK_INTERNAL_NAME=$1" \
+          -D "JDK_FTYPE=0x1L" \
+          $7, \
+      MANIFEST := $(JAVA_MANIFEST), \
+      CODESIGN := $$($1_CODESIGN))
+
+  LAUNCHERS += $$(BUILD_LAUNCHER_$1)
+
+  ifneq (,$(filter $(OPENJDK_TARGET_OS), macosx aix))
+    $$(BUILD_LAUNCHER_$1): $(JDK_OUTPUTDIR)/objs/libjli_static.a
+  endif
+
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    $$(BUILD_LAUNCHER_$1): $(JDK_OUTPUTDIR)/objs/libjava/java.lib \
+        $$($1_WINDOWS_JLI_LIB)
+  endif
+endef
+
+##########################################################################################
+
+XLIBS := $(X_LIBS) -lX11
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  DPACKAGEPATH := -DPACKAGE_PATH='"$(PACKAGE_PATH)"'
+  XLIBS :=
+endif
+
+JAVA_RC_FLAGS += -i $(JDK_TOPDIR)/src/java.base/windows/native/common
+ifdef OPENJDK
+  JAVA_RC_FLAGS += -i "$(JDK_TOPDIR)/src/java.base/windows/native/launcher/icons"
+else
+  JAVA_RC_FLAGS += -i "$(JDK_TOPDIR)/src/closed/java.base/windows/native/launcher/icons"
+endif
+
