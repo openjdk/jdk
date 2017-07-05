@@ -179,6 +179,10 @@ public final class Method extends Executable {
         return res;
     }
 
+    /**
+     * @throws InaccessibleObjectException {@inheritDoc}
+     * @throws SecurityException {@inheritDoc}
+     */
     @Override
     @CallerSensitive
     public void setAccessible(boolean flag) {

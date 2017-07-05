@@ -23,7 +23,8 @@
 
 /*
  * This class consists of the following java code, but has an illegal class
- * access_flags value of 0x8000, that should be ignored by the JVM.
+ * access_flags value of 0x8000, that should be ignored by the JVM because
+ * the class file version is < 53.
  *
  *    public class acc_module {
  *       public static void main(String[] args) {
