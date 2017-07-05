@@ -93,10 +93,12 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   // The index of the first full word in a range.
   idx_t word_index_round_up(idx_t bit) const;
 
-  // Verification, statistics.
-  void verify_index(idx_t index) const;
-  void verify_range(idx_t beg_index, idx_t end_index) const;
+  // Verification.
+  inline void verify_index(idx_t index) const NOT_DEBUG_RETURN;
+  inline void verify_range(idx_t beg_index, idx_t end_index) const
+    NOT_DEBUG_RETURN;
 
+  // Statistics.
   static idx_t* _pop_count_table;
   static void init_pop_count_table();
   static idx_t num_set_bits(bm_word_t w);
@@ -286,7 +288,6 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   void print_on(outputStream* st) const;
 #endif
 };
-
 
 // Convenience class wrapping BitMap which provides multiple bits per slot.
 class BitMap2D VALUE_OBJ_CLASS_SPEC {

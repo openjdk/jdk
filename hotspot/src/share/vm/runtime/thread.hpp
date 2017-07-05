@@ -191,6 +191,9 @@ class Thread: public ThreadShadow {
   NOT_PRODUCT(int _allow_safepoint_count;)       // If 0, thread allow a safepoint to happen
   debug_only (int _allow_allocation_count;)      // If 0, the thread is allowed to allocate oops.
 
+  // Used by SkipGCALot class.
+  NOT_PRODUCT(bool _skip_gcalot;)                // Should we elide gc-a-lot?
+
   // Record when GC is locked out via the GC_locker mechanism
   CHECK_UNHANDLED_OOPS_ONLY(int _gc_locked_out_count;)
 
@@ -307,6 +310,11 @@ class Thread: public ThreadShadow {
   }
   bool is_gc_locked_out() { return _gc_locked_out_count > 0; }
 #endif // CHECK_UNHANDLED_OOPS
+
+#ifndef PRODUCT
+  bool skip_gcalot()           { return _skip_gcalot; }
+  void set_skip_gcalot(bool v) { _skip_gcalot = v;    }
+#endif
 
  public:
   // Installs a pending exception to be inserted later
