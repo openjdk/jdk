@@ -166,8 +166,8 @@ class java_lang_String : AllStatic {
   // objects in the shared archive file.
   // hash P(31) from Kernighan & Ritchie
   //
-  // For this reason, THIS ALGORITHM MUST MATCH String.toHash().
-  template <typename T> static unsigned int to_hash(T* s, int len) {
+  // For this reason, THIS ALGORITHM MUST MATCH String.hashCode().
+  template <typename T> static unsigned int hash_code(T* s, int len) {
     unsigned int h = 0;
     while (len-- > 0) {
       h = 31*h + (unsigned int) *s;
@@ -175,10 +175,10 @@ class java_lang_String : AllStatic {
     }
     return h;
   }
-  static unsigned int to_hash(oop java_string);
+  static unsigned int hash_code(oop java_string);
 
   // This is the string hash code used by the StringTable, which may be
-  // the same as String.toHash or an alternate hash code.
+  // the same as String.hashCode or an alternate hash code.
   static unsigned int hash_string(oop java_string);
 
   static bool equals(oop java_string, jchar* chars, int len);
