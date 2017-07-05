@@ -53,16 +53,57 @@ GENSRC += $(GENSRC_JDWP)
 include GensrcMisc.gmk
 GENSRC += $(GENSRC_MISC)
 
+include GensrcCharsetMapping.gmk
+GENSRC += $(GENSRC_CHARSETMAPPING)
+
+include GensrcCharsetCoder.gmk
+GENSRC += $(GENSRC_CHARSETCODER)
+
+include GensrcBuffer.gmk
+GENSRC += $(GENSRC_BUFFER)
+
+include GensrcExceptions.gmk
+GENSRC += $(GENSRC_EXCEPTIONS)
+
+ifneq ($(HOST_OS),windows)
+include GensrcIcons.gmk
+GENSRC += $(GENSRC_ICONS)
+
+include GensrcX11Wrappers.gmk
+GENSRC += $(GENSRC_X11WRAPPERS)
+endif
+
+include GensrcSwing.gmk
+ifndef DISABLE_NIMBUS
+  GENSRC += $(GENSRC_SWING_NIMBUS)
+endif
+
 $(GENSRC) : $(BUILD_TOOLS)
 
-all: $(GENSRC)
+# The exception handling of swing beaninfo
+# gensrc_swing/javax/swing/beaninfo/* have not be in src.zip
+all: $(GENSRC) $(GENSRC_SWING_BEANINFO)
 	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc
 	(cd $(JDK_OUTPUTDIR) && \
-		chmod -R u+rw gensrc && \
-		cp -rp gensrc_characterdata/* gensrc && \
-		cp -rp gensrc_properties/* gensrc && \
-		cp -rp gensrc_localedatametainfo/* gensrc && \
-		cp -rp gensrc_jdwp/* gensrc && \
-		cp -rp gensrc_misc/* gensrc)
+		$(CHMOD) -R u+rw gensrc && \
+		$(CP) -rp gensrc_characterdata/* gensrc && \
+		$(CP) -rp gensrc_properties/* gensrc && \
+		$(CP) -rp gensrc_localedatametainfo/* gensrc && \
+		$(CP) -rp gensrc_jdwp/* gensrc && \
+		$(CP) -rp gensrc_misc/* gensrc && \
+		$(CP) -rp gensrc_charsetmapping/* gensrc && \
+		$(CP) -rp gensrc_charsetcoder/* gensrc && \
+		$(CP) -rp gensrc_exceptions/* gensrc && \
+		$(CP) -rp gensrc_buffer/* gensrc)
+	if [ -d  $(JDK_OUTPUTDIR)/gensrc_swing/javax/swing/plaf ] ; then \
+		(cd $(JDK_OUTPUTDIR) && \
+		$(MKDIR) -p gensrc/javax/swing/plaf && \
+		$(CP) -rp gensrc_swing/javax/swing/plaf/* gensrc/javax/swing/plaf) \
+	fi
+ifneq ($(HOST_OS),windows)
+	(cd $(JDK_OUTPUTDIR) && \
+		$(CP) -rp gensrc_icons/* gensrc && \
+		$(CP) -rp gensrc_x11wrappers/classes/* gensrc)
+endif
 
 .PHONY: all

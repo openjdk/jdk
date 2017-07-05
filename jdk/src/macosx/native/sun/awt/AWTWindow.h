@@ -43,6 +43,7 @@
     NSSize javaMaxSize;
     jint styleBits;
     BOOL isEnabled;
+    NSWindow *nsWindow;
 }
 
 // An instance of either AWTWindow_Normal or AWTWindow_Panel

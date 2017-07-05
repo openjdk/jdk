@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,6 @@ import sun.security.util.DerValue;
  * System properties recognized:
  * <ul>
  * <li>test.kdc.save.ccache
- * </ul>
- * Support policies:
- * <ul>
- * <li>ok-as-delegate
  * </ul>
  * Issues and TODOs:
  * <ol>
@@ -178,6 +174,10 @@ public class KDC {
          * Multiple ETYPE-INFO-ENTRY with same etype but different salt
          */
         DUP_ETYPE,
+        /**
+         * What backend server can be delegated to
+         */
+        OK_AS_DELEGATE,
     };
 
     static {
@@ -232,7 +232,11 @@ public class KDC {
      * @param obj the value
      */
     public void setOption(Option key, Object value) {
-        options.put(key, value);
+        if (value == null) {
+            options.remove(key);
+        } else {
+            options.put(key, value);
+        }
     }
 
     /**
@@ -579,53 +583,6 @@ public class KDC {
         }
     }
 
-    private Map<String,String> policies = new HashMap<>();
-
-    public void setPolicy(String rule, String value) {
-        if (value == null) {
-            policies.remove(rule);
-        } else {
-            policies.put(rule, value);
-        }
-    }
-    /**
-     * If the provided client/server pair matches a rule
-     *
-     * A system property named test.kdc.policy.RULE will be consulted.
-     * If it's unset, returns false. If its value is "", any pair is
-     * matched. Otherwise, it should contains the server name matched.
-     *
-     * TODO: client name is not used currently.
-     *
-     * @param c client name
-     * @param s server name
-     * @param rule rule name
-     * @return if a match is found
-     */
-    private boolean configMatch(String c, String s, String rule) {
-        String policy = policies.get(rule);
-        boolean result = false;
-        if (policy == null) {
-            result = false;
-        } else if (policy.length() == 0) {
-            result = true;
-        } else {
-            String[] names = policy.split("\\s+");
-            for (String name: names) {
-                if (name.equals(s)) {
-                    result = true;
-                    break;
-                }
-            }
-        }
-        if (result) {
-            System.out.printf(">>>> Policy match result (%s vs %s on %s) %b\n",
-                    c, s, rule, result);
-        }
-        return result;
-    }
-
-
     /**
      * Processes an incoming request and generates a response.
      * @param in the request
@@ -724,7 +681,10 @@ public class KDC {
                 bFlags[Krb5.TKT_OPTS_MAY_POSTDATE] = true;
             }
 
-            if (configMatch("", service.getNameString(), "ok-as-delegate")) {
+            String okAsDelegate = (String)options.get(Option.OK_AS_DELEGATE);
+            if (okAsDelegate != null && (
+                    okAsDelegate.isEmpty() ||
+                    okAsDelegate.contains(service.getNameString()))) {
                 bFlags[Krb5.TKT_OPTS_DELEGATE] = true;
             }
             bFlags[Krb5.TKT_OPTS_INITIAL] = true;

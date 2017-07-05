@@ -27,6 +27,8 @@ package java.awt.image;
 
 import java.util.Hashtable;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The interface for objects expressing interest in image data through
  * the ImageProducer interfaces.  When a consumer is added to an image
@@ -37,6 +39,8 @@ import java.util.Hashtable;
  *
  * @author      Jim Graham
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public interface ImageConsumer {
     /**
      * The dimensions of the source image are reported using the

@@ -92,6 +92,8 @@ import java.util.Iterator;
 import sun.java2d.DestSurfaceProvider;
 import sun.misc.PerformanceLogger;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * This is a the master Graphics2D superclass for all of the Sun
  * Graphics implementations.  This class relies on subclasses to
@@ -101,6 +103,8 @@ import sun.misc.PerformanceLogger;
  *
  * @author Jim Graham
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public final class SunGraphics2D
     extends Graphics2D
     implements ConstrainableGraphics, Cloneable, DestSurfaceProvider

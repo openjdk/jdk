@@ -54,14 +54,21 @@ fi
 
 if [ "`uname`" == "SunOS" ]; then
     NM=gnm
-    STAT=gstat
+    STAT="gstat -c%s"
+    LDD=ldd
 elif [ $OSTYPE == "cygwin" ]; then
     NM="$VS100COMNTOOLS/../../VC/bin/amd64/dumpbin.exe"
     NM_ARGS=/exports
-    STAT=stat
+    STAT="stat -c%s"
+    LDD=
+elif [ "`uname`" == "Darwin" ]; then
+    NM=nm
+    STAT="stat -f%z"
+    LDD="otool -L"
 else
     NM=nm
-    STAT=stat
+    STAT="stat -c%s"
+    LDD=ldd
 fi
 
 # Should the differences be viewed?
@@ -76,8 +83,8 @@ fi
 OLD=$(cd $(dirname $1) && pwd)/$(basename $1)
 NEW=$(cd $(dirname $2) && pwd)/$(basename $2)
 
-OLD_SIZE=$($STAT -c%s "$OLD")
-NEW_SIZE=$($STAT -c%s "$NEW")
+OLD_SIZE=$($STAT "$OLD")
+NEW_SIZE=$($STAT "$NEW")
 
 if [ $# -gt 3 ]
 then
@@ -139,13 +146,39 @@ DIFFS=$(LANG=C diff $OLD_SYMBOLS $NEW_SYMBOLS)
 
 RESULT=0
 
+if [ "${LDD}" ]
+then
+    NAME=`basename $OLD`
+    TMP=$COMPARE_ROOT/ldd/ldd.${NAME}
+    rm -rf "${TMP}"
+    mkdir -p "${TMP}"
+    
+    (cd "${TMP}" && cp $OLD . && ${LDD} ${NAME} | awk '{ print $1;}' | sort | tee dep.old | uniq > dep.uniq.old)
+    (cd "${TMP}" && cp $NEW . && ${LDD} ${NAME} | awk '{ print $1;}' | sort | tee dep.new | uniq > dep.uniq.new)
+    (cd "${TMP}" && rm -f ${NAME})
+    
+    DIFFS_DEP=$(LANG=C diff "${TMP}/dep.old" "${TMP}/dep.new")
+    DIFFS_UNIQ_DEP=$(LANG=C diff "${TMP}/dep.uniq.old" "${TMP}/dep.uniq.new")
+    
+    DEP_MSG=
+    if [ -z "${DIFFS_UNIQ_DEP}" -a -z "${DIFFS_DEP}" ]; then
+       DEP_MSG="Identical dependencies"
+    elif [ -z "${DIFFS_UNIQ_DEP}" ]; then
+       DEP_MSG="Redundant duplicate dependencies added"
+       RES=1
+    else
+       DEP_MSG="DIFFERENT dependencies"
+       RES=1
+    fi
+fi
+
 if [ -n "$DIFFS" ]; then
    if [ $OLD_SIZE -ne $NEW_SIZE ]
    then
-       echo Differences, content AND size     : $OLD_NAME 
+       echo Differences, content AND size     : $DEP_MSG : $OLD_NAME 
        RESULT=4
    else
-       echo Differences, content BUT SAME size: $OLD_NAME 
+       echo Differences, content BUT SAME size: $DEP_MSG : $OLD_NAME 
        RESULT=3
    fi
    if [ "x$VIEW" == "xview" ]; then
@@ -154,10 +187,10 @@ if [ -n "$DIFFS" ]; then
 else
    if [ $OLD_SIZE -ne $NEW_SIZE ]
    then
-       echo Identical symbols BUT NEW size    : $OLD_NAME 
+       echo Identical symbols BUT NEW size    : $DEP_MSG : $OLD_NAME 
        RESULT=2
    else
-       echo Identical symbols AND size, BUT not bytewise identical: $OLD_NAME 
+       echo Identical symbols AND size, BUT not bytewise identical: $DEP_MSG : $OLD_NAME 
        RESULT=1
    fi
 fi

@@ -365,37 +365,36 @@ public final class KdcComm {
 
             for (int i=1; i <= retries; i++) {
                 String proto = useTCP?"TCP":"UDP";
-                NetClient kdcClient = NetClient.getInstance(
-                        proto, kdc, port, timeout);
-                if (DEBUG) {
-                    System.out.println(">>> KDCCommunication: kdc=" + kdc
-                           + " " + proto + ":"
-                           +  port +  ", timeout="
-                           + timeout
-                           + ",Attempt =" + i
-                           + ", #bytes=" + obuf.length);
-                }
-                try {
-                    /*
-                     * Send the data to the kdc.
-                     */
-                    kdcClient.send(obuf);
-                    /*
-                     * And get a response.
-                     */
-                    ibuf = kdcClient.receive();
-                    break;
-                } catch (SocketTimeoutException se) {
+                try (NetClient kdcClient = NetClient.getInstance(
+                        proto, kdc, port, timeout)) {
                     if (DEBUG) {
-                        System.out.println ("SocketTimeOutException with " +
-                                            "attempt: " + i);
+                        System.out.println(">>> KDCCommunication: kdc=" + kdc
+                            + " " + proto + ":"
+                            +  port +  ", timeout="
+                            + timeout
+                            + ",Attempt =" + i
+                            + ", #bytes=" + obuf.length);
                     }
-                    if (i == retries) {
-                        ibuf = null;
-                        throw se;
+                    try {
+                        /*
+                        * Send the data to the kdc.
+                        */
+                        kdcClient.send(obuf);
+                        /*
+                        * And get a response.
+                        */
+                        ibuf = kdcClient.receive();
+                        break;
+                    } catch (SocketTimeoutException se) {
+                        if (DEBUG) {
+                            System.out.println ("SocketTimeOutException with " +
+                                                "attempt: " + i);
+                        }
+                        if (i == retries) {
+                            ibuf = null;
+                            throw se;
+                        }
                     }
-                } finally {
-                    kdcClient.close();
                 }
             }
             return ibuf;

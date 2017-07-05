@@ -25,12 +25,6 @@
 
 package com.sun.java.util.jar.pack;
 
-import com.sun.java.util.jar.pack.ConstantPool.ClassEntry;
-import com.sun.java.util.jar.pack.ConstantPool.DescriptorEntry;
-import com.sun.java.util.jar.pack.ConstantPool.LiteralEntry;
-import com.sun.java.util.jar.pack.ConstantPool.MemberEntry;
-import com.sun.java.util.jar.pack.ConstantPool.SignatureEntry;
-import com.sun.java.util.jar.pack.ConstantPool.Utf8Entry;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -38,9 +32,8 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -211,9 +204,7 @@ class Utils {
     static String getVersionString() {
         return "Pack200, Vendor: " +
             System.getProperty("java.vendor") +
-            ", Version: " +
-            Constants.JAVA6_PACKAGE_MAJOR_VERSION + "." +
-            Constants.JAVA6_PACKAGE_MINOR_VERSION;
+            ", Version: " + Constants.MAX_PACKAGE_VERSION;
     }
 
     static void markJarFile(JarOutputStream out) throws IOException {
@@ -240,8 +231,7 @@ class Utils {
     }
     static void copyJarFile(JarFile in, JarOutputStream out) throws IOException {
         byte[] buffer = new byte[1 << 14];
-        for (Enumeration<JarEntry> e = in.entries(); e.hasMoreElements(); ) {
-            JarEntry je = e.nextElement();
+        for (JarEntry je : Collections.list(in.entries())) {
             out.putNextEntry(je);
             InputStream ein = in.getInputStream(je);
             for (int nr; 0 < (nr = ein.read(buffer)); ) {

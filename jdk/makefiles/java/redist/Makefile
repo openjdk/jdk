@@ -74,7 +74,7 @@ CLASSSHARINGDATA_DIR   = $(BUILDDIR)/../make/tools/sharing
 # Needed to do file copy
 ABS_BUILDDIR :=$(call FullPath,$(BUILDDIR))
 
-SUBDIRS_desktop = fonts
+SUBDIRS_desktop =
 SUBDIRS_tools   = sajdi
 include $(BUILDDIR)/common/Subdirs.gmk
 

@@ -558,6 +558,8 @@ AwtComponent::CreateHWnd(JNIEnv *env, LPCWSTR title,
 
     m_hwnd = hwnd;
 
+    ::ImmAssociateContext(m_hwnd, NULL);
+
     SetDrawState((jint)JAWT_LOCK_SURFACE_CHANGED |
         (jint)JAWT_LOCK_BOUNDS_CHANGED |
         (jint)JAWT_LOCK_CLIP_CHANGED);

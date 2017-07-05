@@ -37,6 +37,10 @@ import java.awt.peer.TextFieldPeer;
 import javax.swing.JPasswordField;
 import javax.swing.text.JTextComponent;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 final class LWTextFieldPeer
         extends LWTextComponentPeer<TextField, JPasswordField>
         implements TextFieldPeer, ActionListener {

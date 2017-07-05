@@ -30,8 +30,8 @@ import java.awt.event.*;
 
 import javax.swing.*;
 
+
 import static javax.swing.JLayeredPane.*;
-import static sun.tools.jconsole.Resources.*;
 
 /**
  * Used instead of JDialog in a JDesktopPane/JInternalFrame environment.
@@ -73,7 +73,7 @@ public class InternalDialog extends JInternalFrame {
         private ImageIcon rightIcon =
             new ImageIcon(InternalDialog.class.getResource("resources/masthead-right.png"));
 
-        private Font font = Font.decode(getText("Masthead.font"));
+        private Font font = Font.decode(Messages.MASTHEAD_FONT);
         private int gap = 10;
         private String title;
 

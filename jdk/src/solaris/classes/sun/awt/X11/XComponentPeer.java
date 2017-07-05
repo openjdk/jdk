@@ -70,6 +70,10 @@ import sun.awt.image.ToolkitImage;
 import sun.java2d.BackBufferCapsProvider;
 import sun.java2d.pipe.Region;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class XComponentPeer extends XWindow implements ComponentPeer, DropTargetPeer,
     BackBufferCapsProvider
 {

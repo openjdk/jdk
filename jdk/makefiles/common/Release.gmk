@@ -509,7 +509,8 @@ NOTJRETOOLS = \
 
 # The following get removed from the JRE after the bulk-copy of LIBDIR...
 NOTJRELIBS = tools.jar \
-        jconsole.jar
+        jconsole.jar \
+	dt.jar
 
 ifeq ($(INCLUDE_SA), true)
   NOTJRELIBS += sa-jdi.jar
@@ -584,6 +585,7 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "sun/awt/motif/X11KSC5601\$$Decoder.class" >> $@
 	$(ECHO) "sun/awt/motif/X11KSC5601\$$Encoder.class" >> $@
 	$(ECHO) "sun/awt/motif/X11KSC5601.class" >> $@
+	$(ECHO) "META-INF/services/java.nio.charset.spi.CharsetProvider" >> $@
 	$(ECHO) "sun/rmi/rmic/" >> $@
 	$(ECHO) "sun/tools/asm/" >> $@
 	$(ECHO) "sun/tools/java/" >> $@
@@ -611,6 +613,18 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "sun/security/provider/Sun.class" >> $@
 	$(ECHO) "sun/security/rsa/SunRsaSign.class" >> $@
 	$(ECHO) "sun/security/ssl/" >> $@
+	$(ECHO) "sun/security/pkcs11/" >> $@
+	$(ECHO) "sun/security/ec/ECDHKeyAgreement.class" >> $@
+	$(ECHO) "sun/security/ec/ECDSASignature.class" >> $@
+	$(ECHO) "sun/security/ec/ECKeyPairGenerator.class" >> $@
+	$(ECHO) "sun/security/ec/SunEC\$$1.class" >> $@
+	$(ECHO) "sun/security/ec/SunEC.class" >> $@
+	$(ECHO) "sun/security/ec/SunECEntries.class" >> $@
+	$(ECHO) "sun/security/ec/ECDSASignature\$$Raw.class" >> $@
+	$(ECHO) "sun/security/ec/ECDSASignature\$$SHA1.class" >> $@
+	$(ECHO) "sun/security/ec/ECDSASignature\$$SHA256.class" >> $@
+	$(ECHO) "sun/security/ec/ECDSASignature\$$SHA384.class" >> $@
+	$(ECHO) "sun/security/ec/ECDSASignature\$$SHA512.class" >> $@
 	$(ECHO) "com/sun/net/ssl/internal/ssl/" >> $@
 	$(ECHO) "javax/crypto/" >> $@
 	$(ECHO) "sun/security/internal/" >> $@
@@ -629,7 +643,54 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "sun/tools/jmap/" >> $@
 	$(ECHO) "sun/net/spi/nameservice/dns/" >> $@
 	$(ECHO) "META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor" >> $@
-	$(ECHO) $(patsubst $(CLASSBINDIR)/%,%,$(LOCALEDATA_JAR_FILES)) | sed 's/ /\n/g' >> $@
+	$(ECHO) "javax/swing/AbstractButtonBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/BoxBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JAppletBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JButtonBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JCheckBoxBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JCheckBoxMenuItemBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JColorChooserBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JComboBoxBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JComponentBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JDesktopPaneBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JDialogBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JEditorPaneBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JFileChooserBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JFormattedTextFieldBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JFrameBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JInternalFrameBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JLabelBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JLayeredPaneBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JListBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JMenuBarBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JMenuBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JMenuItemBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JOptionPaneBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JPanelBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JPasswordFieldBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JPopupMenuBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JProgressBarBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JRadioButtonBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JRadioButtonMenuItemBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JScrollBarBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JScrollPaneBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JSeparatorBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JSliderBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JSpinnerBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JSplitPaneBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JTabbedPaneBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JTableBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JTextAreaBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JTextFieldBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JTextPaneBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JToggleButtonBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JToolBarBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JTreeBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/JWindowBeanInfo.class" >> $@
+	$(ECHO) "javax/swing/SwingBeanInfoBase.class" >> $@
+	$(ECHO) "javax/swing/text/JTextComponentBeanInfo.class" >> $@
+	$(ECHO) "sun/swing/BeanInfoUtils.class" >> $@
+	$(ECHO) $(patsubst $(CLASSBINDIR)/%,%,$(LOCALEDATA_JAR_FILES)) | $(TR) " " "\n" >> $@
 ifndef OPENJDK
 ifndef JAVASE_EMBEDDED
 	$(ECHO) "com/oracle/jrockit/jfr/" >> $@
@@ -647,7 +708,46 @@ ifndef JAVASE_EMBEDDED
 	$(ECHO) "oracle/jrockit/jfr/util/text/" >> $@
 endif
 endif
+	(cd $(JDK_OUTPUTDIR)/classes && $(FIND) . -name "_the.*") >> $@
+ifeq ($(PLATFORM), macosx)
+	$(ECHO) "com/sun/nio/sctp/" >> $@
+	$(ECHO) "sun/nio/ch/sctp/" >> $@
+	$(ECHO) "sun/jdbc/" >> $@
+	$(ECHO) "sun/nio/ch/DevPollArrayWrapper\$$Updator.class" >> $@
+	$(ECHO) "sun/nio/ch/DevPollArrayWrapper.class" >> $@
+	$(ECHO) "sun/nio/ch/DevPollSelectorImpl.class" >> $@
+	$(ECHO) "sun/nio/ch/DevPollSelectorProvider.class" >> $@
+	$(ECHO) "sun/nio/ch/EPollArrayWrapper\$$Updator.class" >> $@
+	$(ECHO) "sun/nio/ch/EPollArrayWrapper.class" >> $@
+	$(ECHO) "sun/nio/ch/EPollSelectorImpl.class" >> $@
+	$(ECHO) "sun/nio/ch/EPollSelectorProvider.class" >> $@
+endif
 
+######################################################
+# List of directories in classes directory that should NOT be in resources.jar
+######################################################
+
+NOT_RESOURCES_JAR_LIST = $(IMAGES_OUTPUTDIR)/tmp/not_resources_jar.list
+
+$(NOT_RESOURCES_JAR_LIST): FRC
+	$(prep-target)
+	$(ECHO) "#\n" >> $@
+	$(ECHO) "# List of subdirectories not in include in resources.jar" >> $@
+	$(ECHO) "# Directories must contain trailing '/'." >> $@
+	$(ECHO) "javax/swing/beaninfo/" >> $@
+
+TOTAL_JAR_EXCLUDE_LIST = $(IMAGES_OUTPUTDIR)/tmp/total_jar_exclude.list
+
+######################################################
+# Total exclude list
+######################################################
+
+$(TOTAL_JAR_EXCLUDE_LIST): $(NOT_RT_JAR_LIST) $(NOT_RESOURCES_JAR_LIST)
+	$(prep-target)
+	$(ECHO) "#\n" >> $@
+	$(ECHO) "# List of subdirectories not in include in resources.jar" >> $@	
+	$(CAT) $(NOT_RT_JAR_LIST) >>$@
+	$(CAT) $(NOT_RESOURCES_JAR_LIST) >>$@ 
 
 # File order list for rt.jar
 #     - sun.applet is included, till hotjava stops relying on it.
@@ -660,12 +760,12 @@ JARFILELISTS_TEMPDIR=$(IMAGES_OUTPUTDIR)/tmp/jarfilelists
 RT_JAR_FILELIST=$(JARFILELISTS_TEMPDIR)/rt_jar_list
 RES_JAR_FILELIST=$(JARFILELISTS_TEMPDIR)/resources_jar_list
 
-$(TOTAL_JAR_FILELIST): $(BUILD_TOOLS) $(NOT_RT_JAR_LIST)
+$(TOTAL_JAR_FILELIST): $(BUILD_TOOLS) $(TOTAL_JAR_EXCLUDE_LIST)
 	$(prep-target)
 	$(RM) $@.temp
 	($(CD) $(CLASSBINDIR) && \
 	    $(TOOL_JARREORDER) \
-		-o  $@.temp $(ABS_LIBDIR)/classlist $(NOT_RT_JAR_LIST) . )
+		-o  $@.temp $(ABS_LIBDIR)/classlist $(TOTAL_JAR_EXCLUDE_LIST) . )
 	$(MV) $@.temp $@
 	($(CD) $(CLASSBINDIR) && $(java-vm-cleanup))
 
@@ -1181,7 +1281,7 @@ endif
 	@#
 	@# Swing BeanInfo generation
 	@#
-	$(CD) javax/swing/beaninfo && $(MAKE) TEMPDIR=$(IMAGES_OUTPUTDIR)/tmp ABS_TEMPDIR=$(IMAGES_OUTPUTDIR)/tmp swing-1.2-beans
+	$(CP) $(JDK_OUTPUTDIR)/lib/dt.jar $(JDK_IMAGE_DIR)/lib/dt.jar
 ifneq ($(PLATFORM), windows)
 	$(call copy-man-pages,$(JDK_IMAGE_DIR),$(JDK_MAN_PAGES))
 endif # !windows

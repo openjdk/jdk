@@ -33,11 +33,10 @@ import javax.swing.border.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
 
+
 import static javax.swing.SwingConstants.*;
 
 import static sun.tools.jconsole.JConsole.*;
-import static sun.tools.jconsole.Resources.*;
-import static sun.tools.jconsole.Utilities.*;
 
 @SuppressWarnings("serial")
 public class BorderedComponent extends JPanel implements ActionListener {
@@ -46,8 +45,6 @@ public class BorderedComponent extends JPanel implements ActionListener {
     JLabel label;
     JComponent comp;
     boolean collapsed = false;
-
-    private JPopupMenu popupMenu;
 
     private Icon collapseIcon;
     private Icon expandIcon;
@@ -100,7 +97,7 @@ public class BorderedComponent extends JPanel implements ActionListener {
                 moreOrLessButton.setMargin(new Insets(0, 0, 0, 0));
                 moreOrLessButton.addActionListener(this);
                 String toolTip =
-                    getText("BorderedComponent.moreOrLessButton.toolTip");
+                    Messages.BORDERED_COMPONENT_MORE_OR_LESS_BUTTON_TOOLTIP;
                 moreOrLessButton.setToolTipText(toolTip);
                 borderLabel.add(moreOrLessButton);
                 borderLabel.setSize(borderLabel.getPreferredSize());
@@ -136,7 +133,8 @@ public class BorderedComponent extends JPanel implements ActionListener {
     public void setValueLabel(String str) {
         this.valueLabelStr = str;
         if (label != null) {
-            label.setText(Resources.getText("Current value",valueLabelStr));
+            label.setText(Resources.format(Messages.CURRENT_VALUE,
+                                           valueLabelStr));
         }
     }
 
@@ -151,8 +149,8 @@ public class BorderedComponent extends JPanel implements ActionListener {
             remove(comp);
             if (valueLabelStr != null) {
                 if (label == null) {
-                    label = new JLabel(Resources.getText("Current value",
-                                                         valueLabelStr));
+                    label = new JLabel(Resources.format(Messages.CURRENT_VALUE,
+                                                        valueLabelStr));
                 }
                 add(label);
             }
@@ -439,8 +437,6 @@ public class BorderedComponent extends JPanel implements ActionListener {
          * @param insets the object to be reinitialized
          */
         public Insets getBorderInsets(Component c, Insets insets) {
-            int height = 16;
-
             Border border = getBorder();
             if (border != null) {
                 if (border instanceof AbstractBorder) {

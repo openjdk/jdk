@@ -46,4 +46,4 @@ if [ "$NOFILES" = "unlimited" ] || [ $NOFILES -ge 10000 ]; then
     ulimit -n 2048
 fi
 
-${TESTJAVA}/bin/java LotsOfUpdates
+${TESTJAVA}/bin/java ${TESTVMOPTS} LotsOfUpdates
