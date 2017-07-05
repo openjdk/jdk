@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,13 @@
 
 # Rules to build signal interposition library, used by vm.make
 
-# libjsig[_g].so: signal interposition library
+# libjsig.so: signal interposition library
 JSIG   = jsig
-JSIG_G = $(JSIG)$(G_SUFFIX)
 
 ifeq ($(OS_VENDOR), Darwin)
   LIBJSIG   = lib$(JSIG).dylib
-  LIBJSIG_G = lib$(JSIG_G).dylib
 else
   LIBJSIG   = lib$(JSIG).so
-  LIBJSIG_G = lib$(JSIG_G).so
 endif
 
 JSIGSRCDIR = $(GAMMADIR)/src/os/$(Platform_os_family)/vm
@@ -58,7 +55,6 @@ $(LIBJSIG): $(JSIGSRCDIR)/jsig.c $(LIBJSIG_MAPFILE)
 	@echo Making signal interposition lib...
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG) \
                          $(LFLAGS_JSIG) $(JSIG_DEBUG_CFLAGS) -o $@ $<
-	$(QUIETLY) [ -f $(LIBJSIG_G) ] || { ln -s $@ $(LIBJSIG_G); }
 
 install_jsig: $(LIBJSIG)
 	@echo "Copying $(LIBJSIG) to $(DEST_JSIG)"

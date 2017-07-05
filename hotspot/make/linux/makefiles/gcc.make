@@ -229,9 +229,9 @@ ifeq ($(DEBUG_BINARIES), true)
 else
   # Use the stabs format for debugging information (this is the default
   # on gcc-2.91). It's good enough, has all the information about line
-  # numbers and local variables, and libjvm_g.so is only about 16M.
+  # numbers and local variables, and libjvm.so is only about 16M.
   # Change this back to "-g" if you want the most expressive format.
-  # (warning: that could easily inflate libjvm_g.so to 150M!)
+  # (warning: that could easily inflate libjvm.so to 150M!)
   # Note: The Itanium gcc compiler crashes when using -gstabs.
   DEBUG_CFLAGS/ia64  = -g
   DEBUG_CFLAGS/amd64 = -g
