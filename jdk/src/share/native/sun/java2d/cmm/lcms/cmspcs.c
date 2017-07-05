@@ -898,9 +898,11 @@ cmsUInt32Number CMSEXPORT cmsChannelsOf(cmsColorSpaceSignature ColorSpace)
 {
     switch (ColorSpace) {
 
+    case cmsSigMCH1Data:
     case cmsSig1colorData:
     case cmsSigGrayData: return 1;
 
+    case cmsSigMCH2Data:
     case cmsSig2colorData:  return 2;
 
     case cmsSigXYZData:
@@ -912,10 +914,12 @@ cmsUInt32Number CMSEXPORT cmsChannelsOf(cmsColorSpaceSignature ColorSpace)
     case cmsSigHsvData:
     case cmsSigHlsData:
     case cmsSigCmyData:
+    case cmsSigMCH3Data:
     case cmsSig3colorData:  return 3;
 
     case cmsSigLuvKData:
     case cmsSigCmykData:
+    case cmsSigMCH4Data:
     case cmsSig4colorData:  return 4;
 
     case cmsSigMCH5Data:

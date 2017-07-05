@@ -27,6 +27,7 @@ package sun.nio.ch;
 
 import java.util.concurrent.*;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetIntegerAction;
 
@@ -39,14 +40,6 @@ public class ThreadPool {
         "java.nio.channels.DefaultThreadPool.threadFactory";
     private static final String DEFAULT_THREAD_POOL_INITIAL_SIZE =
         "java.nio.channels.DefaultThreadPool.initialSize";
-    private static final ThreadFactory defaultThreadFactory = new ThreadFactory() {
-         @Override
-         public Thread newThread(Runnable r) {
-             Thread t = new Thread(r);
-             t.setDaemon(true);
-             return t;
-        }
-     };
 
     private final ExecutorService executor;
 
@@ -79,7 +72,22 @@ public class ThreadPool {
     }
 
     static ThreadFactory defaultThreadFactory() {
-        return defaultThreadFactory;
+        if (System.getSecurityManager() == null) {
+            return (Runnable r) -> {
+                Thread t = new Thread(r);
+                t.setDaemon(true);
+                return t;
+            };
+        } else {
+            return (Runnable r) -> {
+                PrivilegedAction<Thread> action = () -> {
+                    Thread t = new sun.misc.InnocuousThread(r);
+                    t.setDaemon(true);
+                    return t;
+               };
+               return AccessController.doPrivileged(action);
+           };
+        }
     }
 
     private static class DefaultThreadPoolHolder {
@@ -100,7 +108,7 @@ public class ThreadPool {
         // default to thread factory that creates daemon threads
         ThreadFactory threadFactory = getDefaultThreadPoolThreadFactory();
         if (threadFactory == null)
-            threadFactory = defaultThreadFactory;
+            threadFactory = defaultThreadFactory();
         // create thread pool
         ExecutorService executor = Executors.newCachedThreadPool(threadFactory);
         return new ThreadPool(executor, false, initialSize);

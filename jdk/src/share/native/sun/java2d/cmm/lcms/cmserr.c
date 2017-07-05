@@ -302,8 +302,6 @@ _cmsSubAllocator_chunk* _cmsCreateSubAllocChunk(cmsContext ContextID, cmsUInt32N
         return NULL;
     }
 
-
-
     chunk ->BlockSize = Initial;
     chunk ->Used      = 0;
     chunk ->next      = NULL;

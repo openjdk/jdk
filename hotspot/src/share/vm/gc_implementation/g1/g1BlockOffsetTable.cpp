@@ -304,26 +304,26 @@ void G1BlockOffsetArray::check_all_cards(size_t start_card, size_t end_card) con
     if (c - start_card > BlockOffsetArray::power_to_cards_back(1)) {
       guarantee(entry > N_words,
                 err_msg("Should be in logarithmic region - "
-                        "entry: " UINT32_FORMAT ", "
-                        "_array->offset_array(c): " UINT32_FORMAT ", "
-                        "N_words: " UINT32_FORMAT,
-                        entry, _array->offset_array(c), N_words));
+                        "entry: %u, "
+                        "_array->offset_array(c): %u, "
+                        "N_words: %u",
+                        (uint)entry, (uint)_array->offset_array(c), (uint)N_words));
     }
     size_t backskip = BlockOffsetArray::entry_to_cards_back(entry);
     size_t landing_card = c - backskip;
     guarantee(landing_card >= (start_card - 1), "Inv");
     if (landing_card >= start_card) {
       guarantee(_array->offset_array(landing_card) <= entry,
-                err_msg("Monotonicity - landing_card offset: " UINT32_FORMAT ", "
-                        "entry: " UINT32_FORMAT,
-                        _array->offset_array(landing_card), entry));
+                err_msg("Monotonicity - landing_card offset: %u, "
+                        "entry: %u",
+                        (uint)_array->offset_array(landing_card), (uint)entry));
     } else {
       guarantee(landing_card == start_card - 1, "Tautology");
       // Note that N_words is the maximum offset value
       guarantee(_array->offset_array(landing_card) <= N_words,
-                err_msg("landing card offset: " UINT32_FORMAT ", "
-                        "N_words: " UINT32_FORMAT,
-                        _array->offset_array(landing_card), N_words));
+                err_msg("landing card offset: %u, "
+                        "N_words: %u",
+                        (uint)_array->offset_array(landing_card), (uint)N_words));
     }
   }
 }
@@ -554,21 +554,20 @@ void G1BlockOffsetArray::alloc_block_work2(HeapWord** threshold_, size_t* index_
           (_array->offset_array(orig_index) > 0 &&
          _array->offset_array(orig_index) <= N_words),
          err_msg("offset array should have been set - "
-                  "orig_index offset: " UINT32_FORMAT ", "
+                  "orig_index offset: %u, "
                   "blk_start: " PTR_FORMAT ", "
                   "boundary: " PTR_FORMAT,
-                  _array->offset_array(orig_index),
+                  (uint)_array->offset_array(orig_index),
                   blk_start, boundary));
   for (size_t j = orig_index + 1; j <= end_index; j++) {
     assert(_array->offset_array(j) > 0 &&
            _array->offset_array(j) <=
              (u_char) (N_words+BlockOffsetArray::N_powers-1),
            err_msg("offset array should have been set - "
-                   UINT32_FORMAT " not > 0 OR "
-                   UINT32_FORMAT " not <= " UINT32_FORMAT,
-                   _array->offset_array(j),
-                   _array->offset_array(j),
-                   (u_char) (N_words+BlockOffsetArray::N_powers-1)));
+                   "%u not > 0 OR %u not <= %u",
+                   (uint) _array->offset_array(j),
+                   (uint) _array->offset_array(j),
+                   (uint) (N_words+BlockOffsetArray::N_powers-1)));
   }
 #endif
 }

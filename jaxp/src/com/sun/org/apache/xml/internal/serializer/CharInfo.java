@@ -22,6 +22,11 @@
  */
 package com.sun.org.apache.xml.internal.serializer;
 
+import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
+import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
+import com.sun.org.apache.xml.internal.serializer.utils.SystemIDResolver;
+import com.sun.org.apache.xml.internal.serializer.utils.Utils;
+import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,18 +34,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import javax.xml.transform.TransformerException;
-
-import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
-import com.sun.org.apache.xml.internal.serializer.utils.SystemIDResolver;
-import com.sun.org.apache.xml.internal.serializer.utils.Utils;
-import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 
 /**
  * This class provides services that tell if a character should have
@@ -176,13 +173,19 @@ final class CharInfo
         //      file
         //   3) try treating the resource a URI
 
-        if (internal) {
-            try {
+        try {
+            if (internal) {
                 // Load entity property files by using PropertyResourceBundle,
                 // cause of security issure for applets
                 entities = PropertyResourceBundle.getBundle(entitiesResource);
-            } catch (Exception e) {}
-        }
+            } else {
+                ClassLoader cl = SecuritySupport.getContextClassLoader();
+                if (cl != null) {
+                    entities = PropertyResourceBundle.getBundle(entitiesResource,
+                            Locale.getDefault(), cl);
+                }
+            }
+        } catch (Exception e) {}
 
         if (entities != null) {
             Enumeration keys = entities.getKeys();
@@ -198,6 +201,7 @@ final class CharInfo
             set(S_CARRIAGERETURN);
         } else {
             InputStream is = null;
+            String err = null;
 
             // Load user specified resource file by using URL loading, it
             // requires a valid URI as parameter
@@ -205,18 +209,22 @@ final class CharInfo
                 if (internal) {
                     is = CharInfo.class.getResourceAsStream(entitiesResource);
                 } else {
-                    ClassLoader cl = ObjectFactory.findClassLoader();
-                    if (cl == null) {
-                        is = ClassLoader.getSystemResourceAsStream(entitiesResource);
-                    } else {
-                        is = cl.getResourceAsStream(entitiesResource);
+                    ClassLoader cl = SecuritySupport.getContextClassLoader();
+                    if (cl != null) {
+                        try {
+                            is = cl.getResourceAsStream(entitiesResource);
+                        } catch (Exception e) {
+                            err = e.getMessage();
+                        }
                     }
 
                     if (is == null) {
                         try {
                             URL url = new URL(entitiesResource);
                             is = url.openStream();
-                        } catch (Exception e) {}
+                        } catch (Exception e) {
+                            err = e.getMessage();
+                        }
                     }
                 }
 
@@ -224,7 +232,7 @@ final class CharInfo
                     throw new RuntimeException(
                         Utils.messages.createMessage(
                             MsgKey.ER_RESOURCE_COULD_NOT_FIND,
-                            new Object[] {entitiesResource, entitiesResource}));
+                            new Object[] {entitiesResource, err}));
                 }
 
                 // Fix Bugzilla#4000: force reading in UTF-8
@@ -456,64 +464,56 @@ final class CharInfo
         return isCleanTextASCII[value];
     }
 
-//  In the future one might want to use the array directly and avoid
-//  the method call, but I think the JIT alreay inlines this well enough
-//  so don't do it (for now) - bjm
-//    public final boolean[] getASCIIClean()
-//    {
-//        return isCleanTextASCII;
-//    }
-
-
-    private static CharInfo getCharInfoBasedOnPrivilege(
-        final String entitiesFileName, final String method,
-        final boolean internal){
-            return (CharInfo) AccessController.doPrivileged(
-                new PrivilegedAction() {
-                        public Object run() {
-                            return new CharInfo(entitiesFileName,
-                              method, internal);}
-            });
-    }
 
     /**
-     * Factory that reads in a resource file that describes the mapping of
-     * characters to entity references.
+     * Read an internal resource file that describes the mapping of
+     * characters to entity references; Construct a CharInfo object.
      *
-     * Resource files must be encoded in UTF-8 and have a format like:
-     * <pre>
-     * # First char # is a comment
-     * Entity numericValue
-     * quot 34
-     * amp 38
-     * </pre>
-     * (Note: Why don't we just switch to .properties files? Oct-01 -sc)
-     *
-     * @param entitiesResource Name of entities resource file that should
-     * be loaded, which describes that mapping of characters to entity references.
-     * @param method the output method type, which should be one of "xml", "html", "text"...
+     * @param entitiesFileName Name of entities resource file that should
+     * be loaded, which describes the mapping of characters to entity references.
+     * @param method the output method type, which should be one of "xml", "html", and "text".
+     * @return an instance of CharInfo
      *
      * @xsl.usage internal
      */
-    static CharInfo getCharInfo(String entitiesFileName, String method)
+    static CharInfo getCharInfoInternal(String entitiesFileName, String method)
     {
         CharInfo charInfo = (CharInfo) m_getCharInfoCache.get(entitiesFileName);
         if (charInfo != null) {
             return charInfo;
         }
 
-        // try to load it internally - cache
-        try {
-            charInfo = getCharInfoBasedOnPrivilege(entitiesFileName,
-                                        method, true);
-            m_getCharInfoCache.put(entitiesFileName, charInfo);
-            return charInfo;
-        } catch (Exception e) {}
+        charInfo = new CharInfo(entitiesFileName, method, true);
+        m_getCharInfoCache.put(entitiesFileName, charInfo);
+        return charInfo;
+    }
 
-        // try to load it externally - do not cache
+    /**
+     * Constructs a CharInfo object using the following process to try reading
+     * the entitiesFileName parameter:
+     *
+     *   1) attempt to load it as a ResourceBundle
+     *   2) try using the class loader to find the specified file
+     *   3) try opening it as an URI
+     *
+     * In case of 2 and 3, the resource file must be encoded in UTF-8 and have the
+     * following format:
+     * <pre>
+     * # First char # is a comment
+     * Entity numericValue
+     * quot 34
+     * amp 38
+     * </pre>
+     *
+     * @param entitiesFileName Name of entities resource file that should
+     * be loaded, which describes the mapping of characters to entity references.
+     * @param method the output method type, which should be one of "xml", "html", and "text".
+     * @return an instance of CharInfo
+     */
+    static CharInfo getCharInfo(String entitiesFileName, String method)
+    {
         try {
-            return getCharInfoBasedOnPrivilege(entitiesFileName,
-                                method, false);
+            return new CharInfo(entitiesFileName, method, false);
         } catch (Exception e) {}
 
         String absoluteEntitiesFileName;
@@ -530,8 +530,7 @@ final class CharInfo
             }
         }
 
-        return getCharInfoBasedOnPrivilege(entitiesFileName,
-                                method, false);
+        return new CharInfo(absoluteEntitiesFileName, method, false);
     }
 
     /** Table of user-specified char infos. */

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4486841 7040220 7096080
+ * @bug 4486841 7040220 7096080 8039751
  * @summary Test UTF-8 charset
  */
 
@@ -291,12 +291,16 @@ public class TestUTF8 {
         {1, (byte)0xE0, (byte)0xC0, (byte)0xBF }, // invalid second byte
         {2, (byte)0xE0, (byte)0xA0, (byte)0x7F }, // invalid third byte
         {2, (byte)0xE0, (byte)0xA0, (byte)0xC0 }, // invalid third byte
+        {2, (byte)0xE1, (byte)0x80, (byte)0x42},  // invalid third byte
+
         {1, (byte)0xFF, (byte)0xFF, (byte)0xFF }, // all ones
         {1, (byte)0xE0, (byte)0xC0, (byte)0x80 }, // invalid second byte
         {1, (byte)0xE0, (byte)0x80, (byte)0xC0 }, // invalid first byte
         {1, (byte)0xE0, (byte)0x41,},             // invalid second byte & 2 bytes
+        {1, (byte)0xE1, (byte)0x40,},             // invalid second byte & 2 bytes
         {3, (byte)0xED, (byte)0xAE, (byte)0x80 }, // 3 bytes surrogate
         {3, (byte)0xED, (byte)0xB0, (byte)0x80 }, // 3 bytes surrogate
+
 
 
         // Four-byte sequences
@@ -322,6 +326,32 @@ public class TestUTF8 {
         {1, (byte)0xF4, (byte)0x90, (byte)0x80, (byte)0xC0 }, // out-range 4-byte
         {1, (byte)0xF4, (byte)0xC0, (byte)0x80, (byte)0xC0 }, // out-range 4-byte
         {1, (byte)0xF5, (byte)0x80, (byte)0x80, (byte)0xC0 }, // out-range 4-byte
+
+        // #8039751
+        {1, (byte)0xF6, (byte)0x80, (byte)0x80, (byte)0x80 }, // out-range 1st byte
+        {1, (byte)0xF6, (byte)0x80, (byte)0x80,  },
+        {1, (byte)0xF6, (byte)0x80, },
+        {1, (byte)0xF6, },
+        {1, (byte)0xF5, (byte)0x80, (byte)0x80, (byte)0x80 }, // out-range 1st byte
+        {1, (byte)0xF5, (byte)0x80, (byte)0x80,  },
+        {1, (byte)0xF5, (byte)0x80,  },
+        {1, (byte)0xF5  },
+
+        {1, (byte)0xF4, (byte)0x90, (byte)0x80, (byte)0x80 }, // out-range 2nd byte
+        {1, (byte)0xF4, (byte)0x90, (byte)0x80 },
+        {1, (byte)0xF4, (byte)0x90 },
+
+        {1, (byte)0xF4, (byte)0x7f, (byte)0x80, (byte)0x80 }, // out-range/ascii 2nd byte
+        {1, (byte)0xF4, (byte)0x7f, (byte)0x80 },
+        {1, (byte)0xF4, (byte)0x7f },
+
+        {1, (byte)0xF0, (byte)0x80, (byte)0x80, (byte)0x80 }, // out-range 2nd byte
+        {1, (byte)0xF0, (byte)0x80, (byte)0x80 },
+        {1, (byte)0xF0, (byte)0x80 },
+
+        {1, (byte)0xF0, (byte)0xc0, (byte)0x80, (byte)0x80 }, // out-range 2nd byte
+        {1, (byte)0xF0, (byte)0xc0, (byte)0x80 },
+        {1, (byte)0xF0, (byte)0xc0 },
 
         // Five-byte sequences
         {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80},  // invalid first byte
@@ -553,7 +583,6 @@ public class TestUTF8 {
         check4ByteSurrs("UTF-8");
         checkMalformed("UTF-8", malformed);
         checkUnderOverflow("UTF-8");
-
         checkRoundtrip("CESU-8");
         check6ByteSurrs("CESU-8");
         checkMalformed("CESU-8", malformed_cesu8);

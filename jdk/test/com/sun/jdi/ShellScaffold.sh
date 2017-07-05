@@ -199,30 +199,26 @@ findPid()
         return 1
     fi
 
-    if [ -z "$isWin98" ] ; then
-        if [ "$osname" = SunOS ] ; then
-            # Solaris and OpenSolaris use pgrep and not ps in psCmd
-            findPidCmd="$psCmd"
-        elif [ "$osname" = AIX ] ; then
-            findPidCmd="$psCmd"
-        else
+    case "$osname" in
+        SunOS | AIX)
+            $psCmd | $grep '^ *'"$1 " > $devnull 2>&1
+            res=$?
+            ;;
+        Windows* | CYGWIN*)
+            # Don't use ps on cygwin since it sometimes misses
+            # some processes (!).
+            tasklist /NH | $grep " $1 " > $devnull 2>&1
+            res=$?
+            ;;
+       *)
             #   Never use plain 'ps', which requires a "controlling terminal"
             #     and will fail  with a "ps: no controlling terminal" error.
             #     Running under 'rsh' will cause this ps error.
-            # cygwin ps puts an I in column 1 for some reason.
-            findPidCmd="$psCmd -e"
-        fi
-        $findPidCmd | $grep '^I* *'"$1 " > $devnull 2>&1
-        return $?
-    fi
-
-    # mks 6.2a on win98 has $! getting a negative
-    # number and in ps, it shows up as 0x...
-    # Thus, we can't search in ps output for 
-    # PIDs gotten via $!
-    # We don't know if it is running or not - assume it is.
-    # We don't really care about win98 anymore.
-    return 0
+            $psCmd -e | $grep '^ *'"$1 " > $devnull 2>&1
+            res=$?
+            ;;
+    esac
+    return $res
 }
 
 setup()
@@ -252,16 +248,10 @@ setup()
 
     ulimitCmd=
     osname=`uname -s`
-    isWin98=
     isCygwin=
     case "$osname" in
         Windows* | CYGWIN*)
             devnull=NUL
-            if [ "$osname" = Windows_98 -o "$osname" = Windows_ME ]; then
-                isWin98=1
-                debuggeeKeyword='we_cant_kill_debuggees_on_win98'
-                jdbKeyword='jdb\.exe'
-            fi
             case "$osname" in
                 CYGWIN*)
                     isCygwin=1
@@ -772,7 +762,7 @@ waitForJdbMsg()
         sleep ${sleep_seconds}
         findPid $topPid
         if [ $? != 0 ] ; then
-            # Top process is dead.  We better die too
+            echo "--Top process ($topPid) is dead.  We better die too" >&2
             dojstack
             exit 1
         fi
@@ -977,19 +967,12 @@ waitForFinish()
             break
         fi
 
-        if [ ! -z "$isWin98" ] ; then
-            $psCmd | $grep -i 'JDB\.EXE' >$devnull 2>&1
-            if [ $? != 0 ] ; then
-                break
-            fi
-        fi
-
         # (Don't use jdbFailIfPresent here since it is not safe 
         # to call from different processes)
-	$grep -s 'Input stream closed' $jdbOutFile > $devnull 2>&1
-	if [ $? = 0 ] ; then
+        $grep -s 'Input stream closed' $jdbOutFile > $devnull 2>&1
+        if [ $? = 0 ] ; then
             dofail "jdb input stream closed prematurely"
-	fi
+        fi
 
         # If a failure has occured, quit
         if [ -r "$failFile" ] ; then

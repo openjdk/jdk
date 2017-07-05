@@ -159,7 +159,7 @@ import sun.net.spi.nameservice.*;
  * <dl>
  * <dt><b>networkaddress.cache.ttl</b></dt>
  * <dd>Indicates the caching policy for successful name lookups from
- * the name service. The value is specified as as integer to indicate
+ * the name service. The value is specified as an integer to indicate
  * the number of seconds to cache the successful lookup. The default
  * setting is to cache for an implementation specific period of time.
  * <p>
@@ -167,7 +167,7 @@ import sun.net.spi.nameservice.*;
  * </dd>
  * <dt><b>networkaddress.cache.negative.ttl</b> (default: 10)</dt>
  * <dd>Indicates the caching policy for un-successful name lookups
- * from the name service. The value is specified as as integer to
+ * from the name service. The value is specified as an integer to
  * indicate the number of seconds to cache the failure for
  * un-successful lookups.
  * <p>

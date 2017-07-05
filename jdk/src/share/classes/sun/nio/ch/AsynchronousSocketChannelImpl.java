@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 import sun.net.NetHooks;
+import sun.net.ExtendedOptionsImpl;
 
 /**
  * Base implementation of AsynchronousSocketChannel
@@ -508,6 +509,9 @@ abstract class AsynchronousSocketChannelImpl
             set.add(StandardSocketOptions.SO_KEEPALIVE);
             set.add(StandardSocketOptions.SO_REUSEADDR);
             set.add(StandardSocketOptions.TCP_NODELAY);
+            if (ExtendedOptionsImpl.flowSupported()) {
+                set.add(jdk.net.ExtendedSocketOptions.SO_FLOW_SLA);
+            }
             return Collections.unmodifiableSet(set);
         }
     }
