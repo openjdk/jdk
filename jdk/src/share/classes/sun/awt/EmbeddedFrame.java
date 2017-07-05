@@ -40,6 +40,7 @@ import java.beans.PropertyChangeEvent;
 import java.util.Set;
 import java.awt.AWTKeyStroke;
 import java.applet.Applet;
+import javax.tools.annotation.GenerateNativeHeader;
 import sun.applet.AppletPanel;
 
 /**
@@ -59,6 +60,8 @@ import sun.applet.AppletPanel;
  *
  * @author      Thomas Ball
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public abstract class EmbeddedFrame extends Frame
                           implements KeyEventDispatcher, PropertyChangeListener {
 

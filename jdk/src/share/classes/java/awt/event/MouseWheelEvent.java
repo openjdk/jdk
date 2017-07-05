@@ -27,6 +27,8 @@ package java.awt.event;
 
 import java.awt.Component;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * An event which indicates that the mouse wheel was rotated in a component.
  * <P>
@@ -97,6 +99,8 @@ import java.awt.Component;
  * @since 1.4
  */
 
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class MouseWheelEvent extends MouseEvent {
 
     /**

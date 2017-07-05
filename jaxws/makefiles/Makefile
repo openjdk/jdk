@@ -23,11 +23,12 @@
 # questions.
 #
 
+# This must be the first rule
+default: all
+
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-
-default: all
 
 JAVAC_JARS ?= -Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar \
 		-jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar

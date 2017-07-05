@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,12 +193,17 @@ final class PropMap implements SortedMap<String, String>  {
     boolean setBoolean(String s, boolean val) {
         return toBoolean(setProperty(s, String.valueOf(val)));
     }
-
     int toInteger(String val) {
-        if (val == null)  return 0;
+        return toInteger(val, 0);
+    }
+    int toInteger(String val, int def) {
+        if (val == null)  return def;
         if (Pack200.Packer.TRUE.equals(val))   return 1;
         if (Pack200.Packer.FALSE.equals(val))  return 0;
         return Integer.parseInt(val);
+    }
+    int getInteger(String s, int def) {
+        return toInteger(getProperty(s), def);
     }
     int getInteger(String s) {
         return toInteger(getProperty(s));
