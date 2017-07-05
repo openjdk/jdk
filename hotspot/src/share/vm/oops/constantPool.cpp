@@ -2095,12 +2095,10 @@ void ConstantPool::verify_on(outputStream* st) {
     CPSlot entry = slot_at(i);
     if (tag.is_klass()) {
       if (entry.is_resolved()) {
-        guarantee(entry.get_klass()->is_metadata(), "should be metadata");
         guarantee(entry.get_klass()->is_klass(),    "should be klass");
       }
     } else if (tag.is_unresolved_klass()) {
       if (entry.is_resolved()) {
-        guarantee(entry.get_klass()->is_metadata(), "should be metadata");
         guarantee(entry.get_klass()->is_klass(),    "should be klass");
       }
     } else if (tag.is_symbol()) {
@@ -2112,13 +2110,11 @@ void ConstantPool::verify_on(outputStream* st) {
   if (cache() != NULL) {
     // Note: cache() can be NULL before a class is completely setup or
     // in temporary constant pools used during constant pool merging
-    guarantee(cache()->is_metadata(),          "should be metadata");
     guarantee(cache()->is_constantPoolCache(), "should be constant pool cache");
   }
   if (pool_holder() != NULL) {
     // Note: pool_holder() can be NULL in temporary constant pools
     // used during constant pool merging
-    guarantee(pool_holder()->is_metadata(), "should be metadata");
     guarantee(pool_holder()->is_klass(),    "should be klass");
   }
 }

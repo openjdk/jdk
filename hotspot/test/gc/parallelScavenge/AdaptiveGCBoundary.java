@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,35 +19,43 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "oops/compiledICHolder.hpp"
-#include "oops/klass.hpp"
-#include "oops/method.hpp"
-#include "oops/oop.inline2.hpp"
+/**
+ * @test AdaptiveGCBoundary
+ * @summary UseAdaptiveGCBoundary is broken
+ * @bug 8014546
+ * @key gc
+ * @key regression
+ * @library /testlibrary
+ * @run main/othervm AdaptiveGCBoundary
+ * @author jon.masamitsu@oracle.com
+ */
 
-volatile int CompiledICHolder::_live_count;
-volatile int CompiledICHolder::_live_not_claimed_count;
+import com.oracle.java.testlibrary.*;
 
+public class AdaptiveGCBoundary {
+  public static void main(String args[]) throws Exception {
 
-// Printing
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+      "-showversion",
+      "-XX:+UseParallelGC",
+      "-XX:+UseAdaptiveGCBoundary",
+      "-XX:+PrintCommandLineFlags",
+      SystemGCCaller.class.getName()
+      );
 
-void CompiledICHolder::print_on(outputStream* st) const {
-  st->print("%s", internal_name());
-  st->print(" - method: "); holder_method()->print_value_on(st); st->cr();
-  st->print(" - klass:  "); holder_klass()->print_value_on(st); st->cr();
-}
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-void CompiledICHolder::print_value_on(outputStream* st) const {
-  st->print("%s", internal_name());
-}
+    output.shouldContain("+UseAdaptiveGCBoundary");
 
+    output.shouldNotContain("error");
 
-// Verification
-
-void CompiledICHolder::verify_on(outputStream* st) {
-  guarantee(holder_method()->is_method(), "should be method");
-  guarantee(holder_klass()->is_klass(),   "should be klass");
+    output.shouldHaveExitValue(0);
+  }
+  static class SystemGCCaller {
+    public static void main(String [] args) {
+      System.gc();
+    }
+  }
 }
