@@ -52,10 +52,8 @@ import java.io.IOException;
  *   </tr>
  * </table>
  * </blockquote>
- * <p> The {@link #getAttribute getAttribute} or {@link #readAttributes
- * readAttributes(String,String[])} methods may be used to read any of these
- * attributes as if by invoking the {@link #readAttributes readAttributes()}
- * method.
+ * <p> The {@link java.nio.file.FileStore#getAttribute getAttribute} method may
+ * be used to read any of these attributes.
  *
  * @since 1.7
  */

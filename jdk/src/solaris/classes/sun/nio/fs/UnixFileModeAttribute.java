@@ -42,10 +42,7 @@ class UnixFileModeAttribute {
     static final int TEMPFILE_PERMISSIONS =
         UnixConstants.S_IRUSR | UnixConstants.S_IWUSR | UnixConstants.S_IXUSR;
 
-    private Set<PosixFilePermission> perms;
-
-    UnixFileModeAttribute() {
-        perms = Collections.emptySet();
+    private UnixFileModeAttribute() {
     }
 
     static int toUnixMode(Set<PosixFilePermission> perms) {

@@ -86,14 +86,14 @@ public class ISO2022_CN
 
         private static final Charset gb2312 = new EUC_CN();
         private static final Charset cns = new EUC_TW();
-        private final EUC_CN.Decoder gb2312Decoder;
+        private final DoubleByte.Decoder gb2312Decoder;
         private final EUC_TW.Decoder cnsDecoder;
 
         Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
             shiftOut = false;
             currentSODesig = SODesigGB;
-            gb2312Decoder = (EUC_CN.Decoder)gb2312.newDecoder();
+            gb2312Decoder = (DoubleByte.Decoder)gb2312.newDecoder();
             cnsDecoder = (EUC_TW.Decoder)cns.newDecoder();
         }
 

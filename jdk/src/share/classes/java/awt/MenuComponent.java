@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
+import sun.awt.AWTAccessor;
 import javax.accessibility.*;
 
 /**
@@ -108,6 +109,22 @@ public abstract class MenuComponent implements java.io.Serializable {
      * JDK 1.1 serialVersionUID
      */
     private static final long serialVersionUID = -4536902356223894379L;
+
+    static {
+        AWTAccessor.setMenuComponentAccessor(
+            new AWTAccessor.MenuComponentAccessor() {
+                public AppContext getAppContext(MenuComponent menuComp) {
+                    return menuComp.appContext;
+                }
+                public void setAppContext(MenuComponent menuComp,
+                                          AppContext appContext) {
+                    menuComp.appContext = appContext;
+                }
+                public MenuContainer getParent(MenuComponent menuComp) {
+                    return menuComp.parent;
+                }
+            });
+    }
 
     /**
      * Creates a <code>MenuComponent</code>.

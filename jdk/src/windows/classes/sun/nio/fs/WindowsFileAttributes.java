@@ -65,7 +65,6 @@ class WindowsFileAttributes
     private static final short OFFSETOF_FILE_INFORMATION_VOLSERIALNUM    = 28;
     private static final short OFFSETOF_FILE_INFORMATION_SIZEHIGH        = 32;
     private static final short OFFSETOF_FILE_INFORMATION_SIZELOW         = 36;
-    private static final short OFFSETOF_FILE_INFORMATION_NUMLINKS        = 40;
     private static final short OFFSETOF_FILE_INFORMATION_INDEXHIGH       = 44;
     private static final short OFFSETOF_FILE_INFORMATION_INDEXLOW        = 48;
 
@@ -110,6 +109,9 @@ class WindowsFileAttributes
     private static final short OFFSETOF_FIND_DATA_SIZELOW = 32;
     private static final short OFFSETOF_FIND_DATA_RESERVED0 = 36;
 
+    // used to adjust values between Windows and java epoch
+    private static final long WINDOWS_EPOCH_IN_MICROSECONDS = -11644473600000000L;
+
     // indicates if accurate metadata is required (interesting on NTFS only)
     private static final boolean ensureAccurateMetadata;
     static {
@@ -128,29 +130,33 @@ class WindowsFileAttributes
     private final int reparseTag;
 
     // additional attributes when using GetFileInformationByHandle
-    private final int linkCount;
     private final int volSerialNumber;
     private final int fileIndexHigh;
     private final int fileIndexLow;
 
     /**
      * Convert 64-bit value representing the number of 100-nanosecond intervals
-     * since January 1, 1601 to java time.
+     * since January 1, 1601 to a FileTime.
      */
-    private static long toJavaTime(long time) {
-        time /= 10000L;
-        time -= 11644473600000L;
-        return time;
+    static FileTime toFileTime(long time) {
+        // 100ns -> us
+        time /= 10L;
+        // adjust to java epoch
+        time += WINDOWS_EPOCH_IN_MICROSECONDS;
+        return FileTime.from(time, TimeUnit.MICROSECONDS);
     }
 
     /**
-     * Convert java time to 64-bit value representing the number of 100-nanosecond
+     * Convert FileTime to 64-bit value representing the number of 100-nanosecond
      * intervals since January 1, 1601.
      */
-    static long toWindowsTime(long time) {
-        time += 11644473600000L;
-        time *= 10000L;
-        return time;
+    static long toWindowsTime(FileTime time) {
+        long value = time.to(TimeUnit.MICROSECONDS);
+        // adjust to Windows epoch+= 11644473600000000L;
+        value -= WINDOWS_EPOCH_IN_MICROSECONDS;
+        // us -> 100ns
+        value *= 10L;
+        return value;
     }
 
     /**
@@ -162,7 +168,6 @@ class WindowsFileAttributes
                                   long lastWriteTime,
                                   long size,
                                   int reparseTag,
-                                  int linkCount,
                                   int volSerialNumber,
                                   int fileIndexHigh,
                                   int fileIndexLow)
@@ -173,7 +178,6 @@ class WindowsFileAttributes
         this.lastWriteTime = lastWriteTime;
         this.size = size;
         this.reparseTag = reparseTag;
-        this.linkCount = linkCount;
         this.volSerialNumber = volSerialNumber;
         this.fileIndexHigh = fileIndexHigh;
         this.fileIndexLow = fileIndexLow;
@@ -184,15 +188,11 @@ class WindowsFileAttributes
      */
     private static WindowsFileAttributes fromFileInformation(long address, int reparseTag) {
         int fileAttrs = unsafe.getInt(address + OFFSETOF_FILE_INFORMATION_ATTRIBUTES);
-        long creationTime =
-            toJavaTime(unsafe.getLong(address + OFFSETOF_FILE_INFORMATION_CREATETIME));
-        long lastAccessTime =
-            toJavaTime(unsafe.getLong(address + OFFSETOF_FILE_INFORMATION_LASTACCESSTIME));
-        long lastWriteTime =
-            toJavaTime(unsafe.getLong(address + OFFSETOF_FILE_INFORMATION_LASTWRITETIME));
+        long creationTime = unsafe.getLong(address + OFFSETOF_FILE_INFORMATION_CREATETIME);
+        long lastAccessTime = unsafe.getLong(address + OFFSETOF_FILE_INFORMATION_LASTACCESSTIME);
+        long lastWriteTime = unsafe.getLong(address + OFFSETOF_FILE_INFORMATION_LASTWRITETIME);
         long size = ((long)(unsafe.getInt(address + OFFSETOF_FILE_INFORMATION_SIZEHIGH)) << 32)
             + (unsafe.getInt(address + OFFSETOF_FILE_INFORMATION_SIZELOW) & 0xFFFFFFFFL);
-        int linkCount = unsafe.getInt(address + OFFSETOF_FILE_INFORMATION_NUMLINKS);
         int volSerialNumber = unsafe.getInt(address + OFFSETOF_FILE_INFORMATION_VOLSERIALNUM);
         int fileIndexHigh = unsafe.getInt(address + OFFSETOF_FILE_INFORMATION_INDEXHIGH);
         int fileIndexLow = unsafe.getInt(address + OFFSETOF_FILE_INFORMATION_INDEXLOW);
@@ -202,7 +202,6 @@ class WindowsFileAttributes
                                          lastWriteTime,
                                          size,
                                          reparseTag,
-                                         linkCount,
                                          volSerialNumber,
                                          fileIndexHigh,
                                          fileIndexLow);
@@ -213,12 +212,9 @@ class WindowsFileAttributes
      */
     private static WindowsFileAttributes fromFileAttributeData(long address, int reparseTag) {
         int fileAttrs = unsafe.getInt(address + OFFSETOF_FILE_ATTRIBUTE_DATA_ATTRIBUTES);
-        long creationTime =
-            toJavaTime(unsafe.getLong(address + OFFSETOF_FILE_ATTRIBUTE_DATA_CREATETIME));
-        long lastAccessTime =
-            toJavaTime(unsafe.getLong(address + OFFSETOF_FILE_ATTRIBUTE_DATA_LASTACCESSTIME));
-        long lastWriteTime =
-            toJavaTime(unsafe.getLong(address + OFFSETOF_FILE_ATTRIBUTE_DATA_LASTWRITETIME));
+        long creationTime = unsafe.getLong(address + OFFSETOF_FILE_ATTRIBUTE_DATA_CREATETIME);
+        long lastAccessTime = unsafe.getLong(address + OFFSETOF_FILE_ATTRIBUTE_DATA_LASTACCESSTIME);
+        long lastWriteTime = unsafe.getLong(address + OFFSETOF_FILE_ATTRIBUTE_DATA_LASTWRITETIME);
         long size = ((long)(unsafe.getInt(address + OFFSETOF_FILE_ATTRIBUTE_DATA_SIZEHIGH)) << 32)
             + (unsafe.getInt(address + OFFSETOF_FILE_ATTRIBUTE_DATA_SIZELOW) & 0xFFFFFFFFL);
         return new WindowsFileAttributes(fileAttrs,
@@ -227,7 +223,6 @@ class WindowsFileAttributes
                                          lastWriteTime,
                                          size,
                                          reparseTag,
-                                         1,  // linkCount
                                          0,  // volSerialNumber
                                          0,  // fileIndexHigh
                                          0); // fileIndexLow
@@ -246,12 +241,9 @@ class WindowsFileAttributes
      */
     static WindowsFileAttributes fromFindData(long address) {
         int fileAttrs = unsafe.getInt(address + OFFSETOF_FIND_DATA_ATTRIBUTES);
-        long creationTime =
-            toJavaTime(unsafe.getLong(address + OFFSETOF_FIND_DATA_CREATETIME));
-        long lastAccessTime =
-            toJavaTime(unsafe.getLong(address + OFFSETOF_FIND_DATA_LASTACCESSTIME));
-        long lastWriteTime =
-            toJavaTime(unsafe.getLong(address + OFFSETOF_FIND_DATA_LASTWRITETIME));
+        long creationTime = unsafe.getLong(address + OFFSETOF_FIND_DATA_CREATETIME);
+        long lastAccessTime = unsafe.getLong(address + OFFSETOF_FIND_DATA_LASTACCESSTIME);
+        long lastWriteTime = unsafe.getLong(address + OFFSETOF_FIND_DATA_LASTWRITETIME);
         long size = ((long)(unsafe.getInt(address + OFFSETOF_FIND_DATA_SIZEHIGH)) << 32)
             + (unsafe.getInt(address + OFFSETOF_FIND_DATA_SIZELOW) & 0xFFFFFFFFL);
         int reparseTag = ((fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) != 0) ?
@@ -262,7 +254,6 @@ class WindowsFileAttributes
                                          lastWriteTime,
                                          size,
                                          reparseTag,
-                                         1,  // linkCount
                                          0,  // volSerialNumber
                                          0,  // fileIndexHigh
                                          0); // fileIndexLow
@@ -375,28 +366,18 @@ class WindowsFileAttributes
     }
 
     @Override
-    public long lastModifiedTime() {
-        return (lastWriteTime >= 0L) ? lastWriteTime : 0L;
+    public FileTime lastModifiedTime() {
+        return toFileTime(lastWriteTime);
     }
 
     @Override
-    public long lastAccessTime() {
-        return (lastAccessTime >= 0L) ? lastAccessTime : 0L;
+    public FileTime lastAccessTime() {
+        return toFileTime(lastAccessTime);
     }
 
     @Override
-    public long creationTime() {
-        return (creationTime >= 0L) ? creationTime : 0L;
-    }
-
-    @Override
-    public TimeUnit resolution() {
-        return TimeUnit.MILLISECONDS;
-    }
-
-    @Override
-    public int linkCount() {
-        return linkCount;
+    public FileTime creationTime() {
+        return toFileTime(creationTime);
     }
 
     @Override

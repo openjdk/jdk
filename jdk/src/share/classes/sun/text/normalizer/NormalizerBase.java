@@ -1598,15 +1598,34 @@ public final class NormalizerBase implements Cloneable {
      * @param options   the optional features to be enabled.
      */
     public static String normalize(String str, Normalizer.Form form, int options) {
+        int len = str.length();
+        boolean asciiOnly = true;
+        if (len < 80) {
+            for (int i = 0; i < len; i++) {
+                if (str.charAt(i) > 127) {
+                    asciiOnly = false;
+                    break;
+                }
+            }
+        } else {
+            char[] a = str.toCharArray();
+            for (int i = 0; i < len; i++) {
+                if (a[i] > 127) {
+                    asciiOnly = false;
+                    break;
+                }
+            }
+        }
+
         switch (form) {
         case NFC :
-            return NFC.normalize(str, options);
+            return asciiOnly ? str : NFC.normalize(str, options);
         case NFD :
-            return NFD.normalize(str, options);
+            return asciiOnly ? str : NFD.normalize(str, options);
         case NFKC :
-            return NFKC.normalize(str, options);
+            return asciiOnly ? str : NFKC.normalize(str, options);
         case NFKD :
-            return NFKD.normalize(str, options);
+            return asciiOnly ? str : NFKD.normalize(str, options);
         }
 
         throw new IllegalArgumentException("Unexpected normalization form: " +

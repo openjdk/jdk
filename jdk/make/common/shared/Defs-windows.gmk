@@ -520,7 +520,7 @@ ifdef ALT_INSTALL_MSSDK
   xALT_INSTALL_MSSDK :="$(subst \,/,$(ALT_INSTALL_MSSDK))"
   INSTALL_MSSDK      :=$(call FullPath,$(xALT_INSTALL_MSSDK))
 else
-  INSTALL_MSSDK      :=$(_psdk)
+  INSTALL_MSSDK      :=$(_ms_sdk)
 endif
 INSTALL_MSSDK:=$(call AltCheckSpaces,INSTALL_MSSDK)
 
@@ -631,7 +631,12 @@ JDK_IMPORT_PATH:=$(call AltCheckValue,JDK_IMPORT_PATH)
 ifdef ALT_HOTSPOT_IMPORT_PATH
   HOTSPOT_IMPORT_PATH :=$(call FullPath,$(ALT_HOTSPOT_IMPORT_PATH))
 else
-  HOTSPOT_IMPORT_PATH =$(JDK_IMPORT_PATH)
+  # Default locations include the current $OUTPUTDIR, RE Promotions,
+  # and a JDK.  Please be aware the JDK does not include a Kernel VM.
+  _HOTSPOT_IMPORT_PATH1 = $(OUTPUTDIR)/hotspot/import
+  _HOTSPOT_IMPORT_PATH2 = $(PROMOTED_BUILD_DISTDIR)/hotspot/import
+  _HOTSPOT_IMPORT_PATH3 = $(JDK_IMPORT_PATH)
+   HOTSPOT_IMPORT_PATH := $(call DirExists,$(_HOTSPOT_IMPORT_PATH1),$(_HOTSPOT_IMPORT_PATH2),$(_HOTSPOT_IMPORT_PATH3))
 endif
 HOTSPOT_IMPORT_PATH:=$(call AltCheckSpaces,HOTSPOT_IMPORT_PATH)
 HOTSPOT_IMPORT_PATH:=$(call AltCheckValue,HOTSPOT_IMPORT_PATH)
@@ -665,4 +670,3 @@ else
 endif
 HOTSPOT_LIB_PATH:=$(call AltCheckSpaces,HOTSPOT_LIB_PATH)
 HOTSPOT_LIB_PATH:=$(call AltCheckValue,HOTSPOT_LIB_PATH)
-

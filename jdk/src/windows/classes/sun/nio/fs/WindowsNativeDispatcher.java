@@ -379,8 +379,11 @@ class WindowsNativeDispatcher {
      *   CONST FILETIME *lpLastWriteTime
      * )
      */
-    static native void SetFileTime(long handle, long createTime,
-        long lastAccessTime, long lastWriteTime) throws WindowsException;
+    static native void SetFileTime(long handle,
+                                   long createTime,
+                                   long lastAccessTime,
+                                   long lastWriteTime)
+        throws WindowsException;
 
     /**
      * SetEndOfFile(

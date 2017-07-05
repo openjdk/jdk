@@ -64,6 +64,7 @@ FILES_c = \
 	jio.c \
 	logging.c \
 	jni_util.c \
+	jni_util_md.c \
 	jdk_util.c \
 	jdk_util_md.c \
 	check_version.c \

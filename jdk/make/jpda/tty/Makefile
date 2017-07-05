@@ -33,6 +33,12 @@ PRODUCT = jpda
 PROGRAM = jdb
 include $(BUILDDIR)/common/Defs.gmk
 
+# This program must contain a manifest that defines the execution level
+# needed to follow standard Vista User Access Control Guidelines
+# This must be set before Program.gmk is included
+#
+BUILD_MANIFEST=true
+
 #
 # Java Files to compile are found automatically.
 #

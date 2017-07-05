@@ -69,6 +69,7 @@ class SynthColorChooserUI extends BasicColorChooserUI implements
     }
 
     protected void installDefaults() {
+        super.installDefaults();
         updateStyle(chooser);
     }
 
