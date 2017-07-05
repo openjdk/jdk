@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,25 @@ public class ClassToInterfaceConverter implements ClassFilePreprocessor {
             }
         }
         cf.methods = new_methods;
+        //  Convert method tag. Find Methodref, which is not "<init>" and only invoked by other methods
+        //  in the interface, convert it to InterfaceMethodref
+        ArrayList<ClassFile.CpEntry> cpool = new ArrayList<>();
+        for (int i = 0; i < cf.constant_pool.size(); i++) {
+            ClassFile.CpEntry ce = cf.constant_pool.get(i);
+            if (ce instanceof ClassFile.CpMethodRef) {
+                ClassFile.CpMethodRef me = (ClassFile.CpMethodRef)ce;
+                ClassFile.CpNameAndType nameType = (ClassFile.CpNameAndType)cf.constant_pool.get(me.name_and_type_index);
+                ClassFile.CpEntry name = cf.constant_pool.get(nameType.name_index);
+                if (!utf8Matches(name, "<init>") && cf.this_class == me.class_index) {
+                    ClassFile.CpInterfaceMethodRef newEntry = new ClassFile.CpInterfaceMethodRef();
+                    newEntry.class_index = me.class_index;
+                    newEntry.name_and_type_index = me.name_and_type_index;
+                    ce = newEntry;
+                }
+            }
+            cpool.add(ce);
+        }
+        cf.constant_pool = cpool;
     }
 
     public byte[] preprocess(String classname, byte[] bytes) {

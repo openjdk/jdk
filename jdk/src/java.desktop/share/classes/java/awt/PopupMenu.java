@@ -35,11 +35,11 @@ import sun.awt.AWTAccessor;
  * A class that implements a menu which can be dynamically popped up
  * at a specified position within a component.
  * <p>
- * As the inheritance hierarchy implies, a <code>PopupMenu</code>
- *  can be used anywhere a <code>Menu</code> can be used.
- * However, if you use a <code>PopupMenu</code> like a <code>Menu</code>
- * (e.g., you add it to a <code>MenuBar</code>), then you <b>cannot</b>
- * call <code>show</code> on that <code>PopupMenu</code>.
+ * As the inheritance hierarchy implies, a {@code PopupMenu}
+ *  can be used anywhere a {@code Menu} can be used.
+ * However, if you use a {@code PopupMenu} like a {@code Menu}
+ * (e.g., you add it to a {@code MenuBar}), then you <b>cannot</b>
+ * call {@code show} on that {@code PopupMenu}.
  *
  * @author      Amy Fowler
  */
@@ -77,7 +77,7 @@ public class PopupMenu extends Menu {
     /**
      * Creates a new popup menu with the specified name.
      *
-     * @param label a non-<code>null</code> string specifying
+     * @param label a non-{@code null} string specifying
      *                the popup menu's label
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
@@ -98,8 +98,8 @@ public class PopupMenu extends Menu {
     }
 
     /**
-     * Constructs a name for this <code>MenuComponent</code>.
-     * Called by <code>getName</code> when the name is <code>null</code>.
+     * Constructs a name for this {@code MenuComponent}.
+     * Called by {@code getName} when the name is {@code null}.
      */
     String constructComponentName() {
         synchronized (PopupMenu.class) {
@@ -139,16 +139,16 @@ public class PopupMenu extends Menu {
      * hierarchy of the popup menu's parent.  Both the origin and the parent
      * must be showing on the screen for this method to be valid.
      * <p>
-     * If this <code>PopupMenu</code> is being used as a <code>Menu</code>
-     * (i.e., it has a non-<code>Component</code> parent),
-     * then you cannot call this method on the <code>PopupMenu</code>.
+     * If this {@code PopupMenu} is being used as a {@code Menu}
+     * (i.e., it has a non-{@code Component} parent),
+     * then you cannot call this method on the {@code PopupMenu}.
      *
      * @param origin the component which defines the coordinate space
      * @param x the x coordinate position to popup the menu
      * @param y the y coordinate position to popup the menu
-     * @exception NullPointerException  if the parent is <code>null</code>
-     * @exception IllegalArgumentException  if this <code>PopupMenu</code>
-     *                has a non-<code>Component</code> parent
+     * @exception NullPointerException  if the parent is {@code null}
+     * @exception IllegalArgumentException  if this {@code PopupMenu}
+     *                has a non-{@code Component} parent
      * @exception IllegalArgumentException if the origin is not in the
      *                parent's hierarchy
      * @exception RuntimeException if the parent is not showing on screen
@@ -196,11 +196,11 @@ public class PopupMenu extends Menu {
 ////////////////
 
     /**
-     * Gets the <code>AccessibleContext</code> associated with this
-     * <code>PopupMenu</code>.
+     * Gets the {@code AccessibleContext} associated with this
+     * {@code PopupMenu}.
      *
-     * @return the <code>AccessibleContext</code> of this
-     *                <code>PopupMenu</code>
+     * @return the {@code AccessibleContext} of this
+     *                {@code PopupMenu}
      * @since 1.3
      */
     public AccessibleContext getAccessibleContext() {

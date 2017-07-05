@@ -32,9 +32,9 @@ import java.util.EventListener;
  * The class that is interested in processing an item event
  * implements this interface. The object created with that
  * class is then registered with a component using the
- * component's <code>addItemListener</code> method. When an
+ * component's {@code addItemListener} method. When an
  * item-selection event occurs, the listener object's
- * <code>itemStateChanged</code> method is invoked.
+ * {@code itemStateChanged} method is invoked.
  *
  * @author Amy Fowler
  *

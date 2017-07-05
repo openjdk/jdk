@@ -142,10 +142,10 @@ public class ICC_ColorSpace extends ColorSpace {
      * This method transforms color values using algorithms designed
      * to produce the best perceptual match between input and output
      * colors.  In order to do colorimetric conversion of color values,
-     * you should use the <code>toCIEXYZ</code>
+     * you should use the {@code toCIEXYZ}
      * method of this color space to first convert from the input
      * color space to the CS_CIEXYZ color space, and then use the
-     * <code>fromCIEXYZ</code> method of the CS_sRGB color space to
+     * {@code fromCIEXYZ} method of the CS_sRGB color space to
      * convert from CS_CIEXYZ to the output color space.
      * See {@link #toCIEXYZ(float[]) toCIEXYZ} and
      * {@link #fromCIEXYZ(float[]) fromCIEXYZ} for further information.
@@ -194,10 +194,10 @@ public class ICC_ColorSpace extends ColorSpace {
      * This method transforms color values using algorithms designed
      * to produce the best perceptual match between input and output
      * colors.  In order to do colorimetric conversion of color values,
-     * you should use the <code>toCIEXYZ</code>
+     * you should use the {@code toCIEXYZ}
      * method of the CS_sRGB color space to first convert from the input
      * color space to the CS_CIEXYZ color space, and then use the
-     * <code>fromCIEXYZ</code> method of this color space to
+     * {@code fromCIEXYZ} method of this color space to
      * convert from CS_CIEXYZ to the output color space.
      * See {@link #toCIEXYZ(float[]) toCIEXYZ} and
      * {@link #fromCIEXYZ(float[]) fromCIEXYZ} for further information.

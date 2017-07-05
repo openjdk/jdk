@@ -41,20 +41,20 @@ import sun.util.logging.PlatformLogger;
  * This class is to let AWT shutdown automatically when a user is done
  * with AWT. It tracks AWT state using the following parameters:
  * <ul>
- * <li><code>peerMap</code> - the map between the existing peer objects
+ * <li>{@code peerMap} - the map between the existing peer objects
  *     and their associated targets
- * <li><code>toolkitThreadBusy</code> - whether the toolkit thread
+ * <li>{@code toolkitThreadBusy} - whether the toolkit thread
  *     is waiting for a new native event to appear in its queue
  *     or is dispatching an event
- * <li><code>busyThreadSet</code> - a set of all the event dispatch
+ * <li>{@code busyThreadSet} - a set of all the event dispatch
  *     threads that are busy at this moment, i.e. those that are not
  *     waiting for a new event to appear in their event queue.
  * </ul><p>
  * AWT is considered to be in ready-to-shutdown state when
- * <code>peerMap</code> is empty and <code>toolkitThreadBusy</code>
- * is false and <code>busyThreadSet</code> is empty.
+ * {@code peerMap} is empty and {@code toolkitThreadBusy}
+ * is false and {@code busyThreadSet} is empty.
  * The internal AWTAutoShutdown logic secures that the single non-daemon
- * thread (<code>blockerThread</code>) is running when AWT is not in
+ * thread ({@code blockerThread}) is running when AWT is not in
  * ready-to-shutdown state. This blocker thread is to prevent AWT from
  * exiting since the toolkit thread is now daemon and all the event
  * dispatch threads are started only when needed. Once it is detected
@@ -229,8 +229,8 @@ public final class AWTAutoShutdown implements Runnable {
     /**
      * Determine whether AWT is currently in ready-to-shutdown state.
      * AWT is considered to be in ready-to-shutdown state if
-     * <code>peerMap</code> is empty and <code>toolkitThreadBusy</code>
-     * is false and <code>busyThreadSet</code> is empty.
+     * {@code peerMap} is empty and {@code toolkitThreadBusy}
+     * is false and {@code busyThreadSet} is empty.
      *
      * @return true if AWT is in ready-to-shutdown state.
      */

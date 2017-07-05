@@ -161,7 +161,7 @@ public class Type1Font extends FileFont {
      * - does basic verification of the file
      * - reads the names (full, family).
      * - determines the style of the font.
-     * @throws FontFormatException - if the font can't be opened
+     * @throws FontFormatException if the font can't be opened
      * or fails verification,  or there's no usable cmap
      */
     public Type1Font(String platname, Object nativeNames, boolean createdCopy)

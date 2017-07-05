@@ -30,7 +30,7 @@ import java.awt.Component;
 /**
  * <p>
  * This interface is implemented by
- * <code>BeanContextChildren</code> that have an AWT <code>Component</code>
+ * {@code BeanContextChildren} that have an AWT {@code Component}
  * associated with them.
  * </p>
  *
@@ -44,10 +44,10 @@ import java.awt.Component;
 public interface BeanContextChildComponentProxy {
 
     /**
-     * Gets the <code>java.awt.Component</code> associated with
-     * this <code>BeanContextChild</code>.
-     * @return the AWT <code>Component</code> associated with
-     * this <code>BeanContextChild</code>
+     * Gets the {@code java.awt.Component} associated with
+     * this {@code BeanContextChild}.
+     * @return the AWT {@code Component} associated with
+     * this {@code BeanContextChild}
      */
 
     Component getComponent();

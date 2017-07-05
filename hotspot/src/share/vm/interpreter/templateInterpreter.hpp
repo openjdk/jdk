@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,13 +193,6 @@ class TemplateInterpreter: public AbstractInterpreter {
 
   // Size of interpreter code.  Max size with JVMTI
   static int InterpreterCodeSize;
-
-#ifdef PPC
- public:
-  // PPC-only: Support abs and sqrt like in compiler.
-  // For others we can use a normal (native) entry.
-  static bool math_entry_available(AbstractInterpreter::MethodKind kind);
-#endif
 };
 
 #endif // !CC_INTERP

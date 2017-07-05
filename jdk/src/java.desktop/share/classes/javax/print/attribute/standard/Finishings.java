@@ -212,8 +212,8 @@ import javax.print.attribute.PrintJobAttribute;
  * <B>IPP Compatibility:</B> Class Finishings encapsulates some of the
  * IPP enum values that can be included in an IPP "finishings" attribute, which
  * is a set of enums. The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  * In IPP Finishings is a multi-value attribute, this API currently allows
  * only one binding to be specified.
@@ -466,7 +466,7 @@ public class Finishings extends EnumSyntax
      * instance.
      * <P>
      * For class Finishings and any vendor-defined subclasses, the
-     * category name is <CODE>"finishings"</CODE>.
+     * category name is {@code "finishings"}.
      *
      * @return  Attribute category name.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 /*
  * @test
  * @bug 8028994
- * @ignore 8147477
- * @ignore 8147494
  * @author Staffan Larsen
  * @library /lib/testlibrary
  * @modules jdk.attach/sun.tools.attach
@@ -73,7 +71,7 @@ public class CheckOrigin {
 
             Map<String, String> env = pb.environment();
             // "UseCMSGC" should be ignored.
-            env.put("_JAVA_OPTIONS", "-XX:+TraceExceptions -XX:+UseCMSGC");
+            env.put("_JAVA_OPTIONS", "-XX:+CheckJNICalls -XX:+UseCMSGC");
             // "UseGOneGC" should be ignored.
             env.put("JAVA_TOOL_OPTIONS", "-XX:+IgnoreUnrecognizedVMOptions "
                 + "-XX:+PrintVMOptions -XX:+UseGOneGC");
@@ -101,7 +99,7 @@ public class CheckOrigin {
             // Set on the command line
             checkOrigin("UseCodeAging", Origin.VM_CREATION);
             // Set in _JAVA_OPTIONS
-            checkOrigin("TraceExceptions", Origin.ENVIRON_VAR);
+            checkOrigin("CheckJNICalls", Origin.ENVIRON_VAR);
             // Set in JAVA_TOOL_OPTIONS
             checkOrigin("IgnoreUnrecognizedVMOptions", Origin.ENVIRON_VAR);
             checkOrigin("PrintVMOptions", Origin.ENVIRON_VAR);

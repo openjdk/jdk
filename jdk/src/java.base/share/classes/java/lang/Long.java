@@ -401,18 +401,6 @@ public final class Long extends Number implements Comparable<Long> {
      * @param offset the offset in the destination buffer to start at
      * @param len the number of characters to write
      */
-     static void formatUnsignedLong(long val, int shift, char[] buf, int offset, int len) {
-        // assert shift > 0 && shift <=5 : "Illegal shift value";
-        // assert offset >= 0 && offset < buf.length : "illegal offset";
-        // assert len > 0 && (offset + len) <= buf.length : "illegal length";
-        int charPos = offset + len;
-        int radix = 1 << shift;
-        int mask = radix - 1;
-        do {
-            buf[--charPos] = Integer.digits[((int) val) & mask];
-            val >>>= shift;
-        } while (charPos > offset);
-    }
 
     /** byte[]/LATIN1 version    */
     static void formatUnsignedLong0(long val, int shift, byte[] buf, int offset, int len) {
@@ -434,6 +422,39 @@ public final class Long extends Number implements Comparable<Long> {
             StringUTF16.putChar(buf, --charPos, Integer.digits[((int) val) & mask]);
             val >>>= shift;
         } while (charPos > offset);
+    }
+
+    static String fastUUID(long lsb, long msb) {
+        if (COMPACT_STRINGS) {
+            byte[] buf = new byte[36];
+            formatUnsignedLong0(lsb,        4, buf, 24, 12);
+            formatUnsignedLong0(lsb >>> 48, 4, buf, 19, 4);
+            formatUnsignedLong0(msb,        4, buf, 14, 4);
+            formatUnsignedLong0(msb >>> 16, 4, buf, 9,  4);
+            formatUnsignedLong0(msb >>> 32, 4, buf, 0,  8);
+
+            buf[23] = '-';
+            buf[18] = '-';
+            buf[13] = '-';
+            buf[8]  = '-';
+
+            return new String(buf, LATIN1);
+        } else {
+            byte[] buf = new byte[72];
+
+            formatUnsignedLong0UTF16(lsb,        4, buf, 24, 12);
+            formatUnsignedLong0UTF16(lsb >>> 48, 4, buf, 19, 4);
+            formatUnsignedLong0UTF16(msb,        4, buf, 14, 4);
+            formatUnsignedLong0UTF16(msb >>> 16, 4, buf, 9,  4);
+            formatUnsignedLong0UTF16(msb >>> 32, 4, buf, 0,  8);
+
+            StringUTF16.putChar(buf, 23, '-');
+            StringUTF16.putChar(buf, 18, '-');
+            StringUTF16.putChar(buf, 13, '-');
+            StringUTF16.putChar(buf,  8, '-');
+
+            return new String(buf, UTF16);
+        }
     }
 
     /**

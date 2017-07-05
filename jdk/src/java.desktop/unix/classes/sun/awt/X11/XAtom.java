@@ -29,28 +29,31 @@ package sun.awt.X11;
  * XAtom is a class that allows you to create and modify X Window properties.
  * An X Atom is an identifier for a property that you can set on any X Window.
  * Standard X Atom are defined by X11 and these atoms are defined in this class
- * for convenience. Common X Atoms like <code>XA_WM_NAME</code> are used to communicate with the
+ * for convenience. Common X Atoms like {@code XA_WM_NAME} are used to communicate with the
  * Window manager to let it know the Window name. The use and protocol for these
  * atoms are defined in the Inter client communications converntions manual.
  * User specified XAtoms are defined by specifying a name that gets Interned
- * by the XServer and an <code>XAtom</code> object is returned. An <code>XAtom</code> can also be created
- * by using a pre-exisiting atom like <code>XA_WM_CLASS</code>. A <code>display</code> has to be specified
- * in order to create an <code>XAtom</code>. <p> <p>
+ * by the XServer and an {@code XAtom} object is returned. An {@code XAtom} can also be created
+ * by using a pre-exisiting atom like {@code XA_WM_CLASS}. A {@code display} has to be specified
+ * in order to create an {@code XAtom}. <p> <p>
  *
- * Once an <code>XAtom</code> instance is created, you can call get and set property methods to
+ * Once an {@code XAtom} instance is created, you can call get and set property methods to
  * set the values for a particular window. <p> <p>
  *
  *
  * Example usage : To set the window name for a top level: <p>
- * <code>
- * XAtom xa = new XAtom(display,XAtom.XA_WM_NAME); <p>
- * xa.setProperty(window,"Hello World");<p></code>
- *<p>
- *<p>
- * To get the cut buffer :<p>
- * <p><code>
- * XAtom xa = new XAtom(display,XAtom.XA_CUT_BUFFER0);<p>
- * String selection = xa.getProperty(root_window);<p></code>
+ * <pre>{@code
+ * XAtom xa = new XAtom(display,XAtom.XA_WM_NAME);
+ * xa.setProperty(window,"Hello World");
+ * }</pre>
+ * <p>
+ * <p>
+ * To get the cut buffer:
+ * <pre>{@code
+ * XAtom xa = new XAtom(display,XAtom.XA_CUT_BUFFER0);
+ * String selection = xa.getProperty(root_window);
+ * }</pre>
+ *
  * @author  Bino George
  * @since       1.5
  */
@@ -237,7 +240,7 @@ public final class XAtom {
     }
 
     /**  This constructor will create an instance of XAtom that is specified
-     *  by the predefined XAtom specified by u <code> latom </code>
+     *  by the predefined XAtom specified by u {@code latom}
      *
      * @param display X display to use.
      * @param atom a predefined XAtom.
@@ -250,7 +253,7 @@ public final class XAtom {
     }
 
     /**  This constructor will create the instance,
-     *  and if <code>autoIntern</code> is true intern a new XAtom that is specified
+     *  and if {@code autoIntern} is true intern a new XAtom that is specified
      *  by the supplied name.
      *
      * @param display X display to use
@@ -450,7 +453,7 @@ public final class XAtom {
 
     /**
      * Gets uninterpreted set of data from property and stores them in data_ptr.
-     * Property type is <code>type</code>, property is current atom.
+     * Property type is {@code type}, property is current atom.
      * Property format is 32. Property 'delete' is false.
      * Returns boolean if requested type, format, length match returned values
      * and returned data pointer is not null.
@@ -505,7 +508,7 @@ public final class XAtom {
 
     /**
      * Sets uninterpreted set of data into property from data_ptr.
-     * Property type is <code>type</code>, property is current atom.
+     * Property type is {@code type}, property is current atom.
      * Property format is 32. Mode is PropModeReplace. length is a number
      * of items pointer by data_ptr.
      */
@@ -526,7 +529,7 @@ public final class XAtom {
 
     /**
      * Sets uninterpreted set of data into property from data_ptr.
-     * Property type is <code>type</code>, property is current atom.
+     * Property type is {@code type}, property is current atom.
      * Property format is 8. Mode is PropModeReplace. length is a number
      * of bytes pointer by data_ptr.
      */
@@ -784,7 +787,7 @@ public final class XAtom {
     }
 
     /**
-     * Sets property on the <code>window</code> to the value <code>window_value</window>
+     * Sets property on the {@code window} to the value {@code window_value}
      * Property is assumed to be of type WINDOW/32
      */
     public void setWindowProperty(long window, long window_value) {
@@ -807,7 +810,7 @@ public final class XAtom {
     }
 
     /**
-     * Gets property on the <code>window</code>. Property is assumed to be
+     * Gets property on the {@code window}. Property is assumed to be
      * of type WINDOW/32.
      */
     public long getWindowProperty(long window) {

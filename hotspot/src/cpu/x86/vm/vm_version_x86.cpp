@@ -671,7 +671,7 @@ void VM_Version::get_processor_features() {
       }
       // --AES-CTR ends--
     }
-  } else if (UseAES || UseAESIntrinsics) {
+  } else if (UseAES || UseAESIntrinsics || UseAESCTRIntrinsics) {
     if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
       warning("AES instructions are not available on this CPU");
       FLAG_SET_DEFAULT(UseAES, false);
@@ -705,16 +705,6 @@ void VM_Version::get_processor_features() {
     if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics))
       warning("CRC32 Intrinsics requires CLMUL instructions (not available on this CPU)");
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
-  }
-
-  if (UseAESIntrinsics) {
-    if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
-      UseAESCTRIntrinsics = true;
-    }
-  } else if (UseAESCTRIntrinsics) {
-    if (!FLAG_IS_DEFAULT(UseAESCTRIntrinsics))
-        warning("AES/CTR intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
   if (supports_sse4_2()) {

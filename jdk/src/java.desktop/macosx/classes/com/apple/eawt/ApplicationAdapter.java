@@ -26,7 +26,7 @@
 package com.apple.eawt;
 
 /**
- * An abstract adapter class for receiving <code>ApplicationEvents</code>.
+ * An abstract adapter class for receiving {@code ApplicationEvents}.
  *
  * ApplicationEvents are deprecated. Use individual app event listeners or handlers instead.
  *

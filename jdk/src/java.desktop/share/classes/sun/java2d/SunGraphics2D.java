@@ -2759,8 +2759,8 @@ public final class SunGraphics2D
     }
 
     /**
-     * Intersects <code>destRect</code> with <code>clip</code> and
-     * overwrites <code>destRect</code> with the result.
+     * Intersects {@code destRect} with {@code clip} and
+     * overwrites {@code destRect} with the result.
      * Returns false if the intersection was empty, true otherwise.
      */
     private boolean clipTo(Rectangle destRect, Rectangle clip) {

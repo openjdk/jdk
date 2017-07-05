@@ -36,17 +36,17 @@ import java.util.Arrays;
 
 /**
  * This class performs an arbitrary linear combination of the bands
- * in a <CODE>Raster</CODE>, using a specified matrix.
+ * in a {@code Raster}, using a specified matrix.
  * <p>
  * The width of the matrix must be equal to the number of bands in the
- * source <CODE>Raster</CODE>, optionally plus one.  If there is one more
+ * source {@code Raster}, optionally plus one.  If there is one more
  * column in the matrix than the number of bands, there is an implied 1 at the
  * end of the vector of band samples representing a pixel.  The height
  * of the matrix must be equal to the number of bands in the destination.
  * <p>
- * For example, a 3-banded <CODE>Raster</CODE> might have the following
+ * For example, a 3-banded {@code Raster} might have the following
  * transformation applied to each pixel in order to invert the second band of
- * the <CODE>Raster</CODE>.
+ * the {@code Raster}.
  * <pre>
  *   [ 1.0   0.0   0.0    0.0  ]     [ b1 ]
  *   [ 0.0  -1.0   0.0  255.0  ]  x  [ b2 ]
@@ -64,9 +64,9 @@ public class BandCombineOp implements  RasterOp {
     RenderingHints hints;
 
     /**
-     * Constructs a <CODE>BandCombineOp</CODE> with the specified matrix.
+     * Constructs a {@code BandCombineOp} with the specified matrix.
      * The width of the matrix must be equal to the number of bands in
-     * the source <CODE>Raster</CODE>, optionally plus one.  If there is one
+     * the source {@code Raster}, optionally plus one.  If there is one
      * more column in the matrix than the number of bands, there is an implied
      * 1 at the end of the vector of band samples representing a pixel.  The
      * height of the matrix must be equal to the number of bands in the
@@ -74,11 +74,11 @@ public class BandCombineOp implements  RasterOp {
      * <p>
      * The first subscript is the row index and the second
      * is the column index.  This operation uses none of the currently
-     * defined rendering hints; the <CODE>RenderingHints</CODE> argument can be
+     * defined rendering hints; the {@code RenderingHints} argument can be
      * null.
      *
      * @param matrix The matrix to use for the band combine operation.
-     * @param hints The <CODE>RenderingHints</CODE> object for this operation.
+     * @param hints The {@code RenderingHints} object for this operation.
      * Not currently used so it can be null.
      */
     public BandCombineOp (float[][] matrix, RenderingHints hints) {
@@ -113,8 +113,8 @@ public class BandCombineOp implements  RasterOp {
     }
 
     /**
-     * Transforms the <CODE>Raster</CODE> using the matrix specified in the
-     * constructor. An <CODE>IllegalArgumentException</CODE> may be thrown if
+     * Transforms the {@code Raster} using the matrix specified in the
+     * constructor. An {@code IllegalArgumentException} may be thrown if
      * the number of bands in the source or destination is incompatible with
      * the matrix.  See the class comments for more details.
      * <p>
@@ -122,11 +122,11 @@ public class BandCombineOp implements  RasterOp {
      * equalling the number of rows in the matrix. No exception is thrown
      * if the operation causes a data overflow.
      *
-     * @param src The <CODE>Raster</CODE> to be filtered.
-     * @param dst The <CODE>Raster</CODE> in which to store the results
+     * @param src The {@code Raster} to be filtered.
+     * @param dst The {@code Raster} in which to store the results
      * of the filter operation.
      *
-     * @return The filtered <CODE>Raster</CODE>.
+     * @return The filtered {@code Raster}.
      *
      * @throws IllegalArgumentException If the number of bands in the
      * source or destination is incompatible with the matrix.
@@ -207,13 +207,13 @@ public class BandCombineOp implements  RasterOp {
      * Returns the bounding box of the transformed destination.  Since
      * this is not a geometric operation, the bounding box is the same for
      * the source and destination.
-     * An <CODE>IllegalArgumentException</CODE> may be thrown if the number of
+     * An {@code IllegalArgumentException} may be thrown if the number of
      * bands in the source is incompatible with the matrix.  See
      * the class comments for more details.
      *
-     * @param src The <CODE>Raster</CODE> to be filtered.
+     * @param src The {@code Raster} to be filtered.
      *
-     * @return The <CODE>Rectangle2D</CODE> representing the destination
+     * @return The {@code Rectangle2D} representing the destination
      * image's bounding box.
      *
      * @throws IllegalArgumentException If the number of bands in the source
@@ -225,15 +225,15 @@ public class BandCombineOp implements  RasterOp {
 
 
     /**
-     * Creates a zeroed destination <CODE>Raster</CODE> with the correct size
+     * Creates a zeroed destination {@code Raster} with the correct size
      * and number of bands.
-     * An <CODE>IllegalArgumentException</CODE> may be thrown if the number of
+     * An {@code IllegalArgumentException} may be thrown if the number of
      * bands in the source is incompatible with the matrix.  See
      * the class comments for more details.
      *
-     * @param src The <CODE>Raster</CODE> to be filtered.
+     * @param src The {@code Raster} to be filtered.
      *
-     * @return The zeroed destination <CODE>Raster</CODE>.
+     * @return The zeroed destination {@code Raster}.
      */
     public WritableRaster createCompatibleDestRaster (Raster src) {
         int nBands = src.getNumBands();
@@ -256,16 +256,16 @@ public class BandCombineOp implements  RasterOp {
 
     /**
      * Returns the location of the corresponding destination point given a
-     * point in the source <CODE>Raster</CODE>.  If <CODE>dstPt</CODE> is
+     * point in the source {@code Raster}.  If {@code dstPt} is
      * specified, it is used to hold the return value.
      * Since this is not a geometric operation, the point returned
-     * is the same as the specified <CODE>srcPt</CODE>.
+     * is the same as the specified {@code srcPt}.
      *
-     * @param srcPt The <code>Point2D</code> that represents the point in
-     *              the source <code>Raster</code>
-     * @param dstPt The <CODE>Point2D</CODE> in which to store the result.
+     * @param srcPt The {@code Point2D} that represents the point in
+     *              the source {@code Raster}
+     * @param dstPt The {@code Point2D} in which to store the result.
      *
-     * @return The <CODE>Point2D</CODE> in the destination image that
+     * @return The {@code Point2D} in the destination image that
      * corresponds to the specified point in the source image.
      */
     public final Point2D getPoint2D (Point2D srcPt, Point2D dstPt) {
@@ -280,7 +280,7 @@ public class BandCombineOp implements  RasterOp {
     /**
      * Returns the rendering hints for this operation.
      *
-     * @return The <CODE>RenderingHints</CODE> object associated with this
+     * @return The {@code RenderingHints} object associated with this
      * operation.  Returns null if no hints have been set.
      */
     public final RenderingHints getRenderingHints() {

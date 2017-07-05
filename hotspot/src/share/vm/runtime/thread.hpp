@@ -256,7 +256,7 @@ class Thread: public ThreadShadow {
   // If !allow_allocation(), then an assertion failure will happen during allocation
   // (Hence, !allow_safepoint() => !allow_allocation()).
   //
-  // The two classes No_Safepoint_Verifier and No_Allocation_Verifier are used to set these counters.
+  // The two classes NoSafepointVerifier and No_Allocation_Verifier are used to set these counters.
   //
   NOT_PRODUCT(int _allow_safepoint_count;)      // If 0, thread allow a safepoint to happen
   debug_only(int _allow_allocation_count;)     // If 0, the thread is allowed to allocate oops.
@@ -264,10 +264,10 @@ class Thread: public ThreadShadow {
   // Used by SkipGCALot class.
   NOT_PRODUCT(bool _skip_gcalot;)               // Should we elide gc-a-lot?
 
-  friend class No_Alloc_Verifier;
-  friend class No_Safepoint_Verifier;
-  friend class Pause_No_Safepoint_Verifier;
-  friend class GC_locker;
+  friend class NoAllocVerifier;
+  friend class NoSafepointVerifier;
+  friend class PauseNoSafepointVerifier;
+  friend class GCLocker;
 
   ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
@@ -1966,14 +1966,6 @@ class JavaThread: public Thread {
   bool is_attaching_via_jni() const { return _jni_attach_state == _attaching_via_jni; }
   bool has_attached_via_jni() const { return is_attaching_via_jni() || _jni_attach_state == _attached_via_jni; }
   inline void set_done_attaching_via_jni();
- private:
-  // This field is used to determine if a thread has claimed
-  // a par_id: it is UINT_MAX if the thread has not claimed a par_id;
-  // otherwise its value is the par_id that has been claimed.
-  uint _claimed_par_id;
- public:
-  uint get_claimed_par_id() { return _claimed_par_id; }
-  void set_claimed_par_id(uint id) { _claimed_par_id = id; }
 };
 
 // Inline implementation of JavaThread::current

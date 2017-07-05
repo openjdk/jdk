@@ -100,6 +100,10 @@ private:
   CompileTask*     _task;
   int              _system_dictionary_modification_counter;
 
+  // Compilation result values
+  const char*      _failure_reason;
+  bool             _retryable;
+
   // Cache JVMTI state
   bool  _jvmti_can_hotswap_or_post_breakpoint;
   bool  _jvmti_can_access_local_variables;
@@ -140,6 +144,14 @@ private:
 
 public:
   CompileTask* task() { return _task; }
+
+  const char* failure_reason() { return _failure_reason; }
+  bool retryable() { return _retryable; }
+
+  void set_failure(const char* reason, bool retryable) {
+    _failure_reason = reason;
+    _retryable = retryable;
+  }
 
   // Register the result of a compilation.
   static JVMCIEnv::CodeInstallResult register_method(

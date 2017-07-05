@@ -25,7 +25,7 @@
 
 package sun.nio.ch;
 
-import sun.misc.Cleaner;
+import jdk.internal.ref.Cleaner;
 
 
 public interface DirectBuffer {

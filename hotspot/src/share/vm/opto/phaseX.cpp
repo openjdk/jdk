@@ -26,6 +26,7 @@
 #include "memory/allocation.inline.hpp"
 #include "opto/block.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
@@ -835,6 +836,22 @@ Node *PhaseGVN::transform_no_reclaim( Node *n ) {
   return k;
 }
 
+bool PhaseGVN::is_dominator_helper(Node *d, Node *n, bool linear_only) {
+  if (d->is_top() || n->is_top()) {
+    return false;
+  }
+  assert(d->is_CFG() && n->is_CFG(), "must have CFG nodes");
+  int i = 0;
+  while (d != n) {
+    n = IfNode::up_one_dom(n, linear_only);
+    i++;
+    if (n == NULL || i >= 10) {
+      return false;
+    }
+  }
+  return true;
+}
+
 #ifdef ASSERT
 //------------------------------dead_loop_check--------------------------------
 // Check for a simple dead loop when a data node references itself directly
@@ -1396,6 +1413,10 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
       if (dead->is_expensive()) {
         C->remove_expensive_node(dead);
       }
+      CastIINode* cast = dead->isa_CastII();
+      if (cast != NULL && cast->has_range_check()) {
+        C->remove_range_check_cast(cast);
+      }
     }
   } // while (_stack.is_nonempty())
 }
@@ -1525,7 +1546,7 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
     }
 
     // If changed Cast input, check Phi users for simple cycles
-    if( use->is_ConstraintCast() || use->is_CheckCastPP() ) {
+    if (use->is_ConstraintCast()) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
         Node* u = use->fast_out(i2);
         if (u->is_Phi())

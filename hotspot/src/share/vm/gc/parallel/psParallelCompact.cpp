@@ -1717,7 +1717,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   assert(ref_processor() != NULL, "Sanity");
 
-  if (GC_locker::check_active_before_gc()) {
+  if (GCLocker::check_active_before_gc()) {
     return false;
   }
 

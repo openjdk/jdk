@@ -358,7 +358,7 @@ public class AppletClassLoader extends URLClassLoader {
      * #getResource(String)}.<p>
      *
      * @param  name the resource name
-     * @return an input stream for reading the resource, or <code>null</code>
+     * @return an input stream for reading the resource, or {@code null}
      *         if the resource could not be found
      * @since  1.1
      */
@@ -418,7 +418,7 @@ public class AppletClassLoader extends URLClassLoader {
      * #getResource(String)}.<p>
      *
      * @param  name the resource name
-     * @return an input stream for reading the resource, or <code>null</code>
+     * @return an input stream for reading the resource, or {@code null}
      *         if the resource could not be found
      * @since  1.1
      */

@@ -162,9 +162,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       # Default is to calculate a string like this <timestamp>.<username>.<base dir name>
       timestamp=`$DATE '+%Y-%m-%d-%H%M%S'`
       # Outer [ ] to quote m4.
-      [ username=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
       [ basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'` ]
-      VERSION_OPT="$timestamp.$username.$basedirname"
+      VERSION_OPT="$timestamp.$USERNAME.$basedirname"
     fi
   fi
 

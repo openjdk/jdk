@@ -31,7 +31,7 @@ import java.awt.Rectangle;
 import java.awt.event.PaintEvent;
 
 /**
- * The <code>RepaintArea</code> is a geometric construct created for the
+ * The {@code RepaintArea} is a geometric construct created for the
  * purpose of holding the geometry of several coalesced paint events.
  * This geometry is accessed synchronously, although it is written such
  * that painting may still be executed asynchronously.
@@ -59,17 +59,17 @@ public class RepaintArea {
 
 
     /**
-     * Constructs a new <code>RepaintArea</code>
+     * Constructs a new {@code RepaintArea}
      * @since   1.3
      */
     public RepaintArea() {
     }
 
     /**
-     * Constructs a new <code>RepaintArea</code> initialized to match
+     * Constructs a new {@code RepaintArea} initialized to match
      * the values of the specified RepaintArea.
      *
-     * @param   ra  the <code>RepaintArea</code> from which to copy initial
+     * @param   ra  the {@code RepaintArea} from which to copy initial
      *              values to a newly constructed RepaintArea
      * @since   1.3
      */
@@ -82,12 +82,12 @@ public class RepaintArea {
     }
 
     /**
-     * Adds a <code>Rectangle</code> to this <code>RepaintArea</code>.
+     * Adds a {@code Rectangle} to this {@code RepaintArea}.
      * PAINT Rectangles are divided into mostly vertical and mostly horizontal.
      * Each group is unioned together.
      * UPDATE Rectangles are unioned.
      *
-     * @param   r   the specified <code>Rectangle</code>
+     * @param   r   the specified {@code Rectangle}
      * @param   id  possible values PaintEvent.UPDATE or PaintEvent.PAINT
      * @since   1.3
      */
@@ -109,11 +109,11 @@ public class RepaintArea {
 
 
     /**
-     * Creates a new <code>RepaintArea</code> with the same geometry as this
+     * Creates a new {@code RepaintArea} with the same geometry as this
      * RepaintArea, then removes all of the geometry from this
      * RepaintArea and restores it to an empty RepaintArea.
      *
-     * @return  ra a new <code>RepaintArea</code> having the same geometry as
+     * @return  ra a new {@code RepaintArea} having the same geometry as
      *          this RepaintArea.
      * @since   1.3
      */
@@ -186,7 +186,7 @@ public class RepaintArea {
      * MAX_BENEFIT_RATIO times the benefit, then the vertical and horizontal unions are
      * painted separately.  Otherwise the entire bounding rectangle is painted.
      *
-     * @param   target Component to <code>paint</code> or <code>update</code>
+     * @param   target Component to {@code paint} or {@code update}
      * @since   1.4
      */
     public void paint(Object target, boolean shouldClearRectBeforePaint) {
@@ -248,7 +248,7 @@ public class RepaintArea {
     }
 
     /**
-     * Calls <code>Component.update(Graphics)</code> with given Graphics.
+     * Calls {@code Component.update(Graphics)} with given Graphics.
      */
     protected void updateComponent(Component comp, Graphics g) {
         if (comp != null) {
@@ -257,7 +257,7 @@ public class RepaintArea {
     }
 
     /**
-     * Calls <code>Component.paint(Graphics)</code> with given Graphics.
+     * Calls {@code Component.paint(Graphics)} with given Graphics.
      */
     protected void paintComponent(Component comp, Graphics g) {
         if (comp != null) {

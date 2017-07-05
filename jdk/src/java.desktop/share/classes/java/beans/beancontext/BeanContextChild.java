@@ -73,64 +73,64 @@ public interface BeanContextChild {
      * shall fire a java.beans.PropertyChangeEvent, with parameters:
      *
      * propertyName "beanContext", oldValue (the previous nesting
-     * <code>BeanContext</code> instance, or <code>null</code>),
+     * {@code BeanContext} instance, or {@code null}),
      * newValue (the current nesting
-     * <code>BeanContext</code> instance, or <code>null</code>).
+     * {@code BeanContext} instance, or {@code null}).
      * <p>
      * A change in the value of the nesting BeanContext property of this
      * BeanContextChild may be vetoed by throwing the appropriate exception.
      * </p>
-     * @param bc The <code>BeanContext</code> with which
-     * to associate this <code>BeanContextChild</code>.
+     * @param bc The {@code BeanContext} with which
+     * to associate this {@code BeanContextChild}.
      * @throws PropertyVetoException if the
-     * addition of the specified <code>BeanContext</code> is refused.
+     * addition of the specified {@code BeanContext} is refused.
      */
     void setBeanContext(BeanContext bc) throws PropertyVetoException;
 
     /**
-     * Gets the <code>BeanContext</code> associated
-     * with this <code>BeanContextChild</code>.
-     * @return the <code>BeanContext</code> associated
-     * with this <code>BeanContextChild</code>.
+     * Gets the {@code BeanContext} associated
+     * with this {@code BeanContextChild}.
+     * @return the {@code BeanContext} associated
+     * with this {@code BeanContextChild}.
      */
     BeanContext getBeanContext();
 
     /**
-     * Adds a <code>PropertyChangeListener</code>
-     * to this <code>BeanContextChild</code>
-     * in order to receive a <code>PropertyChangeEvent</code>
+     * Adds a {@code PropertyChangeListener}
+     * to this {@code BeanContextChild}
+     * in order to receive a {@code PropertyChangeEvent}
      * whenever the specified property has changed.
      * @param name the name of the property to listen on
-     * @param pcl the <code>PropertyChangeListener</code> to add
+     * @param pcl the {@code PropertyChangeListener} to add
      */
     void addPropertyChangeListener(String name, PropertyChangeListener pcl);
 
     /**
-     * Removes a <code>PropertyChangeListener</code> from this
-     * <code>BeanContextChild</code>  so that it no longer
-     * receives <code>PropertyChangeEvents</code> when the
+     * Removes a {@code PropertyChangeListener} from this
+     * {@code BeanContextChild}  so that it no longer
+     * receives {@code PropertyChangeEvents} when the
      * specified property is changed.
      *
      * @param name the name of the property that was listened on
-     * @param pcl the <code>PropertyChangeListener</code> to remove
+     * @param pcl the {@code PropertyChangeListener} to remove
      */
     void removePropertyChangeListener(String name, PropertyChangeListener pcl);
 
     /**
-     * Adds a <code>VetoableChangeListener</code> to
-     * this <code>BeanContextChild</code>
+     * Adds a {@code VetoableChangeListener} to
+     * this {@code BeanContextChild}
      * to receive events whenever the specified property changes.
      * @param name the name of the property to listen on
-     * @param vcl the <code>VetoableChangeListener</code> to add
+     * @param vcl the {@code VetoableChangeListener} to add
      */
     void addVetoableChangeListener(String name, VetoableChangeListener vcl);
 
     /**
-     * Removes a <code>VetoableChangeListener</code> from this
-     * <code>BeanContextChild</code> so that it no longer receives
+     * Removes a {@code VetoableChangeListener} from this
+     * {@code BeanContextChild} so that it no longer receives
      * events when the specified property changes.
      * @param name the name of the property that was listened on.
-     * @param vcl the <code>VetoableChangeListener</code> to remove.
+     * @param vcl the {@code VetoableChangeListener} to remove.
      */
     void removeVetoableChangeListener(String name, VetoableChangeListener vcl);
 

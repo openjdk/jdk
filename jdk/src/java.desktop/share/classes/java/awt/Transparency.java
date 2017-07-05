@@ -28,7 +28,7 @@ package java.awt;
 import java.lang.annotation.Native;
 
 /**
- * The <code>Transparency</code> interface defines the common transparency
+ * The {@code Transparency} interface defines the common transparency
  * modes for implementing classes.
  */
 public interface Transparency {
@@ -53,8 +53,8 @@ public interface Transparency {
     @Native public static final int TRANSLUCENT        = 3;
 
     /**
-     * Returns the type of this <code>Transparency</code>.
-     * @return the field type of this <code>Transparency</code>, which is
+     * Returns the type of this {@code Transparency}.
+     * @return the field type of this {@code Transparency}, which is
      *          either OPAQUE, BITMASK or TRANSLUCENT.
      */
     public int getTransparency();
