@@ -25,8 +25,6 @@
 #include "precompiled.hpp"
 #include "runtime/stackValueCollection.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 jint StackValueCollection::int_at(int slot) const {
   intptr_t val =  at(slot)->get_int();
   jint ival = *((jint*) (&val));

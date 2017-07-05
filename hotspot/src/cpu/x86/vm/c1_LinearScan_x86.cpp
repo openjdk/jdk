@@ -814,8 +814,7 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
 
     case lir_tan:
     case lir_sin:
-    case lir_cos:
-    case lir_exp: {
+    case lir_cos: {
       // sin, cos and exp need two temporary fpu stack slots, so there are two temporary
       // registers (stored in right and temp of the operation).
       // the stack allocator must guarantee that the stack slots are really free,

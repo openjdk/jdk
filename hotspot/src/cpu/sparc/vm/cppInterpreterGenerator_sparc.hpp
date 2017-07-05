@@ -31,6 +31,7 @@
 
   void generate_more_monitors();
   void generate_deopt_handling();
+  void lock_method(void);
   void adjust_callers_stack(Register args);
   void generate_compute_interpreter_state(const Register state,
                                           const Register prev_state,

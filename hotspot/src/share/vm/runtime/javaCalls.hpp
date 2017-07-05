@@ -103,6 +103,7 @@ class JavaCallArguments : public StackObj {
   int         _size;
   int         _max_size;
   bool        _start_at_zero;      // Support late setting of receiver
+  JVMCI_ONLY(nmethod*    _alternative_target;) // Nmethod that should be called instead of normal target
 
   void initialize() {
     // Starts at first element to support set_receiver.
@@ -112,6 +113,7 @@ class JavaCallArguments : public StackObj {
     _max_size = _default_size;
     _size = 0;
     _start_at_zero = false;
+    JVMCI_ONLY(_alternative_target = NULL;)
   }
 
  public:
@@ -133,10 +135,21 @@ class JavaCallArguments : public StackObj {
       _max_size = max_size;
       _size = 0;
       _start_at_zero = false;
+      JVMCI_ONLY(_alternative_target = NULL;)
     } else {
       initialize();
     }
   }
+
+#if INCLUDE_JVMCI
+  void set_alternative_target(nmethod* target) {
+    _alternative_target = target;
+  }
+
+  nmethod* alternative_target() {
+    return _alternative_target;
+  }
+#endif
 
   inline void push_oop(Handle h)    { _is_oop[_size] = true;
                                JNITypes::put_obj((oop)h.raw_value(), _value, _size); }

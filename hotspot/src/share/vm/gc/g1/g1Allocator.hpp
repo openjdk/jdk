@@ -295,9 +295,9 @@ public:
 
   virtual G1PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) {
     assert(dest.is_valid(),
-           err_msg("Allocation buffer index out-of-bounds: " CSETSTATE_FORMAT, dest.value()));
+           "Allocation buffer index out-of-bounds: " CSETSTATE_FORMAT, dest.value());
     assert(_alloc_buffers[dest.value()] != NULL,
-           err_msg("Allocation buffer is NULL: " CSETSTATE_FORMAT, dest.value()));
+           "Allocation buffer is NULL: " CSETSTATE_FORMAT, dest.value());
     return _alloc_buffers[dest.value()];
   }
 

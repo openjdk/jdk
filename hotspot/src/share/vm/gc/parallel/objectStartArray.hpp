@@ -121,8 +121,8 @@ class ObjectStartArray : public CHeapObj<mtGC> {
 
 #define assert_covered_region_contains(addr)                                                                 \
         assert(_covered_region.contains(addr),                                                               \
-               err_msg(#addr " (" PTR_FORMAT ") is not in covered region [" PTR_FORMAT ", " PTR_FORMAT "]",  \
-                       p2i(addr), p2i(_covered_region.start()), p2i(_covered_region.end())))
+               #addr " (" PTR_FORMAT ") is not in covered region [" PTR_FORMAT ", " PTR_FORMAT "]",          \
+               p2i(addr), p2i(_covered_region.start()), p2i(_covered_region.end()))
 
   void allocate_block(HeapWord* p) {
     assert_covered_region_contains(p);
