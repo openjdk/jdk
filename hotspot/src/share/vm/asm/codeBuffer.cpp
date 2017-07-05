@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -604,7 +604,7 @@ void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
 
 
 
-csize_t CodeBuffer::total_offset_of(CodeSection* cs) const {
+csize_t CodeBuffer::total_offset_of(const CodeSection* cs) const {
   csize_t size_so_far = 0;
   for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     const CodeSection* cur_cs = code_section(n);

@@ -389,7 +389,7 @@ bool RegMask::is_UP() const {
 //------------------------------Size-------------------------------------------
 // Compute size of register mask in bits
 uint RegMask::Size() const {
-  extern uint8_t bitsInByte[512];
+  extern uint8_t bitsInByte[BITS_IN_BYTE_ARRAY_SIZE];
   uint sum = 0;
   for( int i = 0; i < RM_SIZE; i++ )
     sum +=

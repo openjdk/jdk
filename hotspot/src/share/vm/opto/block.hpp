@@ -197,7 +197,7 @@ public:
 
   // Report the alignment required by this block.  Must be a power of 2.
   // The previous block will insert nops to get this alignment.
-  uint code_alignment();
+  uint code_alignment() const;
   uint compute_loop_alignment();
 
   // BLOCK_FREQUENCY is a sentinel to mark uses of constant block frequencies.

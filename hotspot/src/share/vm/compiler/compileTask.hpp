@@ -40,6 +40,39 @@ class CompileTask : public CHeapObj<mtCompiler> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 
+ public:
+  // Different reasons for a compilation
+  // The order is important - Reason_Whitebox and higher can not become
+  // stale, see CompileTask::can_become_stale()
+  // Also mapped to reason_names[]
+  enum CompileReason {
+      Reason_None,
+      Reason_InvocationCount,  // Simple/StackWalk-policy
+      Reason_BackedgeCount,    // Simple/StackWalk-policy
+      Reason_Tiered,           // Tiered-policy
+      Reason_CTW,              // Compile the world
+      Reason_Replay,           // ciReplay
+      Reason_Whitebox,         // Whitebox API
+      Reason_MustBeCompiled,   // Java callHelper, LinkResolver
+      Reason_Bootstrap,        // JVMCI bootstrap
+      Reason_Count
+  };
+
+  static const char* reason_name(CompileTask::CompileReason compile_reason) {
+    static const char* reason_names[] = {
+      "no_reason",
+      "count",
+      "backedge_count",
+      "tiered",
+      "CTW",
+      "replay",
+      "whitebox",
+      "must_be_compiled",
+      "bootstrap"
+    };
+    return reason_names[compile_reason];
+  }
+
  private:
   static CompileTask* _task_free_list;
 #ifdef ASSERT
@@ -69,7 +102,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   Method*      _hot_method;   // which method actually triggered this task
   jobject      _hot_method_holder;
   int          _hot_count;    // information about its invocation counter
-  const char*  _comment;      // more info about the task
+  CompileReason _compile_reason;      // more info about the task
   const char*  _failure_reason;
 
  public:
@@ -78,8 +111,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
   }
 
   void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
-                  const methodHandle& hot_method, int hot_count, const char* comment,
-                  bool is_blocking);
+                  const methodHandle& hot_method, int hot_count,
+                  CompileTask::CompileReason compile_reason, bool is_blocking);
 
   static CompileTask* allocate();
   static void         free(CompileTask* task);
@@ -91,6 +124,15 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_complete() const               { return _is_complete; }
   bool         is_blocking() const               { return _is_blocking; }
   bool         is_success() const                { return _is_success; }
+  bool         can_become_stale() const          {
+    switch (_compile_reason) {
+      case Reason_BackedgeCount:
+      case Reason_InvocationCount:
+      case Reason_Tiered:
+        return !_is_blocking;
+    }
+    return false;
+  }
 #if INCLUDE_JVMCI
   bool         has_waiter() const                { return _has_waiter; }
   void         clear_waiter()                    { _has_waiter = false; }

@@ -28,11 +28,11 @@ import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
-import jdk.test.lib.jittester.TypeUtil;
 import jdk.test.lib.jittester.types.TypeInt;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.types.TypeLong;
 import jdk.test.lib.jittester.utils.PseudoRandom;
+import jdk.test.lib.jittester.utils.TypeUtil;
 
 class BinaryShiftOperatorFactory extends BinaryOperatorFactory {
     BinaryShiftOperatorFactory(OperatorKind opKind, long complexityLimit, int operatorLimit,

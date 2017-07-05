@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -152,6 +152,7 @@ void AbstractInterpreter::layout_activation(Method* method,
   intptr_t* top_frame_sp = is_top_frame ? sp : sp + (frame::abi_minframe_size - frame::abi_reg_args_size) / Interpreter::stackElementSize;
 
   interpreter_frame->interpreter_frame_set_method(method);
+  interpreter_frame->interpreter_frame_set_mirror(method->method_holder()->java_mirror());
   interpreter_frame->interpreter_frame_set_locals(locals_base);
   interpreter_frame->interpreter_frame_set_cpcache(method->constants()->cache());
   interpreter_frame->interpreter_frame_set_esp(esp);

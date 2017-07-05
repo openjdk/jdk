@@ -24,10 +24,13 @@
 #include "precompiled.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logLevel.hpp"
+#include "logging/logMessageBuffer.hpp"
 #include "logging/logOutput.hpp"
 #include "logging/logTag.hpp"
 #include "logging/logTagSet.hpp"
+#include "logging/logTagSetDescriptions.hpp"
 #include "memory/allocation.inline.hpp"
+#include "utilities/ostream.hpp"
 
 LogTagSet*  LogTagSet::_list      = NULL;
 size_t      LogTagSet::_ntagsets  = 0;
@@ -71,6 +74,13 @@ void LogTagSet::log(LogLevelType level, const char* msg) {
   LogDecorations decorations(level, *this, _decorators);
   for (LogOutputList::Iterator it = _output_list.iterator(level); it != _output_list.end(); it++) {
     (*it)->write(decorations, msg);
+  }
+}
+
+void LogTagSet::log(const LogMessageBuffer& msg) {
+  LogDecorations decorations(LogLevel::Invalid, *this, _decorators);
+  for (LogOutputList::Iterator it = _output_list.iterator(msg.least_detailed_level()); it != _output_list.end(); it++) {
+    (*it)->write(msg.iterator(it.level(), decorations));
   }
 }
 
@@ -119,3 +129,44 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
   }
   va_end(saved_args);
 }
+
+static const size_t TagSetBufferSize = 128;
+
+void LogTagSet::describe_tagsets(outputStream* out) {
+  out->print_cr("Described tag combinations:");
+  for (const LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {
+    char buf[TagSetBufferSize];
+    d->tagset->label(buf, sizeof(buf), "+");
+    out->print_cr(" %s: %s", buf, d->descr);
+  }
+}
+
+static int qsort_strcmp(const void* a, const void* b) {
+  return strcmp((*(const char**)a), (*(const char**)b));
+}
+
+void LogTagSet::list_all_tagsets(outputStream* out) {
+  char** tagset_labels = NEW_C_HEAP_ARRAY(char*, _ntagsets, mtLogging);
+
+  // Generate the list of tagset labels
+  size_t idx = 0;
+  for (LogTagSet* ts = first(); ts != NULL; ts = ts->next()) {
+    char buf[TagSetBufferSize];
+    ts->label(buf, sizeof(buf), "+");
+    tagset_labels[idx++] = os::strdup_check_oom(buf, mtLogging);
+  }
+  assert(idx == _ntagsets, "_ntagsets and list of tagsets not in sync");
+
+  // Sort them lexicographically
+  qsort(tagset_labels, _ntagsets, sizeof(*tagset_labels), qsort_strcmp);
+
+  // Print and then free the labels
+  out->print("All available tag sets: ");
+  for (idx = 0; idx < _ntagsets; idx++) {
+    out->print("%s%s", (idx == 0 ? "" : ", "), tagset_labels[idx]);
+    os::free(tagset_labels[idx]);
+  }
+  out->cr();
+  FREE_C_HEAP_ARRAY(char*, tagset_labels);
+}
+

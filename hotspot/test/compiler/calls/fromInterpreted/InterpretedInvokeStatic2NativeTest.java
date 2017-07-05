@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib /testlibrary /
  * @build compiler.calls.common.InvokeStatic
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

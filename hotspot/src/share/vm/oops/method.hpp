@@ -58,6 +58,7 @@ class MethodCounters;
 class ConstMethod;
 class InlineTableSizes;
 class KlassSizeStats;
+class CompiledMethod;
 
 class Method : public Metadata {
  friend class VMStructs;
@@ -98,7 +99,7 @@ class Method : public Metadata {
   // field can come and go.  It can transition from NULL to not-null at any
   // time (whenever a compile completes).  It can transition from not-null to
   // NULL only at safepoints (because of a de-opt).
-  nmethod* volatile _code;                       // Points to the corresponding piece of native code
+  CompiledMethod* volatile _code;                       // Points to the corresponding piece of native code
   volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
 
   // Constructor
@@ -187,8 +188,18 @@ class Method : public Metadata {
   }
 
   // JVMTI breakpoints
+#if !INCLUDE_JVMTI
+  Bytecodes::Code orig_bytecode_at(int bci) const {
+    ShouldNotReachHere();
+    return Bytecodes::_shouldnotreachhere;
+  }
+  void set_orig_bytecode_at(int bci, Bytecodes::Code code) {
+    ShouldNotReachHere();
+  };
+  u2   number_of_breakpoints() const {return 0;}
+#else // !INCLUDE_JVMTI
   Bytecodes::Code orig_bytecode_at(int bci) const;
-  void        set_orig_bytecode_at(int bci, Bytecodes::Code code);
+  void set_orig_bytecode_at(int bci, Bytecodes::Code code);
   void set_breakpoint(int bci);
   void clear_breakpoint(int bci);
   void clear_all_breakpoints();
@@ -221,6 +232,7 @@ class Method : public Metadata {
       mcs->clear_number_of_breakpoints();
     }
   }
+#endif // !INCLUDE_JVMTI
 
   // index into InstanceKlass methods() array
   // note: also used by jfr
@@ -423,9 +435,9 @@ class Method : public Metadata {
   // nmethod/verified compiler entry
   address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
-  nmethod* volatile code() const                 { assert( check_code(), "" ); return (nmethod *)OrderAccess::load_ptr_acquire(&_code); }
+  CompiledMethod* volatile code() const                 { assert( check_code(), "" ); return (CompiledMethod *)OrderAccess::load_ptr_acquire(&_code); }
   void clear_code();            // Clear out any compiled code
-  static void set_code(methodHandle mh, nmethod* code);
+  static void set_code(methodHandle mh, CompiledMethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
     constMethod()->set_adapter_entry(adapter);
   }
@@ -1034,6 +1046,8 @@ class CompressedLineNumberReadStream: public CompressedReadStream {
 };
 
 
+#if INCLUDE_JVMTI
+
 /// Fast Breakpoints.
 
 // If this structure gets more complicated (because bpts get numerous),
@@ -1077,6 +1091,8 @@ class BreakpointInfo : public CHeapObj<mtClass> {
   void set(Method* method);
   void clear(Method* method);
 };
+
+#endif // INCLUDE_JVMTI
 
 // Utility class for access exception handlers
 class ExceptionTable : public StackObj {

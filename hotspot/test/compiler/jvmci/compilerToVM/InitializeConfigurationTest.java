@@ -27,6 +27,7 @@
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library / /testlibrary
  * @library ../common/patches
+ * @modules java.base/jdk.internal.misc
  * @modules jdk.vm.ci/jdk.vm.ci.hotspot
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.compilerToVM.InitializeConfigurationTest
@@ -46,7 +47,7 @@ import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class InitializeConfigurationTest {
     private static final Unsafe UNSAFE = Utils.getUnsafe();

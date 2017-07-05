@@ -408,21 +408,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------TanDNode---------------------------------------
-// tangens of a double
-class TanDNode : public Node {
-public:
-  TanDNode(Compile* C, Node *c,Node *in1) : Node(c, in1) {
-    init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
-  }
-  virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::DOUBLE; }
-  virtual uint ideal_reg() const { return Op_RegD; }
-  virtual const Type* Value(PhaseGVN* phase) const;
-};
-
-
 //------------------------------AtanDNode--------------------------------------
 // arcus tangens of a double
 class AtanDNode : public Node {
@@ -439,20 +424,6 @@ public:
 class SqrtDNode : public Node {
 public:
   SqrtDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
-    init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
-  }
-  virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::DOUBLE; }
-  virtual uint ideal_reg() const { return Op_RegD; }
-  virtual const Type* Value(PhaseGVN* phase) const;
-};
-
-//------------------------------Log10DNode---------------------------------------
-// Log_10 of a double
-class Log10DNode : public Node {
-public:
-  Log10DNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
     init_flags(Flag_is_expensive);
     C->add_expensive_node(this);
   }

@@ -31,7 +31,7 @@
  */
 
 import java.lang.reflect.Field;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class TestUnsafePutAddressNullObjMustNotEscape {
 
@@ -43,7 +43,7 @@ public class TestUnsafePutAddressNullObjMustNotEscape {
         System.out.println("EXECUTING test.");
 
         {
-            System.out.println("Acquiring sun.misc.Unsafe.theUnsafe using reflection.");
+            System.out.println("Acquiring jdk.internal.misc.Unsafe.theUnsafe using reflection.");
             getUnsafe();
             System.out.println("Allocating raw memory.");
             mem = (usafe.allocateMemory(1024) + 8L) & ~7L;
@@ -78,8 +78,8 @@ public class TestUnsafePutAddressNullObjMustNotEscape {
     }
 
     private static void getUnsafe() throws Exception {
-        Field field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+        Field field = jdk.internal.misc.Unsafe.class.getDeclaredField("theUnsafe");
         field.setAccessible(true);
-        usafe = (sun.misc.Unsafe) field.get(null);
+        usafe = (jdk.internal.misc.Unsafe) field.get(null);
     }
 }

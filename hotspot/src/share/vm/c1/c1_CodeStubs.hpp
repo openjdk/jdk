@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,17 +77,13 @@ class CodeStub: public CompilationResourceObj {
   }
 };
 
-
-define_array(CodeStubArray, CodeStub*)
-define_stack(_CodeStubList, CodeStubArray)
-
-class CodeStubList: public _CodeStubList {
+class CodeStubList: public GrowableArray<CodeStub*> {
  public:
-  CodeStubList(): _CodeStubList() {}
+  CodeStubList(): GrowableArray<CodeStub*>() {}
 
   void append(CodeStub* stub) {
     if (!contains(stub)) {
-      _CodeStubList::append(stub);
+      GrowableArray<CodeStub*>::append(stub);
     }
   }
 };

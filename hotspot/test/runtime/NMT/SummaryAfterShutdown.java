@@ -38,7 +38,7 @@ public class SummaryAfterShutdown {
   public static void main(String args[]) throws Exception {
     OutputAnalyzer output;
     // Grab my own PID
-    String pid = Integer.toString(ProcessTools.getProcessId());
+    String pid = Long.toString(ProcessTools.getProcessId());
     ProcessBuilder pb = new ProcessBuilder();
 
     // Run 'jcmd <pid> VM.native_memory shutdown'

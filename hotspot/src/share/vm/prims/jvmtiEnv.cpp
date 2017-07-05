@@ -489,7 +489,7 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     ObjectLocker ol(loader_lock, thread);
 
     // add the jar file to the bootclasspath
-    log_info(classload)("opened: %s", zip_entry->name());
+    log_info(class, load)("opened: %s", zip_entry->name());
     ClassLoaderExt::append_boot_classpath(zip_entry);
     return JVMTI_ERROR_NONE;
   } else {
@@ -640,11 +640,11 @@ JvmtiEnv::SetVerboseFlag(jvmtiVerboseFlag flag, jboolean value) {
     break;
   case JVMTI_VERBOSE_CLASS:
     if (value == 0) {
-      LogConfiguration::parse_log_arguments("stdout", "classunload=off", NULL, NULL, NULL);
-      LogConfiguration::parse_log_arguments("stdout", "classload=off", NULL, NULL, NULL);
+      LogConfiguration::parse_log_arguments("stdout", "class+unload=off", NULL, NULL, NULL);
+      LogConfiguration::parse_log_arguments("stdout", "class+load=off", NULL, NULL, NULL);
     } else {
-      LogConfiguration::parse_log_arguments("stdout", "classload=info", NULL, NULL, NULL);
-      LogConfiguration::parse_log_arguments("stdout", "classunload=info", NULL, NULL, NULL);
+      LogConfiguration::parse_log_arguments("stdout", "class+load=info", NULL, NULL, NULL);
+      LogConfiguration::parse_log_arguments("stdout", "class+unload=info", NULL, NULL, NULL);
     }
     break;
   case JVMTI_VERBOSE_GC:
@@ -1675,7 +1675,7 @@ JvmtiEnv::FollowReferences(jint heap_filter, jclass klass, jobject initial_objec
   HandleMark hm(thread);
   KlassHandle kh (thread, k_oop);
 
-  TraceTime t("FollowReferences", TraceJVMTIObjectTagging);
+  TraceTime t("FollowReferences", TRACETIME_LOG(Debug, jvmti, objecttagging));
   JvmtiTagMap::tag_map_for(this)->follow_references(heap_filter, kh, initial_object, callbacks, user_data);
   return JVMTI_ERROR_NONE;
 } /* end FollowReferences */
@@ -1706,7 +1706,7 @@ JvmtiEnv::IterateThroughHeap(jint heap_filter, jclass klass, const jvmtiHeapCall
   HandleMark hm(thread);
   KlassHandle kh (thread, k_oop);
 
-  TraceTime t("IterateThroughHeap", TraceJVMTIObjectTagging);
+  TraceTime t("IterateThroughHeap", TRACETIME_LOG(Debug, jvmti, objecttagging));
   JvmtiTagMap::tag_map_for(this)->iterate_through_heap(heap_filter, kh, callbacks, user_data);
   return JVMTI_ERROR_NONE;
 } /* end IterateThroughHeap */
@@ -1738,7 +1738,7 @@ JvmtiEnv::SetTag(jobject object, jlong tag) {
 // tag_result_ptr - NULL is a valid value, must be checked
 jvmtiError
 JvmtiEnv::GetObjectsWithTags(jint tag_count, const jlong* tags, jint* count_ptr, jobject** object_result_ptr, jlong** tag_result_ptr) {
-  TraceTime t("GetObjectsWithTags", TraceJVMTIObjectTagging);
+  TraceTime t("GetObjectsWithTags", TRACETIME_LOG(Debug, jvmti, objecttagging));
   return JvmtiTagMap::tag_map_for(this)->get_objects_with_tags((jlong*)tags, tag_count, count_ptr, object_result_ptr, tag_result_ptr);
 } /* end GetObjectsWithTags */
 
@@ -1771,7 +1771,7 @@ JvmtiEnv::IterateOverObjectsReachableFromObject(jobject object, jvmtiObjectRefer
 // user_data - NULL is a valid value, must be checked
 jvmtiError
 JvmtiEnv::IterateOverReachableObjects(jvmtiHeapRootCallback heap_root_callback, jvmtiStackReferenceCallback stack_ref_callback, jvmtiObjectReferenceCallback object_ref_callback, const void* user_data) {
-  TraceTime t("IterateOverReachableObjects", TraceJVMTIObjectTagging);
+  TraceTime t("IterateOverReachableObjects", TRACETIME_LOG(Debug, jvmti, objecttagging));
   JvmtiTagMap::tag_map_for(this)->iterate_over_reachable_objects(heap_root_callback, stack_ref_callback, object_ref_callback, user_data);
   return JVMTI_ERROR_NONE;
 } /* end IterateOverReachableObjects */
@@ -1781,7 +1781,7 @@ JvmtiEnv::IterateOverReachableObjects(jvmtiHeapRootCallback heap_root_callback, 
 // user_data - NULL is a valid value, must be checked
 jvmtiError
 JvmtiEnv::IterateOverHeap(jvmtiHeapObjectFilter object_filter, jvmtiHeapObjectCallback heap_object_callback, const void* user_data) {
-  TraceTime t("IterateOverHeap", TraceJVMTIObjectTagging);
+  TraceTime t("IterateOverHeap", TRACETIME_LOG(Debug, jvmti, objecttagging));
   Thread *thread = Thread::current();
   HandleMark hm(thread);
   JvmtiTagMap::tag_map_for(this)->iterate_over_heap(object_filter, KlassHandle(), heap_object_callback, user_data);
@@ -1805,7 +1805,7 @@ JvmtiEnv::IterateOverInstancesOfClass(oop k_mirror, jvmtiHeapObjectFilter object
   Thread *thread = Thread::current();
   HandleMark hm(thread);
   KlassHandle klass (thread, k_oop);
-  TraceTime t("IterateOverInstancesOfClass", TraceJVMTIObjectTagging);
+  TraceTime t("IterateOverInstancesOfClass", TRACETIME_LOG(Debug, jvmti, objecttagging));
   JvmtiTagMap::tag_map_for(this)->iterate_over_heap(object_filter, klass, heap_object_callback, user_data);
   return JVMTI_ERROR_NONE;
 } /* end IterateOverInstancesOfClass */

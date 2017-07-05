@@ -406,9 +406,9 @@ class ClassLoader: AllStatic {
 
   static s2 module_to_classloader(const char* module_name);
   static void initialize_module_loader_map(JImageFile* jimage);
-#endif
   static s2 classloader_type(Symbol* class_name, ClassPathEntry* e,
-                                 int classpath_index, TRAPS);
+                             int classpath_index, TRAPS);
+#endif
 
   static void  trace_class_path(const char* msg, const char* name = NULL);
 

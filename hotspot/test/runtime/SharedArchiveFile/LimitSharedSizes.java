@@ -125,7 +125,7 @@ public class LimitSharedSizes {
 
         // test with sizes which just meet the minimum required sizes
         // the following tests also attempt to use the shared archive
-        new SharedSizeTestData(Region.RO, Platform.is64bit() ? "9M":"8M", Result.VALID_ARCHIVE),
+        new SharedSizeTestData(Region.RO, Platform.is64bit() ? "10M":"9M", Result.VALID_ARCHIVE),
         new SharedSizeTestData(Region.RW, Platform.is64bit() ? "12M":"7M", Result.VALID_ARCHIVE),
         new SharedSizeTestData(Region.MD, Platform.is64bit() ? "4M":"2M", Result.VALID_ARCHIVE),
         new SharedSizeTestData(Region.MC, "120k", Result.VALID_ARCHIVE),
@@ -176,7 +176,7 @@ public class LimitSharedSizes {
                                output.getOutput().contains("Unable to reserve shared space at required address")) &&
                                output.getExitValue() == 1) {
                                System.out.println("Unable to use shared archive: test not executed; assumed passed");
-                               return;
+                               continue;
                           }
                       }
                       output.shouldHaveExitValue(0);

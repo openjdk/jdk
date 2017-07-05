@@ -25,6 +25,7 @@
  * @test
  * @library /testlibrary
  * @summary Test that type annotations are retained after a retransform
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.instrument
  *          jdk.jartool/sun.tools.jar

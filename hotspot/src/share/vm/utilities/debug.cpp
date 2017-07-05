@@ -58,6 +58,8 @@
 #include "trace/tracing.hpp"
 #endif
 
+#include <stdio.h>
+
 #ifndef ASSERT
 #  ifdef _DEBUG
    // NOTE: don't turn the lines below into a comment -- if you're getting
@@ -187,7 +189,7 @@ bool error_is_suppressed(const char* file_name, int line_no) {
     return true;
   }
 
-  if (!is_error_reported()) {
+  if (!is_error_reported() && !SuppressFatalErrorMessage) {
     // print a friendly hint:
     fdStream out(defaultStream::output_fd());
     out.print_raw_cr("# To suppress the following error report, specify this argument");
@@ -261,6 +263,21 @@ void report_should_not_reach_here(const char* file, int line) {
 void report_unimplemented(const char* file, int line) {
   report_vm_error(file, line, "Unimplemented()");
 }
+
+#ifdef ASSERT
+bool is_executing_unit_tests() {
+  return ExecutingUnitTests;
+}
+
+void report_assert_msg(const char* msg, ...) {
+  va_list ap;
+  va_start(ap, msg);
+
+  fprintf(stderr, "assert failed: %s\n", err_msg(FormatBufferDummy(), msg, ap).buffer());
+
+  va_end(ap);
+}
+#endif // ASSERT
 
 void report_untested(const char* file, int line, const char* message) {
 #ifndef PRODUCT

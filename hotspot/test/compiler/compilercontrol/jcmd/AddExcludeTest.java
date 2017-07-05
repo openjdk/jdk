@@ -25,6 +25,7 @@
  * @test
  * @bug 8137167
  * @summary Tests jcmd to be able to add a directive to exclude only specified methods
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
  * @build compiler.compilercontrol.jcmd.AddExcludeTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox

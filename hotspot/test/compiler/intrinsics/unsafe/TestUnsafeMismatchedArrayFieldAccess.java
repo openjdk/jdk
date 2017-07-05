@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8142386
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @summary Unsafe access to an array is wrongly marked as mismatched
  * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:-TieredCompilation TestUnsafeMismatchedArrayFieldAccess
@@ -33,7 +34,7 @@
 
 import java.lang.reflect.*;
 import jdk.test.lib.Utils;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class TestUnsafeMismatchedArrayFieldAccess {
 
