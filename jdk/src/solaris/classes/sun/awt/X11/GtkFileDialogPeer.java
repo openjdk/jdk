@@ -76,9 +76,12 @@ class GtkFileDialogPeer extends XDialogPeer implements FileDialogPeer {
             accessor.setFiles(fd, null, null);
         } else {
             // Fix 6987233: add the trailing slash if it's absent
-            accessor.setDirectory(fd, directory +
-                    (directory.endsWith(File.separator) ?
-                     "" : File.separator));
+            String with_separator = directory;
+            if (directory != null) {
+                with_separator = directory.endsWith(File.separator) ?
+                        directory : (directory + File.separator);
+            }
+            accessor.setDirectory(fd, with_separator);
             accessor.setFile(fd, filenames[0]);
             accessor.setFiles(fd, directory, filenames);
         }

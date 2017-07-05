@@ -53,6 +53,7 @@ import com.sun.jmx.snmp.agent.SnmpStandardObjectServer;
  */
 public abstract class JVM_MANAGEMENT_MIB extends SnmpMib implements Serializable {
 
+    static final long serialVersionUID = 6895037919735816732L;
     /**
      * Default constructor. Initialize the Mib tree.
      */

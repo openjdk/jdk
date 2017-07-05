@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4807942
+ * @bug 4807942 7033170
  * @summary Test the Cipher.getMaxAllowedKeyLength(String) and
  * getMaxAllowedParameterSpec(String) methods
  * @author Valerie Peng
@@ -40,7 +40,7 @@ import javax.crypto.spec.*;
 
 public class GetMaxAllowed {
 
-    private static void runTest(boolean isUnlimited) throws Exception {
+    private static void runTest1(boolean isUnlimited) throws Exception {
         System.out.println("Testing " + (isUnlimited? "un":"") +
                            "limited policy...");
 
@@ -78,6 +78,20 @@ public class GetMaxAllowed {
         System.out.println("All tests passed");
     }
 
+    private static void runTest2() throws Exception {
+        System.out.println("Testing against Security.getAlgorithms()");
+
+        Set<String> algorithms = Security.getAlgorithms("Cipher");
+
+        for (String algorithm: algorithms) {
+            int keylength = -1;
+
+            // if 7033170 is not fixed, NoSuchAlgorithmException is thrown
+            keylength = Cipher.getMaxAllowedKeyLength(algorithm);
+
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         // decide if the installed jurisdiction policy file is the
         // unlimited version
@@ -88,6 +102,9 @@ public class GetMaxAllowed {
         } catch (InvalidKeyException ike) {
             isUnlimited = false;
         }
-        runTest(isUnlimited);
+        runTest1(isUnlimited);
+
+        // test using the set of algorithms returned by Security.getAlgorithms()
+        runTest2();
     }
 }

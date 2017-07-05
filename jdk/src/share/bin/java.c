@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1225,14 +1225,7 @@ LoadMainClass(JNIEnv *env, int mode, char *name)
                 "checkAndLoadMain",
                 "(ZILjava/lang/String;)Ljava/lang/Class;"));
 
-    switch (mode) {
-        case LM_CLASS:
-            str = NewPlatformString(env, name);
-            break;
-        default:
-            str = (*env)->NewStringUTF(env, name);
-            break;
-    }
+    str = NewPlatformString(env, name);
     result = (*env)->CallStaticObjectMethod(env, cls, mid, USE_STDERR, mode, str);
 
     if (JLI_IsTraceLauncher()) {

@@ -40,7 +40,7 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 
 public class ThrowExceptionsTest {
-    private static final Class CLASS = ThrowExceptionsTest.class;
+    private static final Class<?> CLASS = ThrowExceptionsTest.class;
     private static final Lookup LOOKUP = lookup();
 
     public static void main(String argv[]) throws Throwable {
@@ -132,9 +132,9 @@ public class ThrowExceptionsTest {
                 int tc = testCases;
                 try {
                     m.invoke(this);
-                } catch (Throwable ex) {
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
                     System.out.println("*** "+ex);
-                    ex.printStackTrace();
+                    ex.printStackTrace(System.out);
                 }
                 if (testCases == tc)  testCases++;
             }

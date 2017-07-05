@@ -27,11 +27,9 @@ import sun.invoke.util.ValueConversions;
 import sun.invoke.util.Wrapper;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
-import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -52,7 +50,7 @@ import static org.junit.Assert.*;
  * @author jrose
  */
 public class ValueConversionsTest {
-    private static final Class CLASS = ValueConversionsTest.class;
+    private static final Class<?> CLASS = ValueConversionsTest.class;
     private static final int MAX_ARITY = Integer.getInteger(CLASS.getSimpleName()+".MAX_ARITY", 40);
     private static final int START_ARITY = Integer.getInteger(CLASS.getSimpleName()+".START_ARITY", 0);
     private static final boolean EXHAUSTIVE = Boolean.getBoolean(CLASS.getSimpleName()+".EXHAUSTIVE");
@@ -165,7 +163,7 @@ public class ValueConversionsTest {
                 Object expResult = box;
                 Object result = null;
                 switch (w) {
-                    case INT:     result = boxer.invokeExact((int)n); break;
+                    case INT:     result = boxer.invokeExact(/*int*/n); break;
                     case LONG:    result = boxer.invokeExact((long)n); break;
                     case FLOAT:   result = boxer.invokeExact((float)n); break;
                     case DOUBLE:  result = boxer.invokeExact((double)n); break;
@@ -361,6 +359,7 @@ public class ValueConversionsTest {
             assert(stype == MethodType.methodType(arrayType, arrayType));
             if (nargs <= 5) {
                 // invoke target as a spreader also:
+                @SuppressWarnings("cast")
                 Object res2 = spreader.invokeWithArguments((Object)res);
                 String res2String = toArrayString(res2);
                 assertEquals(Arrays.toString(args), res2String);
