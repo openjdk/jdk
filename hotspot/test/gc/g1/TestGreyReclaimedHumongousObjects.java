@@ -24,7 +24,7 @@
 /*
  * @test TestGreyReclaimedHumongousObjects.java
  * @bug 8069367
- * @requires vm.gc == "G1" | vm.gc == "null"
+ * @requires vm.gc.G1
  * @summary Test handling of marked but unscanned reclaimed humongous objects.
  * @key gc
  * @modules jdk.management

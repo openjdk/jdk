@@ -34,6 +34,7 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.code.test.amd64.AMD64TestAssembler;
 import jdk.vm.ci.code.test.sparc.SPARCTestAssembler;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -50,6 +51,7 @@ public class CodeInstallationTest {
     protected final CodeCacheProvider codeCache;
     protected final TargetDescription target;
     protected final ConstantReflectionProvider constantReflection;
+    protected final TestHotSpotVMConfig config;
 
     public CodeInstallationTest() {
         JVMCIBackend backend = JVMCI.getRuntime().getHostJVMCIBackend();
@@ -57,6 +59,7 @@ public class CodeInstallationTest {
         codeCache = backend.getCodeCache();
         target = backend.getTarget();
         constantReflection = backend.getConstantReflection();
+        config = new TestHotSpotVMConfig(HotSpotJVMCIRuntime.runtime().getConfigStore());
     }
 
     protected interface TestCompiler {
@@ -67,9 +70,9 @@ public class CodeInstallationTest {
     private TestAssembler createAssembler() {
         Architecture arch = codeCache.getTarget().arch;
         if (arch instanceof AMD64) {
-            return new AMD64TestAssembler(codeCache);
+            return new AMD64TestAssembler(codeCache, config);
         } else if (arch instanceof SPARC) {
-            return new SPARCTestAssembler(codeCache);
+            return new SPARCTestAssembler(codeCache, config);
         } else {
             Assert.fail("unsupported architecture");
             return null;
@@ -86,17 +89,17 @@ public class CodeInstallationTest {
     }
 
     protected void test(TestCompiler compiler, Method method, Object... args) {
-        HotSpotResolvedJavaMethod resolvedMethod = (HotSpotResolvedJavaMethod) metaAccess.lookupJavaMethod(method);
-        TestAssembler asm = createAssembler();
-
-        asm.emitPrologue();
-        compiler.compile(asm);
-        asm.emitEpilogue();
-
-        HotSpotCompiledCode code = asm.finish(resolvedMethod);
-        InstalledCode installed = codeCache.addCode(resolvedMethod, code, null, null);
-
         try {
+            HotSpotResolvedJavaMethod resolvedMethod = (HotSpotResolvedJavaMethod) metaAccess.lookupJavaMethod(method);
+            TestAssembler asm = createAssembler();
+
+            asm.emitPrologue();
+            compiler.compile(asm);
+            asm.emitEpilogue();
+
+            HotSpotCompiledCode code = asm.finish(resolvedMethod);
+            InstalledCode installed = codeCache.addCode(resolvedMethod, code, null, null);
+
             Object expected = method.invoke(null, args);
             Object actual = installed.executeVarargs(args);
             Assert.assertEquals(expected, actual);

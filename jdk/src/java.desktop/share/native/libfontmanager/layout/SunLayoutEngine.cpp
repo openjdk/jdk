@@ -151,7 +151,8 @@ JNIEXPORT void JNICALL Java_sun_font_SunLayoutEngine_nativeLayout
     return;
   }
 
-  if (min < 0) min = 0; if (max < min) max = min; /* defensive coding */
+  if (min < 0) min = 0;
+  if (max < min) max = min; /* defensive coding */
   // have to copy, yuck, since code does upcalls now.  this will be soooo slow
   jint len = max - min;
   jchar buffer[256];

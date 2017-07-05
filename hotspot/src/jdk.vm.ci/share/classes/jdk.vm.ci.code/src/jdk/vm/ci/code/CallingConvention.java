@@ -100,6 +100,7 @@ public class CallingConvention {
     /**
      * Gets the locations required for the arguments.
      */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "FB false positive")
     public AllocatableValue[] getArguments() {
         if (argumentLocations.length == 0) {
             return argumentLocations;

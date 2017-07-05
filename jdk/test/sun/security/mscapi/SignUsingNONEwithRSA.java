@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,21 @@
  * questions.
  */
 
-/**
- * @see SignUsingNONEwithRSA.sh
+ /*
+ * @test
+ * @bug 6578658
+ * @modules java.base/sun.security.x509
+ *          java.base/sun.security.tools.keytool
+ * @requires os.family == "windows"
+ * @summary Sign using the NONEwithRSA signature algorithm from SunMSCAPI
  */
 
 import java.security.*;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateCrtKey;
 import java.util.*;
+import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.x509.X500Name;
 
 public class SignUsingNONEwithRSA {
 
@@ -92,24 +101,42 @@ public class SignUsingNONEwithRSA {
                 System.out.println("    " + provider.getName());
             }
         }
-        System.out.println("-------------------------------------------------");
+        System.out.println(
+                "Creating a temporary RSA keypair in the Windows-My store");
+        KeyStore ks = KeyStore.getInstance("Windows-MY");
+        ks.load(null, null);
+        CertAndKeyGen ckg = new CertAndKeyGen("RSA", "SHA1withRSA");
+        ckg.generate(1024);
+        RSAPrivateCrtKey k = (RSAPrivateCrtKey) ckg.getPrivateKey();
+        ks.setKeyEntry("6578658", k, null, new X509Certificate[]{
+                    ckg.getSelfCertificate(new X500Name("cn=6578658,c=US"), 1000)
+                });
+        ks.store(null, null);
 
-        KeyPair keys = getKeysFromKeyStore();
-        signAllUsing("SunMSCAPI", keys.getPrivate());
-        System.out.println("-------------------------------------------------");
+        System.out.println("---------------------------------------------");
 
-        verifyAllUsing("SunMSCAPI", keys.getPublic());
-        System.out.println("-------------------------------------------------");
+        try {
+            KeyPair keys = getKeysFromKeyStore();
+            signAllUsing("SunMSCAPI", keys.getPrivate());
+            System.out.println("---------------------------------------------");
 
-        verifyAllUsing("SunJCE", keys.getPublic());
-        System.out.println("-------------------------------------------------");
+            verifyAllUsing("SunMSCAPI", keys.getPublic());
+            System.out.println("---------------------------------------------");
 
-        keys = generateKeys();
-        signAllUsing("SunJCE", keys.getPrivate());
-        System.out.println("-------------------------------------------------");
+            verifyAllUsing("SunJCE", keys.getPublic());
+            System.out.println("---------------------------------------------");
 
-        verifyAllUsing("SunMSCAPI", keys.getPublic());
-        System.out.println("-------------------------------------------------");
+            keys = generateKeys();
+            signAllUsing("SunJCE", keys.getPrivate());
+            System.out.println("---------------------------------------------");
+
+            verifyAllUsing("SunMSCAPI", keys.getPublic());
+            System.out.println("---------------------------------------------");
+        } finally {
+            System.out.println(
+                    "Deleting temporary RSA keypair from Windows-My store");
+            ks.deleteEntry("6578658");
+        }
 
     }
 

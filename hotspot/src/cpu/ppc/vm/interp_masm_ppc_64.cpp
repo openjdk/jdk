@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -476,33 +476,6 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass, Register 
   profile_typecheck(Rsub_klass, Rtmp1, Rtmp2);
   check_klass_subtype(Rsub_klass, Rsuper_klass, Rtmp1, Rtmp2, ok_is_subtype);
   profile_typecheck_failed(Rtmp1, Rtmp2);
-}
-
-void InterpreterMacroAssembler::generate_stack_overflow_check_with_compare_and_throw(Register Rmem_frame_size, Register Rscratch1) {
-  Label done;
-  BLOCK_COMMENT("stack_overflow_check_with_compare_and_throw {");
-  sub(Rmem_frame_size, R1_SP, Rmem_frame_size);
-  ld(Rscratch1, thread_(stack_overflow_limit));
-  cmpld(CCR0/*is_stack_overflow*/, Rmem_frame_size, Rscratch1);
-  bgt(CCR0/*is_stack_overflow*/, done);
-
-  // Load target address of the runtime stub.
-  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "generated in wrong order");
-  load_const_optimized(Rscratch1, (StubRoutines::throw_StackOverflowError_entry()), R0);
-  mtctr(Rscratch1);
-  // Restore caller_sp.
-#ifdef ASSERT
-  ld(Rscratch1, 0, R1_SP);
-  ld(R0, 0, R21_sender_SP);
-  cmpd(CCR0, R0, Rscratch1);
-  asm_assert_eq("backlink", 0x547);
-#endif // ASSERT
-  mr(R1_SP, R21_sender_SP);
-  bctr();
-
-  align(32, 12);
-  bind(done);
-  BLOCK_COMMENT("} stack_overflow_check_with_compare_and_throw");
 }
 
 // Separate these two to allow for delay slot in middle.

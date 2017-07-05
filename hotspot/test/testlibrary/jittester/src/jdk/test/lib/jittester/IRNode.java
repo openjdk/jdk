@@ -198,6 +198,31 @@ public abstract class IRNode {
         return result;
     }
 
+    public static long getModifiableNodesCount(List<IRNode> nodes) {
+        return nodes.stream()
+                .map(IRNode::getStackableLeaves)
+                .mapToInt(List::size)
+                .filter(i -> i > 0)
+                .count();
+    }
+
+    public static boolean tryToReduceNodesDepth(List<IRNode> nodes, int maxDepth) {
+        boolean allSucceed = true;
+        for (IRNode child : nodes) {
+            for (IRNode leaf : child.getDeviantBlocks(Math.max(child.countDepth(), maxDepth + 1))) {
+                if (child.countDepth() > maxDepth) {
+                    // doesn't remove control deviation block. Just some parts.
+                    leaf.removeSelf();
+                    boolean successfull = child.countDepth() > maxDepth;
+                    allSucceed &= successfull;
+                } else {
+                    break;
+                }
+            }
+        }
+        return allSucceed;
+    }
+
     // TODO: add field instead this function
     public boolean isCFDeviation() {
         return this instanceof If || this instanceof Switch

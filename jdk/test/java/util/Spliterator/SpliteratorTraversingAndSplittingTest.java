@@ -49,8 +49,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.RandomAccess;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.Spliterator;
@@ -379,6 +381,150 @@ public class SpliteratorTraversingAndSplittingTest {
 
             db.addList(Vector::new);
 
+            class AbstractRandomAccessListImpl extends AbstractList<Integer> implements RandomAccess {
+                Integer[] ia;
+
+                AbstractRandomAccessListImpl(Collection<Integer> c) {
+                    this.ia = c.toArray(new Integer[c.size()]);
+                }
+
+                @Override
+                public Integer get(int index) {
+                    return ia[index];
+                }
+
+                @Override
+                public int size() {
+                    return ia.length;
+                }
+            }
+            db.addList(AbstractRandomAccessListImpl::new);
+
+            class RandomAccessListImpl implements List<Integer>, RandomAccess {
+                Integer[] ia;
+                List<Integer> l;
+
+                RandomAccessListImpl(Collection<Integer> c) {
+                    this.ia = c.toArray(new Integer[c.size()]);
+                    this.l = Arrays.asList(ia);
+                }
+
+                @Override
+                public Integer get(int index) {
+                    return ia[index];
+                }
+
+                @Override
+                public Integer set(int index, Integer element) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void add(int index, Integer element) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public Integer remove(int index) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public int indexOf(Object o) {
+                    return l.indexOf(o);
+                }
+
+                @Override
+                public int lastIndexOf(Object o) {
+                    return Arrays.asList(ia).lastIndexOf(o);
+                }
+
+                @Override
+                public ListIterator<Integer> listIterator() {
+                    return l.listIterator();
+                }
+
+                @Override
+                public ListIterator<Integer> listIterator(int index) {
+                    return l.listIterator(index);
+                }
+
+                @Override
+                public List<Integer> subList(int fromIndex, int toIndex) {
+                    return l.subList(fromIndex, toIndex);
+                }
+
+                @Override
+                public int size() {
+                    return ia.length;
+                }
+
+                @Override
+                public boolean isEmpty() {
+                    return size() != 0;
+                }
+
+                @Override
+                public boolean contains(Object o) {
+                    return l.contains(o);
+                }
+
+                @Override
+                public Iterator<Integer> iterator() {
+                    return l.iterator();
+                }
+
+                @Override
+                public Object[] toArray() {
+                    return l.toArray();
+                }
+
+                @Override
+                public <T> T[] toArray(T[] a) {
+                    return l.toArray(a);
+                }
+
+                @Override
+                public boolean add(Integer integer) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public boolean remove(Object o) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public boolean containsAll(Collection<?> c) {
+                    return l.containsAll(c);
+                }
+
+                @Override
+                public boolean addAll(Collection<? extends Integer> c) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public boolean addAll(int index, Collection<? extends Integer> c) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public boolean removeAll(Collection<?> c) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public boolean retainAll(Collection<?> c) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void clear() {
+                    throw new UnsupportedOperationException();
+                }
+            }
+            db.addList(RandomAccessListImpl::new);
 
             db.addCollection(HashSet::new);
 

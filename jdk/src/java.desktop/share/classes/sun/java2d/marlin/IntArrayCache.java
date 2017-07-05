@@ -54,7 +54,7 @@ final class IntArrayCache implements MarlinConst {
     }
 
     int[] getArray() {
-        if (doStats) {
+        if (DO_STATS) {
             getOp++;
         }
 
@@ -64,7 +64,7 @@ final class IntArrayCache implements MarlinConst {
             return array;
         }
 
-        if (doStats) {
+        if (DO_STATS) {
             createOp++;
         }
 
@@ -73,18 +73,18 @@ final class IntArrayCache implements MarlinConst {
 
     void putDirtyArray(final int[] array, final int length) {
         if (length != arraySize) {
-            if (doChecks) {
+            if (DO_CHECKS) {
                 MarlinUtils.logInfo("ArrayCache: bad length = " + length);
             }
             return;
         }
-        if (doStats) {
+        if (DO_STATS) {
             returnOp++;
         }
 
         // NO clean-up of array data = DIRTY ARRAY
 
-        if (doCleanDirty) {
+        if (DO_CLEAN_DIRTY) {
             // Force zero-fill dirty arrays:
             Arrays.fill(array, 0, array.length, 0);
         }
@@ -97,12 +97,12 @@ final class IntArrayCache implements MarlinConst {
                   final int fromIndex, final int toIndex)
     {
         if (length != arraySize) {
-            if (doChecks) {
+            if (DO_CHECKS) {
                 MarlinUtils.logInfo("ArrayCache: bad length = " + length);
             }
             return;
         }
-        if (doStats) {
+        if (DO_STATS) {
             returnOp++;
         }
 
@@ -125,7 +125,7 @@ final class IntArrayCache implements MarlinConst {
             Arrays.fill(array, fromIndex, toIndex, value);
         }
 
-        if (doChecks) {
+        if (DO_CHECKS) {
             check(array, fromIndex, toIndex, value);
         }
     }
@@ -133,7 +133,7 @@ final class IntArrayCache implements MarlinConst {
     static void check(final int[] array, final int fromIndex,
                       final int toIndex, final int value)
     {
-        if (doChecks) {
+        if (DO_CHECKS) {
             // check zero on full array:
             for (int i = 0; i < array.length; i++) {
                 if (array[i] != value) {

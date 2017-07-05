@@ -32,6 +32,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandomParameters;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class HmacDrbg extends AbstractHashDrbg {
 
@@ -56,7 +58,7 @@ public class HmacDrbg extends AbstractHashDrbg {
     }
 
     // 800-90Ar1 10.1.2.2: HMAC_DRBG Update Process
-    private void update(byte[]... inputs) {
+    private void update(List<byte[]> inputs) {
         try {
             // Step 1. K = HMAC (K, V || 0x00 || provided_data).
             mac.init(new SecretKeySpec(k, macAlg));
@@ -71,7 +73,7 @@ public class HmacDrbg extends AbstractHashDrbg {
             mac.init(new SecretKeySpec(k, macAlg));
             v = mac.doFinal(v);
 
-            if (inputs.length != 0) {
+            if (!inputs.isEmpty()) {
                 // Step 4. K = HMAC (K, V || 0x01 || provided_data).
                 mac.update(v);
                 mac.update((byte) 1);
@@ -116,7 +118,7 @@ public class HmacDrbg extends AbstractHashDrbg {
 
     // This method is used by both instantiation and reseeding.
     @Override
-    protected final synchronized void hashReseedInternal(byte[] input) {
+    protected final synchronized void hashReseedInternal(List<byte[]> input) {
 
         // 800-90Ar1 10.1.2.3: Instantiate Process.
         // 800-90Ar1 10.1.2.4: Reseed Process.
@@ -156,16 +158,15 @@ public class HmacDrbg extends AbstractHashDrbg {
 
         // Step 2. HMAC_DRBG_Update
         if (additionalInput != null) {
-            update(additionalInput);
+            update(Collections.singletonList(additionalInput));
         }
 
         // Step 3. temp = Null.
         int pos = 0;
+        int len = result.length;
 
         // Step 4. Loop
-        while (pos < result.length) {
-            int tailLen = result.length - pos;
-
+        while (len > 0) {
             // Step 4.1 V = HMAC (Key, V).
             try {
                 mac.init(new SecretKeySpec(k, macAlg));
@@ -175,7 +176,13 @@ public class HmacDrbg extends AbstractHashDrbg {
             v = mac.doFinal(v);
             // Step 4.2 temp = temp || V.
             System.arraycopy(v, 0, result, pos,
-                    tailLen > outLen ? outLen : tailLen);
+                    len > outLen ? outLen : len);
+
+            len -= outLen;
+            if (len <= 0) {
+                // shortcut, so that pos needn't be updated
+                break;
+            }
             pos += outLen;
         }
 
@@ -183,9 +190,9 @@ public class HmacDrbg extends AbstractHashDrbg {
 
         // Step 6. HMAC_DRBG_Update (additional_input, Key, V).
         if (additionalInput != null) {
-            update(additionalInput);
+            update(Collections.singletonList(additionalInput));
         } else {
-            update();
+            update(Collections.emptyList());
         }
 
         // Step 7. reseed_counter = reseed_counter + 1.

@@ -24,13 +24,13 @@
 /**
  * @test
  * @bug 8035968
- * @summary Verify UseSHA256Intrinsics option processing on unsupported CPU,
- * @library /testlibrary /test/lib /compiler/testlibrary testcases
+ * @summary Verify UseSHA256Intrinsics option processing on unsupported CPU.
+ * @library /testlibrary /test/lib testcases /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseSHA256IntrinsicsOptionOnUnsupportedCPU
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   TestUseSHA256IntrinsicsOptionOnUnsupportedCPU
