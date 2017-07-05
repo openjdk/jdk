@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,7 +338,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
      * and sets this value; the default is null, implying a native operating
      * system window title pane.
      *
-     * @param content the <code>JComponent</code> to use for the window title pane.
+     * @param titlePane the <code>JComponent</code> to use for the window title pane.
      */
     private void setTitlePane(JRootPane root, JComponent titlePane) {
         JLayeredPane layeredPane = root.getLayeredPane();
@@ -434,7 +434,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
         /**
          * Returns the amount of space the layout would like to have.
          *
-         * @param the Container for which this layout manager is being used
+         * @param parent the Container for which this layout manager is being used
          * @return a Dimension object containing the layout's preferred size
          */
         public Dimension preferredLayoutSize(Container parent) {
@@ -486,7 +486,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
         /**
          * Returns the minimum amount of space the layout needs.
          *
-         * @param the Container for which this layout manager is being used
+         * @param parent the Container for which this layout manager is being used
          * @return a Dimension object containing the layout's minimum size
          */
         public Dimension minimumLayoutSize(Container parent) {
@@ -537,7 +537,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
         /**
          * Returns the maximum amount of space the layout can use.
          *
-         * @param the Container for which this layout manager is being used
+         * @param target the Container for which this layout manager is being used
          * @return a Dimension object containing the layout's maximum size
          */
         public Dimension maximumLayoutSize(Container target) {
@@ -601,7 +601,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
          * Instructs the layout manager to perform the layout for the specified
          * container.
          *
-         * @param the Container for which this layout manager is being used
+         * @param parent the Container for which this layout manager is being used
          */
         public void layoutContainer(Container parent) {
             JRootPane root = (JRootPane) parent;

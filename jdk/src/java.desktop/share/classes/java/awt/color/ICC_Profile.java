@@ -1081,7 +1081,7 @@ public class ICC_Profile implements Serializable {
      * when loading this profile.
      * If deferring is enabled, then the deferred activation
      * code will take care of access privileges.
-     * @see activateDeferredProfile()
+     * @see #activateDeferredProfile()
      */
     static ICC_Profile getDeferredInstance(ProfileDeferralInfo pdi) {
         if (!ProfileDeferralMgr.deferring) {
