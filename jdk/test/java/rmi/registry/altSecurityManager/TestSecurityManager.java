@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,18 +28,18 @@ public class TestSecurityManager extends SecurityManager {
     }
 
     public void checkListen(int port) {
-	// 4269910: ok, now rmid and the regsitry will *really* go
-	// away...
-	//
-	// rmid and the registry need to listen on sockets so they
-	// will exit when they try to do so... this is used as a sign
-	// by the main test process to detect that the proper security
-	// manager has been installed in the relevant VMs.
-	//
-	System.exit(1);
+        // 4269910: ok, now rmid and the regsitry will *really* go
+        // away...
+        //
+        // rmid and the registry need to listen on sockets so they
+        // will exit when they try to do so... this is used as a sign
+        // by the main test process to detect that the proper security
+        // manager has been installed in the relevant VMs.
+        //
+        System.exit(1);
     }
 
     public void checkExit(int status) {
-	// permit check exit for all code
+        // permit check exit for all code
     }
 }

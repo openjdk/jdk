@@ -45,10 +45,8 @@ ifeq ($(PLATFORM), windows)
   NMAKE          = MFLAGS= MAKEFLAGS= $(COMPILER_PATH)nmake -nologo
   ifeq ($(ARCH_DATA_MODEL), 32)
     CC_VER  = UNKNOWN
-    CC_TYPE = UNKNOWN
   else
     CC_VER  = UNKNOWN
-    CC_TYPE = UNKNOWN
   endif
   _LINK_VER :=$(shell $(LINK) 2>&1 | $(HEAD) -n 1)
   LINK_VER  :=$(call GetVersion,"$(_LINK_VER)")

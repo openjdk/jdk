@@ -37,23 +37,45 @@
 # include <stdlib.h>
 # include <wchar.h>
 # include <stdarg.h>
+#ifdef SOLARIS
 # include <ieeefp.h>
+#endif
 # include <math.h>
+#ifdef LINUX
+#ifndef FP_PZERO
+  // Linux doesn't have positive/negative zero
+  #define FP_PZERO FP_ZERO
+#endif
+#ifndef fpclass
+  #define fpclass fpclassify
+#endif
+#endif
 # include <time.h>
 # include <fcntl.h>
 # include <dlfcn.h>
 # include <pthread.h>
+#ifdef SOLARIS
 # include <thread.h>
+#endif
 # include <limits.h>
 # include <errno.h>
+#ifdef SOLARIS
 # include <sys/trap.h>
 # include <sys/regset.h>
 # include <sys/procset.h>
 # include <ucontext.h>
 # include <setjmp.h>
+#endif
 # ifdef SOLARIS_MUTATOR_LIBTHREAD
 # include <sys/procfs.h>
 # endif
+#ifdef LINUX
+# include <inttypes.h>
+# include <signal.h>
+# include <ucontext.h>
+# include <sys/time.h>
+#endif
+
 
 // 4810578: varargs unsafe on 32-bit integer/64-bit pointer architectures
 // When __cplusplus is defined, NULL is defined as 0 (32-bit constant) in
@@ -68,6 +90,11 @@
 // pointer when it extracts the argument, then we have a problem.
 //
 // Solution: For 64-bit architectures, redefine NULL as 64-bit constant 0.
+//
+// Note: this fix doesn't work well on Linux because NULL will be overwritten
+// whenever a system header file is included. Linux handles NULL correctly
+// through a special type '__null'.
+#ifdef SOLARIS
 #ifdef _LP64
 #undef NULL
 #define NULL 0L
@@ -76,13 +103,25 @@
 #define NULL 0
 #endif
 #endif
+#endif
 
 // NULL vs NULL_WORD:
 // On Linux NULL is defined as a special type '__null'. Assigning __null to
 // integer variable will cause gcc warning. Use NULL_WORD in places where a
-// pointer is stored as integer value.
-#define NULL_WORD NULL
+// pointer is stored as integer value. On some platforms, sizeof(intptr_t) >
+// sizeof(void*), so here we want something which is integer type, but has the
+// same size as a pointer.
+#ifdef LINUX
+  #ifdef _LP64
+    #define NULL_WORD  0L
+  #else
+    #define NULL_WORD  0
+  #endif
+#else
+  #define NULL_WORD  NULL
+#endif
 
+#ifndef LINUX
 // Compiler-specific primitive types
 typedef unsigned short     uint16_t;
 #ifndef _UINT32_T
@@ -99,6 +138,7 @@ typedef int                     intptr_t;
 typedef unsigned int            uintptr_t;
 // If this gets an error, figure out a symbol XXX that implies the
 // prior definition of intptr_t, and add "&& !defined(XXX)" above.
+#endif
 #endif
 
 // Additional Java basic types
@@ -128,7 +168,7 @@ inline jdouble jdouble_cast(jlong   x)           { return *(jdouble*)&x; }
 const jlong min_jlong = CONST64(0x8000000000000000);
 const jlong max_jlong = CONST64(0x7fffffffffffffff);
 
-
+#ifdef SOLARIS
 //----------------------------------------------------------------------------------------------------
 // ANSI C++ fixes
 // NOTE:In the ANSI committee's continuing attempt to make each version
@@ -162,7 +202,7 @@ extern "C" {
    typedef int (*int_fnP_cond_tP_i_vP)(cond_t *cv, int scope, void *arg);
    typedef int (*int_fnP_cond_tP)(cond_t *cv);
 };
-
+#endif
 
 //----------------------------------------------------------------------------------------------------
 // Debugging
@@ -173,7 +213,7 @@ extern "C" void breakpoint();
 #define BREAKPOINT ::breakpoint()
 
 // checking for nanness
-
+#ifdef SOLARIS
 #ifdef SPARC
 inline int g_isnan(float  f) { return isnanf(f); }
 #else
@@ -182,6 +222,12 @@ inline int g_isnan(float  f) { return isnand(f); }
 #endif
 
 inline int g_isnan(double f) { return isnand(f); }
+#elif LINUX
+inline int g_isnan(float  f) { return isnanf(f); }
+inline int g_isnan(double f) { return isnan(f); }
+#else
+#error "missing platform-specific definition here"
+#endif
 
 // Checking for finiteness
 
@@ -195,9 +241,11 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 
 
 // Misc
+// NOTE: This one leads to an infinite recursion on Linux
+#ifndef LINUX
 int local_vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr);
 #define vsnprintf local_vsnprintf
-
+#endif
 
 // Portability macros
 #define PRAGMA_INTERFACE

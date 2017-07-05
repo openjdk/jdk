@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,12 +32,12 @@
  *
  * @bug 4214123
  * @summary Unreferenced.unreferenced(...) threads should run in the nonSystem group.
- *          To complete the fix for, 4182104, RMI unreferenced threads should also 
+ *          To complete the fix for, 4182104, RMI unreferenced threads should also
  *          run in the nonSystem so that they do not need permissions to modify the
  *          system thread group.
  *
  * @author Laird Dornin
- * 
+ *
  * @library ../../../testlibrary
  * @build UnreferencedContext
  * @build UnreferencedContext_Stub
@@ -60,127 +60,127 @@ public class UnreferencedContext implements Remote, Unreferenced, Runnable {
     private ClassLoader unreferencedContext;
 
     public void run() {
-	System.err.println("unreferenced method created thread succesfully");
+        System.err.println("unreferenced method created thread succesfully");
     }
 
     public void unreferenced() {
-	// turn on security to ensure that the action below will not
-	// require extra permissions
-	System.setSecurityManager(new java.rmi.RMISecurityManager());
+        // turn on security to ensure that the action below will not
+        // require extra permissions
+        System.setSecurityManager(new java.rmi.RMISecurityManager());
 
-	// exercise functionality prohibited by 4214123
-	(new Thread(this)).start();
+        // exercise functionality prohibited by 4214123
+        (new Thread(this)).start();
 
-	System.err.println("unreferenced() method invoked");
-	synchronized (lock) {
-	    unreferencedInvoked = true;
-	    unreferencedContext =
-		Thread.currentThread().getContextClassLoader();
-	    lock.notify();
-	}
+        System.err.println("unreferenced() method invoked");
+        synchronized (lock) {
+            unreferencedInvoked = true;
+            unreferencedContext =
+                Thread.currentThread().getContextClassLoader();
+            lock.notify();
+        }
     }
 
     public static void main(String[] args) {
 
-	System.err.println("\nRegression test for bug 4171278\n");
+        System.err.println("\nRegression test for bug 4171278\n");
 
-	/*
-	 * Set the interval that RMI will request for GC latency (before RMI
-	 * gets initialized and this property is read) to an unrealistically
-	 * small value, so that this test shouldn't have to wait too long.
-	 */
-	System.setProperty("sun.rmi.dgc.client.gcInterval",
-	    String.valueOf(GC_INTERVAL));
+        /*
+         * Set the interval that RMI will request for GC latency (before RMI
+         * gets initialized and this property is read) to an unrealistically
+         * small value, so that this test shouldn't have to wait too long.
+         */
+        System.setProperty("sun.rmi.dgc.client.gcInterval",
+            String.valueOf(GC_INTERVAL));
 
-	UnreferencedContext obj = new UnreferencedContext();
+        UnreferencedContext obj = new UnreferencedContext();
 
-	try {
-	    /*
-	     * This little trick is necessary to make sure that the RMI server
-	     * threads for objects created on the default port get created
-	     * before we set our special context class loader, so that they
-	     * don't *accidentally* inherit it when making the unreferenced()
-	     * callback.
-	     */
-	    UnicastRemoteObject.exportObject(obj);
-	    UnicastRemoteObject.unexportObject(obj, true);
+        try {
+            /*
+             * This little trick is necessary to make sure that the RMI server
+             * threads for objects created on the default port get created
+             * before we set our special context class loader, so that they
+             * don't *accidentally* inherit it when making the unreferenced()
+             * callback.
+             */
+            UnicastRemoteObject.exportObject(obj);
+            UnicastRemoteObject.unexportObject(obj, true);
 
-	    /*
-	     * Now create special context class loader before exporting the
-	     * remote object for real, so that it should be set when the
-	     * object's unreferenced() method is called.
-	     */
-	    ClassLoader intendedContext = new URLClassLoader(new URL[0]);
-	    Thread.currentThread().setContextClassLoader(intendedContext);
-	    System.err.println(
-		"created and set intended context class loader: " +
-		intendedContext);
+            /*
+             * Now create special context class loader before exporting the
+             * remote object for real, so that it should be set when the
+             * object's unreferenced() method is called.
+             */
+            ClassLoader intendedContext = new URLClassLoader(new URL[0]);
+            Thread.currentThread().setContextClassLoader(intendedContext);
+            System.err.println(
+                "created and set intended context class loader: " +
+                intendedContext);
 
-	    UnicastRemoteObject.exportObject(obj);
-	    System.err.println("exported remote object");
+            UnicastRemoteObject.exportObject(obj);
+            System.err.println("exported remote object");
 
-	    LocateRegistry.createRegistry(TestLibrary.REGISTRY_PORT);
-	    System.err.println("created registry");
+            LocateRegistry.createRegistry(TestLibrary.REGISTRY_PORT);
+            System.err.println("created registry");
 
-	    Registry registry = LocateRegistry.getRegistry("", TestLibrary.REGISTRY_PORT);
-	    registry.bind(BINDING, obj);
-	    System.err.println("bound remote object in registry");
+            Registry registry = LocateRegistry.getRegistry("", TestLibrary.REGISTRY_PORT);
+            registry.bind(BINDING, obj);
+            System.err.println("bound remote object in registry");
 
-	    synchronized (obj.lock) {
-		registry.unbind(BINDING);
-		System.err.println("unbound remote object from registry; " +
-		    "waiting for unreferenced() callback...");
-		/*
-		 * This incantation seems sufficient to work around the
-		 * ramifications of 4164696, so that this test will actually
-		 * prove something useful about 1.2Beta4 or 1.2FCS before
-		 * 4171278 was fixed.
-		 */
-		for (int i = 0; i < 10; i++) {
-		    System.gc();
-		    obj.lock.wait(TIMEOUT / 10);
-		    if (obj.unreferencedInvoked) {
-			break;
-		    }
-		}
+            synchronized (obj.lock) {
+                registry.unbind(BINDING);
+                System.err.println("unbound remote object from registry; " +
+                    "waiting for unreferenced() callback...");
+                /*
+                 * This incantation seems sufficient to work around the
+                 * ramifications of 4164696, so that this test will actually
+                 * prove something useful about 1.2Beta4 or 1.2FCS before
+                 * 4171278 was fixed.
+                 */
+                for (int i = 0; i < 10; i++) {
+                    System.gc();
+                    obj.lock.wait(TIMEOUT / 10);
+                    if (obj.unreferencedInvoked) {
+                        break;
+                    }
+                }
 
-		if (obj.unreferencedInvoked) {
-		    System.err.println(
-			"invoked with context class loader: " +
-			obj.unreferencedContext);
+                if (obj.unreferencedInvoked) {
+                    System.err.println(
+                        "invoked with context class loader: " +
+                        obj.unreferencedContext);
 
-		    if (obj.unreferencedContext == intendedContext) {
-			System.err.println(
-			    "TEST PASSED: unreferenced() invoked" +
-			    " with intended context class loader");
-		    } else {
-			throw new RuntimeException(
-			    "TEST FAILED: unreferenced() invoked" +
-			    " with incorrect context class loader");
-		    }
-		} else {
-		    throw new RuntimeException(
-			"TEST FAILED: unreferenced() not invoked after " +
-			((double) TIMEOUT / 1000.0) + " seconds or unreferenced failed to create a thread");
-		}
-	    }
+                    if (obj.unreferencedContext == intendedContext) {
+                        System.err.println(
+                            "TEST PASSED: unreferenced() invoked" +
+                            " with intended context class loader");
+                    } else {
+                        throw new RuntimeException(
+                            "TEST FAILED: unreferenced() invoked" +
+                            " with incorrect context class loader");
+                    }
+                } else {
+                    throw new RuntimeException(
+                        "TEST FAILED: unreferenced() not invoked after " +
+                        ((double) TIMEOUT / 1000.0) + " seconds or unreferenced failed to create a thread");
+                }
+            }
 
-	} catch (Exception e) {
-	    if (e instanceof RuntimeException) {
-		throw (RuntimeException) e;
-	    } else {
-		throw new RuntimeException(
-		    "TEST FAILED: unexpected exception: " + e.toString());
-	    }
-	} finally {
-	    /*
-	     * When all is said and done, try to unexport the remote object
-	     * so that the VM has a chance to exit.
-	     */
-	    try {
-		UnicastRemoteObject.unexportObject(obj, true);
-	    } catch (RemoteException e) {
-	    }
-	}
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException(
+                    "TEST FAILED: unexpected exception: " + e.toString());
+            }
+        } finally {
+            /*
+             * When all is said and done, try to unexport the remote object
+             * so that the VM has a chance to exit.
+             */
+            try {
+                UnicastRemoteObject.unexportObject(obj, true);
+            } catch (RemoteException e) {
+            }
+        }
     }
 }

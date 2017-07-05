@@ -321,6 +321,20 @@ void VM_Version::get_processor_features() {
         UseXmmRegToRegMoveAll = false;
       }
     }
+    if( FLAG_IS_DEFAULT(UseXmmI2F) ) {
+      if( supports_sse4a() ) {
+        UseXmmI2F = true;
+      } else {
+        UseXmmI2F = false;
+      }
+    }
+    if( FLAG_IS_DEFAULT(UseXmmI2D) ) {
+      if( supports_sse4a() ) {
+        UseXmmI2D = true;
+      } else {
+        UseXmmI2D = false;
+      }
+    }
   }
 
   if( is_intel() ) { // Intel cpus specific settings

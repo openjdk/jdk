@@ -392,6 +392,10 @@ enum BasicType {
   T_ILLEGAL  = 99
 };
 
+inline bool is_java_primitive(BasicType t) {
+  return T_BOOLEAN <= t && t <= T_LONG;
+}
+
 // Convert a char from a classfile signature to a BasicType
 inline BasicType char2type(char c) {
   switch( c ) {
@@ -464,7 +468,12 @@ enum ArrayElementSize {
   T_VOID_aelem_bytes    = 0
 };
 
-extern int type2aelembytes[T_CONFLICT+1]; // maps a BasicType to nof bytes used by its array element
+extern int _type2aelembytes[T_CONFLICT+1]; // maps a BasicType to nof bytes used by its array element
+#ifdef ASSERT
+extern int type2aelembytes(BasicType t, bool allow_address = false); // asserts
+#else
+inline int type2aelembytes(BasicType t) { return _type2aelembytes[t]; }
+#endif
 
 
 // JavaValue serves as a container for arbitrary Java values.

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,19 +32,18 @@ public class TestImpl
     }
 
     public TestIface export()
-	throws RemoteException
+        throws RemoteException
     {
-	return (TestIface)UnicastRemoteObject.exportObject(this);
+        return (TestIface)UnicastRemoteObject.exportObject(this);
     }
 
     public void unexport()
-	throws NoSuchObjectException
+        throws NoSuchObjectException
     {
-	UnicastRemoteObject.unexportObject(this, true);
+        UnicastRemoteObject.unexportObject(this, true);
     }
 
     public String testCall(String ign) {
-	return ("OK");
+        return ("OK");
     }
 }
-

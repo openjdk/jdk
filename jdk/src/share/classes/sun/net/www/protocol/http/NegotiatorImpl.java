@@ -91,9 +91,10 @@ public class NegotiatorImpl extends Negotiator {
         GSSManagerImpl manager = new GSSManagerImpl(
                 GSSUtil.CALLER_HTTP_NEGOTIATE);
 
-        String peerName = "HTTP/" + hostname;
+        String peerName = "HTTP@" + hostname;
 
-        GSSName serverName = manager.createName(peerName, null);
+        GSSName serverName = manager.createName(peerName,
+                GSSName.NT_HOSTBASED_SERVICE);
         context = manager.createContext(serverName,
                                         oid,
                                         null,

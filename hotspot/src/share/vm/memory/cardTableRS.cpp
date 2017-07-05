@@ -556,10 +556,16 @@ void CardTableRS::verify() {
 }
 
 
-void CardTableRS::verify_empty(MemRegion mr) {
+void CardTableRS::verify_aligned_region_empty(MemRegion mr) {
   if (!mr.is_empty()) {
     jbyte* cur_entry = byte_for(mr.start());
     jbyte* limit = byte_after(mr.last());
+    // The region mr may not start on a card boundary so
+    // the first card may reflect a write to the space
+    // just prior to mr.
+    if (!is_aligned(mr.start())) {
+      cur_entry++;
+    }
     for (;cur_entry < limit; cur_entry++) {
       guarantee(*cur_entry == CardTableModRefBS::clean_card,
                 "Unexpected dirty card found");

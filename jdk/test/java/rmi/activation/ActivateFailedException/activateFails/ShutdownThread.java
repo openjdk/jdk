@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,21 +31,20 @@ public class ShutdownThread extends Thread implements Serializable {
     ActivationID activationID = null;
 
     public ShutdownThread(Remote remoteObject, ActivationID activationID) {
-	remoteObject = remoteObject;
-	activationID = activationID;
+        remoteObject = remoteObject;
+        activationID = activationID;
     }
 
     public void run() {
 
-	try {
+        try {
 
-	    Activatable.unexportObject(remoteObject, true);
-	    Activatable.inactive(activationID);
+            Activatable.unexportObject(remoteObject, true);
+            Activatable.inactive(activationID);
 
-	} catch (Exception e) {
-	}
+        } catch (Exception e) {
+        }
 
     }
 
 }
-

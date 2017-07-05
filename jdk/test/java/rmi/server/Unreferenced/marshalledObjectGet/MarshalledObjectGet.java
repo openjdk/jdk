@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,72 +51,72 @@ public class MarshalledObjectGet implements Remote, Unreferenced {
     private boolean unreferencedInvoked;
 
     public void unreferenced() {
-	System.err.println("unreferenced() method invoked");
-	synchronized (lock) {
-	    unreferencedInvoked = true;
-	    lock.notify();
-	}
+        System.err.println("unreferenced() method invoked");
+        synchronized (lock) {
+            unreferencedInvoked = true;
+            lock.notify();
+        }
     }
 
     public static void main(String[] args) {
 
-	System.err.println(
-	    "\nTest to verify correction interaction of " +
-	    "MarshalledObject.get and DGC registration\n");
+        System.err.println(
+            "\nTest to verify correction interaction of " +
+            "MarshalledObject.get and DGC registration\n");
 
-	/*
-	 * Set the interval that RMI will request for GC latency (before RMI
-	 * gets initialized and this property is read) to an unrealistically
-	 * small value, so that this test shouldn't have to wait too long.
-	 */
-	System.setProperty("sun.rmi.dgc.client.gcInterval",
-	    String.valueOf(GC_INTERVAL));
+        /*
+         * Set the interval that RMI will request for GC latency (before RMI
+         * gets initialized and this property is read) to an unrealistically
+         * small value, so that this test shouldn't have to wait too long.
+         */
+        System.setProperty("sun.rmi.dgc.client.gcInterval",
+            String.valueOf(GC_INTERVAL));
 
-	MarshalledObjectGet obj = new MarshalledObjectGet();
+        MarshalledObjectGet obj = new MarshalledObjectGet();
 
-	try {
-	    Remote stub = UnicastRemoteObject.exportObject(obj);
-	    System.err.println("exported remote object");
+        try {
+            Remote stub = UnicastRemoteObject.exportObject(obj);
+            System.err.println("exported remote object");
 
-	    MarshalledObject mobj = new MarshalledObject(stub);
-	    Remote unmarshalledStub = (Remote) mobj.get();
-	    System.err.println("unmarshalled stub from marshalled object");
+            MarshalledObject mobj = new MarshalledObject(stub);
+            Remote unmarshalledStub = (Remote) mobj.get();
+            System.err.println("unmarshalled stub from marshalled object");
 
-	    synchronized (obj.lock) {
-		obj.unreferencedInvoked = false;
+            synchronized (obj.lock) {
+                obj.unreferencedInvoked = false;
 
-		unmarshalledStub = null;
-		System.gc();
-		System.err.println("cleared unmarshalled stub");
-		System.err.println("waiting for unreferenced() callback " +
-				   "(SHOULD happen)...");
-		obj.lock.wait(TIMEOUT);
+                unmarshalledStub = null;
+                System.gc();
+                System.err.println("cleared unmarshalled stub");
+                System.err.println("waiting for unreferenced() callback " +
+                                   "(SHOULD happen)...");
+                obj.lock.wait(TIMEOUT);
 
-		if (obj.unreferencedInvoked) {
-		    // TEST PASSED
-		} else {
-		    throw new RuntimeException(
-			"TEST FAILED: unrefereced() not invoked after " +
-			((double) TIMEOUT / 1000.0) + " seconds");
-		}
-	    }
+                if (obj.unreferencedInvoked) {
+                    // TEST PASSED
+                } else {
+                    throw new RuntimeException(
+                        "TEST FAILED: unrefereced() not invoked after " +
+                        ((double) TIMEOUT / 1000.0) + " seconds");
+                }
+            }
 
-	    System.err.println("TEST PASSED");
+            System.err.println("TEST PASSED");
 
-	} catch (Exception e) {
-	    if (e instanceof RuntimeException) {
-		throw (RuntimeException) e;
-	    } else {
-		throw new RuntimeException(
-		    "TEST FAILED: unexpected exception: " + e.toString());
-	    }
-	} finally {
-	    if (obj != null) {
-		try {
-		    UnicastRemoteObject.unexportObject(obj, true);
-		} catch (Exception e) {
-		}
-	    }
-	}
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException(
+                    "TEST FAILED: unexpected exception: " + e.toString());
+            }
+        } finally {
+            if (obj != null) {
+                try {
+                    UnicastRemoteObject.unexportObject(obj, true);
+                } catch (Exception e) {
+                }
+            }
+        }
     }
 }

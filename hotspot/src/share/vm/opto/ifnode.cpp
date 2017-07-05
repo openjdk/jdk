@@ -543,6 +543,159 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
   return NULL;                  // Dead loop?  Or hit root?
 }
 
+
+//------------------------------filtered_int_type--------------------------------
+// Return a possibly more restrictive type for val based on condition control flow for an if
+const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node *val, Node* if_proj) {
+  assert(if_proj &&
+         (if_proj->Opcode() == Op_IfTrue || if_proj->Opcode() == Op_IfFalse), "expecting an if projection");
+  if (if_proj->in(0) && if_proj->in(0)->is_If()) {
+    IfNode* iff = if_proj->in(0)->as_If();
+    if (iff->in(1) && iff->in(1)->is_Bool()) {
+      BoolNode* bol = iff->in(1)->as_Bool();
+      if (bol->in(1) && bol->in(1)->is_Cmp()) {
+        const CmpNode* cmp  = bol->in(1)->as_Cmp();
+        if (cmp->in(1) == val) {
+          const TypeInt* cmp2_t = gvn->type(cmp->in(2))->isa_int();
+          if (cmp2_t != NULL) {
+            jint lo = cmp2_t->_lo;
+            jint hi = cmp2_t->_hi;
+            BoolTest::mask msk = if_proj->Opcode() == Op_IfTrue ? bol->_test._test : bol->_test.negate();
+            switch (msk) {
+            case BoolTest::ne:
+              // Can't refine type
+              return NULL;
+            case BoolTest::eq:
+              return cmp2_t;
+            case BoolTest::lt:
+              lo = TypeInt::INT->_lo;
+              if (hi - 1 < hi) {
+                hi = hi - 1;
+              }
+              break;
+            case BoolTest::le:
+              lo = TypeInt::INT->_lo;
+              break;
+            case BoolTest::gt:
+              if (lo + 1 > lo) {
+                lo = lo + 1;
+              }
+              hi = TypeInt::INT->_hi;
+              break;
+            case BoolTest::ge:
+              // lo unchanged
+              hi = TypeInt::INT->_hi;
+              break;
+            }
+            const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen);
+            return rtn_t;
+          }
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+//------------------------------fold_compares----------------------------
+// See if a pair of CmpIs can be converted into a CmpU.  In some cases
+// the direction of this if is determined by the preciding if so it
+// can be eliminate entirely.  Given an if testing (CmpI n c) check
+// for an immediately control dependent if that is testing (CmpI n c2)
+// and has one projection leading to this if and the other projection
+// leading to a region that merges one of this ifs control
+// projections.
+//
+//                   If
+//                  / |
+//                 /  |
+//                /   |
+//              If    |
+//              /\    |
+//             /  \   |
+//            /    \  |
+//           /    Region
+//
+Node* IfNode::fold_compares(PhaseGVN* phase) {
+  if (!EliminateAutoBox || Opcode() != Op_If) return NULL;
+
+  Node* this_cmp = in(1)->in(1);
+  if (this_cmp != NULL && this_cmp->Opcode() == Op_CmpI &&
+      this_cmp->in(2)->is_Con() && this_cmp->in(2) != phase->C->top()) {
+    Node* ctrl = in(0);
+    BoolNode* this_bool = in(1)->as_Bool();
+    Node* n = this_cmp->in(1);
+    int hi = this_cmp->in(2)->get_int();
+    if (ctrl != NULL && ctrl->is_Proj() && ctrl->outcnt() == 1 &&
+        ctrl->in(0)->is_If() &&
+        ctrl->in(0)->outcnt() == 2 &&
+        ctrl->in(0)->in(1)->is_Bool() &&
+        ctrl->in(0)->in(1)->in(1)->Opcode() == Op_CmpI &&
+        ctrl->in(0)->in(1)->in(1)->in(2)->is_Con() &&
+        ctrl->in(0)->in(1)->in(1)->in(1) == n) {
+      IfNode* dom_iff = ctrl->in(0)->as_If();
+      Node* otherproj = dom_iff->proj_out(!ctrl->as_Proj()->_con);
+      if (otherproj->outcnt() == 1 && otherproj->unique_out()->is_Region() &&
+          this_bool->_test._test != BoolTest::ne && this_bool->_test._test != BoolTest::eq) {
+        // Identify which proj goes to the region and which continues on
+        RegionNode* region = otherproj->unique_out()->as_Region();
+        Node* success = NULL;
+        Node* fail = NULL;
+        for (int i = 0; i < 2; i++) {
+          Node* proj = proj_out(i);
+          if (success == NULL && proj->outcnt() == 1 && proj->unique_out() == region) {
+            success = proj;
+          } else if (fail == NULL) {
+            fail = proj;
+          } else {
+            success = fail = NULL;
+          }
+        }
+        if (success != NULL && fail != NULL && !region->has_phi()) {
+          int lo = dom_iff->in(1)->in(1)->in(2)->get_int();
+          BoolNode* dom_bool = dom_iff->in(1)->as_Bool();
+          Node* dom_cmp =  dom_bool->in(1);
+          const TypeInt* failtype  = filtered_int_type(phase, n, ctrl);
+          if (failtype != NULL) {
+            const TypeInt* type2 = filtered_int_type(phase, n, fail);
+            if (type2 != NULL) {
+              failtype = failtype->join(type2)->is_int();
+            } else {
+              failtype = NULL;
+            }
+          }
+
+          if (failtype != NULL &&
+              dom_bool->_test._test != BoolTest::ne && dom_bool->_test._test != BoolTest::eq) {
+            int bound = failtype->_hi - failtype->_lo + 1;
+            if (failtype->_hi != max_jint && failtype->_lo != min_jint && bound > 1) {
+              // Merge the two compares into a single unsigned compare by building  (CmpU (n - lo) hi)
+              BoolTest::mask cond = fail->as_Proj()->_con ? BoolTest::lt : BoolTest::ge;
+              Node* adjusted = phase->transform(new (phase->C, 3) SubINode(n, phase->intcon(failtype->_lo)));
+              Node* newcmp = phase->transform(new (phase->C, 3) CmpUNode(adjusted, phase->intcon(bound)));
+              Node* newbool = phase->transform(new (phase->C, 2) BoolNode(newcmp, cond));
+              phase->hash_delete(dom_iff);
+              dom_iff->set_req(1, phase->intcon(ctrl->as_Proj()->_con));
+              phase->is_IterGVN()->_worklist.push(dom_iff);
+              phase->hash_delete(this);
+              set_req(1, newbool);
+              return this;
+            }
+            if (failtype->_lo > failtype->_hi) {
+              // previous if determines the result of this if so
+              // replace Bool with constant
+              phase->hash_delete(this);
+              set_req(1, phase->intcon(success->as_Proj()->_con));
+              return this;
+            }
+          }
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
 //------------------------------remove_useless_bool----------------------------
 // Check for people making a useless boolean: things like
 // if( (x < y ? true : false) ) { ... }
@@ -743,6 +896,11 @@ Node *IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
     // Normal equivalent-test check.
     if( !dom ) return NULL;     // Dead loop?
+
+    Node* result = fold_compares(phase);
+    if (result != NULL) {
+      return result;
+    }
 
     // Search up the dominator tree for an If with an identical test
     while( dom->Opcode() != op    ||  // Not same opcode?
