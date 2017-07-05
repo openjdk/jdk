@@ -989,7 +989,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
       // since we're notifying the VM on every catch.
       // Force deoptimization and the rest of the lookup
       // will be fine.
-      deoptimize_caller_frame(thread, true);
+      deoptimize_caller_frame(thread);
     }
 
     // Check the stack guard pages.  If enabled, look for handler in this frame;
@@ -1143,17 +1143,22 @@ const TypeFunc *OptoRuntime::rethrow_Type() {
 
 
 void OptoRuntime::deoptimize_caller_frame(JavaThread *thread, bool doit) {
-  // Deoptimize frame
-  if (doit) {
-    // Called from within the owner thread, so no need for safepoint
-    RegisterMap reg_map(thread);
-    frame stub_frame = thread->last_frame();
-    assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
-    frame caller_frame = stub_frame.sender(&reg_map);
-
-    // Deoptimize the caller frame.
-    Deoptimization::deoptimize_frame(thread, caller_frame.id());
+  // Deoptimize the caller before continuing, as the compiled
+  // exception handler table may not be valid.
+  if (!StressCompiledExceptionHandlers && doit) {
+    deoptimize_caller_frame(thread);
   }
+}
+
+void OptoRuntime::deoptimize_caller_frame(JavaThread *thread) {
+  // Called from within the owner thread, so no need for safepoint
+  RegisterMap reg_map(thread);
+  frame stub_frame = thread->last_frame();
+  assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
+  frame caller_frame = stub_frame.sender(&reg_map);
+
+  // Deoptimize the caller frame.
+  Deoptimization::deoptimize_frame(thread, caller_frame.id());
 }
 
 
