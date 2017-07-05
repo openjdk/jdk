@@ -583,14 +583,14 @@ final class RBTableBuilder {
     // ==============================================================
     // constants
     // ==============================================================
-    final static int CHARINDEX = 0x70000000;  // need look up in .commit()
+    static final int CHARINDEX = 0x70000000;  // need look up in .commit()
 
-    private final static int IGNORABLEMASK = 0x0000ffff;
-    private final static int PRIMARYORDERINCREMENT = 0x00010000;
-    private final static int SECONDARYORDERINCREMENT = 0x00000100;
-    private final static int TERTIARYORDERINCREMENT = 0x00000001;
-    private final static int INITIALTABLESIZE = 20;
-    private final static int MAXKEYSIZE = 5;
+    private static final int IGNORABLEMASK = 0x0000ffff;
+    private static final int PRIMARYORDERINCREMENT = 0x00010000;
+    private static final int SECONDARYORDERINCREMENT = 0x00000100;
+    private static final int TERTIARYORDERINCREMENT = 0x00000001;
+    private static final int INITIALTABLESIZE = 20;
+    private static final int MAXKEYSIZE = 5;
 
     // ==============================================================
     // instance variables

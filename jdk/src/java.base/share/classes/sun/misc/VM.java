@@ -354,12 +354,12 @@ public class VM {
      * in the hotspot implementation. Its value is set according to
      * the JVM TI specification GetThreadState function.
      */
-    private final static int JVMTI_THREAD_STATE_ALIVE = 0x0001;
-    private final static int JVMTI_THREAD_STATE_TERMINATED = 0x0002;
-    private final static int JVMTI_THREAD_STATE_RUNNABLE = 0x0004;
-    private final static int JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER = 0x0400;
-    private final static int JVMTI_THREAD_STATE_WAITING_INDEFINITELY = 0x0010;
-    private final static int JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT = 0x0020;
+    private static final int JVMTI_THREAD_STATE_ALIVE = 0x0001;
+    private static final int JVMTI_THREAD_STATE_TERMINATED = 0x0002;
+    private static final int JVMTI_THREAD_STATE_RUNNABLE = 0x0004;
+    private static final int JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER = 0x0400;
+    private static final int JVMTI_THREAD_STATE_WAITING_INDEFINITELY = 0x0010;
+    private static final int JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT = 0x0020;
 
     /*
      * Returns the first non-null class loader up the execution stack,
@@ -435,5 +435,5 @@ public class VM {
     static {
         initialize();
     }
-    private native static void initialize();
+    private static native void initialize();
 }

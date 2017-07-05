@@ -49,6 +49,7 @@ class STWGCTimer;
 
 // declared at end
 class PreservedMark;
+class MarkAndPushClosure;
 
 class MarkSweep : AllStatic {
   //
@@ -56,13 +57,6 @@ class MarkSweep : AllStatic {
   //
   class FollowRootClosure: public OopsInGenClosure {
    public:
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
-  };
-
-  class MarkAndPushClosure: public ExtendedOopClosure {
-   public:
-    template <typename T> void do_oop_nv(T* p);
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
   };
@@ -146,6 +140,7 @@ class MarkSweep : AllStatic {
 
   // Reference Processing
   static ReferenceProcessor* const ref_processor() { return _ref_processor; }
+  static void set_ref_processor(ReferenceProcessor* rp);
 
   // Archive Object handling
   static inline bool is_archive_object(oop object);
@@ -153,34 +148,55 @@ class MarkSweep : AllStatic {
   static STWGCTimer* gc_timer() { return _gc_timer; }
   static SerialOldTracer* gc_tracer() { return _gc_tracer; }
 
-  // Call backs for marking
-  static void mark_object(oop obj);
-  // Mark pointer and follow contents.  Empty marking stack afterwards.
-  template <class T> static inline void follow_root(T* p);
-
-  // Check mark and maybe push on marking stack
-  template <class T> static void mark_and_push(T* p);
-
-  static inline void push_objarray(oop obj, size_t index);
-
-  static void follow_stack();   // Empty marking stack.
-
-  static void follow_object(oop obj);
-
-  static void follow_array(objArrayOop array, int index);
-
-  static void follow_klass(Klass* klass);
-
-  static void follow_class_loader(ClassLoaderData* cld);
-
-  static int adjust_pointers(oop obj);
-
   static void preserve_mark(oop p, markOop mark);
                                 // Save the mark word so it can be restored later
   static void adjust_marks();   // Adjust the pointers in the preserved marks table
   static void restore_marks();  // Restore the marks that we saved in preserve_mark
 
+  static int adjust_pointers(oop obj);
+
+  static void follow_stack();   // Empty marking stack.
+
+  static void follow_klass(Klass* klass);
+
+  static void follow_cld(ClassLoaderData* cld);
+
   template <class T> static inline void adjust_pointer(T* p);
+
+  // Check mark and maybe push on marking stack
+  template <class T> static void mark_and_push(T* p);
+
+ private:
+  // Call backs for marking
+  static void mark_object(oop obj);
+  // Mark pointer and follow contents.  Empty marking stack afterwards.
+  template <class T> static inline void follow_root(T* p);
+
+  static inline void push_objarray(oop obj, size_t index);
+
+  static void follow_object(oop obj);
+
+  static void follow_array(objArrayOop array);
+
+  static void follow_array_chunk(objArrayOop array, int index);
+};
+
+class MarkAndPushClosure: public ExtendedOopClosure {
+public:
+  template <typename T> void do_oop_nv(T* p);
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
+
+  virtual bool do_metadata();
+  bool do_metadata_nv();
+
+  virtual void do_klass(Klass* k);
+  void do_klass_nv(Klass* k);
+
+  virtual void do_cld(ClassLoaderData* cld);
+  void do_cld_nv(ClassLoaderData* cld);
+
+  void set_ref_processor(ReferenceProcessor* rp) { _ref_processor = rp; }
 };
 
 class PreservedMark VALUE_OBJ_CLASS_SPEC {

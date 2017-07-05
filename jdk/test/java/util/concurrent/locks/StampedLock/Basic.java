@@ -75,7 +75,7 @@ public class Basic {
         }
     }
 
-    static abstract class Locker extends Thread {
+    abstract static class Locker extends Thread {
         static AtomicInteger count = new AtomicInteger(1);
         private volatile Throwable thrown;
         private volatile long stamp;;
@@ -94,7 +94,7 @@ public class Basic {
         }
     }
 
-    static abstract class Reader extends Locker {
+    abstract static class Reader extends Locker {
         Reader() { super("Reader"); }
         Reader(String name) { super(name); }
     }
@@ -173,7 +173,7 @@ public class Basic {
                     : interruptibleReader(sl, timeout, unit, gate);
     }
 
-    static abstract class Writer extends Locker {
+    abstract static class Writer extends Locker {
         Writer() { super("Writer"); }
         Writer(String name) { super(name); }
     }

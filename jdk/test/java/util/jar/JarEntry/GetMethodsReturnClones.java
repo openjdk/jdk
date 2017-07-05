@@ -36,7 +36,7 @@ import java.util.jar.*;
 
 public class GetMethodsReturnClones {
 
-    private final static String BASE = System.getProperty("test.src", ".") +
+    private static final String BASE = System.getProperty("test.src", ".") +
         System.getProperty("file.separator");
 
     public static void main(String[] args) throws Exception {

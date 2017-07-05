@@ -65,7 +65,7 @@ public class LastErrorString {
     }
 
 
-    static abstract class Test {
+    abstract static class Test {
 
         String name;
 
@@ -73,7 +73,7 @@ public class LastErrorString {
             this.name = name;
         }
 
-        abstract public void run() throws IOException;
+        public abstract void run() throws IOException;
 
         public void go() throws IOException {
             try {
@@ -88,7 +88,7 @@ public class LastErrorString {
 
     }
 
-    static abstract class ClosedFISTest extends Test {
+    abstract static class ClosedFISTest extends Test {
 
         FileInputStream in;
 
@@ -104,7 +104,7 @@ public class LastErrorString {
 
     }
 
-    static abstract class ClosedFOSTest extends Test {
+    abstract static class ClosedFOSTest extends Test {
 
         FileOutputStream out;
 
@@ -120,7 +120,7 @@ public class LastErrorString {
 
     }
 
-    static abstract class ClosedRAFTest extends Test {
+    abstract static class ClosedRAFTest extends Test {
 
         RandomAccessFile raf;
 
@@ -136,7 +136,7 @@ public class LastErrorString {
 
     }
 
-    static abstract class ReadOnlyRAFTest extends Test {
+    abstract static class ReadOnlyRAFTest extends Test {
 
         RandomAccessFile raf;
 

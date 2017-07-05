@@ -275,13 +275,6 @@ java.sql.rowset_CLEAN_FILES := $(wildcard \
     $(JDK_TOPDIR)/src/java.sql.rowset/share/classes/javax/sql/rowset/*.properties)
 
 ################################################################################
-# Exclude building of IIOP transport for RMI Connector
-
-ifeq ($(RMICONNECTOR_IIOP), false)
-  java.management_EXCLUDES += com/sun/jmx/remote/protocol/iiop
-endif
-
-################################################################################
 
 java.rmi_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.rmi_CLEAN_FILES := $(wildcard \

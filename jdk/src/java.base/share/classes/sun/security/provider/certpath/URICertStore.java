@@ -91,10 +91,10 @@ class URICertStore extends CertStoreSpi {
 
     // interval between checks for update of cached Certificates/CRLs
     // (30 seconds)
-    private final static int CHECK_INTERVAL = 30 * 1000;
+    private static final int CHECK_INTERVAL = 30 * 1000;
 
     // size of the cache (see Cache class for sizing recommendations)
-    private final static int CACHE_SIZE = 185;
+    private static final int CACHE_SIZE = 185;
 
     // X.509 certificate factory instance
     private final CertificateFactory factory;

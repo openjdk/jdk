@@ -1030,7 +1030,7 @@ public abstract class ClassLoader {
         return findLoadedClass0(name);
     }
 
-    private native final Class<?> findLoadedClass0(String name);
+    private final native Class<?> findLoadedClass0(String name);
 
     /**
      * Sets the signers of a class.  This should be invoked after defining a

@@ -192,7 +192,8 @@ class NativeRSASignature extends SignatureSpi {
         // Need to check RSA key length whenever a new private key is set
         if (privateKey != key) {
             if (!(privateKey instanceof RSAPrivateKey)) {
-                throw new InvalidKeyException("RSAPrivateKey required");
+                throw new InvalidKeyException("RSAPrivateKey required. " +
+                    "Received: " + privateKey.getClass().getName());
             }
             RSAPrivateKey rsaPrivKey = (RSAPrivateKey) privateKey;
             BigInteger mod = rsaPrivKey.getModulus();
@@ -242,7 +243,8 @@ class NativeRSASignature extends SignatureSpi {
                     throw new InvalidKeyException(ikse);
                 }
             } else {
-                throw new InvalidKeyException("RSAPublicKey required");
+                throw new InvalidKeyException("RSAPublicKey required. " +
+                    "Received: " + publicKey.getClass().getName());
             }
         }
         init(false, newKey, newSigLength);
@@ -269,7 +271,8 @@ class NativeRSASignature extends SignatureSpi {
         throws SignatureException {
         if (outbuf == null || (offset < 0) || (outbuf.length < (offset + sigLength))
             || (len < sigLength)) {
-            throw new SignatureException("Invalid output buffer");
+            throw new SignatureException("Invalid output buffer. offset: " +
+                offset + ". len: " + len + ". sigLength: " + sigLength);
         }
         int rv = doFinal(outbuf, offset, sigLength);
         if (rv < 0) {
@@ -328,7 +331,8 @@ class NativeRSASignature extends SignatureSpi {
         throws SignatureException {
         if (sigBytes == null || (sigOfs < 0) || (sigBytes.length < (sigOfs + this.sigLength))
             || (sigLen < this.sigLength)) {
-            throw new SignatureException("Invalid signature buffer");
+            throw new SignatureException("Invalid signature buffer. sigOfs: " +
+                sigOfs + ". sigLen: " + sigLen + ". this.sigLength: " + this.sigLength);
         }
 
         int rv = doFinal(sigBytes, sigOfs, sigLen);
@@ -405,7 +409,8 @@ class NativeRSASignature extends SignatureSpi {
     // returns 0 (success) or negative (ucrypto error occurred)
     private int update(byte[] in, int inOfs, int inLen) {
         if (inOfs < 0 || inOfs + inLen > in.length) {
-            throw new ArrayIndexOutOfBoundsException();
+            throw new ArrayIndexOutOfBoundsException("inOfs :" + inOfs +
+                ". inLen: " + inLen + ". in.length: " + in.length);
         }
         ensureInitialized();
         int k = nativeUpdate(pCtxt.id, sign, in, inOfs, inLen);
@@ -442,7 +447,8 @@ class NativeRSASignature extends SignatureSpi {
         int maxDataSize = keySize - PKCS1PADDING_LEN;
         if (maxDataSize < encodedLen) {
             throw new InvalidKeyException
-                ("Key is too short for this signature algorithm");
+                ("Key is too short for this signature algorithm. maxDataSize: " +
+                    maxDataSize + ". encodedLen: " + encodedLen);
         }
         return keySize;
     }

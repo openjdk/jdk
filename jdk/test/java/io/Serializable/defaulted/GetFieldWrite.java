@@ -42,7 +42,7 @@ class TestClass implements Serializable {
     private static final long serialVersionUID = 5748652654655279289L;
 
     // Fields to be serialized.
-    private final static ObjectStreamField[] serialPersistentFields = {
+    private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("objectI", Integer.class)};
 
     Integer objectI;

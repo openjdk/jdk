@@ -136,7 +136,7 @@ public class Test6998541 {
         throw new AssertionError();
     }
 
-    private final static MethodHandles.Lookup lookup = MethodHandles.lookup();
+    private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
 
     private static MethodHandle mh(Class ret, Class... args) {
         try {
@@ -191,14 +191,14 @@ public class Test6998541 {
 
     private static MethodHandle mh_z(Class ret) { return mh(ret, boolean.class); }
 
-    private final static MethodHandle mh_zz = mh_z(boolean.class);
-    private final static MethodHandle mh_bz = mh_z(byte.class   );
-    private final static MethodHandle mh_cz = mh_z(char.class   );
-    private final static MethodHandle mh_sz = mh_z(short.class  );
-    private final static MethodHandle mh_iz = mh_z(int.class    );
-    private final static MethodHandle mh_jz = mh_z(long.class   );
-    private final static MethodHandle mh_fz = mh_z(float.class  );
-    private final static MethodHandle mh_dz = mh_z(double.class );
+    private static final MethodHandle mh_zz = mh_z(boolean.class);
+    private static final MethodHandle mh_bz = mh_z(byte.class   );
+    private static final MethodHandle mh_cz = mh_z(char.class   );
+    private static final MethodHandle mh_sz = mh_z(short.class  );
+    private static final MethodHandle mh_iz = mh_z(int.class    );
+    private static final MethodHandle mh_jz = mh_z(long.class   );
+    private static final MethodHandle mh_fz = mh_z(float.class  );
+    private static final MethodHandle mh_dz = mh_z(double.class );
 
     private static void boolean2prim(boolean x) throws Throwable {
         int i = x ? 1 : 0;
@@ -225,14 +225,14 @@ public class Test6998541 {
 
     private static MethodHandle mh_b(Class ret) { return mh(ret, byte.class); }
 
-    private final static MethodHandle mh_zb = mh_b(boolean.class);
-    private final static MethodHandle mh_bb = mh_b(byte.class   );
-    private final static MethodHandle mh_cb = mh_b(char.class   );
-    private final static MethodHandle mh_sb = mh_b(short.class  );
-    private final static MethodHandle mh_ib = mh_b(int.class    );
-    private final static MethodHandle mh_jb = mh_b(long.class   );
-    private final static MethodHandle mh_fb = mh_b(float.class  );
-    private final static MethodHandle mh_db = mh_b(double.class );
+    private static final MethodHandle mh_zb = mh_b(boolean.class);
+    private static final MethodHandle mh_bb = mh_b(byte.class   );
+    private static final MethodHandle mh_cb = mh_b(char.class   );
+    private static final MethodHandle mh_sb = mh_b(short.class  );
+    private static final MethodHandle mh_ib = mh_b(int.class    );
+    private static final MethodHandle mh_jb = mh_b(long.class   );
+    private static final MethodHandle mh_fb = mh_b(float.class  );
+    private static final MethodHandle mh_db = mh_b(double.class );
 
     private static void byte2prim(byte x) throws Throwable {
         assertEquals((byte)    x, (byte)    mh_bb.invokeExact(x));  // byte -> byte
@@ -254,14 +254,14 @@ public class Test6998541 {
 
     private static MethodHandle mh_c(Class ret) { return mh(ret, char.class); }
 
-    private final static MethodHandle mh_zc = mh_c(boolean.class);
-    private final static MethodHandle mh_bc = mh_c(byte.class   );
-    private final static MethodHandle mh_cc = mh_c(char.class   );
-    private final static MethodHandle mh_sc = mh_c(short.class  );
-    private final static MethodHandle mh_ic = mh_c(int.class    );
-    private final static MethodHandle mh_jc = mh_c(long.class   );
-    private final static MethodHandle mh_fc = mh_c(float.class  );
-    private final static MethodHandle mh_dc = mh_c(double.class );
+    private static final MethodHandle mh_zc = mh_c(boolean.class);
+    private static final MethodHandle mh_bc = mh_c(byte.class   );
+    private static final MethodHandle mh_cc = mh_c(char.class   );
+    private static final MethodHandle mh_sc = mh_c(short.class  );
+    private static final MethodHandle mh_ic = mh_c(int.class    );
+    private static final MethodHandle mh_jc = mh_c(long.class   );
+    private static final MethodHandle mh_fc = mh_c(float.class  );
+    private static final MethodHandle mh_dc = mh_c(double.class );
 
     private static void char2prim(char x) throws Throwable {
         assertEquals((char)    x, (char)    mh_cc.invokeExact(x));  // char -> char
@@ -284,14 +284,14 @@ public class Test6998541 {
 
     private static MethodHandle mh_s(Class ret) { return mh(ret, short.class); }
 
-    private final static MethodHandle mh_zs = mh_s(boolean.class);
-    private final static MethodHandle mh_bs = mh_s(byte.class   );
-    private final static MethodHandle mh_cs = mh_s(char.class   );
-    private final static MethodHandle mh_ss = mh_s(short.class  );
-    private final static MethodHandle mh_is = mh_s(int.class    );
-    private final static MethodHandle mh_js = mh_s(long.class   );
-    private final static MethodHandle mh_fs = mh_s(float.class  );
-    private final static MethodHandle mh_ds = mh_s(double.class );
+    private static final MethodHandle mh_zs = mh_s(boolean.class);
+    private static final MethodHandle mh_bs = mh_s(byte.class   );
+    private static final MethodHandle mh_cs = mh_s(char.class   );
+    private static final MethodHandle mh_ss = mh_s(short.class  );
+    private static final MethodHandle mh_is = mh_s(int.class    );
+    private static final MethodHandle mh_js = mh_s(long.class   );
+    private static final MethodHandle mh_fs = mh_s(float.class  );
+    private static final MethodHandle mh_ds = mh_s(double.class );
 
     private static void short2prim(short x) throws Throwable {
         assertEquals((short)   x, (short)   mh_ss.invokeExact(x));  // short -> short
@@ -314,14 +314,14 @@ public class Test6998541 {
 
     private static MethodHandle mh_i(Class ret) { return mh(ret, int.class); }
 
-    private final static MethodHandle mh_zi = mh_i(boolean.class);
-    private final static MethodHandle mh_bi = mh_i(byte.class   );
-    private final static MethodHandle mh_ci = mh_i(char.class   );
-    private final static MethodHandle mh_si = mh_i(short.class  );
-    private final static MethodHandle mh_ii = mh_i(int.class    );
-    private final static MethodHandle mh_ji = mh_i(long.class   );
-    private final static MethodHandle mh_fi = mh_i(float.class  );
-    private final static MethodHandle mh_di = mh_i(double.class );
+    private static final MethodHandle mh_zi = mh_i(boolean.class);
+    private static final MethodHandle mh_bi = mh_i(byte.class   );
+    private static final MethodHandle mh_ci = mh_i(char.class   );
+    private static final MethodHandle mh_si = mh_i(short.class  );
+    private static final MethodHandle mh_ii = mh_i(int.class    );
+    private static final MethodHandle mh_ji = mh_i(long.class   );
+    private static final MethodHandle mh_fi = mh_i(float.class  );
+    private static final MethodHandle mh_di = mh_i(double.class );
 
     private static void int2prim(int x) throws Throwable {
         assertEquals((int)     x, (int)     mh_ii.invokeExact(x));  // int -> int
@@ -345,14 +345,14 @@ public class Test6998541 {
 
     private static MethodHandle mh_j(Class ret) { return mh(ret, long.class); }
 
-    private final static MethodHandle mh_zj = mh_j(boolean.class);
-    private final static MethodHandle mh_bj = mh_j(byte.class   );
-    private final static MethodHandle mh_cj = mh_j(char.class   );
-    private final static MethodHandle mh_sj = mh_j(short.class  );
-    private final static MethodHandle mh_ij = mh_j(int.class    );
-    private final static MethodHandle mh_jj = mh_j(long.class   );
-    private final static MethodHandle mh_fj = mh_j(float.class  );
-    private final static MethodHandle mh_dj = mh_j(double.class );
+    private static final MethodHandle mh_zj = mh_j(boolean.class);
+    private static final MethodHandle mh_bj = mh_j(byte.class   );
+    private static final MethodHandle mh_cj = mh_j(char.class   );
+    private static final MethodHandle mh_sj = mh_j(short.class  );
+    private static final MethodHandle mh_ij = mh_j(int.class    );
+    private static final MethodHandle mh_jj = mh_j(long.class   );
+    private static final MethodHandle mh_fj = mh_j(float.class  );
+    private static final MethodHandle mh_dj = mh_j(double.class );
 
     private static void long2prim(long x) throws Throwable {
         assertEquals((long)   x, (long)    mh_jj.invokeExact(x));  // long -> long
@@ -377,14 +377,14 @@ public class Test6998541 {
 
     private static MethodHandle mh_f(Class ret) { return mh(ret, float.class); }
 
-    private final static MethodHandle mh_zf = mh_f(boolean.class);
-    private final static MethodHandle mh_bf = mh_f(byte.class   );
-    private final static MethodHandle mh_cf = mh_f(char.class   );
-    private final static MethodHandle mh_sf = mh_f(short.class  );
-    private final static MethodHandle mh_if = mh_f(int.class    );
-    private final static MethodHandle mh_jf = mh_f(long.class   );
-    private final static MethodHandle mh_ff = mh_f(float.class  );
-    private final static MethodHandle mh_df = mh_f(double.class );
+    private static final MethodHandle mh_zf = mh_f(boolean.class);
+    private static final MethodHandle mh_bf = mh_f(byte.class   );
+    private static final MethodHandle mh_cf = mh_f(char.class   );
+    private static final MethodHandle mh_sf = mh_f(short.class  );
+    private static final MethodHandle mh_if = mh_f(int.class    );
+    private static final MethodHandle mh_jf = mh_f(long.class   );
+    private static final MethodHandle mh_ff = mh_f(float.class  );
+    private static final MethodHandle mh_df = mh_f(double.class );
 
     private static void float2prim(float x) throws Throwable {
         assertEquals((float)   x, (float)   mh_ff.invokeExact(x));  // float -> float
@@ -410,14 +410,14 @@ public class Test6998541 {
 
     private static MethodHandle mh_d(Class ret) { return mh(ret, double.class); }
 
-    private final static MethodHandle mh_zd = mh_d(boolean.class);
-    private final static MethodHandle mh_bd = mh_d(byte.class   );
-    private final static MethodHandle mh_cd = mh_d(char.class   );
-    private final static MethodHandle mh_sd = mh_d(short.class  );
-    private final static MethodHandle mh_id = mh_d(int.class    );
-    private final static MethodHandle mh_jd = mh_d(long.class   );
-    private final static MethodHandle mh_fd = mh_d(float.class  );
-    private final static MethodHandle mh_dd = mh_d(double.class );
+    private static final MethodHandle mh_zd = mh_d(boolean.class);
+    private static final MethodHandle mh_bd = mh_d(byte.class   );
+    private static final MethodHandle mh_cd = mh_d(char.class   );
+    private static final MethodHandle mh_sd = mh_d(short.class  );
+    private static final MethodHandle mh_id = mh_d(int.class    );
+    private static final MethodHandle mh_jd = mh_d(long.class   );
+    private static final MethodHandle mh_fd = mh_d(float.class  );
+    private static final MethodHandle mh_dd = mh_d(double.class );
 
     private static void double2prim(double x) throws Throwable {
         assertEquals((double) x, (double)  mh_dd.invokeExact(x));  // double -> double
@@ -442,14 +442,14 @@ public class Test6998541 {
         try { float   y = (float)   mh_fd.invokeExact(x); fail(); } catch (ClassCastException expected) {}  // double -> float
     }
 
-    private final static MethodHandle mh_zv = mh(boolean.class);
-    private final static MethodHandle mh_bv = mh(byte.class   );
-    private final static MethodHandle mh_cv = mh(char.class   );
-    private final static MethodHandle mh_sv = mh(short.class  );
-    private final static MethodHandle mh_iv = mh(int.class    );
-    private final static MethodHandle mh_jv = mh(long.class   );
-    private final static MethodHandle mh_fv = mh(float.class  );
-    private final static MethodHandle mh_dv = mh(double.class );
+    private static final MethodHandle mh_zv = mh(boolean.class);
+    private static final MethodHandle mh_bv = mh(byte.class   );
+    private static final MethodHandle mh_cv = mh(char.class   );
+    private static final MethodHandle mh_sv = mh(short.class  );
+    private static final MethodHandle mh_iv = mh(int.class    );
+    private static final MethodHandle mh_jv = mh(long.class   );
+    private static final MethodHandle mh_fv = mh(float.class  );
+    private static final MethodHandle mh_dv = mh(double.class );
 
     private static void void2prim(int i) throws Throwable {
         assertEquals(        false, (boolean) mh_zv.invokeExact());  // void -> boolean
@@ -468,14 +468,14 @@ public class Test6998541 {
 
     private static MethodHandle mh_v(Class arg) { return mh(void.class, arg); }
 
-    private final static MethodHandle mh_vz = mh_v(boolean.class);
-    private final static MethodHandle mh_vb = mh_v(byte.class   );
-    private final static MethodHandle mh_vc = mh_v(char.class   );
-    private final static MethodHandle mh_vs = mh_v(short.class  );
-    private final static MethodHandle mh_vi = mh_v(int.class    );
-    private final static MethodHandle mh_vj = mh_v(long.class   );
-    private final static MethodHandle mh_vf = mh_v(float.class  );
-    private final static MethodHandle mh_vd = mh_v(double.class );
+    private static final MethodHandle mh_vz = mh_v(boolean.class);
+    private static final MethodHandle mh_vb = mh_v(byte.class   );
+    private static final MethodHandle mh_vc = mh_v(char.class   );
+    private static final MethodHandle mh_vs = mh_v(short.class  );
+    private static final MethodHandle mh_vi = mh_v(int.class    );
+    private static final MethodHandle mh_vj = mh_v(long.class   );
+    private static final MethodHandle mh_vf = mh_v(float.class  );
+    private static final MethodHandle mh_vd = mh_v(double.class );
 
     private static void prim2void(int x) throws Throwable {
         boolean z = ((x & 1) != 0);

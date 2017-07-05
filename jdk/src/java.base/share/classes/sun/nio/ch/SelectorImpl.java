@@ -159,6 +159,6 @@ public abstract class SelectorImpl
 
     protected abstract void implDereg(SelectionKeyImpl ski) throws IOException;
 
-    abstract public Selector wakeup();
+    public abstract Selector wakeup();
 
 }

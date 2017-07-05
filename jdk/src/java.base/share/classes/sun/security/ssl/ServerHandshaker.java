@@ -119,7 +119,7 @@ final class ServerHandshaker extends Handshaker {
                     new SSLAlgorithmDecomposer());
 
     // To switch off the status_request[_v2] extensions
-    private final static boolean enableStatusRequestExtension =
+    private static final boolean enableStatusRequestExtension =
             Debug.getBooleanProperty(
                     "jdk.tls.server.enableStatusRequestExtension", false);
     private boolean staplingActive = false;

@@ -55,12 +55,12 @@ import java.security.Provider.Service;
  */
 public final class ProviderList {
 
-    final static sun.security.util.Debug debug =
+    static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("jca", "ProviderList");
 
-    private final static ProviderConfig[] PC0 = new ProviderConfig[0];
+    private static final ProviderConfig[] PC0 = new ProviderConfig[0];
 
-    private final static Provider[] P0 = new Provider[0];
+    private static final Provider[] P0 = new Provider[0];
 
     // constant for an ProviderList with no elements
     static final ProviderList EMPTY = new ProviderList(PC0, true);

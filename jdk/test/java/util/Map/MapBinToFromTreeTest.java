@@ -186,7 +186,7 @@ public class MapBinToFromTreeTest {
         }
     }
 
-    final static class HashCodeInteger implements Comparable<HashCodeInteger> {
+    static final class HashCodeInteger implements Comparable<HashCodeInteger> {
         final int value;
 
         final int hashcode;

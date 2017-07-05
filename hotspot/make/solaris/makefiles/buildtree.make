@@ -270,6 +270,7 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo "CP ?= cp"; \
 	echo "MV ?= mv"; \
 	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/$(VARIANT).make"; \
+	echo "include \$$(GAMMADIR)/make/excludeSrc.make"; \
 	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/$(COMPILER).make"; \
 	) > $@
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
   @test
-  @bug 6566434
+  @bug 6566434 8039467
   @library ../../regtesthelpers
   @build Util Sysout AbstractTest
   @summary Choice in unfocusable window responds to keyboard
@@ -63,6 +63,18 @@ public class UnfocusableToplevel {
         w.setLayout(new FlowLayout());
         w.setSize(200, 200);
 
+        // Note that Window w is non focusable. Key press events will not be
+        // consumed by w, but by any previously focused window & this can
+        // disturb the environment. So creating tempFrameToHoldFocus frame,
+        // to consume key press events.
+        Frame tempFrameToHoldFocus = new Frame();
+        tempFrameToHoldFocus.setVisible(true);
+        Util.waitForIdle(robot);
+
+        tempFrameToHoldFocus.requestFocus();
+        Util.clickOnComp(tempFrameToHoldFocus, robot);
+        Util.waitForIdle(robot);
+
         ch.addKeyListener(new KeyAdapter(){
                 public void keyTyped(KeyEvent e){
                     traceEvent("keytyped", e);
@@ -94,6 +106,10 @@ public class UnfocusableToplevel {
 
         testKeys();
         Util.waitForIdle(robot);
+
+        tempFrameToHoldFocus.dispose();
+        w.dispose();
+        f.dispose();
     }
 
     private static void testKeys(){

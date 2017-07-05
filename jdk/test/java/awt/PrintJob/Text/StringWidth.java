@@ -23,7 +23,6 @@
 
 import java.awt.*;
 import java.util.Properties;
-import sun.awt.*;
 
 public class StringWidth extends Frame {
 

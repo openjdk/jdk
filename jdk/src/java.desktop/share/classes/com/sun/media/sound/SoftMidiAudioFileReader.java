@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
 
 package com.sun.media.sound;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaMessage;
@@ -44,28 +42,27 @@ import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.spi.AudioFileReader;
 
 /**
  * MIDI File Audio Renderer/Reader.
  *
  * @author Karl Helgason
  */
-public final class SoftMidiAudioFileReader extends AudioFileReader {
+public final class SoftMidiAudioFileReader extends SunFileReader {
 
-    public static final Type MIDI = new Type("MIDI", "mid");
-    private static AudioFormat format = new AudioFormat(44100, 16, 2, true, false);
+    private static final Type MIDI = new Type("MIDI", "mid");
 
-    public AudioFileFormat getAudioFileFormat(Sequence seq)
-            throws UnsupportedAudioFileException, IOException {
+    private static final AudioFormat format = new AudioFormat(44100, 16, 2,
+                                                              true, false);
 
+    private static AudioFileFormat getAudioFileFormat(final Sequence seq) {
         long totallen = seq.getMicrosecondLength() / 1000000;
         long len = (long) (format.getFrameRate() * (totallen + 4));
         return new AudioFileFormat(MIDI, format, (int) len);
     }
 
-    public AudioInputStream getAudioInputStream(Sequence seq)
-            throws UnsupportedAudioFileException, IOException {
+    private AudioInputStream getAudioInputStream(final Sequence seq)
+            throws InvalidMidiDataException {
         AudioSynthesizer synth = (AudioSynthesizer) new SoftSynthesizer();
         AudioInputStream stream;
         Receiver recv;
@@ -73,7 +70,7 @@ public final class SoftMidiAudioFileReader extends AudioFileReader {
             stream = synth.openStream(format, null);
             recv = synth.getReceiver();
         } catch (MidiUnavailableException e) {
-            throw new IOException(e.toString());
+            throw new InvalidMidiDataException(e.toString());
         }
         float divtype = seq.getDivisionType();
         Track[] tracks = seq.getTracks();
@@ -111,7 +108,7 @@ public final class SoftMidiAudioFileReader extends AudioFileReader {
                     if (((MetaMessage) msg).getType() == 0x51) {
                         byte[] data = ((MetaMessage) msg).getData();
                         if (data.length < 3) {
-                            throw new UnsupportedAudioFileException();
+                            throw new InvalidMidiDataException();
                         }
                         mpq = ((data[0] & 0xff) << 16)
                                 | ((data[1] & 0xff) << 8) | (data[2] & 0xff);
@@ -128,91 +125,25 @@ public final class SoftMidiAudioFileReader extends AudioFileReader {
         return stream;
     }
 
-    public AudioInputStream getAudioInputStream(InputStream inputstream)
+    @Override
+    public AudioInputStream getAudioInputStream(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
-
-        inputstream.mark(200);
-        Sequence seq;
+        stream.mark(200);
         try {
-            seq = MidiSystem.getSequence(inputstream);
-        } catch (InvalidMidiDataException e) {
-            inputstream.reset();
-            throw new UnsupportedAudioFileException();
-        } catch (IOException e) {
-            inputstream.reset();
+            return getAudioInputStream(MidiSystem.getSequence(stream));
+        } catch (final InvalidMidiDataException ignored) {
+            stream.reset();
             throw new UnsupportedAudioFileException();
         }
-        return getAudioInputStream(seq);
     }
 
-    public AudioFileFormat getAudioFileFormat(URL url)
+    @Override
+    AudioFileFormat getAudioFileFormatImpl(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
-        Sequence seq;
         try {
-            seq = MidiSystem.getSequence(url);
-        } catch (InvalidMidiDataException e) {
-            throw new UnsupportedAudioFileException();
-        } catch (IOException e) {
+            return getAudioFileFormat(MidiSystem.getSequence(stream));
+        } catch (final InvalidMidiDataException ignored) {
             throw new UnsupportedAudioFileException();
         }
-        return getAudioFileFormat(seq);
-    }
-
-    public AudioFileFormat getAudioFileFormat(File file)
-            throws UnsupportedAudioFileException, IOException {
-        Sequence seq;
-        try {
-            seq = MidiSystem.getSequence(file);
-        } catch (InvalidMidiDataException e) {
-            throw new UnsupportedAudioFileException();
-        } catch (IOException e) {
-            throw new UnsupportedAudioFileException();
-        }
-        return getAudioFileFormat(seq);
-    }
-
-    public AudioInputStream getAudioInputStream(URL url)
-            throws UnsupportedAudioFileException, IOException {
-        Sequence seq;
-        try {
-            seq = MidiSystem.getSequence(url);
-        } catch (InvalidMidiDataException e) {
-            throw new UnsupportedAudioFileException();
-        } catch (IOException e) {
-            throw new UnsupportedAudioFileException();
-        }
-        return getAudioInputStream(seq);
-    }
-
-    public AudioInputStream getAudioInputStream(File file)
-            throws UnsupportedAudioFileException, IOException {
-        if (!file.getName().toLowerCase().endsWith(".mid"))
-            throw new UnsupportedAudioFileException();
-        Sequence seq;
-        try {
-            seq = MidiSystem.getSequence(file);
-        } catch (InvalidMidiDataException e) {
-            throw new UnsupportedAudioFileException();
-        } catch (IOException e) {
-            throw new UnsupportedAudioFileException();
-        }
-        return getAudioInputStream(seq);
-    }
-
-    public AudioFileFormat getAudioFileFormat(InputStream inputstream)
-            throws UnsupportedAudioFileException, IOException {
-
-        inputstream.mark(200);
-        Sequence seq;
-        try {
-            seq = MidiSystem.getSequence(inputstream);
-        } catch (InvalidMidiDataException e) {
-            inputstream.reset();
-            throw new UnsupportedAudioFileException();
-        } catch (IOException e) {
-            inputstream.reset();
-            throw new UnsupportedAudioFileException();
-        }
-        return getAudioFileFormat(seq);
     }
 }

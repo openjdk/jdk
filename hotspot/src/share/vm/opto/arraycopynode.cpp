@@ -681,10 +681,10 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransf
     uint header = arrayOopDesc::base_offset_in_bytes(ary_elem);
     uint elemsize = type2aelembytes(ary_elem);
 
-    intptr_t dest_pos_plus_len_lo = (((intptr_t)dest_pos_t->_lo) + len_t->_lo) * elemsize + header;
-    intptr_t dest_pos_plus_len_hi = (((intptr_t)dest_pos_t->_hi) + len_t->_hi) * elemsize + header;
-    intptr_t dest_pos_lo = ((intptr_t)dest_pos_t->_lo) * elemsize + header;
-    intptr_t dest_pos_hi = ((intptr_t)dest_pos_t->_hi) * elemsize + header;
+    jlong dest_pos_plus_len_lo = (((jlong)dest_pos_t->_lo) + len_t->_lo) * elemsize + header;
+    jlong dest_pos_plus_len_hi = (((jlong)dest_pos_t->_hi) + len_t->_hi) * elemsize + header;
+    jlong dest_pos_lo = ((jlong)dest_pos_t->_lo) * elemsize + header;
+    jlong dest_pos_hi = ((jlong)dest_pos_t->_hi) * elemsize + header;
 
     if (must_modify) {
       if (offset_lo >= dest_pos_hi && offset_hi < dest_pos_plus_len_lo) {

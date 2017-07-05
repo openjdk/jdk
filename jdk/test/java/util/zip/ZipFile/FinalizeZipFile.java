@@ -34,7 +34,7 @@ import java.util.concurrent.CountDownLatch;
 
 public class FinalizeZipFile {
 
-    private final static CountDownLatch finalizersDone = new CountDownLatch(3);
+    private static final CountDownLatch finalizersDone = new CountDownLatch(3);
 
     private static class InstrumentedZipFile extends ZipFile {
 

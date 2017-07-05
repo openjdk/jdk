@@ -445,9 +445,9 @@ class DirectMethodHandle extends MethodHandle {
 
     /** This subclass handles static field references. */
     static class StaticAccessor extends DirectMethodHandle {
-        final private Class<?> fieldType;
-        final private Object   staticBase;
-        final private long     staticOffset;
+        private final Class<?> fieldType;
+        private final Object   staticBase;
+        private final long     staticOffset;
 
         private StaticAccessor(MethodType mtype, LambdaForm form, MemberName member,
                                Object staticBase, long staticOffset) {

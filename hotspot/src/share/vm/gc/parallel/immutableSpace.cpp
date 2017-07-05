@@ -44,7 +44,7 @@ void ImmutableSpace::oop_iterate(ExtendedOopClosure* cl) {
   HeapWord* t = end();
   // Could call objects iterate, but this is easier.
   while (obj_addr < t) {
-    obj_addr += oop(obj_addr)->oop_iterate(cl);
+    obj_addr += oop(obj_addr)->oop_iterate_size(cl);
   }
 }
 

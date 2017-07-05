@@ -955,6 +955,64 @@ public class RenderingHints
         SunHints.VALUE_STROKE_PURE;
 
     /**
+     * Image resolution variant hint key.
+     * The {@code RESOLUTION_VARIANT} hint controls which image resolution
+     * variant should be chosen for image drawing.
+     *
+     * <ul>
+     * <li>{@link #VALUE_RESOLUTION_VARIANT_DEFAULT}
+     * <li>{@link #VALUE_RESOLUTION_VARIANT_BASE}
+     * <li>{@link #VALUE_RESOLUTION_VARIANT_SIZE_FIT}
+     * <li>{@link #VALUE_RESOLUTION_VARIANT_DPI_FIT}
+     * </ul>
+     * @since 1.9
+     */
+    public static final Key KEY_RESOLUTION_VARIANT =
+        SunHints.KEY_RESOLUTION_VARIANT;
+
+    /**
+     * Image resolution variant hint value -- an image resolution variant is
+     * chosen based on a default heuristic which may depend on the policies
+     * of the platform
+     *
+     * @see #KEY_RESOLUTION_VARIANT
+     * @since 1.9
+     */
+    public static final Object VALUE_RESOLUTION_VARIANT_DEFAULT =
+        SunHints.VALUE_RESOLUTION_VARIANT_DEFAULT;
+
+    /**
+     * Image resolution variant hint value -- the standard resolution of an image
+     * is always used.
+     *
+     * @see #KEY_RESOLUTION_VARIANT
+     * @since 1.9
+     */
+    public static final Object VALUE_RESOLUTION_VARIANT_BASE =
+        SunHints.VALUE_RESOLUTION_VARIANT_BASE;
+
+    /**
+     * Image resolution variant hint value -- an image resolution variant is
+     * chosen based on the DPI of the screen and the transform in the Graphics2D
+     * context.
+     *
+     * @see #KEY_RESOLUTION_VARIANT
+     * @since 1.9
+     */
+    public static final Object VALUE_RESOLUTION_VARIANT_SIZE_FIT =
+        SunHints.VALUE_RESOLUTION_VARIANT_SIZE_FIT;
+
+    /**
+     * Image resolution variant hint value -- an image resolution variant is
+     * chosen based only on the DPI of the screen.
+     *
+     * @see #KEY_RESOLUTION_VARIANT
+     * @since 1.9
+     */
+    public static final Object VALUE_RESOLUTION_VARIANT_DPI_FIT =
+        SunHints.VALUE_RESOLUTION_VARIANT_DPI_FIT;
+
+    /**
      * Constructs a new object with keys and values initialized
      * from the specified Map object which may be null.
      * @param init a map of key/value pairs to initialize the hints

@@ -167,7 +167,7 @@ final class FindOps {
      * @param <T> The type of input element
      * @param <O> The result type, typically an optional type
      */
-    private static abstract class FindSink<T, O> implements TerminalSink<T, O> {
+    private abstract static class FindSink<T, O> implements TerminalSink<T, O> {
         boolean hasValue;
         T value;
 
