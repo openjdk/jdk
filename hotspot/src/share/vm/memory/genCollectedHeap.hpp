@@ -325,7 +325,7 @@ public:
   void prepare_for_verify();
 
   // Override.
-  void verify(bool allow_dirty, bool silent);
+  void verify(bool allow_dirty, bool silent, bool /* option */);
 
   // Override.
   void print() const;

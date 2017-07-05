@@ -68,7 +68,7 @@ methodOop methodKlass::allocate(constMethodHandle xconst,
   m->set_constants(NULL);
   m->set_max_stack(0);
   m->set_max_locals(0);
-  m->clear_intrinsic_id_cache();
+  m->set_intrinsic_id(vmIntrinsics::_none);
   m->set_method_data(NULL);
   m->set_interpreter_throwout_count(0);
   m->set_vtable_index(methodOopDesc::garbage_vtable_index);

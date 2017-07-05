@@ -233,6 +233,10 @@ class OopMapSet : public ResourceObj {
   int heap_size() const;
   void copy_to(address addr);
 
+  // Methods oops_do() and all_do() filter out NULL oops and
+  // oop == Universe::narrow_oop_base() before passing oops
+  // to closures.
+
   // Iterates through frame for a compiled method
   static void oops_do            (const frame* fr,
                                   const RegisterMap* reg_map, OopClosure* f);

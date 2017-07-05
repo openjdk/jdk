@@ -1202,18 +1202,13 @@ void Arguments::set_ergonomics_flags() {
   }
 
 #ifdef _LP64
-  // Compressed Headers do not work with CMS, which uses a bit in the klass
-  // field offset to determine free list chunk markers.
   // Check that UseCompressedOops can be set with the max heap size allocated
   // by ergonomics.
   if (MaxHeapSize <= max_heap_for_compressed_oops()) {
-    if (FLAG_IS_DEFAULT(UseCompressedOops) && !UseG1GC) {
+    if (FLAG_IS_DEFAULT(UseCompressedOops)) {
       // Turn off until bug is fixed.
       // the following line to return it to default status.
       // FLAG_SET_ERGO(bool, UseCompressedOops, true);
-    } else if (UseCompressedOops && UseG1GC) {
-      warning(" UseCompressedOops does not currently work with UseG1GC; switching off UseCompressedOops. ");
-      FLAG_SET_DEFAULT(UseCompressedOops, false);
     }
 #ifdef _WIN64
     if (UseLargePages && UseCompressedOops) {
@@ -1454,6 +1449,7 @@ bool Arguments::check_gc_consistency() {
   if (UseSerialGC)                       i++;
   if (UseConcMarkSweepGC || UseParNewGC) i++;
   if (UseParallelGC || UseParallelOldGC) i++;
+  if (UseG1GC)                           i++;
   if (i > 1) {
     jio_fprintf(defaultStream::error_stream(),
                 "Conflicting collector combinations in option list; "
@@ -2603,22 +2599,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     return result;
   }
 
-  // These are hacks until G1 is fully supported and tested
-  // but lets you force -XX:+UseG1GC in PRT and get it where it (mostly) works
-  if (UseG1GC) {
-    if (UseConcMarkSweepGC || UseParNewGC || UseParallelGC || UseParallelOldGC || UseSerialGC) {
-#ifndef PRODUCT
-      tty->print_cr("-XX:+UseG1GC is incompatible with other collectors, using UseG1GC");
-#endif // PRODUCT
-      UseConcMarkSweepGC = false;
-      UseParNewGC        = false;
-      UseParallelGC      = false;
-      UseParallelOldGC   = false;
-      UseSerialGC        = false;
-    }
-    no_shared_spaces();
-  }
-
 #ifndef PRODUCT
   if (TraceBytecodesAt != 0) {
     TraceBytecodes = true;
@@ -2676,10 +2656,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   } else if (UseParNewGC) {
     // Set some flags for ParNew
     set_parnew_gc_flags();
-  }
-  // Temporary; make the "if" an "else-if" before
-  // we integrate G1. XXX
-  if (UseG1GC) {
+  } else if (UseG1GC) {
     // Set some flags for garbage-first, if needed.
     set_g1_gc_flags();
   }

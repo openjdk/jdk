@@ -1216,6 +1216,8 @@ inline bool Type::is_floatingpoint() const {
 #define Op_AndX      Op_AndL
 #define Op_AddX      Op_AddL
 #define Op_SubX      Op_SubL
+#define Op_XorX      Op_XorL
+#define Op_URShiftX  Op_URShiftL
 // conversions
 #define ConvI2X(x)   ConvI2L(x)
 #define ConvL2X(x)   (x)
@@ -1258,6 +1260,8 @@ inline bool Type::is_floatingpoint() const {
 #define Op_AndX      Op_AndI
 #define Op_AddX      Op_AddI
 #define Op_SubX      Op_SubI
+#define Op_XorX      Op_XorI
+#define Op_URShiftX  Op_URShiftI
 // conversions
 #define ConvI2X(x)   (x)
 #define ConvL2X(x)   ConvL2I(x)
