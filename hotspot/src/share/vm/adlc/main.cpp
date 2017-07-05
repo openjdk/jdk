@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,7 +349,7 @@ void ArchDesc::close_files(int delete_out)
     }
     else {
       if (_ADL_file._name) printf("%s --> ", _ADL_file._name);
-      printf("%s, %s, %s, %s, %s, %s, %s, %s, %s",
+      printf("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s",
              _CPP_file._name,
              _CPP_CLONE_file._name,
              _CPP_EXPAND_file._name,
@@ -358,7 +358,8 @@ void ArchDesc::close_files(int delete_out)
              _CPP_MISC_file._name,
              _CPP_PEEPHOLE_file._name,
              _CPP_PIPELINE_file._name,
-             _HPP_file._name, _DFA_file._name);
+             _HPP_file._name,
+             _DFA_file._name);
     }
     printf("\n");
   }
@@ -431,7 +432,7 @@ int get_legal_text(FileBuff &fbuf, char **legal_text)
     legal_end = fbuf.get_line();
   }
   *legal_text = legal_start;
-  return (legal_end - legal_start);
+  return (int) (legal_end - legal_start);
 }
 
 // VS2005 has its own definition, identical to this one.

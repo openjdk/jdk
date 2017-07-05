@@ -133,14 +133,12 @@ void ConcurrentG1RefineThread::queueBasedRefinement() {
       _co_tracker.update(false);
 
       if (G1SmoothConcRefine) {
-        start_vtime_sec = os::elapsedVTime();
         prev_buffer_num = curr_buffer_num;
-
         _sts.leave();
         os::sleep(Thread::current(), (jlong) _interval_ms, false);
         _sts.join();
+        start_vtime_sec = os::elapsedVTime();
       }
-
       n_logs++;
     }
     // Make sure we harvest the PYA, if any.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -513,7 +513,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
     // compute full expression stack limit
 
     const Address size_of_stack    (rbx, methodOopDesc::max_stack_offset());
-    __ load_unsigned_word(rdx, size_of_stack);                            // get size of expression stack in words
+    __ load_unsigned_short(rdx, size_of_stack);                           // get size of expression stack in words
     __ negptr(rdx);                                                       // so we can subtract in next step
     // Allocate expression stack
     __ lea(rsp, Address(rsp, rdx, Address::times_ptr));
@@ -523,7 +523,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
 #ifdef _LP64
   // Make sure stack is properly aligned and sized for the abi
   __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
-  __ andptr(rsp, -16); // must be 16 byte boundry (see amd64 ABI)
+  __ andptr(rsp, -16); // must be 16 byte boundary (see amd64 ABI)
 #endif // _LP64
 
 
@@ -659,7 +659,7 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
     // Always give one monitor to allow us to start interp if sync method.
     // Any additional monitors need a check when moving the expression stack
     const int one_monitor = frame::interpreter_frame_monitor_size() * wordSize;
-  __ load_unsigned_word(rax, size_of_stack);                            // get size of expression stack in words
+  __ load_unsigned_short(rax, size_of_stack);                           // get size of expression stack in words
   __ lea(rax, Address(noreg, rax, Interpreter::stackElementScale(), one_monitor));
   __ lea(rax, Address(rax, rdx, Interpreter::stackElementScale(), overhead_size));
 
@@ -863,13 +863,13 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     __ bind(notByte);
     __ cmpl(rdx, stos);
     __ jcc(Assembler::notEqual, notShort);
-    __ load_signed_word(rax, field_address);
+    __ load_signed_short(rax, field_address);
     __ jmp(xreturn_path);
 
     __ bind(notShort);
     __ cmpl(rdx, ctos);
     __ jcc(Assembler::notEqual, notChar);
-    __ load_unsigned_word(rax, field_address);
+    __ load_unsigned_short(rax, field_address);
     __ jmp(xreturn_path);
 
     __ bind(notChar);
@@ -937,7 +937,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   const Register locals = rdi;
 
   // get parameter size (always needed)
-  __ load_unsigned_word(rcx, size_of_parameters);
+  __ load_unsigned_short(rcx, size_of_parameters);
 
   // rbx: methodOop
   // rcx: size of parameters
@@ -970,7 +970,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifdef _LP64
     // duplicate the alignment rsp got after setting stack_base
     __ subptr(rax, frame::arg_reg_save_area_bytes); // windows
-    __ andptr(rax, -16); // must be 16 byte boundry (see amd64 ABI)
+    __ andptr(rax, -16); // must be 16 byte boundary (see amd64 ABI)
 #endif // _LP64
     __ cmpptr(rax, rsp);
     __ jcc(Assembler::equal, L);
@@ -1062,12 +1062,12 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // allocate space for parameters
   __ movptr(method, STATE(_method));
   __ verify_oop(method);
-  __ load_unsigned_word(t, Address(method, methodOopDesc::size_of_parameters_offset()));
+  __ load_unsigned_short(t, Address(method, methodOopDesc::size_of_parameters_offset()));
   __ shll(t, 2);
 #ifdef _LP64
   __ subptr(rsp, t);
   __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
-  __ andptr(rsp, -16); // must be 16 byte boundry (see amd64 ABI)
+  __ andptr(rsp, -16); // must be 16 byte boundary (see amd64 ABI)
 #else
   __ addptr(t, 2*wordSize);     // allocate two more slots for JNIEnv and possible mirror
   __ subptr(rsp, t);
@@ -1659,11 +1659,11 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // const Address monitor(rbp, frame::interpreter_frame_initial_sp_offset * wordSize - (int)sizeof(BasicObjectLock));
 
   // get parameter size (always needed)
-  __ load_unsigned_word(rcx, size_of_parameters);
+  __ load_unsigned_short(rcx, size_of_parameters);
 
   // rbx: methodOop
   // rcx: size of parameters
-  __ load_unsigned_word(rdx, size_of_locals);                      // get size of locals in words
+  __ load_unsigned_short(rdx, size_of_locals);                     // get size of locals in words
 
   __ subptr(rdx, rcx);                                             // rdx = no. of additional locals
 
@@ -1949,7 +1949,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   __ movptr(rbx, STATE(_result._to_call._callee));
 
   // callee left args on top of expression stack, remove them
-  __ load_unsigned_word(rcx, Address(rbx, methodOopDesc::size_of_parameters_offset()));
+  __ load_unsigned_short(rcx, Address(rbx, methodOopDesc::size_of_parameters_offset()));
   __ lea(rsp, Address(rsp, rcx, Address::times_ptr));
 
   __ movl(rcx, Address(rbx, methodOopDesc::result_index_offset()));
@@ -2119,7 +2119,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // Make it look like call_stub calling conventions
 
   // Get (potential) receiver
-  __ load_unsigned_word(rcx, size_of_parameters);                     // get size of parameters in words
+  __ load_unsigned_short(rcx, size_of_parameters);                   // get size of parameters in words
 
   ExternalAddress recursive(CAST_FROM_FN_PTR(address, RecursiveInterpreterActivation));
   __ pushptr(recursive.addr());                                      // make it look good in the debugger

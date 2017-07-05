@@ -88,7 +88,7 @@ reg_class X_REG(AX, BX); // form a matcher register class of X_REG
                          // these are used for constraints, etc.
 
 alloc_class class1(AX, BX); // form an allocation class of registers
-                            // used by the register allocator for seperate
+                            // used by the register allocator for separate
                             // allocation of target register classes
 
 	3. Pipeline Syntax for Scheduling
@@ -150,7 +150,7 @@ D. Delimiters
 		b. %}  (block terminator)
 		c. EOF (file terminator)
 
-	4. Each statement must start on a seperate line
+	4. Each statement must start on a separate line
 
 	5. Identifiers cannot contain: (){}%;,"/\
 

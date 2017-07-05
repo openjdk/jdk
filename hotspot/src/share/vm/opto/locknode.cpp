@@ -121,7 +121,7 @@ void Parse::do_monitor_exit() {
   kill_dead_locals();
 
   pop();                        // Pop oop to unlock
-  // Because monitors are guarenteed paired (else we bail out), we know
+  // Because monitors are guaranteed paired (else we bail out), we know
   // the matching Lock for this Unlock.  Hence we know there is no need
   // for a null check on Unlock.
   shared_unlock(map()->peek_monitor_box(), map()->peek_monitor_obj());
