@@ -25,16 +25,16 @@
   @test
   @bug 4397404 4720930
   @summary tests that images of all supported native image formats are transfered properly
+  @library ../../../../lib/testlibrary
   @library ../../regtesthelpers/process/
-  @build ProcessResults ProcessCommunicator
+  @build jdk.testlibrary.OSInfo ProcessResults ProcessCommunicator
   @author gas@sparc.spb.su area=Clipboard
   @run main ImageTransferTest
 */
 
-import sun.awt.OSInfo;
-import sun.awt.SunToolkit;
 import test.java.awt.regtesthelpers.process.ProcessCommunicator;
 import test.java.awt.regtesthelpers.process.ProcessResults;
+import jdk.testlibrary.OSInfo;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -105,11 +105,15 @@ public class ImageTransferTest {
 
 
 class Util {
+    private static Robot srobot = null;
     public static void sync() {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
         try {
+            if(srobot == null) {
+                srobot = new Robot();
+            }
+            srobot.waitForIdle();
             Thread.sleep(500);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

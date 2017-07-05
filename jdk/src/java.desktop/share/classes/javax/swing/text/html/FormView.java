@@ -37,7 +37,7 @@ import javax.swing.text.*;
  * Component decorator that implements the view interface
  * for form elements, &lt;input&gt;, &lt;textarea&gt;,
  * and &lt;select&gt;.  The model for the component is stored
- * as an attribute of the the element (using StyleConstants.ModelAttribute),
+ * as an attribute of the element (using StyleConstants.ModelAttribute),
  * and is used to build the component of the view.  The type
  * of the model is assumed to of the type that would be set by
  * <code>HTMLDocument.HTMLReader.FormAction</code>.  If there are

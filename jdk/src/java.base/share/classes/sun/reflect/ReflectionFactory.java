@@ -135,7 +135,7 @@ public class ReflectionFactory {
      * be initialized and therefore must not be called until the
      * first get/set of this field.
      * @param field the field
-     * @param override true if caller has overridden aaccessibility
+     * @param override true if caller has overridden accessibility
      */
     public FieldAccessor newFieldAccessor(Field field, boolean override) {
         checkInitted();

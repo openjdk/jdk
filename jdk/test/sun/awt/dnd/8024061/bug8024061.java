@@ -25,11 +25,10 @@
  * @bug 8024061
  * @summary Checks that no exception is thrown if dragGestureRecognized
  *          takes a while to complete.
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
+ * @run main bug8024061
  */
-import sun.awt.OSInfo;
-import sun.awt.OSInfo.OSType;
-import sun.awt.SunToolkit;
-
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -55,6 +54,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.*;
+import jdk.testlibrary.OSInfo;
+
 
 /**
  * If dragGestureRecognized() takes a while to complete and if user performs a drag quickly,
@@ -106,8 +107,8 @@ public class bug8024061 {
     }
 
     public static void main(String[] args) throws AWTException, InvocationTargetException, InterruptedException {
-        OSType type = OSInfo.getOSType();
-        if (type != OSType.LINUX && type != OSType.SOLARIS) {
+        OSInfo.OSType type = OSInfo.getOSType();
+        if (type != OSInfo.OSType.LINUX && type != OSInfo.OSType.SOLARIS) {
             System.out.println("This test is for Linux and Solaris only... " +
                                "skipping!");
             return;
@@ -122,8 +123,7 @@ public class bug8024061 {
         });
         final Robot robot = new Robot();
         robot.setAutoDelay(10);
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         JFrame frame = dnd[0].frame;
         Point point = frame.getLocationOnScreen();
@@ -138,7 +138,7 @@ public class bug8024061 {
             System.out.println("x = " + here.x);
         }
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         System.out.println("finished");

@@ -1094,7 +1094,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
     }
 
     /**
-     * Clips the copy area to the heavywieght bounds and returns the cliped rectangle. The tricky part here is the the
+     * Clips the copy area to the heavywieght bounds and returns the cliped rectangle. The tricky part here is the
      * passed arguments x, y are in the coordinate space of the sg2d/lightweight comp. In order to do the clipping we
      * translate them to the coordinate space of the surface, and the returned clipped rectangle is in the coordinate
      * space of the surface.

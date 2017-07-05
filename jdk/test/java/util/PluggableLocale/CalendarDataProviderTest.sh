@@ -23,6 +23,6 @@
 #
 #
 # @test
-# @bug 7058207 8000986
+# @bug 7058207 8000986 8062588
 # @summary CalendarDataProvider tests
-# @run shell ExecTest.sh bar CalendarDataProviderTest true
+# @run shell ExecTest.sh bar CalendarDataProviderTest

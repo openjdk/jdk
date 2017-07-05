@@ -32,7 +32,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.Point;
 import java.awt.event.*;
-import sun.awt.SunToolkit;
 
 public class bug4708809 {
 
@@ -42,7 +41,6 @@ public class bug4708809 {
     private static JScrollBar sbar;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(350);
 
@@ -53,7 +51,7 @@ public class bug4708809 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -63,13 +61,13 @@ public class bug4708809 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point point = getClickPoint(0.5, 0.5);
         robot.mouseMove(point.x, point.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -88,12 +86,12 @@ public class bug4708809 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         point = getClickPoint(0.5, 0.2);
         robot.mouseMove(point.x, point.y);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!do_test || !passed) {
             throw new Exception("The scrollbar moved with incorrect direction");

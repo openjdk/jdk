@@ -367,7 +367,8 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
 
   # ZERO_ARCHDEF is used to enable architecture-specific code
   case "${OPENJDK_TARGET_CPU}" in
-    ppc*)    ZERO_ARCHDEF=PPC   ;;
+    ppc)     ZERO_ARCHDEF=PPC32 ;;
+    ppc64)   ZERO_ARCHDEF=PPC64 ;;
     s390*)   ZERO_ARCHDEF=S390  ;;
     sparc*)  ZERO_ARCHDEF=SPARC ;;
     x86_64*) ZERO_ARCHDEF=AMD64 ;;

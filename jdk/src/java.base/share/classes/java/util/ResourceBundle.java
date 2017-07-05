@@ -994,7 +994,7 @@ public abstract class ResourceBundle {
      * bundle is found, the default control's {@link Control#getFallbackLocale
      * getFallbackLocale} method is called, which returns the current default
      * locale.  A new sequence of candidate locale names is generated using this
-     * locale and and searched again, as above.
+     * locale and searched again, as above.
      *
      * <p>If still no result bundle is found, the base name alone is looked up. If
      * this still fails, a <code>MissingResourceException</code> is thrown.

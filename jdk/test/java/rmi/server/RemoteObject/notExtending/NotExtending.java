@@ -30,7 +30,7 @@
  * @author Peter Jones
  *
  * @build NotExtending_Stub NotExtending_Skel
- * @run main/othervm/timeout=240 NotExtending
+ * @run main/othervm NotExtending
  */
 
 
@@ -46,9 +46,16 @@ public class NotExtending implements Remote {
     /** true if the hashValue field has been initialized */
     private boolean hashValueInitialized = false;
 
-    public NotExtending() throws RemoteException {
+    // no declared constructor - rely on implicit no-arg contructor
+
+    public Remote export() throws RemoteException {
         stub = UnicastRemoteObject.exportObject(this);
         setHashValue(stub.hashCode());
+        return stub;
+    }
+
+    public void unexport() throws RemoteException {
+        UnicastRemoteObject.unexportObject(this, true);
     }
 
     private void setHashValue(int value) {
@@ -58,12 +65,11 @@ public class NotExtending implements Remote {
 
     public int hashCode() {
         /*
-         * Test fails with a RuntimeException if the hashCode() method is
-         * called (during the export procedure) before the correct hash
-         * value has been initialized.
+         * Test fails if the hashCode() method is called (during export)
+         * before the correct hash value has been initialized.
          */
         if (!hashValueInitialized) {
-            throw new RuntimeException(
+            throw new AssertionError(
                 "hashCode() invoked before hashValue initialized");
         }
         return hashValue;
@@ -74,69 +80,40 @@ public class NotExtending implements Remote {
     }
 
     public static void main(String[] args) throws Exception {
-        /*
-         * The following line is required with the JDK 1.2 VM so that the
-         * VM can exit gracefully when this test completes.  Otherwise, the
-         * conservative garbage collector will find a handle to the server
-         * object on the native stack and not clear the weak reference to
-         * it in the RMI runtime's object table.
-         */
-        Object dummy = new Object();
+        NotExtending server = null;
 
-        NotExtending server;
         try {
             /*
              * Verify that hashCode() is not invoked before it is
              * initialized.  Tests bugid 4102938.
              */
             server = new NotExtending();
+            Remote stub = server.export();
             System.err.println("Server exported without invoking hashCode().");
 
             /*
              * Verify that passing stub to server's equals() method
              * returns true.
              */
-            if (server.equals(server.stub)) {
-                System.err.println(
-                    "Passing stub to server's equals() method succeeded.");
+            if (server.equals(stub)) {
+                System.err.println("server.equals(stub) returns true");
             } else {
-                throw new RuntimeException(
-                    "passing stub to server's equals() method failed");
+                throw new AssertionError("server.equals(stub) returns false");
             }
 
             /*
              * Verify that passing server to stub's equals() method
              * returns true.  Tests bugid 4099660.
              */
-            if (server.stub.equals(server)) {
-                System.err.println(
-                    "Passing server to stub's equals() method succeeded.");
+            if (stub.equals(server)) {
+                System.err.println("stub.equals(server) returns true");
             } else {
-                throw new RuntimeException(
-                    "passing server to stub's equals() method failed");
+                throw new AssertionError("stub.equals(server) returns false");
             }
-
         } finally {
-            server = null;
-            flushCachedRefs();
-        }
-    }
-
-    /**
-     * Force desperate garbage collection so that soft references
-     * will be cleared.
-     *
-     * This method is required with the JDK 1.1.x RMI runtime so that the
-     * VM can exit gracefully when this test completes.  See bugid 4006356.
-     */
-    public static void flushCachedRefs() {
-        java.util.Vector chain = new java.util.Vector();
-        try {
-            while (true) {
-                int[] hungry = new int[65536];
-                chain.addElement(hungry);
+            if (server != null) {
+                server.unexport();
             }
-        } catch (OutOfMemoryError e) {
         }
     }
 }

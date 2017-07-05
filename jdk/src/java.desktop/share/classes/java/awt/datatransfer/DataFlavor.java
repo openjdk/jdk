@@ -384,7 +384,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      * @param representationClass the class used to transfer data in this flavor
      * @param humanPresentableName the human-readable string used to identify
      *                 this flavor; if this parameter is <code>null</code>
-     *                 then the value of the the MIME Content Type is used
+     *                 then the value of the MIME Content Type is used
      * @exception NullPointerException if <code>representationClass</code> is null
      */
     public DataFlavor(Class<?> representationClass, String humanPresentableName) {
@@ -418,7 +418,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      *                 is thrown
      * @param humanPresentableName the human-readable string used to identify
      *                 this flavor; if this parameter is <code>null</code>
-     *                 then the value of the the MIME Content Type is used
+     *                 then the value of the MIME Content Type is used
      * @exception IllegalArgumentException if <code>mimeType</code> is
      *                 invalid or if the class is not successfully loaded
      * @exception NullPointerException if <code>mimeType</code> is null
