@@ -696,32 +696,32 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   }
 
   if (FLAG_IS_DEFAULT(MarkStackSize)) {
-    uintx mark_stack_size =
+    size_t mark_stack_size =
       MIN2(MarkStackSizeMax,
-          MAX2(MarkStackSize, (uintx) (parallel_marking_threads() * TASKQUEUE_SIZE)));
+          MAX2(MarkStackSize, (size_t) (parallel_marking_threads() * TASKQUEUE_SIZE)));
     // Verify that the calculated value for MarkStackSize is in range.
     // It would be nice to use the private utility routine from Arguments.
     if (!(mark_stack_size >= 1 && mark_stack_size <= MarkStackSizeMax)) {
-      warning("Invalid value calculated for MarkStackSize (" UINTX_FORMAT "): "
-              "must be between " UINTX_FORMAT " and " UINTX_FORMAT,
-              mark_stack_size, (uintx) 1, MarkStackSizeMax);
+      warning("Invalid value calculated for MarkStackSize (" SIZE_FORMAT "): "
+              "must be between 1 and " SIZE_FORMAT,
+              mark_stack_size, MarkStackSizeMax);
       return;
     }
-    FLAG_SET_ERGO(uintx, MarkStackSize, mark_stack_size);
+    FLAG_SET_ERGO(size_t, MarkStackSize, mark_stack_size);
   } else {
     // Verify MarkStackSize is in range.
     if (FLAG_IS_CMDLINE(MarkStackSize)) {
       if (FLAG_IS_DEFAULT(MarkStackSizeMax)) {
         if (!(MarkStackSize >= 1 && MarkStackSize <= MarkStackSizeMax)) {
-          warning("Invalid value specified for MarkStackSize (" UINTX_FORMAT "): "
-                  "must be between " UINTX_FORMAT " and " UINTX_FORMAT,
-                  MarkStackSize, (uintx) 1, MarkStackSizeMax);
+          warning("Invalid value specified for MarkStackSize (" SIZE_FORMAT "): "
+                  "must be between 1 and " SIZE_FORMAT,
+                  MarkStackSize, MarkStackSizeMax);
           return;
         }
       } else if (FLAG_IS_CMDLINE(MarkStackSizeMax)) {
         if (!(MarkStackSize >= 1 && MarkStackSize <= MarkStackSizeMax)) {
-          warning("Invalid value specified for MarkStackSize (" UINTX_FORMAT ")"
-                  " or for MarkStackSizeMax (" UINTX_FORMAT ")",
+          warning("Invalid value specified for MarkStackSize (" SIZE_FORMAT ")"
+                  " or for MarkStackSizeMax (" SIZE_FORMAT ")",
                   MarkStackSize, MarkStackSizeMax);
           return;
         }
@@ -745,7 +745,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   // so that the assertion in MarkingTaskQueue::task_queue doesn't fail
   _active_tasks = _max_worker_id;
 
-  size_t max_regions = (size_t) _g1h->max_regions();
+  uint max_regions = _g1h->max_regions();
   for (uint i = 0; i < _max_worker_id; ++i) {
     CMTaskQueue* task_queue = new CMTaskQueue();
     task_queue->initialize();

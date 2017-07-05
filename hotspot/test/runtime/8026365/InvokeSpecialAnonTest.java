@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary Test invokespecial of host class method from an anonymous class
  * @author  Robert Field
  * @library /testlibrary
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/sun.misc
  * @compile -XDignore.symbol.file InvokeSpecialAnonTest.java
  * @run main ClassFileInstaller InvokeSpecialAnonTest AnonTester
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all InvokeSpecialAnonTest

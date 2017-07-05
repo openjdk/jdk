@@ -31,6 +31,10 @@ import com.oracle.java.testlibrary.dcmd.JMXExecutor;
  * @test
  * @summary Test of diagnostic command VM.system_properties
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.jvmstat/sun.jvmstat.monitor
  * @build com.oracle.java.testlibrary.*
  * @build com.oracle.java.testlibrary.dcmd.*
  * @run testng SystemPropertiesTest

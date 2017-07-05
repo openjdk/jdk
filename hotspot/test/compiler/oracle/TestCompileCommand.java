@@ -31,6 +31,8 @@ import com.oracle.java.testlibrary.*;
  * @bug 8069389
  * @summary "Regression tests of -XX:CompileCommand"
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main TestCompileCommand
  */
 

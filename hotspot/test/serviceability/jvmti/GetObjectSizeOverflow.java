@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,11 @@ import com.oracle.java.testlibrary.*;
  * @test
  * @bug 8027230
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.compiler
+ *          java.instrument
+ *          java.management
+ *          jdk.jvmstat/sun.jvmstat.monitor
  * @build ClassFileInstaller com.oracle.java.testlibrary.* GetObjectSizeOverflowAgent
  * @run main ClassFileInstaller GetObjectSizeOverflowAgent
  * @run main GetObjectSizeOverflow

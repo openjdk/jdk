@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@
  * @summary Safepoint placed between stack pointer increment and decrement leads
  *          to interpreter's stack corruption after deoptimization.
  * @library /testlibrary /../../test/lib
+ * @modules java.base/sun.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.jvmstat/sun.jvmstat.monitor
  * @build ClassFileInstaller sun.hotspot.WhiteBox com.oracle.java.testlibrary.*
  *        Test_ia32 InlinedArrayCloneTestCase
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

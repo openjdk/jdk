@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,13 +55,6 @@ private:
     init_pools_list_size = 10,
     init_managers_list_size = 5,
     init_code_heap_pools_size = 9
-  };
-
-  // index for minor and major generations
-  enum {
-    minor = 0,
-    major = 1,
-    n_gens = 2
   };
 
   static GrowableArray<MemoryPool*>*    _pools_list;
