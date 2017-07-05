@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -165,63 +165,6 @@ ProjectCreatorIDEOptionsIgnoreCompiler2=\
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
 $(ProjectCreatorIDEOptionsIgnoreCompiler1:TARGET=core) \
 $(ProjectCreatorIDEOptionsIgnoreCompiler2:TARGET=core)
-
-##################################################
-# JKERNEL specific options
-##################################################
-ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
- -define_kernel KERNEL \
-$(ProjectCreatorIDEOptionsIgnoreCompiler2:TARGET=kernel) \
- -ignorePath_kernel src/share/vm/gc_implementation/parallelScavenge \
- -ignorePath_kernel src/share/vm/gc_implementation/parNew \
- -ignorePath_kernel src/share/vm/gc_implementation/concurrentMarkSweep \
- -ignorePath_kernel src/share/vm/gc_implementation/g1 \
- -ignoreFile_kernel attachListener.cpp \
- -ignoreFile_kernel attachListener_windows.cpp \
- -ignoreFile_kernel dump.cpp \
- -ignoreFile_kernel dump_$(Platform_arch_model).cpp \
- -ignoreFile_kernel forte.cpp \
- -ignoreFile_kernel fprofiler.cpp \
- -ignoreFile_kernel heapDumper.cpp \
- -ignoreFile_kernel heapInspection.cpp \
- -ignoreFile_kernel jniCheck.cpp \
- -ignoreFile_kernel jvmtiCodeBlobEvents.cpp \
- -ignoreFile_kernel jvmtiExtensions.cpp \
- -ignoreFile_kernel jvmtiImpl.cpp \
- -ignoreFile_kernel jvmtiRawMonitor.cpp \
- -ignoreFile_kernel jvmtiTagMap.cpp \
- -ignoreFile_kernel jvmtiTrace.cpp \
- -ignoreFile_kernel jvmtiTrace.hpp \
- -ignoreFile_kernel restore.cpp \
- -ignoreFile_kernel serialize.cpp \
- -ignoreFile_kernel vmStructs.cpp \
- -ignoreFile_kernel g1MemoryPool.cpp \
- -ignoreFile_kernel g1MemoryPool.hpp \
- -ignoreFile_kernel psMemoryPool.cpp \
- -ignoreFile_kernel psMemoryPool.hpp \
- -ignoreFile_kernel gcAdaptivePolicyCounters.cpp \
- -ignoreFile_kernel concurrentGCThread.cpp \
- -ignoreFile_kernel mutableNUMASpace.cpp \
- -ignoreFile_kernel ciTypeFlow.cpp \
- -ignoreFile_kernel ciTypeFlow.hpp \
- -ignoreFile_kernel oop.pcgc.inline.hpp \
- -ignoreFile_kernel oop.psgc.inline.hpp \
- -ignoreFile_kernel allocationStats.cpp \
- -ignoreFile_kernel allocationStats.hpp \
- -ignoreFile_kernel concurrentGCThread.hpp \
- -ignoreFile_kernel gSpaceCounters.cpp \
- -ignoreFile_kernel gSpaceCounters.hpp \
- -ignoreFile_kernel gcAdaptivePolicyCounters.hpp \
- -ignoreFile_kernel immutableSpace.cpp \
- -ignoreFile_kernel mutableNUMASpace.hpp \
- -ignoreFile_kernel mutableSpace.cpp \
- -ignoreFile_kernel spaceCounters.cpp \
- -ignoreFile_kernel spaceCounters.hpp \
- -ignoreFile_kernel yieldingWorkgroup.cpp \
- -ignoreFile_kernel yieldingWorkgroup.hpp \
- -ignorePath_kernel vmStructs_ \
- -ignoreFile_kernel $(Platform_arch_model).ad \
- -additionalFile_kernel gcTaskManager.hpp
 
 ##################################################
 # Client(C1) compiler specific options

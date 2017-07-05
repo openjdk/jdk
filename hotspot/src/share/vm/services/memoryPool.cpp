@@ -32,6 +32,7 @@
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
+#include "utilities/macros.hpp"
 
 MemoryPool::MemoryPool(const char* name,
                        PoolType type,
@@ -208,7 +209,7 @@ MemoryUsage SurvivorContiguousSpacePool::get_memory_usage() {
   return MemoryUsage(initial_size(), used, committed, maxSize);
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 CompactibleFreeListSpacePool::CompactibleFreeListSpacePool(CompactibleFreeListSpace* space,
                                                            const char* name,
                                                            PoolType type,
@@ -225,7 +226,7 @@ MemoryUsage CompactibleFreeListSpacePool::get_memory_usage() {
 
   return MemoryUsage(initial_size(), used, committed, maxSize);
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 GenerationPool::GenerationPool(Generation* gen,
                                const char* name,

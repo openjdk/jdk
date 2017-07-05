@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,13 +210,14 @@ void FileMapInfo::open_for_write() {
     tty->print_cr("   %s", _full_path);
   }
 
-  // Remove the existing file in case another process has it open.
-  remove(_full_path);
-#ifdef _WINDOWS  // if 0444 is used on Windows, then remove() will fail.
-  int fd = open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0744);
-#else
-  int fd = open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
+#ifdef _WINDOWS  // On Windows, need WRITE permission to remove the file.
+  chmod(_full_path, _S_IREAD | _S_IWRITE);
 #endif
+
+  // Use remove() to delete the existing file because, on Unix, this will
+  // allow processes that have it open continued access to the file.
+  remove(_full_path);
+  int fd = open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
   if (fd < 0) {
     fail_stop("Unable to create shared archive file %s.", _full_path);
   }

@@ -351,7 +351,9 @@ import sun.misc.FormattedFloatingDecimal;
  * <tr><td valign="top">{@code 'a'}, {@code 'A'}
  *     <td valign="top"> floating point
  *     <td> The result is formatted as a hexadecimal floating-point number with
- *     a significand and an exponent
+ *     a significand and an exponent. This conversion is <b>not</b> supported
+ *     for the {@code BigDecimal} type despite the latter's being in the
+ *     <i>floating point</i> argument category.
  *
  * <tr><td valign="top">{@code 't'}, {@code 'T'}
  *     <td valign="top"> date/time

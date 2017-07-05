@@ -252,7 +252,7 @@ class ciMethod : public ciMetadata {
   bool has_option(const char *option);
   bool can_be_compiled();
   bool can_be_osr_compiled(int entry_bci);
-  void set_not_compilable();
+  void set_not_compilable(const char* reason = NULL);
   bool has_compiled_code();
   void log_nmethod_identity(xmlStream* log);
   bool is_not_reached(int bci);

@@ -465,6 +465,12 @@ JVM_GetClassSignature(JNIEnv *env, jclass cls);
 JNIEXPORT jbyteArray JNICALL
 JVM_GetClassAnnotations(JNIEnv *env, jclass cls);
 
+/* Type use annotations support (JDK 1.8) */
+
+JNIEXPORT jbyteArray JNICALL
+JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls);
+
+
 /*
  * New (JDK 1.4) reflection implementation
  */

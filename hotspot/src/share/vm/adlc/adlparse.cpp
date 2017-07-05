@@ -168,7 +168,7 @@ void ADLParser::instr_parse(void) {
   // Check for block delimiter
   if ( (_curchar != '%')
        || ( next_char(),  (_curchar != '{')) ) {
-    parse_err(SYNERR, "missing '%{' in instruction definition\n");
+    parse_err(SYNERR, "missing '%%{' in instruction definition\n");
     return;
   }
   next_char();                     // Maintain the invariant
@@ -253,7 +253,7 @@ void ADLParser::instr_parse(void) {
   } while(_curchar != '%');
   next_char();
   if (_curchar != '}') {
-    parse_err(SYNERR, "missing '%}' in instruction definition\n");
+    parse_err(SYNERR, "missing '%%}' in instruction definition\n");
     return;
   }
   // Check for "Set" form of chain rule
@@ -423,7 +423,7 @@ void ADLParser::oper_parse(void) {
   skipws();
   // Check for block delimiter
   if ((_curchar != '%') || (*(_ptr+1) != '{')) { // If not open block
-    parse_err(SYNERR, "missing '%c{' in operand definition\n","%");
+    parse_err(SYNERR, "missing '%%{' in operand definition\n");
     return;
   }
   next_char(); next_char();        // Skip over "%{" symbol
@@ -483,7 +483,7 @@ void ADLParser::oper_parse(void) {
   } while(_curchar != '%');
   next_char();
   if (_curchar != '}') {
-    parse_err(SYNERR, "missing '%}' in operand definition\n");
+    parse_err(SYNERR, "missing '%%}' in operand definition\n");
     return;
   }
   // Add operand to tail of operand list
@@ -1324,7 +1324,7 @@ void ADLParser::pipe_parse(void) {
   // Check for block delimiter
   if ( (_curchar != '%')
        || ( next_char(),  (_curchar != '{')) ) {
-    parse_err(SYNERR, "missing '%{' in pipeline definition\n");
+    parse_err(SYNERR, "missing '%%{' in pipeline definition\n");
     return;
   }
   next_char();                     // Maintain the invariant
@@ -1341,7 +1341,7 @@ void ADLParser::pipe_parse(void) {
       skipws();
       if ( (_curchar != '%')
            || ( next_char(),  (_curchar != '{')) ) {
-        parse_err(SYNERR, "expected '%{'\n");
+        parse_err(SYNERR, "expected '%%{'\n");
         return;
       }
       next_char(); skipws();
@@ -1397,7 +1397,7 @@ void ADLParser::pipe_parse(void) {
       skipws();
       if ( (_curchar != '%')
            || ( next_char(),  (_curchar != '{')) ) {
-        parse_err(SYNERR, "expected '%{'\n");
+        parse_err(SYNERR, "expected '%%{'\n");
         return;
       }
       next_char(); skipws();
@@ -1586,7 +1586,7 @@ void ADLParser::pipe_parse(void) {
 
       if ( (_curchar != '%')
            || ( next_char(),  (_curchar != '}')) ) {
-        parse_err(SYNERR, "expected '%}', found \"%c\"\n", _curchar);
+        parse_err(SYNERR, "expected '%%}', found \"%c\"\n", _curchar);
       }
       next_char(); skipws();
 
@@ -1612,7 +1612,7 @@ void ADLParser::pipe_parse(void) {
 
   next_char();
   if (_curchar != '}') {
-    parse_err(SYNERR, "missing \"%}\" in pipeline definition\n");
+    parse_err(SYNERR, "missing \"%%}\" in pipeline definition\n");
     return;
   }
 
@@ -1775,7 +1775,7 @@ void ADLParser::pipe_class_parse(PipelineForm &pipeline) {
   // Check for block delimiter
   if ( (_curchar != '%')
        || ( next_char(),  (_curchar != '{')) ) {
-    parse_err(SYNERR, "missing \"%{\" in pipe_class definition\n");
+    parse_err(SYNERR, "missing \"%%{\" in pipe_class definition\n");
     return;
   }
   next_char();
@@ -2062,7 +2062,7 @@ void ADLParser::pipe_class_parse(PipelineForm &pipeline) {
 
   next_char();
   if (_curchar != '}') {
-    parse_err(SYNERR, "missing \"%}\" in pipe_class definition\n");
+    parse_err(SYNERR, "missing \"%%}\" in pipe_class definition\n");
     return;
   }
 
@@ -3341,12 +3341,12 @@ Interface *ADLParser::mem_interface_parse(void) {
   char *disp        = NULL;
 
   if (_curchar != '%') {
-    parse_err(SYNERR, "Missing '%{' for 'interface' block.\n");
+    parse_err(SYNERR, "Missing '%%{' for 'interface' block.\n");
     return NULL;
   }
   next_char();                  // Skip '%'
   if (_curchar != '{') {
-    parse_err(SYNERR, "Missing '%{' for 'interface' block.\n");
+    parse_err(SYNERR, "Missing '%%{' for 'interface' block.\n");
     return NULL;
   }
   next_char();                  // Skip '{'
@@ -3354,7 +3354,7 @@ Interface *ADLParser::mem_interface_parse(void) {
   do {
     char *field = get_ident();
     if (field == NULL) {
-      parse_err(SYNERR, "Expected keyword, base|index|scale|disp,  or '%}' ending interface.\n");
+      parse_err(SYNERR, "Expected keyword, base|index|scale|disp,  or '%%}' ending interface.\n");
       return NULL;
     }
     if ( strcmp(field,"base") == 0 ) {
@@ -3370,13 +3370,13 @@ Interface *ADLParser::mem_interface_parse(void) {
       disp  = interface_field_parse();
     }
     else {
-      parse_err(SYNERR, "Expected keyword, base|index|scale|disp,  or '%}' ending interface.\n");
+      parse_err(SYNERR, "Expected keyword, base|index|scale|disp,  or '%%}' ending interface.\n");
       return NULL;
     }
   } while( _curchar != '%' );
   next_char();                  // Skip '%'
   if ( _curchar != '}' ) {
-    parse_err(SYNERR, "Missing '%}' for 'interface' block.\n");
+    parse_err(SYNERR, "Missing '%%}' for 'interface' block.\n");
     return NULL;
   }
   next_char();                  // Skip '}'
@@ -3403,12 +3403,12 @@ Interface *ADLParser::cond_interface_parse(void) {
   const char *greater_format = "gt";
 
   if (_curchar != '%') {
-    parse_err(SYNERR, "Missing '%{' for 'cond_interface' block.\n");
+    parse_err(SYNERR, "Missing '%%{' for 'cond_interface' block.\n");
     return NULL;
   }
   next_char();                  // Skip '%'
   if (_curchar != '{') {
-    parse_err(SYNERR, "Missing '%{' for 'cond_interface' block.\n");
+    parse_err(SYNERR, "Missing '%%{' for 'cond_interface' block.\n");
     return NULL;
   }
   next_char();                  // Skip '{'
@@ -3416,7 +3416,7 @@ Interface *ADLParser::cond_interface_parse(void) {
   do {
     char *field = get_ident();
     if (field == NULL) {
-      parse_err(SYNERR, "Expected keyword, base|index|scale|disp,  or '%}' ending interface.\n");
+      parse_err(SYNERR, "Expected keyword, base|index|scale|disp,  or '%%}' ending interface.\n");
       return NULL;
     }
     if ( strcmp(field,"equal") == 0 ) {
@@ -3438,13 +3438,13 @@ Interface *ADLParser::cond_interface_parse(void) {
       greater = interface_field_parse(&greater_format);
     }
     else {
-      parse_err(SYNERR, "Expected keyword, base|index|scale|disp,  or '%}' ending interface.\n");
+      parse_err(SYNERR, "Expected keyword, base|index|scale|disp,  or '%%}' ending interface.\n");
       return NULL;
     }
   } while( _curchar != '%' );
   next_char();                  // Skip '%'
   if ( _curchar != '}' ) {
-    parse_err(SYNERR, "Missing '%}' for 'interface' block.\n");
+    parse_err(SYNERR, "Missing '%%}' for 'interface' block.\n");
     return NULL;
   }
   next_char();                  // Skip '}'
@@ -3543,7 +3543,7 @@ MatchRule *ADLParser::match_parse(FormDict &operands) {
   }
   else if ((cnstr = find_cpp_block("match constructor")) == NULL ) {
     parse_err(SYNERR, "invalid construction of match rule\n"
-              "Missing ';' or invalid '%{' and '%}' constructor\n");
+              "Missing ';' or invalid '%%{' and '%%}' constructor\n");
     return NULL;                  // No MatchRule to return
   }
   if (_AD._adl_debug > 1)
@@ -3646,7 +3646,7 @@ FormatRule* ADLParser::format_parse(void) {
       // Check for closing '"' and '%}' in format description
       skipws();                   // Move to closing '%}'
       if ( _curchar != '%' ) {
-        parse_err(SYNERR, "non-blank characters between closing '\"' and '%' in format");
+        parse_err(SYNERR, "non-blank characters between closing '\"' and '%%' in format");
         return NULL;
       }
     } // Done with format description inside
@@ -3654,7 +3654,7 @@ FormatRule* ADLParser::format_parse(void) {
     skipws();
     // Past format description, at '%'
     if ( _curchar != '%' || *(_ptr+1) != '}' ) {
-      parse_err(SYNERR, "missing '%}' at end of format block");
+      parse_err(SYNERR, "missing '%%}' at end of format block");
       return NULL;
     }
     next_char();                  // Move past the '%'
@@ -3785,7 +3785,7 @@ FormatRule* ADLParser::template_parse(void) {
   skipws();
   // Past format description, at '%'
   if ( _curchar != '%' || *(_ptr+1) != '}' ) {
-    parse_err(SYNERR, "missing '%}' at end of format block");
+    parse_err(SYNERR, "missing '%%}' at end of format block");
     return NULL;
   }
   next_char();                  // Move past the '%'
@@ -3834,7 +3834,7 @@ ExpandRule* ADLParser::expand_parse(InstructForm *instr) {
   skipws();                        // Skip leading whitespace
   if ((_curchar != '%')
       || (next_char(), (_curchar != '{')) ) { // If not open block
-    parse_err(SYNERR, "missing '%{' in expand definition\n");
+    parse_err(SYNERR, "missing '%%{' in expand definition\n");
     return(NULL);
   }
   next_char();                     // Maintain the invariant
@@ -3933,7 +3933,7 @@ ExpandRule* ADLParser::expand_parse(InstructForm *instr) {
   } while(_curchar != '%');
   next_char();
   if (_curchar != '}') {
-    parse_err(SYNERR, "missing '%}' in expand rule definition\n");
+    parse_err(SYNERR, "missing '%%}' in expand rule definition\n");
     return(NULL);
   }
   next_char();

@@ -88,40 +88,25 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
         DragGestureEvent trigger = getTrigger();
         InputEvent         triggerEvent = trigger.getTriggerEvent();
 
-        Point dragOrigin = trigger.getDragOrigin();
+        Point dragOrigin = new Point(trigger.getDragOrigin());
         int extModifiers = (triggerEvent.getModifiers() | triggerEvent.getModifiersEx());
         long timestamp   = triggerEvent.getWhen();
         int clickCount   = ((triggerEvent instanceof MouseEvent) ? (((MouseEvent) triggerEvent).getClickCount()) : 1);
 
-        // Get drag source component and its peer:
         Component component = trigger.getComponent();
-        Point componentOffset = new Point();
-        ComponentPeer peer = component.getPeer();
-
-        // For a lightweight component traverse up the hierarchy to the first heavyweight
-        // which will be used as the ComponentModel for the native drag source.
-        if (component.isLightweight()) {
-            Point loc = component.getLocation();
-            componentOffset.translate(loc.x, loc.y);
-
-            for (Component parent = component.getParent(); parent != null; parent = parent.getParent()) {
-                if (parent.isLightweight() == false) {
-                    peer = parent.getPeer();
-                    break;
-                }
-
-                loc = parent.getLocation();
-                componentOffset.translate(loc.x, loc.y);
-            }
+        // For a lightweight component traverse up the hierarchy to the root
+        Point loc = component.getLocation();
+        Component rootComponent = component;
+        while (!(rootComponent instanceof Window)) {
+            dragOrigin.translate(loc.x, loc.y);
+            rootComponent = rootComponent.getParent();
+            loc = rootComponent.getLocation();
         }
 
-        // Make sure the drop target is a ComponentModel:
-        if (!(peer instanceof LWComponentPeer))
-            throw new IllegalArgumentException("DragSource's peer must be a ComponentModel.");
-
-        // Get model pointer (CButton.m and such) and its native peer:
-        LWComponentPeer model = (LWComponentPeer) peer;
-        CPlatformWindow platformWindow = (CPlatformWindow) model.getPlatformWindow();
+        //It sure will be LWComponentPeer instance as rootComponent is a Window
+        LWComponentPeer peer = (LWComponentPeer)rootComponent.getPeer();
+        //Get a pointer to a native window
+        CPlatformWindow platformWindow = (CPlatformWindow) peer.getPlatformWindow();
         long nativeWindowPtr = platformWindow.getNSWindowPtr();
 
         // Get drag cursor:
@@ -155,7 +140,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
         try {
             // Create native dragging source:
             final long nativeDragSource = createNativeDragSource(component, peer, nativeWindowPtr, transferable, triggerEvent,
-                (int) (dragOrigin.getX() + componentOffset.x), (int) (dragOrigin.getY() + componentOffset.y), extModifiers,
+                (int) (dragOrigin.getX()), (int) (dragOrigin.getY()), extModifiers,
                 clickCount, timestamp, cursor, fDragCImage, dragImageOffset.x, dragImageOffset.y,
                 getDragSourceContext().getSourceActions(), formats, formatMap);
 
@@ -165,8 +150,8 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
             setNativeContext(nativeDragSource);
 
             CCursorManager.getInstance().startDrag(
-                    (int) (dragOrigin.getX() + componentOffset.x),
-                    (int) (dragOrigin.getY() + componentOffset.y));
+                    (int) (dragOrigin.getX()),
+                    (int) (dragOrigin.getY()));
         }
 
         catch (Exception e) {

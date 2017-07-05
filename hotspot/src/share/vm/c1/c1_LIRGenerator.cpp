@@ -35,9 +35,10 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/bitMap.inline.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/heapRegion.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->
@@ -1417,12 +1418,12 @@ void LIRGenerator::pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
                                bool do_load, bool patch, CodeEmitInfo* info) {
   // Do the pre-write barrier, if any.
   switch (_bs->kind()) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
       G1SATBCardTableModRef_pre_barrier(addr_opr, pre_val, do_load, patch, info);
       break;
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
     case BarrierSet::CardTableModRef:
     case BarrierSet::CardTableExtension:
       // No pre barriers
@@ -1439,12 +1440,12 @@ void LIRGenerator::pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
 
 void LIRGenerator::post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val) {
   switch (_bs->kind()) {
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
       G1SATBCardTableModRef_post_barrier(addr,  new_val);
       break;
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
     case BarrierSet::CardTableModRef:
     case BarrierSet::CardTableExtension:
       CardTableModRef_post_barrier(addr,  new_val);
@@ -1459,7 +1460,7 @@ void LIRGenerator::post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val) {
 }
 
 ////////////////////////////////////////////////////////////////////////
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 
 void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
                                                      bool do_load, bool patch, CodeEmitInfo* info) {
@@ -1575,7 +1576,7 @@ void LIRGenerator::G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_Opr
   __ branch_destination(slow->continuation());
 }
 
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 ////////////////////////////////////////////////////////////////////////
 
 void LIRGenerator::CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val) {
@@ -2181,7 +2182,7 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
 
   get_Object_unsafe(value, src.result(), off.result(), type, x->is_volatile());
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // We might be reading the value of the referent field of a
   // Reference object in order to attach it back to the live
   // object graph. If G1 is enabled then we need to record
@@ -2311,7 +2312,7 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
       __ branch_destination(Lcont->label());
     }
   }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   if (x->is_volatile() && os::is_MP()) __ membar_acquire();
 }

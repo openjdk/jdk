@@ -30,11 +30,12 @@
 #include "memory/generationSpec.hpp"
 #include "memory/tenuredGeneration.hpp"
 #include "runtime/java.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parNew/asParNewGeneration.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 #include "gc_implementation/parNew/parNewGeneration.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 Generation* GenerationSpec::init(ReservedSpace rs, int level,
                                  GenRemSet* remset) {
@@ -45,7 +46,7 @@ Generation* GenerationSpec::init(ReservedSpace rs, int level,
     case Generation::MarkSweepCompact:
       return new TenuredGeneration(rs, init_size(), level, remset);
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     case Generation::ParNew:
       return new ParNewGeneration(rs, init_size(), level);
 
@@ -94,7 +95,7 @@ Generation* GenerationSpec::init(ReservedSpace rs, int level,
 
       return g;
     }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
     default:
       guarantee(false, "unrecognized GenerationName");

@@ -29,6 +29,7 @@
 #include "gc_implementation/shared/gcStats.hpp"
 #include "gc_implementation/shared/generationCounters.hpp"
 #include "memory/generation.hpp"
+#include "utilities/macros.hpp"
 
 // TenuredGeneration models the heap containing old (promoted/tenured) objects.
 
@@ -45,11 +46,11 @@ class TenuredGeneration: public OneContigSpaceCardGeneration {
   size_t _capacity_at_prologue;
   size_t _used_at_prologue;
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // To support parallel promotion: an array of parallel allocation
   // buffers, one per thread, initially NULL.
   ParGCAllocBufferWithBOT** _alloc_buffers;
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // Retire all alloc buffers before a full GC, so that they will be
   // re-allocated at the start of the next young GC.
@@ -93,14 +94,14 @@ class TenuredGeneration: public OneContigSpaceCardGeneration {
                        size_t size,
                        bool is_tlab);
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // Overrides.
   virtual oop par_promote(int thread_num,
                           oop obj, markOop m, size_t word_sz);
   virtual void par_promote_alloc_undo(int thread_num,
                                       HeapWord* obj, size_t word_sz);
   virtual void par_promote_alloc_done(int thread_num);
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // Performance Counter support
   void update_counters();
