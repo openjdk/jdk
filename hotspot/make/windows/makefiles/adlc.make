@@ -46,6 +46,7 @@ ADLCFLAGS=-q -T -D_LP64
 ADLCFLAGS=-q -T -U_LP64
 !endif
 
+CPP_FLAGS=$(CPP_FLAGS) /D _CRT_SECURE_NO_WARNINGS /D _CRT_SECURE_NO_DEPRECATE  
 
 CPP_INCLUDE_DIRS=\
   /I "..\generated"                          \

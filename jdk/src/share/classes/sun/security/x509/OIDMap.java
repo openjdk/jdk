@@ -100,6 +100,8 @@ public class OIDMap {
                                         DeltaCRLIndicatorExtension.NAME;
     private static final String FRESHEST_CRL = ROOT + "." +
                                         FreshestCRLExtension.NAME;
+    private static final String OCSPNOCHECK = ROOT + "." +
+                                        OCSPNoCheckExtension.NAME;
 
     private static final int NetscapeCertType_data[] =
         { 2, 16, 840, 1, 113730, 1, 1 };
@@ -161,6 +163,8 @@ public class OIDMap {
                     "sun.security.x509.DeltaCRLIndicatorExtension");
         addInternal(FRESHEST_CRL, PKIXExtensions.FreshestCRL_Id,
                     "sun.security.x509.FreshestCRLExtension");
+        addInternal(OCSPNOCHECK, PKIXExtensions.OCSPNoCheck_Id,
+                    "sun.security.x509.OCSPNoCheckExtension");
     }
 
     /**

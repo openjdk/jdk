@@ -2277,7 +2277,7 @@ Node* GraphKit::gen_subtype_check(Node* subklass, Node* superklass) {
   r_not_subtype->init_req(1, _gvn.transform( new (C, 1) IfTrueNode (iff2) ) );
   set_control(                _gvn.transform( new (C, 1) IfFalseNode(iff2) ) );
 
-  // Check for self.  Very rare to get here, but its taken 1/3 the time.
+  // Check for self.  Very rare to get here, but it is taken 1/3 the time.
   // No performance impact (too rare) but allows sharing of secondary arrays
   // which has some footprint reduction.
   Node *cmp3 = _gvn.transform( new (C, 3) CmpPNode( subklass, superklass ) );
@@ -2286,11 +2286,27 @@ Node* GraphKit::gen_subtype_check(Node* subklass, Node* superklass) {
   r_ok_subtype->init_req(2, _gvn.transform( new (C, 1) IfTrueNode ( iff3 ) ) );
   set_control(               _gvn.transform( new (C, 1) IfFalseNode( iff3 ) ) );
 
+  // -- Roads not taken here: --
+  // We could also have chosen to perform the self-check at the beginning
+  // of this code sequence, as the assembler does.  This would not pay off
+  // the same way, since the optimizer, unlike the assembler, can perform
+  // static type analysis to fold away many successful self-checks.
+  // Non-foldable self checks work better here in second position, because
+  // the initial primary superclass check subsumes a self-check for most
+  // types.  An exception would be a secondary type like array-of-interface,
+  // which does not appear in its own primary supertype display.
+  // Finally, we could have chosen to move the self-check into the
+  // PartialSubtypeCheckNode, and from there out-of-line in a platform
+  // dependent manner.  But it is worthwhile to have the check here,
+  // where it can be perhaps be optimized.  The cost in code space is
+  // small (register compare, branch).
+
   // Now do a linear scan of the secondary super-klass array.  Again, no real
   // performance impact (too rare) but it's gotta be done.
-  // (The stub also contains the self-check of subklass == superklass.
   // Since the code is rarely used, there is no penalty for moving it
-  // out of line, and it can only improve I-cache density.)
+  // out of line, and it can only improve I-cache density.
+  // The decision to inline or out-of-line this final check is platform
+  // dependent, and is found in the AD file definition of PartialSubtypeCheck.
   Node* psc = _gvn.transform(
     new (C, 3) PartialSubtypeCheckNode(control(), subklass, superklass) );
 

@@ -265,8 +265,8 @@ public final class CertAndKeyGen {
             // Add all mandatory attributes
             info.set(X509CertInfo.VERSION,
                      new CertificateVersion(CertificateVersion.V3));
-            info.set(X509CertInfo.SERIAL_NUMBER,
-                 new CertificateSerialNumber((int)(firstDate.getTime()/1000)));
+            info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(
+                    new java.util.Random().nextInt() & 0x7fffffff));
             AlgorithmId algID = issuer.getAlgorithmId();
             info.set(X509CertInfo.ALGORITHM_ID,
                      new CertificateAlgorithmId(algID));

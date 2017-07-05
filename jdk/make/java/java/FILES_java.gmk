@@ -449,7 +449,6 @@ JAVA_JAVA_java = \
     sun/misc/Service.java \
     sun/misc/JavaLangAccess.java \
     sun/misc/JavaIOAccess.java \
-    sun/misc/JavaIODeleteOnExitAccess.java \
     sun/misc/JavaIOFileDescriptorAccess.java \
     sun/misc/JavaNioAccess.java
 

@@ -4598,6 +4598,7 @@ vm_version_<arch>.cpp                   vm_version_<arch>.hpp
 vm_version_<arch>.hpp                   globals_extension.hpp
 vm_version_<arch>.hpp                   vm_version.hpp
 
+vm_version_<os_arch>.cpp                os.hpp
 vm_version_<os_arch>.cpp                vm_version_<arch>.hpp
 
 vmreg.cpp                               assembler.hpp

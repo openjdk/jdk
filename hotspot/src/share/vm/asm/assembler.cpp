@@ -321,16 +321,19 @@ void AbstractAssembler::block_comment(const char* comment) {
 bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
   // Exception handler checks the nmethod's implicit null checks table
   // only when this method returns false.
-  if (UseCompressedOops) {
+#ifdef _LP64
+  if (UseCompressedOops && Universe::narrow_oop_base() != NULL) {
+    assert (Universe::heap() != NULL, "java heap should be initialized");
     // The first page after heap_base is unmapped and
     // the 'offset' is equal to [heap_base + offset] for
     // narrow oop implicit null checks.
-    uintptr_t heap_base = (uintptr_t)Universe::heap_base();
-    if ((uintptr_t)offset >= heap_base) {
+    uintptr_t base = (uintptr_t)Universe::narrow_oop_base();
+    if ((uintptr_t)offset >= base) {
       // Normalize offset for the next check.
-      offset = (intptr_t)(pointer_delta((void*)offset, (void*)heap_base, 1));
+      offset = (intptr_t)(pointer_delta((void*)offset, (void*)base, 1));
     }
   }
+#endif
   return offset < 0 || os::vm_page_size() <= offset;
 }
 
