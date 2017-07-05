@@ -39,6 +39,7 @@ import java.util.ListIterator;
 //import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Stack;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.internal.jline.Terminal;
@@ -2336,6 +2337,33 @@ public class ConsoleReader
                 out.flush();
             }
 
+            Stack<Character> pushBackChar = new Stack<Character>();
+
+            if (terminal.isAnsiSupported()) {
+                //detect the prompt length by reading the cursor position from the terminal
+                //the real prompt length could differ from the simple prompt length due to
+                //use of escape sequences:
+                out.write("\033[6n");
+                out.flush();
+                StringBuilder input = new StringBuilder();
+                while (true) {
+                    int read;
+                    while ((read = in.read()) != 'R') {
+                        input.appendCodePoint(read);
+                    }
+                    input.appendCodePoint(read);
+                    Matcher m = CURSOR_COLUMN_PATTERN.matcher(input);
+                    if (m.matches()) {
+                        promptLen = Integer.parseInt(m.group("column")) - 1;
+                        String prefix = m.group("prefix");
+                        for (int i = prefix.length() - 1; i >= 0; i--) {
+                            pushBackChar.push(prefix.charAt(i));
+                        }
+                        break;
+                    }
+                }
+            }
+
             // if the terminal is unsupported, just use plain-java reading
             if (!terminal.isSupported()) {
                 return readLineSimple();
@@ -2352,7 +2380,6 @@ public class ConsoleReader
             boolean success = true;
 
             StringBuilder sb = new StringBuilder();
-            Stack<Character> pushBackChar = new Stack<Character>();
             while (true) {
                 int c = pushBackChar.isEmpty() ? readCharacter() : pushBackChar.pop ();
                 if (c == -1) {
@@ -3193,6 +3220,9 @@ public class ConsoleReader
             }
         }
     }
+    //where:
+        private Pattern CURSOR_COLUMN_PATTERN =
+                Pattern.compile("(?<prefix>.*)\033\\[[0-9]+;(?<column>[0-9]+)R");
 
     /**
      * Read a line for unsupported terminals.

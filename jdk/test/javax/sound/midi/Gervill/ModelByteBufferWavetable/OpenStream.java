@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import javax.sound.sampled.*;
 
@@ -99,16 +101,15 @@ public class OpenStream {
         buffer_wave = new ModelByteBuffer(baos.toByteArray());
 
         test_file = File.createTempFile("test", ".raw");
-        FileOutputStream fos = new FileOutputStream(test_file);
-        fos.write(baos.toByteArray());
-        fos.close();
+        try (FileOutputStream fos = new FileOutputStream(test_file)) {
+            fos.write(baos.toByteArray());
+        }
         buffer_wave_ondisk = new ModelByteBuffer(test_file);
 
     }
 
     static void tearDown() throws Exception {
-        if (!test_file.delete())
-            test_file.deleteOnExit();
+        Files.delete(Paths.get(test_file.getAbsolutePath()));
     }
 
     public static void testOpenStream(ModelByteBufferWavetable wavetable)

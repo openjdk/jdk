@@ -283,7 +283,7 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
 
-    if (java_lang_Class::is_primitive(k_mirror)) {
+    if (!VM_RedefineClasses::is_modifiable_class(k_mirror)) {
       return JVMTI_ERROR_UNMODIFIABLE_CLASS;
     }
 
@@ -293,9 +293,6 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
     jint status = klass->jvmti_class_status();
     if (status & (JVMTI_CLASS_STATUS_ERROR)) {
       return JVMTI_ERROR_INVALID_CLASS;
-    }
-    if (status & (JVMTI_CLASS_STATUS_ARRAY)) {
-      return JVMTI_ERROR_UNMODIFIABLE_CLASS;
     }
 
     instanceKlassHandle ikh(current_thread, k_oop);

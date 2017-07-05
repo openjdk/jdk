@@ -46,8 +46,8 @@ import com.apple.laf.AquaIcon.JRSUIControlSpec;
 import com.apple.laf.AquaIcon.SystemIcon;
 import com.apple.laf.AquaUtils.RecyclableObject;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
-import java.awt.image.MultiResolutionImage;
 import sun.awt.image.MultiResolutionCachedImage;
+import sun.lwawt.macosx.CImage;
 
 public class AquaImageFactory {
     public static IconUIResource getConfirmImageIcon() {
@@ -73,7 +73,7 @@ public class AquaImageFactory {
     public static IconUIResource getLockImageIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
         if (JRSUIUtils.Images.shouldUseLegacySecurityUIPath()) {
-            final Image lockIcon = AquaUtils.getCImageCreator().createImageFromFile("/System/Library/CoreServices/SecurityAgent.app/Contents/Resources/Security.icns", kAlertIconSize, kAlertIconSize);
+            final Image lockIcon = CImage.createImageFromFile("/System/Library/CoreServices/SecurityAgent.app/Contents/Resources/Security.icns", kAlertIconSize, kAlertIconSize);
             return getAppIconCompositedOn(lockIcon);
         }
 

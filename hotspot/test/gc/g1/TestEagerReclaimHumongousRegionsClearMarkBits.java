@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test to make sure that eager reclaim of humongous objects correctly clears
  * mark bitmaps at reclaim.
  * @key gc
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
@@ -36,8 +36,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 // An object that has a few references to other instances to slow down marking.
 class ObjectWithSomeRefs {

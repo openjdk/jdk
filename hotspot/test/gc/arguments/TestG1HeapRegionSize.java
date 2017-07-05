@@ -29,7 +29,7 @@
  * @summary Verify that the flag G1HeapRegionSize is updated properly
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
- * @library /testlibrary
+ * @library /test/lib
  * @run main TestG1HeapRegionSize
  */
 
@@ -39,7 +39,8 @@ import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestG1HeapRegionSize {
 

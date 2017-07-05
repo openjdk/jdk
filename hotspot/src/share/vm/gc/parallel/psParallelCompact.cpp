@@ -57,7 +57,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"

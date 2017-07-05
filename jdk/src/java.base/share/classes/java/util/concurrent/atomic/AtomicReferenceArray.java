@@ -155,7 +155,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     /**
      * Possibly atomically sets the element at index {@code i} to
      * {@code newValue} if the element's current value {@code == expectedValue},
-     * with memory effects as specified by {@link VarHandle#weakCompareAndSet}.
+     * with memory effects as specified by {@link VarHandle#weakCompareAndSetPlain}.
      *
      * @param i the index
      * @param expectedValue the expected value
@@ -163,7 +163,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @return {@code true} if successful
      */
     public final boolean weakCompareAndSet(int i, E expectedValue, E newValue) {
-        return AA.weakCompareAndSet(array, i, expectedValue, newValue);
+        return AA.weakCompareAndSetPlain(array, i, expectedValue, newValue);
     }
 
     /**
@@ -451,7 +451,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * Possibly atomically sets the element at index {@code i} to
      * {@code newValue} if the element's current value {@code == expectedValue},
      * with memory effects as specified by
-     * {@link VarHandle#weakCompareAndSetVolatile}.
+     * {@link VarHandle#weakCompareAndSet}.
      *
      * @param i the index
      * @param expectedValue the expected value
@@ -460,7 +460,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetVolatile(int i, E expectedValue, E newValue) {
-        return AA.weakCompareAndSetVolatile(array, i, expectedValue, newValue);
+        return AA.weakCompareAndSet(array, i, expectedValue, newValue);
     }
 
     /**

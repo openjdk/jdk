@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "AWTSurfaceLayers.h"
+
+#import "jni_util.h"
 
 JNIEXPORT JAWT_DrawingSurfaceInfo* JNICALL awt_DrawingSurface_GetDrawingSurfaceInfo
 (JAWT_DrawingSurface* ds)
@@ -129,4 +131,48 @@ JNIEXPORT jobject JNICALL awt_GetComponent
 {
     // TODO: implement
     return NULL;
+}
+
+// EmbeddedFrame support
+
+static char *const embeddedClassName = "sun/lwawt/macosx/CViewEmbeddedFrame";
+
+JNIEXPORT jobject JNICALL awt_CreateEmbeddedFrame
+(JNIEnv* env, void* platformInfo)
+{
+    static jmethodID mid = NULL;
+    static jclass cls;
+    if (mid == NULL) {
+        cls = (*env)->FindClass(env, embeddedClassName);
+        CHECK_NULL_RETURN(cls, NULL);
+        mid = (*env)->GetMethodID(env, cls, "<init>", "(J)V");
+        CHECK_NULL_RETURN(mid, NULL);
+    }
+    return (*env)->NewObject(env, cls, mid, platformInfo);
+}
+
+JNIEXPORT void JNICALL awt_SetBounds
+(JNIEnv *env, jobject embeddedFrame, jint x, jint y, jint w, jint h)
+{
+    static jmethodID mid = NULL;
+    if (mid == NULL) {
+        jclass cls = (*env)->FindClass(env, embeddedClassName);
+        CHECK_NULL(cls);
+        mid = (*env)->GetMethodID(env, cls, "setBoundsPrivate", "(IIII)V");
+        CHECK_NULL(mid);
+    }
+    (*env)->CallVoidMethod(env, embeddedFrame, mid, x, y, w, h);
+}
+
+JNIEXPORT void JNICALL awt_SynthesizeWindowActivation
+(JNIEnv *env, jobject embeddedFrame, jboolean doActivate)
+{
+    static jmethodID mid = NULL;
+    if (mid == NULL) {
+        jclass cls = (*env)->FindClass(env, embeddedClassName);
+        CHECK_NULL(cls);
+        mid = (*env)->GetMethodID(env, cls, "synthesizeWindowActivation", "(Z)V");
+        CHECK_NULL(mid);
+    }
+    (*env)->CallVoidMethod(env, embeddedFrame, mid, doActivate);
 }

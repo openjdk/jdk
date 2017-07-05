@@ -25,11 +25,11 @@
  * @test TestDefaultLogOutput
  * @summary Ensure logging is default on stdout.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  */
 
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestDefaultLogOutput {
 

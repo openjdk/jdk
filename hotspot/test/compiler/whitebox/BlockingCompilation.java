@@ -26,9 +26,8 @@
  * @bug 8150646 8153013
  * @summary Add support for blocking compiles through whitebox API
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @build sun.hotspot.WhiteBox
- *        compiler.testlibrary.CompilerUtils
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm

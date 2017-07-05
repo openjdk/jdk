@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,20 @@
  * @test TestSurvivorRatioFlag
  * @key gc
  * @summary Verify that actual survivor ratio is equal to specified SurvivorRatio value
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestSurvivorRatioFlag
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver TestSurvivorRatioFlag
  */
 
-import jdk.test.lib.AllocationHelper;
 import java.lang.management.MemoryUsage;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
-import jdk.test.lib.HeapRegionUsageTool;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 import sun.hotspot.WhiteBox;
 

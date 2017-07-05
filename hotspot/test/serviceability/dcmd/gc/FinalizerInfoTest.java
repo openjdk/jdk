@@ -28,19 +28,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 
 /*
  * @test
  * @summary
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.xml
  *          java.management
- * @build jdk.test.lib.*
- * @build jdk.test.lib.dcmd.*
  * @run testng FinalizerInfoTest
  */
 public class FinalizerInfoTest {

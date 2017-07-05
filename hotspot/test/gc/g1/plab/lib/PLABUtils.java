@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 
 /**

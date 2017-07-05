@@ -25,16 +25,17 @@
  * @test
  * @bug 8151939
  * @summary os+cpu output should contain some os,cpu information
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver OsCpuLoggingTest
  */
 
 import java.io.File;
 import java.util.Map;
-import jdk.test.lib.*;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class OsCpuLoggingTest {
 

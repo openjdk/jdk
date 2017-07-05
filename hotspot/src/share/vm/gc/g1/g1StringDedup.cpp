@@ -31,7 +31,7 @@
 #include "gc/g1/g1StringDedupStat.hpp"
 #include "gc/g1/g1StringDedupTable.hpp"
 #include "gc/g1/g1StringDedupThread.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 
 bool G1StringDedup::_enabled = false;
 

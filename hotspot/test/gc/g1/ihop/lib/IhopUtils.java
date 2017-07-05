@@ -27,7 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 
 
 /**
