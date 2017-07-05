@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -661,6 +661,12 @@ class CommandLineFlags {
                                                                             \
   product(ccstrlist, OnOutOfMemoryError, "",                                \
           "Run user-defined commands on first java.lang.OutOfMemoryError")  \
+                                                                            \
+  manageable(bool, HeapDumpBeforeFullGC, false,                             \
+          "Dump heap to file before any major stop-world GC")               \
+                                                                            \
+  manageable(bool, HeapDumpAfterFullGC, false,                              \
+          "Dump heap to file after any major stop-world GC")                \
                                                                             \
   manageable(bool, HeapDumpOnOutOfMemoryError, false,                       \
           "Dump heap to file when java.lang.OutOfMemoryError is thrown")    \
@@ -1970,6 +1976,12 @@ class CommandLineFlags {
                                                                             \
   product(bool, PrintHeapAtSIGBREAK, true,                                  \
           "Print heap layout in response to SIGBREAK")                      \
+                                                                            \
+  manageable(bool, PrintClassHistogramBeforeFullGC, false,                  \
+          "Print a class histogram before any major stop-world GC")         \
+                                                                            \
+  manageable(bool, PrintClassHistogramAfterFullGC, false,                   \
+          "Print a class histogram after any major stop-world GC")          \
                                                                             \
   manageable(bool, PrintClassHistogram, false,                              \
           "Print a histogram of class instances")                           \

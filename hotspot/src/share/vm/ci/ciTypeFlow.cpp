@@ -541,7 +541,7 @@ void ciTypeFlow::StateVector::do_aaload(ciBytecodeStream* str) {
     // is report a value that will meet correctly with any downstream
     // reference types on paths that will truly be executed.  This null type
     // meets with any reference type to yield that same reference type.
-    // (The compiler will generate an unconditonal exception here.)
+    // (The compiler will generate an unconditional exception here.)
     push(null_type());
     return;
   }

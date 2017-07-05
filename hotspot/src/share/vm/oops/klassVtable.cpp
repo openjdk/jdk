@@ -992,6 +992,10 @@ void klassItable::adjust_method_entries(methodOop* old_methods, methodOop* new_m
     methodOop new_method = new_methods[j];
     itableMethodEntry* ime = method_entry(0);
 
+    // The itable can describe more than one interface and the same
+    // method signature can be specified by more than one interface.
+    // This means we have to do an exhaustive search to find all the
+    // old_method references.
     for (int i = 0; i < _size_method_table; i++) {
       if (ime->method() == old_method) {
         ime->initialize(new_method);
@@ -1008,7 +1012,6 @@ void klassItable::adjust_method_entries(methodOop* old_methods, methodOop* new_m
             new_method->name()->as_C_string(),
             new_method->signature()->as_C_string()));
         }
-        break;
       }
       ime++;
     }
