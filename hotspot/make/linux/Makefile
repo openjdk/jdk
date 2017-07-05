@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -168,6 +168,13 @@ VARIANTARCH = $(subst i386,i486,$(ZERO_LIBARCH))
 #       profiledzero    zero            <os>_<arch>_zero/profiled
 #       productzero     zero            <os>_<arch>_zero/product
 #
+#       debugshark      shark           <os>_<arch>_shark/debug
+#       fastdebugshark  shark           <os>_<arch>_shark/fastdebug
+#       jvmgshark       shark           <os>_<arch>_shark/jvmg
+#       optimizedshark  shark           <os>_<arch>_shark/optimized
+#       profiledshark   shark           <os>_<arch>_shark/profiled
+#       productshark    shark           <os>_<arch>_shark/product
+#
 # What you get with each target:
 #
 # debug*     - "thin" libjvm_g - debug info linked into the gamma_g launcher
@@ -191,12 +198,14 @@ SUBDIRS_C2        = $(addprefix $(OSNAME)_$(BUILDARCH)_compiler2/,$(TARGETS))
 SUBDIRS_TIERED    = $(addprefix $(OSNAME)_$(BUILDARCH)_tiered/,$(TARGETS))
 SUBDIRS_CORE      = $(addprefix $(OSNAME)_$(BUILDARCH)_core/,$(TARGETS))
 SUBDIRS_ZERO      = $(addprefix $(OSNAME)_$(VARIANTARCH)_zero/,$(TARGETS))
+SUBDIRS_SHARK     = $(addprefix $(OSNAME)_$(VARIANTARCH)_shark/,$(TARGETS))
 
 TARGETS_C2        = $(TARGETS)
 TARGETS_C1        = $(addsuffix 1,$(TARGETS))
 TARGETS_TIERED    = $(addsuffix tiered,$(TARGETS))
 TARGETS_CORE      = $(addsuffix core,$(TARGETS))
 TARGETS_ZERO      = $(addsuffix zero,$(TARGETS))
+TARGETS_SHARK     = $(addsuffix shark,$(TARGETS))
 
 BUILDTREE_MAKE    = $(GAMMADIR)/make/$(OSNAME)/makefiles/buildtree.make
 BUILDTREE_VARS    = GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OSNAME) ARCH=$(SRCARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH)
@@ -213,6 +222,7 @@ all:
 	@echo "  $(TARGETS_C1)"
 	@echo "  $(TARGETS_CORE)"
 	@echo "  $(TARGETS_ZERO)"
+	@echo "  $(TARGETS_SHARK)"
 
 checks: check_os_version check_j2se_version
 
@@ -266,6 +276,10 @@ $(SUBDIRS_ZERO): $(BUILDTREE_MAKE) platform_zero
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
 	$(BUILDTREE) VARIANT=zero VARIANTARCH=$(VARIANTARCH)
 
+$(SUBDIRS_SHARK): $(BUILDTREE_MAKE) platform_zero
+	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
+	$(BUILDTREE) VARIANT=shark VARIANTARCH=$(VARIANTARCH)
+
 platform_zero: $(GAMMADIR)/make/$(OSNAME)/platform_zero.in
 	$(SED) 's/@ZERO_ARCHDEF@/$(ZERO_ARCHDEF)/g;s/@ZERO_LIBARCH@/$(ZERO_LIBARCH)/g;' < $< > $@
 
@@ -306,11 +320,19 @@ ifdef INSTALL
 	cd $(OSNAME)_$(VARIANTARCH)_zero/$(patsubst %zero,%,$@) && $(MAKE) $(MFLAGS) install
 endif
 
+$(TARGETS_SHARK):  $(SUBDIRS_SHARK)
+	cd $(OSNAME)_$(VARIANTARCH)_shark/$(patsubst %shark,%,$@) && $(MAKE) $(MFLAGS)
+	cd $(OSNAME)_$(VARIANTARCH)_shark/$(patsubst %shark,%,$@) && ./test_gamma
+ifdef INSTALL
+	cd $(OSNAME)_$(VARIANTARCH)_shark/$(patsubst %shark,%,$@) && $(MAKE) $(MFLAGS) install
+endif
+
 # Just build the tree, and nothing else:
 tree:      $(SUBDIRS_C2)
 tree1:     $(SUBDIRS_C1)
 treecore:  $(SUBDIRS_CORE)
 treezero:  $(SUBDIRS_ZERO)
+treeshark: $(SUBDIRS_SHARK)
 
 # Doc target.  This is the same for all build options.
 #     Hence create a docs directory beside ...$(ARCH)_[...]
@@ -327,20 +349,22 @@ core: jvmgcore productcore
 
 zero: jvmgzero productzero
 
+shark: jvmgshark productshark
+
 clean_docs:
 	rm -rf $(SUBDIR_DOCS)
 
-clean_compiler1 clean_compiler2 clean_core clean_zero:
+clean_compiler1 clean_compiler2 clean_core clean_zero clean_shark:
 	rm -rf $(OSNAME)_$(BUILDARCH)_$(subst clean_,,$@)
 
-clean:  clean_compiler2 clean_compiler1 clean_core clean_zero clean_docs
+clean:  clean_compiler2 clean_compiler1 clean_core clean_zero clean_shark clean_docs
 
 include $(GAMMADIR)/make/$(OSNAME)/makefiles/cscope.make
 
 #-------------------------------------------------------------------------------
 
-.PHONY: $(TARGETS_C2) $(TARGETS_C1) $(TARGETS_CORE) $(TARGETS_ZERO)
-.PHONY: tree tree1 treecore treezero
-.PHONY: all compiler1 compiler2 core zero
-.PHONY: clean clean_compiler1 clean_compiler2 clean_core clean_zero docs clean_docs
+.PHONY: $(TARGETS_C2) $(TARGETS_C1) $(TARGETS_CORE) $(TARGETS_ZERO) $(TARGETS_SHARK)
+.PHONY: tree tree1 treecore treezero treeshark
+.PHONY: all compiler1 compiler2 core zero shark
+.PHONY: clean clean_compiler1 clean_compiler2 clean_core clean_zero clean_shark docs clean_docs
 .PHONY: checks check_os_version check_j2se_version

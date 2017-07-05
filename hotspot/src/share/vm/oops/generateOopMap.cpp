@@ -2111,7 +2111,13 @@ void GenerateOopMap::verify_error(const char *format, ...) {
   // We do not distinguish between different types of errors for verification
   // errors.  Let the verifier give a better message.
   const char *msg = "Illegal class file encountered. Try running with -Xverify:all";
-  error_work(msg, NULL);
+  _got_error = true;
+  // Append method name
+  char msg_buffer2[512];
+  jio_snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg,
+               method()->name()->as_C_string());
+  _exception = Exceptions::new_exception(Thread::current(),
+                vmSymbols::java_lang_LinkageError(), msg_buffer2);
 }
 
 //

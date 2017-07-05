@@ -1974,12 +1974,12 @@ public:
 
   // address pseudos: make these names unlike instruction names to avoid confusion
   inline intptr_t load_pc_address( Register reg, int bytes_to_skip );
-  inline void load_contents(AddressLiteral& addrlit, Register d, int offset = 0);
-  inline void load_ptr_contents(AddressLiteral& addrlit, Register d, int offset = 0);
-  inline void store_contents(Register s, AddressLiteral& addrlit, Register temp, int offset = 0);
-  inline void store_ptr_contents(Register s, AddressLiteral& addrlit, Register temp, int offset = 0);
-  inline void jumpl_to(AddressLiteral& addrlit, Register temp, Register d, int offset = 0);
-  inline void jump_to(AddressLiteral& addrlit, Register temp, int offset = 0);
+  inline void load_contents(const AddressLiteral& addrlit, Register d, int offset = 0);
+  inline void load_ptr_contents(const AddressLiteral& addrlit, Register d, int offset = 0);
+  inline void store_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset = 0);
+  inline void store_ptr_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset = 0);
+  inline void jumpl_to(const AddressLiteral& addrlit, Register temp, Register d, int offset = 0);
+  inline void jump_to(const AddressLiteral& addrlit, Register temp, int offset = 0);
   inline void jump_indirect_to(Address& a, Register temp, int ld_offset = 0, int jmp_offset = 0);
 
   // ring buffer traceable jumps
@@ -1987,8 +1987,8 @@ public:
   void jmp2( Register r1, Register r2, const char* file, int line );
   void jmp ( Register r1, int offset,  const char* file, int line );
 
-  void jumpl(AddressLiteral& addrlit, Register temp, Register d, int offset, const char* file, int line);
-  void jump (AddressLiteral& addrlit, Register temp,             int offset, const char* file, int line);
+  void jumpl(const AddressLiteral& addrlit, Register temp, Register d, int offset, const char* file, int line);
+  void jump (const AddressLiteral& addrlit, Register temp,             int offset, const char* file, int line);
 
 
   // argument pseudos:
