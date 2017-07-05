@@ -61,16 +61,38 @@
  */
 package java.time.chrono;
 
-
 import java.time.DateTimeException;
-import java.time.LocalDate;
 
 /**
  * An era in the ISO calendar system.
  * <p>
  * The ISO-8601 standard does not define eras.
  * A definition has therefore been created with two eras - 'Current era' (CE) for
- * years from 0001-01-01 (ISO) and 'Before current era' (BCE) for years before that.
+ * years on or after 0001-01-01 (ISO), and 'Before current era' (BCE) for years before that.
+ * <p>
+ * <table summary="ISO years and eras" cellpadding="2" cellspacing="3" border="0" >
+ * <thead>
+ * <tr class="tableSubHeadingColor">
+ * <th class="colFirst" align="left">year-of-era</th>
+ * <th class="colFirst" align="left">era</th>
+ * <th class="colLast" align="left">proleptic-year</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr class="rowColor">
+ * <td>2</td><td>CE</td><td>2</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td>1</td><td>CE</td><td>1</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td>1</td><td>BCE</td><td>0</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td>2</td><td>BCE</td><td>-1</td>
+ * </tr>
+ * </tbody>
+ * </table>
  * <p>
  * <b>Do not use {@code ordinal()} to obtain the numeric representation of {@code IsoEra}.
  * Use {@code getValue()} instead.</b>
@@ -80,20 +102,16 @@ import java.time.LocalDate;
  *
  * @since 1.8
  */
-enum IsoEra implements Era {
+public enum IsoEra implements Era {
 
     /**
-     * The singleton instance for the era BCE, 'Before Current Era'.
-     * The 'ISO' part of the name emphasizes that this differs from the BCE
-     * era in the Gregorian calendar system.
-     * This has the numeric value of {@code 0}.
+     * The singleton instance for the era before the current one, 'Before Current Era',
+     * which has the numeric value 0.
      */
     BCE,
     /**
-     * The singleton instance for the era CE, 'Current Era'.
-     * The 'ISO' part of the name emphasizes that this differs from the CE
-     * era in the Gregorian calendar system.
-     * This has the numeric value of {@code 1}.
+     * The singleton instance for the current era, 'Current Era',
+     * which has the numeric value 1.
      */
     CE;
 
@@ -104,18 +122,18 @@ enum IsoEra implements Era {
      * {@code IsoEra} is an enum representing the ISO eras of BCE/CE.
      * This factory allows the enum to be obtained from the {@code int} value.
      *
-     * @param era  the BCE/CE value to represent, from 0 (BCE) to 1 (CE)
+     * @param isoEra  the BCE/CE value to represent, from 0 (BCE) to 1 (CE)
      * @return the era singleton, not null
      * @throws DateTimeException if the value is invalid
      */
-    public static IsoEra of(int era) {
-        switch (era) {
+    public static IsoEra of(int isoEra) {
+        switch (isoEra) {
             case 0:
                 return BCE;
             case 1:
                 return CE;
             default:
-                throw new DateTimeException("Invalid era: " + era);
+                throw new DateTimeException("Invalid era: " + isoEra);
         }
     }
 
@@ -130,23 +148,6 @@ enum IsoEra implements Era {
     @Override
     public int getValue() {
         return ordinal();
-    }
-
-    @Override
-    public IsoChronology getChronology() {
-        return IsoChronology.INSTANCE;
-    }
-
-    // JDK8 default methods:
-    //-----------------------------------------------------------------------
-    @Override
-    public LocalDate date(int year, int month, int day) {
-        return getChronology().date(this, year, month, day);
-    }
-
-    @Override
-    public LocalDate dateYearDay(int year, int dayOfYear) {
-        return getChronology().dateYearDay(this, year, dayOfYear);
     }
 
 }

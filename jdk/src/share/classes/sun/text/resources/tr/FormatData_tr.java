@@ -76,11 +76,11 @@
 
 package sun.text.resources.tr;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_tr extends ListResourceBundle {
+public class FormatData_tr extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -101,6 +101,23 @@ public class FormatData_tr extends ListResourceBundle {
                     "" // month 13 if applicable
                 }
             },
+            { "standalone.MonthNames",
+                new String[] {
+                    "Ocak",
+                    "\u015eubat",
+                    "Mart",
+                    "Nisan",
+                    "May\u0131s",
+                    "Haziran",
+                    "Temmuz",
+                    "A\u011fustos",
+                    "Eyl\u00fcl",
+                    "Ekim",
+                    "Kas\u0131m",
+                    "Aral\u0131k",
+                    "",
+                }
+            },
             { "MonthAbbreviations",
                 new String[] {
                     "Oca", // abb january
@@ -116,6 +133,40 @@ public class FormatData_tr extends ListResourceBundle {
                     "Kas", // abb november
                     "Ara", // abb december
                     "" // abb month 13 if applicable
+                }
+            },
+            { "standalone.MonthAbbreviations",
+                new String[] {
+                    "Oca",
+                    "\u015eub",
+                    "Mar",
+                    "Nis",
+                    "May",
+                    "Haz",
+                    "Tem",
+                    "A\u011fu",
+                    "Eyl",
+                    "Eki",
+                    "Kas",
+                    "Ara",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "O",
+                    "\u015e",
+                    "M",
+                    "N",
+                    "M",
+                    "H",
+                    "T",
+                    "A",
+                    "E",
+                    "E",
+                    "K",
+                    "A",
+                    "",
                 }
             },
             { "standalone.MonthNarrows",
@@ -146,6 +197,17 @@ public class FormatData_tr extends ListResourceBundle {
                     "Cumartesi" // Saturday
                 }
             },
+            { "standalone.DayNames",
+                new String[] {
+                    "Pazar",
+                    "Pazartesi",
+                    "Sal\u0131",
+                    "\u00c7ar\u015famba",
+                    "Per\u015fembe",
+                    "Cuma",
+                    "Cumartesi",
+                }
+            },
             { "DayAbbreviations",
                 new String[] {
                     "Paz", // abb Sunday
@@ -157,6 +219,17 @@ public class FormatData_tr extends ListResourceBundle {
                     "Cmt" // abb Saturday
                 }
             },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "Paz",
+                    "Pzt",
+                    "Sal",
+                    "\u00c7ar",
+                    "Per",
+                    "Cum",
+                    "Cmt",
+                }
+            },
             { "DayNarrows",
                 new String[] {
                     "P",
@@ -166,6 +239,29 @@ public class FormatData_tr extends ListResourceBundle {
                     "P",
                     "C",
                     "C",
+                }
+            },
+            { "standalone.DayNarrows",
+                new String[] {
+                    "P",
+                    "P",
+                    "S",
+                    "\u00c7",
+                    "P",
+                    "C",
+                    "C",
+                }
+            },
+            { "long.Eras",
+                new String[] {
+                    "Milattan \u00d6nce",
+                    "Milattan Sonra",
+                }
+            },
+            { "Eras",
+                new String[] {
+                    "M\u00d6",
+                    "MS",
                 }
             },
             { "NumberPatterns",
@@ -212,89 +308,6 @@ public class FormatData_tr extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "dd MMMM y G EEEE",
-                    "dd MMMM y G",
-                    "dd MMM y G",
-                    "dd.MM.yyyy G",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "dd MMMM y G EEEE",
-                    "dd MMMM y G",
-                    "dd MMM y G",
-                    "dd.MM.yyyy G",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "dd MMMM y G EEEE",
-                    "dd MMMM y G",
-                    "dd MMM y G",
-                    "dd.MM.yyyy G",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "dd MMMM y GGGG EEEE",
-                    "dd MMMM y GGGG",
-                    "dd MMM y GGGG",
-                    "dd.MM.yyyy GGGG",
-                }
-            },
-            { "islamic.MonthNames",
-                new String[] {
-                    "Muharrem",
-                    "Safer",
-                    "Rebi\u00fclevvel",
-                    "Rebi\u00fclahir",
-                    "Cemaziyelevvel",
-                    "Cemaziyelahir",
-                    "Recep",
-                    "\u015eaban",
-                    "Ramazan",
-                    "\u015eevval",
-                    "Zilkade",
-                    "Zilhicce",
-                    "",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "dd MMMM y G EEEE",
-                    "dd MMMM y G",
-                    "dd MMM y G",
-                    "dd.MM.yyyy G",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "dd MMMM y GGGG EEEE",
-                    "dd MMMM y GGGG",
-                    "dd MMM y GGGG",
-                    "dd.MM.yyyy GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "Arap Takvimi" },
-            { "calendarname.islamicc", "Arap Takvimi" },
-            { "calendarname.islamic", "Hicri Takvim" },
-            { "calendarname.japanese", "Japon Takvimi" },
-            { "calendarname.gregorian", "Miladi Takvim" },
-            { "calendarname.gregory", "Miladi Takvim" },
-            { "calendarname.roc", "\u00c7in Cumhuriyeti Takvimi" },
-            { "calendarname.buddhist", "Budist Takvimi" },
-            { "field.era", "Miladi D\u00f6nem" },
-            { "field.year", "Y\u0131l" },
-            { "field.month", "Ay" },
-            { "field.week", "Hafta" },
-            { "field.weekday", "Haftan\u0131n G\u00fcn\u00fc" },
-            { "field.dayperiod", "AM/PM" },
-            { "field.hour", "Saat" },
-            { "field.minute", "Dakika" },
-            { "field.second", "Saniye" },
-            { "field.zone", "Saat Dilimi" },
         };
     }
 }

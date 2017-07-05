@@ -24,6 +24,11 @@
  */
 
 /*
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file:
+ *
  * Copyright (c) 2012, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -56,7 +61,6 @@
  */
 package java.time.chrono;
 
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -66,37 +70,66 @@ import java.time.DateTimeException;
  * An era in the Thai Buddhist calendar system.
  * <p>
  * The Thai Buddhist calendar system has two eras.
+ * The current era, for years from 1 onwards, is known as the 'Buddhist' era.
+ * All previous years, zero or earlier in the proleptic count or one and greater
+ * in the year-of-era count, are part of the 'Before Buddhist' era.
  * <p>
- * <b>Do not use ordinal() to obtain the numeric representation of a ThaiBuddhistEra
- * instance. Use getValue() instead.</b>
+ * <table summary="Buddhist years and eras" cellpadding="2" cellspacing="3" border="0" >
+ * <thead>
+ * <tr class="tableSubHeadingColor">
+ * <th class="colFirst" align="left">year-of-era</th>
+ * <th class="colFirst" align="left">era</th>
+ * <th class="colFirst" align="left">proleptic-year</th>
+ * <th class="colLast" align="left">ISO proleptic-year</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr class="rowColor">
+ * <td>2</td><td>BE</td><td>2</td><td>-542</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td>1</td><td>BE</td><td>1</td><td>-543</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td>1</td><td>BEFORE_BE</td><td>0</td><td>-544</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td>2</td><td>BEFORE_BE</td><td>-1</td><td>-545</td>
+ * </tr>
+ * </tbody>
+ * </table>
+ * <p>
+ * <b>Do not use {@code ordinal()} to obtain the numeric representation of {@code ThaiBuddhistEra}.
+ * Use {@code getValue()} instead.</b>
  *
  * <h3>Specification for implementors</h3>
  * This is an immutable and thread-safe enum.
  *
  * @since 1.8
  */
-enum ThaiBuddhistEra implements Era {
+public enum ThaiBuddhistEra implements Era {
 
     /**
      * The singleton instance for the era before the current one, 'Before Buddhist Era',
-     * which has the value 0.
+     * which has the numeric value 0.
      */
     BEFORE_BE,
     /**
-     * The singleton instance for the current era, 'Buddhist Era', which has the value 1.
+     * The singleton instance for the current era, 'Buddhist Era',
+     * which has the numeric value 1.
      */
     BE;
 
     //-----------------------------------------------------------------------
     /**
-     * Obtains an instance of {@code ThaiBuddhistEra} from a value.
+     * Obtains an instance of {@code ThaiBuddhistEra} from an {@code int} value.
      * <p>
-     * The current era (from ISO year -543 onwards) has the value 1
-     * The previous era has the value 0.
+     * {@code ThaiBuddhistEra} is an enum representing the Thai Buddhist eras of BEFORE_BE/BE.
+     * This factory allows the enum to be obtained from the {@code int} value.
      *
      * @param thaiBuddhistEra  the era to represent, from 0 to 1
      * @return the BuddhistEra singleton, never null
-     * @throws IllegalCalendarFieldValueException if the era is invalid
+     * @throws DateTimeException if the era is invalid
      */
     public static ThaiBuddhistEra of(int thaiBuddhistEra) {
         switch (thaiBuddhistEra) {
@@ -105,39 +138,21 @@ enum ThaiBuddhistEra implements Era {
             case 1:
                 return BE;
             default:
-                throw new DateTimeException("Era is not valid for ThaiBuddhistEra");
+                throw new DateTimeException("Invalid era: " + thaiBuddhistEra);
         }
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Gets the era numeric value.
+     * Gets the numeric era {@code int} value.
      * <p>
-     * The current era (from ISO year -543 onwards) has the value 1
-     * The previous era has the value 0.
+     * The era BEFORE_BE has the value 0, while the era BE has the value 1.
      *
      * @return the era value, from 0 (BEFORE_BE) to 1 (BE)
      */
     @Override
     public int getValue() {
         return ordinal();
-    }
-
-    @Override
-    public ThaiBuddhistChronology getChronology() {
-        return ThaiBuddhistChronology.INSTANCE;
-    }
-
-    // JDK8 default methods:
-    //-----------------------------------------------------------------------
-    @Override
-    public ThaiBuddhistDate date(int year, int month, int day) {
-        return (ThaiBuddhistDate)(getChronology().date(this, year, month, day));
-    }
-
-    @Override
-    public ThaiBuddhistDate dateYearDay(int year, int dayOfYear) {
-        return (ThaiBuddhistDate)(getChronology().dateYearDay(this, year, dayOfYear));
     }
 
     //-----------------------------------------------------------------------

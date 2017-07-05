@@ -71,12 +71,18 @@ abstract class KrbAppMessage {
         }
 
         if (packetTimestamp != null) {
-            packetTimestamp.setMicroSeconds(packetUsec);
-            if (!packetTimestamp.inClockSkew())
+            if (packetUsec != null) {
+                packetTimestamp =
+                    packetTimestamp.withMicroSeconds(packetUsec.intValue());
+            }
+            if (!packetTimestamp.inClockSkew()) {
                 throw new KrbApErrException(Krb5.KRB_AP_ERR_SKEW);
-        } else
-            if (timestampRequired)
+            }
+        } else {
+            if (timestampRequired) {
                 throw new KrbApErrException(Krb5.KRB_AP_ERR_SKEW);
+            }
+        }
 
         // XXX check replay cache
         // if (rcache.repeated(packetTimestamp, packetUsec, packetSAddress))

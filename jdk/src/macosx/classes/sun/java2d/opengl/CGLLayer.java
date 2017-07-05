@@ -40,11 +40,12 @@ import java.awt.Transparency;
 public class CGLLayer extends CFRetainedResource {
 
     private native long nativeCreateLayer();
-
+    private static native void nativeSetScale(long layerPtr, double scale);
     private static native void validate(long layerPtr, CGLSurfaceData cglsd);
     private static native void blitTexture(long layerPtr);
 
     private LWWindowPeer peer;
+    private int scale = 1;
 
     private SurfaceData surfaceData; // represents intermediate buffer (texture)
 
@@ -90,7 +91,7 @@ public class CGLLayer extends CFRetainedResource {
         // and blits the buffer to the layer surface (in drawInCGLContext callback)
         CGraphicsConfig gc = (CGraphicsConfig)peer.getGraphicsConfiguration();
         surfaceData = gc.createSurfaceData(this);
-
+        setScale(gc.getDevice().getScaleFactor());
         // the layer holds a reference to the buffer, which in
         // turn has a reference back to this layer
         if (surfaceData instanceof CGLSurfaceData) {
@@ -119,6 +120,13 @@ public class CGLLayer extends CFRetainedResource {
         // break the connection between the layer and the buffer
         validate(null);
         super.dispose();
+    }
+
+    private void setScale(final int _scale) {
+        if (scale != _scale) {
+            scale = _scale;
+            nativeSetScale(getPointer(), scale);
+        }
     }
 
     // ----------------------------------------------------------------------

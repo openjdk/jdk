@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
 package sun.security.provider;
 
 /**
- * <P> This class generates seeds for the cryptographically strong random
- * number generator.
- * <P> The seed is produced using one of two techniques, via a computation
+ * This class generates seeds for the SHA1PRNG cryptographically strong
+ * random number generator.
+ * <p>
+ * The seed is produced using one of two techniques, via a computation
  * of current system activity or from an entropy gathering device.
- * <p> In the default technique the seed is  produced by counting the
+ * <p>
+ * In the default technique the seed is produced by counting the
  * number of times the VM manages to loop in a given period. This number
  * roughly reflects the machine load at that point in time.
  * The samples are translated using a permutation (s-box)
@@ -41,23 +43,24 @@ package sun.security.provider;
  * We also create a number of sleeper threads which add entropy
  * to the system by keeping the scheduler busy.
  * Twenty such samples should give us roughly 160 bits of randomness.
- * <P> These values are gathered in the background by a daemon thread
+ * <p>
+ * These values are gathered in the background by a daemon thread
  * thus allowing the system to continue performing it's different
  * activites, which in turn add entropy to the random seed.
- * <p> The class also gathers miscellaneous system information, some
+ * <p>
+ * The class also gathers miscellaneous system information, some
  * machine dependent, some not. This information is then hashed together
  * with the 20 seed bytes.
- * <P> The alternative to the above approach is to acquire seed material
+ * <p>
+ * The alternative to the above approach is to acquire seed material
  * from an entropy gathering device, such as /dev/random. This can be
- * accomplished by setting the value of the "securerandom.source"
- * security property (in the Java security properties file) to a URL
- * specifying the location of the entropy gathering device.
+ * accomplished by setting the value of the {@code securerandom.source}
+ * Security property to a URL specifying the location of the entropy
+ * gathering device, or by setting the {@code java.security.egd} System
+ * property.
+ * <p>
  * In the event the specified URL cannot be accessed the default
- * mechanism is used.
- * The Java security properties file is located in the file named
- * &lt;JAVA_HOME&gt;/lib/security/java.security.
- * &lt;JAVA_HOME&gt; refers to the value of the java.home system property,
- * and specifies the directory where the JRE is installed.
+ * threading mechanism is used.
  *
  * @author Joshua Bloch
  * @author Gadi Guy
@@ -81,27 +84,28 @@ abstract class SeedGenerator {
 
     private static final Debug debug = Debug.getInstance("provider");
 
-    final static String URL_DEV_RANDOM = SunEntries.URL_DEV_RANDOM;
-    final static String URL_DEV_URANDOM = SunEntries.URL_DEV_URANDOM;
-
     // Static initializer to hook in selected or best performing generator
     static {
         String egdSource = SunEntries.getSeedSource();
 
-        // Try the URL specifying the source
-        // e.g. file:/dev/random
-        //
-        // The URL file:/dev/random or file:/dev/urandom is used to indicate
-        // the SeedGenerator using OS support, if available.
-        // On Windows, the causes MS CryptoAPI to be used.
-        // On Solaris and Linux, this is the identical to using
-        // URLSeedGenerator to read from /dev/random
-
-        if (egdSource.equals(URL_DEV_RANDOM) || egdSource.equals(URL_DEV_URANDOM)) {
+        /*
+         * Try the URL specifying the source (e.g. file:/dev/random)
+         *
+         * The URLs "file:/dev/random" or "file:/dev/urandom" are used to
+         * indicate the SeedGenerator should use OS support, if available.
+         *
+         * On Windows, this causes the MS CryptoAPI seeder to be used.
+         *
+         * On Solaris/Linux/MacOS, this is identical to using
+         * URLSeedGenerator to read from /dev/[u]random
+         */
+        if (egdSource.equals(SunEntries.URL_DEV_RANDOM) ||
+                egdSource.equals(SunEntries.URL_DEV_URANDOM)) {
             try {
-                instance = new NativeSeedGenerator();
+                instance = new NativeSeedGenerator(egdSource);
                 if (debug != null) {
-                    debug.println("Using operating system seed generator");
+                    debug.println(
+                        "Using operating system seed generator" + egdSource);
                 }
             } catch (IOException e) {
                 if (debug != null) {
@@ -117,9 +121,10 @@ abstract class SeedGenerator {
                                   + egdSource);
                 }
             } catch (IOException e) {
-                if (debug != null)
+                if (debug != null) {
                     debug.println("Failed to create seed generator with "
                                   + egdSource + ": " + e.toString());
+                }
             }
         }
 
@@ -161,8 +166,8 @@ abstract class SeedGenerator {
 
         java.security.AccessController.doPrivileged
             (new java.security.PrivilegedAction<Void>() {
+                @Override
                 public Void run() {
-
                     try {
                         // System properties can change from machine to machine
                         String s;
@@ -180,7 +185,9 @@ abstract class SeedGenerator {
                         // The temporary dir
                         File f = new File(p.getProperty("java.io.tmpdir"));
                         int count = 0;
-                        try (DirectoryStream<Path> stream = Files.newDirectoryStream(f.toPath())) {
+                        try (
+                            DirectoryStream<Path> stream =
+                                Files.newDirectoryStream(f.toPath())) {
                             // We use a Random object to choose what file names
                             // should be used. Otherwise on a machine with too
                             // many files, the same first 1024 files always get
@@ -189,7 +196,8 @@ abstract class SeedGenerator {
                             Random r = new Random();
                             for (Path entry: stream) {
                                 if (count < 512 || r.nextBoolean()) {
-                                    md.update(entry.getFileName().toString().getBytes());
+                                    md.update(entry.getFileName()
+                                        .toString().getBytes());
                                 }
                                 if (count++ > 1024) {
                                     break;
@@ -236,7 +244,8 @@ abstract class SeedGenerator {
     */
 
 
-    private static class ThreadedSeedGenerator extends SeedGenerator implements Runnable {
+    private static class ThreadedSeedGenerator extends SeedGenerator
+            implements Runnable {
         // Queue is used to collect seed bytes
         private byte[] pool;
         private int start, end, count;
@@ -245,11 +254,10 @@ abstract class SeedGenerator {
         ThreadGroup seedGroup;
 
         /**
-     * The constructor is only called once to construct the one
-     * instance we actually use. It instantiates the message digest
-     * and starts the thread going.
-     */
-
+         * The constructor is only called once to construct the one
+         * instance we actually use. It instantiates the message digest
+         * and starts the thread going.
+         */
         ThreadedSeedGenerator() {
             pool = new byte[20];
             start = end = 0;
@@ -266,16 +274,18 @@ abstract class SeedGenerator {
             final ThreadGroup[] finalsg = new ThreadGroup[1];
             Thread t = java.security.AccessController.doPrivileged
                 (new java.security.PrivilegedAction<Thread>() {
+                        @Override
                         public Thread run() {
                             ThreadGroup parent, group =
                                 Thread.currentThread().getThreadGroup();
-                            while ((parent = group.getParent()) != null)
+                            while ((parent = group.getParent()) != null) {
                                 group = parent;
+                            }
                             finalsg[0] = new ThreadGroup
                                 (group, "SeedGenerator ThreadGroup");
                             Thread newT = new Thread(finalsg[0],
-                                                     ThreadedSeedGenerator.this,
-                                                     "SeedGenerator Thread");
+                                ThreadedSeedGenerator.this,
+                                "SeedGenerator Thread");
                             newT.setPriority(Thread.MIN_PRIORITY);
                             newT.setDaemon(true);
                             return newT;
@@ -289,21 +299,23 @@ abstract class SeedGenerator {
          * This method does the actual work. It collects random bytes and
          * pushes them into the queue.
          */
+        @Override
         final public void run() {
             try {
                 while (true) {
                     // Queue full? Wait till there's room.
                     synchronized(this) {
-                        while (count >= pool.length)
+                        while (count >= pool.length) {
                             wait();
+                        }
                     }
 
                     int counter, quanta;
                     byte v = 0;
 
                     // Spin count must not be under 64000
-                    for (counter = quanta = 0; (counter < 64000) && (quanta < 6);
-                         quanta++) {
+                    for (counter = quanta = 0;
+                            (counter < 64000) && (quanta < 6); quanta++) {
 
                         // Start some noisy threads
                         try {
@@ -313,14 +325,12 @@ abstract class SeedGenerator {
                             t.start();
                         } catch (Exception e) {
                             throw new InternalError("internal error: " +
-                                                    "SeedGenerator thread creation error."
-                                    , e);
+                                "SeedGenerator thread creation error.", e);
                         }
 
                         // We wait 250milli quanta, so the minimum wait time
                         // cannot be under 250milli.
                         int latch = 0;
-                        latch = 0;
                         long l = System.currentTimeMillis() + 250;
                         while (System.currentTimeMillis() < l) {
                             synchronized(this){};
@@ -339,16 +349,16 @@ abstract class SeedGenerator {
                         pool[end] = v;
                         end++;
                         count++;
-                        if (end >= pool.length)
+                        if (end >= pool.length) {
                             end = 0;
+                        }
 
                         notifyAll();
                     }
                 }
             } catch (Exception e) {
                 throw new InternalError("internal error: " +
-                                        "SeedGenerator thread generated an exception."
-                        , e);
+                    "SeedGenerator thread generated an exception.", e);
             }
         }
 
@@ -360,19 +370,20 @@ abstract class SeedGenerator {
         }
 
         byte getSeedByte() {
-            byte b = 0;
+            byte b;
 
             try {
                 // Wait for it...
                 synchronized(this) {
-                    while (count <= 0)
+                    while (count <= 0) {
                         wait();
+                    }
                 }
             } catch (Exception e) {
-                if (count <= 0)
+                if (count <= 0) {
                     throw new InternalError("internal error: " +
-                                            "SeedGenerator thread generated an exception."
-                            ,e);
+                        "SeedGenerator thread generated an exception.", e);
+                }
             }
 
             synchronized(this) {
@@ -381,8 +392,9 @@ abstract class SeedGenerator {
                 pool[start] = 0;
                 start++;
                 count--;
-                if (start == pool.length)
+                if (start == pool.length) {
                     start = 0;
+                }
 
                 // Notify the daemon thread, just in case it is
                 // waiting for us to make room in the queue.
@@ -430,12 +442,13 @@ abstract class SeedGenerator {
          * thus adding entropy to the system load.
          * At least one instance of this class is generated for every seed byte.
          */
-
         private static class BogusThread implements Runnable {
+            @Override
             final public void run() {
                 try {
-                    for(int i = 0; i < 5; i++)
+                    for (int i = 0; i < 5; i++) {
                         Thread.sleep(50);
+                    }
                     // System.gc();
                 } catch (Exception e) {
                 }
@@ -446,7 +459,7 @@ abstract class SeedGenerator {
     static class URLSeedGenerator extends SeedGenerator {
 
         private String deviceName;
-        private InputStream devRandom;
+        private InputStream seedStream;
 
         /**
          * The constructor is only called once to construct the one
@@ -462,15 +475,12 @@ abstract class SeedGenerator {
             init();
         }
 
-        URLSeedGenerator() throws IOException {
-            this(SeedGenerator.URL_DEV_RANDOM);
-        }
-
         private void init() throws IOException {
             final URL device = new URL(deviceName);
             try {
-                devRandom = java.security.AccessController.doPrivileged
+                seedStream = java.security.AccessController.doPrivileged
                     (new java.security.PrivilegedExceptionAction<InputStream>() {
+                        @Override
                         public InputStream run() throws IOException {
                             /*
                              * return a FileInputStream for file URLs and
@@ -481,7 +491,8 @@ abstract class SeedGenerator {
                              * can be slow to replenish.
                              */
                             if (device.getProtocol().equalsIgnoreCase("file")) {
-                                File deviceFile = getDeviceFile(device);
+                                File deviceFile =
+                                    SunEntries.getDeviceFile(device);
                                 return new FileInputStream(deviceFile);
                             } else {
                                 return device.openStream();
@@ -489,36 +500,8 @@ abstract class SeedGenerator {
                         }
                     });
             } catch (Exception e) {
-                throw new IOException("Failed to open " + deviceName, e.getCause());
-            }
-        }
-
-        /*
-         * Use a URI to access this File. Previous code used a URL
-         * which is less strict on syntax. If we encounter a
-         * URISyntaxException we make best efforts for backwards
-         * compatibility. e.g. space character in deviceName string.
-         *
-         * Method called within PrivilegedExceptionAction block.
-         */
-        private File getDeviceFile(URL device) throws IOException {
-            try {
-                URI deviceURI = device.toURI();
-                if(deviceURI.isOpaque()) {
-                    // File constructor does not accept opaque URI
-                    URI localDir = new File(System.getProperty("user.dir")).toURI();
-                    String uriPath = localDir.toString() +
-                                         deviceURI.toString().substring(5);
-                    return new File(URI.create(uriPath));
-                } else {
-                    return new File(deviceURI);
-                }
-            } catch (URISyntaxException use) {
-                /*
-                 * Make best effort to access this File.
-                 * We can try using the URL path.
-                 */
-                return new File(device.getPath());
+                throw new IOException(
+                    "Failed to open " + deviceName, e.getCause());
             }
         }
 
@@ -528,19 +511,19 @@ abstract class SeedGenerator {
             int read = 0;
             try {
                 while (read < len) {
-                    int count = devRandom.read(result, read, len - read);
+                    int count = seedStream.read(result, read, len - read);
                     // /dev/random blocks - should never have EOF
-                    if (count < 0)
-                        throw new InternalError("URLSeedGenerator " + deviceName +
-                                        " reached end of file");
+                    if (count < 0) {
+                        throw new InternalError(
+                            "URLSeedGenerator " + deviceName +
+                            " reached end of file");
+                    }
                     read += count;
                 }
             } catch (IOException ioe) {
                 throw new InternalError("URLSeedGenerator " + deviceName +
-                                        " generated exception: " +
-                                        ioe.getMessage(), ioe);
+                    " generated exception: " + ioe.getMessage(), ioe);
             }
         }
-
     }
 }

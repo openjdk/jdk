@@ -169,16 +169,12 @@ final class PBES1Core {
         PBEParameterSpec pbeSpec = new PBEParameterSpec(salt, iCount);
         try {
             params = AlgorithmParameters.getInstance("PBEWithMD5And" +
-                (algo.equalsIgnoreCase("DES")? "DES":"TripleDES"), "SunJCE");
+                (algo.equalsIgnoreCase("DES")? "DES":"TripleDES"),
+                SunJCE.getInstance());
+            params.init(pbeSpec);
         } catch (NoSuchAlgorithmException nsae) {
             // should never happen
             throw new RuntimeException("SunJCE called, but not configured");
-        } catch (NoSuchProviderException nspe) {
-            // should never happen
-            throw new RuntimeException("SunJCE called, but not configured");
-        }
-        try {
-            params.init(pbeSpec);
         } catch (InvalidParameterSpecException ipse) {
             // should never happen
             throw new RuntimeException("PBEParameterSpec not supported");

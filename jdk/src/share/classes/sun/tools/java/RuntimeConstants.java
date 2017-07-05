@@ -87,6 +87,9 @@ public interface RuntimeConstants {
     int CONSTANT_METHOD              = 10;
     int CONSTANT_INTERFACEMETHOD     = 11;
     int CONSTANT_NAMEANDTYPE         = 12;
+    int CONSTANT_METHODHANDLE        = 15;
+    int CONSTANT_METHODTYPE          = 16;
+    int CONSTANT_INVOKEDYNAMIC       = 18;
 
     /* Access and modifier flags */
     int ACC_PUBLIC                   = 0x00000001;

@@ -645,17 +645,23 @@ public class TestDateTimeFormatterBuilder {
             {"GGGG", "Text(Era)"},
             {"GGGGG", "Text(Era,NARROW)"},
 
-            {"y", "Value(Year)"},
-            {"yy", "ReducedValue(Year,2,2000)"},
-            {"yyy", "Value(Year,3,19,NORMAL)"},
-            {"yyyy", "Value(Year,4,19,EXCEEDS_PAD)"},
-            {"yyyyy", "Value(Year,5,19,EXCEEDS_PAD)"},
+            {"u", "Value(Year)"},
+            {"uu", "ReducedValue(Year,2,2000)"},
+            {"uuu", "Value(Year,3,19,NORMAL)"},
+            {"uuuu", "Value(Year,4,19,EXCEEDS_PAD)"},
+            {"uuuuu", "Value(Year,5,19,EXCEEDS_PAD)"},
 
-//            {"Y", "Value(WeekBasedYear)"},
-//            {"YY", "ReducedValue(WeekBasedYear,2,2000)"},
-//            {"YYY", "Value(WeekBasedYear,3,19,NORMAL)"},
-//            {"YYYY", "Value(WeekBasedYear,4,19,EXCEEDS_PAD)"},
-//            {"YYYYY", "Value(WeekBasedYear,5,19,EXCEEDS_PAD)"},
+            {"y", "Value(YearOfEra)"},
+            {"yy", "ReducedValue(YearOfEra,2,2000)"},
+            {"yyy", "Value(YearOfEra,3,19,NORMAL)"},
+            {"yyyy", "Value(YearOfEra,4,19,EXCEEDS_PAD)"},
+            {"yyyyy", "Value(YearOfEra,5,19,EXCEEDS_PAD)"},
+
+            {"Y", "Localized(WeekBasedYear)"},
+            {"YY", "Localized(ReducedValue(WeekBasedYear,2,2000))"},
+            {"YYY", "Localized(WeekBasedYear,3,19,NORMAL)"},
+            {"YYYY", "Localized(WeekBasedYear,4,19,EXCEEDS_PAD)"},
+            {"YYYYY", "Localized(WeekBasedYear,5,19,EXCEEDS_PAD)"},
 
             {"M", "Value(MonthOfYear)"},
             {"MM", "Value(MonthOfYear,2)"},
@@ -663,17 +669,20 @@ public class TestDateTimeFormatterBuilder {
             {"MMMM", "Text(MonthOfYear)"},
             {"MMMMM", "Text(MonthOfYear,NARROW)"},
 
+            {"L", "Value(MonthOfYear)"},
+            {"LL", "Value(MonthOfYear,2)"},
+            {"LLL", "Text(MonthOfYear,SHORT_STANDALONE)"},
+            {"LLLL", "Text(MonthOfYear,FULL_STANDALONE)"},
+            {"LLLLL", "Text(MonthOfYear,NARROW_STANDALONE)"},
+
             {"D", "Value(DayOfYear)"},
             {"DD", "Value(DayOfYear,2)"},
             {"DDD", "Value(DayOfYear,3)"},
 
             {"d", "Value(DayOfMonth)"},
             {"dd", "Value(DayOfMonth,2)"},
-            {"ddd", "Value(DayOfMonth,3)"},
 
-            {"F", "Value(AlignedWeekOfMonth)"},
-            {"FF", "Value(AlignedWeekOfMonth,2)"},
-            {"FFF", "Value(AlignedWeekOfMonth,3)"},
+            {"F", "Value(AlignedDayOfWeekInMonth)"},
 
             {"Q", "Value(QuarterOfYear)"},
             {"QQ", "Value(QuarterOfYear,2)"},
@@ -681,41 +690,48 @@ public class TestDateTimeFormatterBuilder {
             {"QQQQ", "Text(QuarterOfYear)"},
             {"QQQQQ", "Text(QuarterOfYear,NARROW)"},
 
-            {"E", "Value(DayOfWeek)"},
-            {"EE", "Value(DayOfWeek,2)"},
+            {"q", "Value(QuarterOfYear)"},
+            {"qq", "Value(QuarterOfYear,2)"},
+            {"qqq", "Text(QuarterOfYear,SHORT_STANDALONE)"},
+            {"qqqq", "Text(QuarterOfYear,FULL_STANDALONE)"},
+            {"qqqqq", "Text(QuarterOfYear,NARROW_STANDALONE)"},
+
+            {"E", "Text(DayOfWeek,SHORT)"},
+            {"EE", "Text(DayOfWeek,SHORT)"},
             {"EEE", "Text(DayOfWeek,SHORT)"},
             {"EEEE", "Text(DayOfWeek)"},
             {"EEEEE", "Text(DayOfWeek,NARROW)"},
 
+            {"e", "Localized(DayOfWeek,1)"},
+            {"ee", "Localized(DayOfWeek,2)"},
+            {"eee", "Text(DayOfWeek,SHORT)"},
+            {"eeee", "Text(DayOfWeek)"},
+            {"eeeee", "Text(DayOfWeek,NARROW)"},
+
+            {"c", "Localized(DayOfWeek,1)"},
+            {"ccc", "Text(DayOfWeek,SHORT_STANDALONE)"},
+            {"cccc", "Text(DayOfWeek,FULL_STANDALONE)"},
+            {"ccccc", "Text(DayOfWeek,NARROW_STANDALONE)"},
+
             {"a", "Text(AmPmOfDay,SHORT)"},
-            {"aa", "Text(AmPmOfDay,SHORT)"},
-            {"aaa", "Text(AmPmOfDay,SHORT)"},
-            {"aaaa", "Text(AmPmOfDay)"},
-            {"aaaaa", "Text(AmPmOfDay,NARROW)"},
 
             {"H", "Value(HourOfDay)"},
             {"HH", "Value(HourOfDay,2)"},
-            {"HHH", "Value(HourOfDay,3)"},
 
             {"K", "Value(HourOfAmPm)"},
             {"KK", "Value(HourOfAmPm,2)"},
-            {"KKK", "Value(HourOfAmPm,3)"},
 
             {"k", "Value(ClockHourOfDay)"},
             {"kk", "Value(ClockHourOfDay,2)"},
-            {"kkk", "Value(ClockHourOfDay,3)"},
 
             {"h", "Value(ClockHourOfAmPm)"},
             {"hh", "Value(ClockHourOfAmPm,2)"},
-            {"hhh", "Value(ClockHourOfAmPm,3)"},
 
             {"m", "Value(MinuteOfHour)"},
             {"mm", "Value(MinuteOfHour,2)"},
-            {"mmm", "Value(MinuteOfHour,3)"},
 
             {"s", "Value(SecondOfMinute)"},
             {"ss", "Value(SecondOfMinute,2)"},
-            {"sss", "Value(SecondOfMinute,3)"},
 
             {"S", "Fraction(NanoOfSecond,1,1)"},
             {"SS", "Fraction(NanoOfSecond,2,2)"},
@@ -760,22 +776,20 @@ public class TestDateTimeFormatterBuilder {
             {"ppH", "Pad(Value(HourOfDay),2)"},
             {"pppDD", "Pad(Value(DayOfYear,2),3)"},
 
-            {"yyyy[-MM[-dd", "Value(Year,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)['-'Value(DayOfMonth,2)]]"},
-            {"yyyy[-MM[-dd]]", "Value(Year,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)['-'Value(DayOfMonth,2)]]"},
-            {"yyyy[-MM[]-dd]", "Value(Year,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)'-'Value(DayOfMonth,2)]"},
+            {"yyyy[-MM[-dd", "Value(YearOfEra,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)['-'Value(DayOfMonth,2)]]"},
+            {"yyyy[-MM[-dd]]", "Value(YearOfEra,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)['-'Value(DayOfMonth,2)]]"},
+            {"yyyy[-MM[]-dd]", "Value(YearOfEra,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)'-'Value(DayOfMonth,2)]"},
 
-            {"yyyy-MM-dd'T'HH:mm:ss.SSS", "Value(Year,4,19,EXCEEDS_PAD)'-'Value(MonthOfYear,2)'-'Value(DayOfMonth,2)" +
+            {"yyyy-MM-dd'T'HH:mm:ss.SSS", "Value(YearOfEra,4,19,EXCEEDS_PAD)'-'Value(MonthOfYear,2)'-'Value(DayOfMonth,2)" +
                 "'T'Value(HourOfDay,2)':'Value(MinuteOfHour,2)':'Value(SecondOfMinute,2)'.'Fraction(NanoOfSecond,3,3)"},
 
-            {"e", "WeekBased(e1)"},
-            {"w", "WeekBased(w1)"},
-            {"W", "WeekBased(W1)"},
-            {"WW", "WeekBased(W2)"},
-
+            {"w", "Localized(WeekOfWeekBasedYear,1)"},
+            {"ww", "Localized(WeekOfWeekBasedYear,2)"},
+            {"W", "Localized(WeekOfMonth,1)"},
         };
     }
 
-    @Test(dataProvider="validPatterns", groups={"implementation"})
+    @Test(dataProvider="validPatterns")
     public void test_appendPattern_valid(String input, String expected) throws Exception {
         builder.appendPattern(input);
         DateTimeFormatter f = builder.toFormatter();
@@ -798,12 +812,34 @@ public class TestDateTimeFormatterBuilder {
             {"yyyy]MM"},
             {"yyyy[MM]]"},
 
-            {"MMMMMM"},
-            {"QQQQQQ"},
-            {"EEEEEE"},
+            {"aa"},
+            {"aaa"},
+            {"aaaa"},
+            {"aaaaa"},
             {"aaaaaa"},
-            {"ZZZZ"},
+            {"MMMMMM"},
+            {"LLLLLL"},
+            {"QQQQQQ"},
+            {"qqqqqq"},
+            {"EEEEEE"},
+            {"eeeeee"},
+            {"cc"},
+            {"cccccc"},
+            {"ddd"},
+            {"DDDD"},
+            {"FF"},
+            {"FFF"},
+            {"hhh"},
+            {"HHH"},
+            {"kkk"},
+            {"KKK"},
+            {"mmm"},
+            {"sss"},
+            {"OO"},
+            {"OOO"},
+            {"OOOOO"},
             {"XXXXXX"},
+            {"ZZZZZZ"},
             {"zzzzz"},
             {"V"},
             {"VVV"},
@@ -823,9 +859,8 @@ public class TestDateTimeFormatterBuilder {
             {"fa"},
             {"fM"},
 
-            {"ww"},
-            {"ee"},
-            {"WWW"},
+            {"www"},
+            {"WW"},
         };
     }
 
@@ -844,9 +879,9 @@ public class TestDateTimeFormatterBuilder {
         return new Object[][] {
             {"Q", date(2012, 2, 10), "1"},
             {"QQ", date(2012, 2, 10), "01"},
-//            {"QQQ", date(2012, 2, 10), "Q1"},  // TODO: data for quarters?
-//            {"QQQQ", date(2012, 2, 10), "Q1"},
-//            {"QQQQQ", date(2012, 2, 10), "Q1"},
+            {"QQQ", date(2012, 2, 10), "Q1"},
+            {"QQQQ", date(2012, 2, 10), "1st quarter"},
+            {"QQQQQ", date(2012, 2, 10), "1"},
         };
     }
 

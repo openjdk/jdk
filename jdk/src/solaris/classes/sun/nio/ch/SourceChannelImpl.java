@@ -165,7 +165,7 @@ class SourceChannelImpl
                     return 0;
                 thread = NativeThread.current();
                 do {
-                    n = IOUtil.read(fd, dst, -1, nd, lock);
+                    n = IOUtil.read(fd, dst, -1, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(n);
             } finally {

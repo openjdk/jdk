@@ -841,7 +841,6 @@ abstract class CMap {
 
         CMapFormat6(ByteBuffer bbuffer, int offset, char[] xlat) {
 
-             System.err.println("WARNING: CMapFormat8 is untested.");
              bbuffer.position(offset+6);
              CharBuffer buffer = bbuffer.asCharBuffer();
              firstCode = buffer.get();
@@ -884,7 +883,6 @@ abstract class CMap {
 
          CMapFormat8(ByteBuffer bbuffer, int offset, char[] xlat) {
 
-             System.err.println("WARNING: CMapFormat8 is untested.");
              bbuffer.position(12);
              bbuffer.get(is32);
              nGroups = bbuffer.getInt();
@@ -915,7 +913,6 @@ abstract class CMap {
 
          CMapFormat10(ByteBuffer bbuffer, int offset, char[] xlat) {
 
-             System.err.println("WARNING: CMapFormat10 is untested.");
              firstCode = bbuffer.getInt() & INTMASK;
              entryCount = bbuffer.getInt() & INTMASK;
              bbuffer.position(offset+20);

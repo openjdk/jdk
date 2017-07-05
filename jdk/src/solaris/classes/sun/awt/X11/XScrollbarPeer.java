@@ -156,7 +156,9 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
 
     public void handleJavaKeyEvent(KeyEvent event) {
         super.handleJavaKeyEvent(event);
-        if (log.isLoggable(PlatformLogger.FINEST)) log.finer("KeyEvent on scrollbar: " + event);
+        if (log.isLoggable(PlatformLogger.FINER)) {
+            log.finer("KeyEvent on scrollbar: " + event);
+        }
         if (!(event.isConsumed()) && event.getID() == KeyEvent.KEY_RELEASED) {
             switch(event.getKeyCode()) {
             case KeyEvent.VK_UP:

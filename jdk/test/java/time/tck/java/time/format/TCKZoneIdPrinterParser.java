@@ -67,8 +67,8 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.Queries;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQuery;
 import java.util.Locale;
 
 import org.testng.annotations.BeforeMethod;
@@ -209,9 +209,9 @@ public class TCKZoneIdPrinterParser {
         assertEquals(pos.getErrorIndex(), expectedErrorIndex);
         assertEquals(pos.getIndex(), expectedIndex);
         if (expected != null) {
-            assertEquals(parsed.query(Queries.zoneId()), expected);
-            assertEquals(parsed.query(Queries.offset()), null);
-            assertEquals(parsed.query(Queries.zone()), expected);
+            assertEquals(parsed.query(TemporalQuery.zoneId()), expected);
+            assertEquals(parsed.query(TemporalQuery.offset()), null);
+            assertEquals(parsed.query(TemporalQuery.zone()), expected);
         } else {
             assertEquals(parsed, null);
         }
@@ -225,9 +225,9 @@ public class TCKZoneIdPrinterParser {
         assertEquals(pos.getErrorIndex(), expectedErrorIndex >= 0  ? expectedErrorIndex + 3 : expectedErrorIndex);
         assertEquals(pos.getIndex(), expectedIndex + 3);
         if (expected != null) {
-            assertEquals(parsed.query(Queries.zoneId()), expected);
-            assertEquals(parsed.query(Queries.offset()), null);
-            assertEquals(parsed.query(Queries.zone()), expected);
+            assertEquals(parsed.query(TemporalQuery.zoneId()), expected);
+            assertEquals(parsed.query(TemporalQuery.offset()), null);
+            assertEquals(parsed.query(TemporalQuery.zone()), expected);
         } else {
             assertEquals(parsed, null);
         }
@@ -240,9 +240,9 @@ public class TCKZoneIdPrinterParser {
         assertEquals(pos.getErrorIndex(), expectedErrorIndex);
         assertEquals(pos.getIndex(), expectedIndex);
         if (expected != null) {
-            assertEquals(parsed.query(Queries.zoneId()), expected);
-            assertEquals(parsed.query(Queries.offset()), null);
-            assertEquals(parsed.query(Queries.zone()), expected);
+            assertEquals(parsed.query(TemporalQuery.zoneId()), expected);
+            assertEquals(parsed.query(TemporalQuery.offset()), null);
+            assertEquals(parsed.query(TemporalQuery.zone()), expected);
         } else {
             assertEquals(parsed, null);
         }
@@ -261,9 +261,9 @@ public class TCKZoneIdPrinterParser {
             assertEquals(pos.getIndex(), expectedIndex);
             assertEquals(pos.getErrorIndex(), expectedErrorIndex);
             if (expected != null) {
-                assertEquals(parsed.query(Queries.zoneId()), expected);
-                assertEquals(parsed.query(Queries.offset()), null);
-                assertEquals(parsed.query(Queries.zone()), expected);
+                assertEquals(parsed.query(TemporalQuery.zoneId()), expected);
+                assertEquals(parsed.query(TemporalQuery.offset()), null);
+                assertEquals(parsed.query(TemporalQuery.zone()), expected);
             } else {
                 assertEquals(parsed, null);
             }
@@ -277,9 +277,9 @@ public class TCKZoneIdPrinterParser {
         assertEquals(pos.getErrorIndex(), expectedErrorIndex);
         assertEquals(pos.getIndex(), expectedIndex);
         if (expected != null) {
-            assertEquals(parsed.query(Queries.zoneId()), expected);
-            assertEquals(parsed.query(Queries.offset()), null);
-            assertEquals(parsed.query(Queries.zone()), expected);
+            assertEquals(parsed.query(TemporalQuery.zoneId()), expected);
+            assertEquals(parsed.query(TemporalQuery.offset()), null);
+            assertEquals(parsed.query(TemporalQuery.zone()), expected);
         } else {
             assertEquals(parsed, null);
         }

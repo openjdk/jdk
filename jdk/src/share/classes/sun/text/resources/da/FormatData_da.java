@@ -79,11 +79,11 @@
 
 package sun.text.resources.da;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_da extends ListResourceBundle {
+public class FormatData_da extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -118,6 +118,23 @@ public class FormatData_da extends ListResourceBundle {
                     "okt.",
                     "nov.",
                     "dec.",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
                     "",
                 }
             },
@@ -186,6 +203,18 @@ public class FormatData_da extends ListResourceBundle {
                     "\ufffd" // NaN
                 }
             },
+            { "Eras",
+                new String[] {
+                    "f.Kr.",
+                    "e.Kr.",
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "f.Kr.",
+                    "e.Kr.",
+                }
+            },
             { "TimePatterns",
                 new String[] {
                     "HH:mm:ss z", // full time pattern
@@ -208,64 +237,6 @@ public class FormatData_da extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GuMtkHmsSEDFwWahKzZ" },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y G",
-                    "d. MMMM y G",
-                    "d. MMM y G",
-                    "d/M/y GGGGG",
-                }
-            },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y G",
-                    "d. MMMM y G",
-                    "d. MMM y G",
-                    "d/M/y GGGGG",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y GGGG",
-                    "d. MMMM y GGGG",
-                    "d. MMM y GGGG",
-                    "d/M/y G",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y G",
-                    "d. MMMM y G",
-                    "d. MMM y G",
-                    "d/M/y G",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE d. MMMM y GGGG",
-                    "d. MMMM y GGGG",
-                    "d. MMM y GGGG",
-                    "d/M/y GGGG",
-                }
-            },
-            { "calendarname.islamic-civil", "verdslig islamisk kalender" },
-            { "calendarname.islamicc", "verdslig islamisk kalender" },
-            { "calendarname.roc", "kalender for Republikken Kina" },
-            { "calendarname.islamic", "islamisk kalender" },
-            { "calendarname.buddhist", "buddhistisk kalender" },
-            { "calendarname.japanese", "japansk kalender" },
-            { "calendarname.gregorian", "gregoriansk kalender" },
-            { "calendarname.gregory", "gregoriansk kalender" },
-            { "field.era", "\u00e6ra" },
-            { "field.year", "\u00e5r" },
-            { "field.month", "m\u00e5ned" },
-            { "field.week", "uge" },
-            { "field.weekday", "ugedag" },
-            { "field.dayperiod", "dagtid" },
-            { "field.hour", "time" },
-            { "field.minute", "minut" },
-            { "field.second", "sekund" },
-            { "field.zone", "tidszone" },
         };
     }
 }

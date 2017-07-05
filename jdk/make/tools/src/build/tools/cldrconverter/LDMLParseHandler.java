@@ -356,6 +356,44 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 }
             }
             break;
+        case "quarterContext":
+            {
+                // for FormatData
+                // need to keep stand-alone and format, to allow for inheritance in CLDR
+                String type = attributes.getValue("type");
+                if ("stand-alone".equals(type) || "format".equals(type)) {
+                    pushKeyContainer(qName, attributes, type);
+                } else {
+                    pushIgnoredContainer(qName);
+                }
+            }
+            break;
+        case "quarterWidth":
+            {
+                // for FormatData
+                // keep info about the context type so we can sort out inheritance later
+                String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
+                switch (attributes.getValue("type")) {
+                case "wide":
+                    pushStringArrayEntry(qName, attributes, prefix + "QuarterNames/" + getContainerKey(), 4);
+                    break;
+                case "abbreviated":
+                    pushStringArrayEntry(qName, attributes, prefix + "QuarterAbbreviations/" + getContainerKey(), 4);
+                    break;
+                case "narrow":
+                    pushStringArrayEntry(qName, attributes, prefix + "QuarterNarrows/" + getContainerKey(), 4);
+                    break;
+                default:
+                    pushIgnoredContainer(qName);
+                    break;
+                }
+            }
+            break;
+        case "quarter":
+            // for FormatData
+            // add to string array entry of quarterWidth element
+            pushStringArrayElement(qName, attributes, Integer.parseInt(attributes.getValue("type")) - 1);
+            break;
 
         //
         // Time zone names
