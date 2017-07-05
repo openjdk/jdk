@@ -149,6 +149,10 @@ include $(MAKEFILES_DIR)/dtrace.make
 include $(MAKEFILES_DIR)/add_gnu_debuglink.make
 
 #----------------------------------------------------------------------
+# fix_empty_sec_hdr_flags tool
+include $(MAKEFILES_DIR)/fix_empty_sec_hdr_flags.make
+
+#----------------------------------------------------------------------
 # JVM
 
 JVM      = jvm
@@ -280,7 +284,7 @@ else
 LINK_VM = $(LINK_LIB.CXX)
 endif
 # making the library:
-$(LIBJVM): $(ADD_GNU_DEBUGLINK) $(LIBJVM.o) $(LIBJVM_MAPFILE) 
+$(LIBJVM): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(LIBJVM.o) $(LIBJVM_MAPFILE) 
 ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	@echo Linking vm...
 	$(QUIETLY) $(LINK_LIB.CXX/PRE_HOOK)
@@ -290,10 +294,15 @@ ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	$(QUIETLY) [ -f $(LIBJVM_G) ] || ln -s $@ $(LIBJVM_G)
 	$(QUIETLY) [ -f $(LIBJVM_G).1 ] || ln -s $@.1 $(LIBJVM_G).1
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+# gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
+# Clear the SHF_ALLOC flag (if set) from empty section headers.
+# An empty section header has sh_addr == 0 and sh_size == 0.
+# This problem has only been seen on Solaris X64, but we call this tool
+# on all Solaris builds just in case.
+	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DEBUGINFO)
-# $(OBJCOPY) --add-gnu-debuglink=... corrupts the SUNW_dof section
-# in libjvm.so. Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY)
-# is available.
+# $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+# Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
 #	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
 	$(QUIETLY) $(ADD_GNU_DEBUGLINK) $(LIBJVM_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
