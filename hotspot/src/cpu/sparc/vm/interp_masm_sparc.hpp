@@ -25,7 +25,7 @@
 #ifndef CPU_SPARC_VM_INTERP_MASM_SPARC_HPP
 #define CPU_SPARC_VM_INTERP_MASM_SPARC_HPP
 
-#include "assembler_sparc.inline.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "interpreter/invocationCounter.hpp"
 
 // This file specializes the assember with interpreter-specific macros

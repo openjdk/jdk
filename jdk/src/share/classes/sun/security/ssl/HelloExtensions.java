@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
 import javax.net.ssl.*;
-import java.nio.charset.StandardCharsets;
-import java.security.spec.ECParameterSpec;
 
 /**
  * This file contains all the classes relevant to TLS Extensions for the

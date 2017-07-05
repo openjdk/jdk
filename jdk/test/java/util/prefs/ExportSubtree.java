@@ -23,9 +23,10 @@
 
 
 /* @test
-   @bug 6203576 4700020
-   @summary checks if the output of exportSubtree() is identical to
-            the output from previous release.
+ * @bug 6203576 4700020 7197662
+ * @summary checks if the output of exportSubtree() is identical to
+ *          the output from previous release.
+ * @run main/othervm -Djava.util.prefs.userRoot=. ExportSubtree
  */
 
 import java.io.*;

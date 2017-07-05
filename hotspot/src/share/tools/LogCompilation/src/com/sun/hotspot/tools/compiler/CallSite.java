@@ -38,6 +38,7 @@ public class CallSite {
     private String reason;
     private List<CallSite> calls;
     private int endNodes;
+    private int endLiveNodes;
     private double timeStamp;
 
     CallSite() {
@@ -106,7 +107,7 @@ public class CallSite {
             }
         }
         if (getEndNodes() > 0) {
-          stream.printf(" (end time: %6.4f nodes: %d)", getTimeStamp(), getEndNodes());
+            stream.printf(" (end time: %6.4f nodes: %d live: %d)", getTimeStamp(), getEndNodes(), getEndLiveNodes());
         }
         stream.println("");
         if (getReceiver() != null) {
@@ -193,6 +194,14 @@ public class CallSite {
 
     public int getEndNodes() {
         return endNodes;
+    }
+
+    void setEndLiveNodes(int n) {
+        endLiveNodes = n;
+    }
+
+    public int getEndLiveNodes() {
+        return endLiveNodes;
     }
 
     void setTimeStamp(double time) {

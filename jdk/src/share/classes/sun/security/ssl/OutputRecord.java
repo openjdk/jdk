@@ -116,6 +116,7 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
      * Reset the record so that it can be refilled, starting
      * immediately after the header.
      */
+    @Override
     public synchronized void reset() {
         super.reset();
         count = headerSize;

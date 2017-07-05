@@ -1260,13 +1260,15 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_IsKanaKeyboard
 
 JavaVM* jvm = NULL;
 static int ToolkitErrorHandler(Display * dpy, XErrorEvent * event) {
+    JNIEnv * env;
     if (jvm != NULL) {
-        JNIEnv * env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        return JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XToolkit", "globalErrorHandler", "(JJ)I",
-                                          ptr_to_jlong(dpy), ptr_to_jlong(event)).i;
-    } else {
-        return 0;
+        env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+        if (env) {
+            return JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XToolkit", "globalErrorHandler", "(JJ)I",
+                                              ptr_to_jlong(dpy), ptr_to_jlong(event)).i;
+        }
     }
+    return 0;
 }
 
 /*

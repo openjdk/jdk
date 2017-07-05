@@ -601,8 +601,8 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   set_map(entry_map);
   do_exits();
 
-  if (log)  log->done("parse nodes='%d' memory='%d'",
-                      C->unique(), C->node_arena()->used());
+  if (log)  log->done("parse nodes='%d' live='%d' memory='%d'",
+                      C->unique(), C->live_nodes(), C->node_arena()->used());
 }
 
 //---------------------------do_all_blocks-------------------------------------
@@ -1008,7 +1008,7 @@ SafePointNode* Parse::create_entry_map() {
   // If this is an inlined method, we may have to do a receiver null check.
   if (_caller->has_method() && is_normal_parse() && !method()->is_static()) {
     GraphKit kit(_caller);
-    kit.null_check_receiver(method());
+    kit.null_check_receiver_before_call(method());
     _caller = kit.transfer_exceptions_into_jvms();
     if (kit.stopped()) {
       _exits.add_exception_states_from(_caller);
@@ -1398,7 +1398,7 @@ void Parse::do_one_block() {
 #ifdef ASSERT
     int pre_bc_sp = sp();
     int inputs, depth;
-    bool have_se = !stopped() && compute_stack_effects(inputs, depth, /*for_parse*/ true);
+    bool have_se = !stopped() && compute_stack_effects(inputs, depth);
     assert(!have_se || pre_bc_sp >= inputs, err_msg_res("have enough stack to execute this BC: pre_bc_sp=%d, inputs=%d", pre_bc_sp, inputs));
 #endif //ASSERT
 

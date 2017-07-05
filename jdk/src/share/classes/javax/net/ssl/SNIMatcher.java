@@ -44,7 +44,7 @@ package javax.net.ssl;
  * @see SNIServerName
  * @see SNIHostName
  * @see SSLParameters#getSNIMatchers()
- * @see SSLParameters#setSNIMatchers(Collection<SNIMatcher>)
+ * @see SSLParameters#setSNIMatchers(Collection)
  *
  * @since 1.8
  */

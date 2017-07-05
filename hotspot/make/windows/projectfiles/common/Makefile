@@ -71,41 +71,36 @@ default:: $(AdditionalTargets) $(JvmtiGeneratedFiles)
 
 !include $(HOTSPOTWORKSPACE)/make/hotspot_version
 
-!if "$(HOTSPOT_RELEASE_VERSION)" != ""
-HOTSPOT_RELEASE_VERSION="$(HOTSPOT_RELEASE_VERSION)"
-!else
-HOTSPOT_RELEASE_VERSION="$(HS_MAJOR_VER).$(HS_MINOR_VER)-b$(HS_BUILD_NUMBER)"
-!endif
 !if "$(USER_RELEASE_SUFFIX)" != ""
-HOTSPOT_BUILD_VERSION$(HOTSPOT_BUILD_VERSION) = internal-$(USER_RELEASE_SUFFIX)
+HOTSPOT_BUILD_VERSION = internal-$(USER_RELEASE_SUFFIX)
 !else
-HOTSPOT_BUILD_VERSION$(HOTSPOT_BUILD_VERSION) = internal
+HOTSPOT_BUILD_VERSION = internal
 !endif
-!if "$(HOTSPOT_BUILD_VERSION)" != ""
-HOTSPOT_RELEASE_VERSION="$(HOTSPOT_RELEASE_VERSION)-$(HOTSPOT_BUILD_VERSION)"
+!if "$(HOTSPOT_RELEASE_VERSION)" != ""
+HOTSPOT_RELEASE_VERSION="\\\"$(HOTSPOT_RELEASE_VERSION)\\\""
+!else
+HOTSPOT_RELEASE_VERSION="\\\"$(HS_MAJOR_VER).$(HS_MINOR_VER)-b$(HS_BUILD_NUMBER)-$(HOTSPOT_BUILD_VERSION)\\\""
 !endif
 !if "$(JRE_RELEASE_VERSION)" != ""
-JRE_RELEASE_VERSION="$(JRE_RELEASE_VERSION)"
+JRE_RELEASE_VERSION="\\\"$(JRE_RELEASE_VERSION)\\\""
 !else
-JRE_RELEASE_VERSION="$(JDK_MAJOR_VER).$(JDK_MINOR_VER).$(JDK_MICRO_VER)"
+JRE_RELEASE_VERSION="\\\"$(JDK_MAJOR_VER).$(JDK_MINOR_VER).$(JDK_MICRO_VER)\\\""
 !endif
 
 # Define HOTSPOT_VM_DISTRO if HOTSPOT_VM_DISTRO is set,
 # and if it is not see if we have the src/closed directory
 !if "$(HOTSPOT_VM_DISTRO)" != ""
-HOTSPOT_VM_DISTRO="$(HOTSPOT_VM_DISTRO)"
+HOTSPOT_VM_DISTRO=$(HOTSPOT_VM_DISTRO)
 !else
 !if exists($(HOTSPOTWORKSPACE)\src\closed)
-HOTSPOT_VM_DISTRO="Java HotSpot(TM)"
+HOTSPOT_VM_DISTRO="\\\"Java HotSpot(TM)\\\""
 !else
-HOTSPOT_VM_DISTRO="OpenJDK"
+HOTSPOT_VM_DISTRO="\\\"OpenJDK\\\""
 !endif
 !endif
 
-ProjectCreatorIDEOptions =       $(ProjectCreatorIDEOptions) \
-      -define              HOTSPOT_RELEASE_VERSION=\\\"$(HOTSPOT_RELEASE_VERSION)\\\" \
-      -define              JRE_RELEASE_VERSION=\\\"$(JRE_RELEASE_VERSION)\\\" \
-      -define              HOTSPOT_VM_DISTRO=\\\"$(HOTSPOT_VM_DISTRO)\\\"
+ReleaseOptions = -define HOTSPOT_RELEASE_VERSION=$(HOTSPOT_RELEASE_VERSION) -define JRE_RELEASE_VERSION=$(JRE_RELEASE_VERSION) -define HOTSPOT_VM_DISTRO=$(HOTSPOT_VM_DISTRO)
+ProjectCreatorIDEOptions = $(ProjectCreatorIDEOptions) $(ReleaseOptions)
 
 $(HOTSPOTBUILDSPACE)/$(ProjectFile): $(HOTSPOTBUILDSPACE)/classes/ProjectCreator.class
 	@$(RUN_JAVA) -Djava.class.path="$(HOTSPOTBUILDSPACE)/classes" ProjectCreator WinGammaPlatform$(VcVersion) $(ProjectCreatorIDEOptions)

@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 4619564
+ * @bug 4619564 7197662
  * @summary XMl Comments in Preferences File lead to ClassCastException
+ * @run main/othervm -Djava.util.prefs.userRoot=. CommentsInXml
  * @author kladko
  */
 

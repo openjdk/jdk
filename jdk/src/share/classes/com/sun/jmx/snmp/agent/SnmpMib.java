@@ -42,10 +42,6 @@ import com.sun.jmx.snmp.SnmpOid;
 import com.sun.jmx.snmp.SnmpVarBind;
 import com.sun.jmx.snmp.SnmpDefinitions;
 import com.sun.jmx.snmp.SnmpStatusException;
-import com.sun.jmx.snmp.SnmpEngine;
-import com.sun.jmx.snmp.SnmpUnknownModelException;
-import com.sun.jmx.snmp.internal.SnmpAccessControlModel;
-import com.sun.jmx.snmp.internal.SnmpEngineImpl;
 
 /**
  * Abstract class for representing an SNMP MIB.
@@ -241,6 +237,7 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
     // Implements the method defined in SnmpMibAgent. See SnmpMibAgent
     // for java-doc
     //
+    @Override
     public void get(SnmpMibRequest req) throws SnmpStatusException {
 
         // Builds the request tree: creation is not allowed, operation
@@ -259,8 +256,8 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
 
         // For each sub-request stored in the request-tree, invoke the
         // get() method.
-        for (Enumeration eh=handlers.getHandlers();eh.hasMoreElements();) {
-            h = (SnmpRequestTree.Handler) eh.nextElement();
+        for (Enumeration<SnmpRequestTree.Handler> eh=handlers.getHandlers();eh.hasMoreElements();) {
+            h = eh.nextElement();
 
             // Gets the Meta node. It can be either a Group Meta or a
             // Table Meta.
@@ -270,11 +267,11 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
             // Gets the depth of the Meta node in the OID tree
             final int depth = handlers.getOidDepth(h);
 
-            for (Enumeration rqs=handlers.getSubRequests(h);
+            for (Enumeration<SnmpMibSubRequest> rqs=handlers.getSubRequests(h);
                  rqs.hasMoreElements();) {
 
                 // Invoke the get() operation.
-                meta.get((SnmpMibSubRequest)rqs.nextElement(),depth);
+                meta.get(rqs.nextElement(),depth);
             }
         }
     }
@@ -286,6 +283,7 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
     // Implements the method defined in SnmpMibAgent. See SnmpMibAgent
     // for java-doc
     //
+    @Override
     public void set(SnmpMibRequest req) throws SnmpStatusException {
 
         SnmpRequestTree handlers = null;
@@ -307,8 +305,8 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
         handlers.switchCreationFlag(false);
         handlers.setPduType(reqType);
 
-        SnmpRequestTree.Handler h = null;
-        SnmpMibNode meta = null;
+        SnmpRequestTree.Handler h;
+        SnmpMibNode meta;
 
         if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINEST)) {
             SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, SnmpMib.class.getName(),
@@ -317,8 +315,8 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
 
         // For each sub-request stored in the request-tree, invoke the
         // get() method.
-        for (Enumeration eh=handlers.getHandlers();eh.hasMoreElements();) {
-            h = (SnmpRequestTree.Handler) eh.nextElement();
+        for (Enumeration<SnmpRequestTree.Handler> eh=handlers.getHandlers();eh.hasMoreElements();) {
+            h = eh.nextElement();
 
             // Gets the Meta node. It can be either a Group Meta or a
             // Table Meta.
@@ -328,11 +326,11 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
             // Gets the depth of the Meta node in the OID tree
             final int depth = handlers.getOidDepth(h);
 
-            for (Enumeration rqs=handlers.getSubRequests(h);
+            for (Enumeration<SnmpMibSubRequest> rqs=handlers.getSubRequests(h);
                  rqs.hasMoreElements();) {
 
                 // Invoke the set() operation
-                meta.set((SnmpMibSubRequest)rqs.nextElement(),depth);
+                meta.set(rqs.nextElement(),depth);
             }
         }
     }
@@ -346,6 +344,7 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
     // Implements the method defined in SnmpMibAgent. See SnmpMibAgent
     // for java-doc
     //
+    @Override
     public void check(SnmpMibRequest req) throws SnmpStatusException {
 
         final int reqType = SnmpDefinitions.pduWalkRequest;
@@ -353,8 +352,8 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
         // is atomic.
         SnmpRequestTree handlers = getHandlers(req,true,true,reqType);
 
-        SnmpRequestTree.Handler h = null;
-        SnmpMibNode meta = null;
+        SnmpRequestTree.Handler h;
+        SnmpMibNode meta;
 
         if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINEST)) {
             SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, SnmpMib.class.getName(),
@@ -363,8 +362,8 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
 
         // For each sub-request stored in the request-tree, invoke the
         // check() method.
-        for (Enumeration eh=handlers.getHandlers();eh.hasMoreElements();) {
-            h = (SnmpRequestTree.Handler) eh.nextElement();
+        for (Enumeration<SnmpRequestTree.Handler> eh=handlers.getHandlers();eh.hasMoreElements();) {
+            h = eh.nextElement();
 
             // Gets the Meta node. It can be either a Group Meta or a
             // Table Meta.
@@ -374,11 +373,11 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
             // Gets the depth of the Meta node in the OID tree
             final int depth = handlers.getOidDepth(h);
 
-            for (Enumeration rqs=handlers.getSubRequests(h);
+            for (Enumeration<SnmpMibSubRequest> rqs=handlers.getSubRequests(h);
                  rqs.hasMoreElements();) {
 
                 // Invoke the check() operation
-                meta.check((SnmpMibSubRequest)rqs.nextElement(),depth);
+                meta.check(rqs.nextElement(),depth);
             }
         }
 
@@ -398,13 +397,14 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
     // Implements the method defined in SnmpMibAgent. See SnmpMibAgent
     // for java-doc
     //
+    @Override
     public void getNext(SnmpMibRequest req) throws SnmpStatusException {
         // Build the request tree for the operation
         // The subrequest stored in the request tree are valid GET requests
         SnmpRequestTree handlers = getGetNextHandlers(req);
 
-        SnmpRequestTree.Handler h = null;
-        SnmpMibNode meta = null;
+        SnmpRequestTree.Handler h;
+        SnmpMibNode meta;
 
         if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINEST)) {
             SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, SnmpMib.class.getName(),
@@ -412,8 +412,8 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
         }
 
         // Now invoke get() for each subrequest of the request tree.
-        for (Enumeration eh=handlers.getHandlers();eh.hasMoreElements();) {
-            h = (SnmpRequestTree.Handler) eh.nextElement();
+        for (Enumeration<SnmpRequestTree.Handler> eh=handlers.getHandlers();eh.hasMoreElements();) {
+            h = eh.nextElement();
 
             // Gets the Meta node. It can be either a Group Meta or a
             // Table Meta.
@@ -423,11 +423,11 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
             // Gets the depth of the Meta node in the OID tree
             int depth = handlers.getOidDepth(h);
 
-            for (Enumeration rqs=handlers.getSubRequests(h);
+            for (Enumeration<SnmpMibSubRequest> rqs=handlers.getSubRequests(h);
                  rqs.hasMoreElements();) {
 
                 // Invoke the get() operation
-                meta.get((SnmpMibSubRequest)rqs.nextElement(),depth);
+                meta.get(rqs.nextElement(),depth);
             }
         }
     }
@@ -442,6 +442,7 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
     // Implements the method defined in SnmpMibAgent. See SnmpMibAgent
     // for java-doc
     //
+    @Override
     public void getBulk(SnmpMibRequest req, int nonRepeat, int maxRepeat)
         throws SnmpStatusException {
 
@@ -456,10 +457,11 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
      *
      * @return The root object identifier.
      */
+    @Override
     public long[] getRootOid() {
 
         if( rootOid == null) {
-            Vector<Integer> list= new Vector<Integer>(10);
+            Vector<Integer> list= new Vector<>(10);
 
             // Ask the tree to do the job !
             //
@@ -507,13 +509,13 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
             new SnmpRequestTree(req,createflag,type);
 
         int index=0;
-        SnmpVarBind var = null;
+        SnmpVarBind var;
         final int ver= req.getVersion();
 
         // For each varbind in the list finds its handling node.
-        for (Enumeration e= req.getElements(); e.hasMoreElements(); index++) {
+        for (Enumeration<SnmpVarBind> e= req.getElements(); e.hasMoreElements(); index++) {
 
-            var= (SnmpVarBind) e.nextElement();
+            var= e.nextElement();
 
             try {
                 // Find the handling node for this varbind.
@@ -657,10 +659,10 @@ public abstract class SnmpMib extends SnmpMibAgent implements Serializable {
         // request into a valid GET request, replacing the OIDs in the
         // original GET-NEXT request with the OID of the first leaf that
         // follows.
-        for (Enumeration e= req.getElements(); e.hasMoreElements(); index++) {
+        for (Enumeration<SnmpVarBind> e= req.getElements(); e.hasMoreElements(); index++) {
 
-            var = (SnmpVarBind) e.nextElement();
-            SnmpOid result = null;
+            var = e.nextElement();
+            SnmpOid result;
             try {
                 // Find the node handling the OID that follows the varbind
                 // OID. `result' contains this next leaf OID.
