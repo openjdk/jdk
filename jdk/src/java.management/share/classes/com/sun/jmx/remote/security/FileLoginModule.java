@@ -65,7 +65,7 @@ import sun.management.jmxremote.ConnectorBootstrap;
  * associated cleartext password. By default, the following password file is
  * used:
  * <pre>
- *     ${java.home}/lib/management/jmxremote.password
+ *     ${java.home}/conf/management/jmxremote.password
  * </pre>
  * A different password file can be specified via the <code>passwordFile</code>
  * configuration option.
@@ -113,7 +113,7 @@ public class FileLoginModule implements LoginModule {
     // Location of the default password file
     private static final String DEFAULT_PASSWORD_FILE_NAME =
         AccessController.doPrivileged(new GetPropertyAction("java.home")) +
-        File.separatorChar + "lib" +
+        File.separatorChar + "conf" +
         File.separatorChar + "management" + File.separatorChar +
         ConnectorBootstrap.DefaultValues.PASSWORD_FILE_NAME;
 

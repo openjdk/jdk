@@ -54,10 +54,6 @@ public class PackageVersionTest {
     public final static int JAVA7_PACKAGE_MINOR_VERSION = 1;
 
     public static void main(String... args) throws IOException {
-        if (!javaHome.getName().endsWith("jre")) {
-            throw new RuntimeException("Error: requires an SDK to run");
-        }
-
         File out = new File("test.pack");
         createClassFile("Test6");
         createClassFile("Test7");

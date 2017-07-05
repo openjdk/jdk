@@ -34,7 +34,7 @@ include SetupJavaCompilers.gmk
 JDK_CLASSES := $(subst $(SPACE),$(PATH_SEP),$(strip $(addprefix $(JDK_OUTPUTDIR)/modules/, \
       java.base java.logging java.scripting)))
 
-NASHORN_JAR := $(NASHORN_DIST)/nashorn.jar
+NASHORN_JAR := $(IMAGES_OUTPUTDIR)/nashorn.jar
 NASHORN_VERSION := $(JDK_VERSION)
 NASHORN_FULL_VERSION := $(FULL_VERSION)
 
@@ -56,8 +56,9 @@ $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
 $(eval $(call SetupJavaCompilation,BUILD_NASHORN, \
     SETUP := GENERATE_NEWBYTECODE_DEBUG, \
     SRC := $(NASHORN_TOPDIR)/src/jdk.scripting.nashorn/share/classes, \
+    EXCLUDE_FILES := META-INF/MANIFEST.MF, \
     COPY := .properties .js, \
-    BIN := $(NASHORN_OUTPUTDIR)/nashorn_classes))
+    BIN := $(SUPPORT_OUTPUTDIR)/misc/jdk.scripting.nashorn/classes))
 
 NASGEN_SRC := $(NASHORN_TOPDIR)/buildtools/nasgen/src
 ASM_SRC := $(JDK_TOPDIR)/src/java.base/share/classes/jdk/internal/org/objectweb/asm
@@ -66,8 +67,8 @@ ASM_SRC := $(JDK_TOPDIR)/src/java.base/share/classes/jdk/internal/org/objectweb/
 $(eval $(call SetupJavaCompilation,BUILD_NASGEN, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(NASGEN_SRC) $(ASM_SRC), \
-    BIN := $(NASHORN_OUTPUTDIR)/nasgen_classes, \
-    ADD_JAVAC_FLAGS := -bootclasspath "$(BOOT_RTJAR)$(PATH_SEP)$(NASHORN_OUTPUTDIR)/nashorn_classes"))
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/nasgen_classes, \
+    ADD_JAVAC_FLAGS := -Xbootclasspath/p:"$(SUPPORT_OUTPUTDIR)/misc/jdk.scripting.nashorn/classes"))
 
 # Nasgen needs nashorn classes
 $(BUILD_NASGEN): $(BUILD_NASHORN)
@@ -80,9 +81,9 @@ $(NASGEN_RUN_FILE): $(BUILD_NASGEN)
 	$(ECHO) Running nasgen
 	$(MKDIR) -p $(@D)
 	$(RM) -rf $(@D)/jdk $(@D)/netscape
-	$(CP) -R -p $(NASHORN_OUTPUTDIR)/nashorn_classes/* $(@D)/
+	$(CP) -R -p $(SUPPORT_OUTPUTDIR)/misc/jdk.scripting.nashorn/classes/* $(@D)/
 	$(FIXPATH) $(JAVA) \
-	    -Xbootclasspath/p:"$(NASHORN_OUTPUTDIR)/nasgen_classes$(PATH_SEP)$(NASHORN_OUTPUTDIR)/nashorn_classes" \
+	    -Xbootclasspath/p:"$(BUILDTOOLS_OUTPUTDIR)/nasgen_classes$(PATH_SEP)$(SUPPORT_OUTPUTDIR)/misc/jdk.scripting.nashorn/classes" \
 	    jdk.nashorn.internal.tools.nasgen.Main $(@D) jdk.nashorn.internal.objects $(@D)
 	$(TOUCH) $@
 

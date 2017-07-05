@@ -41,12 +41,11 @@ public class RMICClassPathTest {
     private final static String SRC_PATH = System.getProperty("test.src", ".");
     public static void main(String[] args) throws Exception {
         String sysPath = SRC_PATH + "/jdk/jre/lib/rt.jar";
-        String extDir = "";
         String clPath = SRC_PATH + "/user.jar" + File.pathSeparator +
             SRC_PATH + "/user2.jar" + File.pathSeparator +
             SRC_PATH + "/user3.jar";
 
-        String cpStr = BatchEnvironment.createClassPath(clPath, sysPath, extDir).toString();
+        String cpStr = BatchEnvironment.createClassPath(clPath, sysPath).toString();
 
         String[] paths = cpStr.split(File.pathSeparator);
 

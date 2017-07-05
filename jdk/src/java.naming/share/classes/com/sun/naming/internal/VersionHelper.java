@@ -159,12 +159,12 @@ public final class VersionHelper {
     }
 
     /*
-     * Returns an input stream for a file in <java.home>/lib,
+     * Returns an input stream for a file in <java.home>/conf,
      * or null if it cannot be located or opened.
      *
      * @param filename  The file name, sans directory.
      */
-    InputStream getJavaHomeLibStream(String filename) {
+    InputStream getJavaHomeConfStream(String filename) {
         PrivilegedAction<InputStream> act = () -> {
             try {
                 String javahome = System.getProperty("java.home");
@@ -172,7 +172,7 @@ public final class VersionHelper {
                     return null;
                 }
                 String pathname = javahome + File.separator +
-                        "lib" + File.separator + filename;
+                        "conf" + File.separator + filename;
                 return new FileInputStream(pathname);
             } catch (Exception e) {
                 return null;

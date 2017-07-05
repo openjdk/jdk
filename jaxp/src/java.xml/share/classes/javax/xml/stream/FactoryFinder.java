@@ -51,12 +51,12 @@ class FactoryFinder {
     private static boolean debug = false;
 
     /**
-     * Cache for properties in java.home/lib/jaxp.properties
+     * Cache for properties in java.home/conf/jaxp.properties
      */
     final private static Properties cacheProps = new Properties();
 
     /**
-     * Flag indicating if properties from java.home/lib/jaxp.properties
+     * Flag indicating if properties from java.home/conf/jaxp.properties
      * have been cached.
      */
     private static volatile boolean firstTime = true;
@@ -271,7 +271,7 @@ class FactoryFinder {
         }
 
         // Try read $java.home/lib/stax.properties followed by
-        // $java.home/lib/jaxp.properties if former not present
+        // $java.home/conf/jaxp.properties if former not present
         String configFile = null;
         try {
             if (firstTime) {
@@ -287,7 +287,7 @@ class FactoryFinder {
                         }
                         else {
                             configFile = ss.getSystemProperty("java.home") + File.separator +
-                                "lib" + File.separator + "jaxp.properties";
+                                "conf" + File.separator + "jaxp.properties";
                             f = new File(configFile);
                             if (ss.doesFileExist(f)) {
                                 dPrint("Read properties file "+f);

@@ -62,7 +62,7 @@ public class NetProperties {
             throw new Error("Can't find java.home ??");
         }
         try {
-            File f = new File(fname, "lib");
+            File f = new File(fname, "conf");
             f = new File(f, "net.properties");
             fname = f.getCanonicalPath();
             InputStream in = new FileInputStream(fname);
