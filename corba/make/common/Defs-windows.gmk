@@ -77,6 +77,11 @@ ifeq ($(ARCH_DATA_MODEL), 32)
     MSVCPNN_DLL = msvcp90.dll
     MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
   endif
+  ifeq ($(COMPILER_VERSION), VS2010)
+    MSVCRNN_DLL = msvcr100.dll
+    MSVCPNN_DLL = msvcp100.dll
+    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+  endif
 endif
 
 # C Compiler flag definitions
@@ -162,6 +167,20 @@ ifeq ($(CC_VERSION),msvc)
     endif
   endif
   ifeq ($(COMPILER_VERSION), VS2008)
+    # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
+    AUTOMATIC_PCH_OPTION =
+    GX_OPTION = -EHsc
+    ifeq ($(ARCH_DATA_MODEL), 32)
+      CC_HIGHEST_OPT = -O2
+      CC_HIGHER_OPT  = -O1
+      CC_LOWER_OPT   = -O1
+    else
+      CC_HIGHEST_OPT = -O2
+      CC_HIGHER_OPT  = -O1
+      CC_LOWER_OPT   = -O1
+    endif
+  endif
+  ifeq ($(COMPILER_VERSION), VS2010)
     # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
     AUTOMATIC_PCH_OPTION =
     GX_OPTION = -EHsc
