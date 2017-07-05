@@ -750,7 +750,6 @@ bool JSONTest::test() {
 
   JSONTest::test("{ key : 1 }", true);
   JSONTest::test("{ key : 1, }", true);
-  JSONTest::test("{ key : 1.2 }", true);
   JSONTest::test("{ key : true }", true);
   JSONTest::test("{ key : true, }", true);
   JSONTest::test("{ key : false }", true);

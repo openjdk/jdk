@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,6 @@
 
 #define __ _masm->
 
-#ifdef CC_INTERP
-#define EXCEPTION_ENTRY StubRoutines::throw_NullPointerException_at_call_entry()
-#else
-#define EXCEPTION_ENTRY Interpreter::throw_NullPointerException_entry()
-#endif
-
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) // nothing
 #else
@@ -51,10 +45,12 @@ inline static RegisterOrConstant constant(int value) {
   return RegisterOrConstant(value);
 }
 
-void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg, Register temp_reg, Register temp2_reg) {
-  if (VerifyMethodHandles)
-    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class), temp_reg, temp2_reg,
-                 "MH argument is a Class");
+void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg,
+                                          Register temp_reg, Register temp2_reg) {
+  if (VerifyMethodHandles) {
+    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
+                 temp_reg, temp2_reg, "MH argument is a Class");
+  }
   __ ld(klass_reg, java_lang_Class::klass_offset_in_bytes(), klass_reg);
 }
 
@@ -187,7 +183,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
                         sizeof(u2), /*is_signed*/ false);
     // assert(sizeof(u2) == sizeof(ConstMethod::_size_of_parameters), "");
     Label L;
-    __ ld(temp2, __ argument_offset(temp2, temp2, 0), CC_INTERP_ONLY(R17_tos) NOT_CC_INTERP(R15_esp));
+    __ ld(temp2, __ argument_offset(temp2, temp2, 0), R15_esp);
     __ cmpd(CCR1, temp2, recv);
     __ beq(CCR1, L);
     __ stop("receiver not on stack");
@@ -214,7 +210,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
-  Register argbase    = CC_INTERP_ONLY(R17_tos) NOT_CC_INTERP(R15_esp); // parameter (preserved)
+  Register argbase    = R15_esp; // parameter (preserved)
   Register argslot    = R3;
   Register temp1      = R6;
   Register param_size = R7;
@@ -317,10 +313,12 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       __ verify_oop(receiver_reg);
       if (iid == vmIntrinsics::_linkToSpecial) {
         // Don't actually load the klass; just null-check the receiver.
-        __ null_check_throw(receiver_reg, -1, temp1, EXCEPTION_ENTRY);
+        __ null_check_throw(receiver_reg, -1, temp1,
+                            Interpreter::throw_NullPointerException_entry());
       } else {
         // load receiver klass itself
-        __ null_check_throw(receiver_reg, oopDesc::klass_offset_in_bytes(), temp1, EXCEPTION_ENTRY);
+        __ null_check_throw(receiver_reg, oopDesc::klass_offset_in_bytes(), temp1,
+                            Interpreter::throw_NullPointerException_entry());
         __ load_klass(temp1_recv_klass, receiver_reg);
         __ verify_klass_ptr(temp1_recv_klass);
       }
@@ -504,8 +502,7 @@ void trace_method_handle_stub(const char* adaptername,
       frame cur_frame = os::current_frame();
 
       // Robust search of trace_calling_frame (independant of inlining).
-      // Assumes saved_regs comes from a pusha in the trace_calling_frame.
-      assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
+      assert(cur_frame.sp() <= saved_regs, "registers not saved on stack ?");
       frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
       while (trace_calling_frame.fp() < saved_regs) {
         trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
@@ -539,7 +536,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   BLOCK_COMMENT("trace_method_handle {");
 
   const Register tmp = R11; // Will be preserved.
-  const int nbytes_save = 11*8; // volatile gprs except R0
+  const int nbytes_save = MacroAssembler::num_volatile_regs * 8;
   __ save_volatile_gprs(R1_SP, -nbytes_save); // except R0
   __ save_LR_CR(tmp); // save in old frame
 

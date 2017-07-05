@@ -38,6 +38,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
@@ -305,9 +306,6 @@ void Thread::clear_thread_current() {
 void Thread::record_stack_base_and_size() {
   set_stack_base(os::current_stack_base());
   set_stack_size(os::current_stack_size());
-  if (is_Java_thread()) {
-    ((JavaThread*) this)->set_stack_overflow_limit();
-  }
   // CR 7190089: on Solaris, primordial thread's stack is adjusted
   // in initialize_thread(). Without the adjustment, stack size is
   // incorrect if stack is set to unlimited (ulimit -s unlimited).
@@ -316,10 +314,14 @@ void Thread::record_stack_base_and_size() {
   // set up any platform-specific state.
   os::initialize_thread(this);
 
+  // Set stack limits after thread is initialized.
+  if (is_Java_thread()) {
+    ((JavaThread*) this)->set_stack_overflow_limit();
+    ((JavaThread*) this)->set_reserved_stack_activation(stack_base());
+  }
 #if INCLUDE_NMT
   // record thread's native stack, stack grows downward
-  address stack_low_addr = stack_base() - stack_size();
-  MemTracker::record_thread_stack(stack_low_addr, stack_size());
+  MemTracker::record_thread_stack(stack_end(), stack_size());
 #endif // INCLUDE_NMT
 }
 
@@ -336,8 +338,7 @@ Thread::~Thread() {
   // not proper way to enforce that.
 #if INCLUDE_NMT
   if (_stack_base != NULL) {
-    address low_stack_addr = stack_base() - stack_size();
-    MemTracker::release_thread_stack(low_stack_addr, stack_size());
+    MemTracker::release_thread_stack(stack_end(), stack_size());
 #ifdef ASSERT
     set_stack_base(NULL);
 #endif
@@ -820,7 +821,7 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   else                                st->print("Thread");
 
   st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
-            p2i(_stack_base - _stack_size), p2i(_stack_base));
+            p2i(stack_end()), p2i(stack_base()));
 
   if (osthread()) {
     st->print(" [id=%d]", osthread()->thread_id());
@@ -906,9 +907,8 @@ bool Thread::is_in_stack(address adr) const {
   return false;
 }
 
-
 bool Thread::is_in_usable_stack(address adr) const {
-  size_t stack_guard_size = os::uses_stack_guard_pages() ? (StackYellowPages + StackRedPages) * os::vm_page_size() : 0;
+  size_t stack_guard_size = os::uses_stack_guard_pages() ? JavaThread::stack_guard_zone_size() : 0;
   size_t usable_stack_size = _stack_size - stack_guard_size;
 
   return ((adr < stack_base()) && (adr >= stack_base() - usable_stack_size));
@@ -1460,6 +1460,7 @@ void JavaThread::initialize() {
     _jvmci_counters = NULL;
   }
 #endif // INCLUDE_JVMCI
+  _reserved_stack_activation = NULL;  // stack base not known yet
   (void)const_cast<oop&>(_exception_oop = oop(NULL));
   _exception_pc  = 0;
   _exception_handler_pc = 0;
@@ -1532,7 +1533,8 @@ JavaThread::JavaThread(bool is_attaching_via_jni) :
 }
 
 bool JavaThread::reguard_stack(address cur_sp) {
-  if (_stack_guard_state != stack_guard_yellow_disabled) {
+  if (_stack_guard_state != stack_guard_yellow_reserved_disabled
+      && _stack_guard_state != stack_guard_reserved_disabled) {
     return true; // Stack already guarded or guard pages not needed.
   }
 
@@ -1548,9 +1550,17 @@ bool JavaThread::reguard_stack(address cur_sp) {
   // is executing there, either StackShadowPages should be larger, or
   // some exception code in c1, c2 or the interpreter isn't unwinding
   // when it should.
-  guarantee(cur_sp > stack_yellow_zone_base(), "not enough space to reguard - increase StackShadowPages");
-
-  enable_stack_yellow_zone();
+  guarantee(cur_sp > stack_reserved_zone_base(),
+            "not enough space to reguard - increase StackShadowPages");
+  if (_stack_guard_state == stack_guard_yellow_reserved_disabled) {
+    enable_stack_yellow_reserved_zone();
+    if (reserved_stack_activation() != stack_base()) {
+      set_reserved_stack_activation(stack_base());
+    }
+  } else if (_stack_guard_state == stack_guard_reserved_disabled) {
+    set_reserved_stack_activation(stack_base());
+    enable_stack_reserved_zone();
+  }
   return true;
 }
 
@@ -2054,10 +2064,7 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
       frame caller_fr = last_frame().sender(&map);
       assert(caller_fr.is_compiled_frame(), "what?");
       if (caller_fr.is_deoptimized_frame()) {
-        if (TraceExceptions) {
-          ResourceMark rm;
-          tty->print_cr("deferred async exception at compiled safepoint");
-        }
+        log_info(exceptions)("deferred async exception at compiled safepoint");
         return;
       }
     }
@@ -2083,14 +2090,15 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
       // We cannot call Exceptions::_throw(...) here because we cannot block
       set_pending_exception(_pending_async_exception, __FILE__, __LINE__);
 
-      if (TraceExceptions) {
+      if (log_is_enabled(Info, exceptions)) {
         ResourceMark rm;
-        tty->print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
-        if (has_last_Java_frame()) {
-          frame f = last_frame();
-          tty->print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
-        }
-        tty->print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
+        outputStream* logstream = LogHandle(exceptions)::info_stream();
+        logstream->print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
+          if (has_last_Java_frame()) {
+            frame f = last_frame();
+           logstream->print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
+          }
+        logstream->print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
       }
       _pending_async_exception = NULL;
       clear_has_async_exception();
@@ -2206,9 +2214,10 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
       // Set async. pending exception in thread.
       set_pending_async_exception(java_throwable);
 
-      if (TraceExceptions) {
-        ResourceMark rm;
-        tty->print_cr("Pending Async. exception installed of type: %s", _pending_async_exception->klass()->external_name());
+      if (log_is_enabled(Info, exceptions)) {
+         ResourceMark rm;
+        log_info(exceptions)("Pending Async. exception installed of type: %s",
+                             InstanceKlass::cast(_pending_async_exception->klass())->external_name());
       }
       // for AbortVMOnException flag
       Exceptions::debug_check_abort(_pending_async_exception->klass()->external_name());
@@ -2470,10 +2479,15 @@ void JavaThread::java_resume() {
   }
 }
 
+size_t JavaThread::_stack_red_zone_size = 0;
+size_t JavaThread::_stack_yellow_zone_size = 0;
+size_t JavaThread::_stack_reserved_zone_size = 0;
+size_t JavaThread::_stack_shadow_zone_size = 0;
+
 void JavaThread::create_stack_guard_pages() {
-  if (! os::uses_stack_guard_pages() || _stack_guard_state != stack_guard_unused) return;
-  address low_addr = stack_base() - stack_size();
-  size_t len = (StackYellowPages + StackRedPages) * os::vm_page_size();
+  if (!os::uses_stack_guard_pages() || _stack_guard_state != stack_guard_unused) { return; }
+  address low_addr = stack_end();
+  size_t len = stack_guard_zone_size();
 
   int allocate = os::allocate_stack_guard_pages();
   // warning("Guarding at " PTR_FORMAT " for len " SIZE_FORMAT "\n", low_addr, len);
@@ -2496,8 +2510,8 @@ void JavaThread::create_stack_guard_pages() {
 void JavaThread::remove_stack_guard_pages() {
   assert(Thread::current() == this, "from different thread");
   if (_stack_guard_state == stack_guard_unused) return;
-  address low_addr = stack_base() - stack_size();
-  size_t len = (StackYellowPages + StackRedPages) * os::vm_page_size();
+  address low_addr = stack_end();
+  size_t len = stack_guard_zone_size();
 
   if (os::allocate_stack_guard_pages()) {
     if (os::remove_stack_guard_pages((char *) low_addr, len)) {
@@ -2515,18 +2529,56 @@ void JavaThread::remove_stack_guard_pages() {
   }
 }
 
-void JavaThread::enable_stack_yellow_zone() {
+void JavaThread::enable_stack_reserved_zone() {
+  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
+  assert(_stack_guard_state != stack_guard_enabled, "already enabled");
+
+  // The base notation is from the stack's point of view, growing downward.
+  // We need to adjust it to work correctly with guard_memory()
+  address base = stack_reserved_zone_base() - stack_reserved_zone_size();
+
+  guarantee(base < stack_base(),"Error calculating stack reserved zone");
+  guarantee(base < os::current_stack_pointer(),"Error calculating stack reserved zone");
+
+  if (os::guard_memory((char *) base, stack_reserved_zone_size())) {
+    _stack_guard_state = stack_guard_enabled;
+  } else {
+    warning("Attempt to guard stack reserved zone failed.");
+  }
+  enable_register_stack_guard();
+}
+
+void JavaThread::disable_stack_reserved_zone() {
+  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
+  assert(_stack_guard_state != stack_guard_reserved_disabled, "already disabled");
+
+  // Simply return if called for a thread that does not use guard pages.
+  if (_stack_guard_state == stack_guard_unused) return;
+
+  // The base notation is from the stack's point of view, growing downward.
+  // We need to adjust it to work correctly with guard_memory()
+  address base = stack_reserved_zone_base() - stack_reserved_zone_size();
+
+  if (os::unguard_memory((char *)base, stack_reserved_zone_size())) {
+    _stack_guard_state = stack_guard_reserved_disabled;
+  } else {
+    warning("Attempt to unguard stack reserved zone failed.");
+  }
+  disable_register_stack_guard();
+}
+
+void JavaThread::enable_stack_yellow_reserved_zone() {
   assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
   assert(_stack_guard_state != stack_guard_enabled, "already enabled");
 
   // The base notation is from the stacks point of view, growing downward.
   // We need to adjust it to work correctly with guard_memory()
-  address base = stack_yellow_zone_base() - stack_yellow_zone_size();
+  address base = stack_red_zone_base();
 
   guarantee(base < stack_base(), "Error calculating stack yellow zone");
   guarantee(base < os::current_stack_pointer(), "Error calculating stack yellow zone");
 
-  if (os::guard_memory((char *) base, stack_yellow_zone_size())) {
+  if (os::guard_memory((char *) base, stack_yellow_reserved_zone_size())) {
     _stack_guard_state = stack_guard_enabled;
   } else {
     warning("Attempt to guard stack yellow zone failed.");
@@ -2534,19 +2586,19 @@ void JavaThread::enable_stack_yellow_zone() {
   enable_register_stack_guard();
 }
 
-void JavaThread::disable_stack_yellow_zone() {
+void JavaThread::disable_stack_yellow_reserved_zone() {
   assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
-  assert(_stack_guard_state != stack_guard_yellow_disabled, "already disabled");
+  assert(_stack_guard_state != stack_guard_yellow_reserved_disabled, "already disabled");
 
   // Simply return if called for a thread that does not use guard pages.
   if (_stack_guard_state == stack_guard_unused) return;
 
   // The base notation is from the stacks point of view, growing downward.
   // We need to adjust it to work correctly with guard_memory()
-  address base = stack_yellow_zone_base() - stack_yellow_zone_size();
+  address base = stack_red_zone_base();
 
-  if (os::unguard_memory((char *)base, stack_yellow_zone_size())) {
-    _stack_guard_state = stack_guard_yellow_disabled;
+  if (os::unguard_memory((char *)base, stack_yellow_reserved_zone_size())) {
+    _stack_guard_state = stack_guard_yellow_reserved_disabled;
   } else {
     warning("Attempt to unguard stack yellow zone failed.");
   }
@@ -2851,7 +2903,7 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
     st->print(", id=%d", osthread()->thread_id());
   }
   st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ")",
-            p2i(_stack_base - _stack_size), p2i(_stack_base));
+            p2i(stack_end()), p2i(stack_base()));
   st->print("]");
   return;
 }
@@ -3609,13 +3661,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     if (jvmciCompiler != NULL) {
       JVMCIRuntime::save_compiler(jvmciCompiler);
     }
-    JVMCIRuntime::maybe_print_flags(CHECK_JNI_ERR);
   }
 #endif // INCLUDE_JVMCI
 
   // initialize compiler(s)
 #if defined(COMPILER1) || defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
-  CompileBroker::compilation_init();
+  CompileBroker::compilation_init(CHECK_JNI_ERR);
 #endif
 
   // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.

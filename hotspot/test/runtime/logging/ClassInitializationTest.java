@@ -27,10 +27,13 @@
  * @bug 8142976
  * @library /testlibrary
  * @compile BadMap50.jasm
+ * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.Platform jdk.test.lib.ProcessTools
  * @run driver ClassInitializationTest
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.ProcessTools;
 
 public class ClassInitializationTest {
 

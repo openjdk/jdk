@@ -30,6 +30,7 @@
 #include "gc/g1/g1RemSetSummary.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
+#include "memory/allocation.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 class GetRSThreadVTimeClosure : public ThreadClosure {
@@ -87,6 +88,23 @@ void G1RemSetSummary::initialize(G1RemSet* remset) {
   memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
 
   update();
+}
+
+G1RemSetSummary::G1RemSetSummary() :
+  _remset(NULL),
+  _num_refined_cards(0),
+  _num_processed_buf_mutator(0),
+  _num_processed_buf_rs_threads(0),
+  _num_coarsenings(0),
+  _rs_threads_vtimes(NULL),
+  _num_vtimes(0),
+  _sampling_thread_vtime(0.0f) {
+}
+
+G1RemSetSummary::~G1RemSetSummary() {
+  if (_rs_threads_vtimes) {
+    FREE_C_HEAP_ARRAY(double, _rs_threads_vtimes);
+  }
 }
 
 void G1RemSetSummary::set(G1RemSetSummary* other) {
@@ -271,7 +289,7 @@ public:
   void print_summary_on(outputStream* out) {
     RegionTypeCounter* counters[] = { &_young, &_humonguous, &_free, &_old, NULL };
 
-    out->print_cr("\n Current rem set statistics");
+    out->print_cr(" Current rem set statistics");
     out->print_cr("  Total per region rem sets sizes = " SIZE_FORMAT "K."
                   " Max = " SIZE_FORMAT "K.",
                   round_to_K(total_rs_mem_sz()), round_to_K(max_rs_mem_sz()));
@@ -323,7 +341,7 @@ public:
 };
 
 void G1RemSetSummary::print_on(outputStream* out) {
-  out->print_cr("\n Recent concurrent refinement statistics");
+  out->print_cr(" Recent concurrent refinement statistics");
   out->print_cr("  Processed " SIZE_FORMAT " cards",
                 num_concurrent_refined_cards());
   out->print_cr("  Of " SIZE_FORMAT " completed buffers:", num_processed_buf_total());

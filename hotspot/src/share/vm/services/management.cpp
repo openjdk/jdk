@@ -473,90 +473,6 @@ JVM_LEAF(jint, jmm_GetOptionalSupport(JNIEnv *env, jmmOptionalSupport* support))
   return 0;
 JVM_END
 
-// Returns a java.lang.String object containing the input arguments to the VM.
-JVM_ENTRY(jobject, jmm_GetInputArguments(JNIEnv *env))
-  ResourceMark rm(THREAD);
-
-  if (Arguments::num_jvm_args() == 0 && Arguments::num_jvm_flags() == 0) {
-    return NULL;
-  }
-
-  char** vm_flags = Arguments::jvm_flags_array();
-  char** vm_args  = Arguments::jvm_args_array();
-  int num_flags   = Arguments::num_jvm_flags();
-  int num_args    = Arguments::num_jvm_args();
-
-  size_t length = 1; // null terminator
-  int i;
-  for (i = 0; i < num_flags; i++) {
-    length += strlen(vm_flags[i]);
-  }
-  for (i = 0; i < num_args; i++) {
-    length += strlen(vm_args[i]);
-  }
-  // add a space between each argument
-  length += num_flags + num_args - 1;
-
-  // Return the list of input arguments passed to the VM
-  // and preserve the order that the VM processes.
-  char* args = NEW_RESOURCE_ARRAY(char, length);
-  args[0] = '\0';
-  // concatenate all jvm_flags
-  if (num_flags > 0) {
-    strcat(args, vm_flags[0]);
-    for (i = 1; i < num_flags; i++) {
-      strcat(args, " ");
-      strcat(args, vm_flags[i]);
-    }
-  }
-
-  if (num_args > 0 && num_flags > 0) {
-    // append a space if args already contains one or more jvm_flags
-    strcat(args, " ");
-  }
-
-  // concatenate all jvm_args
-  if (num_args > 0) {
-    strcat(args, vm_args[0]);
-    for (i = 1; i < num_args; i++) {
-      strcat(args, " ");
-      strcat(args, vm_args[i]);
-    }
-  }
-
-  Handle hargs = java_lang_String::create_from_platform_dependent_str(args, CHECK_NULL);
-  return JNIHandles::make_local(env, hargs());
-JVM_END
-
-// Returns an array of java.lang.String object containing the input arguments to the VM.
-JVM_ENTRY(jobjectArray, jmm_GetInputArgumentArray(JNIEnv *env))
-  ResourceMark rm(THREAD);
-
-  if (Arguments::num_jvm_args() == 0 && Arguments::num_jvm_flags() == 0) {
-    return NULL;
-  }
-
-  char** vm_flags = Arguments::jvm_flags_array();
-  char** vm_args = Arguments::jvm_args_array();
-  int num_flags = Arguments::num_jvm_flags();
-  int num_args = Arguments::num_jvm_args();
-
-  instanceKlassHandle ik (THREAD, SystemDictionary::String_klass());
-  objArrayOop r = oopFactory::new_objArray(ik(), num_args + num_flags, CHECK_NULL);
-  objArrayHandle result_h(THREAD, r);
-
-  int index = 0;
-  for (int j = 0; j < num_flags; j++, index++) {
-    Handle h = java_lang_String::create_from_platform_dependent_str(vm_flags[j], CHECK_NULL);
-    result_h->obj_at_put(index, h());
-  }
-  for (int i = 0; i < num_args; i++, index++) {
-    Handle h = java_lang_String::create_from_platform_dependent_str(vm_args[i], CHECK_NULL);
-    result_h->obj_at_put(index, h());
-  }
-  return (jobjectArray) JNIHandles::make_local(env, result_h());
-JVM_END
-
 // Returns an array of java/lang/management/MemoryPoolMXBean object
 // one for each memory pool if obj == null; otherwise returns
 // an array of memory pools for a given memory manager if
@@ -2291,9 +2207,7 @@ const struct jmmInterface_1_ jmm_interface = {
   NULL,
   jmm_GetVersion,
   jmm_GetOptionalSupport,
-  jmm_GetInputArguments,
   jmm_GetThreadInfo,
-  jmm_GetInputArgumentArray,
   jmm_GetMemoryPools,
   jmm_GetMemoryManagers,
   jmm_GetMemoryPoolUsage,

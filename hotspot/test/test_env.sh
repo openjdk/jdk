@@ -192,6 +192,11 @@ then
   if [ $VM_BITS = "64" ]
   then
     VM_CPU="ppc64"
+    grep "ppc64le" vm_version.out > ${NULL}
+    if [ $? = 0 ]
+    then
+      VM_CPU="ppc64le"
+    fi
   fi
 fi
 grep "ia64" vm_version.out > ${NULL}

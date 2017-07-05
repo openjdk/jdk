@@ -49,8 +49,8 @@ import java.util.stream.Collectors;
 
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaField;
 import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.TrustedInterface;
 import jdk.vm.ci.runtime.JVMCI;
@@ -179,7 +179,7 @@ public class TypeUniverse {
             List<ConstantValue> res = new ArrayList<>();
             for (Field field : fromClass.getDeclaredFields()) {
                 if (isStatic(field.getModifiers()) && isFinal(field.getModifiers())) {
-                    JavaField javaField = metaAccess.lookupJavaField(field);
+                    ResolvedJavaField javaField = metaAccess.lookupJavaField(field);
                     Object boxed = field.get(null);
                     if (boxed instanceof JavaConstant) {
                         res.add(new ConstantValue(javaField.format("%H.%n"), (JavaConstant) boxed, boxed));

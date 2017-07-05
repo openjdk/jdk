@@ -73,6 +73,7 @@ class ProfileData;
 // Overlay for generic profiling data.
 class DataLayout VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 
 private:
   // Every data layout begins with a header.  This header
@@ -536,6 +537,7 @@ public:
 // A BitData holds a flag or two in its header.
 class BitData : public ProfileData {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 protected:
   enum {
     // null_seen:
@@ -605,6 +607,7 @@ public:
 // A CounterData corresponds to a simple counter.
 class CounterData : public BitData {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 protected:
   enum {
     count_off,
@@ -670,6 +673,7 @@ public:
 // the corresponding target bci.
 class JumpData : public ProfileData {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 protected:
   enum {
     taken_off_set,
@@ -1177,6 +1181,7 @@ public:
 // which are used to store a type profile for the receiver of the check.
 class ReceiverTypeData : public CounterData {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 protected:
   enum {
 #if INCLUDE_JVMCI
@@ -1683,6 +1688,7 @@ public:
 // for the taken case.
 class BranchData : public JumpData {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 protected:
   enum {
     not_taken_off_set = jump_cell_count,
@@ -1760,6 +1766,7 @@ public:
 // and an array start.
 class ArrayData : public ProfileData {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 protected:
   friend class DataLayout;
 
@@ -1838,6 +1845,7 @@ public:
 // case was taken and specify the data displacment for each branch target.
 class MultiBranchData : public ArrayData {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 protected:
   enum {
     default_count_off_set,
@@ -2137,6 +2145,7 @@ class CleanExtraDataClosure;
 
 class MethodData : public Metadata {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
   CC_INTERP_ONLY(friend class BytecodeInterpreter;)
 private:
   friend class ProfileData;

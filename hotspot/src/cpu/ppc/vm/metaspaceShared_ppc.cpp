@@ -50,12 +50,29 @@
 // to be 'vtbl_list_size' instances of the vtable in order to
 // differentiate between the 'vtable_list_size' original Klass objects.
 
+#define __ masm->
+
 void MetaspaceShared::generate_vtable_methods(void** vtbl_list,
                                               void** vtable,
                                               char** md_top,
                                               char* md_end,
                                               char** mc_top,
                                               char* mc_end) {
-  Unimplemented();
+  intptr_t vtable_bytes = (num_virtuals * vtbl_list_size) * sizeof(void*);
+  *(intptr_t *)(*md_top) = vtable_bytes;
+  *md_top += sizeof(intptr_t);
+  void** dummy_vtable = (void**)*md_top;
+  *vtable = dummy_vtable;
+  *md_top += vtable_bytes;
+
+  // Get ready to generate dummy methods.
+
+  CodeBuffer cb((unsigned char*)*mc_top, mc_end - *mc_top);
+  MacroAssembler* masm = new MacroAssembler(&cb);
+
+  // There are more general problems with CDS on ppc, so I can not
+  // really test this. But having this instead of Unimplementd() allows
+  // us to pass TestOptionsWithRanges.java.
+  __ unimplemented();
 }
 

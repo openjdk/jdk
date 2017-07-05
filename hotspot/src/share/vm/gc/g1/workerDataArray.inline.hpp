@@ -29,12 +29,10 @@ template <typename T>
 WorkerDataArray<T>::WorkerDataArray(uint length,
                                     const char* title,
                                     bool print_sum,
-                                    int log_level,
                                     uint indent_level) :
  _title(title),
  _length(0),
  _print_sum(print_sum),
- _log_level(log_level),
  _indent_level(indent_level),
  _thread_work_items(NULL),
  _enabled(true) {

@@ -33,6 +33,7 @@
 
 class ObjArrayKlass : public ArrayKlass {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
  private:
   Klass* _element_klass;            // The klass of the elements of this array type
   Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)

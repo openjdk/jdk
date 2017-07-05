@@ -36,44 +36,21 @@ import jdk.test.lib.OutputAnalyzer;
 
 public class TestGCId {
   public static void main(String[] args) throws Exception {
-    testGCId("UseParallelGC", "PrintGC");
-    testGCId("UseParallelGC", "PrintGCDetails");
-
-    testGCId("UseG1GC", "PrintGC");
-    testGCId("UseG1GC", "PrintGCDetails");
-
-    testGCId("UseConcMarkSweepGC", "PrintGC");
-    testGCId("UseConcMarkSweepGC", "PrintGCDetails");
-
-    testGCId("UseSerialGC", "PrintGC");
-    testGCId("UseSerialGC", "PrintGCDetails");
+    testGCId("UseParallelGC");
+    testGCId("UseG1GC");
+    testGCId("UseConcMarkSweepGC");
+    testGCId("UseSerialGC");
   }
 
   private static void verifyContainsGCIDs(OutputAnalyzer output) {
-    output.shouldMatch("^#0: \\[");
-    output.shouldMatch("^#1: \\[");
+    output.shouldMatch("\\[.*\\]\\[.*\\]\\[.*\\] GC\\(0\\) ");
+    output.shouldMatch("\\[.*\\]\\[.*\\]\\[.*\\] GC\\(1\\) ");
     output.shouldHaveExitValue(0);
   }
 
-  private static void verifyContainsNoGCIDs(OutputAnalyzer output) {
-    output.shouldNotMatch("^#[0-9]+: \\[");
-    output.shouldHaveExitValue(0);
-  }
-
-  private static void testGCId(String gcFlag, String logFlag) throws Exception {
-    // GCID logging enabled
-    ProcessBuilder pb_enabled =
-      ProcessTools.createJavaProcessBuilder("-XX:+" + gcFlag, "-XX:+" + logFlag, "-Xmx10M", "-XX:+PrintGCID", GCTest.class.getName());
-    verifyContainsGCIDs(new OutputAnalyzer(pb_enabled.start()));
-
-    // GCID logging disabled
-    ProcessBuilder pb_disabled =
-      ProcessTools.createJavaProcessBuilder("-XX:+" + gcFlag, "-XX:+" + logFlag, "-Xmx10M", "-XX:-PrintGCID", GCTest.class.getName());
-    verifyContainsNoGCIDs(new OutputAnalyzer(pb_disabled.start()));
-
-    // GCID logging default
+  private static void testGCId(String gcFlag) throws Exception {
     ProcessBuilder pb_default =
-      ProcessTools.createJavaProcessBuilder("-XX:+" + gcFlag, "-XX:+" + logFlag, "-Xmx10M", GCTest.class.getName());
+      ProcessTools.createJavaProcessBuilder("-XX:+" + gcFlag, "-Xlog:gc", "-Xmx10M", GCTest.class.getName());
     verifyContainsGCIDs(new OutputAnalyzer(pb_default.start()));
   }
 

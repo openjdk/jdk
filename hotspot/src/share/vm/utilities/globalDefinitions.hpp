@@ -1418,6 +1418,32 @@ template<class T> static void swap(T& a, T& b) {
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
 
+//----------------------------------------------------------------------------------------------------
+// Sum and product which can never overflow: they wrap, just like the
+// Java operations.  Note that we don't intend these to be used for
+// general-purpose arithmetic: their purpose is to emulate Java
+// operations.
+
+// The goal of this code to avoid undefined or implementation-defined
+// behaviour.  The use of an lvalue to reference cast is explicitly
+// permitted by Lvalues and rvalues [basic.lval].  [Section 3.10 Para
+// 15 in C++03]
+#define JAVA_INTEGER_OP(OP, NAME, TYPE, UNSIGNED_TYPE)  \
+inline TYPE NAME (TYPE in1, TYPE in2) {                 \
+  UNSIGNED_TYPE ures = static_cast<UNSIGNED_TYPE>(in1); \
+  ures OP ## = static_cast<UNSIGNED_TYPE>(in2);         \
+  return reinterpret_cast<TYPE&>(ures);                 \
+}
+
+JAVA_INTEGER_OP(+, java_add, jint, juint)
+JAVA_INTEGER_OP(-, java_subtract, jint, juint)
+JAVA_INTEGER_OP(*, java_multiply, jint, juint)
+JAVA_INTEGER_OP(+, java_add, jlong, julong)
+JAVA_INTEGER_OP(-, java_subtract, jlong, julong)
+JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
+
+#undef JAVA_INTEGER_OP
+
 // Dereference vptr
 // All C++ compilers that we know of have the vtbl pointer in the first
 // word.  If there are exceptions, this function needs to be made compiler

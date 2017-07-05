@@ -50,7 +50,7 @@ public class TestDynamicNumberOfGCThreads {
 
   private static void testDynamicNumberOfGCThreads(String gcFlag) throws Exception {
     // UseDynamicNumberOfGCThreads and TraceDynamicGCThreads enabled
-    String[] baseArgs = {"-XX:+" + gcFlag, "-Xmx10M", "-XX:+PrintGCDetails",  "-XX:+UseDynamicNumberOfGCThreads", "-XX:+TraceDynamicGCThreads", GCTest.class.getName()};
+    String[] baseArgs = {"-XX:+" + gcFlag, "-Xmx10M", "-XX:+UseDynamicNumberOfGCThreads", "-Xlog:gc+task=trace", GCTest.class.getName()};
 
     // Base test with gc and +UseDynamicNumberOfGCThreads:
     ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(baseArgs);

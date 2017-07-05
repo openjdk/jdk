@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,6 @@ class BytecodeInterpreter : StackObj {
 friend class SharedRuntime;
 friend class AbstractInterpreterGenerator;
 friend class CppInterpreterGenerator;
-friend class InterpreterGenerator;
 friend class InterpreterMacroAssembler;
 friend class frame;
 friend class VMStructs;
@@ -572,24 +571,10 @@ static const char* C_msg(BytecodeInterpreter::messages msg);
 void print();
 #endif // PRODUCT
 
-    // Platform fields/methods
-#ifdef TARGET_ARCH_x86
-# include "bytecodeInterpreter_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "bytecodeInterpreter_sparc.hpp"
-#endif
 #ifdef TARGET_ARCH_zero
 # include "bytecodeInterpreter_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "bytecodeInterpreter_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "bytecodeInterpreter_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "bytecodeInterpreter_aarch64.hpp"
+#else
+#error "Only Zero Bytecode Interpreter is supported"
 #endif
 
 

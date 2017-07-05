@@ -250,10 +250,7 @@ void MarkSweep::adjust_marks() {
 void MarkSweep::restore_marks() {
   assert(_preserved_oop_stack.size() == _preserved_mark_stack.size(),
          "inconsistent preserved oop stacks");
-  if (PrintGC && Verbose) {
-    gclog_or_tty->print_cr("Restoring " SIZE_FORMAT " marks",
-                           _preserved_count + _preserved_oop_stack.size());
-  }
+  log_trace(gc)("Restoring " SIZE_FORMAT " marks", _preserved_count + _preserved_oop_stack.size());
 
   // restore the marks we saved earlier
   for (size_t i = 0; i < _preserved_count; i++) {
@@ -305,20 +302,13 @@ template <class T> static void trace_reference_gc(const char *s, oop obj,
                                                   T* referent_addr,
                                                   T* next_addr,
                                                   T* discovered_addr) {
-  if(TraceReferenceGC && PrintGCDetails) {
-    gclog_or_tty->print_cr("%s obj " PTR_FORMAT, s, p2i(obj));
-    gclog_or_tty->print_cr("     referent_addr/* " PTR_FORMAT " / "
-                           PTR_FORMAT, p2i(referent_addr),
-                           p2i(referent_addr ?
-                               (address)oopDesc::load_decode_heap_oop(referent_addr) : NULL));
-    gclog_or_tty->print_cr("     next_addr/* " PTR_FORMAT " / "
-                           PTR_FORMAT, p2i(next_addr),
-                           p2i(next_addr ? (address)oopDesc::load_decode_heap_oop(next_addr) : NULL));
-    gclog_or_tty->print_cr("     discovered_addr/* " PTR_FORMAT " / "
-                           PTR_FORMAT, p2i(discovered_addr),
-                           p2i(discovered_addr ?
-                               (address)oopDesc::load_decode_heap_oop(discovered_addr) : NULL));
-  }
+  log_develop_trace(gc, ref)("%s obj " PTR_FORMAT, s, p2i(obj));
+  log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
+                             p2i(referent_addr), p2i(referent_addr ? (address)oopDesc::load_decode_heap_oop(referent_addr) : NULL));
+  log_develop_trace(gc, ref)("     next_addr/* " PTR_FORMAT " / " PTR_FORMAT,
+                             p2i(next_addr), p2i(next_addr ? (address)oopDesc::load_decode_heap_oop(next_addr) : NULL));
+  log_develop_trace(gc, ref)("     discovered_addr/* " PTR_FORMAT " / " PTR_FORMAT,
+                             p2i(discovered_addr), p2i(discovered_addr ? (address)oopDesc::load_decode_heap_oop(discovered_addr) : NULL));
 }
 #endif
 

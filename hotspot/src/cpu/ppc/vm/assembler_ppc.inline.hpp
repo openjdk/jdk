@@ -117,6 +117,8 @@ inline void Assembler::mullw(  Register d, Register a, Register b) { emit_int32(
 inline void Assembler::mullw_( Register d, Register a, Register b) { emit_int32(MULLW_OPCODE  | rt(d) | ra(a) | rb(b) | oe(0) | rc(1)); }
 inline void Assembler::mulhw(  Register d, Register a, Register b) { emit_int32(MULHW_OPCODE  | rt(d) | ra(a) | rb(b) | rc(0)); }
 inline void Assembler::mulhw_( Register d, Register a, Register b) { emit_int32(MULHW_OPCODE  | rt(d) | ra(a) | rb(b) | rc(1)); }
+inline void Assembler::mulhwu( Register d, Register a, Register b) { emit_int32(MULHWU_OPCODE | rt(d) | ra(a) | rb(b) | rc(0)); }
+inline void Assembler::mulhwu_(Register d, Register a, Register b) { emit_int32(MULHWU_OPCODE | rt(d) | ra(a) | rb(b) | rc(1)); }
 inline void Assembler::mulhd(  Register d, Register a, Register b) { emit_int32(MULHD_OPCODE  | rt(d) | ra(a) | rb(b) | rc(0)); }
 inline void Assembler::mulhd_( Register d, Register a, Register b) { emit_int32(MULHD_OPCODE  | rt(d) | ra(a) | rb(b) | rc(1)); }
 inline void Assembler::mulhdu( Register d, Register a, Register b) { emit_int32(MULHDU_OPCODE | rt(d) | ra(a) | rb(b) | rc(0)); }
@@ -206,8 +208,11 @@ inline void Assembler::andc_(   Register a, Register s, Register b)    { emit_in
 inline void Assembler::orc(     Register a, Register s, Register b)    { emit_int32(ORC_OPCODE     | rta(a) | rs(s) | rb(b) | rc(0)); }
 inline void Assembler::orc_(    Register a, Register s, Register b)    { emit_int32(ORC_OPCODE     | rta(a) | rs(s) | rb(b) | rc(1)); }
 inline void Assembler::extsb(   Register a, Register s)                { emit_int32(EXTSB_OPCODE   | rta(a) | rs(s) | rc(0)); }
+inline void Assembler::extsb_(  Register a, Register s)                { emit_int32(EXTSB_OPCODE   | rta(a) | rs(s) | rc(1)); }
 inline void Assembler::extsh(   Register a, Register s)                { emit_int32(EXTSH_OPCODE   | rta(a) | rs(s) | rc(0)); }
+inline void Assembler::extsh_(  Register a, Register s)                { emit_int32(EXTSH_OPCODE   | rta(a) | rs(s) | rc(1)); }
 inline void Assembler::extsw(   Register a, Register s)                { emit_int32(EXTSW_OPCODE   | rta(a) | rs(s) | rc(0)); }
+inline void Assembler::extsw_(  Register a, Register s)                { emit_int32(EXTSW_OPCODE   | rta(a) | rs(s) | rc(1)); }
 
 // extended mnemonics
 inline void Assembler::nop()                              { Assembler::ori(R0, R0, 0); }
@@ -609,6 +614,8 @@ inline void Assembler::smt_prio_high()        { Assembler::or_unchecked(R3,  R3,
 inline void Assembler::smt_yield()            { Assembler::or_unchecked(R27, R27, R27); }
 inline void Assembler::smt_mdoio()            { Assembler::or_unchecked(R29, R29, R29); }
 inline void Assembler::smt_mdoom()            { Assembler::or_unchecked(R30, R30, R30); }
+// >= Power8
+inline void Assembler::smt_miso()             { Assembler::or_unchecked(R26, R26, R26); }
 
 inline void Assembler::twi_0(Register a)      { twi_unchecked(0, a, 0);}
 
@@ -967,12 +974,15 @@ inline void Assembler::load_const(Register d, Label& L, Register tmp) {
 
 // Load a 64 bit constant encoded by an AddressLiteral. patchable.
 inline void Assembler::load_const(Register d, AddressLiteral& a, Register tmp) {
-  assert(d != R0, "R0 not allowed");
   // First relocate (we don't change the offset in the RelocationHolder,
   // just pass a.rspec()), then delegate to load_const(Register, long).
   relocate(a.rspec());
   load_const(d, (long)a.value(), tmp);
 }
 
+inline void Assembler::load_const32(Register d, int i) {
+  lis(d, i >> 16);
+  ori(d, d, i & 0xFFFF);
+}
 
 #endif // CPU_PPC_VM_ASSEMBLER_PPC_INLINE_HPP

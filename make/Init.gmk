@@ -226,8 +226,8 @@ else # HAS_SPEC=true
   $(eval $(call ParseCompareBuild))
 
   ifeq ($(LOG_NOFILE), true)
-    # Disable log wrapper if LOG=[level,]nofile was given
-    override BUILD_LOG_WRAPPER :=
+    # Disable build log if LOG=[level,]nofile was given
+    override BUILD_LOG_PIPE :=
   endif
 
   ifeq ($(OUTPUT_SYNC_SUPPORTED), true)
@@ -277,10 +277,10 @@ else # HAS_SPEC=true
         ifneq ($(SEQUENTIAL_TARGETS)$(PARALLEL_TARGETS), )
 	  $(call RotateLogFiles)
 	  $(call PrepareFailureLogs)
-	  $(BUILD_LOG_WRAPPER) $(PRINTF) "Building $(TARGET_DESCRIPTION)\n"
+	  $(PRINTF) "Building $(TARGET_DESCRIPTION)\n" $(BUILD_LOG_PIPE)
           ifneq ($(SEQUENTIAL_TARGETS), )
             # Don't touch build output dir since we might be cleaning. That
-            # means no log wrapper.
+            # means no log pipe.
 	    ( cd $(TOPDIR) && \
 	        $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
 	        $(SEQUENTIAL_TARGETS) )
@@ -289,11 +289,12 @@ else # HAS_SPEC=true
 	    $(call StartGlobalTimer)
 	    $(call PrepareSmartJavac)
 	    ( cd $(TOPDIR) && \
-	        $(BUILD_LOG_WRAPPER) $(NICE) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
+	        $(NICE) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
 	            -j $(JOBS) -f make/Main.gmk $(USER_MAKE_VARS) \
-	            $(PARALLEL_TARGETS) $(COMPARE_BUILD_MAKE) || \
-	        ( exitcode=$$? && $(BUILD_LOG_WRAPPER) \
-	        $(PRINTF) "\nERROR: Build failed for $(TARGET_DESCRIPTION) (exit code $$exitcode) \n" && \
+	            $(PARALLEL_TARGETS) $(COMPARE_BUILD_MAKE) $(BUILD_LOG_PIPE) || \
+	        ( exitcode=$$? && \
+	        $(PRINTF) "\nERROR: Build failed for $(TARGET_DESCRIPTION) (exit code $$exitcode) \n" \
+	            $(BUILD_LOG_PIPE) && \
 	        cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -j 1 -f make/Init.gmk \
 	            HAS_SPEC=true on-failure ; \
 	        exit $$exitcode ) )
@@ -301,7 +302,7 @@ else # HAS_SPEC=true
 	    $(call StopGlobalTimer)
 	    $(call ReportBuildTimes)
           endif
-	  $(BUILD_LOG_WRAPPER) $(PRINTF) "Finished building $(TARGET_DESCRIPTION)\n"
+	  $(PRINTF) "Finished building $(TARGET_DESCRIPTION)\n" $(BUILD_LOG_PIPE)
         endif
 
     on-failure:

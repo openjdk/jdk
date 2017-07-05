@@ -344,8 +344,8 @@ Node *AddINode::Identity( PhaseTransform *phase ) {
 const Type *AddINode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeInt *r0 = t0->is_int(); // Handy access
   const TypeInt *r1 = t1->is_int();
-  int lo = r0->_lo + r1->_lo;
-  int hi = r0->_hi + r1->_hi;
+  int lo = java_add(r0->_lo, r1->_lo);
+  int hi = java_add(r0->_hi, r1->_hi);
   if( !(r0->is_con() && r1->is_con()) ) {
     // Not both constants, compute approximate result
     if( (r0->_lo & r1->_lo) < 0 && lo >= 0 ) {
@@ -461,8 +461,8 @@ Node *AddLNode::Identity( PhaseTransform *phase ) {
 const Type *AddLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
-  jlong lo = r0->_lo + r1->_lo;
-  jlong hi = r0->_hi + r1->_hi;
+  jlong lo = java_add(r0->_lo, r1->_lo);
+  jlong hi = java_add(r0->_hi, r1->_hi);
   if( !(r0->is_con() && r1->is_con()) ) {
     // Not both constants, compute approximate result
     if( (r0->_lo & r1->_lo) < 0 && lo >= 0 ) {

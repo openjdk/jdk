@@ -1380,7 +1380,7 @@ void os::shutdown() {
 // Note: os::abort() might be called very early during initialization, or
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, void* context) {
+void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
@@ -1904,23 +1904,6 @@ void os::print_memory_info(outputStream* st) {
   st->print("(" UINT64_FORMAT "k free)", os::available_memory() >> 10);
   st->cr();
   (void) check_addr0(st);
-}
-
-void os::print_siginfo(outputStream* st, void* siginfo) {
-  const siginfo_t* si = (const siginfo_t*)siginfo;
-
-  os::Posix::print_siginfo_brief(st, si);
-
-  if (si && (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) &&
-      UseSharedSpaces) {
-    FileMapInfo* mapinfo = FileMapInfo::current_info();
-    if (mapinfo->is_in_shared_space(si->si_addr)) {
-      st->print("\n\nError accessing class data sharing archive."   \
-                " Mapped file inaccessible during execution, "      \
-                " possible disk/network problem.");
-    }
-  }
-  st->cr();
 }
 
 // Moved from whole group, because we need them here for diagnostic
@@ -3736,7 +3719,7 @@ void PcFetcher::do_task(const os::SuspendedThreadTaskContext& context) {
   Thread* thread = context.thread();
   OSThread* osthread = thread->osthread();
   if (osthread->ucontext() != NULL) {
-    _epc = os::Solaris::ucontext_get_pc((ucontext_t *) context.ucontext());
+    _epc = os::Solaris::ucontext_get_pc((const ucontext_t *) context.ucontext());
   } else {
     // NULL context is unexpected, double-check this is the VMThread
     guarantee(thread->is_VM_thread(), "can only be called for VMThread");
@@ -4376,14 +4359,6 @@ void os::init(void) {
   // the minimum of what the OS supports (thr_min_stack()), and
   // enough to allow the thread to get to user bytecode execution.
   Solaris::min_stack_allowed = MAX2(thr_min_stack(), Solaris::min_stack_allowed);
-  // If the pagesize of the VM is greater than 8K determine the appropriate
-  // number of initial guard pages.  The user can change this with the
-  // command line arguments, if needed.
-  if (vm_page_size() > 8*K) {
-    StackYellowPages = 1;
-    StackRedPages = 1;
-    StackShadowPages = round_to((StackShadowPages*8*K), vm_page_size()) / vm_page_size();
-  }
 }
 
 // To install functions for atexit system call
@@ -4438,8 +4413,9 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Solaris::min_stack_allowed = MAX2(os::Solaris::min_stack_allowed,
-                                        (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
-                                        2*BytesPerWord COMPILER2_PRESENT(+1)) * page_size);
+                                        JavaThread::stack_guard_zone_size() +
+                                        JavaThread::stack_shadow_zone_size() +
+                                        2*BytesPerWord COMPILER2_PRESENT(+1) * page_size);
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&
@@ -4459,7 +4435,8 @@ jint os::init_2(void) {
   if (vm_page_size() > 8*K) {
     threadStackSizeInBytes = (threadStackSizeInBytes != 0)
        ? threadStackSizeInBytes +
-         ((StackYellowPages + StackRedPages) * vm_page_size())
+         JavaThread::stack_red_zone_size() +
+         JavaThread::stack_yellow_zone_size()
        : 0;
     ThreadStackSize = threadStackSizeInBytes/K;
   }

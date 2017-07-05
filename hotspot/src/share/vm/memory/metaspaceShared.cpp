@@ -57,6 +57,48 @@ bool MetaspaceShared::_link_classes_made_progress;
 bool MetaspaceShared::_check_classes_made_progress;
 bool MetaspaceShared::_has_error_classes;
 bool MetaspaceShared::_archive_loading_failed = false;
+SharedMiscRegion MetaspaceShared::_mc;
+SharedMiscRegion MetaspaceShared::_md;
+
+void SharedMiscRegion::initialize(ReservedSpace rs, size_t committed_byte_size,  SharedSpaceType space_type) {
+  _vs.initialize(rs, committed_byte_size);
+  _alloc_top = _vs.low();
+  _space_type = space_type;
+}
+
+// NOT thread-safe, but this is called during dump time in single-threaded mode.
+char* SharedMiscRegion::alloc(size_t num_bytes) {
+  assert(DumpSharedSpaces, "dump time only");
+  size_t alignment = sizeof(char*);
+  num_bytes = align_size_up(num_bytes, alignment);
+  _alloc_top = (char*)align_ptr_up(_alloc_top, alignment);
+  if (_alloc_top + num_bytes > _vs.high()) {
+    report_out_of_shared_space(_space_type);
+  }
+
+  char* p = _alloc_top;
+  _alloc_top += num_bytes;
+
+  memset(p, 0, num_bytes);
+  return p;
+}
+
+void MetaspaceShared::initialize_shared_rs(ReservedSpace* rs) {
+  assert(DumpSharedSpaces, "dump time only");
+  _shared_rs = rs;
+
+  // Split up and initialize the misc code and data spaces
+  size_t metadata_size = SharedReadOnlySize + SharedReadWriteSize;
+  ReservedSpace shared_ro_rw = _shared_rs->first_part(metadata_size);
+  ReservedSpace misc_section = _shared_rs->last_part(metadata_size);
+
+  // Now split into misc sections.
+  ReservedSpace md_rs   = misc_section.first_part(SharedMiscDataSize);
+  ReservedSpace mc_rs   = misc_section.last_part(SharedMiscDataSize);
+  _md.initialize(md_rs, SharedMiscDataSize, SharedMiscData);
+  _mc.initialize(mc_rs, SharedMiscCodeSize, SharedMiscData);
+}
+
 // Read/write a data stream for restoring/preserving metadata pointers and
 // miscellaneous data from/to the shared archive file.
 
@@ -429,63 +471,16 @@ private:
   VirtualSpace _mc_vs;
   CompactHashtableWriter* _string_cht;
   GrowableArray<MemRegion> *_string_regions;
-  char* _md_alloc_low;
-  char* _md_alloc_top;
-  char* _md_alloc_max;
-  static VM_PopulateDumpSharedSpace* _instance;
 
 public:
   VM_PopulateDumpSharedSpace(ClassLoaderData* loader_data,
                              GrowableArray<Klass*> *class_promote_order) :
     _loader_data(loader_data) {
-    // Split up and initialize the misc code and data spaces
-    ReservedSpace* shared_rs = MetaspaceShared::shared_rs();
-    size_t metadata_size = SharedReadOnlySize + SharedReadWriteSize;
-    ReservedSpace shared_ro_rw = shared_rs->first_part(metadata_size);
-    ReservedSpace misc_section = shared_rs->last_part(metadata_size);
-
-    // Now split into misc sections.
-    ReservedSpace md_rs   = misc_section.first_part(SharedMiscDataSize);
-    ReservedSpace mc_rs   = misc_section.last_part(SharedMiscDataSize);
-    _md_vs.initialize(md_rs, SharedMiscDataSize);
-    _mc_vs.initialize(mc_rs, SharedMiscCodeSize);
     _class_promote_order = class_promote_order;
-
-    _md_alloc_low = _md_vs.low();
-    _md_alloc_top = _md_alloc_low + sizeof(char*);
-    _md_alloc_max = _md_vs.low() + SharedMiscDataSize;
-
-    assert(_instance == NULL, "must be singleton");
-    _instance = this;
-  }
-
-  ~VM_PopulateDumpSharedSpace() {
-    assert(_instance == this, "must be singleton");
-    _instance = NULL;
-  }
-
-  static VM_PopulateDumpSharedSpace* instance() {
-    assert(_instance != NULL, "sanity");
-    return _instance;
   }
 
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit();   // outline because gdb sucks
-
-  char* misc_data_space_alloc(size_t num_bytes) {
-    size_t alignment = sizeof(char*);
-    num_bytes = align_size_up(num_bytes, alignment);
-    _md_alloc_top = (char*)align_ptr_up(_md_alloc_top, alignment);
-    if (_md_alloc_top + num_bytes > _md_alloc_max) {
-      report_out_of_shared_space(SharedMiscData);
-    }
-
-    char* p = _md_alloc_top;
-    _md_alloc_top += num_bytes;
-
-    memset(p, 0, num_bytes);
-    return p;
-  }
 
 private:
   void handle_misc_data_space_failure(bool success) {
@@ -494,8 +489,6 @@ private:
     }
   }
 }; // class VM_PopulateDumpSharedSpace
-
-VM_PopulateDumpSharedSpace* VM_PopulateDumpSharedSpace::_instance;
 
 void VM_PopulateDumpSharedSpace::doit() {
   Thread* THREAD = VMThread::vm_thread();
@@ -555,16 +548,14 @@ void VM_PopulateDumpSharedSpace::doit() {
   tty->print_cr("done. ");
 
   // Set up the share data and shared code segments.
+  _md_vs = *MetaspaceShared::misc_data_region()->virtual_space();
+  _mc_vs = *MetaspaceShared::misc_code_region()->virtual_space();
   char* md_low = _md_vs.low();
-  char* md_top = md_low;
+  char* md_top = MetaspaceShared::misc_data_region()->alloc_top();
   char* md_end = _md_vs.high();
   char* mc_low = _mc_vs.low();
-  char* mc_top = mc_low;
+  char* mc_top = MetaspaceShared::misc_code_region()->alloc_top();
   char* mc_end = _mc_vs.high();
-
-  assert(_md_alloc_top != NULL, "sanity");
-  *(char**)_md_alloc_low = _md_alloc_top;
-  md_top = _md_alloc_top;
 
   // Reserve space for the list of Klass*s whose vtables are used
   // for patching others as needed.
@@ -681,36 +672,32 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   FileMapInfo* mapinfo = new FileMapInfo();
   mapinfo->populate_header(MetaspaceShared::max_alignment());
+  mapinfo->set_misc_data_patching_start((char*)vtbl_list);
 
-  // Pass 1 - update file offsets in header.
-  mapinfo->write_header();
-  mapinfo->write_space(MetaspaceShared::ro, _loader_data->ro_metaspace(), true);
-  mapinfo->write_space(MetaspaceShared::rw, _loader_data->rw_metaspace(), false);
-  mapinfo->write_region(MetaspaceShared::md, _md_vs.low(),
-                        pointer_delta(md_top, _md_vs.low(), sizeof(char)),
-                        SharedMiscDataSize,
-                        false, false);
-  mapinfo->write_region(MetaspaceShared::mc, _mc_vs.low(),
-                        pointer_delta(mc_top, _mc_vs.low(), sizeof(char)),
-                        SharedMiscCodeSize,
-                        true, true);
-  mapinfo->write_string_regions(_string_regions);
-
-  // Pass 2 - write data.
-  mapinfo->open_for_write();
-  mapinfo->set_header_crc(mapinfo->compute_header_crc());
-  mapinfo->write_header();
-  mapinfo->write_space(MetaspaceShared::ro, _loader_data->ro_metaspace(), true);
-  mapinfo->write_space(MetaspaceShared::rw, _loader_data->rw_metaspace(), false);
-  mapinfo->write_region(MetaspaceShared::md, _md_vs.low(),
-                        pointer_delta(md_top, _md_vs.low(), sizeof(char)),
-                        SharedMiscDataSize,
-                        false, false);
-  mapinfo->write_region(MetaspaceShared::mc, _mc_vs.low(),
-                        pointer_delta(mc_top, _mc_vs.low(), sizeof(char)),
-                        SharedMiscCodeSize,
-                        true, true);
-  mapinfo->write_string_regions(_string_regions);
+  for (int pass=1; pass<=2; pass++) {
+    if (pass == 1) {
+      // The first pass doesn't actually write the data to disk. All it
+      // does is to update the fields in the mapinfo->_header.
+    } else {
+      // After the first pass, the contents of mapinfo->_header are finalized,
+      // so we can compute the header's CRC, and write the contents of the header
+      // and the regions into disk.
+      mapinfo->open_for_write();
+      mapinfo->set_header_crc(mapinfo->compute_header_crc());
+    }
+    mapinfo->write_header();
+    mapinfo->write_space(MetaspaceShared::ro, _loader_data->ro_metaspace(), true);
+    mapinfo->write_space(MetaspaceShared::rw, _loader_data->rw_metaspace(), false);
+    mapinfo->write_region(MetaspaceShared::md, _md_vs.low(),
+                          pointer_delta(md_top, _md_vs.low(), sizeof(char)),
+                          SharedMiscDataSize,
+                          false, false);
+    mapinfo->write_region(MetaspaceShared::mc, _mc_vs.low(),
+                          pointer_delta(mc_top, _mc_vs.low(), sizeof(char)),
+                          SharedMiscCodeSize,
+                          true, true);
+    mapinfo->write_string_regions(_string_regions);
+  }
 
   mapinfo->close();
 
@@ -938,11 +925,6 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
   }
 }
 
-// Allocate misc data blocks during dumping.
-char* MetaspaceShared::misc_data_space_alloc(size_t num_bytes) {
-  return VM_PopulateDumpSharedSpace::instance()->misc_data_space_alloc(num_bytes);
-}
-
 // Closure for serializing initialization data in from a data area
 // (ptr_array) read from the shared file.
 
@@ -1065,10 +1047,7 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
 
 void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *mapinfo = FileMapInfo::current_info();
-
-  char* buffer = mapinfo->header()->region_addr(md);
-
-  buffer = *((char**)buffer); // skip over the md_alloc'ed blocks
+  char* buffer = mapinfo->misc_data_patching_start();
 
   // Skip over (reserve space for) a list of addresses of C++ vtables
   // for Klass objects.  They get filled in later.
