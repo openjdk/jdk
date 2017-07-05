@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1802,7 +1802,7 @@ JvmtiEnv::GetLocalObject(JavaThread* java_thread, jint depth, jint slot, jobject
 // depth - pre-checked as non-negative
 // value - pre-checked for NULL
 jvmtiError
-JvmtiEnv::GetLocalInstance(JavaThread* java_thread, jint depth, jobject* value){
+JvmtiEnv::GetLocalInstance(JavaThread* java_thread, jint depth, jobject* value_ptr){
   JavaThread* current_thread = JavaThread::current();
   // rm object is created to clean up the javaVFrame created in
   // doit_prologue(), but after doit() is finished with it.
@@ -1814,7 +1814,7 @@ JvmtiEnv::GetLocalInstance(JavaThread* java_thread, jint depth, jobject* value){
   if (err != JVMTI_ERROR_NONE) {
     return err;
   } else {
-    *value = op.value().l;
+    *value_ptr = op.value().l;
     return JVMTI_ERROR_NONE;
   }
 } /* end GetLocalInstance */
@@ -3440,12 +3440,12 @@ JvmtiEnv::GetSystemProperty(const char* property, char** value_ptr) {
 // property - pre-checked for NULL
 // value - NULL is a valid value, must be checked
 jvmtiError
-JvmtiEnv::SetSystemProperty(const char* property, const char* value) {
+JvmtiEnv::SetSystemProperty(const char* property, const char* value_ptr) {
   jvmtiError err =JVMTI_ERROR_NOT_AVAILABLE;
 
   for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
     if (strcmp(property, p->key()) == 0) {
-      if (p->set_value((char *)value)) {
+      if (p->set_value((char *)value_ptr)) {
         err =  JVMTI_ERROR_NONE;
       }
     }
