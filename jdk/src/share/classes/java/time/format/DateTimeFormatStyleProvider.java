@@ -61,12 +61,13 @@
  */
 package java.time.format;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.temporal.Chrono;
+import java.time.chrono.Chronology;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.LocaleResources;
 
 /**
  * A provider to obtain date-time formatters for a style.
@@ -110,44 +111,36 @@ final class DateTimeFormatStyleProvider {
      * @throws IllegalArgumentException if both format styles are null or if the locale is not recognized
      */
     public DateTimeFormatter getFormatter(
-            FormatStyle dateStyle, FormatStyle timeStyle, Chrono<?> chrono, Locale locale) {
+            FormatStyle dateStyle, FormatStyle timeStyle, Chronology chrono, Locale locale) {
         if (dateStyle == null && timeStyle == null) {
             throw new IllegalArgumentException("Date and Time style must not both be null");
         }
         String key = chrono.getId() + '|' + locale.toString() + '|' + dateStyle + timeStyle;
         Object cached = FORMATTER_CACHE.get(key);
         if (cached != null) {
-            if (cached.equals("")) {
-                throw new IllegalArgumentException("Unable to convert DateFormat to DateTimeFormatter");
-            }
             return (DateTimeFormatter) cached;
         }
-        DateFormat dateFormat;
-        if (dateStyle != null) {
-            if (timeStyle != null) {
-                dateFormat = DateFormat.getDateTimeInstance(convertStyle(dateStyle), convertStyle(timeStyle), locale);
-            } else {
-                dateFormat = DateFormat.getDateInstance(convertStyle(dateStyle), locale);
-            }
-        } else {
-            dateFormat = DateFormat.getTimeInstance(convertStyle(timeStyle), locale);
-        }
-        if (dateFormat instanceof SimpleDateFormat) {
-            String pattern = ((SimpleDateFormat) dateFormat).toPattern();
-            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter(locale);
-            FORMATTER_CACHE.putIfAbsent(key, formatter);
-            return formatter;
-        }
-        FORMATTER_CACHE.putIfAbsent(key, "");
-        throw new IllegalArgumentException("Unable to convert DateFormat to DateTimeFormatter");
+
+        LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased()
+                                    .getLocaleResources(locale);
+        String pattern = lr.getCldrDateTimePattern(convertStyle(timeStyle), convertStyle(dateStyle),
+                                                   chrono.getCalendarType());
+        DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter(locale);
+        FORMATTER_CACHE.putIfAbsent(key, formatter);
+        return formatter;
     }
 
     /**
-     * Converts the enum style to the old format style.
-     * @param style  the enum style, not null
-     * @return the int style
+     * Converts the enum style to the java.util.Calendar style. Standalone styles
+     * are not supported.
+     *
+     * @param style  the enum style
+     * @return the int style, or -1 if style is null, indicating unrequired
      */
     private int convertStyle(FormatStyle style) {
+        if (style == null) {
+            return -1;
+        }
         return style.ordinal();  // indices happen to align
     }
 

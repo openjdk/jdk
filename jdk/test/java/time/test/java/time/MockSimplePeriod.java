@@ -68,15 +68,16 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import java.util.Objects;
 
 import java.time.temporal.Temporal;
-import java.time.temporal.TemporalSubtractor;
-import java.time.temporal.TemporalAdder;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalUnit;
+import java.util.List;
 
 /**
  * Mock period of time measured using a single unit, such as {@code 3 Days}.
  */
 public final class MockSimplePeriod
-        implements TemporalAdder, TemporalSubtractor, Comparable<MockSimplePeriod> {
+        implements TemporalAmount, Comparable<MockSimplePeriod> {
 
     /**
      * A constant for a period of zero, measured in days.
@@ -117,6 +118,16 @@ public final class MockSimplePeriod
         }
         this.amount = amount;
         this.unit = unit;
+    }
+
+    @Override
+    public long get(TemporalUnit unit) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public List<TemporalUnit> getUnits() {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     //-----------------------------------------------------------------------

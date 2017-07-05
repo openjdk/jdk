@@ -74,9 +74,9 @@ import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.EPOCH_DAY;
 import static java.time.temporal.ChronoField.EPOCH_MONTH;
+import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
-import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import static java.time.temporal.ChronoField.MICRO_OF_DAY;
 import static java.time.temporal.ChronoField.MICRO_OF_SECOND;
 import static java.time.temporal.ChronoField.MILLI_OF_DAY;
@@ -86,34 +86,33 @@ import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.NANO_OF_DAY;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
-import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
+import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.temporal.Chrono;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.Chronology;
+import java.time.chrono.Era;
+import java.time.chrono.IsoChronology;
+import java.time.chrono.JapaneseChronology;
 import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.Queries;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * Builder that can holds date and time fields and related date and time objects.
@@ -121,12 +120,11 @@ import java.util.Set;
  * <b>This class still needs major revision before JDK1.8 ships.</b>
  * <p>
  * The builder is used to hold onto different elements of date and time.
- * It is designed as two separate maps:
+ * It holds two kinds of object:
  * <p><ul>
- * <li>from {@link java.time.temporal.TemporalField} to {@code long} value, where the value may be
- * outside the valid range for the field
- * <li>from {@code Class} to {@link java.time.temporal.TemporalAccessor}, holding larger scale objects
- * like {@code LocalDateTime}.
+ * <li>a {@code Map} from {@link TemporalField} to {@code long} value, where the
+ *  value may be outside the valid range for the field
+ * <li>a list of objects, such as {@code Chronology} or {@code ZoneId}
  * </ul><p>
  *
  * <h3>Specification for implementors</h3>
@@ -135,7 +133,7 @@ import java.util.Set;
  *
  * @since 1.8
  */
-public final class DateTimeBuilder
+final class DateTimeBuilder
         implements TemporalAccessor, Cloneable {
 
     /**
@@ -147,9 +145,21 @@ public final class DateTimeBuilder
      */
     private final EnumMap<ChronoField, Long> standardFields = new EnumMap<ChronoField, Long>(ChronoField.class);
     /**
-     * The list of complete date-time objects.
+     * The chronology.
      */
-    private final List<Object> objects = new ArrayList<>(2);
+    private Chronology chrono;
+    /**
+     * The zone.
+     */
+    private ZoneId zone;
+    /**
+     * The date.
+     */
+    private LocalDate date;
+    /**
+     * The time.
+     */
+    private LocalTime time;
 
     //-----------------------------------------------------------------------
     /**
@@ -158,74 +168,7 @@ public final class DateTimeBuilder
     public DateTimeBuilder() {
     }
 
-    /**
-     * Creates a new instance of the builder with a single field-value.
-     * <p>
-     * This is equivalent to using {@link #addFieldValue(TemporalField, long)} on an empty builder.
-     *
-     * @param field  the field to add, not null
-     * @param value  the value to add, not null
-     */
-    public DateTimeBuilder(TemporalField field, long value) {
-        addFieldValue(field, value);
-    }
-
-    /**
-     * Creates a new instance of the builder.
-     *
-     * @param zone  the zone, may be null
-     * @param chrono  the chronology, may be null
-     */
-    public DateTimeBuilder(ZoneId zone, Chrono<?> chrono) {
-        if (zone != null) {
-            objects.add(zone);
-        }
-        if (chrono != null) {
-            objects.add(chrono);
-        }
-    }
-
     //-----------------------------------------------------------------------
-    /**
-     * Gets the map of field-value pairs in the builder.
-     *
-     * @return a modifiable copy of the field-value map, not null
-     */
-    public Map<TemporalField, Long> getFieldValueMap() {
-        Map<TemporalField, Long> map = new HashMap<TemporalField, Long>(standardFields);
-        if (otherFields != null) {
-            map.putAll(otherFields);
-        }
-        return map;
-    }
-
-    /**
-     * Checks whether the specified field is present in the builder.
-     *
-     * @param field  the field to find in the field-value map, not null
-     * @return true if the field is present
-     */
-    public boolean containsFieldValue(TemporalField field) {
-        Objects.requireNonNull(field, "field");
-        return standardFields.containsKey(field) || (otherFields != null && otherFields.containsKey(field));
-    }
-
-    /**
-     * Gets the value of the specified field from the builder.
-     *
-     * @param field  the field to query in the field-value map, not null
-     * @return the value of the field, may be out of range
-     * @throws DateTimeException if the field is not present
-     */
-    public long getFieldValue(TemporalField field) {
-        Objects.requireNonNull(field, "field");
-        Long value = getFieldValue0(field);
-        if (value == null) {
-            throw new DateTimeException("Field not found: " + field);
-        }
-        return value;
-    }
-
     private Long getFieldValue0(TemporalField field) {
         if (field instanceof ChronoField) {
             return standardFields.get(field);
@@ -233,18 +176,6 @@ public final class DateTimeBuilder
             return otherFields.get(field);
         }
         return null;
-    }
-
-    /**
-     * Gets the value of the specified field from the builder ensuring it is valid.
-     *
-     * @param field  the field to query in the field-value map, not null
-     * @return the value of the field, may be out of range
-     * @throws DateTimeException if the field is not present
-     */
-    public long getValidFieldValue(TemporalField field) {
-        long value = getFieldValue(field);
-        return field.range().checkValidValue(value, field);
     }
 
     /**
@@ -261,7 +192,7 @@ public final class DateTimeBuilder
      * @return {@code this}, for method chaining
      * @throws DateTimeException if the field is already present with a different value
      */
-    public DateTimeBuilder addFieldValue(TemporalField field, long value) {
+    DateTimeBuilder addFieldValue(TemporalField field, long value) {
         Objects.requireNonNull(field, "field");
         Long old = getFieldValue0(field);  // check first for better error message
         if (old != null && old.longValue() != value) {
@@ -282,125 +213,21 @@ public final class DateTimeBuilder
         return this;
     }
 
-    /**
-     * Removes a field-value pair from the builder.
-     * <p>
-     * This removes a field, which must exist, from the builder.
-     * See {@link #removeFieldValues(TemporalField...)} for a version which does not throw an exception
-     *
-     * @param field  the field to remove, not null
-     * @return the previous value of the field
-     * @throws DateTimeException if the field is not found
-     */
-    public long removeFieldValue(TemporalField field) {
-        Objects.requireNonNull(field, "field");
-        Long value = null;
-        if (field instanceof ChronoField) {
-            value = standardFields.remove(field);
-        } else if (otherFields != null) {
-            value = otherFields.remove(field);
-        }
-        if (value == null) {
-            throw new DateTimeException("Field not found: " + field);
-        }
-        return value;
-    }
-
     //-----------------------------------------------------------------------
-    /**
-     * Removes a list of fields from the builder.
-     * <p>
-     * This removes the specified fields from the builder.
-     * No exception is thrown if the fields are not present.
-     *
-     * @param fields  the fields to remove, not null
-     */
-    public void removeFieldValues(TemporalField... fields) {
-        for (TemporalField field : fields) {
-            if (field instanceof ChronoField) {
-                standardFields.remove(field);
-            } else if (otherFields != null) {
-                otherFields.remove(field);
-            }
-        }
+    void addObject(Chronology chrono) {
+        this.chrono = chrono;
     }
 
-    /**
-     * Queries a list of fields from the builder.
-     * <p>
-     * This gets the value of the specified fields from the builder into
-     * an array where the positions match the order of the fields.
-     * If a field is not present, the array will contain null in that position.
-     *
-     * @param fields  the fields to query, not null
-     * @return the array of field values, not null
-     */
-    public Long[] queryFieldValues(TemporalField... fields) {
-        Long[] values = new Long[fields.length];
-        int i = 0;
-        for (TemporalField field : fields) {
-            values[i++] = getFieldValue0(field);
-        }
-        return values;
+    void addObject(ZoneId zone) {
+        this.zone = zone;
     }
 
-    //-----------------------------------------------------------------------
-    /**
-     * Gets the list of date-time objects in the builder.
-     * <p>
-     * This map is intended for use with {@link ZoneOffset} and {@link ZoneId}.
-     * The returned map is live and may be edited.
-     *
-     * @return the editable list of date-time objects, not null
-     */
-    public List<Object> getCalendricalList() {
-        return objects;
+    void addObject(LocalDate date) {
+        this.date = date;
     }
 
-    /**
-     * Adds a date-time object to the builder.
-     * <p>
-     * This adds a date-time object to the builder.
-     * If the object is a {@code DateTimeBuilder}, each field is added using {@link #addFieldValue}.
-     * If the object is not already present, then the object is added.
-     * If the object is already present and it is equal to that specified, no action occurs.
-     * If the object is already present and it is not equal to that specified, then an exception is thrown.
-     *
-     * @param object  the object to add, not null
-     * @return {@code this}, for method chaining
-     * @throws DateTimeException if the field is already present with a different value
-     */
-    public DateTimeBuilder addCalendrical(Object object) {
-        Objects.requireNonNull(object, "object");
-        // special case
-        if (object instanceof DateTimeBuilder) {
-            DateTimeBuilder dtb = (DateTimeBuilder) object;
-            for (TemporalField field : dtb.getFieldValueMap().keySet()) {
-                addFieldValue(field, dtb.getFieldValue(field));
-            }
-            return this;
-        }
-        if (object instanceof Instant) {
-            addFieldValue(INSTANT_SECONDS, ((Instant) object).getEpochSecond());
-            addFieldValue(NANO_OF_SECOND, ((Instant) object).getNano());
-        } else {
-            objects.add(object);
-        }
-//      TODO
-//        // preserve state of builder until validated
-//        Class<?> cls = dateTime.extract(Class.class);
-//        if (cls == null) {
-//            throw new DateTimeException("Invalid dateTime, unable to extract Class");
-//        }
-//        Object obj = objects.get(cls);
-//        if (obj != null) {
-//            if (obj.equals(dateTime) == false) {
-//                throw new DateTimeException("Conflict found: " + dateTime.getClass().getSimpleName() + " " + obj + " differs from " + dateTime + ": " + this);
-//            }
-//        } else {
-//            objects.put(cls, dateTime);
-//        }
-        return this;
+    void addObject(LocalTime time) {
+        this.time = time;
     }
 
     //-----------------------------------------------------------------------
@@ -413,21 +240,7 @@ public final class DateTimeBuilder
      *
      * @return {@code this}, for method chaining
      */
-    public DateTimeBuilder resolve() {
-        splitObjects();
-        // handle unusual fields
-        if (otherFields != null) {
-            outer:
-            while (true) {
-                Set<Entry<TemporalField, Long>> entrySet = new HashSet<>(otherFields.entrySet());
-                for (Entry<TemporalField, Long> entry : entrySet) {
-                    if (entry.getKey().resolve(this, entry.getValue())) {
-                        continue outer;
-                    }
-                }
-                break;
-            }
-        }
+    DateTimeBuilder resolve() {
         // handle standard fields
         mergeDate();
         mergeTime();
@@ -441,11 +254,39 @@ public final class DateTimeBuilder
             return;
         }
 
-        // normalize fields
-        if (standardFields.containsKey(EPOCH_MONTH)) {
-            long em = standardFields.remove(EPOCH_MONTH);
-            addFieldValue(MONTH_OF_YEAR, (em % 12) + 1);
-            addFieldValue(YEAR, (em / 12) + 1970);
+        Era era = null;
+        if (chrono == IsoChronology.INSTANCE) {
+            // normalize fields
+            if (standardFields.containsKey(EPOCH_MONTH)) {
+                long em = standardFields.remove(EPOCH_MONTH);
+                addFieldValue(MONTH_OF_YEAR, (em % 12) + 1);
+                addFieldValue(YEAR, (em / 12) + 1970);
+            }
+        } else {
+            // TODO: revisit EPOCH_MONTH calculation in non-ISO chronology
+            // Handle EPOCH_MONTH here for non-ISO Chronology
+            if (standardFields.containsKey(EPOCH_MONTH)) {
+                long em = standardFields.remove(EPOCH_MONTH);
+                ChronoLocalDate<?> chronoDate = chrono.date(LocalDate.ofEpochDay(0L));
+                chronoDate = chronoDate.plus(em, ChronoUnit.MONTHS);
+                LocalDate date = LocalDate.ofEpochDay(chronoDate.toEpochDay());
+                checkDate(date);
+                return;
+            }
+            List<Era> eras = chrono.eras();
+            if (!eras.isEmpty()) {
+                if (standardFields.containsKey(ERA)) {
+                    long index = standardFields.remove(ERA);
+                    era = chrono.eraOf((int) index);
+                } else {
+                    era = eras.get(eras.size() - 1); // current Era
+                }
+                if (standardFields.containsKey(YEAR_OF_ERA)) {
+                    Long y = standardFields.remove(YEAR_OF_ERA);
+                    putFieldValue0(YEAR, y);
+                }
+            }
+
         }
 
         // build date
@@ -455,7 +296,19 @@ public final class DateTimeBuilder
                     int y = Math.toIntExact(standardFields.remove(YEAR));
                     int moy = Math.toIntExact(standardFields.remove(MONTH_OF_YEAR));
                     int dom = Math.toIntExact(standardFields.remove(DAY_OF_MONTH));
-                    checkDate(LocalDate.of(y, moy, dom));
+                    LocalDate date;
+                    if (chrono == IsoChronology.INSTANCE) {
+                        date = LocalDate.of(y, moy, dom);
+                    } else {
+                        ChronoLocalDate<?> chronoDate;
+                        if (era == null) {
+                            chronoDate = chrono.date(y, moy, dom);
+                        } else {
+                            chronoDate = era.date(y, moy, dom);
+                        }
+                        date = LocalDate.ofEpochDay(chronoDate.toEpochDay());
+                    }
+                    checkDate(date);
                     return;
                 }
                 if (standardFields.containsKey(ALIGNED_WEEK_OF_MONTH)) {
@@ -464,7 +317,20 @@ public final class DateTimeBuilder
                         int moy = Math.toIntExact(standardFields.remove(MONTH_OF_YEAR));
                         int aw = Math.toIntExact(standardFields.remove(ALIGNED_WEEK_OF_MONTH));
                         int ad = Math.toIntExact(standardFields.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
-                        checkDate(LocalDate.of(y, moy, 1).plusDays((aw - 1) * 7 + (ad - 1)));
+                        LocalDate date;
+                        if (chrono == IsoChronology.INSTANCE) {
+                            date = LocalDate.of(y, moy, 1).plusDays((aw - 1) * 7 + (ad - 1));
+                        } else {
+                            ChronoLocalDate<?> chronoDate;
+                            if (era == null) {
+                                chronoDate = chrono.date(y, moy, 1);
+                            } else {
+                                chronoDate = era.date(y, moy, 1);
+                            }
+                            chronoDate = chronoDate.plus((aw - 1) * 7 + (ad - 1), ChronoUnit.DAYS);
+                            date = LocalDate.ofEpochDay(chronoDate.toEpochDay());
+                        }
+                        checkDate(date);
                         return;
                     }
                     if (standardFields.containsKey(DAY_OF_WEEK)) {
@@ -472,7 +338,20 @@ public final class DateTimeBuilder
                         int moy = Math.toIntExact(standardFields.remove(MONTH_OF_YEAR));
                         int aw = Math.toIntExact(standardFields.remove(ALIGNED_WEEK_OF_MONTH));
                         int dow = Math.toIntExact(standardFields.remove(DAY_OF_WEEK));
-                        checkDate(LocalDate.of(y, moy, 1).plusDays((aw - 1) * 7).with(nextOrSame(DayOfWeek.of(dow))));
+                        LocalDate date;
+                        if (chrono == IsoChronology.INSTANCE) {
+                            date = LocalDate.of(y, moy, 1).plusDays((aw - 1) * 7).with(nextOrSame(DayOfWeek.of(dow)));
+                        } else {
+                            ChronoLocalDate<?> chronoDate;
+                            if (era == null) {
+                                chronoDate = chrono.date(y, moy, 1);
+                            } else {
+                                chronoDate = era.date(y, moy, 1);
+                            }
+                            chronoDate = chronoDate.plus((aw - 1) * 7, ChronoUnit.DAYS).with(nextOrSame(DayOfWeek.of(dow)));
+                            date = LocalDate.ofEpochDay(chronoDate.toEpochDay());
+                        }
+                        checkDate(date);
                         return;
                     }
                 }
@@ -480,7 +359,19 @@ public final class DateTimeBuilder
             if (standardFields.containsKey(DAY_OF_YEAR)) {
                 int y = Math.toIntExact(standardFields.remove(YEAR));
                 int doy = Math.toIntExact(standardFields.remove(DAY_OF_YEAR));
-                checkDate(LocalDate.ofYearDay(y, doy));
+                LocalDate date;
+                if (chrono == IsoChronology.INSTANCE) {
+                    date = LocalDate.ofYearDay(y, doy);
+                } else {
+                    ChronoLocalDate<?> chronoDate;
+                    if (era == null) {
+                        chronoDate = chrono.dateYearDay(y, doy);
+                    } else {
+                        chronoDate = era.dateYearDay(y, doy);
+                    }
+                    date = LocalDate.ofEpochDay(chronoDate.toEpochDay());
+                }
+                checkDate(date);
                 return;
             }
             if (standardFields.containsKey(ALIGNED_WEEK_OF_YEAR)) {
@@ -488,14 +379,40 @@ public final class DateTimeBuilder
                     int y = Math.toIntExact(standardFields.remove(YEAR));
                     int aw = Math.toIntExact(standardFields.remove(ALIGNED_WEEK_OF_YEAR));
                     int ad = Math.toIntExact(standardFields.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
-                    checkDate(LocalDate.of(y, 1, 1).plusDays((aw - 1) * 7 + (ad - 1)));
+                    LocalDate date;
+                    if (chrono == IsoChronology.INSTANCE) {
+                        date = LocalDate.of(y, 1, 1).plusDays((aw - 1) * 7 + (ad - 1));
+                    } else {
+                        ChronoLocalDate<?> chronoDate;
+                        if (era == null) {
+                            chronoDate = chrono.dateYearDay(y, 1);
+                        } else {
+                            chronoDate = era.dateYearDay(y, 1);
+                        }
+                        chronoDate = chronoDate.plus((aw - 1) * 7 + (ad - 1), ChronoUnit.DAYS);
+                        date = LocalDate.ofEpochDay(chronoDate.toEpochDay());
+                    }
+                    checkDate(date);
                     return;
                 }
                 if (standardFields.containsKey(DAY_OF_WEEK)) {
                     int y = Math.toIntExact(standardFields.remove(YEAR));
                     int aw = Math.toIntExact(standardFields.remove(ALIGNED_WEEK_OF_YEAR));
                     int dow = Math.toIntExact(standardFields.remove(DAY_OF_WEEK));
-                    checkDate(LocalDate.of(y, 1, 1).plusDays((aw - 1) * 7).with(nextOrSame(DayOfWeek.of(dow))));
+                    LocalDate date;
+                    if (chrono == IsoChronology.INSTANCE) {
+                        date = LocalDate.of(y, 1, 1).plusDays((aw - 1) * 7).with(nextOrSame(DayOfWeek.of(dow)));
+                    } else {
+                        ChronoLocalDate<?> chronoDate;
+                        if (era == null) {
+                            chronoDate = chrono.dateYearDay(y, 1);
+                        } else {
+                            chronoDate = era.dateYearDay(y, 1);
+                        }
+                        chronoDate = chronoDate.plus((aw - 1) * 7, ChronoUnit.DAYS).with(nextOrSame(DayOfWeek.of(dow)));
+                        date = LocalDate.ofEpochDay(chronoDate.toEpochDay());
+                    }
+                    checkDate(date);
                     return;
                 }
             }
@@ -503,9 +420,7 @@ public final class DateTimeBuilder
     }
 
     private void checkDate(LocalDate date) {
-        // TODO: this doesn't handle aligned weeks over into next month which would otherwise be valid
-
-        addCalendrical(date);
+        addObject(date);
         for (ChronoField field : standardFields.keySet()) {
             long val1;
             try {
@@ -594,96 +509,66 @@ public final class DateTimeBuilder
                     int somVal = Math.toIntExact(som);
                     if (nos != null) {
                         int nosVal = Math.toIntExact(nos);
-                        addCalendrical(LocalTime.of(hodVal, mohVal, somVal, nosVal));
+                        addObject(LocalTime.of(hodVal, mohVal, somVal, nosVal));
                     } else {
-                        addCalendrical(LocalTime.of(hodVal, mohVal, somVal));
+                        addObject(LocalTime.of(hodVal, mohVal, somVal));
                     }
                 } else {
-                    addCalendrical(LocalTime.of(hodVal, mohVal));
+                    addObject(LocalTime.of(hodVal, mohVal));
                 }
             } else {
-                addCalendrical(LocalTime.of(hodVal, 0));
-            }
-        }
-    }
-
-    private void splitObjects() {
-        List<Object> objectsToAdd = new ArrayList<>();
-        for (Object object : objects) {
-            if (object instanceof LocalDate || object instanceof LocalTime ||
-                            object instanceof ZoneId || object instanceof Chrono) {
-                continue;
-            }
-            if (object instanceof ZoneOffset || object instanceof Instant) {
-                objectsToAdd.add(object);
-
-            } else if (object instanceof TemporalAccessor) {
-                // TODO
-//                TemporalAccessor dt = (TemporalAccessor) object;
-//                objectsToAdd.add(dt.extract(LocalDate.class));
-//                objectsToAdd.add(dt.extract(LocalTime.class));
-//                objectsToAdd.add(dt.extract(ZoneId.class));
-//                objectsToAdd.add(dt.extract(Chrono.class));
-            }
-        }
-        for (Object object : objectsToAdd) {
-            if (object != null) {
-                addCalendrical(object);
+                addObject(LocalTime.of(hodVal, 0));
             }
         }
     }
 
     //-----------------------------------------------------------------------
     @Override
-    public <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.zoneId()) {
-            return (R) extract(ZoneId.class);
+    public boolean isSupported(TemporalField field) {
+        if (field == null) {
+            return false;
         }
-        if (query == Queries.offset()) {
-            ZoneOffset offset = extract(ZoneOffset.class);
-            if (offset == null && standardFields.containsKey(OFFSET_SECONDS)) {
-                offset = ZoneOffset.ofTotalSeconds(Math.toIntExact(standardFields.get(OFFSET_SECONDS)));
+        return standardFields.containsKey(field) ||
+                (otherFields != null && otherFields.containsKey(field)) ||
+                (date != null && date.isSupported(field)) ||
+                (time != null && time.isSupported(field));
+    }
+
+    @Override
+    public long getLong(TemporalField field) {
+        Objects.requireNonNull(field, "field");
+        Long value = getFieldValue0(field);
+        if (value == null) {
+            if (date != null && date.isSupported(field)) {
+                return date.getLong(field);
             }
-            return (R) offset;
+            if (time != null && time.isSupported(field)) {
+                return time.getLong(field);
+            }
+            throw new DateTimeException("Field not found: " + field);
         }
-        if (query == Queries.chrono()) {
-            return extract(Chrono.class);
-        }
-        // incomplete, so no need to handle PRECISION
-        return TemporalAccessor.super.query(query);
+        return value;
     }
 
     @SuppressWarnings("unchecked")
-    public <R> R extract(Class<?> type) {
-        R result = null;
-        for (Object obj : objects) {
-            if (type.isInstance(obj)) {
-                if (result != null && result.equals(obj) == false) {
-                    throw new DateTimeException("Conflict found: " + type.getSimpleName() + " differs " + result + " vs " + obj + ": " + this);
-                }
-                result = (R) obj;
-            }
-        }
-        return result;
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * Clones this builder, creating a new independent copy referring to the
-     * same map of fields and objects.
-     *
-     * @return the cloned builder, not null
-     */
     @Override
-    public DateTimeBuilder clone() {
-        DateTimeBuilder dtb = new DateTimeBuilder();
-        dtb.objects.addAll(this.objects);
-        dtb.standardFields.putAll(this.standardFields);
-        dtb.standardFields.putAll(this.standardFields);
-        if (this.otherFields != null) {
-            dtb.otherFields.putAll(this.otherFields);
+    public <R> R query(TemporalQuery<R> query) {
+        if (query == Queries.zoneId()) {
+            return (R) zone;
+        } else if (query == Queries.chronology()) {
+            return (R) chrono;
+        } else if (query == Queries.localDate()) {
+            return (R) date;
+        } else if (query == Queries.localTime()) {
+            return (R) time;
+        } else if (query == Queries.zone() || query == Queries.offset()) {
+            return query.queryFrom(this);
+        } else if (query == Queries.precision()) {
+            return null;  // not a complete date/time
         }
-        return dtb;
+        // inline TemporalAccessor.super.query(query) as an optimization
+        // non-JDK classes are not permitted to make this optimization
+        return query.queryFrom(this);
     }
 
     //-----------------------------------------------------------------------
@@ -691,29 +576,20 @@ public final class DateTimeBuilder
     public String toString() {
         StringBuilder buf = new StringBuilder(128);
         buf.append("DateTimeBuilder[");
-        Map<TemporalField, Long> fields = getFieldValueMap();
+        Map<TemporalField, Long> fields = new HashMap<>();
+        fields.putAll(standardFields);
+        if (otherFields != null) {
+            fields.putAll(otherFields);
+        }
         if (fields.size() > 0) {
             buf.append("fields=").append(fields);
         }
-        if (objects.size() > 0) {
-            if (fields.size() > 0) {
-                buf.append(", ");
-            }
-            buf.append("objects=").append(objects);
-        }
+        buf.append(", ").append(chrono);
+        buf.append(", ").append(zone);
+        buf.append(", ").append(date);
+        buf.append(", ").append(time);
         buf.append(']');
         return buf.toString();
-    }
-
-    //-----------------------------------------------------------------------
-    @Override
-    public boolean isSupported(TemporalField field) {
-        return field != null && containsFieldValue(field);
-    }
-
-    @Override
-    public long getLong(TemporalField field) {
-        return getFieldValue(field);
     }
 
 }

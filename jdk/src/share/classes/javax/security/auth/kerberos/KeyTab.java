@@ -41,6 +41,20 @@ import sun.security.krb5.RealmException;
  * {@link javax.security.auth.Subject Subject} during the commit phase of the
  * authentication process.
  * <p>
+ * If a {@code KeyTab} object is obtained from {@link #getUnboundInstance()}
+ * or {@link #getUnboundInstance(java.io.File)}, it is unbound and thus can be
+ * used by any service principal. Otherwise, if it's obtained from
+ * {@link #getInstance(KerberosPrincipal)} or
+ * {@link #getInstance(KerberosPrincipal, java.io.File)}, it is bound to the
+ * specific service principal and can only be used by it.
+ * <p>
+ * Please note the constructors {@link #getInstance()} and
+ * {@link #getInstance(java.io.File)} were created when there was no support
+ * for unbound keytabs. These methods should not be used anymore. An object
+ * created with either of these methods are considered to be bound to an
+ * unknown principal, which means, its {@link #isBound()} returns true and
+ * {@link #getPrincipal()} returns null.
+ * <p>
  * It might be necessary for the application to be granted a
  * {@link javax.security.auth.PrivateCredentialPermission
  * PrivateCredentialPermission} if it needs to access the KeyTab
@@ -52,7 +66,7 @@ import sun.security.krb5.RealmException;
  * The keytab file format is described at
  * <a href="http://www.ioplex.com/utilities/keytab.txt">
  * http://www.ioplex.com/utilities/keytab.txt</a>.
- *
+ * <p>
  * @since 1.7
  */
 public final class KeyTab {
@@ -74,21 +88,33 @@ public final class KeyTab {
     // is maintained in snapshot, this field is never "resolved".
     private final File file;
 
+    // Bound user: normally from the "principal" value in a JAAS krb5
+    // login conf. Will be null if it's "*".
+    private final KerberosPrincipal princ;
+
+    private final boolean bound;
+
     // Set up JavaxSecurityAuthKerberosAccess in KerberosSecrets
     static {
         KerberosSecrets.setJavaxSecurityAuthKerberosAccess(
                 new JavaxSecurityAuthKerberosAccessImpl());
     }
 
-    private KeyTab(File file) {
+    private KeyTab(KerberosPrincipal princ, File file, boolean bound) {
+        this.princ = princ;
         this.file = file;
+        this.bound = bound;
     }
 
     /**
-     * Returns a {@code KeyTab} instance from a {@code File} object.
+     * Returns a {@code KeyTab} instance from a {@code File} object
+     * that is bound to an unknown service principal.
      * <p>
      * The result of this method is never null. This method only associates
      * the returned {@code KeyTab} object with the file and does not read it.
+     * <p>
+     * Developers should call {@link #getInstance(KerberosPrincipal,File)}
+     * when the bound service principal is known.
      * @param file the keytab {@code File} object, must not be null
      * @return the keytab instance
      * @throws NullPointerException if the {@code file} argument is null
@@ -97,23 +123,99 @@ public final class KeyTab {
         if (file == null) {
             throw new NullPointerException("file must be non null");
         }
-        return new KeyTab(file);
+        return new KeyTab(null, file, true);
     }
 
     /**
-     * Returns the default {@code KeyTab} instance.
+     * Returns an unbound {@code KeyTab} instance from a {@code File}
+     * object.
+     * <p>
+     * The result of this method is never null. This method only associates
+     * the returned {@code KeyTab} object with the file and does not read it.
+     * @param file the keytab {@code File} object, must not be null
+     * @return the keytab instance
+     * @throws NullPointerException if the file argument is null
+     * @since 1.8
+     */
+    public static KeyTab getUnboundInstance(File file) {
+        if (file == null) {
+            throw new NullPointerException("file must be non null");
+        }
+        return new KeyTab(null, file, false);
+    }
+
+    /**
+     * Returns a {@code KeyTab} instance from a {@code File} object
+     * that is bound to the specified service principal.
+     * <p>
+     * The result of this method is never null. This method only associates
+     * the returned {@code KeyTab} object with the file and does not read it.
+     * @param princ the bound service principal, must not be null
+     * @param file the keytab {@code File} object, must not be null
+     * @return the keytab instance
+     * @throws NullPointerException if either of the arguments is null
+     * @since 1.8
+     */
+    public static KeyTab getInstance(KerberosPrincipal princ, File file) {
+        if (princ == null) {
+            throw new NullPointerException("princ must be non null");
+        }
+        if (file == null) {
+            throw new NullPointerException("file must be non null");
+        }
+        return new KeyTab(princ, file, true);
+    }
+
+    /**
+     * Returns the default {@code KeyTab} instance that is bound
+     * to an unknown service principal.
      * <p>
      * The result of this method is never null. This method only associates
      * the returned {@code KeyTab} object with the default keytab file and
      * does not read it.
+     * <p>
+     * Developers should call {@link #getInstance(KerberosPrincipal)}
+     * when the bound service principal is known.
      * @return the default keytab instance.
      */
     public static KeyTab getInstance() {
-        return new KeyTab(null);
+        return new KeyTab(null, null, true);
+    }
+
+    /**
+     * Returns the default unbound {@code KeyTab} instance.
+     * <p>
+     * The result of this method is never null. This method only associates
+     * the returned {@code KeyTab} object with the default keytab file and
+     * does not read it.
+     * @return the default keytab instance
+     * @since 1.8
+     */
+    public static KeyTab getUnboundInstance() {
+        return new KeyTab(null, null, false);
+    }
+
+    /**
+     * Returns the default {@code KeyTab} instance that is bound
+     * to the specified service principal.
+     * <p>
+     * The result of this method is never null. This method only associates
+     * the returned {@code KeyTab} object with the default keytab file and
+     * does not read it.
+     * @param princ the bound service principal, must not be null
+     * @return the default keytab instance
+     * @throws NullPointerException if {@code princ} is null
+     * @since 1.8
+     */
+    public static KeyTab getInstance(KerberosPrincipal princ) {
+        if (princ == null) {
+            throw new NullPointerException("princ must be non null");
+        }
+        return new KeyTab(princ, null, true);
     }
 
     //Takes a snapshot of the keytab content
-    private sun.security.krb5.internal.ktab.KeyTab takeSnapshot() {
+    sun.security.krb5.internal.ktab.KeyTab takeSnapshot() {
         return sun.security.krb5.internal.ktab.KeyTab.getInstance(file);
     }
 
@@ -147,6 +249,9 @@ public final class KeyTab {
      * <p>
      * Any unsupported key read from the keytab is ignored and not included
      * in the result.
+     * <p>
+     * If this keytab is bound to a specific principal, calling this method on
+     * another principal will return an empty array.
      *
      * @param principal the Kerberos principal, must not be null.
      * @return the keys (never null, may be empty)
@@ -157,8 +262,11 @@ public final class KeyTab {
      */
     public KerberosKey[] getKeys(KerberosPrincipal principal) {
         try {
-            EncryptionKey[] keys = takeSnapshot().readServiceKeys(
-                    new PrincipalName(principal.getName()));
+            if (princ != null && !principal.equals(princ)) {
+                return new KerberosKey[0];
+            }
+            PrincipalName pn = new PrincipalName(principal.getName());
+            EncryptionKey[] keys = takeSnapshot().readServiceKeys(pn);
             KerberosKey[] kks = new KerberosKey[keys.length];
             for (int i=0; i<kks.length; i++) {
                 Integer tmp = keys[i].getKeyVersionNumber();
@@ -195,7 +303,10 @@ public final class KeyTab {
     }
 
     public String toString() {
-        return file == null ? "Default keytab" : file.toString();
+        String s = (file == null) ? "Default keytab" : file.toString();
+        if (!bound) return s;
+        else if (princ == null) return s + " for someone";
+        else return s + " for " + princ;
     }
 
     /**
@@ -204,7 +315,7 @@ public final class KeyTab {
      * @return a hashCode() for the <code>KeyTab</code>
      */
     public int hashCode() {
-        return Objects.hash(file);
+        return Objects.hash(file, princ, bound);
     }
 
     /**
@@ -225,6 +336,31 @@ public final class KeyTab {
         }
 
         KeyTab otherKtab = (KeyTab) other;
-        return Objects.equals(otherKtab.file, file);
+        return Objects.equals(otherKtab.princ, princ) &&
+                Objects.equals(otherKtab.file, file) &&
+                bound == otherKtab.bound;
+    }
+
+    /**
+     * Returns the service principal this {@code KeyTab} object
+     * is bound to. Returns {@code null} if it's not bound.
+     * <p>
+     * Please note the deprecated constructors create a KeyTab object bound for
+     * some unknown principal. In this case, this method also returns null.
+     * User can call {@link #isBound()} to verify this case.
+     * @return the service principal
+     * @since 1.8
+     */
+    public KerberosPrincipal getPrincipal() {
+        return princ;
+    }
+
+    /**
+     * Returns if the keytab is bound to a principal
+     * @return if the keytab is bound to a principal
+     * @since 1.8
+     */
+    public boolean isBound() {
+        return bound;
     }
 }

@@ -23,6 +23,8 @@
  */
 
 package sun.hotspot;
+
+import java.lang.reflect.Method;
 import java.security.BasicPermission;
 import sun.hotspot.parser.DiagnosticCommand;
 
@@ -81,4 +83,15 @@ public class WhiteBox {
   public native boolean NMTAllocTest();
   public native boolean NMTFreeTestMemory();
   public native boolean NMTWaitForDataMerge();
+
+  // Compiler
+  public native void    deoptimizeAll();
+  public native boolean isMethodCompiled(Method method);
+  public native boolean isMethodCompilable(Method method);
+  public native boolean isMethodQueuedForCompilation(Method method);
+  public native int     deoptimizeMethod(Method method);
+  public native void    makeMethodNotCompilable(Method method);
+  public native int     getMethodCompilationLevel(Method method);
+  public native boolean setDontInlineMethod(Method method, boolean value);
+  public native int     getCompileQueuesSize();
 }

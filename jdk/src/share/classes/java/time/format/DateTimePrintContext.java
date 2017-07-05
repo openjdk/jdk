@@ -67,9 +67,9 @@ import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.temporal.Chrono;
+import java.time.chrono.Chronology;
 import java.time.temporal.ChronoField;
-import java.time.temporal.ChronoLocalDate;
+import java.time.chrono.ChronoLocalDate;
 import java.time.temporal.Queries;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
@@ -81,12 +81,12 @@ import java.util.Objects;
 /**
  * Context object used during date and time printing.
  * <p>
- * This class provides a single wrapper to items used in the print.
+ * This class provides a single wrapper to items used in the format.
  *
  * <h3>Specification for implementors</h3>
  * This class is a mutable context intended for use from a single thread.
  * Usage of the class is thread-safe within standard printing as the framework creates
- * a new instance of the class for each print and printing is single-threaded.
+ * a new instance of the class for each format and printing is single-threaded.
  *
  * @since 1.8
  */
@@ -109,7 +109,7 @@ final class DateTimePrintContext {
      * Creates a new instance of the context.
      *
      * @param temporal  the temporal object being output, not null
-     * @param formatter  the formatter controlling the print, not null
+     * @param formatter  the formatter controlling the format, not null
      */
     DateTimePrintContext(TemporalAccessor temporal, DateTimeFormatter formatter) {
         super();
@@ -119,14 +119,14 @@ final class DateTimePrintContext {
 
     private static TemporalAccessor adjust(final TemporalAccessor temporal, DateTimeFormatter formatter) {
         // normal case first
-        Chrono<?> overrideChrono = formatter.getChrono();
+        Chronology overrideChrono = formatter.getChronology();
         ZoneId overrideZone = formatter.getZone();
         if (overrideChrono == null && overrideZone == null) {
             return temporal;
         }
 
         // ensure minimal change
-        Chrono<?> temporalChrono = Chrono.from(temporal);  // default to ISO, handles Instant
+        Chronology temporalChrono = Chronology.from(temporal);  // default to ISO, handles Instant
         ZoneId temporalZone = temporal.query(Queries.zone());  // zone then offset, handles OffsetDateTime
         if (temporal.isSupported(EPOCH_DAY) == false || Objects.equals(overrideChrono, temporalChrono)) {
             overrideChrono = null;
@@ -144,8 +144,8 @@ final class DateTimePrintContext {
         } else if (overrideZone != null) {
             return temporalChrono.zonedDateTime(Instant.from(temporal), overrideZone);
         } else {  // overrideChrono != null
-            // need class here to handle non-standard cases like OffsetDate
-            final ChronoLocalDate<?> date = overrideChrono.date(temporal);
+            // need class here to handle non-standard cases
+            final ChronoLocalDate date = overrideChrono.date(temporal);
             return new TemporalAccessor() {
                 @Override
                 public boolean isSupported(TemporalField field) {
@@ -160,7 +160,7 @@ final class DateTimePrintContext {
                             return temporal.range(field);
                         }
                     }
-                    return field.doRange(this);
+                    return field.rangeRefinedBy(this);
                 }
                 @Override
                 public long getLong(TemporalField field) {
@@ -171,11 +171,15 @@ final class DateTimePrintContext {
                             return temporal.getLong(field);
                         }
                     }
-                    return field.doGet(this);
+                    return field.getFrom(this);
                 }
+                @SuppressWarnings("unchecked")
                 @Override
                 public <R> R query(TemporalQuery<R> query) {
-                    if (query == Queries.zoneId() || query == Queries.chrono() || query == Queries.precision()) {
+                    if (query == Queries.chronology()) {
+                        return (R) date.getChronology();
+                    }
+                    if (query == Queries.zoneId() || query == Queries.precision()) {
                         return temporal.query(query);
                     }
                     return query.queryFrom(this);
@@ -197,7 +201,7 @@ final class DateTimePrintContext {
     /**
      * Gets the locale.
      * <p>
-     * This locale is used to control localization in the print output except
+     * This locale is used to control localization in the format output except
      * where localization is controlled by the symbols.
      *
      * @return the locale, not null

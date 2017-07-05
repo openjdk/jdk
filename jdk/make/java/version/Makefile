@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ $(GENSRCDIR)/sun/misc/Version.java: \
 	    -e 's/@@java_version@@/$(RELEASE)/g' \
 	    -e 's/@@java_runtime_version@@/$(FULL_VERSION)/g' \
 	    -e 's/@@java_runtime_name@@/$(RUNTIME_NAME)/g' \
+	    -e 's/@@java_profile_name@@//g' \
 	$< > $@.temp
 	@$(MV) $@.temp $@
 

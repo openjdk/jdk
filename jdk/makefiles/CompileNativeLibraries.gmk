@@ -2188,6 +2188,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJFR,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libjfr/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$(RC_FLAGS)\
 			  -D "JDK_FNAME=jfr.dll" \
@@ -2236,6 +2237,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBKCMS,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX_linux:=-lc -lpthread,\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		LDFLAGS_SUFFIX_windows:=$(WIN_JAVA_LIB) advapi32.lib user32.lib version.lib, \
 		LDFLAGS_SUFFIX_posix:=-lm -ljava -ljvm,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/closed/share/native/sun/java2d/cmm/kcms/cmm.rc,\
@@ -2939,6 +2941,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2UCRYPTO,\
 		MAPFILE:=$(JDK_TOPDIR)/makefiles/mapfiles/libj2ucrypto/mapfile-vers, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB),\
 		LDFLAGS_SUFFIX:=$(LIBDL),\
+		LDFLAGS_SUFFIX_solaris:=-lc,\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2ucrypto))
 
 $(BUILD_LIBJ2UCRYPTO) : $(BUILD_LIBJAVA)

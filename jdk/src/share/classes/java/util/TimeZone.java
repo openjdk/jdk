@@ -42,6 +42,7 @@ import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.time.ZoneId;
 import java.util.concurrent.ConcurrentHashMap;
 import sun.misc.JavaAWTAccess;
 import sun.misc.SharedSecrets;
@@ -528,6 +529,37 @@ abstract public class TimeZone implements Serializable, Cloneable {
      */
     public static synchronized TimeZone getTimeZone(String ID) {
         return getTimeZone(ID, true);
+    }
+
+    /**
+     * Gets the {@code TimeZone} for the given {@code zoneId}.
+     *
+     * @param zoneid a {@link ZoneId} from which the time zone ID is obtained
+     * @return the specified {@code TimeZone}, or the GMT zone if the given ID
+     *         cannot be understood.
+     * @throws NullPointerException if {@code zoneId} is {@code null}
+     * @since 1.8
+     */
+    public static TimeZone getTimeZone(ZoneId zoneId) {
+        String tzid = zoneId.getId(); // throws an NPE if null
+        char c = tzid.charAt(0);
+        if (c == '+' || c == '-') {
+            tzid = "GMT" + tzid;
+        } else if (c == 'Z' && tzid.length() == 1) {
+            tzid = "UTC";
+        }
+        return getTimeZone(tzid, true);
+    }
+
+    /**
+     * Converts this {@code TimeZone} object to a {@code ZoneId}.
+     *
+     * @return a {@code ZoneId} representing the same time zone as this
+     *         {@code TimeZone}
+     * @since 1.8
+     */
+    public ZoneId toZoneId() {
+        return ZoneId.of(getID(), ZoneId.OLD_IDS_POST_2005);
     }
 
     private static TimeZone getTimeZone(String ID, boolean fallback) {

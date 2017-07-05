@@ -180,7 +180,7 @@ public class TestDateTimeTextProvider extends AbstractTestPrinterParser {
     @Test(dataProvider = "Text")
     public void test_getText(TemporalField field, Number value, TextStyle style, Locale locale, String expected) {
           DateTimeFormatter fmt = getFormatter(field, style).withLocale(locale);
-          assertEquals(fmt.print(ZonedDateTime.now().with(field, value.longValue())), expected);
+          assertEquals(fmt.format(ZonedDateTime.now().with(field, value.longValue())), expected);
     }
 
 }

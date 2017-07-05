@@ -59,8 +59,7 @@
  */
 package tck.java.time.zone;
 
-import java.time.zone.*;
-import test.java.time.zone.*;
+import java.time.ZoneId;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -73,6 +72,9 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import java.time.ZoneOffset;
+import java.time.zone.ZoneRules;
+import java.time.zone.ZoneRulesException;
+import java.time.zone.ZoneRulesProvider;
 
 import org.testng.annotations.Test;
 
@@ -87,7 +89,7 @@ public class TCKZoneRulesProvider {
     //-----------------------------------------------------------------------
     // getAvailableZoneIds()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_getAvailableGroupIds() {
         Set<String> zoneIds = ZoneRulesProvider.getAvailableZoneIds();
         assertEquals(zoneIds.contains("Europe/London"), true);
@@ -98,34 +100,48 @@ public class TCKZoneRulesProvider {
     }
 
     //-----------------------------------------------------------------------
-    // getRules(String)
+    // getRules(String, boolean)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_getRules_String() {
-        ZoneRules rules = ZoneRulesProvider.getRules("Europe/London");
+    @Test
+    public void test_getRules_StringBoolean() {
+        ZoneRules rules = ZoneRulesProvider.getRules("Europe/London", false);
         assertNotNull(rules);
-        ZoneRules rules2 = ZoneRulesProvider.getRules("Europe/London");
+        ZoneRules rules2 = ZoneRulesProvider.getRules("Europe/London", false);
         assertEquals(rules2, rules);
     }
 
-    @Test(groups={"tck"}, expectedExceptions=ZoneRulesException.class)
-    public void test_getRules_String_unknownId() {
-        ZoneRulesProvider.getRules("Europe/Lon");
+    @Test(expectedExceptions=ZoneRulesException.class)
+    public void test_getRules_StringBoolean_unknownId() {
+        ZoneRulesProvider.getRules("Europe/Lon", false);
     }
 
-    @Test(groups={"tck"}, expectedExceptions=NullPointerException.class)
-    public void test_getRules_String_null() {
-        ZoneRulesProvider.getRules(null);
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_getRules_StringBoolean_null() {
+        ZoneRulesProvider.getRules(null, false);
+    }
+
+    @Test
+    public void test_getRules_StringBoolean_dynamic() {
+        MockDynamicProvider dynamicProvider = new MockDynamicProvider();
+        ZoneRulesProvider.registerProvider(dynamicProvider);
+
+        assertEquals(dynamicProvider.count, 0);
+        ZoneRules rules1 = ZoneId.of("DynamicLocation").getRules();
+        assertEquals(dynamicProvider.count, 2);
+        assertEquals(rules1, dynamicProvider.BASE);
+        ZoneRules rules2 = ZoneId.of("DynamicLocation").getRules();
+        assertEquals(dynamicProvider.count, 4);
+        assertEquals(rules2, dynamicProvider.ALTERNATE);
     }
 
     //-----------------------------------------------------------------------
     // getVersions(String)
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_getVersions_String() {
         NavigableMap<String, ZoneRules> versions = ZoneRulesProvider.getVersions("Europe/London");
         assertTrue(versions.size() >= 1);
-        ZoneRules rules = ZoneRulesProvider.getRules("Europe/London");
+        ZoneRules rules = ZoneRulesProvider.getRules("Europe/London", false);
         assertEquals(versions.lastEntry().getValue(), rules);
 
         NavigableMap<String, ZoneRules> copy = new TreeMap<>(versions);
@@ -135,12 +151,12 @@ public class TCKZoneRulesProvider {
         assertEquals(versions2, copy);
     }
 
-    @Test(groups={"tck"}, expectedExceptions=ZoneRulesException.class)
+    @Test(expectedExceptions=ZoneRulesException.class)
     public void test_getVersions_String_unknownId() {
         ZoneRulesProvider.getVersions("Europe/Lon");
     }
 
-    @Test(groups={"tck"}, expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_getVersions_String_null() {
         ZoneRulesProvider.getVersions(null);
     }
@@ -148,7 +164,7 @@ public class TCKZoneRulesProvider {
     //-----------------------------------------------------------------------
     // refresh()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_refresh() {
         assertEquals(ZoneRulesProvider.refresh(), false);
     }
@@ -164,8 +180,7 @@ public class TCKZoneRulesProvider {
         assertEquals(pre.contains("FooLocation"), false);
         Set<String> post = ZoneRulesProvider.getAvailableZoneIds();
         assertEquals(post.contains("FooLocation"), true);
-
-        assertEquals(ZoneRulesProvider.getRules("FooLocation"), ZoneOffset.of("+01:45").getRules());
+        assertEquals(ZoneRulesProvider.getRules("FooLocation", false), ZoneOffset.of("+01:45").getRules());
     }
 
     static class MockTempProvider extends ZoneRulesProvider {
@@ -175,19 +190,42 @@ public class TCKZoneRulesProvider {
             return new HashSet<String>(Collections.singleton("FooLocation"));
         }
         @Override
-        protected ZoneRulesProvider provideBind(String zoneId) {
-            return this;
-        }
-        @Override
         protected NavigableMap<String, ZoneRules> provideVersions(String zoneId) {
             NavigableMap<String, ZoneRules> result = new TreeMap<>();
             result.put("BarVersion", rules);
             return result;
         }
         @Override
-        protected ZoneRules provideRules(String zoneId) {
+        protected ZoneRules provideRules(String zoneId, boolean forCaching) {
             if (zoneId.equals("FooLocation")) {
                 return rules;
+            }
+            throw new ZoneRulesException("Invalid");
+        }
+    }
+
+    static class MockDynamicProvider extends ZoneRulesProvider {
+        final ZoneRules BASE = ZoneOffset.of("+01:15").getRules();
+        final ZoneRules ALTERNATE = ZoneOffset.of("+01:30").getRules();
+        int count = 0;
+        @Override
+        public Set<String> provideZoneIds() {
+            return new HashSet<>(Collections.singleton("DynamicLocation"));
+        }
+        @Override
+        protected NavigableMap<String, ZoneRules> provideVersions(String zoneId) {
+            NavigableMap<String, ZoneRules> result = new TreeMap<>();
+            result.put("DynamicVersion1", BASE);
+            if (count > 2) {
+                result.put("DynamicVersion2", ALTERNATE);
+            }
+            return result;
+        }
+        @Override
+        protected ZoneRules provideRules(String zoneId, boolean forCaching) {
+            count++;
+            if (zoneId.equals("DynamicLocation")) {
+                return (forCaching ? null : (count > 2 ? ALTERNATE : BASE));
             }
             throw new ZoneRulesException("Invalid");
         }
