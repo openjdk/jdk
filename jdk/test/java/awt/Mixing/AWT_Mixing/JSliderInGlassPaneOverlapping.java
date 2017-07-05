@@ -33,6 +33,8 @@ import javax.swing.*;
 @test
 @summary Simple Overlapping test for javax.swing.JSlider
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JSliderInGlassPaneOverlapping
  */
 public class JSliderInGlassPaneOverlapping extends GlassPaneOverlappingTestBase {

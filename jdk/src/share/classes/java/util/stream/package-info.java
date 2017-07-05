@@ -468,7 +468,7 @@
  * <pre>{@code
  *     int sumOfWeights = widgets.stream()
  *                               .reduce(0,
- *                                       (sum, b) -> sum + b.getWeight())
+ *                                       (sum, b) -> sum + b.getWeight(),
  *                                       Integer::sum);
  * }</pre>
  * though the explicit map-reduce form is more readable and therefore should

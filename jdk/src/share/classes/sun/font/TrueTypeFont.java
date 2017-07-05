@@ -39,10 +39,14 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
@@ -1129,6 +1133,8 @@ public class TrueTypeFont extends FileFont {
 
             nameLocale = sun.awt.SunToolkit.getStartupLocale();
             short nameLocaleID = getLCIDFromLocale(nameLocale);
+            languageCompatibleLCIDs =
+                getLanguageCompatibleLCIDsFromLocale(nameLocale);
 
             for (int i=0; i<numRecords; i++) {
                 short platformID = sbuffer.get();
@@ -1145,18 +1151,21 @@ public class TrueTypeFont extends FileFont {
                 switch (nameID) {
 
                 case FAMILY_NAME_ID:
-
+                    boolean compatible = false;
                     if (familyName == null || langID == ENGLISH_LOCALE_ID ||
-                        langID == nameLocaleID)
+                        langID == nameLocaleID ||
+                        (localeFamilyName == null &&
+                         (compatible = isLanguageCompatible(langID))))
                     {
                         buffer.position(namePtr);
                         buffer.get(name, 0, nameLen);
                         tmpName = makeString(name, nameLen, encodingID);
-
                         if (familyName == null || langID == ENGLISH_LOCALE_ID){
                             familyName = tmpName;
                         }
-                        if (langID == nameLocaleID) {
+                        if (langID == nameLocaleID ||
+                            (localeFamilyName == null && compatible))
+                        {
                             localeFamilyName = tmpName;
                         }
                     }
@@ -1175,9 +1184,11 @@ public class TrueTypeFont extends FileFont {
                     break;
 
                 case FULL_NAME_ID:
-
+                    compatible = false;
                     if (fullName == null || langID == ENGLISH_LOCALE_ID ||
-                        langID == nameLocaleID)
+                        langID == nameLocaleID ||
+                        (localeFullName == null &&
+                         (compatible = isLanguageCompatible(langID))))
                     {
                         buffer.position(namePtr);
                         buffer.get(name, 0, nameLen);
@@ -1186,7 +1197,9 @@ public class TrueTypeFont extends FileFont {
                         if (fullName == null || langID == ENGLISH_LOCALE_ID) {
                             fullName = tmpName;
                         }
-                        if (langID == nameLocaleID) {
+                        if (langID == nameLocaleID ||
+                            (localeFullName == null && compatible))
+                        {
                             localeFullName = tmpName;
                         }
                     }
@@ -1696,5 +1709,157 @@ public class TrueTypeFont extends FileFont {
     public String toString() {
         return "** TrueType Font: Family="+familyName+ " Name="+fullName+
             " style="+style+" fileName="+getPublicFileName();
+    }
+
+
+    private static Map<String, short[]> lcidLanguageCompatibilityMap;
+    private static final short[] EMPTY_COMPATIBLE_LCIDS = new short[0];
+
+    // the language compatible LCIDs for this font's nameLocale
+    private short[] languageCompatibleLCIDs;
+
+    /*
+     * Returns true if the given lcid's language is compatible
+     * to the language of the startup Locale. I.e. if
+     * startupLocale.getLanguage().equals(lcidLocale.getLanguage()) would
+     * return true.
+     */
+    private boolean isLanguageCompatible(short lcid){
+        for (short s : languageCompatibleLCIDs) {
+            if (s == lcid) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /*
+     * Returns an array of all the language compatible LCIDs for the
+     * given Locale. This array is later used to find compatible
+     * locales.
+     */
+    private static short[] getLanguageCompatibleLCIDsFromLocale(Locale locale) {
+        if (lcidLanguageCompatibilityMap == null) {
+            createLCIDMap();
+            createLCIDLanguageCompatibilityMap();
+        }
+        String language = locale.getLanguage();
+        short[] result = lcidLanguageCompatibilityMap.get(language);
+        return result == null ? EMPTY_COMPATIBLE_LCIDS : result;
+    }
+
+//     private static void prtLine(String s) {
+//        System.out.println(s);
+//     }
+
+//     /*
+//      * Initializes the map from Locale keys (e.g. "en_BZ" or "de")
+//      * to language compatible LCIDs.
+//      * This map could be statically created based on the fixed known set
+//      * added to lcidMap.
+//      */
+//     private static void createLCIDLanguageCompatibilityMap() {
+//         if (lcidLanguageCompatibilityMap != null) {
+//             return;
+//         }
+//         HashMap<String, List<Short>> result = new HashMap<>();
+//         for (Entry<String, Short> e : lcidMap.entrySet()) {
+//             String language = e.getKey();
+//             int index = language.indexOf('_');
+//             if (index != -1) {
+//                 language = language.substring(0, index);
+//             }
+//             List<Short> list = result.get(language);
+//             if (list == null) {
+//                 list = new ArrayList<>();
+//                 result.put(language, list);
+//             }
+//             if (index == -1) {
+//                 list.add(0, e.getValue());
+//             } else{
+//                 list.add(e.getValue());
+//             }
+//         }
+//         Map<String, short[]> compMap = new HashMap<>();
+//         for (Entry<String, List<Short>> e : result.entrySet()) {
+//             if (e.getValue().size() > 1) {
+//                 List<Short> list = e.getValue();
+//                 short[] shorts = new short[list.size()];
+//                 for (int i = 0; i < shorts.length; i++) {
+//                     shorts[i] = list.get(i);
+//                 }
+//                 compMap.put(e.getKey(), shorts);
+//             }
+//         }
+
+//         /* Now dump code to init the map to System.out */
+//         prtLine("    private static void createLCIDLanguageCompatibilityMap() {");
+//         prtLine("");
+
+//         prtLine("        Map<String, short[]> map = new HashMap<>();");
+//         prtLine("");
+//         prtLine("        short[] sarr;");
+//         for (Entry<String, short[]> e : compMap.entrySet()) {
+//             String lang = e.getKey();
+//             short[] ids = e.getValue();
+//             StringBuilder sb = new StringBuilder("sarr = new short[] { ");
+//             for (int i = 0; i < ids.length; i++) {
+//                 sb.append(ids[i]+", ");
+//             }
+//             sb.append("}");
+//             prtLine("        " + sb + ";");
+//             prtLine("        map.put(\"" + lang + "\", sarr);");
+//         }
+//         prtLine("");
+//         prtLine("        lcidLanguageCompatibilityMap = map;");
+//         prtLine("    }");
+//         /* done dumping map */
+
+//         lcidLanguageCompatibilityMap = compMap;
+//     }
+
+    private static void createLCIDLanguageCompatibilityMap() {
+
+        Map<String, short[]> map = new HashMap<>();
+
+        short[] sarr;
+        sarr = new short[] { 1031, 3079, 5127, 2055, 4103, };
+        map.put("de", sarr);
+        sarr = new short[] { 1044, 2068, };
+        map.put("no", sarr);
+        sarr = new short[] { 1049, 2073, };
+        map.put("ru", sarr);
+        sarr = new short[] { 1053, 2077, };
+        map.put("sv", sarr);
+        sarr = new short[] { 1046, 2070, };
+        map.put("pt", sarr);
+        sarr = new short[] { 1131, 3179, 2155, };
+        map.put("qu", sarr);
+        sarr = new short[] { 1086, 2110, };
+        map.put("ms", sarr);
+        sarr = new short[] { 11273, 3081, 12297, 8201, 10249, 4105, 13321, 6153, 7177, 5129, 2057, };
+        map.put("en", sarr);
+        sarr = new short[] { 1050, 4122, };
+        map.put("hr", sarr);
+        sarr = new short[] { 1040, 2064, };
+        map.put("it", sarr);
+        sarr = new short[] { 1036, 5132, 6156, 2060, 3084, 4108, };
+        map.put("fr", sarr);
+        sarr = new short[] { 1034, 12298, 14346, 2058, 8202, 19466, 17418, 9226, 13322, 5130, 7178, 11274, 16394, 4106, 10250, 6154, 18442, 20490, 15370, };
+        map.put("es", sarr);
+        sarr = new short[] { 1028, 3076, 5124, 4100, 2052, };
+        map.put("zh", sarr);
+        sarr = new short[] { 1025, 8193, 16385, 9217, 2049, 14337, 15361, 11265, 13313, 10241, 7169, 12289, 4097, 5121, 6145, 3073, };
+        map.put("ar", sarr);
+        sarr = new short[] { 1083, 3131, 2107, };
+        map.put("se", sarr);
+        sarr = new short[] { 1048, 2072, };
+        map.put("ro", sarr);
+        sarr = new short[] { 1043, 2067, };
+        map.put("nl", sarr);
+        sarr = new short[] { 7194, 3098, };
+        map.put("sr", sarr);
+
+        lcidLanguageCompatibilityMap = map;
     }
 }

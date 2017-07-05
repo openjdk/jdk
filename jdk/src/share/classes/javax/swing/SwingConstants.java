@@ -31,6 +31,7 @@ package javax.swing;
  *
  * @author Jeff Dinkins
  * @author Ralph Kar (orientation support)
+ * @since 1.2
  */
 public interface SwingConstants {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,9 @@ public interface TableCellRenderer {
      *                          drawing the header, the value of
      *                          <code>row</code> is -1
      * @param   column          the column index of the cell being drawn
+     *
+     * @return                  the component used for drawing the cell.
+     *
      * @see javax.swing.JComponent#isPaintingForPrint()
      */
     Component getTableCellRendererComponent(JTable table, Object value,

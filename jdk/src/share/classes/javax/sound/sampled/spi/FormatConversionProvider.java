@@ -117,7 +117,7 @@ public abstract class FormatConversionProvider {
      * are supported for this source format, an array of length 0 is returned.
      *
      * @param  sourceFormat format of the incoming data
-     * @return array of supported target format encodings.
+     * @return array of supported target format encodings
      */
     public abstract Encoding[] getTargetEncodings(AudioFormat sourceFormat);
 
@@ -150,7 +150,7 @@ public abstract class FormatConversionProvider {
      *
      * @param  targetEncoding desired encoding of the stream after processing
      * @param  sourceFormat format of the incoming data
-     * @return array of supported target formats.
+     * @return array of supported target formats
      */
     public abstract AudioFormat[] getTargetFormats(Encoding targetEncoding,
                                                    AudioFormat sourceFormat);
@@ -187,7 +187,7 @@ public abstract class FormatConversionProvider {
      * @return stream from which processed data with the specified target
      *         encoding may be read
      * @throws IllegalArgumentException if the format combination supplied is
-     *         not supported.
+     *         not supported
      */
     public abstract AudioInputStream getAudioInputStream(
             Encoding targetEncoding, AudioInputStream sourceStream);
@@ -202,7 +202,7 @@ public abstract class FormatConversionProvider {
      * @return stream from which processed data with the specified format may be
      *         read
      * @throws IllegalArgumentException if the format combination supplied is
-     *         not supported.
+     *         not supported
      */
     public abstract AudioInputStream getAudioInputStream(
             AudioFormat targetFormat, AudioInputStream sourceStream);

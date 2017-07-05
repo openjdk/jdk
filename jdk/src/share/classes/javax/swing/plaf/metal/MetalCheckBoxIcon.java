@@ -49,6 +49,11 @@ import javax.swing.plaf.*;
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalCheckBoxIcon implements Icon, UIResource, Serializable {
 
+    /**
+     * Returns the size of the control.
+     *
+     * @return the size of the control
+     */
     protected int getControlSize() { return 13; }
 
     public void paintIcon(Component c, Graphics g, int x, int y) {
@@ -91,6 +96,14 @@ public class MetalCheckBoxIcon implements Icon, UIResource, Serializable {
         }
     }
 
+    /**
+     * Paints {@code MetalCheckBoxIcon}.
+     *
+     * @param c a component
+     * @param g an instance of {@code Graphics}
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     */
     protected void drawCheck(Component c, Graphics g, int x, int y) {
         int controlSize = getControlSize();
         g.fillRect( x+3, y+5, 2, controlSize-8 );

@@ -48,10 +48,19 @@ public class MetalDesktopIconUI extends BasicDesktopIconUI
     TitleListener titleListener;
     private int width;
 
+    /**
+     * Constructs a new instance of {@code MetalDesktopIconUI}.
+     *
+     * @param c a component
+     * @return a new instance of {@code MetalDesktopIconUI}
+     */
     public static ComponentUI createUI(JComponent c)    {
         return new MetalDesktopIconUI();
     }
 
+    /**
+     * Constructs a new instance of {@code MetalDesktopIconUI}.
+     */
     public MetalDesktopIconUI() {
     }
 

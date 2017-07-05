@@ -213,7 +213,7 @@ class MuxingAttributeSet implements AttributeSet, Serializable {
      * @return the attribute names
      * @see AttributeSet#getAttributeNames
      */
-    public Enumeration getAttributeNames() {
+    public Enumeration<?> getAttributeNames() {
         return new MuxingAttributeNameEnumeration();
     }
 
@@ -240,7 +240,7 @@ class MuxingAttributeSet implements AttributeSet, Serializable {
     public boolean containsAttributes(AttributeSet attrs) {
         boolean result = true;
 
-        Enumeration names = attrs.getAttributeNames();
+        Enumeration<?> names = attrs.getAttributeNames();
         while (result && names.hasMoreElements()) {
             Object name = names.nextElement();
             result = attrs.getAttribute(name).equals(getAttribute(name));
@@ -268,7 +268,7 @@ class MuxingAttributeSet implements AttributeSet, Serializable {
      * An Enumeration of the Attribute names in a MuxingAttributeSet.
      * This may return the same name more than once.
      */
-    private class MuxingAttributeNameEnumeration implements Enumeration {
+    private class MuxingAttributeNameEnumeration implements Enumeration<Object> {
 
         MuxingAttributeNameEnumeration() {
             updateEnum();
@@ -307,6 +307,6 @@ class MuxingAttributeSet implements AttributeSet, Serializable {
         /** Index into attrs the current Enumeration came from. */
         private int attrIndex;
         /** Enumeration from attrs. */
-        private Enumeration currentEnum;
+        private Enumeration<?> currentEnum;
     }
 }

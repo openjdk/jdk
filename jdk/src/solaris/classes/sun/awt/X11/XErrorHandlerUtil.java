@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ public final class XErrorHandlerUtil {
      * @param handler the synthetic error handler to set
      */
     public static void WITH_XERROR_HANDLER(XErrorHandler handler) {
+        XSync();
         saved_error = null;
         current_error_handler = handler;
     }
@@ -105,15 +106,9 @@ public final class XErrorHandlerUtil {
      * Unsets a current synthetic error handler. Must be called with the acquired AWT lock.
      */
     public static void RESTORE_XERROR_HANDLER() {
-        RESTORE_XERROR_HANDLER(true);
-    }
-
-    private static void RESTORE_XERROR_HANDLER(boolean doXSync) {
-        if (doXSync) {
-            // Wait until all requests are processed by the X server
-            // and only then uninstall the error handler.
-            XSync();
-        }
+        // Wait until all requests are processed by the X server
+        // and only then uninstall the error handler.
+        XSync();
         current_error_handler = null;
     }
 

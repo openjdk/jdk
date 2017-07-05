@@ -69,6 +69,7 @@ import sun.swing.DefaultLookup;
  *
  * @author Philip Milne
  * @author Hans Muller
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class DefaultListCellRenderer extends JLabel

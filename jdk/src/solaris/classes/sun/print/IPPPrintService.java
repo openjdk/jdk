@@ -91,7 +91,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     private CUPSPrinter cps;
     private HttpURLConnection urlConnection = null;
     private DocFlavor[] supportedDocFlavors;
-    private Class[] supportedCats;
+    private Class<?>[] supportedCats;
     private MediaTray[] mediaTrays;
     private MediaSizeName[] mediaSizeNames;
     private CustomMediaSizeName[] customMediaSizeNames;
@@ -99,7 +99,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     private boolean isCupsPrinter;
     private boolean init;
     private Boolean isPS;
-    private HashMap getAttMap;
+    private HashMap<String, AttributeClass> getAttMap;
     private boolean pngImagesAdded = false;
     private boolean gifImagesAdded = false;
     private boolean jpgImagesAdded = false;
@@ -424,8 +424,8 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
             // use IPP to get all media,
             Media[] allMedia = getSupportedMedia();
-            ArrayList sizeList = new ArrayList();
-            ArrayList trayList = new ArrayList();
+            ArrayList<Media> sizeList = new ArrayList<>();
+            ArrayList<Media> trayList = new ArrayList<>();
             for (int i=0; i<allMedia.length; i++) {
                 if (allMedia[i] instanceof MediaSizeName) {
                     sizeList.add(allMedia[i]);
@@ -436,13 +436,11 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
             if (sizeList != null) {
                 mediaSizeNames = new MediaSizeName[sizeList.size()];
-                mediaSizeNames = (MediaSizeName[])sizeList.toArray(
-                                                       mediaSizeNames);
+                mediaSizeNames = sizeList.toArray(mediaSizeNames);
             }
             if (trayList != null) {
                 mediaTrays = new MediaTray[trayList.size()];
-                mediaTrays = (MediaTray[])trayList.toArray(
-                                                           mediaTrays);
+                mediaTrays = trayList.toArray(mediaTrays);
             }
             urlConnection.disconnect();
 
@@ -503,7 +501,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                   flavor.equals(DocFlavor.BYTE_ARRAY.POSTSCRIPT))) {
                 CopiesSupported cs = new CopiesSupported(1, MAXCOPIES);
                 AttributeClass attribClass = (getAttMap != null) ?
-                    (AttributeClass)getAttMap.get(cs.getName()) : null;
+                    getAttMap.get(cs.getName()) : null;
                 if (attribClass != null) {
                     int[] range = attribClass.getIntRangeValue();
                     cs = new CopiesSupported(range[0], range[1]);
@@ -545,7 +543,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             return arr;
         } else if (category == Finishings.class) {
             AttributeClass attribClass = (getAttMap != null) ?
-                (AttributeClass)getAttMap.get("finishings-supported")
+                getAttMap.get("finishings-supported")
                 : null;
             if (attribClass != null) {
                 int[] finArray = attribClass.getArrayOfIntValues();
@@ -648,7 +646,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             }
         } else if (category == NumberUp.class) {
             AttributeClass attribClass = (getAttMap != null) ?
-                (AttributeClass)getAttMap.get("number-up-supported") : null;
+                getAttMap.get("number-up-supported") : null;
             if (attribClass != null) {
                 int[] values = attribClass.getArrayOfIntValues();
                 if (values != null) {
@@ -673,7 +671,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             OrientationRequested[] orientSup = null;
 
             AttributeClass attribClass = (getAttMap != null) ?
-              (AttributeClass)getAttMap.get("orientation-requested-supported")
+              getAttMap.get("orientation-requested-supported")
                 : null;
             if (attribClass != null) {
                 int[] orientArray = attribClass.getArrayOfIntValues();
@@ -748,7 +746,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             // or printable so if the document is in Landscape, this may
             // result in double rotation.
             AttributeClass attribClass = (getAttMap != null) ?
-                (AttributeClass)getAttMap.get("sides-supported")
+                getAttMap.get("sides-supported")
                 : null;
             if (attribClass != null) {
                 String[] sidesArray = attribClass.getArrayOfStringValues();
@@ -833,13 +831,13 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             getAttMap.containsKey("document-format-supported")) {
 
             AttributeClass attribClass =
-                (AttributeClass)getAttMap.get("document-format-supported");
+                getAttMap.get("document-format-supported");
             if (attribClass != null) {
                 String mimeType;
                 boolean psSupported = false;
                 String[] docFlavors = attribClass.getArrayOfStringValues();
                 DocFlavor[] flavors;
-                HashSet docList = new HashSet();
+                HashSet<Object> docList = new HashSet<>();
                 int j;
                 String hostEnc = DocFlavor.hostEncoding.
                     toLowerCase(Locale.ENGLISH);
@@ -970,8 +968,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         if ((getAttMap != null) &&
             getAttMap.containsKey("media-supported")) {
 
-            AttributeClass attribClass =
-                (AttributeClass)getAttMap.get("media-supported");
+            AttributeClass attribClass = getAttMap.get("media-supported");
 
             if (attribClass != null) {
                 String[] mediaVals = attribClass.getArrayOfStringValues();
@@ -990,23 +987,21 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     }
 
 
-    public synchronized Class[] getSupportedAttributeCategories() {
+    public synchronized Class<?>[] getSupportedAttributeCategories() {
         if (supportedCats != null) {
             return supportedCats;
         }
 
         initAttributes();
 
-        ArrayList catList = new ArrayList();
-        Class cl;
+        ArrayList<Class<?>> catList = new ArrayList<>();
 
         for (int i=0; i < printReqAttribDefault.length; i++) {
             PrintRequestAttribute pra =
                 (PrintRequestAttribute)printReqAttribDefault[i];
             if (getAttMap != null &&
                 getAttMap.containsKey(pra.getName()+"-supported")) {
-                cl = pra.getCategory();
-                catList.add(cl);
+                catList.add(pra.getCategory());
             }
         }
 
@@ -1047,7 +1042,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         if (getAttMap != null && getAttMap.containsKey("color-supported")) {
             catList.add(Chromaticity.class);
         }
-        supportedCats = new Class[catList.size()];
+        supportedCats = new Class<?>[catList.size()];
         catList.toArray(supportedCats);
         return supportedCats;
     }
@@ -1085,7 +1080,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         return false;
     }
 
-
+    @SuppressWarnings("unchecked")
     public synchronized <T extends PrintServiceAttribute>
         T getAttribute(Class<T> category)
     {
@@ -1103,7 +1098,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         } else if (category == PrinterInfo.class) {
             PrinterInfo pInfo = new PrinterInfo(printer, null);
             AttributeClass ac = (getAttMap != null) ?
-                (AttributeClass)getAttMap.get(pInfo.getName())
+                getAttMap.get(pInfo.getName())
                 : null;
             if (ac != null) {
                 return (T)(new PrinterInfo(ac.getStringValue(), null));
@@ -1112,7 +1107,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         } else if (category == QueuedJobCount.class) {
             QueuedJobCount qjc = new QueuedJobCount(0);
             AttributeClass ac = (getAttMap != null) ?
-                (AttributeClass)getAttMap.get(qjc.getName())
+                getAttMap.get(qjc.getName())
                 : null;
             if (ac != null) {
                 qjc = new QueuedJobCount(ac.getIntValue());
@@ -1122,7 +1117,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             PrinterIsAcceptingJobs accJob =
                 PrinterIsAcceptingJobs.ACCEPTING_JOBS;
             AttributeClass ac = (getAttMap != null) ?
-                (AttributeClass)getAttMap.get(accJob.getName())
+                getAttMap.get(accJob.getName())
                 : null;
             if ((ac != null) && (ac.getByteValue() == 0)) {
                 accJob = PrinterIsAcceptingJobs.NOT_ACCEPTING_JOBS;
@@ -1131,7 +1126,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         } else if (category == ColorSupported.class) {
             ColorSupported cs = ColorSupported.SUPPORTED;
             AttributeClass ac = (getAttMap != null) ?
-                (AttributeClass)getAttMap.get(cs.getName())
+                getAttMap.get(cs.getName())
                 : null;
             if ((ac != null) && (ac.getByteValue() == 0)) {
                 cs = ColorSupported.NOT_SUPPORTED;
@@ -1165,7 +1160,8 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         for (int i=0; i < serviceAttributes.length; i++) {
             String name = (String)serviceAttributes[i][1];
             if (getAttMap != null && getAttMap.containsKey(name)) {
-                Class c = (Class)serviceAttributes[i][0];
+                @SuppressWarnings("unchecked")
+                Class<PrintServiceAttribute> c = (Class<PrintServiceAttribute>)serviceAttributes[i][0];
                 PrintServiceAttribute psa = getAttribute(c);
                 if (psa != null) {
                     attrs.add(psa);
@@ -1279,7 +1275,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 return false;
             }
         }
-        Class category = attr.getCategory();
+        Class<? extends Attribute> category = attr.getCategory();
         if (!isAttributeCategorySupported(category)) {
             return false;
         }
@@ -1397,7 +1393,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         }
         String attribName = catName+"-default";
         AttributeClass attribClass = (getAttMap != null) ?
-                (AttributeClass)getAttMap.get(attribName) : null;
+                getAttMap.get(attribName) : null;
 
         if (category == Copies.class) {
             if (attribClass != null) {
@@ -1600,7 +1596,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     }
 
 
-    public boolean usesClass(Class c) {
+    public boolean usesClass(Class<?> c) {
         return (c == sun.print.PSPrinterJob.class);
     }
 
@@ -1675,9 +1671,9 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                                    AttributeClass.TAG_URI,
                                    ""+myURI)};
 
-            OutputStream os = (OutputStream)java.security.AccessController.
-                doPrivileged(new java.security.PrivilegedAction() {
-                    public Object run() {
+            OutputStream os = java.security.AccessController.
+                doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
+                    public OutputStream run() {
                         try {
                             return urlConnection.getOutputStream();
                         } catch (Exception e) {
@@ -1696,7 +1692,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             if (success) {
                 InputStream is = null;
                 if ((is = urlConnection.getInputStream())!=null) {
-                    HashMap[] responseMap = readIPPResponse(is);
+                    HashMap<String, AttributeClass>[] responseMap = readIPPResponse(is);
 
                     if (responseMap != null && responseMap.length > 0) {
                         getAttMap = responseMap[0];
@@ -1771,7 +1767,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     }
 
 
-    public static HashMap[] readIPPResponse(InputStream inputStream) {
+    public static HashMap<String, AttributeClass>[] readIPPResponse(InputStream inputStream) {
 
         if (inputStream == null) {
             return null;
@@ -1792,8 +1788,8 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 String attribStr = null;
                 // assign default value
                 byte valTagByte = AttributeClass.TAG_KEYWORD;
-                ArrayList respList = new ArrayList();
-                HashMap responseMap = new HashMap();
+                ArrayList<HashMap<String, AttributeClass>> respList = new ArrayList<>();
+                HashMap<String, AttributeClass> responseMap = new HashMap<>();
 
                 response[0] = ois.readByte();
 
@@ -1829,7 +1825,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                             // if key exists, new HashMap
                             if (responseMap.containsKey(attribStr)) {
                                 respList.add(responseMap);
-                                responseMap = new HashMap();
+                                responseMap = new HashMap<>();
                             }
 
                             // exclude those that are unknown
@@ -1885,7 +1881,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                         if ((counter != 0) &&
                             responseMap.containsKey(attribStr)) {
                             respList.add(responseMap);
-                            responseMap = new HashMap();
+                            responseMap = new HashMap<>();
                         }
 
                         byte outArray[] = outObj.toByteArray();
@@ -1901,8 +1897,10 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 if ((responseMap != null) && (responseMap.size() > 0)) {
                     respList.add(responseMap);
                 }
-                return (HashMap[])respList.toArray(
-                                  new HashMap[respList.size()]);
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                HashMap<String, AttributeClass>[] tmp  =
+                    respList.toArray((HashMap<String, AttributeClass>[])new HashMap[respList.size()]);
+                return tmp;
             } else {
                 debug_println(debugPrefix+
                           "readIPPResponse client error, IPP status code: 0x"+

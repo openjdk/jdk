@@ -56,10 +56,10 @@ public class MemoryUsageCompositeData extends LazyCompositeData {
         // CONTENTS OF THIS ARRAY MUST BE SYNCHRONIZED WITH
         // memoryUsageItemNames!
         final Object[] memoryUsageItemValues = {
-            new Long(usage.getInit()),
-            new Long(usage.getUsed()),
-            new Long(usage.getCommitted()),
-            new Long(usage.getMax()),
+            usage.getInit(),
+            usage.getUsed(),
+            usage.getCommitted(),
+            usage.getMax(),
         };
 
         try {

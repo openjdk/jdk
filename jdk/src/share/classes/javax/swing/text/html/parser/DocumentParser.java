@@ -112,11 +112,24 @@ public class DocumentParser extends javax.swing.text.html.parser.Parser {
     private boolean ignoreCharSet = false;
     private static final boolean debugFlag = false;
 
+    /**
+     * Creates document parser with the specified {@code dtd}.
+     *
+     * @param dtd the dtd.
+     */
     public DocumentParser(DTD dtd) {
         super(dtd);
     }
 
-    public void parse(Reader in,  HTMLEditorKit.ParserCallback callback, boolean ignoreCharSet) throws IOException {
+    /**
+     * Parse an HTML stream, given a DTD.
+     *
+     * @param in the reader to read the source from
+     * @param callback the callback
+     * @param ignoreCharSet if {@code true} the charset is ignored
+     * @throws IOException if an I/O error occurs
+     */
+    public void parse(Reader in, HTMLEditorKit.ParserCallback callback, boolean ignoreCharSet) throws IOException {
         this.ignoreCharSet = ignoreCharSet;
         this.callback = callback;
         parse(in);

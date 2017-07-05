@@ -30,6 +30,12 @@
 
 #include <setjmp.h>
 
+#ifdef __APPLE__
+/* use setjmp/longjmp versions that do not save/restore the signal mask */
+#define setjmp _setjmp
+#define longjmp _longjmp
+#endif
+
 /* stream input handling */
 
 typedef struct

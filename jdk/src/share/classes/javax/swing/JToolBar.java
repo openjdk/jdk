@@ -85,6 +85,7 @@ import java.util.Hashtable;
  * @author Georges Saab
  * @author Jeff Shapiro
  * @see Action
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JToolBar extends JComponent implements SwingConstants, Accessible

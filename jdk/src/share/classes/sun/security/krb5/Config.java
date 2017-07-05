@@ -31,10 +31,13 @@
 package sun.security.krb5;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FilePermission;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.security.PrivilegedAction;
 import java.util.*;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -196,8 +199,11 @@ public class Config {
                 }
             }
         } catch (IOException ioe) {
-            // I/O error, mostly like krb5.conf missing.
-            // No problem. We'll use DNS or system property etc.
+            if (DEBUG) {
+                System.out.println("Exception thrown in loading config:");
+                ioe.printStackTrace(System.out);
+            }
+            throw new KrbException("krb5.conf loading failed");
         }
     }
 
@@ -206,7 +212,7 @@ public class Config {
      * @param keys the keys, as an array from section name, sub-section names
      * (if any), to value name.
      * @return the value. When there are multiple values for the same key,
-     * returns the last one. {@code null} is returned if not all the keys are
+     * returns the first one. {@code null} is returned if not all the keys are
      * defined. For example, {@code get("libdefaults", "forwardable")} will
      * return null if "forwardable" is not defined in [libdefaults], and
      * {@code get("realms", "R", "kdc")} will return null if "R" is not
@@ -223,7 +229,7 @@ public class Config {
     public String get(String... keys) {
         Vector<String> v = getString0(keys);
         if (v == null) return null;
-        return v.lastElement();
+        return v.firstElement();
     }
 
     /**
@@ -273,7 +279,7 @@ public class Config {
     }
 
     /**
-     * Returns true if keys exists, can be either final string(s) or sub-stanza
+     * Returns true if keys exists, can be final string(s) or a sub-section
      * @throws IllegalArgumentException if any of the keys is illegal
      *         (See {@link #get})
      */
@@ -291,9 +297,9 @@ public class Config {
         }
     }
 
-    // Internal method. Returns the value for keys, which can be a sub-stanza
-    // or final string value(s).
-    // The only method (except for toString) that reads stanzaTable directly.
+    // Internal method. Returns the value for keys, which can be a sub-section
+    // (as a Hashtable) or final string value(s) (as a Vector). This is the
+    // only method (except for toString) that reads stanzaTable directly.
     @SuppressWarnings("unchecked")
     private Object get0(String... keys) {
         Object current = stanzaTable;
@@ -453,142 +459,207 @@ public class Config {
     }
 
     /**
-     * Reads lines to the memory from the configuration file.
+     * Reads the lines of the configuration file. All include and includedir
+     * directives are resolved by calling this method recursively.
      *
-     * Configuration file contains information about the default realm,
-     * ticket parameters, location of the KDC and the admin server for
-     * known realms, etc. The file is divided into sections. Each section
-     * contains one or more name/value pairs with one pair per line. A
-     * typical file would be:
-     * <pre>
-     * [libdefaults]
-     *          default_realm = EXAMPLE.COM
-     *          default_tgs_enctypes = des-cbc-md5
-     *          default_tkt_enctypes = des-cbc-md5
-     * [realms]
-     *          EXAMPLE.COM = {
-     *                  kdc = kerberos.example.com
-     *                  kdc = kerberos-1.example.com
-     *                  admin_server = kerberos.example.com
-     *                  }
-     *          SAMPLE_COM = {
-     *                  kdc = orange.sample.com
-     *                  admin_server = orange.sample.com
-     *                  }
-     * [domain_realm]
-     *          blue.sample.com = TEST.SAMPLE.COM
-     *          .backup.com     = EXAMPLE.COM
-     * </pre>
-     * @return an ordered list of strings representing the config file after
-     * some initial processing, including:<ol>
-     * <li> Comment lines and empty lines are removed
-     * <li> "{" not at the end of a line is appended to the previous line
-     * <li> The content of a section is also placed between "{" and "}".
-     * <li> Lines are trimmed</ol>
+     * @param file the krb5.conf file, must be absolute
+     * @param content the lines. Comment and empty lines are removed,
+     *                all lines trimmed, include and includedir
+     *                directives resolved, unknown directives ignored
+     * @param dups a set of Paths to check for possible infinite loop
      * @throws IOException if there is an I/O error
-     * @throws KrbException if there is a file format error
      */
-    private List<String> loadConfigFile(final String fileName)
-            throws IOException, KrbException {
-        try {
-            List<String> v = new ArrayList<>();
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(
-                AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<FileInputStream> () {
-                        public FileInputStream run() throws IOException {
-                            return new FileInputStream(fileName);
-                        }
-                    })))) {
-                String line;
-                String previous = null;
-                while ((line = br.readLine()) != null) {
-                    line = line.trim();
-                    if (line.startsWith("#") || line.isEmpty()) {
-                        // ignore comments and blank line
-                        // Comments start with #.
-                        continue;
-                    }
-                    // In practice, a subsection might look like:
-                    //      [realms]
-                    //      EXAMPLE.COM =
-                    //      {
-                    //          kdc = kerberos.example.com
-                    //          ...
-                    //      }
-                    // Before parsed into stanza table, it needs to be
-                    // converted into a canonicalized style (no indent):
-                    //      realms = {
-                    //          EXAMPLE.COM = {
-                    //              kdc = kerberos.example.com
-                    //              ...
-                    //          }
-                    //      }
-                    //
-                    if (line.startsWith("[")) {
-                        if (!line.endsWith("]")) {
-                            throw new KrbException("Illegal config content:"
-                                    + line);
-                        }
-                        if (previous != null) {
-                            v.add(previous);
-                            v.add("}");
-                        }
-                        String title = line.substring(
-                                1, line.length()-1).trim();
-                        if (title.isEmpty()) {
-                            throw new KrbException("Illegal config content:"
-                                    + line);
-                        }
-                        previous = title + " = {";
-                    } else if (line.startsWith("{")) {
-                        if (previous == null) {
-                            throw new KrbException(
-                                "Config file should not start with \"{\"");
-                        }
-                        previous += " {";
-                        if (line.length() > 1) {
-                            // { and content on the same line
-                            v.add(previous);
-                            previous = line.substring(1).trim();
-                        }
-                    } else {
-                        // Lines before the first section are ignored
-                        if (previous != null) {
-                            v.add(previous);
-                            previous = line;
-                        }
-                    }
-                }
-                if (previous != null) {
-                    v.add(previous);
-                    v.add("}");
-                }
-            }
-            return v;
-        } catch (java.security.PrivilegedActionException pe) {
-            throw (IOException)pe.getException();
+    private static Void readConfigFileLines(
+            Path file, List<String> content, Set<Path> dups)
+            throws IOException {
+
+        if (DEBUG) {
+            System.out.println("Loading krb5 profile at " + file);
         }
+        if (!file.isAbsolute()) {
+            throw new IOException("Profile path not absolute");
+        }
+
+        if (!dups.add(file)) {
+            throw new IOException("Profile path included more than once");
+        }
+
+        List<String> lines = Files.readAllLines(file);
+
+        boolean inDirectives = true;
+        for (String line: lines) {
+            line = line.trim();
+            if (line.isEmpty() || line.startsWith("#")) {
+                continue;
+            }
+            if (inDirectives) {
+                if (line.charAt(0) == '[') {
+                    inDirectives = false;
+                    content.add(line);
+                } else if (line.startsWith("includedir ")) {
+                    Path dir = Paths.get(
+                            line.substring("includedir ".length()).trim());
+                    try (DirectoryStream<Path> files =
+                                 Files.newDirectoryStream(dir)) {
+                        for (Path p: files) {
+                            if (Files.isDirectory(p)) continue;
+                            String name = p.getFileName().toString();
+                            if (name.matches("[a-zA-Z0-9_-]+")) {
+                                // if dir is absolute, so is p
+                                readConfigFileLines(p, content, dups);
+                            }
+                        }
+                    }
+                } else if (line.startsWith("include ")) {
+                    readConfigFileLines(
+                            Paths.get(line.substring("include ".length()).trim()),
+                            content, dups);
+                } else {
+                    // Unsupported directives
+                    if (DEBUG) {
+                        System.out.println("Unknown directive: " + line);
+                    }
+                }
+            } else {
+                content.add(line);
+            }
+        }
+        return null;
     }
 
     /**
-     * Parses stanza names and values from configuration file to
-     * stanzaTable (Hashtable). Hashtable key would be stanza names,
-     * (libdefaults, realms, domain_realms, etc), and the hashtable value
-     * would be another hashtable which contains the key-value pairs under
-     * a stanza name. The value of this sub-hashtable can be another hashtable
-     * containing another sub-sub-section or a vector of strings for
-     * final values (even if there is only one value defined).
+     * Reads the configuration file and return normalized lines.
+     * If the original file is:
+     *
+     *     [realms]
+     *     EXAMPLE.COM =
+     *     {
+     *         kdc = kerberos.example.com
+     *         ...
+     *     }
+     *     ...
+     *
+     * The result will be (no indentations):
+     *
+     *     {
+     *         realms = {
+     *             EXAMPLE.COM = {
+     *                 kdc = kerberos.example.com
+     *                 ...
+     *             }
+     *         }
+     *         ...
+     *     }
+     *
+     * @param fileName the configuration file
+     * @return normalized lines
+     */
+    private List<String> loadConfigFile(final String fileName)
+            throws IOException, KrbException {
+
+        List<String> result = new ArrayList<>();
+        List<String> raw = new ArrayList<>();
+        Set<Path> dupsCheck = new HashSet<>();
+
+        try {
+            Path fullp = AccessController.doPrivileged((PrivilegedAction<Path>)
+                        () -> Paths.get(fileName).toAbsolutePath(),
+                    null,
+                    new PropertyPermission("user.dir", "read"));
+            AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<Void>() {
+                        @Override
+                        public Void run() throws IOException {
+                            Path path = Paths.get(fileName);
+                            if (!Files.exists(path)) {
+                                // This is OK. There are other ways to get
+                                // Kerberos 5 settings
+                                return null;
+                            } else {
+                                return readConfigFileLines(
+                                        fullp, raw, dupsCheck);
+                            }
+                        }
+                    },
+                    null,
+                    // include/includedir can go anywhere
+                    new FilePermission("<<ALL FILES>>", "read"));
+        } catch (java.security.PrivilegedActionException pe) {
+            throw (IOException)pe.getException();
+        }
+        String previous = null;
+        for (String line: raw) {
+            if (line.startsWith("[")) {
+                if (!line.endsWith("]")) {
+                    throw new KrbException("Illegal config content:"
+                            + line);
+                }
+                if (previous != null) {
+                    result.add(previous);
+                    result.add("}");
+                }
+                String title = line.substring(
+                        1, line.length()-1).trim();
+                if (title.isEmpty()) {
+                    throw new KrbException("Illegal config content:"
+                            + line);
+                }
+                previous = title + " = {";
+            } else if (line.startsWith("{")) {
+                if (previous == null) {
+                    throw new KrbException(
+                        "Config file should not start with \"{\"");
+                }
+                previous += " {";
+                if (line.length() > 1) {
+                    // { and content on the same line
+                    result.add(previous);
+                    previous = line.substring(1).trim();
+                }
+            } else {
+                if (previous == null) {
+                    // This won't happen, because before a section
+                    // all directives have been resolved
+                    throw new KrbException(
+                        "Config file must starts with a section");
+                }
+                result.add(previous);
+                previous = line;
+            }
+        }
+        if (previous != null) {
+            result.add(previous);
+            result.add("}");
+        }
+        return result;
+    }
+
+    /**
+     * Parses the input lines to a hashtable. The key would be section names
+     * (libdefaults, realms, domain_realms, etc), and the value would be
+     * another hashtable which contains the key-value pairs inside the section.
+     * The value of this sub-hashtable can be another hashtable containing
+     * another sub-sub-section or a non-empty vector of strings for final values
+     * (even if there is only one value defined).
      * <p>
-     * For duplicates section names, the latter overwrites the former. For
-     * duplicate value names, the values are in a vector in its appearing order.
-     * </ol>
-     * Please note that this behavior is Java traditional. and it is
-     * not the same as the MIT krb5 behavior, where:<ol>
-     * <li>Duplicated root sections will be merged
-     * <li>For duplicated sub-sections, the former overwrites the latter
-     * <li>Duplicate keys for values are always saved in a vector
-     * </ol>
-     * @param v the strings in the file, never null, might be empty
+     * For top-level sections with duplicates names, their contents are merged.
+     * For sub-sections the former overwrites the latter. For final values,
+     * they are stored in a vector in their appearing order. Please note these
+     * values must appear in the same sub-section. Otherwise, the sub-section
+     * appears first should have already overridden the others.
+     * <p>
+     * As a corner case, if the same name is used as both a section name and a
+     * value name, the first appearance decides the type. That is to say, if the
+     * first one is for a section, all latter appearances are ignored. If it's
+     * a value, latter appearances as sections are ignored, but those as values
+     * are added to the vector.
+     * <p>
+     * The behavior described above is compatible to other krb5 implementations
+     * but it's not decumented publicly anywhere. the best practice is not to
+     * assume any kind of override functionality and only specify values for
+     * a particular key in one place.
+     *
+     * @param v the normalized input as return by loadConfigFile
      * @throws KrbException if there is a file format error
      */
     @SuppressWarnings("unchecked")
@@ -596,7 +667,7 @@ public class Config {
             throws KrbException {
         Hashtable<String,Object> current = stanzaTable;
         for (String line: v) {
-            // There are 3 kinds of lines
+            // There are only 3 kinds of lines
             // 1. a = b
             // 2. a = {
             // 3. }
@@ -612,14 +683,25 @@ public class Config {
                     throw new KrbException("Illegal config content:" + line);
                 }
                 String key = line.substring(0, pos).trim();
-                String value = trimmed(line.substring(pos+1));
+                String value = unquote(line.substring(pos + 1));
                 if (value.equals("{")) {
                     Hashtable<String,Object> subTable;
                     if (current == stanzaTable) {
                         key = key.toLowerCase(Locale.US);
                     }
-                    subTable = new Hashtable<>();
-                    current.put(key, subTable);
+                    // When there are dup names for sections
+                    if (current.containsKey(key)) {
+                        if (current == stanzaTable) {   // top-level, merge
+                            // The value at top-level must be another Hashtable
+                            subTable = (Hashtable<String,Object>)current.get(key);
+                        } else {                        // otherwise, ignored
+                            // read and ignore it (do not put into current)
+                            subTable = new Hashtable<>();
+                        }
+                    } else {
+                        subTable = new Hashtable<>();
+                        current.put(key, subTable);
+                    }
                     // A special entry for its parent. Put whitespaces around,
                     // so will never be confused with a normal key
                     subTable.put(" PARENT ", current);
@@ -628,20 +710,19 @@ public class Config {
                     Vector<String> values;
                     if (current.containsKey(key)) {
                         Object obj = current.get(key);
-                        // If a key first shows as a section and then a value,
-                        // this is illegal. However, we haven't really forbid
-                        // first value then section, which the final result
-                        // is a section.
-                        if (!(obj instanceof Vector)) {
-                            throw new KrbException("Key " + key
-                                    + "used for both value and section");
+                        if (obj instanceof Vector) {
+                            // String values are merged
+                            values = (Vector<String>)obj;
+                            values.add(value);
+                        } else {
+                            // If a key shows as section first and then a value,
+                            // ignore the value.
                         }
-                        values = (Vector<String>)current.get(key);
                     } else {
                         values = new Vector<String>();
+                        values.add(value);
                         current.put(key, values);
                     }
-                    values.add(value);
                 }
             }
         }
@@ -764,7 +845,7 @@ public class Config {
         return "/etc/krb5.conf";
     }
 
-    private static String trimmed(String s) {
+    private static String unquote(String s) {
         s = s.trim();
         if (s.isEmpty()) return s;
         if (s.charAt(0) == '"' && s.charAt(s.length()-1) == '"' ||

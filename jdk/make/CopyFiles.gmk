@@ -373,7 +373,14 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   POLICY_SRC_LIST += $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS)/lib/security/java.policy
 endif
 ifndef OPENJDK
-  ifneq (, $(filter $(OPENJDK_TARGET_OS), windows solaris))
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+      POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS)/lib/security/java.policy-win32
+    else
+      POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS)/lib/security/java.policy-win64
+    endif
+  endif
+  ifeq ($(OPENJDK_TARGET_OS), solaris)
     POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS)/lib/security/java.policy
   endif
 endif

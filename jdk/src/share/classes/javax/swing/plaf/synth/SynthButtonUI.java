@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,9 +138,7 @@ public class SynthButtonUI extends BasicButtonUI implements
     }
 
     SynthContext getContext(JComponent c, int state) {
-        Region region = SynthLookAndFeel.getRegion(c);
-        return SynthContext.getContext(SynthContext.class, c, region,
-                                       style, state);
+        return SynthContext.getContext(c, style, state);
     }
 
     /**
@@ -514,6 +512,13 @@ public class SynthButtonUI extends BasicButtonUI implements
 
     /**
      * Returns the Icon used in calculating the
+     * preferred/minimum/maximum size.
+     *
+     * @param b specifies the {@code AbstractButton}
+     * used when calculating the preferred/minimum/maximum
+     * size.
+     *
+     * @return the Icon used in calculating the
      * preferred/minimum/maximum size.
      */
     protected Icon getSizingIcon(AbstractButton b) {

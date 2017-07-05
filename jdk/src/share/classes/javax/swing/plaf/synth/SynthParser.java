@@ -67,6 +67,7 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import com.sun.beans.decoder.DocumentHandler;
+import sun.reflect.misc.ReflectUtil;
 
 class SynthParser extends DefaultHandler {
     //
@@ -648,7 +649,7 @@ class SynthParser extends DefaultHandler {
                     }
                     else {
                         try {
-                            typeClass = Class.forName(typeName.substring(
+                            typeClass = ReflectUtil.forName(typeName.substring(
                                                       0, classIndex));
                         } catch (ClassNotFoundException cnfe) {
                             throw new SAXException("Unknown class: " +

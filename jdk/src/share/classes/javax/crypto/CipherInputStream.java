@@ -170,7 +170,6 @@ public class CipherInputStream extends FilterInputStream {
      * @return  the next byte of data, or <code>-1</code> if the end of the
      *          stream is reached.
      * @exception  IOException  if an I/O error occurs.
-     * @since JCE1.2
      */
     public int read() throws IOException {
         if (ostart >= ofinish) {
@@ -196,7 +195,6 @@ public class CipherInputStream extends FilterInputStream {
      *             the stream has been reached.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.InputStream#read(byte[], int, int)
-     * @since      JCE1.2
      */
     public int read(byte b[]) throws IOException {
         return read(b, 0, b.length);
@@ -217,7 +215,6 @@ public class CipherInputStream extends FilterInputStream {
      *             the stream has been reached.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.InputStream#read()
-     * @since      JCE1.2
      */
     public int read(byte b[], int off, int len) throws IOException {
         if (ostart >= ofinish) {
@@ -254,7 +251,6 @@ public class CipherInputStream extends FilterInputStream {
      * @param      n the number of bytes to be skipped.
      * @return     the actual number of bytes skipped.
      * @exception  IOException  if an I/O error occurs.
-     * @since JCE1.2
      */
     public long skip(long n) throws IOException {
         int available = ofinish - ostart;
@@ -277,7 +273,6 @@ public class CipherInputStream extends FilterInputStream {
      * @return     the number of bytes that can be read from this input stream
      *             without blocking.
      * @exception  IOException  if an I/O error occurs.
-     * @since      JCE1.2
      */
     public int available() throws IOException {
         return (ofinish - ostart);
@@ -292,7 +287,6 @@ public class CipherInputStream extends FilterInputStream {
      * stream.
      *
      * @exception  IOException  if an I/O error occurs.
-     * @since JCE1.2
      */
     public void close() throws IOException {
         if (closed) {
@@ -321,7 +315,6 @@ public class CipherInputStream extends FilterInputStream {
      *          <code>mark</code> and <code>reset</code> methods.
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.InputStream#reset()
-     * @since   JCE1.2
      */
     public boolean markSupported() {
         return false;

@@ -78,6 +78,7 @@ import javax.swing.plaf.*;
  *
  * @author  Timothy Prinzing
  * @see javax.swing.text.StyledEditorKit
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JTextPane extends JEditorPane {

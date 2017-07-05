@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.lang.reflect.Constructor;
 /**
  * A PropertyDescriptor describes one property that a Java Bean
  * exports via a pair of accessor methods.
+ * @since 1.1
  */
 public class PropertyDescriptor extends FeatureDescriptor {
 
@@ -112,7 +113,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
         // If this class or one of its base classes allow PropertyChangeListener,
         // then we assume that any properties we discover are "bound".
         // See Introspector.getTargetPropertyInfo() method.
-        Class[] args = { PropertyChangeListener.class };
+        Class<?>[] args = { PropertyChangeListener.class };
         this.bound = null != Introspector.findMethod(beanClass, "addPropertyChangeListener", args.length, args);
     }
 
@@ -244,6 +245,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      *
      * @param readMethod The new read method.
      * @throws IntrospectionException if the read method is invalid
+     * @since 1.2
      */
     public synchronized void setReadMethod(Method readMethod)
                                 throws IntrospectionException {
@@ -314,6 +316,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      *
      * @param writeMethod The new write method.
      * @throws IntrospectionException if the write method is invalid
+     * @since 1.2
      */
     public synchronized void setWriteMethod(Method writeMethod)
                                 throws IntrospectionException {

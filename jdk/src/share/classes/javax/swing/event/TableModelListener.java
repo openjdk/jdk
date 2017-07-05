@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@ public interface TableModelListener extends java.util.EventListener
     /**
      * This fine grain notification tells listeners the exact range
      * of cells, rows, or columns that changed.
+     *
+     * @param e a {@code TableModelEvent} to notify listener that a table model
+     *          has changed
      */
     public void tableChanged(TableModelEvent e);
 }

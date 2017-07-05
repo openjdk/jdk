@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,6 +272,10 @@ public class TextField extends TextComponent {
     }
 
     /**
+     * Sets the character to be echoed when protected input is displayed.
+     *
+     *  @param  c the echo character for this text field
+     *
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setEchoChar(char)</code>.
      */
@@ -368,6 +372,12 @@ public class TextField extends TextComponent {
     }
 
     /**
+     * Returns the preferred size for this text field
+     * with the specified number of columns.
+     *
+     * @param  columns the number of columns
+     * @return the preferred size for the text field
+     *
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getPreferredSize(int)</code>.
      */
@@ -407,8 +417,9 @@ public class TextField extends TextComponent {
     /**
      * Gets the minimum dimensions for a text field with
      * the specified number of columns.
-     * @param    columns   the number of columns in
-     *                          this text field.
+     * @param  columns the number of columns in
+     *         this text field.
+     * @return the minimum size for this text field
      * @since    1.1
      */
     public Dimension getMinimumSize(int columns) {
@@ -416,6 +427,11 @@ public class TextField extends TextComponent {
     }
 
     /**
+     * Returns the minimum dimensions for a text field with
+     * the specified number of columns.
+     *
+     * @param  columns the number of columns
+     * @return the minimum size for this text field
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getMinimumSize(int)</code>.
      */

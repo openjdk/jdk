@@ -214,7 +214,11 @@ public class InlineView extends LabelView {
         }
     }
 
-
+    /**
+     * Convenient method to get the StyleSheet.
+     *
+     * @return the StyleSheet
+     */
     protected StyleSheet getStyleSheet() {
         HTMLDocument doc = (HTMLDocument) getDocument();
         return doc.getStyleSheet();
