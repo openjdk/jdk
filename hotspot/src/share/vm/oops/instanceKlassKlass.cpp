@@ -105,7 +105,6 @@ void instanceKlassKlass::oop_follow_contents(oop obj) {
   MarkSweep::mark_and_push(ik->adr_protection_domain());
   MarkSweep::mark_and_push(ik->adr_host_klass());
   MarkSweep::mark_and_push(ik->adr_signers());
-  MarkSweep::mark_and_push(ik->adr_bootstrap_method());
   MarkSweep::mark_and_push(ik->adr_class_annotations());
   MarkSweep::mark_and_push(ik->adr_fields_annotations());
   MarkSweep::mark_and_push(ik->adr_methods_annotations());
@@ -142,7 +141,6 @@ void instanceKlassKlass::oop_follow_contents(ParCompactionManager* cm,
   PSParallelCompact::mark_and_push(cm, ik->adr_protection_domain());
   PSParallelCompact::mark_and_push(cm, ik->adr_host_klass());
   PSParallelCompact::mark_and_push(cm, ik->adr_signers());
-  PSParallelCompact::mark_and_push(cm, ik->adr_bootstrap_method());
   PSParallelCompact::mark_and_push(cm, ik->adr_class_annotations());
   PSParallelCompact::mark_and_push(cm, ik->adr_fields_annotations());
   PSParallelCompact::mark_and_push(cm, ik->adr_methods_annotations());
@@ -185,7 +183,6 @@ int instanceKlassKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
   for (int i = 0; i < instanceKlass::implementors_limit; i++) {
     blk->do_oop(&ik->adr_implementors()[i]);
   }
-  blk->do_oop(ik->adr_bootstrap_method());
   blk->do_oop(ik->adr_class_annotations());
   blk->do_oop(ik->adr_fields_annotations());
   blk->do_oop(ik->adr_methods_annotations());
@@ -239,8 +236,6 @@ int instanceKlassKlass::oop_oop_iterate_m(oop obj, OopClosure* blk,
   for (int i = 0; i < instanceKlass::implementors_limit; i++) {
     if (mr.contains(&adr[i])) blk->do_oop(&adr[i]);
   }
-  adr = ik->adr_bootstrap_method();
-  if (mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_class_annotations();
   if (mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_fields_annotations();
@@ -281,7 +276,6 @@ int instanceKlassKlass::oop_adjust_pointers(oop obj) {
   for (int i = 0; i < instanceKlass::implementors_limit; i++) {
     MarkSweep::adjust_pointer(&ik->adr_implementors()[i]);
   }
-  MarkSweep::adjust_pointer(ik->adr_bootstrap_method());
   MarkSweep::adjust_pointer(ik->adr_class_annotations());
   MarkSweep::adjust_pointer(ik->adr_fields_annotations());
   MarkSweep::adjust_pointer(ik->adr_methods_annotations());
@@ -315,11 +309,6 @@ void instanceKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   oop* sg_addr = ik->adr_signers();
   if (PSScavenge::should_scavenge(sg_addr)) {
     pm->claim_or_forward_depth(sg_addr);
-  }
-
-  oop* bsm_addr = ik->adr_bootstrap_method();
-  if (PSScavenge::should_scavenge(bsm_addr)) {
-    pm->claim_or_forward_depth(bsm_addr);
   }
 
   klassKlass::oop_push_contents(pm, obj);
@@ -420,7 +409,6 @@ instanceKlassKlass::allocate_instance_klass(Symbol* name, int vtable_len, int it
     ik->set_breakpoints(NULL);
     ik->init_previous_versions();
     ik->set_generic_signature(NULL);
-    ik->set_bootstrap_method(NULL);
     ik->release_set_methods_jmethod_ids(NULL);
     ik->release_set_methods_cached_itable_indices(NULL);
     ik->set_class_annotations(NULL);
@@ -542,11 +530,6 @@ void instanceKlassKlass::oop_print_on(oop obj, outputStream* st) {
     } // pvw is cleaned up
   } // rm is cleaned up
 
-  if (ik->bootstrap_method() != NULL) {
-    st->print(BULLET"bootstrap method:  ");
-    ik->bootstrap_method()->print_value_on(st);
-    st->cr();
-  }
   if (ik->generic_signature() != NULL) {
     st->print(BULLET"generic signature: ");
     ik->generic_signature()->print_value_on(st);

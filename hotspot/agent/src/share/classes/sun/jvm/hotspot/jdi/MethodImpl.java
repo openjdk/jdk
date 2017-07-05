@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,8 +200,7 @@ public abstract class MethodImpl extends TypeComponentImpl implements Method {
     }
 
     // From interface Comparable
-    public int compareTo(Object object) {
-      Method method = (Method)object;
+    public int compareTo(Method method) {
         ReferenceTypeImpl declaringType = (ReferenceTypeImpl)declaringType();
          int rc = declaringType.compareTo(method.declaringType());
          if (rc == 0) {

@@ -52,7 +52,6 @@ void Rewriter::compute_index_maps() {
       case JVM_CONSTANT_MethodHandle      : // fall through
       case JVM_CONSTANT_MethodType        : // fall through
       case JVM_CONSTANT_InvokeDynamic     : // fall through
-      case JVM_CONSTANT_InvokeDynamicTrans: // fall through
         add_cp_cache_entry(i);
         break;
     }
@@ -62,7 +61,6 @@ void Rewriter::compute_index_maps() {
             "all cp cache indexes fit in a u2");
 
   _have_invoke_dynamic = ((tag_mask & (1 << JVM_CONSTANT_InvokeDynamic)) != 0);
-  _have_invoke_dynamic |= ((tag_mask & (1 << JVM_CONSTANT_InvokeDynamicTrans)) != 0);
 }
 
 
@@ -81,16 +79,10 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
       if (pool_index >= 0 &&
           _pool->tag_at(pool_index).is_invoke_dynamic()) {
         int bsm_index = _pool->invoke_dynamic_bootstrap_method_ref_index_at(pool_index);
-        if (bsm_index != 0) {
-          assert(_pool->tag_at(bsm_index).is_method_handle(), "must be a MH constant");
-          // There is a CP cache entry holding the BSM for these calls.
-          int bsm_cache_index = cp_entry_to_cp_cache(bsm_index);
-          cache->entry_at(i)->initialize_bootstrap_method_index_in_cache(bsm_cache_index);
-        } else {
-          // There is no CP cache entry holding the BSM for these calls.
-          // We will need to look for a class-global BSM, later.
-          guarantee(AllowTransitionalJSR292, "");
-        }
+        assert(_pool->tag_at(bsm_index).is_method_handle(), "must be a MH constant");
+        // There is a CP cache entry holding the BSM for these calls.
+        int bsm_cache_index = cp_entry_to_cp_cache(bsm_index);
+        cache->entry_at(i)->initialize_bootstrap_method_index_in_cache(bsm_cache_index);
       }
     }
   }

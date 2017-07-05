@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ implements ReferenceType {
         return saKlass.hashCode();
     }
 
-    public int compareTo(Object object) {
+    public int compareTo(ReferenceType refType) {
         /*
          * Note that it is critical that compareTo() == 0
          * implies that equals() == true. Otherwise, TreeSet
@@ -108,7 +108,7 @@ implements ReferenceType {
          * (Classes of the same name loaded by different class loaders
          * or in different VMs must not return 0).
          */
-        ReferenceTypeImpl other = (ReferenceTypeImpl)object;
+        ReferenceTypeImpl other = (ReferenceTypeImpl)refType;
         int comp = name().compareTo(other.name());
         if (comp == 0) {
             Oop rf1 = ref();

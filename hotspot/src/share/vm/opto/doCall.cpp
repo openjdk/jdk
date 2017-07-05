@@ -63,6 +63,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
                                        JVMState* jvms, bool allow_inline,
                                        float prof_factor) {
   CallGenerator* cg;
+  guarantee(call_method != NULL, "failed method resolution");
 
   // Dtrace currently doesn't work unless all calls are vanilla
   if (env()->dtrace_method_probes()) {
@@ -130,8 +131,9 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
 
         // Get an adapter for the MethodHandle.
         ciMethod* target_method = method_handle->get_method_handle_adapter();
-
-        CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
+        CallGenerator* hit_cg = NULL;
+        if (target_method != NULL)
+          hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
         if (hit_cg != NULL && hit_cg->is_inline())
           return hit_cg;
       }
@@ -152,8 +154,9 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
 
       // Get an adapter for the MethodHandle.
       ciMethod* target_method = method_handle->get_invokedynamic_adapter();
-
-      CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
+      CallGenerator* hit_cg = NULL;
+      if (target_method != NULL)
+        hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
       if (hit_cg != NULL && hit_cg->is_inline()) {
         CallGenerator* miss_cg = CallGenerator::for_dynamic_call(call_method);
         return CallGenerator::for_predicted_dynamic_call(method_handle, miss_cg, hit_cg, prof_factor);

@@ -27,6 +27,7 @@
 #include "opto/addnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
@@ -222,22 +223,35 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
 
   // Make a region merging constants and a region merging the rest
   uint req_c = 0;
+  Node* predicate_proj = NULL;
   for (uint ii = 1; ii < r->req(); ii++) {
-    if( phi->in(ii) == con1 ) {
+    if (phi->in(ii) == con1) {
       req_c++;
     }
+    Node* proj = PhaseIdealLoop::find_predicate(r->in(ii));
+    if (proj != NULL) {
+      assert(predicate_proj == NULL, "only one predicate entry expected");
+      predicate_proj = proj;
+    }
   }
+  Node* predicate_c = NULL;
+  Node* predicate_x = NULL;
+
   Node *region_c = new (igvn->C, req_c + 1) RegionNode(req_c + 1);
   Node *phi_c    = con1;
   uint  len      = r->req();
-  Node *region_x = new (igvn->C, len - req_c + 1) RegionNode(len - req_c + 1);
+  Node *region_x = new (igvn->C, len - req_c) RegionNode(len - req_c);
   Node *phi_x    = PhiNode::make_blank(region_x, phi);
   for (uint i = 1, i_c = 1, i_x = 1; i < len; i++) {
-    if( phi->in(i) == con1 ) {
+    if (phi->in(i) == con1) {
       region_c->init_req( i_c++, r  ->in(i) );
+      if (r->in(i) == predicate_proj)
+        predicate_c = predicate_proj;
     } else {
       region_x->init_req( i_x,   r  ->in(i) );
       phi_x   ->init_req( i_x++, phi->in(i) );
+      if (r->in(i) == predicate_proj)
+        predicate_x = predicate_proj;
     }
   }
 
@@ -277,8 +291,20 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   // Make the true/false arms
   Node *iff_c_t = phase->transform(new (igvn->C, 1) IfTrueNode (iff_c));
   Node *iff_c_f = phase->transform(new (igvn->C, 1) IfFalseNode(iff_c));
+  if (predicate_c != NULL) {
+    assert(predicate_x == NULL, "only one predicate entry expected");
+    // Clone loop predicates to each path
+    iff_c_t = igvn->clone_loop_predicates(predicate_c, iff_c_t);
+    iff_c_f = igvn->clone_loop_predicates(predicate_c, iff_c_f);
+  }
   Node *iff_x_t = phase->transform(new (igvn->C, 1) IfTrueNode (iff_x));
   Node *iff_x_f = phase->transform(new (igvn->C, 1) IfFalseNode(iff_x));
+  if (predicate_x != NULL) {
+    assert(predicate_c == NULL, "only one predicate entry expected");
+    // Clone loop predicates to each path
+    iff_x_t = igvn->clone_loop_predicates(predicate_x, iff_x_t);
+    iff_x_f = igvn->clone_loop_predicates(predicate_x, iff_x_f);
+  }
 
   // Merge the TRUE paths
   Node *region_s = new (igvn->C, 3) RegionNode(3);
