@@ -134,32 +134,25 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_OPEN_OR_CUSTOM],
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 [
-  # Should we build a JDK/JVM with headful support (ie a graphical ui)?
-  # We always build headless support.
-  AC_MSG_CHECKING([headful support])
-  AC_ARG_ENABLE([headful], [AS_HELP_STRING([--disable-headful],
-      [disable building headful support (graphical UI support) @<:@enabled@:>@])],
-      [SUPPORT_HEADFUL=${enable_headful}], [SUPPORT_HEADFUL=yes])
+  # Should we build a JDK without a graphical UI?
+  AC_MSG_CHECKING([headless only])
+  AC_ARG_ENABLE([headless-only], [AS_HELP_STRING([--enable-headless-only],
+      [only build headless (no GUI) support @<:@disabled@:>@])])
 
-  SUPPORT_HEADLESS=yes
-  BUILD_HEADLESS="BUILD_HEADLESS:=true"
-
-  if test "x$SUPPORT_HEADFUL" = xyes; then
-    # We are building both headful and headless.
-    headful_msg="include support for both headful and headless"
+  if test "x$enable_headless_only" = "xyes"; then
+    ENABLE_HEADLESS_ONLY="true"
+    AC_MSG_RESULT([yes])
+  elif test "x$enable_headless_only" = "xno"; then
+    ENABLE_HEADLESS_ONLY="false"
+    AC_MSG_RESULT([no])
+  elif test "x$enable_headless_only" = "x"; then
+    ENABLE_HEADLESS_ONLY="false"
+    AC_MSG_RESULT([no])
+  else
+    AC_MSG_ERROR([--enable-headless-only can only take yes or no])
   fi
 
-  if test "x$SUPPORT_HEADFUL" = xno; then
-    # Thus we are building headless only.
-    BUILD_HEADLESS="BUILD_HEADLESS:=true"
-    headful_msg="headless only"
-  fi
-
-  AC_MSG_RESULT([$headful_msg])
-
-  AC_SUBST(SUPPORT_HEADLESS)
-  AC_SUBST(SUPPORT_HEADFUL)
-  AC_SUBST(BUILD_HEADLESS)
+  AC_SUBST(ENABLE_HEADLESS_ONLY)
 
   # Choose cacerts source file
   AC_ARG_WITH(cacerts-file, [AS_HELP_STRING([--with-cacerts-file],

@@ -52,7 +52,6 @@ import compiler.jvmci.common.testcases.SingleSubclassedClass;
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
@@ -61,7 +60,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ResolveMethodTest {
-    private static final Unsafe UNSAFE = UnsafeHelper.getUnsafe();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     public static void main(String args[]) {
         ResolveMethodTest test = new ResolveMethodTest();

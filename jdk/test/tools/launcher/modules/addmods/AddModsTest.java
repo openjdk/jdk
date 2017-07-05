@@ -31,6 +31,7 @@
  * @summary Basic test for java --add-modules
  */
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -218,6 +219,27 @@ public class AddModsTest {
                 .outputTo(System.out)
                 .errorTo(System.out)
                 .getExitValue();
+
+        assertTrue(exitValue == 0);
+    }
+
+
+    /**
+     * Tests {@code --add-modules} be specified more than once.
+     */
+    public void testWithMultipleAddModules() throws Exception {
+
+        String modulepath = MODS1_DIR.toString() + File.pathSeparator +
+                                MODS2_DIR.toString();
+        int exitValue
+            = executeTestJava("--module-path", modulepath,
+            "--add-modules", LOGGER_MODULE,
+            "--add-modules", TEST_MODULE,
+            "-m", TEST_MID,
+            "logger.Logger")
+            .outputTo(System.out)
+            .errorTo(System.out)
+            .getExitValue();
 
         assertTrue(exitValue == 0);
     }

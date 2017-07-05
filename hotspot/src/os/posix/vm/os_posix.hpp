@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,18 @@ protected:
   static void print_libversion_info(outputStream* st);
   static void print_load_average(outputStream* st);
 
+  // Minimum stack size a thread can be created with (allowing
+  // the VM to completely create the thread and enter user code)
+  static size_t _compiler_thread_min_stack_allowed;
+  static size_t _java_thread_min_stack_allowed;
+  static size_t _vm_internal_thread_min_stack_allowed;
+
 public:
+  // Return default stack size for the specified thread type
+  static size_t default_stack_size(os::ThreadType thr_type);
+  // Check and sets minimum stack sizes
+  static jint set_minimum_stack_sizes();
+  static size_t get_initial_stack_size(ThreadType thr_type, size_t req_stack_size);
 
   // Returns true if signal is valid.
   static bool is_valid_signal(int sig);

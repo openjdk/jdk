@@ -1963,16 +1963,16 @@ public abstract class ImageWriter implements ImageTranscoder {
             try {
                 bundle = ResourceBundle.getBundle(baseName, locale, this.getClass().getModule());
             } catch (MissingResourceException mre) {
-                throw new IllegalArgumentException("Bundle not found!");
+                throw new IllegalArgumentException("Bundle not found!", mre);
             }
 
             String warning = null;
             try {
                 warning = bundle.getString(keyword);
             } catch (ClassCastException cce) {
-                throw new IllegalArgumentException("Resource is not a String!");
+                throw new IllegalArgumentException("Resource is not a String!", cce);
             } catch (MissingResourceException mre) {
-                throw new IllegalArgumentException("Resource is missing!");
+                throw new IllegalArgumentException("Resource is missing!", mre);
             }
 
             listener.warningOccurred(this, imageIndex, warning);

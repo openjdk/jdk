@@ -1761,7 +1761,7 @@ public class KeyToolTest {
         //PKCS#11 tests
 
         //   1. sccs edit cert8.db key3.db
-        //Runtime.getRuntime().exec("/usr/ccs/bin/sccs edit cert8.db key3.db");
+        //Runtime.getRuntime().exec("/usr/bin/sccs edit cert8.db key3.db");
         testOK("", p11Arg + ("-storepass test12 -genkey -alias genkey" +
                 " -dname cn=genkey -keysize 512 -keyalg rsa"));
         testOK("", p11Arg + "-storepass test12 -list");
@@ -1781,7 +1781,7 @@ public class KeyToolTest {
         testOK("", p11Arg + "-storepass test12 -list");
         assertTrue(out.indexOf("Your keystore contains 0 entries") != -1);
         //(check for empty database listing)
-        //Runtime.getRuntime().exec("/usr/ccs/bin/sccs unedit cert8.db key3.db");
+        //Runtime.getRuntime().exec("/usr/bin/sccs unedit cert8.db key3.db");
         remove("genkey.cert");
         remove("genkey.certreq");
         //  12. sccs unedit cert8.db key3.db

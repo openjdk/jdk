@@ -103,14 +103,16 @@ public class LongAccumulator extends Striped64 implements Serializable {
      */
     public void accumulate(long x) {
         Cell[] as; long b, v, r; int m; Cell a;
-        if ((as = cells) != null ||
-            (r = function.applyAsLong(b = base, x)) != b && !casBase(b, r)) {
+        if ((as = cells) != null
+            || ((r = function.applyAsLong(b = base, x)) != b
+                && !casBase(b, r))) {
             boolean uncontended = true;
-            if (as == null || (m = as.length - 1) < 0 ||
-                (a = as[getProbe() & m]) == null ||
-                !(uncontended =
-                  (r = function.applyAsLong(v = a.value, x)) == v ||
-                  a.cas(v, r)))
+            if (as == null
+                || (m = as.length - 1) < 0
+                || (a = as[getProbe() & m]) == null
+                || !(uncontended =
+                     (r = function.applyAsLong(v = a.value, x)) == v
+                     || a.cas(v, r)))
                 longAccumulate(x, function, uncontended);
         }
     }
