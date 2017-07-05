@@ -37,8 +37,8 @@ class MethodHandleEntry;
 
 class MethodHandles: AllStatic {
   // JVM support for MethodHandle, MethodType, and related types
-  // in java.dyn and java.dyn.hotspot.
-  // See also  javaClasses for layouts java_dyn_Method{Handle,Type,Type::Form}.
+  // in java.lang.invoke and sun.invoke.
+  // See also  javaClasses for layouts java_lang_invoke_Method{Handle,Type,Type::Form}.
  public:
   enum EntryKind {
     _raise_exception,           // stub for error generation from other stubs
@@ -54,21 +54,21 @@ class MethodHandles: AllStatic {
     _bound_long_direct_mh,
 
     _adapter_mh_first,     // adapter sequence goes here...
-    _adapter_retype_only   = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_RETYPE_ONLY,
-    _adapter_retype_raw    = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_RETYPE_RAW,
-    _adapter_check_cast    = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_CHECK_CAST,
-    _adapter_prim_to_prim  = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_PRIM_TO_PRIM,
-    _adapter_ref_to_prim   = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_REF_TO_PRIM,
-    _adapter_prim_to_ref   = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_PRIM_TO_REF,
-    _adapter_swap_args     = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_SWAP_ARGS,
-    _adapter_rot_args      = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_ROT_ARGS,
-    _adapter_dup_args      = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_DUP_ARGS,
-    _adapter_drop_args     = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_DROP_ARGS,
-    _adapter_collect_args  = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_COLLECT_ARGS,
-    _adapter_spread_args   = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_SPREAD_ARGS,
-    _adapter_flyby         = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_FLYBY,
-    _adapter_ricochet      = _adapter_mh_first + sun_dyn_AdapterMethodHandle::OP_RICOCHET,
-    _adapter_mh_last       = _adapter_mh_first + sun_dyn_AdapterMethodHandle::CONV_OP_LIMIT - 1,
+    _adapter_retype_only   = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_RETYPE_ONLY,
+    _adapter_retype_raw    = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_RETYPE_RAW,
+    _adapter_check_cast    = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_CHECK_CAST,
+    _adapter_prim_to_prim  = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_PRIM,
+    _adapter_ref_to_prim   = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_REF_TO_PRIM,
+    _adapter_prim_to_ref   = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_REF,
+    _adapter_swap_args     = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_SWAP_ARGS,
+    _adapter_rot_args      = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_ROT_ARGS,
+    _adapter_dup_args      = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_DUP_ARGS,
+    _adapter_drop_args     = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_DROP_ARGS,
+    _adapter_collect_args  = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS,
+    _adapter_spread_args   = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_SPREAD_ARGS,
+    _adapter_flyby         = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_FLYBY,
+    _adapter_ricochet      = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::OP_RICOCHET,
+    _adapter_mh_last       = _adapter_mh_first + java_lang_invoke_AdapterMethodHandle::CONV_OP_LIMIT - 1,
 
     // Optimized adapter types
 
@@ -107,16 +107,16 @@ class MethodHandles: AllStatic {
   static void set_enabled(bool z);
 
  private:
-  enum {  // import sun_dyn_AdapterMethodHandle::CONV_OP_*
-    CONV_OP_LIMIT         = sun_dyn_AdapterMethodHandle::CONV_OP_LIMIT,
-    CONV_OP_MASK          = sun_dyn_AdapterMethodHandle::CONV_OP_MASK,
-    CONV_VMINFO_MASK      = sun_dyn_AdapterMethodHandle::CONV_VMINFO_MASK,
-    CONV_VMINFO_SHIFT     = sun_dyn_AdapterMethodHandle::CONV_VMINFO_SHIFT,
-    CONV_OP_SHIFT         = sun_dyn_AdapterMethodHandle::CONV_OP_SHIFT,
-    CONV_DEST_TYPE_SHIFT  = sun_dyn_AdapterMethodHandle::CONV_DEST_TYPE_SHIFT,
-    CONV_SRC_TYPE_SHIFT   = sun_dyn_AdapterMethodHandle::CONV_SRC_TYPE_SHIFT,
-    CONV_STACK_MOVE_SHIFT = sun_dyn_AdapterMethodHandle::CONV_STACK_MOVE_SHIFT,
-    CONV_STACK_MOVE_MASK  = sun_dyn_AdapterMethodHandle::CONV_STACK_MOVE_MASK
+  enum {  // import java_lang_invoke_AdapterMethodHandle::CONV_OP_*
+    CONV_OP_LIMIT         = java_lang_invoke_AdapterMethodHandle::CONV_OP_LIMIT,
+    CONV_OP_MASK          = java_lang_invoke_AdapterMethodHandle::CONV_OP_MASK,
+    CONV_VMINFO_MASK      = java_lang_invoke_AdapterMethodHandle::CONV_VMINFO_MASK,
+    CONV_VMINFO_SHIFT     = java_lang_invoke_AdapterMethodHandle::CONV_VMINFO_SHIFT,
+    CONV_OP_SHIFT         = java_lang_invoke_AdapterMethodHandle::CONV_OP_SHIFT,
+    CONV_DEST_TYPE_SHIFT  = java_lang_invoke_AdapterMethodHandle::CONV_DEST_TYPE_SHIFT,
+    CONV_SRC_TYPE_SHIFT   = java_lang_invoke_AdapterMethodHandle::CONV_SRC_TYPE_SHIFT,
+    CONV_STACK_MOVE_SHIFT = java_lang_invoke_AdapterMethodHandle::CONV_STACK_MOVE_SHIFT,
+    CONV_STACK_MOVE_MASK  = java_lang_invoke_AdapterMethodHandle::CONV_STACK_MOVE_MASK
   };
 
   static bool _enabled;
@@ -471,7 +471,7 @@ class MethodHandles: AllStatic {
 };
 
 
-// Access methods for the "entry" field of a java.dyn.MethodHandle.
+// Access methods for the "entry" field of a java.lang.invoke.MethodHandle.
 // The field is primarily a jump target for compiled calls.
 // However, we squirrel away some nice pointers for other uses,
 // just before the jump target.
