@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,27 @@ G1SATBCardTableModRefBS::write_ref_array_pre_work(T* dst, int count) {
   }
 }
 
+bool G1SATBCardTableModRefBS::mark_card_deferred(size_t card_index) {
+  jbyte val = _byte_map[card_index];
+  // It's already processed
+  if ((val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val()) {
+    return false;
+  }
+  // Cached bit can be installed either on a clean card or on a claimed card.
+  jbyte new_val = val;
+  if (val == clean_card_val()) {
+    new_val = (jbyte)deferred_card_val();
+  } else {
+    if (val & claimed_card_val()) {
+      new_val = val | (jbyte)deferred_card_val();
+    }
+  }
+  if (new_val != val) {
+    Atomic::cmpxchg(new_val, &_byte_map[card_index], val);
+  }
+  return true;
+}
+
 G1SATBCardTableLoggingModRefBS::
 G1SATBCardTableLoggingModRefBS(MemRegion whole_heap,
                                int max_covered_regions) :
@@ -95,7 +116,7 @@ void
 G1SATBCardTableLoggingModRefBS::write_ref_field_static(void* field,
                                                        oop new_val) {
   uintptr_t field_uint = (uintptr_t)field;
-  uintptr_t new_val_uint = (uintptr_t)new_val;
+  uintptr_t new_val_uint = cast_from_oop<uintptr_t>(new_val);
   uintptr_t comb = field_uint ^ new_val_uint;
   comb = comb >> HeapRegion::LogOfHRGrainBytes;
   if (comb == 0) return;

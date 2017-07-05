@@ -388,6 +388,8 @@ static void defineCCodeDump(OperandForm* oper, FILE *fp, int i) {
   fprintf(fp, "  else if( _c%d == BoolTest::ge ) st->print(\"%s\");\n",i,cond->_greater_equal_format);
   fprintf(fp, "  else if( _c%d == BoolTest::lt ) st->print(\"%s\");\n",i,cond->_less_format);
   fprintf(fp, "  else if( _c%d == BoolTest::gt ) st->print(\"%s\");\n",i,cond->_greater_format);
+  fprintf(fp, "  else if( _c%d == BoolTest::overflow ) st->print(\"%s\");\n",i,cond->_overflow_format);
+  fprintf(fp, "  else if( _c%d == BoolTest::no_overflow ) st->print(\"%s\");\n",i,cond->_no_overflow_format);
 }
 
 // Output code that dumps constant values, increment "i" if type is constant
@@ -1208,6 +1210,8 @@ void ArchDesc::declareClasses(FILE *fp) {
       fprintf(fp,"    case  BoolTest::ne : return not_equal();\n");
       fprintf(fp,"    case  BoolTest::le : return less_equal();\n");
       fprintf(fp,"    case  BoolTest::ge : return greater_equal();\n");
+      fprintf(fp,"    case  BoolTest::overflow : return overflow();\n");
+      fprintf(fp,"    case  BoolTest::no_overflow: return no_overflow();\n");
       fprintf(fp,"    default : ShouldNotReachHere(); return 0;\n");
       fprintf(fp,"    }\n");
       fprintf(fp,"  };\n");
@@ -1372,6 +1376,14 @@ void ArchDesc::declareClasses(FILE *fp) {
         const char *greater = cInterface->_greater;
         if( greater != NULL ) {
           define_oper_interface(fp, *oper, _globalNames, "greater", greater);
+        }
+        const char *overflow = cInterface->_overflow;
+        if( overflow != NULL ) {
+          define_oper_interface(fp, *oper, _globalNames, "overflow", overflow);
+        }
+        const char *no_overflow = cInterface->_no_overflow;
+        if( no_overflow != NULL ) {
+          define_oper_interface(fp, *oper, _globalNames, "no_overflow", no_overflow);
         }
       } // end Conditional Interface
       // Check if it is a Constant Interface

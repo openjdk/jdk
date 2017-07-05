@@ -173,10 +173,6 @@ void VM_UnlinkSymbols::doit() {
   SymbolTable::unlink();
 }
 
-void VM_HandleFullCodeCache::doit() {
-  NMethodSweeper::speculative_disconnect_nmethods(_is_full);
-}
-
 void VM_Verify::doit() {
   Universe::heap()->prepare_for_verify();
   Universe::verify(_silent);
