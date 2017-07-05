@@ -2068,7 +2068,7 @@ void G1CollectedHeap::stop() {
 }
 
 void G1CollectedHeap::clear_humongous_is_live_table() {
-  guarantee(G1ReclaimDeadHumongousObjectsAtYoungGC, "Should only be called if true");
+  guarantee(G1EagerReclaimHumongousObjects, "Should only be called if true");
   _humongous_is_live.clear();
 }
 
@@ -3485,8 +3485,24 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
  private:
   size_t _total_humongous;
   size_t _candidate_humongous;
+
+  DirtyCardQueue _dcq;
+
+  bool humongous_region_is_candidate(uint index) {
+    HeapRegion* region = G1CollectedHeap::heap()->region_at(index);
+    assert(region->is_starts_humongous(), "Must start a humongous object");
+    HeapRegionRemSet* const rset = region->rem_set();
+    bool const allow_stale_refs = G1EagerReclaimHumongousObjectsWithStaleRefs;
+    return !oop(region->bottom())->is_objArray() &&
+           ((allow_stale_refs && rset->occupancy_less_or_equal_than(G1RSetSparseRegionEntries)) ||
+            (!allow_stale_refs && rset->is_empty()));
+  }
+
  public:
-  RegisterHumongousWithInCSetFastTestClosure() : _total_humongous(0), _candidate_humongous(0) {
+  RegisterHumongousWithInCSetFastTestClosure()
+  : _total_humongous(0),
+    _candidate_humongous(0),
+    _dcq(&JavaThread::dirty_card_queue_set()) {
   }
 
   virtual bool doHeapRegion(HeapRegion* r) {
@@ -3496,11 +3512,29 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
     uint region_idx = r->hrm_index();
-    bool is_candidate = !g1h->humongous_region_is_always_live(region_idx);
-    // Is_candidate already filters out humongous regions with some remembered set.
-    // This will not lead to humongous object that we mistakenly keep alive because
-    // during young collection the remembered sets will only be added to.
+    bool is_candidate = humongous_region_is_candidate(region_idx);
+    // Is_candidate already filters out humongous object with large remembered sets.
+    // If we have a humongous object with a few remembered sets, we simply flush these
+    // remembered set entries into the DCQS. That will result in automatic
+    // re-evaluation of their remembered set entries during the following evacuation
+    // phase.
     if (is_candidate) {
+      if (!r->rem_set()->is_empty()) {
+        guarantee(r->rem_set()->occupancy_less_or_equal_than(G1RSetSparseRegionEntries),
+                  "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
+        G1SATBCardTableLoggingModRefBS* bs = g1h->g1_barrier_set();
+        HeapRegionRemSetIterator hrrs(r->rem_set());
+        size_t card_index;
+        while (hrrs.has_next(card_index)) {
+          jbyte* card_ptr = (jbyte*)bs->byte_for_index(card_index);
+          if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
+            *card_ptr = CardTableModRefBS::dirty_card_val();
+            _dcq.enqueue(card_ptr);
+          }
+        }
+        r->rem_set()->clear_locked();
+      }
+      assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
       g1h->register_humongous_region_with_in_cset_fast_test(region_idx);
       _candidate_humongous++;
     }
@@ -3511,23 +3545,32 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
 
   size_t total_humongous() const { return _total_humongous; }
   size_t candidate_humongous() const { return _candidate_humongous; }
+
+  void flush_rem_set_entries() { _dcq.flush(); }
 };
 
 void G1CollectedHeap::register_humongous_regions_with_in_cset_fast_test() {
-  if (!G1ReclaimDeadHumongousObjectsAtYoungGC) {
-    g1_policy()->phase_times()->record_fast_reclaim_humongous_stats(0, 0);
+  if (!G1EagerReclaimHumongousObjects) {
+    g1_policy()->phase_times()->record_fast_reclaim_humongous_stats(0.0, 0, 0);
     return;
   }
+  double time = os::elapsed_counter();
 
   RegisterHumongousWithInCSetFastTestClosure cl;
   heap_region_iterate(&cl);
-  g1_policy()->phase_times()->record_fast_reclaim_humongous_stats(cl.total_humongous(),
+
+  time = ((double)(os::elapsed_counter() - time) / os::elapsed_frequency()) * 1000.0;
+  g1_policy()->phase_times()->record_fast_reclaim_humongous_stats(time,
+                                                                  cl.total_humongous(),
                                                                   cl.candidate_humongous());
   _has_humongous_reclaim_candidates = cl.candidate_humongous() > 0;
 
-  if (_has_humongous_reclaim_candidates || G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
+  if (_has_humongous_reclaim_candidates || G1TraceEagerReclaimHumongousObjects) {
     clear_humongous_is_live_table();
   }
+
+  // Finally flush all remembered set entries to re-check into the global DCQS.
+  cl.flush_rem_set_entries();
 }
 
 void
@@ -6140,22 +6183,20 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
     // are completely up-to-date wrt to references to the humongous object.
     //
     // Other implementation considerations:
-    // - never consider object arrays: while they are a valid target, they have not
-    // been observed to be used as temporary objects.
-    // - they would also pose considerable effort for cleaning up the the remembered
-    // sets.
-    // While this cleanup is not strictly necessary to be done (or done instantly),
-    // given that their occurrence is very low, this saves us this additional
-    // complexity.
+    // - never consider object arrays at this time because they would pose
+    // considerable effort for cleaning up the the remembered sets. This is
+    // required because stale remembered sets might reference locations that
+    // are currently allocated into.
     uint region_idx = r->hrm_index();
     if (g1h->humongous_is_live(region_idx) ||
         g1h->humongous_region_is_always_live(region_idx)) {
 
-      if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
-        gclog_or_tty->print_cr("Live humongous %d region %d size "SIZE_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
-                               r->is_humongous(),
+      if (G1TraceEagerReclaimHumongousObjects) {
+        gclog_or_tty->print_cr("Live humongous region %u size "SIZE_FORMAT" start "PTR_FORMAT" length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
                                region_idx,
                                obj->size()*HeapWordSize,
+                               r->bottom(),
+                               r->region_num(),
                                r->rem_set()->occupied(),
                                r->rem_set()->strong_code_roots_list_length(),
                                next_bitmap->isMarked(r->bottom()),
@@ -6171,12 +6212,11 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
               err_msg("Eagerly reclaiming object arrays is not supported, but the object "PTR_FORMAT" is.",
                       r->bottom()));
 
-    if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
-      gclog_or_tty->print_cr("Reclaim humongous region %d size "SIZE_FORMAT" start "PTR_FORMAT" region %d length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
-                             r->is_humongous(),
+    if (G1TraceEagerReclaimHumongousObjects) {
+      gclog_or_tty->print_cr("Dead humongous region %u size "SIZE_FORMAT" start "PTR_FORMAT" length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
+                             region_idx,
                              obj->size()*HeapWordSize,
                              r->bottom(),
-                             region_idx,
                              r->region_num(),
                              r->rem_set()->occupied(),
                              r->rem_set()->strong_code_roots_list_length(),
@@ -6213,8 +6253,8 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
 void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
   assert_at_safepoint(true);
 
-  if (!G1ReclaimDeadHumongousObjectsAtYoungGC ||
-      (!_has_humongous_reclaim_candidates && !G1TraceReclaimDeadHumongousObjectsAtYoungGC)) {
+  if (!G1EagerReclaimHumongousObjects ||
+      (!_has_humongous_reclaim_candidates && !G1TraceEagerReclaimHumongousObjects)) {
     g1_policy()->phase_times()->record_fast_reclaim_humongous_time_ms(0.0, 0);
     return;
   }

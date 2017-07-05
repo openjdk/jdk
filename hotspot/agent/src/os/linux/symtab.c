@@ -325,6 +325,12 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
 
   // Reading of elf header
   struct elf_section *scn_cache = NULL;
+#if defined(ppc64) && !defined(ABI_ELFv2)
+  // Only big endian ppc64 (i.e. ABI_ELFv1) has 'official procedure descriptors' in ELF files
+  // see: http://refspecs.linuxfoundation.org/LSB_3.1.1/LSB-Core-PPC64/LSB-Core-PPC64/specialsections.html
+  struct elf_section *opd_sect = NULL;
+  ELF_SHDR *opd = NULL;
+#endif
   int cnt = 0;
   ELF_SHDR* shbuf = NULL;
   ELF_SHDR* cursct = NULL;
@@ -367,6 +373,14 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
     }
     cursct++;
   }
+
+#if defined(ppc64) && !defined(ABI_ELFv2)
+  opd_sect = find_section_by_name(".opd", fd, &ehdr, scn_cache);
+  if (opd_sect != NULL && opd_sect->c_data != NULL && opd_sect->c_shdr != NULL) {
+    // plausibility check
+    opd = opd_sect->c_shdr;
+  }
+#endif
 
   for (cnt = 1; cnt < ehdr.e_shnum; cnt++) {
     ELF_SHDR *shdr = scn_cache[cnt].c_shdr;
@@ -412,6 +426,7 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
       // copy symbols info our symtab and enter them info the hash table
       for (j = 0; j < n; j++, syms++) {
         ENTRY item, *ret;
+        uintptr_t sym_value;
         char *sym_name = symtab->strs + syms->st_name;
 
         // skip non-object and non-function symbols
@@ -422,9 +437,19 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
         if (*sym_name == '\0' || syms->st_shndx == SHN_UNDEF) continue;
 
         symtab->symbols[j].name   = sym_name;
-        symtab->symbols[j].offset = syms->st_value - baseaddr;
         symtab->symbols[j].size   = syms->st_size;
+        sym_value = syms->st_value;
 
+#if defined(ppc64) && !defined(ABI_ELFv2)
+        // see hotspot/src/share/vm/utilities/elfFuncDescTable.hpp for a detailed description
+        // of why we have to go this extra way via the '.opd' section on big endian ppc64
+        if (opd != NULL && *sym_name != '.' &&
+            (opd->sh_addr <= sym_value && sym_value <= opd->sh_addr + opd->sh_size)) {
+          sym_value = ((ELF_ADDR*)opd_sect->c_data)[(sym_value - opd->sh_addr) / sizeof(ELF_ADDR*)];
+        }
+#endif
+
+        symtab->symbols[j].offset = sym_value - baseaddr;
         item.key = sym_name;
         item.data = (void *)&(symtab->symbols[j]);
 
@@ -433,9 +458,17 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
     }
   }
 
+#if defined(ppc64) && !defined(ABI_ELFv2)
+  // On Linux/PPC64 the debuginfo files contain an empty function descriptor
+  // section (i.e. '.opd' section) which makes the resolution of symbols
+  // with the above algorithm impossible (we would need the have both, the
+  // .opd section from the library and the symbol table from the debuginfo
+  // file which doesn't match with the current workflow.)
+  goto quit;
+#endif
+
   // Look for a separate debuginfo file.
   if (try_debuginfo) {
-
     // We prefer a debug symtab to an object's own symtab, so look in
     // the debuginfo file.  We stash a copy of the old symtab in case
     // there is no debuginfo.
