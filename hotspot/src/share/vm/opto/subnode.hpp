@@ -477,20 +477,6 @@ public:
   virtual const Type *Value( PhaseTransform *phase ) const;
 };
 
-//------------------------------LogDNode---------------------------------------
-// Log_e of a double
-class LogDNode : public Node {
-public:
-  LogDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
-    init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
-  }
-  virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::DOUBLE; }
-  virtual uint ideal_reg() const { return Op_RegD; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
-};
-
 //------------------------------Log10DNode---------------------------------------
 // Log_10 of a double
 class Log10DNode : public Node {
