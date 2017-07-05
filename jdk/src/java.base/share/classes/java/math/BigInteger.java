@@ -1963,6 +1963,43 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * int array z.  The contents of x are not changed.
      */
     private static final int[] squareToLen(int[] x, int len, int[] z) {
+         int zlen = len << 1;
+         if (z == null || z.length < zlen)
+             z = new int[zlen];
+
+         // Execute checks before calling intrinsified method.
+         implSquareToLenChecks(x, len, z, zlen);
+         return implSquareToLen(x, len, z, zlen);
+     }
+
+     /**
+      * Parameters validation.
+      */
+     private static void implSquareToLenChecks(int[] x, int len, int[] z, int zlen) throws RuntimeException {
+         if (len < 1) {
+             throw new IllegalArgumentException("invalid input length: " + len);
+         }
+         if (len > x.length) {
+             throw new IllegalArgumentException("input length out of bound: " +
+                                        len + " > " + x.length);
+         }
+         if (len * 2 > z.length) {
+             throw new IllegalArgumentException("input length out of bound: " +
+                                        (len * 2) + " > " + z.length);
+         }
+         if (zlen < 1) {
+             throw new IllegalArgumentException("invalid input length: " + zlen);
+         }
+         if (zlen > z.length) {
+             throw new IllegalArgumentException("input length out of bound: " +
+                                        len + " > " + z.length);
+         }
+     }
+
+     /**
+      * Java Runtime may use intrinsic for this method.
+      */
+     private static final int[] implSquareToLen(int[] x, int len, int[] z, int zlen) {
         /*
          * The algorithm used here is adapted from Colin Plumb's C library.
          * Technique: Consider the partial products in the multiplication
@@ -1997,9 +2034,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
          * again.  The low bit is simply a copy of the low bit of the
          * input, so it doesn't need special care.
          */
-        int zlen = len << 1;
-        if (z == null || z.length < zlen)
-            z = new int[zlen];
 
         // Store the squares, right shifted one bit (i.e., divided by 2)
         int lastProductLowWord = 0;
@@ -2857,6 +2891,32 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Multiply an array by one word k and add to result, return the carry
      */
     static int mulAdd(int[] out, int[] in, int offset, int len, int k) {
+        implMulAddCheck(out, in, offset, len, k);
+        return implMulAdd(out, in, offset, len, k);
+    }
+
+    /**
+     * Parameters validation.
+     */
+    private static void implMulAddCheck(int[] out, int[] in, int offset, int len, int k) {
+        if (len > in.length) {
+            throw new IllegalArgumentException("input length is out of bound: " + len + " > " + in.length);
+        }
+        if (offset < 0) {
+            throw new IllegalArgumentException("input offset is invalid: " + offset);
+        }
+        if (offset > (out.length - 1)) {
+            throw new IllegalArgumentException("input offset is out of bound: " + offset + " > " + (out.length - 1));
+        }
+        if (len > (out.length - offset)) {
+            throw new IllegalArgumentException("input len is out of bound: " + len + " > " + (out.length - offset));
+        }
+    }
+
+    /**
+     * Java Runtime may use intrinsic for this method.
+     */
+    private static int implMulAdd(int[] out, int[] in, int offset, int len, int k) {
         long kLong = k & LONG_MASK;
         long carry = 0;
 

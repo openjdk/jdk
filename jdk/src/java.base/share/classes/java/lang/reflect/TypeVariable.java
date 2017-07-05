@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ package java.lang.reflect;
 public interface TypeVariable<D extends GenericDeclaration> extends Type, AnnotatedElement {
     /**
      * Returns an array of {@code Type} objects representing the
-     * upper bound(s) of this type variable.  Note that if no upper bound is
+     * upper bound(s) of this type variable.  If no upper bound is
      * explicitly declared, the upper bound is {@code Object}.
      *
      * <p>For each upper bound B: <ul> <li>if B is a parameterized
@@ -67,7 +67,7 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      *     for any reason
      * @return an array of {@code Type}s representing the upper
      *     bound(s) of this type variable
-    */
+     */
     Type[] getBounds();
 
     /**
@@ -91,11 +91,11 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      * Returns an array of AnnotatedType objects that represent the use of
      * types to denote the upper bounds of the type parameter represented by
      * this TypeVariable. The order of the objects in the array corresponds to
-     * the order of the bounds in the declaration of the type parameter.
+     * the order of the bounds in the declaration of the type parameter. Note that
+     * if no upper bound is explicitly declared, the upper bound is unannotated
+     * {@code Object}.
      *
-     * Returns an array of length 0 if the type parameter declares no bounds.
-     *
-     * @return an array of objects representing the upper bounds of the type variable
+     * @return an array of objects representing the upper bound(s) of the type variable
      * @since 1.8
      */
      AnnotatedType[] getAnnotatedBounds();
