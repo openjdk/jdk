@@ -43,14 +43,6 @@ inline void MacroAssembler::pd_patch_instruction(address branch, address target)
   stub_inst = patched_branch(target - branch, stub_inst, 0);
 }
 
-#ifndef PRODUCT
-inline void MacroAssembler::pd_print_patched_instruction(address branch) {
-  jint stub_inst = *(jint*) branch;
-  print_instruction(stub_inst);
-  ::tty->print("%s", " (unresolved)");
-}
-#endif // PRODUCT
-
 // Use the right loads/stores for the platform
 inline void MacroAssembler::ld_ptr( Register s1, Register s2, Register d ) {
 #ifdef _LP64

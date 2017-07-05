@@ -30,7 +30,7 @@
 
 
 void MacroAssembler::int3() {
-  emit_byte(0xCC);
+  emit_int8((unsigned char)0xCC);
 }
 
 #ifndef _LP64

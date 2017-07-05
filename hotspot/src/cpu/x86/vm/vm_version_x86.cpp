@@ -489,8 +489,8 @@ void VM_Version::get_processor_features() {
   }
 
   // The AES intrinsic stubs require AES instruction support (of course)
-  // but also require AVX and sse3 modes for instructions it use.
-  if (UseAES && (UseAVX > 0) && (UseSSE > 2)) {
+  // but also require sse3 mode for instructions it use.
+  if (UseAES && (UseSSE > 2)) {
     if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
       UseAESIntrinsics = true;
     }

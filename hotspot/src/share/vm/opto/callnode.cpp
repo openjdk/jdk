@@ -751,7 +751,7 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
         projs->fallthrough_ioproj = pn;
       for (DUIterator j = pn->outs(); pn->has_out(j); j++) {
         Node* e = pn->out(j);
-        if (e->Opcode() == Op_CreateEx && e->in(0)->is_CatchProj()) {
+        if (e->Opcode() == Op_CreateEx && e->in(0)->is_CatchProj() && e->outcnt() > 0) {
           assert(projs->exobj == NULL, "only one");
           projs->exobj = e;
         }
