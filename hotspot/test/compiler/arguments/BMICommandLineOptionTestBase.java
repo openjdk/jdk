@@ -25,6 +25,12 @@ import com.oracle.java.testlibrary.cli.*;
 
 /**
  * Base class for all X86 bit manipulation related command line options.
+ *
+ * Note that this test intended to verify that VM could be launched with
+ * specific options and that values of these options processed correctly.
+ * In order to do that test launch a new VM with tested options, the same
+ * flavor-specific flag as one that was used for parent VM (-client, -server,
+ * -minimal, -graal) and '-version'.
  */
 public abstract class BMICommandLineOptionTestBase
               extends CPUSpecificCommandLineOptionTest {
@@ -58,10 +64,11 @@ public abstract class BMICommandLineOptionTestBase
                                         String supportedCPUFeatures[],
                                         String unsupportedCPUFeatures[]) {
         super(".*", supportedCPUFeatures, unsupportedCPUFeatures);
-            this.optionName = optionName;
-            this.warningMessage = warningMessage;
-            this.errorMessage = CommandLineOptionTest.
-                UNRECOGNIZED_OPTION_ERROR_FORMAT.format(optionName);
+        this.optionName = optionName;
+        this.warningMessage = warningMessage;
+        this.errorMessage = String.format(
+                CommandLineOptionTest.UNRECOGNIZED_OPTION_ERROR_FORMAT,
+                optionName);
     }
 
 }

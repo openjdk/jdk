@@ -86,12 +86,12 @@ public final class PKIXValidator extends Validator {
             factory = CertificateFactory.getInstance("X.509");
         } catch (InvalidAlgorithmParameterException e) {
             throw new RuntimeException("Unexpected error: " + e.toString(), e);
-            } catch (CertificateException e) {
-                throw new RuntimeException("Internal error", e);
-            }
+        } catch (CertificateException e) {
+            throw new RuntimeException("Internal error", e);
+        }
 
         setDefaultParameters(variant);
-            plugin = variant.equals(VAR_PLUGIN_CODE_SIGNING);
+        plugin = variant.equals(VAR_PLUGIN_CODE_SIGNING);
 
         trustedSubjects = setTrustedSubjects();
     }
@@ -107,13 +107,13 @@ public final class PKIXValidator extends Validator {
         }
         parameterTemplate = params;
 
-            try {
-                factory = CertificateFactory.getInstance("X.509");
-            } catch (CertificateException e) {
-                throw new RuntimeException("Internal error", e);
-            }
+        try {
+            factory = CertificateFactory.getInstance("X.509");
+        } catch (CertificateException e) {
+            throw new RuntimeException("Internal error", e);
+        }
 
-            plugin = variant.equals(VAR_PLUGIN_CODE_SIGNING);
+        plugin = variant.equals(VAR_PLUGIN_CODE_SIGNING);
 
         trustedSubjects = setTrustedSubjects();
     }
@@ -133,10 +133,10 @@ public final class PKIXValidator extends Validator {
             List<PublicKey> keys;
             if (subjectMap.containsKey(dn)) {
                 keys = subjectMap.get(dn);
-        } else {
+            } else {
                 keys = new ArrayList<PublicKey>();
                 subjectMap.put(dn, keys);
-        }
+            }
             keys.add(cert.getPublicKey());
         }
 
@@ -202,75 +202,74 @@ public final class PKIXValidator extends Validator {
             pkixParameters.addCertPathChecker(algorithmChecker);
         }
 
-            // check that chain is in correct order and check if chain contains
-            // trust anchor
-            X500Principal prevIssuer = null;
-            for (int i = 0; i < chain.length; i++) {
-                X509Certificate cert = chain[i];
-                X500Principal dn = cert.getSubjectX500Principal();
-                if (i != 0 &&
-                    !dn.equals(prevIssuer)) {
-                    // chain is not ordered correctly, call builder instead
-                    return doBuild(chain, otherCerts, pkixParameters);
-                }
-
-                // Check if chain[i] is already trusted. It may be inside
-                // trustedCerts, or has the same dn and public key as a cert
-                // inside trustedCerts. The latter happens when a CA has
-                // updated its cert with a stronger signature algorithm in JRE
-                // but the weak one is still in circulation.
-
-                if (trustedCerts.contains(cert) ||          // trusted cert
-                        (trustedSubjects.containsKey(dn) && // replacing ...
-                         trustedSubjects.get(dn).contains(  // ... weak cert
-                            cert.getPublicKey()))) {
-                    if (i == 0) {
-                        return new X509Certificate[] {chain[0]};
-                    }
-                    // Remove and call validator on partial chain [0 .. i-1]
-                    X509Certificate[] newChain = new X509Certificate[i];
-                    System.arraycopy(chain, 0, newChain, 0, i);
-                    return doValidate(newChain, pkixParameters);
-                }
-                prevIssuer = cert.getIssuerX500Principal();
+        // check that chain is in correct order and check if chain contains
+        // trust anchor
+        X500Principal prevIssuer = null;
+        for (int i = 0; i < chain.length; i++) {
+            X509Certificate cert = chain[i];
+            X500Principal dn = cert.getSubjectX500Principal();
+            if (i != 0 && !dn.equals(prevIssuer)) {
+                // chain is not ordered correctly, call builder instead
+                return doBuild(chain, otherCerts, pkixParameters);
             }
 
-            // apparently issued by trust anchor?
-            X509Certificate last = chain[chain.length - 1];
-            X500Principal issuer = last.getIssuerX500Principal();
-            X500Principal subject = last.getSubjectX500Principal();
-            if (trustedSubjects.containsKey(issuer) &&
-                    isSignatureValid(trustedSubjects.get(issuer), last)) {
-                return doValidate(chain, pkixParameters);
-            }
+            // Check if chain[i] is already trusted. It may be inside
+            // trustedCerts, or has the same dn and public key as a cert
+            // inside trustedCerts. The latter happens when a CA has
+            // updated its cert with a stronger signature algorithm in JRE
+            // but the weak one is still in circulation.
 
-            // don't fallback to builder if called from plugin/webstart
-            if (plugin) {
-                // Validate chain even if no trust anchor is found. This
-                // allows plugin/webstart to make sure the chain is
-                // otherwise valid
-                if (chain.length > 1) {
-                    X509Certificate[] newChain =
-                        new X509Certificate[chain.length-1];
-                    System.arraycopy(chain, 0, newChain, 0, newChain.length);
-
-                    // temporarily set last cert as sole trust anchor
-                    try {
-                        pkixParameters.setTrustAnchors
-                            (Collections.singleton(new TrustAnchor
-                                (chain[chain.length-1], null)));
-                    } catch (InvalidAlgorithmParameterException iape) {
-                        // should never occur, but ...
-                        throw new CertificateException(iape);
-                    }
-                    doValidate(newChain, pkixParameters);
+            if (trustedCerts.contains(cert) ||          // trusted cert
+                    (trustedSubjects.containsKey(dn) && // replacing ...
+                     trustedSubjects.get(dn).contains(  // ... weak cert
+                        cert.getPublicKey()))) {
+                if (i == 0) {
+                    return new X509Certificate[] {chain[0]};
                 }
-                // if the rest of the chain is valid, throw exception
-                // indicating no trust anchor was found
-                throw new ValidatorException
-                    (ValidatorException.T_NO_TRUST_ANCHOR);
+                // Remove and call validator on partial chain [0 .. i-1]
+                X509Certificate[] newChain = new X509Certificate[i];
+                System.arraycopy(chain, 0, newChain, 0, i);
+                return doValidate(newChain, pkixParameters);
             }
-            // otherwise, fall back to builder
+            prevIssuer = cert.getIssuerX500Principal();
+        }
+
+        // apparently issued by trust anchor?
+        X509Certificate last = chain[chain.length - 1];
+        X500Principal issuer = last.getIssuerX500Principal();
+        X500Principal subject = last.getSubjectX500Principal();
+        if (trustedSubjects.containsKey(issuer) &&
+                isSignatureValid(trustedSubjects.get(issuer), last)) {
+            return doValidate(chain, pkixParameters);
+        }
+
+        // don't fallback to builder if called from plugin/webstart
+        if (plugin) {
+            // Validate chain even if no trust anchor is found. This
+            // allows plugin/webstart to make sure the chain is
+            // otherwise valid
+            if (chain.length > 1) {
+                X509Certificate[] newChain =
+                    new X509Certificate[chain.length-1];
+                System.arraycopy(chain, 0, newChain, 0, newChain.length);
+
+                // temporarily set last cert as sole trust anchor
+                try {
+                    pkixParameters.setTrustAnchors
+                        (Collections.singleton(new TrustAnchor
+                            (chain[chain.length-1], null)));
+                } catch (InvalidAlgorithmParameterException iape) {
+                    // should never occur, but ...
+                    throw new CertificateException(iape);
+                }
+                doValidate(newChain, pkixParameters);
+            }
+            // if the rest of the chain is valid, throw exception
+            // indicating no trust anchor was found
+            throw new ValidatorException
+                (ValidatorException.T_NO_TRUST_ANCHOR);
+        }
+        // otherwise, fall back to builder
 
         return doBuild(chain, otherCerts, pkixParameters);
     }

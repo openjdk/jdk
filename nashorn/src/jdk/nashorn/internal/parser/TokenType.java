@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.parser;
 
-import java.util.Locale;
 import static jdk.nashorn.internal.parser.TokenKind.BINARY;
 import static jdk.nashorn.internal.parser.TokenKind.BRACKET;
 import static jdk.nashorn.internal.parser.TokenKind.FUTURE;
@@ -35,6 +34,8 @@ import static jdk.nashorn.internal.parser.TokenKind.KEYWORD;
 import static jdk.nashorn.internal.parser.TokenKind.LITERAL;
 import static jdk.nashorn.internal.parser.TokenKind.SPECIAL;
 import static jdk.nashorn.internal.parser.TokenKind.UNARY;
+
+import java.util.Locale;
 
 /**
  * Description of all the JavaScript tokens.
@@ -182,7 +183,6 @@ public enum TokenType {
     ARRAY          (LITERAL,  null),
 
     COMMALEFT      (IR,       null),
-    DISCARD        (IR,       null),
     DECPOSTFIX     (IR,       null),
     INCPOSTFIX     (IR,       null);
 

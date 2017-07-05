@@ -25,15 +25,23 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
+import jdk.nashorn.internal.runtime.arrays.TypedArrayData;
 
 /**
  * Int32 array for the TypedArray extension
@@ -55,41 +63,94 @@ public final class NativeInt32Array extends ArrayBufferView {
         public ArrayBufferView construct(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
             return new NativeInt32Array(buffer, byteOffset, length);
         }
+
         @Override
-        public ArrayData createArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
-            return new Int32ArrayData(buffer, byteOffset, length);
+        public Int32ArrayData createArrayData(final ByteBuffer nb, final int start, final int length) {
+            return new Int32ArrayData(nb.asIntBuffer(), start, length);
+        }
+
+        @Override
+        public String getClassName() {
+            return "Int32Array";
         }
     };
 
-    private static final class Int32ArrayData extends ArrayDataImpl {
-        private Int32ArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
-            super(buffer, byteOffset, elementLength);
+    private static final class Int32ArrayData extends TypedArrayData<IntBuffer> {
+
+        private static final MethodHandle GET_ELEM = specialCall(MethodHandles.lookup(), Int32ArrayData.class, "getElem", int.class, int.class).methodHandle();
+        private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Int32ArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
+
+        private Int32ArrayData(final IntBuffer nb, final int start, final int end) {
+            super(((IntBuffer)nb.position(start).limit(end)).slice(), end - start);
         }
 
         @Override
-        protected int byteIndex(final int index) {
-            return index * BYTES_PER_ELEMENT + byteOffset;
+        protected MethodHandle getGetElem() {
+            return GET_ELEM;
         }
 
         @Override
-        protected int getIntImpl(final int index) {
-            final int byteIndex = byteIndex(index);
-            final byte[] byteArray = buffer.getByteArray();
-            return byteArray[byteIndex  ]       & 0x0000_00ff |
-                   byteArray[byteIndex+1] <<  8 & 0x0000_ff00 |
-                   byteArray[byteIndex+2] << 16 & 0x00ff_0000 |
-                   byteArray[byteIndex+3] << 24 & 0xff00_0000 ;
+        protected MethodHandle getSetElem() {
+            return SET_ELEM;
+        }
+
+        private int getElem(final int index) {
+            try {
+                return nb.get(index);
+            } catch (final IndexOutOfBoundsException e) {
+                throw new ClassCastException(); //force relink - this works for unoptimistic too
+            }
+        }
+
+        private void setElem(final int index, final int elem) {
+            try {
+                nb.put(index, elem);
+               } catch (final IndexOutOfBoundsException e) {
+                   if (index < 0) {
+                      throw new ClassCastException();
+                 }
+            }
         }
 
         @Override
-        protected void setImpl(final int index, final int value) {
-            final int byteIndex = byteIndex(index);
-            @SuppressWarnings("MismatchedReadAndWriteOfArray")
-            final byte[] byteArray = buffer.getByteArray();
-            byteArray[byteIndex  ] = (byte)(value        & 0xff);
-            byteArray[byteIndex+1] = (byte)(value >>>  8 & 0xff);
-            byteArray[byteIndex+2] = (byte)(value >>> 16 & 0xff);
-            byteArray[byteIndex+3] = (byte)(value >>> 24 & 0xff);
+        public int getInt(final int index) {
+            return getElem(index);
+        }
+
+        @Override
+        public long getLong(final int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public double getDouble(final int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public Object getObject(final int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public ArrayData set(final int index, final Object value, final boolean strict) {
+            return set(index, JSType.toInt32(value), strict);
+        }
+
+        @Override
+        public ArrayData set(final int index, final int value, final boolean strict) {
+            setElem(index, value);
+            return this;
+        }
+
+        @Override
+        public ArrayData set(final int index, final long value, final boolean strict) {
+            return set(index, (int)value, strict);
+        }
+
+        @Override
+        public ArrayData set(final int index, final double value, final boolean strict) {
+            return set(index, (int)value, strict);
         }
     }
 
@@ -104,16 +165,11 @@ public final class NativeInt32Array extends ArrayBufferView {
      */
     @Constructor(arity = 1)
     public static NativeInt32Array constructor(final boolean newObj, final Object self, final Object... args) {
-        return (NativeInt32Array)constructorImpl(args, FACTORY);
+        return (NativeInt32Array)constructorImpl(newObj, args, FACTORY);
     }
 
     NativeInt32Array(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
         super(buffer, byteOffset, length);
-    }
-
-    @Override
-    public String getClassName() {
-        return "Int32Array";
     }
 
     @Override

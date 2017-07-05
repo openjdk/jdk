@@ -147,17 +147,17 @@ public abstract class Remapper {
         }
 
         Type[] args = Type.getArgumentTypes(desc);
-        StringBuffer s = new StringBuffer("(");
+        StringBuilder sb = new StringBuilder("(");
         for (int i = 0; i < args.length; i++) {
-            s.append(mapDesc(args[i].getDescriptor()));
+            sb.append(mapDesc(args[i].getDescriptor()));
         }
         Type returnType = Type.getReturnType(desc);
         if (returnType == Type.VOID_TYPE) {
-            s.append(")V");
-            return s.toString();
+            sb.append(")V");
+            return sb.toString();
         }
-        s.append(')').append(mapDesc(returnType.getDescriptor()));
-        return s.toString();
+        sb.append(')').append(mapDesc(returnType.getDescriptor()));
+        return sb.toString();
     }
 
     public Object mapValue(Object value) {

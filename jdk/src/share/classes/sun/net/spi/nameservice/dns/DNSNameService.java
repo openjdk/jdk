@@ -325,7 +325,7 @@ public final class DNSNameService implements NameService {
             while (i.hasNext()) {
                 String parentDomain = i.next();
                 int start = 0;
-                while ((start = parentDomain.indexOf(".")) != -1
+                while ((start = parentDomain.indexOf('.')) != -1
                        && start < parentDomain.length() -1) {
                     try {
                         results = resolve(ctx, host+"."+parentDomain, ids, 0);

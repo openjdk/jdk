@@ -29,12 +29,11 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
-import javax.script.ScriptContext;
 import javax.script.ScriptException;
-import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.testng.annotations.Test;
@@ -55,7 +54,7 @@ public class TrustedScriptEngineTest {
         private final boolean[] reached = new boolean[1];
 
         @Override
-        protected Class findClass(final String name) throws ClassNotFoundException {
+        protected Class<?> findClass(final String name) throws ClassNotFoundException {
             // flag that it reached here
             reached[0] = true;
             return super.findClass(name);
@@ -72,7 +71,7 @@ public class TrustedScriptEngineTest {
     @Test
     public void factoryClassLoaderTest() {
         final ScriptEngineManager sm = new ScriptEngineManager();
-        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
+        for (final ScriptEngineFactory fac : sm.getEngineFactories()) {
             if (fac instanceof NashornScriptEngineFactory) {
                 final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
                 final MyClassLoader loader = new MyClassLoader();
@@ -96,7 +95,7 @@ public class TrustedScriptEngineTest {
     @Test
     public void factoryClassLoaderAndOptionsTest() {
         final ScriptEngineManager sm = new ScriptEngineManager();
-        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
+        for (final ScriptEngineFactory fac : sm.getEngineFactories()) {
             if (fac instanceof NashornScriptEngineFactory) {
                 final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
                 final String[] options = new String[] { "-strict" };
@@ -130,7 +129,7 @@ public class TrustedScriptEngineTest {
     @Test
     public void factoryOptionsTest() {
         final ScriptEngineManager sm = new ScriptEngineManager();
-        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
+        for (final ScriptEngineFactory fac : sm.getEngineFactories()) {
             if (fac instanceof NashornScriptEngineFactory) {
                 final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
                 // specify --no-syntax-extensions flag
@@ -156,7 +155,7 @@ public class TrustedScriptEngineTest {
      */
     public void noLoaderPerCompilerTest() {
         final ScriptEngineManager sm = new ScriptEngineManager();
-        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
+        for (final ScriptEngineFactory fac : sm.getEngineFactories()) {
             if (fac instanceof NashornScriptEngineFactory) {
                 final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
                 final String[] options = new String[] { "--loader-per-compile=false" };
@@ -181,7 +180,7 @@ public class TrustedScriptEngineTest {
      */
     public void noLoaderPerCompilerWithSameNameTest() {
         final ScriptEngineManager sm = new ScriptEngineManager();
-        for (ScriptEngineFactory fac : sm.getEngineFactories()) {
+        for (final ScriptEngineFactory fac : sm.getEngineFactories()) {
             if (fac instanceof NashornScriptEngineFactory) {
                 final NashornScriptEngineFactory nfac = (NashornScriptEngineFactory)fac;
                 final String[] options = new String[] { "--loader-per-compile=false" };

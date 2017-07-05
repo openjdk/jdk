@@ -1089,7 +1089,7 @@ public class InstructionAdapter extends MethodVisitor {
     @Deprecated
     public void invokestatic(final String owner, final String name,
             final String desc) {
-        if (api < Opcodes.ASM5) {
+        if (api >= Opcodes.ASM5) {
             invokestatic(owner, name, desc, false);
             return;
         }

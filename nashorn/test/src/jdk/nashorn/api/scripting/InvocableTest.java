@@ -25,6 +25,9 @@
 
 package jdk.nashorn.api.scripting;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
+
 import java.util.Objects;
 import java.util.function.Function;
 import javax.script.Invocable;
@@ -34,8 +37,6 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
 import org.testng.Assert;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
 import org.testng.annotations.Test;
 
 /**
@@ -43,7 +44,7 @@ import org.testng.annotations.Test;
  */
 public class InvocableTest {
 
-    private void log(String msg) {
+    private void log(final String msg) {
         org.testng.Reporter.log(msg, true);
     }
 
@@ -69,12 +70,12 @@ public class InvocableTest {
      * evaluating script with different Context set.
      */
     public void invokeMethodDifferentContextTest() {
-        ScriptEngineManager m = new ScriptEngineManager();
-        ScriptEngine e = m.getEngineByName("nashorn");
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
 
         try {
             // define an object with method on it
-            Object obj = e.eval("({ hello: function() { return 'Hello World!'; } })");
+            final Object obj = e.eval("({ hello: function() { return 'Hello World!'; } })");
 
             final ScriptContext ctxt = new SimpleScriptContext();
             ctxt.setBindings(e.createBindings(), ScriptContext.ENGINE_SCOPE);
@@ -180,7 +181,7 @@ public class InvocableTest {
         final ScriptEngine engine2 = m.getEngineByName("nashorn");
 
         try {
-            Object obj = engine1.eval("({ run: function() {} })");
+            final Object obj = engine1.eval("({ run: function() {} })");
             // pass object from engine1 to engine2 as 'thiz' for invokeMethod
             ((Invocable) engine2).invokeMethod(obj, "run");
             fail("should have thrown IllegalArgumentException");
@@ -211,7 +212,7 @@ public class InvocableTest {
         // try interface on specific script object
         try {
             e.eval("var obj = { run: function() { print('run from obj'); } };");
-            Object obj = e.get("obj");
+            final Object obj = e.get("obj");
             final Runnable runnable = inv.getInterface(obj, Runnable.class);
             runnable.run();
         } catch (final Exception exp) {
@@ -307,17 +308,17 @@ public class InvocableTest {
      * switching to use different ScriptContext.
      */
     public void getInterfaceDifferentContext() {
-        ScriptEngineManager m = new ScriptEngineManager();
-        ScriptEngine e = m.getEngineByName("nashorn");
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
         try {
-            Object obj = e.eval("({ run: function() { } })");
+            final Object obj = e.eval("({ run: function() { } })");
 
             // change script context
-            ScriptContext ctxt = new SimpleScriptContext();
+            final ScriptContext ctxt = new SimpleScriptContext();
             ctxt.setBindings(e.createBindings(), ScriptContext.ENGINE_SCOPE);
             e.setContext(ctxt);
 
-            Runnable r = ((Invocable) e).getInterface(obj, Runnable.class);
+            final Runnable r = ((Invocable) e).getInterface(obj, Runnable.class);
             r.run();
         } catch (final Exception exp) {
             exp.printStackTrace();
@@ -376,7 +377,7 @@ public class InvocableTest {
         final ScriptEngine engine2 = m.getEngineByName("nashorn");
 
         try {
-            Object obj = engine1.eval("({ run: function() {} })");
+            final Object obj = engine1.eval("({ run: function() {} })");
             // pass object from engine1 to engine2 as 'thiz' for getInterface
             ((Invocable) engine2).getInterface(obj, Runnable.class);
             fail("should have thrown IllegalArgumentException");
@@ -433,12 +434,12 @@ public class InvocableTest {
      * Bindings.
      */
     public void invokeFunctionDifferentContextTest() {
-        ScriptEngineManager m = new ScriptEngineManager();
-        ScriptEngine e = m.getEngineByName("nashorn");
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
 
         try {
             // define an object with method on it
-            Object obj = e.eval("function hello() { return 'Hello World!'; }");
+            final Object obj = e.eval("function hello() { return 'Hello World!'; }");
             final ScriptContext ctxt = new SimpleScriptContext();
             ctxt.setBindings(e.createBindings(), ScriptContext.ENGINE_SCOPE);
             // change engine's current context
@@ -531,8 +532,8 @@ public class InvocableTest {
         final ScriptEngine e = m.getEngineByName("nashorn");
         final Invocable inv = (Invocable) e;
 
-        Object obj = e.eval("({ apply: function(arg) { return arg.toUpperCase(); }})");
-        Function<String, String> func = inv.getInterface(obj, Function.class);
+        final Object obj = e.eval("({ apply: function(arg) { return arg.toUpperCase(); }})");
+        final Function<String, String> func = inv.getInterface(obj, Function.class);
         assertEquals(func.apply("hello"), "HELLO");
     }
 }

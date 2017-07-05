@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.runtime.regexp.joni.ast.ConsAltNode.newAltNod
 import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.isRepeatInfinite;
 
 import java.util.HashSet;
-
 import jdk.nashorn.internal.runtime.regexp.joni.ast.AnchorNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.BackRefNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.CClassNode;
@@ -50,7 +49,7 @@ import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
 final class Analyser extends Parser {
 
-    protected Analyser(ScanEnvironment env, char[] chars, int p, int end) {
+    protected Analyser(final ScanEnvironment env, final char[] chars, final int p, final int end) {
         super(env, chars, p, end);
     }
 
@@ -117,7 +116,7 @@ final class Analyser extends Parser {
         } // DEBUG_COMPILE
     }
 
-    private void swap(Node a, Node b) {
+    private void swap(final Node a, final Node b) {
         a.swap(b);
 
         if (root == b) {
@@ -128,7 +127,7 @@ final class Analyser extends Parser {
     }
 
     // USE_INFINITE_REPEAT_MONOMANIAC_MEM_STATUS_CHECK
-    private int quantifiersMemoryInfo(Node node) {
+    private int quantifiersMemoryInfo(final Node node) {
         int info = 0;
 
         switch(node.getType()) {
@@ -136,20 +135,20 @@ final class Analyser extends Parser {
         case NodeType.ALT:
             ConsAltNode can = (ConsAltNode)node;
             do {
-                int v = quantifiersMemoryInfo(can.car);
+                final int v = quantifiersMemoryInfo(can.car);
                 if (v > info) info = v;
             } while ((can = can.cdr) != null);
             break;
 
         case NodeType.QTFR:
-            QuantifierNode qn = (QuantifierNode)node;
+            final QuantifierNode qn = (QuantifierNode)node;
             if (qn.upper != 0) {
                 info = quantifiersMemoryInfo(qn.target);
             }
             break;
 
         case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
+            final EncloseNode en = (EncloseNode)node;
             switch (en.type) {
             case EncloseType.MEMORY:
                 return TargetInfo.IS_EMPTY_MEM;
@@ -177,12 +176,12 @@ final class Analyser extends Parser {
         return info;
     }
 
-    private int getMinMatchLength(Node node) {
+    private int getMinMatchLength(final Node node) {
         int min = 0;
 
         switch (node.getType()) {
         case NodeType.BREF:
-            BackRefNode br = (BackRefNode)node;
+            final BackRefNode br = (BackRefNode)node;
             if (br.isRecursion()) break;
 
             if (br.backRef > env.numMem) {
@@ -202,8 +201,8 @@ final class Analyser extends Parser {
         case NodeType.ALT:
             ConsAltNode y = (ConsAltNode)node;
             do {
-                Node x = y.car;
-                int tmin = getMinMatchLength(x);
+                final Node x = y.car;
+                final int tmin = getMinMatchLength(x);
                 if (y == node) {
                     min = tmin;
                 } else if (min > tmin) {
@@ -226,7 +225,7 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.QTFR:
-            QuantifierNode qn = (QuantifierNode)node;
+            final QuantifierNode qn = (QuantifierNode)node;
             if (qn.lower > 0) {
                 min = getMinMatchLength(qn.target);
                 min = MinMaxLen.distanceMultiply(min, qn.lower);
@@ -234,7 +233,7 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
+            final EncloseNode en = (EncloseNode)node;
             switch (en.type) {
             case EncloseType.MEMORY:
                 if (en.isMinFixed()) {
@@ -261,14 +260,14 @@ final class Analyser extends Parser {
         return min;
     }
 
-    private int getMaxMatchLength(Node node) {
+    private int getMaxMatchLength(final Node node) {
         int max = 0;
 
         switch (node.getType()) {
         case NodeType.LIST:
             ConsAltNode ln = (ConsAltNode)node;
             do {
-                int tmax = getMaxMatchLength(ln.car);
+                final int tmax = getMaxMatchLength(ln.car);
                 max = MinMaxLen.distanceAdd(max, tmax);
             } while ((ln = ln.cdr) != null);
             break;
@@ -276,7 +275,7 @@ final class Analyser extends Parser {
         case NodeType.ALT:
             ConsAltNode an = (ConsAltNode)node;
             do {
-                int tmax = getMaxMatchLength(an.car);
+                final int tmax = getMaxMatchLength(an.car);
                 if (max < tmax) max = tmax;
             } while ((an = an.cdr) != null);
             break;
@@ -295,7 +294,7 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.BREF:
-            BackRefNode br = (BackRefNode)node;
+            final BackRefNode br = (BackRefNode)node;
             if (br.isRecursion()) {
                 max = MinMaxLen.INFINITE_DISTANCE;
                 break;
@@ -304,12 +303,12 @@ final class Analyser extends Parser {
             if (br.backRef > env.numMem) {
                 throw new ValueException(ERR_INVALID_BACKREF);
             }
-            int tmax = getMaxMatchLength(env.memNodes[br.backRef]);
+            final int tmax = getMaxMatchLength(env.memNodes[br.backRef]);
             if (max < tmax) max = tmax;
             break;
 
         case NodeType.QTFR:
-            QuantifierNode qn = (QuantifierNode)node;
+            final QuantifierNode qn = (QuantifierNode)node;
             if (qn.upper != 0) {
                 max = getMaxMatchLength(qn.target);
                 if (max != 0) {
@@ -323,7 +322,7 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
+            final EncloseNode en = (EncloseNode)node;
             switch (en.type) {
             case EncloseType.MEMORY:
                 if (en.isMaxFixed()) {
@@ -352,11 +351,11 @@ final class Analyser extends Parser {
 
     private static final int GET_CHAR_LEN_VARLEN            = -1;
     private static final int GET_CHAR_LEN_TOP_ALT_VARLEN    = -2;
-    protected final int getCharLengthTree(Node node) {
+    protected final int getCharLengthTree(final Node node) {
         return getCharLengthTree(node, 0);
     }
 
-    private int getCharLengthTree(Node node, int level) {
+    private int getCharLengthTree(final Node node, int level) {
         level++;
 
         int len = 0;
@@ -366,7 +365,7 @@ final class Analyser extends Parser {
         case NodeType.LIST:
             ConsAltNode ln = (ConsAltNode)node;
             do {
-                int tlen = getCharLengthTree(ln.car, level);
+                final int tlen = getCharLengthTree(ln.car, level);
                 if (returnCode == 0) len = MinMaxLen.distanceAdd(len, tlen);
             } while (returnCode == 0 && (ln = ln.cdr) != null);
             break;
@@ -377,7 +376,7 @@ final class Analyser extends Parser {
 
             int tlen = getCharLengthTree(an.car, level);
             while (returnCode == 0 && (an = an.cdr) != null) {
-                int tlen2 = getCharLengthTree(an.car, level);
+                final int tlen2 = getCharLengthTree(an.car, level);
                 if (returnCode == 0) {
                     if (tlen != tlen2) varLen = true;
                 }
@@ -397,12 +396,12 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.STR:
-            StringNode sn = (StringNode)node;
+            final StringNode sn = (StringNode)node;
             len = sn.length();
             break;
 
         case NodeType.QTFR:
-            QuantifierNode qn = (QuantifierNode)node;
+            final QuantifierNode qn = (QuantifierNode)node;
             if (qn.lower == qn.upper) {
                 tlen = getCharLengthTree(qn.target, level);
                 if (returnCode == 0) len = MinMaxLen.distanceMultiply(tlen, qn.lower);
@@ -418,7 +417,7 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
+            final EncloseNode en = (EncloseNode)node;
             switch(en.type) {
             case EncloseType.MEMORY:
                 if (en.isCLenFixed()) {
@@ -455,7 +454,7 @@ final class Analyser extends Parser {
         // !retry:!
         retry: while(true) {
 
-        int yType = y.getType();
+        final int yType = y.getType();
 
         switch(x.getType()) {
         case NodeType.CTYPE:
@@ -482,12 +481,12 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.CCLASS:
-            CClassNode xc = (CClassNode)x;
+            final CClassNode xc = (CClassNode)x;
 
             switch(yType) {
 
             case NodeType.CCLASS:
-                CClassNode yc = (CClassNode)y;
+                final CClassNode yc = (CClassNode)y;
 
                 for (int i=0; i<BitSet.SINGLE_BYTE_SIZE; i++) {
                     boolean v = xc.bs.at(i);
@@ -514,18 +513,18 @@ final class Analyser extends Parser {
             break; // case NodeType.CCLASS
 
         case NodeType.STR:
-            StringNode xs = (StringNode)x;
+            final StringNode xs = (StringNode)x;
             if (xs.length() == 0) break;
 
             switch (yType) {
 
             case NodeType.CCLASS:
-                CClassNode cc = (CClassNode)y;
-                int code = xs.chars[xs.p];
+                final CClassNode cc = (CClassNode)y;
+                final int code = xs.chars[xs.p];
                 return !cc.isCodeInCC(code);
 
             case NodeType.STR:
-                StringNode ys = (StringNode)y;
+                final StringNode ys = (StringNode)y;
                 int len = xs.length();
                 if (len > ys.length()) len = ys.length();
                 if (xs.isAmbig() || ys.isAmbig()) {
@@ -551,7 +550,7 @@ final class Analyser extends Parser {
         return false;
     }
 
-    private Node getHeadValueNode(Node node, boolean exact) {
+    private Node getHeadValueNode(final Node node, final boolean exact) {
         Node n = null;
 
         switch(node.getType()) {
@@ -570,7 +569,7 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.STR:
-            StringNode sn = (StringNode)node;
+            final StringNode sn = (StringNode)node;
             if (sn.end <= sn.p) break; // ???
 
             if (exact && !sn.isRaw() && isIgnoreCase(regex.options)){
@@ -581,7 +580,7 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.QTFR:
-            QuantifierNode qn = (QuantifierNode)node;
+            final QuantifierNode qn = (QuantifierNode)node;
             if (qn.lower > 0) {
                 if (qn.headExact != null) {
                     n = qn.headExact;
@@ -592,11 +591,11 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
+            final EncloseNode en = (EncloseNode)node;
 
             switch (en.type) {
             case EncloseType.OPTION:
-                int options = regex.options;
+                final int options = regex.options;
                 regex.options = en.option;
                 n = getHeadValueNode(en.target, exact);
                 regex.options = options;
@@ -610,7 +609,7 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.ANCHOR:
-            AnchorNode an = (AnchorNode)node;
+            final AnchorNode an = (AnchorNode)node;
             if (an.type == AnchorType.PREC_READ) n = getHeadValueNode(an.target, exact);
             break;
 
@@ -622,7 +621,7 @@ final class Analyser extends Parser {
     }
 
     // true: invalid
-    private boolean checkTypeTree(Node node, int typeMask, int encloseMask, int anchorMask) {
+    private boolean checkTypeTree(final Node node, final int typeMask, final int encloseMask, final int anchorMask) {
         if ((node.getType2Bit() & typeMask) == 0) return true;
 
         boolean invalid = false;
@@ -641,13 +640,13 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
+            final EncloseNode en = (EncloseNode)node;
             if ((en.type & encloseMask) == 0) return true;
             invalid = checkTypeTree(en.target, typeMask, encloseMask, anchorMask);
             break;
 
         case NodeType.ANCHOR:
-            AnchorNode an = (AnchorNode)node;
+            final AnchorNode an = (AnchorNode)node;
             if ((an.type & anchorMask) == 0) return true;
 
             if (an.target != null) invalid = checkTypeTree(an.target, typeMask, encloseMask, anchorMask);
@@ -666,14 +665,14 @@ final class Analyser extends Parser {
     (?<!A|B) ==> (?<!A)(?<!B)
      */
     private Node divideLookBehindAlternatives(Node node) {
-        AnchorNode an = (AnchorNode)node;
-        int anchorType = an.type;
+        final AnchorNode an = (AnchorNode)node;
+        final int anchorType = an.type;
         Node head = an.target;
         Node np = ((ConsAltNode)head).car;
 
         swap(node, head);
 
-        Node tmp = node;
+        final Node tmp = node;
         node = head;
         head = tmp;
 
@@ -682,7 +681,7 @@ final class Analyser extends Parser {
         np = node;
 
         while ((np = ((ConsAltNode)np).cdr) != null) {
-            AnchorNode insert = new AnchorNode(anchorType);
+            final AnchorNode insert = new AnchorNode(anchorType);
             insert.setTarget(((ConsAltNode)np).car);
             ((ConsAltNode)np).setCar(insert);
         }
@@ -697,9 +696,9 @@ final class Analyser extends Parser {
         return node;
     }
 
-    private Node setupLookBehind(Node node) {
-        AnchorNode an = (AnchorNode)node;
-        int len = getCharLengthTree(an.target);
+    private Node setupLookBehind(final Node node) {
+        final AnchorNode an = (AnchorNode)node;
+        final int len = getCharLengthTree(an.target);
         switch(returnCode) {
         case 0:
             an.charLength = len;
@@ -716,16 +715,16 @@ final class Analyser extends Parser {
         return node;
     }
 
-    private void nextSetup(Node node, Node nextNode) {
+    private void nextSetup(Node node, final Node nextNode) {
         // retry:
         retry: while(true) {
 
-        int type = node.getType();
+        final int type = node.getType();
         if (type == NodeType.QTFR) {
-            QuantifierNode qn = (QuantifierNode)node;
+            final QuantifierNode qn = (QuantifierNode)node;
             if (qn.greedy && isRepeatInfinite(qn.upper)) {
                 if (Config.USE_QTFR_PEEK_NEXT) {
-                    StringNode n = (StringNode)getHeadValueNode(nextNode, true);
+                    final StringNode n = (StringNode)getHeadValueNode(nextNode, true);
                     /* '\0': for UTF-16BE etc... */
                     if (n != null && n.chars[n.p] != 0) { // ?????????
                         qn.nextHeadExact = n;
@@ -734,11 +733,11 @@ final class Analyser extends Parser {
                 /* automatic posseivation a*b ==> (?>a*)b */
                 if (qn.lower <= 1) {
                     if (qn.target.isSimple()) {
-                        Node x = getHeadValueNode(qn.target, false);
+                        final Node x = getHeadValueNode(qn.target, false);
                         if (x != null) {
-                            Node y = getHeadValueNode(nextNode, false);
+                            final Node y = getHeadValueNode(nextNode, false);
                             if (y != null && isNotIncluded(x, y)) {
-                                EncloseNode en = new EncloseNode(EncloseType.STOP_BACKTRACK); //onig_node_new_enclose
+                                final EncloseNode en = new EncloseNode(EncloseType.STOP_BACKTRACK); //onig_node_new_enclose
                                 en.setStopBtSimpleRepeat();
                                 //en.setTarget(qn.target); // optimize it ??
                                 swap(node, en);
@@ -750,7 +749,7 @@ final class Analyser extends Parser {
                 }
             }
         } else if (type == NodeType.ENCLOSE) {
-            EncloseNode en = (EncloseNode)node;
+            final EncloseNode en = (EncloseNode)node;
             if (en.isMemory()) {
                 node = en.target;
                 // !goto retry;!
@@ -762,15 +761,15 @@ final class Analyser extends Parser {
         } // while
     }
 
-    private void updateStringNodeCaseFoldMultiByte(StringNode sn) {
-        char[] chars = sn.chars;
-        int end = sn.end;
+    private void updateStringNodeCaseFoldMultiByte(final StringNode sn) {
+        final char[] chars = sn.chars;
+        final int end = sn.end;
         value = sn.p;
         int sp = 0;
         char buf;
 
         while (value < end) {
-            int ovalue = value;
+            final int ovalue = value;
             buf = EncodingHelper.toLowerCase(chars[value++]);
 
             if (chars[ovalue] != buf) {
@@ -781,7 +780,7 @@ final class Analyser extends Parser {
                 while (value < end) {
                     buf = EncodingHelper.toLowerCase(chars[value++]);
                     if (sp >= sbuf.length) {
-                        char[]tmp = new char[sbuf.length << 1];
+                        final char[]tmp = new char[sbuf.length << 1];
                         System.arraycopy(sbuf, 0, tmp, 0, sbuf.length);
                         sbuf = tmp;
                     }
@@ -794,13 +793,13 @@ final class Analyser extends Parser {
         }
     }
 
-    private void updateStringNodeCaseFold(Node node) {
-        StringNode sn = (StringNode)node;
+    private void updateStringNodeCaseFold(final Node node) {
+        final StringNode sn = (StringNode)node;
         updateStringNodeCaseFoldMultiByte(sn);
     }
 
-    private Node expandCaseFoldMakeRemString(char[] chars, int p, int end) {
-        StringNode node = new StringNode(chars, p, end);
+    private Node expandCaseFoldMakeRemString(final char[] chars, final int p, final int end) {
+        final StringNode node = new StringNode(chars, p, end);
 
         updateStringNodeCaseFold(node);
         node.setAmbig();
@@ -808,8 +807,8 @@ final class Analyser extends Parser {
         return node;
     }
 
-    private boolean expandCaseFoldStringAlt(int itemNum, char[] items,
-                                              char[] chars, int p, int slen, int end, ObjPtr<Node> node) {
+    private boolean expandCaseFoldStringAlt(final int itemNum, final char[] items,
+                                              final char[] chars, final int p, final int slen, final int end, final ObjPtr<Node> node) {
 
         ConsAltNode altNode;
         node.p = altNode = newAltNode(null, null);
@@ -822,7 +821,7 @@ final class Analyser extends Parser {
 
             snode.catCode(items[i]);
 
-            ConsAltNode an = newAltNode(null, null);
+            final ConsAltNode an = newAltNode(null, null);
             an.setCar(snode);
             altNode.setCdr(an);
             altNode = an;
@@ -831,22 +830,22 @@ final class Analyser extends Parser {
     }
 
     private static final int THRESHOLD_CASE_FOLD_ALT_FOR_EXPANSION = 8;
-    private Node expandCaseFoldString(Node node) {
-        StringNode sn = (StringNode)node;
+    private Node expandCaseFoldString(final Node node) {
+        final StringNode sn = (StringNode)node;
 
         if (sn.isAmbig() || sn.length() <= 0) return node;
 
-        char[] chars = sn.chars;
+        final char[] chars = sn.chars;
         int p = sn.p;
-        int end = sn.end;
+        final int end = sn.end;
         int altNum = 1;
 
         ConsAltNode topRoot = null, root = null;
-        ObjPtr<Node> prevNode = new ObjPtr<Node>();
+        final ObjPtr<Node> prevNode = new ObjPtr<Node>();
         StringNode stringNode = null;
 
         while (p < end) {
-            char[] items = EncodingHelper.caseFoldCodesByString(regex.caseFoldFlag, chars[p]);
+            final char[] items = EncodingHelper.caseFoldCodesByString(regex.caseFoldFlag, chars[p]);
 
             if (items.length == 0) {
                 if (stringNode == null) {
@@ -877,7 +876,7 @@ final class Analyser extends Parser {
         }
 
         if (p < end) {
-            Node srem = expandCaseFoldMakeRemString(chars, p, end);
+            final Node srem = expandCaseFoldMakeRemString(chars, p, end);
 
             if (prevNode.p != null && root == null) {
                 topRoot = root = ConsAltNode.listAdd(null, prevNode.p);
@@ -890,7 +889,7 @@ final class Analyser extends Parser {
             }
         }
         /* ending */
-        Node xnode = topRoot != null ? topRoot : prevNode.p;
+        final Node xnode = topRoot != null ? topRoot : prevNode.p;
 
         swap(node, xnode);
         return xnode;
@@ -946,7 +945,7 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.BREF:
-            BackRefNode br = (BackRefNode)node;
+            final BackRefNode br = (BackRefNode)node;
             if (br.backRef > env.numMem) {
                 throw new ValueException(ERR_INVALID_BACKREF);
             }
@@ -956,17 +955,17 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.QTFR:
-            QuantifierNode qn = (QuantifierNode)node;
+            final QuantifierNode qn = (QuantifierNode)node;
             Node target = qn.target;
 
             if ((state & IN_REPEAT) != 0) qn.setInRepeat();
 
             if (isRepeatInfinite(qn.upper) || qn.lower >= 1) {
-                int d = getMinMatchLength(target);
+                final int d = getMinMatchLength(target);
                 if (d == 0) {
                     qn.targetEmptyInfo = TargetInfo.IS_EMPTY;
                     if (Config.USE_MONOMANIAC_CHECK_CAPTURES_IN_ENDLESS_REPEAT) {
-                        int info = quantifiersMemoryInfo(target);
+                        final int info = quantifiersMemoryInfo(target);
                         if (info > 0) qn.targetEmptyInfo = info;
                     } // USE_INFINITE_REPEAT_MONOMANIAC_MEM_STATUS_CHECK
                     // strange stuff here (turned off)
@@ -982,12 +981,12 @@ final class Analyser extends Parser {
             if (target.getType() == NodeType.STR) {
                 if (!isRepeatInfinite(qn.lower) && qn.lower == qn.upper &&
                     qn.lower > 1 && qn.lower <= EXPAND_STRING_MAX_LENGTH) {
-                    StringNode sn = (StringNode)target;
-                    int len = sn.length();
+                    final StringNode sn = (StringNode)target;
+                    final int len = sn.length();
 
                     if (len * qn.lower <= EXPAND_STRING_MAX_LENGTH) {
-                        StringNode str = qn.convertToString(sn.flag);
-                        int n = qn.lower;
+                        final StringNode str = qn.convertToString(sn.flag);
+                        final int n = qn.lower;
                         for (int i = 0; i < n; i++) {
                             str.cat(sn.chars, sn.p, sn.end);
                         }
@@ -999,7 +998,7 @@ final class Analyser extends Parser {
             if (Config.USE_OP_PUSH_OR_JUMP_EXACT) {
                 if (qn.greedy && qn.targetEmptyInfo != 0) {
                     if (target.getType() == NodeType.QTFR) {
-                        QuantifierNode tqn = (QuantifierNode)target;
+                        final QuantifierNode tqn = (QuantifierNode)target;
                         if (tqn.headExact != null) {
                             qn.headExact = tqn.headExact;
                             tqn.headExact = null;
@@ -1012,10 +1011,10 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
+            final EncloseNode en = (EncloseNode)node;
             switch (en.type) {
             case EncloseType.OPTION:
-                int options = regex.options;
+                final int options = regex.options;
                 regex.options = en.option;
                 setupTree(en.target, state);
                 regex.options = options;
@@ -1033,7 +1032,7 @@ final class Analyser extends Parser {
             case EncloseType.STOP_BACKTRACK:
                 setupTree(en.target, state);
                 if (en.target.getType() == NodeType.QTFR) {
-                    QuantifierNode tqn = (QuantifierNode)en.target;
+                    final QuantifierNode tqn = (QuantifierNode)en.target;
                     if (isRepeatInfinite(tqn.upper) && tqn.lower <= 1 && tqn.greedy) {
                         /* (?>a*), a*+ etc... */
                         if (tqn.target.isSimple()) en.setStopBtSimpleRepeat();
@@ -1045,7 +1044,7 @@ final class Analyser extends Parser {
             break;
 
         case NodeType.ANCHOR:
-            AnchorNode an = (AnchorNode)node;
+            final AnchorNode an = (AnchorNode)node;
             switch (an.type) {
             case AnchorType.PREC_READ:
                 setupTree(an.target, state);
@@ -1081,14 +1080,14 @@ final class Analyser extends Parser {
     }
 
     private static final int MAX_NODE_OPT_INFO_REF_COUNT   = 5;
-    private void optimizeNodeLeft(Node node, NodeOptInfo opt, OptEnvironment oenv) { // oenv remove, pass mmd
+    private void optimizeNodeLeft(final Node node, final NodeOptInfo opt, final OptEnvironment oenv) { // oenv remove, pass mmd
         opt.clear();
         opt.setBoundNode(oenv.mmd);
 
         switch (node.getType()) {
         case NodeType.LIST: {
-            OptEnvironment nenv = new OptEnvironment();
-            NodeOptInfo nopt = new NodeOptInfo();
+            final OptEnvironment nenv = new OptEnvironment();
+            final NodeOptInfo nopt = new NodeOptInfo();
             nenv.copy(oenv);
             ConsAltNode lin = (ConsAltNode)node;
             do {
@@ -1100,7 +1099,7 @@ final class Analyser extends Parser {
         }
 
         case NodeType.ALT: {
-            NodeOptInfo nopt = new NodeOptInfo();
+            final NodeOptInfo nopt = new NodeOptInfo();
             ConsAltNode aln = (ConsAltNode)node;
             do {
                 optimizeNodeLeft(aln.car, nopt, oenv);
@@ -1114,9 +1113,9 @@ final class Analyser extends Parser {
         }
 
         case NodeType.STR: {
-            StringNode sn = (StringNode)node;
+            final StringNode sn = (StringNode)node;
 
-            int slen = sn.length();
+            final int slen = sn.length();
 
             if (!sn.isAmbig()) {
                 opt.exb.concatStr(sn.chars, sn.p, sn.end, sn.isRaw());
@@ -1150,13 +1149,13 @@ final class Analyser extends Parser {
         }
 
         case NodeType.CCLASS: {
-            CClassNode cc = (CClassNode)node;
+            final CClassNode cc = (CClassNode)node;
             /* no need to check ignore case. (setted in setup_tree()) */
             if (cc.mbuf != null || cc.isNot()) {
                 opt.length.set(1, 1);
             } else {
                 for (int i=0; i<BitSet.SINGLE_BYTE_SIZE; i++) {
-                    boolean z = cc.bs.at(i);
+                    final boolean z = cc.bs.at(i);
                     if ((z && !cc.isNot()) || (!z && cc.isNot())) {
                         opt.map.addChar(i);
                     }
@@ -1172,7 +1171,7 @@ final class Analyser extends Parser {
         }
 
         case NodeType.ANCHOR: {
-            AnchorNode an = (AnchorNode)node;
+            final AnchorNode an = (AnchorNode)node;
             switch (an.type) {
             case AnchorType.BEGIN_BUF:
             case AnchorType.BEGIN_POSITION:
@@ -1184,7 +1183,7 @@ final class Analyser extends Parser {
                 break;
 
             case AnchorType.PREC_READ:
-                NodeOptInfo nopt = new NodeOptInfo();
+                final NodeOptInfo nopt = new NodeOptInfo();
                 optimizeNodeLeft(an.target, nopt, oenv);
                 if (nopt.exb.length > 0) {
                     opt.expr.copy(nopt.exb);
@@ -1205,17 +1204,17 @@ final class Analyser extends Parser {
         }
 
         case NodeType.BREF: {
-            BackRefNode br = (BackRefNode)node;
+            final BackRefNode br = (BackRefNode)node;
 
             if (br.isRecursion()) {
                 opt.length.set(0, MinMaxLen.INFINITE_DISTANCE);
                 break;
             }
 
-            Node[]nodes = oenv.scanEnv.memNodes;
+            final Node[]nodes = oenv.scanEnv.memNodes;
 
-            int min = getMinMatchLength(nodes[br.backRef]);
-            int max = getMaxMatchLength(nodes[br.backRef]);
+            final int min = getMinMatchLength(nodes[br.backRef]);
+            final int max = getMaxMatchLength(nodes[br.backRef]);
 
             opt.length.set(min, max);
             break;
@@ -1223,8 +1222,8 @@ final class Analyser extends Parser {
 
 
         case NodeType.QTFR: {
-            NodeOptInfo nopt = new NodeOptInfo();
-            QuantifierNode qn = (QuantifierNode)node;
+            final NodeOptInfo nopt = new NodeOptInfo();
+            final QuantifierNode qn = (QuantifierNode)node;
             optimizeNodeLeft(qn.target, nopt, oenv);
             if (qn.lower == 0 && isRepeatInfinite(qn.upper)) {
                 if (oenv.mmd.max == 0 && qn.target.getType() == NodeType.CANY && qn.greedy) {
@@ -1258,7 +1257,7 @@ final class Analyser extends Parser {
 
                 }
             }
-            int min = MinMaxLen.distanceMultiply(nopt.length.min, qn.lower);
+            final int min = MinMaxLen.distanceMultiply(nopt.length.min, qn.lower);
             int max;
             if (isRepeatInfinite(qn.upper)) {
                 max = nopt.length.max > 0 ? MinMaxLen.INFINITE_DISTANCE : 0;
@@ -1270,10 +1269,10 @@ final class Analyser extends Parser {
         }
 
         case NodeType.ENCLOSE: {
-            EncloseNode en = (EncloseNode)node;
+            final EncloseNode en = (EncloseNode)node;
             switch (en.type) {
             case EncloseType.OPTION:
-                int save = oenv.options;
+                final int save = oenv.options;
                 oenv.options = en.option;
                 optimizeNodeLeft(en.target, opt, oenv);
                 oenv.options = save;
@@ -1308,9 +1307,9 @@ final class Analyser extends Parser {
         } // switch
     }
 
-    protected final void setOptimizedInfoFromTree(Node node) {
-        NodeOptInfo opt = new NodeOptInfo();
-        OptEnvironment oenv = new OptEnvironment();
+    protected final void setOptimizedInfoFromTree(final Node node) {
+        final NodeOptInfo opt = new NodeOptInfo();
+        final OptEnvironment oenv = new OptEnvironment();
 
         oenv.options = regex.options;
         oenv.caseFoldFlag = regex.caseFoldFlag;

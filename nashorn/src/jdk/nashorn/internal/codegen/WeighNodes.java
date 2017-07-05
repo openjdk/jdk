@@ -27,7 +27,6 @@ package jdk.nashorn.internal.codegen;
 
 import java.util.List;
 import java.util.Map;
-import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -69,24 +68,25 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
      * Weight constants.
      */
     static final long FUNCTION_WEIGHT  = 40;
-    static final long AASTORE_WEIGHT   = 2;
-    static final long ACCESS_WEIGHT    = 4;
+    static final long AASTORE_WEIGHT   =  2;
+    static final long ACCESS_WEIGHT    =  4;
     static final long ADD_WEIGHT       = 10;
-    static final long BREAK_WEIGHT     = 1;
+    static final long BREAK_WEIGHT     =  1;
     static final long CALL_WEIGHT      = 10;
     static final long CATCH_WEIGHT     = 10;
-    static final long CONTINUE_WEIGHT  = 1;
-    static final long IF_WEIGHT        = 2;
+    static final long COMPARE_WEIGHT   =  6;
+    static final long CONTINUE_WEIGHT  =  1;
+    static final long IF_WEIGHT        =  2;
     static final long LITERAL_WEIGHT   = 10;
-    static final long LOOP_WEIGHT      = 4;
-    static final long NEW_WEIGHT       = 6;
+    static final long LOOP_WEIGHT      =  4;
+    static final long NEW_WEIGHT       =  6;
     static final long FUNC_EXPR_WEIGHT = 20;
-    static final long RETURN_WEIGHT    = 2;
+    static final long RETURN_WEIGHT    =  2;
     static final long SPLIT_WEIGHT     = 40;
-    static final long SWITCH_WEIGHT    = 8;
-    static final long THROW_WEIGHT     = 2;
+    static final long SWITCH_WEIGHT    =  8;
+    static final long THROW_WEIGHT     =  2;
     static final long VAR_WEIGHT       = 40;
-    static final long WITH_WEIGHT      = 8;
+    static final long WITH_WEIGHT      =  8;
 
     /** Accumulated weight. */
     private long weight;
@@ -101,7 +101,7 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
      *
      * @param weightCache cache of already calculated block weights
      */
-    private WeighNodes(FunctionNode topFunction, final Map<Node, Long> weightCache) {
+    private WeighNodes(final FunctionNode topFunction, final Map<Node, Long> weightCache) {
         super(new LexicalContext());
         this.topFunction = topFunction;
         this.weightCache = weightCache;
@@ -307,11 +307,6 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
-    public Node leaveDISCARD(final UnaryNode unaryNode) {
-        return unaryNodeWeight(unaryNode);
-    }
-
-    @Override
     public Node leaveNEW(final UnaryNode unaryNode) {
         weight += NEW_WEIGHT;
         return unaryNode;
@@ -446,22 +441,22 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveEQ(final BinaryNode binaryNode) {
-        return runtimeNodeWeight(binaryNode);
+        return compareWeight(binaryNode);
     }
 
     @Override
     public Node leaveEQ_STRICT(final BinaryNode binaryNode) {
-        return runtimeNodeWeight(binaryNode);
+        return compareWeight(binaryNode);
     }
 
     @Override
     public Node leaveGE(final BinaryNode binaryNode) {
-        return runtimeNodeWeight(binaryNode);
+        return compareWeight(binaryNode);
     }
 
     @Override
     public Node leaveGT(final BinaryNode binaryNode) {
-        return runtimeNodeWeight(binaryNode);
+        return compareWeight(binaryNode);
     }
 
     @Override
@@ -478,12 +473,12 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveLE(final BinaryNode binaryNode) {
-        return runtimeNodeWeight(binaryNode);
+        return compareWeight(binaryNode);
     }
 
     @Override
     public Node leaveLT(final BinaryNode binaryNode) {
-        return runtimeNodeWeight(binaryNode);
+        return compareWeight(binaryNode);
     }
 
     @Override
@@ -498,12 +493,12 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
 
     @Override
     public Node leaveNE(final BinaryNode binaryNode) {
-        return runtimeNodeWeight(binaryNode);
+        return compareWeight(binaryNode);
     }
 
     @Override
     public Node leaveNE_STRICT(final BinaryNode binaryNode) {
-        return runtimeNodeWeight(binaryNode);
+        return compareWeight(binaryNode);
     }
 
     @Override
@@ -546,8 +541,8 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
         return unaryNode;
     }
 
-    private Node runtimeNodeWeight(final BinaryNode binaryNode) {
-        weight += Type.widest(binaryNode.lhs().getType(), binaryNode.rhs().getType()).isObject() ? CALL_WEIGHT : 1;
+    private Node compareWeight(final BinaryNode binaryNode) {
+        weight += COMPARE_WEIGHT;
         return binaryNode;
     }
 }

@@ -25,9 +25,6 @@
 
 package jdk.nashorn.internal.runtime.regexp.joni;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-
 import org.testng.annotations.Test;
 
 /**

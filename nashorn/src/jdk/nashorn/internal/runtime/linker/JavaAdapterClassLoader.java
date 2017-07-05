@@ -30,8 +30,14 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import jdk.internal.dynalink.beans.StaticClass;
+import jdk.nashorn.internal.codegen.DumpBytecode;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 
 /**
@@ -39,16 +45,18 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
  * It can be invoked repeatedly to create multiple adapter classes from the same bytecode; adapter classes that have
  * class-level overrides must be re-created for every set of such overrides. Note that while this class is named
  * "class loader", it does not, in fact, extend {@code ClassLoader}, but rather uses them internally. Instances of this
- * class are normally created by {@link JavaAdapterBytecodeGenerator}.
+ * class are normally created by {@code JavaAdapterBytecodeGenerator}.
  */
-@SuppressWarnings("javadoc")
 final class JavaAdapterClassLoader {
     private static final AccessControlContext CREATE_LOADER_ACC_CTXT = ClassAndLoader.createPermAccCtxt("createClassLoader");
+    private static final AccessControlContext GET_CONTEXT_ACC_CTXT = ClassAndLoader.createPermAccCtxt(Context.NASHORN_GET_CONTEXT);
+    private static final Collection<String> VISIBLE_INTERNAL_CLASS_NAMES = Collections.unmodifiableCollection(new HashSet<>(
+            Arrays.asList(JavaAdapterServices.class.getName(), ScriptFunction.class.getName(), JSType.class.getName())));
 
     private final String className;
     private final byte[] classBytes;
 
-    JavaAdapterClassLoader(String className, byte[] classBytes) {
+    JavaAdapterClassLoader(final String className, final byte[] classBytes) {
         this.className = className.replace('/', '.');
         this.classBytes = classBytes;
     }
@@ -94,7 +102,7 @@ final class JavaAdapterClassLoader {
                     // loaded by a loader that prevents package.access. If so, it'd throw
                     // SecurityException for nashorn's classes!. For adapter's to work, we
                     // should be able to refer to the few classes it needs in its implementation.
-                    if(ScriptFunction.class.getName().equals(name) || JavaAdapterServices.class.getName().equals(name)) {
+                    if(VISIBLE_INTERNAL_CLASS_NAMES.contains(name)) {
                         return myLoader.loadClass(name);
                     }
                     throw se;
@@ -105,6 +113,14 @@ final class JavaAdapterClassLoader {
             protected Class<?> findClass(final String name) throws ClassNotFoundException {
                 if(name.equals(className)) {
                     assert classBytes != null : "what? already cleared .class bytes!!";
+
+                    final Context ctx = AccessController.doPrivileged(new PrivilegedAction<Context>() {
+                        @Override
+                        public Context run() {
+                            return Context.getContext();
+                        }
+                    }, GET_CONTEXT_ACC_CTXT);
+                    DumpBytecode.dumpBytecode(ctx.getEnv(), ctx.getLogger(jdk.nashorn.internal.codegen.Compiler.class), classBytes, name);
                     return defineClass(name, classBytes, 0, classBytes.length, protectionDomain);
                 }
                 throw new ClassNotFoundException(name);

@@ -92,7 +92,7 @@ abstract class NashornLoader extends SecureClassLoader {
     }
 
     @Override
-    protected PermissionCollection getPermissions(CodeSource codesource) {
+    protected PermissionCollection getPermissions(final CodeSource codesource) {
         final Permissions permCollection = new Permissions();
         for (final Permission perm : SCRIPT_PERMISSIONS) {
             permCollection.add(perm);

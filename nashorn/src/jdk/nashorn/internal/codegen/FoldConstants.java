@@ -44,26 +44,41 @@ import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * Simple constant folding pass, executed before IR is starting to be lowered.
  */
-final class FoldConstants extends NodeVisitor<LexicalContext> {
+@Logger(name="fold")
+final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggable {
 
-    private static final DebugLogger LOG = new DebugLogger("fold");
+    private final DebugLogger log;
 
-    FoldConstants() {
+    FoldConstants(final Compiler compiler) {
         super(new LexicalContext());
+        this.log = initLogger(compiler.getContext());
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
     }
 
     @Override
     public Node leaveUnaryNode(final UnaryNode unaryNode) {
         final LiteralNode<?> literalNode = new UnaryNodeConstantEvaluator(unaryNode).eval();
         if (literalNode != null) {
-            LOG.info("Unary constant folded ", unaryNode, " to ", literalNode);
+            log.info("Unary constant folded ", unaryNode, " to ", literalNode);
             return literalNode;
         }
         return unaryNode;
@@ -73,15 +88,10 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
     public Node leaveBinaryNode(final BinaryNode binaryNode) {
         final LiteralNode<?> literalNode = new BinaryNodeConstantEvaluator(binaryNode).eval();
         if (literalNode != null) {
-            LOG.info("Binary constant folded ", binaryNode, " to ", literalNode);
+            log.info("Binary constant folded ", binaryNode, " to ", literalNode);
             return literalNode;
         }
         return binaryNode;
-    }
-
-    @Override
-    public boolean enterFunctionNode(final FunctionNode functionNode) {
-        return !functionNode.isLazy();
     }
 
     @Override
@@ -149,7 +159,7 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
         final LexicalContext lc = new LexicalContext();
         block.accept(lc, new NodeVisitor<LexicalContext>(lc) {
             @Override
-            public boolean enterVarNode(VarNode varNode) {
+            public boolean enterVarNode(final VarNode varNode) {
                 statements.add(varNode.setInit(null));
                 return false;
             }
@@ -163,7 +173,7 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
 
         @Override
         protected LiteralNode<?> eval() {
-            final Node rhsNode = parent.rhs();
+            final Node rhsNode = parent.getExpression();
 
             if (!(rhsNode instanceof LiteralNode)) {
                 return null;
@@ -174,7 +184,8 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
             }
 
             final LiteralNode<?> rhs = (LiteralNode<?>)rhsNode;
-            final boolean rhsInteger = rhs.getType().isInteger();
+            final Type rhsType = rhs.getType();
+            final boolean rhsInteger = rhsType.isInteger() || rhsType.isBoolean();
 
             LiteralNode<?> literalNode;
 
@@ -261,7 +272,7 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
                 break;
             case ADD:
                 if ((lhs.isString() || rhs.isNumeric()) && (rhs.isString() || rhs.isNumeric())) {
-                    Object res = ScriptRuntime.ADD(lhs.getObject(), rhs.getObject());
+                    final Object res = ScriptRuntime.ADD(lhs.getObject(), rhs.getObject());
                     if (res instanceof Number) {
                         value = ((Number)res).doubleValue();
                         break;
@@ -311,8 +322,8 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
                 return null;
             }
 
-            isInteger &= value != 0.0 && JSType.isRepresentableAsInt(value);
-            isLong    &= value != 0.0 && JSType.isRepresentableAsLong(value);
+            isInteger &= JSType.isRepresentableAsInt(value) && !JSType.isNegativeZero(value);
+            isLong    &= JSType.isRepresentableAsLong(value) && !JSType.isNegativeZero(value);
 
             if (isInteger) {
                 return LiteralNode.newInstance(token, finish, (int)value);

@@ -63,7 +63,7 @@ import jdk.nashorn.internal.runtime.Undefined;
 final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {
     private static final ClassValue<MethodHandle> ARRAY_CONVERTERS = new ClassValue<MethodHandle>() {
         @Override
-        protected MethodHandle computeValue(Class<?> type) {
+        protected MethodHandle computeValue(final Class<?> type) {
             return createArrayConverter(type);
         }
     };
@@ -91,16 +91,20 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
             return null;
         }
 
+        return Bootstrap.asTypeSafeReturn(getGuardedInvocation(self,  request, desc), linkerServices, desc);
+    }
+
+    private static GuardedInvocation getGuardedInvocation(final Object self, final LinkRequest request, final CallSiteDescriptor desc) {
         final GuardedInvocation inv;
         if (self instanceof ScriptObject) {
             inv = ((ScriptObject)self).lookup(desc, request);
         } else if (self instanceof Undefined) {
             inv = Undefined.lookup(desc);
         } else {
-            throw new AssertionError(); // Should never reach here.
+            throw new AssertionError(self.getClass().getName()); // Should never reach here.
         }
 
-        return Bootstrap.asType(inv, linkerServices, desc);
+        return inv;
     }
 
     @Override
@@ -184,7 +188,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
      */
     private static GuardedInvocation getArrayConverter(final Class<?> sourceType, final Class<?> targetType) {
         final boolean isSourceTypeNativeArray = sourceType == NativeArray.class;
-        // If source type is more generic than ScriptFunction class, we'll need to use a guard
+        // If source type is more generic than NativeArray class, we'll need to use a guard
         final boolean isSourceTypeGeneric = !isSourceTypeNativeArray && sourceType.isAssignableFrom(NativeArray.class);
 
         if (isSourceTypeNativeArray || isSourceTypeGeneric) {
@@ -208,12 +212,12 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         return MH.asType(converter, converter.type().changeReturnType(type));
     }
 
-    private static GuardedInvocation getMirrorConverter(Class<?> sourceType, Class<?> targetType) {
+    private static GuardedInvocation getMirrorConverter(final Class<?> sourceType, final Class<?> targetType) {
         // Could've also used (targetType.isAssignableFrom(ScriptObjectMirror.class) && targetType != Object.class) but
         // it's probably better to explicitly spell out the supported target types
         if (targetType == Map.class || targetType == Bindings.class || targetType == JSObject.class || targetType == ScriptObjectMirror.class) {
             if(ScriptObject.class.isAssignableFrom(sourceType)) {
-                return new GuardedInvocation(CREATE_MIRROR, null);
+                return new GuardedInvocation(CREATE_MIRROR);
             }
             return new GuardedInvocation(CREATE_MIRROR, IS_SCRIPT_OBJECT);
         }
@@ -270,7 +274,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         return Comparison.INDETERMINATE;
     }
 
-    private static boolean isList(Class<?> clazz) {
+    private static boolean isList(final Class<?> clazz) {
         return clazz == List.class || clazz == Deque.class;
     }
 

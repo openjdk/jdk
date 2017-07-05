@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,9 +84,9 @@ public class IteratorAtEnd {
         try {
             final Iterator it = c.iterator();
             THROWS(NoSuchElementException.class,
-                   new Fun() {void f() { while (true) it.next(); }});
+                   () -> { while (true) it.next(); });
             try { it.remove(); }
-            catch (UnsupportedOperationException _) { return; }
+            catch (UnsupportedOperationException exc) { return; }
             pass();
         } catch (Throwable t) { unexpected(t); }
 
@@ -96,10 +96,9 @@ public class IteratorAtEnd {
                 final ListIterator it = list.listIterator(0);
                 it.next();
                 final Object x = it.previous();
-                THROWS(NoSuchElementException.class,
-                       new Fun() {void f() { it.previous(); }});
+                THROWS(NoSuchElementException.class, () -> it.previous());
                 try { it.remove(); }
-                catch (UnsupportedOperationException _) { return; }
+                catch (UnsupportedOperationException exc) { return; }
                 pass();
                 check(! list.get(0).equals(x));
             } catch (Throwable t) { unexpected(t); }
@@ -108,10 +107,9 @@ public class IteratorAtEnd {
                 final ListIterator it = list.listIterator(list.size());
                 it.previous();
                 final Object x = it.next();
-                THROWS(NoSuchElementException.class,
-                       new Fun() {void f() { it.next(); }});
+                THROWS(NoSuchElementException.class, () -> it.next());
                 try { it.remove(); }
-                catch (UnsupportedOperationException _) { return; }
+                catch (UnsupportedOperationException exc) { return; }
                 pass();
                 check(! list.get(list.size()-1).equals(x));
             } catch (Throwable t) { unexpected(t); }
@@ -132,7 +130,7 @@ public class IteratorAtEnd {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    private static abstract class Fun {abstract void f() throws Throwable;}
+    interface Fun {void f() throws Throwable;}
     static void THROWS(Class<? extends Throwable> k, Fun... fs) {
         for (Fun f : fs)
             try { f.f(); fail("Expected " + k.getName() + " not thrown"); }

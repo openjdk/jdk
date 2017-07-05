@@ -98,7 +98,7 @@ class DefaultCallSiteDescriptor extends AbstractCallSiteDescriptor {
     private final String[] tokenizedName;
     private final MethodType methodType;
 
-    DefaultCallSiteDescriptor(String[] tokenizedName, MethodType methodType) {
+    DefaultCallSiteDescriptor(final String[] tokenizedName, final MethodType methodType) {
         this.tokenizedName = tokenizedName;
         this.methodType = methodType;
     }
@@ -109,10 +109,10 @@ class DefaultCallSiteDescriptor extends AbstractCallSiteDescriptor {
     }
 
     @Override
-    public String getNameToken(int i) {
+    public String getNameToken(final int i) {
         try {
             return tokenizedName[i];
-        } catch(ArrayIndexOutOfBoundsException e) {
+        } catch(final ArrayIndexOutOfBoundsException e) {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
@@ -127,7 +127,7 @@ class DefaultCallSiteDescriptor extends AbstractCallSiteDescriptor {
     }
 
     @Override
-    public CallSiteDescriptor changeMethodType(MethodType newMethodType) {
+    public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
         return CallSiteDescriptorFactory.getCanonicalPublicDescriptor(new DefaultCallSiteDescriptor(tokenizedName,
                 newMethodType));
     }

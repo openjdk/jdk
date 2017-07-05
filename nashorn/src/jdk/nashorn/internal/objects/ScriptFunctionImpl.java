@@ -30,6 +30,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
+import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -37,7 +38,6 @@ import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.runtime.AccessorProperty;
 
 /**
  * Concrete implementation of ScriptFunction. This sets correct map for the
@@ -175,13 +175,13 @@ public class ScriptFunctionImpl extends ScriptFunction {
     private static class AnonymousFunction extends ScriptFunctionImpl {
         private static final PropertyMap anonmap$ = PropertyMap.newMap();
 
-        AnonymousFunction(final Global global) {
+        AnonymousFunction() {
             super("", GlobalFunctions.ANONYMOUS, anonmap$, null);
         }
     }
 
-    static ScriptFunctionImpl newAnonymousFunction(final Global global) {
-        return new AnonymousFunction(global);
+    static ScriptFunctionImpl newAnonymousFunction() {
+        return new AnonymousFunction();
     }
 
     /**
@@ -226,7 +226,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @return a function with the specified self and parameters bound.
      */
     @Override
-    protected ScriptFunction makeBoundFunction(Object self, Object[] args) {
+    protected ScriptFunction makeBoundFunction(final Object self, final Object[] args) {
         return super.makeBoundFunction(self, args);
     }
 
@@ -272,14 +272,13 @@ public class ScriptFunctionImpl extends ScriptFunction {
 
         // We have to fill user accessor functions late as these are stored
         // in this object rather than in the PropertyMap of this object.
-
-        final ScriptFunction errorThrower = global.getTypeErrorThrower();
+        assert objectSpill == null;
+        final ScriptFunction typeErrorThrower = global.getTypeErrorThrower();
         if (findProperty("arguments", true) != null) {
-            setUserAccessors("arguments", errorThrower, errorThrower);
-        }
-
+            initUserAccessors("arguments", Property.NOT_CONFIGURABLE | Property.NOT_ENUMERABLE, typeErrorThrower, typeErrorThrower);
+       }
         if (findProperty("caller", true) != null) {
-            setUserAccessors("caller", errorThrower, errorThrower);
-        }
+            initUserAccessors("caller", Property.NOT_CONFIGURABLE | Property.NOT_ENUMERABLE, typeErrorThrower, typeErrorThrower);
+       }
     }
 }
