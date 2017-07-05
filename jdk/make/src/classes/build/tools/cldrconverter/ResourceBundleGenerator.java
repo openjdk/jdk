@@ -143,8 +143,9 @@ class ResourceBundleGenerator implements BundleGenerator {
 
     @Override
     public void generateMetaInfo(Map<String, SortedSet<String>> metaInfo) throws IOException {
-        String dirName = CLDRConverter.DESTINATION_DIR + File.separator + "sun" + File.separator + "util" + File.separator
-                + "cldr" + File.separator;
+        String dirName = CLDRConverter.DESTINATION_DIR + File.separator + "sun" + File.separator + "util" +
+            File.separator + "resources" + File.separator + "cldr" + File.separator +
+            "provider" + File.separator ;
         File dir = new File(dirName);
         if (!dir.exists()) {
             dir.mkdirs();
@@ -158,7 +159,7 @@ class ResourceBundleGenerator implements BundleGenerator {
         try (PrintWriter out = new PrintWriter(file, "us-ascii")) {
             out.println(CopyrightHeaders.getOpenJDKCopyright());
 
-            out.println("package sun.util.cldr;\n\n"
+            out.println("package sun.util.resources.cldr.provider;\n\n"
                       + "import java.util.ListResourceBundle;\n"
                       + "import sun.util.locale.provider.LocaleProviderAdapter;\n"
                       + "import sun.util.locale.provider.LocaleDataMetaInfo;\n");

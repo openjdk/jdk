@@ -49,6 +49,8 @@ class MethodCounters: public MetaspaceObj {
 #ifdef TIERED
   float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
   jlong             _prev_time;                   // Previous time the rate was acquired
+  u1                _highest_comp_level;          // Highest compile level this method has ever seen.
+  u1                _highest_osr_comp_level;      // Same for OSR level
 #endif
 
   MethodCounters() : _interpreter_invocation_count(0),
@@ -57,7 +59,9 @@ class MethodCounters: public MetaspaceObj {
                      _nmethod_age(INT_MAX)
 #ifdef TIERED
                    , _rate(0),
-                     _prev_time(0)
+                     _prev_time(0),
+                     _highest_comp_level(0),
+                     _highest_osr_comp_level(0)
 #endif
   {
     invocation_counter()->init();
@@ -113,6 +117,11 @@ class MethodCounters: public MetaspaceObj {
   float rate() const                             { return _rate; }
   void set_rate(float rate)                      { _rate = rate; }
 #endif
+
+  int highest_comp_level() const;
+  void set_highest_comp_level(int level);
+  int highest_osr_comp_level() const;
+  void set_highest_osr_comp_level(int level);
 
   // invocation counter
   InvocationCounter* invocation_counter() { return &_invocation_counter; }

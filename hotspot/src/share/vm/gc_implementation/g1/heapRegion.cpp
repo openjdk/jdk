@@ -861,7 +861,6 @@ void HeapRegion::verify(VerifyOption vo,
   HeapWord* prev_p = NULL;
   VerifyLiveClosure vl_cl(g1, vo);
   bool is_humongous = isHumongous();
-  bool do_bot_verify = !is_young();
   size_t object_num = 0;
   while (p < top()) {
     oop obj = oop(p);
@@ -876,15 +875,6 @@ void HeapRegion::verify(VerifyOption vo,
                              obj_size, is_humongous ? "" : "non-");
        *failures = true;
        return;
-    }
-
-    // If it returns false, verify_for_object() will output the
-    // appropriate message.
-    if (do_bot_verify &&
-        !g1->is_obj_dead(obj, this) &&
-        !_offsets.verify_for_object(p, obj_size)) {
-      *failures = true;
-      return;
     }
 
     if (!g1->is_obj_dead_cond(obj, this, vo)) {
@@ -922,6 +912,10 @@ void HeapRegion::verify(VerifyOption vo,
     }
     prev_p = p;
     p += obj_size;
+  }
+
+  if (!is_young() && !is_empty()) {
+    _offsets.verify();
   }
 
   if (p != top()) {

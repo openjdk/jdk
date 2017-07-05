@@ -71,6 +71,7 @@ public class BigIntegerTest {
     static final int BITS_TOOM_COOK_SQUARE = 6912;
     static final int BITS_SCHOENHAGE_BASE = 640;
     static final int BITS_BURNIKEL_ZIEGLER = 2560;
+    static final int BITS_BURNIKEL_ZIEGLER_OFFSET = 1280;
 
     static final int ORDER_SMALL = 60;
     static final int ORDER_MEDIUM = 100;
@@ -288,19 +289,19 @@ public class BigIntegerTest {
      * where {@code abs(u) > abs(v)} and {@code a > b && b > 0}, then if
      * {@code w/z = q1*z + r1} and {@code u/v = q2*v + r2}, then
      * {@code q1 = q2*pow(2,a-b)} and {@code r1 = r2*pow(2,b)}.  The test
-     * ensures that {@code v} is just under the B-Z threshold and that {@code w}
-     * and {@code z} are both over the threshold.  This implies that {@code u/v}
-     * uses the standard division algorithm and {@code w/z} uses the B-Z
-     * algorithm.  The results of the two algorithms are then compared using the
-     * observation described in the foregoing and if they are not equal a
-     * failure is logged.
+     * ensures that {@code v} is just under the B-Z threshold, that {@code z} is
+     * over the threshold and {@code w} is much larger than {@code z}. This
+     * implies that {@code u/v} uses the standard division algorithm and
+     * {@code w/z} uses the B-Z algorithm.  The results of the two algorithms
+     * are then compared using the observation described in the foregoing and
+     * if they are not equal a failure is logged.
      */
     public static void divideLarge() {
         int failCount = 0;
 
-        BigInteger base = BigInteger.ONE.shiftLeft(BITS_BURNIKEL_ZIEGLER - 33);
+        BigInteger base = BigInteger.ONE.shiftLeft(BITS_BURNIKEL_ZIEGLER + BITS_BURNIKEL_ZIEGLER_OFFSET - 33);
         for (int i=0; i<SIZE; i++) {
-            BigInteger addend = new BigInteger(BITS_BURNIKEL_ZIEGLER - 34, rnd);
+            BigInteger addend = new BigInteger(BITS_BURNIKEL_ZIEGLER + BITS_BURNIKEL_ZIEGLER_OFFSET - 34, rnd);
             BigInteger v = base.add(addend);
 
             BigInteger u = v.multiply(BigInteger.valueOf(2 + rnd.nextInt(Short.MAX_VALUE - 1)));
@@ -312,14 +313,14 @@ public class BigIntegerTest {
                 v = v.negate();
             }
 
-            int a = 17 + rnd.nextInt(16);
+            int a = BITS_BURNIKEL_ZIEGLER_OFFSET + rnd.nextInt(16);
             int b = 1 + rnd.nextInt(16);
-            BigInteger w = u.multiply(BigInteger.valueOf(1L << a));
-            BigInteger z = v.multiply(BigInteger.valueOf(1L << b));
+            BigInteger w = u.multiply(BigInteger.ONE.shiftLeft(a));
+            BigInteger z = v.multiply(BigInteger.ONE.shiftLeft(b));
 
             BigInteger[] divideResult = u.divideAndRemainder(v);
-            divideResult[0] = divideResult[0].multiply(BigInteger.valueOf(1L << (a - b)));
-            divideResult[1] = divideResult[1].multiply(BigInteger.valueOf(1L << b));
+            divideResult[0] = divideResult[0].multiply(BigInteger.ONE.shiftLeft(a - b));
+            divideResult[1] = divideResult[1].multiply(BigInteger.ONE.shiftLeft(b));
             BigInteger[] bzResult = w.divideAndRemainder(z);
 
             if (divideResult[0].compareTo(bzResult[0]) != 0 ||

@@ -170,7 +170,7 @@ address LIR_Assembler::pc() const {
 // removes the need to bang the stack in the deoptimization blob which
 // in turn simplifies stack overflow handling.
 int LIR_Assembler::bang_size_in_bytes() const {
-  return MAX2(initial_frame_size_in_bytes(), _compilation->interpreter_frame_size());
+  return MAX2(initial_frame_size_in_bytes() + os::extra_bang_size_in_bytes(), _compilation->interpreter_frame_size());
 }
 
 void LIR_Assembler::emit_exception_entries(ExceptionInfoList* info_list) {

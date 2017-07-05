@@ -869,9 +869,7 @@ class MethodType implements java.io.Serializable {
         if (dstTypes == srcTypes) {
             return true;
         }
-        if (dstTypes.length != srcTypes.length) {
-            return false;
-        }
+        assert(dstTypes.length == srcTypes.length);
         for (int i = 0; i < dstTypes.length; i++) {
             if (!explicitCastEquivalentToAsType(srcTypes[i], dstTypes[i])) {
                 return false;
