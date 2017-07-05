@@ -27,10 +27,14 @@
  * @library /test/lib
  *          /lib/testlibrary
  * @modules jdk.compiler
- * @build src.test.src.TestDriver JarUtils
- *        jdk.test.lib.compiler.CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
  *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
+ *        src.test.src.TestDriver JarUtils
  * @summary various resource and classloading bugs related to jar files
  * @run main/othervm TestDriver
  */

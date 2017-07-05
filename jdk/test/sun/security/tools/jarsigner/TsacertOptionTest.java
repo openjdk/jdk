@@ -36,6 +36,7 @@ import jdk.test.lib.util.JarUtils;
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
  *          java.management
+ * @build jdk.test.lib.util.JarUtils
  * @run main TsacertOptionTest
  */
 public class TsacertOptionTest extends Test {

@@ -50,7 +50,9 @@ import static java.lang.System.out;
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
  *          jdk.jartool
- * @build jdk.testlibrary.JDKToolFinder
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.testlibrary.JDKToolFinder
  * @compile Basic.java
  * @run testng Basic
  * @summary Tests for plain Modular jars & Multi-Release Modular jars

@@ -31,6 +31,7 @@ package java.security;
  * security-related exception classes that extend from it.
  *
  * @author Jan Luehe
+ * @since 1.2
  */
 
 public class GeneralSecurityException extends Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,7 +541,7 @@ class LambdaFormEditor {
         // adjust the arguments
         MethodHandle aload = MethodHandles.arrayElementGetter(erasedArrayType);
         for (int i = 0; i < arrayLength; i++) {
-            Name loadArgument = new Name(aload, spreadParam, i);
+            Name loadArgument = new Name(new NamedFunction(aload, Intrinsic.ARRAY_LOAD), spreadParam, i);
             buf.insertExpression(exprPos + i, loadArgument);
             buf.replaceParameterByCopy(pos + i, exprPos + i);
         }
@@ -604,7 +604,8 @@ class LambdaFormEditor {
         for (int i = 0; i < collectorArity; i++) {
             newParams[i] = new Name(pos + i, argType);
         }
-        Name callCombiner = new Name(arrayCollector, (Object[]) /*...*/ newParams);
+        Name callCombiner = new Name(new NamedFunction(arrayCollector, Intrinsic.NEW_ARRAY),
+                                        (Object[]) /*...*/ newParams);
 
         // insert the new expression
         int exprPos = lambdaForm.arity();

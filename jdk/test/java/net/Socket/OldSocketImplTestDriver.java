@@ -30,7 +30,12 @@ import java.nio.file.Paths;
  * @test
  * @bug 6449565
  * @library /test/lib
- * @build jdk.test.lib.process.ProcessTools
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main OldSocketImplTestDriver
  * @summary Test driver for OdlSocketImpl
  */

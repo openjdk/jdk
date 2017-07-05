@@ -26,6 +26,7 @@
  * @bug 4347132 8136799
  * @key randomness
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @build Tests
  * @build FdlibmTranslit
  * @build CubeRootTests

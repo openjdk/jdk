@@ -27,8 +27,10 @@
  * @summary  Basic argument validation for --add-reads
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build AddReadsTestWarningError
+ * @build jdk.test.lib.compiler.ModuleInfoMaker
+ * @build jdk.test.lib.compiler.CompilerUtils
  * @build jdk.testlibrary.*
+ * @build AddReadsTestWarningError
  * @run testng AddReadsTestWarningError
  */
 

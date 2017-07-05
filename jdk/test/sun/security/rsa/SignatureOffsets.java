@@ -35,6 +35,7 @@ import java.security.SignatureException;
  *          generation, the test tries to verify signature with the above API
  *          and passing in different signature offset (0, 33, 66, 99).
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @compile ../../../java/security/Signature/Offsets.java
  * @run main SignatureOffsets SunRsaSign MD2withRSA
  * @run main SignatureOffsets SunRsaSign MD5withRSA

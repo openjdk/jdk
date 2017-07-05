@@ -34,6 +34,7 @@ import jdk.test.lib.util.JarUtils;
  * @bug 8050402
  * @summary Check policy is extensible with user defined permissions
  * @library /lib/testlibrary /test/lib
+ * @build jdk.test.lib.util.JarUtils
  * @compile TVJar/TVPermission.java
  * @run main ExtensiblePolicyWithJarTest
  */

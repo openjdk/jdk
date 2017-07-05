@@ -25,6 +25,9 @@
  * @test
  * @bug 6374379
  * @library /test/lib
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ * @run main ReadLongZipFileName
  * @summary Verify that we can read zip file names > 255 chars long
  */
 

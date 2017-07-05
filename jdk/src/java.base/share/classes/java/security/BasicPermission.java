@@ -62,6 +62,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Marianne Mueller
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public abstract class BasicPermission extends Permission

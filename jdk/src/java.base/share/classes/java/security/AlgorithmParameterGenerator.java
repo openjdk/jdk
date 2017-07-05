@@ -61,11 +61,17 @@ import java.util.Objects;
  * </ul>
  *
  * <P>In case the client does not explicitly initialize the
- * AlgorithmParameterGenerator
- * (via a call to an {@code init} method), each provider must supply (and
- * document) a default initialization. For example, the Sun provider uses a
- * default modulus prime size of 1024 bits for the generation of DSA
- * parameters.
+ * AlgorithmParameterGenerator (via a call to an {@code init} method),
+ * each provider must supply (and document) a default initialization.
+ * See the Keysize Restriction sections of the
+ * <a href="{@docRoot}/../technotes/guides/security/SunProviders.html">
+ * JDK Providers</a>
+ * document for information on the AlgorithmParameterGenerator defaults
+ * used by JDK providers.
+ * However, note that defaults may vary across different providers.
+ * Additionally, the default value for a provider may change in a future
+ * version. Therefore, it is recommended to explicitly initialize the
+ * AlgorithmParameterGenerator instead of relying on provider-specific defaults.
  *
  * <p> Every implementation of the Java platform is required to support the
  * following standard {@code AlgorithmParameterGenerator} algorithms and

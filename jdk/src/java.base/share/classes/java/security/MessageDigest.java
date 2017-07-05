@@ -96,6 +96,7 @@ import javax.crypto.SecretKey;
  * other algorithms are supported.
  *
  * @author Benjamin Renaud
+ * @since 1.1
  *
  * @see DigestInputStream
  * @see DigestOutputStream

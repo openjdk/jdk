@@ -25,7 +25,8 @@
  * @bug 4313887 6838333 6917021 7006126 6950237 8006645
  * @summary Unit test for java.nio.file.Files copy and move methods (use -Dseed=X to set PRNG seed)
  * @library .. /test/lib
- * @build CopyAndMove PassThroughFileSystem
+ * @build jdk.test.lib.RandomFactory
+ *        CopyAndMove PassThroughFileSystem
  * @run main/othervm CopyAndMove
  * @key randomness
  */

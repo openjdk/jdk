@@ -59,6 +59,7 @@ import sun.security.util.SecurityConstants;
  * @author Li Gong
  * @author Roland Schemers
  * @author Gary Ellison
+ * @since 1.2
  */
 
 public class ProtectionDomain {
