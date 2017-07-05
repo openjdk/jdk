@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ public:
   // Supplied function to return the additive identity type.
   // This is returned whenever the subtracts inputs are the same.
   virtual const Type *add_id() const = 0;
-
 };
 
 
@@ -140,6 +139,13 @@ public:
   const Type *add_id() const { return TypeInt::ZERO; }
   const Type *bottom_type() const { return TypeInt::CC; }
   virtual uint ideal_reg() const { return Op_RegFlags; }
+
+#ifndef PRODUCT
+  // CmpNode and subclasses include all data inputs (until hitting a control
+  // boundary) in their related node set, as well as all outputs until and
+  // including eventual control nodes and their projections.
+  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
+#endif
 };
 
 //------------------------------CmpINode---------------------------------------
@@ -311,6 +317,7 @@ public:
   bool is_counted_loop_exit_test();
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
+  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 

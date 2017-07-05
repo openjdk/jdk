@@ -251,15 +251,6 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
-    public boolean requestFocusToEmbedder() {
-        if (isEmbeddedInIE) {
-            final WEmbeddedFramePeer peer = AWTAccessor.getComponentAccessor()
-                                                       .getPeer(this);
-            return peer.requestFocusToEmbedder();
-        }
-        return false;
-    }
-
     public void registerAccelerator(AWTKeyStroke stroke) {}
     public void unregisterAccelerator(AWTKeyStroke stroke) {}
 
