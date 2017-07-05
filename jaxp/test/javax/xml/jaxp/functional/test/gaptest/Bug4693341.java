@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,24 +42,28 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import jaxp.library.JAXPFileBaseTest;
-
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
  * @bug 4693341
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true test.gaptest.Bug4693341
+ * @run testng/othervm test.gaptest.Bug4693341
  * @summary test transforming to stream with external dtd
  */
 
-public class Bug4693341 extends JAXPFileBaseTest {
+@Listeners({jaxp.library.FilePolicy.class})
+public class Bug4693341 {
 
     @Test
     public void test() throws TransformerException, ParserConfigurationException, SAXException, IOException {
 
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
 
-        String out = USER_DIR + File.separator + "Bug4693341.out";
+        String out = USER_DIR + "Bug4693341.out";
         StreamResult result = new StreamResult(new File(out));
 
         String in = XML_DIR + "Bug4693341.xml";
@@ -69,7 +73,7 @@ public class Bug4693341 extends JAXPFileBaseTest {
         System.out.println(source.getSystemId());
 
         Files.copy(Paths.get(XML_DIR + "Bug4693341.dtd"),
-                Paths.get(USER_DIR + File.separator + "Bug4693341.dtd"), REPLACE_EXISTING);
+                Paths.get(USER_DIR + "Bug4693341.dtd"), REPLACE_EXISTING);
 
         transformer.transform(source, result);
 
@@ -77,3 +81,4 @@ public class Bug4693341 extends JAXPFileBaseTest {
     }
 
 }
+

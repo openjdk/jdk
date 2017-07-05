@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,27 @@
 
 package javax.xml.xpath.ptests;
 
+import static org.testng.Assert.assertEquals;
+
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import jaxp.library.JAXPBaseTest;
-import static org.testng.Assert.assertEquals;
+
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /**
  * Class containing the test cases for XPathFunctionResolver.
  */
-public class XPathFunctionResolverTest extends JAXPBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.xpath.ptests.XPathFunctionResolverTest
+ * @run testng/othervm javax.xml.xpath.ptests.XPathFunctionResolverTest
+ */
+@Listeners({jaxp.library.BasePolicy.class})
+public class XPathFunctionResolverTest {
     /**
      * A XPath for evaluation environment and expressions.
      */
@@ -73,3 +82,5 @@ public class XPathFunctionResolverTest extends JAXPBaseTest {
         assertEquals(xpath.evaluate(null, "5"), "2");
     }
 }
+
+

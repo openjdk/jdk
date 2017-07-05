@@ -30,11 +30,17 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.DoubleXmlnsTest
+ * @run testng/othervm stream.XMLStreamReaderTest.DoubleXmlnsTest
  * @summary Test double namespaces and nested namespaces.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class DoubleXmlnsTest {
 
     @Test
@@ -112,3 +118,4 @@ public class DoubleXmlnsTest {
         }
     }
 }
+

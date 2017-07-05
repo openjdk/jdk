@@ -23,6 +23,7 @@
 
 package stream.XMLEventReaderTest;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.testng.Assert;
 import java.io.ByteArrayInputStream;
@@ -33,9 +34,14 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
 
 /*
+ * @test
  * @bug 6586466
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLEventReaderTest.Bug6586466Test
+ * @run testng/othervm stream.XMLEventReaderTest.Bug6586466Test
  * @summary Test XMLEventReader.nextTag() shall update internal event state.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6586466Test {
 
     @Test
@@ -60,3 +66,4 @@ public class Bug6586466Test {
     }
 
 }
+

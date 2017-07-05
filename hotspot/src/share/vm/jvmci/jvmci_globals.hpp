@@ -29,8 +29,7 @@
 
 //
 // Defines all global flags used by the JVMCI compiler. Only flags that need
-// to be accessible to the JVMCI C++ code should be defined here. All other
-// JVMCI flags should be defined in JVMCIOptions.java.
+// to be accessible to the JVMCI C++ code should be defined here.
 //
 #define JVMCI_FLAGS(develop, \
                     develop_pd, \
@@ -63,9 +62,6 @@
   experimental(intx, JVMCIHostThreads, 1,                                   \
           "Force number of compiler threads for JVMCI host compiler")       \
           range(1, max_jint)                                                \
-                                                                            \
-  experimental(bool, CodeInstallSafepointChecks, true,                      \
-          "Perform explicit safepoint checks while installing code")        \
                                                                             \
   NOT_COMPILER2(product(intx, MaxVectorSize, 64,                            \
           "Max vector size in bytes, "                                      \
@@ -112,9 +108,9 @@ JVMCI_FLAGS(DECLARE_DEVELOPER_FLAG, \
 
 class JVMCIGlobals {
  public:
-  // Return true if jvmci flags are consistent.
+  // Return true if jvmci flags are consistent. If not consistent,
+  // an error message describing the inconsistency is printed before
+  // returning false.
   static bool check_jvmci_flags_are_consistent();
-  // Print jvmci arguments inconsistency error message.
-  static void print_jvmci_args_inconsistency_error_message();
 };
 #endif // SHARE_VM_JVMCI_JVMCIGLOBALS_HPP

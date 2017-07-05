@@ -21,22 +21,37 @@
  * questions.
  */
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-
 /**
  * @test
  * @bug 8051344
  * @summary Force OSR compilation with non-empty stack at the OSR entry point.
  * @modules java.base/jdk.internal.org.objectweb.asm
- * @compile -XDignore.symbol.file TestOSRWithNonEmptyStack.java
- * @run main/othervm -XX:CompileOnly=TestCase.test TestOSRWithNonEmptyStack
+ * @run main/othervm -XX:CompileCommand=compileonly,TestCase::test
+ *                   compiler.osr.TestOSRWithNonEmptyStack
  */
+
+package compiler.osr;
+
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Label;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.DUP;
+import static jdk.internal.org.objectweb.asm.Opcodes.IADD;
+import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_0;
+import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_1;
+import static jdk.internal.org.objectweb.asm.Opcodes.IF_ICMPLT;
+import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static jdk.internal.org.objectweb.asm.Opcodes.ISTORE;
+import static jdk.internal.org.objectweb.asm.Opcodes.POP;
+import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
+
 public class TestOSRWithNonEmptyStack extends ClassLoader {
     private static final int CLASS_FILE_VERSION = 52;
     private static final String CLASS_NAME = "TestCase";

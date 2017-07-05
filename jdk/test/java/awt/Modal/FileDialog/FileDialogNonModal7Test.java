@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8054359
  * @summary Check whether a modeless FileDialog behaves as expected.
  *

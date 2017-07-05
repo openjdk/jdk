@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,26 +43,23 @@ import javax.xml.xpath.XPathFunctionException;
 import javax.xml.xpath.XPathFunctionResolver;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true xpath.SecureProcessingTest
+ * @run testng/othervm xpath.SecureProcessingTest
  * @summary Test when FEATURE_SECURE_PROCESSING is true, calling an external function will cause XPathFunctionException.
  */
+@Test
+@Listeners({jaxp.library.FilePolicy.class})
 public class SecureProcessingTest {
-    static boolean _isSecureMode = false;
-    static {
-        if (System.getSecurityManager() != null) {
-            _isSecureMode = true;
-            System.out.println("Security Manager is present");
-        } else {
-            System.out.println("Security Manager is NOT present");
-        }
-    }
-
-    @Test
     public final void testSecureProcessing() {
+        boolean _isSecureMode = System.getSecurityManager() != null;
 
         final String XPATH_EXPRESSION = "ext:helloWorld()";
 
@@ -150,7 +147,7 @@ public class SecureProcessingTest {
         }
     }
 
-    public class MyXPathFunctionResolver implements XPathFunctionResolver {
+    private class MyXPathFunctionResolver implements XPathFunctionResolver {
 
         public XPathFunction resolveFunction(QName functionName, int arity) {
 
@@ -159,7 +156,7 @@ public class SecureProcessingTest {
         }
     }
 
-    public class MyXPathFunction implements XPathFunction {
+    private class MyXPathFunction implements XPathFunction {
 
         public Object evaluate(List list) throws XPathFunctionException {
 
@@ -167,7 +164,7 @@ public class SecureProcessingTest {
         }
     }
 
-    public class MyNamespaceContext implements NamespaceContext {
+    private class MyNamespaceContext implements NamespaceContext {
 
         public String getNamespaceURI(String prefix) {
             if (prefix == null) {
@@ -199,3 +196,4 @@ public class SecureProcessingTest {
         }
     }
 }
+

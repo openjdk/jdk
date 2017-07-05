@@ -391,11 +391,15 @@ bool PSScavenge::invoke_no_policy() {
       ParallelTaskTerminator terminator(
         active_workers,
                   (TaskQueueSetSuper*) promotion_manager->stack_array_depth());
-      if (active_workers > 1) {
-        for (uint j = 0; j < active_workers; j++) {
-          q->enqueue(new StealTask(&terminator));
+        // If active_workers can exceed 1, add a StrealTask.
+        // PSPromotionManager::drain_stacks_depth() does not fully drain its
+        // stacks and expects a StealTask to complete the draining if
+        // ParallelGCThreads is > 1.
+        if (gc_task_manager()->workers() > 1) {
+          for (uint j = 0; j < active_workers; j++) {
+            q->enqueue(new StealTask(&terminator));
+          }
         }
-      }
 
       gc_task_manager()->execute_and_wait(q);
     }

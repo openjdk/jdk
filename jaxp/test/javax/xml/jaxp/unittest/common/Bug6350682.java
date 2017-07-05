@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,31 @@
 
 package common;
 
+import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
+
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6350682
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true common.Bug6350682
+ * @run testng/othervm common.Bug6350682
  * @summary Test SAXParserFactory and TransformerFactory can newInstance when setContextClassLoader(null).
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6350682 {
 
     @Test
     public void testSAXParserFactory() {
         try {
-            Thread.currentThread().setContextClassLoader(null);
+            runWithAllPerm(() -> Thread.currentThread().setContextClassLoader(null));
             if (Bug6350682.class.getClassLoader() == null)
                 System.out.println("this class loader is NULL");
             else
@@ -55,7 +63,7 @@ public class Bug6350682 {
     @Test
     public void testTransformerFactory() {
         try {
-            Thread.currentThread().setContextClassLoader(null);
+            runWithAllPerm(() -> Thread.currentThread().setContextClassLoader(null));
             TransformerFactory factory = TransformerFactory.newInstance();
             Assert.assertTrue(factory != null, "Failed to get an instance of a TransformerFactory");
         } catch (Exception e) {
@@ -67,3 +75,4 @@ public class Bug6350682 {
         }
     }
 }
+

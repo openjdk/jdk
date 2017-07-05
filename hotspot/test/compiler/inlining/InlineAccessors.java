@@ -27,11 +27,14 @@
  * @summary Method::is_accessor should cover getters and setters for all types
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary
- * @run main/othervm InlineAccessors
+ *
+ * @run driver compiler.inlining.InlineAccessors
  */
-import java.lang.invoke.*;
-import jdk.test.lib.*;
-import static jdk.test.lib.Asserts.*;
+
+package compiler.inlining;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class InlineAccessors {
     public static void main(String[] args) throws Exception {
@@ -42,7 +45,7 @@ public class InlineAccessors {
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-server", "-XX:-TieredCompilation", "-Xbatch", "-Xcomp",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
-                    "InlineAccessors$Launcher");
+                    Launcher.class.getName());
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 

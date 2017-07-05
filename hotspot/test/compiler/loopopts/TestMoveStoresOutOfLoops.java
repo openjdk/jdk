@@ -26,13 +26,18 @@
  * @test
  * @bug 8080289
  * @summary Move stores out of loops if possible
- * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,TestMoveStoresOutOfLoops::test*  TestMoveStoresOutOfLoops
  *
+ * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
+ *      -XX:CompileCommand=dontinline,compiler.loopopts.TestMoveStoresOutOfLoops::test*
+ *      compiler.loopopts.TestMoveStoresOutOfLoops
  */
 
-import java.lang.reflect.*;
-import java.util.*;
-import java.util.function.*;
+package compiler.loopopts;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.function.Function;
 
 public class TestMoveStoresOutOfLoops {
 

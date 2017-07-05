@@ -25,9 +25,12 @@
  * @test
  * @bug 8134321
  * @summary Code that capture field values of eliminated allocation at a safepoint when there's an arraycopy behind a Phi is broken
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestEliminatedArrayCopyPhi
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.arraycopy.TestEliminatedArrayCopyPhi
  */
+
+package compiler.arraycopy;
 
 public class TestEliminatedArrayCopyPhi {
 

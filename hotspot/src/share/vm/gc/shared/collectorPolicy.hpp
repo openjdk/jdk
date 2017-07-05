@@ -72,10 +72,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   size_t _space_alignment;
   size_t _heap_alignment;
 
-  // Needed to keep information if MaxHeapSize was set on the command line
-  // when the flag value is aligned etc by ergonomics.
-  bool _max_heap_size_cmdline;
-
   // The sizing of the heap is controlled by a sizing policy.
   AdaptiveSizePolicy* _size_policy;
 

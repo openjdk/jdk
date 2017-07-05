@@ -22,11 +22,15 @@
  */
 package common;
 
+import static jaxp.library.JAXPTestUtilities.runWithTmpPermission;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.util.PropertyPermission;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -39,8 +43,10 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
+
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -48,10 +54,15 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 /*
+ * @test
  * @bug 8144967
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true common.Sources
+ * @run testng/othervm common.Sources
  * @summary Tests related to the javax.xml.transform.Source
  * and org.xml.sax.InputSource
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Sources {
 
     /**
@@ -88,7 +99,7 @@ public class Sources {
      * DataProvider: sources that are empty
      */
     @DataProvider(name = "emptySources")
-    Object[][] getSources() throws URISyntaxException {
+    public Object[][] getSources() throws URISyntaxException {
 
         return new Object[][]{
             {new DOMSource()},
@@ -108,27 +119,29 @@ public class Sources {
      * DataProvider: sources that are not empty
      */
     @DataProvider(name = "nonEmptySources")
-    Object[][] getSourcesEx() throws URISyntaxException {
+    public Object[][] getSourcesEx() {
         StAXSource ss = null;
         try {
             ss = new StAXSource(getXMLEventReader());
-        } catch (XMLStreamException ex) {}
+        } catch (XMLStreamException ex) {
+        }
 
-        return new Object[][]{
-            //This will set a non-null systemId on the resulting StreamSource
-            {new StreamSource(new File(""))},
-            //Can't tell because XMLStreamReader is a pull parser, cursor advancement
-            //would have been required in order to examine the reader.
-            {new StAXSource(getXMLStreamReader())},
-            {ss}
-        };
+        return new Object[][] {
+            // This will set a non-null systemId on the resulting
+            // StreamSource
+            { runWithTmpPermission(() -> new StreamSource(new File("")), new PropertyPermission("user.dir", "read")) },
+            // Can't tell because XMLStreamReader is a pull parser, cursor
+            // advancement
+            // would have been required in order to examine the reader.
+            { new StAXSource(getXMLStreamReader()) },
+            { ss } };
     }
 
     /*
      * DataProvider: sources that are empty
      */
     @DataProvider(name = "emptyInputSource")
-    Object[][] getInputSources() throws URISyntaxException {
+    public Object[][] getInputSources() throws URISyntaxException {
         byte[] utf8Bytes = null;
         try {
             utf8Bytes = "".getBytes("UTF8");
@@ -200,3 +213,4 @@ public class Sources {
         return r;
     }
 }
+

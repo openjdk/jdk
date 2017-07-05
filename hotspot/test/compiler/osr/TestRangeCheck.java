@@ -25,7 +25,10 @@
  * @test TestRangeCheck
  * @bug 8054883
  * @summary Tests that range check is not skipped
+ * @run main compiler.osr.TestRangeCheck
  */
+
+package compiler.osr;
 
 public class TestRangeCheck {
     public static void main(String args[]) {

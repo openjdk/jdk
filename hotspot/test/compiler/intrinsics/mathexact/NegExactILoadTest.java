@@ -25,13 +25,14 @@
  * @test
  * @bug 8026844
  * @summary Test negExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile NegExactILoadTest.java Verify.java
- * @run main NegExactILoadTest
  *
+ * @run main compiler.intrinsics.mathexact.NegExactILoadTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class NegExactILoadTest {
     public static void main(String[] args) {

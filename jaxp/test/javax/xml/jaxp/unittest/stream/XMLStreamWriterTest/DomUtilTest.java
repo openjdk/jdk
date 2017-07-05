@@ -41,18 +41,23 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.DomUtilTest
+ * @run testng/othervm stream.XMLStreamWriterTest.DomUtilTest
  * @summary Test XMLStreamWriter writes a soap message.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class DomUtilTest {
 
     private XMLOutputFactory staxOut;
-    final File folder = new File(System.getProperty("tempdir") + "/classes/soapmessages");
     private static final String INPUT_FILE1 = "message_12.xml";
 
     public void setup() {
@@ -119,3 +124,4 @@ public class DomUtilTest {
     }
 
 }
+

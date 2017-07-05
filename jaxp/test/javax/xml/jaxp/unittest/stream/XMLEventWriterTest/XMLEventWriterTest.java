@@ -36,11 +36,17 @@ import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.stream.StreamSource;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLEventWriterTest.XMLEventWriterTest
+ * @run testng/othervm stream.XMLEventWriterTest.XMLEventWriterTest
  * @summary Test XMLEventWriter.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class XMLEventWriterTest {
 
     /**
@@ -150,3 +156,4 @@ public class XMLEventWriterTest {
         }
     }
 }
+

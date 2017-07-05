@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.nio.fs;
 
+import java.net.FileNameMap;
+import java.net.URLConnection;
 import java.nio.file.Path;
 import java.nio.file.spi.FileTypeDetector;
 import java.util.Locale;
@@ -71,6 +73,16 @@ public abstract class AbstractFileTypeDetector
         if (file == null)
             throw new NullPointerException("'file' is null");
         String result = implProbeContentType(file);
+
+        // Fall back to content types property.
+        if (result == null) {
+            Path fileName = file.getFileName();
+            if (fileName != null) {
+                FileNameMap fileNameMap = URLConnection.getFileNameMap();
+                result = fileNameMap.getContentTypeFor(fileName.toString());
+            }
+        }
+
         return (result == null) ? null : parse(result);
     }
 

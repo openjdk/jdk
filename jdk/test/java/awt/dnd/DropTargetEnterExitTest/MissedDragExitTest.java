@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @bug 8024163
  * @summary Checks that dragExit is generated when the new DropTarget is created under the drag
  * @library ../../regtesthelpers

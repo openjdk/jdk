@@ -470,6 +470,12 @@ class InstanceKlass: public Klass {
   static bool find_inner_classes_attr(instanceKlassHandle k,
                                       int* ooff, int* noff, TRAPS);
 
+ private:
+  // Check prohibited package ("java/" only loadable by boot or platform loaders)
+  static void check_prohibited_package(Symbol* class_name,
+                                       Handle class_loader,
+                                       TRAPS);
+ public:
   // tell if two classes have the same enclosing class (at package level)
   bool is_same_package_member(const Klass* class2, TRAPS) const {
     return is_same_package_member_impl(this, class2, THREAD);
@@ -786,7 +792,9 @@ public:
   static void purge_previous_versions(InstanceKlass* ik) { return; };
   static bool has_previous_versions() { return false; }
 
-  void set_cached_class_file(JvmtiCachedClassFileData *data) { ShouldNotReachHere(); }
+  void set_cached_class_file(JvmtiCachedClassFileData *data) {
+    assert(data == NULL, "unexpected call with JVMTI disabled");
+  }
   JvmtiCachedClassFileData * get_cached_class_file() { return (JvmtiCachedClassFileData *)NULL; }
 
 #endif // INCLUDE_JVMTI
@@ -1298,7 +1306,7 @@ public:
   // JSR-292 support
   MemberNameTable* member_names() { return _member_names; }
   void set_member_names(MemberNameTable* member_names) { _member_names = member_names; }
-  oop add_member_name(Handle member_name, bool intern);
+  bool add_member_name(Handle member_name);
 
 public:
   // JVMTI support

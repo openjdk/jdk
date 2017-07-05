@@ -23,10 +23,14 @@
 
 package transform.util;
 
+import static jaxp.library.JAXPTestUtilities.runWithTmpPermission;
+import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.PropertyPermission;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.SAXParser;
@@ -65,7 +69,7 @@ public class StreamUtil extends TransformerUtil {
 
     public Result prepareResult() throws Exception {
         FileOutputStream fos = new FileOutputStream(TEMP_FILE);
-        return new StreamResult(fos);
+        return runWithTmpPermission(() -> new StreamResult(fos), new PropertyPermission("user.dir", "read"));
     }
 
     public void checkResult(Result result, String inputVersion) throws Exception {
@@ -85,8 +89,9 @@ public class StreamUtil extends TransformerUtil {
         // use sax parser, as encoding info cannot be set on DOM document
         SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
         VersionDefaultHandler dh = new VersionDefaultHandler();
-        parser.parse(new File(TEMP_FILE), dh);
+        tryRunWithTmpPermission(() -> parser.parse(new File(TEMP_FILE), dh), new PropertyPermission("user.dir", "read"));
         Assert.assertTrue(dh.getVersion().equals(version), "Expected version is " + version + " actual version " + dh.getVersion());
         Assert.assertTrue(dh.getEncoding().equals(encoding), "Expected version is " + encoding + " actual version " + dh.getEncoding());
     }
 }
+

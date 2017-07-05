@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+   @test
+  @key headful
    @bug 6777378
    @summary NullPointerException in XPDefaultRenderer.paint()
    @author Alexander Potochkin

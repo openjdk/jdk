@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  */
 package javax.xml.transform.ptests;
 
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+
 import java.io.File;
 import java.io.FileInputStream;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Source;
@@ -31,13 +36,11 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import jaxp.library.JAXPFileBaseTest;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -45,7 +48,14 @@ import org.xml.sax.InputSource;
 /**
  * URIResolver should be invoked when transform happens.
  */
-public class URIResolverTest extends JAXPFileBaseTest implements URIResolver {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.URIResolverTest
+ * @run testng/othervm javax.xml.transform.ptests.URIResolverTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class URIResolverTest implements URIResolver {
     /**
      * System ID constant.
      */
@@ -115,7 +125,7 @@ public class URIResolverTest extends JAXPFileBaseTest implements URIResolver {
      *
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public static void resolver01() throws Exception {
         try (FileInputStream fis = new FileInputStream(XSL_INCLUDE_FILE)) {
             TransformerFactory tfactory = TransformerFactory.newInstance();
@@ -134,7 +144,7 @@ public class URIResolverTest extends JAXPFileBaseTest implements URIResolver {
      *
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public static void resolver02() throws Exception {
         TransformerFactory tfactory = TransformerFactory.newInstance();
         URIResolverTest resolver = new URIResolverTest(XSL_TEMP_FILE, SYSTEM_ID);
@@ -155,7 +165,7 @@ public class URIResolverTest extends JAXPFileBaseTest implements URIResolver {
      *
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public static void resolver03() throws Exception {
         try (FileInputStream fis = new FileInputStream(XSL_INCLUDE_FILE)){
             URIResolverTest resolver = new URIResolverTest(XSL_TEMP_FILE, SYSTEM_ID);
@@ -174,7 +184,7 @@ public class URIResolverTest extends JAXPFileBaseTest implements URIResolver {
      *
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public static void resolver04() throws Exception {
         try (FileInputStream fis = new FileInputStream(XSL_IMPORT_FILE)) {
             URIResolverTest resolver = new URIResolverTest(XSL_TEMP_FILE, SYSTEM_ID);
@@ -192,7 +202,7 @@ public class URIResolverTest extends JAXPFileBaseTest implements URIResolver {
      *
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public static void resolver05() throws Exception {
         URIResolverTest resolver = new URIResolverTest(XSL_TEMP_FILE, SYSTEM_ID);
         TransformerFactory tfactory = TransformerFactory.newInstance();
@@ -211,7 +221,7 @@ public class URIResolverTest extends JAXPFileBaseTest implements URIResolver {
      *
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public static void resolver06() throws Exception {
         try (FileInputStream fis = new FileInputStream(XSL_IMPORT_FILE)){
             URIResolverTest resolver = new URIResolverTest(XSL_TEMP_FILE, SYSTEM_ID);
@@ -230,7 +240,7 @@ public class URIResolverTest extends JAXPFileBaseTest implements URIResolver {
      *
      * @throws Exception If any errors occur.
      */
-    @Test (groups = {"readLocalFiles"})
+    @Test
     public static void docResolver01() throws Exception {
         try (FileInputStream fis = new FileInputStream(XML_DIR + "doctest.xsl")) {
             URIResolverTest resolver = new URIResolverTest("temp/colors.xml", SYSTEM_ID);
@@ -252,3 +262,5 @@ public class URIResolverTest extends JAXPFileBaseTest implements URIResolver {
         }
     }
 }
+
+

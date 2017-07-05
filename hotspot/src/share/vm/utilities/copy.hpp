@@ -26,6 +26,7 @@
 #define SHARE_VM_UTILITIES_COPY_HPP
 
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
 
 // Assembly code for platforms that need it.
 extern "C" {
@@ -332,24 +333,7 @@ class Copy : AllStatic {
   }
 
   // Platform dependent implementations of the above methods.
-#ifdef TARGET_ARCH_x86
-# include "copy_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "copy_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "copy_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "copy_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "copy_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "copy_aarch64.hpp"
-#endif
+#include CPU_HEADER(copy)
 
 };
 

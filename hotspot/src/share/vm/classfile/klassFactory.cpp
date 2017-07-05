@@ -96,7 +96,6 @@ instanceKlassHandle KlassFactory::create_from_stream(ClassFileStream* stream,
                                                      Handle protection_domain,
                                                      const Klass* host_klass,
                                                      GrowableArray<Handle>* cp_patches,
-                                                     TempNewSymbol* parsed_name,
                                                      TRAPS) {
 
   assert(stream != NULL, "invariant");
@@ -123,7 +122,6 @@ instanceKlassHandle KlassFactory::create_from_stream(ClassFileStream* stream,
                          name,
                          loader_data,
                          protection_domain,
-                         parsed_name,
                          host_klass,
                          cp_patches,
                          ClassFileParser::BROADCAST, // publicity level

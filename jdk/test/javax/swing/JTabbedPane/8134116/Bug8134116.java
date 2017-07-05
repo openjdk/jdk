@@ -12,6 +12,7 @@ import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 /*
  * @test
+ * @key headful
  * @bug 8134116
  * @summary JTabbedPane$Page.getBounds throws IndexOutOfBoundsException
  * @run main Bug8134116

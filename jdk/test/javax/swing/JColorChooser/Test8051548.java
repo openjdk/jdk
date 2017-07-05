@@ -37,6 +37,7 @@ import javax.swing.colorchooser.AbstractColorChooserPanel;
 
 /*
  * @test
+ * @key headful
  * @bug 8051548
  * @summary JColorChooser should have a way to disable transparency controls
  * @author Alexandr Scherbatiy

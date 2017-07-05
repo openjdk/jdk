@@ -1502,7 +1502,7 @@ public final class Context {
         final URL          url    = source.getURL();
         final CodeSource   cs     = new CodeSource(url, (CodeSigner[])null);
         final CodeInstaller installer;
-        if (!env.useAnonymousClasses(isEval) || env._persistent_cache || !env._lazy_compilation) {
+        if (!env.useAnonymousClasses(source.getLength()) || env._persistent_cache || !env._lazy_compilation) {
             // Persistent code cache and eager compilation preclude use of VM anonymous classes
             final ScriptLoader loader = env._loader_per_compile ? createNewLoader() : scriptLoader;
             installer = new NamedContextCodeInstaller(this, cs, loader);

@@ -82,3 +82,4 @@ public class VersionEventWriter implements XMLEventWriter {
         return encoding;
     }
 }
+

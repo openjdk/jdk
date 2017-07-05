@@ -21,9 +21,9 @@
  * questions.
  */
 
-package scenarios;
+package compiler.types.correctness.scenarios;
 
-import hierarchies.TypeHierarchy;
+import compiler.types.correctness.hierarchies.TypeHierarchy;
 
 import java.util.Arrays;
 

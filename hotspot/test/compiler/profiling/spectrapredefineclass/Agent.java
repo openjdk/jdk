@@ -21,11 +21,14 @@
  * questions.
  */
 
-import java.security.*;
-import java.lang.instrument.*;
-import java.lang.reflect.*;
-import java.lang.management.ManagementFactory;
+package compiler.profiling.spectrapredefineclass;
+
 import com.sun.tools.attach.VirtualMachine;
+
+import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.Instrumentation;
+import java.lang.management.ManagementFactory;
+import java.security.ProtectionDomain;
 
 class A {
     void m() {

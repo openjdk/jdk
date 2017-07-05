@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,19 @@ import static catalog.ResolutionChecker.checkUriResolution;
 import javax.xml.catalog.CatalogResolver;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true catalog.GroupTest
+ * @run testng/othervm catalog.GroupTest
  * @summary Get matched URIs from system, public and uri entries respectively,
  *          and some of the entries are enclosed by group entries.
- * @compile ../../libs/catalog/CatalogTestUtils.java
- * @compile ../../libs/catalog/ResolutionChecker.java
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class GroupTest {
 
     private static final String CATALOG_GROUP = "group.xml";
@@ -52,7 +55,7 @@ public class GroupTest {
     }
 
     @DataProvider(name = "systemId-matchedUri")
-    private Object[][] dataOnSysId() {
+    public Object[][] dataOnSysId() {
         return new Object[][] {
                 // The matched URI of the specified system id is enclosed by a
                 // group entry.
@@ -78,7 +81,7 @@ public class GroupTest {
     }
 
     @DataProvider(name = "publicId-matchedUri")
-    private Object[][] dataOnPubId() {
+    public Object[][] dataOnPubId() {
         return new Object[][] {
                 // The matched URI of the specified public id is enclosed by a
                 // group entry.
@@ -104,7 +107,7 @@ public class GroupTest {
     }
 
     @DataProvider(name = "uri-matchedUri")
-    private Object[][] dataOnUri() {
+    public Object[][] dataOnUri() {
         return new Object[][] {
                 // The matched URI of the specified URI reference is enclosed by
                 // a group entry.
@@ -128,3 +131,4 @@ public class GroupTest {
         return catalogResolver(CATALOG_GROUP);
     }
 }
+

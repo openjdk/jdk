@@ -35,6 +35,7 @@ import static javax.swing.SwingUtilities.invokeAndWait;
 
 /*
  * @test
+ * @key headful
  * @bug 7195179
  * @summary Tests that combobox works with generified renderers
  * @author Sergey Malenkov

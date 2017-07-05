@@ -145,53 +145,56 @@ class G1CMBitMap : public G1CMBitMapRO {
   void clear_range(MemRegion mr);
 };
 
-// Represents a marking stack used by ConcurrentMarking in the G1 collector.
+// Represents the overflow mark stack used by concurrent marking.
+//
+// Stores oops in a huge buffer in virtual memory that is always fully committed.
+// Resizing may only happen during a STW pause when the stack is empty.
 class G1CMMarkStack VALUE_OBJ_CLASS_SPEC {
-  VirtualSpace _virtual_space;   // Underlying backing store for actual stack
-  G1ConcurrentMark* _cm;
-  oop* _base;        // bottom of stack
-  jint _index;       // one more than last occupied index
-  jint _capacity;    // max #elements
-  jint _saved_index; // value of _index saved at start of GC
+  ReservedSpace _reserved_space; // Space currently reserved for the mark stack.
+
+  oop* _base;                    // Bottom address of allocated memory area.
+  size_t _capacity;              // Maximum number of elements.
+  size_t _index;                 // One more than last occupied index.
+
+  size_t _saved_index;           // Value of _index saved at start of GC to detect mark stack modifications during that time.
 
   bool  _overflow;
   bool  _should_expand;
 
+  // Resizes the mark stack to the given new capacity. Releases any previous
+  // memory if successful.
+  bool resize(size_t new_capacity);
+
+  bool stack_modified() const { return _index != _saved_index; }
  public:
-  G1CMMarkStack(G1ConcurrentMark* cm);
+  G1CMMarkStack();
   ~G1CMMarkStack();
 
   bool allocate(size_t capacity);
 
-  // Pushes the first "n" elements of "ptr_arr" on the stack.
-  // Locking impl: concurrency is allowed only with
-  // "par_push_arr" and/or "par_pop_arr" operations, which use the same
-  // locking strategy.
-  void par_push_arr(oop* ptr_arr, int n);
+  // Pushes the first "n" elements of the given buffer on the stack.
+  void par_push_arr(oop* buffer, size_t n);
 
-  // If returns false, the array was empty.  Otherwise, removes up to "max"
-  // elements from the stack, and transfers them to "ptr_arr" in an
-  // unspecified order.  The actual number transferred is given in "n" ("n
-  // == 0" is deliberately redundant with the return value.)  Locking impl:
-  // concurrency is allowed only with "par_push_arr" and/or "par_pop_arr"
-  // operations, which use the same locking strategy.
-  bool par_pop_arr(oop* ptr_arr, int max, int* n);
+  // Moves up to max elements from the stack into the given buffer. Returns
+  // the number of elements pushed, and false if the array has been empty.
+  // Returns true if the buffer contains at least one element.
+  bool par_pop_arr(oop* buffer, size_t max, size_t* n);
 
-  bool isEmpty()    { return _index == 0; }
-  int  maxElems()   { return _capacity; }
+  bool is_empty() const { return _index == 0; }
+  size_t capacity() const  { return _capacity; }
 
-  bool overflow() { return _overflow; }
+  bool overflow() const { return _overflow; }
   void clear_overflow() { _overflow = false; }
 
   bool should_expand() const { return _should_expand; }
-  void set_should_expand();
+  void set_should_expand(bool value) { _should_expand = value; }
 
   // Expand the stack, typically in response to an overflow condition
   void expand();
 
-  int  size() { return _index; }
+  size_t size() const { return _index; }
 
-  void setEmpty()   { _index = 0; clear_overflow(); }
+  void set_empty() { _index = 0; clear_overflow(); }
 
   // Record the current index.
   void note_start_of_gc();
@@ -308,7 +311,7 @@ protected:
   G1CMRootRegions         _root_regions;
 
   // For gray objects
-  G1CMMarkStack           _markStack; // Grey objects behind global finger
+  G1CMMarkStack           _global_mark_stack; // Grey objects behind global finger
   HeapWord* volatile      _finger;  // The global finger, region aligned,
                                     // always points to the end of the
                                     // last claimed region
@@ -478,21 +481,21 @@ public:
   // The push and pop operations are used by tasks for transfers
   // between task-local queues and the global mark stack, and use
   // locking for concurrency safety.
-  bool mark_stack_push(oop* arr, int n) {
-    _markStack.par_push_arr(arr, n);
-    if (_markStack.overflow()) {
+  bool mark_stack_push(oop* arr, size_t n) {
+    _global_mark_stack.par_push_arr(arr, n);
+    if (_global_mark_stack.overflow()) {
       set_has_overflown();
       return false;
     }
     return true;
   }
-  void mark_stack_pop(oop* arr, int max, int* n) {
-    _markStack.par_pop_arr(arr, max, n);
+  void mark_stack_pop(oop* arr, size_t max, size_t* n) {
+    _global_mark_stack.par_pop_arr(arr, max, n);
   }
-  size_t mark_stack_size()                { return _markStack.size(); }
-  size_t partial_mark_stack_size_target() { return _markStack.maxElems()/3; }
-  bool mark_stack_overflow()              { return _markStack.overflow(); }
-  bool mark_stack_empty()                 { return _markStack.isEmpty(); }
+  size_t mark_stack_size()                { return _global_mark_stack.size(); }
+  size_t partial_mark_stack_size_target() { return _global_mark_stack.capacity()/3; }
+  bool mark_stack_overflow()              { return _global_mark_stack.overflow(); }
+  bool mark_stack_empty()                 { return _global_mark_stack.is_empty(); }
 
   G1CMRootRegions* root_regions() { return &_root_regions; }
 
@@ -598,12 +601,12 @@ public:
 
   // Notify data structures that a GC has started.
   void note_start_of_gc() {
-    _markStack.note_start_of_gc();
+    _global_mark_stack.note_start_of_gc();
   }
 
   // Notify data structures that a GC is finished.
   void note_end_of_gc() {
-    _markStack.note_end_of_gc();
+    _global_mark_stack.note_end_of_gc();
   }
 
   // Verify that there are no CSet oops on the stacks (taskqueues /
@@ -660,17 +663,17 @@ private:
 class G1CMTask : public TerminatorTerminator {
 private:
   enum PrivateConstants {
-    // the regular clock call is called once the scanned words reaches
+    // The regular clock call is called once the scanned words reaches
     // this limit
     words_scanned_period          = 12*1024,
-    // the regular clock call is called once the number of visited
+    // The regular clock call is called once the number of visited
     // references reaches this limit
     refs_reached_period           = 384,
-    // initial value for the hash seed, used in the work stealing code
+    // Initial value for the hash seed, used in the work stealing code
     init_hash_seed                = 17,
-    // how many entries will be transferred between global stack and
-    // local queues
-    global_stack_transfer_size    = 16
+    // How many entries will be transferred between global stack and
+    // local queues at once.
+    global_stack_transfer_size    = 1024
   };
 
   uint                        _worker_id;

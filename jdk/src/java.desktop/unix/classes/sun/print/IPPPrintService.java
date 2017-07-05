@@ -1684,7 +1684,6 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         }
         connection = (HttpURLConnection)urlc;
         connection.setUseCaches(false);
-        connection.setDefaultUseCaches(false);
         connection.setDoInput(true);
         connection.setDoOutput(true);
         connection.setRequestProperty("Content-type", "application/ipp");

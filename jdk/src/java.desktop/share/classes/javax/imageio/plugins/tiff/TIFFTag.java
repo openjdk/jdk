@@ -334,8 +334,8 @@ public class TIFFTag {
      * an IFD pointer if and only if its {@code TIFFTagSet} is
      * non-{@code null} or the data type {@code TIFF_IFD_POINTER} is
      * legal. This condition will be satisfied if and only if either
-     * {@code getTagSet()&nbsp;!=&nbsp;null} or
-     * {@code isDataTypeOK(TIFF_IFD_POINTER)&nbsp;==&nbsp;true}.
+     * {@code getTagSet() != null} or
+     * {@code isDataTypeOK(TIFF_IFD_POINTER) == true}.
      *
      * <p>Many TIFF extensions use the IFD mechanism in order to limit the
      * number of new tags that may appear in the root IFD.</p>

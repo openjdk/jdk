@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 
 package parsers;
 
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+
 import java.io.File;
 import java.io.InputStream;
 
@@ -33,31 +36,28 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXParseException;
 
 /*
+ * @test
  * @bug 6309988
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true parsers.Bug6309988
+ * @run testng/othervm parsers.Bug6309988
  * @summary Test elementAttributeLimit, maxOccurLimit, entityExpansionLimit.
  */
+@Test(singleThreaded = true)
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6309988 {
 
     DocumentBuilderFactory dbf = null;
-    static boolean _isSecureMode = false;
-    static {
-        if (System.getSecurityManager() != null) {
-            _isSecureMode = true;
-            System.out.println("Security Manager is present");
-        } else {
-            System.out.println("Security Manager is NOT present");
-        }
-    }
 
     /*
      * Given XML document has more than 10000 attributes. Exception is expected
      */
-    @Test
     public void testDOMParserElementAttributeLimit() {
         try {
             dbf = DocumentBuilderFactory.newInstance();
@@ -75,7 +75,6 @@ public class Bug6309988 {
      * Given XML document has more than 10000 attributes. It should report an
      * error.
      */
-    @Test
     public void testDOMNSParserElementAttributeLimit() {
         try {
             dbf = DocumentBuilderFactory.newInstance();
@@ -94,9 +93,8 @@ public class Bug6309988 {
      * Given XML document has more than 10000 attributes. Parsing this XML
      * document in non-secure mode, should not report any error.
      */
-    @Test
     public void testDOMNSParserElementAttributeLimitWithoutSecureProcessing() {
-        if (_isSecureMode)
+        if (isSecureMode())
             return; // jaxp secure feature can not be turned off when security
                     // manager is present
         try {
@@ -121,16 +119,15 @@ public class Bug6309988 {
      * test should be the same as
      * testSystemElementAttributeLimitWithSecureProcessing
      */
-    @Test
     public void testSystemElementAttributeLimitWithoutSecureProcessing() {
-        if (_isSecureMode)
+        if (isSecureMode())
             return; // jaxp secure feature can not be turned off when security
                     // manager is present
         try {
             dbf = DocumentBuilderFactory.newInstance();
             dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, false);
             dbf.setNamespaceAware(true);
-            System.setProperty("elementAttributeLimit", "2");
+            setSystemProperty("elementAttributeLimit", "2");
             DocumentBuilder parser = dbf.newDocumentBuilder();
             Document doc = parser.parse(this.getClass().getResourceAsStream("DosTest3.xml"));
 
@@ -147,7 +144,7 @@ public class Bug6309988 {
                 Assert.fail("Unexpected error: " + e.getMessage());
             }
         } finally {
-            System.clearProperty("elementAttributeLimit");
+            clearSystemProperty("elementAttributeLimit");
         }
     }
 
@@ -155,12 +152,11 @@ public class Bug6309988 {
      * Given XML document has 3 attributes and System property is set to 2.
      * Parsing this XML document in secure mode, should report an error.
      */
-    @Test
     public void testSystemElementAttributeLimitWithSecureProcessing() {
         try {
             dbf = DocumentBuilderFactory.newInstance();
             dbf.setNamespaceAware(true);
-            System.setProperty("elementAttributeLimit", "2");
+            setSystemProperty("elementAttributeLimit", "2");
             DocumentBuilder parser = dbf.newDocumentBuilder();
             Document doc = parser.parse(this.getClass().getResourceAsStream("DosTest3.xml"));
             Assert.fail("SAXParserException is expected, as given XML document contains more than 2 attributes");
@@ -169,14 +165,13 @@ public class Bug6309988 {
         } catch (Exception e) {
             Assert.fail("Exception " + e.getMessage());
         } finally {
-            System.setProperty("elementAttributeLimit", "");
+            setSystemProperty("elementAttributeLimit", "");
         }
     }
 
     /*
      * Default value for secure processing feature should be true.
      */
-    @Test
     public void testDOMSecureProcessingDefaultValue() {
         try {
             dbf = DocumentBuilderFactory.newInstance();
@@ -190,7 +185,6 @@ public class Bug6309988 {
     /*
      * Default value for secure processing feature should be true.
      */
-    @Test
     public void testSAXSecureProcessingDefaultValue() {
         try {
             SAXParserFactory spf = SAXParserFactory.newInstance();
@@ -206,16 +200,15 @@ public class Bug6309988 {
      * feature is off. Given doument contains more than 2 elements and hence an
      * error should be reported.
      */
-    @Test
     public void testSystemMaxOccurLimitWithoutSecureProcessing() {
-        if (_isSecureMode)
+        if (isSecureMode())
             return; // jaxp secure feature can not be turned off when security
                     // manager is present
         try {
             SAXParserFactory spf = SAXParserFactory.newInstance();
             spf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, false);
             spf.setValidating(true);
-            System.setProperty("maxOccurLimit", "2");
+            setSystemProperty("maxOccurLimit", "2");
             // Set the properties for Schema Validation
             String SCHEMA_LANG = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
             String SCHEMA_TYPE = "http://www.w3.org/2001/XMLSchema";
@@ -230,7 +223,7 @@ public class Bug6309988 {
             MyErrorHandler eh = new MyErrorHandler();
             parser.parse(is, eh);
             Assert.assertFalse(eh.errorOccured, "Not Expected Error");
-            System.setProperty("maxOccurLimit", "");
+            setSystemProperty("maxOccurLimit", "");
         } catch (Exception e) {
             Assert.fail("Exception occured: " + e.getMessage());
         }
@@ -242,9 +235,8 @@ public class Bug6309988 {
      * maxOccur is '3002'. Since secure processing feature is off, document
      * should be parsed without any errors.
      */
-    @Test
     public void testValidMaxOccurLimitWithOutSecureProcessing() {
-        if (_isSecureMode)
+        if (isSecureMode())
             return; // jaxp secure feature can not be turned off when security
                     // manager is present
         try {
@@ -279,13 +271,12 @@ public class Bug6309988 {
      * test should be the same as
      * testSystemElementAttributeLimitWithSecureProcessing
      */
-    @Test
     public void testSystemEntityExpansionLimitWithOutSecureProcessing() {
-        if (_isSecureMode)
+        if (isSecureMode())
             return; // jaxp secure feature can not be turned off when security
                     // manager is present
         try {
-            System.setProperty("entityExpansionLimit", "2");
+            setSystemProperty("entityExpansionLimit", "2");
             dbf = DocumentBuilderFactory.newInstance();
             dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, false);
             dbf.setValidating(true);
@@ -304,7 +295,7 @@ public class Bug6309988 {
                 Assert.fail("Unexpected error: " + e.getMessage());
             }
         } finally {
-            System.clearProperty("entityExpansionLimit");
+            clearSystemProperty("entityExpansionLimit");
         }
     }
 
@@ -312,12 +303,11 @@ public class Bug6309988 {
      * System property is set to 2. Given XML document has more than 2 entity
      * references. Parsing this document in secure mode, should report an error.
      */
-    @Test
     public void testSystemEntityExpansionLimitWithSecureProcessing() {
         try {
             dbf = DocumentBuilderFactory.newInstance();
             dbf.setValidating(true);
-            System.setProperty("entityExpansionLimit", "2");
+            setSystemProperty("entityExpansionLimit", "2");
             DocumentBuilder parser = dbf.newDocumentBuilder();
             Document doc = parser.parse(this.getClass().getResourceAsStream("entity.xml"));
             Assert.fail("SAXParserException is expected, as given XML document contains more 2 entity references");
@@ -327,7 +317,7 @@ public class Bug6309988 {
         } catch (Exception e) {
             Assert.fail("Exception " + e.getMessage());
         } finally {
-            System.setProperty("entityExpansionLimit", "");
+            setSystemProperty("entityExpansionLimit", "");
         }
     }
 
@@ -335,7 +325,6 @@ public class Bug6309988 {
      * Given XML document has more than 64000 entity references. Parsing this
      * document in secure mode, should report an error.
      */
-    @Test
     public void testEntityExpansionLimitWithSecureProcessing() {
         try {
             dbf = DocumentBuilderFactory.newInstance();
@@ -349,7 +338,7 @@ public class Bug6309988 {
         } catch (Exception e) {
             Assert.fail("Exception " + e.getMessage());
         } finally {
-            System.setProperty("entityExpansionLimit", "");
+            setSystemProperty("entityExpansionLimit", "");
         }
     }
 
@@ -357,9 +346,8 @@ public class Bug6309988 {
      * Given XML document has more than 64000 entity references. Parsing this
      * document in non-secure mode, should not report any error.
      */
-    @Test
     public void testEntityExpansionLimitWithOutSecureProcessing() {
-        if (_isSecureMode)
+        if (isSecureMode())
             return; // jaxp secure feature can not be turned off when security
                     // manager is present
         try {
@@ -374,7 +362,12 @@ public class Bug6309988 {
         } catch (Exception e) {
             Assert.fail("Exception " + e.getMessage());
         } finally {
-            System.setProperty("entityExpansionLimit", "");
+            setSystemProperty("entityExpansionLimit", "");
         }
     }
+
+    private boolean isSecureMode() {
+        return System.getSecurityManager() != null;
+    }
 }
+

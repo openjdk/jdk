@@ -2888,7 +2888,10 @@ void CMSCollector::checkpointRootsInitialWork() {
 
       CMSParInitialMarkTask tsk(this, &srs, n_workers);
       initialize_sequential_subtasks_for_young_gen_rescan(n_workers);
-      if (n_workers > 1) {
+      // If the total workers is greater than 1, then multiple workers
+      // may be used at some time and the initialization has been set
+      // such that the single threaded path cannot be used.
+      if (workers->total_workers() > 1) {
         workers->run_task(&tsk);
       } else {
         tsk.work(0);
@@ -3507,7 +3510,7 @@ bool CMSCollector::do_marking_mt() {
   uint num_workers = AdaptiveSizePolicy::calc_active_conc_workers(conc_workers()->total_workers(),
                                                                   conc_workers()->active_workers(),
                                                                   Threads::number_of_non_daemon_threads());
-  conc_workers()->set_active_workers(num_workers);
+  num_workers = conc_workers()->update_active_workers(num_workers);
 
   CompactibleFreeListSpace* cms_space  = _cmsGen->cmsSpace();
 

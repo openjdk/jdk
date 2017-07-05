@@ -23,12 +23,14 @@
  * questions.
  */
 
-/* @test
-   @bug     4529206
-   @summary JToolBar - setFloating does not work correctly
-   @author  Konstantin Eremin
-   @run     main bug4529206
-*/
+/*
+ * @test
+ * @key headful
+ * @bug     4529206
+ * @summary JToolBar - setFloating does not work correctly
+ * @author  Konstantin Eremin
+ * @run     main bug4529206
+ */
 
 import javax.swing.*;
 import java.awt.*;

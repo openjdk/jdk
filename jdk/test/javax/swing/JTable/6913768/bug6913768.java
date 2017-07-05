@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 6913768
  * @summary With default SynthLookAndFeel instance installed new JTable creation leads to throwing NPE
  * @author Pavel Porvatov

@@ -34,11 +34,17 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.DefaultAttributeTest
+ * @run testng/othervm stream.XMLStreamReaderTest.DefaultAttributeTest
  * @summary Test StAX parses namespace and attribute.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class DefaultAttributeTest {
 
     private static final String INPUT_FILE = "ExternalDTD.xml";
@@ -102,3 +108,4 @@ public class DefaultAttributeTest {
         }
     }
 }
+

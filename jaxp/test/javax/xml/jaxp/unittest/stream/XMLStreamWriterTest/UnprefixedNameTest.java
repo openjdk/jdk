@@ -28,12 +28,18 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6394074
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.UnprefixedNameTest
+ * @run testng/othervm stream.XMLStreamWriterTest.UnprefixedNameTest
  * @summary Test XMLStreamWriter namespace prefix with writeDefaultNamespace.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class UnprefixedNameTest {
 
     @Test
@@ -119,3 +125,4 @@ public class UnprefixedNameTest {
         }
     }
 }
+

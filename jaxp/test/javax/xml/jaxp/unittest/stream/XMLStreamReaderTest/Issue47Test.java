@@ -30,12 +30,18 @@ import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
 import org.testng.AssertJUnit;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6631265
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.Issue47Test
+ * @run testng/othervm stream.XMLStreamReaderTest.Issue47Test
  * @summary Test XMLStreamReader.standaloneSet() presents if input document has a value for "standalone" attribute in xml declaration.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Issue47Test {
 
     @Test
@@ -83,3 +89,4 @@ public class Issue47Test {
         }
     }
 }
+

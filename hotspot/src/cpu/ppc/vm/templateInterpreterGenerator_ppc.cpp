@@ -881,10 +881,6 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rmem_f
   BLOCK_COMMENT("} stack_overflow_check_with_compare");
 }
 
-void TemplateInterpreterGenerator::unlock_method(bool check_exceptions) {
-  __ unlock_object(R26_monitor, check_exceptions);
-}
-
 // Lock the current method, interpreter register window must be set up!
 void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratch1, Register Rscratch2, bool flags_preloaded) {
   const Register Robj_to_lock = Rscratch2;
@@ -1566,7 +1562,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   if (synchronized) {
     // Don't check for exceptions since we're still in the i2n frame. Do that
     // manually afterwards.
-    unlock_method(false);
+    __ unlock_object(R26_monitor, false); // Can also unlock methods.
   }
 
   // Reset active handles after returning from native.
@@ -1609,7 +1605,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   if (synchronized) {
     // Don't check for exceptions since we're still in the i2n frame. Do that
     // manually afterwards.
-    unlock_method(false);
+    __ unlock_object(R26_monitor, false); // Can also unlock methods.
   }
   BIND(exception_return_sync_check_already_unlocked);
 

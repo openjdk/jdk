@@ -26,10 +26,14 @@
  * @bug 8137167
  * @summary Tests directives to be able to compile only specified  methods
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib ../share /
+ * @library /testlibrary /test/lib /
+ *
  * @build compiler.compilercontrol.directives.CompileOnlyTest
- *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
- *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
+ *        compiler.compilercontrol.share.pool.sub.*
+ *        compiler.compilercontrol.share.pool.subpack.*
+ *        sun.hotspot.WhiteBox
+ *        compiler.testlibrary.CompilerUtils
+ *        compiler.compilercontrol.share.actions.*
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver compiler.compilercontrol.directives.CompileOnlyTest

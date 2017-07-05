@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,21 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.ValidatorHandler;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 
 /*
+ * @test
  * @bug 4969110
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.Bug4969110
+ * @run testng/othervm validation.Bug4969110
  * @summary Test ValidationHandler.set/getProperty() throws a correct exception
  * instead of a sun internal exception in case the "property name" parameter is invalid.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4969110 {
 
     SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
@@ -73,3 +79,4 @@ public class Bug4969110 {
         validatorHandler.setProperty(name, "123");
     }
 }
+

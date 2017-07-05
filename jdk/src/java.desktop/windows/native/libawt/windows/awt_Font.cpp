@@ -1685,6 +1685,8 @@ CSegTable* CSegTableManager::GetTable(LPCWSTR lpszFontName, BOOL fEUDC)
 
 CSegTableManager g_segTableManager;
 
+#define KEYLEN 16
+
 class CCombinedSegTable : public CSegTableComponent
 {
 public:
@@ -1695,7 +1697,7 @@ public:
 private:
     LPSTR GetCodePageSubkey();
     void GetEUDCFileName(LPWSTR lpszFileName, int cchFileName);
-    static char m_szCodePageSubkey[16];
+    static char m_szCodePageSubkey[KEYLEN];
     static WCHAR m_szDefaultEUDCFile[_MAX_PATH];
     static BOOL m_fEUDCSubKeyExist;
     static BOOL m_fTTEUDCFileExist;
@@ -1703,7 +1705,7 @@ private:
     CEUDCSegTable* m_pEUDCSegTable;
 };
 
-char CCombinedSegTable::m_szCodePageSubkey[16] = "";
+char CCombinedSegTable::m_szCodePageSubkey[KEYLEN] = "";
 
 WCHAR CCombinedSegTable::m_szDefaultEUDCFile[_MAX_PATH] = L"";
 
@@ -1735,8 +1737,11 @@ LPSTR CCombinedSegTable::GetCodePageSubkey()
     }
     lpszCP++; // cf lpszCP = "932"
 
-    char szSubKey[80];
+    char szSubKey[KEYLEN];
     strcpy(szSubKey, "EUDC\\");
+    if ((strlen(szSubKey) + strlen(lpszCP)) >= KEYLEN) {
+        return NULL;
+    }
     strcpy(&(szSubKey[strlen(szSubKey)]), lpszCP);
     strcpy(m_szCodePageSubkey, szSubKey);
     return m_szCodePageSubkey;

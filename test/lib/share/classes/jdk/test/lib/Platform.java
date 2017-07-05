@@ -26,15 +26,15 @@ package jdk.test.lib;
 import java.util.regex.Pattern;
 
 public class Platform {
+    public  static final String vmName      = System.getProperty("java.vm.name");
+    public  static final String vmInfo      = System.getProperty("java.vm.info");
     private static final String osName      = System.getProperty("os.name");
     private static final String dataModel   = System.getProperty("sun.arch.data.model");
     private static final String vmVersion   = System.getProperty("java.vm.version");
     private static final String javaVersion = System.getProperty("java.version");
     private static final String osArch      = System.getProperty("os.arch");
-    private static final String vmName      = System.getProperty("java.vm.name");
     private static final String userName    = System.getProperty("user.name");
     private static final String compiler    = System.getProperty("sun.management.compiler");
-    private static final String vmInfo      = System.getProperty("java.vm.info");
 
     public static boolean isClient() {
         return vmName.endsWith(" Client VM");

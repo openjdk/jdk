@@ -31,11 +31,17 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.IssueTracker70
+ * @run testng/othervm stream.XMLStreamReaderTest.IssueTracker70
  * @summary Test it can retrieve attribute with null or empty name space.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class IssueTracker70 {
 
     static private final File testFile = new File(IssueTracker70.class.getResource("IssueTracker70.xml").getFile());
@@ -70,3 +76,4 @@ public class IssueTracker70 {
         Assert.assertNotNull(value, "should have attribute value");
     }
 }
+

@@ -281,8 +281,6 @@ void SensorInfo::oops_do(OopClosure* f) {
 }
 
 void SensorInfo::process_pending_requests(TRAPS) {
-  assert(has_pending_requests(), "Must have pending request");
-
   int pending_count = pending_trigger_count();
   if (pending_clear_count() > 0) {
     clear(pending_count, CHECK);

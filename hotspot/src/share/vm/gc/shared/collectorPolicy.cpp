@@ -50,7 +50,6 @@ CollectorPolicy::CollectorPolicy() :
     _initial_heap_byte_size(InitialHeapSize),
     _max_heap_byte_size(MaxHeapSize),
     _min_heap_byte_size(Arguments::min_heap_size()),
-    _max_heap_size_cmdline(false),
     _size_policy(NULL),
     _should_clear_all_soft_refs(false),
     _all_soft_refs_clear(false)
@@ -92,7 +91,6 @@ void CollectorPolicy::initialize_flags() {
     if (_min_heap_byte_size != 0 && MaxHeapSize < _min_heap_byte_size) {
       vm_exit_during_initialization("Incompatible minimum and maximum heap sizes specified");
     }
-    _max_heap_size_cmdline = true;
   }
 
   // Check heap parameter properties
@@ -285,7 +283,7 @@ void GenCollectorPolicy::initialize_flags() {
          "heap_alignment: " SIZE_FORMAT " not aligned by gen_alignment: " SIZE_FORMAT,
          _heap_alignment, _gen_alignment);
 
-  // All generational heaps have a youngest gen; handle those flags here
+  // All generational heaps have a young gen; handle those flags here
 
   // Make sure the heap is large enough for two generations
   size_t smallest_new_size = young_gen_size_lower_bound();
@@ -307,7 +305,7 @@ void GenCollectorPolicy::initialize_flags() {
   // Make sure NewSize allows an old generation to fit even if set on the command line
   if (FLAG_IS_CMDLINE(NewSize) && NewSize >= _initial_heap_byte_size) {
     log_warning(gc, ergo)("NewSize was set larger than initial heap size, will use initial heap size.");
-    NewSize = bound_minus_alignment(NewSize, _initial_heap_byte_size);
+    FLAG_SET_ERGO(size_t, NewSize, bound_minus_alignment(NewSize, _initial_heap_byte_size));
   }
 
   // Now take the actual NewSize into account. We will silently increase NewSize
@@ -315,10 +313,7 @@ void GenCollectorPolicy::initialize_flags() {
   size_t bounded_new_size = bound_minus_alignment(NewSize, MaxHeapSize);
   bounded_new_size = MAX2(smallest_new_size, (size_t)align_size_down(bounded_new_size, _gen_alignment));
   if (bounded_new_size != NewSize) {
-    // Do not use FLAG_SET_ERGO to update NewSize here, since this will override
-    // if NewSize was set on the command line or not. This information is needed
-    // later when setting the initial and minimum young generation size.
-    NewSize = bounded_new_size;
+    FLAG_SET_ERGO(size_t, NewSize, bounded_new_size);
   }
   _min_young_size = smallest_new_size;
   _initial_young_size = NewSize;
@@ -361,11 +356,11 @@ void GenCollectorPolicy::initialize_flags() {
     vm_exit_during_initialization("Invalid young gen ratio specified");
   }
 
-  OldSize = MAX2(OldSize, old_gen_size_lower_bound());
+  if (OldSize < old_gen_size_lower_bound()) {
+    FLAG_SET_ERGO(size_t, OldSize, old_gen_size_lower_bound());
+  }
   if (!is_size_aligned(OldSize, _gen_alignment)) {
-    // Setting OldSize directly to preserve information about the possible
-    // setting of OldSize on the command line.
-    OldSize = align_size_down(OldSize, _gen_alignment);
+    FLAG_SET_ERGO(size_t, OldSize, align_size_down(OldSize, _gen_alignment));
   }
 
   if (FLAG_IS_CMDLINE(OldSize) && FLAG_IS_DEFAULT(MaxHeapSize)) {
@@ -384,7 +379,7 @@ void GenCollectorPolicy::initialize_flags() {
 
   // Adjust NewSize and OldSize or MaxHeapSize to match each other
   if (NewSize + OldSize > MaxHeapSize) {
-    if (_max_heap_size_cmdline) {
+    if (FLAG_IS_CMDLINE(MaxHeapSize)) {
       // Somebody has set a maximum heap size with the intention that we should not
       // exceed it. Adjust New/OldSize as necessary.
       size_t calculated_size = NewSize + OldSize;
@@ -927,8 +922,23 @@ public:
 
     save_flags();
 
+    // If NewSize has been ergonomically set, the collector policy
+    // should use it for min but calculate the initial young size
+    // using NewRatio.
+    flag_value = 20 * M;
+    set_basic_flag_values();
+    FLAG_SET_ERGO(size_t, NewSize, flag_value);
+    verify_young_min(flag_value);
+
+    set_basic_flag_values();
+    FLAG_SET_ERGO(size_t, NewSize, flag_value);
+    verify_scaled_young_initial(InitialHeapSize);
+
     // If NewSize is set on the command line, it should be used
     // for both min and initial young size if less than min heap.
+    // Note that once a flag has been set with FLAG_SET_CMDLINE it
+    // will be treated as it have been set on the command line for
+    // the rest of the VM lifetime. This is an irreversible change.
     flag_value = 20 * M;
     set_basic_flag_values();
     FLAG_SET_CMDLINE(size_t, NewSize, flag_value);
@@ -944,18 +954,6 @@ public:
     set_basic_flag_values();
     FLAG_SET_CMDLINE(size_t, NewSize, flag_value);
     verify_young_initial(flag_value);
-
-    // If NewSize has been ergonomically set, the collector policy
-    // should use it for min but calculate the initial young size
-    // using NewRatio.
-    flag_value = 20 * M;
-    set_basic_flag_values();
-    FLAG_SET_ERGO(size_t, NewSize, flag_value);
-    verify_young_min(flag_value);
-
-    set_basic_flag_values();
-    FLAG_SET_ERGO(size_t, NewSize, flag_value);
-    verify_scaled_young_initial(InitialHeapSize);
 
     restore_flags();
   }

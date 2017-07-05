@@ -26,34 +26,35 @@
  * @bug 8130832
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /
- * @build IntrinsicAvailableTest
+ *
+ * @build compiler.intrinsics.IntrinsicAvailableTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   -XX:+UseCRC32Intrinsics
- *                   IntrinsicAvailableTest
+ *                   compiler.intrinsics.IntrinsicAvailableTest
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   -XX:-UseCRC32Intrinsics
- *                   IntrinsicAvailableTest
+ *                   compiler.intrinsics.IntrinsicAvailableTest
  */
+
+
+package compiler.intrinsics;
+
+import compiler.whitebox.CompilerWhiteBoxTest;
+import jdk.test.lib.Platform;
 
 import java.lang.reflect.Executable;
 import java.util.concurrent.Callable;
-import java.util.Objects;
-
-import jdk.test.lib.*;
-import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class IntrinsicAvailableTest extends CompilerWhiteBoxTest {
-    protected String VMName;
 
     public IntrinsicAvailableTest(IntrinsicAvailableTestTestCase testCase) {
         super(testCase);
-        VMName = System.getProperty("java.vm.name");
     }
 
     public static class IntrinsicAvailableTestTestCase implements TestCase {

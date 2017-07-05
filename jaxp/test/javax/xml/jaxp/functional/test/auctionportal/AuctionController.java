@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,23 @@
  */
 package test.auctionportal;
 
-import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_LANGUAGE;
-import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_SOURCE;
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static jaxp.library.JAXPTestUtilities.bomStream;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_LANGUAGE;
+import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_SOURCE;
+import static test.auctionportal.HiBidConstants.PORTAL_ACCOUNT_NS;
+import static test.auctionportal.HiBidConstants.XML_DIR;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.file.Paths;
 import java.util.GregorianCalendar;
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
@@ -46,8 +51,8 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import jaxp.library.JAXPFileReadOnlyBaseTest;
-import static jaxp.library.JAXPTestUtilities.bomStream;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.DOMConfiguration;
@@ -58,20 +63,25 @@ import org.w3c.dom.TypeInfo;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
-import static test.auctionportal.HiBidConstants.PORTAL_ACCOUNT_NS;
-import static test.auctionportal.HiBidConstants.XML_DIR;
 
 /**
  * This is the user controller  class for the Auction portal HiBid.com.
  */
-public class AuctionController extends JAXPFileReadOnlyBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true test.auctionportal.AuctionController
+ * @run testng/othervm test.auctionportal.AuctionController
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class AuctionController {
     /**
      * Check for DOMErrorHandler handling DOMError. Before fix of bug 4890927
      * DOMConfiguration.setParameter("well-formed",true) throws an exception.
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testCreateNewItem2Sell() throws Exception {
         String xmlFile = XML_DIR + "novelsInvalid.xml";
 
@@ -94,7 +104,7 @@ public class AuctionController extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testCreateNewItem2SellRetry() throws Exception  {
         String xmlFile = XML_DIR + "accountInfo.xml";
 
@@ -126,7 +136,7 @@ public class AuctionController extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testCreateID() throws Exception {
         String xmlFile = XML_DIR + "accountInfo.xml";
 
@@ -147,7 +157,7 @@ public class AuctionController extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testCheckingUserData() throws Exception {
         String xmlFile = XML_DIR + "accountInfo.xml";
 
@@ -184,7 +194,7 @@ public class AuctionController extends JAXPFileReadOnlyBaseTest {
      * @throws Exception If any errors occur.
      * @see <a href="content/movies.xml">movies.xml</a>
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testCheckingEncoding() throws Exception {
         // Note since movies.xml is UTF-16 encoding. We're not using stanard XML
         // file suffix.
@@ -206,7 +216,7 @@ public class AuctionController extends JAXPFileReadOnlyBaseTest {
      * @throws Exception If any errors occur.
      * @see <a href="content/userDetails.xsd">userDetails.xsd</a>
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testGetOwnerInfo() throws Exception {
         String schemaFile = XML_DIR + "userDetails.xsd";
         String xmlFile = XML_DIR + "userDetails.xml";
@@ -241,7 +251,7 @@ public class AuctionController extends JAXPFileReadOnlyBaseTest {
      * @see <a href="content/coins.xsd">coins.xsd</a>
      * @see <a href="content/coinsImportMe.xsd">coinsImportMe.xsd</a>
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testGetOwnerItemList() throws Exception {
         String xsdFile = XML_DIR + "coins.xsd";
         String xmlFile = XML_DIR + "coins.xml";
@@ -277,7 +287,7 @@ public class AuctionController extends JAXPFileReadOnlyBaseTest {
      * @see <a href="content/coinsImportMe.xsd">coinsImportMe.xsd</a>
      */
 
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testGetOwnerItemList1() throws Exception {
         String xsdFile = XML_DIR + "coins.xsd";
         String xmlFile = XML_DIR + "coins.xml";
@@ -299,7 +309,7 @@ public class AuctionController extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testGetItemDuration() throws Exception {
         String xmlFile = XML_DIR + "itemsDuration.xml";
 
@@ -332,7 +342,7 @@ public class AuctionController extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void testGetTypeInfo() throws Exception {
         String xmlFile = XML_DIR + "accountInfo.xml";
 
@@ -356,3 +366,5 @@ public class AuctionController extends JAXPFileReadOnlyBaseTest {
         assertTrue(roletypeInfo.getTypeNamespace().equals(PORTAL_ACCOUNT_NS));
     }
 }
+
+

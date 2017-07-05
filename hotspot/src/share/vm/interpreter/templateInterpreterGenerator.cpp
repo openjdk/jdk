@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,7 +476,7 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_Double_doubleToRawLongBits:
     native = true;
     break;
-#endif // defined(TARGET_ARCH_x86) && !defined(_LP64)
+#endif // !IA32
   default:
     fatal("unexpected method kind: %d", kind);
     break;

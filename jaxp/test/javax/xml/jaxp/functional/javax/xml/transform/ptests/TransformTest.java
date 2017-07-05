@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.function.Supplier;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -58,10 +57,9 @@ import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import jaxp.library.JAXPFileBaseTest;
-
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
@@ -71,10 +69,15 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.TransformTest
+ * @run testng/othervm javax.xml.transform.ptests.TransformTest
  * @summary Tests for variable combination of Transformer.transform(Source, Result)
  */
 @Test(singleThreaded = true)
-public class TransformTest extends JAXPFileBaseTest {
+@Listeners({jaxp.library.FilePolicy.class})
+public class TransformTest {
 
     /*
      * Initialize the share objects.
@@ -381,3 +384,5 @@ public class TransformTest extends JAXPFileBaseTest {
     private Document xmlDoc;
 
 }
+
+

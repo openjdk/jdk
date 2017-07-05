@@ -27,12 +27,18 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6218794
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.BOMTest
+ * @run testng/othervm stream.XMLStreamReaderTest.BOMTest
  * @summary Test XMLStreamReader parses BOM UTF-8 and BOM UTF-16 big endian stream.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class BOMTest {
     // UTF-8 BOM test file
     private static final String INPUT_FILE1 = "UTF8-BOM.xml.data";
@@ -61,3 +67,4 @@ public class BOMTest {
         }
     }
 }
+

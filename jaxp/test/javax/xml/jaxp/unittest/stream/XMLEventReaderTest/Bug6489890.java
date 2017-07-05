@@ -29,12 +29,18 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6489890
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLEventReaderTest.Bug6489890
+ * @run testng/othervm stream.XMLEventReaderTest.Bug6489890
  * @summary Test XMLEventReader's initial state is an undefined state, and nextEvent() is START_DOCUMENT.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6489890 {
 
     @Test
@@ -71,3 +77,4 @@ public class Bug6489890 {
     }
 
 }
+

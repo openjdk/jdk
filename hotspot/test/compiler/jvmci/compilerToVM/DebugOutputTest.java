@@ -38,11 +38,11 @@
 
 package compiler.jvmci.compilerToVM;
 
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.test.lib.ProcessTools;
-import java.util.Arrays;
 import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.Utils;
+import jdk.test.lib.ProcessTools;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+
+import java.util.Arrays;
 
 public class DebugOutputTest {
     public static void main(String[] args) {

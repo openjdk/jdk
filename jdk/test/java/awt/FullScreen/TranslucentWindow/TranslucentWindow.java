@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6837004
  * @summary Checks that non-opaque window can be made a fullscreen window
  * @author Artem Ananiev

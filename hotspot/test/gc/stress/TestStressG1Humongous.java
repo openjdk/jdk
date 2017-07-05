@@ -53,6 +53,7 @@ public class TestStressG1Humongous {
     private static final int THREAD_COUNT = Integer.getInteger("threads", 2);
     private static final int REGION_SIZE = Integer.getInteger("regionsize", 1) * 1024 * 1024;
     private static final int HUMONGOUS_SIZE = (int) (REGION_SIZE * Double.parseDouble(System.getProperty("humongoussize", "1.5")));
+    private static final int NUMBER_OF_FREE_REGIONS = 2;
 
     private volatile boolean isRunning;
     private final ExecutorService threadExecutor;
@@ -92,8 +93,12 @@ public class TestStressG1Humongous {
     private int getExpectedAmountOfObjects() {
         long maxMem = Runtime.getRuntime().maxMemory();
         int expectedHObjects = (int) (maxMem / HUMONGOUS_SIZE);
-        // Will allocate 1 region less to give some free space for VM.
-        int checkedAmountOfHObjects = checkHeapCapacity(expectedHObjects) - 1;
+        // Will allocate NUMBER_OF_FREE_REGIONS region less to give some free space for VM.
+        int checkedAmountOfHObjects = checkHeapCapacity(expectedHObjects) - NUMBER_OF_FREE_REGIONS;
+        if (checkedAmountOfHObjects <= 0) {
+            throw new RuntimeException("Cannot start testing because selected maximum heap "
+                    + "is not large enough to contain more than " + NUMBER_OF_FREE_REGIONS + " regions");
+        }
         return checkedAmountOfHObjects;
     }
 

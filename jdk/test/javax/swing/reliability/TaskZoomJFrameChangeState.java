@@ -26,6 +26,7 @@ import java.awt.*;
 
 /*
  * @test
+ * @key headful
  * @summary Construct a JFrame, zoom it from the normal state and back forth
  *          using Frame.ZOOMED and Frame.NORMAL. Iconofy from the zoomed
  *          state and back forth using Frame.ICONIFIED and Frame.NORMAL and

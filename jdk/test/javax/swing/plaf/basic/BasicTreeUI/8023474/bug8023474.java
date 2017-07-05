@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8023474
  * @summary Tests that the first mouse press starts editing in JTree
  * @author Dmitry Markov

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ public class SALauncher {
 
     private static boolean launcherHelp() {
         System.out.println("    clhsdb       \tcommand line debugger");
+        System.out.println("    debugd       \tdebug server");
         System.out.println("    hsdb         \tui debugger");
         System.out.println("    jstack --help\tto get more information");
         System.out.println("    jmap   --help\tto get more information");
@@ -51,6 +52,21 @@ public class SALauncher {
         System.out.println("    --exe\texecutable image name");
         System.out.println("    --core\tpath to coredump");
         System.out.println("    --pid\tpid of process to attach");
+        return false;
+    }
+
+    private static boolean debugdHelp() {
+        // [options] <pid> [server-id]
+        // [options] <executable> <core> [server-id]
+        java.io.PrintStream out = System.out;
+        out.print(" [option] <pid> [server-id]");
+        out.println("\t\t(to connect to a live java process)");
+        out.print("   or  [option] <executable> <core> [server-id]");
+        out.println("\t\t(to connect to a core file produced by <executable>)");
+        out.print("\t\tserver-id is an optional unique id for this debug server, needed ");
+        out.println("\t\tif multiple debug servers are run on the same machine");
+        out.println("where option includes:");
+        out.println("   -h | -help\tto print this help message");
         return false;
     }
 
@@ -105,6 +121,9 @@ public class SALauncher {
         }
         if (toolName.equals("jsnap")) {
             return jsnapHelp();
+        }
+        if (toolName.equals("debugd")) {
+            return debugdHelp();
         }
         if (toolName.equals("hsdb") || toolName.equals("clhsdb")) {
             return commonHelp();
@@ -377,13 +396,28 @@ public class SALauncher {
         JSnap.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
+    private static void runDEBUGD(String[] oldArgs) {
+        if ((oldArgs.length < 1) || (oldArgs.length > 3)) {
+            debugdHelp();
+        }
+
+        // By default SA agent classes prefer Windows process debugger
+        // to windbg debugger. SA expects special properties to be set
+        // to choose other debuggers. We will set those here before
+        // attaching to SA agent.
+        System.setProperty("sun.jvm.hotspot.debugger.useWindbgDebugger", "true");
+
+        // delegate to the actual SA debug server.
+        sun.jvm.hotspot.DebugServer.main(oldArgs);
+    }
+
     public static void main(String[] args) {
         // Provide a help
         if (args.length == 0) {
             launcherHelp();
             return;
         }
-        // No arguments imply help for jstack, jmap, jinfo but launch clhsdb and hsdb
+        // No arguments imply help for debugd, jstack, jmap, jinfo but launch clhsdb and hsdb
         if (args.length == 1 && !args[0].equals("clhsdb") && !args[0].equals("hsdb")) {
             toolHelp(args[0]);
             return;
@@ -428,6 +462,11 @@ public class SALauncher {
 
             if (args[0].equals("jsnap")) {
                 runJSNAP(oldArgs);
+                return;
+            }
+
+            if (args[0].equals("debugd")) {
+                runDEBUGD(oldArgs);
                 return;
             }
 

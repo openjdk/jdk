@@ -23,23 +23,33 @@
 
 package catalog;
 
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+
 import java.io.File;
 import java.io.StringReader;
+
 import javax.xml.transform.Source;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
+
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.InputSource;
 
 /**
+ * @test
  * @bug 8158084 8162438 8162442
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport4
+ * @run testng/othervm catalog.CatalogSupport4
  * @summary verifies the overriding over of the USE_CATALOG feature. Extending
  * CatalogSupport tests, the USE_CATALOG is turned off system-wide, however,
  * a JAXP processor may decide to use Catalog by enabling it through the factory
@@ -54,6 +64,7 @@ import org.xml.sax.InputSource;
  *
  * @author huizhe.wang@oracle.com
  */
+@Listeners({jaxp.library.FilePolicy.class, jaxp.library.NetAccessPolicy.class})
 public class CatalogSupport4 extends CatalogSupportBase {
     /*
      * Initializing fields
@@ -62,12 +73,12 @@ public class CatalogSupport4 extends CatalogSupportBase {
     public void setUpClass() throws Exception {
         setUp();
         //turn off USE_CATALOG system-wide
-        System.setProperty(SP_USE_CATALOG, "false");
+        setSystemProperty(SP_USE_CATALOG, "false");
     }
 
     @AfterClass
     public void tearDownClass() throws Exception {
-        System.clearProperty(SP_USE_CATALOG);
+        clearSystemProperty(SP_USE_CATALOG);
     }
 
     /*
@@ -160,7 +171,7 @@ public class CatalogSupport4 extends CatalogSupportBase {
        Data: set use_catalog, use_catalog, catalog file, xml file, handler, expected result string
      */
     @DataProvider(name = "data_SAXA")
-    Object[][] getDataSAX() {
+    public Object[][] getDataSAX() {
         return new Object[][]{
             {true, true, xml_catalog, xml_system, new MyHandler(elementInSystem), expectedWCatalog},
         };
@@ -171,7 +182,7 @@ public class CatalogSupport4 extends CatalogSupportBase {
        Data: set use_catalog, use_catalog, catalog file, xml file, handler, expected result string
      */
     @DataProvider(name = "data_XIA")
-    Object[][] getDataXI() {
+    public Object[][] getDataXI() {
         return new Object[][]{
             {true, true, xml_catalog, xml_xInclude, new MyHandler(elementInXISimple), contentInUIutf8Catalog},
         };
@@ -182,7 +193,7 @@ public class CatalogSupport4 extends CatalogSupportBase {
        Data: set use_catalog, use_catalog, catalog file, xml file, handler, expected result string
      */
     @DataProvider(name = "data_DOMA")
-    Object[][] getDataDOM() {
+    public Object[][] getDataDOM() {
         return new Object[][]{
             {true, true, xml_catalog, xml_system, new MyHandler(elementInSystem), expectedWCatalog},
         };
@@ -197,7 +208,7 @@ public class CatalogSupport4 extends CatalogSupportBase {
        Data: set use_catalog, use_catalog, catalog file, xsd file, a LSResourceResolver
      */
     @DataProvider(name = "data_SchemaA")
-    Object[][] getDataSchema() {
+    public Object[][] getDataSchema() {
         return new Object[][]{
             // for resolving DTD in xsd
             {true, true, xml_catalog, xsd_xmlSchema, null},
@@ -213,7 +224,7 @@ public class CatalogSupport4 extends CatalogSupportBase {
        Data: source, resolver1, resolver2, catalog1, a catalog2
      */
     @DataProvider(name = "data_ValidatorA")
-    Object[][] getDataValidator() {
+    public Object[][] getDataValidator() {
         DOMSource ds = getDOMSource(xml_val_test, xml_val_test_id, true, true, xml_catalog);
 
         SAXSource ss = new SAXSource(new InputSource(xml_val_test));
@@ -242,7 +253,7 @@ public class CatalogSupport4 extends CatalogSupportBase {
        Data: set use_catalog, use_catalog, catalog file, xsl file, xml file, a URIResolver, expected result
      */
     @DataProvider(name = "data_XSLA")
-    Object[][] getDataXSL() {
+    public Object[][] getDataXSL() {
         // XSLInclude.xsl has one import XSLImport_html.xsl and two includes,
         // XSLInclude_header.xsl and XSLInclude_footer.xsl;
         SAXSource xslSourceDTD = new SAXSource(new InputSource(new StringReader(xsl_includeDTD)));
@@ -258,3 +269,4 @@ public class CatalogSupport4 extends CatalogSupportBase {
         };
     }
 }
+

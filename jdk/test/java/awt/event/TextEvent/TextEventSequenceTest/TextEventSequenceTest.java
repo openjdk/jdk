@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4028580
  * @summary TextArea does not send TextEvent when setText. Does for insert
  * @author kdm@sparc.spb.su: area= awt.TextAvent

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,26 @@
  */
 package org.xml.sax.ptests;
 
-import java.util.Enumeration;
-import jaxp.library.JAXPBaseTest;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
+
+import java.util.Enumeration;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.helpers.NamespaceSupport;
 
 /**
  * Unit test cases for NamespaceSupport API
  */
-public class NSSupportTest extends JAXPBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.NSSupportTest
+ * @run testng/othervm org.xml.sax.ptests.NSSupportTest
+ */
+@Listeners({jaxp.library.BasePolicy.class})
+public class NSSupportTest {
     /**
      * Empty prefix name.
      */
@@ -122,3 +131,5 @@ public class NSSupportTest extends JAXPBaseTest {
         assertNull(support.getURI(DC_PREFIX));
     }
 }
+
+

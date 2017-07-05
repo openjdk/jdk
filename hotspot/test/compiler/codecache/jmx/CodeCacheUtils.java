@@ -21,13 +21,16 @@
  * questions.
  */
 
+package compiler.codecache.jmx;
+
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import java.lang.management.MemoryPoolMXBean;
-import javax.management.Notification;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.BlobType;
 import sun.hotspot.code.CodeBlob;
+
+import javax.management.Notification;
+import java.lang.management.MemoryPoolMXBean;
 
 public final class CodeCacheUtils {
 

@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 4390555
   @summary Synopsis: clearGlobalFocusOwner() is not trigerring permanent FOCUS_LOST event
   @author son@sparc.spb.su, anton.tarasov: area=awt.focus

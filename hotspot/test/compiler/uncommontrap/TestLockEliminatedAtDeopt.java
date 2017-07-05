@@ -25,9 +25,14 @@
  * @test
  * @bug 8032011
  * @summary biased locking's revoke_bias locks monitor in compiled frame with eliminated lock
- * @run main/othervm -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestLockEliminatedAtDeopt$A.m2 -XX:-BackgroundCompilation -XX:BiasedLockingStartupDelay=0 TestLockEliminatedAtDeopt
  *
+ * @run main/othervm -XX:-UseOnStackReplacement
+ *      -XX:CompileCommand=dontinline,compiler.uncommontrap.TestLockEliminatedAtDeopt$A::m2
+ *      -XX:-BackgroundCompilation -XX:BiasedLockingStartupDelay=0
+ *      compiler.uncommontrap.TestLockEliminatedAtDeopt
  */
+
+package compiler.uncommontrap;
 
 public class TestLockEliminatedAtDeopt {
 
