@@ -404,7 +404,7 @@ void Parse::do_multianewarray() {
   // The original expression was of this form: new T[length0][length1]...
   // It is often the case that the lengths are small (except the last).
   // If that happens, use the fast 1-d creator a constant number of times.
-  const jint expand_limit = MIN2((juint)MultiArrayExpandLimit, (juint)100);
+  const jint expand_limit = MIN2((jint)MultiArrayExpandLimit, 100);
   jint expand_count = 1;        // count of allocations in the expansion
   jint expand_fanout = 1;       // running total fanout
   for (j = 0; j < ndimensions-1; j++) {

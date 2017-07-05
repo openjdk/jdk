@@ -245,6 +245,7 @@ MEMORY_SIZE:=@MEMORY_SIZE@
 # Enable sjavac support = use a javac server,
 # multi core javac compilation and dependency tracking.
 ENABLE_SJAVAC:=@ENABLE_SJAVAC@
+ENABLE_JAVAC_SERVER:=@ENABLE_JAVAC_SERVER@
 # Store sjavac server synchronization files here, and
 # the sjavac server log files.
 SJAVAC_SERVER_DIR=$(MAKESUPPORT_OUTPUTDIR)/javacservers
@@ -504,6 +505,7 @@ PATCH:=@PATCH@
 PRINTF:=@PRINTF@
 PWD:=@THEPWDCMD@
 RM:=@RM@
+RMDIR:=@RMDIR@
 SED:=@SED@
 SH:=@SH@
 SORT:=@SORT@

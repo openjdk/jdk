@@ -620,7 +620,7 @@ inline bool math_entry_available(AbstractInterpreter::MethodKind kind) {
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
   if (!math_entry_available(kind)) {
     NOT_PRODUCT(__ should_not_reach_here();)
-    return Interpreter::entry_for_kind(Interpreter::zerolocals);
+    return NULL;
   }
 
   address entry = __ pc();
@@ -1126,14 +1126,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   generate_fixed_frame(false, Rsize_of_parameters, Rsize_of_locals);
 
-#ifdef FAST_DISPATCH
-  __ unimplemented("Fast dispatch in generate_normal_entry");
-#if 0
-  __ set((intptr_t)Interpreter::dispatch_table(), IdispatchTables);
-  // Set bytecode dispatch table base.
-#endif
-#endif
-
   // --------------------------------------------------------------------------
   // Zero out non-parameter locals.
   // Note: *Always* zero out non-parameter locals as Sparc does. It's not
@@ -1266,9 +1258,8 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
 address InterpreterGenerator::generate_CRC32_update_entry() {
-  address start = __ pc();  // Remember stub start address (is rtn value).
-
   if (UseCRC32Intrinsics) {
+    address start = __ pc();  // Remember stub start address (is rtn value).
     Label slow_path;
 
     // Safepoint check
@@ -1313,11 +1304,11 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
     // Generate a vanilla native entry as the slow path.
     BLOCK_COMMENT("} CRC32_update");
     BIND(slow_path);
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native), R11_scratch1);
+    return start;
   }
 
-  (void) generate_native_entry(false);
-
-  return start;
+  return NULL;
 }
 
 // CRC32 Intrinsics.
@@ -1327,9 +1318,8 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long* buf, int off, int len)
  */
 address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  address start = __ pc();  // Remember stub start address (is rtn value).
-
   if (UseCRC32Intrinsics) {
+    address start = __ pc();  // Remember stub start address (is rtn value).
     Label slow_path;
 
     // Safepoint check
@@ -1406,11 +1396,11 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
     // Generate a vanilla native entry as the slow path.
     BLOCK_COMMENT("} CRC32_updateBytes(Buffer)");
     BIND(slow_path);
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native), R11_scratch1);
+    return start;
   }
 
-  (void) generate_native_entry(false);
-
-  return start;
+  return NULL;
 }
 
 // These should never be compiled since the interpreter will prefer

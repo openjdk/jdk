@@ -126,6 +126,7 @@ extern Mutex*   MMUTracker_lock;                 // protects the MMU
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management
 extern Monitor* Service_lock;                    // a lock used for service thread operation
 extern Monitor* PeriodicTask_lock;               // protects the periodic task structure
+extern Mutex*   LogConfiguration_lock;           // protects configuration of logging
 
 #ifdef INCLUDE_TRACE
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table

@@ -580,7 +580,11 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
     st->print("MOV    [ESP + #%d], EBP\t# Save EBP",framesize);
     if (PreserveFramePointer) {
       st->print("\n\t");
-      st->print("MOV    EBP, [ESP + #%d]\t# Save the caller's SP into EBP", (framesize + wordSize));
+      st->print("MOV    EBP, ESP\t# Save the caller's SP into EBP");
+      if (framesize > 0) {
+        st->print("\n\t");
+        st->print("ADD    EBP, #%d", framesize);
+      }
     }
   }
 
@@ -9904,35 +9908,6 @@ instruct powD_reg(regD dst, regD src0, regD src1, eAXRegI rax, eDXRegI rdx, eCXR
     __ movdbl(Address(rsp, 0), $src0$$XMMRegister);
     __ fld_d(Address(rsp, 0));
     __ fast_pow();
-    __ fstp_d(Address(rsp, 0));
-    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
-    __ addptr(rsp, 8);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-
-instruct expDPR_reg(regDPR1 dpr1, eAXRegI rax, eDXRegI rdx, eCXRegI rcx, eFlagsReg cr) %{
-  predicate (UseSSE<=1);
-  match(Set dpr1 (ExpD dpr1));
-  effect(KILL rax, KILL rcx, KILL rdx, KILL cr);
-  format %{ "fast_exp $dpr1 -> $dpr1  // KILL $rax, $rcx, $rdx" %}
-  ins_encode %{
-    __ fast_exp();
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct expD_reg(regD dst, regD src, eAXRegI rax, eDXRegI rdx, eCXRegI rcx, eFlagsReg cr) %{
-  predicate (UseSSE>=2);
-  match(Set dst (ExpD src));
-  effect(KILL rax, KILL rcx, KILL rdx, KILL cr);
-  format %{ "fast_exp $dst -> $src  // KILL $rax, $rcx, $rdx" %}
-  ins_encode %{
-    __ subptr(rsp, 8);
-    __ movdbl(Address(rsp, 0), $src$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-    __ fast_exp();
     __ fstp_d(Address(rsp, 0));
     __ movdbl($dst$$XMMRegister, Address(rsp, 0));
     __ addptr(rsp, 8);

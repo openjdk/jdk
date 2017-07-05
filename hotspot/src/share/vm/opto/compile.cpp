@@ -317,7 +317,7 @@ static inline bool not_a_node(const Node* n) {
 // Use breadth-first pass that records state in a Unique_Node_List,
 // recursive traversal is slower.
 void Compile::identify_useful_nodes(Unique_Node_List &useful) {
-  int estimated_worklist_size = unique();
+  int estimated_worklist_size = live_nodes();
   useful.map( estimated_worklist_size, NULL );  // preallocate space
 
   // Initialize worklist
@@ -596,7 +596,7 @@ uint Compile::scratch_emit_size(const Node* n) {
   n->emit(buf, this->regalloc());
 
   // Emitting into the scratch buffer should not fail
-  assert (!failing(), err_msg_res("Must not have pending failure. Reason is: %s", failure_reason()));
+  assert (!failing(), "Must not have pending failure. Reason is: %s", failure_reason());
 
   if (is_branch) // Restore label.
     n->as_MachBranch()->label_set(saveL, save_bnum);
@@ -1189,7 +1189,7 @@ void Compile::init_start(StartNode* s) {
  * the ideal graph.
  */
 StartNode* Compile::start() const {
-  assert (!failing(), err_msg_res("Must not have pending failure. Reason is: %s", failure_reason()));
+  assert (!failing(), "Must not have pending failure. Reason is: %s", failure_reason());
   for (DUIterator_Fast imax, i = root()->fast_outs(imax); i < imax; i++) {
     Node* start = root()->fast_out(i);
     if (start->is_Start()) {
@@ -2254,6 +2254,8 @@ void Compile::Optimize() {
       if (failing())  return;
     }
   }
+  // Ensure that major progress is now clear
+  C->clear_major_progress();
 
   {
     // Verify that all previous optimizations produced a valid graph
@@ -2336,7 +2338,7 @@ void Compile::Code_Gen() {
     debug_only( cfg.verify(); )
   }
 
-  PhaseChaitin regalloc(unique(), cfg, matcher);
+  PhaseChaitin regalloc(unique(), cfg, matcher, false);
   _regalloc = &regalloc;
   {
     TracePhase tp("regalloc", &timers[_t_registerAllocation]);
@@ -3314,7 +3316,7 @@ bool Compile::final_graph_reshaping() {
   Final_Reshape_Counts frc;
 
   // Visit everybody reachable!
-  // Allocate stack of size C->unique()/2 to avoid frequent realloc
+  // Allocate stack of size C->live_nodes()/2 to avoid frequent realloc
   Node_Stack nstack(live_nodes() >> 1);
   final_graph_reshaping_walk(nstack, root(), frc);
 
@@ -3796,7 +3798,7 @@ void Compile::ConstantTable::emit(CodeBuffer& cb) {
     }
     assert(constant_addr, "consts section too small");
     assert((constant_addr - _masm.code()->consts()->start()) == con.offset(),
-            err_msg_res("must be: %d == %d", (int) (constant_addr - _masm.code()->consts()->start()), (int)(con.offset())));
+            "must be: %d == %d", (int) (constant_addr - _masm.code()->consts()->start()), (int)(con.offset()));
   }
 }
 
@@ -3842,7 +3844,7 @@ Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, MachOper* ope
   case T_OBJECT:
   case T_ADDRESS: value.l = (jobject) oper->constant(); break;
   case T_METADATA: return add((Metadata*)oper->constant()); break;
-  default: guarantee(false, err_msg_res("unhandled type: %s", type2name(type)));
+  default: guarantee(false, "unhandled type: %s", type2name(type));
   }
   return add(n, type, value);
 }
@@ -3864,7 +3866,7 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
   if (Compile::current()->in_scratch_emit_size())  return;
 
   assert(labels.is_nonempty(), "must be");
-  assert((uint) labels.length() == n->outcnt(), err_msg_res("must be equal: %d == %d", labels.length(), n->outcnt()));
+  assert((uint) labels.length() == n->outcnt(), "must be equal: %d == %d", labels.length(), n->outcnt());
 
   // Since MachConstantNode::constant_offset() also contains
   // table_base_offset() we need to subtract the table_base_offset()
@@ -3876,7 +3878,7 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
 
   for (uint i = 0; i < n->outcnt(); i++) {
     address* constant_addr = &jump_table_base[i];
-    assert(*constant_addr == (((address) n) + i), err_msg_res("all jump-table entries must contain adjusted node pointer: " INTPTR_FORMAT " == " INTPTR_FORMAT, p2i(*constant_addr), p2i(((address) n) + i)));
+    assert(*constant_addr == (((address) n) + i), "all jump-table entries must contain adjusted node pointer: " INTPTR_FORMAT " == " INTPTR_FORMAT, p2i(*constant_addr), p2i(((address) n) + i));
     *constant_addr = cb.consts()->target(*labels.at(i), (address) constant_addr);
     cb.consts()->relocate((address) constant_addr, relocInfo::internal_word_type);
   }
@@ -4135,7 +4137,7 @@ int Compile::cmp_expensive_nodes(Node* n1, Node* n2) {
   if (n1->Opcode() < n2->Opcode())      return -1;
   else if (n1->Opcode() > n2->Opcode()) return 1;
 
-  assert(n1->req() == n2->req(), err_msg_res("can't compare %s nodes: n1->req() = %d, n2->req() = %d", NodeClassNames[n1->Opcode()], n1->req(), n2->req()));
+  assert(n1->req() == n2->req(), "can't compare %s nodes: n1->req() = %d, n2->req() = %d", NodeClassNames[n1->Opcode()], n1->req(), n2->req());
   for (uint i = 1; i < n1->req(); i++) {
     if (n1->in(i) < n2->in(i))      return -1;
     else if (n1->in(i) > n2->in(i)) return 1;

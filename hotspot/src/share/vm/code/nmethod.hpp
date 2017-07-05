@@ -126,6 +126,12 @@ class nmethod : public CodeBlob {
   int       _entry_bci;        // != InvocationEntryBci if this nmethod is an on-stack replacement method
   jmethodID _jmethod_id;       // Cache of method()->jmethod_id()
 
+#if INCLUDE_JVMCI
+  // Needed to keep nmethods alive that are not the default nmethod for the associated Method.
+  oop       _jvmci_installed_code;
+  oop       _speculation_log;
+#endif
+
   // To support simple linked-list chaining of nmethods:
   nmethod*  _osr_link;         // from InstanceKlass::osr_nmethods_head
 
@@ -273,7 +279,12 @@ class nmethod : public CodeBlob {
           ExceptionHandlerTable* handler_table,
           ImplicitExceptionTable* nul_chk_table,
           AbstractCompiler* compiler,
-          int comp_level);
+          int comp_level
+#if INCLUDE_JVMCI
+          , Handle installed_code,
+          Handle speculation_log
+#endif
+          );
 
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
@@ -309,7 +320,12 @@ class nmethod : public CodeBlob {
                               ExceptionHandlerTable* handler_table,
                               ImplicitExceptionTable* nul_chk_table,
                               AbstractCompiler* compiler,
-                              int comp_level);
+                              int comp_level
+#if INCLUDE_JVMCI
+                              , Handle installed_code = Handle(),
+                              Handle speculation_log = Handle()
+#endif
+                             );
 
   static nmethod* new_native_nmethod(methodHandle method,
                                      int compile_id,
@@ -332,6 +348,7 @@ class nmethod : public CodeBlob {
   bool is_osr_method() const                      { return _entry_bci != InvocationEntryBci; }
 
   bool is_compiled_by_c1() const;
+  bool is_compiled_by_jvmci() const;
   bool is_compiled_by_c2() const;
   bool is_compiled_by_shark() const;
 
@@ -582,6 +599,14 @@ public:
   // Evolution support. We make old (discarded) compiled methods point to new Method*s.
   void set_method(Method* method) { _method = method; }
 
+#if INCLUDE_JVMCI
+  oop jvmci_installed_code() { return _jvmci_installed_code ; }
+  char* jvmci_installed_code_name(char* buf, size_t buflen);
+  void set_jvmci_installed_code(oop installed_code) { _jvmci_installed_code = installed_code;  }
+  oop speculation_log() { return _speculation_log ; }
+  void set_speculation_log(oop speculation_log) { _speculation_log = speculation_log;  }
+#endif
+
   // GC support
   void do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred);
   //  The parallel versions are used by G1.
@@ -639,7 +664,7 @@ public:
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
   bool is_deopt_pc      (address pc) { return is_deopt_entry(pc) || is_deopt_mh_entry(pc); }
-  bool is_deopt_entry   (address pc) { return pc == deopt_handler_begin(); }
+  bool is_deopt_entry   (address pc);
   bool is_deopt_mh_entry(address pc) { return pc == deopt_mh_handler_begin(); }
   // Accessor/mutator for the original pc of a frame before a frame was deopted.
   address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
@@ -690,7 +715,7 @@ public:
 
   // Prints a comment for one native instruction (reloc info, pc desc)
   void print_code_comment_on(outputStream* st, int column, address begin, address end);
-  static void print_statistics()                  PRODUCT_RETURN;
+  static void print_statistics() PRODUCT_RETURN;
 
   // Compiler task identification.  Note that all OSR methods
   // are numbered in an independent sequence if CICountOSR is true,

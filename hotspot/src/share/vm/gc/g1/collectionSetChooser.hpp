@@ -73,9 +73,7 @@ public:
     HeapRegion* res = NULL;
     if (_front < _end) {
       res = regions_at(_front);
-      assert(res != NULL,
-             err_msg("Unexpected NULL hr in _regions at index %u",
-                     _front));
+      assert(res != NULL, "Unexpected NULL hr in _regions at index %u", _front);
     }
     return res;
   }
@@ -88,9 +86,9 @@ public:
     assert(_front < _end, "pre-condition");
     regions_at_put(_front, NULL);
     assert(hr->reclaimable_bytes() <= _remaining_reclaimable_bytes,
-           err_msg("remaining reclaimable bytes inconsistent "
-                   "from region: " SIZE_FORMAT " remaining: " SIZE_FORMAT,
-                   hr->reclaimable_bytes(), _remaining_reclaimable_bytes));
+           "remaining reclaimable bytes inconsistent "
+           "from region: " SIZE_FORMAT " remaining: " SIZE_FORMAT,
+           hr->reclaimable_bytes(), _remaining_reclaimable_bytes);
     _remaining_reclaimable_bytes -= hr->reclaimable_bytes();
     _front += 1;
     return hr;

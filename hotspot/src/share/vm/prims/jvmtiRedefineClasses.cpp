@@ -45,8 +45,6 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/events.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 Array<Method*>* VM_RedefineClasses::_old_methods = NULL;
 Array<Method*>* VM_RedefineClasses::_new_methods = NULL;
 Method**  VM_RedefineClasses::_matching_old_methods = NULL;
@@ -1714,12 +1712,12 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
             // unless we are trying to stress ldc -> ldc_w rewriting
             RC_TRACE_WITH_THREAD(0x00080000, THREAD,
               ("%s@" INTPTR_FORMAT " old=%d, new=%d", Bytecodes::name(c),
-              bcp, cp_index, new_index));
+              p2i(bcp), cp_index, new_index));
             *(bcp + 1) = new_index;
           } else {
             RC_TRACE_WITH_THREAD(0x00080000, THREAD,
               ("%s->ldc_w@" INTPTR_FORMAT " old=%d, new=%d",
-              Bytecodes::name(c), bcp, cp_index, new_index));
+              Bytecodes::name(c), p2i(bcp), cp_index, new_index));
             // the new value needs ldc_w instead of ldc
             u_char inst_buffer[4]; // max instruction size is 4 bytes
             bcp = (address)inst_buffer;
@@ -1780,7 +1778,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
           // the original index is mapped so update w/ new value
           RC_TRACE_WITH_THREAD(0x00080000, THREAD,
             ("%s@" INTPTR_FORMAT " old=%d, new=%d", Bytecodes::name(c),
-            bcp, cp_index, new_index));
+            p2i(bcp), cp_index, new_index));
           // Rewriter::rewrite_method() uses put_native_u2() in this
           // situation because it is reusing the constant pool index
           // location for a native index into the ConstantPoolCache.

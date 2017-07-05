@@ -92,7 +92,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import jdk.internal.dynalink.support.Lookup;
+import jdk.internal.dynalink.linker.support.Lookup;
 
 /**
  * Base for classes that expose class field and method information to an {@link AbstractJavaLinker}. There are

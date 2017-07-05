@@ -24,15 +24,13 @@
  */
 package javax.swing;
 
-import sun.swing.SwingUtilities2;
-
 import java.awt.*;
-import java.awt.event.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
 import java.io.*;
-import java.util.*;
 
 import javax.swing.plaf.*;
 import javax.swing.text.*;
@@ -184,13 +182,11 @@ import sun.reflect.misc.ReflectUtil;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer false
- * description: A text component to edit various types of content.
- *
  * @author  Timothy Prinzing
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UIClassID", description = "A text component to edit various types of content.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JEditorPane extends JTextComponent {
 
@@ -323,6 +319,7 @@ public class JEditorPane extends JTextComponent {
      *         array if no listeners have been added
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public synchronized HyperlinkListener[] getHyperlinkListeners() {
         return listenerList.getListeners(javax.swing.event.HyperlinkListener.class);
     }
@@ -411,11 +408,9 @@ public class JEditorPane extends JTextComponent {
      * @exception IOException for a <code>null</code> or invalid
      *          page specification, or exception from the stream being read
      * @see #getPage
-     * @beaninfo
-     *  description: the URL used to set content
-     *        bound: true
-     *       expert: true
      */
+    @BeanProperty(expert = true, description
+            = "the URL used to set content")
     public void setPage(URL page) throws IOException {
         if (page == null) {
             throw new IOException("invalid url");
@@ -895,6 +890,7 @@ public class JEditorPane extends JTextComponent {
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -960,11 +956,11 @@ public class JEditorPane extends JTextComponent {
      * @param type the non-<code>null</code> mime type for the content editing
      *   support
      * @see #getContentType
-     * @beaninfo
-     *  description: the type of content
      * @throws NullPointerException if the <code>type</code> parameter
      *          is <code>null</code>
      */
+    @BeanProperty(bound = false, description
+            = "the type of content")
     public final void setContentType(String type) {
         // The type could have optional info is part of it,
         // for example some charset info.  We need to strip that
@@ -1046,11 +1042,9 @@ public class JEditorPane extends JTextComponent {
      *
      * @param kit the desired editor behavior
      * @see #getEditorKit
-     * @beaninfo
-     *  description: the currently installed kit for handling content
-     *        bound: true
-     *       expert: true
      */
+    @BeanProperty(expert = true, description
+            = "the currently installed kit for handling content")
     public void setEditorKit(EditorKit kit) {
         EditorKit old = this.kit;
         isUserSetEditorKit = true;
@@ -1414,9 +1408,9 @@ public class JEditorPane extends JTextComponent {
      * @param t the new text to be set; if <code>null</code> the old
      *    text will be deleted
      * @see #getText
-     * @beaninfo
-     * description: the text of this component
      */
+    @BeanProperty(bound = false, description
+            = "the text of this component")
     public void setText(String t) {
         try {
             Document doc = getDocument();
@@ -1466,6 +1460,7 @@ public class JEditorPane extends JTextComponent {
      * @return true if a viewport should force the Scrollables width to
      * match its own, false otherwise
      */
+    @BeanProperty(bound = false)
     public boolean getScrollableTracksViewportWidth() {
         Container parent = SwingUtilities.getUnwrappedParent(this);
         if (parent instanceof JViewport) {
@@ -1489,6 +1484,7 @@ public class JEditorPane extends JTextComponent {
      *          <code>Scrollable</code>'s height to match its own,
      *          false otherwise
      */
+    @BeanProperty(bound = false)
     public boolean getScrollableTracksViewportHeight() {
         Container parent = SwingUtilities.getUnwrappedParent(this);
         if (parent instanceof JViewport) {
@@ -1626,6 +1622,7 @@ public class JEditorPane extends JTextComponent {
      * @return an AccessibleJEditorPane that serves as the
      *         AccessibleContext of this JEditorPane
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (getEditorKit() instanceof HTMLEditorKit) {
             if (accessibleContext == null || accessibleContext.getClass() !=

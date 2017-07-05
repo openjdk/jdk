@@ -101,6 +101,18 @@ package javax.security.auth;
  *                              login Configuration.
  * </pre>
  *
+ * <p>Please note that granting this permission with the "modifyPrincipals",
+ * "modifyPublicCredentials" or "modifyPrivateCredentials" target allows
+ * a JAAS login module to populate principal or credential objects into
+ * the Subject. Although reading information inside the private credentials
+ * set requires a {@link PrivateCredentialPermission} of the credential type to
+ * be granted, reading information inside the principals set and the public
+ * credentials set requires no additional permission. These objects can contain
+ * potentially sensitive information. For example, login modules that read
+ * local user information or perform a Kerberos login are able to add
+ * potentially sensitive information such as user ids, groups and domain names
+ * to the principals set.
+ *
  * <p> The following target name has been deprecated in favor of
  * {@code createLoginContext.{name}}.
  *

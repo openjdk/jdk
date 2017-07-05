@@ -52,8 +52,6 @@
   #define NOINLINE
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // The "core" versions of monitor enter and exit reside in this file.
 // The interpreter and compilers contain specialized transliterated
 // variants of the enter-exit fast-path operations.  See i486.ad fast_lock(),
@@ -1417,7 +1415,7 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
         if (object->is_instance()) {
           ResourceMark rm;
           tty->print_cr("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-                        (void *) object, (intptr_t) object->mark(),
+                        p2i(object), p2i(object->mark()),
                         object->klass()->external_name());
         }
       }
@@ -1465,7 +1463,7 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
       if (object->is_instance()) {
         ResourceMark rm;
         tty->print_cr("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-                      (void *) object, (intptr_t) object->mark(),
+                      p2i(object), p2i(object->mark()),
                       object->klass()->external_name());
       }
     }
@@ -1529,7 +1527,7 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
       if (obj->is_instance()) {
         ResourceMark rm;
         tty->print_cr("Deflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-                      (void *) obj, (intptr_t) obj->mark(), obj->klass()->external_name());
+                      p2i(obj), p2i(obj->mark()), obj->klass()->external_name());
       }
     }
 
@@ -1702,9 +1700,9 @@ class ReleaseJavaMonitorsClosure: public MonitorClosure {
         Handle obj((oop) mid->object());
         tty->print("INFO: unexpected locked object:");
         javaVFrame::print_locked_object_class_name(tty, obj, "locked");
-        fatal(err_msg("exiting JavaThread=" INTPTR_FORMAT
-                      " unexpectedly owns ObjectMonitor=" INTPTR_FORMAT,
-                      THREAD, mid));
+        fatal("exiting JavaThread=" INTPTR_FORMAT
+              " unexpectedly owns ObjectMonitor=" INTPTR_FORMAT,
+              p2i(THREAD), p2i(mid));
       }
       (void)mid->complete_exit(CHECK);
     }

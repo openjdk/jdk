@@ -23,12 +23,11 @@
 package com.sun.org.apache.xalan.internal.xsltc.dom;
 
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
-import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.StripFilter;
-import com.sun.org.apache.xalan.internal.xsltc.runtime.Hashtable;
+import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 
-import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.Axis;
+import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisTraverser;
 import com.sun.org.apache.xml.internal.dtm.DTMManager;
@@ -38,13 +37,11 @@ import com.sun.org.apache.xml.internal.serializer.EmptySerializer;
 import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
 import com.sun.org.apache.xml.internal.utils.XMLString;
 import com.sun.org.apache.xml.internal.utils.XMLStringDefault;
-
+import java.util.Map;
+import javax.xml.transform.SourceLocator;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
 import org.xml.sax.SAXException;
-
-import javax.xml.transform.SourceLocator;
 
 /**
  * This class represents a light-weight DOM model for simple result tree fragment(RTF).
@@ -608,7 +605,7 @@ public class SimpleResultTreeImpl extends EmptySerializer implements DOM, DTM
         return null;
     }
 
-    public Hashtable getElementsWithIDs()
+    public Map<String, Integer> getElementsWithIDs()
     {
         return null;
     }

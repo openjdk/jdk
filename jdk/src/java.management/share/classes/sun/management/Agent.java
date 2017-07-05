@@ -102,7 +102,10 @@ public class Agent {
         private void addConfigProperties() {
             appendConfigPropsHeader();
             boolean[] first = new boolean[] {true};
-            configProps.entrySet().stream().forEach((e) -> {
+            Properties props = configProps != null ?
+                                   configProps : getManagementProperties();
+
+            props.entrySet().stream().forEach((e) -> {
                 String key = (String)e.getKey();
                 if (key.startsWith("com.sun.management.")) {
                     addConfigProp(key, e.getValue(), first[0]);

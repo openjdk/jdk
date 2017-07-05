@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_VM_GC_G1_G1CODEBLOBCLOSURE_HPP
+#define SHARE_VM_GC_G1_G1CODEBLOBCLOSURE_HPP
+
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "memory/iterator.hpp"
 
@@ -53,3 +56,6 @@ public:
 
   void do_code_blob(CodeBlob* cb);
 };
+
+#endif // SHARE_VM_GC_G1_G1CODEBLOBCLOSURE_HPP
+

@@ -374,6 +374,40 @@ template<class E> class GrowableArray : public GenericGrowableArray {
   void sort(int f(E*,E*), int stride) {
     qsort(_data, length() / stride, sizeof(E) * stride, (_sort_Fn)f);
   }
+
+  // Binary search and insertion utility.  Search array for element
+  // matching key according to the static compare function.  Insert
+  // that element is not already in the list.  Assumes the list is
+  // already sorted according to compare function.
+  template <int compare(const E&, const E&)> E insert_sorted(E& key) {
+    bool found;
+    int location = find_sorted<E, compare>(key, found);
+    if (!found) {
+      insert_before(location, key);
+    }
+    return at(location);
+  }
+
+  template <typename K, int compare(const K&, const E&)> int find_sorted(const K& key, bool& found) {
+    found = false;
+    int min = 0;
+    int max = length() - 1;
+
+    while (max >= min) {
+      int mid = (max + min) / 2;
+      E value = at(mid);
+      int diff = compare(key, value);
+      if (diff > 0) {
+        min = mid + 1;
+      } else if (diff < 0) {
+        max = mid - 1;
+      } else {
+        found = true;
+        return mid;
+      }
+    }
+    return min;
+  }
 };
 
 // Global GrowableArray methods (one instance in the library per each 'E' type).

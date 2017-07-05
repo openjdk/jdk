@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,11 +22,11 @@
 package com.sun.org.apache.xml.internal.serialize;
 
 
-import java.io.UnsupportedEncodingException;
-import java.util.Hashtable;
-import java.util.Locale;
-
 import com.sun.org.apache.xerces.internal.util.EncodingMap;
+import java.io.UnsupportedEncodingException;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -43,7 +42,7 @@ import com.sun.org.apache.xerces.internal.util.EncodingMap;
  * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
  * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.
  */
-public class Encodings
+class Encodings
 {
 
 
@@ -61,10 +60,10 @@ public class Encodings
     // default (Java) encoding if none supplied:
     static final String DEFAULT_ENCODING = "UTF8";
 
-    // note that the size of this Hashtable
+    // note that the size of this Map
     // is bounded by the number of encodings recognized by EncodingMap;
     // therefore it poses no static mutability risk.
-    static Hashtable _encodings = new Hashtable();
+    private static final Map<String, EncodingInfo> _encodings = new ConcurrentHashMap();
 
     /**
      * @param encoding a MIME charset name, or null.
@@ -72,7 +71,7 @@ public class Encodings
     static EncodingInfo getEncodingInfo(String encoding, boolean allowJavaNames) throws UnsupportedEncodingException {
         EncodingInfo eInfo = null;
         if (encoding == null) {
-            if((eInfo = (EncodingInfo)_encodings.get(DEFAULT_ENCODING)) != null)
+            if((eInfo = _encodings.get(DEFAULT_ENCODING)) != null)
                 return eInfo;
             eInfo = new EncodingInfo(EncodingMap.getJava2IANAMapping(DEFAULT_ENCODING), DEFAULT_ENCODING, LAST_PRINTABLE_UNICODE);
             _encodings.put(DEFAULT_ENCODING, eInfo);
@@ -85,7 +84,7 @@ public class Encodings
             // see if the encoding passed in is a Java encoding name.
             if(allowJavaNames ) {
                 EncodingInfo.testJavaEncodingName(encoding);
-                if((eInfo = (EncodingInfo)_encodings.get(encoding)) != null)
+                if((eInfo = _encodings.get(encoding)) != null)
                     return eInfo;
                 // is it known to be unicode-compliant?
                 int i=0;
@@ -104,7 +103,7 @@ public class Encodings
                 throw new UnsupportedEncodingException(encoding);
             }
         }
-        if ((eInfo = (EncodingInfo)_encodings.get(jName)) != null)
+        if ((eInfo = _encodings.get(jName)) != null)
             return eInfo;
         // have to create one...
         // is it known to be unicode-compliant?

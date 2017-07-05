@@ -576,13 +576,13 @@ void ciCallProfile::add_receiver(ciKlass* receiver, int receiver_count) {
 
 void ciMethod::assert_virtual_call_type_ok(int bci) {
   assert(java_code_at_bci(bci) == Bytecodes::_invokevirtual ||
-         java_code_at_bci(bci) == Bytecodes::_invokeinterface, err_msg("unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci))));
+         java_code_at_bci(bci) == Bytecodes::_invokeinterface, "unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci)));
 }
 
 void ciMethod::assert_call_type_ok(int bci) {
   assert(java_code_at_bci(bci) == Bytecodes::_invokestatic ||
          java_code_at_bci(bci) == Bytecodes::_invokespecial ||
-         java_code_at_bci(bci) == Bytecodes::_invokedynamic, err_msg("unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci))));
+         java_code_at_bci(bci) == Bytecodes::_invokedynamic, "unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci)));
 }
 
 /**
@@ -1041,18 +1041,6 @@ MethodCounters* ciMethod::ensure_method_counters() {
   methodHandle mh(THREAD, get_Method());
   MethodCounters* method_counters = mh->get_method_counters(CHECK_NULL);
   return method_counters;
-}
-
-// ------------------------------------------------------------------
-// ciMethod::should_exclude
-//
-// Should this method be excluded from compilation?
-bool ciMethod::should_exclude() {
-  check_is_loaded();
-  VM_ENTRY_MARK;
-  methodHandle mh(THREAD, get_Method());
-  bool ignore;
-  return CompilerOracle::should_exclude(mh, ignore);
 }
 
 // ------------------------------------------------------------------

@@ -128,18 +128,21 @@ public final class XMLLimitAnalyzer {
     public void addValue(int index, String entityName, int value) {
         if (index == Limit.ENTITY_EXPANSION_LIMIT.ordinal() ||
                 index == Limit.MAX_OCCUR_NODE_LIMIT.ordinal() ||
-                index == Limit.ELEMENT_ATTRIBUTE_LIMIT.ordinal()) {
+                index == Limit.ELEMENT_ATTRIBUTE_LIMIT.ordinal() ||
+                index == Limit.TOTAL_ENTITY_SIZE_LIMIT.ordinal()
+                ) {
             totalValue[index] += value;
             return;
         }
-        if (index == Limit.MAX_ELEMENT_DEPTH_LIMIT.ordinal()) {
+        if (index == Limit.MAX_ELEMENT_DEPTH_LIMIT.ordinal() ||
+                index == Limit.MAX_NAME_LIMIT.ordinal()) {
             totalValue[index] = value;
             return;
         }
 
         Map<String, Integer> cache;
         if (caches[index] == null) {
-            cache = new HashMap<String, Integer>(10);
+            cache = new HashMap<>(10);
             caches[index] = cache;
         } else {
             cache = caches[index];
@@ -147,10 +150,10 @@ public final class XMLLimitAnalyzer {
 
         int accumulatedValue = value;
         if (cache.containsKey(entityName)) {
-            accumulatedValue += cache.get(entityName).intValue();
-            cache.put(entityName, Integer.valueOf(accumulatedValue));
+            accumulatedValue += cache.get(entityName);
+            cache.put(entityName, accumulatedValue);
         } else {
-            cache.put(entityName, Integer.valueOf(value));
+            cache.put(entityName, value);
         }
 
         if (accumulatedValue > values[index]) {
@@ -220,6 +223,16 @@ public final class XMLLimitAnalyzer {
         Map<String, Integer> cache = caches[limit.ordinal()];
         if (cache != null) {
             cache.remove(name);
+        }
+    }
+
+    /**
+     * Resets the current value of the specified limit.
+     * @param limit The limit to be reset.
+     */
+    public void reset(Limit limit) {
+        if (limit.ordinal() == Limit.TOTAL_ENTITY_SIZE_LIMIT.ordinal()) {
+            totalValue[limit.ordinal()] = 0;
         }
     }
 

@@ -32,6 +32,9 @@
 #include "runtime/thread.hpp"
 #include "services/threadService.hpp"
 #include "utilities/chunkedList.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 
 MetadataOnStackBuffer* MetadataOnStackMark::_used_buffers = NULL;
 MetadataOnStackBuffer* MetadataOnStackMark::_free_buffers = NULL;
@@ -57,6 +60,9 @@ MetadataOnStackMark::MetadataOnStackMark(bool redefinition_walk) {
     CompileBroker::mark_on_stack();
     JvmtiCurrentBreakpoints::metadata_do(Metadata::mark_on_stack);
     ThreadService::metadata_do(Metadata::mark_on_stack);
+#if INCLUDE_JVMCI
+    JVMCIRuntime::metadata_do(Metadata::mark_on_stack);
+#endif
   }
 }
 
@@ -119,7 +125,7 @@ MetadataOnStackBuffer* MetadataOnStackMark::allocate_buffer() {
     allocated = new MetadataOnStackBuffer();
   }
 
-  assert(!allocated->is_full(), err_msg("Should not be full: " PTR_FORMAT, p2i(allocated)));
+  assert(!allocated->is_full(), "Should not be full: " PTR_FORMAT, p2i(allocated));
 
   return allocated;
 }

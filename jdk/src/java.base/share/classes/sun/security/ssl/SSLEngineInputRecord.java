@@ -284,7 +284,7 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
                                        ((plaintext.get() & 0xFF) << 8) |
                                         (plaintext.get() & 0xFF);
                     plaintext.position(frgPos);
-                    if (remains < (handshakeLen + 1)) { // 1: handshake type
+                    if (remains < (handshakeLen + 4)) { // 4: handshake header
                         // This handshake message is fragmented.
                         prevType = handshakeType;
                         hsMsgOff = remains - 4;         // 4: handshake header

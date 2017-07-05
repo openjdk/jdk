@@ -331,7 +331,7 @@ public class XML11DocumentScannerImpl
                                                          new Object[]{entityName});
                                     }
                                 }
-                                fEntityManager.startEntity(entityName, true);
+                                fEntityManager.startEntity(false, entityName, true);
                             }
                         }
                     }

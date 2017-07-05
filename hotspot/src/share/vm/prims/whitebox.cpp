@@ -29,6 +29,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/methodMatcher.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -63,8 +64,6 @@
 #include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
 
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #define SIZE_T_MAX_VALUE ((size_t) -1)
 
@@ -200,8 +199,8 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
                   "\tUniverse::narrow_oop_base() is " PTR_FORMAT "\n"
                   "\tUniverse::narrow_oop_use_implicit_null_checks() is %d",
                   UseCompressedOops,
-                  rhs.base(),
-                  Universe::narrow_oop_base(),
+                  p2i(rhs.base()),
+                  p2i(Universe::narrow_oop_base()),
                   Universe::narrow_oop_use_implicit_null_checks());
     return;
   }
@@ -625,6 +624,32 @@ WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobjec
   return (mh->queued_for_compilation() || nm != NULL);
 WB_END
 
+
+WB_ENTRY(jint, WB_MatchesMethod(JNIEnv* env, jobject o, jobject method, jstring pattern))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
+
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+
+  ResourceMark rm;
+  char* method_str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(pattern));
+
+  const char* error_msg = NULL;
+
+  BasicMatcher* m = BasicMatcher::parse_method_pattern(method_str, error_msg);
+  if (m == NULL) {
+    assert(error_msg != NULL, "Must have error_msg");
+    tty->print_cr("Got error: %s", error_msg);
+    return -1;
+  }
+
+  // Pattern works - now check if it matches
+  int result = m->matches(mh);
+  delete m;
+  assert(result == 0 || result == 1, "Result out of range");
+  return result;
+WB_END
+
 class AlwaysFalseClosure : public BoolObjectClosure {
  public:
   bool do_object_b(oop p) { return false; }
@@ -998,7 +1023,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  result = env->NewObjectArray(4, clazz, NULL);
+  result = env->NewObjectArray(5, clazz, NULL);
   if (result == NULL) {
     return result;
   }
@@ -1019,6 +1044,10 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   jobject id = integerBox(thread, env, code->compile_id());
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 3, id);
+
+  jobject address = longBox(thread, env, (jlong) code);
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  env->SetObjectArrayElement(result, 4, address);
 
   return result;
 WB_END
@@ -1106,6 +1135,13 @@ WB_ENTRY(jobjectArray, WB_GetCodeBlob(JNIEnv* env, jobject o, jlong addr))
   return codeBlob2objectArray(thread, env, &stub);
 WB_END
 
+WB_ENTRY(jlong, WB_GetMethodData(JNIEnv* env, jobject wv, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION_(env, 0);
+  methodHandle mh(thread, Method::checked_resolve_jmethod_id(jmid));
+  return (jlong) mh->method_data();
+WB_END
+
 WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
   return (jlong) Thread::current()->stack_size();
 WB_END
@@ -1114,6 +1150,7 @@ WB_ENTRY(jlong, WB_GetThreadRemainingStackSize(JNIEnv* env, jobject o))
   JavaThread* t = JavaThread::current();
   return (jlong) t->stack_available(os::current_stack_pointer()) - (jlong) StackShadowPages * os::vm_page_size();
 WB_END
+
 
 int WhiteBox::array_bytes_to_length(size_t bytes) {
   return Array<u1>::bytes_to_length(bytes);
@@ -1189,6 +1226,11 @@ WB_END
 WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
   VM_ForceSafepoint force_safepoint_op;
   VMThread::execute(&force_safepoint_op);
+WB_END
+
+WB_ENTRY(long, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
+  instanceKlassHandle ikh(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  return (long) ikh->constants();
 WB_END
 
 template <typename T>
@@ -1430,6 +1472,9 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/reflect/Executable;)V",          (void*)&WB_ClearMethodState},
   {CC"lockCompilation",    CC"()V",                   (void*)&WB_LockCompilation},
   {CC"unlockCompilation",  CC"()V",                   (void*)&WB_UnlockCompilation},
+  {CC"matchesMethod",
+      CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)I",
+                                                      (void*)&WB_MatchesMethod},
   {CC"isConstantVMFlag",   CC"(Ljava/lang/String;)Z", (void*)&WB_IsConstantVMFlag},
   {CC"isLockedVMFlag",     CC"(Ljava/lang/String;)Z", (void*)&WB_IsLockedVMFlag},
   {CC"setBooleanVMFlag",   CC"(Ljava/lang/String;Z)V",(void*)&WB_SetBooleanVMFlag},
@@ -1479,12 +1524,15 @@ static JNINativeMethod methods[] = {
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },
   {CC"getCompilationActivityMode",
                            CC"()I",                   (void*)&WB_GetCompilationActivityMode},
+  {CC"getMethodData0",     CC"(Ljava/lang/reflect/Executable;)J",
+                                                      (void*)&WB_GetMethodData      },
   {CC"getCodeBlob",        CC"(J)[Ljava/lang/Object;",(void*)&WB_GetCodeBlob        },
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
   {CC"assertMatchingSafepointCalls", CC"(ZZ)V",       (void*)&WB_AssertMatchingSafepointCalls },
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
+  {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
   {CC"getMethodBooleanOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Boolean;",
                                                       (void*)&WB_GetMethodBooleaneOption},
