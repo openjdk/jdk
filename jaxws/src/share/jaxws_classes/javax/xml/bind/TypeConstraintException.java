@@ -59,6 +59,7 @@ public class TypeConstraintException extends java.lang.RuntimeException {
      */
     private volatile Throwable linkedException;
 
+    static final long serialVersionUID = -3059799699420143848L;
 
     /**
      * Construct a TypeConstraintException with the specified detail message.  The

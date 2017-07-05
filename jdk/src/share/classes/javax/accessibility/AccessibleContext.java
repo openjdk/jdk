@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.awt.IllegalComponentStateException;
  * obtaining more specific accessibility information about a component.
  * If the component supports them, these methods will return an object that
  * implements one or more of the following interfaces:
- * <P><ul>
+ * <ul>
  * <li>{@link AccessibleAction} - the object can perform one or more actions.
  * This interface provides the standard mechanism for an assistive
  * technology to determine what those actions are and tell the object

@@ -2023,8 +2023,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
 
-        method._new(ECMAException.class).dup();
-
         final Source source     = lc.getCurrentFunction().getSource();
 
         final Expression expression = throwNode.getExpression();
@@ -2037,7 +2035,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.load(source.getName());
         method.load(line);
         method.load(column);
-        method.invoke(ECMAException.THROW_INIT);
+        method.invoke(ECMAException.CREATE);
 
         method.athrow();
 

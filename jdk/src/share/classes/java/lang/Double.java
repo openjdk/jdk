@@ -833,14 +833,10 @@ public final class Double extends Number implements Comparable<Double> {
      * @return the bits that represent the floating-point number.
      */
     public static long doubleToLongBits(double value) {
-        long result = doubleToRawLongBits(value);
-        // Check for NaN based on values of bit fields, maximum
-        // exponent and nonzero significand.
-        if ( ((result & DoubleConsts.EXP_BIT_MASK) ==
-              DoubleConsts.EXP_BIT_MASK) &&
-             (result & DoubleConsts.SIGNIF_BIT_MASK) != 0L)
-            result = 0x7ff8000000000000L;
-        return result;
+        if (!isNaN(value)) {
+            return doubleToRawLongBits(value);
+        }
+        return 0x7ff8000000000000L;
     }
 
     /**

@@ -66,13 +66,16 @@
     <condition property="exclude.list" value="./exclude/exclude_list_cc.txt" else="./exclude/exclude_list.txt">
       <istrue value="${make.code.coverage}" />
     </condition>
+
+    <condition property="jfr.options" value="${run.test.jvmargs.jfr}" else="">
+      <istrue value="${jfr}"/>
+    </condition>
   </target>
 
   <target name="init" depends="init-conditions, init-cc">
-
     <!-- extends jvm args -->
-    <property name="run.test.jvmargs" value="${run.test.jvmargs.main}  ${run.test.cc.jvmargs}"/>
-    <property name="run.test.jvmargs.octane" value="${run.test.jvmargs.octane.main}  ${run.test.cc.jvmargs}" />
+    <property name="run.test.jvmargs" value="${run.test.jvmargs.main} ${run.test.cc.jvmargs} ${jfr.options}"/>
+    <property name="run.test.jvmargs.octane" value="${run.test.jvmargs.octane.main} ${run.test.cc.jvmargs} ${jfr.options}"/>
 
     <echo message="run.test.jvmargs=${run.test.jvmargs}"/>
     <echo message="run.test.jvmargs.octane=${run.test.jvmargs.octane}"/>
@@ -301,6 +304,10 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
     permission java.lang.RuntimePermission "nashorn.JavaReflection";
 };
 
+grant codeBase "file:/${basedir}/test/script/markdown.js" {
+    permission java.io.FilePermission "${basedir}/test/script/external/showdown/-", "read";
+};
+
     </echo>
 
     <replace file="${build.dir}/nashorn.policy"><replacetoken>\</replacetoken><replacevalue>/</replacevalue></replace>    <!--hack for Windows - to make URLs with normal path separators -->
@@ -316,6 +323,7 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
       <available file="${test.external.dir}/yui" property="test-sys-prop.external.yui"/>
       <available file="${test.external.dir}/jquery" property="test-sys-prop.external.jquery"/>
       <available file="${test.external.dir}/test262" property="test-sys-prop.external.test262"/>
+      <available file="${test.external.dir}/showdown" property="test-sys-prop.external.markdown"/>
   </target>
 
   <target name="check-testng" unless="testng.available">
@@ -338,6 +346,9 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
+      <propertyset>
+        <propertyref prefix="nashorn."/>
+      </propertyset>
       <propertyset>
         <propertyref prefix="test-sys-prop."/>
         <mapper from="test-sys-prop.*" to="*" type="glob"/>
@@ -393,6 +404,25 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
     </testng>
   </target>
   
+  <target name="testmarkdown" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+    <fileset id="test.classes" dir="${build.test.classes.dir}">
+       <include name="**/framework/*Test.class"/>
+    </fileset>
+
+    <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
+       verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
+      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
+      <propertyset>
+        <propertyref prefix="testmarkdown-test-sys-prop."/>
+        <mapper from="testmarkdown-test-sys-prop.*" to="*" type="glob"/>
+      </propertyset>
+      <classpath>
+          <pathelement path="${run.test.classpath}"/>
+      </classpath>
+    </testng>
+  </target>
+  
   <target name="test262" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <fileset id="test.classes" dir="${build.test.classes.dir}">
        <include name="**/framework/*Test.class"/>
@@ -402,6 +432,9 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
+      <propertyset>
+        <propertyref prefix="nashorn."/>
+      </propertyset>
       <propertyset>
         <propertyref prefix="test262-test-sys-prop."/>
         <mapper from="test262-test-sys-prop.*" to="*" type="glob"/>
@@ -537,6 +570,11 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
     <mkdir dir="${test.external.dir}/yui"/>
     <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
     <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui-min.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
+    
+    <!-- showdown -->
+    <mkdir dir="${test.external.dir}/showdown"/>
+    <get src="https://raw.github.com/coreyti/showdown/master/src/showdown.js" dest="${test.external.dir}/showdown" skipexisting="true" ignoreerrors="true"/>
+    <get src="https://raw.github.com/coreyti/showdown/master/src/extensions/table.js" dest="${test.external.dir}/showdown" skipexisting="true" ignoreerrors="true"/>
 
   </target>
 

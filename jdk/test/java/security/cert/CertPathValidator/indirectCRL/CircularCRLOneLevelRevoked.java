@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,18 @@
  * questions.
  */
 
+//
+// Security properties, once set, cannot revert to unset.  To avoid
+// conflicts with tests running in the same VM isolate this test by
+// running it in otherVM mode.
+//
+
 /**
  * @test
  *
  * @bug 6720721
  * @summary CRL check with circular depency support needed
+ * @run main/othervm CircularCRLOneLevelRevoked
  * @author Xuelei Fan
  */
 
@@ -159,6 +166,10 @@ public class CircularCRLOneLevelRevoked {
     }
 
     public static void main(String args[]) throws Exception {
+        // MD5 is used in this test case, don't disable MD5 algorithm.
+        Security.setProperty(
+                "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
+
         CertPath path = generateCertificatePath();
         Set<TrustAnchor> anchors = generateTrustAnchors();
         CertStore crls = generateCertificateStore();

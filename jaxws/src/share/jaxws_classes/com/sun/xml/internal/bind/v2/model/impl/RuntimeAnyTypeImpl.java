@@ -36,7 +36,7 @@ import com.sun.xml.internal.bind.v2.runtime.Transducer;
  */
 final class RuntimeAnyTypeImpl extends AnyTypeImpl<Type,Class> implements RuntimeNonElement {
     private RuntimeAnyTypeImpl() {
-        super(Navigator.REFLECTION);
+        super(Utils.REFLECTION_NAVIGATOR);
     }
 
     public <V> Transducer<V> getTransducer() {

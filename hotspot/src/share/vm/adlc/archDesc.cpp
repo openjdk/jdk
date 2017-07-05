@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -41,32 +41,6 @@ char *toUpper(const char *str) {
   }
   *upper = '\0';
   return result;
-}
-
-// Utilities to characterize effect statements
-static bool is_def(int usedef) {
-  switch(usedef) {
-  case Component::DEF:
-  case Component::USE_DEF: return true; break;
-  }
-  return false;
-}
-
-static bool is_use(int usedef) {
-  switch(usedef) {
-  case Component::USE:
-  case Component::USE_DEF:
-  case Component::USE_KILL: return true; break;
-  }
-  return false;
-}
-
-static bool is_kill(int usedef) {
-  switch(usedef) {
-  case Component::KILL:
-  case Component::USE_KILL: return true; break;
-  }
-  return false;
 }
 
 //---------------------------ChainList Methods-------------------------------

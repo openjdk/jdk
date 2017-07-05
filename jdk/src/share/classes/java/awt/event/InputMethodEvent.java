@@ -277,6 +277,7 @@ public class InputMethodEvent extends AWTEvent {
 
     /**
      * Gets the number of committed characters in the text.
+     * @return the number of committed characters in the text
      */
     public int getCommittedCharacterCount() {
         return committedCharacterCount;

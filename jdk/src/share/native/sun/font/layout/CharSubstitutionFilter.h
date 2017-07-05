@@ -43,6 +43,8 @@ class LEFontInstance;
  * This filter is used by character-based GSUB processors. It
  * accepts only those characters which the given font can display.
  *
+ * Note: Implementation is in ArabicLayoutEngine.cpp
+ *
  * @internal
  */
 class CharSubstitutionFilter : public UMemory, public LEGlyphFilter
@@ -97,7 +99,7 @@ public:
      *
      * @internal
      */
-    le_bool accept(LEGlyphID glyph) const;
+    le_bool accept(LEGlyphID glyph, LEErrorCode &success) const;
 };
 
 U_NAMESPACE_END

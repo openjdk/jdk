@@ -146,16 +146,16 @@ public class ScriptClassInstrumentor extends ClassVisitor {
                 // call $clinit$ just before return from <clinit>
                 if (isStaticInit && opcode == RETURN) {
                     super.visitMethodInsn(INVOKESTATIC, scriptClassInfo.getJavaName(),
-                            $CLINIT$, DEFAULT_INIT_DESC);
+                            $CLINIT$, DEFAULT_INIT_DESC, false);
                 }
                 super.visitInsn(opcode);
             }
 
             @Override
-            public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc) {
+            public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc, final boolean itf) {
                 if (isConstructor && opcode == INVOKESPECIAL &&
                         INIT.equals(name) && SCRIPTOBJECT_TYPE.equals(owner)) {
-                    super.visitMethodInsn(opcode, owner, name, desc);
+                    super.visitMethodInsn(opcode, owner, name, desc, false);
 
                     if (memberCount > 0) {
                         // initialize @Property fields if needed
@@ -166,7 +166,7 @@ public class ScriptClassInstrumentor extends ClassVisitor {
                                 super.visitTypeInsn(NEW, clazz);
                                 super.visitInsn(DUP);
                                 super.visitMethodInsn(INVOKESPECIAL, clazz,
-                                    INIT, DEFAULT_INIT_DESC);
+                                    INIT, DEFAULT_INIT_DESC, false);
                                 super.visitFieldInsn(PUTFIELD, scriptClassInfo.getJavaName(),
                                     memInfo.getJavaName(), memInfo.getJavaDesc());
                             }
@@ -180,7 +180,7 @@ public class ScriptClassInstrumentor extends ClassVisitor {
                         }
                     }
                 } else {
-                    super.visitMethodInsn(opcode, owner, name, desc);
+                    super.visitMethodInsn(opcode, owner, name, desc, itf);
                 }
             }
 

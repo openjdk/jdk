@@ -32,6 +32,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -39,6 +40,7 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
+import java.util.function.Consumer;
 
 import sun.management.VMManagement;
 
@@ -70,9 +72,37 @@ public final class ProcessTools {
     public static Process startProcess(String name,
                                        ProcessBuilder processBuilder)
     throws IOException {
+        return startProcess(name, processBuilder, null);
+    }
+
+    /**
+     * <p>Starts a process from its builder.</p>
+     * <span>The default redirects of STDOUT and STDERR are started</span>
+     * <p>It is possible to monitor the in-streams via the provided {@code consumer}
+     * @param name The process name
+     * @param consumer {@linkplain Consumer} instance to process the in-streams
+     * @param processBuilder The process builder
+     * @return Returns the initialized process
+     * @throws IOException
+     */
+    public static Process startProcess(String name,
+                                       ProcessBuilder processBuilder,
+                                       Consumer<String> consumer)
+    throws IOException {
         Process p = null;
         try {
-            p = startProcess(name, processBuilder, null, -1, TimeUnit.NANOSECONDS);
+            p = startProcess(
+                name,
+                processBuilder,
+                line -> {
+                    if (consumer != null) {
+                        consumer.accept(line);
+                    }
+                    return false;
+                },
+                -1,
+                TimeUnit.NANOSECONDS
+            );
         } catch (InterruptedException | TimeoutException e) {
             // can't ever happen
         }
@@ -111,25 +141,28 @@ public final class ProcessTools {
 
         stdout.addPump(new LineForwarder(name, System.out));
         stderr.addPump(new LineForwarder(name, System.err));
-        final Phaser phs = new Phaser(1);
+        CountDownLatch latch = new CountDownLatch(1);
         if (linePredicate != null) {
-            stdout.addPump(new StreamPumper.LinePump() {
+            StreamPumper.LinePump pump = new StreamPumper.LinePump() {
                 @Override
                 protected void processLine(String line) {
-                    if (linePredicate.test(line)) {
-                        if (phs.getRegisteredParties() > 0) {
-                            phs.arriveAndDeregister();
-                        }
+                    if (latch.getCount() > 0 && linePredicate.test(line)) {
+                        latch.countDown();
                     }
                 }
-            });
+            };
+            stdout.addPump(pump);
+            stderr.addPump(pump);
         }
         Future<Void> stdoutTask = stdout.process();
         Future<Void> stderrTask = stderr.process();
 
         try {
             if (timeout > -1) {
-                phs.awaitAdvanceInterruptibly(0, timeout, unit);
+                long realTimeout = Math.round(timeout * Utils.TIMEOUT_FACTOR);
+                if (!latch.await(realTimeout, unit)) {
+                    throw new TimeoutException();
+                }
             }
         } catch (TimeoutException | InterruptedException e) {
             System.err.println("Failed to start a process (thread dump follows)");

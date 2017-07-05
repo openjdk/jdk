@@ -42,7 +42,6 @@ import com.sun.xml.internal.bind.v2.model.runtime.RuntimeElementPropertyInfo;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeNonElement;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimePropertyInfo;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeTypeRef;
-import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 import com.sun.xml.internal.bind.v2.runtime.IllegalAnnotationException;
 import com.sun.xml.internal.bind.v2.runtime.Transducer;
 import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
@@ -122,7 +121,8 @@ final class RuntimeElementInfoImpl extends ElementInfoImpl<Type,Class,Field,Meth
     }
 
     public Class<? extends JAXBElement> getType() {
-        return Navigator.REFLECTION.erasure(super.getType());
+        //noinspection unchecked
+        return (Class<? extends JAXBElement>) Utils.REFLECTION_NAVIGATOR.erasure(super.getType());
     }
 
     public RuntimeClassInfo getScope() {

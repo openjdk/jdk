@@ -209,8 +209,7 @@ public class LoginContext {
     private Map<String,?> state = new HashMap<String,Object>();
 
     private Configuration config;
-    private boolean configProvided = false;
-    private AccessControlContext creatorAcc = null;
+    private AccessControlContext creatorAcc = null;  // customized config only
     private ModuleInfo[] moduleStack;
     private ClassLoader contextClassLoader = null;
     private static final Class<?>[] PARAMS = { };
@@ -229,7 +228,7 @@ public class LoginContext {
     private void init(String name) throws LoginException {
 
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null && !configProvided) {
+        if (sm != null && creatorAcc == null) {
             sm.checkPermission(new AuthPermission
                                 ("createLoginContext." + name));
         }
@@ -252,7 +251,7 @@ public class LoginContext {
         AppConfigurationEntry[] entries = config.getAppConfigurationEntry(name);
         if (entries == null) {
 
-            if (sm != null && !configProvided) {
+            if (sm != null && creatorAcc == null) {
                 sm.checkPermission(new AuthPermission
                                 ("createLoginContext." + OTHER));
             }
@@ -279,7 +278,15 @@ public class LoginContext {
         contextClassLoader = java.security.AccessController.doPrivileged
                 (new java.security.PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {
-                    return Thread.currentThread().getContextClassLoader();
+                    ClassLoader loader =
+                            Thread.currentThread().getContextClassLoader();
+                    if (loader == null) {
+                        // Don't use bootstrap class loader directly to ensure
+                        // proper package access control!
+                        loader = ClassLoader.getSystemClassLoader();
+                    }
+
+                    return loader;
                 }
         });
     }
@@ -298,10 +305,10 @@ public class LoginContext {
                         (DEFAULT_HANDLER);
                     if (defaultHandler == null || defaultHandler.length() == 0)
                         return null;
-                    Class<?> c = Class.forName(defaultHandler,
-                                        true,
-                                        finalLoader);
-                    return (CallbackHandler)c.newInstance();
+                    Class<? extends CallbackHandler> c = Class.forName(
+                            defaultHandler, true,
+                            finalLoader).asSubclass(CallbackHandler.class);
+                    return c.newInstance();
                 }
             });
         } catch (java.security.PrivilegedActionException pae) {
@@ -309,7 +316,7 @@ public class LoginContext {
         }
 
         // secure it with the caller's ACC
-        if (this.callbackHandler != null && !configProvided) {
+        if (this.callbackHandler != null && creatorAcc == null) {
             this.callbackHandler = new SecureCallbackHandler
                                 (java.security.AccessController.getContext(),
                                 this.callbackHandler);
@@ -498,8 +505,7 @@ public class LoginContext {
                         CallbackHandler callbackHandler,
                         Configuration config) throws LoginException {
         this.config = config;
-        configProvided = (config != null) ? true : false;
-        if (configProvided) {
+        if (config != null) {
             creatorAcc = java.security.AccessController.getContext();
         }
 
@@ -510,7 +516,7 @@ public class LoginContext {
         }
         if (callbackHandler == null) {
             loadDefaultCallbackHandler();
-        } else if (!configProvided) {
+        } else if (creatorAcc == null) {
             this.callbackHandler = new SecureCallbackHandler
                                 (java.security.AccessController.getContext(),
                                 callbackHandler);
@@ -577,23 +583,13 @@ public class LoginContext {
         }
 
         try {
-            if (configProvided) {
-                // module invoked in doPrivileged with creatorAcc
-                invokeCreatorPriv(LOGIN_METHOD);
-                invokeCreatorPriv(COMMIT_METHOD);
-            } else {
-                // module invoked in doPrivileged
-                invokePriv(LOGIN_METHOD);
-                invokePriv(COMMIT_METHOD);
-            }
+            // module invoked in doPrivileged
+            invokePriv(LOGIN_METHOD);
+            invokePriv(COMMIT_METHOD);
             loginSucceeded = true;
         } catch (LoginException le) {
             try {
-                if (configProvided) {
-                    invokeCreatorPriv(ABORT_METHOD);
-                } else {
-                    invokePriv(ABORT_METHOD);
-                }
+                invokePriv(ABORT_METHOD);
             } catch (LoginException le2) {
                 throw le;
             }
@@ -628,13 +624,8 @@ public class LoginContext {
                 ("null.subject.logout.called.before.login"));
         }
 
-        if (configProvided) {
-            // module invoked in doPrivileged with creatorAcc
-            invokeCreatorPriv(LOGOUT_METHOD);
-        } else {
-            // module invoked in doPrivileged
-            invokePriv(LOGOUT_METHOD);
-        }
+        // module invoked in doPrivileged
+        invokePriv(LOGOUT_METHOD);
     }
 
     /**
@@ -677,35 +668,13 @@ public class LoginContext {
 
     /**
      * Invokes the login, commit, and logout methods
-     * from a LoginModule inside a doPrivileged block.
+     * from a LoginModule inside a doPrivileged block restricted
+     * by creatorAcc (may be null).
      *
      * This version is called if the caller did not instantiate
      * the LoginContext with a Configuration object.
      */
     private void invokePriv(final String methodName) throws LoginException {
-        try {
-            java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedExceptionAction<Void>() {
-                public Void run() throws LoginException {
-                    invoke(methodName);
-                    return null;
-                }
-            });
-        } catch (java.security.PrivilegedActionException pae) {
-            throw (LoginException)pae.getException();
-        }
-    }
-
-    /**
-     * Invokes the login, commit, and logout methods
-     * from a LoginModule inside a doPrivileged block restricted
-     * by creatorAcc
-     *
-     * This version is called if the caller instantiated
-     * the LoginContext with a Configuration object.
-     */
-    private void invokeCreatorPriv(final String methodName)
-                throws LoginException {
         try {
             java.security.AccessController.doPrivileged
                 (new java.security.PrivilegedExceptionAction<Void>() {
@@ -735,24 +704,24 @@ public class LoginContext {
                 } else {
 
                     // instantiate the LoginModule
-                    Class<?> c = Class.forName
-                                (moduleStack[i].entry.getLoginModuleName(),
+                    //
+                    // Allow any object to be a LoginModule as long as it
+                    // conforms to the interface.
+                    Class<?> c = Class.forName(
+                                moduleStack[i].entry.getLoginModuleName(),
                                 true,
                                 contextClassLoader);
 
                     Constructor<?> constructor = c.getConstructor(PARAMS);
                     Object[] args = { };
-
-                    // allow any object to be a LoginModule
-                    // as long as it conforms to the interface
                     moduleStack[i].module = constructor.newInstance(args);
 
-                    methods = moduleStack[i].module.getClass().getMethods();
-
                     // call the LoginModule's initialize method
+                    methods = moduleStack[i].module.getClass().getMethods();
                     for (mIndex = 0; mIndex < methods.length; mIndex++) {
-                        if (methods[mIndex].getName().equals(INIT_METHOD))
+                        if (methods[mIndex].getName().equals(INIT_METHOD)) {
                             break;
+                        }
                     }
 
                     Object[] initArgs = {subject,
@@ -760,19 +729,28 @@ public class LoginContext {
                                         state,
                                         moduleStack[i].entry.getOptions() };
                     // invoke the LoginModule initialize method
+                    //
+                    // Throws ArrayIndexOutOfBoundsException if no such
+                    // method defined.  May improve to use LoginException in
+                    // the future.
                     methods[mIndex].invoke(moduleStack[i].module, initArgs);
                 }
 
                 // find the requested method in the LoginModule
                 for (mIndex = 0; mIndex < methods.length; mIndex++) {
-                    if (methods[mIndex].getName().equals(methodName))
+                    if (methods[mIndex].getName().equals(methodName)) {
                         break;
+                    }
                 }
 
                 // set up the arguments to be passed to the LoginModule method
                 Object[] args = { };
 
                 // invoke the LoginModule method
+                //
+                // Throws ArrayIndexOutOfBoundsException if no such
+                // method defined.  May improve to use LoginException in
+                // the future.
                 boolean status = ((Boolean)methods[mIndex].invoke
                                 (moduleStack[i].module, args)).booleanValue();
 

@@ -1,0 +1,7 @@
+class javax.script.ScriptException
+class jdk.nashorn.internal.runtime.ECMAException
+Error: foo
+true
+Error
+foo
+33

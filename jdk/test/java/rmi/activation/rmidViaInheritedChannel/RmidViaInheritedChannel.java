@@ -88,6 +88,17 @@ public class RmidViaInheritedChannel implements Callback {
                                    TestLibrary.RMIDVIAINHERITEDCHANNEL_ACTIVATION_PORT);
             rmid.addOptions(new String[]{
                 "-Djava.nio.channels.spi.SelectorProvider=RmidViaInheritedChannel$RmidSelectorProvider"});
+            if (System.getProperty("os.name").startsWith("Windows") &&
+                System.getProperty("os.version").startsWith("5."))
+            {
+                /* Windows XP/2003 or older
+                 * Need to expand ephemeral range to include RMI test ports
+                 */
+                rmid.addOptions(new String[]{
+                    "-Djdk.net.ephemeralPortRange.low=1024",
+                    "-Djdk.net.ephemeralPortRange.high=64000"
+                });
+            }
             rmid.start();
 
             /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -566,6 +566,7 @@ public class DropTarget implements DropTargetListener, Serializable {
      * DropTargetContextPeer as a drag operation encounters this
      * DropTarget. Accessing the Context while no Drag is current
      * has undefined results.
+     * @return the DropTargetContext associated with this DropTarget
      */
 
     protected DropTargetContext createDropTargetContext() {
@@ -766,9 +767,10 @@ public class DropTarget implements DropTargetListener, Serializable {
 
     /**
      * create an embedded autoscroller
-     * <P>
+     *
      * @param c the <code>Component</code>
      * @param p the <code>Point</code>
+     * @return an embedded autoscroller
      */
 
     protected DropTargetAutoScroller createDropTargetAutoScroller(Component c, Point p) {

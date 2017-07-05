@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,7 +379,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * <code>&#92;u0001</code> through <code>&#92;u007f</code>, it is
      * represented by one byte:
      *
-     * <p><pre>
+     * <pre>
      * (byte)c
      * </pre>
      *
@@ -388,7 +388,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * <code>&#92;u07ff</code>, then it is represented by two bytes,
      * to be written in the order shown:
      *
-     * <p> <pre><code>
+     * <pre><code>
      * (byte)(0xc0 | (0x1f &amp; (c &gt;&gt; 6)))
      * (byte)(0x80 | (0x3f &amp; c))
      * </code></pre>
@@ -397,7 +397,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * <code>&#92;u0800</code> through <code>uffff</code>, then it is
      * represented by three bytes, to be written in the order shown:
      *
-     * <p> <pre><code>
+     * <pre><code>
      * (byte)(0xe0 | (0x0f &amp; (c &gt;&gt; 12)))
      * (byte)(0x80 | (0x3f &amp; (c &gt;&gt; 6)))
      * (byte)(0x80 | (0x3f &amp; c))

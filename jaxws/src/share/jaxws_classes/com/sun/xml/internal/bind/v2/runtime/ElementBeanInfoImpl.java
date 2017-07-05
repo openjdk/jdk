@@ -36,7 +36,6 @@ import javax.xml.stream.XMLStreamException;
 
 import com.sun.xml.internal.bind.api.AccessorException;
 import com.sun.xml.internal.bind.v2.model.core.PropertyKind;
-import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeElementInfo;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimePropertyInfo;
 import com.sun.xml.internal.bind.v2.runtime.property.Property;
@@ -81,10 +80,10 @@ public final class ElementBeanInfoImpl extends JaxBeanInfo<JAXBElement> {
         this.property = PropertyFactory.create(grammar,rei.getProperty());
 
         tagName = rei.getElementName();
-        expectedType = Navigator.REFLECTION.erasure(rei.getContentInMemoryType());
+        expectedType = (Class) Utils.REFLECTION_NAVIGATOR.erasure(rei.getContentInMemoryType());
         scope = rei.getScope()==null ? JAXBElement.GlobalScope.class : rei.getScope().getClazz();
 
-        Class type = Navigator.REFLECTION.erasure(rei.getType());
+        Class type = (Class) Utils.REFLECTION_NAVIGATOR.erasure(rei.getType());
         if(type==JAXBElement.class)
             constructor = null;
         else {

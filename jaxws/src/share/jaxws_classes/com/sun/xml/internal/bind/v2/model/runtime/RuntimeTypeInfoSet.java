@@ -33,7 +33,6 @@ import java.util.Map;
 import javax.xml.namespace.QName;
 
 import com.sun.xml.internal.bind.v2.model.core.TypeInfoSet;
-import com.sun.xml.internal.bind.v2.model.nav.ReflectionNavigator;
 
 /**
  * {@link TypeInfoSet} refined for runtime.
@@ -51,5 +50,4 @@ public interface RuntimeTypeInfoSet extends TypeInfoSet<Type,Class,Field,Method>
     RuntimeElementInfo getElementInfo( Class scope, QName name );
     Map<QName,? extends RuntimeElementInfo> getElementMappings( Class scope );
     Iterable<? extends RuntimeElementInfo> getAllElements();
-    ReflectionNavigator getNavigator();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /* @test
  * @bug 6766775
  * @summary X509 certificate hostname checking is broken in JDK1.6.0_10
  * @run main/othervm DNSIdentities
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
  * @author Xuelei Fan
  */
 
@@ -35,6 +37,7 @@ import java.net.*;
 import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
+import java.security.Security;
 import java.security.KeyStore;
 import java.security.KeyFactory;
 import java.security.cert.Certificate;
@@ -743,6 +746,10 @@ public class DNSIdentities {
     volatile Exception clientException = null;
 
     public static void main(String args[]) throws Exception {
+        // MD5 is used in this test case, don't disable MD5 algorithm.
+        Security.setProperty(
+                "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
+
         if (debug)
             System.setProperty("javax.net.debug", "all");
 

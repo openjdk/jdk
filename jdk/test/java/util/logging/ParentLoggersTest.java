@@ -63,7 +63,9 @@ public class ParentLoggersTest {
     static final String LOGGER_NAME_1   = PARENT_NAME_1 + ".myLogger";
     static final String LOGGER_NAME_2   = PARENT_NAME_2 + ".myBar.myLogger";
 
-    static final List<String> initialLoggerNames = new ArrayList<String>();
+    static final List<String> initialLoggerNames = new ArrayList<>();
+    static final List<Logger> createdLoggers = new ArrayList<>();
+
     public static void main(String args[]) throws Exception {
         // cache the initial set of loggers before this test begins
         // to add any loggers
@@ -74,7 +76,7 @@ public class ParentLoggersTest {
             if (!defaultLoggers.contains(logger)) {
                 initialLoggerNames.add(logger);
             }
-        };
+        }
 
         String tstSrc = System.getProperty(TST_SRC_PROP);
         File   fname  = new File(tstSrc, LM_PROP_FNAME);
@@ -92,7 +94,7 @@ public class ParentLoggersTest {
     }
 
     public static List<String> getDefaultLoggerNames() {
-        List<String> expectedLoggerNames = new ArrayList<String>();
+        List<String> expectedLoggerNames = new ArrayList<>();
 
         // LogManager always creates two loggers:
         expectedLoggerNames.add("");       // root   logger: ""
@@ -106,56 +108,43 @@ public class ParentLoggersTest {
      */
     public static boolean checkLoggers() {
         String failMsg = "# checkLoggers: getLoggerNames() returned unexpected loggers";
-        Vector<String> expectedLoggerNames = new Vector<String>(getDefaultLoggerNames());
+        List<String> expectedLoggerNames = new ArrayList<>(getDefaultLoggerNames());
 
         // Create the logger LOGGER_NAME_1
-        Logger.getLogger(LOGGER_NAME_1);
-        expectedLoggerNames.addElement(PARENT_NAME_1);
-        expectedLoggerNames.addElement(LOGGER_NAME_1);
+        createdLoggers.add(Logger.getLogger(LOGGER_NAME_1));
+        expectedLoggerNames.add(PARENT_NAME_1);
+        expectedLoggerNames.add(LOGGER_NAME_1);
 
         // Create the logger LOGGER_NAME_2
-        Logger.getLogger(LOGGER_NAME_2);
-        expectedLoggerNames.addElement(PARENT_NAME_2);
-        expectedLoggerNames.addElement(LOGGER_NAME_2);
+        createdLoggers.add(Logger.getLogger(LOGGER_NAME_2));
+        expectedLoggerNames.add(PARENT_NAME_2);
+        expectedLoggerNames.add(LOGGER_NAME_2);
+
 
         Enumeration<String> returnedLoggersEnum = logMgr.getLoggerNames();
-        Vector<String>      returnedLoggerNames = new Vector<String>(0);
+        List<String>      returnedLoggerNames = new ArrayList<>(0);
         while (returnedLoggersEnum.hasMoreElements()) {
            String logger = returnedLoggersEnum.nextElement();
             if (!initialLoggerNames.contains(logger)) {
                 // filter out the loggers that have been added before this test runs
-                returnedLoggerNames.addElement(logger);
+                returnedLoggerNames.add(logger);
             }
 
-        };
-
+        }
+        System.out.println(returnedLoggerNames);
         return checkNames(expectedLoggerNames, returnedLoggerNames, failMsg);
     }
 
     // Returns boolean values: PASSED or FAILED
-    private static boolean checkNames(Vector<String> expNames,
-                                      Vector<String> retNames,
+    private static boolean checkNames(List<String> expNames,
+                                      List<String> retNames,
                                       String failMsg) {
         boolean status = PASSED;
 
         if (expNames.size() != retNames.size()) {
             status = FAILED;
-        } else {
-            boolean checked[] = new boolean[retNames.size()];
-            for (int i = 0; i < expNames.size(); i++) {
-                 int j = 0;
-                for (; j < retNames.size(); j++) {
-                    if (!checked[j] &&
-                        expNames.elementAt(i).equals(retNames.elementAt(j))) {
-                        checked[j] = true;
-                        break;
-                    }
-                }
-                if (j >= retNames.size()) {
-                    status = FAILED;
-                    break;
-                }
-            }
+        } else if (!new HashSet<>(expNames).equals(new HashSet<>(retNames))) {
+            status = FAILED;
         }
         if (!status) {
             printFailMsg(expNames, retNames, failMsg);
@@ -163,25 +152,25 @@ public class ParentLoggersTest {
         return status;
     }
 
-    private static void printFailMsg(Vector<String> expNames,
-                                     Vector<String> retNames,
+    private static void printFailMsg(List<String> expNames,
+                                     List<String> retNames,
                                      String failMsg) {
         out.println();
         out.println(failMsg);
-        if (expNames.size() == 0) {
+        if (expNames.isEmpty()) {
             out.println("# there are NO expected logger names");
         } else {
             out.println("# expected logger names (" + expNames.size() + "):");
             for (int i = 0; i < expNames.size(); i++) {
-               out.println(" expNames[" + i + "] = " + expNames.elementAt(i));
+               out.println(" expNames[" + i + "] = " + expNames.get(i));
             }
         }
-        if (retNames.size() == 0) {
+        if (retNames.isEmpty()) {
             out.println("# there are NO returned logger names");
         } else {
             out.println("# returned logger names (" + retNames.size() + "):");
             for (int i = 0; i < retNames.size(); i++) {
-               out.println("  retNames[" + i + "] = " + retNames.elementAt(i));
+               out.println("  retNames[" + i + "] = " + retNames.get(i));
             }
         }
     }

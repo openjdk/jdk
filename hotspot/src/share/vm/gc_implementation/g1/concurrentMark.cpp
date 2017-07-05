@@ -553,6 +553,9 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
   _cmThread = new ConcurrentMarkThread(this);
   assert(cmThread() != NULL, "CM Thread should have been created");
   assert(cmThread()->cm() != NULL, "CM Thread should refer to this cm");
+  if (_cmThread->osthread() == NULL) {
+      vm_shutdown_during_initialization("Could not create ConcurrentMarkThread");
+  }
 
   assert(CGC_lock != NULL, "Where's the CGC_lock?");
   assert(_markBitMap1.covers(heap_rs), "_markBitMap1 inconsistency");
