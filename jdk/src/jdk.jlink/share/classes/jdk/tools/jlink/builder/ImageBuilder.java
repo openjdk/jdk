@@ -27,7 +27,7 @@ package jdk.tools.jlink.builder;
 import java.io.DataOutputStream;
 import java.util.Properties;
 
-import jdk.tools.jlink.plugin.ExecutableImage;
+import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ModulePool;
 

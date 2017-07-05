@@ -367,8 +367,4 @@ inline void BitMap2D::at_put_grow(idx_t slot_index, idx_t bit_within_slot_index,
   _map.at_put(bit, value);
 }
 
-inline void BitMap2D::clear() {
-  _map.clear();
-}
-
 #endif // SHARE_VM_UTILITIES_BITMAP_INLINE_HPP

@@ -31,10 +31,13 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.TreeMap;
 
 import jdk.internal.misc.VM;
@@ -213,7 +216,22 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
 
     private final Map<Class<? extends Architecture>, JVMCIBackend> backends = new HashMap<>();
 
-    private final Iterable<HotSpotVMEventListener> vmEventListeners;
+    private volatile List<HotSpotVMEventListener> vmEventListeners;
+
+    private Iterable<HotSpotVMEventListener> getVmEventListeners() {
+        if (vmEventListeners == null) {
+            synchronized (this) {
+                if (vmEventListeners == null) {
+                    List<HotSpotVMEventListener> listeners = new ArrayList<>();
+                    for (HotSpotVMEventListener vmEventListener : ServiceLoader.load(HotSpotVMEventListener.class)) {
+                        listeners.add(vmEventListener);
+                    }
+                    vmEventListeners = listeners;
+                }
+            }
+        }
+        return vmEventListeners;
+    }
 
     /**
      * Stores the result of {@link HotSpotJVMCICompilerFactory#getTrivialPrefixes()} so that it can
@@ -239,8 +257,6 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
         try (InitTimer t = timer("create JVMCI backend:", hostArchitecture)) {
             hostBackend = registerBackend(factory.createJVMCIBackend(this, null));
         }
-
-        vmEventListeners = Services.load(HotSpotVMEventListener.class);
 
         metaAccessContext = new HotSpotJVMCIMetaAccessContext();
 
@@ -370,7 +386,7 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
      */
     @SuppressWarnings({"unused"})
     private void shutdown() throws Exception {
-        for (HotSpotVMEventListener vmEventListener : vmEventListeners) {
+        for (HotSpotVMEventListener vmEventListener : getVmEventListeners()) {
             vmEventListener.notifyShutdown();
         }
     }
@@ -382,7 +398,7 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
      */
     @SuppressWarnings({"unused"})
     private void bootstrapFinished() throws Exception {
-        for (HotSpotVMEventListener vmEventListener : vmEventListeners) {
+        for (HotSpotVMEventListener vmEventListener : getVmEventListeners()) {
             vmEventListener.notifyBootstrapFinished();
         }
     }
@@ -395,7 +411,7 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
      * @param compiledCode
      */
     void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompiledCode compiledCode) {
-        for (HotSpotVMEventListener vmEventListener : vmEventListeners) {
+        for (HotSpotVMEventListener vmEventListener : getVmEventListeners()) {
             vmEventListener.notifyInstall(hotSpotCodeCacheProvider, installedCode, compiledCode);
         }
     }

@@ -112,13 +112,11 @@ public class DirArchive implements Archive {
 
     @Override
     public Stream<Entry> entries() {
-        Stream<Entry> ret = null;
         try {
-            ret = Files.walk(dirPath).map(this::toEntry).filter(n -> n != null);
+            return Files.walk(dirPath).map(this::toEntry).filter(n -> n != null);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        return ret;
     }
 
     private Archive.Entry toEntry(Path p) {

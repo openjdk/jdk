@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1054,8 +1054,8 @@ Java_java_net_TwoStacksPlainSocketImpl_socketGetOption(JNIEnv *env, jobject this
         }
 
         if (getsockname(fd, (struct sockaddr *)&him, &len) < 0) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                             "Error getting socket name");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
             return -1;
         }
         iaObj = NET_SockaddrToInetAddress(env, (struct sockaddr *)&him, &port);
