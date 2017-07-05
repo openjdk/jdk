@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@
 package build.tools.javazic;
 
 import  java.util.ArrayList;
-import  java.util.HashMap;
-import  java.util.HashSet;
-import  java.util.Iterator;
 import  java.util.LinkedList;
 import  java.util.List;
 import  java.util.Map;

@@ -932,11 +932,11 @@ public final class StrictMath {
     }
 
     /**
-     * Returns the size of an ulp of the argument.  An ulp of a
-     * {@code double} value is the positive distance between this
-     * floating-point value and the {@code double} value next
-     * larger in magnitude.  Note that for non-NaN <i>x</i>,
-     * <code>ulp(-<i>x</i>) == ulp(<i>x</i>)</code>.
+     * Returns the size of an ulp of the argument.  An ulp, unit in
+     * the last place, of a {@code double} value is the positive
+     * distance between this floating-point value and the {@code
+     * double} value next larger in magnitude.  Note that for non-NaN
+     * <i>x</i>, <code>ulp(-<i>x</i>) == ulp(<i>x</i>)</code>.
      *
      * <p>Special Cases:
      * <ul>
@@ -959,11 +959,11 @@ public final class StrictMath {
     }
 
     /**
-     * Returns the size of an ulp of the argument.  An ulp of a
-     * {@code float} value is the positive distance between this
-     * floating-point value and the {@code float} value next
-     * larger in magnitude.  Note that for non-NaN <i>x</i>,
-     * <code>ulp(-<i>x</i>) == ulp(<i>x</i>)</code>.
+     * Returns the size of an ulp of the argument.  An ulp, unit in
+     * the last place, of a {@code float} value is the positive
+     * distance between this floating-point value and the {@code
+     * float} value next larger in magnitude.  Note that for non-NaN
+     * <i>x</i>, <code>ulp(-<i>x</i>) == ulp(<i>x</i>)</code>.
      *
      * <p>Special Cases:
      * <ul>

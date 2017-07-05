@@ -397,7 +397,7 @@ void instanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
 
   if (referent != NULL) {
     guarantee(referent->is_oop(), "referent field heap failed");
-    if (gch != NULL && !gch->is_in_youngest(obj)) {
+    if (gch != NULL && !gch->is_in_young(obj)) {
       // We do a specific remembered set check here since the referent
       // field is not part of the oop mask and therefore skipped by the
       // regular verify code.
@@ -415,7 +415,7 @@ void instanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
   if (next != NULL) {
     guarantee(next->is_oop(), "next field verify failed");
     guarantee(next->is_instanceRef(), "next field verify failed");
-    if (gch != NULL && !gch->is_in_youngest(obj)) {
+    if (gch != NULL && !gch->is_in_young(obj)) {
       // We do a specific remembered set check here since the next field is
       // not part of the oop mask and therefore skipped by the regular
       // verify code.

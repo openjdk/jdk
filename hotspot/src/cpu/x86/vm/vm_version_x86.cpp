@@ -321,6 +321,20 @@ void VM_Version::get_processor_features() {
   if (UseSSE < 2) UseSSE = 2;
 #endif
 
+#ifdef AMD64
+  // flush_icache_stub have to be generated first.
+  // That is why Icache line size is hard coded in ICache class,
+  // see icache_x86.hpp. It is also the reason why we can't use
+  // clflush instruction in 32-bit VM since it could be running
+  // on CPU which does not support it.
+  //
+  // The only thing we can do is to verify that flushed
+  // ICache::line_size has correct value.
+  guarantee(_cpuid_info.std_cpuid1_edx.bits.clflush != 0, "clflush is not supported");
+  // clflush_size is size in quadwords (8 bytes).
+  guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == 8, "such clflush size is not supported");
+#endif
+
   // If the OS doesn't support SSE, we can't use this feature even if the HW does
   if (!os::supports_sse())
     _cpuFeatures &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);

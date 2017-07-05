@@ -30,6 +30,8 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 #include "java_awt_AlphaComposite.h"
 
 #include "SurfaceData.h"
@@ -484,7 +486,9 @@ extern struct _CompositeTypes {
 #define ArraySize(A)    (sizeof(A) / sizeof(A[0]))
 
 #define PtrAddBytes(p, b)               ((void *) (((intptr_t) (p)) + (b)))
-#define PtrCoord(p, x, xinc, y, yinc)   PtrAddBytes(p, (y)*(yinc) + (x)*(xinc))
+#define PtrCoord(p, x, xinc, y, yinc)   PtrAddBytes(p, \
+                                                    ((ptrdiff_t)(y))*(yinc) + \
+                                                    ((ptrdiff_t)(x))*(xinc))
 
 /*
  * The function to call with an array of NativePrimitive structures

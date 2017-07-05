@@ -306,7 +306,7 @@ bool NonTieredCompPolicy::is_mature(methodOop method) {
   return (current >= initial + target);
 }
 
-nmethod* NonTieredCompPolicy::event(methodHandle method, methodHandle inlinee, int branch_bci, int bci, CompLevel comp_level, TRAPS) {
+nmethod* NonTieredCompPolicy::event(methodHandle method, methodHandle inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS) {
   assert(comp_level == CompLevel_none, "This should be only called from the interpreter");
   NOT_PRODUCT(trace_frequency_counter_overflow(method, branch_bci, bci));
   if (JvmtiExport::can_post_interpreter_events()) {
