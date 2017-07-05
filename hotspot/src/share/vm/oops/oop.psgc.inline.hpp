@@ -25,11 +25,12 @@
 #ifndef SHARE_VM_OOPS_OOP_PSGC_INLINE_HPP
 #define SHARE_VM_OOPS_OOP_PSGC_INLINE_HPP
 
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // ParallelScavengeHeap methods
 

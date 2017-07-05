@@ -28,6 +28,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 
 class InstanceKlass;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_VMSTRUCTS_CMS_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_VMSTRUCTS_CMS_HPP
 
-typedef BinaryTreeDictionary<FreeChunk, AdaptiveFreeList> AFLBinaryTreeDictionary;
-
 #define VM_STRUCTS_CMS(nonstatic_field, \
                    volatile_nonstatic_field, \
                    static_field) \
@@ -34,14 +32,15 @@ typedef BinaryTreeDictionary<FreeChunk, AdaptiveFreeList> AFLBinaryTreeDictionar
   nonstatic_field(CompactibleFreeListSpace,    _bt,                                           BlockOffsetArrayNonContigSpace)        \
                                                                                                                                      \
   nonstatic_field(CMSBitMap,                   _bmWordSize,                                   size_t)                                \
-  nonstatic_field(CMSBitMap,                   _shifter,                                      const int)                            \
-  nonstatic_field(CMSBitMap,                      _bm,                                           BitMap)                            \
-  nonstatic_field(CMSBitMap,                   _virtual_space,                                VirtualSpace)                         \
+  nonstatic_field(CMSBitMap,                   _shifter,                                      const int)                             \
+  nonstatic_field(CMSBitMap,                      _bm,                                           BitMap)                             \
+  nonstatic_field(CMSBitMap,                   _virtual_space,                                VirtualSpace)                          \
   nonstatic_field(CMSCollector,                _markBitMap,                                   CMSBitMap)                             \
   nonstatic_field(ConcurrentMarkSweepGeneration, _cmsSpace,                                   CompactibleFreeListSpace*)             \
      static_field(ConcurrentMarkSweepThread,   _collector,                                    CMSCollector*)                         \
   nonstatic_field(LinearAllocBlock,            _word_size,                                    size_t)                                \
   nonstatic_field(AFLBinaryTreeDictionary,     _total_size,                                   size_t)                                \
+  nonstatic_field(CompactibleFreeListSpace,    _dictionary,                                   AFLBinaryTreeDictionary*)              \
   nonstatic_field(CompactibleFreeListSpace,    _indexedFreeList[0],                           FreeList<FreeChunk>)                   \
   nonstatic_field(CompactibleFreeListSpace,    _smallLinearAllocBlock,                        LinearAllocBlock)
 
@@ -62,10 +61,9 @@ typedef BinaryTreeDictionary<FreeChunk, AdaptiveFreeList> AFLBinaryTreeDictionar
   declare_toplevel_type(SurrogateLockerThread*)                           \
   declare_toplevel_type(CompactibleFreeListSpace*)                        \
   declare_toplevel_type(CMSCollector*)                                    \
-  declare_toplevel_type(AFLBinaryTreeDictionary*)                         \
+  declare_toplevel_type(AFLBinaryTreeDictionary)                          \
   declare_toplevel_type(LinearAllocBlock)                                 \
-  declare_toplevel_type(FreeBlockDictionary<FreeChunk>)                   \
-           declare_type(AFLBinaryTreeDictionary, FreeBlockDictionary<FreeChunk>)
+  declare_toplevel_type(FreeBlockDictionary<FreeChunk>)
 
 #define VM_INT_CONSTANTS_CMS(declare_constant)                            \
   declare_constant(Generation::ConcurrentMarkSweep)                       \
