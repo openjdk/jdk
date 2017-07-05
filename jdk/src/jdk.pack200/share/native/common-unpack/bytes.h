@@ -63,7 +63,7 @@ struct bytes {
     bytes res;
     res.ptr = ptr + beg;
     res.len = end - beg;
-    assert(res.len == 0 || inBounds(res.ptr) && inBounds(res.limit()-1));
+    assert(res.len == 0 || (inBounds(res.ptr) && inBounds(res.limit()-1)));
     return res;
   }
   // building C strings inside byte buffers:

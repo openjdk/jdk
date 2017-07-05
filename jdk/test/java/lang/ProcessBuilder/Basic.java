@@ -27,6 +27,7 @@
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
+ *      8067796
  * @summary Basic tests for Process and Environment Variable code
  * @run main/othervm/timeout=300 Basic
  * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=fork Basic
@@ -2384,6 +2385,56 @@ public class Basic {
             check(millisElapsedSince(start) < 10L * 1000L);
             check(!thread.isAlive());
             p.destroy();
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Check that Process.waitFor(timeout, null) throws NPE.
+        //----------------------------------------------------------------
+        try {
+            List<String> childArgs = new ArrayList<String>(javaChildArgs);
+            childArgs.add("sleep");
+            final Process p = new ProcessBuilder(childArgs).start();
+            THROWS(NullPointerException.class,
+                    () ->  p.waitFor(10L, null));
+            THROWS(NullPointerException.class,
+                    () ->  p.waitFor(0L, null));
+            THROWS(NullPointerException.class,
+                    () -> p.waitFor(-1L, null));
+            // Terminate process and recheck after it exits
+            p.destroy();
+            p.waitFor();
+            THROWS(NullPointerException.class,
+                    () -> p.waitFor(10L, null));
+            THROWS(NullPointerException.class,
+                    () -> p.waitFor(0L, null));
+            THROWS(NullPointerException.class,
+                    () -> p.waitFor(-1L, null));
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Check that default implementation of Process.waitFor(timeout, null) throws NPE.
+        //----------------------------------------------------------------
+        try {
+            List<String> childArgs = new ArrayList<String>(javaChildArgs);
+            childArgs.add("sleep");
+            final Process proc = new ProcessBuilder(childArgs).start();
+            final DelegatingProcess p = new DelegatingProcess(proc);
+
+            THROWS(NullPointerException.class,
+                    () ->  p.waitFor(10L, null));
+            THROWS(NullPointerException.class,
+                    () ->  p.waitFor(0L, null));
+            THROWS(NullPointerException.class,
+                    () ->  p.waitFor(-1L, null));
+            // Terminate process and recheck after it exits
+            p.destroy();
+            p.waitFor();
+            THROWS(NullPointerException.class,
+                    () -> p.waitFor(10L, null));
+            THROWS(NullPointerException.class,
+                    () -> p.waitFor(0L, null));
+            THROWS(NullPointerException.class,
+                    () -> p.waitFor(-1L, null));
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,8 +195,9 @@ process_chunk_boundaries(Space* sp,
   // our closures depend on this property and do not protect against
   // double scans.
 
-  uintptr_t cur_chunk_index = addr_to_chunk_index(chunk_mr.start());
-  cur_chunk_index           = cur_chunk_index - lowest_non_clean_base_chunk_index;
+  uintptr_t start_chunk_index = addr_to_chunk_index(chunk_mr.start());
+  assert(start_chunk_index >= lowest_non_clean_base_chunk_index, "Bounds error.");
+  uintptr_t cur_chunk_index   = start_chunk_index - lowest_non_clean_base_chunk_index;
 
   NOISY(tty->print_cr("===========================================================================");)
   NOISY(tty->print_cr(" process_chunk_boundary: Called with [" PTR_FORMAT "," PTR_FORMAT ")",
@@ -242,8 +243,7 @@ process_chunk_boundaries(Space* sp,
     if (first_dirty_card != NULL) {
       NOISY(tty->print_cr(" LNC: Found a dirty card at " PTR_FORMAT " in current chunk",
                     first_dirty_card);)
-      assert(0 <= cur_chunk_index && cur_chunk_index < lowest_non_clean_chunk_size,
-             "Bounds error.");
+      assert(cur_chunk_index < lowest_non_clean_chunk_size, "Bounds error.");
       assert(lowest_non_clean[cur_chunk_index] == NULL,
              "Write exactly once : value should be stable hereafter for this round");
       lowest_non_clean[cur_chunk_index] = first_dirty_card;

@@ -210,7 +210,7 @@ struct unpacker {
   byte*     rp;          // read pointer (< rplimit <= input.limit())
   byte*     rplimit;     // how much of the input block has been read?
   julong    bytes_read;
-  int       unsized_bytes_read;
+  size_t    unsized_bytes_read;
 
   // callback to read at least one byte, up to available input
   typedef jlong (*read_input_fn_t)(unpacker* self, void* buf, jlong minlen, jlong maxlen);

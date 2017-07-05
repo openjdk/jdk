@@ -85,11 +85,6 @@ enum {
   CON_O7,
 };
 
-static inline void set_cont_address(sigcontext* ctx, address addr) {
-  SIG_PC(ctx)  = (intptr_t)addr;
-  SIG_NPC(ctx) = (intptr_t)(addr+4);
-}
-
 // For Forte Analyzer AsyncGetCallTrace profiling support - thread is
 // currently interrupted by SIGPROF.
 // os::Solaris::fetch_frame_from_ucontext() tries to skip nested
@@ -351,6 +346,12 @@ address os::Linux::ucontext_get_pc(ucontext_t* uc) {
   return (address) SIG_PC((sigcontext*)uc);
 }
 
+void os::Linux::ucontext_set_pc(ucontext_t* uc, address pc) {
+  sigcontext_t* ctx = (sigcontext_t*) uc;
+  SIG_PC(ctx)  = (intptr_t)addr;
+  SIG_NPC(ctx) = (intptr_t)(addr+4);
+}
+
 intptr_t* os::Linux::ucontext_get_sp(ucontext_t *uc) {
   return (intptr_t*)
     ((intptr_t)SIG_REGS((sigcontext*)uc).u_regs[CON_O6] + STACK_BIAS);
@@ -366,7 +367,7 @@ intptr_t* os::Linux::ucontext_get_fp(ucontext_t *uc) {
 
 inline static bool checkPrefetch(sigcontext* uc, address pc) {
   if (StubRoutines::is_safefetch_fault(pc)) {
-    set_cont_address(uc, address(StubRoutines::continuation_for_safefetch_fault(pc)));
+    os::Linux::ucontext_set_pc((ucontext_t*)uc, StubRoutines::continuation_for_safefetch_fault(pc));
     return true;
   }
   return false;
@@ -666,7 +667,7 @@ JVM_handle_linux_signal(int sig,
       // save all thread context in case we need to restore it
       thread->set_saved_exception_pc(pc);
       thread->set_saved_exception_npc(npc);
-      set_cont_address(uc, stub);
+      os::Linux::ucontext_set_pc((ucontext_t*)uc, stub);
       return true;
     }
   }
