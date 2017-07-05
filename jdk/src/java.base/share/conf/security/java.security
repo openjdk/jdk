@@ -345,7 +345,7 @@ networkaddress.cache.negative.ttl=10
 # By default, the location of the OCSP responder is determined implicitly
 # from the certificate being validated. This property explicitly specifies
 # the location of the OCSP responder. The property is used when the
-# Authority Information Access extension (defined in RFC 3280) is absent
+# Authority Information Access extension (defined in RFC 5280) is absent
 # from the certificate or when it requires overriding.
 #
 # Example,

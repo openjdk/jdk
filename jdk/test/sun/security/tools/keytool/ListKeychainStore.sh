@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 7133495
+# @bug 7133495 8041740
 # @summary [macosx] KeyChain KeyStore implementation retrieves only one private key entry
 
 if [ "${TESTJAVA}" = "" ] ; then
@@ -49,8 +49,10 @@ PWD="xxxxxx"
 KEYTOOL="${TESTJAVA}/bin/keytool ${TESTTOOLVMOPTS} -storetype KeychainStore -keystore NONE -storepass $PWD"
 TEMPORARY_P12="$TESTCLASSES/7133495.p12"
 TEMPORARY_KC="$TESTCLASSES/7133495.keychain"
+TEMPORARY_LIST="$TESTCLASSES/7133495.tmp"
 CLEANUP_P12="rm -f $TEMPORARY_P12"
 CLEANUP_KC="security delete-keychain $TEMPORARY_KC"
+CLEANUP_LIST="rm -f $TEMPORARY_LIST"
 
 # Count the number of private key entries in the Keychain keystores
 
@@ -114,6 +116,15 @@ if [ $? -ne 0 ]; then
     exit 4
 fi
 echo "Imported keypairs from PKCS12 keystore into the keychain"
+
+# Adjust the keychain search order
+
+echo "\"$TEMPORARY_KC\"" > $TEMPORARY_LIST
+security list-keychains >> $TEMPORARY_LIST
+security list-keychains -s `xargs < ${TEMPORARY_LIST}`
+`$CLEANUP_LIST`
+echo "Temporary keychain search order:"
+security list-keychains
 
 # Recount the number of private key entries in the Keychain keystores
 

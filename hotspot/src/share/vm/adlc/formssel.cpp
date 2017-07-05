@@ -1816,15 +1816,16 @@ void InsEncode::output(FILE *fp) {
 
 //------------------------------Effect-----------------------------------------
 static int effect_lookup(const char *name) {
-  if(!strcmp(name, "USE")) return Component::USE;
-  if(!strcmp(name, "DEF")) return Component::DEF;
-  if(!strcmp(name, "USE_DEF")) return Component::USE_DEF;
-  if(!strcmp(name, "KILL")) return Component::KILL;
-  if(!strcmp(name, "USE_KILL")) return Component::USE_KILL;
-  if(!strcmp(name, "TEMP")) return Component::TEMP;
-  if(!strcmp(name, "INVALID")) return Component::INVALID;
-  if(!strcmp(name, "CALL")) return Component::CALL;
-  assert( false,"Invalid effect name specified\n");
+  if (!strcmp(name, "USE")) return Component::USE;
+  if (!strcmp(name, "DEF")) return Component::DEF;
+  if (!strcmp(name, "USE_DEF")) return Component::USE_DEF;
+  if (!strcmp(name, "KILL")) return Component::KILL;
+  if (!strcmp(name, "USE_KILL")) return Component::USE_KILL;
+  if (!strcmp(name, "TEMP")) return Component::TEMP;
+  if (!strcmp(name, "TEMP_DEF")) return Component::TEMP_DEF;
+  if (!strcmp(name, "INVALID")) return Component::INVALID;
+  if (!strcmp(name, "CALL")) return Component::CALL;
+  assert(false,"Invalid effect name specified\n");
   return Component::INVALID;
 }
 
@@ -1836,6 +1837,7 @@ const char *Component::getUsedefName() {
     case Component::USE_KILL: return "USE_KILL"; break;
     case Component::KILL:     return "KILL";     break;
     case Component::TEMP:     return "TEMP";     break;
+    case Component::TEMP_DEF: return "TEMP_DEF"; break;
     case Component::DEF:      return "DEF";      break;
     case Component::CALL:     return "CALL";     break;
     default: assert(false, "unknown effect");

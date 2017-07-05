@@ -528,7 +528,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   methods_parsed++;
 #ifndef PRODUCT
   // add method size here to guarantee that inlined methods are added too
-  if (TimeCompiler)
+  if (CITime)
     _total_bytes_compiled += method()->code_size();
 
   show_parse_info();
