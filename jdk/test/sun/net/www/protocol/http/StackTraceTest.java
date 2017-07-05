@@ -32,26 +32,28 @@ import java.net.*;
 import java.io.IOException;
 
 public class StackTraceTest {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        URL url;
+        try (ServerSocket ss = new ServerSocket(0)) {  // refusing socket
+            url = new URL("http://localhost:" + ss.getLocalPort() + "/");
+        }
+        URLConnection uc = url.openConnection();
+
+        // Trigger implicit connection by trying to retrieve bogus
+        // response header, and force remembered exception
+        uc.getHeaderFieldKey(20);
+
         try {
-            URL url = new URL("http://localhost:8080/");
-            URLConnection uc = url.openConnection();
-            System.out.println("key = "+uc.getHeaderFieldKey(20));
-            uc.getInputStream();
+            uc.getInputStream();  // expect to throw
+            throw new RuntimeException("Expected getInputStream to throw");
         } catch (IOException ioe) {
-            ioe.printStackTrace();
-
-            if (!(ioe instanceof ConnectException)) {
-                throw new RuntimeException("Expect ConnectException, got "+ioe);
-            }
-            if (ioe.getMessage() == null) {
+            if (!(ioe instanceof ConnectException))
+                throw new RuntimeException("Expect ConnectException, got " + ioe);
+            if (ioe.getMessage() == null)
                 throw new RuntimeException("Exception message is null");
-            }
-
-            // this exception should be a chained exception
-            if (ioe.getCause() == null) {
-                throw new RuntimeException("Excepting a chained exception, but got: ", ioe);
-            }
+            if (ioe.getCause() == null)
+                throw new RuntimeException("Excepting a chained exception, but got: ",
+                                           ioe);
         }
     }
 }

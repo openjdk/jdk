@@ -30,7 +30,6 @@
 #include "compiler/oopMap.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "oops/annotations.hpp"
-#include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
@@ -104,6 +103,7 @@ class CheckedExceptionElement;
 class LocalVariableTableElement;
 class AdapterHandlerEntry;
 class MethodData;
+class ConstMethod;
 
 class Method : public Metadata {
  friend class VMStructs;
@@ -158,14 +158,16 @@ class Method : public Metadata {
   // Constructor
   Method(ConstMethod* xconst, AccessFlags access_flags, int size);
  public:
+
   static Method* allocate(ClassLoaderData* loader_data,
-                            int byte_code_size,
-                            AccessFlags access_flags,
-                            int compressed_line_number_size,
-                            int localvariable_table_length,
-                            int exception_table_length,
-                            int checked_exceptions_length,
-                            TRAPS);
+                          int byte_code_size,
+                          AccessFlags access_flags,
+                          int compressed_line_number_size,
+                          int localvariable_table_length,
+                          int exception_table_length,
+                          int checked_exceptions_length,
+                          ConstMethod::MethodType method_type,
+                          TRAPS);
 
   Method() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
 
@@ -207,21 +209,21 @@ class Method : public Metadata {
 
   // annotations support
   AnnotationArray* annotations() const           {
-    InstanceKlass* ik = InstanceKlass::cast(method_holder());
+    InstanceKlass* ik = method_holder();
     if (ik->annotations() == NULL) {
       return NULL;
     }
     return ik->annotations()->get_method_annotations_of(method_idnum());
   }
   AnnotationArray* parameter_annotations() const {
-    InstanceKlass* ik = InstanceKlass::cast(method_holder());
+    InstanceKlass* ik = method_holder();
     if (ik->annotations() == NULL) {
       return NULL;
     }
     return ik->annotations()->get_method_parameter_annotations_of(method_idnum());
   }
   AnnotationArray* annotation_default() const    {
-    InstanceKlass* ik = InstanceKlass::cast(method_holder());
+    InstanceKlass* ik = method_holder();
     if (ik->annotations() == NULL) {
       return NULL;
     }
@@ -494,7 +496,7 @@ class Method : public Metadata {
                        { return constMethod()->compressed_linenumber_table(); }
 
   // method holder (the Klass* holding this method)
-  Klass* method_holder() const                 { return constants()->pool_holder(); }
+  InstanceKlass* method_holder() const         { return constants()->pool_holder(); }
 
   void compute_size_of_parameters(Thread *thread); // word size of parameters (receiver if any + arguments)
   Symbol* klass_name() const;                    // returns the name of the method holder
@@ -695,18 +697,18 @@ class Method : public Metadata {
 
   // Get this method's jmethodID -- allocate if it doesn't exist
   jmethodID jmethod_id()                            { methodHandle this_h(this);
-                                                      return InstanceKlass::get_jmethod_id(InstanceKlass::cast(method_holder()), this_h); }
+                                                      return InstanceKlass::get_jmethod_id(method_holder(), this_h); }
 
   // Lookup the jmethodID for this method.  Return NULL if not found.
   // NOTE that this function can be called from a signal handler
   // (see AsyncGetCallTrace support for Forte Analyzer) and this
   // needs to be async-safe. No allocation should be done and
   // so handles are not used to avoid deadlock.
-  jmethodID find_jmethod_id_or_null()               { return InstanceKlass::cast(method_holder())->jmethod_id_or_null(this); }
+  jmethodID find_jmethod_id_or_null()               { return method_holder()->jmethod_id_or_null(this); }
 
   // JNI static invoke cached itable index accessors
-  int cached_itable_index()                         { return InstanceKlass::cast(method_holder())->cached_itable_index(method_idnum()); }
-  void set_cached_itable_index(int index)           { InstanceKlass::cast(method_holder())->set_cached_itable_index(method_idnum(), index); }
+  int cached_itable_index()                         { return method_holder()->cached_itable_index(method_idnum()); }
+  void set_cached_itable_index(int index)           { method_holder()->set_cached_itable_index(method_idnum(), index); }
 
   // Support for inlining of intrinsic methods
   vmIntrinsics::ID intrinsic_id() const          { return (vmIntrinsics::ID) _intrinsic_id;           }
@@ -725,14 +727,18 @@ class Method : public Metadata {
   void set_dont_inline(bool x)  {        _dont_inline = x;  }
   bool  is_hidden()             { return _hidden;           }
   void set_hidden(bool x)       {        _hidden = x;       }
+  ConstMethod::MethodType method_type() const {
+      return _constMethod->method_type();
+  }
+  bool is_overpass() const { return method_type() == ConstMethod::OVERPASS; }
 
   // On-stack replacement support
   bool has_osr_nmethod(int level, bool match_level) {
-   return InstanceKlass::cast(method_holder())->lookup_osr_nmethod(this, InvocationEntryBci, level, match_level) != NULL;
+   return method_holder()->lookup_osr_nmethod(this, InvocationEntryBci, level, match_level) != NULL;
   }
 
   nmethod* lookup_osr_nmethod_for(int bci, int level, bool match_level) {
-    return InstanceKlass::cast(method_holder())->lookup_osr_nmethod(this, bci, level, match_level);
+    return method_holder()->lookup_osr_nmethod(this, bci, level, match_level);
   }
 
   // Inline cache support

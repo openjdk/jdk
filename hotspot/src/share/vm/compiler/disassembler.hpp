@@ -49,8 +49,16 @@ class Disassembler {
   friend class decode_env;
  private:
   // this is the type of the dll entry point:
-  typedef void* (*decode_func)(uintptr_t start_va, uintptr_t end_va,
+  typedef void* (*decode_func_virtual)(uintptr_t start_va, uintptr_t end_va,
                                unsigned char* buffer, uintptr_t length,
+                               void* (*event_callback)(void*, const char*, void*),
+                               void* event_stream,
+                               int (*printf_callback)(void*, const char*, ...),
+                               void* printf_stream,
+                               const char* options,
+                               int newline);
+  // this is the type of the dll entry point for old version:
+  typedef void* (*decode_func)(void* start_va, void* end_va,
                                void* (*event_callback)(void*, const char*, void*),
                                void* event_stream,
                                int (*printf_callback)(void*, const char*, ...),
@@ -61,6 +69,7 @@ class Disassembler {
   // bailout
   static bool     _tried_to_load_library;
   // points to the decode function.
+  static decode_func_virtual _decode_instructions_virtual;
   static decode_func _decode_instructions;
   // tries to load library and return whether it succedded.
   static bool load_library();
@@ -85,7 +94,9 @@ class Disassembler {
 
  public:
   static bool can_decode() {
-    return (_decode_instructions != NULL) || load_library();
+    return (_decode_instructions_virtual != NULL) ||
+           (_decode_instructions != NULL) ||
+           load_library();
   }
   static void decode(CodeBlob *cb,               outputStream* st = NULL);
   static void decode(nmethod* nm,                outputStream* st = NULL);

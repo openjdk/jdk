@@ -309,8 +309,7 @@ public class Krb5InitCredential
                                                  int initLifetime)
         throws GSSException {
 
-        String realm = null;
-        final String clientPrincipal, tgsPrincipal = null;
+        final String clientPrincipal;
 
         /*
          * Find the TGT for the realm that the client is in. If the client
@@ -318,20 +317,8 @@ public class Krb5InitCredential
          */
         if (name != null) {
             clientPrincipal = (name.getKrb5PrincipalName()).getName();
-            realm = (name.getKrb5PrincipalName()).getRealmAsString();
         } else {
             clientPrincipal = null;
-            try {
-                Config config = Config.getInstance();
-                realm = config.getDefaultRealm();
-            } catch (KrbException e) {
-                GSSException ge =
-                        new GSSException(GSSException.NO_CRED, -1,
-                            "Attempt to obtain INITIATE credentials failed!" +
-                            " (" + e.getMessage() + ")");
-                ge.initCause(e);
-                throw ge;
-            }
         }
 
         final AccessControlContext acc = AccessController.getContext();
@@ -343,9 +330,11 @@ public class Krb5InitCredential
             return AccessController.doPrivileged(
                 new PrivilegedExceptionAction<KerberosTicket>() {
                 public KerberosTicket run() throws Exception {
+                    // It's OK to use null as serverPrincipal. TGT is almost
+                    // the first ticket for a principal and we use list.
                     return Krb5Util.getTicket(
                         realCaller,
-                        clientPrincipal, tgsPrincipal, acc);
+                        clientPrincipal, null, acc);
                         }});
         } catch (PrivilegedActionException e) {
             GSSException ge =
@@ -353,6 +342,22 @@ public class Krb5InitCredential
                     "Attempt to obtain new INITIATE credentials failed!" +
                     " (" + e.getMessage() + ")");
             ge.initCause(e.getException());
+            throw ge;
+        }
+    }
+
+    @Override
+    public GSSCredentialSpi impersonate(GSSNameSpi name) throws GSSException {
+        try {
+            Krb5NameElement kname = (Krb5NameElement)name;
+            Credentials newCred = Credentials.acquireS4U2selfCreds(
+                    kname.getKrb5PrincipalName(), krb5Credentials);
+            return new Krb5ProxyCredential(this, kname, newCred.getTicket());
+        } catch (IOException | KrbException ke) {
+            GSSException ge =
+                new GSSException(GSSException.FAILURE, -1,
+                    "Attempt to obtain S4U2self credentials failed!");
+            ge.initCause(ke);
             throw ge;
         }
     }

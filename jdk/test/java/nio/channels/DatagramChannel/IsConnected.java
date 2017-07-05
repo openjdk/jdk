@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,23 @@
  */
 
 import java.net.*;
-import java.nio.*;
 import java.nio.channels.*;
 
 
 public class IsConnected {
     public static void main(String argv[]) throws Exception {
-        InetSocketAddress isa = new InetSocketAddress(
-            InetAddress.getByName(TestUtil.HOST), 13);
-        DatagramChannel dc = DatagramChannel.open();
-        dc.configureBlocking(true);
-        dc.connect(isa);
-        if  (!dc.isConnected())
-            throw new RuntimeException("channel.isConnected inconsistent");
-        if (!dc.socket().isConnected())
-            throw new RuntimeException("socket.isConnected inconsistent");
-        dc.close();
+        try (TestServers.UdpDayTimeServer daytimeServer
+                = TestServers.UdpDayTimeServer.startNewServer(100)) {
+            InetSocketAddress isa = new InetSocketAddress(
+                daytimeServer.getAddress(), daytimeServer.getPort());
+            DatagramChannel dc = DatagramChannel.open();
+            dc.configureBlocking(true);
+            dc.connect(isa);
+            if  (!dc.isConnected())
+                throw new RuntimeException("channel.isConnected inconsistent");
+            if (!dc.socket().isConnected())
+                throw new RuntimeException("socket.isConnected inconsistent");
+            dc.close();
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public enum ElementType {
     /** Method declaration */
     METHOD,
 
-    /** Parameter declaration */
+    /** Formal parameter declaration */
     PARAMETER,
 
     /** Constructor declaration */
@@ -59,5 +59,19 @@ public enum ElementType {
     ANNOTATION_TYPE,
 
     /** Package declaration */
-    PACKAGE
+    PACKAGE,
+
+    /**
+     * Type parameter declaration
+     *
+     * @since 1.8
+     */
+    TYPE_PARAMETER,
+
+    /**
+     * Use of a type
+     *
+     * @since 1.8
+     */
+    TYPE_USE
 }
