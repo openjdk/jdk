@@ -35,6 +35,7 @@ import static org.testng.Assert.*;
  * @test
  * @run testng RandomTest
  * @summary test methods on Random
+ * @key randomness
  */
 @Test
 public class RandomTest {

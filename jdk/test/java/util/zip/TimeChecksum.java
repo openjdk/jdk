@@ -25,6 +25,7 @@
 /* @test
  * @bug 7109837
  * @summary Test Adler32/CRC32.update(ByteBuffer)
+ * @key randomness
  */
 
 import java.util.*;

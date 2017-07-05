@@ -25,6 +25,7 @@
    @bug 7040220
    @summary Test if StringCoding and NIO result have the same de/encoding result for UTF-8
  * @run main/othervm/timeout=2000 TestStringCodingUTF8
+ * @key randomness
  */
 
 import java.util.*;

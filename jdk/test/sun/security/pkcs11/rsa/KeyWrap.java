@@ -27,6 +27,7 @@
  * @summary Verify key wrapping (of extractable keys) works for RSA/PKCS1
  * @author Andreas Sterbenz
  * @library ..
+ * @key randomness
  */
 
 import java.io.*;

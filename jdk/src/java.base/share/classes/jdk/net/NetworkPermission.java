@@ -33,7 +33,7 @@ import java.security.BasicPermission;
  * name, but no actions list. Callers either possess the permission or not.
  * <p>
  * The following targets are defined:
- * <p>
+ *
  * <table border=1 cellpadding=5 summary="permission target name,
  *  what the target allows,and associated risks">
  * <tr>

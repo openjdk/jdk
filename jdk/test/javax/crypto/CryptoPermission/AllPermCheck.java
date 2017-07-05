@@ -28,6 +28,7 @@
  * InvalidKeyException is thrown instead of SecurityException when
  * crypto permssion checks failed.
  * @author Valerie Peng
+ * @key randomness
  */
 
 import java.io.*;

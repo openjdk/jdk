@@ -24,6 +24,7 @@
 /* @test
  * @bug 4862411
  * @summary Test positional write method of FileChannel
+ * @key randomness
  */
 
 import java.io.*;

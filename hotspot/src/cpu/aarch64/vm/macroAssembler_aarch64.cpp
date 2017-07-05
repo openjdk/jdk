@@ -32,21 +32,13 @@
 
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
+#include "nativeInst_aarch64.hpp"
+#include "opto/compile.hpp"
+#include "opto/node.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/sharedRuntime.hpp"
-
-// #include "gc_interface/collectedHeap.inline.hpp"
-// #include "interpreter/interpreter.hpp"
-// #include "memory/cardTableModRefBS.hpp"
-// #include "prims/methodHandles.hpp"
-// #include "runtime/biasedLocking.hpp"
-// #include "runtime/interfaceSupport.hpp"
-// #include "runtime/objectMonitor.hpp"
-// #include "runtime/os.hpp"
-// #include "runtime/sharedRuntime.hpp"
-// #include "runtime/stubRoutines.hpp"
 
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"

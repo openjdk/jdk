@@ -37,6 +37,7 @@
  * @run  main/othervm CheckZombieLockTest CLEANUP
  * @run  main/othervm CheckZombieLockTest REUSE
  * @run  main/othervm CheckZombieLockTest CLEANUP
+ * @key randomness
  */
 import java.io.File;
 import java.io.IOException;

@@ -26,19 +26,19 @@
 package com.sun.security.auth;
 
 /**
- * <p> This class extends <code>NTSid</code>
+ * This class extends {@code NTSid}
  * and represents a Windows NT user's domain SID.
  *
  * <p> An NT user only has a domain SID if in fact they are logged
  * into an NT domain.  If the user is logged into a workgroup or
  * just a standalone configuration, they will NOT have a domain SID.
  *
- * <p> Principals such as this <code>NTSidDomainPrincipal</code>
- * may be associated with a particular <code>Subject</code>
- * to augment that <code>Subject</code> with an additional
- * identity.  Refer to the <code>Subject</code> class for more information
+ * <p> Principals such as this {@code NTSidDomainPrincipal}
+ * may be associated with a particular {@code Subject}
+ * to augment that {@code Subject} with an additional
+ * identity.  Refer to the {@code Subject} class for more information
  * on how to achieve this.  Authorization decisions can then be based upon
- * the Principals associated with a <code>Subject</code>.
+ * the Principals associated with a {@code Subject}.
  *
  * @see java.security.Principal
  * @see javax.security.auth.Subject
@@ -49,27 +49,23 @@ public class NTSidDomainPrincipal extends NTSid {
     private static final long serialVersionUID = 5247810785821650912L;
 
     /**
-     * Create an <code>NTSidDomainPrincipal</code> with a Windows NT SID.
-     *
-     * <p>
+     * Create an {@code NTSidDomainPrincipal} with a Windows NT SID.
      *
      * @param name a string version of the Windows NT SID for this
-     *                  user's domain.<p>
+     *                  user's domain.
      *
-     * @exception NullPointerException if the <code>name</code>
-     *                  is <code>null</code>.
+     * @exception NullPointerException if the {@code name}
+     *                  is {@code null}.
      */
     public NTSidDomainPrincipal(String name) {
         super(name);
     }
 
     /**
-     * Return a string representation of this <code>NTSidDomainPrincipal</code>.
-     *
-     * <p>
+     * Return a string representation of this {@code NTSidDomainPrincipal}.
      *
      * @return a string representation of this
-     *          <code>NTSidDomainPrincipal</code>.
+     *          {@code NTSidDomainPrincipal}.
      */
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
@@ -81,18 +77,16 @@ public class NTSidDomainPrincipal extends NTSid {
     }
 
     /**
-     * Compares the specified Object with this <code>NTSidDomainPrincipal</code>
+     * Compares the specified Object with this {@code NTSidDomainPrincipal}
      * for equality.  Returns true if the given object is also a
-     * <code>NTSidDomainPrincipal</code> and the two NTSidDomainPrincipals
+     * {@code NTSidDomainPrincipal} and the two NTSidDomainPrincipals
      * have the same SID.
      *
-     * <p>
-     *
      * @param o Object to be compared for equality with this
-     *          <code>NTSidDomainPrincipal</code>.
+     *          {@code NTSidDomainPrincipal}.
      *
      * @return true if the specified Object is equal to this
-     *          <code>NTSidDomainPrincipal</code>.
+     *          {@code NTSidDomainPrincipal}.
      */
     public boolean equals(Object o) {
             if (o == null)

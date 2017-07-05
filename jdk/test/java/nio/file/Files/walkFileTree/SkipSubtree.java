@@ -27,6 +27,7 @@
  * @library ../..
  * @compile SkipSubtree.java CreateFileTree.java
  * @run main SkipSubtree
+ * @key randomness
  */
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;

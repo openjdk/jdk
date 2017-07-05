@@ -27,6 +27,7 @@
  * @library /lib/testlibrary
  * @build jdk.testlibrary.FileUtils
  * @run main MultiThreadedReadTest
+ * @key randomness
  */
 
 import java.io.File;

@@ -25,6 +25,7 @@
  * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.attribute.UserDefinedFileAttributeView
  * @library ../..
+ * @key randomness
  */
 
 import java.nio.ByteBuffer;

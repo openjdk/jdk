@@ -25,6 +25,7 @@
  * @test
  * @bug 4152868
  * @summary test Case Insensitive Comparator in String
+ * @key randomness
  */
 
 import java.util.*;
