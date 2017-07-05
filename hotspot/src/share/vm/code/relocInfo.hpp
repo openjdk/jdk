@@ -703,6 +703,10 @@ class Relocation VALUE_OBJ_CLASS_SPEC {
     assert(datalen()==0 || type()==relocInfo::none, "no data here");
   }
 
+  static bool is_reloc_index(intptr_t index) {
+    return 0 < index && index < os::vm_page_size();
+  }
+
  protected:
   // Helper functions for pack_data_to() and unpack_data().
 
@@ -1125,6 +1129,12 @@ class external_word_Relocation : public DataRelocation {
     RelocationHolder rh = newHolder();
     new(rh) external_word_Relocation(NULL);
     return rh;
+  }
+
+  // Some address looking values aren't safe to treat as relocations
+  // and should just be treated as constants.
+  static bool can_be_relocated(address target) {
+    return target != NULL && !is_reloc_index((intptr_t)target);
   }
 
  private:

@@ -621,15 +621,20 @@ LEAF(Phi, Instruction)
 LEAF(Local, Instruction)
  private:
   int      _java_index;                          // the local index within the method to which the local belongs
+  ciType*  _declared_type;
  public:
   // creation
-  Local(ValueType* type, int index)
+  Local(ciType* declared, ValueType* type, int index)
     : Instruction(type)
     , _java_index(index)
+    , _declared_type(declared)
   {}
 
   // accessors
   int java_index() const                         { return _java_index; }
+
+  ciType* declared_type() const                  { return _declared_type; }
+  ciType* exact_type() const;
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { /* no values */ }
@@ -1146,6 +1151,8 @@ LEAF(Invoke, StateSplit)
   BasicTypeList* signature() const               { return _signature; }
   ciMethod* target() const                       { return _target; }
 
+  ciType* declared_type() const;
+
   // Returns false if target is not loaded
   bool target_is_final() const                   { return check_flag(TargetIsFinalFlag); }
   bool target_is_loaded() const                  { return check_flag(TargetIsLoadedFlag); }
@@ -1187,6 +1194,7 @@ LEAF(NewInstance, StateSplit)
   // generic
   virtual bool can_trap() const                  { return true; }
   ciType* exact_type() const;
+  ciType* declared_type() const;
 };
 
 
@@ -1207,6 +1215,8 @@ BASE(NewArray, StateSplit)
   Value length() const                           { return _length; }
 
   virtual bool needs_exception_state() const     { return false; }
+
+  ciType* declared_type() const;
 
   // generic
   virtual bool can_trap() const                  { return true; }
@@ -1397,6 +1407,7 @@ LEAF(Intrinsic, StateSplit)
   vmIntrinsics::ID _id;
   Values*          _args;
   Value            _recv;
+  int              _nonnull_state; // mask identifying which args are nonnull
 
  public:
   // preserves_state can be set to true for Intrinsics
@@ -1417,6 +1428,7 @@ LEAF(Intrinsic, StateSplit)
   , _id(id)
   , _args(args)
   , _recv(NULL)
+  , _nonnull_state(AllBits)
   {
     assert(args != NULL, "args must exist");
     ASSERT_VALUES
@@ -1441,6 +1453,23 @@ LEAF(Intrinsic, StateSplit)
   bool has_receiver() const                      { return (_recv != NULL); }
   Value receiver() const                         { assert(has_receiver(), "must have receiver"); return _recv; }
   bool preserves_state() const                   { return check_flag(PreservesStateFlag); }
+
+  bool arg_needs_null_check(int i) {
+    if (i >= 0 && i < (int)sizeof(_nonnull_state) * BitsPerByte) {
+      return is_set_nth_bit(_nonnull_state, i);
+    }
+    return true;
+  }
+
+  void set_arg_needs_null_check(int i, bool check) {
+    if (i >= 0 && i < (int)sizeof(_nonnull_state) * BitsPerByte) {
+      if (check) {
+        _nonnull_state |= nth_bit(i);
+      } else {
+        _nonnull_state &= ~(nth_bit(i));
+      }
+    }
+  }
 
   // generic
   virtual bool can_trap() const                  { return check_flag(CanTrapFlag); }
