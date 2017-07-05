@@ -43,9 +43,12 @@
  * @build bench.serial.ReplaceTrees bench.serial.ShortArrays
  * @build bench.serial.Shorts bench.serial.SmallObjTrees
  * @build bench.serial.StreamBuffer bench.serial.Strings
- * @run main/othervm/timeout=1800 bench.serial.Main -c jtreg-config
+ * @run main/othervm/timeout=1800 -Xss2m bench.serial.Main -c jtreg-config
  * @author Mike Warres, Nigel Daley
  */
+
+// The -Xss2m supplies additional stack space, as bench.serial.ClassDesc
+// consumes a considerable amount of stack.
 
 package bench.serial;
 

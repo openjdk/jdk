@@ -56,13 +56,21 @@
  */
 package tck.java.time.temporal.serial;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.time.DayOfWeek;
 import java.time.temporal.WeekFields;
+import java.util.Arrays;
 
 /**
  * Test serialization of WeekFields.
@@ -90,5 +98,58 @@ public class TCKWeekFieldsSerialization extends AbstractTCKTest {
         return objects;
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        WeekFields wf = WeekFields.of(DayOfWeek.MONDAY, 7);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(64);
+        ObjectOutputStream out = new ObjectOutputStream(baos);
+        out.writeObject(wf);
+        byte[] template = baos.toByteArray();
+
+        // (minimalDays = 5) {
+        byte[] good1 = {0, 0, 0, 5};
+        byte[] val = Arrays.copyOf(template, template.length);
+        System.arraycopy(good1, 0, val, 105, good1.length);
+        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(val))) {
+            Object o = in.readObject();
+            assertEquals(o, WeekFields.of(DayOfWeek.MONDAY, 5), "Should be MONDAY, min = 5");
+        } catch (Exception ioe) {
+            fail("Unexpected exception " + ioe);
+        }
+
+        // (minimalDays < 1) {
+        byte[] bad1 = {0, 0, 0, 0};
+        val = Arrays.copyOf(template, template.length);
+        System.arraycopy(bad1, 0, val, 105, bad1.length);
+        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(val))) {
+            in.readObject();
+            fail("Invalid minimalDays < 1 " + WeekFields.class.getName());
+        } catch (Exception ioe) {
+            // Expected exception
+        }
+
+        // (minimalDays > 7) {
+        byte[] bad2 = {0, 0, 0, 8};
+        val = Arrays.copyOf(template, template.length);
+        System.arraycopy(bad2, 0, val, 105, bad2.length);
+        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(val))) {
+            in.readObject();
+            fail("Invalid minimalDays > 7 " + WeekFields.class.getName());
+        } catch (Exception ioe) {
+            // Expected exception
+        }
+
+        // (StartDay = null) {
+        byte[] bad3 = {0x70};
+        val = Arrays.copyOf(template, 110);
+        System.arraycopy(bad3, 0, val, 105 + 4, bad3.length);
+        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(val))) {
+            in.readObject();
+            fail("Invalid startDay == null " + WeekFields.class.getName());
+        } catch (Exception ioe) {
+            // Expected exception
+        }
+
+    }
 
 }

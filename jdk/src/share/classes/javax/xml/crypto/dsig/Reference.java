@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.List;
  * <a href="http://www.w3.org/TR/xmldsig-core/">
  * W3C Recommendation for XML-Signature Syntax and Processing</a>.
  * The XML schema is defined as:
- * <code><pre>
+ * <pre>
  * &lt;element name="Reference" type="ds:ReferenceType"/&gt;
  * &lt;complexType name="ReferenceType"&gt;
  *   &lt;sequence&gt;
@@ -55,7 +55,7 @@ import java.util.List;
  * &lt;simpleType name="DigestValueType"&gt;
  *   &lt;restriction base="base64Binary"/&gt;
  * &lt;/simpleType&gt;
- * </pre></code>
+ * </pre>
  *
  * <p>A <code>Reference</code> instance may be created by invoking one of the
  * {@link XMLSignatureFactory#newReference newReference} methods of the
@@ -145,7 +145,7 @@ public interface Reference extends URIReference, XMLStructure {
 
     /**
      * Returns the dereferenced data, if
-     * <a href="XMLSignContext.html#Supported Properties">reference caching</a>
+     * <a href="XMLSignContext.html#Supported%20Properties">reference caching</a>
      * is enabled. This is the result of dereferencing the URI of this
      * reference during a validation or generation operation.
      *
@@ -157,7 +157,7 @@ public interface Reference extends URIReference, XMLStructure {
 
     /**
      * Returns the pre-digested input stream, if
-     * <a href="XMLSignContext.html#Supported Properties">reference caching</a>
+     * <a href="XMLSignContext.html#Supported%20Properties">reference caching</a>
      * is enabled. This is the input to the digest operation during a
      * validation or signing operation.
      *

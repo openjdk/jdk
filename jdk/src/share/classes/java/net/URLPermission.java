@@ -47,7 +47,7 @@ import java.security.Permission;
  * class.
  * <i>authority</i> is specified as:
  * <pre>
- *     authority = hostrange [ : portrange ]
+ *     authority = [ userinfo @ ] hostrange [ : portrange ]
  *     portrange = portnumber | -portnumber | portnumber-[portnumber] | *
  *     hostrange = ([*.] dnsname) | IPv4address | IPv6address
  * </pre>
@@ -64,6 +64,9 @@ import java.security.Permission;
  * port number is assumed if the scheme is {@code http} (default 80) or {@code https}
  * (default 443). No default is assumed for other schemes. A wildcard may be specified
  * which means all ports.
+ * <p>
+ * <i>userinfo</i> is optional. A userinfo component if present, is ignored when
+ * creating a URLPermission, and has no effect on any other methods defined by this class.
  * <p>
  * The <i>path</i> component comprises a sequence of path segments,
  * separated by '/' characters. <i>path</i> may also be empty. The path is specified
@@ -473,7 +476,12 @@ public final class URLPermission extends Permission {
         HostPortrange p;
 
         Authority(String scheme, String authority) {
-            p = new HostPortrange(scheme, authority);
+            int at = authority.indexOf('@');
+            if (at == -1) {
+                    p = new HostPortrange(scheme, authority);
+            } else {
+                    p = new HostPortrange(scheme, authority.substring(at+1));
+            }
         }
 
         boolean implies(Authority other) {

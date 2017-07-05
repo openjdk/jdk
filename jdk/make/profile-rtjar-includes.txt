@@ -26,8 +26,8 @@
 # Included or excluded types must take one of two forms
 # - *.class to indicate all classes; or else
 # - a full single type name e.g.
-#     com/sun/security/auth/callback/DialogCallbackHandler$$1.class
-# You can not use arbitrary wildcards like DialogCallbackHandler*.class.
+#     javax/management/remote/rmi/_RMIServer_Stub.class
+# You can not use arbitrary wildcards like _RMI*.class.
 #
 # Notes:
 # - Nested types must use $$ in place of $ as $ is the make meta-character
@@ -149,11 +149,6 @@ PROFILE_3_RTJAR_INCLUDE_PACKAGES := \
 PROFILE_3_RTJAR_INCLUDE_TYPES :=
 
 PROFILE_3_RTJAR_EXCLUDE_TYPES := \
-    com/sun/security/auth/callback/DialogCallbackHandler$$1.class \
-    com/sun/security/auth/callback/DialogCallbackHandler$$2.class \
-    com/sun/security/auth/callback/DialogCallbackHandler$$Action.class \
-    com/sun/security/auth/callback/DialogCallbackHandler$$ConfirmationInfo.class \
-    com/sun/security/auth/callback/DialogCallbackHandler.class \
     javax/management/remote/rmi/_RMIConnectionImpl_Tie.class \
     javax/management/remote/rmi/_RMIConnection_Stub.class \
     javax/management/remote/rmi/_RMIServerImpl_Tie.class \
@@ -225,11 +220,6 @@ FULL_JRE_RTJAR_INCLUDE_PACKAGES := \
     sun/tools/jar
 
 FULL_JRE_RTJAR_INCLUDE_TYPES := \
-    com/sun/security/auth/callback/DialogCallbackHandler$$1.class \
-    com/sun/security/auth/callback/DialogCallbackHandler$$2.class \
-    com/sun/security/auth/callback/DialogCallbackHandler$$Action.class \
-    com/sun/security/auth/callback/DialogCallbackHandler$$ConfirmationInfo.class \
-    com/sun/security/auth/callback/DialogCallbackHandler.class \
     javax/annotation/*.class \
     javax/management/remote/rmi/_RMIConnectionImpl_Tie.class \
     javax/management/remote/rmi/_RMIConnection_Stub.class \

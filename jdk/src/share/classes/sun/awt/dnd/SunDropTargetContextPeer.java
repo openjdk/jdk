@@ -54,10 +54,10 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import sun.awt.AppContext;
+import sun.awt.AWTPermissions;
 import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
-import sun.security.util.SecurityConstants;
 
 /**
  * <p>
@@ -226,7 +226,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         SecurityManager sm = System.getSecurityManager();
         try {
             if (!dropInProcess && sm != null) {
-                sm.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
+                sm.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
             }
         } catch (Exception e) {
             Thread currentThread = Thread.currentThread();
