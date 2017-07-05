@@ -33,4 +33,5 @@ FILES_export =   \
       sun/awt/X11/XDesktopPeer.java \
       sun/awt/X11/XToolkit.java \
       sun/awt/X11/XComponentPeer.java \
-      sun/awt/X11/XInputMethod.java
+      sun/awt/X11/XInputMethod.java \
+      sun/awt/X11/GtkFileDialogPeer.java

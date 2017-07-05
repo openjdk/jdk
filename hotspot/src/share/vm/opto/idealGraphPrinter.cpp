@@ -151,7 +151,8 @@ IdealGraphPrinter::IdealGraphPrinter() {
     } else {
       // It would be nice if we could shut down cleanly but it should
       // be an error if we can't connect to the visualizer.
-      fatal2("Couldn't connect to visualizer at %s:%d", PrintIdealGraphAddress, PrintIdealGraphPort);
+      fatal(err_msg("Couldn't connect to visualizer at %s:%d",
+                    PrintIdealGraphAddress, PrintIdealGraphPort));
     }
   }
 

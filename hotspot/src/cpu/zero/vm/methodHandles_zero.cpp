@@ -26,6 +26,10 @@
 #include "incls/_precompiled.incl"
 #include "incls/_methodHandles_zero.cpp.incl"
 
+int MethodHandles::adapter_conversion_ops_supported_mask() {
+  ShouldNotCallThis();
+}
+
 void MethodHandles::generate_method_handle_stub(MacroAssembler*          masm,
                                                 MethodHandles::EntryKind ek) {
   ShouldNotCallThis();

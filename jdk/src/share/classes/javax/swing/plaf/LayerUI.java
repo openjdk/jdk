@@ -72,58 +72,18 @@ public class LayerUI<V extends Component>
      * the specified {@code Graphics} object to
      * render the content of the component.
      * <p/>
-     * If {@code g} is not an instance of {@code Graphics2D},
-     * this method is no-op.
+     * The default implementation paints the passed component as is.
      *
-     * @param g the {@code Graphics} context in which to paint;
-     * @param c the component being painted;
-     * it can be safely cast to {@code JLayer<? extends V>}
-     *
-     * @see #configureGraphics(Graphics2D, JLayer)
-     * @see #paintLayer(Graphics2D, JLayer)
+     * @param g the {@code Graphics} context in which to paint
+     * @param c the component being painted
      */
     public void paint(Graphics g, JComponent c) {
-        if (g instanceof Graphics2D) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            JLayer<? extends V> l = (JLayer<? extends V>) c;
-            configureGraphics(g2, l);
-            paintLayer(g2, l);
-            g2.dispose();
-        }
+        c.paint(g);
     }
 
     /**
-     * This method is called by the {@link #paint} method prior to
-     * {@link #paintLayer} to configure the {@code Graphics2D} object.
-     * The default implementation is empty.
-     *
-     * @param g2 the {@code Graphics2D} object to configure
-     * @param l the {@code JLayer} being painted
-     *
-     * @see #paintLayer(Graphics2D, JLayer)
-     */
-    protected void configureGraphics(Graphics2D g2, JLayer<? extends V> l) {
-    }
-
-    /**
-     * Called by the {@link #paint} method,
-     * subclasses should override this method
-     * to perform any custom painting operations.
-     * <p/>
-     * The default implementation paints the passed {@code JLayer} as is.
-     *
-     * @param g2 the {@code Graphics2D} context in which to paint
-     * @param l the {@code JLayer} being painted
-     *
-     * @see #configureGraphics(Graphics2D, JLayer)
-     */
-    protected void paintLayer(Graphics2D g2, JLayer<? extends V> l) {
-        l.paint(g2);
-    }
-
-    /**
-     * Dispatches {@code AWTEvent}s for {@code JLayer}
-     * and <b>all its subcomponents</b> to this {@code LayerUI} instance.
+     * Processes {@code AWTEvent}s for {@code JLayer}
+     * and <b>all its descendants</b> to this {@code LayerUI} instance.
      * <p/>
      * To enable the {@code AWTEvent}s of a particular type,
      * you call {@link JLayer#setLayerEventMask}
@@ -133,13 +93,14 @@ public class LayerUI<V extends Component>
      * By default this  method calls the appropriate
      * {@code process&lt;event&nbsp;type&gt;Event}
      * method for the given class of event.
+     * <p/>
+     * <b>Note:</b> Events are processed only for displayable {@code JLayer}s.
      *
      * @param e the event to be dispatched
      * @param l the layer this LayerUI is set to
      *
      * @see JLayer#setLayerEventMask(long)
-     * @see #installUI(javax.swing.JComponent)
-     * @see #uninstallUI(javax.swing.JComponent)
+     * @see Component#isDisplayable()
      * @see #processComponentEvent
      * @see #processFocusEvent
      * @see #processKeyEvent
@@ -628,17 +589,6 @@ public class LayerUI<V extends Component>
     }
 
     /**
-     * Repaints all {@code JLayer} instances this {@code LayerUI} is set to.
-     * Call this method when the state of this {@code LayerUI} is changed
-     * and the visual appearance of its {@code JLayer} objects needs to be updated.
-     *
-     * @see Component#repaint()
-     */
-    protected void repaintLayer() {
-        firePropertyChange("dirty", null, null);
-    }
-
-    /**
      * Notifies the {@code LayerUI} when any of its property are changed
      * and enables updating every {@code JLayer}
      * this {@code LayerUI} instance is set to.
@@ -647,9 +597,6 @@ public class LayerUI<V extends Component>
      * @param l the {@code JLayer} this LayerUI is set to
      */
     public void applyPropertyChange(PropertyChangeEvent evt, JLayer<? extends V> l) {
-        if ("dirty".equals(evt.getPropertyName())) {
-            l.repaint();
-        }
     }
 
     /**

@@ -468,42 +468,16 @@ intptr_t* frame::interpreter_frame_local_at(int index) const {
   return &((*interpreter_frame_locals_addr())[n]);
 }
 
-frame::Tag frame::interpreter_frame_local_tag(int index) const {
-  const int n = Interpreter::local_tag_offset_in_bytes(index)/wordSize;
-  return (Tag)(*interpreter_frame_locals_addr()) [n];
-}
-
-void frame::interpreter_frame_set_local_tag(int index, Tag tag) const {
-  const int n = Interpreter::local_tag_offset_in_bytes(index)/wordSize;
-  (*interpreter_frame_locals_addr())[n] = (intptr_t)tag;
-}
-
 intptr_t* frame::interpreter_frame_expression_stack_at(jint offset) const {
   const int i = offset * interpreter_frame_expression_stack_direction();
-  const int n = ((i * Interpreter::stackElementSize()) +
-                 Interpreter::value_offset_in_bytes())/wordSize;
+  const int n = i * Interpreter::stackElementWords;
   return &(interpreter_frame_expression_stack()[n]);
-}
-
-frame::Tag frame::interpreter_frame_expression_stack_tag(jint offset) const {
-  const int i = offset * interpreter_frame_expression_stack_direction();
-  const int n = ((i * Interpreter::stackElementSize()) +
-                 Interpreter::tag_offset_in_bytes())/wordSize;
-  return (Tag)(interpreter_frame_expression_stack()[n]);
-}
-
-void frame::interpreter_frame_set_expression_stack_tag(jint offset,
-                                                       Tag tag) const {
-  const int i = offset * interpreter_frame_expression_stack_direction();
-  const int n = ((i * Interpreter::stackElementSize()) +
-                 Interpreter::tag_offset_in_bytes())/wordSize;
-  interpreter_frame_expression_stack()[n] = (intptr_t)tag;
 }
 
 jint frame::interpreter_frame_expression_stack_size() const {
   // Number of elements on the interpreter expression stack
   // Callers should span by stackElementWords
-  int element_size = Interpreter::stackElementWords();
+  int element_size = Interpreter::stackElementWords;
   if (frame::interpreter_frame_expression_stack_direction() < 0) {
     return (interpreter_frame_expression_stack() -
             interpreter_frame_tos_address() + 1)/element_size;
@@ -585,20 +559,12 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
   for (i = 0; i < interpreter_frame_method()->max_locals(); i++ ) {
     intptr_t x = *interpreter_frame_local_at(i);
     st->print(" - local  [" INTPTR_FORMAT "]", x);
-    if (TaggedStackInterpreter) {
-      Tag x = interpreter_frame_local_tag(i);
-      st->print(" - local tag [" INTPTR_FORMAT "]", x);
-    }
     st->fill_to(23);
     st->print_cr("; #%d", i);
   }
   for (i = interpreter_frame_expression_stack_size() - 1; i >= 0; --i ) {
     intptr_t x = *interpreter_frame_expression_stack_at(i);
     st->print(" - stack  [" INTPTR_FORMAT "]", x);
-    if (TaggedStackInterpreter) {
-      Tag x = interpreter_frame_expression_stack_tag(i);
-      st->print(" - stack tag [" INTPTR_FORMAT "]", x);
-    }
     st->fill_to(23);
     st->print_cr("; #%d", i);
   }
@@ -844,7 +810,7 @@ class EntryFrameOopFinder: public SignatureInfo {
   }
 
   void oop_at_offset_do(int offset) {
-    assert (offset >= 0, "illegal offset")
+    assert (offset >= 0, "illegal offset");
     oop* addr = (oop*) _fr->entry_frame_argument_at(offset);
     _f->do_oop(addr);
   }
@@ -950,102 +916,18 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
     }
   }
 
-  if (TaggedStackInterpreter) {
-    // process locals & expression stack
-    InterpreterOopMap *mask = NULL;
-#ifdef ASSERT
-    InterpreterOopMap oopmap_mask;
-    OopMapCache::compute_one_oop_map(m, bci, &oopmap_mask);
-    mask = &oopmap_mask;
-#endif // ASSERT
-    oops_interpreted_locals_do(f, max_locals, mask);
-    oops_interpreted_expressions_do(f, signature, has_receiver,
-                                    m->max_stack(),
-                                    max_locals, mask);
+  InterpreterFrameClosure blk(this, max_locals, m->max_stack(), f);
+
+  // process locals & expression stack
+  InterpreterOopMap mask;
+  if (query_oop_map_cache) {
+    m->mask_for(bci, &mask);
   } else {
-    InterpreterFrameClosure blk(this, max_locals, m->max_stack(), f);
-
-    // process locals & expression stack
-    InterpreterOopMap mask;
-    if (query_oop_map_cache) {
-      m->mask_for(bci, &mask);
-    } else {
-      OopMapCache::compute_one_oop_map(m, bci, &mask);
-    }
-    mask.iterate_oop(&blk);
+    OopMapCache::compute_one_oop_map(m, bci, &mask);
   }
+  mask.iterate_oop(&blk);
 }
 
-
-void frame::oops_interpreted_locals_do(OopClosure *f,
-                                      int max_locals,
-                                      InterpreterOopMap *mask) {
-  // Process locals then interpreter expression stack
-  for (int i = 0; i < max_locals; i++ ) {
-    Tag tag = interpreter_frame_local_tag(i);
-    if (tag == TagReference) {
-      oop* addr = (oop*) interpreter_frame_local_at(i);
-      assert((intptr_t*)addr >= sp(), "must be inside the frame");
-      f->do_oop(addr);
-#ifdef ASSERT
-    } else {
-      assert(tag == TagValue, "bad tag value for locals");
-      oop* p = (oop*) interpreter_frame_local_at(i);
-      // Not always true - too bad.  May have dead oops without tags in locals.
-      // assert(*p == NULL || !(*p)->is_oop(), "oop not tagged on interpreter locals");
-      assert(*p == NULL || !mask->is_oop(i), "local oop map mismatch");
-#endif // ASSERT
-    }
-  }
-}
-
-void frame::oops_interpreted_expressions_do(OopClosure *f,
-                                      symbolHandle signature,
-                                      bool has_receiver,
-                                      int max_stack,
-                                      int max_locals,
-                                      InterpreterOopMap *mask) {
-  // There is no stack no matter what the esp is pointing to (native methods
-  // might look like expression stack is nonempty).
-  if (max_stack == 0) return;
-
-  // Point the top of the expression stack above arguments to a call so
-  // arguments aren't gc'ed as both stack values for callee and callee
-  // arguments in callee's locals.
-  int args_size = 0;
-  if (!signature.is_null()) {
-    args_size = ArgumentSizeComputer(signature).size() + (has_receiver ? 1 : 0);
-  }
-
-  intptr_t *tos_addr = interpreter_frame_tos_at(args_size);
-  assert(args_size != 0 || tos_addr == interpreter_frame_tos_address(), "these are same");
-  intptr_t *frst_expr = interpreter_frame_expression_stack_at(0);
-  // In case of exceptions, the expression stack is invalid and the esp
-  // will be reset to express this condition. Therefore, we call f only
-  // if addr is 'inside' the stack (i.e., addr >= esp for Intel).
-  bool in_stack;
-  if (interpreter_frame_expression_stack_direction() > 0) {
-    in_stack = (intptr_t*)frst_expr <= tos_addr;
-  } else {
-    in_stack = (intptr_t*)frst_expr >= tos_addr;
-  }
-  if (!in_stack) return;
-
-  jint stack_size = interpreter_frame_expression_stack_size() - args_size;
-  for (int j = 0; j < stack_size; j++) {
-    Tag tag = interpreter_frame_expression_stack_tag(j);
-    if (tag == TagReference) {
-      oop *addr = (oop*) interpreter_frame_expression_stack_at(j);
-      f->do_oop(addr);
-#ifdef ASSERT
-    } else {
-      assert(tag == TagValue, "bad tag value for stack element");
-      oop *p = (oop*) interpreter_frame_expression_stack_at((j));
-      assert(*p == NULL || !mask->is_oop(j+max_locals), "stack oop map mismatch");
-#endif // ASSERT
-    }
-  }
-}
 
 void frame::oops_interpreted_arguments_do(symbolHandle signature, bool has_receiver, OopClosure* f) {
   InterpretedArgumentOopFinder finder(signature, has_receiver, this, f);
@@ -1306,29 +1188,18 @@ void frame::zap_dead_interpreted_locals(JavaThread *thread, const RegisterMap* m
 
   int max_locals = m->is_native() ? m->size_of_parameters() : m->max_locals();
 
-  if (TaggedStackInterpreter) {
-    InterpreterOopMap *mask = NULL;
-#ifdef ASSERT
-    InterpreterOopMap oopmap_mask;
-    methodHandle method(thread, m);
-    OopMapCache::compute_one_oop_map(method, bci, &oopmap_mask);
-    mask = &oopmap_mask;
-#endif // ASSERT
-    oops_interpreted_locals_do(&_check_oop, max_locals, mask);
-  } else {
-    // process dynamic part
-    InterpreterFrameClosure value_blk(this, max_locals, m->max_stack(),
-                                      &_check_value);
-    InterpreterFrameClosure   oop_blk(this, max_locals, m->max_stack(),
-                                      &_check_oop  );
-    InterpreterFrameClosure  dead_blk(this, max_locals, m->max_stack(),
-                                      &_zap_dead   );
+  // process dynamic part
+  InterpreterFrameClosure value_blk(this, max_locals, m->max_stack(),
+                                    &_check_value);
+  InterpreterFrameClosure   oop_blk(this, max_locals, m->max_stack(),
+                                    &_check_oop  );
+  InterpreterFrameClosure  dead_blk(this, max_locals, m->max_stack(),
+                                    &_zap_dead   );
 
-    // get frame map
-    InterpreterOopMap mask;
-    m->mask_for(bci, &mask);
-    mask.iterate_all( &oop_blk, &value_blk, &dead_blk);
-  }
+  // get frame map
+  InterpreterOopMap mask;
+  m->mask_for(bci, &mask);
+  mask.iterate_all( &oop_blk, &value_blk, &dead_blk);
 }
 
 
