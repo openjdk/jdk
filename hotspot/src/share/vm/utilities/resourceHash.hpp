@@ -44,8 +44,12 @@ template<typename K> bool primitive_equals(const K& k0, const K& k1) {
 
 template<
     typename K, typename V,
-    typename ResourceHashtableFns<K>::hash_fn   HASH   = primitive_hash<K>,
-    typename ResourceHashtableFns<K>::equals_fn EQUALS = primitive_equals<K>,
+    // xlC does not compile this:
+    // http://stackoverflow.com/questions/8532961/template-argument-of-type-that-is-defined-by-inner-typedef-from-other-template-c
+    //typename ResourceHashtableFns<K>::hash_fn   HASH   = primitive_hash<K>,
+    //typename ResourceHashtableFns<K>::equals_fn EQUALS = primitive_equals<K>,
+    unsigned (*HASH)  (K const&)           = primitive_hash<K>,
+    bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>,
     unsigned SIZE = 256
     >
 class ResourceHashtable : public ResourceObj {

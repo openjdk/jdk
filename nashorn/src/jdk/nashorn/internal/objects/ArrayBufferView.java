@@ -47,7 +47,7 @@ abstract class ArrayBufferView extends ScriptObject {
     }
 
     private ArrayBufferView(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength, final Global global) {
-        super(global.getArrayBufferViewMap());
+        super(getInitialMap());
         checkConstructorArgs(buffer, byteOffset, elementLength);
         this.setProto(getPrototype(global));
         this.setArray(factory().createArrayData(buffer, byteOffset, elementLength));

@@ -956,7 +956,7 @@ public final class Context {
 
         final URL          url    = source.getURL();
         final ScriptLoader loader = env._loader_per_compile ? createNewLoader() : scriptLoader;
-        final CodeSource   cs     = url == null ? null : new CodeSource(url, (CodeSigner[])null);
+        final CodeSource   cs     = new CodeSource(url, (CodeSigner[])null);
         final CodeInstaller<ScriptEnvironment> installer = new ContextCodeInstaller(this, loader, cs);
 
         final Compiler compiler = new Compiler(installer, strict);

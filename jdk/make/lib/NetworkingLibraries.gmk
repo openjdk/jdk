@@ -38,6 +38,10 @@ endif
 LIBNET_CFLAGS := $(foreach dir, $(LIBNET_SRC_DIRS), -I$(dir))
 
 LIBNET_EXCLUDE_FILES :=
+ifneq ($(OPENJDK_TARGET_OS), solaris)
+  LIBNET_EXCLUDE_FILES += solaris_close.c
+endif
+
 ifneq ($(OPENJDK_TARGET_OS), linux)
   LIBNET_EXCLUDE_FILES += linux_close.c
 endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,8 @@ protected:
   void           ins_encode_parse(InstructForm &inst);
   void           ins_encode_parse_block(InstructForm &inst);
   void           ins_encode_parse_block_impl(InstructForm& inst, EncClass* encoding, char* ec_name);
+  // Parse instruction postalloc expand rule.
+  void           postalloc_expand_parse(InstructForm &inst);
 
   void           constant_parse(InstructForm& inst);
   void           constant_parse_expression(EncClass* encoding, char* ec_name);

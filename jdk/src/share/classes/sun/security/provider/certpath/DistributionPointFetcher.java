@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -751,9 +751,7 @@ public class DistributionPointFetcher {
          * issued. [section 5.2.1, RFC 2459]
          */
         AuthorityKeyIdentifierExtension crlAKID = crl.getAuthKeyIdExtension();
-        if (crlAKID != null) {
-            issuerSelector.parseAuthorityKeyIdentifierExtension(crlAKID);
-        }
+        issuerSelector.setSkiAndSerialNumber(crlAKID);
 
         matched = issuerSelector.match(cert);
 

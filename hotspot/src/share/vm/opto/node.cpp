@@ -285,6 +285,10 @@ void DUIterator_Last::verify_step(uint num_edges) {
 #ifdef _MSC_VER // the IDX_INIT hack falls foul of warning C4355
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#endif
 
 // Out-of-line code from node constructors.
 // Executed only when extra debug info. is being passed around.
@@ -467,6 +471,10 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   _in[5] = n5; if (n5 != NULL) n5->add_out((Node *)this);
   _in[6] = n6; if (n6 != NULL) n6->add_out((Node *)this);
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 
 //------------------------------clone------------------------------------------
@@ -995,13 +1003,13 @@ void Node::raise_bottom_type(const Type* new_type) {
   if (is_Type()) {
     TypeNode *n = this->as_Type();
     if (VerifyAliases) {
-      assert(new_type->higher_equal(n->type()), "new type must refine old type");
+      assert(new_type->higher_equal_speculative(n->type()), "new type must refine old type");
     }
     n->set_type(new_type);
   } else if (is_Load()) {
     LoadNode *n = this->as_Load();
     if (VerifyAliases) {
-      assert(new_type->higher_equal(n->type()), "new type must refine old type");
+      assert(new_type->higher_equal_speculative(n->type()), "new type must refine old type");
     }
     n->set_type(new_type);
   }
@@ -1523,7 +1531,6 @@ Node* Node::find_ctrl(int idx) const {
 
 
 #ifndef PRODUCT
-int Node::_in_dump_cnt = 0;
 
 // -----------------------------Name-------------------------------------------
 extern const char *NodeClassNames[];
@@ -1595,7 +1602,7 @@ void Node::set_debug_orig(Node* orig) {
 void Node::dump(const char* suffix, outputStream *st) const {
   Compile* C = Compile::current();
   bool is_new = C->node_arena()->contains(this);
-  _in_dump_cnt++;
+  C->_in_dump_cnt++;
   st->print("%c%d\t%s\t=== ", is_new ? ' ' : 'o', _idx, Name());
 
   // Dump the required and precedence inputs
@@ -1610,7 +1617,7 @@ void Node::dump(const char* suffix, outputStream *st) const {
     dump_orig(debug_orig(), st);
 #endif
     st->cr();
-    _in_dump_cnt--;
+    C->_in_dump_cnt--;
     return;                     // don't process dead nodes
   }
 
@@ -1662,7 +1669,7 @@ void Node::dump(const char* suffix, outputStream *st) const {
     }
   }
   if (suffix) st->print(suffix);
-  _in_dump_cnt--;
+  C->_in_dump_cnt--;
 }
 
 //------------------------------dump_req--------------------------------------

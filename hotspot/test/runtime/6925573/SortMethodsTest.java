@@ -47,6 +47,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 /*
+ * @ignore 6959423
  * @test SortMethodsTest
  * @bug 6925573
  * @summary verify that class loading does not need quadratic time with regard to the number of class

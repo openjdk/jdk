@@ -889,7 +889,9 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
+                                         VMRegPair *regs2,
                                          int total_args_passed) {
+  assert(regs2 == NULL, "not needed on x86");
 // We return the amount of VMRegImpl stack slots we need to reserve for all
 // the arguments NOT counting out_preserve_stack_slots.
 
@@ -1857,7 +1859,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Now figure out where the args must be stored and how much stack space
   // they require.
   int out_arg_slots;
-  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args);
+  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, NULL, total_c_args);
 
   // Compute framesize for the wrapper.  We need to handlize all oops in
   // incoming registers
@@ -2761,7 +2763,7 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(MacroAssembler *masm,
   // the 1st six register arguments). It's weird see int_stk_helper.
 
   int out_arg_slots;
-  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args);
+  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, NULL, total_c_args);
 
   // Calculate the total number of stack slots we will need.
 

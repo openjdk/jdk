@@ -281,20 +281,23 @@ void PhaseIFG::verify( const PhaseChaitin *pc ) const {
 }
 #endif
 
-// Interfere this register with everything currently live.  Use the RegMasks
-// to trim the set of possible interferences. Return a count of register-only
-// interferences as an estimate of register pressure.
-void PhaseChaitin::interfere_with_live( uint r, IndexSet *liveout ) {
-  uint retval = 0;
-  // Interfere with everything live.
-  const RegMask &rm = lrgs(r).mask();
-  // Check for interference by checking overlap of regmasks.
-  // Only interfere if acceptable register masks overlap.
+/*
+ * Interfere this register with everything currently live.
+ * Check for interference by checking overlap of regmasks.
+ * Only interfere if acceptable register masks overlap.
+ */
+void PhaseChaitin::interfere_with_live(uint lid, IndexSet* liveout) {
+  LRG& lrg = lrgs(lid);
+  const RegMask& rm = lrg.mask();
   IndexSetIterator elements(liveout);
-  uint l;
-  while( (l = elements.next()) != 0 )
-    if( rm.overlap( lrgs(l).mask() ) )
-      _ifg->add_edge( r, l );
+  uint interfering_lid = elements.next();
+  while (interfering_lid != 0) {
+    LRG& interfering_lrg = lrgs(interfering_lid);
+    if (rm.overlap(interfering_lrg.mask())) {
+      _ifg->add_edge(lid, interfering_lid);
+    }
+    interfering_lid = elements.next();
+  }
 }
 
 // Actually build the interference graph.  Uses virtual registers only, no
@@ -333,7 +336,7 @@ void PhaseChaitin::build_ifg_virtual( ) {
         // Copies do not define a new value and so do not interfere.
         // Remove the copies source from the liveout set before interfering.
         uint idx = n->is_Copy();
-        if (idx) {
+        if (idx != 0) {
           liveout->remove(_lrg_map.live_range_id(n->in(idx)));
         }
 
@@ -389,418 +392,459 @@ void PhaseChaitin::build_ifg_virtual( ) {
   } // End of forall blocks
 }
 
-uint PhaseChaitin::count_int_pressure( IndexSet *liveout ) {
+#ifdef ASSERT
+uint PhaseChaitin::count_int_pressure(IndexSet* liveout) {
   IndexSetIterator elements(liveout);
-  uint lidx;
+  uint lidx = elements.next();
   uint cnt = 0;
-  while ((lidx = elements.next()) != 0) {
-    if( lrgs(lidx).mask().is_UP() &&
-        lrgs(lidx).mask_size() &&
-        !lrgs(lidx)._is_float &&
-        !lrgs(lidx)._is_vector &&
-        lrgs(lidx).mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) )
-      cnt += lrgs(lidx).reg_pressure();
+  while (lidx != 0) {
+    LRG& lrg = lrgs(lidx);
+    if (lrg.mask_is_nonempty_and_up() &&
+        !lrg.is_float_or_vector() &&
+        lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI])) {
+      cnt += lrg.reg_pressure();
+    }
+    lidx = elements.next();
   }
   return cnt;
 }
 
-uint PhaseChaitin::count_float_pressure( IndexSet *liveout ) {
+uint PhaseChaitin::count_float_pressure(IndexSet* liveout) {
   IndexSetIterator elements(liveout);
-  uint lidx;
+  uint lidx = elements.next();
   uint cnt = 0;
-  while ((lidx = elements.next()) != 0) {
-    if( lrgs(lidx).mask().is_UP() &&
-        lrgs(lidx).mask_size() &&
-        (lrgs(lidx)._is_float || lrgs(lidx)._is_vector))
-      cnt += lrgs(lidx).reg_pressure();
+  while (lidx != 0) {
+    LRG& lrg = lrgs(lidx);
+    if (lrg.mask_is_nonempty_and_up() && lrg.is_float_or_vector()) {
+      cnt += lrg.reg_pressure();
+    }
+    lidx = elements.next();
   }
   return cnt;
 }
+#endif
 
-// Adjust register pressure down by 1.  Capture last hi-to-low transition,
-static void lower_pressure( LRG *lrg, uint where, Block *b, uint *pressure, uint *hrp_index ) {
-  if (lrg->mask().is_UP() && lrg->mask_size()) {
-    if (lrg->_is_float || lrg->_is_vector) {
-      pressure[1] -= lrg->reg_pressure();
-      if( pressure[1] == (uint)FLOATPRESSURE ) {
-        hrp_index[1] = where;
-        if( pressure[1] > b->_freg_pressure )
-          b->_freg_pressure = pressure[1]+1;
+/*
+ * Adjust register pressure down by 1.  Capture last hi-to-low transition,
+ */
+void PhaseChaitin::lower_pressure(Block* b, uint location, LRG& lrg, IndexSet* liveout, Pressure& int_pressure, Pressure& float_pressure) {
+  if (lrg.mask_is_nonempty_and_up()) {
+    if (lrg.is_float_or_vector()) {
+      float_pressure.lower(lrg, location);
+    } else {
+      // Do not count the SP and flag registers
+      const RegMask& r = lrg.mask();
+      if (r.overlap(*Matcher::idealreg2regmask[Op_RegI])) {
+        int_pressure.lower(lrg, location);
       }
-    } else if( lrg->mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ) {
-      pressure[0] -= lrg->reg_pressure();
-      if( pressure[0] == (uint)INTPRESSURE   ) {
-        hrp_index[0] = where;
-        if( pressure[0] > b->_reg_pressure )
-          b->_reg_pressure = pressure[0]+1;
+    }
+  }
+  assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
+  assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
+}
+
+/* Go to the first non-phi index in a block */
+static uint first_nonphi_index(Block* b) {
+  uint i;
+  uint end_idx = b->end_idx();
+  for (i = 1; i < end_idx; i++) {
+    Node* n = b->get_node(i);
+    if (!n->is_Phi()) {
+      break;
+    }
+  }
+  return i;
+}
+
+/*
+ * Spills could be inserted before a CreateEx node which should be the first
+ * instruction in a block after Phi nodes. If so, move the CreateEx node up.
+ */
+static void move_exception_node_up(Block* b, uint first_inst, uint last_inst) {
+  for (uint i = first_inst; i < last_inst; i++) {
+    Node* ex = b->get_node(i);
+    if (ex->is_SpillCopy()) {
+      continue;
+    }
+
+    if (i > first_inst &&
+        ex->is_Mach() && ex->as_Mach()->ideal_Opcode() == Op_CreateEx) {
+      b->remove_node(i);
+      b->insert_node(ex, first_inst);
+    }
+    // Stop once a CreateEx or any other node is found
+    break;
+  }
+}
+
+/*
+ * When new live ranges are live, we raise the register pressure
+ */
+void PhaseChaitin::raise_pressure(Block* b, LRG& lrg, Pressure& int_pressure, Pressure& float_pressure) {
+  if (lrg.mask_is_nonempty_and_up()) {
+    if (lrg.is_float_or_vector()) {
+      float_pressure.raise(lrg);
+    } else {
+      // Do not count the SP and flag registers
+      const RegMask& rm = lrg.mask();
+      if (rm.overlap(*Matcher::idealreg2regmask[Op_RegI])) {
+        int_pressure.raise(lrg);
       }
     }
   }
 }
 
-// Build the interference graph using physical registers when available.
-// That is, if 2 live ranges are simultaneously alive but in their acceptable
-// register sets do not overlap, then they do not interfere.
+
+/*
+ * Computes the initial register pressure of a block, looking at all live
+ * ranges in the liveout. The register pressure is computed for both float
+ * and int/pointer registers.
+ * Live ranges in the liveout are presumed live for the whole block.
+ * We add the cost for the whole block to the area of the live ranges initially.
+ * If a live range gets killed in the block, we'll subtract the unused part of
+ * the block from the area.
+ */
+void PhaseChaitin::compute_initial_block_pressure(Block* b, IndexSet* liveout, Pressure& int_pressure, Pressure& float_pressure, double cost) {
+  IndexSetIterator elements(liveout);
+  uint lid = elements.next();
+  while (lid != 0) {
+    LRG& lrg = lrgs(lid);
+    lrg._area += cost;
+    raise_pressure(b, lrg, int_pressure, float_pressure);
+    lid = elements.next();
+  }
+  assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
+  assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
+}
+
+/*
+ * Remove dead node if it's not used.
+ * We only remove projection nodes if the node "defining" the projection is
+ * dead, for example on x86, if we have a dead Add node we remove its
+ * RFLAGS node.
+ */
+bool PhaseChaitin::remove_node_if_not_used(Block* b, uint location, Node* n, uint lid, IndexSet* liveout) {
+  Node* def = n->in(0);
+  if (!n->is_Proj() ||
+      (_lrg_map.live_range_id(def) && !liveout->member(_lrg_map.live_range_id(def)))) {
+    b->remove_node(location);
+    LRG& lrg = lrgs(lid);
+    if (lrg._def == n) {
+      lrg._def = 0;
+    }
+    n->disconnect_inputs(NULL, C);
+    _cfg.unmap_node_from_block(n);
+    n->replace_by(C->top());
+    return true;
+  }
+  return false;
+}
+
+/*
+ * When encountering a fat projection, we might go from a low to high to low
+ * (since the fat proj only lives at this instruction) going backwards in the
+ * block. If we find a low to high transition, we record it.
+ */
+void PhaseChaitin::check_for_high_pressure_transition_at_fatproj(uint& block_reg_pressure, uint location, LRG& lrg, Pressure& pressure, const int op_regtype) {
+  RegMask mask_tmp = lrg.mask();
+  mask_tmp.AND(*Matcher::idealreg2regmask[op_regtype]);
+  pressure.check_pressure_at_fatproj(location, mask_tmp);
+}
+
+/*
+ * Insure high score for immediate-use spill copies so they get a color.
+ * All single-use MachSpillCopy(s) that immediately precede their
+ * use must color early.  If a longer live range steals their
+ * color, the spill copy will split and may push another spill copy
+ * further away resulting in an infinite spill-split-retry cycle.
+ * Assigning a zero area results in a high score() and a good
+ * location in the simplify list.
+ */
+void PhaseChaitin::assign_high_score_to_immediate_copies(Block* b, Node* n, LRG& lrg, uint next_inst, uint last_inst) {
+  if (n->is_SpillCopy() &&
+      lrg.is_singledef() && // A multi defined live range can still split
+      n->outcnt() == 1 &&   // and use must be in this block
+      _cfg.get_block_for_node(n->unique_out()) == b) {
+
+    Node* single_use = n->unique_out();
+    assert(b->find_node(single_use) >= next_inst, "Use must be later in block");
+    // Use can be earlier in block if it is a Phi, but then I should be a MultiDef
+
+    // Find first non SpillCopy 'm' that follows the current instruction
+    // (current_inst - 1) is index for current instruction 'n'
+    Node* m = n;
+    for (uint i = next_inst; i <= last_inst && m->is_SpillCopy(); ++i) {
+      m = b->get_node(i);
+    }
+    if (m == single_use) {
+      lrg._area = 0.0;
+    }
+  }
+}
+
+/*
+ * Copies do not define a new value and so do not interfere.
+ * Remove the copies source from the liveout set before interfering.
+ */
+void PhaseChaitin::remove_interference_from_copy(Block* b, uint location, uint lid_copy, IndexSet* liveout, double cost, Pressure& int_pressure, Pressure& float_pressure) {
+  if (liveout->remove(lid_copy)) {
+    LRG& lrg_copy = lrgs(lid_copy);
+    lrg_copy._area -= cost;
+
+    // Lower register pressure since copy and definition can share the same register
+    lower_pressure(b, location, lrg_copy, liveout, int_pressure, float_pressure);
+  }
+}
+
+/*
+ * The defined value must go in a particular register. Remove that register from
+ * all conflicting parties and avoid the interference.
+ */
+void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG& lrg, IndexSet* liveout, uint& must_spill) {
+  // Check for common case
+  const RegMask& rm = lrg.mask();
+  int r_size = lrg.num_regs();
+  // Smear odd bits
+  IndexSetIterator elements(liveout);
+  uint l = elements.next();
+  while (l != 0) {
+    LRG& interfering_lrg = lrgs(l);
+    // If 'l' must spill already, do not further hack his bits.
+    // He'll get some interferences and be forced to spill later.
+    if (interfering_lrg._must_spill) {
+      l = elements.next();
+      continue;
+    }
+
+    // Remove bound register(s) from 'l's choices
+    RegMask old = interfering_lrg.mask();
+    uint old_size = interfering_lrg.mask_size();
+
+    // Remove the bits from LRG 'rm' from LRG 'l' so 'l' no
+    // longer interferes with 'rm'.  If 'l' requires aligned
+    // adjacent pairs, subtract out bit pairs.
+    assert(!interfering_lrg._is_vector || !interfering_lrg._fat_proj, "sanity");
+
+    if (interfering_lrg.num_regs() > 1 && !interfering_lrg._fat_proj) {
+      RegMask r2mask = rm;
+      // Leave only aligned set of bits.
+      r2mask.smear_to_sets(interfering_lrg.num_regs());
+      // It includes vector case.
+      interfering_lrg.SUBTRACT(r2mask);
+      interfering_lrg.compute_set_mask_size();
+    } else if (r_size != 1) {
+      // fat proj
+      interfering_lrg.SUBTRACT(rm);
+      interfering_lrg.compute_set_mask_size();
+    } else {
+      // Common case: size 1 bound removal
+      OptoReg::Name r_reg = rm.find_first_elem();
+      if (interfering_lrg.mask().Member(r_reg)) {
+        interfering_lrg.Remove(r_reg);
+        interfering_lrg.set_mask_size(interfering_lrg.mask().is_AllStack() ? LRG::AllStack_size : old_size - 1);
+      }
+    }
+
+    // If 'l' goes completely dry, it must spill.
+    if (interfering_lrg.not_free()) {
+      // Give 'l' some kind of reasonable mask, so it picks up
+      // interferences (and will spill later).
+      interfering_lrg.set_mask(old);
+      interfering_lrg.set_mask_size(old_size);
+      must_spill++;
+      interfering_lrg._must_spill = 1;
+      interfering_lrg.set_reg(OptoReg::Name(LRG::SPILL_REG));
+    }
+    l = elements.next();
+  }
+}
+
+/*
+ * Start loop at 1 (skip control edge) for most Nodes. SCMemProj's might be the
+ * sole use of a StoreLConditional. While StoreLConditionals set memory (the
+ * SCMemProj use) they also def flags; if that flag def is unused the allocator
+ * sees a flag-setting instruction with no use of the flags and assumes it's
+ * dead.  This keeps the (useless) flag-setting behavior alive while also
+ * keeping the (useful) memory update effect.
+ */
+void PhaseChaitin::add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, double cost, Pressure& int_pressure, Pressure& float_pressure) {
+  JVMState* jvms = n->jvms();
+  uint debug_start = jvms ? jvms->debug_start() : 999999;
+
+  for (uint k = ((n->Opcode() == Op_SCMemProj) ? 0:1); k < n->req(); k++) {
+    Node* def = n->in(k);
+    uint lid = _lrg_map.live_range_id(def);
+    if (!lid) {
+      continue;
+    }
+    LRG& lrg = lrgs(lid);
+
+    // No use-side cost for spilling debug info
+    if (k < debug_start) {
+      // A USE costs twice block frequency (once for the Load, once
+      // for a Load-delay).  Rematerialized uses only cost once.
+      lrg._cost += (def->rematerialize() ? b->_freq : (b->_freq * 2));
+    }
+
+    if (liveout->insert(lid)) {
+      // Newly live things assumed live from here to top of block
+      lrg._area += cost;
+      raise_pressure(b, lrg, int_pressure, float_pressure);
+      assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
+      assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
+    }
+    assert(lrg._area >= 0.0, "negative spill area" );
+  }
+}
+
+/*
+ * If we run off the top of the block with high pressure just record that the
+ * whole block is high pressure. (Even though we might have a transition
+ * later down in the block)
+ */
+void PhaseChaitin::check_for_high_pressure_block(Pressure& pressure) {
+  // current pressure now means the pressure before the first instruction in the block
+  // (since we have stepped through all instructions backwards)
+  if (pressure.current_pressure() > pressure.high_pressure_limit()) {
+    pressure.set_high_pressure_index_to_block_start();
+  }
+}
+
+/*
+ * Compute high pressure indice; avoid landing in the middle of projnodes
+ * and set the high pressure index for the block
+ */
+void PhaseChaitin::adjust_high_pressure_index(Block* b, uint& block_hrp_index, Pressure& pressure) {
+  uint i = pressure.high_pressure_index();
+  if (i < b->number_of_nodes() && i < b->end_idx() + 1) {
+    Node* cur = b->get_node(i);
+    while (cur->is_Proj() || (cur->is_MachNullCheck()) || cur->is_Catch()) {
+      cur = b->get_node(--i);
+    }
+  }
+  block_hrp_index = i;
+}
+
+/* Build an interference graph:
+ *   That is, if 2 live ranges are simultaneously alive but in their acceptable
+ *   register sets do not overlap, then they do not interfere. The IFG is built
+ *   by a single reverse pass over each basic block. Starting with the known
+ *   live-out set, we remove things that get defined and add things that become
+ *   live (essentially executing one pass of a standard LIVE analysis). Just
+ *   before a Node defines a value (and removes it from the live-ness set) that
+ *   value is certainly live. The defined value interferes with everything
+ *   currently live. The value is then removed from the live-ness set and it's
+ *   inputs are added to the live-ness set.
+ * Compute register pressure for each block:
+ *   We store the biggest register pressure for each block and also the first
+ *   low to high register pressure transition within the block (if any).
+ */
 uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
-  NOT_PRODUCT( Compile::TracePhase t3("buildIFG", &_t_buildIFGphysical, TimeCompiler); )
+  NOT_PRODUCT(Compile::TracePhase t3("buildIFG", &_t_buildIFGphysical, TimeCompiler);)
 
   uint must_spill = 0;
-
-  // For all blocks (in any order) do...
   for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
     Block* block = _cfg.get_block(i);
+
     // Clone (rather than smash in place) the liveout info, so it is alive
     // for the "collect_gc_info" phase later.
     IndexSet liveout(_live->live(block));
+
+    uint first_inst = first_nonphi_index(block);
     uint last_inst = block->end_idx();
-    // Compute first nonphi node index
-    uint first_inst;
-    for (first_inst = 1; first_inst < last_inst; first_inst++) {
-      if (!block->get_node(first_inst)->is_Phi()) {
-        break;
-      }
-    }
 
-    // Spills could be inserted before CreateEx node which should be
-    // first instruction in block after Phis. Move CreateEx up.
-    for (uint insidx = first_inst; insidx < last_inst; insidx++) {
-      Node *ex = block->get_node(insidx);
-      if (ex->is_SpillCopy()) {
-        continue;
-      }
-      if (insidx > first_inst && ex->is_Mach() && ex->as_Mach()->ideal_Opcode() == Op_CreateEx) {
-        // If the CreateEx isn't above all the MachSpillCopies
-        // then move it to the top.
-        block->remove_node(insidx);
-        block->insert_node(ex, first_inst);
-      }
-      // Stop once a CreateEx or any other node is found
-      break;
-    }
+    move_exception_node_up(block, first_inst, last_inst);
 
-    // Reset block's register pressure values for each ifg construction
-    uint pressure[2], hrp_index[2];
-    pressure[0] = pressure[1] = 0;
-    hrp_index[0] = hrp_index[1] = last_inst+1;
-    block->_reg_pressure = block->_freg_pressure = 0;
-    // Liveout things are presumed live for the whole block.  We accumulate
-    // 'area' accordingly.  If they get killed in the block, we'll subtract
-    // the unused part of the block from the area.
+    Pressure int_pressure(last_inst + 1, INTPRESSURE);
+    Pressure float_pressure(last_inst + 1, FLOATPRESSURE);
+    block->_reg_pressure = 0;
+    block->_freg_pressure = 0;
+
     int inst_count = last_inst - first_inst;
     double cost = (inst_count <= 0) ? 0.0 : block->_freq * double(inst_count);
-    assert(!(cost < 0.0), "negative spill cost" );
-    IndexSetIterator elements(&liveout);
-    uint lidx;
-    while ((lidx = elements.next()) != 0) {
-      LRG &lrg = lrgs(lidx);
-      lrg._area += cost;
-      // Compute initial register pressure
-      if (lrg.mask().is_UP() && lrg.mask_size()) {
-        if (lrg._is_float || lrg._is_vector) {   // Count float pressure
-          pressure[1] += lrg.reg_pressure();
-          if (pressure[1] > block->_freg_pressure) {
-            block->_freg_pressure = pressure[1];
-          }
-          // Count int pressure, but do not count the SP, flags
-        } else if(lrgs(lidx).mask().overlap(*Matcher::idealreg2regmask[Op_RegI])) {
-          pressure[0] += lrg.reg_pressure();
-          if (pressure[0] > block->_reg_pressure) {
-            block->_reg_pressure = pressure[0];
-          }
-        }
-      }
-    }
-    assert( pressure[0] == count_int_pressure  (&liveout), "" );
-    assert( pressure[1] == count_float_pressure(&liveout), "" );
+    assert(cost >= 0.0, "negative spill cost" );
 
-    // The IFG is built by a single reverse pass over each basic block.
-    // Starting with the known live-out set, we remove things that get
-    // defined and add things that become live (essentially executing one
-    // pass of a standard LIVE analysis).  Just before a Node defines a value
-    // (and removes it from the live-ness set) that value is certainly live.
-    // The defined value interferes with everything currently live.  The
-    // value is then removed from the live-ness set and it's inputs are added
-    // to the live-ness set.
-    uint j;
-    for (j = last_inst + 1; j > 1; j--) {
-      Node* n = block->get_node(j - 1);
+    compute_initial_block_pressure(block, &liveout, int_pressure, float_pressure, cost);
 
-      // Get value being defined
-      uint r = _lrg_map.live_range_id(n);
+    for (uint location = last_inst; location > 0; location--) {
+      Node* n = block->get_node(location);
+      uint lid = _lrg_map.live_range_id(n);
 
-      // Some special values do not allocate
-      if(r) {
+      if(lid) {
+        LRG& lrg = lrgs(lid);
+
         // A DEF normally costs block frequency; rematerialized values are
         // removed from the DEF sight, so LOWER costs here.
-        lrgs(r)._cost += n->rematerialize() ? 0 : block->_freq;
+        lrg._cost += n->rematerialize() ? 0 : block->_freq;
 
-        // If it is not live, then this instruction is dead.  Probably caused
-        // by spilling and rematerialization.  Who cares why, yank this baby.
-        if( !liveout.member(r) && n->Opcode() != Op_SafePoint ) {
-          Node *def = n->in(0);
-          if( !n->is_Proj() ||
-              // Could also be a flags-projection of a dead ADD or such.
-              (_lrg_map.live_range_id(def) && !liveout.member(_lrg_map.live_range_id(def)))) {
-            block->remove_node(j - 1);
-            if (lrgs(r)._def == n) {
-              lrgs(r)._def = 0;
-            }
-            n->disconnect_inputs(NULL, C);
-            _cfg.unmap_node_from_block(n);
-            n->replace_by(C->top());
-            // Since yanking a Node from block, high pressure moves up one
-            hrp_index[0]--;
-            hrp_index[1]--;
+        if (!liveout.member(lid) && n->Opcode() != Op_SafePoint) {
+          if (remove_node_if_not_used(block, location, n, lid, &liveout)) {
+            float_pressure.lower_high_pressure_index();
+            int_pressure.lower_high_pressure_index();
             continue;
           }
-
-          // Fat-projections kill many registers which cannot be used to
-          // hold live ranges.
-          if (lrgs(r)._fat_proj) {
-            // Count the int-only registers
-            RegMask itmp = lrgs(r).mask();
-            itmp.AND(*Matcher::idealreg2regmask[Op_RegI]);
-            int iregs = itmp.Size();
-            if (pressure[0]+iregs > block->_reg_pressure) {
-              block->_reg_pressure = pressure[0] + iregs;
-            }
-            if (pressure[0] <= (uint)INTPRESSURE && pressure[0] + iregs > (uint)INTPRESSURE) {
-              hrp_index[0] = j - 1;
-            }
-            // Count the float-only registers
-            RegMask ftmp = lrgs(r).mask();
-            ftmp.AND(*Matcher::idealreg2regmask[Op_RegD]);
-            int fregs = ftmp.Size();
-            if (pressure[1] + fregs > block->_freg_pressure) {
-              block->_freg_pressure = pressure[1] + fregs;
-            }
-            if(pressure[1] <= (uint)FLOATPRESSURE && pressure[1]+fregs > (uint)FLOATPRESSURE) {
-              hrp_index[1] = j - 1;
-            }
+          if (lrg._fat_proj) {
+            check_for_high_pressure_transition_at_fatproj(block->_reg_pressure, location, lrg, int_pressure, Op_RegI);
+            check_for_high_pressure_transition_at_fatproj(block->_freg_pressure, location, lrg, float_pressure, Op_RegD);
           }
-
-        } else {                // Else it is live
-          // A DEF also ends 'area' partway through the block.
-          lrgs(r)._area -= cost;
-          assert(!(lrgs(r)._area < 0.0), "negative spill area" );
-
-          // Insure high score for immediate-use spill copies so they get a color
-          if( n->is_SpillCopy()
-              && lrgs(r).is_singledef()        // MultiDef live range can still split
-              && n->outcnt() == 1              // and use must be in this block
-              && _cfg.get_block_for_node(n->unique_out()) == block) {
-            // All single-use MachSpillCopy(s) that immediately precede their
-            // use must color early.  If a longer live range steals their
-            // color, the spill copy will split and may push another spill copy
-            // further away resulting in an infinite spill-split-retry cycle.
-            // Assigning a zero area results in a high score() and a good
-            // location in the simplify list.
-            //
-
-            Node *single_use = n->unique_out();
-            assert(block->find_node(single_use) >= j, "Use must be later in block");
-            // Use can be earlier in block if it is a Phi, but then I should be a MultiDef
-
-            // Find first non SpillCopy 'm' that follows the current instruction
-            // (j - 1) is index for current instruction 'n'
-            Node *m = n;
-            for (uint i = j; i <= last_inst && m->is_SpillCopy(); ++i) {
-              m = block->get_node(i);
-            }
-            if (m == single_use) {
-              lrgs(r)._area = 0.0;
-            }
+        } else {
+          // A live range ends at its definition, remove the remaining area.
+          // If the cost is +Inf (which might happen in extreme cases), the lrg area will also be +Inf,
+          // and +Inf - +Inf = NaN. So let's not do that subtraction.
+          if (g_isfinite(cost)) {
+            lrg._area -= cost;
           }
+          assert(lrg._area >= 0.0, "negative spill area" );
 
-          // Remove from live-out set
-          if( liveout.remove(r) ) {
-            // Adjust register pressure.
-            // Capture last hi-to-lo pressure transition
-            lower_pressure(&lrgs(r), j - 1, block, pressure, hrp_index);
-            assert( pressure[0] == count_int_pressure  (&liveout), "" );
-            assert( pressure[1] == count_float_pressure(&liveout), "" );
+          assign_high_score_to_immediate_copies(block, n, lrg, location + 1, last_inst);
+
+          if (liveout.remove(lid)) {
+            lower_pressure(block, location, lrg, &liveout, int_pressure, float_pressure);
           }
-
-          // Copies do not define a new value and so do not interfere.
-          // Remove the copies source from the liveout set before interfering.
-          uint idx = n->is_Copy();
-          if (idx) {
-            uint x = _lrg_map.live_range_id(n->in(idx));
-            if (liveout.remove(x)) {
-              lrgs(x)._area -= cost;
-              // Adjust register pressure.
-              lower_pressure(&lrgs(x), j - 1, block, pressure, hrp_index);
-              assert( pressure[0] == count_int_pressure  (&liveout), "" );
-              assert( pressure[1] == count_float_pressure(&liveout), "" );
-            }
+          uint copy_idx = n->is_Copy();
+          if (copy_idx) {
+            uint lid_copy = _lrg_map.live_range_id(n->in(copy_idx));
+            remove_interference_from_copy(block, location, lid_copy, &liveout, cost, int_pressure, float_pressure);
           }
-        } // End of if live or not
+        }
 
-        // Interfere with everything live.  If the defined value must
-        // go in a particular register, just remove that register from
-        // all conflicting parties and avoid the interference.
-
-        // Make exclusions for rematerializable defs.  Since rematerializable
-        // DEFs are not bound but the live range is, some uses must be bound.
-        // If we spill live range 'r', it can rematerialize at each use site
-        // according to its bindings.
-        const RegMask &rmask = lrgs(r).mask();
-        if( lrgs(r).is_bound() && !(n->rematerialize()) && rmask.is_NotEmpty() ) {
-          // Check for common case
-          int r_size = lrgs(r).num_regs();
-          OptoReg::Name r_reg = (r_size == 1) ? rmask.find_first_elem() : OptoReg::Physical;
-          // Smear odd bits
-          IndexSetIterator elements(&liveout);
-          uint l;
-          while ((l = elements.next()) != 0) {
-            LRG &lrg = lrgs(l);
-            // If 'l' must spill already, do not further hack his bits.
-            // He'll get some interferences and be forced to spill later.
-            if( lrg._must_spill ) continue;
-            // Remove bound register(s) from 'l's choices
-            RegMask old = lrg.mask();
-            uint old_size = lrg.mask_size();
-            // Remove the bits from LRG 'r' from LRG 'l' so 'l' no
-            // longer interferes with 'r'.  If 'l' requires aligned
-            // adjacent pairs, subtract out bit pairs.
-            assert(!lrg._is_vector || !lrg._fat_proj, "sanity");
-            if (lrg.num_regs() > 1 && !lrg._fat_proj) {
-              RegMask r2mask = rmask;
-              // Leave only aligned set of bits.
-              r2mask.smear_to_sets(lrg.num_regs());
-              // It includes vector case.
-              lrg.SUBTRACT( r2mask );
-              lrg.compute_set_mask_size();
-            } else if( r_size != 1 ) { // fat proj
-              lrg.SUBTRACT( rmask );
-              lrg.compute_set_mask_size();
-            } else {            // Common case: size 1 bound removal
-              if( lrg.mask().Member(r_reg) ) {
-                lrg.Remove(r_reg);
-                lrg.set_mask_size(lrg.mask().is_AllStack() ? LRG::AllStack_size : old_size - 1);
-              }
-            }
-            // If 'l' goes completely dry, it must spill.
-            if( lrg.not_free() ) {
-              // Give 'l' some kind of reasonable mask, so he picks up
-              // interferences (and will spill later).
-              lrg.set_mask( old );
-              lrg.set_mask_size(old_size);
-              must_spill++;
-              lrg._must_spill = 1;
-              lrg.set_reg(OptoReg::Name(LRG::SPILL_REG));
-            }
-          }
-        } // End of if bound
-
-        // Now interference with everything that is live and has
-        // compatible register sets.
-        interfere_with_live(r,&liveout);
-
-      } // End of if normal register-allocated value
+        // Since rematerializable DEFs are not bound but the live range is,
+        // some uses must be bound. If we spill live range 'r', it can
+        // rematerialize at each use site according to its bindings.
+        if (lrg.is_bound() && !n->rematerialize() && lrg.mask().is_NotEmpty()) {
+          remove_bound_register_from_interfering_live_ranges(lrg, &liveout, must_spill);
+        }
+        interfere_with_live(lid, &liveout);
+      }
 
       // Area remaining in the block
       inst_count--;
       cost = (inst_count <= 0) ? 0.0 : block->_freq * double(inst_count);
 
-      // Make all inputs live
-      if( !n->is_Phi() ) {      // Phi function uses come from prior block
-        JVMState* jvms = n->jvms();
-        uint debug_start = jvms ? jvms->debug_start() : 999999;
-        // Start loop at 1 (skip control edge) for most Nodes.
-        // SCMemProj's might be the sole use of a StoreLConditional.
-        // While StoreLConditionals set memory (the SCMemProj use)
-        // they also def flags; if that flag def is unused the
-        // allocator sees a flag-setting instruction with no use of
-        // the flags and assumes it's dead.  This keeps the (useless)
-        // flag-setting behavior alive while also keeping the (useful)
-        // memory update effect.
-        for (uint k = ((n->Opcode() == Op_SCMemProj) ? 0:1); k < n->req(); k++) {
-          Node *def = n->in(k);
-          uint x = _lrg_map.live_range_id(def);
-          if (!x) {
-            continue;
-          }
-          LRG &lrg = lrgs(x);
-          // No use-side cost for spilling debug info
-          if (k < debug_start) {
-            // A USE costs twice block frequency (once for the Load, once
-            // for a Load-delay).  Rematerialized uses only cost once.
-            lrg._cost += (def->rematerialize() ? block->_freq : (block->_freq + block->_freq));
-          }
-          // It is live now
-          if (liveout.insert(x)) {
-            // Newly live things assumed live from here to top of block
-            lrg._area += cost;
-            // Adjust register pressure
-            if (lrg.mask().is_UP() && lrg.mask_size()) {
-              if (lrg._is_float || lrg._is_vector) {
-                pressure[1] += lrg.reg_pressure();
-                if (pressure[1] > block->_freg_pressure)  {
-                  block->_freg_pressure = pressure[1];
-                }
-              } else if( lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ) {
-                pressure[0] += lrg.reg_pressure();
-                if (pressure[0] > block->_reg_pressure) {
-                  block->_reg_pressure = pressure[0];
-                }
-              }
-            }
-            assert( pressure[0] == count_int_pressure  (&liveout), "" );
-            assert( pressure[1] == count_float_pressure(&liveout), "" );
-          }
-          assert(!(lrg._area < 0.0), "negative spill area" );
-        }
-      }
-    } // End of reverse pass over all instructions in block
-
-    // If we run off the top of the block with high pressure and
-    // never see a hi-to-low pressure transition, just record that
-    // the whole block is high pressure.
-    if (pressure[0] > (uint)INTPRESSURE) {
-      hrp_index[0] = 0;
-      if (pressure[0] > block->_reg_pressure) {
-        block->_reg_pressure = pressure[0];
-      }
-    }
-    if (pressure[1] > (uint)FLOATPRESSURE) {
-      hrp_index[1] = 0;
-      if (pressure[1] > block->_freg_pressure) {
-        block->_freg_pressure = pressure[1];
+      if (!n->is_Phi()) {
+        add_input_to_liveout(block, n, &liveout, cost, int_pressure, float_pressure);
       }
     }
 
-    // Compute high pressure indice; avoid landing in the middle of projnodes
-    j = hrp_index[0];
-    if (j < block->number_of_nodes() && j < block->end_idx() + 1) {
-      Node* cur = block->get_node(j);
-      while (cur->is_Proj() || (cur->is_MachNullCheck()) || cur->is_Catch()) {
-        j--;
-        cur = block->get_node(j);
-      }
-    }
-    block->_ihrp_index = j;
-    j = hrp_index[1];
-    if (j < block->number_of_nodes() && j < block->end_idx() + 1) {
-      Node* cur = block->get_node(j);
-      while (cur->is_Proj() || (cur->is_MachNullCheck()) || cur->is_Catch()) {
-        j--;
-        cur = block->get_node(j);
-      }
-    }
-    block->_fhrp_index = j;
+    check_for_high_pressure_block(int_pressure);
+    check_for_high_pressure_block(float_pressure);
+    adjust_high_pressure_index(block, block->_ihrp_index, int_pressure);
+    adjust_high_pressure_index(block, block->_fhrp_index, float_pressure);
+    // set the final_pressure as the register pressure for the block
+    block->_reg_pressure = int_pressure.final_pressure();
+    block->_freg_pressure = float_pressure.final_pressure();
 
 #ifndef PRODUCT
     // Gather Register Pressure Statistics
-    if( PrintOptoStatistics ) {
-      if (block->_reg_pressure > (uint)INTPRESSURE || block->_freg_pressure > (uint)FLOATPRESSURE) {
+    if (PrintOptoStatistics) {
+      if (block->_reg_pressure > int_pressure.high_pressure_limit() || block->_freg_pressure > float_pressure.high_pressure_limit()) {
         _high_pressure++;
       } else {
         _low_pressure++;
       }
     }
 #endif
-  } // End of for all blocks
+  }
 
   return must_spill;
 }

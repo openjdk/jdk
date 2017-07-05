@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,7 @@ final class WeakCache<K, P, V> {
         return reverseMap.size();
     }
 
+    @SuppressWarnings("unchecked") // refQueue.poll actually returns CacheKey<K>
     private void expungeStaleEntries() {
         CacheKey<K> cacheKey;
         while ((cacheKey = (CacheKey<K>)refQueue.poll()) != null) {
@@ -351,6 +352,7 @@ final class WeakCache<K, P, V> {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public boolean equals(Object obj) {
             K key;
             return obj == this ||
@@ -359,7 +361,7 @@ final class WeakCache<K, P, V> {
                    // cleared CacheKey is only equal to itself
                    (key = this.get()) != null &&
                    // compare key by identity
-                   key == ((CacheKey<K>) obj).get();
+                   key == ((CacheKey<K>) obj).get(); // Cast is safe from getClass check
         }
 
         void expungeFrom(ConcurrentMap<?, ? extends ConcurrentMap<?, ?>> map,

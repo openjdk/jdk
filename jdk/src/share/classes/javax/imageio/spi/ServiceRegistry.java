@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,15 +122,6 @@ public class ServiceRegistry {
             categoryMap.put(category, reg);
         }
     }
-
-    // The following two methods expose functionality from
-    // sun.misc.Service.  If that class is made public, they may be
-    // removed.
-    //
-    // The sun.misc.ServiceConfigurationError class may also be
-    // exposed, in which case the references to 'an
-    // <code>Error</code>' below should be changed to 'a
-    // <code>ServiceConfigurationError</code>'.
 
     /**
      * Searches for implementations of a particular service class

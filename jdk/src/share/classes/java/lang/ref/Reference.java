@@ -26,6 +26,8 @@
 package java.lang.ref;
 
 import sun.misc.Cleaner;
+import sun.misc.JavaLangRefAccess;
+import sun.misc.SharedSecrets;
 
 /**
  * Abstract base class for reference objects.  This class defines the
@@ -147,49 +149,73 @@ public abstract class Reference<T> {
         }
 
         public void run() {
-            for (;;) {
-                Reference<Object> r;
-                Cleaner c;
-                try {
-                    synchronized (lock) {
-                        if (pending != null) {
-                            r = pending;
-                            // 'instanceof' might throw OutOfMemoryError sometimes
-                            // so do this before un-linking 'r' from the 'pending' chain...
-                            c = r instanceof Cleaner ? (Cleaner) r : null;
-                            // unlink 'r' from 'pending' chain
-                            pending = r.discovered;
-                            r.discovered = null;
-                        } else {
-                            // The waiting on the lock may cause an OutOfMemoryError
-                            // because it may try to allocate exception objects.
-                            lock.wait();
-                            continue;
-                        }
-                    }
-                } catch (OutOfMemoryError x) {
-                    // Give other threads CPU time so they hopefully drop some live references
-                    // and GC reclaims some space.
-                    // Also prevent CPU intensive spinning in case 'r instanceof Cleaner' above
-                    // persistently throws OOME for some time...
-                    Thread.yield();
-                    // retry
-                    continue;
-                } catch (InterruptedException x) {
-                    // retry
-                    continue;
-                }
-
-                // Fast path for cleaners
-                if (c != null) {
-                    c.clean();
-                    continue;
-                }
-
-                ReferenceQueue<Object> q = r.queue;
-                if (q != ReferenceQueue.NULL) q.enqueue(r);
+            while (true) {
+                tryHandlePending(true);
             }
         }
+    }
+
+    /**
+     * Try handle pending {@link Reference} if there is one.<p>
+     * Return {@code true} as a hint that there might be another
+     * {@link Reference} pending or {@code false} when there are no more pending
+     * {@link Reference}s at the moment and the program can do some other
+     * useful work instead of looping.
+     *
+     * @param waitForNotify if {@code true} and there was no pending
+     *                      {@link Reference}, wait until notified from VM
+     *                      or interrupted; if {@code false}, return immediately
+     *                      when there is no pending {@link Reference}.
+     * @return {@code true} if there was a {@link Reference} pending and it
+     *         was processed, or we waited for notification and either got it
+     *         or thread was interrupted before being notified;
+     *         {@code false} otherwise.
+     */
+    static boolean tryHandlePending(boolean waitForNotify) {
+        Reference<Object> r;
+        Cleaner c;
+        try {
+            synchronized (lock) {
+                if (pending != null) {
+                    r = pending;
+                    // 'instanceof' might throw OutOfMemoryError sometimes
+                    // so do this before un-linking 'r' from the 'pending' chain...
+                    c = r instanceof Cleaner ? (Cleaner) r : null;
+                    // unlink 'r' from 'pending' chain
+                    pending = r.discovered;
+                    r.discovered = null;
+                } else {
+                    // The waiting on the lock may cause an OutOfMemoryError
+                    // because it may try to allocate exception objects.
+                    if (waitForNotify) {
+                        lock.wait();
+                    }
+                    // retry if waited
+                    return waitForNotify;
+                }
+            }
+        } catch (OutOfMemoryError x) {
+            // Give other threads CPU time so they hopefully drop some live references
+            // and GC reclaims some space.
+            // Also prevent CPU intensive spinning in case 'r instanceof Cleaner' above
+            // persistently throws OOME for some time...
+            Thread.yield();
+            // retry
+            return true;
+        } catch (InterruptedException x) {
+            // retry
+            return true;
+        }
+
+        // Fast path for cleaners
+        if (c != null) {
+            c.clean();
+            return true;
+        }
+
+        ReferenceQueue<? super Object> q = r.queue;
+        if (q != ReferenceQueue.NULL) q.enqueue(r);
+        return true;
     }
 
     static {
@@ -204,8 +230,15 @@ public abstract class Reference<T> {
         handler.setPriority(Thread.MAX_PRIORITY);
         handler.setDaemon(true);
         handler.start();
-    }
 
+        // provide access in SharedSecrets
+        SharedSecrets.setJavaLangRefAccess(new JavaLangRefAccess() {
+            @Override
+            public boolean tryHandlePendingReference() {
+                return tryHandlePending(false);
+            }
+        });
+    }
 
     /* -- Referent accessor and setters -- */
 

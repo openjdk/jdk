@@ -165,7 +165,7 @@ export CC SYST ARCH LD_LIBRARY_PATH
 ${JAVAC} -d . ${TESTSRC}${FS}MyCanvas.java
 ${JAVAH} -jni -classpath . -d . MyCanvas
 ${MAKE} -f ${MAKEFILE}
-${JAVA} -classpath . MyCanvas
+${JAVA} ${TESTVMOPTS} -classpath . MyCanvas
 
 exit $?
 
