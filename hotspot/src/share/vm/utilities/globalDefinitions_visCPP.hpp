@@ -153,16 +153,8 @@ const jlong max_jlong = CONST64(0x7fffffffffffffff);
 //----------------------------------------------------------------------------------------------------
 // Miscellaneous
 
-inline int vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
-  // If number of characters written == count, Windows doesn't write a
-  // terminating NULL, so we do it ourselves.
-  int ret = _vsnprintf(buf, count, fmt, argptr);
-  if (count > 0) buf[count-1] = '\0';
-  return ret;
-}
-
 // Visual Studio 2005 deprecates POSIX names - use ISO C++ names instead
-#if _MSC_VER >= 1400 && !defined(_WIN64)
+#if _MSC_VER >= 1400
 #define open _open
 #define close _close
 #define read  _read
@@ -180,6 +172,17 @@ inline int vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
 #pragma warning( disable : 4201 ) // nonstandard extension used : nameless struct/union (needed in windows.h)
 #pragma warning( disable : 4511 ) // copy constructor could not be generated
 #pragma warning( disable : 4291 ) // no matching operator delete found; memory will not be freed if initialization thows an exception
+#if _MSC_VER >= 1400
+#pragma warning( disable : 4996 ) // unsafe string functions. Same as define _CRT_SECURE_NO_WARNINGS/_CRT_SECURE_NO_DEPRICATE
+#endif
+
+inline int vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
+  // If number of characters written == count, Windows doesn't write a
+  // terminating NULL, so we do it ourselves.
+  int ret = _vsnprintf(buf, count, fmt, argptr);
+  if (count > 0) buf[count-1] = '\0';
+  return ret;
+}
 
 // Portability macros
 #define PRAGMA_INTERFACE

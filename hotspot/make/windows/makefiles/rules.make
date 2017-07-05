@@ -42,10 +42,23 @@ COMPILE_RMIC=rmic
 BOOT_JAVA_HOME=
 !endif
 
+ProjectFile=vm.vcproj
+
 !if "$(MSC_VER)" == "1200"
+
 VcVersion=VC6
 ProjectFile=vm.dsp
+
+!elseif "$(MSC_VER)" == "1400"
+
+VcVersion=VC8
+
+!elseif "$(MSC_VER)" == "1500"
+
+VcVersion=VC9
+
 !else
+
 VcVersion=VC7
-ProjectFile=vm.vcproj
+
 !endif

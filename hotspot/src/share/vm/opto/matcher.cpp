@@ -1481,8 +1481,13 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
       const Type* mach_at = mach->adr_type();
       // DecodeN node consumed by an address may have different type
       // then its input. Don't compare types for such case.
-      if (m->adr_type() != mach_at && m->in(MemNode::Address)->is_AddP() &&
-          m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeN()) {
+      if (m->adr_type() != mach_at &&
+          (m->in(MemNode::Address)->is_DecodeN() ||
+           m->in(MemNode::Address)->is_AddP() &&
+           m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeN() ||
+           m->in(MemNode::Address)->is_AddP() &&
+           m->in(MemNode::Address)->in(AddPNode::Address)->is_AddP() &&
+           m->in(MemNode::Address)->in(AddPNode::Address)->in(AddPNode::Address)->is_DecodeN())) {
         mach_at = m->adr_type();
       }
       if (m->adr_type() != mach_at) {

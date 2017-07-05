@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -204,6 +204,9 @@ JDI_DOCTITLE    = "Java$(TRADEMARK) Debug Interface"
 JDI_HEADER      = "Java Debug Interface"
 # JDI_PKGS is located in NON_CORE_PKGS.gmk
 
+# Variables used by security components
+SECURITYAPI_JAVADOCBOTTOM = '<font size="-1"><a href="http://bugs.sun.com/services/bugreport/index.jsp">Report a bug or request a feature.</a><br>Copyright $(THIS_YEAR) Sun Microsystems, Inc. All Rights Reserved. Use is subject to license terms.</font>'
+
 #
 # Variables used by JAAS target
 #
@@ -221,6 +224,7 @@ JAAS_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			 \
                    -windowtitle $(JAAS_WINDOWTITLE)              \
                    -doctitle $(JAAS_DOCTITLE)                    \
                    -header $(JAAS_JAVADOCHEADER)                 \
+                   -bottom $(SECURITYAPI_JAVADOCBOTTOM)                      \
                    -linkoffline ../../../../../api $(DOCSDIR)/api/	 \
                    -overview $(TOPDIR)/src/share/classes/com/sun/security/auth/jaas-overview.html
 JAAS_WINDOWTITLE = "Java Authentication and Authorization Service "
@@ -243,6 +247,7 @@ JGSS_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			\
                    -windowtitle $(JGSS_WINDOWTITLE)             \
                    -doctitle $(JGSS_DOCTITLE)                   \
                    -header $(JGSS_JAVADOCHEADER)                \
+                   -bottom $(SECURITYAPI_JAVADOCBOTTOM)                      \
                    -linkoffline ../../../../../api $(DOCSDIR)/api/ \
                    -overview $(JGSS_SOURCEPATH)/com/sun/security/jgss/jgss-overview.html
 
@@ -266,6 +271,7 @@ SMARTCARDIO_JAVADOCFLAGS = $(COMMON_JAVADOCFLAGS)			\
                    -windowtitle $(SMARTCARDIO_WINDOWTITLE)             \
                    -doctitle $(SMARTCARDIO_DOCTITLE)                   \
                    -header $(SMARTCARDIO_JAVADOCHEADER)                \
+                   -bottom $(SECURITYAPI_JAVADOCBOTTOM)                      \
                    -linkoffline ../../../../../api $(DOCSDIR)/api/
 
 SMARTCARDIO_WINDOWTITLE = "Java Smart Card I/O"

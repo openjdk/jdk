@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,13 @@
  * have any questions.
  */
 
-package sun.misc;
+package sun.nio.cs;
 
-public interface JavaIODeleteOnExitAccess extends Runnable {
-    public void run();
+/*
+ * FastPath char[]->byte[] encoder, REPLACE on malformed input or
+ * unmappable input.
+ */
+
+public interface ArrayEncoder {
+    int encode(char[] src, int off, int len, byte[] dst);
 }

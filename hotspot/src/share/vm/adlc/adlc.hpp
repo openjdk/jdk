@@ -44,7 +44,7 @@ using namespace std;
 #error "Something is wrong with the detection of MSC_VER in the makefiles"
 #endif
 
-#if _MSC_VER >= 1400 && !defined(_WIN64)
+#if _MSC_VER >= 1400
 #define strdup _strdup
 #endif
 
