@@ -228,6 +228,11 @@ void PhaseChaitin::Register_Allocate() {
   // them for real.
   de_ssa();
 
+#ifdef ASSERT
+  // Veify the graph before RA.
+  verify(&live_arena);
+#endif
+
   {
     NOT_PRODUCT( Compile::TracePhase t3("computeLive", &_t_computeLive, TimeCompiler); )
     _live = NULL;                 // Mark live as being not available
@@ -306,12 +311,6 @@ void PhaseChaitin::Register_Allocate() {
     C->check_node_count(2*NodeLimitFudgeFactor, "out of nodes after physical split");
     if (C->failing())  return;
 
-#ifdef ASSERT
-    if( VerifyOpto ) {
-      _cfg.verify();
-      verify_base_ptrs(&live_arena);
-    }
-#endif
     NOT_PRODUCT( C->verify_graph_edges(); )
 
     compact();                  // Compact LRGs; return new lower max lrg
@@ -340,7 +339,7 @@ void PhaseChaitin::Register_Allocate() {
     compress_uf_map_for_nodes();
 
 #ifdef ASSERT
-    if( VerifyOpto ) _ifg->verify(this);
+    verify(&live_arena, true);
 #endif
   } else {
     ifg.SquareUp();
@@ -376,12 +375,6 @@ void PhaseChaitin::Register_Allocate() {
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
     C->check_node_count(2*NodeLimitFudgeFactor, "out of nodes after split");
     if (C->failing())  return;
-#ifdef ASSERT
-    if( VerifyOpto ) {
-      _cfg.verify();
-      verify_base_ptrs(&live_arena);
-    }
-#endif
 
     compact();                  // Compact LRGs; return new lower max lrg
 
@@ -412,7 +405,7 @@ void PhaseChaitin::Register_Allocate() {
     }
     compress_uf_map_for_nodes();
 #ifdef ASSERT
-    if( VerifyOpto ) _ifg->verify(this);
+    verify(&live_arena, true);
 #endif
     cache_lrg_info();           // Count degree of LRGs
 
@@ -431,6 +424,11 @@ void PhaseChaitin::Register_Allocate() {
 
   // Peephole remove copies
   post_allocate_copy_removal();
+
+#ifdef ASSERT
+  // Veify the graph after RA.
+  verify(&live_arena);
+#endif
 
   // max_reg is past the largest *register* used.
   // Convert that to a frame_slot number.
@@ -956,7 +954,7 @@ void PhaseChaitin::Simplify( ) {
       while ((neighbor = elements.next()) != 0) {
         LRG *n = &lrgs(neighbor);
 #ifdef ASSERT
-        if( VerifyOpto ) {
+        if( VerifyOpto || VerifyRegisterAllocator ) {
           assert( _ifg->effective_degree(neighbor) == n->degree(), "" );
         }
 #endif

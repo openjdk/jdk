@@ -281,7 +281,17 @@
   develop(bool, G1HRRSFlushLogBuffersOnVerify, false,                       \
           "Forces flushing of log buffers before verification.")            \
                                                                             \
-  product(intx, G1MaxSurvivorRegions, 0,                                    \
-          "The maximum number of survivor regions")
+  product(bool, G1UseSurvivorSpace, true,                                   \
+          "When true, use survivor space.")                                 \
+                                                                            \
+  product(bool, G1FixedTenuringThreshold, false,                            \
+          "When set, G1 will not adjust the tenuring threshold")            \
+                                                                            \
+  product(bool, G1FixedEdenSize, false,                                     \
+          "When set, G1 will not allocate unused survivor space regions")   \
+                                                                            \
+  product(uintx, G1FixedSurvivorSpaceSize, 0,                               \
+          "If non-0 is the size of the G1 survivor space, "                 \
+          "otherwise SurvivorRatio is used to determine the size")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)

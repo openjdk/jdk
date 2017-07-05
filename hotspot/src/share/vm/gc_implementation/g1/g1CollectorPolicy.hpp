@@ -49,7 +49,7 @@ public:                                                                       \
 class MainBodySummary;
 class PopPreambleSummary;
 
-class PauseSummary {
+class PauseSummary: public CHeapObj {
   define_num_seq(total)
     define_num_seq(other)
 
@@ -58,7 +58,7 @@ public:
   virtual PopPreambleSummary* pop_preamble_summary() { return NULL; }
 };
 
-class MainBodySummary {
+class MainBodySummary: public CHeapObj {
   define_num_seq(satb_drain) // optional
   define_num_seq(parallel) // parallel only
     define_num_seq(ext_root_scan)
@@ -75,7 +75,7 @@ class MainBodySummary {
   define_num_seq(clear_ct)  // parallel only
 };
 
-class PopPreambleSummary {
+class PopPreambleSummary: public CHeapObj {
   define_num_seq(pop_preamble)
     define_num_seq(pop_update_rs)
     define_num_seq(pop_scan_rs)
@@ -557,6 +557,8 @@ public:
     return get_new_neg_prediction(_young_gc_eff_seq);
   }
 
+  double predict_survivor_regions_evac_time();
+
   // </NEW PREDICTION>
 
 public:
@@ -599,8 +601,8 @@ public:
 
   // Returns an estimate of the survival rate of the region at yg-age
   // "yg_age".
-  double predict_yg_surv_rate(int age) {
-    TruncatedSeq* seq = _short_lived_surv_rate_group->get_seq(age);
+  double predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) {
+    TruncatedSeq* seq = surv_rate_group->get_seq(age);
     if (seq->num() == 0)
       gclog_or_tty->print("BARF! age is %d", age);
     guarantee( seq->num() > 0, "invariant" );
@@ -608,6 +610,10 @@ public:
     if (pred > 1.0)
       pred = 1.0;
     return pred;
+  }
+
+  double predict_yg_surv_rate(int age) {
+    return predict_yg_surv_rate(age, _short_lived_surv_rate_group);
   }
 
   double accum_yg_surv_rate_pred(int age) {
@@ -821,6 +827,9 @@ protected:
 public:
 
   virtual void init();
+
+  // Create jstat counters for the policy.
+  virtual void initialize_gc_policy_counters();
 
   virtual HeapWord* mem_allocate_work(size_t size,
                                       bool is_tlab,
@@ -1047,8 +1056,12 @@ public:
   // Print stats on young survival ratio
   void print_yg_surv_rate_info() const;
 
-  void finished_recalculating_age_indexes() {
-    _short_lived_surv_rate_group->finished_recalculating_age_indexes();
+  void finished_recalculating_age_indexes(bool is_survivors) {
+    if (is_survivors) {
+      _survivor_surv_rate_group->finished_recalculating_age_indexes();
+    } else {
+      _short_lived_surv_rate_group->finished_recalculating_age_indexes();
+    }
     // do that for any other surv rate groups
   }
 
@@ -1097,6 +1110,17 @@ protected:
   // maximum amount of suvivors regions.
   int _tenuring_threshold;
 
+  // The limit on the number of regions allocated for survivors.
+  size_t _max_survivor_regions;
+
+  // The amount of survor regions after a collection.
+  size_t _recorded_survivor_regions;
+  // List of survivor regions.
+  HeapRegion* _recorded_survivor_head;
+  HeapRegion* _recorded_survivor_tail;
+
+  ageTable _survivors_age_table;
+
 public:
 
   inline GCAllocPurpose
@@ -1116,7 +1140,9 @@ public:
     return GCAllocForTenured;
   }
 
-  uint max_regions(int purpose);
+  static const size_t REGIONS_UNLIMITED = ~(size_t)0;
+
+  size_t max_regions(int purpose);
 
   // The limit on regions for a particular purpose is reached.
   void note_alloc_region_limit_reached(int purpose) {
@@ -1132,6 +1158,23 @@ public:
   void note_stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
   }
+
+  void record_survivor_regions(size_t      regions,
+                               HeapRegion* head,
+                               HeapRegion* tail) {
+    _recorded_survivor_regions = regions;
+    _recorded_survivor_head    = head;
+    _recorded_survivor_tail    = tail;
+  }
+
+  void record_thread_age_table(ageTable* age_table)
+  {
+    _survivors_age_table.merge_par(age_table);
+  }
+
+  // Calculates survivor space parameters.
+  void calculate_survivors_policy();
+
 };
 
 // This encapsulates a particular strategy for a g1 Collector.
