@@ -113,6 +113,7 @@ public:
 
   // GC support
   static void   oops_do(OopClosure* f);
+  static void   metadata_do(void f(Metadata*));
 };
 
 // Per-thread Statistics for synchronization
@@ -242,6 +243,7 @@ public:
   void        dump_stack_at_safepoint(int max_depth, bool with_locked_monitors);
   void        set_concurrent_locks(ThreadConcurrentLocks* l) { _concurrent_locks = l; }
   void        oops_do(OopClosure* f);
+  void        metadata_do(void f(Metadata*));
 };
 
 class ThreadStackTrace : public CHeapObj<mtInternal> {
@@ -265,6 +267,7 @@ class ThreadStackTrace : public CHeapObj<mtInternal> {
   void            dump_stack_at_safepoint(int max_depth);
   Handle          allocate_fill_stack_trace_element_array(TRAPS);
   void            oops_do(OopClosure* f);
+  void            metadata_do(void f(Metadata*));
   GrowableArray<oop>* jni_locked_monitors() { return _jni_locked_monitors; }
   int             num_jni_locked_monitors() { return (_jni_locked_monitors != NULL ? _jni_locked_monitors->length() : 0); }
 
@@ -280,6 +283,9 @@ class StackFrameInfo : public CHeapObj<mtInternal> {
   Method*             _method;
   int                 _bci;
   GrowableArray<oop>* _locked_monitors; // list of object monitors locked by this frame
+  // We need to save the mirrors in the backtrace to keep the class
+  // from being unloaded while we still have this stack trace.
+  oop                 _class_holder;
 
  public:
 
@@ -289,9 +295,10 @@ class StackFrameInfo : public CHeapObj<mtInternal> {
       delete _locked_monitors;
     }
   };
-  Method* method() const       { return _method; }
+  Method*   method() const       { return _method; }
   int       bci()    const       { return _bci; }
   void      oops_do(OopClosure* f);
+  void      metadata_do(void f(Metadata*));
 
   int       num_locked_monitors()       { return (_locked_monitors != NULL ? _locked_monitors->length() : 0); }
   GrowableArray<oop>* locked_monitors() { return _locked_monitors; }
@@ -354,6 +361,7 @@ class ThreadDumpResult : public StackObj {
   int                  num_snapshots()                  { return _num_snapshots; }
   ThreadSnapshot*      snapshots()                      { return _snapshots; }
   void                 oops_do(OopClosure* f);
+  void                 metadata_do(void f(Metadata*));
 };
 
 class DeadlockCycle : public CHeapObj<mtInternal> {

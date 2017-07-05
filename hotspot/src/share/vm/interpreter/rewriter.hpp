@@ -189,18 +189,18 @@ class Rewriter: public StackObj {
 
   void compute_index_maps();
   void make_constant_pool_cache(TRAPS);
-  void scan_method(Method* m, bool reverse, TRAPS);
+  void scan_method(Method* m, bool reverse, bool* invokespecial_error);
   void rewrite_Object_init(methodHandle m, TRAPS);
   void rewrite_member_reference(address bcp, int offset, bool reverse);
   void maybe_rewrite_invokehandle(address opc, int cp_index, int cache_index, bool reverse);
   void rewrite_invokedynamic(address bcp, int offset, bool reverse);
   void maybe_rewrite_ldc(address bcp, int offset, bool is_wide, bool reverse);
-  void rewrite_invokespecial(address bcp, int offset, bool reverse, TRAPS);
+  void rewrite_invokespecial(address bcp, int offset, bool reverse, bool* invokespecial_error);
 
   void patch_invokedynamic_bytecodes();
 
   // Revert bytecodes in case of an exception.
-  void restore_bytecodes(TRAPS);
+  void restore_bytecodes();
 
   static methodHandle rewrite_jsrs(methodHandle m, TRAPS);
  public:

@@ -30,6 +30,7 @@
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
+#include "services/threadService.hpp"
 #include "utilities/growableArray.hpp"
 
 
@@ -50,6 +51,7 @@ MetadataOnStackMark::MetadataOnStackMark() {
   CodeCache::alive_nmethods_do(nmethod::mark_on_stack);
   CompileBroker::mark_on_stack();
   JvmtiCurrentBreakpoints::metadata_do(Metadata::mark_on_stack);
+  ThreadService::metadata_do(Metadata::mark_on_stack);
 }
 
 MetadataOnStackMark::~MetadataOnStackMark() {
