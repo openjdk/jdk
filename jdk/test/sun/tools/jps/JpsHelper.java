@@ -168,10 +168,8 @@ public final class JpsHelper {
     }
 
     /**
-     * Verify jps output contains pids and programs' name information.
-     * The function will discard any lines that come before the first line with pid.
-     * This can happen if the JVM outputs a warning message for some reason
-     * before running jps.
+     * Verify jps stdout contains only pids and programs' name information.
+     * jps stderr may contain VM warning messages which will be ignored.
      *
      * The output can look like:
      * 35536 Jps
@@ -180,8 +178,10 @@ public final class JpsHelper {
      */
     public static void verifyJpsOutput(OutputAnalyzer output, String regex) throws Exception {
         output.shouldHaveExitValue(0);
-        int matchedCount = output.shouldMatchByLineFrom(regex, regex);
+        int matchedCount = output.stdoutShouldMatchByLine(regex);
         assertGreaterThan(matchedCount , 0, "Found no lines matching pattern: " + regex);
+        output.stderrShouldNotMatch("[E|e]xception");
+        output.stderrShouldNotMatch("[E|e]rror");
     }
 
     /**

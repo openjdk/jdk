@@ -51,17 +51,16 @@ import sun.reflect.misc.ReflectUtil;
  */
 public class TypeVariableImpl<D extends GenericDeclaration>
     extends LazyReflectiveObjectGenerator implements TypeVariable<D> {
-    D genericDeclaration;
-    private String name;
-    // upper bounds - evaluated lazily
-    private Type[] bounds;
+    private final D genericDeclaration;
+    private final String name;
 
-    // The ASTs for the bounds. We are required to evaluate the bounds
-    // lazily, so we store these at least until we are first asked
-    // for the bounds. This also neatly solves the
-    // problem with F-bounds - you can't reify them before the formal
-    // is defined.
-    private FieldTypeSignature[] boundASTs;
+    /**
+     * The upper bounds.  Lazily converted from FieldTypeSignature[] to Type[].
+     * We are required to evaluate the bounds lazily, so we store them as ASTs
+     * until we are first asked for them.  This also neatly solves the problem
+     * with F-bounds - you can't reify them before the formal is defined.
+     */
+    private volatile Object[] bounds;
 
     // constructor is private to enforce access through static factory
     private TypeVariableImpl(D decl, String n, FieldTypeSignature[] bs,
@@ -69,18 +68,7 @@ public class TypeVariableImpl<D extends GenericDeclaration>
         super(f);
         genericDeclaration = decl;
         name = n;
-        boundASTs = bs;
-    }
-
-    // Accessors
-
-    // accessor for ASTs for bounds. Must not be called after
-    // bounds have been evaluated, because we might throw the ASTs
-    // away (but that is not thread-safe, is it?)
-    private FieldTypeSignature[] getBoundASTs() {
-        // check that bounds were not evaluated yet
-        assert(bounds == null);
-        return boundASTs;
+        bounds = bs;
     }
 
     /**
@@ -123,7 +111,7 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      *  <li>Otherwise, B is resolved.
      * </ul>
      *
-     * @throws <tt>TypeNotPresentException</tt>  if any of the
+     * @throws <tt>TypeNotPresentException</tt> if any of the
      *     bounds refers to a non-existent type declaration
      * @throws <tt>MalformedParameterizedTypeException</tt> if any of the
      *     bounds refer to a parameterized type that cannot be instantiated
@@ -132,34 +120,23 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      *     type variable
     */
     public Type[] getBounds() {
-        // lazily initialize bounds if necessary
-        if (bounds == null) {
-            FieldTypeSignature[] fts = getBoundASTs(); // get AST
-            // allocate result array; note that
-            // keeping ts and bounds separate helps with threads
-            Type[] ts = new Type[fts.length];
-            // iterate over bound trees, reifying each in turn
-            for ( int j = 0; j  < fts.length; j++) {
-                Reifier r = getReifier();
-                fts[j].accept(r);
-                ts[j] = r.getResult();
-            }
-            // cache result
-            bounds = ts;
-            // could throw away bound ASTs here; thread safety?
+        Object[] value = bounds;
+        if (value instanceof FieldTypeSignature[]) {
+            value = reifyBounds((FieldTypeSignature[])value);
+            bounds = value;
         }
-        return bounds.clone(); // return cached bounds
+        return (Type[])value.clone();
     }
 
     /**
-     * Returns the <tt>GenericDeclaration</tt>  object representing the
+     * Returns the <tt>GenericDeclaration</tt> object representing the
      * generic declaration that declared this type variable.
      *
      * @return the generic declaration that declared this type variable.
      *
      * @since 1.5
      */
-    public D getGenericDeclaration(){
+    public D getGenericDeclaration() {
         if (genericDeclaration instanceof Class)
             ReflectUtil.checkPackageAccess((Class)genericDeclaration);
         else if ((genericDeclaration instanceof Method) ||

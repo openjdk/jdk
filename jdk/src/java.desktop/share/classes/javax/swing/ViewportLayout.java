@@ -66,7 +66,7 @@ public class ViewportLayout implements LayoutManager, Serializable
     /**
      * Adds the specified component to the layout. Not used by this class.
      * @param name the name of the component
-     * @param c the the component to be added
+     * @param c the component to be added
      */
     public void addLayoutComponent(String name, Component c) { }
 

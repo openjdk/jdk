@@ -40,7 +40,6 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import sun.awt.SunToolkit;
 
 
 //*** global search and replace TestAlwaysOnTopBeforeShow with name of the test ***
@@ -53,6 +52,7 @@ public class TestAlwaysOnTopBeforeShow
     private static AtomicBoolean focused = new AtomicBoolean();
     private static AtomicBoolean pressed = new AtomicBoolean();
     private static volatile Object pressedTarget;
+    private static Robot robot = null;
     private static void init()
     {
         //*** Create instructions for the user here ***
@@ -123,10 +123,13 @@ public class TestAlwaysOnTopBeforeShow
     }//End  init()
 
     private static void waitForIdle(int mls) {
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
         try {
+            if(robot == null) {
+                robot = new Robot();
+            }
+            robot.waitForIdle();
             Thread.sleep(mls);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

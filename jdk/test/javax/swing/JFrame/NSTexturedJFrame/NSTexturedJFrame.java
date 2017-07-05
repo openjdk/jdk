@@ -22,21 +22,21 @@
  */
 
 import java.awt.Rectangle;
-import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-
-import sun.awt.OSInfo;
-import sun.awt.SunToolkit;
+import jdk.testlibrary.OSInfo;
 
 /**
  * @test
  * @bug 7124513
  * @summary We should support NSTexturedBackgroundWindowMask style on OSX.
  * @author Sergey Bylokhov
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot jdk.testlibrary.OSInfo
+ * @run main NSTexturedJFrame
  */
 public final class NSTexturedJFrame {
 
@@ -46,12 +46,15 @@ public final class NSTexturedJFrame {
     private static Rectangle bounds;
     private static volatile int step;
     private static JFrame frame;
+    private static ExtendedRobot robot;
 
     public static void main(final String[] args) throws Exception {
         if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
             System.out.println("This test is for OSX, considered passed.");
             return;
         }
+        robot = new ExtendedRobot();
+        robot.setAutoDelay(50);
         // Default window appearance
         showFrame();
         step++;
@@ -84,12 +87,10 @@ public final class NSTexturedJFrame {
     }
 
     private static void showFrame() throws Exception {
-        final Robot robot = new Robot();
-        robot.setAutoDelay(50);
         createUI();
         images[step] = robot.createScreenCapture(bounds);
         SwingUtilities.invokeAndWait(frame::dispose);
-        sleep();
+        robot.waitForIdle(1000);
     }
 
     private static void createUI() throws Exception {
@@ -107,15 +108,11 @@ public final class NSTexturedJFrame {
             }
             frame.setVisible(true);
         });
-        sleep();
+        robot.waitForIdle(1000);
         SwingUtilities.invokeAndWait(() -> {
             bounds = frame.getBounds();
         });
-        sleep();
+        robot.waitForIdle(1000);
     }
 
-    private static void sleep() throws InterruptedException {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
-        Thread.sleep(1000);
-    }
 }

@@ -110,7 +110,7 @@ abstract class TranslucentWindowPainter {
     protected abstract Image getBackBuffer(boolean clear);
 
     /**
-     * Updates the the window associated with this painter with the contents
+     * Updates the window associated with this painter with the contents
      * of the passed image.
      * The image can not be null, and NPE will be thrown if it is.
      */

@@ -34,8 +34,8 @@ import java.lang.annotation.*;
  */
 public class TypeNotPresentExceptionProxy extends ExceptionProxy {
     private static final long serialVersionUID = 5565925172427947573L;
-    String typeName;
-    Throwable cause;
+    final String typeName;
+    final Throwable cause;
 
     public TypeNotPresentExceptionProxy(String typeName, Throwable cause) {
         this.typeName = typeName;

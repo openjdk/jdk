@@ -35,7 +35,6 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import sun.awt.SunToolkit;
 
 public class bug4458079 extends JFrame implements PopupMenuListener {
     public JMenu menu;
@@ -47,21 +46,20 @@ public class bug4458079 extends JFrame implements PopupMenuListener {
                 new bug4458079().createAndShowGUI();
             }
         });
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
-
         Robot robot = new Robot();
+        robot.waitForIdle();
+
         robot.setAutoDelay(50);
 
         Util.hitMnemonics(robot, KeyEvent.VK_M);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         Thread.sleep(1000);
 
         Util.hitKeys(robot, KeyEvent.VK_DOWN);
         Util.hitKeys(robot, KeyEvent.VK_ENTER);
 
-        toolkit.realSync();
+        robot.waitForIdle();
         Thread.sleep(1000);
 
         if (!itemASelected) {

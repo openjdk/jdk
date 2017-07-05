@@ -26,6 +26,7 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
+import java.util.concurrent.atomic.AtomicBoolean;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -57,10 +58,9 @@ class FileInputStream extends InputStream
      */
     private final String path;
 
-    private FileChannel channel = null;
+    private volatile FileChannel channel;
 
-    private final Object closeLock = new Object();
-    private volatile boolean closed = false;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
      * Creates a <code>FileInputStream</code> by
@@ -313,14 +313,14 @@ class FileInputStream extends InputStream
      * @spec JSR-51
      */
     public void close() throws IOException {
-        synchronized (closeLock) {
-            if (closed) {
-                return;
-            }
-            closed = true;
+        if (!closed.compareAndSet(false, true)) {
+            // if compareAndSet() returns false closed was already true
+            return;
         }
-        if (channel != null) {
-           channel.close();
+
+        FileChannel fc = channel;
+        if (fc != null) {
+           fc.close();
         }
 
         fd.closeAll(new Closeable() {
@@ -364,12 +364,23 @@ class FileInputStream extends InputStream
      * @spec JSR-51
      */
     public FileChannel getChannel() {
-        synchronized (this) {
-            if (channel == null) {
-                channel = FileChannelImpl.open(fd, path, true, false, this);
+        FileChannel fc = this.channel;
+        if (fc == null) {
+            synchronized (this) {
+                fc = this.channel;
+                if (fc == null) {
+                    this.channel = fc = FileChannelImpl.open(fd, path, true, false, this);
+                    if (closed.get()) {
+                        try {
+                            fc.close();
+                        } catch (IOException ioe) {
+                            throw new InternalError(ioe); // should not happen
+                        }
+                    }
+                }
             }
-            return channel;
         }
+        return fc;
     }
 
     private static native void initIDs();

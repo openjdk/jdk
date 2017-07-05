@@ -319,7 +319,7 @@ public final class ReflectUtil {
             return;
         }
 
-        // disallow any method not declared in one of the proxy intefaces
+        // disallow any method not declared in one of the proxy interfaces
         throw new IllegalArgumentException("Can't handle: " + method);
     }
 

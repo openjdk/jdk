@@ -4281,7 +4281,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         /**
-         * Makes specified region of the the next available buffer visible
+         * Makes specified region of the next available buffer visible
          * by either blitting or flipping.
          */
         void showSubRegion(int x1, int y1, int x2, int y2) {
@@ -7431,7 +7431,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param id one of KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
      *        KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, or
      *        KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS
-     * @return <code>true</code> if the the Set of focus traversal keys for the
+     * @return <code>true</code> if the Set of focus traversal keys for the
      *         given focus traversal operation has been explicitly defined for
      *         this Component; <code>false</code> otherwise.
      * @throws IllegalArgumentException if id is not one of

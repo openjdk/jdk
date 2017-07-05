@@ -35,7 +35,6 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.event.*;
 import java.awt.*;
-import sun.awt.SunToolkit;
 import javax.accessibility.*;
 
 public class bug8036819 {
@@ -49,15 +48,14 @@ public class bug8036819 {
             }
         });
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
 
         Robot robo = new Robot();
         robo.setAutoDelay(300);
+        robo.waitForIdle();
 
         // Using mnemonic key to focus on the textfield
         Util.hitMnemonics(robo, KeyEvent.VK_P);
-        toolkit.realSync();
+        robo.waitForIdle();
 
         if (!passed){
             throw new RuntimeException("Test failed.");

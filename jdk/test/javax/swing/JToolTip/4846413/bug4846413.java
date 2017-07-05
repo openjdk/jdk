@@ -37,7 +37,6 @@ import java.awt.Toolkit;
 import javax.swing.*;
 import java.awt.event.*;
 import javax.swing.plaf.metal.MetalToolTipUI;
-import sun.awt.SunToolkit;
 
 public class bug4846413 {
 
@@ -46,7 +45,6 @@ public class bug4846413 {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -59,11 +57,11 @@ public class bug4846413 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point movePoint = getButtonPoint();
         robot.mouseMove(movePoint.x, movePoint.y);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         long timeout = System.currentTimeMillis() + 9000;
         while (!isTooltipAdded && (System.currentTimeMillis() < timeout)) {

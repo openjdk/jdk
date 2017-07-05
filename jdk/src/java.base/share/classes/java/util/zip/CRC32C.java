@@ -204,7 +204,6 @@ public final class CRC32C implements Checksum {
     /**
      * Updates the CRC-32C checksum with the specified array of bytes.
      */
-    @SuppressWarnings("deprecation") // Unsafe.{getInt, getLong}
     private static int updateBytes(int crc, byte[] b, int off, int end) {
 
         // Do only byte reads for arrays so short they can't be aligned
@@ -228,11 +227,11 @@ public final class CRC32C implements Checksum {
                 int secondHalf;
                 if (Unsafe.ADDRESS_SIZE == 4) {
                     // On 32 bit platforms read two ints instead of a single 64bit long
-                    firstHalf = UNSAFE.getInt(b, Unsafe.ARRAY_BYTE_BASE_OFFSET + off);
-                    secondHalf = UNSAFE.getInt(b, Unsafe.ARRAY_BYTE_BASE_OFFSET + off
+                    firstHalf = UNSAFE.getInt(b, (long)Unsafe.ARRAY_BYTE_BASE_OFFSET + off);
+                    secondHalf = UNSAFE.getInt(b, (long)Unsafe.ARRAY_BYTE_BASE_OFFSET + off
                                                + Integer.BYTES);
                 } else {
-                    long value = UNSAFE.getLong(b, Unsafe.ARRAY_BYTE_BASE_OFFSET + off);
+                    long value = UNSAFE.getLong(b, (long)Unsafe.ARRAY_BYTE_BASE_OFFSET + off);
                     if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
                         firstHalf = (int) value;
                         secondHalf = (int) (value >>> 32);

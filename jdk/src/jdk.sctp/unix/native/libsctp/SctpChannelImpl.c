@@ -507,7 +507,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
             if (handleNotification(env, fd, resultContainerObj, snp, rv,
                                    (msg->msg_flags & MSG_EOR),
                                    (struct sockaddr*)&sa ) == JNI_TRUE) {
-                /* We have received a notification that is of interest to
+                /* We have received a notification that is of interest
                    to the Java API. The appropriate notification will be
                    set in the result container. */
                 if (allocated == JNI_TRUE) {

@@ -302,7 +302,7 @@ public class URIName implements GeneralNameInterface {
      * <p>
      * RFC5280: For URIs, the constraint applies to the host part of the name.
      * The constraint may specify a host or a domain.  Examples would be
-     * "foo.bar.com";  and ".xyz.com".  When the the constraint begins with
+     * "foo.bar.com";  and ".xyz.com".  When the constraint begins with
      * a period, it may be expanded with one or more subdomains.  That is,
      * the constraint ".xyz.com" is satisfied by both abc.xyz.com and
      * abc.def.xyz.com.  However, the constraint ".xyz.com" is not satisfied

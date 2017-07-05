@@ -225,7 +225,7 @@ public class ScrollPaneLayout
      * </ul>
      *
      * @param s the component identifier
-     * @param c the the component to be added
+     * @param c the component to be added
      * @exception IllegalArgumentException if <code>s</code> is an invalid key
      */
     public void addLayoutComponent(String s, Component c)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,7 @@ public final class RSACipher extends CipherSpi {
     }
 
     // see JCE spec
+    @SuppressWarnings("deprecation")
     protected void engineInit(int opmode, Key key,
             AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
@@ -369,6 +370,7 @@ public final class RSACipher extends CipherSpi {
     }
 
     // see JCE spec
+    @SuppressWarnings("deprecation")
     protected java.security.Key engineUnwrap(byte[] wrappedKey,
             String algorithm,
             int type) throws InvalidKeyException, NoSuchAlgorithmException {

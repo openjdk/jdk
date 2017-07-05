@@ -29,7 +29,6 @@
  */
 import java.awt.*;
 import javax.swing.*;
-import sun.awt.SunToolkit;
 
 public class bug4247996 {
 
@@ -38,7 +37,6 @@ public class bug4247996 {
 
     public static void main(String[] args) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -51,11 +49,11 @@ public class bug4247996 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point point = getButtonCenter();
         robot.mouseMove(point.x, point.y);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         checkButtonsSize();
 

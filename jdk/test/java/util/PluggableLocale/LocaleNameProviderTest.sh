@@ -23,6 +23,6 @@
 #
 #
 # @test
-# @bug 4052440 8000273
+# @bug 4052440 8000273 8062588
 # @summary LocaleNameProvider tests
-# @run shell ExecTest.sh bar LocaleNameProviderTest true
+# @run shell ExecTest.sh bar LocaleNameProviderTest

@@ -242,7 +242,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
     }
 
     /**
-     * Returns the the dragged column, if and only if, a drag is in
+     * Returns the dragged column, if and only if, a drag is in
      * process, otherwise returns <code>null</code>.
      *
      * @return  the dragged column, if a drag is in

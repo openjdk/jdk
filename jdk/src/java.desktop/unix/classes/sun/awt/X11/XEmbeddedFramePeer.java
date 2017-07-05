@@ -251,7 +251,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
                 embedder.registerAccelerator(iter.next(), i++);
             }
         }
-        // Now we know that the the embedder is an XEmbed server, so we
+        // Now we know that the embedder is an XEmbed server, so we
         // reregister the drop target to enable XDnD protocol support via
         // XEmbed.
         updateDropTarget();

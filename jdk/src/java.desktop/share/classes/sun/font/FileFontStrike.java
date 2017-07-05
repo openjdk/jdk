@@ -898,7 +898,7 @@ public class FileFontStrike extends PhysicalStrike {
 
     /* The caller of this can be trusted to return a copy of this
      * return value rectangle to public API. In fact frequently it
-     * can't use use this return value directly anyway.
+     * can't use this return value directly anyway.
      * This returns bounds in device space. Currently the only
      * caller is SGV and it converts back to user space.
      * We could change things so that this code does the conversion so
