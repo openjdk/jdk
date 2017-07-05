@@ -590,9 +590,6 @@
   product(intx, TypeProfileMajorReceiverPercent, 90,                        \
           "% of major receiver type to all profiled receivers")             \
                                                                             \
-  notproduct(bool, TimeCompiler2, false,                                    \
-          "detailed time the compiler (requires +TimeCompiler)")            \
-                                                                            \
   diagnostic(bool, PrintIntrinsics, false,                                  \
           "prints attempted and successful inlining of intrinsics")         \
                                                                             \
