@@ -55,6 +55,19 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
     fi
 ])
 
+cygwin_help() {
+    case $1 in
+    unzip)
+        PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P unzip" ;;
+    zip)
+        PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P zip" ;;
+    make)
+        PKGHANDLER_COMMAND="cd <location of cygwin setup.exe> && cmd /c setup -q -P make" ;;
+    * )
+       break ;;
+    esac
+}
+
 apt_help() {
     case $1 in
     devkit)
@@ -149,7 +162,15 @@ printf "* Debug level:    $DEBUG_LEVEL\n"
 printf "* JDK variant:    $JDK_VARIANT\n"
 printf "* JVM variants:   $with_jvm_variants\n"
 printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
-printf "* Boot JDK:       $BOOT_JDK\n"
+
+printf "\n"
+printf "Tools summary:\n"
+if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+  printf "* Environment:    $WINDOWS_ENV_VENDOR version $WINDOWS_ENV_VERSION (root at $WINDOWS_ENV_ROOT_PATH)\n"
+fi
+printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
+printf "* C Compiler:     $CC_VENDOR version $CC_VERSION (at $CC)\n"
+printf "* C++ Compiler:   $CXX_VENDOR version $CXX_VERSION (at $CXX)\n"
 
 printf "\n"
 printf "Build performance summary:\n"

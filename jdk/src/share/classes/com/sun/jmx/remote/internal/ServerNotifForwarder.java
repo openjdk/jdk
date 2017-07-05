@@ -68,9 +68,9 @@ public class ServerNotifForwarder {
         this.notifBuffer = notifBuffer;
         this.connectionId = connectionId;
         connectionTimeout = EnvHelp.getServerConnectionTimeout(env);
-        checkNotificationEmission = EnvHelp.computeBooleanFromString(
-            env,
-            "jmx.remote.x.check.notification.emission",false);
+
+        String stringBoolean = (String) env.get("jmx.remote.x.check.notification.emission");
+        checkNotificationEmission = EnvHelp.computeBooleanFromString( stringBoolean );
         notificationAccessController =
                 EnvHelp.getNotificationAccessController(env);
     }

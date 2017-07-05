@@ -56,12 +56,6 @@ implements java.io.Serializable {
 
     private static final long serialVersionUID = 3581829991155417889L;
 
-    /**
-     * This static object will be seeded by SeedGenerator, and used
-     * to seed future instances of SecureRandom
-     */
-    private static SecureRandom seeder;
-
     private static final int DIGEST_SIZE = 20;
     private transient MessageDigest digest;
     private byte[] state;
@@ -173,6 +167,28 @@ implements java.io.Serializable {
     }
 
     /**
+     * This static object will be seeded by SeedGenerator, and used
+     * to seed future instances of SHA1PRNG SecureRandoms.
+     *
+     * Bloch, Effective Java Second Edition: Item 71
+     */
+    private static class SeederHolder {
+
+        private static final SecureRandom seeder;
+
+        static {
+            /*
+             * Call to SeedGenerator.generateSeed() to add additional
+             * seed material (likely from the Native implementation).
+             */
+            seeder = new SecureRandom(SeedGenerator.getSystemEntropy());
+            byte [] b = new byte[DIGEST_SIZE];
+            SeedGenerator.generateSeed(b);
+            seeder.engineSetSeed(b);
+        }
+    }
+
+    /**
      * Generates a user-specified number of random bytes.
      *
      * @param bytes the array to be filled in with random bytes.
@@ -183,13 +199,8 @@ implements java.io.Serializable {
         byte[] output = remainder;
 
         if (state == null) {
-            if (seeder == null) {
-                seeder = new SecureRandom(SeedGenerator.getSystemEntropy());
-                seeder.engineSetSeed(engineGenerateSeed(DIGEST_SIZE));
-            }
-
             byte[] seed = new byte[DIGEST_SIZE];
-            seeder.engineNextBytes(seed);
+            SeederHolder.seeder.engineNextBytes(seed);
             state = digest.digest(seed);
         }
 

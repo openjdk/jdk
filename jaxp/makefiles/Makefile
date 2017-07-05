@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,39 +23,27 @@
 # questions.
 #
 
-# This must be the first rule
-default: all
+# Locate this Makefile
+ifeq ($(filter /%,$(lastword $(MAKEFILE_LIST))),)
+    makefile_path:=$(CURDIR)/$(lastword $(MAKEFILE_LIST))
+else
+    makefile_path:=$(lastword $(MAKEFILE_LIST))
+endif
+repo_dir:=$(patsubst %/makefiles/Makefile,%,$(makefile_path))
 
--include $(SPEC)
-include MakeBase.gmk
-include JavaCompilation.gmk
+# What is the name of this subsystem (langtools, corba, etc)?
+subsystem_name:=$(notdir $(repo_dir))
 
-JAVAC_JARS ?= "-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar" \
-		-jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
-DISABLE_JAXP_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough
+# Try to locate top-level makefile
+top_level_makefile:=$(repo_dir)/../common/makefiles/Makefile
+ifneq ($(wildcard $(top_level_makefile)),)
+  $(info Will run $(subsystem_name) target on top-level Makefile)
+  $(info WARNING: This is a non-recommended way of building!)
+  $(info ===================================================)
+else
+  $(info Cannot locate top-level Makefile. Is this repo not checked out as part of a complete forest?)
+  $(error Build from top-level Makefile instead)
+endif
 
-# The generate new bytecode uses the new compiler for to generate bytecode
-# for the new jdk that is being built. The code compiled by this setup
-# cannot necessarily be run with the boot jdk.
-$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG,\
-     JVM:=$(JAVA),\
-     JAVAC:=$(JAVAC_JARS),\
-     FLAGS:=-XDignore.symbol.file=true $(DISABLE_JAXP_WARNINGS) -g,\
-     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
-     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
-
-$(eval $(call SetupJavaCompilation,BUILD_JAXP,\
-		SETUP:=GENERATE_NEWBYTECODE_DEBUG,\
-		SRC:=$(JAXP_TOPDIR)/src,\
-		CLEAN:=.properties,\
-		BIN:=$(JAXP_OUTPUTDIR)/classes,\
-		SRCZIP:=$(JAXP_OUTPUTDIR)/dist/lib/src.zip))
-
-$(eval $(call SetupArchive,ARCHIVE_JAXP,$(BUILD_JAXP),\
-		SRCS:=$(JAXP_OUTPUTDIR)/classes,\
-		SUFFIXES:=.class .properties,\
-		JAR:=$(JAXP_OUTPUTDIR)/dist/lib/classes.jar))
-
-all: $(JAXP_OUTPUTDIR)/dist/lib/classes.jar $(JAXP_OUTPUTDIR)/dist/lib/src.zip
-
-.PHONY: default all 
+all:
+	@$(MAKE) -f $(top_level_makefile) $(subsystem_name)

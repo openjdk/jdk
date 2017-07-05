@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -45,6 +48,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import sun.misc.SharedSecrets;
 
 /**
  * The main class to parse JavaBeans XML archive.
@@ -56,11 +61,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * @see ElementHandler
  */
 public final class DocumentHandler extends DefaultHandler {
-    private final Map<String, Class<? extends ElementHandler>> handlers = new HashMap<String, Class<? extends ElementHandler>>();
-
-    private final Map<String, Object> environment = new HashMap<String, Object>();
-
-    private final List<Object> objects = new ArrayList<Object>();
+    private final AccessControlContext acc = AccessController.getContext();
+    private final Map<String, Class<? extends ElementHandler>> handlers = new HashMap<>();
+    private final Map<String, Object> environment = new HashMap<>();
+    private final List<Object> objects = new ArrayList<>();
 
     private Reference<ClassLoader> loader;
     private ExceptionListener listener;
@@ -351,23 +355,32 @@ public final class DocumentHandler extends DefaultHandler {
      *
      * @param input  the input source to parse
      */
-    public void parse(InputSource input) {
-        try {
-            SAXParserFactory.newInstance().newSAXParser().parse(input, this);
+    public void parse(final InputSource input) {
+        if ((this.acc == null) && (null != System.getSecurityManager())) {
+            throw new SecurityException("AccessControlContext is not set");
         }
-        catch (ParserConfigurationException exception) {
-            handleException(exception);
-        }
-        catch (SAXException wrapper) {
-            Exception exception = wrapper.getException();
-            if (exception == null) {
-                exception = wrapper;
+        AccessControlContext stack = AccessController.getContext();
+        SharedSecrets.getJavaSecurityAccess().doIntersectionPrivilege(new PrivilegedAction<Void>() {
+            public Void run() {
+                try {
+                    SAXParserFactory.newInstance().newSAXParser().parse(input, DocumentHandler.this);
+                }
+                catch (ParserConfigurationException exception) {
+                    handleException(exception);
+                }
+                catch (SAXException wrapper) {
+                    Exception exception = wrapper.getException();
+                    if (exception == null) {
+                        exception = wrapper;
+                    }
+                    handleException(exception);
+                }
+                catch (IOException exception) {
+                    handleException(exception);
+                }
+                return null;
             }
-            handleException(exception);
-        }
-        catch (IOException exception) {
-            handleException(exception);
-        }
+        }, stack, this.acc);
     }
 
     /**

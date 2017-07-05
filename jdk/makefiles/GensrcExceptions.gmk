@@ -25,8 +25,8 @@
 
 GENSRC_EXCEPTIONS :=
 
-GENSRC_EXCEPTIONS_TMP := $(JDK_OUTPUTDIR)/gensrc_exceptions
-GENSRC_EXCEPTIONS_DST := $(JDK_OUTPUTDIR)/gensrc_exceptions/java/nio
+GENSRC_EXCEPTIONS_TMP := $(JDK_OUTPUTDIR)/gensrc
+GENSRC_EXCEPTIONS_DST := $(JDK_OUTPUTDIR)/gensrc/java/nio
 
 GENSRC_EXCEPTIONS_SRC := $(JDK_TOPDIR)/src/share/classes/java/nio
 GENSRC_EXCEPTIONS_CMD := $(JDK_TOPDIR)/makefiles/scripts/genExceptions.sh
@@ -35,7 +35,7 @@ GENSRC_EXCEPTIONS_SRC_DIRS := . charset channels
 
 ###
 
-$(GENSRC_EXCEPTIONS_DST)/_the.dir :
+$(GENSRC_EXCEPTIONS_DST)/_the.exceptions.dir :
 	$(ECHO) "Generating exceptions classes"
 	$(MKDIR) -p $(@D)
 	$(TOUCH) $@
@@ -45,9 +45,9 @@ $(GENSRC_EXCEPTIONS_DST)/_the.dir :
 
 $(GENSRC_EXCEPTIONS_DST)/_the.% : $(GENSRC_EXCEPTIONS_SRC)/%/exceptions \
                                   $(GENSRC_EXCEPTIONS_CMD) \
-                                  $(GENSRC_EXCEPTIONS_DST)/_the.dir
+                                  $(GENSRC_EXCEPTIONS_DST)/_the.exceptions.dir
 	$(MKDIR) -p $(@D)/$*
-	SCRIPTS="$(JDK_TOPDIR)/makefiles/scripts" NAWK="$(NAWK)" SH="$(SH)" $(SH) $(GENSRC_EXCEPTIONS_CMD) $< $(@D)/$*
+	SCRIPTS="$(JDK_TOPDIR)/makefiles/scripts" NAWK="$(NAWK)" SH="$(SH)" $(SH) $(GENSRC_EXCEPTIONS_CMD) $< $(@D)/$* $(LOG_INFO) 
 	$(TOUCH) $@
 
 GENSRC_EXCEPTIONS += $(foreach D,$(GENSRC_EXCEPTIONS_SRC_DIRS),$(GENSRC_EXCEPTIONS_DST)/_the.$(D))

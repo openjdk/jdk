@@ -364,7 +364,7 @@ void MemTracker::create_memory_record(address addr, MEMFLAGS flags,
 
     if (thread != NULL) {
       if (thread->is_Java_thread() && ((JavaThread*)thread)->is_safepoint_visible()) {
-        JavaThread*      java_thread = static_cast<JavaThread*>(thread);
+        JavaThread*      java_thread = (JavaThread*)thread;
         JavaThreadState  state = java_thread->thread_state();
         if (SafepointSynchronize::safepoint_safe(java_thread, state)) {
           // JavaThreads that are safepoint safe, can run through safepoint,
@@ -472,6 +472,8 @@ void MemTracker::sync() {
       // it should guarantee that NMT is fully sync-ed.
       ThreadCritical tc;
 
+      SequenceGenerator::reset();
+
       // walk all JavaThreads to collect recorders
       SyncThreadRecorderClosure stc;
       Threads::threads_do(&stc);
@@ -484,11 +486,12 @@ void MemTracker::sync() {
         pending_recorders = _global_recorder;
         _global_recorder = NULL;
       }
-      SequenceGenerator::reset();
       // check _worker_thread with lock to avoid racing condition
       if (_worker_thread != NULL) {
         _worker_thread->at_sync_point(pending_recorders);
       }
+
+      assert(SequenceGenerator::peek() == 1, "Should not have memory activities during sync-point");
     }
   }
 

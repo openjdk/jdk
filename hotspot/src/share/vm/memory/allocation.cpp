@@ -433,19 +433,18 @@ Arena::Arena() {
   NOT_PRODUCT(Atomic::inc(&_instance_count);)
 }
 
-Arena::Arena(Arena *a) : _chunk(a->_chunk), _hwm(a->_hwm), _max(a->_max), _first(a->_first) {
-  set_size_in_bytes(a->size_in_bytes());
-  NOT_PRODUCT(Atomic::inc(&_instance_count);)
-}
-
-
 Arena *Arena::move_contents(Arena *copy) {
   copy->destruct_contents();
   copy->_chunk = _chunk;
   copy->_hwm   = _hwm;
   copy->_max   = _max;
   copy->_first = _first;
-  copy->set_size_in_bytes(size_in_bytes());
+
+  // workaround rare racing condition, which could double count
+  // the arena size by native memory tracking
+  size_t size = size_in_bytes();
+  set_size_in_bytes(0);
+  copy->set_size_in_bytes(size);
   // Destroy original arena
   reset();
   return copy;            // Return Arena with contents
@@ -497,6 +496,9 @@ void Arena::destruct_contents() {
     char* end = _first->next() ? _first->top() : _hwm;
     free_malloced_objects(_first, _first->bottom(), end, _hwm);
   }
+  // reset size before chop to avoid a rare racing condition
+  // that can have total arena memory exceed total chunk memory
+  set_size_in_bytes(0);
   _first->chop();
   reset();
 }
