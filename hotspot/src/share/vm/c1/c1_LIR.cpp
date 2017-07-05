@@ -626,8 +626,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       break;
     }
 
-    case lir_throw:
-    case lir_unwind: {
+    case lir_throw: {
       assert(op->as_Op2() != NULL, "must be");
       LIR_Op2* op2 = (LIR_Op2*)op;
 
@@ -635,6 +634,17 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       if (op2->_opr1->is_valid())         do_temp(op2->_opr1);
       if (op2->_opr2->is_valid())         do_input(op2->_opr2); // exception object is input parameter
       assert(op2->_result->is_illegal(), "no result");
+
+      break;
+    }
+
+    case lir_unwind: {
+      assert(op->as_Op1() != NULL, "must be");
+      LIR_Op1* op1 = (LIR_Op1*)op;
+
+      assert(op1->_info == NULL, "no info");
+      assert(op1->_opr->is_valid(), "exception oop");         do_input(op1->_opr);
+      assert(op1->_result->is_illegal(), "no result");
 
       break;
     }

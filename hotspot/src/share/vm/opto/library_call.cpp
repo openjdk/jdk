@@ -636,6 +636,8 @@ bool LibraryCallKit::try_to_inline() {
 
   case vmIntrinsics::_reverseBytes_i:
   case vmIntrinsics::_reverseBytes_l:
+  case vmIntrinsics::_reverseBytes_s:
+  case vmIntrinsics::_reverseBytes_c:
     return inline_reverseBytes((vmIntrinsics::ID) intrinsic_id());
 
   case vmIntrinsics::_get_AtomicLong:
@@ -2010,13 +2012,19 @@ bool LibraryCallKit::inline_bitCount(vmIntrinsics::ID id) {
   return true;
 }
 
-//----------------------------inline_reverseBytes_int/long-------------------
+//----------------------------inline_reverseBytes_int/long/char/short-------------------
 // inline Integer.reverseBytes(int)
 // inline Long.reverseBytes(long)
+// inline Character.reverseBytes(char)
+// inline Short.reverseBytes(short)
 bool LibraryCallKit::inline_reverseBytes(vmIntrinsics::ID id) {
-  assert(id == vmIntrinsics::_reverseBytes_i || id == vmIntrinsics::_reverseBytes_l, "not reverse Bytes");
-  if (id == vmIntrinsics::_reverseBytes_i && !Matcher::has_match_rule(Op_ReverseBytesI)) return false;
-  if (id == vmIntrinsics::_reverseBytes_l && !Matcher::has_match_rule(Op_ReverseBytesL)) return false;
+  assert(id == vmIntrinsics::_reverseBytes_i || id == vmIntrinsics::_reverseBytes_l ||
+         id == vmIntrinsics::_reverseBytes_c || id == vmIntrinsics::_reverseBytes_s,
+         "not reverse Bytes");
+  if (id == vmIntrinsics::_reverseBytes_i && !Matcher::has_match_rule(Op_ReverseBytesI))  return false;
+  if (id == vmIntrinsics::_reverseBytes_l && !Matcher::has_match_rule(Op_ReverseBytesL))  return false;
+  if (id == vmIntrinsics::_reverseBytes_c && !Matcher::has_match_rule(Op_ReverseBytesUS)) return false;
+  if (id == vmIntrinsics::_reverseBytes_s && !Matcher::has_match_rule(Op_ReverseBytesS))  return false;
   _sp += arg_size();        // restore stack pointer
   switch (id) {
   case vmIntrinsics::_reverseBytes_i:
@@ -2024,6 +2032,12 @@ bool LibraryCallKit::inline_reverseBytes(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_reverseBytes_l:
     push_pair(_gvn.transform(new (C, 2) ReverseBytesLNode(0, pop_pair())));
+    break;
+  case vmIntrinsics::_reverseBytes_c:
+    push(_gvn.transform(new (C, 2) ReverseBytesUSNode(0, pop())));
+    break;
+  case vmIntrinsics::_reverseBytes_s:
+    push(_gvn.transform(new (C, 2) ReverseBytesSNode(0, pop())));
     break;
   default:
     ;

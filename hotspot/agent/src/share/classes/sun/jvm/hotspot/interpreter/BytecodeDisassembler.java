@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,10 +96,6 @@ public class BytecodeDisassembler {
       addBytecodeClass(Bytecodes._dstore, BytecodeStore.class);
       addBytecodeClass(Bytecodes._astore, BytecodeStore.class);
       addBytecodeClass(Bytecodes._tableswitch, BytecodeTableswitch.class);
-
-      // only special fast_xxx cases. others are handled differently.
-      addBytecodeClass(Bytecodes._fast_iaccess_0, BytecodeFastAAccess0.class);
-      addBytecodeClass(Bytecodes._fast_aaccess_0, BytecodeFastIAccess0.class);
    }
 
    public BytecodeDisassembler(Method method) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1815,8 +1815,19 @@ NOT_PRODUCT(
     do_compaction_work(clear_all_soft_refs);
 
     // Has the GC time limit been exceeded?
-    check_gc_time_limit();
-
+    DefNewGeneration* young_gen = _young_gen->as_DefNewGeneration();
+    size_t max_eden_size = young_gen->max_capacity() -
+                           young_gen->to()->capacity() -
+                           young_gen->from()->capacity();
+    GenCollectedHeap* gch = GenCollectedHeap::heap();
+    GCCause::Cause gc_cause = gch->gc_cause();
+    size_policy()->check_gc_overhead_limit(_young_gen->used(),
+                                           young_gen->eden()->used(),
+                                           _cmsGen->max_capacity(),
+                                           max_eden_size,
+                                           full,
+                                           gc_cause,
+                                           gch->collector_policy());
   } else {
     do_mark_sweep_work(clear_all_soft_refs, first_state,
       should_start_over);
@@ -1826,55 +1837,6 @@ NOT_PRODUCT(
   clear_expansion_cause();
   _foregroundGCIsActive = false;
   return;
-}
-
-void CMSCollector::check_gc_time_limit() {
-
-  // Ignore explicit GC's.  Exiting here does not set the flag and
-  // does not reset the count.  Updating of the averages for system
-  // GC's is still controlled by UseAdaptiveSizePolicyWithSystemGC.
-  GCCause::Cause gc_cause = GenCollectedHeap::heap()->gc_cause();
-  if (GCCause::is_user_requested_gc(gc_cause) ||
-      GCCause::is_serviceability_requested_gc(gc_cause)) {
-    return;
-  }
-
-  // Calculate the fraction of the CMS generation was freed during
-  // the last collection.
-  // Only consider the STW compacting cost for now.
-  //
-  // Note that the gc time limit test only works for the collections
-  // of the young gen + tenured gen and not for collections of the
-  // permanent gen.  That is because the calculation of the space
-  // freed by the collection is the free space in the young gen +
-  // tenured gen.
-
-  double fraction_free =
-    ((double)_cmsGen->free())/((double)_cmsGen->max_capacity());
-  if ((100.0 * size_policy()->compacting_gc_cost()) >
-         ((double) GCTimeLimit) &&
-        ((fraction_free * 100) < GCHeapFreeLimit)) {
-    size_policy()->inc_gc_time_limit_count();
-    if (UseGCOverheadLimit &&
-        (size_policy()->gc_time_limit_count() >
-         AdaptiveSizePolicyGCTimeLimitThreshold)) {
-      size_policy()->set_gc_time_limit_exceeded(true);
-      // Avoid consecutive OOM due to the gc time limit by resetting
-      // the counter.
-      size_policy()->reset_gc_time_limit_count();
-      if (PrintGCDetails) {
-        gclog_or_tty->print_cr("      GC is exceeding overhead limit "
-          "of %d%%", GCTimeLimit);
-      }
-    } else {
-      if (PrintGCDetails) {
-        gclog_or_tty->print_cr("      GC would exceed overhead limit "
-          "of %d%%", GCTimeLimit);
-      }
-    }
-  } else {
-    size_policy()->reset_gc_time_limit_count();
-  }
 }
 
 // Resize the perm generation and the tenured generation
@@ -6182,6 +6144,11 @@ void CMSCollector::reset(bool asynch) {
       }
       curAddr = chunk.end();
     }
+    // A successful mostly concurrent collection has been done.
+    // Because only the full (i.e., concurrent mode failure) collections
+    // are being measured for gc overhead limits, clean the "near" flag
+    // and count.
+    sp->reset_gc_overhead_limit_count();
     _collectorState = Idling;
   } else {
     // already have the lock

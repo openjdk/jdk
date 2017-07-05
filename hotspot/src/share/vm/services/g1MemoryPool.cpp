@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ size_t G1MemoryPoolSuper::eden_space_committed(G1CollectedHeap* g1h) {
 
 // See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::eden_space_used(G1CollectedHeap* g1h) {
-  size_t young_list_length = g1h->young_list_length();
+  size_t young_list_length = g1h->young_list()->length();
   size_t eden_used = young_list_length * HeapRegion::GrainBytes;
   size_t survivor_used = survivor_space_used(g1h);
   eden_used = subtract_up_to_zero(eden_used, survivor_used);

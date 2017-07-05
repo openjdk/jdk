@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2814,9 +2814,6 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
 
 
 void LinearScan::compute_debug_info(CodeEmitInfo* info, int op_id) {
-  if (!compilation()->needs_debug_information()) {
-    return;
-  }
   TRACE_LINEAR_SCAN(3, tty->print_cr("creating debug information at op_id %d", op_id));
 
   IRScope* innermost_scope = info->scope();
