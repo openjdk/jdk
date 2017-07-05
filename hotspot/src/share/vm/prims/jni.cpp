@@ -2173,8 +2173,7 @@ static char* get_bad_address() {
     size_t size = os::vm_allocation_granularity();
     bad_address = os::reserve_memory(size);
     if (bad_address != NULL) {
-      os::commit_memory(bad_address, size);
-      os::protect_memory(bad_address, size);
+      os::protect_memory(bad_address, size, os::MEM_PROT_READ);
     }
   }
   return bad_address;

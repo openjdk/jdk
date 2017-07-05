@@ -263,8 +263,12 @@ public abstract class MBeanSupport<M>
         return resource.getClass().getName();
     }
 
-    public final Object getResource() {
+    public final Object getWrappedObject() {
         return resource;
+    }
+
+    public final ClassLoader getWrappedClassLoader() {
+        return resource.getClass().getClassLoader();
     }
 
     public final Class<?> getMBeanInterface() {

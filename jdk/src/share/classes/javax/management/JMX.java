@@ -26,6 +26,7 @@
 package javax.management;
 
 import com.sun.jmx.mbeanserver.Introspector;
+import com.sun.jmx.mbeanserver.MBeanInjector;
 import com.sun.jmx.remote.util.ClassLogger;
 import java.beans.BeanInfo;
 import java.beans.PropertyDescriptor;
@@ -130,6 +131,7 @@ public class JMX {
      * </pre>
      *
      * @see javax.management.JMX.ProxyOptions
+     * @see javax.management.StandardMBean.Options
      */
     public static class MBeanOptions implements Serializable, Cloneable {
         private static final long serialVersionUID = -6380842449318177843L;
@@ -738,5 +740,29 @@ public class JMX {
         // We don't bother excluding the case where the name is
         // exactly the string "MXBean" since that would mean there
         // was no package name, which is pretty unlikely in practice.
+    }
+
+    /**
+     * <p>Test if an MBean can emit notifications.  An MBean can emit
+     * notifications if either it implements {@link NotificationBroadcaster}
+     * (perhaps through its child interface {@link NotificationEmitter}), or
+     * it uses <a href="MBeanRegistration.html#injection">resource
+     * injection</a> to obtain an instance of {@link SendNotification}
+     * through which it can send notifications.</p>
+     *
+     * @param mbean an MBean object.
+     * @return true if the given object is a valid MBean that can emit
+     * notifications; false if the object is a valid MBean but that
+     * cannot emit notifications.
+     * @throws NotCompliantMBeanException if the given object is not
+     * a valid MBean.
+     */
+    public static boolean isNotificationSource(Object mbean)
+            throws NotCompliantMBeanException {
+        if (mbean instanceof NotificationBroadcaster)
+            return true;
+        Object resource = (mbean instanceof DynamicWrapperMBean) ?
+            ((DynamicWrapperMBean) mbean).getWrappedObject() : mbean;
+        return (MBeanInjector.injectsSendNotification(resource));
     }
 }
