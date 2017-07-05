@@ -50,17 +50,6 @@ bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
   // even if isInJava == true. It should be more reliable than
   // ucontext info.
   if (jt->has_last_Java_frame() && jt->frame_anchor()->walkable()) {
-#if 0
-    // This sanity check may not be needed with the new frame
-    // walking code. Remove it for now.
-    if (!jt->frame_anchor()->post_Java_state_is_pc()
-    && frame::next_younger_sp_or_null(last_Java_sp(),
-    jt->frame_anchor()->post_Java_sp()) == NULL) {
-      // the anchor contains an SP, but the frame is not walkable
-      // because post_Java_sp isn't valid relative to last_Java_sp
-      return false;
-    }
-#endif
     *fr_addr = jt->pd_last_frame();
     return true;
   }
@@ -77,23 +66,59 @@ bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
     return false;
   }
 
+  frame ret_frame(ret_sp, frame::unpatchable, addr.pc());
+
   // we were running Java code when SIGPROF came in
   if (isInJava) {
+
+
+    // If the frame we got is safe then it is most certainly valid
+    if (ret_frame.safe_for_sender(jt)) {
+      *fr_addr = ret_frame;
+      return true;
+    }
+
+    // If it isn't safe then we can try several things to try and get
+    // a good starting point.
+    //
+    // On sparc the frames are almost certainly walkable in the sense
+    // of sp/fp linkages. However because of recycling of windows if
+    // a piece of code does multiple save's where the initial save creates
+    // a real frame with a return pc and the succeeding save's are used to
+    // simply get free registers and have no real pc then the pc linkage on these
+    // "inner" temporary frames will be bogus.
+    // Since there is in general only a nesting level like
+    // this one deep in general we'll try and unwind such an "inner" frame
+    // here ourselves and see if it makes sense
+
+    frame unwind_frame(ret_frame.fp(), frame::unpatchable, addr.pc());
+
+    if (unwind_frame.safe_for_sender(jt)) {
+      *fr_addr = unwind_frame;
+      return true;
+    }
+
+    // Well that didn't work. Most likely we're toast on this tick
+    // The previous code would try this. I think it is dubious in light
+    // of changes to safe_for_sender and the unwind trick above but
+    // if it gets us a safe frame who wants to argue.
+
     // If we have a last_Java_sp, then the SIGPROF signal caught us
     // right when we were transitioning from _thread_in_Java to a new
     // JavaThreadState. We use last_Java_sp instead of the sp from
     // the ucontext since it should be more reliable.
+
     if (jt->has_last_Java_frame()) {
       ret_sp = jt->last_Java_sp();
+      frame ret_frame2(ret_sp, frame::unpatchable, addr.pc());
+      if (ret_frame2.safe_for_sender(jt)) {
+        *fr_addr = ret_frame2;
+        return true;
+      }
     }
-    // Implied else: we don't have a last_Java_sp so we use what we
-    // got from the ucontext.
 
-    frame ret_frame(ret_sp, frame::unpatchable, addr.pc());
-    if (!ret_frame.safe_for_sender(jt)) {
-      // nothing else to try if the frame isn't good
-      return false;
-    }
+    // This is the best we can do. We will only be able to decode the top frame
+
     *fr_addr = ret_frame;
     return true;
   }
@@ -105,17 +130,13 @@ bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
   if (jt->has_last_Java_frame()) {
     assert(!jt->frame_anchor()->walkable(), "case covered above");
 
-    if (jt->thread_state() == _thread_in_native) {
-      frame ret_frame(jt->last_Java_sp(), frame::unpatchable, addr.pc());
-      if (!ret_frame.safe_for_sender(jt)) {
-        // nothing else to try if the frame isn't good
-        return false;
-      }
-      *fr_addr = ret_frame;
-      return true;
-    }
+    frame ret_frame(jt->last_Java_sp(), frame::unpatchable, addr.pc());
+    *fr_addr = ret_frame;
+    return true;
   }
 
-  // nothing else to try
-  return false;
+  // nothing else to try but what we found initially
+
+  *fr_addr = ret_frame;
+  return true;
 }

@@ -504,7 +504,7 @@ public class GIFImageReader extends ImageReader {
             }
 
             // Found position of metadata for image 0
-            imageStartPosition.add(new Long(stream.getStreamPosition()));
+            imageStartPosition.add(Long.valueOf(stream.getStreamPosition()));
         } catch (IOException e) {
             throw new IIOException("I/O error reading header!", e);
         }

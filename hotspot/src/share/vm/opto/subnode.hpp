@@ -163,6 +163,16 @@ public:
   virtual const Type *sub( const Type *, const Type * ) const;
 };
 
+//------------------------------CmpNNode--------------------------------------
+// Compare 2 narrow oop values, returning condition codes (-1, 0 or 1).
+class CmpNNode : public CmpNode {
+public:
+  CmpNNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
+  virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *sub( const Type *, const Type * ) const;
+};
+
 //------------------------------CmpLNode---------------------------------------
 // Compare 2 long values, returning condition codes (-1, 0 or 1).
 class CmpLNode : public CmpNode {

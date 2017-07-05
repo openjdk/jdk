@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,10 +81,10 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         super.preInit(params);
 
         params.put(EVENT_MASK,
-                   KeyPressMask       | KeyReleaseMask
-                   | FocusChangeMask  | ButtonPressMask | ButtonReleaseMask
-                   | EnterWindowMask  | LeaveWindowMask | PointerMotionMask
-                   | ButtonMotionMask | ExposureMask    | StructureNotifyMask | SubstructureNotifyMask);
+                   XConstants.KeyPressMask       | XConstants.KeyReleaseMask
+                   | XConstants.FocusChangeMask  | XConstants.ButtonPressMask | XConstants.ButtonReleaseMask
+                   | XConstants.EnterWindowMask  | XConstants.LeaveWindowMask | XConstants.PointerMotionMask
+                   | XConstants.ButtonMotionMask | XConstants.ExposureMask    | XConstants.StructureNotifyMask | XConstants.SubstructureNotifyMask);
 
     }
 
@@ -134,7 +134,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         try {
             XToolkit.addEventDispatcher(xembed.handle, xembed);
             XlibWrapper.XSelectInput(XToolkit.getDisplay(), xembed.handle,
-                                     XlibWrapper.StructureNotifyMask | XlibWrapper.PropertyChangeMask);
+                                     XConstants.StructureNotifyMask | XConstants.PropertyChangeMask);
 
             XDropTargetRegistry.getRegistry().registerXEmbedClient(getWindow(), xembed.handle);
         } finally {
@@ -194,7 +194,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
     public void dispatchEvent(XEvent ev) {
         super.dispatchEvent(ev);
         switch (ev.get_type()) {
-          case CreateNotify:
+          case XConstants.CreateNotify:
               XCreateWindowEvent cr = ev.get_xcreatewindow();
               if (xembedLog.isLoggable(Level.FINEST)) {
                   xembedLog.finest("Message on embedder: " + cr);
@@ -205,7 +205,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
               }
               embedChild(cr.get_window());
               break;
-          case DestroyNotify:
+          case XConstants.DestroyNotify:
               XDestroyWindowEvent dn = ev.get_xdestroywindow();
               if (xembedLog.isLoggable(Level.FINEST)) {
                   xembedLog.finest("Message on embedder: " + dn);
@@ -215,7 +215,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
               }
               childDestroyed();
               break;
-          case ReparentNotify:
+          case XConstants.ReparentNotify:
               XReparentEvent rep = ev.get_xreparent();
               if (xembedLog.isLoggable(Level.FINEST)) {
                   xembedLog.finest("Message on embedder: " + rep);
@@ -309,7 +309,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
 
                 if (status == 0 ||
                     (XToolkit.saved_error != null &&
-                     XToolkit.saved_error.get_error_code() != XlibWrapper.Success)) {
+                     XToolkit.saved_error.get_error_code() != XConstants.Success)) {
                     return null;
                 }
 
@@ -480,7 +480,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
             if (xembedLog.isLoggable(Level.FINE)) xembedLog.fine("Forwarding native key event: " + ke);
             XToolkit.awtLock();
             try {
-                XlibWrapper.XSendEvent(XToolkit.getDisplay(), xembed.handle, false, XlibWrapper.NoEventMask, data);
+                XlibWrapper.XSendEvent(XToolkit.getDisplay(), xembed.handle, false, XConstants.NoEventMask, data);
             } finally {
                 XToolkit.awtUnlock();
             }
@@ -742,7 +742,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
                 version = Native.getCard32(xembed_info_data, 0);
                 flags = Native.getCard32(xembed_info_data, 1);
                 boolean new_mapped = (flags & XEMBED_MAPPED) != 0;
-                boolean currently_mapped = XlibUtil.getWindowMapState(handle) != XlibWrapper.IsUnmapped;
+                boolean currently_mapped = XlibUtil.getWindowMapState(handle) != XConstants.IsUnmapped;
                 if (new_mapped != currently_mapped) {
                     if (xembedLog.isLoggable(Level.FINER))
                         xembedLog.fine("Mapping state of the client has changed, old state: " + currently_mapped + ", new state: " + new_mapped);
@@ -803,13 +803,13 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         public void dispatchEvent(XEvent xev) {
             int type = xev.get_type();
             switch (type) {
-              case PropertyNotify:
+              case XConstants.PropertyNotify:
                   handlePropertyNotify(xev);
                   break;
-              case ConfigureNotify:
+              case XConstants.ConfigureNotify:
                   handleConfigureNotify(xev);
                   break;
-              case ClientMessage:
+              case XConstants.ClientMessage:
                   handleClientMessage(xev);
                   break;
             }
@@ -844,7 +844,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
                 XKeyEvent ke = new XKeyEvent(data);
 
                 // We recognize only these masks
-                modifiers = ke.get_state() & (ShiftMask | ControlMask | LockMask);
+                modifiers = ke.get_state() & (XConstants.ShiftMask | XConstants.ControlMask | XConstants.LockMask);
                 if (xembedLog.isLoggable(Level.FINEST)) xembedLog.finest("Mapped " + e + " to " + this);
             } finally {
                 XlibWrapper.unsafe.freeMemory(data);

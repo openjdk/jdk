@@ -157,22 +157,158 @@ void RegisterMap::shift_individual_registers() {
   check_location_valid();
 }
 
-
 bool frame::safe_for_sender(JavaThread *thread) {
-  address   sp = (address)_sp;
-  if (sp != NULL &&
-      (sp <= thread->stack_base() && sp >= thread->stack_base() - thread->stack_size())) {
-      // Unfortunately we can only check frame complete for runtime stubs and nmethod
-      // other generic buffer blobs are more problematic so we just assume they are
-      // ok. adapter blobs never have a frame complete and are never ok.
-      if (_cb != NULL && !_cb->is_frame_complete_at(_pc)) {
-        if (_cb->is_nmethod() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
-          return false;
-        }
-      }
-      return true;
+
+  address _SP = (address) sp();
+  address _FP = (address) fp();
+  address _UNEXTENDED_SP = (address) unextended_sp();
+  // sp must be within the stack
+  bool sp_safe = (_SP <= thread->stack_base()) &&
+                 (_SP >= thread->stack_base() - thread->stack_size());
+
+  if (!sp_safe) {
+    return false;
   }
-  return false;
+
+  // unextended sp must be within the stack and above or equal sp
+  bool unextended_sp_safe = (_UNEXTENDED_SP <= thread->stack_base()) &&
+                            (_UNEXTENDED_SP >= _SP);
+
+  if (!unextended_sp_safe) return false;
+
+  // an fp must be within the stack and above (but not equal) sp
+  bool fp_safe = (_FP <= thread->stack_base()) &&
+                 (_FP > _SP);
+
+  // We know sp/unextended_sp are safe only fp is questionable here
+
+  // If the current frame is known to the code cache then we can attempt to
+  // to construct the sender and do some validation of it. This goes a long way
+  // toward eliminating issues when we get in frame construction code
+
+  if (_cb != NULL ) {
+
+    // First check if frame is complete and tester is reliable
+    // Unfortunately we can only check frame complete for runtime stubs and nmethod
+    // other generic buffer blobs are more problematic so we just assume they are
+    // ok. adapter blobs never have a frame complete and are never ok.
+
+    if (!_cb->is_frame_complete_at(_pc)) {
+      if (_cb->is_nmethod() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
+        return false;
+      }
+    }
+
+    // Entry frame checks
+    if (is_entry_frame()) {
+      // an entry frame must have a valid fp.
+
+      if (!fp_safe) {
+        return false;
+      }
+
+      // Validate the JavaCallWrapper an entry frame must have
+
+      address jcw = (address)entry_frame_call_wrapper();
+
+      bool jcw_safe = (jcw <= thread->stack_base()) && ( jcw > _FP);
+
+      return jcw_safe;
+
+    }
+
+    intptr_t* younger_sp = sp();
+    intptr_t* _SENDER_SP = sender_sp(); // sender is actually just _FP
+    bool adjusted_stack = is_interpreted_frame();
+
+    address   sender_pc = (address)younger_sp[I7->sp_offset_in_saved_window()] + pc_return_offset;
+
+
+    // We must always be able to find a recognizable pc
+    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
+    if (sender_pc == NULL ||  sender_blob == NULL) {
+      return false;
+    }
+
+    // It should be safe to construct the sender though it might not be valid
+
+    frame sender(_SENDER_SP, younger_sp, adjusted_stack);
+
+    // Do we have a valid fp?
+    address sender_fp = (address) sender.fp();
+
+    // an fp must be within the stack and above (but not equal) current frame's _FP
+
+    bool sender_fp_safe = (sender_fp <= thread->stack_base()) &&
+                   (sender_fp > _FP);
+
+    if (!sender_fp_safe) {
+      return false;
+    }
+
+
+    // If the potential sender is the interpreter then we can do some more checking
+    if (Interpreter::contains(sender_pc)) {
+      return sender.is_interpreted_frame_valid(thread);
+    }
+
+    // Could just be some random pointer within the codeBlob
+    if (!sender.cb()->instructions_contains(sender_pc)) return false;
+
+    // We should never be able to see an adapter if the current frame is something from code cache
+
+    if ( sender_blob->is_adapter_blob()) {
+      return false;
+    }
+
+    if( sender.is_entry_frame()) {
+      // Validate the JavaCallWrapper an entry frame must have
+
+      address jcw = (address)sender.entry_frame_call_wrapper();
+
+      bool jcw_safe = (jcw <= thread->stack_base()) && ( jcw > sender_fp);
+
+      return jcw_safe;
+    }
+
+    // If the frame size is 0 something is bad because every nmethod has a non-zero frame size
+    // because you must allocate window space
+
+    if (sender_blob->frame_size() == 0) {
+      assert(!sender_blob->is_nmethod(), "should count return address at least");
+      return false;
+    }
+
+    // The sender should positively be an nmethod or call_stub. On sparc we might in fact see something else.
+    // The cause of this is because at a save instruction the O7 we get is a leftover from an earlier
+    // window use. So if a runtime stub creates two frames (common in fastdebug/jvmg) then we see the
+    // stale pc. So if the sender blob is not something we'd expect we have little choice but to declare
+    // the stack unwalkable. pd_get_top_frame_for_signal_handler tries to recover from this by unwinding
+    // that initial frame and retrying.
+
+    if (!sender_blob->is_nmethod()) {
+      return false;
+    }
+
+    // Could put some more validation for the potential non-interpreted sender
+    // frame we'd create by calling sender if I could think of any. Wait for next crash in forte...
+
+    // One idea is seeing if the sender_pc we have is one that we'd expect to call to current cb
+
+    // We've validated the potential sender that would be created
+
+    return true;
+
+  }
+
+  // Must be native-compiled frame. Since sender will try and use fp to find
+  // linkages it must be safe
+
+  if (!fp_safe) return false;
+
+  // could try and do some more potential verification of native frame if we could think of some...
+
+  return true;
 }
 
 // constructors
@@ -450,7 +586,7 @@ void frame::pd_gc_epilog() {
 }
 
 
-bool frame::is_interpreted_frame_valid() const {
+bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 #ifdef CC_INTERP
   // Is there anything to do?
 #else
@@ -462,6 +598,7 @@ bool frame::is_interpreted_frame_valid() const {
   if (sp() == 0 || (intptr_t(sp()) & (2*wordSize-1)) != 0) {
     return false;
   }
+
   const intptr_t interpreter_frame_initial_sp_offset = interpreter_frame_vm_local_words;
   if (fp() + interpreter_frame_initial_sp_offset < sp()) {
     return false;
@@ -471,9 +608,43 @@ bool frame::is_interpreted_frame_valid() const {
   if (fp() <= sp()) {        // this attempts to deal with unsigned comparison above
     return false;
   }
-  if (fp() - sp() > 4096) {  // stack frames shouldn't be large.
+  // do some validation of frame elements
+
+  // first the method
+
+  methodOop m = *interpreter_frame_method_addr();
+
+  // validate the method we'd find in this potential sender
+  if (!Universe::heap()->is_valid_method(m)) return false;
+
+  // stack frames shouldn't be much larger than max_stack elements
+
+  if (fp() - sp() > 1024 + m->max_stack()*Interpreter::stackElementSize()) {
     return false;
   }
+
+  // validate bci/bcx
+
+  intptr_t  bcx    = interpreter_frame_bcx();
+  if (m->validate_bci_from_bcx(bcx) < 0) {
+    return false;
+  }
+
+  // validate constantPoolCacheOop
+
+  constantPoolCacheOop cp = *interpreter_frame_cache_addr();
+
+  if (cp == NULL ||
+      !Space::is_aligned(cp) ||
+      !Universe::heap()->is_permanent((void*)cp)) return false;
+
+  // validate locals
+
+  address locals =  (address) *interpreter_frame_locals_addr();
+
+  if (locals > thread->stack_base() || locals < (address) fp()) return false;
+
+  // We'd have to be pretty unlucky to be mislead at this point
 #endif /* CC_INTERP */
   return true;
 }

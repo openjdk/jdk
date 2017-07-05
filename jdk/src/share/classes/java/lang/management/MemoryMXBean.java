@@ -46,6 +46,9 @@ import javax.management.openmbean.CompositeData;
  *           <tt>java.lang:type=Memory</tt>}
  * </blockquote>
  *
+ * It can be obtained by calling the
+ * {@link PlatformManagedObject#getObjectName} method.
+ *
  * <h4> Memory </h4>
  * The memory system of the Java virtual machine manages
  * the following kinds of memory:
@@ -190,6 +193,7 @@ import javax.management.openmbean.CompositeData;
  * emitter.addNotificationListener(listener, null, null);
  * </pre></blockquote>
  *
+ * @see ManagementFactory#getPlatformMXBeans(Class)
  * @see <a href="../../../javax/management/package-summary.html">
  *      JMX Specification.</a>
  * @see <a href="package-summary.html#examples">
@@ -198,7 +202,7 @@ import javax.management.openmbean.CompositeData;
  * @author  Mandy Chung
  * @since   1.5
  */
-public interface MemoryMXBean {
+public interface MemoryMXBean extends PlatformManagedObject {
     /**
      * Returns the approximate number of objects for which
      * finalization is pending.

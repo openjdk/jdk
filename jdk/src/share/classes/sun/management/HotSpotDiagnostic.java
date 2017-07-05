@@ -28,6 +28,8 @@ package sun.management;
 import java.util.*;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import javax.management.ObjectName;
+
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
 
@@ -72,7 +74,7 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
             throw new NullPointerException("value cannot be null");
         }
 
-        ManagementFactory.checkControlAccess();
+        Util.checkControlAccess();
         Flag flag = Flag.getFlag(name);
         if (flag == null) {
             throw new IllegalArgumentException("VM option \"" +
@@ -112,5 +114,9 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
                 name + "\" is of an unsupported type: " +
                 v.getClass().getName());
         }
+    }
+
+    public ObjectName getObjectName() {
+        return Util.newObjectName("com.sun.management:type=HotSpotDiagnostic");
     }
 }

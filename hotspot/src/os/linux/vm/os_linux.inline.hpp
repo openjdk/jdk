@@ -120,3 +120,6 @@ inline int os::closedir(DIR *dirp)
   RESTARTABLE(_cmd, _result); \
   return _result; \
 } while(false)
+
+inline bool os::numa_has_static_binding()   { return true; }
+inline bool os::numa_has_group_homing()     { return false;  }

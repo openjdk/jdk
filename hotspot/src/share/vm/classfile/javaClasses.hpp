@@ -45,9 +45,9 @@ class java_lang_String : AllStatic {
  private:
   enum {
     hc_value_offset  = 0,
-    hc_offset_offset = 1,
-    hc_count_offset  = 2,
-    hc_hash_offset   = 3
+    hc_offset_offset = 1
+    //hc_count_offset = 2  -- not a word-scaled offset
+    //hc_hash_offset  = 3  -- not a word-scaled offset
   };
 
   static int value_offset;
@@ -149,6 +149,9 @@ class java_lang_Class : AllStatic {
   // Conversion
   static klassOop as_klassOop(oop java_class);
   // Testing
+  static bool is_instance(oop obj) {
+    return obj != NULL && obj->klass() == SystemDictionary::class_klass();
+  }
   static bool is_primitive(oop java_class);
   static BasicType primitive_type(oop java_class);
   static oop primitive_mirror(BasicType t);
@@ -651,13 +654,16 @@ class java_lang_boxing_object: AllStatic {
   };
   static int value_offset;
 
-  static oop initialize_and_allocate(klassOop klass, TRAPS);
+  static oop initialize_and_allocate(BasicType type, TRAPS);
  public:
   // Allocation. Returns a boxed value, or NULL for invalid type.
   static oop create(BasicType type, jvalue* value, TRAPS);
   // Accessors. Returns the basic type being boxed, or T_ILLEGAL for invalid oop.
   static BasicType get_value(oop box, jvalue* value);
   static BasicType set_value(oop box, jvalue* value);
+  static BasicType basic_type(oop box);
+  static bool is_instance(oop box)                 { return basic_type(box) != T_ILLEGAL; }
+  static bool is_instance(oop box, BasicType type) { return basic_type(box) == type; }
 
   static int value_offset_in_bytes() { return value_offset; }
 
@@ -691,24 +697,47 @@ class java_lang_ref_Reference: AllStatic {
   static int number_of_fake_oop_fields;
 
   // Accessors
-  static oop referent(oop ref)        { return *referent_addr(ref); }
-  static void set_referent(oop ref, oop value);
-  static oop* referent_addr(oop ref);
-
-  static oop next(oop ref)            { return *next_addr(ref); }
-  static void set_next(oop ref, oop value);
-  static oop* next_addr(oop ref);
-
-  static oop discovered(oop ref)      { return *discovered_addr(ref); }
-  static void set_discovered(oop ref, oop value);
-  static oop* discovered_addr(oop ref);
-
+  static oop referent(oop ref) {
+    return ref->obj_field(referent_offset);
+  }
+  static void set_referent(oop ref, oop value) {
+    ref->obj_field_put(referent_offset, value);
+  }
+  static void set_referent_raw(oop ref, oop value) {
+    ref->obj_field_raw_put(referent_offset, value);
+  }
+  static HeapWord* referent_addr(oop ref) {
+    return ref->obj_field_addr<HeapWord>(referent_offset);
+  }
+  static oop next(oop ref) {
+    return ref->obj_field(next_offset);
+  }
+  static void set_next(oop ref, oop value) {
+    ref->obj_field_put(next_offset, value);
+  }
+  static void set_next_raw(oop ref, oop value) {
+    ref->obj_field_raw_put(next_offset, value);
+  }
+  static HeapWord* next_addr(oop ref) {
+    return ref->obj_field_addr<HeapWord>(next_offset);
+  }
+  static oop discovered(oop ref) {
+    return ref->obj_field(discovered_offset);
+  }
+  static void set_discovered(oop ref, oop value) {
+    ref->obj_field_put(discovered_offset, value);
+  }
+  static void set_discovered_raw(oop ref, oop value) {
+    ref->obj_field_raw_put(discovered_offset, value);
+  }
+  static HeapWord* discovered_addr(oop ref) {
+    return ref->obj_field_addr<HeapWord>(discovered_offset);
+  }
   // Accessors for statics
-  static oop  pending_list_lock()     { return *pending_list_lock_addr(); }
-  static oop  pending_list()          { return *pending_list_addr(); }
+  static oop  pending_list_lock();
+  static oop  pending_list();
 
-  static oop* pending_list_lock_addr();
-  static oop* pending_list_addr();
+  static HeapWord*  pending_list_addr();
 };
 
 
@@ -898,6 +927,7 @@ class JavaClasses : AllStatic {
  private:
   static bool check_offset(const char *klass_name, int offset, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
   static bool check_static_offset(const char *klass_name, int hardcoded_offset, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
+  static bool check_constant(const char *klass_name, int constant, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
  public:
   static void compute_hard_coded_offsets();
   static void compute_offsets();

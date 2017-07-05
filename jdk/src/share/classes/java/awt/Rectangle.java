@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.awt;
 
 import java.awt.geom.Rectangle2D;
+import java.beans.Transient;
 
 /**
  * A <code>Rectangle</code> specifies an area in a coordinate space that is
@@ -308,6 +309,7 @@ public class Rectangle extends Rectangle2D
      * @see       #setBounds(int, int, int, int)
      * @since     1.1
      */
+    @Transient
     public Rectangle getBounds() {
         return new Rectangle(x, y, width, height);
     }

@@ -100,6 +100,7 @@ class OrQueryExp extends QueryEval implements QueryExp {
     /**
      * Returns a string representation of this OrQueryExp
      */
+    @Override
     public String toString() {
         return "(" + exp1 + ") or (" + exp2 + ")";
     }

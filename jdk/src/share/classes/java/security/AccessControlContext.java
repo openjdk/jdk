@@ -101,13 +101,14 @@ public final class AccessControlContext {
     }
 
     /**
-     * Create an AccessControlContext with the given set of ProtectionDomains.
+     * Create an AccessControlContext with the given array of ProtectionDomains.
      * Context must not be null. Duplicate domains will be removed from the
      * context.
      *
      * @param context the ProtectionDomains associated with this context.
      * The non-duplicate domains are copied from the array. Subsequent
      * changes to the array will not affect this AccessControlContext.
+     * @throws NullPointerException if <code>context</code> is <code>null</code>
      */
     public AccessControlContext(ProtectionDomain context[])
     {
@@ -125,8 +126,10 @@ public final class AccessControlContext {
                 if ((context[i] != null) &&  (!v.contains(context[i])))
                     v.add(context[i]);
             }
-            this.context = new ProtectionDomain[v.size()];
-            this.context = v.toArray(this.context);
+            if (!v.isEmpty()) {
+                this.context = new ProtectionDomain[v.size()];
+                this.context = v.toArray(this.context);
+            }
         }
     }
 

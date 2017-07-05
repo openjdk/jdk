@@ -557,8 +557,8 @@ void TemplateTable::aaload() {
   // eax: index
   // rdx: array
   index_check(rdx, rax); // kills rbx
-  __ movq(rax, Address(rdx, rax,
-                       Address::times_8,
+  __ load_heap_oop(rax, Address(rdx, rax,
+                       UseCompressedOops ? Address::times_4 : Address::times_8,
                        arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
 }
 
@@ -870,15 +870,15 @@ void TemplateTable::aastore() {
   __ jcc(Assembler::zero, is_null);
 
   // Move subklass into rbx
-  __ movq(rbx, Address(rax, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rbx, rax);
   // Move superklass into rax
-  __ movq(rax, Address(rdx, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rax, rdx);
   __ movq(rax, Address(rax,
                        sizeof(oopDesc) +
                        objArrayKlass::element_klass_offset_in_bytes()));
-  // Compress array + index*8 + 12 into a single register.  Frees rcx.
+  // Compress array + index*oopSize + 12 into a single register.  Frees rcx.
   __ leaq(rdx, Address(rdx, rcx,
-                       Address::times_8,
+                       UseCompressedOops ? Address::times_4 : Address::times_8,
                        arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
 
   // Generate subtype check.  Blows rcx, rdi
@@ -892,17 +892,17 @@ void TemplateTable::aastore() {
   // Come here on success
   __ bind(ok_is_subtype);
   __ movq(rax, at_tos()); // Value
-  __ movq(Address(rdx, 0), rax);
+  __ store_heap_oop(Address(rdx, 0), rax);
   __ store_check(rdx);
   __ jmp(done);
 
   // Have a NULL in rax, rdx=array, ecx=index.  Store NULL at ary[idx]
   __ bind(is_null);
   __ profile_null_seen(rbx);
-  __ movq(Address(rdx, rcx,
-                  Address::times_8,
-                  arrayOopDesc::base_offset_in_bytes(T_OBJECT)),
-          rax);
+  __ store_heap_oop(Address(rdx, rcx,
+                            UseCompressedOops ? Address::times_4 : Address::times_8,
+                            arrayOopDesc::base_offset_in_bytes(T_OBJECT)),
+                    rax);
 
   // Pop stack arguments
   __ bind(done);
@@ -1934,7 +1934,7 @@ void TemplateTable::_return(TosState state) {
   if (_desc->bytecode() == Bytecodes::_return_register_finalizer) {
     assert(state == vtos, "only valid state");
     __ movq(c_rarg1, aaddress(0));
-    __ movq(rdi, Address(c_rarg1, oopDesc::klass_offset_in_bytes()));
+    __ load_klass(rdi, c_rarg1);
     __ movl(rdi, Address(rdi, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc)));
     __ testl(rdi, JVM_ACC_HAS_FINALIZER);
     Label skip_register_finalizer;
@@ -2184,7 +2184,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   __ cmpl(flags, atos);
   __ jcc(Assembler::notEqual, notObj);
   // atos
-  __ movq(rax, field);
+  __ load_heap_oop(rax, field);
   __ push(atos);
   if (!is_static) {
     patch_bytecode(Bytecodes::_fast_agetfield, bc, rbx);
@@ -2394,7 +2394,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
   // atos
   __ pop(atos);
   if (!is_static) pop_and_check_object(obj);
-  __ movq(field, rax);
+  __ store_heap_oop(field, rax);
   __ store_check(obj, field); // Need to mark card
   if (!is_static) {
     patch_bytecode(Bytecodes::_fast_aputfield, bc, rbx);
@@ -2515,7 +2515,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     const Address field(c_rarg3, 0);
 
     switch (bytecode()) {          // load values into the jvalue object
-    case Bytecodes::_fast_aputfield: // fall through
+    case Bytecodes::_fast_aputfield: __ movq(field, rax); break;
     case Bytecodes::_fast_lputfield: __ movq(field, rax); break;
     case Bytecodes::_fast_iputfield: __ movl(field, rax); break;
     case Bytecodes::_fast_bputfield: __ movb(field, rax); break;
@@ -2582,7 +2582,7 @@ void TemplateTable::fast_storefield(TosState state) {
   // access field
   switch (bytecode()) {
   case Bytecodes::_fast_aputfield:
-    __ movq(field, rax);
+    __ store_heap_oop(field, rax);
     __ store_check(rcx, field);
     break;
   case Bytecodes::_fast_lputfield:
@@ -2631,8 +2631,8 @@ void TemplateTable::fast_accessfield(TosState state) {
     __ jcc(Assembler::zero, L1);
     // access constant pool cache entry
     __ get_cache_entry_pointer_at_bcp(c_rarg2, rcx, 1);
-    __ movq(r12, rax);  // save object pointer before call_VM() clobbers it
     __ verify_oop(rax);
+    __ movq(r12, rax);  // save object pointer before call_VM() clobbers it
     __ movq(c_rarg1, rax);
     // c_rarg1: object pointer copied above
     // c_rarg2: cache entry pointer
@@ -2641,6 +2641,7 @@ void TemplateTable::fast_accessfield(TosState state) {
                                 InterpreterRuntime::post_field_access),
                c_rarg1, c_rarg2);
     __ movq(rax, r12); // restore object pointer
+    __ reinit_heapbase();
     __ bind(L1);
   }
 
@@ -2667,7 +2668,7 @@ void TemplateTable::fast_accessfield(TosState state) {
   // access field
   switch (bytecode()) {
   case Bytecodes::_fast_agetfield:
-    __ movq(rax, field);
+    __ load_heap_oop(rax, field);
     __ verify_oop(rax);
     break;
   case Bytecodes::_fast_lgetfield:
@@ -2725,7 +2726,7 @@ void TemplateTable::fast_xaccess(TosState state) {
     __ movl(rax, Address(rax, rbx, Address::times_1));
     break;
   case atos:
-    __ movq(rax, Address(rax, rbx, Address::times_1));
+    __ load_heap_oop(rax, Address(rax, rbx, Address::times_1));
     __ verify_oop(rax);
     break;
   case ftos:
@@ -2787,7 +2788,8 @@ void TemplateTable::prepare_invoke(Register method,
     __ movl(recv, flags);
     __ andl(recv, 0xFF);
     if (TaggedStackInterpreter) __ shll(recv, 1);  // index*2
-    __ movq(recv, Address(rsp, recv, Address::times_8, -Interpreter::expr_offset_in_bytes(1)));
+    __ movq(recv, Address(rsp, recv, Address::times_8,
+                                 -Interpreter::expr_offset_in_bytes(1)));
     __ verify_oop(recv);
   }
 
@@ -2854,7 +2856,7 @@ void TemplateTable::invokevirtual_helper(Register index,
 
   // get receiver klass
   __ null_check(recv, oopDesc::klass_offset_in_bytes());
-  __ movq(rax, Address(recv, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rax, recv);
 
   __ verify_oop(rax);
 
@@ -2866,8 +2868,8 @@ void TemplateTable::invokevirtual_helper(Register index,
   assert(vtableEntry::size() * wordSize == 8,
          "adjust the scaling in the code below");
   __ movq(method, Address(rax, index,
-                          Address::times_8,
-                          base + vtableEntry::method_offset_in_bytes()));
+                                 Address::times_8,
+                                 base + vtableEntry::method_offset_in_bytes()));
   __ movq(rdx, Address(method, methodOopDesc::interpreter_entry_offset()));
   __ jump_from_interpreted(method, rdx);
 }
@@ -2932,7 +2934,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // Get receiver klass into rdx - also a null check
   __ restore_locals(); // restore r14
-  __ movq(rdx, Address(rcx, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rdx, rcx);
   __ verify_oop(rdx);
 
   // profile this call
@@ -3161,7 +3163,7 @@ void TemplateTable::_new() {
       __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),
                (intptr_t) markOopDesc::prototype()); // header (address 0x1)
     }
-    __ movq(Address(rax, oopDesc::klass_offset_in_bytes()), rsi);  // klass
+    __ store_klass(rax, rsi);  // klass
     __ jmp(done);
   }
 
@@ -3223,12 +3225,12 @@ void TemplateTable::checkcast() {
                   typeArrayOopDesc::header_size(T_BYTE) * wordSize),
           JVM_CONSTANT_Class);
   __ jcc(Assembler::equal, quicked);
-
-  __ movq(r12, rcx); // save rcx XXX
   __ push(atos); // save receiver for result, and for GC
+  __ movq(r12, rcx); // save rcx XXX
   call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ pop_ptr(rdx); // restore receiver
   __ movq(rcx, r12); // restore rcx XXX
+  __ reinit_heapbase();
+  __ pop_ptr(rdx); // restore receiver
   __ jmpb(resolved);
 
   // Get superklass in rax and subklass in rbx
@@ -3238,7 +3240,7 @@ void TemplateTable::checkcast() {
                        Address::times_8, sizeof(constantPoolOopDesc)));
 
   __ bind(resolved);
-  __ movq(rbx, Address(rdx, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rbx, rdx);
 
   // Generate subtype check.  Blows rcx, rdi.  Object in rdx.
   // Superklass in rax.  Subklass in rbx.
@@ -3280,19 +3282,20 @@ void TemplateTable::instanceof() {
           JVM_CONSTANT_Class);
   __ jcc(Assembler::equal, quicked);
 
-  __ movq(r12, rcx); // save rcx
   __ push(atos); // save receiver for result, and for GC
+  __ movq(r12, rcx); // save rcx
   call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ pop_ptr(rdx); // restore receiver
-  __ movq(rdx, Address(rdx, oopDesc::klass_offset_in_bytes()));
   __ movq(rcx, r12); // restore rcx
+  __ reinit_heapbase();
+  __ pop_ptr(rdx); // restore receiver
+  __ load_klass(rdx, rdx);
   __ jmpb(resolved);
 
   // Get superklass in rax and subklass in rdx
   __ bind(quicked);
-  __ movq(rdx, Address(rax, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rdx, rax);
   __ movq(rax, Address(rcx, rbx,
-                       Address::times_8, sizeof(constantPoolOopDesc)));
+                              Address::times_8, sizeof(constantPoolOopDesc)));
 
   __ bind(resolved);
 

@@ -26,21 +26,25 @@
 // This hierarchy is a representation hierarchy, i.e. if A is a superclass
 // of B, A's representation is a prefix of B's representation.
 
+typedef juint narrowOop; // Offset instead of address for an oop within a java object
+typedef class klassOopDesc* wideKlassOop; // to keep SA happy and unhandled oop
+                                          // detector happy.
+
 #ifndef CHECK_UNHANDLED_OOPS
 
-typedef class oopDesc*                      oop;
+typedef class oopDesc*                            oop;
 typedef class   instanceOopDesc*            instanceOop;
-typedef class   methodOopDesc*              methodOop;
-typedef class   constMethodOopDesc*         constMethodOop;
-typedef class   methodDataOopDesc*          methodDataOop;
-typedef class   arrayOopDesc*               arrayOop;
-typedef class     constantPoolOopDesc*      constantPoolOop;
-typedef class     constantPoolCacheOopDesc* constantPoolCacheOop;
-typedef class     objArrayOopDesc*          objArrayOop;
-typedef class     typeArrayOopDesc*         typeArrayOop;
-typedef class   symbolOopDesc*              symbolOop;
-typedef class   klassOopDesc*               klassOop;
-typedef class   markOopDesc*                markOop;
+typedef class   methodOopDesc*                    methodOop;
+typedef class   constMethodOopDesc*            constMethodOop;
+typedef class   methodDataOopDesc*            methodDataOop;
+typedef class   arrayOopDesc*                    arrayOop;
+typedef class     objArrayOopDesc*            objArrayOop;
+typedef class     typeArrayOopDesc*            typeArrayOop;
+typedef class   constantPoolOopDesc*            constantPoolOop;
+typedef class   constantPoolCacheOopDesc*   constantPoolCacheOop;
+typedef class   symbolOopDesc*                    symbolOop;
+typedef class   klassOopDesc*                    klassOop;
+typedef class   markOopDesc*                    markOop;
 typedef class   compiledICHolderOopDesc*    compiledICHolderOop;
 
 #else
@@ -172,9 +176,9 @@ class     arrayKlassKlass;
 class       objArrayKlassKlass;
 class       typeArrayKlassKlass;
 class   arrayKlass;
-class     constantPoolKlass;
-class     constantPoolCacheKlass;
 class     objArrayKlass;
 class     typeArrayKlass;
-class       symbolKlass;
+class   constantPoolKlass;
+class   constantPoolCacheKlass;
+class   symbolKlass;
 class   compiledICHolderKlass;

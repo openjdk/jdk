@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.awt;
 
 import java.awt.geom.Point2D;
+import java.beans.Transient;
 
 /**
  * A point representing a location in {@code (x,y)} coordinate space,
@@ -119,6 +120,7 @@ public class Point extends Point2D implements java.io.Serializable {
      * @see         java.awt.Point#setLocation(int, int)
      * @since       1.1
      */
+    @Transient
     public Point getLocation() {
         return new Point(x, y);
     }

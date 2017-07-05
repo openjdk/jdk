@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ abstract class XDragSourceProtocol {
 
             if (status == 0 ||
                 (XToolkit.saved_error != null &&
-                 XToolkit.saved_error.get_error_code() != XlibWrapper.Success)) {
+                 XToolkit.saved_error.get_error_code() != XConstants.Success)) {
                 throw new XException("XGetWindowAttributes failed");
             }
 
@@ -201,12 +201,12 @@ abstract class XDragSourceProtocol {
         XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
         XlibWrapper.XSelectInput(XToolkit.getDisplay(), targetWindow,
                                  targetWindowMask |
-                                 XlibWrapper.StructureNotifyMask);
+                                 XConstants.StructureNotifyMask);
 
         XToolkit.RESTORE_XERROR_HANDLER();
 
         if (XToolkit.saved_error != null &&
-            XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+            XToolkit.saved_error.get_error_code() != XConstants.Success) {
             throw new XException("XSelectInput failed");
         }
 

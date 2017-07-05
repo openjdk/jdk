@@ -44,9 +44,13 @@ package java.lang.management;
  *           <tt>java.lang:type=Runtime</tt>}
  * </blockquote>
  *
+ * It can be obtained by calling the
+ * {@link PlatformManagedObject#getObjectName} method.
+ *
  * <p> This interface defines several convenient methods for accessing
  * system properties about the Java virtual machine.
  *
+ * @see ManagementFactory#getPlatformMXBeans(Class)
  * @see <a href="../../../javax/management/package-summary.html">
  *      JMX Specification.</a>
  * @see <a href="package-summary.html#examples">
@@ -55,7 +59,7 @@ package java.lang.management;
  * @author  Mandy Chung
  * @since   1.5
  */
-public interface RuntimeMXBean {
+public interface RuntimeMXBean extends PlatformManagedObject {
     /**
      * Returns the name representing the running Java virtual machine.
      * The returned name string can be any arbitrary string and

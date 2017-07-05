@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1352,7 +1352,6 @@ final class sun_swing_PrintColorUIResource_PersistenceDelegate extends Persisten
 
 class MetaData {
     private static Hashtable internalPersistenceDelegates = new Hashtable();
-    private static Hashtable transientProperties = new Hashtable();
 
     private static PersistenceDelegate nullPersistenceDelegate = new NullPersistenceDelegate();
     private static PersistenceDelegate enumPersistenceDelegate = new EnumPersistenceDelegate();
@@ -1383,94 +1382,6 @@ class MetaData {
 
         internalPersistenceDelegates.put("java.util.JumboEnumSet", new java_util_EnumSet_PersistenceDelegate());
         internalPersistenceDelegates.put("java.util.RegularEnumSet", new java_util_EnumSet_PersistenceDelegate());
-
-// Transient properties
-
-  // awt
-
-    // Infinite graphs.
-        removeProperty("java.awt.geom.RectangularShape", "frame");
-        // removeProperty("java.awt.Rectangle2D", "frame");
-        // removeProperty("java.awt.Rectangle", "frame");
-
-        removeProperty("java.awt.Rectangle", "bounds");
-        removeProperty("java.awt.Dimension", "size");
-        removeProperty("java.awt.Point", "location");
-
-        // The color and font properties in Component need special treatment, see above.
-        removeProperty("java.awt.Component", "foreground");
-        removeProperty("java.awt.Component", "background");
-        removeProperty("java.awt.Component", "font");
-
-        // The visible property of Component needs special treatment because of Windows.
-        removeProperty("java.awt.Component", "visible");
-
-        // This property throws an exception if accessed when there is no child.
-        removeProperty("java.awt.ScrollPane", "scrollPosition");
-
-        // 4917458 this should be removed for XAWT since it may throw
-        // an unsupported exception if there isn't any input methods.
-        // This shouldn't be a problem since these are added behind
-        // the scenes automatically.
-        removeProperty("java.awt.im.InputContext", "compositionEnabled");
-
-  // swing
-
-        // The size properties in JComponent need special treatment, see above.
-        removeProperty("javax.swing.JComponent", "minimumSize");
-        removeProperty("javax.swing.JComponent", "preferredSize");
-        removeProperty("javax.swing.JComponent", "maximumSize");
-
-        // These properties have platform specific implementations
-        // and should not appear in archives.
-        removeProperty("javax.swing.ImageIcon", "image");
-        removeProperty("javax.swing.ImageIcon", "imageObserver");
-
-        // This property unconditionally throws a "not implemented" exception.
-        removeProperty("javax.swing.JMenuBar", "helpMenu");
-
-        // The scrollBars in a JScrollPane are dynamic and should not
-        // be archived. The row and columns headers are changed by
-        // components like JTable on "addNotify".
-        removeProperty("javax.swing.JScrollPane", "verticalScrollBar");
-        removeProperty("javax.swing.JScrollPane", "horizontalScrollBar");
-        removeProperty("javax.swing.JScrollPane", "rowHeader");
-        removeProperty("javax.swing.JScrollPane", "columnHeader");
-
-        removeProperty("javax.swing.JViewport", "extentSize");
-
-        // Renderers need special treatment, since their properties
-        // change during rendering.
-        removeProperty("javax.swing.table.JTableHeader", "defaultRenderer");
-        removeProperty("javax.swing.JList", "cellRenderer");
-
-        removeProperty("javax.swing.JList", "selectedIndices");
-
-        // The lead and anchor selection indexes are best ignored.
-        // Selection is rarely something that should persist from
-        // development to deployment.
-        removeProperty("javax.swing.DefaultListSelectionModel", "leadSelectionIndex");
-        removeProperty("javax.swing.DefaultListSelectionModel", "anchorSelectionIndex");
-
-        // The selection must come after the text itself.
-        removeProperty("javax.swing.JComboBox", "selectedIndex");
-
-        // All selection information should come after the JTabbedPane is built
-        removeProperty("javax.swing.JTabbedPane", "selectedIndex");
-        removeProperty("javax.swing.JTabbedPane", "selectedComponent");
-
-        // PENDING: The "disabledIcon" property is often computed from the icon property.
-        removeProperty("javax.swing.AbstractButton", "disabledIcon");
-        removeProperty("javax.swing.JLabel", "disabledIcon");
-
-        // The caret property throws errors when it it set beyond
-        // the extent of the text. We could just set it after the
-        // text, but this is probably not something we want to archive anyway.
-        removeProperty("javax.swing.text.JTextComponent", "caret");
-        removeProperty("javax.swing.text.JTextComponent", "caretPosition");
-        // The selectionStart must come after the text itself.
-        removeProperty("javax.swing.text.JTextComponent", "selectionStart");
-        removeProperty("javax.swing.text.JTextComponent", "selectionEnd");
     }
 
     /*pp*/ static boolean equals(Object o1, Object o2) {
@@ -1509,18 +1420,6 @@ class MetaData {
         // }
 
         String typeName = type.getName();
-
-        // Check to see if there are properties that have been lazily registered for removal.
-        if (getBeanAttribute(type, "transient_init") == null) {
-            Vector tp = (Vector)transientProperties.get(typeName);
-            if (tp != null) {
-                for(int i = 0; i < tp.size(); i++) {
-                    setPropertyAttribute(type, (String)tp.get(i), "transient", Boolean.TRUE);
-                }
-            }
-            setBeanAttribute(type, "transient_init", Boolean.TRUE);
-        }
-
         PersistenceDelegate pd = (PersistenceDelegate)getBeanAttribute(type, "persistenceDelegate");
         if (pd == null) {
             pd = (PersistenceDelegate)internalPersistenceDelegates.get(typeName);
@@ -1583,55 +1482,11 @@ class MetaData {
         return true;
     }
 
-    // Wrapper for Introspector.getBeanInfo to handle exception handling.
-    // Note: this relys on new 1.4 Introspector semantics which cache the BeanInfos
-    public static BeanInfo getBeanInfo(Class type) {
-        BeanInfo info = null;
-        try {
-            info = Introspector.getBeanInfo(type);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        return info;
-    }
-
-    private static PropertyDescriptor getPropertyDescriptor(Class type, String propertyName) {
-        BeanInfo info = getBeanInfo(type);
-        PropertyDescriptor[] propertyDescriptors = info.getPropertyDescriptors();
-        // System.out.println("Searching for: " + propertyName + " in " + type);
-        for(int i = 0; i < propertyDescriptors.length; i++) {
-            PropertyDescriptor pd  = propertyDescriptors[i];
-            if (propertyName.equals(pd.getName())) {
-                return pd;
-            }
-        }
-        return null;
-    }
-
-    private static void setPropertyAttribute(Class type, String property, String attribute, Object value) {
-        PropertyDescriptor pd = getPropertyDescriptor(type, property);
-        if (pd == null) {
-            System.err.println("Warning: property " + property + " is not defined on " + type);
-            return;
-        }
-        pd.setValue(attribute, value);
-    }
-
-    private static void setBeanAttribute(Class type, String attribute, Object value) {
-        getBeanInfo(type).getBeanDescriptor().setValue(attribute, value);
-    }
-
     private static Object getBeanAttribute(Class type, String attribute) {
-        return getBeanInfo(type).getBeanDescriptor().getValue(attribute);
-    }
-
-    private static void removeProperty(String typeName, String property) {
-        Vector tp = (Vector)transientProperties.get(typeName);
-        if (tp == null) {
-            tp = new Vector();
-            transientProperties.put(typeName, tp);
+        try {
+            return Introspector.getBeanInfo(type).getBeanDescriptor().getValue(attribute);
+        } catch (IntrospectionException exception) {
+            return null;
         }
-        tp.add(property);
     }
 }

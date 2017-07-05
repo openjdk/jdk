@@ -41,6 +41,7 @@ public interface OopVisitor {
 
   // Callback methods for each field type in an object
   public void doOop(OopField field, boolean isVMField);
+  public void doOop(NarrowOopField field, boolean isVMField);
   public void doByte(ByteField field, boolean isVMField);
   public void doChar(CharField field, boolean isVMField);
   public void doBoolean(BooleanField field, boolean isVMField);
