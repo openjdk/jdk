@@ -140,6 +140,7 @@ c2_globals_<os_family>.hpp              globalDefinitions.hpp
 c2_globals_<os_family>.hpp              macros.hpp
 
 c2_init_<arch>.cpp                      compile.hpp
+c2_init_<arch>.cpp                      node.hpp
 
 c2compiler.cpp                          ad_<arch_model>.hpp
 c2compiler.cpp                          c2compiler.hpp
@@ -839,6 +840,7 @@ parseHelper.cpp                         systemDictionary.hpp
 phase.cpp                               compile.hpp
 phase.cpp                               compileBroker.hpp
 phase.cpp                               nmethod.hpp
+phase.cpp                               node.hpp
 phase.cpp                               phase.hpp
 
 phase.hpp                               port.hpp

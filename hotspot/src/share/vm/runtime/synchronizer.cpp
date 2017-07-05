@@ -424,7 +424,7 @@ void ObjectSynchronizer::Initialize () {
 // asserts is that error message -- often something about negative array
 // indices -- is opaque.
 
-#define CTASSERT(x) { int tag[1-(2*!(x))]; printf ("Tag @%X\n", tag); }
+#define CTASSERT(x) { int tag[1-(2*!(x))]; printf ("Tag @" INTPTR_FORMAT "\n", (intptr_t)tag); }
 
 void ObjectMonitor::ctAsserts() {
   CTASSERT(offset_of (ObjectMonitor, _header) == 0);

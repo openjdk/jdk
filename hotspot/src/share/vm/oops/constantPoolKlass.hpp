@@ -34,7 +34,7 @@ class constantPoolKlass : public Klass {
 
   // Allocation
   DEFINE_ALLOCATE_PERMANENT(constantPoolKlass);
-  constantPoolOop allocate(int length, TRAPS);
+  constantPoolOop allocate(int length, bool is_conc_safe, TRAPS);
   static klassOop create_klass(TRAPS);
 
   // Casting from klassOop
@@ -48,6 +48,8 @@ class constantPoolKlass : public Klass {
   int object_size() const        { return align_object_size(header_size()); }
 
   // Garbage collection
+  // Returns true is the object is safe for GC concurrent processing.
+  virtual bool oop_is_conc_safe(oop obj) const;
   void oop_follow_contents(oop obj);
   int oop_adjust_pointers(oop obj);
 
