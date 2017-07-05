@@ -21,7 +21,6 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 
-# @ignore 8029139
 # @test testme.sh
 # @bug 8009062
 # @summary Poor performance of JNI AttachCurrentThread after fix for 7017193
@@ -44,31 +43,35 @@ then
   exit 0
 fi
 
-gcc_cmd=`which g++`
+gcc_cmd=`which gcc`
 if [ "x$gcc_cmd" = "x" ]; then
-    echo "WARNING: g++ not found. Cannot execute test." 2>&1
+    echo "WARNING: gcc not found. Cannot execute test." 2>&1
     exit 0;
 fi
 
 CFLAGS="-m${VM_BITS}"
 
-LD_LIBRARY_PATH=.:${COMPILEJAVA}/jre/lib/${VM_CPU}/${VM_TYPE}:/usr/lib:$LD_LIBRARY_PATH
+LD_LIBRARY_PATH=.:${TESTJAVA}/jre/lib/${VM_CPU}/${VM_TYPE}:/usr/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
 
-cp ${TESTSRC}${FS}invoke.cxx .
+cp ${TESTSRC}/invoke.c .
 
 # Copy the result of our @compile action:
-cp ${TESTCLASSES}${FS}DoOverflow.class .
+cp ${TESTCLASSES}/DoOverflow.class .
 
-echo "Compilation flag: ${COMP_FLAG}"
+echo "Architecture: ${VM_CPU}"
+echo "Compilation flag: ${CFLAGS}"
+echo "VM type: ${VM_TYPE}"
+echo "LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
+
 # Note pthread may not be found thus invoke creation will fail to be created.
 # Check to ensure you have a /usr/lib/libpthread.so if you don't please look
 # for /usr/lib/`uname -m`-linux-gnu version ensure to add that path to below compilation.
 
 $gcc_cmd -DLINUX ${CFLAGS} -o invoke \
-    -I${COMPILEJAVA}/include -I${COMPILEJAVA}/include/linux \
-    -L${COMPILEJAVA}/jre/lib/${VM_CPU}/${VM_TYPE} \
-    -ljvm -lpthread invoke.cxx
+    -I${TESTJAVA}/include -I${TESTJAVA}/include/linux \
+    -L${TESTJAVA}/jre/lib/${VM_CPU}/${VM_TYPE} \
+    -ljvm -lpthread invoke.c
 
 ./invoke
 exit $?
