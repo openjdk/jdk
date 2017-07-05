@@ -241,15 +241,6 @@ void InterpreterGenerator::generate_counter_overflow(Label& Lcontinue) {
 
 // Various method entries
 
-address InterpreterGenerator::generate_jump_to_normal_entry(void) {
-  address entry = __ pc();
-  assert(Interpreter::entry_for_kind(Interpreter::zerolocals) != NULL, "should already be generated");
-  AddressLiteral al(Interpreter::entry_for_kind(Interpreter::zerolocals));
-  __ jump_to(al, G3_scratch);
-  __ delayed()->nop();
-  return entry;
-}
-
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
 //

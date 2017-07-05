@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6603011
  * @summary long/int division by constant
- *
+ * @library /testlibrary
  * @run main/othervm -Xcomp -Xbatch -XX:-Inline Test
  */
 
@@ -36,7 +36,7 @@
 //   dividend and divisor combinations are tested
 //
 
-import java.net.*;
+import jdk.test.lib.Utils;
 
 class s {
   static int  divi(int  dividend, int  divisor) { return dividend / divisor; }
@@ -189,10 +189,10 @@ public class Test implements Runnable {
   // This allows the JIT to see q.DIVISOR as a final constant, and change
   // any divisions or mod operations into multiplies.
   public static void test_divisor(int divisor,
-                                  URLClassLoader apploader) throws Exception {
+                                  ClassLoader apploader) throws Exception {
     System.setProperty("divisor", "" + divisor);
-    ClassLoader loader = new URLClassLoader(apploader.getURLs(),
-                                            apploader.getParent());
+    ClassLoader loader
+                = Utils.getTestClassPathURLClassLoader(apploader.getParent());
     Class c = loader.loadClass("Test");
     Runnable r = (Runnable)c.newInstance();
     r.run();
@@ -200,7 +200,7 @@ public class Test implements Runnable {
 
   public static void main(String[] args) throws Exception {
     Class cl = Class.forName("Test");
-    URLClassLoader apploader = (URLClassLoader)cl.getClassLoader();
+    ClassLoader apploader = cl.getClassLoader();
 
 
     // Test every divisor between -100 and 100.

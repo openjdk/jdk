@@ -30,39 +30,40 @@
 class Decoder;
 class VM_ReportJavaOutOfMemory;
 
-class VMError : public StackObj {
+class VMError : public AllStatic {
   friend class VM_ReportJavaOutOfMemory;
   friend class Decoder;
 
-  int          _id;          // Solaris/Linux signals: 0 - SIGRTMAX
-                             // Windows exceptions: 0xCxxxxxxx system errors
-                             //                     0x8xxxxxxx system warnings
+  static int         _id;               // Solaris/Linux signals: 0 - SIGRTMAX
+                                        // Windows exceptions: 0xCxxxxxxx system errors
+                                        //                     0x8xxxxxxx system warnings
 
-  const char * _message;
-  const char * _detail_msg;
+  static const char* _message;
+  static char        _detail_msg[1024];
 
-  Thread *     _thread;      // NULL if it's native thread
-
+  static Thread*     _thread;           // NULL if it's native thread
 
   // additional info for crashes
-  address      _pc;          // faulting PC
-  void *       _siginfo;     // ExceptionRecord on Windows,
-                             // siginfo_t on Solaris/Linux
-  void *       _context;     // ContextRecord on Windows,
-                             // ucontext_t on Solaris/Linux
+  static address     _pc;               // faulting PC
+  static void*       _siginfo;          // ExceptionRecord on Windows,
+                                        // siginfo_t on Solaris/Linux
+  static void*       _context;          // ContextRecord on Windows,
+                                        // ucontext_t on Solaris/Linux
 
   // additional info for VM internal errors
-  const char * _filename;
-  int          _lineno;
+  static const char* _filename;
+  static int         _lineno;
+
+  // used by reporting about OOM
+  static size_t      _size;
 
   // used by fatal error handler
-  int          _current_step;
-  const char * _current_step_info;
-  int          _verbose;
-  // First error, and its thread id. We must be able to handle native thread,
+  static int         _current_step;
+  static const char* _current_step_info;
+
+  // Thread id of the first error. We must be able to handle native thread,
   // so use thread id instead of Thread* to identify thread.
-  static VMError* volatile first_error;
-  static volatile jlong    first_error_tid;
+  static volatile intptr_t first_error_tid;
 
   // Core dump status, false if we have been unable to write a core/minidump for some reason
   static bool coredump_status;
@@ -72,18 +73,16 @@ class VMError : public StackObj {
   // no core/minidump has been written to disk
   static char coredump_message[O_BUFLEN];
 
-  // used by reporting about OOM
-  size_t       _size;
 
   // set signal handlers on Solaris/Linux or the default exception filter
   // on Windows, to handle recursive crashes.
-  void reset_signal_handlers();
+  static void reset_signal_handlers();
 
   // handle -XX:+ShowMessageBoxOnError. buf is used to format the message string
-  void show_message_box(char* buf, int buflen);
+  static void show_message_box(char* buf, int buflen);
 
   // generate an error report
-  void report(outputStream* st);
+  static void report(outputStream* st, bool verbose);
 
   // generate a stack trace
   static void print_stack_trace(outputStream* st, JavaThread* jt,
@@ -92,42 +91,44 @@ class VMError : public StackObj {
   static const char* gc_mode();
   static void print_oom_reasons(outputStream* st);
 
-  // accessor
-  const char* message() const    { return _message; }
-  const char* detail_msg() const { return _detail_msg; }
-  bool should_report_bug(unsigned int id) {
+  static bool should_report_bug(unsigned int id) {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
   }
+
+  static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
+                             void* context, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(6, 7);
+  static void report_and_die(const char* message, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static fdStream out;
   static fdStream log; // error log used by VMError::report_and_die()
 
 public:
 
-  // Constructor for crashes
-  VMError(Thread* thread, unsigned int sig, address pc, void* siginfo,
-          void* context);
-  // Constructor for VM internal errors
-  VMError(Thread* thread, const char* filename, int lineno,
-          const char* message, const char * detail_msg);
-
-  // Constructor for VM OOM errors
-  VMError(Thread* thread, const char* filename, int lineno, size_t size,
-          VMErrorType vm_err_type, const char* message);
-  // Constructor for non-fatal errors
-  VMError(const char* message);
-
   // return a string to describe the error
-  char *error_string(char* buf, int buflen);
+  static char* error_string(char* buf, int buflen);
 
   // Record status of core/minidump
   static void record_coredump_status(const char* message, bool status);
 
   // main error reporting function
-  void report_and_die();
+  static void report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
+                             Thread* thread, address pc, void* siginfo, void* context,
+                             const char* filename, int lineno, size_t size) ATTRIBUTE_PRINTF(3, 0);
+
+  static void report_and_die(Thread* thread, unsigned int sig, address pc,
+                             void* siginfo, void* context);
+
+  static void report_and_die(Thread* thread,const char* filename, int lineno, const char* message,
+                             const char* detail_fmt, va_list detail_args) ATTRIBUTE_PRINTF(5, 0);
+
+  static void report_and_die(Thread* thread, const char* filename, int lineno, size_t size,
+                             VMErrorType vm_err_type, const char* detail_fmt,
+                             va_list detail_args) ATTRIBUTE_PRINTF(6, 0);
+
+  static void report_and_die(const char* message);
 
   // reporting OutOfMemoryError
-  void report_java_out_of_memory();
+  static void report_java_out_of_memory(const char* message);
 
   // returns original flags for signal, if it was resetted, or -1 if
   // signal was not changed by error reporter
@@ -138,11 +139,9 @@ public:
   static address get_resetted_sighandler(int sig);
 
   // check to see if fatal error reporting is in progress
-  static bool fatal_error_in_progress() { return first_error != NULL; }
+  static bool fatal_error_in_progress() { return first_error_tid != -1; }
 
-  static jlong get_first_error_tid() {
-    return first_error_tid;
-  }
+  static intptr_t get_first_error_tid() { return first_error_tid; }
 };
 
 #endif // SHARE_VM_UTILITIES_VMERROR_HPP

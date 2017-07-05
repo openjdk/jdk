@@ -48,17 +48,17 @@ class InstanceMirrorKlass: public InstanceKlass {
 
   // Constructor
   InstanceMirrorKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags,  bool is_anonymous)
-    : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt, access_flags, is_anonymous) {}
+    : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size,
+                    InstanceKlass::_misc_kind_mirror, rt, access_flags, is_anonymous) {}
 
  public:
   InstanceMirrorKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
-  // Type testing
-  bool oop_is_instanceMirror() const             { return true; }
 
   // Casting from Klass*
   static InstanceMirrorKlass* cast(Klass* k) {
-    assert(k->oop_is_instanceMirror(), "cast to InstanceMirrorKlass");
-    return (InstanceMirrorKlass*) k;
+    assert(InstanceKlass::cast(k)->is_mirror_instance_klass(),
+           "cast to InstanceMirrorKlass");
+    return static_cast<InstanceMirrorKlass*>(k);
   }
 
   // Returns the size of the instance including the extra static fields.

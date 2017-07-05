@@ -24,7 +24,7 @@
 package sun.hotspot.tools.ctw;
 
 import sun.hotspot.WhiteBox;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.SharedSecrets;
 import sun.reflect.ConstantPool;
 
 import java.lang.reflect.Executable;

@@ -77,16 +77,16 @@ void ObjPtrQueue::flush() {
 inline bool requires_marking(const void* entry, G1CollectedHeap* heap) {
   // Includes rejection of NULL pointers.
   assert(heap->is_in_reserved(entry),
-         err_msg("Non-heap pointer in SATB buffer: " PTR_FORMAT, p2i(entry)));
+         "Non-heap pointer in SATB buffer: " PTR_FORMAT, p2i(entry));
 
   HeapRegion* region = heap->heap_region_containing_raw(entry);
-  assert(region != NULL, err_msg("No region for " PTR_FORMAT, p2i(entry)));
+  assert(region != NULL, "No region for " PTR_FORMAT, p2i(entry));
   if (entry >= region->next_top_at_mark_start()) {
     return false;
   }
 
   assert(((oop)entry)->is_oop(true /* ignore mark word */),
-         err_msg("Invalid oop in SATB buffer: " PTR_FORMAT, p2i(entry)));
+         "Invalid oop in SATB buffer: " PTR_FORMAT, p2i(entry));
 
   return true;
 }

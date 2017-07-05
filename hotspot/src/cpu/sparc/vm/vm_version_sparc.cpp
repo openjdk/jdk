@@ -40,10 +40,6 @@ void VM_Version::initialize() {
   PrefetchScanIntervalInBytes = prefetch_scan_interval_in_bytes();
   PrefetchFieldsAhead         = prefetch_fields_ahead();
 
-  assert(0 <= AllocatePrefetchInstr && AllocatePrefetchInstr <= 1, "invalid value");
-  if( AllocatePrefetchInstr < 0 ) AllocatePrefetchInstr = 0;
-  if( AllocatePrefetchInstr > 1 ) AllocatePrefetchInstr = 0;
-
   // Allocation prefetch settings
   intx cache_line_size = prefetch_data_size();
   if( cache_line_size > AllocatePrefetchStepSize )
@@ -59,26 +55,12 @@ void VM_Version::initialize() {
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
 
-  assert((AllocatePrefetchDistance % AllocatePrefetchStepSize) == 0 &&
-         (AllocatePrefetchDistance > 0), "invalid value");
-  if ((AllocatePrefetchDistance % AllocatePrefetchStepSize) != 0 ||
-      (AllocatePrefetchDistance <= 0)) {
-    AllocatePrefetchDistance = AllocatePrefetchStepSize;
-  }
-
   if (AllocatePrefetchStyle == 3 && !has_blk_init()) {
     warning("BIS instructions are not available on this CPU");
     FLAG_SET_DEFAULT(AllocatePrefetchStyle, 1);
   }
 
   guarantee(VM_Version::has_v9(), "only SPARC v9 is supported");
-
-  assert(ArraycopySrcPrefetchDistance < 4096, "invalid value");
-  if (ArraycopySrcPrefetchDistance >= 4096)
-    ArraycopySrcPrefetchDistance = 4064;
-  assert(ArraycopyDstPrefetchDistance < 4096, "invalid value");
-  if (ArraycopyDstPrefetchDistance >= 4096)
-    ArraycopyDstPrefetchDistance = 4064;
 
   UseSSE = 0; // Only on x86 and x64
 

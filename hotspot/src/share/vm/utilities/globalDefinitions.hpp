@@ -60,9 +60,6 @@
 #ifndef PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 #endif
-#ifndef PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-#define PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-#endif
 #ifndef ATTRIBUTE_PRINTF
 #define ATTRIBUTE_PRINTF(fmt, vargs)
 #endif
@@ -903,20 +900,20 @@ enum CompLevel {
   CompLevel_simple            = 1,         // C1
   CompLevel_limited_profile   = 2,         // C1, invocation & backedge counters
   CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
-  CompLevel_full_optimization = 4,         // C2 or Shark
+  CompLevel_full_optimization = 4,         // C2, Shark or JVMCI
 
-#if defined(COMPILER2) || defined(SHARK)
-  CompLevel_highest_tier      = CompLevel_full_optimization,  // pure C2 and tiered
+#if defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
+  CompLevel_highest_tier      = CompLevel_full_optimization,  // pure C2 and tiered or JVMCI and tiered
 #elif defined(COMPILER1)
-  CompLevel_highest_tier      = CompLevel_simple,             // pure C1
+  CompLevel_highest_tier      = CompLevel_simple,             // pure C1 or JVMCI
 #else
   CompLevel_highest_tier      = CompLevel_none,
 #endif
 
 #if defined(TIERED)
   CompLevel_initial_compile   = CompLevel_full_profile        // tiered
-#elif defined(COMPILER1)
-  CompLevel_initial_compile   = CompLevel_simple              // pure C1
+#elif defined(COMPILER1) || INCLUDE_JVMCI
+  CompLevel_initial_compile   = CompLevel_simple              // pure C1 or JVMCI
 #elif defined(COMPILER2) || defined(SHARK)
   CompLevel_initial_compile   = CompLevel_full_optimization   // pure C2
 #else
@@ -1412,14 +1409,6 @@ template<class T> static void swap(T& a, T& b) {
 #define INTX_FORMAT_W(width)  "%" #width PRIdPTR
 #define UINTX_FORMAT_W(width) "%" #width PRIuPTR
 
-
-// Enable zap-a-lot if in debug version.
-
-# ifdef ASSERT
-# ifdef COMPILER2
-#   define ENABLE_ZAP_DEAD_LOCALS
-#endif /* COMPILER2 */
-# endif /* ASSERT */
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
 

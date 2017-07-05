@@ -43,7 +43,7 @@ void InstanceRefKlass::oop_oop_iterate_ref_processing_specialized(oop obj, OopCl
 
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
   T heap_oop = oopDesc::load_heap_oop(referent_addr);
-  ReferenceProcessor* rp = closure->_ref_processor;
+  ReferenceProcessor* rp = closure->ref_processor();
   if (!oopDesc::is_null(heap_oop)) {
     oop referent = oopDesc::decode_heap_oop_not_null(heap_oop);
     if (!referent->is_gc_marked() && (rp != NULL) &&

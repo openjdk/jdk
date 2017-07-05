@@ -326,14 +326,14 @@ void Matcher::match( ) {
   grow_new_node_array(C->unique());
 
   // Reset node counter so MachNodes start with _idx at 0
-  int nodes = C->unique(); // save value
+  int live_nodes = C->live_nodes();
   C->set_unique(0);
   C->reset_dead_node_list();
 
   // Recursively match trees from old space into new space.
   // Correct leaves of new-space Nodes; they point to old-space.
   _visited.Clear();             // Clear visit bits for xform call
-  C->set_cached_top_node(xform( C->top(), nodes ));
+  C->set_cached_top_node(xform( C->top(), live_nodes ));
   if (!C->failing()) {
     Node* xroot =        xform( C->root(), 1 );
     if (xroot == NULL) {
@@ -1001,7 +1001,7 @@ class MStack: public Node_Stack {
 Node *Matcher::transform( Node *n ) { ShouldNotCallThis(); return n; }
 Node *Matcher::xform( Node *n, int max_stack ) {
   // Use one stack to keep both: child's node/state and parent's node/index
-  MStack mstack(max_stack * 2 * 2); // C->unique() * 2 * 2
+  MStack mstack(max_stack * 2 * 2); // usually: C->live_nodes() * 2 * 2
   mstack.push(n, Visit, NULL, -1);  // set NULL as parent to indicate root
 
   while (mstack.is_nonempty()) {
@@ -2045,11 +2045,38 @@ bool Matcher::is_bmi_pattern(Node *n, Node *m) {
 // and then expanded into the inline_cache_reg and a method_oop register
 //   defined in ad_<arch>.cpp
 
+// Check for shift by small constant as well
+static bool clone_shift(Node* shift, Matcher* matcher, MStack& mstack, VectorSet& address_visited) {
+  if (shift->Opcode() == Op_LShiftX && shift->in(2)->is_Con() &&
+      shift->in(2)->get_int() <= 3 &&
+      // Are there other uses besides address expressions?
+      !matcher->is_visited(shift)) {
+    address_visited.set(shift->_idx); // Flag as address_visited
+    mstack.push(shift->in(2), Visit);
+    Node *conv = shift->in(1);
+#ifdef _LP64
+    // Allow Matcher to match the rule which bypass
+    // ConvI2L operation for an array index on LP64
+    // if the index value is positive.
+    if (conv->Opcode() == Op_ConvI2L &&
+        conv->as_Type()->type()->is_long()->_lo >= 0 &&
+        // Are there other uses besides address expressions?
+        !matcher->is_visited(conv)) {
+      address_visited.set(conv->_idx); // Flag as address_visited
+      mstack.push(conv->in(1), Pre_Visit);
+    } else
+#endif
+      mstack.push(conv, Pre_Visit);
+    return true;
+  }
+  return false;
+}
+
 
 //------------------------------find_shared------------------------------------
 // Set bits if Node is shared or otherwise a root
 void Matcher::find_shared( Node *n ) {
-  // Allocate stack of size C->unique() * 2 to avoid frequent realloc
+  // Allocate stack of size C->live_nodes() * 2 to avoid frequent realloc
   MStack mstack(C->live_nodes() * 2);
   // Mark nodes as address_visited if they are inputs to an address expression
   VectorSet address_visited(Thread::current()->resource_area());
@@ -2205,7 +2232,10 @@ void Matcher::find_shared( Node *n ) {
 #endif
 
         // Clone addressing expressions as they are "free" in memory access instructions
-        if( mem_op && i == MemNode::Address && mop == Op_AddP ) {
+        if (mem_op && i == MemNode::Address && mop == Op_AddP &&
+            // When there are other uses besides address expressions
+            // put it on stack and mark as shared.
+            !is_visited(m)) {
           // Some inputs for address expression are not put on stack
           // to avoid marking them as shared and forcing them into register
           // if they are used only in address expressions.
@@ -2213,10 +2243,7 @@ void Matcher::find_shared( Node *n ) {
           // besides address expressions.
 
           Node *off = m->in(AddPNode::Offset);
-          if( off->is_Con() &&
-              // When there are other uses besides address expressions
-              // put it on stack and mark as shared.
-              !is_visited(m) ) {
+          if (off->is_Con()) {
             address_visited.test_set(m->_idx); // Flag as address_visited
             Node *adr = m->in(AddPNode::Address);
 
@@ -2229,28 +2256,7 @@ void Matcher::find_shared( Node *n ) {
                 !is_visited(adr) ) {
               address_visited.set(adr->_idx); // Flag as address_visited
               Node *shift = adr->in(AddPNode::Offset);
-              // Check for shift by small constant as well
-              if( shift->Opcode() == Op_LShiftX && shift->in(2)->is_Con() &&
-                  shift->in(2)->get_int() <= 3 &&
-                  // Are there other uses besides address expressions?
-                  !is_visited(shift) ) {
-                address_visited.set(shift->_idx); // Flag as address_visited
-                mstack.push(shift->in(2), Visit);
-                Node *conv = shift->in(1);
-#ifdef _LP64
-                // Allow Matcher to match the rule which bypass
-                // ConvI2L operation for an array index on LP64
-                // if the index value is positive.
-                if( conv->Opcode() == Op_ConvI2L &&
-                    conv->as_Type()->type()->is_long()->_lo >= 0 &&
-                    // Are there other uses besides address expressions?
-                    !is_visited(conv) ) {
-                  address_visited.set(conv->_idx); // Flag as address_visited
-                  mstack.push(conv->in(1), Pre_Visit);
-                } else
-#endif
-                mstack.push(conv, Pre_Visit);
-              } else {
+              if (!clone_shift(shift, this, mstack, address_visited)) {
                 mstack.push(shift, Pre_Visit);
               }
               mstack.push(adr->in(AddPNode::Address), Pre_Visit);
@@ -2263,6 +2269,12 @@ void Matcher::find_shared( Node *n ) {
             mstack.push(off, Visit);
             mstack.push(m->in(AddPNode::Base), Pre_Visit);
             continue; // for(int i = ...)
+          } else if (clone_shift_expressions &&
+                     clone_shift(off, this, mstack, address_visited)) {
+              address_visited.test_set(m->_idx); // Flag as address_visited
+              mstack.push(m->in(AddPNode::Address), Pre_Visit);
+              mstack.push(m->in(AddPNode::Base), Pre_Visit);
+              continue;
           } // if( off->is_Con() )
         }   // if( mem_op &&
         mstack.push(m, Pre_Visit);

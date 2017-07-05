@@ -102,7 +102,8 @@ extern "C" {                                                             \
 #define UNCHECKED() (unchecked_jni_NativeInterface)
 
 static const char * warn_wrong_jnienv = "Using JNIEnv in the wrong thread";
-static const char * warn_bad_class_descriptor = "JNI FindClass received a bad class descriptor \"%s\".  A correct class descriptor " \
+static const char * warn_bad_class_descriptor1 = "JNI FindClass received a bad class descriptor \"";
+static const char * warn_bad_class_descriptor2 = "\".  A correct class descriptor " \
   "has no leading \"L\" or trailing \";\".  Incorrect descriptors will not be accepted in future releases.";
 static const char * fatal_using_jnienv_in_nonjava = "FATAL ERROR in native method: Using JNIEnv in non-Java thread";
 static const char * warn_other_function_in_critical = "Warning: Calling other JNI functions in the scope of " \
@@ -484,7 +485,8 @@ void jniCheck::validate_class_descriptor(JavaThread* thr, const char* name) {
       name[0] == JVM_SIGNATURE_CLASS &&            // 'L'
       name[len-1] == JVM_SIGNATURE_ENDCLASS ) {    // ';'
     char msg[JVM_MAXPATHLEN];
-    jio_snprintf(msg, JVM_MAXPATHLEN, warn_bad_class_descriptor, name);
+    jio_snprintf(msg, JVM_MAXPATHLEN, "%s%s%s",
+                 warn_bad_class_descriptor1, name, warn_bad_class_descriptor2);
     ReportJNIWarning(thr, msg);
   }
 }

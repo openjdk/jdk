@@ -37,6 +37,9 @@ class DIR_Chunk {
   int  _offset; // location in the stream of this scope
   int  _length; // number of bytes in the stream
   int  _hash;   // hash of stream bytes (for quicker reuse)
+#if INCLUDE_JVMCI
+  DebugInformationRecorder* _DIR;
+#endif
 
   void* operator new(size_t ignore, DebugInformationRecorder* dir) throw() {
     assert(ignore == sizeof(DIR_Chunk), "");
@@ -51,6 +54,9 @@ class DIR_Chunk {
   DIR_Chunk(int offset, int length, DebugInformationRecorder* dir) {
     _offset = offset;
     _length = length;
+#if INCLUDE_JVMCI
+    _DIR = dir;
+#endif
     unsigned int hash = 0;
     address p = dir->stream()->buffer() + _offset;
     for (int i = 0; i < length; i++) {
@@ -77,6 +83,25 @@ class DIR_Chunk {
     }
     return NULL;
   }
+
+#if INCLUDE_JVMCI
+  static int compare(DIR_Chunk* const & a, DIR_Chunk* const & b) {
+    if (b->_hash > a->_hash) {
+      return 1;
+    }
+    if (b->_hash < a->_hash) {
+      return -1;
+    }
+    if (b->_length > a->_length) {
+      return 1;
+    }
+    if (b->_length < a->_length) {
+      return -1;
+    }
+    address buf = a->_DIR->stream()->buffer();
+    return memcmp(buf + b->_offset, buf + a->_offset, a->_length);
+  }
+#endif
 };
 
 static inline bool compute_recording_non_safepoints() {
@@ -113,7 +138,9 @@ DebugInformationRecorder::DebugInformationRecorder(OopRecorder* oop_recorder)
   _oop_recorder = oop_recorder;
 
   _all_chunks    = new GrowableArray<DIR_Chunk*>(300);
+#if !INCLUDE_JVMCI
   _shared_chunks = new GrowableArray<DIR_Chunk*>(30);
+#endif
   _next_chunk = _next_chunk_limit = NULL;
 
   add_new_pc_offset(PcDesc::lower_offset_limit);  // sentinel record
@@ -235,10 +262,13 @@ struct dir_stats_struct {
 
 
 int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
+#if !INCLUDE_JVMCI
   // Only pull this trick if non-safepoint recording
   // is enabled, for now.
-  if (!recording_non_safepoints())
+  if (!recording_non_safepoints()) {
     return serialized_null;
+  }
+#endif // INCLUDE_JVMCI
 
   NOT_PRODUCT(++dir_stats.chunks_queried);
   int stream_length = stream()->position() - stream_offset;
@@ -247,6 +277,19 @@ int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
 
   DIR_Chunk* ns = new(this) DIR_Chunk(stream_offset, stream_length, this);
 
+#if INCLUDE_JVMCI
+  DIR_Chunk* match = _all_chunks->insert_sorted<DIR_Chunk::compare>(ns);
+  if (match != ns) {
+    // Found an existing chunk
+    NOT_PRODUCT(++dir_stats.chunks_shared);
+    assert(ns+1 == _next_chunk, "");
+    _next_chunk = ns;
+    return match->_offset;
+  } else {
+    // Inserted this chunk, so nothing to do
+    return serialized_null;
+  }
+#else // INCLUDE_JVMCI
   // Look in previously shared scopes first:
   DIR_Chunk* ms = ns->find_match(_shared_chunks, 0, this);
   if (ms != NULL) {
@@ -274,15 +317,18 @@ int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
   // No match.  Add this guy to the list, in hopes of future shares.
   _all_chunks->append(ns);
   return serialized_null;
+#endif // INCLUDE_JVMCI
 }
 
 
 // must call add_safepoint before: it sets PcDesc and this routine uses
 // the last PcDesc set
 void DebugInformationRecorder::describe_scope(int         pc_offset,
+                                              methodHandle methodH,
                                               ciMethod*   method,
                                               int         bci,
                                               bool        reexecute,
+                                              bool        rethrow_exception,
                                               bool        is_method_handle_invoke,
                                               bool        return_oop,
                                               DebugToken* locals,
@@ -298,6 +344,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
 
   // Record flags into pcDesc.
   last_pd->set_should_reexecute(reexecute);
+  last_pd->set_rethrow_exception(rethrow_exception);
   last_pd->set_is_method_handle_invoke(is_method_handle_invoke);
   last_pd->set_return_oop(return_oop);
 
@@ -305,8 +352,16 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   stream()->write_int(sender_stream_offset);
 
   // serialize scope
-  Metadata* method_enc = (method == NULL)? NULL: method->constant_encoding();
-  stream()->write_int(oop_recorder()->find_index(method_enc));
+  Metadata* method_enc;
+  if (method != NULL) {
+    method_enc = method->constant_encoding();
+  } else if (methodH.not_null()) {
+    method_enc = methodH();
+  } else {
+    method_enc = NULL;
+  }
+  int method_enc_index = oop_recorder()->find_index(method_enc);
+  stream()->write_int(method_enc_index);
   stream()->write_bci(bci);
   assert(method == NULL ||
          (method->is_native() && bci == 0) ||
@@ -338,7 +393,7 @@ void DebugInformationRecorder::dump_object_pool(GrowableArray<ScopeValue*>* obje
   PcDesc* last_pd = &_pcs[_pcs_length-1];
   if (objects != NULL) {
     for (int i = objects->length() - 1; i >= 0; i--) {
-      ((ObjectValue*) objects->at(i))->set_visited(false);
+      objects->at(i)->as_ObjectValue()->set_visited(false);
     }
   }
   int offset = serialize_scope_values(objects);

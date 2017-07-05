@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
@@ -44,8 +45,6 @@
 #include "utilities/events.hpp"
 #include "utilities/top.hpp"
 #include "utilities/vmError.hpp"
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // List of environment variables that should be reported in error log file.
 const char *env_list[] = {
@@ -71,108 +70,6 @@ const char *env_list[] = {
   (const char *)0
 };
 
-// Fatal error handler for internal errors and crashes.
-//
-// The default behavior of fatal error handler is to print a brief message
-// to standard out (defaultStream::output_fd()), then save detailed information
-// into an error report file (hs_err_pid<pid>.log) and abort VM. If multiple
-// threads are having troubles at the same time, only one error is reported.
-// The thread that is reporting error will abort VM when it is done, all other
-// threads are blocked forever inside report_and_die().
-
-// Constructor for crashes
-VMError::VMError(Thread* thread, unsigned int sig, address pc, void* siginfo, void* context) {
-    _thread = thread;
-    _id = sig;
-    _pc   = pc;
-    _siginfo = siginfo;
-    _context = context;
-
-    _verbose = false;
-    _current_step = 0;
-    _current_step_info = NULL;
-
-    _message = NULL;
-    _detail_msg = NULL;
-    _filename = NULL;
-    _lineno = 0;
-
-    _size = 0;
-}
-
-// Constructor for internal errors
-VMError::VMError(Thread* thread, const char* filename, int lineno,
-                 const char* message, const char * detail_msg)
-{
-  _thread = thread;
-  _id = INTERNAL_ERROR;     // Value that's not an OS exception/signal
-  _filename = filename;
-  _lineno = lineno;
-  _message = message;
-  _detail_msg = detail_msg;
-
-  _verbose = false;
-  _current_step = 0;
-  _current_step_info = NULL;
-
-  _pc = NULL;
-  _siginfo = NULL;
-  _context = NULL;
-
-  _size = 0;
-}
-
-// Constructor for OOM errors
-VMError::VMError(Thread* thread, const char* filename, int lineno, size_t size,
-                 VMErrorType vm_err_type, const char* message) {
-    _thread = thread;
-    _id = vm_err_type; // Value that's not an OS exception/signal
-    _filename = filename;
-    _lineno = lineno;
-    _message = message;
-    _detail_msg = NULL;
-
-    _verbose = false;
-    _current_step = 0;
-    _current_step_info = NULL;
-
-    _pc = NULL;
-    _siginfo = NULL;
-    _context = NULL;
-
-    _size = size;
-}
-
-
-// Constructor for non-fatal errors
-VMError::VMError(const char* message) {
-    _thread = NULL;
-    _id = INTERNAL_ERROR;     // Value that's not an OS exception/signal
-    _filename = NULL;
-    _lineno = 0;
-    _message = message;
-    _detail_msg = NULL;
-
-    _verbose = false;
-    _current_step = 0;
-    _current_step_info = NULL;
-
-    _pc = NULL;
-    _siginfo = NULL;
-    _context = NULL;
-
-    _size = 0;
-}
-
-// -XX:OnError=<string>, where <string> can be a list of commands, separated
-// by ';'. "%p" is replaced by current process id (pid); "%%" is replaced by
-// a single "%". Some examples:
-//
-// -XX:OnError="pmap %p"                // show memory map
-// -XX:OnError="gcore %p; dbx - %p"     // dump core and launch debugger
-// -XX:OnError="cat hs_err_pid%p.log | mail my_email@sun.com"
-// -XX:OnError="kill -9 %p"             // ?#!@#
-
 // A simple parser for -XX:OnError, usage:
 //  ptr = OnError;
 //  while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr) != NULL)
@@ -195,7 +92,6 @@ static char* next_OnError_command(char* buf, int buflen, const char** ptr) {
   *ptr = (*cmdend == '\0' ? cmdend : cmdend + 1);
   return buf;
 }
-
 
 static void print_bug_submit_message(outputStream *out, Thread *thread) {
   if (out == NULL) return;
@@ -223,7 +119,6 @@ void VMError::record_coredump_status(const char* message, bool status) {
   coredump_message[sizeof(coredump_message)-1] = 0;
 }
 
-
 // Return a string to describe the error
 char* VMError::error_string(char* buf, int buflen) {
   char signame_buf[64];
@@ -243,9 +138,9 @@ char* VMError::error_string(char* buf, int buflen) {
                          p ? p + 1 : _filename, _lineno,
                          os::current_process_id(), os::current_thread_id());
     if (n >= 0 && n < buflen && _message) {
-      if (_detail_msg) {
+      if (strlen(_detail_msg) > 0) {
         jio_snprintf(buf + n, buflen - n, "%s%s: %s",
-                     os::line_separator(), _message, _detail_msg);
+        os::line_separator(), _message, _detail_msg);
       } else {
         jio_snprintf(buf + n, buflen - n, "%sError: %s",
                      os::line_separator(), _message);
@@ -357,7 +252,11 @@ const char* VMError::gc_mode() {
 // thread can report error, so large buffers are statically allocated in data
 // segment.
 
-void VMError::report(outputStream* st) {
+int          VMError::_current_step;
+const char*  VMError::_current_step_info;
+
+void VMError::report(outputStream* st, bool _verbose) {
+
 # define BEGIN if (_current_step == 0) { _current_step = 1;
 # define STEP(n, s) } if (_current_step < n) { _current_step = n; _current_step_info = s;
 # define END }
@@ -384,14 +283,14 @@ void VMError::report(outputStream* st) {
   // error handler after a secondary crash works.
   STEP(20, "(test secondary crash 1)")
     if (_verbose && TestCrashInErrorHandler != 0) {
-      st->print_cr("Will crash now (TestCrashInErrorHandler=%d)...",
+      st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
   STEP(30, "(test secondary crash 2)")
     if (_verbose && TestCrashInErrorHandler != 0) {
-      st->print_cr("Will crash now (TestCrashInErrorHandler=%d)...",
+      st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
@@ -429,15 +328,15 @@ void VMError::report(outputStream* st) {
            jio_snprintf(buf, sizeof(buf), SIZE_FORMAT, _size);
            st->print("%s", buf);
            st->print(" bytes");
-           if (_message != NULL) {
+           if (strlen(_detail_msg) > 0) {
              st->print(" for ");
-             st->print("%s", _message);
+             st->print("%s", _detail_msg);
            }
            st->cr();
          } else {
-           if (_message != NULL) {
+           if (strlen(_detail_msg) > 0) {
              st->print("# ");
-             st->print_cr("%s", _message);
+             st->print_cr("%s", _detail_msg);
            }
          }
          // In error file give some solutions
@@ -460,7 +359,7 @@ void VMError::report(outputStream* st) {
      if (os::exception_name(_id, buf, sizeof(buf))) {
        st->print("%s", buf);
        st->print(" (0x%x)", _id);                // signal number
-       st->print(" at pc=" PTR_FORMAT, _pc);
+       st->print(" at pc=" PTR_FORMAT, p2i(_pc));
      } else {
        if (should_report_bug(_id)) {
          st->print("Internal Error");
@@ -493,12 +392,12 @@ void VMError::report(outputStream* st) {
 
      if (should_report_bug(_id)) {  // already printed the message.
        // error message
-       if (_detail_msg) {
+       if (strlen(_detail_msg) > 0) {
          st->print_cr("#  %s: %s", _message ? _message : "Error", _detail_msg);
        } else if (_message) {
          st->print_cr("#  Error: %s", _message);
        }
-    }
+     }
 
   STEP(90, "(printing Java version string)")
 
@@ -511,11 +410,17 @@ void VMError::report(outputStream* st) {
                                   JDK_Version::runtime_version() : "";
      st->print_cr("# JRE version: %s (%s) (build %s)", runtime_name, buf, runtime_version);
      // This is the long version with some default settings added
-     st->print_cr("# Java VM: %s (%s, %s%s%s, %s, %s)",
+     st->print_cr("# Java VM: %s (%s, %s%s%s%s%s, %s, %s)",
                    Abstract_VM_Version::vm_name(),
                    Abstract_VM_Version::vm_release(),
                    Abstract_VM_Version::vm_info_string(),
                    TieredCompilation ? ", tiered" : "",
+#if INCLUDE_JVMCI
+                   EnableJVMCI ? ", jvmci" : "",
+                   UseJVMCICompiler ? ", jvmci compiler" : "",
+#else
+                   "", "",
+#endif
                    UseCompressedOops ? ", compressed oops" : "",
                    gc_mode(),
                    Abstract_VM_Version::vm_platform_string()
@@ -595,7 +500,7 @@ void VMError::report(outputStream* st) {
      // current thread
      if (_verbose) {
        if (_thread) {
-         st->print("Current thread (" PTR_FORMAT "):  ", _thread);
+         st->print("Current thread (" PTR_FORMAT "):  ", p2i(_thread));
          _thread->print_on_error(st, buf, sizeof(buf));
          st->cr();
        } else {
@@ -634,13 +539,13 @@ void VMError::report(outputStream* st) {
        }
 
        address stack_bottom = stack_top - stack_size;
-       st->print("[" PTR_FORMAT "," PTR_FORMAT "]", stack_bottom, stack_top);
+       st->print("[" PTR_FORMAT "," PTR_FORMAT "]", p2i(stack_bottom), p2i(stack_top));
 
        frame fr = _context ? os::fetch_frame_from_context(_context)
                            : os::current_frame();
 
        if (fr.sp()) {
-         st->print(",  sp=" PTR_FORMAT, fr.sp());
+         st->print(",  sp=" PTR_FORMAT, p2i(fr.sp()));
          size_t free_stack_size = pointer_delta(fr.sp(), stack_bottom, 1024);
          st->print(",  free space=" SIZE_FORMAT "k", free_stack_size);
        }
@@ -674,7 +579,7 @@ void VMError::report(outputStream* st) {
      if (_verbose && _thread && (_thread->is_Named_thread())) {
        JavaThread*  jt = ((NamedThread *)_thread)->processed_thread();
        if (jt != NULL) {
-         st->print_cr("JavaThread " PTR_FORMAT " (nid = " UINTX_FORMAT ") was being processed", jt, jt->osthread()->thread_id());
+         st->print_cr("JavaThread " PTR_FORMAT " (nid = %d) was being processed", p2i(jt), jt->osthread()->thread_id());
          print_stack_trace(st, jt, buf, sizeof(buf), true);
        }
      }
@@ -702,6 +607,31 @@ void VMError::report(outputStream* st) {
      if (_verbose && _context) {
        os::print_context(st, _context);
        st->cr();
+     }
+
+  STEP(265, "(printing code blob if possible)")
+
+     if (_verbose && _context) {
+       CodeBlob* cb = CodeCache::find_blob(_pc);
+       if (cb != NULL) {
+         if (Interpreter::contains(_pc)) {
+           // The interpreter CodeBlob is very large so try to print the codelet instead.
+           InterpreterCodelet* codelet = Interpreter::codelet_containing(_pc);
+           if (codelet != NULL) {
+             codelet->print_on(st);
+             Disassembler::decode(codelet->code_begin(), codelet->code_end(), st);
+           }
+         } else {
+           StubCodeDesc* desc = StubCodeDesc::desc_for(_pc);
+           if (desc != NULL) {
+             desc->print_on(st);
+             Disassembler::decode(desc->begin(), desc->end(), st);
+           } else {
+             Disassembler::decode(cb, st);
+             st->cr();
+           }
+         }
+       }
      }
 
   STEP(270, "(printing VM operation)" )
@@ -786,7 +716,7 @@ void VMError::report(outputStream* st) {
        Universe::heap()->print_on_error(st);
        st->cr();
 
-       st->print_cr("Polling page: " INTPTR_FORMAT, os::get_polling_page());
+       st->print_cr("Polling page: " INTPTR_FORMAT, p2i(os::get_polling_page()));
        st->cr();
      }
 
@@ -896,8 +826,7 @@ void VMError::report(outputStream* st) {
 # undef END
 }
 
-VMError* volatile VMError::first_error = NULL;
-volatile jlong VMError::first_error_tid = -1;
+volatile intptr_t VMError::first_error_tid = -1;
 
 // An error could happen before tty is initialized or after it has been
 // destroyed. Here we use a very simple unbuffered fdStream for printing.
@@ -958,7 +887,59 @@ static int prepare_log_file(const char* pattern, const char* default_pattern, ch
   return fd;
 }
 
-void VMError::report_and_die() {
+int         VMError::_id;
+const char* VMError::_message;
+char        VMError::_detail_msg[1024];
+Thread*     VMError::_thread;
+address     VMError::_pc;
+void*       VMError::_siginfo;
+void*       VMError::_context;
+const char* VMError::_filename;
+int         VMError::_lineno;
+size_t      VMError::_size;
+
+void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
+                             void* context, const char* detail_fmt, ...)
+{
+  va_list detail_args;
+  va_start(detail_args, detail_fmt);
+  report_and_die(sig, NULL, detail_fmt, detail_args, thread, pc, siginfo, context, NULL, 0, 0);
+  va_end(detail_args);
+}
+
+void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo, void* context)
+{
+  report_and_die(thread, sig, pc, siginfo, context, "%s", "");
+}
+
+void VMError::report_and_die(const char* message, const char* detail_fmt, ...)
+{
+  va_list detail_args;
+  va_start(detail_args, detail_fmt);
+  report_and_die(INTERNAL_ERROR, message, detail_fmt, detail_args, NULL, NULL, NULL, NULL, NULL, 0, 0);
+  va_end(detail_args);
+}
+
+void VMError::report_and_die(const char* message)
+{
+  report_and_die(message, "%s", "");
+}
+
+void VMError::report_and_die(Thread* thread, const char* filename, int lineno, const char* message,
+                             const char* detail_fmt, va_list detail_args)
+{
+  report_and_die(INTERNAL_ERROR, message, detail_fmt, detail_args, thread, NULL, NULL, NULL, filename, lineno, 0);
+}
+
+void VMError::report_and_die(Thread* thread, const char* filename, int lineno, size_t size,
+                             VMErrorType vm_err_type, const char* detail_fmt, va_list detail_args) {
+  report_and_die(vm_err_type, NULL, detail_fmt, detail_args, thread, NULL, NULL, NULL, filename, lineno, size);
+}
+
+void VMError::report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
+                             Thread* thread, address pc, void* siginfo, void* context, const char* filename,
+                             int lineno, size_t size)
+{
   // Don't allocate large buffer on stack
   static char buffer[O_BUFLEN];
 
@@ -974,12 +955,22 @@ void VMError::report_and_die() {
   if (SuppressFatalErrorMessage) {
       os::abort(CreateCoredumpOnCrash);
   }
-  jlong mytid = os::current_thread_id();
-  if (first_error == NULL &&
-      Atomic::cmpxchg_ptr(this, &first_error, NULL) == NULL) {
+  intptr_t mytid = os::current_thread_id();
+  if (first_error_tid == -1 &&
+      Atomic::cmpxchg_ptr(mytid, &first_error_tid, -1) == -1) {
+
+    _id = id;
+    _message = message;
+    _thread = thread;
+    _pc = pc;
+    _siginfo = siginfo;
+    _context = context;
+    _filename = filename;
+    _lineno = lineno;
+    _size = size;
+    jio_vsnprintf(_detail_msg, sizeof(_detail_msg), detail_fmt, detail_args);
 
     // first time
-    first_error_tid = mytid;
     set_error_reported();
 
     if (ShowMessageBoxOnError || PauseAtExit) {
@@ -1007,7 +998,7 @@ void VMError::report_and_die() {
     if (first_error_tid != mytid) {
       char msgbuf[64];
       jio_snprintf(msgbuf, sizeof(msgbuf),
-                   "[thread " INT64_FORMAT " also had an error]",
+                   "[thread " INTX_FORMAT " also had an error]",
                    mytid);
       out.print_raw_cr(msgbuf);
 
@@ -1022,8 +1013,7 @@ void VMError::report_and_die() {
 
       jio_snprintf(buffer, sizeof(buffer),
                    "[error occurred during error reporting %s, id 0x%x]",
-                   first_error ? first_error->_current_step_info : "",
-                   _id);
+                   _current_step_info, _id);
       if (log.is_open()) {
         log.cr();
         log.print_raw_cr(buffer);
@@ -1038,21 +1028,17 @@ void VMError::report_and_die() {
 
   // print to screen
   if (!out_done) {
-    first_error->_verbose = false;
-
     staticBufferStream sbs(buffer, sizeof(buffer), &out);
-    first_error->report(&sbs);
+    report(&sbs, false);
 
     out_done = true;
 
-    first_error->_current_step = 0;         // reset current_step
-    first_error->_current_step_info = "";   // reset current_step string
+    _current_step = 0;
+    _current_step_info = "";
   }
 
   // print to error log file
   if (!log_done) {
-    first_error->_verbose = true;
-
     // see if log file is already open
     if (!log.is_open()) {
       // open log file
@@ -1072,12 +1058,12 @@ void VMError::report_and_die() {
     }
 
     staticBufferStream sbs(buffer, O_BUFLEN, &log);
-    first_error->report(&sbs);
-    first_error->_current_step = 0;         // reset current_step
-    first_error->_current_step_info = "";   // reset current_step string
+    report(&sbs, true);
+    _current_step = 0;
+    _current_step_info = "";
 
     // Run error reporting to determine whether or not to report the crash.
-    if (!transmit_report_done && should_report_bug(first_error->_id)) {
+    if (!transmit_report_done && should_report_bug(_id)) {
       transmit_report_done = true;
       const int fd2 = ::dup(log.fd());
       FILE* const hs_err = ::fdopen(fd2, "r");
@@ -1149,7 +1135,7 @@ void VMError::report_and_die() {
     }
   }
 
-  static bool skip_bug_url = !should_report_bug(first_error->_id);
+  static bool skip_bug_url = !should_report_bug(_id);
   if (!skip_bug_url) {
     skip_bug_url = true;
 
@@ -1162,7 +1148,7 @@ void VMError::report_and_die() {
     static bool skip_os_abort = false;
     if (!skip_os_abort) {
       skip_os_abort = true;
-      bool dump_core = should_report_bug(first_error->_id);
+      bool dump_core = should_report_bug(_id);
       os::abort(dump_core && CreateCoredumpOnCrash, _siginfo, _context);
     }
 
@@ -1177,10 +1163,10 @@ void VMError::report_and_die() {
  */
 class VM_ReportJavaOutOfMemory : public VM_Operation {
  private:
-  VMError *_err;
+  const char* _message;
  public:
-  VM_ReportJavaOutOfMemory(VMError *err) { _err = err; }
-  VMOp_Type type() const                 { return VMOp_ReportJavaOutOfMemory; }
+  VM_ReportJavaOutOfMemory(const char* message) { _message = message; }
+  VMOp_Type type() const                        { return VMOp_ReportJavaOutOfMemory; }
   void doit();
 };
 
@@ -1189,7 +1175,7 @@ void VM_ReportJavaOutOfMemory::doit() {
   static char buffer[O_BUFLEN];
 
   tty->print_cr("#");
-  tty->print_cr("# java.lang.OutOfMemoryError: %s", _err->message());
+  tty->print_cr("# java.lang.OutOfMemoryError: %s", _message);
   tty->print_cr("# -XX:OnOutOfMemoryError=\"%s\"", OnOutOfMemoryError);
 
   // make heap parsability
@@ -1212,10 +1198,10 @@ void VM_ReportJavaOutOfMemory::doit() {
   }
 }
 
-void VMError::report_java_out_of_memory() {
+void VMError::report_java_out_of_memory(const char* message) {
   if (OnOutOfMemoryError && OnOutOfMemoryError[0]) {
     MutexLocker ml(Heap_lock);
-    VM_ReportJavaOutOfMemory op(this);
+    VM_ReportJavaOutOfMemory op(message);
     VMThread::execute(&op);
   }
 }

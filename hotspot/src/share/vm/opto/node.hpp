@@ -353,7 +353,7 @@ protected:
 #endif
 
   // Reference to the i'th input Node.  Error if out of bounds.
-  Node* in(uint i) const { assert(i < _max, err_msg_res("oob: i=%d, _max=%d", i, _max)); return _in[i]; }
+  Node* in(uint i) const { assert(i < _max, "oob: i=%d, _max=%d", i, _max); return _in[i]; }
   // Reference to the i'th input Node.  NULL if out of bounds.
   Node* lookup(uint i) const { return ((i < _max) ? _in[i] : NULL); }
   // Reference to the i'th output Node.  Error if out of bounds.
@@ -393,7 +393,7 @@ protected:
   void ins_req( uint i, Node *n ); // Insert a NEW required input
   void set_req( uint i, Node *n ) {
     assert( is_not_dead(n), "can not use dead node");
-    assert( i < _cnt, err_msg_res("oob: i=%d, _cnt=%d", i, _cnt));
+    assert( i < _cnt, "oob: i=%d, _cnt=%d", i, _cnt);
     assert( !VerifyHashTableKeys || _hash_lock == 0,
             "remove node from hash table before modifying it");
     Node** p = &_in[i];    // cache this._in, across the del_out call
@@ -674,7 +674,8 @@ public:
     Flag_avoid_back_to_back_after    = Flag_avoid_back_to_back_before << 1,
     Flag_has_call                    = Flag_avoid_back_to_back_after << 1,
     Flag_is_reduction                = Flag_has_call << 1,
-    Flag_is_expensive                = Flag_is_reduction << 1,
+    Flag_is_scheduled                = Flag_is_reduction,
+    Flag_is_expensive                = Flag_is_scheduled << 1,
     _max_flags = (Flag_is_expensive << 1) - 1 // allow flags combination
   };
 
@@ -860,6 +861,9 @@ public:
   // An arithmetic node which accumulates a data in a loop.
   // It must have the loop's phi as input and provide a def to the phi.
   bool is_reduction() const { return (_flags & Flag_is_reduction) != 0; }
+
+  // Used in lcm to mark nodes that have scheduled
+  bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }
 
 //----------------- Optimization
 

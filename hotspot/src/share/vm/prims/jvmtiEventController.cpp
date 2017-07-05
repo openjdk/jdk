@@ -38,8 +38,6 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #ifdef JVMTI_TRACE
 #define EC_TRACE(out) do { \
   if (JvmtiTrace::trace_event_controller()) { \
@@ -564,7 +562,7 @@ JvmtiEventControllerPrivate::recompute_enabled() {
   jlong was_any_env_thread_enabled = JvmtiEventController::_universal_global_event_enabled.get_bits();
   jlong any_env_thread_enabled = 0;
 
-  EC_TRACE(("JVMTI [-] # recompute enabled - before %llx", was_any_env_thread_enabled));
+  EC_TRACE(("JVMTI [-] # recompute enabled - before " UINT64_FORMAT_X, was_any_env_thread_enabled));
 
   // compute non-thread-filters events.
   // This must be done separately from thread-filtered events, since some
@@ -646,7 +644,7 @@ JvmtiEventControllerPrivate::recompute_enabled() {
 
   }
 
-  EC_TRACE(("JVMTI [-] # recompute enabled - after %llx", any_env_thread_enabled));
+  EC_TRACE(("JVMTI [-] # recompute enabled - after " UINT64_FORMAT_X, any_env_thread_enabled));
 }
 
 
