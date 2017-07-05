@@ -3787,7 +3787,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * Abstract node class to match one character satisfying some
      * boolean property.
      */
-    private static abstract class CharProperty extends Node {
+    private abstract static class CharProperty extends Node {
         abstract boolean isSatisfiedBy(int ch);
         CharProperty complement() {
             return new CharProperty() {
@@ -3815,7 +3815,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * Optimized version of CharProperty that works only for
      * properties never satisfied by Supplementary characters.
      */
-    private static abstract class BmpCharProperty extends CharProperty {
+    private abstract static class BmpCharProperty extends CharProperty {
         boolean match(Matcher matcher, int i, CharSequence seq) {
             if (i < matcher.to) {
                 return isSatisfiedBy(seq.charAt(i))
@@ -5578,7 +5578,7 @@ NEXT:       while (i <= last) {
             return m == null ? null : m.make();
         }
 
-        private static abstract class CharPropertyFactory {
+        private abstract static class CharPropertyFactory {
             abstract CharProperty make();
         }
 
@@ -5600,7 +5600,7 @@ NEXT:       while (i <= last) {
                     CharProperty make() { return new Ctype(ctype);}});
         }
 
-        private static abstract class CloneableProperty
+        private abstract static class CloneableProperty
             extends CharProperty implements Cloneable
         {
             public CloneableProperty clone() {

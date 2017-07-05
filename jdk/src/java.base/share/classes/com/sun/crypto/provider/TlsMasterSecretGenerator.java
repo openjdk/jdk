@@ -43,7 +43,7 @@ import static com.sun.crypto.provider.TlsPrfGenerator.*;
  */
 public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
 
-    private final static String MSG = "TlsMasterSecretGenerator must be "
+    private static final String MSG = "TlsMasterSecretGenerator must be "
         + "initialized using a TlsMasterSecretParameterSpec";
 
     @SuppressWarnings("deprecation")

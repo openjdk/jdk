@@ -62,7 +62,7 @@ public final class MD4 extends DigestBase {
     private static final int S33 = 11;
     private static final int S34 = 15;
 
-    private final static Provider md4Provider;
+    private static final Provider md4Provider;
 
     static {
         md4Provider = new Provider("MD4Provider", 1.9d, "MD4 MessageDigest") {

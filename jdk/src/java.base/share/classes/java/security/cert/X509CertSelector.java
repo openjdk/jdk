@@ -87,7 +87,7 @@ public class X509CertSelector implements CertSelector {
 
     private static final Debug debug = Debug.getInstance("certpath");
 
-    private final static ObjectIdentifier ANY_EXTENDED_KEY_USAGE =
+    private static final ObjectIdentifier ANY_EXTENDED_KEY_USAGE =
         ObjectIdentifier.newInternal(new int[] {2, 5, 29, 37, 0});
 
     static {

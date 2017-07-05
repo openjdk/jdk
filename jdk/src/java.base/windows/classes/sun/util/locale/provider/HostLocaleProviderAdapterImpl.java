@@ -128,7 +128,7 @@ public class HostLocaleProviderAdapterImpl {
         }
         supportedLocaleSet = Collections.unmodifiableSet(tmpSet);
     }
-    private final static Locale[] supportedLocale = supportedLocaleSet.toArray(new Locale[0]);
+    private static final Locale[] supportedLocale = supportedLocaleSet.toArray(new Locale[0]);
 
     public static DateFormatProvider getDateFormatProvider() {
         return new DateFormatProvider() {

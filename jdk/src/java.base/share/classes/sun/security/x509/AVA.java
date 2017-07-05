@@ -72,15 +72,15 @@ public class AVA implements DerEncoder {
      * DEFAULT format allows both RFC1779 and RFC2253 syntax and
      * additional keywords.
      */
-    final static int DEFAULT = 1;
+    static final int DEFAULT = 1;
     /**
      * RFC1779 specifies format according to RFC1779.
      */
-    final static int RFC1779 = 2;
+    static final int RFC1779 = 2;
     /**
      * RFC2253 specifies format according to RFC2253.
      */
-    final static int RFC2253 = 3;
+    static final int RFC2253 = 3;
 
     // currently not private, accessed directly from RDN
     final ObjectIdentifier oid;

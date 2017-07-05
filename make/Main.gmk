@@ -285,9 +285,12 @@ test-image-jdk-jtreg-native:
 	+($(CD) $(JDK_TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregNative.gmk \
 	    test-image-jdk-jtreg-native)
 
+build-test-lib:
+	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f BuildTestLib.gmk)
+
 ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
     test-image-hotspot-jtreg-native build-test-jdk-jtreg-native \
-    test-image-jdk-jtreg-native
+    test-image-jdk-jtreg-native build-test-lib
 
 ################################################################################
 # Run tests
@@ -553,7 +556,7 @@ ALL_TARGETS += default jdk images docs all
 CLEAN_DIRS += hotspot jdk bootcycle-build test buildtools support \
     images make-support test-make bundles
 CLEAN_DIR_TARGETS := $(addprefix clean-, $(CLEAN_DIRS))
-CLEAN_TESTS += hotspot-jtreg-native jdk-jtreg-native
+CLEAN_TESTS += hotspot-jtreg-native jdk-jtreg-native lib
 CLEAN_TEST_TARGETS += $(addprefix clean-test-, $(CLEAN_TESTS))
 CLEAN_PHASES := gensrc java native include docs
 CLEAN_PHASE_TARGETS := $(addprefix clean-, $(CLEAN_PHASES))

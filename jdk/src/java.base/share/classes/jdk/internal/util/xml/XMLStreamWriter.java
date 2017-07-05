@@ -36,8 +36,8 @@ package jdk.internal.util.xml;
 public  interface XMLStreamWriter {
 
     //Defaults the XML version to 1.0, and the encoding to utf-8
-    public final static String DEFAULT_XML_VERSION = "1.0";
-    public final static String DEFAULT_ENCODING = "UTF-8";
+    public static final String DEFAULT_XML_VERSION = "1.0";
+    public static final String DEFAULT_ENCODING = "UTF-8";
 
     /**
      * Writes a start tag to the output.  All writeStartElement methods

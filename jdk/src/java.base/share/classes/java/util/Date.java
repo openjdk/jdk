@@ -613,7 +613,7 @@ public class Date
         // syntax error
         throw new IllegalArgumentException();
     }
-    private final static String wtb[] = {
+    private static final String wtb[] = {
         "am", "pm",
         "monday", "tuesday", "wednesday", "thursday", "friday",
         "saturday", "sunday",
@@ -622,7 +622,7 @@ public class Date
         "gmt", "ut", "utc", "est", "edt", "cst", "cdt",
         "mst", "mdt", "pst", "pdt"
     };
-    private final static int ttb[] = {
+    private static final int ttb[] = {
         14, 1, 0, 0, 0, 0, 0, 0, 0,
         2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
         10000 + 0, 10000 + 0, 10000 + 0,    // GMT/UT/UTC
@@ -1300,7 +1300,7 @@ public class Date
         return gcal;
     }
 
-    synchronized private static final BaseCalendar getJulianCalendar() {
+    private static final synchronized BaseCalendar getJulianCalendar() {
         if (jcal == null) {
             jcal = (BaseCalendar) CalendarSystem.forName("julian");
         }

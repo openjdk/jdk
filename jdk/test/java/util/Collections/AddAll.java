@@ -32,7 +32,7 @@
 import java.util.*;
 
 public class AddAll {
-    final static int N = 100;
+    static final int N = 100;
     public static void main(String args[]) {
         test(new ArrayList<Integer>());
         test(new LinkedList<Integer>());

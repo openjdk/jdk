@@ -52,7 +52,7 @@ import java.security.cert.X509Certificate;
  *
  * @since 1.4
  */
-abstract public
+public abstract
 class HttpsURLConnection extends HttpURLConnection
 {
     /**

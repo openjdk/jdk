@@ -73,7 +73,7 @@ class BandStructure {
     boolean optVaryCodings = !p200.getBoolean(Utils.COM_PREFIX+"no.vary.codings");
     boolean optBigStrings = !p200.getBoolean(Utils.COM_PREFIX+"no.big.strings");
 
-    abstract protected Index getCPIndex(byte tag);
+    protected abstract Index getCPIndex(byte tag);
 
     // Local copy of highest class version.
     private Package.Version highestClassVersion = null;
@@ -97,27 +97,27 @@ class BandStructure {
 
     protected BandStructure() {}
 
-    final static Coding BYTE1 = Coding.of(1,256);
+    static final Coding BYTE1 = Coding.of(1,256);
 
-    final static Coding CHAR3 = Coding.of(3,128);
+    static final Coding CHAR3 = Coding.of(3,128);
     // Note:  Tried sharper (3,16) with no post-zip benefit.
 
     // This is best used with BCI values:
-    final static Coding BCI5 = Coding.of(5,4);  // mostly 1-byte offsets
-    final static Coding BRANCH5 = Coding.of(5,4,2); // mostly forward branches
+    static final Coding BCI5 = Coding.of(5,4);  // mostly 1-byte offsets
+    static final Coding BRANCH5 = Coding.of(5,4,2); // mostly forward branches
 
-    final static Coding UNSIGNED5 = Coding.of(5,64);
-    final static Coding UDELTA5 = UNSIGNED5.getDeltaCoding();
+    static final Coding UNSIGNED5 = Coding.of(5,64);
+    static final Coding UDELTA5 = UNSIGNED5.getDeltaCoding();
     // "sharp" (5,64) zips 0.4% better than "medium" (5,128)
     // It zips 1.1% better than "flat" (5,192)
 
-    final static Coding SIGNED5 = Coding.of(5,64,1);  //sharp
-    final static Coding DELTA5 = SIGNED5.getDeltaCoding();
+    static final Coding SIGNED5 = Coding.of(5,64,1);  //sharp
+    static final Coding DELTA5 = SIGNED5.getDeltaCoding();
     // Note:  Tried (5,128,2) and (5,192,2) with no benefit.
 
-    final static Coding MDELTA5 = Coding.of(5,64,2).getDeltaCoding();
+    static final Coding MDELTA5 = Coding.of(5,64,2).getDeltaCoding();
 
-    final private static Coding[] basicCodings = {
+    private static final Coding[] basicCodings = {
         // Table of "Canonical BHSD Codings" from Pack200 spec.
         null,  // _meta_default
 
@@ -250,7 +250,7 @@ class BandStructure {
 
         null
     };
-    final private static Map<Coding, Integer> basicCodingIndexes;
+    private static final Map<Coding, Integer> basicCodingIndexes;
     static {
         assert(basicCodings[_meta_default] == null);
         assert(basicCodings[_meta_canon_min] != null);
@@ -362,9 +362,9 @@ class BandStructure {
 
         protected long outputSize = -1;  // cache
 
-        final public Coding regularCoding;
+        public final Coding regularCoding;
 
-        final public int seqForDebug;
+        public final int seqForDebug;
         public int       elementCountForDebug;
 
 
@@ -430,7 +430,7 @@ class BandStructure {
 
         protected abstract long computeOutputSize();
 
-        abstract protected void writeDataTo(OutputStream out) throws IOException;
+        protected abstract void writeDataTo(OutputStream out) throws IOException;
 
         /** Expect a certain number of values. */
         void expectLength(int l) {
@@ -468,7 +468,7 @@ class BandStructure {
             readDataFrom(in);
             readyToDisburse();
         }
-        abstract protected void readDataFrom(InputStream in) throws IOException;
+        protected abstract void readDataFrom(InputStream in) throws IOException;
         protected void readyToDisburse() {
             if (verbose > 1)  Utils.log.fine("readyToDisburse "+this);
             setPhase(DISBURSE_PHASE);
@@ -1447,7 +1447,7 @@ class BandStructure {
         return b;
     }
 
-    static private final boolean NULL_IS_OK = true;
+    private static final boolean NULL_IS_OK = true;
 
     MultiBand all_bands = (MultiBand) new MultiBand("(package)", UNSIGNED5).init();
 
@@ -2539,7 +2539,7 @@ class BandStructure {
         return false;
     }
 
-    static private boolean assertDoneDisbursing(Band b) {
+    private static boolean assertDoneDisbursing(Band b) {
         if (b.phase != DISBURSE_PHASE) {
             Utils.log.warning("assertDoneDisbursing: still in phase "+b.phase+": "+b);
             if (verbose() <= 1)  return false;  // fail now
@@ -2562,7 +2562,7 @@ class BandStructure {
         return true;
     }
 
-    static private void printCDecl(Band b) {
+    private static void printCDecl(Band b) {
         if (b instanceof MultiBand) {
             MultiBand mb = (MultiBand) b;
             for (int i = 0; i < mb.bandCount; i++) {

@@ -55,7 +55,7 @@ public class CheckPackageMatching {
      * PackageMatcher implements a state machine that matches package
      * names against packages parsed from the package access list.
      */
-    private static abstract class PackageMatcher {
+    private abstract static class PackageMatcher {
         // For each state, chars[state] contains the chars that matches.
         private final char[][] chars;
         // For each state, states[state][i] contains the next state to go

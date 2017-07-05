@@ -57,6 +57,9 @@ default: jdk_core langtools_jtreg jaxp_all
 # All testing
 all: jdk_all langtools_all jaxp_all
 
+# Bring in closed test targets if present
+-include $(TOPDIR)/closed/test/Makefile
+
 # Test targets
 langtools_% :
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(LANGTOOLS_DIR), JT_JAVA=$(PRODUCT_HOME) JTREG_HOME=$(JT_HOME) TEST="$(subst langtools_,,$@)" $(subst langtools_,,$@))

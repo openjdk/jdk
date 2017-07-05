@@ -677,7 +677,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * no connections will be able to rejoin this session.
      */
     @Override
-    synchronized public void invalidate() {
+    public synchronized void invalidate() {
         //
         // Can't invalidate the NULL session -- this would be
         // attempted when we get a handshaking error on a brand

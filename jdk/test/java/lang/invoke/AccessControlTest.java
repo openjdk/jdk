@@ -459,29 +459,29 @@ public class AccessControlTest {
     static Lookup lookup_in_self() {
         return MethodHandles.lookup();
     }
-    static public      void pub_in_self() { }
-    static protected   void pro_in_self() { }
+    public static      void pub_in_self() { }
+    protected static   void pro_in_self() { }
     static /*package*/ void pkg_in_self() { }
-    static private     void pri_in_self() { }
+    private static     void pri_in_self() { }
 
     static class Inner_nestmate {
         static Lookup lookup_in_nestmate() {
             return MethodHandles.lookup();
         }
-        static public      void pub_in_nestmate() { }
-        static protected   void pro_in_nestmate() { }
+        public static      void pub_in_nestmate() { }
+        protected static   void pro_in_nestmate() { }
         static /*package*/ void pkg_in_nestmate() { }
-        static private     void pri_in_nestmate() { }
+        private static     void pri_in_nestmate() { }
     }
 }
 class AccessControlTest_sibling {
     static Lookup lookup_in_sibling() {
         return MethodHandles.lookup();
     }
-    static public      void pub_in_sibling() { }
-    static protected   void pro_in_sibling() { }
+    public static      void pub_in_sibling() { }
+    protected static   void pro_in_sibling() { }
     static /*package*/ void pkg_in_sibling() { }
-    static private     void pri_in_sibling() { }
+    private static     void pri_in_sibling() { }
 }
 
 // This guy tests access from outside the package:

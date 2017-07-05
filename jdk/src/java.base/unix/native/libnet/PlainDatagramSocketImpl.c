@@ -955,17 +955,23 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
                    (char *)&arg, sizeof(arg)) < 0) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         strerror(errno));
+        close(fd);
         return;
     }
     if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF,
                    (char *)&arg, sizeof(arg)) < 0) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         strerror(errno));
+        close(fd);
         return;
     }
 #endif /* __APPLE__ */
 
-     setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*) &t, sizeof(int));
+    if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*) &t, sizeof (int)) < 0) {
+        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", strerror(errno));
+        close(fd);
+        return;
+    }
 
 #if defined(__linux__)
      arg = 0;
@@ -986,8 +992,12 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
      */
     if (domain == AF_INET6) {
         int ttl = 1;
-        setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (char *)&ttl,
-                   sizeof(ttl));
+        if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (char *) &ttl,
+                sizeof (ttl)) < 0) {
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", strerror(errno));
+            close(fd);
+            return;
+        }
     }
 #endif /* __linux__ */
 

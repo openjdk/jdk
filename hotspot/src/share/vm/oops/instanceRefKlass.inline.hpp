@@ -106,37 +106,27 @@ void InstanceRefKlass::oop_oop_iterate_ref_processing_bounded(oop obj, OopClosur
 }
 
 template <bool nv, class OopClosureType>
-int InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  // Get size before changing pointers
-  int size = InstanceKlass::oop_oop_iterate<nv>(obj, closure);
+void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
+  InstanceKlass::oop_oop_iterate<nv>(obj, closure);
 
   oop_oop_iterate_ref_processing<nv>(obj, closure);
-
-  return size;
 }
 
 #if INCLUDE_ALL_GCS
 template <bool nv, class OopClosureType>
-int InstanceRefKlass::
-oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  // Get size before changing pointers
-  int size = InstanceKlass::oop_oop_iterate_reverse<nv>(obj, closure);
+void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
+  InstanceKlass::oop_oop_iterate_reverse<nv>(obj, closure);
 
   oop_oop_iterate_ref_processing<nv>(obj, closure);
-
-  return size;
 }
 #endif // INCLUDE_ALL_GCS
 
 
 template <bool nv, class OopClosureType>
-int InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  // Get size before changing pointers
-  int size = InstanceKlass::oop_oop_iterate_bounded<nv>(obj, closure, mr);
+void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
+  InstanceKlass::oop_oop_iterate_bounded<nv>(obj, closure, mr);
 
   oop_oop_iterate_ref_processing_bounded<nv>(obj, closure, mr);
-
-  return size;
 }
 
 // Macro to define InstanceRefKlass::oop_oop_iterate for virtual/nonvirtual for

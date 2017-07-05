@@ -440,7 +440,7 @@ class MethodHandleNatives {
      * Use best possible cause for err.initCause(), substituting the
      * cause for err itself if the cause has the same (or better) type.
      */
-    static private Error initCauseFrom(Error err, Exception ex) {
+    private static Error initCauseFrom(Error err, Exception ex) {
         Throwable th = ex.getCause();
         if (err.getClass().isInstance(th))
            return (Error) th;

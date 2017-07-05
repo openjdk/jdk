@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @author Andreas Sterbenz
  * @library ..
  * @run main/othervm AddPrivateKey
- * @key randomness
  */
 
 import java.io.*;
@@ -42,6 +41,13 @@ import java.security.cert.*;
 // is really a generic KeyStore test so it should be modified to run for
 // all providers.
 public class AddPrivateKey extends SecmodTest {
+
+    private static final String ALIAS1 = "entry1";
+    private static final String ALIAS2 = "entry2";
+    private static final String ALIAS3 = "entry3";
+    private static final int MAX_LINE = 85;
+    private static final int DATA_LENGTH = 4096;
+    private static final byte[] DATA = generateData(DATA_LENGTH);
 
     public static void main(String[] args) throws Exception {
         if (initSecmod() == false) {
@@ -57,7 +63,7 @@ public class AddPrivateKey extends SecmodTest {
         System.out.println();
         Security.addProvider(p);
 
-        KeyStore ks = KeyStore.getInstance("PKCS11", p);
+        KeyStore ks = KeyStore.getInstance(PKCS11, p);
         ks.load(null, password);
         for (String alias : aliases(ks)) {
             System.out.println("Deleting: " + alias);
@@ -65,25 +71,28 @@ public class AddPrivateKey extends SecmodTest {
         }
 
         KeyStore jks = KeyStore.getInstance("JKS");
-        InputStream in = new FileInputStream(new File(BASE, "keystore.jks"));
-        char[] jkspass = "passphrase".toCharArray();
-        jks.load(in, jkspass);
-        List<PrivateKeyEntry> entries = new ArrayList<PrivateKeyEntry>();
-        for (String alias : Collections.list(jks.aliases())) {
-            if (jks.entryInstanceOf(alias, PrivateKeyEntry.class)) {
-                PrivateKeyEntry entry = (PrivateKeyEntry)jks.getEntry(alias, new PasswordProtection(jkspass));
-                String algorithm = entry.getPrivateKey().getAlgorithm();
-                System.out.println("-Entry " + alias + " (" + algorithm + ")");
-                if ((supportsEC == false) && algorithm.equals("EC")) {
-                    System.out.println("EC not supported by provider, skipping");
-                    continue;
-                }
-                if ((supportsEC == false) && algorithm.equals("DSA")) {
-                    System.out.println("Provider does not appear to have CKA_NETSCAPE_DB fix, skipping");
-                    continue;
-                }
-                test(p, entry);
-            } // else ignore
+        try (InputStream in = new FileInputStream(BASE + SEP + "keystore.jks")) {
+            char[] jkspass = "passphrase".toCharArray();
+            jks.load(in, jkspass);
+            for (String alias : Collections.list(jks.aliases())) {
+                if (jks.entryInstanceOf(alias, PrivateKeyEntry.class)) {
+                    PrivateKeyEntry entry = (PrivateKeyEntry)jks.getEntry(alias,
+                            new PasswordProtection(jkspass));
+                    String algorithm = entry.getPrivateKey().getAlgorithm();
+                    System.out.printf("-Entry %s (%s)%n", alias, algorithm);
+                    if ((supportsEC == false) && algorithm.equals("EC")) {
+                        System.out.println("EC not supported by provider, "
+                                + "skipping");
+                        continue;
+                    }
+                    if ((supportsEC == false) && algorithm.equals("DSA")) {
+                        System.out.println("Provider does not appear to have "
+                                + "CKA_NETSCAPE_DB fix, skipping");
+                        continue;
+                    }
+                    test(p, entry);
+                } // else ignore
+            }
         }
         System.out.println("OK");
     }
@@ -91,10 +100,6 @@ public class AddPrivateKey extends SecmodTest {
     private static List<String> aliases(KeyStore ks) throws KeyStoreException {
         return Collections.list(ks.aliases());
     }
-
-    private final static String ALIAS1 = "entry1";
-    private final static String ALIAS2 = "entry2";
-    private final static String ALIAS3 = "entry3";
 
     private static void test(Provider p, PrivateKeyEntry entry) throws Exception {
         PrivateKey key = entry.getPrivateKey();
@@ -122,11 +127,8 @@ public class AddPrivateKey extends SecmodTest {
 
         PrivateKey key2 = (PrivateKey)ks.getKey(ALIAS1, null);
         System.out.println(toString(key2));
-        X509Certificate[] chain2 = (X509Certificate[])ks.getCertificateChain(ALIAS1);
-        // NSS makes token keys always sensitive, skip this check
-//      if (key.equals(key2) == false) {
-//          throw new Exception("key mismatch");
-//      }
+        X509Certificate[] chain2 =
+                (X509Certificate[]) ks.getCertificateChain(ALIAS1);
         if (Arrays.equals(chain, chain2) == false) {
             throw new Exception("chain mismatch");
         }
@@ -154,7 +156,8 @@ public class AddPrivateKey extends SecmodTest {
 
         PrivateKey key4 = (PrivateKey)ks.getKey(ALIAS2, null);
         System.out.println(toString(key4));
-        X509Certificate[] chain4 = (X509Certificate[])ks.getCertificateChain(ALIAS2);
+        X509Certificate[] chain4 = (X509Certificate[])
+                ks.getCertificateChain(ALIAS2);
         if (Arrays.equals(chain, chain4) == false) {
             throw new Exception("chain mismatch");
         }
@@ -172,7 +175,8 @@ public class AddPrivateKey extends SecmodTest {
 
         PrivateKey key5 = (PrivateKey)ks.getKey(ALIAS3, null);
         System.out.println(toString(key5));
-        X509Certificate[] chain5 = (X509Certificate[])ks.getCertificateChain(ALIAS3);
+        X509Certificate[] chain5 = (X509Certificate[])
+                ks.getCertificateChain(ALIAS3);
         if (Arrays.equals(chain, chain5) == false) {
             throw new Exception("chain mismatch");
         }
@@ -186,24 +190,22 @@ public class AddPrivateKey extends SecmodTest {
         System.out.println("OK");
     }
 
-    private final static byte[] DATA = new byte[4096];
-
-    static {
-        Random random = new Random();
-        random.nextBytes(DATA);
-    }
-
-    private static void sign(Provider p, PrivateKey privateKey, PublicKey publicKey) throws Exception {
+    private static void sign(Provider p, PrivateKey privateKey,
+            PublicKey publicKey) throws Exception {
         String keyAlg = privateKey.getAlgorithm();
         String alg;
-        if (keyAlg.equals("RSA")) {
-            alg = "SHA1withRSA";
-        } else if (keyAlg.equals("DSA")) {
-            alg = "SHA1withDSA";
-        } else if (keyAlg.equals("EC")) {
-            alg = "SHA1withECDSA";
-        } else {
-            throw new Exception("Unknown algorithm " + keyAlg);
+        switch (keyAlg) {
+            case "RSA":
+                alg = "SHA1withRSA";
+                break;
+            case "DSA":
+                alg = "SHA1withDSA";
+                break;
+            case "EC":
+                alg = "SHA1withECDSA";
+                break;
+            default:
+                throw new Exception("Unknown algorithm " + keyAlg);
         }
         Signature s = Signature.getInstance(alg, p);
         s.initSign(privateKey);
@@ -216,8 +218,6 @@ public class AddPrivateKey extends SecmodTest {
             throw new Exception("Signature did not verify");
         }
     }
-
-    private final static int MAX_LINE = 85;
 
     private static String toString(Object o) {
         String s = String.valueOf(o).split("\n")[0];

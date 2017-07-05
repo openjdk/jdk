@@ -205,7 +205,7 @@ public class EquivMapsGenerator {
         System.out.println();
     }
 
-    private final static String headerText =
+    private static final String headerText =
         "final class LocaleEquivalentMaps {\n\n"
         + "    static final Map<String, String> singleEquivMap;\n"
         + "    static final Map<String, String[]> multiEquivsMap;\n"
@@ -216,7 +216,7 @@ public class EquivMapsGenerator {
         + "        regionVariantEquivMap = new HashMap<>();\n\n"
         + "        // This is an auto-generated file and should not be manually edited.\n";
 
-    private final static String footerText =
+    private static final String footerText =
         "    }\n\n"
         + "}";
 

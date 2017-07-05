@@ -74,7 +74,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
 
     /* AuthCacheValue: */
 
-    transient protected PasswordAuthentication pw;
+    protected transient PasswordAuthentication pw;
 
     public PasswordAuthentication credentials() {
         return pw;
@@ -113,13 +113,13 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * at the same time, then all but the first will block until
      * the first completes its authentication.
      */
-    static private HashMap<String,Thread> requests = new HashMap<>();
+    private static HashMap<String,Thread> requests = new HashMap<>();
 
     /* check if a request for this destination is in progress
      * return false immediately if not. Otherwise block until
      * request is finished and return true
      */
-    static private boolean requestIsInProgress (String key) {
+    private static boolean requestIsInProgress (String key) {
         if (!serializeAuth) {
             /* behavior is disabled. Revert to concurrent requests */
             return false;
@@ -147,7 +147,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     /* signal completion of an authentication (whether it succeeded or not)
      * so that other threads can continue.
      */
-    static private void requestCompleted (String key) {
+    private static void requestCompleted (String key) {
         synchronized (requests) {
             Thread thread = requests.get(key);
             if (thread != null && thread == Thread.currentThread()) {

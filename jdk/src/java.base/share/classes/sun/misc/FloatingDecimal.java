@@ -187,7 +187,7 @@ public class FloatingDecimal{
      * and infinite values.
      */
     private static class ExceptionalBinaryToASCIIBuffer implements BinaryToASCIIConverter {
-        final private String image;
+        private final String image;
         private boolean isNegative;
 
         public ExceptionalBinaryToASCIIBuffer(String image, boolean isNegative) {
@@ -1003,8 +1003,8 @@ public class FloatingDecimal{
      * A <code>ASCIIToBinaryConverter</code> container for a <code>double</code>.
      */
     static class PreparedASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
-        final private double doubleVal;
-        final private float floatVal;
+        private final double doubleVal;
+        private final float floatVal;
 
         public PreparedASCIIToBinaryBuffer(double doubleVal, float floatVal) {
             this.doubleVal = doubleVal;

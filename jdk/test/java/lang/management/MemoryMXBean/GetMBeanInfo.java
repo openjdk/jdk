@@ -35,7 +35,7 @@ import java.lang.management.*;
 import javax.management.*;
 
 public class GetMBeanInfo {
-    private final static int EXPECTED_NOTIF_TYPES = 2;
+    private static final int EXPECTED_NOTIF_TYPES = 2;
     private static int count = 0;
 
     public static void main(String argv[]) throws Exception {

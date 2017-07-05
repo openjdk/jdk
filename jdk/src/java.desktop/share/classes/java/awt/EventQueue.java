@@ -899,11 +899,13 @@ public class EventQueue {
                 }
             }
 
-            // Wake up EDT waiting in getNextEvent(), so it can
-            // pick up a new EventQueue. Post the waking event before
-            // topQueue.nextQueue is assigned, otherwise the event would
-            // go newEventQueue
-            topQueue.postEventPrivate(new InvocationEvent(topQueue, dummyRunnable));
+            if (topQueue.dispatchThread != null) {
+                // Wake up EDT waiting in getNextEvent(), so it can
+                // pick up a new EventQueue. Post the waking event before
+                // topQueue.nextQueue is assigned, otherwise the event would
+                // go newEventQueue
+                topQueue.postEventPrivate(new InvocationEvent(topQueue, dummyRunnable));
+            }
 
             newEventQueue.previousQueue = topQueue;
             topQueue.nextQueue = newEventQueue;

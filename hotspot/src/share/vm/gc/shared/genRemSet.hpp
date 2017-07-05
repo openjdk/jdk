@@ -110,13 +110,11 @@ public:
   virtual void print() {}
 
   // Informs the RS that the given memregion contains no references to
-  // younger generations.
+  // the young generation.
   virtual void clear(MemRegion mr) = 0;
 
-  // Informs the RS that there are no references to generations
-  // younger than gen from generations gen and older.
-  // The parameter clear_perm indicates if the perm_gen's
-  // remembered set should also be processed/cleared.
+  // Informs the RS that there are no references to the young generation
+  // from old_gen.
   virtual void clear_into_younger(Generation* old_gen) = 0;
 
   // Informs the RS that refs in the given "mr" may have changed

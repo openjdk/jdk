@@ -31,7 +31,7 @@ import java.security.AccessController;
 import sun.misc.Unsafe;
 
 /** Base class for sun.misc.Unsafe-based FieldAccessors for final or
-    volatile static fields.  */
+    static volatile fields.  */
 
 abstract class UnsafeQualifiedStaticFieldAccessorImpl
     extends UnsafeStaticFieldAccessorImpl

@@ -115,7 +115,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      *
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
-    abstract public E get(int index);
+    public abstract E get(int index);
 
     /**
      * {@inheritDoc}

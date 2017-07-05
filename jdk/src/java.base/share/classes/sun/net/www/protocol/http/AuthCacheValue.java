@@ -47,7 +47,7 @@ public abstract class AuthCacheValue implements Serializable {
     /**
      * Caches authentication info entered by user.  See cacheKey()
      */
-    static protected AuthCache cache = new AuthCacheImpl();
+    protected static AuthCache cache = new AuthCacheImpl();
 
     public static void setAuthCache (AuthCache map) {
         cache = map;

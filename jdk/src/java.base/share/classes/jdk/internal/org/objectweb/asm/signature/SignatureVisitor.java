@@ -88,17 +88,17 @@ public abstract class SignatureVisitor {
     /**
      * Wildcard for an "extends" type argument.
      */
-    public final static char EXTENDS = '+';
+    public static final char EXTENDS = '+';
 
     /**
      * Wildcard for a "super" type argument.
      */
-    public final static char SUPER = '-';
+    public static final char SUPER = '-';
 
     /**
      * Wildcard for a normal type argument.
      */
-    public final static char INSTANCEOF = '=';
+    public static final char INSTANCEOF = '=';
 
     /**
      * The ASM API version implemented by this visitor. The value of this field

@@ -31,25 +31,24 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import javax.imageio.ImageIO;
-import sun.awt.OSInfo;
 import sun.awt.SunHints;
 import java.awt.MediaTracker;
-import java.awt.geom.AffineTransform;
+import java.awt.RenderingHints;
 import java.awt.image.ImageObserver;
-import java.util.Arrays;
-import java.util.List;
 import javax.swing.JPanel;
-import sun.awt.SunToolkit;
-import sun.awt.image.MultiResolutionImage;
+import jdk.testlibrary.Platform;
+import java.awt.image.MultiResolutionImage;
 
 /**
- * @test
- * @bug 8011059
+ * @test @bug 8011059
  * @author Alexander Scherbatiy
  * @summary [macosx] Make JDK demos look perfect on retina displays
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.Platform
+ * @requires (os.family == "mac")
  * @modules java.desktop/sun.awt
  *          java.desktop/sun.awt.image
- * @run main MultiResolutionImageTest CUSTOM
+ *          java.desktop/sun.lwawt.macosx
  * @run main MultiResolutionImageTest TOOLKIT_PREPARE
  * @run main MultiResolutionImageTest TOOLKIT_LOAD
  * @run main MultiResolutionImageTest TOOLKIT
@@ -70,149 +69,29 @@ public class MultiResolutionImageTest {
         if (args.length == 0) {
             throw new RuntimeException("Not found a test");
         }
-
         String test = args[0];
-
         System.out.println("TEST: " + test);
-        System.out.println("CHECK OS: " + checkOS());
 
-        if ("CUSTOM".equals(test)) {
-            testCustomMultiResolutionImage();
-        } else if (checkOS()) {
-            switch (test) {
-                case "CUSTOM":
-                    break;
-                case "TOOLKIT_PREPARE":
-                    testToolkitMultiResolutionImagePrepare();
-                    break;
-                case "TOOLKIT_LOAD":
-                    testToolkitMultiResolutionImageLoad();
-                    break;
-                case "TOOLKIT":
-                    testToolkitMultiResolutionImage();
-                    testImageNameTo2xParsing();
-                    break;
-                default:
-                    throw new RuntimeException("Unknown test: " + test);
-            }
+        // To automatically pass the test if the test is not run using JTReg.
+        if (!Platform.isOSX()) {
+            System.out.println("Non-Mac platform detected. Passing the test");
+            return;
         }
-    }
-
-    static boolean checkOS() {
-        return OSInfo.getOSType() == OSInfo.OSType.MACOSX;
-    }
-
-    public static void testCustomMultiResolutionImage() {
-        testCustomMultiResolutionImage(false);
-        testCustomMultiResolutionImage(true);
-    }
-
-    public static void testCustomMultiResolutionImage(boolean enableImageScaling) {
-
-        Image image = new MultiResolutionBufferedImage();
-
-        // Same image size
-        BufferedImage bufferedImage = new BufferedImage(IMAGE_WIDTH, IMAGE_HEIGHT,
-                BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2d = (Graphics2D) bufferedImage.getGraphics();
-        setImageScalingHint(g2d, enableImageScaling);
-        g2d.drawImage(image, 0, 0, null);
-        checkColor(bufferedImage.getRGB(3 * IMAGE_WIDTH / 4, 3 * IMAGE_HEIGHT / 4), false);
-
-        // Twice image size
-        bufferedImage = new BufferedImage(2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT,
-                BufferedImage.TYPE_INT_RGB);
-        g2d = (Graphics2D) bufferedImage.getGraphics();
-        setImageScalingHint(g2d, enableImageScaling);
-        g2d.drawImage(image, 0, 0, 2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT, null);
-        checkColor(bufferedImage.getRGB(3 * IMAGE_WIDTH / 2, 3 * IMAGE_HEIGHT / 2), enableImageScaling);
-
-        // Scale 2x
-        bufferedImage = new BufferedImage(2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
-        g2d = (Graphics2D) bufferedImage.getGraphics();
-        setImageScalingHint(g2d, enableImageScaling);
-        g2d.scale(2, 2);
-        g2d.drawImage(image, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT, null);
-        checkColor(bufferedImage.getRGB(3 * IMAGE_WIDTH / 2, 3 * IMAGE_HEIGHT / 2), enableImageScaling);
-
-        // Rotate
-        bufferedImage = new BufferedImage(IMAGE_WIDTH, IMAGE_HEIGHT,
-                BufferedImage.TYPE_INT_RGB);
-        g2d = (Graphics2D) bufferedImage.getGraphics();
-        setImageScalingHint(g2d, enableImageScaling);
-        g2d.drawImage(image, 0, 0, null);
-        g2d.rotate(Math.PI / 4);
-        checkColor(bufferedImage.getRGB(3 * IMAGE_WIDTH / 4, 3 * IMAGE_HEIGHT / 4), false);
-
-        // Scale 2x and Rotate
-        bufferedImage = new BufferedImage(2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
-        g2d = (Graphics2D) bufferedImage.getGraphics();
-        setImageScalingHint(g2d, enableImageScaling);
-        g2d.scale(-2, 2);
-        g2d.rotate(-Math.PI / 10);
-        g2d.drawImage(image, -IMAGE_WIDTH, 0, IMAGE_WIDTH, IMAGE_HEIGHT, null);
-        checkColor(bufferedImage.getRGB(3 * IMAGE_WIDTH / 2, 3 * IMAGE_HEIGHT / 2), enableImageScaling);
-
-        // General Transform
-        bufferedImage = new BufferedImage(2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
-        g2d = (Graphics2D) bufferedImage.getGraphics();
-        setImageScalingHint(g2d, enableImageScaling);
-        float delta = 0.05f;
-        float cos = 1 - delta * delta / 2;
-        float sin = 1 + delta;
-        AffineTransform transform = new AffineTransform(2 * cos, 0.1, 0.3, -2 * sin, 10, -5);
-        g2d.setTransform(transform);
-        g2d.drawImage(image, 0, -IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_HEIGHT, null);
-        checkColor(bufferedImage.getRGB(3 * IMAGE_WIDTH / 2, 3 * IMAGE_HEIGHT / 2), enableImageScaling);
-
-        int D = 10;
-        // From Source to small Destination region
-        bufferedImage = new BufferedImage(IMAGE_WIDTH, IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
-        g2d = (Graphics2D) bufferedImage.getGraphics();
-        setImageScalingHint(g2d, enableImageScaling);
-        g2d.drawImage(image, IMAGE_WIDTH / 2, IMAGE_HEIGHT / 2, IMAGE_WIDTH - D, IMAGE_HEIGHT - D,
-                D, D, IMAGE_WIDTH - D, IMAGE_HEIGHT - D, null);
-        checkColor(bufferedImage.getRGB(3 * IMAGE_WIDTH / 4, 3 * IMAGE_HEIGHT / 4), false);
-
-        // From Source to large Destination region
-        bufferedImage = new BufferedImage(2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
-        g2d = (Graphics2D) bufferedImage.getGraphics();
-        setImageScalingHint(g2d, enableImageScaling);
-        g2d.drawImage(image, D, D, 2 * IMAGE_WIDTH - D, 2 * IMAGE_HEIGHT - D,
-                IMAGE_WIDTH / 2, IMAGE_HEIGHT / 2, IMAGE_WIDTH - D, IMAGE_HEIGHT - D, null);
-        checkColor(bufferedImage.getRGB(3 * IMAGE_WIDTH / 2, 3 * IMAGE_HEIGHT / 2), enableImageScaling);
-    }
-
-    static class MultiResolutionBufferedImage extends BufferedImage
-            implements MultiResolutionImage {
-
-        Image highResolutionImage;
-
-        public MultiResolutionBufferedImage() {
-            super(IMAGE_WIDTH, IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
-            highResolutionImage = new BufferedImage(
-                    2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
-            draw(getGraphics(), 1);
-            draw(highResolutionImage.getGraphics(), 2);
+        switch (test) {
+            case "TOOLKIT_PREPARE":
+                testToolkitMultiResolutionImagePrepare();
+                break;
+            case "TOOLKIT_LOAD":
+                testToolkitMultiResolutionImageLoad();
+                break;
+            case "TOOLKIT":
+                testToolkitMultiResolutionImage();
+                testImageNameTo2xParsing();
+                break;
+            default:
+                throw new RuntimeException("Unknown test: " + test);
         }
-
-        void draw(Graphics graphics, float resolution) {
-            Graphics2D g2 = (Graphics2D) graphics;
-            g2.scale(resolution, resolution);
-            g2.setColor((resolution == 1) ? COLOR_1X : COLOR_2X);
-            g2.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-        }
-
-        @Override
-        public Image getResolutionVariant(int width, int height) {
-            return ((width <= getWidth() && height <= getHeight()))
-                    ? this : highResolutionImage;
-        }
-
-        @Override
-        public List<Image> getResolutionVariants() {
-            return Arrays.asList(this, highResolutionImage);
-        }
+        System.out.println("Test passed.");
     }
 
     static void testToolkitMultiResolutionImagePrepare() throws Exception {
@@ -224,8 +103,9 @@ public class MultiResolutionImageTest {
 
         Image image = Toolkit.getDefaultToolkit().getImage(fileName);
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.prepareImage(image, IMAGE_WIDTH, IMAGE_HEIGHT, new LoadImageObserver(image));
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        toolkit.prepareImage(image, IMAGE_WIDTH, IMAGE_HEIGHT,
+            new LoadImageObserver(image));
 
         testToolkitMultiResolutionImageLoad(image);
     }
@@ -240,7 +120,8 @@ public class MultiResolutionImageTest {
         testToolkitMultiResolutionImageLoad(image);
     }
 
-    static void testToolkitMultiResolutionImageLoad(Image image) throws Exception {
+    static void testToolkitMultiResolutionImageLoad(Image image)
+        throws Exception {
 
         MediaTracker tracker = new MediaTracker(new JPanel());
         tracker.addImage(image, 0);
@@ -256,7 +137,7 @@ public class MultiResolutionImageTest {
         int h = image.getHeight(null);
 
         Image resolutionVariant = ((MultiResolutionImage) image)
-                .getResolutionVariant(2 * w, 2 * h);
+            .getResolutionVariant(2 * w, 2 * h);
 
         if (image == resolutionVariant) {
             throw new RuntimeException("Resolution variant is not loaded");
@@ -267,9 +148,10 @@ public class MultiResolutionImageTest {
 
     static void testImageLoaded(Image image) {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
 
-        int flags = toolkit.checkImage(image, IMAGE_WIDTH, IMAGE_WIDTH, new SilentImageObserver());
+        int flags = toolkit.checkImage(image, IMAGE_WIDTH, IMAGE_WIDTH,
+            new SilentImageObserver());
         if ((flags & (ImageObserver.FRAMEBITS | ImageObserver.ALLBITS)) == 0) {
             throw new RuntimeException("Image is not loaded!");
         }
@@ -278,7 +160,8 @@ public class MultiResolutionImageTest {
     static class SilentImageObserver implements ImageObserver {
 
         @Override
-        public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
+        public boolean imageUpdate(Image img, int infoflags, int x, int y,
+            int width, int height) {
             throw new RuntimeException("Observer should not be called!");
         }
     }
@@ -292,21 +175,25 @@ public class MultiResolutionImageTest {
         }
 
         @Override
-        public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
+        public boolean imageUpdate(Image img, int infoflags, int x, int y,
+            int width, int height) {
 
             if (image != img) {
-                throw new RuntimeException("Original image is not passed to the observer");
+                throw new RuntimeException("Original image is not passed "
+                    + "to the observer");
             }
 
             if ((infoflags & ImageObserver.WIDTH) != 0) {
                 if (width != IMAGE_WIDTH) {
-                    throw new RuntimeException("Original width is not passed to the observer");
+                    throw new RuntimeException("Original width is not passed "
+                        + "to the observer");
                 }
             }
 
             if ((infoflags & ImageObserver.HEIGHT) != 0) {
                 if (height != IMAGE_HEIGHT) {
-                    throw new RuntimeException("Original height is not passed to the observer");
+                    throw new RuntimeException("Original height is not passed "
+                        + "to the observer");
                 }
             }
 
@@ -335,7 +222,8 @@ public class MultiResolutionImageTest {
         testToolkitMultiResolutionImage(image, true);
     }
 
-    static void testToolkitMultiResolutionImageChache(String fileName, URL url) {
+    static void testToolkitMultiResolutionImageChache(String fileName,
+        URL url) {
 
         Image img1 = Toolkit.getDefaultToolkit().getImage(fileName);
         if (!(img1 instanceof MultiResolutionImage)) {
@@ -358,8 +246,8 @@ public class MultiResolutionImageTest {
         }
     }
 
-    static void testToolkitMultiResolutionImage(Image image, boolean enableImageScaling)
-            throws Exception {
+    static void testToolkitMultiResolutionImage(Image image,
+        boolean enableImageScaling) throws Exception {
 
         MediaTracker tracker = new MediaTracker(new JPanel());
         tracker.addImage(image, 0);
@@ -368,15 +256,16 @@ public class MultiResolutionImageTest {
             throw new RuntimeException("Error during image loading");
         }
 
-        final BufferedImage bufferedImage1x = new BufferedImage(IMAGE_WIDTH, IMAGE_HEIGHT,
-                BufferedImage.TYPE_INT_RGB);
+        final BufferedImage bufferedImage1x = new BufferedImage(IMAGE_WIDTH,
+            IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
         Graphics2D g1x = (Graphics2D) bufferedImage1x.getGraphics();
         setImageScalingHint(g1x, false);
         g1x.drawImage(image, 0, 0, null);
-        checkColor(bufferedImage1x.getRGB(3 * IMAGE_WIDTH / 4, 3 * IMAGE_HEIGHT / 4), false);
+        checkColor(bufferedImage1x.getRGB(3 * IMAGE_WIDTH / 4,
+            3 * IMAGE_HEIGHT / 4), false);
 
         Image resolutionVariant = ((MultiResolutionImage) image).
-                getResolutionVariant(2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT);
+            getResolutionVariant(2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT);
 
         if (resolutionVariant == null) {
             throw new RuntimeException("Resolution variant is null");
@@ -390,23 +279,28 @@ public class MultiResolutionImageTest {
         }
 
         final BufferedImage bufferedImage2x = new BufferedImage(2 * IMAGE_WIDTH,
-                2 * IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
+            2 * IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2x = (Graphics2D) bufferedImage2x.getGraphics();
         setImageScalingHint(g2x, enableImageScaling);
-        g2x.drawImage(image, 0, 0, 2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT, null);
-        checkColor(bufferedImage2x.getRGB(3 * IMAGE_WIDTH / 2, 3 * IMAGE_HEIGHT / 2), enableImageScaling);
+        g2x.drawImage(image, 0, 0, 2 * IMAGE_WIDTH,
+            2 * IMAGE_HEIGHT, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT, null);
+        checkColor(bufferedImage2x.getRGB(3 * IMAGE_WIDTH / 2,
+            3 * IMAGE_HEIGHT / 2), enableImageScaling);
 
         if (!(image instanceof MultiResolutionImage)) {
             throw new RuntimeException("Not a MultiResolutionImage");
         }
 
-        MultiResolutionImage multiResolutionImage = (MultiResolutionImage) image;
+        MultiResolutionImage multiResolutionImage
+            = (MultiResolutionImage) image;
 
-        Image image1x = multiResolutionImage.getResolutionVariant(IMAGE_WIDTH, IMAGE_HEIGHT);
-        Image image2x = multiResolutionImage.getResolutionVariant(2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT);
+        Image image1x = multiResolutionImage.getResolutionVariant(
+            IMAGE_WIDTH, IMAGE_HEIGHT);
+        Image image2x = multiResolutionImage.getResolutionVariant(
+            2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT);
 
         if (image1x.getWidth(null) * 2 != image2x.getWidth(null)
-                || image1x.getHeight(null) * 2 != image2x.getHeight(null)) {
+            || image1x.getHeight(null) * 2 != image2x.getHeight(null)) {
             throw new RuntimeException("Wrong resolution variant size");
         }
     }
@@ -416,13 +310,15 @@ public class MultiResolutionImageTest {
         ImageObserver observer = new ImageObserver() {
 
             @Override
-            public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
+            public boolean imageUpdate(Image img, int infoflags, int x, int y,
+                int width, int height) {
 
                 if (img != image) {
                     throw new RuntimeException("Wrong image in observer");
                 }
 
-                if ((infoflags & (ImageObserver.ERROR | ImageObserver.ABORT)) != 0) {
+                if ((infoflags & (ImageObserver.ERROR | ImageObserver.ABORT))
+                    != 0) {
                     throw new RuntimeException("Error during image loading");
                 }
 
@@ -432,18 +328,20 @@ public class MultiResolutionImageTest {
         };
 
         final BufferedImage bufferedImage2x = new BufferedImage(2 * IMAGE_WIDTH,
-                2 * IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
+            2 * IMAGE_HEIGHT, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2x = (Graphics2D) bufferedImage2x.getGraphics();
         setImageScalingHint(g2x, true);
 
-        g2x.drawImage(image, 0, 0, 2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT, observer);
+        g2x.drawImage(image, 0, 0, 2 * IMAGE_WIDTH, 2 * IMAGE_HEIGHT, 0, 0,
+            IMAGE_WIDTH, IMAGE_HEIGHT, observer);
 
     }
 
-    static void setImageScalingHint(Graphics2D g2d, boolean enableImageScaling) {
+    static void setImageScalingHint(Graphics2D g2d,
+        boolean enableImageScaling) {
         g2d.setRenderingHint(SunHints.KEY_RESOLUTION_VARIANT, enableImageScaling
-                ? SunHints.VALUE_RESOLUTION_VARIANT_ON
-                : SunHints.VALUE_RESOLUTION_VARIANT_OFF);
+            ? RenderingHints.VALUE_RESOLUTION_VARIANT_DEFAULT
+            : RenderingHints.VALUE_RESOLUTION_VARIANT_BASE);
     }
 
     static void checkColor(int rgb, boolean isImageScaled) {
@@ -468,8 +366,9 @@ public class MultiResolutionImageTest {
     }
 
     static void generateImage(int scale) throws Exception {
-        BufferedImage image = new BufferedImage(scale * IMAGE_WIDTH, scale * IMAGE_HEIGHT,
-                BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(
+            scale * IMAGE_WIDTH, scale * IMAGE_HEIGHT,
+            BufferedImage.TYPE_INT_RGB);
         Graphics g = image.getGraphics();
         g.setColor(scale == 1 ? COLOR_1X : COLOR_2X);
         g.fillRect(0, 0, scale * IMAGE_WIDTH, scale * IMAGE_HEIGHT);
@@ -493,7 +392,7 @@ public class MultiResolutionImageTest {
             }
 
             throw new RuntimeException("Test name " + testName
-                    + ", result name: " + resultName);
+                + ", result name: " + resultName);
         }
 
         for (URL[] testURLs : TEST_URLS) {
@@ -510,7 +409,7 @@ public class MultiResolutionImageTest {
             }
 
             throw new RuntimeException("Test url: " + testURL
-                    + ", result url: " + resultURL);
+                + ", result url: " + resultURL);
         }
 
     }
@@ -521,19 +420,22 @@ public class MultiResolutionImageTest {
     }
 
     static String getTestScaledImageName(String name) throws Exception {
-        Method method = getScalableImageMethod("getScaledImageName", String.class);
+        Method method = getScalableImageMethod(
+            "getScaledImageName", String.class);
         return (String) method.invoke(null, name);
     }
 
     private static boolean isValidPath(String path) {
         return !path.isEmpty() && !path.endsWith("/") && !path.endsWith(".")
-                && !path.contains("@2x");
+            && !path.contains("@2x");
     }
 
     private static Method getScalableImageMethod(String name,
-            Class... parameterTypes) throws Exception {
+        Class... parameterTypes) throws Exception {
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        Method method = toolkit.getClass().getDeclaredMethod(name, parameterTypes);
+        Method method = toolkit.getClass()
+            .
+            getDeclaredMethod(name, parameterTypes);
         method.setAccessible(true);
         return method;
     }
@@ -604,9 +506,11 @@ public class MultiResolutionImageTest {
                 {new URL("jar:file:/dir/Java2D.jar!/images/image.ext"),
                     new URL("jar:file:/dir/Java2D.jar!/images/image@2x.ext")},
                 {new URL("jar:file:/aaa.bbb/Java2D.jar!/images/image.ext"),
-                    new URL("jar:file:/aaa.bbb/Java2D.jar!/images/image@2x.ext")},
+                    new URL("jar:file:/aaa.bbb/Java2D.jar!/"
+                    + "images/image@2x.ext")},
                 {new URL("jar:file:/dir/Java2D.jar!/aaa.bbb/image.ext"),
-                    new URL("jar:file:/dir/Java2D.jar!/aaa.bbb/image@2x.ext")},};
+                    new URL("jar:file:/dir/Java2D.jar!/"
+                    + "aaa.bbb/image@2x.ext")},};
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -615,7 +519,8 @@ public class MultiResolutionImageTest {
     static class PreloadedImageObserver implements ImageObserver {
 
         @Override
-        public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
+        public boolean imageUpdate(Image img, int infoflags, int x, int y,
+            int width, int height) {
             throw new RuntimeException("Image should be already preloaded");
         }
     }

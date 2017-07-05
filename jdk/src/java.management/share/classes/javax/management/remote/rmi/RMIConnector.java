@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,25 +30,21 @@ import com.sun.jmx.remote.internal.ClientCommunicatorAdmin;
 import com.sun.jmx.remote.internal.ClientListenerInfo;
 import com.sun.jmx.remote.internal.ClientNotifForwarder;
 import com.sun.jmx.remote.internal.ProxyRef;
-import com.sun.jmx.remote.internal.IIOPHelper;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InvalidObjectException;
-import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
-import java.io.WriteAbortedException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
-import java.rmi.MarshalException;
 import java.rmi.MarshalledObject;
 import java.rmi.NoSuchObjectException;
 import java.rmi.Remote;
@@ -61,13 +57,12 @@ import java.rmi.server.RemoteRef;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
 import javax.management.Attribute;
@@ -146,22 +141,20 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * the RMI connector server with the given address.</p>
      *
      * <p>The address can refer directly to the connector server,
-     * using one of the following syntaxes:</p>
+     * using the following syntax:</p>
      *
      * <pre>
      * service:jmx:rmi://<em>[host[:port]]</em>/stub/<em>encoded-stub</em>
-     * service:jmx:iiop://<em>[host[:port]]</em>/ior/<em>encoded-IOR</em>
      * </pre>
      *
      * <p>(Here, the square brackets {@code []} are not part of the
      * address but indicate that the host and port are optional.)</p>
      *
      * <p>The address can instead indicate where to find an RMI stub
-     * through JNDI, using one of the following syntaxes:</p>
+     * through JNDI, using the following syntax:</p>
      *
      * <pre>
      * service:jmx:rmi://<em>[host[:port]]</em>/jndi/<em>jndi-name</em>
-     * service:jmx:iiop://<em>[host[:port]]</em>/jndi/<em>jndi-name</em>
      * </pre>
      *
      * <p>An implementation may also recognize additional address
@@ -242,8 +235,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
     /**
      * @throws IOException if the connection could not be made because of a
-     *   communication problem, or in the case of the {@code iiop} protocol,
-     *   that RMI/IIOP is not supported
+     *   communication problem
      */
     public void connect() throws IOException {
         connect(null);
@@ -251,8 +243,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
     /**
      * @throws IOException if the connection could not be made because of a
-     *   communication problem, or in the case of the {@code iiop} protocol,
-     *   that RMI/IIOP is not supported
+     *   communication problem
      */
     public synchronized void connect(Map<String,?> environment)
     throws IOException {
@@ -294,9 +285,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
             if (checkStub) checkStub(stub, rmiServerImplStubClass);
 
-            // Connect IIOP Stub if needed.
             if (tracing) logger.trace("connect",idstr + " connecting stub...");
-            stub = connectStub(stub,usemap);
             idstr = (tracing?"["+this.toString()+"]":null);
 
             // Calling newClient on the RMIServer stub.
@@ -307,18 +296,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             try {
                 connection = getConnection(stub, credentials, checkStub);
             } catch (java.rmi.RemoteException re) {
-                if (jmxServiceURL != null) {
-                    final String pro = jmxServiceURL.getProtocol();
-                    final String path = jmxServiceURL.getURLPath();
-
-                    if ("rmi".equals(pro) &&
-                        path.startsWith("/jndi/iiop:")) {
-                        MalformedURLException mfe = new MalformedURLException(
-                              "Protocol is rmi but JNDI scheme is iiop: " + jmxServiceURL);
-                        mfe.initCause(re);
-                        throw mfe;
-                    }
-                }
                 throw re;
             }
 
@@ -1413,13 +1390,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             if (ioe instanceof UnmarshalException) {
                 throw ioe; // the fix of 6937053 made ClientNotifForwarder.fetchNotifs
                            // fetch one by one with UnmarshalException
-            } else if (ioe instanceof MarshalException) {
-                // IIOP will throw MarshalException wrapping a NotSerializableException
-                // when a server fails to serialize a response.
-                MarshalException me = (MarshalException)ioe;
-                if (me.detail instanceof NotSerializableException) {
-                    throw (NotSerializableException)me.detail;
-                }
             }
 
             // Not serialization problem, return.
@@ -1654,9 +1624,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 throw new IOException("Failed to get a RMI stub: "+ne);
             }
 
-            // Connect IIOP Stub if needed.
-            stub = connectStub(stub,env);
-
             // Calling newClient on the RMIServer stub.
             Object credentials = env.get(CREDENTIALS);
             connection = stub.newClient(credentials);
@@ -1693,103 +1660,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     //--------------------------------------------------------------------
     // Private stuff - Serialization
     //--------------------------------------------------------------------
-    /**
-     * <p>In order to be usable, an IIOP stub must be connected to an ORB.
-     * The stub is automatically connected to the ORB if:
-     * <ul>
-     *     <li> It was returned by the COS naming</li>
-     *     <li> Its server counterpart has been registered in COS naming
-     *          through JNDI.</li>
-     * </ul>
-     * Otherwise, it is not connected. A stub which is deserialized
-     * from Jini is not connected. A stub which is obtained from a
-     * non registered RMIIIOPServerImpl is not a connected.<br>
-     * A stub which is not connected can't be serialized, and thus
-     * can't be registered in Jini. A stub which is not connected can't
-     * be used to invoke methods on the server.
-     * <p>
-     * In order to palliate this, this method will connect the
-     * given stub if it is not yet connected. If the given
-     * <var>RMIServer</var> is not an instance of
-     * {@link javax.rmi.CORBA.Stub javax.rmi.CORBA.Stub}, then the
-     * method do nothing and simply returns that stub. Otherwise,
-     * this method will attempt to connect the stub to an ORB as
-     * follows:
-     * <ul>
-     * <li>This method looks in the provided <var>environment</var> for
-     * the "java.naming.corba.orb" property. If it is found, the
-     * referenced object (an {@link org.omg.CORBA.ORB ORB}) is used to
-     * connect the stub. Otherwise, a new org.omg.CORBA.ORB is created
-     * by calling {@link
-     * org.omg.CORBA.ORB#init(String[], Properties)
-     * org.omg.CORBA.ORB.init((String[])null,(Properties)null)}</li>
-     * <li>The new created ORB is kept in a static
-     * {@link WeakReference} and can be reused for connecting other
-     * stubs. However, no reference is ever kept on the ORB provided
-     * in the <var>environment</var> map, if any.</li>
-     * </ul>
-     * @param rmiServer A RMI Server Stub.
-     * @param environment An environment map, possibly containing an ORB.
-     * @return the given stub.
-     * @exception IllegalArgumentException if the
-     *      {@code java.naming.corba.orb} property is specified and
-     *      does not point to an {@link org.omg.CORBA.ORB ORB}.
-     * @exception IOException if the connection to the ORB failed.
-     **/
-    static RMIServer connectStub(RMIServer rmiServer,
-                                 Map<String, ?> environment)
-        throws IOException {
-        if (IIOPHelper.isStub(rmiServer)) {
-            try {
-                IIOPHelper.getOrb(rmiServer);
-            } catch (UnsupportedOperationException x) {
-                // BAD_OPERATION
-                IIOPHelper.connect(rmiServer, resolveOrb(environment));
-            }
-        }
-        return rmiServer;
-    }
-
-    /**
-     * Get the ORB specified by <var>environment</var>, or create a
-     * new one.
-     * <p>This method looks in the provided <var>environment</var> for
-     * the "java.naming.corba.orb" property. If it is found, the
-     * referenced object (an {@link org.omg.CORBA.ORB ORB}) is
-     * returned. Otherwise, a new org.omg.CORBA.ORB is created
-     * by calling {@link
-     * org.omg.CORBA.ORB#init(String[], java.util.Properties)
-     * org.omg.CORBA.ORB.init((String[])null,(Properties)null)}
-     * <p>The new created ORB is kept in a static
-     * {@link WeakReference} and can be reused for connecting other
-     * stubs. However, no reference is ever kept on the ORB provided
-     * in the <var>environment</var> map, if any.
-     * @param environment An environment map, possibly containing an ORB.
-     * @return An ORB.
-     * @exception IllegalArgumentException if the
-     *      {@code java.naming.corba.orb} property is specified and
-     *      does not point to an {@link org.omg.CORBA.ORB ORB}.
-     * @exception IOException if the ORB initialization failed.
-     **/
-    static Object resolveOrb(Map<String, ?> environment)
-        throws IOException {
-        if (environment != null) {
-            final Object orb = environment.get(EnvHelp.DEFAULT_ORB);
-            if (orb != null && !(IIOPHelper.isOrb(orb)))
-                throw new IllegalArgumentException(EnvHelp.DEFAULT_ORB +
-                        " must be an instance of org.omg.CORBA.ORB.");
-            if (orb != null) return orb;
-        }
-        final Object orb =
-                (RMIConnector.orb==null)?null:RMIConnector.orb.get();
-        if (orb != null) return orb;
-
-        final Object newOrb =
-                IIOPHelper.createOrb((String[])null, (Properties)null);
-        RMIConnector.orb = new WeakReference<Object>(newOrb);
-        return newOrb;
-    }
-
     /**
      * Read RMIConnector fields from an {@link java.io.ObjectInputStream
      * ObjectInputStream}.
@@ -1846,7 +1716,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     throws IOException {
         if (rmiServer == null && jmxServiceURL == null) throw new
                 InvalidObjectException("rmiServer and jmxServiceURL both null.");
-        connectStub(this.rmiServer,env);
         s.defaultWriteObject();
     }
 
@@ -1911,24 +1780,15 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     private RMIServer findRMIServer(JMXServiceURL directoryURL,
             Map<String, Object> environment)
             throws NamingException, IOException {
-        final boolean isIiop = RMIConnectorServer.isIiopURL(directoryURL,true);
-        if (isIiop) {
-            // Make sure java.naming.corba.orb is in the Map.
-            environment.put(EnvHelp.DEFAULT_ORB,resolveOrb(environment));
-        }
 
         String path = directoryURL.getURLPath();
         int end = path.indexOf(';');
         if (end < 0) end = path.length();
         if (path.startsWith("/jndi/"))
-            return findRMIServerJNDI(path.substring(6,end), environment, isIiop);
+            return findRMIServerJNDI(path.substring(6,end), environment);
         else if (path.startsWith("/stub/"))
-            return findRMIServerJRMP(path.substring(6,end), environment, isIiop);
-        else if (path.startsWith("/ior/")) {
-            if (!IIOPHelper.isAvailable())
-                throw new IOException("iiop protocol not available");
-            return findRMIServerIIOP(path.substring(5,end), environment, isIiop);
-        } else {
+            return findRMIServerJRMP(path.substring(6,end), environment);
+        else {
             final String msg = "URL path must begin with /jndi/ or /stub/ " +
                     "or /ior/: " + path;
             throw new MalformedURLException(msg);
@@ -1940,16 +1800,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * @param jndiURL A JNDI URL indicating the location of the Stub
      *                (see {@link javax.management.remote.rmi}), e.g.:
      *   <ul><li>{@code rmi://registry-host:port/rmi-stub-name}</li>
-     *       <li>or {@code iiop://cosnaming-host:port/iiop-stub-name}</li>
      *       <li>or {@code ldap://ldap-host:port/java-container-dn}</li>
      *   </ul>
      * @param env the environment Map passed to the connector.
-     * @param isIiop true if the stub is expected to be an IIOP stub.
      * @return The retrieved RMIServer stub.
      * @exception NamingException if the stub couldn't be found.
      **/
-    private RMIServer findRMIServerJNDI(String jndiURL, Map<String, ?> env,
-            boolean isIiop)
+    private RMIServer findRMIServerJNDI(String jndiURL, Map<String, ?> env)
             throws NamingException {
 
         InitialContext ctx = new InitialContext(EnvHelp.mapToHashtable(env));
@@ -1957,10 +1814,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         Object objref = ctx.lookup(jndiURL);
         ctx.close();
 
-        if (isIiop)
-            return narrowIIOPServer(objref);
-        else
-            return narrowJRMPServer(objref);
+        return narrowJRMPServer(objref);
     }
 
     private static RMIServer narrowJRMPServer(Object objref) {
@@ -1968,28 +1822,8 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         return (RMIServer) objref;
     }
 
-    private static RMIServer narrowIIOPServer(Object objref) {
-        try {
-            return IIOPHelper.narrow(objref, RMIServer.class);
-        } catch (ClassCastException e) {
-            if (logger.traceOn())
-                logger.trace("narrowIIOPServer","Failed to narrow objref=" +
-                        objref + ": " + e);
-            if (logger.debugOn()) logger.debug("narrowIIOPServer",e);
-            return null;
-        }
-    }
-
-    private RMIServer findRMIServerIIOP(String ior, Map<String, ?> env, boolean isIiop) {
-        // could forbid "rmi:" URL here -- but do we need to?
-        final Object orb = env.get(EnvHelp.DEFAULT_ORB);
-        final Object stub = IIOPHelper.stringToObject(orb, ior);
-        return IIOPHelper.narrow(stub, RMIServer.class);
-    }
-
-    private RMIServer findRMIServerJRMP(String base64, Map<String, ?> env, boolean isIiop)
+    private RMIServer findRMIServerJRMP(String base64, Map<String, ?> env)
         throws IOException {
-        // could forbid "iiop:" URL here -- but do we need to?
         final byte[] serialized;
         try {
             serialized = base64ToByteArray(base64);
@@ -2203,228 +2037,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         return proxyStub;
     }
 
-    /*
-       The following code performs a similar trick for RMI/IIOP to the
-       one described above for RMI/JRMP.  Unlike JRMP, though, we
-       can't easily insert an object between the RMIConnection stub
-       and the RMI/IIOP deserialization code, as explained below.
-
-       A method in an RMI/IIOP stub does the following.  It makes an
-       org.omg.CORBA_2_3.portable.OutputStream for each request, and
-       writes the parameters to it.  Then it calls
-       _invoke(OutputStream) which it inherits from CORBA's
-       ObjectImpl.  That returns an
-       org.omg.CORBA_2_3.portable.InputStream.  The return value is
-       read from this InputStream.  So the stack during
-       deserialization looks like this:
-
-       MBeanServerConnection.getAttribute (or whatever)
-       -> _RMIConnection_Stub.getAttribute
-          -> Util.readAny (a CORBA method)
-             -> InputStream.read_any
-                -> internal CORBA stuff
-
-       What we would have *liked* to have done would be the same thing
-       as for RMI/JRMP.  We create a "ProxyDelegate" that is an
-       org.omg.CORBA.portable.Delegate that simply forwards every
-       operation to the real original Delegate from the RMIConnection
-       stub, except that the InputStream returned by _invoke is
-       wrapped by a "ProxyInputStream" that is loaded by our
-       NoCallStackClassLoader.
-
-       Unfortunately, this doesn't work, at least with Sun's J2SE
-       1.4.2, because the CORBA code is not designed to allow you to
-       change Delegates arbitrarily.  You get a ClassCastException
-       from code that expects the Delegate to implement an internal
-       interface.
-
-       So instead we do the following.  We create a subclass of the
-       stub that overrides the _invoke method so as to wrap the
-       returned InputStream in a ProxyInputStream.  We create a
-       subclass of ProxyInputStream using the NoCallStackClassLoader
-       and override its read_any and read_value(Class) methods.
-       (These are the only methods called during deserialization of
-       MBeanServerConnection return values.)  We extract the Delegate
-       from the original stub and insert it into our subclass stub,
-       and away we go.  The state of a stub consists solely of its
-       Delegate.
-
-       We also need to catch ApplicationException, which will encode
-       any exceptions declared in the throws clause of the called
-       method.  Its InputStream needs to be wrapped in a
-       ProxyInputSteam too.
-
-       We override _releaseReply in the stub subclass so that it
-       replaces a ProxyInputStream argument with the original
-       InputStream.  This avoids problems if the implementation of
-       _releaseReply ends up casting this InputStream to an
-       implementation-specific interface (which in Sun's J2SE 5 it
-       does).
-
-       It is not strictly necessary for the stub subclass to be loaded
-       by a NoCallStackClassLoader, since the call-stack search stops
-       at the ProxyInputStream subclass.  However, it is convenient
-       for two reasons.  One is that it means that the
-       ProxyInputStream subclass can be accessed directly, without
-       using reflection.  The other is that it avoids build problems,
-       since usually stubs are created after other classes are
-       compiled, so we can't access them from this class without,
-       again, using reflection.
-
-       The strings below encode the following two Java classes,
-       compiled using javac -g:none.
-
-        package com.sun.jmx.remote.protocol.iiop;
-
-        import org.omg.stub.javax.management.remote.rmi._RMIConnection_Stub;
-
-        import org.omg.CORBA.portable.ApplicationException;
-        import org.omg.CORBA.portable.InputStream;
-        import org.omg.CORBA.portable.OutputStream;
-        import org.omg.CORBA.portable.RemarshalException;
-
-        public class ProxyStub extends _RMIConnection_Stub {
-            public InputStream _invoke(OutputStream out)
-                    throws ApplicationException, RemarshalException {
-                try {
-                    return new PInputStream(super._invoke(out));
-                } catch (ApplicationException e) {
-                    InputStream pis = new PInputStream(e.getInputStream());
-                    throw new ApplicationException(e.getId(), pis);
-                }
-            }
-
-            public void _releaseReply(InputStream in) {
-                if (in != null)
-                    in = ((PInputStream)in).getProxiedInputStream();
-                super._releaseReply(in);
-            }
-        }
-
-        package com.sun.jmx.remote.protocol.iiop;
-
-        public class PInputStream extends ProxyInputStream {
-            public PInputStream(org.omg.CORBA.portable.InputStream in) {
-                super(in);
-            }
-
-            public org.omg.CORBA.Any read_any() {
-                return in.read_any();
-            }
-
-            public java.io.Serializable read_value(Class clz) {
-                return narrow().read_value(clz);
-            }
-        }
-
-
-     */
-    private static final String iiopConnectionStubClassName =
-        "org.omg.stub.javax.management.remote.rmi._RMIConnection_Stub";
-    private static final String proxyStubClassName =
-        "com.sun.jmx.remote.protocol.iiop.ProxyStub";
-    private static final String ProxyInputStreamClassName =
-        "com.sun.jmx.remote.protocol.iiop.ProxyInputStream";
-    private static final String pInputStreamClassName =
-        "com.sun.jmx.remote.protocol.iiop.PInputStream";
-    private static final Class<?> proxyStubClass;
-    static {
-        final String proxyStubByteCodeString =
-                "\312\376\272\276\0\0\0\63\0+\12\0\14\0\30\7\0\31\12\0\14\0\32\12"+
-                "\0\2\0\33\7\0\34\12\0\5\0\35\12\0\5\0\36\12\0\5\0\37\12\0\2\0 "+
-                "\12\0\14\0!\7\0\"\7\0#\1\0\6<init>\1\0\3()V\1\0\4Code\1\0\7_in"+
-                "voke\1\0K(Lorg/omg/CORBA/portable/OutputStream;)Lorg/omg/CORBA"+
-                "/portable/InputStream;\1\0\15StackMapTable\7\0\34\1\0\12Except"+
-                "ions\7\0$\1\0\15_releaseReply\1\0'(Lorg/omg/CORBA/portable/Inp"+
-                "utStream;)V\14\0\15\0\16\1\0-com/sun/jmx/remote/protocol/iiop/"+
-                "PInputStream\14\0\20\0\21\14\0\15\0\27\1\0+org/omg/CORBA/porta"+
-                "ble/ApplicationException\14\0%\0&\14\0'\0(\14\0\15\0)\14\0*\0&"+
-                "\14\0\26\0\27\1\0*com/sun/jmx/remote/protocol/iiop/ProxyStub\1"+
-                "\0<org/omg/stub/javax/management/remote/rmi/_RMIConnection_Stu"+
-                "b\1\0)org/omg/CORBA/portable/RemarshalException\1\0\16getInput"+
-                "Stream\1\0&()Lorg/omg/CORBA/portable/InputStream;\1\0\5getId\1"+
-                "\0\24()Ljava/lang/String;\1\09(Ljava/lang/String;Lorg/omg/CORB"+
-                "A/portable/InputStream;)V\1\0\25getProxiedInputStream\0!\0\13\0"+
-                "\14\0\0\0\0\0\3\0\1\0\15\0\16\0\1\0\17\0\0\0\21\0\1\0\1\0\0\0\5"+
-                "*\267\0\1\261\0\0\0\0\0\1\0\20\0\21\0\2\0\17\0\0\0G\0\4\0\4\0\0"+
-                "\0'\273\0\2Y*+\267\0\3\267\0\4\260M\273\0\2Y,\266\0\6\267\0\4N"+
-                "\273\0\5Y,\266\0\7-\267\0\10\277\0\1\0\0\0\14\0\15\0\5\0\1\0\22"+
-                "\0\0\0\6\0\1M\7\0\23\0\24\0\0\0\6\0\2\0\5\0\25\0\1\0\26\0\27\0"+
-                "\1\0\17\0\0\0'\0\2\0\2\0\0\0\22+\306\0\13+\300\0\2\266\0\11L*+"+
-                "\267\0\12\261\0\0\0\1\0\22\0\0\0\3\0\1\14\0\0";
-        final String pInputStreamByteCodeString =
-                "\312\376\272\276\0\0\0\63\0\36\12\0\7\0\17\11\0\6\0\20\12\0\21"+
-                "\0\22\12\0\6\0\23\12\0\24\0\25\7\0\26\7\0\27\1\0\6<init>\1\0'("+
-                "Lorg/omg/CORBA/portable/InputStream;)V\1\0\4Code\1\0\10read_an"+
-                "y\1\0\25()Lorg/omg/CORBA/Any;\1\0\12read_value\1\0)(Ljava/lang"+
-                "/Class;)Ljava/io/Serializable;\14\0\10\0\11\14\0\30\0\31\7\0\32"+
-                "\14\0\13\0\14\14\0\33\0\34\7\0\35\14\0\15\0\16\1\0-com/sun/jmx"+
-                "/remote/protocol/iiop/PInputStream\1\0\61com/sun/jmx/remote/pr"+
-                "otocol/iiop/ProxyInputStream\1\0\2in\1\0$Lorg/omg/CORBA/portab"+
-                "le/InputStream;\1\0\"org/omg/CORBA/portable/InputStream\1\0\6n"+
-                "arrow\1\0*()Lorg/omg/CORBA_2_3/portable/InputStream;\1\0&org/o"+
-                "mg/CORBA_2_3/portable/InputStream\0!\0\6\0\7\0\0\0\0\0\3\0\1\0"+
-                "\10\0\11\0\1\0\12\0\0\0\22\0\2\0\2\0\0\0\6*+\267\0\1\261\0\0\0"+
-                "\0\0\1\0\13\0\14\0\1\0\12\0\0\0\24\0\1\0\1\0\0\0\10*\264\0\2\266"+
-                "\0\3\260\0\0\0\0\0\1\0\15\0\16\0\1\0\12\0\0\0\25\0\2\0\2\0\0\0"+
-                "\11*\266\0\4+\266\0\5\260\0\0\0\0\0\0";
-        final byte[] proxyStubByteCode =
-                NoCallStackClassLoader.stringToBytes(proxyStubByteCodeString);
-        final byte[] pInputStreamByteCode =
-                NoCallStackClassLoader.stringToBytes(pInputStreamByteCodeString);
-        final String[] classNames={proxyStubClassName, pInputStreamClassName};
-        final byte[][] byteCodes = {proxyStubByteCode, pInputStreamByteCode};
-        final String[] otherClassNames = {
-            iiopConnectionStubClassName,
-            ProxyInputStreamClassName,
-        };
-        if (IIOPHelper.isAvailable()) {
-            PrivilegedExceptionAction<Class<?>> action =
-                new PrivilegedExceptionAction<Class<?>>() {
-              public Class<?> run() throws Exception {
-                Class<RMIConnector> thisClass = RMIConnector.class;
-                ClassLoader thisLoader = thisClass.getClassLoader();
-                ProtectionDomain thisProtectionDomain =
-                        thisClass.getProtectionDomain();
-                ClassLoader cl =
-                        new NoCallStackClassLoader(classNames,
-                        byteCodes,
-                        otherClassNames,
-                        thisLoader,
-                        thisProtectionDomain);
-                return cl.loadClass(proxyStubClassName);
-              }
-            };
-            Class<?> stubClass;
-            try {
-                stubClass = AccessController.doPrivileged(action);
-            } catch (Exception e) {
-                logger.error("<clinit>",
-                        "Unexpected exception making shadow IIOP stub class: "+e);
-                logger.debug("<clinit>",e);
-                stubClass = null;
-            }
-            proxyStubClass = stubClass;
-        } else {
-            proxyStubClass = null;
-        }
-    }
-
-  private static RMIConnection shadowIiopStub(Object stub)
-    throws InstantiationException, IllegalAccessException {
-        Object proxyStub = null;
-        try {
-            proxyStub = AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
-                public Object run() throws Exception {
-                    return proxyStubClass.newInstance();
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw new InternalError();
-        }
-        IIOPHelper.setDelegate(proxyStub, IIOPHelper.getDelegate(stub));
-        return (RMIConnection) proxyStub;
-    }
     private static RMIConnection getConnection(RMIServer server,
             Object credentials,
             boolean checkStub)
@@ -2434,8 +2046,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         try {
             if (c.getClass() == rmiConnectionImplStubClass)
                 return shadowJrmpStub((RemoteObject) c);
-            if (c.getClass().getName().equals(iiopConnectionStubClassName))
-                return shadowIiopStub(c);
             logger.trace("getConnection",
                     "Did not wrap " + c.getClass() + " to foil " +
                     "stack search for classes: class loading semantics " +
