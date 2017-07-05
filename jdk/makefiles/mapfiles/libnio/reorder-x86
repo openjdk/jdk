@@ -1,0 +1,17 @@
+data = R0x2000;
+text = LOAD ?RXO;
+# Test Null
+# Test Exit
+# Test Hello
+# Test Sleep
+# Test IntToString
+# Test LoadToolkit
+text: .text%Java_sun_nio_ch_FileChannelImpl_initIDs;
+text: .text%Java_sun_nio_ch_FileDispatcher_initIDs;
+text: .text%Java_sun_nio_ch_IOUtil_initIDs;
+text: .text%Java_sun_nio_ch_FileDispatcher_read0;
+text: .text%convertReturnVal;
+# Test LoadFrame
+# Test LoadJFrame
+# Test JHello
+# SwingSet
