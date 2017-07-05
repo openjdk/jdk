@@ -74,6 +74,7 @@ SUNWprivate_1.1 {
 		JVM_CurrentTimeMillis;
 		JVM_DefineClass;
 		JVM_DefineClassWithSource;
+		JVM_DefineClassWithSourceCond;
 		JVM_DesiredAssertionStatus;
 		JVM_DisableCompiler;
 		JVM_DoPrivileged;
