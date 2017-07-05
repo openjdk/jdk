@@ -60,13 +60,13 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Hashtable;
 import sun.font.AttributeValues;
+import sun.font.CodePointIterator;
 import sun.font.CoreMetrics;
 import sun.font.Decoration;
 import sun.font.FontLineMetrics;
 import sun.font.FontResolver;
 import sun.font.GraphicComponent;
 import sun.font.LayoutPathImpl;
-import sun.text.CodePointIterator;
 
 /**
  *

@@ -43,6 +43,12 @@ import javax.swing.plaf.*;
 
 public class MetalPopupMenuSeparatorUI extends MetalSeparatorUI
 {
+    /**
+     * Constructs a new {@code MetalPopupMenuSeparatorUI} instance.
+     *
+     * @param c a component
+     * @return a new {@code MetalPopupMenuSeparatorUI} instance
+     */
     public static ComponentUI createUI( JComponent c )
     {
         return new MetalPopupMenuSeparatorUI();

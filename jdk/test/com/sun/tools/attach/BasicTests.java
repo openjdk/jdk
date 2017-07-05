@@ -38,7 +38,7 @@ import jdk.testlibrary.ProcessThread;
  * @bug 6173612 6273707 6277253 6335921 6348630 6342019 6381757
  * @summary Basic unit tests for the VM attach mechanism.
  * @library /lib/testlibrary
- * @run build jdk.testlibrary.* Agent BadAgent RedefineAgent Application Shutdown RedefineDummy RunnerUtil
+ * @run build jdk.testlibrary.* Agent BadAgent RedefineAgent Application RedefineDummy RunnerUtil
  * @run main BasicTests
  *
  * This test will perform a number of basic attach tests.
@@ -55,21 +55,18 @@ public class BasicTests {
      * 5. Shut down the Application.
      */
     public static void main(String args[]) throws Throwable {
-        final String pidFile = "TestsBasic.Application.pid";
         ProcessThread processThread = null;
-        RunnerUtil.ProcessInfo info = null;
         try {
             buildJars();
-            processThread = RunnerUtil.startApplication(pidFile);
-            info = RunnerUtil.readProcessInfo(pidFile);
-            runTests(info.pid);
+            processThread = RunnerUtil.startApplication();
+            runTests(processThread.getPid());
         } catch (Throwable t) {
             System.out.println("TestBasic got unexpected exception: " + t);
             t.printStackTrace();
             throw t;
         } finally {
             // Make sure the Application process is stopped.
-            RunnerUtil.stopApplication(info.shutdownPort, processThread);
+            RunnerUtil.stopApplication(processThread);
         }
     }
 
@@ -78,7 +75,7 @@ public class BasicTests {
      * The reason for running the tests in a separate process
      * is that we need to modify the class path.
      */
-    private static void runTests(int pid) throws Throwable {
+    private static void runTests(long pid) throws Throwable {
         final String sep = File.separator;
 
         // Need to add jdk/lib/tools.jar to classpath.
@@ -92,7 +89,7 @@ public class BasicTests {
             "-classpath",
             classpath,
             "BasicTests$TestMain",
-            Integer.toString(pid),
+            Long.toString(pid),
             testClassDir + "Agent.jar",
             testClassDir + "BadAgent.jar",
             testClassDir + "RedefineAgent.jar" };

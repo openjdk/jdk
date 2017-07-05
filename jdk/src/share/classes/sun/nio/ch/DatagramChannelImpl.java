@@ -195,15 +195,8 @@ class DatagramChannelImpl
         synchronized (stateLock) {
             ensureOpen();
 
-            if (name == StandardSocketOptions.IP_TOS) {
-                // IPv4 only; no-op for IPv6
-                if (family == StandardProtocolFamily.INET) {
-                    Net.setSocketOption(fd, family, name, value);
-                }
-                return this;
-            }
-
-            if (name == StandardSocketOptions.IP_MULTICAST_TTL ||
+            if (name == StandardSocketOptions.IP_TOS ||
+                name == StandardSocketOptions.IP_MULTICAST_TTL ||
                 name == StandardSocketOptions.IP_MULTICAST_LOOP)
             {
                 // options are protocol dependent
@@ -256,16 +249,8 @@ class DatagramChannelImpl
         synchronized (stateLock) {
             ensureOpen();
 
-            if (name == StandardSocketOptions.IP_TOS) {
-                // IPv4 only; always return 0 on IPv6
-                if (family == StandardProtocolFamily.INET) {
-                    return (T) Net.getSocketOption(fd, family, name);
-                } else {
-                    return (T) Integer.valueOf(0);
-                }
-            }
-
-            if (name == StandardSocketOptions.IP_MULTICAST_TTL ||
+            if (name == StandardSocketOptions.IP_TOS ||
+                name == StandardSocketOptions.IP_MULTICAST_TTL ||
                 name == StandardSocketOptions.IP_MULTICAST_LOOP)
             {
                 return (T) Net.getSocketOption(fd, family, name);

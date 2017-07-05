@@ -56,7 +56,7 @@ public class JPEGImageDecoder extends ImageDecoder {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {
-                    System.loadLibrary("jpeg");
+                    System.loadLibrary("javajpeg");
                     return null;
                 }
             });

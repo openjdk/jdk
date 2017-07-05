@@ -246,12 +246,12 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
             }
         }
         if (vc != null) {
-            Constructor cons;
+            Constructor<?> cons;
 
             try {
                 ReflectUtil.checkPackageAccess(vc);
                 SwingUtilities2.checkAccess(vc.getModifiers());
-                cons = vc.getConstructor(new Class[]{String.class});
+                cons = vc.getConstructor(new Class<?>[]{String.class});
 
             } catch (NoSuchMethodException nsme) {
                 cons = null;

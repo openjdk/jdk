@@ -593,6 +593,20 @@ public class ScriptEngineTest {
         }
     }
 
+    // @bug 8046013: TypeError: Cannot apply "with" to non script object
+    @Test
+    public void withOnMirrorTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        final Object obj = e.eval("({ foo: 'hello'})");
+        final Object[] arr = new Object[1];
+        arr[0] = obj;
+        e.put("arr", arr);
+        final Object res = e.eval("var res; with(arr[0]) { res = foo; }; res");
+        assertEquals(res, "hello");
+    }
+
     private static void checkProperty(final ScriptEngine e, final String name)
         throws ScriptException {
         final String value = System.getProperty(name);

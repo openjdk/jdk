@@ -32,6 +32,8 @@ package java.beans;
  * to a Class object, not being able to resolve a string method name,
  * or specifying a method name that has the wrong type signature for
  * its intended use.
+ *
+ * @since 1.1
  */
 
 public

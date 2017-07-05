@@ -894,10 +894,10 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     // Icons
 
-    private static Map smallSystemImages = new HashMap();
-    private static Map largeSystemImages = new HashMap();
-    private static Map smallLinkedSystemImages = new HashMap();
-    private static Map largeLinkedSystemImages = new HashMap();
+    private static Map<Integer, Image> smallSystemImages = new HashMap<>();
+    private static Map<Integer, Image> largeSystemImages = new HashMap<>();
+    private static Map<Integer, Image> smallLinkedSystemImages = new HashMap<>();
+    private static Map<Integer, Image> largeLinkedSystemImages = new HashMap<>();
 
     // NOTE: this method uses COM and must be called on the 'COM thread'. See ComInvoker for the details
     private static native long getIShellIcon(long pIShellFolder);
@@ -970,13 +970,13 @@ final class Win32ShellFolder2 extends ShellFolder {
                             // These are cached per type (using the index in the system image list)
                             int index = getIconIndex(parentIShellIcon, relativePIDL);
                             if (index > 0) {
-                                Map imageCache;
+                                Map<Integer, Image> imageCache;
                                 if (isLink()) {
                                     imageCache = getLargeIcon ? largeLinkedSystemImages : smallLinkedSystemImages;
                                 } else {
                                     imageCache = getLargeIcon ? largeSystemImages : smallSystemImages;
                                 }
-                                newIcon = (Image) imageCache.get(Integer.valueOf(index));
+                                newIcon = imageCache.get(Integer.valueOf(index));
                                 if (newIcon == null) {
                                     long hIcon = getIcon(getAbsolutePath(), getLargeIcon);
                                     newIcon = makeIcon(hIcon, getLargeIcon);

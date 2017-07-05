@@ -48,6 +48,9 @@ import java.security.PrivilegedAction;
 public class ParserDelegator extends HTMLEditorKit.Parser implements Serializable {
     private static final Object DTD_KEY = new Object();
 
+    /**
+     * Sets the default DTD.
+     */
     protected static void setDefaultDTD() {
         getDefaultDTD();
     }
@@ -75,6 +78,13 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
         return dtd;
     }
 
+    /**
+     * Recreates a DTD from an archived format with the specified {@code name}.
+     *
+     * @param dtd a DTD
+     * @param name the name of the resource, relative to the  ParserDelegator class.
+     * @return the DTD with the specified {@code name}.
+     */
     protected static DTD createDTD(DTD dtd, String name) {
 
         InputStream in = null;
@@ -92,7 +102,9 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
         return dtd;
     }
 
-
+    /**
+     * Creates {@code ParserDelegator} with default DTD.
+     */
     public ParserDelegator() {
         setDefaultDTD();
     }
@@ -109,7 +121,7 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
      *
      * @param name the name of the resource, relative to the
      *  ParserDelegator class.
-     * @returns a stream representing the resource
+     * @return a stream representing the resource
      */
     static InputStream getResourceAsStream(final String name) {
         return AccessController.doPrivileged(

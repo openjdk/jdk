@@ -342,14 +342,14 @@ public class Utils {
         Object result;
         if (primitiveToWrapper.containsKey(type)) {
             if (type.equals(Character.TYPE.getName())) {
-                result = new Character(value.charAt(0));
+                result = value.charAt(0);
             } else {
                 result = newStringConstructor(
                         ((Class<?>) primitiveToWrapper.get(type)).getName(),
                         value);
             }
         } else if (type.equals(Character.class.getName())) {
-            result = new Character(value.charAt(0));
+            result = value.charAt(0);
         } else if (Number.class.isAssignableFrom(Utils.getClass(type))) {
             result = createNumberFromStringValue(value);
         } else if (value == null || value.equals("null")) {

@@ -26,6 +26,7 @@
 package sun.print;
 
 import javax.print.attribute.PrintRequestAttribute;
+import javax.print.attribute.PrintRequestAttribute;
 
 /*
  * A class used to determine minimum and maximum pages.
@@ -40,7 +41,7 @@ public final class SunMinMaxPage implements PrintRequestAttribute {
     }
 
 
-    public final Class getCategory() {
+    public final Class<? extends PrintRequestAttribute> getCategory() {
         return SunMinMaxPage.class;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,25 @@ package java.awt;
  */
 
 public interface MenuContainer {
+
+    /**
+     * Returns the font in use by this container.
+     *
+     * @return the menu font
+     */
     Font getFont();
+
+    /**
+     * Removes the specified menu component from the menu.
+     *
+     * @param  comp the menu component to remove
+     */
     void remove(MenuComponent comp);
 
     /**
+     * Posts an event to the listeners.
+     *
+     * @param  evt the event to dispatch
      * @deprecated As of JDK version 1.1
      * replaced by dispatchEvent(AWTEvent).
      */

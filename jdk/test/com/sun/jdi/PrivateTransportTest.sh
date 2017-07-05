@@ -82,12 +82,7 @@ fi
 echo "JDK under test is: $TESTJAVA"
 
 # Get flags being sent to debuggee
-DEBUGGEEFLAGS=
-if [ -r $TESTCLASSES/@debuggeeVMOptions ] ; then
-   DEBUGGEEFLAGS=`cat $TESTCLASSES/@debuggeeVMOptions`
-elif [ -r $TESTCLASSES/../@debuggeeVMOptions ] ; then
-   DEBUGGEEFLAGS=`cat $TESTCLASSES/../@debuggeeVMOptions`
-fi
+DEBUGGEEFLAGS=$TESTVMOPTS $TESTJAVAOPTS
 
 # Figure out what the libarch path is
 os=`uname -s`

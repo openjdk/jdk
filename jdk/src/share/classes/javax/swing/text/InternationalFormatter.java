@@ -106,11 +106,11 @@ public class InternationalFormatter extends DefaultFormatter {
     /**
      * Can be used to impose a maximum value.
      */
-    private Comparable max;
+    private Comparable<?> max;
     /**
      * Can be used to impose a minimum value.
      */
-    private Comparable min;
+    private Comparable<?> min;
 
     /**
      * <code>InternationalFormatter</code>'s behavior is dicatated by a
@@ -211,7 +211,7 @@ public class InternationalFormatter extends DefaultFormatter {
      * @param minimum Minimum legal value that can be input
      * @see #setValueClass
      */
-    public void setMinimum(Comparable minimum) {
+    public void setMinimum(Comparable<?> minimum) {
         if (getValueClass() == null && minimum != null) {
             setValueClass(minimum.getClass());
         }
@@ -223,7 +223,7 @@ public class InternationalFormatter extends DefaultFormatter {
      *
      * @return Minimum legal value that can be input
      */
-    public Comparable getMinimum() {
+    public Comparable<?> getMinimum() {
         return min;
     }
 
@@ -236,7 +236,7 @@ public class InternationalFormatter extends DefaultFormatter {
      * @param max Maximum legal value that can be input
      * @see #setValueClass
      */
-    public void setMaximum(Comparable max) {
+    public void setMaximum(Comparable<?> max) {
         if (getValueClass() == null && max != null) {
             setValueClass(max.getClass());
         }
@@ -248,7 +248,7 @@ public class InternationalFormatter extends DefaultFormatter {
      *
      * @return Maximum legal value that can be input
      */
-    public Comparable getMaximum() {
+    public Comparable<?> getMaximum() {
         return max;
     }
 
@@ -411,7 +411,8 @@ public class InternationalFormatter extends DefaultFormatter {
      *                 false is returned.
      */
     boolean isValidValue(Object value, boolean wantsCCE) {
-        Comparable min = getMinimum();
+        @SuppressWarnings("unchecked")
+        Comparable<Object> min = (Comparable<Object>)getMinimum();
 
         try {
             if (min != null && min.compareTo(value) > 0) {
@@ -424,7 +425,8 @@ public class InternationalFormatter extends DefaultFormatter {
             return false;
         }
 
-        Comparable max = getMaximum();
+        @SuppressWarnings("unchecked")
+        Comparable<Object> max = (Comparable<Object>)getMaximum();
         try {
             if (max != null && max.compareTo(value) < 0) {
                 return false;
@@ -770,7 +772,7 @@ public class InternationalFormatter extends DefaultFormatter {
     /**
      * Returns true if <code>attributes</code> is null or empty.
      */
-    boolean isLiteral(Map attributes) {
+    boolean isLiteral(Map<?, ?> attributes) {
         return ((attributes == null) || attributes.size() == 0);
     }
 
@@ -797,7 +799,7 @@ public class InternationalFormatter extends DefaultFormatter {
 
             iterator.first();
             while (iterator.current() != CharacterIterator.DONE) {
-                Map attributes = iterator.getAttributes();
+                Map<Attribute,Object> attributes = iterator.getAttributes();
                 boolean set = isLiteral(attributes);
                 int start = iterator.getIndex();
                 int end = iterator.getRunLimit();
@@ -858,7 +860,7 @@ public class InternationalFormatter extends DefaultFormatter {
     /**
      * Returns the field that will be adjusted by adjustValue.
      */
-    Object getAdjustField(int start, Map attributes) {
+    Object getAdjustField(int start, Map<?, ?> attributes) {
         return null;
     }
 
@@ -900,7 +902,7 @@ public class InternationalFormatter extends DefaultFormatter {
      * null depending upon <code>canIncrement</code>) and
      * <code>direction</code> is the amount to increment by.
      */
-    Object adjustValue(Object value, Map attributes, Object field,
+    Object adjustValue(Object value, Map<?, ?> attributes, Object field,
                            int direction) throws
                       BadLocationException, ParseException {
         return null;
@@ -1023,7 +1025,7 @@ public class InternationalFormatter extends DefaultFormatter {
 
                         iterator.setIndex(start);
 
-                        Map attributes = iterator.getAttributes();
+                        Map<Attribute,Object> attributes = iterator.getAttributes();
                         Object field = getAdjustField(start, attributes);
 
                         if (canIncrement(field, start)) {

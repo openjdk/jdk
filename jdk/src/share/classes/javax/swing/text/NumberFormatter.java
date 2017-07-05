@@ -173,7 +173,8 @@ public class NumberFormatter extends InternationalFormatter {
      * <code>Byte</code> or <code>Short</code> and <code>value</code>
      * is an instanceof <code>Number</code>.
      */
-    private Object convertValueToValueClass(Object value, Class valueClass) {
+    private Object convertValueToValueClass(Object value,
+                                            Class<?> valueClass) {
         if (valueClass != null && (value instanceof Number)) {
             Number numberValue = (Number)value;
             if (valueClass == Integer.class) {
@@ -266,7 +267,7 @@ public class NumberFormatter extends InternationalFormatter {
      * Subclassed to treat the decimal separator, grouping separator,
      * exponent symbol, percent, permille, currency and sign as literals.
      */
-    boolean isLiteral(Map attrs) {
+    boolean isLiteral(Map<?, ?> attrs) {
         if (!super.isLiteral(attrs)) {
             if (attrs == null) {
                 return false;
@@ -327,7 +328,7 @@ public class NumberFormatter extends InternationalFormatter {
             while (index >= 0 && index < max) {
                 iterator.setIndex(index);
 
-                Map attrs = iterator.getAttributes();
+                Map<?,?> attrs = iterator.getAttributes();
 
                 if (attrs != null && attrs.size() > 0) {
                     for (Object key : attrs.keySet()) {
@@ -432,8 +433,8 @@ public class NumberFormatter extends InternationalFormatter {
                     try {
                         ReflectUtil.checkPackageAccess(valueClass);
                         SwingUtilities2.checkAccess(valueClass.getModifiers());
-                        Constructor cons = valueClass.getConstructor(
-                                              new Class[] { String.class });
+                        Constructor<?> cons = valueClass.getConstructor(
+                                              new Class<?>[] { String.class });
                         if (cons != null) {
                             SwingUtilities2.checkAccess(cons.getModifiers());
                             return cons.newInstance(new Object[]{string});

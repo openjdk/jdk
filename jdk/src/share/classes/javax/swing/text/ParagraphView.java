@@ -806,7 +806,7 @@ public class ParagraphView extends FlowView implements TabExpander {
     /**
      * Used to create an i18n-based layout strategy
      */
-    static Class i18nStrategy;
+    static Class<?> i18nStrategy;
 
     /** Used for searching for a tab. */
     static char[] tabChars;

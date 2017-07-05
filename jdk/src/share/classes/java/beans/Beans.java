@@ -56,6 +56,8 @@ import java.util.Vector;
 
 /**
  * This class provides some general purpose beans control methods.
+ *
+ * @since 1.1
  */
 
 public class Beans {
@@ -96,6 +98,7 @@ public class Beans {
      * @exception ClassNotFoundException if the class of a serialized
      *              object could not be found.
      * @exception IOException if an I/O error occurs.
+     * @since 1.2
      */
 
     public static Object instantiate(ClassLoader cls, String beanName, BeanContext beanContext) throws IOException, ClassNotFoundException {
@@ -152,6 +155,7 @@ public class Beans {
      * @exception ClassNotFoundException if the class of a serialized
      *              object could not be found.
      * @exception IOException if an I/O error occurs.
+     * @since 1.2
      */
 
     public static Object instantiate(ClassLoader cls, String beanName, BeanContext beanContext, AppletInitializer initializer)

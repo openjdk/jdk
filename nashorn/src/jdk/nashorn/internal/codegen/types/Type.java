@@ -417,6 +417,15 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     }
 
     /**
+     * Determines whether a type is a CHARSEQUENCE type used internally strings
+     *
+     * @return true if CharSequence (internal string) type, false otherwise
+     */
+    public boolean isCharSequence() {
+        return this.equals(Type.CHARSEQUENCE);
+    }
+
+    /**
      * Determine if two types are equivalent, i.e. need no conversion
      *
      * @param type the second type to check
@@ -798,6 +807,13 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * A string singleton
      */
     public static final Type STRING = putInCache(new ObjectType(String.class));
+
+    /**
+     * This is the CharSequence singleton used to represent JS strings internally
+     * (either a {@code java.lang.String} or {@code jdk.nashorn.internal.runtime.ConsString}.
+     */
+    public static final Type CHARSEQUENCE = putInCache(new ObjectType(CharSequence.class));
+
 
     /**
      * This is the object singleton, used for all object types

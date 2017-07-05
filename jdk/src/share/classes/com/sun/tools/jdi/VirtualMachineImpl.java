@@ -781,7 +781,7 @@ class VirtualMachineImpl extends MirrorImpl
             type.setSignature(signature);
         }
 
-        typesByID.put(new Long(id), type);
+        typesByID.put(id, type);
         typesBySignature.add(type);
 
         if ((vm.traceFlags & VirtualMachine.TRACE_REFTYPES) != 0) {
@@ -809,7 +809,7 @@ class VirtualMachineImpl extends MirrorImpl
             if (comp == 0) {
                 matches++;
                 iter.remove();
-                typesByID.remove(new Long(type.ref()));
+                typesByID.remove(type.ref());
                 if ((vm.traceFlags & VirtualMachine.TRACE_REFTYPES) != 0) {
                    vm.printTrace("Uncaching ReferenceType, sig=" + signature +
                                  ", id=" + type.ref());
@@ -895,7 +895,7 @@ class VirtualMachineImpl extends MirrorImpl
             ReferenceTypeImpl retType = null;
             synchronized (this) {
                 if (typesByID != null) {
-                    retType = (ReferenceTypeImpl)typesByID.get(new Long(id));
+                    retType = (ReferenceTypeImpl)typesByID.get(id);
                 }
                 if (retType == null) {
                     retType = addReferenceType(id, tag, signature);
@@ -1247,7 +1247,7 @@ class VirtualMachineImpl extends MirrorImpl
             return null;
         }
         ObjectReferenceImpl object = null;
-        Long key = new Long(id);
+        Long key = id;
 
         /*
          * Attempt to retrieve an existing object object reference
@@ -1313,7 +1313,7 @@ class VirtualMachineImpl extends MirrorImpl
         // Handle any queue elements that are not strongly reachable
         processQueue();
 
-        SoftObjectReference ref = objectsByID.remove(new Long(object.ref()));
+        SoftObjectReference ref = objectsByID.remove(object.ref());
         if (ref != null) {
             batchForDispose(ref);
         } else {

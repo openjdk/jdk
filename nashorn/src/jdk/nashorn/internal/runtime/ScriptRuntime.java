@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
+import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.syntaxError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
@@ -49,6 +50,7 @@ import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.ir.debug.JSONWriter;
 import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.objects.NativeObject;
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
@@ -478,9 +480,21 @@ public final class ScriptRuntime {
             throw typeError(global, "cant.apply.with.to.null");
         }
 
-        final Object wrappedExpr = JSType.toScriptObject(global, expression);
-        if (wrappedExpr instanceof ScriptObject) {
-            return new WithObject(scope, (ScriptObject)wrappedExpr);
+        if (expression instanceof ScriptObjectMirror) {
+            final Object unwrapped = ScriptObjectMirror.unwrap(expression, global);
+            if (unwrapped instanceof ScriptObject) {
+                return new WithObject(scope, (ScriptObject)unwrapped);
+            } else {
+                // foreign ScriptObjectMirror
+                ScriptObject exprObj = global.newObject();
+                NativeObject.bindAllProperties(exprObj, (ScriptObjectMirror)expression);
+                return new WithObject(scope, exprObj);
+            }
+        } else {
+            final Object wrappedExpr = JSType.toScriptObject(global, expression);
+            if (wrappedExpr instanceof ScriptObject) {
+                return new WithObject(scope, (ScriptObject)wrappedExpr);
+            }
         }
 
         throw typeError(global, "cant.apply.with.to.non.scriptobject");
@@ -518,7 +532,11 @@ public final class ScriptRuntime {
 
         if (xPrim instanceof String || yPrim instanceof String
                 || xPrim instanceof ConsString || yPrim instanceof ConsString) {
-            return new ConsString(JSType.toCharSequence(xPrim), JSType.toCharSequence(yPrim));
+            try {
+                return new ConsString(JSType.toCharSequence(xPrim), JSType.toCharSequence(yPrim));
+            } catch (final IllegalArgumentException iae) {
+                throw rangeError(iae, "concat.string.too.big");
+            }
         }
 
         return JSType.toNumber(xPrim) + JSType.toNumber(yPrim);

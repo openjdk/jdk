@@ -90,6 +90,8 @@ import sun.reflect.misc.ReflectUtil;
  * For more information about introspection and design patterns, please
  * consult the
  *  <a href="http://www.oracle.com/technetwork/java/javase/documentation/spec-136004.html">JavaBeans&trade; specification</a>.
+ *
+ * @since 1.1
  */
 
 public class Introspector {
@@ -97,14 +99,17 @@ public class Introspector {
     // Flags that can be used to control getBeanInfo:
     /**
      * Flag to indicate to use of all beaninfo.
+     * @since 1.2
      */
     public final static int USE_ALL_BEANINFO           = 1;
     /**
      * Flag to indicate to ignore immediate beaninfo.
+     * @since 1.2
      */
     public final static int IGNORE_IMMEDIATE_BEANINFO  = 2;
     /**
      * Flag to indicate to ignore all beaninfo.
+     * @since 1.2
      */
     public final static int IGNORE_ALL_BEANINFO        = 3;
 
@@ -214,6 +219,7 @@ public class Introspector {
      * @return  A BeanInfo object describing the target bean.
      * @exception IntrospectionException if an exception occurs during
      *              introspection.
+     * @since 1.2
      */
     public static BeanInfo getBeanInfo(Class<?> beanClass, int flags)
                                                 throws IntrospectionException {
@@ -354,6 +360,8 @@ public class Introspector {
      * not normally required.  It is normally only needed by advanced
      * tools that update existing "Class" objects in-place and need
      * to make the Introspector re-analyze existing Class objects.
+     *
+     * @since 1.2
      */
 
     public static void flushCaches() {
@@ -377,6 +385,7 @@ public class Introspector {
      *
      * @param clz  Class object to be flushed.
      * @throws NullPointerException If the Class object is null.
+     * @since 1.2
      */
     public static void flushFromCaches(Class<?> clz) {
         if (clz == null) {
@@ -1384,7 +1393,7 @@ public class Introspector {
      * parameter list on a given class.
      */
     private static Method internalFindMethod(Class<?> start, String methodName,
-                                                 int argCount, Class args[]) {
+                                                 int argCount, Class<?> args[]) {
         // For overriden methods we need to find the most derived version.
         // So we start with the given class and walk up the superclass chain.
 
@@ -1426,7 +1435,7 @@ public class Introspector {
         // Now check any inherited interfaces.  This is necessary both when
         // the argument class is itself an interface, and when the argument
         // class is an abstract class.
-        Class ifcs[] = start.getInterfaces();
+        Class<?>[] ifcs = start.getInterfaces();
         for (int i = 0 ; i < ifcs.length; i++) {
             // Note: The original implementation had both methods calling
             // the 3 arg method. This is preserved but perhaps it should
@@ -1459,7 +1468,7 @@ public class Introspector {
      * @return the method or null if not found
      */
     static Method findMethod(Class<?> cls, String methodName, int argCount,
-                             Class args[]) {
+                             Class<?>[] args) {
         if (methodName == null) {
             return null;
         }
@@ -1502,7 +1511,7 @@ public class Introspector {
      * Return true iff the given method throws the given exception.
      */
     private boolean throwsException(Method method, Class<?> exception) {
-        Class exs[] = method.getExceptionTypes();
+        Class<?>[] exs = method.getExceptionTypes();
         for (int i = 0; i < exs.length; i++) {
             if (exs[i] == exception) {
                 return true;

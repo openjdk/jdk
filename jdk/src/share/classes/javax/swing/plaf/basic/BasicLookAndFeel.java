@@ -458,7 +458,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
         Integer fiveHundred = new Integer(500);
 
         // *** Shared Longs
-        Long oneThousand = new Long(1000);
+        Long oneThousand = 1000L;
 
         LazyValue dialogPlain12 = t ->
             new FontUIResource(Font.DIALOG, Font.PLAIN, 12);

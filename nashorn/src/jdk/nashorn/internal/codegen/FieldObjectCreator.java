@@ -62,6 +62,8 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
 
     /** call site flags to be used for invocations */
     private final int callSiteFlags;
+    /** are we creating this field object from 'eval' code? */
+    private final boolean evalCode;
 
     /**
      * Constructor
@@ -88,7 +90,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
     FieldObjectCreator(final CodeGenerator codegen, final List<MapTuple<T>> tuples, final boolean isScope, final boolean hasArguments) {
         super(codegen, tuples, isScope, hasArguments);
         this.callSiteFlags = codegen.getCallSiteFlags();
-
+        this.evalCode = codegen.isEvalCode();
         countFields();
         findClass();
     }
@@ -153,7 +155,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
     @Override
     protected PropertyMap makeMap() {
         assert propertyMap == null : "property map already initialized";
-        propertyMap = newMapCreator(fieldObjectClass).makeFieldMap(hasArguments(), fieldCount, paddedFieldCount);
+        propertyMap = newMapCreator(fieldObjectClass).makeFieldMap(hasArguments(), fieldCount, paddedFieldCount, evalCode);
         return propertyMap;
     }
 

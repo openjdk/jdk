@@ -212,6 +212,7 @@ import sun.swing.PrintingStatus;
  * @author Shannon Hickey (printing support)
  * @see javax.swing.table.DefaultTableModel
  * @see javax.swing.table.TableRowSorter
+ * @since 1.2
  */
 /* The first versions of the JTable, contained in Swing-0.1 through
  * Swing-0.4, were written by Alan Chung.

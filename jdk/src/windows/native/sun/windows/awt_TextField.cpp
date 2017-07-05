@@ -200,7 +200,10 @@ AwtTextField::HandleEvent(MSG *msg, BOOL synthetic)
             si.cbSize = sizeof(si);
             si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
 
+            SendMessage(EM_SHOWSCROLLBAR, SB_HORZ, TRUE);
             VERIFY(::GetScrollInfo(GetHWnd(), SB_HORZ, &si));
+            SendMessage(EM_SHOWSCROLLBAR, SB_HORZ, FALSE);
+
             if (bScrollLeft == TRUE) {
                 si.nPos = si.nPos - si.nPage / 2;
                 si.nPos = max(si.nMin, si.nPos);

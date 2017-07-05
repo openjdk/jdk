@@ -34,6 +34,8 @@ import javax.swing.event.ChangeListener;
 @test
 @summary Simple Overlapping test for javax.swing.JSpinner
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JSpinnerOverlapping
  */
 public class JSpinnerOverlapping extends SimpleOverlappingTestBase {

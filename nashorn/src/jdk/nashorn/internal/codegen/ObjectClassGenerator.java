@@ -550,7 +550,7 @@ public final class ObjectClassGenerator implements Loggable {
     }
 
     //no optimism here. we do unconditional conversion to types
-    private static MethodHandle createGetterInner(final Class<?> forType, final Class<?> type, final MethodHandle primitiveGetter, final MethodHandle objectGetter, final MethodHandle[] converters, final int programPoint) {
+    private static MethodHandle createGetterInner(final Class<?> forType, final Class<?> type, final MethodHandle primitiveGetter, final MethodHandle objectGetter, final List<MethodHandle> converters, final int programPoint) {
         final int fti = forType == null ? TYPE_UNDEFINED_INDEX : getAccessorTypeIndex(forType);
         final int ti  = getAccessorTypeIndex(type);
         //this means fail if forType != type
@@ -564,7 +564,7 @@ public final class ObjectClassGenerator implements Loggable {
             if (isOptimistic) {
                 //return undefined if asking for object. otherwise throw UnwarrantedOptimismException
                 if (ti == TYPE_OBJECT_INDEX) {
-                    return MH.dropArguments(GET_UNDEFINED[TYPE_OBJECT_INDEX], 0, Object.class);
+                    return MH.dropArguments(GET_UNDEFINED.get(TYPE_OBJECT_INDEX), 0, Object.class);
                 }
                 //throw exception
                 return MH.asType(
@@ -578,7 +578,7 @@ public final class ObjectClassGenerator implements Loggable {
                     getter.type().changeReturnType(type));
             }
             //return an undefined and coerce it to the appropriate type
-            return MH.dropArguments(GET_UNDEFINED[ti], 0, Object.class);
+            return MH.dropArguments(GET_UNDEFINED.get(ti), 0, Object.class);
         }
 
         assert forType != null;
@@ -604,7 +604,7 @@ public final class ObjectClassGenerator implements Loggable {
                     return MH.filterReturnValue(
                             objectGetter,
                             MH.insertArguments(
-                                    converters[ti],
+                                    converters.get(ti),
                                     1,
                                     programPoint));
                 }
@@ -631,7 +631,7 @@ public final class ObjectClassGenerator implements Loggable {
         final MethodHandle tgetter = getterForType(forType, primitiveGetter, objectGetter);
         if (fti == TYPE_OBJECT_INDEX) {
             if (fti != ti) {
-                return MH.filterReturnValue(tgetter, CONVERT_OBJECT[ti]);
+                return MH.filterReturnValue(tgetter, CONVERT_OBJECT.get(ti));
             }
             return tgetter;
         }

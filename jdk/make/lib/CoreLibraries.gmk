@@ -306,7 +306,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBPREFS, \
     LDFLAGS_SUFFIX_solaris := -ljvm -ljava -lc, \
     LDFLAGS_SUFFIX_aix := -ljvm -ljava, \
     LDFLAGS_SUFFIX_windows := advapi32.lib jvm.lib $(WIN_JAVA_LIB), \
-    LDFLAGS_SUFFIX_macosx := -ljvm -framework CoreFoundation, \
+    LDFLAGS_SUFFIX_macosx := -ljvm -framework CoreFoundation -framework Foundation, \
     VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=prefs.dll" \

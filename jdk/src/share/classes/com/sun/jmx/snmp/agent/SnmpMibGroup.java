@@ -136,7 +136,7 @@ public abstract class SnmpMibGroup extends SnmpMibOid
      */
     public boolean isNestedArc(long arc) {
         if (subgroups == null) return false;
-        Object obj = subgroups.get(new Long(arc));
+        Object obj = subgroups.get(arc);
         // if the arc is registered in the hashtable,
         // it leads to a subgroup.
         return (obj != null);
@@ -260,7 +260,7 @@ public abstract class SnmpMibGroup extends SnmpMibOid
      *
      */
     void registerNestedArc(long arc) {
-        Long obj = new Long(arc);
+        Long obj = arc;
         if (subgroups == null) subgroups = new Hashtable<>();
         // registers the arc in the hashtable.
         subgroups.put(obj,obj);

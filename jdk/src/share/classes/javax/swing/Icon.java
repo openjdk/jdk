@@ -32,6 +32,7 @@ import java.awt.Component;
  * A small fixed size picture, typically used to decorate components.
  *
  * @see ImageIcon
+ * @since 1.2
  */
 
 public interface Icon

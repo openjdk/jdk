@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,18 @@ import java.util.EventListener;
 public interface TreeExpansionListener extends EventListener
 {
     /**
-      * Called whenever an item in the tree has been expanded.
-      */
+     * Called whenever an item in the tree has been expanded.
+     *
+     * @param event a {@code TreeExpansionEvent} containing a {@code TreePath}
+     *              object for the expanded node
+     */
     public void treeExpanded(TreeExpansionEvent event);
 
     /**
-      * Called whenever an item in the tree has been collapsed.
-      */
+     * Called whenever an item in the tree has been collapsed.
+     *
+     * @param event a {@code TreeExpansionEvent} containing a {@code TreePath}
+     *              object for the collapsed node
+     */
     public void treeCollapsed(TreeExpansionEvent event);
 }

@@ -181,7 +181,7 @@ public:
     static void adjustMPres(MPreFixups *mpreFixups, LEGlyphStorage &glyphStorage, LEErrorCode& success);
 
     static le_int32 v2process(const LEUnicode *theChars, le_int32 charCount, le_int32 scriptCode,
-        LEUnicode *outChars, LEGlyphStorage &glyphStorage);
+        LEUnicode *outChars, LEGlyphStorage &glyphStorage, LEErrorCode& success);
 
     static const FeatureMap *getFeatureMap(le_int32 &count);
 

@@ -155,4 +155,9 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
         return StaticClassIntrospector.editConstructorMethodHandle(Lookup.unreflectConstructor(lookup,
                 (Constructor<?>)target));
     }
+
+    @Override
+    boolean isConstructor() {
+        return target instanceof Constructor;
+    }
 }

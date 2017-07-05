@@ -1,12 +1,12 @@
 Path: .
-Working Copy Root Path: /hudson/jobs/objectweb-pull/workspace/asm-svn-2014-05-27
+Working Copy Root Path: /hudson/jobs/objectweb-pull/workspace/asm-svn-2014-06-19
 URL: file:///svnroot/asm/trunk/asm
 Repository Root: file:///svnroot/asm
 Repository UUID: 271bd773-ee82-43a6-9b2b-1890ed8ce7f9
-Revision: 1748
+Revision: 1750
 Node Kind: directory
 Schedule: normal
-Last Changed Author: ebruneton
-Last Changed Rev: 1747
-Last Changed Date: 2014-05-24 10:22:13 +0200 (Sat, 24 May 2014)
+Last Changed Author: forax
+Last Changed Rev: 1750
+Last Changed Date: 2014-06-06 00:31:02 +0200 (Fri, 06 Jun 2014)
 

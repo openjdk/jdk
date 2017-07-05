@@ -122,7 +122,6 @@ public class CustomLauncherTest {
             );
 
             final AtomicReference<String> port = new AtomicReference<>();
-            final AtomicReference<String> pid = new AtomicReference<>();
 
             serverPrc = ProcessTools.startProcess(
                 "Launcher",
@@ -130,12 +129,10 @@ public class CustomLauncherTest {
                 (String line) -> {
                     if (line.startsWith("port:")) {
                          port.set(line.split("\\:")[1]);
-                     } else  if (line.startsWith("pid:")) {
-                         pid.set(line.split("\\:")[1]);
-                     } else if (line.startsWith("waiting")) {
+                    } else if (line.startsWith("waiting")) {
                          return true;
-                     }
-                     return false;
+                    }
+                    return false;
                 },
                 5,
                 TimeUnit.SECONDS
@@ -143,7 +140,7 @@ public class CustomLauncherTest {
 
             System.out.println("Attaching test manager:");
             System.out.println("=========================");
-            System.out.println("  PID           : " + pid.get());
+            System.out.println("  PID           : " + serverPrc.getPid());
             System.out.println("  shutdown port : " + port.get());
 
             ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
@@ -156,7 +153,7 @@ public class CustomLauncherTest {
                     File.separator +
                     "tools.jar",
                 "TestManager",
-                pid.get(),
+                String.valueOf(serverPrc.getPid()),
                 port.get(),
                 "true"
             );

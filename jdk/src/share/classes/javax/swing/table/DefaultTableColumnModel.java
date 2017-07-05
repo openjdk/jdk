@@ -716,6 +716,8 @@ public class DefaultTableColumnModel implements TableColumnModel,
 
     /**
      * Creates a new default list selection model.
+     *
+     * @return a newly created default list selection model.
      */
     protected ListSelectionModel createSelectionModel() {
         return new DefaultListSelectionModel();
