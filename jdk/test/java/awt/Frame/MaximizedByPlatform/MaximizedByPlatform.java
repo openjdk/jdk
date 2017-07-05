@@ -25,11 +25,12 @@
  * @bug 8026143
  * @summary [macosx] Maximized state could be inconsistent between peer and frame
  * @author Petr Pchelko
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run main MaximizedByPlatform
  */
 
-import sun.awt.OSInfo;
-import sun.awt.SunToolkit;
+import jdk.testlibrary.OSInfo;
 
 import java.awt.*;
 
@@ -43,6 +44,13 @@ public class MaximizedByPlatform {
             return;
         }
 
+        Robot robot;
+        try {
+            robot = new Robot();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
         availableScreenBounds = getAvailableScreenBounds();
 
         // Test 1. The maximized state is set in setBounds
@@ -51,12 +59,12 @@ public class MaximizedByPlatform {
             frame.setBounds(100, 100, 100, 100);
             frame.setVisible(true);
 
-            ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+            robot.waitForIdle();
 
             frame.setBounds(availableScreenBounds.x, availableScreenBounds.y,
                     availableScreenBounds.width, availableScreenBounds.height);
 
-            ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+            robot.waitForIdle();
 
             if (frame.getExtendedState() != Frame.MAXIMIZED_BOTH) {
                 throw new RuntimeException("Maximized state was not set for frame in setBounds");
@@ -73,7 +81,7 @@ public class MaximizedByPlatform {
                     availableScreenBounds.width + 100, availableScreenBounds.height);
             frame.setVisible(true);
 
-            ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+            robot.waitForIdle();
 
             if (frame.getExtendedState() != Frame.MAXIMIZED_BOTH) {
                 throw new RuntimeException("Maximized state was not set for frame in setVisible");

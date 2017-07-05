@@ -1014,19 +1014,19 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 ################################################################################
 
 
-# From Paul Eggert (2006-03-22):
-# A good source for time zone historical data outside the U.S. is
+# From Paul Eggert (2014-10-31):
+#
+# Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
 # San Diego: ACS Publications, Inc. (2003).
+# Unfortunately this book contains many errors and cites no sources.
 #
 # Gwillim Law writes that a good source
 # for recent time zone data is the International Air Transport
 # Association's Standard Schedules Information Manual (IATA SSIM),
 # published semiannually.  Law sent in several helpful summaries
-# of the IATA's data after 1990.
-#
-# Except where otherwise noted, Shanks & Pottenger is the source for
-# entries through 1990, and IATA SSIM is the source for entries afterwards.
+# of the IATA's data after 1990.  Except where otherwise noted,
+# IATA SSIM is the source for entries after 1990.
 #
 # Other sources occasionally used include:
 #
@@ -3154,13 +3154,17 @@ Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 # From Paul Eggert (2014-08-19):
 # The 2014-08-13 Cabinet meeting decided to stay on UTC-4 year-round.  See:
 # http://tcweeklynews.com/daylight-savings-time-to-be-maintained-p5353-127.htm
-# Model this as a switch from EST/EDT to AST on 2014-11-02 at 02:00.
+# Model this as a switch from EST/EDT to AST ...
+# From Chris Walton (2014-11-04):
+# ... the TCI government appears to have delayed the switch to
+# "permanent daylight saving time" by one year....
+# http://tcweeklynews.com/time-change-to-go-ahead-this-november-p5437-127.htm
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Grand_Turk	-4:44:32 -	LMT	1890
 			-5:07:11 -	KMT	1912 Feb # Kingston Mean Time
 			-5:00	-	EST	1979
-			-5:00	US	E%sT	2014 Nov  2  2:00
+			-5:00	US	E%sT	2015 Nov Sun>=1 2:00
 			-4:00	-	AST
 
 # British Virgin Is

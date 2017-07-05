@@ -68,7 +68,10 @@
 // ciMethod::ciMethod
 //
 // Loaded method.
-ciMethod::ciMethod(methodHandle h_m) : ciMetadata(h_m()) {
+ciMethod::ciMethod(methodHandle h_m, ciInstanceKlass* holder) :
+  ciMetadata(h_m()),
+  _holder(holder)
+{
   assert(h_m() != NULL, "no null method");
 
   // These fields are always filled in in loaded methods.
@@ -124,7 +127,6 @@ ciMethod::ciMethod(methodHandle h_m) : ciMetadata(h_m()) {
   // generating _signature may allow GC and therefore move m.
   // These fields are always filled in.
   _name = env->get_symbol(h_m()->name());
-  _holder = env->get_instance_klass(h_m()->method_holder());
   ciSymbol* sig_symbol = env->get_symbol(h_m()->signature());
   constantPoolHandle cpool = h_m()->constants();
   _signature = new (env->arena()) ciSignature(_holder, cpool, sig_symbol);

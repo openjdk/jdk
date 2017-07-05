@@ -2096,7 +2096,8 @@ private:
   short             _num_loops;
   short             _num_blocks;
   // Does this method contain anything worth profiling?
-  bool              _would_profile;
+  enum WouldProfile {unknown, no_profile, profile};
+  WouldProfile      _would_profile;
 
   // Size of _data array in bytes.  (Excludes header and extra_data fields.)
   int _data_size;
@@ -2270,8 +2271,8 @@ public:
   }
 #endif
 
-  void set_would_profile(bool p)              { _would_profile = p;    }
-  bool would_profile() const                  { return _would_profile; }
+  void set_would_profile(bool p)              { _would_profile = p ? profile : no_profile; }
+  bool would_profile() const                  { return _would_profile != no_profile; }
 
   int num_loops() const                       { return _num_loops;  }
   void set_num_loops(int n)                   { _num_loops = n;     }

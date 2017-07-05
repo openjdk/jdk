@@ -27,6 +27,7 @@
 
 #include "classfile/classFileParser.hpp"
 #include "runtime/perfData.hpp"
+#include "utilities/macros.hpp"
 
 // The VM class loader.
 #include <sys/stat.h>

@@ -29,7 +29,7 @@ include LibCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
 
-  LIBSUNMSCAPI_SRC := $(JDK_TOPDIR)/src/jdk.crypto.mscapi/$(OPENJDK_TARGET_OS_API_DIR)/native/libsunmscapi
+  LIBSUNMSCAPI_SRC := $(JDK_TOPDIR)/src/jdk.crypto.mscapi/$(OPENJDK_TARGET_OS_TYPE)/native/libsunmscapi
 
   $(eval $(call SetupNativeCompilation,BUILD_LIBSUNMSCAPI, \
       LIBRARY := sunmscapi, \

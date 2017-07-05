@@ -47,6 +47,7 @@
 #include "services/memoryService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
@@ -1411,7 +1412,7 @@ size_t MetaspaceGC::delta_capacity_until_GC(size_t bytes) {
 
 size_t MetaspaceGC::capacity_until_GC() {
   size_t value = (size_t)OrderAccess::load_ptr_acquire(&_capacity_until_GC);
-  assert(value >= MetaspaceSize, "Not initialied properly?");
+  assert(value >= MetaspaceSize, "Not initialized properly?");
   return value;
 }
 

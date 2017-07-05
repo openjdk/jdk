@@ -152,6 +152,10 @@ public class MapCreator<T> {
             flags |= Property.NOT_WRITABLE;
         }
 
+        if (symbol.isBlockScoped()) {
+            flags |= Property.IS_LEXICAL_BINDING;
+        }
+
         // Mark symbol as needing declaration. Access before declaration will throw a ReferenceError.
         if (symbol.isBlockScoped() && symbol.isScope()) {
             flags |= Property.NEEDS_DECLARATION;

@@ -28,8 +28,6 @@
  * @run main Test8027025
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -49,7 +47,8 @@ public class Test8027025 {
                 window.setVisible(true);
             });
 
-            ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+            Robot robot = new Robot();
+            robot.waitForIdle();
 
             AtomicReference<Point> point = new AtomicReference<>();
             SwingUtilities.invokeAndWait(() -> point.set(window.getLocationOnScreen()));

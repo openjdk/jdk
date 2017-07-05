@@ -150,4 +150,9 @@ public final class WhileNode extends LoopNode {
         }
         return test == null;
     }
+
+    @Override
+    public boolean hasPerIterationScope() {
+        return false;
+    }
 }

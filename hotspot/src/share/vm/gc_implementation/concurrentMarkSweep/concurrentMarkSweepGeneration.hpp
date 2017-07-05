@@ -356,7 +356,6 @@ class CMSStats VALUE_OBJ_CLASS_SPEC {
   size_t _gc0_promoted;         // bytes promoted per gc0
   double _cms_duration;
   double _cms_duration_pre_sweep; // time from initiation to start of sweep
-  double _cms_duration_per_mb;
   double _cms_period;
   size_t _cms_allocated;        // bytes of direct allocation per gc0 period
 
@@ -383,17 +382,7 @@ class CMSStats VALUE_OBJ_CLASS_SPEC {
 
   unsigned int _valid_bits;
 
-  unsigned int _icms_duty_cycle;        // icms duty cycle (0-100).
-
  protected:
-
-  // Return a duty cycle that avoids wild oscillations, by limiting the amount
-  // of change between old_duty_cycle and new_duty_cycle (the latter is treated
-  // as a recommended value).
-  static unsigned int icms_damped_duty_cycle(unsigned int old_duty_cycle,
-                                             unsigned int new_duty_cycle);
-  unsigned int icms_update_duty_cycle_impl();
-
   // In support of adjusting of cms trigger ratios based on history
   // of concurrent mode failure.
   double cms_free_adjustment_factor(size_t free) const;
@@ -426,7 +415,6 @@ class CMSStats VALUE_OBJ_CLASS_SPEC {
   size_t gc0_promoted() const   { return _gc0_promoted; }
   double cms_period() const          { return _cms_period; }
   double cms_duration() const        { return _cms_duration; }
-  double cms_duration_per_mb() const { return _cms_duration_per_mb; }
   size_t cms_allocated() const       { return _cms_allocated; }
 
   size_t cms_used_at_gc0_end() const { return _cms_used_at_gc0_end;}
@@ -457,12 +445,6 @@ class CMSStats VALUE_OBJ_CLASS_SPEC {
   double time_until_cms_start() const;
 
   // End of higher level statistics.
-
-  // Returns the cms incremental mode duty cycle, as a percentage (0-100).
-  unsigned int icms_duty_cycle() const { return _icms_duty_cycle; }
-
-  // Update the duty cycle and return the new value.
-  unsigned int icms_update_duty_cycle();
 
   // Debugging.
   void print_on(outputStream* st) const PRODUCT_RETURN;
@@ -626,7 +608,6 @@ class CMSCollector: public CHeapObj<mtGC> {
   GCHeapSummary _last_heap_summary;
   MetaspaceSummary _last_metaspace_summary;
 
-  void register_foreground_gc_start(GCCause::Cause cause);
   void register_gc_start(GCCause::Cause cause);
   void register_gc_end();
   void save_heap_summary();
@@ -713,8 +694,6 @@ class CMSCollector: public CHeapObj<mtGC> {
   int    _numYields;
   size_t _numDirtyCards;
   size_t _sweep_count;
-  // Number of full gc's since the last concurrent gc.
-  uint   _full_gcs_since_conc_gc;
 
   // Occupancy used for bootstrapping stats
   double _bootstrap_occupancy;
@@ -724,13 +703,6 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // Timing, allocation and promotion statistics, used for scheduling.
   CMSStats      _stats;
-
-  // Allocation limits installed in the young gen, used only in
-  // CMSIncrementalMode.  When an allocation in the young gen would cross one of
-  // these limits, the cms generation is notified and the cms thread is started
-  // or stopped, respectively.
-  HeapWord*     _icms_start_limit;
-  HeapWord*     _icms_stop_limit;
 
   enum CMS_op_type {
     CMS_op_checkpointRootsInitial,
@@ -785,14 +757,14 @@ class CMSCollector: public CHeapObj<mtGC> {
   NOT_PRODUCT(bool par_simulate_overflow();)   // MT version
 
   // CMS work methods
-  void checkpointRootsInitialWork(bool asynch); // Initial checkpoint work
+  void checkpointRootsInitialWork(); // Initial checkpoint work
 
   // A return value of false indicates failure due to stack overflow
-  bool markFromRootsWork(bool asynch);  // Concurrent marking work
+  bool markFromRootsWork();  // Concurrent marking work
 
  public:   // FIX ME!!! only for testing
-  bool do_marking_st(bool asynch);      // Single-threaded marking
-  bool do_marking_mt(bool asynch);      // Multi-threaded  marking
+  bool do_marking_st();      // Single-threaded marking
+  bool do_marking_mt();      // Multi-threaded  marking
 
  private:
 
@@ -813,20 +785,19 @@ class CMSCollector: public CHeapObj<mtGC> {
   void reset_survivor_plab_arrays();
 
   // Final (second) checkpoint work
-  void checkpointRootsFinalWork(bool asynch, bool clear_all_soft_refs,
-                                bool init_mark_was_synchronous);
+  void checkpointRootsFinalWork();
   // Work routine for parallel version of remark
   void do_remark_parallel();
   // Work routine for non-parallel version of remark
   void do_remark_non_parallel();
   // Reference processing work routine (during second checkpoint)
-  void refProcessingWork(bool asynch, bool clear_all_soft_refs);
+  void refProcessingWork();
 
   // Concurrent sweeping work
-  void sweepWork(ConcurrentMarkSweepGeneration* gen, bool asynch);
+  void sweepWork(ConcurrentMarkSweepGeneration* gen);
 
   // (Concurrent) resetting of support data structures
-  void reset(bool asynch);
+  void reset(bool concurrent);
 
   // Clear _expansion_cause fields of constituent generations
   void clear_expansion_cause();
@@ -835,21 +806,9 @@ class CMSCollector: public CHeapObj<mtGC> {
   // used regions of each generation to limit the extent of sweep
   void save_sweep_limits();
 
-  // A work method used by foreground collection to determine
-  // what type of collection (compacting or not, continuing or fresh)
-  // it should do.
-  void decide_foreground_collection_type(bool clear_all_soft_refs,
-    bool* should_compact, bool* should_start_over);
-
   // A work method used by the foreground collector to do
   // a mark-sweep-compact.
   void do_compaction_work(bool clear_all_soft_refs);
-
-  // A work method used by the foreground collector to do
-  // a mark-sweep, after taking over from a possibly on-going
-  // concurrent mark-sweep collection.
-  void do_mark_sweep_work(bool clear_all_soft_refs,
-    CollectorState first_state, bool should_start_over);
 
   // Work methods for reporting concurrent mode interruption or failure
   bool is_external_interruption();
@@ -866,10 +825,6 @@ class CMSCollector: public CHeapObj<mtGC> {
   // that the collection was finished by the foreground
   // collector.
   bool waitForForegroundGC();
-
-  // Incremental mode triggering:  recompute the icms duty cycle and set the
-  // allocation limits in the young gen.
-  void icms_update_allocation_limits();
 
   size_t block_size_using_printezis_bits(HeapWord* addr) const;
   size_t block_size_if_printezis_bits(HeapWord* addr) const;
@@ -897,15 +852,13 @@ class CMSCollector: public CHeapObj<mtGC> {
   // Locking checks
   NOT_PRODUCT(static bool have_cms_token();)
 
-  // XXXPERM bool should_collect(bool full, size_t size, bool tlab);
   bool shouldConcurrentCollect();
 
   void collect(bool   full,
                bool   clear_all_soft_refs,
                size_t size,
                bool   tlab);
-  void collect_in_background(bool clear_all_soft_refs, GCCause::Cause cause);
-  void collect_in_foreground(bool clear_all_soft_refs, GCCause::Cause cause);
+  void collect_in_background(GCCause::Cause cause);
 
   // In support of ExplicitGCInvokesConcurrent
   static void request_full_gc(unsigned int full_gc_count, GCCause::Cause cause);
@@ -927,9 +880,6 @@ class CMSCollector: public CHeapObj<mtGC> {
   // in its entirety.
   void promoted(bool par, HeapWord* start,
                 bool is_obj_array, size_t obj_size);
-
-  HeapWord* allocation_limit_reached(Space* space, HeapWord* top,
-                                     size_t word_size);
 
   void getFreelistLocks() const;
   void releaseFreelistLocks() const;
@@ -960,18 +910,16 @@ class CMSCollector: public CHeapObj<mtGC> {
   void directAllocated(HeapWord* start, size_t size);
 
   // Main CMS steps and related support
-  void checkpointRootsInitial(bool asynch);
-  bool markFromRoots(bool asynch);  // a return value of false indicates failure
-                                    // due to stack overflow
+  void checkpointRootsInitial();
+  bool markFromRoots();  // a return value of false indicates failure
+                         // due to stack overflow
   void preclean();
-  void checkpointRootsFinal(bool asynch, bool clear_all_soft_refs,
-                            bool init_mark_was_synchronous);
-  void sweep(bool asynch);
+  void checkpointRootsFinal();
+  void sweep();
 
   // Check that the currently executing thread is the expected
   // one (foreground collector or background collector).
   static void check_correct_thread_executing() PRODUCT_RETURN;
-  // XXXPERM void print_statistics()           PRODUCT_RETURN;
 
   bool is_cms_reachable(HeapWord* addr);
 
@@ -1000,14 +948,6 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // Timers/stats for gc scheduling and incremental mode pacing.
   CMSStats& stats() { return _stats; }
-
-  // Convenience methods that check whether CMSIncrementalMode is enabled and
-  // forward to the corresponding methods in ConcurrentMarkSweepThread.
-  static void start_icms();
-  static void stop_icms();    // Called at the end of the cms cycle.
-  static void disable_icms(); // Called before a foreground collection.
-  static void enable_icms();  // Called after a foreground collection.
-  void icms_wait();          // Called at yield points.
 
   // Adaptive size policy
   AdaptiveSizePolicy* size_policy();
@@ -1100,15 +1040,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // In support of MinChunkSize being larger than min object size
   const double _dilatation_factor;
 
-  enum CollectionTypes {
-    Concurrent_collection_type          = 0,
-    MS_foreground_collection_type       = 1,
-    MSC_foreground_collection_type      = 2,
-    Unknown_collection_type             = 3
-  };
-
-  CollectionTypes _debug_collection_type;
-
   // True if a compacting collection was done.
   bool _did_compact;
   bool did_compact() { return _did_compact; }
@@ -1192,7 +1123,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // hack to allow the collection of the younger gen first if the flag is
   // set.
   virtual bool full_collects_younger_generations() const {
-    return UseCMSCompactAtFullCollection && !ScavengeBeforeFullGC;
+    return !ScavengeBeforeFullGC;
   }
 
   void space_iterate(SpaceClosure* blk, bool usedOnly = false);
@@ -1211,9 +1142,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
     return allocate(size, tlab);
   }
 
-  // Incremental mode triggering.
-  HeapWord* allocation_limit_reached(Space* space, HeapWord* top,
-                                     size_t word_size);
 
   // Used by CMSStats to track direct allocation.  The value is sampled and
   // reset after each young gen collection.
@@ -1338,9 +1266,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // Resize the generation after a non-compacting
   // collection.
   void compute_new_size_free_list();
-
-  CollectionTypes debug_collection_type() { return _debug_collection_type; }
-  void rotate_debug_collection_type();
 };
 
 //
@@ -1387,7 +1312,6 @@ class Par_MarkFromRootsClosure: public BitMapClosure {
   CMSBitMap*     _mut;
   OopTaskQueue*  _work_queue;
   CMSMarkStack*  _overflow_stack;
-  bool           _yield;
   int            _skip_bits;
   HeapWord*      _finger;
   HeapWord*      _threshold;
@@ -1397,8 +1321,7 @@ class Par_MarkFromRootsClosure: public BitMapClosure {
                        MemRegion span,
                        CMSBitMap* bit_map,
                        OopTaskQueue* work_queue,
-                       CMSMarkStack*  overflow_stack,
-                       bool should_yield);
+                       CMSMarkStack*  overflow_stack);
   bool do_bit(size_t offset);
   inline void do_yield_check();
 

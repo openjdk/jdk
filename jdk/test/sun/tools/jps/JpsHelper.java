@@ -93,7 +93,7 @@ public final class JpsHelper {
     /**
      * VM arguments to start test application with
      */
-    public static final String[] VM_ARGS = {"-Xmx512m", "-XX:+UseParallelGC"};
+    public static final String[] VM_ARGS = {"-Xmx512m", "-XX:+PrintGCDetails"};
     /**
      * VM flag to start test application with
      */
