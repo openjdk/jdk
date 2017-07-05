@@ -113,6 +113,11 @@ final class CipherBox {
     private SecureRandom random;
 
     /**
+     * Is the cipher of CBC mode?
+     */
+    private final boolean isCBCMode;
+
+    /**
      * Fixed masks of various block size, as the initial decryption IVs
      * for TLS 1.1 or later.
      *
@@ -128,6 +133,7 @@ final class CipherBox {
     private CipherBox() {
         this.protocolVersion = ProtocolVersion.DEFAULT;
         this.cipher = null;
+        this.isCBCMode = false;
     }
 
     /**
@@ -148,6 +154,7 @@ final class CipherBox {
                 random = JsseJce.getSecureRandom();
             }
             this.random = random;
+            this.isCBCMode = bulkCipher.isCBCMode;
 
             /*
              * RFC 4346 recommends two algorithms used to generated the
@@ -694,4 +701,12 @@ final class CipherBox {
         }
     }
 
+    /*
+     * Does the cipher use CBC mode?
+     *
+     * @return true if the cipher use CBC mode, false otherwise.
+     */
+    boolean isCBCMode() {
+        return isCBCMode;
+    }
 }

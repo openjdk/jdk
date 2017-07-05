@@ -490,9 +490,6 @@ sun/security/pkcs11/ec/TestECDSA.java                           solaris-i586
 #sun/security/pkcs11/ec/TestKeyFactory.java                     solaris-i586
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-i586
 
-# Directly references PKCS11 class
-sun/security/pkcs11/Provider/Absolute.java                      windows-x64
-
 # Fails on Fedora 9/Ubuntu 10.04 64bit, PKCS11Exception: CKR_DEVICE_ERROR
 sun/security/pkcs11/KeyAgreement/TestDH.java                    generic-all
 

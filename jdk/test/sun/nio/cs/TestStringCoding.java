@@ -24,7 +24,7 @@
  */
 
 /* @test
-   @bug 6636323 6636319 7040220
+   @bug 6636323 6636319 7040220 7096080
    @summary Test if StringCoding and NIO result have the same de/encoding result
  * @run main/othervm/timeout=2000 TestStringCoding
  */
@@ -111,7 +111,8 @@ public class TestStringCoding {
         //encode unmappable surrogates
         if (enc instanceof sun.nio.cs.ArrayEncoder &&
             cs.contains(Charset.forName("ASCII"))) {
-            if (cs.name().equals("UTF-8"))    // utf8 handles surrogates
+            if (cs.name().equals("UTF-8") ||     // utf8 handles surrogates
+                cs.name().equals("CESU-8"))       // utf8 handles surrogates
                 return;
             enc.replaceWith(new byte[] { (byte)'A'});
             sun.nio.cs.ArrayEncoder cae = (sun.nio.cs.ArrayEncoder)enc;
@@ -136,7 +137,6 @@ public class TestStringCoding {
                                                        cs.name())))
                 throw new RuntimeException("encode3(surrogates) failed  -> "
                                            + cs.name());
-
             ba = new byte[str.length() - 1];
             n = cae.encode(str.toCharArray(), 0, str.length(), ba);
             if (n != 7 || !"abABABc".equals(new String(ba, 0, n,

@@ -60,10 +60,11 @@ final class ProcessImpl extends Process {
         throws IOException
     {
         if (append) {
+            String path = f.getPath();
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
-                sm.checkWrite(f.getPath());
-            long handle = openForAtomicAppend(f.getPath());
+                sm.checkWrite(path);
+            long handle = openForAtomicAppend(path);
             final FileDescriptor fd = new FileDescriptor();
             fdAccess.setHandle(fd, handle);
             return AccessController.doPrivileged(
