@@ -156,6 +156,7 @@ class Solaris {
   static int get_dev_zero_fd() { return _dev_zero_fd; }
   static void set_dev_zero_fd(int fd) { _dev_zero_fd = fd; }
   static char* mmap_chunk(char *addr, size_t size, int flags, int prot);
+  static char* anon_mmap(char* requested_addr, size_t bytes, size_t alignment_hint, bool fixed);
   static bool mpss_sanity_check(bool warn, size_t * page_size);
   static bool ism_sanity_check (bool warn, size_t * page_size);
 

@@ -105,7 +105,7 @@ class Deoptimization : AllStatic {
   static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
   static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
   static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects);
-  static void relock_objects(frame* fr, RegisterMap* reg_map, GrowableArray<MonitorValue*>* monitors);
+  static void relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaThread* thread);
   NOT_PRODUCT(static void print_objects(GrowableArray<ScopeValue*>* objects);)
 #endif // COMPILER2
 

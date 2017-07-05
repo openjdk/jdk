@@ -138,29 +138,21 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
     __ round_to(rbx, BytesPerLong);
   }
 
-  Label hit, next, entry;
+  Label hit, next, entry, throw_icce;
 
-  __ jmp(entry);
+  __ jmpb(entry);
 
   __ bind(next);
   __ addl(rbx, itableOffsetEntry::size() * wordSize);
 
   __ bind(entry);
 
-#ifdef ASSERT
-    // Check that the entry is non-null
-  if (DebugVtables) {
-    Label L;
-    __ pushl(rbx);
-    __ movl(rbx, Address(rbx, itableOffsetEntry::interface_offset_in_bytes()));
-    __ testl(rbx, rbx);
-    __ jcc(Assembler::notZero, L);
-    __ stop("null entry point found in itable's offset table");
-    __ bind(L);
-    __ popl(rbx);
-  }
-#endif
-  __ cmpl(rax, Address(rbx, itableOffsetEntry::interface_offset_in_bytes()));
+  // If the entry is NULL then we've reached the end of the table
+  // without finding the expected interface, so throw an exception
+  __ movl(rdx, Address(rbx, itableOffsetEntry::interface_offset_in_bytes()));
+  __ testl(rdx, rdx);
+  __ jcc(Assembler::zero, throw_icce);
+  __ cmpl(rax, rdx);
   __ jcc(Assembler::notEqual, next);
 
   // We found a hit, move offset into rbx,
@@ -194,7 +186,15 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   address ame_addr = __ pc();
   __ jmp(Address(method, methodOopDesc::from_compiled_offset()));
 
+  __ bind(throw_icce);
+  // Restore saved register
+  __ popl(rdx);
+  __ jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
+
   masm->flush();
+
+  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
+
   s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
@@ -207,7 +207,7 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
     return (DebugVtables ? 210 : 16) + (CountCompiledCalls ? 6 : 0);
   } else {
     // Itable stub size
-    return (DebugVtables ? 140 : 55) + (CountCompiledCalls ? 6 : 0);
+    return (DebugVtables ? 144 : 64) + (CountCompiledCalls ? 6 : 0);
   }
 }
 

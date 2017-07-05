@@ -102,8 +102,9 @@ bool CodeHeap::reserve(size_t reserved_size, size_t committed_size,
   _log2_segment_size = exact_log2(segment_size);
 
   // Reserve and initialize space for _memory.
-  const size_t page_size = os::page_size_for_region(committed_size,
-                                                    reserved_size, 8);
+  const size_t page_size = os::can_execute_large_page_memory() ?
+          os::page_size_for_region(committed_size, reserved_size, 8) :
+          os::vm_page_size();
   const size_t granularity = os::vm_allocation_granularity();
   const size_t r_align = MAX2(page_size, granularity);
   const size_t r_size = align_size_up(reserved_size, r_align);
@@ -111,7 +112,7 @@ bool CodeHeap::reserve(size_t reserved_size, size_t committed_size,
 
   const size_t rs_align = page_size == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_size, granularity);
-  ReservedSpace rs(r_size, rs_align, false);
+  ReservedSpace rs(r_size, rs_align, rs_align > 0);
   os::trace_page_sizes("code heap", committed_size, reserved_size, page_size,
                        rs.base(), rs.size());
   if (!_memory.initialize(rs, c_size)) {

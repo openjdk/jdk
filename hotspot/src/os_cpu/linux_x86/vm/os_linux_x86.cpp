@@ -62,8 +62,14 @@
 #endif // AMD64
 
 address os::current_stack_pointer() {
+#ifdef SPARC_WORKS
+  register void *esp;
+  __asm__("mov %%"SPELL_REG_SP", %0":"=r"(esp));
+  return (address) ((char*)esp + sizeof(long)*2);
+#else
   register void *esp __asm__ (SPELL_REG_SP);
   return (address) esp;
+#endif
 }
 
 char* os::non_memory_address_word() {
@@ -139,7 +145,12 @@ frame os::get_sender_for_C_frame(frame* fr) {
 }
 
 intptr_t* _get_previous_fp() {
+#ifdef SPARC_WORKS
+  register intptr_t **ebp;
+  __asm__("mov %%"SPELL_REG_FP", %0":"=r"(ebp));
+#else
   register intptr_t **ebp __asm__ (SPELL_REG_FP);
+#endif
   return (intptr_t*) *ebp;   // we want what it points to.
 }
 
@@ -157,22 +168,7 @@ frame os::current_frame() {
   }
 }
 
-
 // Utility functions
-
-julong os::allocatable_physical_memory(julong size) {
-#ifdef AMD64
-  return size;
-#else
-  julong result = MIN2(size, (julong)3800*M);
-   if (!is_allocatable(result)) {
-     // See comments under solaris for alignment considerations
-     julong reasonable_size = (julong)2*G - 2 * os::vm_page_size();
-     result =  MIN2(size, reasonable_size);
-   }
-   return result;
-#endif // AMD64
-}
 
 // From IA32 System Programming Guide
 enum {
@@ -575,7 +571,9 @@ bool os::Linux::supports_variable_stack_size() {  return true; }
 #else
 size_t os::Linux::min_stack_allowed  =  (48 DEBUG_ONLY(+4))*K;
 
+#ifdef __GNUC__
 #define GET_GS() ({int gs; __asm__ volatile("movw %%gs, %w0":"=q"(gs)); gs&0xffff;})
+#endif
 
 // Test if pthread library can support variable thread stack size. LinuxThreads
 // in fixed stack mode allocates 2M fixed slot for each thread. LinuxThreads
@@ -606,7 +604,11 @@ bool os::Linux::supports_variable_stack_size() {
     // return true and skip _thread_safety_check(), so we may not be able to
     // detect stack-heap collisions. But otherwise it's harmless.
     //
+#ifdef __GNUC__
     return (GET_GS() != 0);
+#else
+    return false;
+#endif
   }
 }
 #endif // AMD64

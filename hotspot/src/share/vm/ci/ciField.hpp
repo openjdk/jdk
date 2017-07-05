@@ -102,7 +102,7 @@ public:
   BasicType layout_type() { return type2field[(_type == NULL) ? T_OBJECT : _type->basic_type()]; }
 
   // How big is this field in memory?
-  int size_in_bytes() { return type2aelembytes[layout_type()]; }
+  int size_in_bytes() { return type2aelembytes(layout_type()); }
 
   // What is the offset of this field?
   int offset() {

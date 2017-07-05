@@ -413,7 +413,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
-  ReservedSpace rs(bytes, rs_align, false);
+  ReservedSpace rs(bytes, rs_align, rs_align > 0);
   os::trace_page_sizes("par compact", raw_bytes, raw_bytes, page_sz, rs.base(),
                        rs.size());
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);

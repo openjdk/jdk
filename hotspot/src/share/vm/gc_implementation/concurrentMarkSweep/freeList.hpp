@@ -38,6 +38,7 @@ class Mutex;
 
 class FreeList VALUE_OBJ_CLASS_SPEC {
   friend class CompactibleFreeListSpace;
+  friend class printTreeCensusClosure;
   FreeChunk*    _head;          // List of free chunks
   FreeChunk*    _tail;          // Tail of list of free chunks
   size_t        _size;          // Size in Heap words of each chunks
@@ -63,10 +64,11 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
  protected:
   void init_statistics();
   void set_count(ssize_t v) { _count = v;}
-  void increment_count() { _count++; }
+  void increment_count()    { _count++; }
   void decrement_count() {
     _count--;
-    assert(_count >= 0, "Count should not be negative"); }
+    assert(_count >= 0, "Count should not be negative");
+  }
 
  public:
   // Constructor
@@ -158,6 +160,10 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
 
   ssize_t desired() const {
     return _allocation_stats.desired();
+  }
+  void set_desired(ssize_t v) {
+    assert_proper_lock_protection();
+    _allocation_stats.set_desired(v);
   }
   void compute_desired(float inter_sweep_current,
                        float inter_sweep_estimate) {
@@ -298,4 +304,8 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
   // Verify that the chunk is in the list.
   // found.  Return NULL if "fc" is not found.
   bool verifyChunkInFreeLists(FreeChunk* fc) const;
+
+  // Printing support
+  static void print_labels_on(outputStream* st, const char* c);
+  void print_on(outputStream* st, const char* c = NULL) const;
 };

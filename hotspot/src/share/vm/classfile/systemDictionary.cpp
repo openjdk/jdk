@@ -1242,7 +1242,9 @@ static instanceKlassHandle download_and_retry_class_load(
     oop obj = (oop) result.get_jobject();
     if (obj == NULL) { return nk; }
 
-    char* new_class_name = java_lang_String::as_utf8_string(obj);
+    Handle h_obj(THREAD, obj);
+    char* new_class_name = java_lang_String::as_platform_dependent_str(h_obj,
+                                                                  CHECK_(nk));
 
     // lock the loader
     // we use this lock because JVMTI does.
