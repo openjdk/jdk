@@ -22,17 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 4245011
- *  @summary Test launcher command line construction
- *  @author Gordon Hirsch
+ * @test
+ * @bug 4245011
+ * @summary Test launcher command line construction
+ * @author Gordon Hirsch
  *
- *  @modules jdk.jdi
- *  @run build JDIScaffold VMConnection
- *  @run compile -g HelloWorld.java
- *  @run build LaunchCommandLine
+ * @run build JDIScaffold VMConnection
+ * @run compile -g HelloWorld.java
+ * @run build LaunchCommandLine
  *
- *  @run driver LaunchCommandLine
+ * @run driver LaunchCommandLine
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

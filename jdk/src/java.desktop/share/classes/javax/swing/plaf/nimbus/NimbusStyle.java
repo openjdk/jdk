@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -934,9 +934,7 @@ public final class NimbusStyle extends SynthStyle {
      * <p>The actual code path for determining the proper state is the same as
      * in Synth.</p>
      *
-     * @param ctx
      * @param lastState a 1 element array, allowing me to do pass-by-reference.
-     * @return
      */
     private RuntimeState getNextState(RuntimeState[] states,
                                       int[] lastState,
