@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import org.ietf.jgss.*;
 import sun.security.jgss.GSSCaller;
 import sun.security.jgss.spi.*;
 import sun.security.krb5.*;
-import javax.security.auth.kerberos.*;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.AccessController;
@@ -43,40 +42,23 @@ import javax.security.auth.DestroyFailedException;
  * @since 1.4
  */
 public class Krb5AcceptCredential
-    extends KerberosKey
     implements Krb5CredElement {
 
     private static final long serialVersionUID = 7714332137352567952L;
 
     private Krb5NameElement name;
 
-    /**
-     * We cache an EncryptionKey representation of this key because many
-     * Krb5 operation require a key in that form. At some point we might do
-     * away with EncryptionKey altogether and use the base class
-     * KerberosKey everywhere.
-     */
-    private EncryptionKey[] krb5EncryptionKeys;
+    private Krb5Util.ServiceCreds screds;
 
-    private Krb5AcceptCredential(Krb5NameElement name, KerberosKey[] keys) {
+    private Krb5AcceptCredential(Krb5NameElement name, Krb5Util.ServiceCreds creds) {
         /*
          * Initialize this instance with the data from the acquired
          * KerberosKey. This class needs to be a KerberosKey too
          * hence we can't just store a reference.
          */
-        super(keys[0].getPrincipal(),
-              keys[0].getEncoded(),
-              keys[0].getKeyType(),
-              keys[0].getVersionNumber());
 
         this.name = name;
-        // Cache this for later use by the sun.security.krb5 package.
-        krb5EncryptionKeys = new EncryptionKey[keys.length];
-        for (int i = 0; i < keys.length; i++) {
-            krb5EncryptionKeys[i] = new EncryptionKey(keys[i].getEncoded(),
-                                    keys[i].getKeyType(),
-                                    new Integer(keys[i].getVersionNumber()));
-        }
+        this.screds = creds;
     }
 
     static Krb5AcceptCredential getInstance(final GSSCaller caller, Krb5NameElement name)
@@ -86,12 +68,12 @@ public class Krb5AcceptCredential
             name.getKrb5PrincipalName().getName());
         final AccessControlContext acc = AccessController.getContext();
 
-        KerberosKey[] keys;
+        Krb5Util.ServiceCreds creds = null;
         try {
-            keys = AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<KerberosKey[]>() {
-                public KerberosKey[] run() throws Exception {
-                    return Krb5Util.getKeys(
+            creds = AccessController.doPrivileged(
+                        new PrivilegedExceptionAction<Krb5Util.ServiceCreds>() {
+                public Krb5Util.ServiceCreds run() throws Exception {
+                    return Krb5Util.getServiceCreds(
                         caller == GSSCaller.CALLER_UNKNOWN ? GSSCaller.CALLER_ACCEPT: caller,
                         serverPrinc, acc);
                 }});
@@ -103,17 +85,17 @@ public class Krb5AcceptCredential
             throw ge;
         }
 
-        if (keys == null || keys.length == 0)
+        if (creds == null)
             throw new GSSException(GSSException.NO_CRED, -1,
-                                   "Failed to find any Kerberos Key");
+                                   "Failed to find any Kerberos credentails");
 
         if (name == null) {
-            String fullName = keys[0].getPrincipal().getName();
+            String fullName = creds.getName();
             name = Krb5NameElement.getInstance(fullName,
                                        Krb5MechFactory.NT_GSS_KRB5_PRINCIPAL);
         }
 
-        return new Krb5AcceptCredential(name, keys);
+        return new Krb5AcceptCredential(name, creds);
     }
 
     /**
@@ -171,7 +153,7 @@ public class Krb5AcceptCredential
     }
 
     EncryptionKey[] getKrb5EncryptionKeys() {
-        return krb5EncryptionKeys;
+        return screds.getEKeys();
     }
 
     /**
@@ -193,13 +175,6 @@ public class Krb5AcceptCredential
      * destroy in the base class.
      */
     public void destroy() throws DestroyFailedException {
-        if (krb5EncryptionKeys != null) {
-            for (int i = 0; i < krb5EncryptionKeys.length; i++) {
-                krb5EncryptionKeys[i].destroy();
-            }
-            krb5EncryptionKeys = null;
-        }
-
-        super.destroy();
+        screds.destroy();
     }
 }

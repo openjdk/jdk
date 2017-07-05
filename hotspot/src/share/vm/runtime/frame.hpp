@@ -60,6 +60,7 @@
 typedef class BytecodeInterpreter* interpreterState;
 
 class CodeBlob;
+class FrameValues;
 class vframeArray;
 
 
@@ -381,12 +382,17 @@ class frame VALUE_OBJ_CLASS_SPEC {
  private:
   const char* print_name() const;
 
+  void describe_pd(FrameValues& values, int frame_no);
+
  public:
   void print_value() const { print_value_on(tty,NULL); }
   void print_value_on(outputStream* st, JavaThread *thread) const;
   void print_on(outputStream* st) const;
   void interpreter_frame_print_on(outputStream* st) const;
   void print_on_error(outputStream* st, char* buf, int buflen, bool verbose = false) const;
+
+  // Add annotated descriptions of memory locations belonging to this frame to values
+  void describe(FrameValues& values, int frame_no);
 
   // Conversion from an VMReg to physical stack location
   oop* oopmapreg_to_location(VMReg reg, const RegisterMap* regmap) const;
@@ -472,6 +478,41 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
 };
 
+#ifdef ASSERT
+// A simple class to describe a location on the stack
+class FrameValue VALUE_OBJ_CLASS_SPEC {
+ public:
+  intptr_t* location;
+  char* description;
+  int owner;
+  int priority;
+};
+
+
+// A collection of described stack values that can print a symbolic
+// description of the stack memory.  Interpreter frame values can be
+// in the caller frames so all the values are collected first and then
+// sorted before being printed.
+class FrameValues {
+ private:
+  GrowableArray<FrameValue> _values;
+
+  static int compare(FrameValue* a, FrameValue* b) {
+    if (a->location == b->location) {
+      return a->priority - b->priority;
+    }
+    return a->location - b->location;
+  }
+
+ public:
+  // Used by frame functions to describe locations.
+  void describe(int owner, intptr_t* location, const char* description, int priority = 0);
+
+  bool validate();
+  void print();
+};
+
+#endif
 
 //
 // StackFrameStream iterates through the frames of a thread starting from

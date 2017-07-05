@@ -99,8 +99,6 @@ class EPoll {
 
     // -- Native methods --
 
-    private static native void init();
-
     private static native int eventSize();
 
     private static native int eventsOffset();
@@ -116,6 +114,5 @@ class EPoll {
 
     static {
         Util.load();
-        init();
     }
 }

@@ -1,0 +1,104 @@
+." Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH jvisualvm 1 "10 May 2011"
+
+.LP
+.SH "Name"
+\f2jvisualvm\fP \- Java Virtual Machine Monitoring, Troubleshooting, and Profiling Tool
+.LP
+.SH "SYNOPSIS"
+.LP
+.nf
+\f3
+.fl
+        \fP\f3jvisualvm\fP [ \f2options\fP ]
+.fl
+.fi
+
+.LP
+.SH "PARAMETERS"
+.LP
+.LP
+Options, if used, should follow immediately after the command name. Options may be in any order. For a discussion of parameters that apply to a specific option, see OPTIONS below.
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+Java VisualVM is an intuitive graphical user interface that provides detailed information about Java technology\-based applications (Java applications) while they are running on a given Java Virtual Machine (JVM(*)). The name Java VisualVM comes from the fact that Java VisualVM provides information about the JVM software \f2visually\fP.
+.LP
+.LP
+Java VisualVM combines several monitoring, troubleshooting, and profiling utilities into a single tool. For example, most of the functionality offered by the standalone tools \f2jmap\fP, \f2jinfo\fP, \f2jstat\fP and \f2jstack\fP have been integrated into Java VisualVM. Other functionalities, such as some of those offered by the JConsole tool, can be added as optional plug\-ins.
+.LP
+.SH "OPTIONS"
+.LP
+.LP
+The following option is possible when you launch Java VisualVM.
+.LP
+.RS 3
+.TP 3
+\-J<jvm_option>\  
+Pass this \f2<jvm_option>\fP to the JVM software. 
+.RE
+
+.LP
+.SH "USAGE"
+.LP
+.LP
+Java VisualVM is useful to Java application developers to troubleshoot applications and to monitor and improve the applications' performance. Java VisualVM can allow developers to generate and analyse heap dumps, track down memory leaks, perform and monitor garbage collection, and perform lightweight memory and CPU profiling. Plug\-ins also exist that expand the functionality of Java VisualVM. For example, most of the functionality of the JConsole tool is available via the MBeans Tab and JConsole Plug\-in Wrapper plug\-ins. You can choose from a catalog of standard Java VisualVM plug\-ins by selecting 'Tools' | 'Plugins' in the Java VisualVM menus.
+.LP
+.LP
+Start Java VisualVM with the following command:
+.LP
+.nf
+\f3
+.fl
+%  jvisualvm \fP\f4<options>\fP\f3
+.fl
+\fP
+.fi
+
+.LP
+.SH "SEE ALSO"
+.LP
+.LP
+For more details about Java VisualVM see the following pages.
+.LP
+.RS 3
+.TP 2
+o
+.na
+\f2Java VisualVM developers' site\fP @
+.fi
+http://visualvm.java.net 
+.TP 2
+o
+.na
+\f2Java VisualVM in Java SE platform documentation\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/visualvm/index.html 
+.RE
+
+.LP
+.LP
+\f2(* The terms "Java Virtual Machine" and "JVM" mean a Virtual Machine for the Java platform.)\fP
+.LP
+ 
