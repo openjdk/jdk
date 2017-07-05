@@ -53,7 +53,7 @@
 /*
  * USELABELS - If using GCC, then use labels for the opcode dispatching
  * rather -then a switch statement. This improves performance because it
- * gives us the oportunity to have the instructions that calculate the
+ * gives us the opportunity to have the instructions that calculate the
  * next opcode to jump to be intermixed with the rest of the instructions
  * that implement the opcode (see UPDATE_PC_AND_TOS_AND_CONTINUE macro).
  */

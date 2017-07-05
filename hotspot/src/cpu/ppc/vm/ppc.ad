@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
-// Copyright 2012, 2014 SAP AG. All rights reserved.
+// Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+// Copyright 2012, 2015 SAP AG. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2698,7 +2698,7 @@ encode %{
         const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
         __ relocate(a.rspec());
       } else if (constant_reloc == relocInfo::metadata_type) {
-        AddressLiteral a = __ allocate_metadata_address((Metadata *)val);
+        AddressLiteral a = __ constant_metadata_address((Metadata *)val);
         const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
         __ relocate(a.rspec());
       } else {
@@ -2727,7 +2727,7 @@ encode %{
         const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
         __ relocate(a.rspec());
       } else if (constant_reloc == relocInfo::metadata_type) {
-        AddressLiteral a = __ allocate_metadata_address((Metadata *)val);
+        AddressLiteral a = __ constant_metadata_address((Metadata *)val);
         const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
         __ relocate(a.rspec());
       } else {  // non-oop pointers, e.g. card mark base, heap top
@@ -6029,6 +6029,20 @@ instruct clearMs32b(iRegNdst dst, iRegNsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
+// Optimize DecodeN for disjoint base.
+// Load base of compressed oops into a register
+instruct loadBase(iRegLdst dst) %{
+  effect(DEF dst);
+
+  format %{ "MR      $dst, r30_heapbase" %}
+  size(4);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_or);
+    __ mr($dst$$Register, R30);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Loading ConN must be postalloc expanded so that edges between
 // the nodes are safe. They may not interfere with a safepoint.
 // GL TODO: This needs three instructions: better put this into the constant pool.
@@ -6724,13 +6738,12 @@ instruct cond_set_0_oop(iRegNdst dst, flagsReg crx, iRegPsrc src1) %{
   ins_pipe(pipe_class_default);
 %}
 
-// base != 0
-// 32G aligned narrow oop base.
-instruct encodeP_32GAligned(iRegNdst dst, iRegPsrc src) %{
+// Disjoint narrow oop base.
+instruct encodeP_Disjoint(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
-  predicate(false /* TODO: PPC port Universe::narrow_oop_base_disjoint()*/);
+  predicate(Universe::narrow_oop_base_disjoint());
 
-  format %{ "EXTRDI  $dst, $src, #32, #3 \t// encode with 32G aligned base" %}
+  format %{ "EXTRDI  $dst, $src, #32, #3 \t// encode with disjoint base" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
@@ -6745,7 +6758,7 @@ instruct encodeP_Ex(iRegNdst dst, flagsReg crx, iRegPsrc src) %{
   effect(TEMP crx);
   predicate(n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull &&
             Universe::narrow_oop_shift() != 0 &&
-            true /* TODO: PPC port Universe::narrow_oop_base_overlaps()*/);
+            Universe::narrow_oop_base_overlaps());
 
   format %{ "EncodeP $dst, $crx, $src \t// postalloc expanded" %}
   postalloc_expand( postalloc_expand_encode_oop(dst, src, crx));
@@ -6756,7 +6769,7 @@ instruct encodeP_not_null_Ex(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
   predicate(n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull &&
             Universe::narrow_oop_shift() != 0 &&
-            true /* TODO: PPC port Universe::narrow_oop_base_overlaps()*/);
+            Universe::narrow_oop_base_overlaps());
 
   format %{ "EncodeP $dst, $src\t// $src != Null, postalloc expanded" %}
   postalloc_expand( postalloc_expand_encode_oop_not_null(dst, src) );
@@ -6876,6 +6889,7 @@ instruct decodeN_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
              n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
             Universe::narrow_oop_shift() != 0 &&
             Universe::narrow_oop_base() != 0);
+  ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel_Ex.
   effect(TEMP crx);
 
   format %{ "DecodeN $dst, $src \t// Kills $crx, postalloc expanded" %}
@@ -6897,6 +6911,106 @@ instruct decodeN_nullBase(iRegPdst dst, iRegNsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
+// Optimize DecodeN for disjoint base.
+// Shift narrow oop and or it into register that already contains the heap base.
+// Base == dst must hold, and is assured by construction in postaloc_expand.
+instruct decodeN_mergeDisjoint(iRegPdst dst, iRegNsrc src, iRegLsrc base) %{
+  match(Set dst (DecodeN src));
+  effect(TEMP base);
+  predicate(false);
+
+  format %{ "RLDIMI  $dst, $src, shift, 32-shift \t// DecodeN (disjoint base)" %}
+  size(4);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_rldimi);
+    __ rldimi($dst$$Register, $src$$Register, Universe::narrow_oop_shift(), 32-Universe::narrow_oop_shift());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Optimize DecodeN for disjoint base.
+// This node requires only one cycle on the critical path.
+// We must postalloc_expand as we can not express use_def effects where
+// the used register is L and the def'ed register P.
+instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
+  match(Set dst (DecodeN src));
+  effect(TEMP_DEF dst);
+  predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
+             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
+            Universe::narrow_oop_base_disjoint());
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MOV     $dst, R30 \t\n"
+            "RLDIMI  $dst, $src, shift, 32-shift \t// decode with disjoint base" %}
+  postalloc_expand %{
+    loadBaseNode *n1 = new loadBaseNode();
+    n1->add_req(NULL);
+    n1->_opnds[0] = op_dst;
+
+    decodeN_mergeDisjointNode *n2 = new decodeN_mergeDisjointNode();
+    n2->add_req(n_region, n_src, n1);
+    n2->_opnds[0] = op_dst;
+    n2->_opnds[1] = op_src;
+    n2->_opnds[2] = op_dst;
+    n2->_bottom_type = _bottom_type;
+
+    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+
+    nodes->push(n1);
+    nodes->push(n2);
+  %}
+%}
+
+instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
+  match(Set dst (DecodeN src));
+  effect(TEMP_DEF dst, TEMP crx);
+  predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
+             n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
+            Universe::narrow_oop_base_disjoint() && VM_Version::has_isel());
+  ins_cost(3 * DEFAULT_COST);
+
+  format %{ "DecodeN  $dst, $src \t// decode with disjoint base using isel" %}
+  postalloc_expand %{
+    loadBaseNode *n1 = new loadBaseNode();
+    n1->add_req(NULL);
+    n1->_opnds[0] = op_dst;
+
+    cmpN_reg_imm0Node *n_compare  = new cmpN_reg_imm0Node();
+    n_compare->add_req(n_region, n_src);
+    n_compare->_opnds[0] = op_crx;
+    n_compare->_opnds[1] = op_src;
+    n_compare->_opnds[2] = new immN_0Oper(TypeNarrowOop::NULL_PTR);
+    
+    decodeN_mergeDisjointNode *n2 = new decodeN_mergeDisjointNode();
+    n2->add_req(n_region, n_src, n1);
+    n2->_opnds[0] = op_dst;
+    n2->_opnds[1] = op_src;
+    n2->_opnds[2] = op_dst;
+    n2->_bottom_type = _bottom_type;
+
+    cond_set_0_ptrNode *n_cond_set = new cond_set_0_ptrNode();
+    n_cond_set->add_req(n_region, n_compare, n2);
+    n_cond_set->_opnds[0] = op_dst;
+    n_cond_set->_opnds[1] = op_crx;
+    n_cond_set->_opnds[2] = op_dst;
+    n_cond_set->_bottom_type = _bottom_type;
+
+    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
+    ra_->set_oop(n_cond_set, true);
+    
+    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
+    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+
+    nodes->push(n1);
+    nodes->push(n_compare);
+    nodes->push(n2);
+    nodes->push(n_cond_set);
+  %}
+%}
+
 // src != 0, shift != 0, base != 0
 instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
@@ -6904,6 +7018,7 @@ instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
             Universe::narrow_oop_shift() != 0 &&
             Universe::narrow_oop_base() != 0);
+  ins_cost(2 * DEFAULT_COST);
 
   format %{ "DecodeN $dst, $src \t// $src != NULL, postalloc expanded" %}
   postalloc_expand( postalloc_expand_decode_oop_not_null(dst, src));
@@ -6973,13 +7088,12 @@ instruct encodePKlass_sub_base(iRegPdst dst, iRegLsrc base, iRegPdst src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// base != 0
-// 32G aligned narrow oop base.
-instruct encodePKlass_32GAligned(iRegNdst dst, iRegPsrc src) %{
+// Disjoint narrow oop base.
+instruct encodePKlass_Disjoint(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodePKlass src));
   predicate(false /* TODO: PPC port Universe::narrow_klass_base_disjoint()*/);
 
-  format %{ "EXTRDI  $dst, $src, #32, #3 \t// encode with 32G aligned base" %}
+  format %{ "EXTRDI  $dst, $src, #32, #3 \t// encode with disjoint base" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
@@ -7486,7 +7600,7 @@ instruct storeLConditional_regP_regL_regL(flagsReg crx, indirect mem_ptr, iRegLs
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ cmpxchgd($crx$$CondRegister, R0, $oldVal$$Register, $newVal$$Register, $mem_ptr$$Register,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
+                MacroAssembler::MemBarAcq, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, NULL, true);
   %}
   ins_pipe(pipe_class_default);
@@ -10476,7 +10590,7 @@ instruct cmpN_reg_reg(flagsReg crx, iRegNsrc src1, iRegNsrc src2) %{
   match(Set crx (CmpN src1 src2));
 
   size(4);
-  ins_cost(DEFAULT_COST);
+  ins_cost(2);
   format %{ "CMPLW   $crx, $src1, $src2 \t// compressed ptr" %}
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_cmpl);
@@ -10488,7 +10602,7 @@ instruct cmpN_reg_reg(flagsReg crx, iRegNsrc src1, iRegNsrc src2) %{
 instruct cmpN_reg_imm0(flagsReg crx, iRegNsrc src1, immN_0 src2) %{
   match(Set crx (CmpN src1 src2));
   // Make this more expensive than zeroCheckN_iReg_imm0.
-  ins_cost(DEFAULT_COST);
+  ins_cost(2);
 
   format %{ "CMPLWI  $crx, $src1, $src2 \t// compressed ptr" %}
   size(4);
@@ -10508,6 +10622,7 @@ instruct zeroCheckP_reg_imm0(cmpOp cmp, iRegP_N2P value, immP_0 zero, label labl
             _kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne &&
             _leaf->as_If()->_prob >= PROB_LIKELY_MAG(4) &&
             Matcher::branches_to_uncommon_trap(_leaf));
+  ins_cost(1); // Should not be cheaper than zeroCheckN.
 
   ins_is_TrapBasedCheckNode(true);
 
@@ -10889,7 +11004,7 @@ instruct branchLoopEndSched(cmpOp cmp, flagsReg crx, label labl) %{
 instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P superklass,
                              iRegPdst tmp_klass, iRegPdst tmp_arrayptr) %{
   match(Set result (PartialSubtypeCheck subklass superklass));
-  effect(TEMP result, TEMP tmp_klass, TEMP tmp_arrayptr);
+  effect(TEMP_DEF result, TEMP tmp_klass, TEMP tmp_arrayptr);
   ins_cost(DEFAULT_COST*10);
 
   format %{ "PartialSubtypeCheck $result = ($subklass instanceOf $superklass) tmp: $tmp_klass, $tmp_arrayptr" %}
@@ -11000,7 +11115,7 @@ instruct string_indexOf_imm1_char(iRegIdst result, iRegPsrc haystack, iRegIsrc h
   predicate(SpecialStringIndexOf);  // type check implicit by parameter type, See Matcher::match_rule_supported
   match(Set result (StrIndexOf (Binary haystack haycnt) (Binary (AddP needleImm offsetImm) needlecntImm)));
 
-  effect(TEMP result, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1);
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1);
 
   ins_cost(150);
   format %{ "String IndexOf CSCL1 $haystack[0..$haycnt], $needleImm+$offsetImm[0..$needlecntImm]"
@@ -11037,7 +11152,7 @@ instruct string_indexOf_imm1(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt
                              iRegIdst tmp1, iRegIdst tmp2,
                              flagsRegCR0 cr0, flagsRegCR1 cr1) %{
   match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecntImm)));
-  effect(USE_KILL needle, /* TDEF needle, */ TEMP result,
+  effect(USE_KILL needle, /* TDEF needle, */ TEMP_DEF result,
          TEMP tmp1, TEMP tmp2);
   // Required for EA: check if it is still a type_array.
   predicate(SpecialStringIndexOf && n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
@@ -11084,7 +11199,7 @@ instruct string_indexOf_imm(iRegIdst result, iRegPsrc haystack, rscratch1RegI ha
                             iRegIdst tmp1, iRegIdst tmp2, iRegIdst tmp3, iRegIdst tmp4, iRegIdst tmp5,
                             flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6) %{
   match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecntImm)));
-  effect(USE_KILL haycnt, /* better: TDEF haycnt, */ TEMP result,
+  effect(USE_KILL haycnt, /* better: TDEF haycnt, */ TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6);
   // Required for EA: check if it is still a type_array.
   predicate(SpecialStringIndexOf && n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
@@ -11118,7 +11233,7 @@ instruct string_indexOf(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt
                         flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6) %{
   match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecnt)));
   effect(USE_KILL haycnt, USE_KILL needlecnt, /*better: TDEF haycnt, TDEF needlecnt,*/
-         TEMP result,
+         TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr0, KILL cr1, KILL cr6);
   predicate(SpecialStringIndexOf);  // See Matcher::match_rule_supported.
   ins_cost(300);
@@ -11142,7 +11257,7 @@ instruct string_equals_imm(iRegPsrc str1, iRegPsrc str2, uimmI15 cntImm, iRegIds
                            iRegPdst tmp1, iRegPdst tmp2,
                            flagsRegCR0 cr0, flagsRegCR6 cr6, regCTR ctr) %{
   match(Set result (StrEquals (Binary str1 str2) cntImm));
-  effect(TEMP result, TEMP tmp1, TEMP tmp2,
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2,
          KILL cr0, KILL cr6, KILL ctr);
   predicate(SpecialStringEquals);  // See Matcher::match_rule_supported.
   ins_cost(250);
@@ -11165,7 +11280,7 @@ instruct string_equals(iRegPsrc str1, iRegPsrc str2, iRegIsrc cnt, iRegIdst resu
                        iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3, iRegPdst tmp4, iRegPdst tmp5,
                        flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6, regCTR ctr) %{
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(TEMP result, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
          KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   predicate(SpecialStringEquals);  // See Matcher::match_rule_supported.
   ins_cost(300);
@@ -11188,7 +11303,7 @@ instruct string_equals(iRegPsrc str1, iRegPsrc str2, iRegIsrc cnt, iRegIdst resu
 instruct string_compare(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt1, rarg4RegI cnt2, iRegIdst result,
                         iRegPdst tmp, flagsRegCR0 cr0, regCTR ctr) %{
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(USE_KILL cnt1, USE_KILL cnt2, USE_KILL str1, USE_KILL str2, TEMP result, TEMP tmp, KILL cr0, KILL ctr);
+  effect(USE_KILL cnt1, USE_KILL cnt2, USE_KILL str1, USE_KILL str2, TEMP_DEF result, TEMP tmp, KILL cr0, KILL ctr);
   ins_cost(300);
 
   ins_alignment(8); // 'compute_padding()' gets called, up to this number-1 nops will get inserted.

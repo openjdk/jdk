@@ -105,6 +105,7 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
         return IOS_THROWN;
     }
 
+    SetHandleInformation((HANDLE)(UINT_PTR)newfd, HANDLE_FLAG_INHERIT, 0);
     (*env)->SetIntField(env, newfdo, fd_fdID, newfd);
     remote_ia = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, (int *)&remote_port);
     CHECK_NULL_RETURN(remote_ia, IOS_THROWN);

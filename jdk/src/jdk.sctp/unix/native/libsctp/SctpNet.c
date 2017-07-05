@@ -316,11 +316,12 @@ void initializeISA
     if (isaCls == 0) {
         jclass c = (*env)->FindClass(env, "java/net/InetSocketAddress");
         CHECK_NULL(c);
+        isaCtrID = (*env)->GetMethodID(env, c, "<init>",
+                                     "(Ljava/net/InetAddress;I)V");
+        CHECK_NULL(isaCtrID);
         isaCls = (*env)->NewGlobalRef(env, c);
         CHECK_NULL(isaCls);
         (*env)->DeleteLocalRef(env, c);
-        isaCtrID = (*env)->GetMethodID(env, isaCls, "<init>",
-                                     "(Ljava/net/InetAddress;I)V");
     }
 }
 

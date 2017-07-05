@@ -50,6 +50,9 @@ JAR1_MANIFEST := $(OUTPUT_DIR)/jar1_manifest
 clean-jar1:
 	$(RM) -r $(OUTPUT_DIR)/_jar1* $(OUTPUT_DIR)/jar1*
 
+$(JAR1_MANIFEST): | $(OUTPUT_DIR)/_jar1_created
+	$(ECHO) "Test-Attribute: value" > $(JAR1_MANIFEST)
+
 $(OUTPUT_DIR)/_jar1_created: $(DEPS)
 	$(RM) -r $(JAR1_SRC_ROOT)
 	$(RM) $(JAR1_FILE)
@@ -61,7 +64,6 @@ $(OUTPUT_DIR)/_jar1_created: $(DEPS)
 	$(TOUCH) $(JAR1_SRC_ROOT)/dir1/file1.class
 	$(TOUCH) $(JAR1_SRC_ROOT)/dir2/file2.class
 	$(TOUCH) $(JAR1_SRC_ROOT)/META-INF/metafile
-	$(ECHO) "Test-Attribute: value" > $(JAR1_MANIFEST)
 	$(TOUCH) $@
 
 $(eval $(call SetupArchive,BUILD_JAR1, \
@@ -77,7 +79,7 @@ $(OUTPUT_DIR)/_jar1_verified: $(BUILD_JAR1)
 	$(DIFF) -r $(JAR1_SRC_ROOT)/dir1 $(JAR1_UNZIP)/dir1
 	$(DIFF) -r $(JAR1_SRC_ROOT)/dir2 $(JAR1_UNZIP)/dir2
 	$(DIFF) -r $(JAR1_SRC_ROOT)/META-INF/metafile $(JAR1_UNZIP)/META-INF/metafile
-	if [ "`$(GREP) 'Test-Attribute: value' $(JAR1_MANIFEST)`" = "" ]; then \
+	if [ "`$(GREP) 'Test-Attribute: value' $(JAR1_UNZIP)/META-INF/MANIFEST.MF`" = "" ]; then \
 	  $(ECHO) "Could not find Test-Attribute in manifest of $(JAR1_FILE)"; \
 	  exit 1; \
 	fi
@@ -88,7 +90,7 @@ TEST_TARGETS += $(OUTPUT_DIR)/_jar1_verified
 
 # Change a source file and call this makefile again to force the jar to be 
 # updated. 
-$(OUTPUT_DIR)_jar1_updated: $(OUTPUT_DIR)/_jar1_verified
+$(OUTPUT_DIR)/_jar1_updated: $(OUTPUT_DIR)/_jar1_verified
 	$(ECHO) updated > $(JAR1_SRC_ROOT)/dir1/file1.class
 	$(ECHO) updated > $(JAR1_SRC_ROOT)/META-INF/metafile
 	$(TOUCH) $(OUTPUT_DIR)/_jar1_created
@@ -96,9 +98,26 @@ $(OUTPUT_DIR)_jar1_updated: $(OUTPUT_DIR)/_jar1_verified
 	$(TOUCH) $@
 
 update-jar1: $(OUTPUT_DIR)_jar1_updated
-TEST_TARGETS += $(OUTPUT_DIR)_jar1_updated
 
-.PHONY: clean-jar1 create-jar1 update-jar1
+# Change the manifest file and call this makefile again to force the jar
+# to be updated
+$(OUTPUT_DIR)/_jar1_updated_manifest: $(OUTPUT_DIR)/_jar1_updated
+	$(ECHO) "Test-Attribute: foobar" > $(JAR1_MANIFEST)
+	+$(MAKE) -f $(THIS_FILE) $(BUILD_JAR1)
+	$(RM) -r $(JAR1_UNZIP)
+	$(MKDIR) -p $(JAR1_UNZIP)
+	$(CD) $(JAR1_UNZIP) && $(UNZIP) $(JAR1_FILE) $(LOG_DEBUG)
+	if [ "`$(GREP) 'Test-Attribute: foobar' $(JAR1_UNZIP)/META-INF/MANIFEST.MF`" = "" ]; then \
+	  $(ECHO) "Could not find Test-Attribute in manifest of $(JAR1_FILE)"; \
+	  exit 1; \
+	fi
+	$(TOUCH) $@
+
+update-jar1-manifest: $(OUTPUT_DIR)/_jar1_updated_manifest
+
+TEST_TARGETS += $(OUTPUT_DIR)/_jar1_updated $(OUTPUT_DIR)/_jar1_updated_manifest
+
+.PHONY: clean-jar1 create-jar1 update-jar1 update-jar1-manifest
 
 ################################################################################
 # Test: jar2
@@ -139,14 +158,14 @@ $(OUTPUT_DIR)/_jar2_verified: $(BUILD_JAR2)
 create-jar2: $(OUTPUT_DIR)/_jar2_verified
 TEST_TARGETS += $(OUTPUT_DIR)/_jar2_verified
 
-$(OUTPUT_DIR)_jar2_updated: $(OUTPUT_DIR)/_jar2_verified
+$(OUTPUT_DIR)/_jar2_updated: $(OUTPUT_DIR)/_jar2_verified
 	$(ECHO) updated > $(JAR2_SRC_ROOT1)/dir1/file1.class
 	$(TOUCH) $(OUTPUT_DIR)/_jar2_created
 	+$(MAKE) -f $(THIS_FILE) $(OUTPUT_DIR)/_jar2_verified
 	$(TOUCH) $@
 
-update-jar2: $(OUTPUT_DIR)_jar2_updated
-TEST_TARGETS += $(OUTPUT_DIR)_jar2_updated
+update-jar2: $(OUTPUT_DIR)/_jar2_updated
+TEST_TARGETS += $(OUTPUT_DIR)/_jar2_updated
 
 .PHONY: clean-jar2 create-jar2 update-jar2
 
@@ -200,14 +219,14 @@ $(OUTPUT_DIR)/_jar3_verified: $(BUILD_JAR3)
 create-jar3: $(OUTPUT_DIR)/_jar3_verified
 TEST_TARGETS += $(OUTPUT_DIR)/_jar3_verified
 
-$(OUTPUT_DIR)_jar3_updated: $(OUTPUT_DIR)/_jar3_verified
+$(OUTPUT_DIR)/_jar3_updated: $(OUTPUT_DIR)/_jar3_verified
 	$(ECHO) updated > $(JAR3_SRC_ROOT2)/extra-file
 	$(TOUCH) $(OUTPUT_DIR)/_jar3_created
 	+$(MAKE) -f $(THIS_FILE) $(OUTPUT_DIR)/_jar3_verified
 	$(TOUCH) $@
 
-update-jar3: $(OUTPUT_DIR)_jar3_updated
-TEST_TARGETS += $(OUTPUT_DIR)_jar3_updated
+update-jar3: $(OUTPUT_DIR)/_jar3_updated
+TEST_TARGETS += $(OUTPUT_DIR)/_jar3_updated
 
 .PHONY: clean-jar3 create-jar3 update-jar3
 
