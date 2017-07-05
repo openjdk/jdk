@@ -136,14 +136,14 @@ final class ClassLoaderRepositorySupport
         new Hashtable<ObjectName,ClassLoader>(10);
 
     // from javax.management.loading.DefaultLoaderRepository
-    public final Class loadClass(String className)
+    public final Class<?> loadClass(String className)
         throws ClassNotFoundException {
         return  loadClass(loaders, className, null, null);
     }
 
 
     // from javax.management.loading.DefaultLoaderRepository
-    public final Class loadClassWithout(ClassLoader without, String className)
+    public final Class<?> loadClassWithout(ClassLoader without, String className)
             throws ClassNotFoundException {
         if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
             MBEANSERVER_LOGGER.logp(Level.FINER,
@@ -167,7 +167,7 @@ final class ClassLoaderRepositorySupport
     }
 
 
-    public final Class loadClassBefore(ClassLoader stop, String className)
+    public final Class<?> loadClassBefore(ClassLoader stop, String className)
             throws ClassNotFoundException {
         if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
             MBEANSERVER_LOGGER.logp(Level.FINER,
@@ -187,10 +187,10 @@ final class ClassLoaderRepositorySupport
     }
 
 
-    private Class loadClass(final LoaderEntry list[],
-                            final String className,
-                            final ClassLoader without,
-                            final ClassLoader stop)
+    private Class<?> loadClass(final LoaderEntry list[],
+                               final String className,
+                               final ClassLoader without,
+                               final ClassLoader stop)
             throws ClassNotFoundException {
         final int size = list.length;
         for(int i=0; i<size; i++) {

@@ -63,7 +63,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -104,10 +104,10 @@ import org.openide.util.lookup.InstanceContent;
  */
 public class DiagramScene extends Scene implements ChangedListener<DiagramViewModel> {
 
-    private Hashtable<Figure, FigureWidget> figureWidgets;
-    private Hashtable<Slot, SlotWidget> slotWidgets;
-    private Hashtable<Connection, ConnectionWidget> connectionWidgets;
-    private Hashtable<InputBlock, BlockWidget> blockWidgets;
+    private HashMap<Figure, FigureWidget> figureWidgets;
+    private HashMap<Slot, SlotWidget> slotWidgets;
+    private HashMap<Connection, ConnectionWidget> connectionWidgets;
+    private HashMap<InputBlock, BlockWidget> blockWidgets;
     private Widget hoverWidget;
     private WidgetAction hoverAction;
     private List<FigureWidget> selectedWidgets;
@@ -414,7 +414,7 @@ public class DiagramScene extends Scene implements ChangedListener<DiagramViewMo
         this.addChild(selectLayer);
         this.getActions().addAction(ActionFactory.createRectangularSelectAction(rectangularSelectDecorator, selectLayer, rectangularSelectProvider));
 
-        blockWidgets = new Hashtable<InputBlock, BlockWidget>();
+        blockWidgets = new HashMap<InputBlock, BlockWidget>();
 
         boolean b = this.getUndoRedoEnabled();
         this.setUndoRedoEnabled(false);
@@ -543,9 +543,9 @@ public class DiagramScene extends Scene implements ChangedListener<DiagramViewMo
         blockLayer.removeChildren();
 
         blockWidgets.clear();
-        figureWidgets = new Hashtable<Figure, FigureWidget>();
-        slotWidgets = new Hashtable<Slot, SlotWidget>();
-        connectionWidgets = new Hashtable<Connection, ConnectionWidget>();
+        figureWidgets = new HashMap<Figure, FigureWidget>();
+        slotWidgets = new HashMap<Slot, SlotWidget>();
+        connectionWidgets = new HashMap<Connection, ConnectionWidget>();
 
         WidgetAction selectAction = new ExtendedSelectAction(selectProvider);
         Diagram d = getModel().getDiagramToView();

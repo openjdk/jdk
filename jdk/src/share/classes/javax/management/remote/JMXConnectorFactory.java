@@ -367,7 +367,8 @@ public class JMXConnectorFactory {
         return provider.newJMXConnector(serviceURL, fixedenv);
     }
 
-    private static String resolvePkgs(Map env) throws JMXProviderException {
+    private static String resolvePkgs(Map<String, ?> env)
+            throws JMXProviderException {
 
         Object pkgsObject = null;
 
@@ -521,7 +522,7 @@ public class JMXConnectorFactory {
         return null;
     }
 
-    static ClassLoader resolveClassLoader(Map environment) {
+    static ClassLoader resolveClassLoader(Map<String, ?> environment) {
         ClassLoader loader = null;
 
         if (environment != null) {

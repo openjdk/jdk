@@ -78,12 +78,12 @@ public class OpenMBeanAttributeInfoSupport
     /**
      * @serial The open mbean attribute's min value
      */
-    private final Comparable minValue;
+    private final Comparable<?> minValue;
 
     /**
      * @serial The open mbean attribute's max value
      */
-    private final Comparable maxValue;
+    private final Comparable<?> maxValue;
 
 
     // As this instance is immutable, these two values need only
@@ -450,7 +450,7 @@ public class OpenMBeanAttributeInfoSupport
     }
 
     static void check(OpenMBeanParameterInfo info) throws OpenDataException {
-        OpenType openType = info.getOpenType();
+        OpenType<?> openType = info.getOpenType();
         if (openType == null)
             throw new IllegalArgumentException("OpenType cannot be null");
 
@@ -562,7 +562,7 @@ public class OpenMBeanAttributeInfoSupport
 
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     static int compare(Object x, Object y) {
         return ((Comparable) x).compareTo(y);
     }
@@ -657,11 +657,11 @@ public class OpenMBeanAttributeInfoSupport
         return result;
     }
 
-    static <T> Comparable comparableValueFrom(Descriptor d, String name,
-                                              OpenType<T> openType) {
+    static <T> Comparable<?> comparableValueFrom(Descriptor d, String name,
+                                                 OpenType<T> openType) {
         T t = valueFrom(d, name, openType);
         if (t == null || t instanceof Comparable<?>)
-            return (Comparable) t;
+            return (Comparable<?>) t;
         final String msg =
             "Descriptor field " + name + " with value " + t +
             " is not Comparable";
@@ -925,7 +925,7 @@ public class OpenMBeanAttributeInfoSupport
         return isValue(this, obj);
     }
 
-    @SuppressWarnings("unchecked")  // cast to Comparable
+    @SuppressWarnings({"unchecked", "rawtypes"})  // cast to Comparable
     static boolean isValue(OpenMBeanParameterInfo info, Object obj) {
         if (info.hasDefaultValue() && obj == null)
             return true;

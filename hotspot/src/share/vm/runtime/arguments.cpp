@@ -1365,6 +1365,9 @@ void Arguments::set_aggressive_opts_flags() {
   if (AggressiveOpts && FLAG_IS_DEFAULT(SpecialArraysEquals)) {
     FLAG_SET_DEFAULT(SpecialArraysEquals, true);
   }
+  if (AggressiveOpts && FLAG_IS_DEFAULT(BiasedLockingStartupDelay)) {
+    FLAG_SET_DEFAULT(BiasedLockingStartupDelay, 500);
+  }
 #endif
 
   if (AggressiveOpts) {
@@ -2624,6 +2627,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Biased locking is not implemented with c++ interpreter
   FLAG_SET_DEFAULT(UseBiasedLocking, false);
 #endif /* CC_INTERP */
+
+#ifdef COMPILER2
+  if (!UseBiasedLocking || EmitSync != 0) {
+    UseOptoBiasInlining = false;
+  }
+#endif
 
   if (PrintCommandLineFlags) {
     CommandLineFlags::printSetFlags();

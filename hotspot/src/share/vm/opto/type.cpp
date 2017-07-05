@@ -3541,7 +3541,7 @@ intptr_t TypeNarrowOop::get_con() const {
 
 #ifndef PRODUCT
 void TypeNarrowOop::dump2( Dict & d, uint depth, outputStream *st ) const {
-  tty->print("narrowoop: ");
+  st->print("narrowoop: ");
   _ooptype->dump2(d, depth, st);
 }
 #endif

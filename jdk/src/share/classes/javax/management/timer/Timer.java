@@ -248,8 +248,7 @@ public class Timer extends NotificationBroadcasterSupport
      */
     public synchronized MBeanNotificationInfo[] getNotificationInfo() {
         Set<String> notifTypes = new TreeSet<String>();
-        for (Iterator it = timerTable.values().iterator(); it.hasNext(); ) {
-            Object[] entry = (Object[]) it.next();
+        for (Object[] entry : timerTable.values()) {
             TimerNotification notif = (TimerNotification)
                 entry[TIMER_NOTIF_INDEX];
             notifTypes.add(notif.getType());

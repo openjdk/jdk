@@ -74,12 +74,12 @@ public class OpenMBeanParameterInfoSupport
     /**
      * @serial The open mbean parameter's min value
      */
-    private Comparable minValue        = null;
+    private Comparable<?> minValue        = null;
 
     /**
      * @serial The open mbean parameter's max value
      */
-    private Comparable maxValue        = null;
+    private Comparable<?> maxValue        = null;
 
 
     // As this instance is immutable, these two values need only

@@ -172,7 +172,7 @@ public class RoleResult implements Serializable {
 
             roleList = new RoleList();
 
-            for (Iterator roleIter = list.iterator();
+            for (Iterator<?> roleIter = list.iterator();
                  roleIter.hasNext();) {
                 Role currRole = (Role)(roleIter.next());
                 roleList.add((Role)(currRole.clone()));
@@ -195,7 +195,7 @@ public class RoleResult implements Serializable {
 
             unresolvedRoleList = new RoleUnresolvedList();
 
-            for (Iterator roleUnresIter = unresolvedList.iterator();
+            for (Iterator<?> roleUnresIter = unresolvedList.iterator();
                  roleUnresIter.hasNext();) {
                 RoleUnresolved currRoleUnres =
                     (RoleUnresolved)(roleUnresIter.next());

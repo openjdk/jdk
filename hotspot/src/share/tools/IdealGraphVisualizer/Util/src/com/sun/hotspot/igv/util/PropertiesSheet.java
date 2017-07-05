@@ -36,11 +36,11 @@ import org.openide.nodes.Sheet;
  */
 public class PropertiesSheet {
 
-    public static void initializeSheet(Properties properties, Sheet s) {
+    public static void initializeSheet(final Properties properties, Sheet s) {
 
         Sheet.Set set1 = Sheet.createPropertiesSet();
         set1.setDisplayName("Properties");
-        for (final Property p : properties.getProperties()) {
+        for (final Property p : properties) {
             Node.Property<String> prop = new Node.Property<String>(String.class) {
 
                 @Override
@@ -60,7 +60,7 @@ public class PropertiesSheet {
 
                 @Override
                 public void setValue(String arg0) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-                    p.setValue(arg0);
+                    properties.setProperty(p.getName(), arg0);
                 }
             };
             prop.setName(p.getName());
