@@ -62,4 +62,11 @@ check("(function({ x }) { return x; })()");
 check("(function([x]) { return x; })()");
 check("for (var [[x, y, z] = [4, 5, 6]] = [7, 8, 9]; iterCount < 1; ) ;");
 check("for ([ arrow = () => {} ] of [[]]) ;");
+check("try { throw null;} catch({}) { }");
+check("try { throw {} } catch ({}) { }");
+check("try { throw [] } catch ([,]) { }");
+check("try { throw { w: [7, undefined, ] }} catch ({ w: [x, y, z] = [4, 5, 6] }) { }");
+check("try { throw { a: 2, b: 3} } catch ({a, b}) { }");
+check("try { throw [null] } catch ([[x]]) { }");
+check("try { throw { w: undefined } } catch ({ w: { x, y, z } = { x: 4, y: 5, z: 6 } }) { }");
 

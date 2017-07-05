@@ -725,11 +725,13 @@ Rule	Tonga	1999	only	-	Oct	 7	2:00s	1:00	S
 Rule	Tonga	2000	only	-	Mar	19	2:00s	0	-
 Rule	Tonga	2000	2001	-	Nov	Sun>=1	2:00	1:00	S
 Rule	Tonga	2001	2002	-	Jan	lastSun	2:00	0	-
+Rule	Tonga	2016	max	-	Nov	Sun>=1	2:00	1:00	S
+Rule	Tonga	2017	max	-	Jan	Sun>=15	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Tongatapu	12:19:20 -	LMT	1901
-			12:20	-	TOT	1941 # Tonga Time
-			13:00	-	TOT	1999
-			13:00	Tonga	TO%sT
+			12:20	-	+1220	1941
+			13:00	-	+13	1999
+			13:00	Tonga	+13/+14
 
 # Tuvalu
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -1735,9 +1737,17 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # of January the standard time in the Kingdom shall be moved backward by one
 # hour to 1:00am.
 
-# From Pulu 'Anau (2002-11-05):
+# From Pulu ʻAnau (2002-11-05):
 # The law was for 3 years, supposedly to get renewed.  It wasn't.
 
+# From Pulu ʻAnau (2016-10-27):
+# http://mic.gov.to/news-today/press-releases/6375-daylight-saving-set-to-run-from-6-november-2016-to-15-january-2017
+# Cannot find anyone who knows the rules, has seen the duration or has seen
+# the cabinet decision, but it appears we are following Fiji's rule set.
+#
+# From Tim Parenti (2016-10-26):
+# Assume Tonga will observe DST from the first Sunday in November at 02:00
+# through the third Sunday in January at 03:00, like Fiji, for now.
 
 # Wake
 
