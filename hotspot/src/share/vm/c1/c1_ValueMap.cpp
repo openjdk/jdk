@@ -125,6 +125,7 @@ Value ValueMap::find_insert(Value x) {
             // otherwise it is possible that they are not evaluated
             f->pin(Instruction::PinGlobalValueNumbering);
           }
+          assert(x->type()->tag() == f->type()->tag(), "should have same type");
 
           return f;
 

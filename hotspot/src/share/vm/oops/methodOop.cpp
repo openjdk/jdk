@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -594,6 +594,11 @@ void methodOopDesc::clear_native_function() {
     SharedRuntime::native_method_throw_unsatisfied_link_error_entry(),
     !native_bind_event_is_interesting);
   clear_code();
+}
+
+address methodOopDesc::critical_native_function() {
+  methodHandle mh(this);
+  return NativeLookup::lookup_critical_entry(mh);
 }
 
 

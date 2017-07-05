@@ -447,8 +447,18 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     private class SynthComboBoxRenderer extends JLabel implements ListCellRenderer<Object>, UIResource {
         public SynthComboBoxRenderer() {
             super();
-            setName("ComboBox.renderer");
             setText(" ");
+        }
+
+        @Override
+        public String getName() {
+            // SynthComboBoxRenderer should have installed Name while constructor is working.
+            // The setName invocation in the SynthComboBoxRenderer() constructor doesn't work
+            // because of the opaque property is installed in the constructor based on the
+            // component name (see GTKStyle.isOpaque())
+            String name = super.getName();
+
+            return name == null ? "ComboBox.renderer" : name;
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,7 +183,6 @@ protected:
 
   // Accessor
   int entry_size() const { return _entry_size; }
-  int table_size() { return _table_size; }
 
   // The following method is MT-safe and may be used with caution.
   BasicHashtableEntry* bucket(int i);
@@ -195,6 +194,7 @@ protected:
   BasicHashtableEntry* new_entry(unsigned int hashValue);
 
 public:
+  int table_size() { return _table_size; }
   void set_entry(int index, BasicHashtableEntry* entry);
 
   void add_entry(int index, BasicHashtableEntry* entry);

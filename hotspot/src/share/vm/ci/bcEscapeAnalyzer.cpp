@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,7 +359,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
       case Bytecodes::_nop:
         break;
       case Bytecodes::_aconst_null:
-        state.apush(empty_map);
+        state.apush(unknown_obj);
         break;
       case Bytecodes::_iconst_m1:
       case Bytecodes::_iconst_0:
@@ -392,6 +392,8 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         if (tag.is_long() || tag.is_double()) {
           // Only longs and doubles use 2 stack slots.
           state.lpush();
+        } else if (tag.basic_type() == T_OBJECT) {
+          state.apush(unknown_obj);
         } else {
           state.spush();
         }

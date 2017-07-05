@@ -6431,7 +6431,8 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * @see #setKeyColumns
      */
     public int[] getKeyColumns() throws SQLException {
-        return keyCols;
+        int[]keyColumns  = this.keyCols;
+        return (keyColumns == null) ? null : Arrays.copyOf(keyColumns, keyColumns.length);
     }
 
 
