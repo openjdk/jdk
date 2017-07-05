@@ -27,6 +27,7 @@ package sun.nio.fs;
 
 import java.nio.file.attribute.*;
 import java.util.Map;
+import java.util.Set;
 import java.io.IOException;
 import sun.misc.Unsafe;
 
@@ -56,6 +57,10 @@ class LinuxDosFileAttributeView
     private static final int DOS_XATTR_HIDDEN   = 0x02;
     private static final int DOS_XATTR_SYSTEM   = 0x04;
     private static final int DOS_XATTR_ARCHIVE  = 0x20;
+
+    // the names of the DOS attributes (includes basic)
+    private static final Set<String> dosAttributeNames =
+        Util.newSet(basicAttributeNames, READONLY_NAME, ARCHIVE_NAME, SYSTEM_NAME, HIDDEN_NAME);
 
     LinuxDosFileAttributeView(UnixPath file, boolean followLinks) {
         super(file, followLinks);
@@ -93,9 +98,10 @@ class LinuxDosFileAttributeView
     public Map<String,Object> readAttributes(String[] attributes)
         throws IOException
     {
-        AttributesBuilder builder = AttributesBuilder.create(attributes);
+        AttributesBuilder builder =
+            AttributesBuilder.create(dosAttributeNames, attributes);
         DosFileAttributes attrs = readAttributes();
-        addBasicAttributesToBuilder(attrs, builder);
+        addRequestedBasicAttributes(attrs, builder);
         if (builder.match(READONLY_NAME))
             builder.add(READONLY_NAME, attrs.isReadOnly());
         if (builder.match(ARCHIVE_NAME))

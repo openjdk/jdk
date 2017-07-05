@@ -41,6 +41,10 @@
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/handles.inline.hpp"
 #ifndef SERIALGC
+#include "gc_implementation/parNew/parOopClosures.inline.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#include "memory/cardTableRS.hpp"
 #include "oops/oop.pcgc.inline.hpp"
 #endif
 
@@ -175,6 +179,12 @@ int klassKlass::oop_adjust_pointers(oop obj) {
 
 #ifndef SERIALGC
 void klassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
+  Klass* k = Klass::cast(klassOop(obj));
+
+  oop* p = k->adr_java_mirror();
+  if (PSScavenge::should_scavenge(p)) {
+    pm->claim_or_forward_depth(p);
+  }
 }
 
 int klassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
@@ -233,7 +243,7 @@ void klassKlass::oop_verify_on(oop obj, outputStream* st) {
 
   if (k->java_mirror() != NULL || (k->oop_is_instance() && instanceKlass::cast(klassOop(obj))->is_loaded())) {
     guarantee(k->java_mirror() != NULL,          "should be allocated");
-    guarantee(k->java_mirror()->is_perm(),       "should be in permspace");
+    guarantee(k->java_mirror()->is_perm() || !JavaObjectsInPerm,       "should be in permspace");
     guarantee(k->java_mirror()->is_instance(),   "should be instance");
   }
 }
