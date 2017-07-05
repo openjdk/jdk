@@ -202,15 +202,15 @@ inline int os::socket(int domain, int type, int protocol) {
   return ::socket(domain, type, protocol);
 }
 
-inline int os::recv(int fd, char *buf, int nBytes, int flags) {
-  RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, (unsigned int) flags));
+inline int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
 }
 
-inline int os::send(int fd, char *buf, int nBytes, int flags) {
-  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, (unsigned int) flags));
+inline int os::send(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
 }
 
-inline int os::raw_send(int fd, char *buf, int nBytes, int flags) {
+inline int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return os::send(fd, buf, nBytes, flags);
 }
 
@@ -250,57 +250,53 @@ inline int os::listen(int fd, int count) {
   return ::listen(fd, count);
 }
 
-inline int os::connect(int fd, struct sockaddr *him, int len) {
+inline int os::connect(int fd, struct sockaddr* him, socklen_t len) {
   RESTARTABLE_RETURN_INT(::connect(fd, him, len));
 }
 
-inline int os::accept(int fd, struct sockaddr *him, int *len) {
-  // This cast is from int to unsigned int on linux.  Since we
-  // only pass the parameter "len" around the vm and don't try to
-  // fetch it's value, this cast is safe for now. The java.net group
-  // may need and want to change this interface someday if socklen_t goes
-  // to 64 bits on some platform that we support.
-  // Linux doc says this can't return EINTR, unlike accept() on Solaris
-
-  return ::accept(fd, him, (socklen_t *)len);
+inline int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
+  // Linux doc says this can't return EINTR, unlike accept() on Solaris.
+  // But see attachListener_linux.cpp, LinuxAttachListener::dequeue().
+  return (int)::accept(fd, him, len);
 }
 
-inline int os::recvfrom(int fd, char *buf, int nBytes, int flags,
-                         sockaddr *from, int *fromlen) {
-  RESTARTABLE_RETURN_INT(::recvfrom(fd, buf, nBytes, (unsigned int) flags, from, (socklen_t *)fromlen));
+inline int os::recvfrom(int fd, char* buf, size_t nBytes, uint flags,
+                        sockaddr* from, socklen_t* fromlen) {
+  RESTARTABLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen));
 }
 
-inline int os::sendto(int fd, char *buf, int len, int flags,
-                        struct sockaddr *to, int tolen) {
-  RESTARTABLE_RETURN_INT(::sendto(fd, buf, len, (unsigned int) flags, to, tolen));
+inline int os::sendto(int fd, char* buf, size_t len, uint flags,
+                      struct sockaddr* to, socklen_t tolen) {
+  RESTARTABLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen));
 }
 
-inline int os::socket_shutdown(int fd, int howto){
+inline int os::socket_shutdown(int fd, int howto) {
   return ::shutdown(fd, howto);
 }
 
-inline int os::bind(int fd, struct sockaddr *him, int len){
+inline int os::bind(int fd, struct sockaddr* him, socklen_t len) {
   return ::bind(fd, him, len);
 }
 
-inline int os::get_sock_name(int fd, struct sockaddr *him, int *len){
-  return ::getsockname(fd, him, (socklen_t *)len);
+inline int os::get_sock_name(int fd, struct sockaddr* him, socklen_t* len) {
+  return ::getsockname(fd, him, len);
 }
 
-inline int os::get_host_name(char* name, int namelen){
+inline int os::get_host_name(char* name, int namelen) {
   return ::gethostname(name, namelen);
 }
 
-inline struct hostent*  os::get_host_by_name(char* name) {
+inline struct hostent* os::get_host_by_name(char* name) {
   return ::gethostbyname(name);
 }
+
 inline int os::get_sock_opt(int fd, int level, int optname,
-                             char *optval, int* optlen){
-  return ::getsockopt(fd, level, optname, optval, (socklen_t *)optlen);
+                            char* optval, socklen_t* optlen) {
+  return ::getsockopt(fd, level, optname, optval, optlen);
 }
 
 inline int os::set_sock_opt(int fd, int level, int optname,
-                             const char *optval, int optlen){
+                            const char* optval, socklen_t optlen) {
   return ::setsockopt(fd, level, optname, optval, optlen);
 }
 #endif // OS_LINUX_VM_OS_LINUX_INLINE_HPP
