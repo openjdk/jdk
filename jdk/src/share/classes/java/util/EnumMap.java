@@ -499,7 +499,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
             int j = 0;
             for (int i = 0; i < vals.length; i++)
                 if (vals[i] != null)
-                    a[j++] = new AbstractMap.SimpleEntry<K,V>(
+                    a[j++] = new AbstractMap.SimpleEntry<>(
                         keyUniverse[i], unmaskNull(vals[i]));
             return a;
         }

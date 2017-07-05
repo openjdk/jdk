@@ -81,7 +81,7 @@ class CharacterName {
             } while (cpOff < cpEnd);
             strPool = new byte[total - cpEnd];
             dis.readFully(strPool);
-            refStrPool = new SoftReference<byte[]>(strPool);
+            refStrPool = new SoftReference<>(strPool);
         } catch (Exception x) {
             throw new InternalError(x.getMessage());
         } finally {

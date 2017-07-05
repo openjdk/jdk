@@ -2824,7 +2824,7 @@ public class Arrays {
      * @return a list view of the specified array
      */
     public static <T> List<T> asList(T... a) {
-        return new ArrayList<T>(a);
+        return new ArrayList<>(a);
     }
 
     /**

@@ -25,7 +25,7 @@
  * @test
  * @bug 5010310 6319835 6904882 6968373
  * @summary test fonts can be created in the presence of a security manager
- * @run main/othervm/secure=java.lang.SecurityManager FontPrivilege
+ * @run main FontPrivilege
  */
 
 import java.awt.Font;
@@ -33,6 +33,8 @@ import java.awt.Font;
 public class FontPrivilege {
 
     public static void main(String[] args) throws Exception {
+        System.setSecurityManager(new SecurityManager());
+
         new Font("Helvetica", Font.PLAIN, 12).getFamily();
         new Font("foo bar", Font.PLAIN, 12).getFamily();
    }

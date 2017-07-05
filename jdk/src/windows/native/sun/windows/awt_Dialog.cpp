@@ -230,7 +230,7 @@ LRESULT CALLBACK AwtDialog::ModalFilterProc(int code,
         if (::IsIconic(hWnd)) {
             ::ShowWindow(hWnd, SW_RESTORE);
         }
-        PopupAllDialogs(blocker, TRUE, ::GetForegroundWindow(), FALSE);
+        PopupBlockers(blocker, TRUE, ::GetForegroundWindow(), FALSE);
         // return 1 to prevent the system from allowing the operation
         return 1;
     }
@@ -256,7 +256,7 @@ LRESULT CALLBACK AwtDialog::MouseHookProc(int nCode,
             HWND blocker = AwtWindow::GetModalBlocker(AwtComponent::GetTopLevelParentForWindow(hWnd));
             if (::IsWindow(blocker)) {
                 BOOL onTaskbar = !(::WindowFromPoint(mhs->pt) == hWnd);
-                PopupAllDialogs(hWnd, FALSE, ::GetForegroundWindow(), onTaskbar);
+                PopupBlockers(blocker, FALSE, ::GetForegroundWindow(), onTaskbar);
                 // return a nonzero value to prevent the system from passing
                 // the message to the target window procedure
                 return 1;
@@ -268,60 +268,60 @@ LRESULT CALLBACK AwtDialog::MouseHookProc(int nCode,
 }
 
 /*
- * The function goes through the heirarchy of the blocker dialogs and
- * popups all the dialogs. Note that the function starts from the top
- * blocker dialog and goes down to the dialog which is the bottom dialog.
- * Using another traversal may cause to the flickering issue as a bottom
- * dialog will cover a top dialog for some period of time.
+ * The function goes through the hierarchy of the blockers and
+ * popups all the blockers. Note that the function starts from the top
+ * blocker and goes down to the blocker which is the bottom one.
+ * Using another traversal algorithm (bottom->top) may cause to flickering
+ * as the bottom blocker will cover the top blocker for a while.
  */
-void AwtDialog::PopupAllDialogs(HWND dialog, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar)
+void AwtDialog::PopupBlockers(HWND blocker, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar)
 {
-    HWND blocker = AwtWindow::GetModalBlocker(dialog);
-    BOOL isBlocked = ::IsWindow(blocker);
-    if (isBlocked) {
-        PopupAllDialogs(blocker, isModalHook, prevFGWindow, onTaskbar);
+    HWND nextBlocker = AwtWindow::GetModalBlocker(blocker);
+    BOOL nextBlockerExists = ::IsWindow(nextBlocker);
+    if (nextBlockerExists) {
+        PopupBlockers(nextBlocker, isModalHook, prevFGWindow, onTaskbar);
     }
-    PopupOneDialog(dialog, blocker, isModalHook, prevFGWindow, onTaskbar);
+    PopupBlocker(blocker, nextBlocker, isModalHook, prevFGWindow, onTaskbar);
 }
 
 /*
- * The function popups the dialog, it distinguishes non-blocked dialogs
- * and activates the dialogs (sets as foreground window). If the dialog is
- * blocked, then it changes the Z-order of the dialog.
+ * The function popups the blocker, for a non-blocked blocker we need
+ * to activate the blocker but if a blocker is blocked, then we need
+ * to change z-order of the blocker placing the blocker under the next blocker.
  */
-void AwtDialog::PopupOneDialog(HWND dialog, HWND blocker, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar)
+void AwtDialog::PopupBlocker(HWND blocker, HWND nextBlocker, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar)
 {
-    if (dialog == AwtToolkit::GetInstance().GetHWnd()) {
+    if (blocker == AwtToolkit::GetInstance().GetHWnd()) {
         return;
     }
 
     // fix for 6494032
-    if (isModalHook && !::IsWindowVisible(dialog)) {
-        ::ShowWindow(dialog, SW_SHOWNA);
+    if (isModalHook && !::IsWindowVisible(blocker)) {
+        ::ShowWindow(blocker, SW_SHOWNA);
     }
 
-    BOOL isBlocked = ::IsWindow(blocker);
+    BOOL nextBlockerExists = ::IsWindow(nextBlocker);
     UINT flags = SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE;
 
-    if (isBlocked) {
+    if (nextBlockerExists) {
         // Fix for 6829546: if blocker is a top-most window, but window isn't, then
         // calling ::SetWindowPos(dialog, blocker, ...) makes window top-most as well
-        BOOL isBlockerTopmost = (::GetWindowLong(blocker, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
-        BOOL isDialogTopmost = (::GetWindowLong(dialog, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
-        if (!isBlockerTopmost || isDialogTopmost) {
-            ::SetWindowPos(dialog, blocker, 0, 0, 0, 0, flags);
+        BOOL topmostNextBlocker = (::GetWindowLong(nextBlocker, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
+        BOOL topmostBlocker = (::GetWindowLong(blocker, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0;
+        if (!topmostNextBlocker || topmostBlocker) {
+            ::SetWindowPos(blocker, nextBlocker, 0, 0, 0, 0, flags);
         } else {
-            ::SetWindowPos(dialog, HWND_TOP, 0, 0, 0, 0, flags);
+            ::SetWindowPos(blocker, HWND_TOP, 0, 0, 0, 0, flags);
         }
     } else {
-        ::SetWindowPos(dialog, HWND_TOP, 0, 0, 0, 0, flags);
+        ::SetWindowPos(blocker, HWND_TOP, 0, 0, 0, 0, flags);
         // no beep/flash if the mouse was clicked in the taskbar menu
         // or the dialog is currently inactive
-        if (!isModalHook && !onTaskbar && (dialog == prevFGWindow)) {
-            AnimateModalBlocker(dialog);
+        if (!isModalHook && !onTaskbar && (blocker == prevFGWindow)) {
+            AnimateModalBlocker(blocker);
         }
-        ::BringWindowToTop(dialog);
-        ::SetForegroundWindow(dialog);
+        ::BringWindowToTop(blocker);
+        ::SetForegroundWindow(blocker);
     }
 }
 

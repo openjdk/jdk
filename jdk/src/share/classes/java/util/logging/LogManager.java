@@ -156,8 +156,7 @@ public class LogManager {
     private final static Level defaultLevel = Level.INFO;
 
     // Table of named Loggers that maps names to Loggers.
-    private Hashtable<String,LoggerWeakRef> namedLoggers =
-        new Hashtable<String,LoggerWeakRef>();
+    private Hashtable<String,LoggerWeakRef> namedLoggers = new Hashtable<>();
     // Tree of named Loggers
     private LogNode root = new LogNode(null);
     private Logger rootLogger;
@@ -422,7 +421,7 @@ public class LogManager {
     // loggerRefQueue holds LoggerWeakRef objects for Logger objects
     // that have been GC'ed.
     private final ReferenceQueue<Logger> loggerRefQueue
-        = new ReferenceQueue<Logger>();
+        = new ReferenceQueue<>();
 
     // Package-level inner class.
     // Helper class for managing WeakReferences to Logger objects.
@@ -672,7 +671,7 @@ public class LogManager {
                 name = "";
             }
             if (node.children == null) {
-                node.children = new HashMap<String,LogNode>();
+                node.children = new HashMap<>();
             }
             LogNode child = node.children.get(head);
             if (child == null) {
@@ -856,7 +855,7 @@ public class LogManager {
         }
         hands = hands.trim();
         int ix = 0;
-        Vector<String> result = new Vector<String>();
+        Vector<String> result = new Vector<>();
         while (ix < hands.length()) {
             int end = ix;
             while (end < hands.length()) {
