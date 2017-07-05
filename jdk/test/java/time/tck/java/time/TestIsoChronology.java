@@ -80,7 +80,7 @@ import java.time.chrono.HijrahEra;
 import java.time.chrono.IsoChronology;
 import java.time.chrono.IsoEra;
 import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -208,14 +208,14 @@ public class TestIsoChronology {
     @Test
     public void test_adjust1() {
         LocalDate base = IsoChronology.INSTANCE.date(1728, 10, 28);
-        LocalDate test = base.with(TemporalAdjuster.lastDayOfMonth());
+        LocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(test, IsoChronology.INSTANCE.date(1728, 10, 31));
     }
 
     @Test
     public void test_adjust2() {
         LocalDate base = IsoChronology.INSTANCE.date(1728, 12, 2);
-        LocalDate test = base.with(TemporalAdjuster.lastDayOfMonth());
+        LocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
         assertEquals(test, IsoChronology.INSTANCE.date(1728, 12, 31));
     }
 

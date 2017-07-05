@@ -35,6 +35,7 @@ import sun.management.VMManagement;
  * public API and its API may change in incompatable ways between dot dot
  * releases and even patch releases. You should not rely on this class.
  */
+@jdk.Exported(false)
 public class OSMBeanFactory {
     /* static factory class */
     private OSMBeanFactory() {};

@@ -76,6 +76,7 @@ import java.time.ZoneOffset;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.zone.ZoneRulesException;
 import java.util.HashMap;
@@ -559,7 +560,7 @@ public class TCKZoneId extends AbstractTCKTest {
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TemporalQuery<R> query) {
-                if (query == TemporalQuery.zoneId()) {
+                if (query == TemporalQueries.zoneId()) {
                     return (R) ZoneId.of("Europe/Paris");
                 }
                 return TemporalAccessor.super.query(query);

@@ -38,6 +38,7 @@ import java.util.Map;
  * @since   6u25
  */
 
+@jdk.Exported
 public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
     /**
      * Returns the total CPU time for each thread whose ID is

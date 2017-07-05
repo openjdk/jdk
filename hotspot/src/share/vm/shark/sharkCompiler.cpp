@@ -133,11 +133,10 @@ SharkCompiler::SharkCompiler()
     exit(1);
   }
 
-  execution_engine()->addModule(
-    _native_context->module());
+  execution_engine()->addModule(_native_context->module());
 
   // All done
-  mark_initialized();
+  set_state(initialized);
 }
 
 void SharkCompiler::initialize() {

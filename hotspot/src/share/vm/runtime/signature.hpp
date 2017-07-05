@@ -401,6 +401,9 @@ class SignatureStream : public StackObj {
 
   // return same as_symbol except allocation of new symbols is avoided.
   Symbol* as_symbol_or_null();
+
+  // count the number of references in the signature
+  int reference_parameter_count();
 };
 
 class SignatureVerifier : public StackObj {

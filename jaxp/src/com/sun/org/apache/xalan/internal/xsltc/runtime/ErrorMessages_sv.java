@@ -81,7 +81,13 @@ public class ErrorMessages_sv extends ListResourceBundle {
  */
 
     // These message should be read from a locale-specific resource bundle
-    private static final Object[][] _contents =  new Object[][] {
+    /** Get the lookup table for error messages.
+     *
+     * @return The message lookup table.
+     */
+    public Object[][] getContents()
+    {
+        return new Object[][] {
 
         /*
          * Note to translators:  the substitution text in the following message
@@ -276,13 +282,6 @@ public class ErrorMessages_sv extends ListResourceBundle {
         {BasisLibrary.UNALLOWED_EXTENSION_ELEMENT_ERR,
         "Anv\u00E4ndning av till\u00E4ggselementet ''{0}'' \u00E4r inte till\u00E5tet n\u00E4r s\u00E4ker bearbetning till\u00E4mpas."},
     };
-    /** Get the lookup table for error messages.
-     *
-     * @return The message lookup table.
-     */
-    public Object[][] getContents()
-    {
-        return _contents;
     }
 
 }

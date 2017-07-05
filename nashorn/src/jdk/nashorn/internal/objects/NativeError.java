@@ -30,6 +30,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
@@ -135,11 +136,12 @@ public final class NativeError extends ScriptObject {
      * @param errorObj the error object
      * @return undefined
      */
+    @SuppressWarnings("unused")
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object captureStackTrace(final Object self, final Object errorObj) {
         Global.checkObject(errorObj);
         final ScriptObject sobj = (ScriptObject)errorObj;
-        final ECMAException exp = new ECMAException(sobj, null);
+        new ECMAException(sobj, null); //constructor has side effects
         sobj.delete("stack", false);
         final ScriptFunction getStack = ScriptFunctionImpl.makeFunction("getStack", GET_STACK);
         final ScriptFunction setStack = ScriptFunctionImpl.makeFunction("setStack", SET_STACK);

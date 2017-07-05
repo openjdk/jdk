@@ -32,5 +32,5 @@ try {
     eval("for each(var v=0;false;);");
     print("FAILED: for each(var v=0; false;); should have thrown error");
 } catch (e) {
-    print(e.toString().replace(/\\/g, '/'));
+    printError(e);
 }

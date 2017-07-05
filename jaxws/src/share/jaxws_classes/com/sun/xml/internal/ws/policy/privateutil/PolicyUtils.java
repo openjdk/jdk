@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,13 +282,13 @@ public final class PolicyUtils {
     /**
      * Reflection utilities wrapper
      */
-    public static class Reflection {
+    static class Reflection {
         private static final PolicyLogger LOGGER = PolicyLogger.getLogger(PolicyUtils.Reflection.class);
 
         /**
          * Reflectively invokes specified method on the specified target
          */
-        public static <T> T invoke(final Object target, final String methodName,
+        static <T> T invoke(final Object target, final String methodName,
                 final Class<T> resultClass, final Object... parameters) throws RuntimePolicyUtilsException {
             Class[] parameterTypes;
             if (parameters != null && parameters.length > 0) {
@@ -311,7 +311,7 @@ public final class PolicyUtils {
                 final Object[] parameters, final Class[] parameterTypes) throws RuntimePolicyUtilsException {
             try {
                 final Method method = target.getClass().getMethod(methodName, parameterTypes);
-                final Object result = method.invoke(target, parameters);
+                final Object result = MethodUtil.invoke(target, method,parameters);
 
                 return resultClass.cast(result);
             } catch (IllegalArgumentException e) {

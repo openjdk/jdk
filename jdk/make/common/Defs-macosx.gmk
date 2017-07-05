@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,100 @@ SCRIPT_SUFFIX =
 # CC compiler object code output directive flag value
 CC_OBJECT_OUTPUT_FLAG = -o #trailing blank required!
 CC_PROGRAM_OUTPUT_FLAG = -o #trailing blank required!
+
+# The Full Debug Symbols (FDS) default for VARIANT == OPT builds is
+# enabled with debug info files ZIP'ed to save space. For VARIANT !=
+# OPT builds, FDS is always enabled, after all a debug build without
+# debug info isn't very useful. The ZIP_DEBUGINFO_FILES option only has
+# meaning when FDS is enabled.
+#
+# If you invoke a build with FULL_DEBUG_SYMBOLS=0, then FDS will be
+# disabled for a VARIANT == OPT build.
+#
+# Note: Use of a different variable name for the FDS override option
+# versus the FDS enabled check is intentional (FULL_DEBUG_SYMBOLS
+# versus ENABLE_FULL_DEBUG_SYMBOLS). For auto build systems that pass
+# in options via environment variables, use of distinct variables
+# prevents strange behaviours. For example, in a VARIANT != OPT build,
+# the FULL_DEBUG_SYMBOLS environment variable will be 0, but the
+# ENABLE_FULL_DEBUG_SYMBOLS make variable will be 1. If the same
+# variable name is used, then different values can be picked up by
+# different parts of the build. Just to be clear, we only need two
+# variable names because the incoming option value can be overridden
+# in some situations, e.g., a VARIANT != OPT build.
+
+ifeq ($(VARIANT), OPT)
+  FULL_DEBUG_SYMBOLS ?= 1
+  ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
+else
+  # debug variants always get Full Debug Symbols (if available)
+  ENABLE_FULL_DEBUG_SYMBOLS = 1
+endif
+_JUNK_ := $(shell \
+  echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
+# since objcopy is optional, we set ZIP_DEBUGINFO_FILES later
+
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(OS_NAME),darwin)
+    # MacOS X doesn't use OBJCOPY or STRIP_POLICY
+    OBJCOPY=
+    STRIP_POLICY=
+    ZIP_DEBUGINFO_FILES ?= 1
+  else
+    ifndef CROSS_COMPILE_ARCH
+      # Default OBJCOPY comes from GNU Binutils on Linux:
+      DEF_OBJCOPY=/usr/bin/objcopy
+    else
+      # Assume objcopy is part of the cross-compilation toolkit
+      DEF_OBJCOPY=$(COMPILER_PATH)/objcopy
+    endif
+    OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
+    ifneq ($(ALT_OBJCOPY),)
+      _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
+      # disable .debuginfo support by setting ALT_OBJCOPY to a non-existent path
+      OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
+    endif
+
+    # Setting ENABLE_FULL_DEBUG_SYMBOLS=1 (and OBJCOPY) above enables the
+    # JDK build to import .debuginfo or .diz files from the HotSpot build.
+    # However, adding FDS support to the JDK build will occur in phases
+    # so a different make variable (LIBRARY_SUPPORTS_FULL_DEBUG_SYMBOLS
+    # and PROGRAM_SUPPORTS_FULL_DEBUG_SYMBOLS) is used to indicate that a
+    # particular library or program supports FDS.
+
+    ifeq ($(OBJCOPY),)
+      _JUNK_ := $(shell \
+        echo >&2 "INFO: no objcopy cmd found so cannot create .debuginfo" \
+          "files. You may need to set ALT_OBJCOPY.")
+      ENABLE_FULL_DEBUG_SYMBOLS=0
+    else
+      _JUNK_ := $(shell \
+        echo >&2 "INFO: $(OBJCOPY) cmd found so will create .debuginfo files.")
+
+      # Library stripping policies for .debuginfo configs:
+      #   all_strip - strips everything from the library
+      #   min_strip - strips most stuff from the library; leaves
+      #               minimum symbols
+      #   no_strip  - does not strip the library at all
+      #
+      # Oracle security policy requires "all_strip". A waiver was granted
+      # on 2011.09.01 that permits using "min_strip" in the Java JDK and
+      # Java JRE.
+      #
+      # Currently, STRIP_POLICY is only used when Full Debug Symbols
+      # is enabled.
+      STRIP_POLICY ?= min_strip
+
+      _JUNK_ := $(shell \
+        echo >&2 "INFO: STRIP_POLICY=$(STRIP_POLICY)")
+
+      ZIP_DEBUGINFO_FILES ?= 1
+    endif
+  endif
+
+  _JUNK_ := $(shell \
+    echo >&2 "INFO: ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)")
+endif
 
 #
 # Default optimization

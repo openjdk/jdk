@@ -81,7 +81,7 @@
  * A unit is used to measure an amount of time, such as years, days or minutes.
  * All units implement {@link java.time.temporal.TemporalUnit}.
  * The set of well known units is defined in {@link java.time.temporal.ChronoUnit}, such as {@code DAYS}.
- * The unit interface is designed to allow applications defined units.
+ * The unit interface is designed to allow application defined units.
  * </p>
  * <p>
  * A field is used to express part of a larger date-time, such as year, month-of-year or second-of-minute.
@@ -89,7 +89,7 @@
  * The set of well known fields are defined in {@link java.time.temporal.ChronoField}, such as {@code HOUR_OF_DAY}.
  * Additional fields are defined by {@link java.time.temporal.JulianFields}, {@link java.time.temporal.WeekFields}
  * and {@link java.time.temporal.IsoFields}.
- * The field interface is designed to allow applications defined fields.
+ * The field interface is designed to allow application defined fields.
  * </p>
  * <p>
  * This package provides tools that allow the units and fields of date and time to be accessed
@@ -112,23 +112,23 @@
  * such as the "last day of the month", or "next Wednesday".
  * These are modeled as functions that adjust a base date-time.
  * The functions implement {@link java.time.temporal.TemporalAdjuster} and operate on {@code Temporal}.
- * A set of common functions are provided in {@code TemporalAdjuster}.
+ * A set of common functions are provided in {@link java.time.temporal.TemporalAdjusters}.
  * For example, to find the first occurrence of a day-of-week after a given date, use
- * {@link java.time.temporal.TemporalAdjuster#next(DayOfWeek)}, such as
+ * {@link java.time.temporal.TemporalAdjusters#next(DayOfWeek)}, such as
  * {@code date.with(next(MONDAY))}.
- * Applications can also define adjusters by implementing {@code TemporalAdjuster}.
+ * Applications can also define adjusters by implementing {@link java.time.temporal.TemporalAdjuster}.
  * </p>
  * <p>
  * The {@link java.time.temporal.TemporalAmount} interface models amounts of relative time.
  * </p>
  * <p>
- * In addition to adjusting a date-time, an interface is provided to enable querying -
+ * In addition to adjusting a date-time, an interface is provided to enable querying via
  * {@link java.time.temporal.TemporalQuery}.
  * The most common implementations of the query interface are method references.
  * The {@code from(TemporalAccessor)} methods on major classes can all be used, such as
  * {@code LocalDate::from} or {@code Month::from}.
- * Further implementations are provided in {@code TemporalQuery} as static methods.
- * Applications can also define queries by implementing {@code TemporalQuery}.
+ * Further implementations are provided in {@link java.time.temporal.TemporalQueries} as static methods.
+ * Applications can also define queries by implementing {@link java.time.temporal.TemporalQuery}.
  * </p>
  *
  * <h3>Weeks</h3>

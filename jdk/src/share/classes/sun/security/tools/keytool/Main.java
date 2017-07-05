@@ -309,7 +309,7 @@ public final class Main {
         }
     };
 
-    private static final Class[] PARAM_STRING = { String.class };
+    private static final Class<?>[] PARAM_STRING = { String.class };
 
     private static final String NONE = "NONE";
     private static final String P11KEYSTORE = "PKCS11";

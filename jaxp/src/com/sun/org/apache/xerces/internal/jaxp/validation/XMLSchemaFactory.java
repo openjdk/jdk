@@ -41,10 +41,10 @@ import com.sun.org.apache.xerces.internal.util.DOMInputSource;
 import com.sun.org.apache.xerces.internal.util.ErrorHandlerWrapper;
 import com.sun.org.apache.xerces.internal.util.SAXInputSource;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
-import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import com.sun.org.apache.xerces.internal.util.StAXInputSource;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.XMLGrammarPoolImpl;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
@@ -79,7 +79,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
     private static final String XMLGRAMMAR_POOL =
         Constants.XERCES_PROPERTY_PREFIX + Constants.XMLGRAMMAR_POOL_PROPERTY;
 
-    /** Property identifier: SecurityManager. */
+    /** Property identifier: XMLSecurityManager. */
     private static final String SECURITY_MANAGER =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SECURITY_MANAGER_PROPERTY;
 
@@ -108,7 +108,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
     private ErrorHandlerWrapper fErrorHandlerWrapper;
 
     /** The SecurityManager. */
-    private SecurityManager fSecurityManager;
+    private XMLSecurityManager fSecurityManager;
 
     /** The Security property manager. */
     private XMLSecurityPropertyManager fSecurityPropertyMgr;
@@ -141,7 +141,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
         fXMLSchemaLoader.setErrorHandler(fErrorHandlerWrapper);
 
         // Enable secure processing feature by default
-        fSecurityManager = new SecurityManager();
+        fSecurityManager = new XMLSecurityManager(true);
         fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
 
         fSecurityPropertyMgr = new XMLSecurityPropertyManager();
@@ -301,7 +301,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
                     "FeatureNameNull", null));
         }
         if (name.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
-            return (fSecurityManager != null);
+            return (fSecurityManager != null && fSecurityManager.isSecureProcessing());
         }
         try {
             return fXMLSchemaLoader.getFeature(name);
@@ -365,17 +365,15 @@ public final class XMLSchemaFactory extends SchemaFactory {
                         SAXMessageFormatter.formatMessage(null,
                         "jaxp-secureprocessing-feature", null));
             }
-            if (value) {
-                fSecurityManager = new SecurityManager();
 
+            fSecurityManager.setSecureProcessing(value);
+            if (value) {
                 if (Constants.IS_JDK8_OR_ABOVE) {
                     fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD,
                             XMLSecurityPropertyManager.State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
                     fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA,
                             XMLSecurityPropertyManager.State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 }
-            } else {
-                fSecurityManager = null;
             }
 
             fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
@@ -410,8 +408,16 @@ public final class XMLSchemaFactory extends SchemaFactory {
                     "ProperyNameNull", null));
         }
         if (name.equals(SECURITY_MANAGER)) {
-            fSecurityManager = (SecurityManager) object;
+            fSecurityManager = XMLSecurityManager.convert(object, fSecurityManager);
             fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
+            return;
+        } else if (name.equals(Constants.XML_SECURITY_PROPERTY_MANAGER)) {
+            if (object == null) {
+                fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+            } else {
+                fSecurityPropertyMgr = (XMLSecurityPropertyManager)object;
+            }
+            fXMLSchemaLoader.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
             return;
         }
         else if (name.equals(XMLGRAMMAR_POOL)) {
@@ -420,12 +426,15 @@ public final class XMLSchemaFactory extends SchemaFactory {
                     "property-not-supported", new Object [] {name}));
         }
         try {
-            int index = fSecurityPropertyMgr.getIndex(name);
-            if (index > -1) {
-                fSecurityPropertyMgr.setValue(index,
-                        XMLSecurityPropertyManager.State.APIPROPERTY, (String)object);
-            } else {
-                fXMLSchemaLoader.setProperty(name, object);
+            //check if the property is managed by security manager
+            if (fSecurityManager == null ||
+                    !fSecurityManager.setLimit(name, XMLSecurityManager.State.APIPROPERTY, object)) {
+                //check if the property is managed by security property manager
+                if (fSecurityPropertyMgr == null ||
+                        !fSecurityPropertyMgr.setValue(name, XMLSecurityPropertyManager.State.APIPROPERTY, object)) {
+                    //fall back to the existing property manager
+                    fXMLSchemaLoader.setProperty(name, object);
+                }
             }
         }
         catch (XMLConfigurationException e) {

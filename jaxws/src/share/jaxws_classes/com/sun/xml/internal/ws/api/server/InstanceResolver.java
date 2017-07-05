@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ public abstract class InstanceResolver<T> {
             public Object invoke(Packet p, Method m, Object... args) throws InvocationTargetException, IllegalAccessException {
                 T t = resolve(p);
                 try {
-                    return m.invoke(t, args );
+                    return MethodUtil.invoke(t, m, args );
                 } finally {
                     postInvoke(p,t);
                 }

@@ -2694,8 +2694,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(uintx, MaxHeapSize, (uintx)long_max_heap_size);
     // Xmaxf
     } else if (match_option(option, "-Xmaxf", &tail)) {
-      int maxf = (int)(atof(tail) * 100);
-      if (maxf < 0 || maxf > 100) {
+      char* err;
+      int maxf = (int)(strtod(tail, &err) * 100);
+      if (*err != '\0' || maxf < 0 || maxf > 100) {
         jio_fprintf(defaultStream::error_stream(),
                     "Bad max heap free percentage size: %s\n",
                     option->optionString);
@@ -2705,8 +2706,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       }
     // Xminf
     } else if (match_option(option, "-Xminf", &tail)) {
-      int minf = (int)(atof(tail) * 100);
-      if (minf < 0 || minf > 100) {
+      char* err;
+      int minf = (int)(strtod(tail, &err) * 100);
+      if (*err != '\0' || minf < 0 || minf > 100) {
         jio_fprintf(defaultStream::error_stream(),
                     "Bad min heap free percentage size: %s\n",
                     option->optionString);

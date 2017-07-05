@@ -26,6 +26,9 @@
 
 package javax.management.remote;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.security.Principal;
 
@@ -64,9 +67,7 @@ public class JMXPrincipal implements Principal, Serializable {
      * <code>null</code>.
      */
     public JMXPrincipal(String name) {
-        if (name == null)
-            throw new NullPointerException("illegal null input");
-
+        validate(name);
         this.name = name;
     }
 
@@ -129,5 +130,21 @@ public class JMXPrincipal implements Principal, Serializable {
      */
     public int hashCode() {
         return name.hashCode();
+    }
+
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField gf = ois.readFields();
+        String principalName = (String)gf.get("name", null);
+        try {
+            validate(principalName);
+            this.name = principalName;
+        } catch (NullPointerException e) {
+            throw new InvalidObjectException(e.getMessage());
+        }
+    }
+
+    private static void validate(String name) throws NullPointerException {
+        if (name == null)
+            throw new NullPointerException("illegal null input");
     }
 }

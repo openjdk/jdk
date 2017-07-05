@@ -57,6 +57,7 @@ import com.sun.jdi.*;
  * @since  1.3
  */
 
+@jdk.Exported
 public interface EventQueue extends Mirror {
 
     /**

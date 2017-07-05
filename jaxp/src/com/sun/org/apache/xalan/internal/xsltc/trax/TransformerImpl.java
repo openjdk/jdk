@@ -25,6 +25,7 @@ package com.sun.org.apache.xalan.internal.xsltc.trax;
 
 import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
+import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -214,6 +215,7 @@ public final class TransformerImpl extends Transformer
      */
     private String _accessExternalDTD = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
 
+    private XMLSecurityManager _securityManager;
     /**
      * A hashtable to store parameters for the identity transform. These
      * are not needed during the transformation, but we must keep track of
@@ -269,8 +271,11 @@ public final class TransformerImpl extends Transformer
         _useServicesMechanism = _tfactory.useServicesMechnism();
         _accessExternalStylesheet = (String)_tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET);
         _accessExternalDTD = (String)_tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_DTD);
+        _securityManager = (XMLSecurityManager)_tfactory.getAttribute(XalanConstants.SECURITY_MANAGER);
         _readerManager = XMLReaderManager.getInstance(_useServicesMechanism);
         _readerManager.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
+        _readerManager.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, _isSecureProcessing);
+        _readerManager.setProperty(XalanConstants.SECURITY_MANAGER, _securityManager);
         //_isIncremental = tfactory._incremental;
     }
 
@@ -286,6 +291,7 @@ public final class TransformerImpl extends Transformer
      */
     public void setSecureProcessing(boolean flag) {
         _isSecureProcessing = flag;
+        _readerManager.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, _isSecureProcessing);
     }
     /**
      * Return the state of the services mechanism feature.

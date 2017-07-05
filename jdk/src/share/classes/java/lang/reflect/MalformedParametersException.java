@@ -50,10 +50,22 @@ package java.lang.reflect;
  */
 public class MalformedParametersException extends RuntimeException {
 
+    /**
+     * Version for serialization.
+     */
     private static final long serialVersionUID = 20130919L;
 
+    /**
+     * Create a {@code MalformedParametersException} with an empty
+     * reason.
+     */
     public MalformedParametersException() {}
 
+    /**
+     * Create a {@code MalformedParametersException}.
+     *
+     * @param reason The reason for the exception.
+     */
     public MalformedParametersException(String reason) {
         super(reason);
     }
