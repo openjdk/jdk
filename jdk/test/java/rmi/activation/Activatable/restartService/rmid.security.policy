@@ -1,4 +1,6 @@
 grant {
     permission com.sun.rmi.rmid.ExecOptionPermission "-Djava.security.manager";
     permission com.sun.rmi.rmid.ExecOptionPermission "-Djava.security.policy=*";
+    permission java.lang.RuntimePermission "selectorProvider";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
 };

@@ -26,6 +26,7 @@
 package java.security;
 
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Objects;
 
 /**
  * The {@code AlgorithmParameterGenerator} class is used to generate a
@@ -153,16 +154,19 @@ public class AlgorithmParameterGenerator {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
-     * @return the new AlgorithmParameterGenerator object.
+     * @return the new {@code AlgorithmParameterGenerator} object
      *
-     * @exception NoSuchAlgorithmException if no Provider supports an
-     *          AlgorithmParameterGeneratorSpi implementation for the
-     *          specified algorithm.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports an
+     *         {@code AlgorithmParameterGeneratorSpi} implementation for the
+     *         specified algorithm
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      */
     public static AlgorithmParameterGenerator getInstance(String algorithm)
         throws NoSuchAlgorithmException {
+            Objects.requireNonNull(algorithm, "null algorithm name");
             try {
                 Object[] objs = Security.getImpl(algorithm,
                                                  "AlgorithmParameterGenerator",
@@ -197,17 +201,20 @@ public class AlgorithmParameterGenerator {
      *
      * @param provider the string name of the Provider.
      *
-     * @return the new AlgorithmParameterGenerator object.
+     * @return the new {@code AlgorithmParameterGenerator} object
      *
-     * @exception NoSuchAlgorithmException if an AlgorithmParameterGeneratorSpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the provider name is {@code null}
+     *         or empty
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws NoSuchAlgorithmException if an
+     *         {@code AlgorithmParameterGeneratorSpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
-     * @exception IllegalArgumentException if the provider name is null
-     *          or empty.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      */
@@ -215,6 +222,7 @@ public class AlgorithmParameterGenerator {
                                                           String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         if (provider == null || provider.length() == 0)
             throw new IllegalArgumentException("missing provider");
         Object[] objs = Security.getImpl(algorithm,
@@ -241,15 +249,19 @@ public class AlgorithmParameterGenerator {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
-     * @param provider the Provider object.
+     * @param provider the {@code Provider} object.
      *
-     * @return the new AlgorithmParameterGenerator object.
+     * @return the new {@code AlgorithmParameterGenerator} object
      *
-     * @exception NoSuchAlgorithmException if an AlgorithmParameterGeneratorSpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws IllegalArgumentException if the specified provider is
+     *         {@code null}
      *
-     * @exception IllegalArgumentException if the specified provider is null.
+     * @throws NoSuchAlgorithmException if an
+     *         {@code AlgorithmParameterGeneratorSpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified {@code Provider} object
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      *
@@ -259,6 +271,7 @@ public class AlgorithmParameterGenerator {
                                                           Provider provider)
         throws NoSuchAlgorithmException
     {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         if (provider == null)
             throw new IllegalArgumentException("missing provider");
         Object[] objs = Security.getImpl(algorithm,

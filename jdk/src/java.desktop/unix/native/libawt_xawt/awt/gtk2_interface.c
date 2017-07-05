@@ -35,9 +35,6 @@
 #include <jni_util.h>
 #include "awt.h"
 
-#define GTHREAD_LIB_VERSIONED VERSIONED_JNI_LIB_NAME("gthread-2.0", "0")
-#define GTHREAD_LIB JNI_LIB_NAME("gthread-2.0")
-
 #define GTK_TYPE_BORDER                 ((*fp_gtk_border_get_type)())
 
 #define G_TYPE_FUNDAMENTAL_SHIFT        (2)

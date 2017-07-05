@@ -298,31 +298,24 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
         public void paintIcon(Component c, Graphics g, int xo, int yo) {
             int w = getIconWidth();
             int h = getIconHeight();
+            int x1 = xo + w - 1;
+            int y1 = yo;
+            int x2 = xo + w / 2;
+            int y2 = yo + h - 1;
 
+            g.setColor(fill);
+            g.fillPolygon(new int[]{xo, x1, x2}, new int[]{yo, y1, y2}, 3);
             g.setColor(lightShadow);
-            g.drawLine(xo, yo, xo+w-1, yo);
-            g.drawLine(xo, yo+1, xo+w-3, yo+1);
-            g.setColor(darkShadow);
-            g.drawLine(xo+w-2, yo+1, xo+w-1, yo+1);
+            g.drawLine(xo, yo, x1, y1);
 
-            for ( int x = xo+1, y = yo+2, dx = w-6; y+1 < yo+h; y += 2 ) {
-                g.setColor(lightShadow);
-                g.drawLine(x, y,   x+1, y);
-                g.drawLine(x, y+1, x+1, y+1);
-                if ( dx > 0 ) {
-                    g.setColor(fill);
-                    g.drawLine(x+2, y,   x+1+dx, y);
-                    g.drawLine(x+2, y+1, x+1+dx, y+1);
-                }
-                g.setColor(darkShadow);
-                g.drawLine(x+dx+2, y,   x+dx+3, y);
-                g.drawLine(x+dx+2, y+1, x+dx+3, y+1);
-                x += 1;
-                dx -= 2;
-            }
-
+            g.drawLine(xo, yo + 1, x2, y2);
+            g.drawLine(xo, yo + 1, x1, y1 + 1);
+            g.drawLine(xo + 1, yo + 1, x2, y2 - 1);
             g.setColor(darkShadow);
-            g.drawLine(xo+(w/2), yo+h-1, xo+(w/2), yo+h-1);
+            g.drawLine(x1, y1 + 1, x2, y2);
+            g.drawLine(x1 - 1, y1 + 1, x2, y2 - 1);
+            g.drawLine(x1 - 1, y1 + 1, x1, y1 + 1); // corner
+            g.drawLine(x2, y2, x2, y2); // corner
 
         }
 

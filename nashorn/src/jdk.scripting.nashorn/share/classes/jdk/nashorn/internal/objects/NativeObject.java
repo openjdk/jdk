@@ -25,6 +25,10 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.dynalink.StandardNamespace.METHOD;
+import static jdk.dynalink.StandardNamespace.PROPERTY;
+import static jdk.dynalink.StandardOperation.GET;
+import static jdk.dynalink.StandardOperation.SET;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
@@ -40,9 +44,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
-import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.BeansLinker;
 import jdk.dynalink.beans.StaticClass;
 import jdk.dynalink.linker.GuardedInvocation;
@@ -96,6 +98,10 @@ public final class NativeObject {
                     }
                 });
     }
+
+    private static final Operation GET_METHOD   = GET.withNamespace(METHOD);
+    private static final Operation GET_PROPERTY = GET.withNamespace(PROPERTY);
+    private static final Operation SET_PROPERTY = SET.withNamespace(PROPERTY);
 
     @SuppressWarnings("unused")
     private static ScriptObject get__proto__(final Object self) {
@@ -782,7 +788,7 @@ public final class NativeObject {
         for(final String methodName: methodNames) {
             final MethodHandle method;
             try {
-                method = getBeanOperation(linker, StandardOperation.GET_METHOD, methodName, getterType, source);
+                method = getBeanOperation(linker, GET_METHOD, methodName, getterType, source);
             } catch(final IllegalAccessError e) {
                 // Presumably, this was a caller sensitive method. Ignore it and carry on.
                 continue;
@@ -794,7 +800,7 @@ public final class NativeObject {
             MethodHandle getter;
             if(readablePropertyNames.contains(propertyName)) {
                 try {
-                    getter = getBeanOperation(linker, StandardOperation.GET_PROPERTY, propertyName, getterType, source);
+                    getter = getBeanOperation(linker, GET_PROPERTY, propertyName, getterType, source);
                 } catch(final IllegalAccessError e) {
                     // Presumably, this was a caller sensitive method. Ignore it and carry on.
                     getter = Lookup.EMPTY_GETTER;
@@ -806,7 +812,7 @@ public final class NativeObject {
             MethodHandle setter;
             if(isWritable) {
                 try {
-                    setter = getBeanOperation(linker, StandardOperation.SET_PROPERTY, propertyName, setterType, source);
+                    setter = getBeanOperation(linker, SET_PROPERTY, propertyName, setterType, source);
                 } catch(final IllegalAccessError e) {
                     // Presumably, this was a caller sensitive method. Ignore it and carry on.
                     setter = Lookup.EMPTY_SETTER;
@@ -836,11 +842,11 @@ public final class NativeObject {
         }
     }
 
-    private static MethodHandle getBeanOperation(final GuardingDynamicLinker linker, final StandardOperation operation,
+    private static MethodHandle getBeanOperation(final GuardingDynamicLinker linker, final Operation operation,
             final String name, final MethodType methodType, final Object source) {
         final GuardedInvocation inv;
         try {
-            inv = NashornBeansLinker.getGuardedInvocation(linker, createLinkRequest(new NamedOperation(operation, name), methodType, source), Bootstrap.getLinkerServices());
+            inv = NashornBeansLinker.getGuardedInvocation(linker, createLinkRequest(operation.named(name), methodType, source), Bootstrap.getLinkerServices());
             assert passesGuard(source, inv.getGuard());
         } catch(RuntimeException|Error e) {
             throw e;

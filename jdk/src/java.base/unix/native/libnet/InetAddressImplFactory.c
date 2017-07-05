@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,10 @@
  * Signature: ()I
  */
 JNIEXPORT jboolean JNICALL
-Java_java_net_InetAddressImplFactory_isIPv6Supported(JNIEnv *env, jclass cls)
-{
-#ifdef AF_INET6
+Java_java_net_InetAddressImplFactory_isIPv6Supported(JNIEnv *env, jclass cls) {
     if (ipv6_available()) {
         return JNI_TRUE;
-    } else
-#endif /* AF_INET6 */
-        {
-            return JNI_FALSE;
-        }
+    } else {
+        return JNI_FALSE;
+    }
 }

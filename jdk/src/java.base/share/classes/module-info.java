@@ -196,7 +196,8 @@ module java.base {
         jdk.vm.ci;
     exports jdk.internal.util.jar to
         jdk.jartool,
-        jdk.jdeps;
+        jdk.jdeps,
+        jdk.jlink;
     exports jdk.internal.vm to
         java.management,
         jdk.jvmstat;

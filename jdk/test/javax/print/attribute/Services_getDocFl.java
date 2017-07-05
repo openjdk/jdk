@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 
 /*
  * @test
- * @bug 4901243 8040139
+ * @bug 4901243 8040139 8167291
  * @summary JPG, GIF, and PNG DocFlavors (URL) should be supported if Postscript is supported.
  * @run main Services_getDocFl
 */
@@ -58,6 +58,7 @@ public class Services_getDocFl {
             pngImagesSupported = false;
             gifImagesSupported = false;
             jpgImagesSupported = false;
+            psSupported = false;
             for (int j=0; j<flavors.length; j++) {
                 System.out.println(flavors[j]);
 

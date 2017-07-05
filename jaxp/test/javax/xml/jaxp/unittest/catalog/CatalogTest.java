@@ -23,18 +23,16 @@
 package catalog;
 
 import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
-import static jaxp.library.JAXPTestUtilities.getSystemProperty;
 import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Paths;
-import java.util.PropertyPermission;
+
 import javax.xml.XMLConstants;
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogException;
@@ -57,7 +55,6 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import jaxp.library.JAXPTestUtilities;
 
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
@@ -73,7 +70,7 @@ import org.xml.sax.ext.DefaultHandler2;
 
 /*
  * @test
- * @bug 8081248 8144966 8146606 8146237 8151154 8150969 8151162 8152527 8154220 8163232
+ * @bug 8081248 8144966 8146606 8146237 8150969 8151162 8152527 8154220 8163232
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true catalog.CatalogTest
  * @run testng/othervm catalog.CatalogTest
@@ -459,21 +456,6 @@ public class CatalogTest extends CatalogSupportBase {
         Catalog catalog = CatalogManager.catalog(features, catalogFile);
     }
 
-    /**
-     * @bug 8151154
-     * Verifies that the CatalogFeatures' builder throws IllegalArgumentException
-     * on invalid file inputs.
-     * @param file the file path
-     */
-    @Test(dataProvider = "invalidPaths", expectedExceptions = IllegalArgumentException.class)
-    public void testFileInput(String file) {
-        JAXPTestUtilities.runWithTmpPermission(() -> {
-            CatalogFeatures features = CatalogFeatures.builder()
-                .with(CatalogFeatures.Feature.FILES, file)
-                .build();
-        }, new FilePermission("/../../..", "read"), new FilePermission("c:\\te:t", "read"),
-                new FilePermission("c:\\te?t", "read"), new PropertyPermission("user.dir", "read"));
-    }
 
     /**
      * @bug 8146237
@@ -736,24 +718,6 @@ public class CatalogTest extends CatalogSupportBase {
         };
     }
 
-    /*
-       DataProvider: for testing the verification of file paths by
-                     the CatalogFeatures builder
-     */
-    @DataProvider(name = "invalidPaths")
-    public Object[][] getFiles() {
-        return new Object[][]{
-            {null},
-            {""},
-            {"file:a/b\\c"},
-            {"file:/../../.."},
-            {"c:/te:t"},
-            {"c:/te?t"},
-            {"c/te*t"},
-            {"in|valid.txt"},
-            {"shema:invalid.txt"},
-        };
-    }
 
     /*
        DataProvider: provides test name, expected string, the catalog, and XML

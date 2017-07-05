@@ -25,6 +25,8 @@
 
 package sun.security.krb5.internal.rcache;
 
+import sun.security.action.GetPropertyAction;
+
 import java.util.Objects;
 
 /**
@@ -34,14 +36,39 @@ import java.util.Objects;
 public class AuthTimeWithHash extends AuthTime
         implements Comparable<AuthTimeWithHash> {
 
+    // The hash algorithm can be "HASH" or "SHA256".
+    public static final String DEFAULT_HASH_ALG;
+
+    static {
+        if (GetPropertyAction.privilegedGetProperty(
+                "jdk.krb5.rcache.useMD5", "false").equals("true")) {
+            DEFAULT_HASH_ALG = "HASH";
+        } else {
+            DEFAULT_HASH_ALG = "SHA256";
+        }
+    }
+
+    public static String realAlg(String alg) {
+        switch (alg) {
+            case "HASH":
+                return "MD5";
+            case "SHA256":
+                return "SHA-256";
+            default:
+                throw new AssertionError(alg + " is not HASH or SHA256");
+        }
+    }
+
+    final String hashAlg;
     final String hash;
 
     /**
      * Constructs a new <code>AuthTimeWithHash</code>.
      */
     public AuthTimeWithHash(String client, String server,
-            int ctime, int cusec, String hash) {
+            int ctime, int cusec, String hashAlg, String hash) {
         super(client, server, ctime, cusec);
+        this.hashAlg = hashAlg;
         this.hash = hash;
     }
 
@@ -56,6 +83,7 @@ public class AuthTimeWithHash extends AuthTime
         if (!(o instanceof AuthTimeWithHash)) return false;
         AuthTimeWithHash that = (AuthTimeWithHash)o;
         return Objects.equals(hash, that.hash)
+                && Objects.equals(hashAlg, that.hashAlg)
                 && Objects.equals(client, that.client)
                 && Objects.equals(server, that.server)
                 && ctime == that.ctime
@@ -91,6 +119,19 @@ public class AuthTimeWithHash extends AuthTime
     /**
      * Compares with a possibly old style object. Used
      * in DflCache$Storage#loadAndCheck.
+     * @return true if all AuthTime fields are the same but different hash
+     */
+    public boolean sameTimeDiffHash(AuthTimeWithHash old) {
+        if (!this.isSameIgnoresHash(old)) {
+            return false;
+        }
+        return this.hashAlg.equals(old.hashAlg) &&
+                !this.hash.equals(old.hash);
+    }
+
+    /**
+     * Compares with a possibly old style object. Used
+     * in DflCache$Storage#loadAndCheck.
      * @return true if all AuthTime fields are the same
      */
     public boolean isSameIgnoresHash(AuthTime old) {
@@ -112,7 +153,7 @@ public class AuthTimeWithHash extends AuthTime
         String sstring;
         if (withHash) {
             cstring = "";
-            sstring = String.format("HASH:%s %d:%s %d:%s", hash,
+            sstring = String.format("%s:%s %d:%s %d:%s", hashAlg, hash,
                     client.length(), client,
                     server.length(), server);
         } else {
