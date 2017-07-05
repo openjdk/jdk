@@ -257,6 +257,18 @@ public class Basic {
         s.write(bytes);         // Might hang!
     }
 
+    static void checkPermissionDenied(ProcessBuilder pb) {
+        try {
+            pb.start();
+            fail("Expected IOException not thrown");
+        } catch (IOException e) {
+            String m = e.getMessage();
+            if (EnglishUnix.is() &&
+                ! matches(m, "Permission denied"))
+                unexpected(e);
+        } catch (Throwable t) { unexpected(t); }
+    }
+
     public static class JavaChild {
         public static void main(String args[]) throws Throwable {
             String action = args[0];
@@ -317,12 +329,10 @@ public class Basic {
                 for (final ProcessBuilder pb :
                          new ProcessBuilder[] {pb1, pb2}) {
                     pb.command("true");
-                    r = run(pb.start());
-                    equal(r.exitValue(), True.exitValue());
+                    equal(run(pb).exitValue(), True.exitValue());
 
                     pb.command("false");
-                    r = run(pb.start());
-                    equal(r.exitValue(), False.exitValue());
+                    equal(run(pb).exitValue(), False.exitValue());
                 }
 
                 if (failed != 0) throw new Error("null PATH");
@@ -367,31 +377,82 @@ public class Basic {
                         // Can't execute a directory -- permission denied
                         // Report EACCES errno
                         new File("dir1/prog").mkdirs();
-                        try {
-                            pb.start();
-                            fail("Expected IOException not thrown");
-                        } catch (IOException e) {
-                            String m = e.getMessage();
-                            if (EnglishUnix.is() &&
-                                ! matches(m, "Permission denied"))
-                                unexpected(e);
-                        } catch (Throwable t) { unexpected(t); }
+                        checkPermissionDenied(pb);
 
                         // continue searching if EACCES
                         copy("/bin/true", "dir2/prog");
-                        equal(run(pb.start()).exitValue(), True.exitValue());
+                        equal(run(pb).exitValue(), True.exitValue());
                         new File("dir1/prog").delete();
                         new File("dir2/prog").delete();
 
                         new File("dir2/prog").mkdirs();
                         copy("/bin/true", "dir1/prog");
-                        equal(run(pb.start()).exitValue(), True.exitValue());
+                        equal(run(pb).exitValue(), True.exitValue());
 
-                        // Check empty PATH component means current directory
+                        // Check empty PATH component means current directory.
+                        //
+                        // While we're here, let's test different kinds of
+                        // Unix executables, and PATH vs explicit searching.
                         new File("dir1/prog").delete();
                         new File("dir2/prog").delete();
-                        copy("/bin/true", "./prog");
-                        equal(run(pb.start()).exitValue(), True.exitValue());
+                        for (String[] command :
+                                 new String[][] {
+                                     new String[] {"./prog"},
+                                     cmd}) {
+                            pb.command(command);
+                            File prog = new File("./prog");
+                            // "Normal" binaries
+                            copy("/bin/true", "./prog");
+                            equal(run(pb).exitValue(),
+                                  True.exitValue());
+                            copy("/bin/false", "./prog");
+                            equal(run(pb).exitValue(),
+                                  False.exitValue());
+                            prog.delete();
+                            // Interpreter scripts with #!
+                            setFileContents(prog, "#!/bin/true\n");
+                            prog.setExecutable(true);
+                            equal(run(pb).exitValue(),
+                                  True.exitValue());
+                            prog.delete();
+                            setFileContents(prog, "#!/bin/false\n");
+                            prog.setExecutable(true);
+                            equal(run(pb).exitValue(),
+                                  False.exitValue());
+                            // Traditional shell scripts without #!
+                            setFileContents(prog, "exec /bin/true\n");
+                            prog.setExecutable(true);
+                            equal(run(pb).exitValue(),
+                                  True.exitValue());
+                            prog.delete();
+                            setFileContents(prog, "exec /bin/false\n");
+                            prog.setExecutable(true);
+                            equal(run(pb).exitValue(),
+                                  False.exitValue());
+                            prog.delete();
+                        }
+
+                        // Test Unix interpreter scripts
+                        File dir1Prog = new File("dir1/prog");
+                        dir1Prog.delete();
+                        pb.command(new String[] {"prog", "world"});
+                        setFileContents(dir1Prog, "#!/bin/echo hello\n");
+                        checkPermissionDenied(pb);
+                        dir1Prog.setExecutable(true);
+                        equal(run(pb).out(), "hello dir1/prog world\n");
+                        equal(run(pb).exitValue(), True.exitValue());
+                        dir1Prog.delete();
+                        pb.command(cmd);
+
+                        // Test traditional shell scripts without #!
+                        setFileContents(dir1Prog, "/bin/echo \"$@\"\n");
+                        pb.command(new String[] {"prog", "hello", "world"});
+                        checkPermissionDenied(pb);
+                        dir1Prog.setExecutable(true);
+                        equal(run(pb).out(), "hello world\n");
+                        equal(run(pb).exitValue(), True.exitValue());
+                        dir1Prog.delete();
+                        pb.command(cmd);
 
                         // If prog found on both parent and child's PATH,
                         // parent's is used.
@@ -402,10 +463,10 @@ public class Basic {
                         copy("/bin/true", "dir1/prog");
                         copy("/bin/false", "dir3/prog");
                         pb.environment().put("PATH","dir3");
-                        equal(run(pb.start()).exitValue(), True.exitValue());
+                        equal(run(pb).exitValue(), True.exitValue());
                         copy("/bin/true", "dir3/prog");
                         copy("/bin/false", "dir1/prog");
-                        equal(run(pb.start()).exitValue(), False.exitValue());
+                        equal(run(pb).exitValue(), False.exitValue());
 
                     } finally {
                         // cleanup
@@ -1503,21 +1564,19 @@ public class Basic {
             childArgs.add("OutErr");
             ProcessBuilder pb = new ProcessBuilder(childArgs);
             {
-                ProcessResults r = run(pb.start());
+                ProcessResults r = run(pb);
                 equal(r.out(), "outout");
                 equal(r.err(), "errerr");
             }
             {
                 pb.redirectErrorStream(true);
-                ProcessResults r = run(pb.start());
+                ProcessResults r = run(pb);
                 equal(r.out(), "outerrouterr");
                 equal(r.err(), "");
             }
         } catch (Throwable t) { unexpected(t); }
 
-        if (! Windows.is() &&
-            new File("/bin/true").exists() &&
-            new File("/bin/false").exists()) {
+        if (Unix.is()) {
             //----------------------------------------------------------------
             // We can find true and false when PATH is null
             //----------------------------------------------------------------
@@ -1526,7 +1585,7 @@ public class Basic {
                 childArgs.add("null PATH");
                 ProcessBuilder pb = new ProcessBuilder(childArgs);
                 pb.environment().remove("PATH");
-                ProcessResults r = run(pb.start());
+                ProcessResults r = run(pb);
                 equal(r.out(), "");
                 equal(r.err(), "");
                 equal(r.exitValue(), 0);
@@ -1540,7 +1599,7 @@ public class Basic {
                 childArgs.add("PATH search algorithm");
                 ProcessBuilder pb = new ProcessBuilder(childArgs);
                 pb.environment().put("PATH", "dir1:dir2:");
-                ProcessResults r = run(pb.start());
+                ProcessResults r = run(pb);
                 equal(r.out(), "");
                 equal(r.err(), "");
                 equal(r.exitValue(), True.exitValue());

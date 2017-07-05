@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,13 +71,6 @@ public class GSSUtil {
 
     private static final String DEFAULT_HANDLER =
             "auth.login.defaultCallbackHandler";
-
-    public static final int CALLER_UNKNOWN         = -1;
-    public static final int CALLER_INITIATE        = 1;
-    public static final int CALLER_ACCEPT          = 2;
-    public static final int CALLER_SSL_CLIENT      = 3;
-    public static final int CALLER_SSL_SERVER      = 4;
-    public static final int CALLER_HTTP_NEGOTIATE  = 5;
 
     static final boolean DEBUG;
     static {
@@ -240,11 +233,12 @@ public class GSSUtil {
      * @param mech the mech to be used
      * @return the authenticated subject
      */
-    public static Subject login(int caller, Oid mech) throws LoginException {
+    public static Subject login(GSSCaller caller, Oid mech) throws LoginException {
 
         CallbackHandler cb = null;
-        if (caller == GSSUtil.CALLER_HTTP_NEGOTIATE) {
-            cb = new sun.net.www.protocol.http.NegotiateCallbackHandler();
+        if (caller instanceof HttpCaller) {
+            cb = new sun.net.www.protocol.http.NegotiateCallbackHandler(
+                    ((HttpCaller)caller).info());
         } else {
             String defaultHandler =
                     java.security.Security.getProperty(DEFAULT_HANDLER);
@@ -274,12 +268,12 @@ public class GSSUtil {
      * The application indicates this by explicitly setting the system
      * property javax.security.auth.useSubjectCredsOnly to false.
      */
-    public static boolean useSubjectCredsOnly(int caller) {
+    public static boolean useSubjectCredsOnly(GSSCaller caller) {
 
         // HTTP/SPNEGO doesn't use the standard JAAS framework. Instead, it
         // uses the java.net.Authenticator style, therefore always return
         // false here.
-        if (caller == CALLER_HTTP_NEGOTIATE) {
+        if (caller instanceof HttpCaller) {
             return false;
         }
         /*

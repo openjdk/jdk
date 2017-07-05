@@ -105,7 +105,8 @@ public class KeepAliveStreamCleaner extends LinkedBlockingQueue<KeepAliveCleaner
                         HttpClient hc = kace.getHttpClient();
                         try {
                             if (hc != null && !hc.isInKeepAliveCache()) {
-                                int oldTimeout = hc.setTimeout(TIMEOUT);
+                                int oldTimeout = hc.getReadTimeout();
+                                hc.setReadTimeout(TIMEOUT);
                                 long remainingToRead = kas.remainingToRead();
                                 if (remainingToRead > 0) {
                                     long n = 0;
@@ -119,7 +120,7 @@ public class KeepAliveStreamCleaner extends LinkedBlockingQueue<KeepAliveCleaner
                                     remainingToRead = remainingToRead - n;
                                 }
                                 if (remainingToRead == 0) {
-                                    hc.setTimeout(oldTimeout);
+                                    hc.setReadTimeout(oldTimeout);
                                     hc.finished();
                                 } else
                                     hc.closeServer();

@@ -621,7 +621,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
     private static final int DH_PKIX_data[] = { 1, 2, 840, 10046, 2, 1 };
     private static final int DSA_OIW_data[] = { 1, 3, 14, 3, 2, 12 };
     private static final int DSA_PKIX_data[] = { 1, 2, 840, 10040, 4, 1 };
-    private static final int RSA_data[] = { 1, 2, 5, 8, 1, 1 };
+    private static final int RSA_data[] = { 2, 5, 8, 1, 1 };
     private static final int RSAEncryption_data[] =
                                  { 1, 2, 840, 113549, 1, 1, 1 };
 
@@ -745,7 +745,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * Algorithm ID for RSA keys used for any purpose, as defined in X.509.
      * The algorithm parameter is a single value, the number of bits in the
      * public modulus.
-     * OID = 1.2.5.8.1.1
+     * OID = 2.5.8.1.1
      */
         RSA_oid = ObjectIdentifier.newInternal(RSA_data);
 
