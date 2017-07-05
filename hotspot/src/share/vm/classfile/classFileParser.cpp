@@ -28,7 +28,6 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/defaultMethods.hpp"
-#include "classfile/genericSignatures.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -3039,35 +3038,6 @@ AnnotationArray* ClassFileParser::assemble_annotations(u1* runtime_visible_annot
   return annotations;
 }
 
-
-#ifdef ASSERT
-static void parseAndPrintGenericSignatures(
-    instanceKlassHandle this_klass, TRAPS) {
-  assert(ParseAllGenericSignatures == true, "Shouldn't call otherwise");
-  ResourceMark rm;
-
-  if (this_klass->generic_signature() != NULL) {
-    using namespace generic;
-    ClassDescriptor* spec = ClassDescriptor::parse_generic_signature(this_klass(), CHECK);
-
-    tty->print_cr("Parsing %s", this_klass->generic_signature()->as_C_string());
-    spec->print_on(tty);
-
-    for (int i = 0; i < this_klass->methods()->length(); ++i) {
-      Method* m = this_klass->methods()->at(i);
-      MethodDescriptor* method_spec = MethodDescriptor::parse_generic_signature(m, spec);
-      Symbol* sig = m->generic_signature();
-      if (sig == NULL) {
-        sig = m->signature();
-      }
-      tty->print_cr("Parsing %s", sig->as_C_string());
-      method_spec->print_on(tty);
-    }
-  }
-}
-#endif // def ASSERT
-
-
 instanceKlassHandle ClassFileParser::parse_super_class(int super_class_index,
                                                        TRAPS) {
   instanceKlassHandle super_klass;
@@ -4059,12 +4029,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     // Allocate mirror and initialize static fields
     java_lang_Class::create_mirror(this_klass, protection_domain, CHECK_(nullHandle));
 
-
-#ifdef ASSERT
-    if (ParseAllGenericSignatures) {
-      parseAndPrintGenericSignatures(this_klass, CHECK_(nullHandle));
-    }
-#endif
 
     // Generate any default methods - default methods are interface methods
     // that have a default implementation.  This is new with Lambda project.
