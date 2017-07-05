@@ -62,7 +62,6 @@ import sun.swing.AccumulativeRunnable;
  *   </li>
  * </ul>
  *
- * <p>
  *
  * <p>
  * These constraints mean that a GUI application with time intensive

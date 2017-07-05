@@ -182,7 +182,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *  each a single row of values.  In other words, to get to the cell
      *  at row 1, column 5: <p>
      *
-     *  <code>((Vector)getDataVector().elementAt(1)).elementAt(5);</code><p>
+     *  <code>((Vector)getDataVector().elementAt(1)).elementAt(5);</code>
      *
      * @return  the vector of vectors containing the tables data values
      *
@@ -306,7 +306,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *  Sets the number of rows in the model.  If the new size is greater
      *  than the current size, new rows are added to the end of the model
      *  If the new size is less than the current size, all
-     *  rows at index <code>rowCount</code> and greater are discarded. <p>
+     *  rows at index <code>rowCount</code> and greater are discarded.
      *
      * @param   rowCount   the new number of rows
      * @see #setRowCount
@@ -330,7 +330,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *  Sets the number of rows in the model.  If the new size is greater
      *  than the current size, new rows are added to the end of the model
      *  If the new size is less than the current size, all
-     *  rows at index <code>rowCount</code> and greater are discarded. <p>
+     *  rows at index <code>rowCount</code> and greater are discarded.
      *
      *  @see #setColumnCount
      * @since 1.3
@@ -414,7 +414,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *  After the move, the row that was at index <code>start</code>
      *  will be at index <code>to</code>.
      *  This method will send a <code>tableChanged</code> notification
-     *  message to all the listeners. <p>
+       message to all the listeners.
      *
      *  <pre>
      *  Examples of moves:
@@ -473,7 +473,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * of columns, new columns are added to the end of each row in the model.
      * If the number of <code>newIdentifier</code>s is less than the current
      * number of columns, all the extra columns at the end of a row are
-     * discarded. <p>
+     * discarded.
      *
      * @param   columnIdentifiers  vector of column identifiers.  If
      *                          <code>null</code>, set the model
@@ -490,7 +490,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * of columns, new columns are added to the end of each row in the model.
      * If the number of <code>newIdentifier</code>s is less than the current
      * number of columns, all the extra columns at the end of a row are
-     * discarded. <p>
+     * discarded.
      *
      * @param   newIdentifiers  array of column identifiers.
      *                          If <code>null</code>, set

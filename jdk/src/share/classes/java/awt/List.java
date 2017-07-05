@@ -41,7 +41,7 @@ import javax.accessibility.*;
  * the user can choose either one item or multiple items.
  * <p>
  * For example, the code&nbsp;.&nbsp;.&nbsp;.
- * <p>
+ *
  * <hr><blockquote><pre>
  * List lst = new List(4, false);
  * lst.add("Mercury");
@@ -1082,7 +1082,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * This method is not called unless item events are
      * enabled for this component. Item events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>An <code>ItemListener</code> object is registered
      * via <code>addItemListener</code>.
      * <li>Item events are enabled via <code>enableEvents</code>.
@@ -1113,7 +1113,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * This method is not called unless action events are
      * enabled for this component. Action events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>An <code>ActionListener</code> object is registered
      * via <code>addActionListener</code>.
      * <li>Action events are enabled via <code>enableEvents</code>.

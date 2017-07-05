@@ -192,9 +192,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
 
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the {@literal L&F} object that renders this component.
      *
-     * @param ui  the <code>ScrollBarUI</code> L&F object
+     * @param ui  the <code>ScrollBarUI</code> {@literal L&F} object
      * @see UIDefaults#getUI
      * @since 1.4
      * @beaninfo
@@ -606,9 +606,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * Sets the four BoundedRangeModel properties after forcing
      * the arguments to obey the usual constraints:
      * <pre>
-     * minimum <= value <= value+extent <= maximum
+     * minimum &le; value &le; value+extent &le; maximum
      * </pre>
-     * <p>
+     *
      *
      * @see BoundedRangeModel#setRangeProperties
      * @see #setValue

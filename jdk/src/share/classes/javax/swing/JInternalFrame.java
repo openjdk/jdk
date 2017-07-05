@@ -1645,7 +1645,7 @@ public class JInternalFrame extends JComponent implements
      * Sets the operation that will happen by default when
      * the user initiates a "close" on this internal frame.
      * The possible choices are:
-     * <p>
+     * <br><br>
      * <dl>
      * <dt><code>DO_NOTHING_ON_CLOSE</code>
      * <dd> Do nothing.

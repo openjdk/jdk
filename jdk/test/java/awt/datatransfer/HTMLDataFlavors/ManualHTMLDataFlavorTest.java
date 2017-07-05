@@ -96,9 +96,7 @@ public class ManualHTMLDataFlavorTest extends Applet {
                 Sysout.println(t.getTransferData(DataFlavor.fragmentHtmlFlavor).toString());
                 Sysout.println("SELECTION:");
                 Sysout.println(t.getTransferData(DataFlavor.selectionHtmlFlavor).toString());
-            } catch (UnsupportedFlavorException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
+            } catch (UnsupportedFlavorException | IOException e) {
                 e.printStackTrace();
             }
 
@@ -116,6 +114,7 @@ public class ManualHTMLDataFlavorTest extends Applet {
                 "   otherwise for instance iexplore can prohibit drag and drop from",
                 "   the browser to other applications because of",
                 "   the protected mode restrictions.",
+                "   On Mac OS X do NOT use Safari, it does not provide the needed DataFlavor",
                 "3) Check the data in the output area of this dialog",
                 "5) The output should not contain information that any of",
                 "   flavors is not present in the system clipboard",

@@ -206,7 +206,9 @@ public class SSLSocketSSLEngineTemplate {
     private void runTest(boolean direct) throws Exception {
         boolean serverClose = direct;
 
-        serverSocket = new ServerSocket(0);
+        serverSocket = new ServerSocket();
+        serverSocket.setReuseAddress(false);
+        serverSocket.bind(null);
         int port = serverSocket.getLocalPort();
         Thread thread = createClientThread(port, serverClose);
 

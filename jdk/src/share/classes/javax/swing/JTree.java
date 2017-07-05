@@ -3956,7 +3956,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
          * allows children depends on how it was created.
          *
          * @return true if this node allows children, false otherwise
-         * @see #JTree.DynamicUtilTreeNode
+         * @see JTree.DynamicUtilTreeNode
          */
         public boolean isLeaf() {
             return !getAllowsChildren();
