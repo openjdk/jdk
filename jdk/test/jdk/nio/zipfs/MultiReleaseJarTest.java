@@ -38,16 +38,18 @@ import java.net.URI;
 import java.nio.file.*;
 import java.util.HashMap;
 import java.util.Map;
-
-import static sun.misc.Version.jdkMajorVersion;
+import jdk.Version;
 
 import org.testng.Assert;
 import org.testng.annotations.*;
 
 public class MultiReleaseJarTest {
+    final private int MAJOR_VERSION= Version.current().major();
+
     final private String userdir = System.getProperty("user.dir",".");
     final private Map<String,String> stringEnv = new HashMap<>();
     final private Map<String,Integer> integerEnv = new HashMap<>();
+    final private Map<String,Version> versionEnv = new HashMap<>();
     final private String className = "version.Version";
     final private MethodType mt = MethodType.methodType(int.class);
 
@@ -81,7 +83,7 @@ public class MultiReleaseJarTest {
     @DataProvider(name="strings")
     public Object[][] createStrings() {
         return new Object[][]{
-                {"runtime", jdkMajorVersion()},
+                {"runtime", MAJOR_VERSION},
                 {"-20", 8},
                 {"0", 8},
                 {"8", 8},
@@ -105,6 +107,17 @@ public class MultiReleaseJarTest {
         };
     }
 
+    @DataProvider(name="versions")
+    public Object[][] createVersions() {
+        return new Object[][] {
+                {Version.parse("8"),    8},
+                {Version.parse("9"),    9},
+                {Version.parse("10"),  10},
+                {Version.parse("11"),  10},
+                {Version.parse("100"), 10}
+        };
+    }
+
     // Not the best test but all I can do since ZipFileSystem and JarFileSystem
     // are not public, so I can't use (fs instanceof ...)
     @Test
@@ -117,7 +130,7 @@ public class MultiReleaseJarTest {
         env.put("multi-release", "runtime");
         // a configuration and jar file is multi-release
         try (FileSystem fs = FileSystems.newFileSystem(mruri, env)) {
-            Assert.assertTrue(readAndCompare(fs, jdkMajorVersion()));
+            Assert.assertTrue(readAndCompare(fs, MAJOR_VERSION));
         }
         // a configuration but jar file is unversioned
         try (FileSystem fs = FileSystems.newFileSystem(uvuri, env)) {
@@ -141,6 +154,12 @@ public class MultiReleaseJarTest {
     public void testIntegers(Integer value, int expected) throws Throwable {
         integerEnv.put("multi-release", value);
         runTest(integerEnv, expected);
+    }
+
+    @Test(dataProvider="versions")
+    public void testVersions(Version value, int expected) throws Throwable {
+        versionEnv.put("multi-release", value);
+        runTest(versionEnv, expected);
     }
 
     @Test

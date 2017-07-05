@@ -25,7 +25,7 @@
  * @test
  * @bug 4990825
  * @modules jdk.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UsePerfData -XX:PerfDataMemorySize=64k PrologSizeSanityCheck
+ * @run main/othervm -XX:+UsePerfData PrologSizeSanityCheck
  * @summary prolog size and overflow sanity checks
  */
 

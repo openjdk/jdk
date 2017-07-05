@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ void FileMapInfo::allocate_classpath_entry_table() {
         count ++;
         bytes += (int)entry_size;
         bytes += name_bytes;
-        if (TraceClassPaths || (TraceClassLoading && Verbose)) {
+        if (TraceClassPaths) {
           tty->print_cr("[Add main shared path (%s) %s]", (cpe->is_jar_file() ? "jar" : "dir"), name);
         }
       } else {
@@ -275,7 +275,7 @@ bool FileMapInfo::validate_classpath_entry_table() {
     struct stat st;
     const char* name = ent->_name;
     bool ok = true;
-    if (TraceClassPaths || (TraceClassLoading && Verbose)) {
+    if (TraceClassPaths) {
       tty->print_cr("[Checking shared classpath entry: %s]", name);
     }
     if (os::stat(name, &st) != 0) {
@@ -301,7 +301,7 @@ bool FileMapInfo::validate_classpath_entry_table() {
       }
     }
     if (ok) {
-      if (TraceClassPaths || (TraceClassLoading && Verbose)) {
+      if (TraceClassPaths) {
         tty->print_cr("[ok]");
       }
     } else if (!PrintSharedArchiveAndExit) {

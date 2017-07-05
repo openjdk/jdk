@@ -126,7 +126,7 @@ final class HotSpotConstantPool implements ConstantPool, HotSpotProxified, Metas
         private static final int InternalMin = config().jvmConstantInternalMin;
         private static final int InternalMax = config().jvmConstantInternalMax;
 
-        private JVM_CONSTANT(int tag) {
+        JVM_CONSTANT(int tag) {
             this.tag = tag;
         }
 
@@ -171,7 +171,7 @@ final class HotSpotConstantPool implements ConstantPool, HotSpotProxified, Metas
         int lastCpi = Integer.MIN_VALUE;
         JavaType javaType;
 
-        public LookupTypeCacheElement(int lastCpi, JavaType javaType) {
+        LookupTypeCacheElement(int lastCpi, JavaType javaType) {
             super();
             this.lastCpi = lastCpi;
             this.javaType = javaType;

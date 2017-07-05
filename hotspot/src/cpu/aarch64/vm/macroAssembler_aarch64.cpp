@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -127,7 +127,10 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
                      Instruction_aarch64::extract(insn2, 4, 0)) {
         // movk #imm16<<32
         Instruction_aarch64::patch(branch + 4, 20, 5, (uint64_t)target >> 32);
-        offset &= (1<<20)-1;
+        long dest = ((long)target & 0xffffffffL) | ((long)branch & 0xffff00000000L);
+        long pc_page = (long)branch >> 12;
+        long adr_page = (long)dest >> 12;
+        offset = adr_page - pc_page;
         instructions = 2;
       }
     }
@@ -898,23 +901,18 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
          "caller must use same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
-  int vtable_base = InstanceKlass::vtable_start_offset() * wordSize;
+  int vtable_base = in_bytes(Klass::vtable_start_offset());
   int itentry_off = itableMethodEntry::method_offset_in_bytes();
   int scan_step   = itableOffsetEntry::size() * wordSize;
-  int vte_size    = vtableEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size_in_bytes();
   assert(vte_size == wordSize, "else adjust times_vte_scale");
 
-  ldrw(scan_temp, Address(recv_klass, InstanceKlass::vtable_length_offset() * wordSize));
+  ldrw(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
 
   // %%% Could store the aligned, prescaled offset in the klassoop.
   // lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
   lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(3)));
   add(scan_temp, scan_temp, vtable_base);
-  if (HeapWordsPerLong > 1) {
-    // Round up to align_object_offset boundary
-    // see code for instanceKlass::start_of_itable!
-    round_to(scan_temp, BytesPerLong);
-  }
 
   // Adjust recv_klass by scaled itable_index, so we can free itable_index.
   assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
@@ -963,7 +961,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = InstanceKlass::vtable_start_offset() * wordSize;
+  const int base = in_bytes(Klass::vtable_start_offset());
   assert(vtableEntry::size() * wordSize == 8,
          "adjust the scaling in the code below");
   int vtable_offset_in_bytes = base + vtableEntry::method_offset_in_bytes();
@@ -3998,11 +3996,12 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
   if (offset_high >= -(1<<20) && offset_low < (1<<20)) {
     _adrp(reg1, dest.target());
   } else {
-    unsigned long pc_page = (unsigned long)pc() >> 12;
-    long offset = dest_page - pc_page;
-    offset = (offset & ((1<<20)-1)) << 12;
-    _adrp(reg1, pc()+offset);
-    movk(reg1, (unsigned long)dest.target() >> 32, 32);
+    unsigned long target = (unsigned long)dest.target();
+    unsigned long adrp_target
+      = (target & 0xffffffffUL) | ((unsigned long)pc() & 0xffff00000000UL);
+
+    _adrp(reg1, (address)adrp_target);
+    movk(reg1, target >> 32, 32);
   }
   byte_offset = (unsigned long)dest.target() & 0xfff;
 }
@@ -4555,6 +4554,82 @@ void MacroAssembler::string_equals(Register str1, Register str2,
   bind(DONE);
 
   BLOCK_COMMENT("} string_equals");
+}
+
+
+void MacroAssembler::byte_arrays_equals(Register ary1, Register ary2,
+                                        Register result, Register tmp1)
+{
+  Register cnt1 = rscratch1;
+  Register cnt2 = rscratch2;
+  Register tmp2 = rscratch2;
+
+  Label SAME, DIFFER, NEXT, TAIL07, TAIL03, TAIL01;
+
+  int length_offset  = arrayOopDesc::length_offset_in_bytes();
+  int base_offset    = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+
+  BLOCK_COMMENT("byte_arrays_equals  {");
+
+    // different until proven equal
+    mov(result, false);
+
+    // same array?
+    cmp(ary1, ary2);
+    br(Assembler::EQ, SAME);
+
+    // ne if either null
+    cbz(ary1, DIFFER);
+    cbz(ary2, DIFFER);
+
+    // lengths ne?
+    ldrw(cnt1, Address(ary1, length_offset));
+    ldrw(cnt2, Address(ary2, length_offset));
+    cmp(cnt1, cnt2);
+    br(Assembler::NE, DIFFER);
+
+    lea(ary1, Address(ary1, base_offset));
+    lea(ary2, Address(ary2, base_offset));
+
+    subs(cnt1, cnt1, 8);
+    br(LT, TAIL07);
+
+  BIND(NEXT);
+    ldr(tmp1, Address(post(ary1, 8)));
+    ldr(tmp2, Address(post(ary2, 8)));
+    subs(cnt1, cnt1, 8);
+    eor(tmp1, tmp1, tmp2);
+    cbnz(tmp1, DIFFER);
+    br(GE, NEXT);
+
+  BIND(TAIL07);  // 0-7 bytes left, cnt1 = #bytes left - 4
+    tst(cnt1, 0b100);
+    br(EQ, TAIL03);
+    ldrw(tmp1, Address(post(ary1, 4)));
+    ldrw(tmp2, Address(post(ary2, 4)));
+    cmp(tmp1, tmp2);
+    br(NE, DIFFER);
+
+  BIND(TAIL03);  // 0-3 bytes left, cnt1 = #bytes left - 4
+    tst(cnt1, 0b10);
+    br(EQ, TAIL01);
+    ldrh(tmp1, Address(post(ary1, 2)));
+    ldrh(tmp2, Address(post(ary2, 2)));
+    cmp(tmp1, tmp2);
+    br(NE, DIFFER);
+  BIND(TAIL01);  // 0-1 byte left
+    tst(cnt1, 0b01);
+    br(EQ, SAME);
+    ldrb(tmp1, ary1);
+    ldrb(tmp2, ary2);
+    cmp(tmp1, tmp2);
+    br(NE, DIFFER);
+
+  BIND(SAME);
+    mov(result, true);
+  BIND(DIFFER); // result already set
+
+  BLOCK_COMMENT("} byte_arrays_equals");
 }
 
 // Compare char[] arrays aligned to 4 bytes

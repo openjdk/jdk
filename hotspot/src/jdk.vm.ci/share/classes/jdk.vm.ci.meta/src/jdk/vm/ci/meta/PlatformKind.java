@@ -33,7 +33,7 @@ public interface PlatformKind {
 
     }
 
-    public class EnumKey<E extends Enum<E>> implements Key {
+    class EnumKey<E extends Enum<E>> implements Key {
         private final Enum<E> e;
 
         public EnumKey(Enum<E> e) {

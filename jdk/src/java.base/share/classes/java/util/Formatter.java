@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3440,7 +3440,7 @@ public final class Formatter implements Closeable, Flushable {
 
                 int exponent  = Math.getExponent(d);
                 boolean subnormal
-                    = (exponent == DoubleConsts.MIN_EXPONENT - 1);
+                    = (exponent == Double.MIN_EXPONENT - 1);
 
                 // If this is subnormal input so normalize (could be faster to
                 // do as integer operation).
@@ -3450,8 +3450,8 @@ public final class Formatter implements Closeable, Flushable {
                     // Calculate the exponent.  This is not just exponent + 54
                     // since the former is not the normalized exponent.
                     exponent = Math.getExponent(d);
-                    assert exponent >= DoubleConsts.MIN_EXPONENT &&
-                        exponent <= DoubleConsts.MAX_EXPONENT: exponent;
+                    assert exponent >= Double.MIN_EXPONENT &&
+                        exponent <= Double.MAX_EXPONENT: exponent;
                 }
 
                 int precision = 1 + prec*4;
