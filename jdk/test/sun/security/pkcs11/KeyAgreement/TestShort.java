@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4942494
+ * @bug 4942494 7146728
  * @summary KAT test for DH (normal and with secret that has leading a 0x00 byte)
  * @author Andreas Sterbenz
  * @library ..
@@ -66,7 +66,7 @@ public class TestShort extends PKCS11Test {
     ("433011588852527167500079509018272713204454720683");
 
     private final static byte[] s2 = parse
-    ("19:c7:f1:bb:2e:3d:93:fa:02:d2:e9:9f:75:32:b9:e6:7a:a0:4a:10:45:81:d4:2b:"
+    ("00:19:c7:f1:bb:2e:3d:93:fa:02:d2:e9:9f:75:32:b9:e6:7a:a0:4a:10:45:81:d4:2b:"
     + "e2:77:4c:70:41:39:7c:19:fa:65:64:47:49:8a:ad:0a:fa:9d:e9:62:68:97:c5:52"
     + ":b1:37:03:d9:cd:aa:e1:bd:7e:71:0c:fc:15:a1:95");
 
@@ -88,31 +88,36 @@ public class TestShort extends PKCS11Test {
             System.out.println("DH not supported, skipping");
             return;
         }
-        DHPublicKeySpec publicSpec;
-        DHPrivateKeySpec privateSpec;
-        KeyFactory kf = KeyFactory.getInstance("DH", provider);
-        KeyAgreement ka = KeyAgreement.getInstance("DH", provider);
-//      KeyAgreement ka = KeyAgreement.getInstance("DH");
+        try {
+            DHPublicKeySpec publicSpec;
+            DHPrivateKeySpec privateSpec;
+            KeyFactory kf = KeyFactory.getInstance("DH", provider);
+            KeyAgreement ka = KeyAgreement.getInstance("DH", provider);
 
-        PrivateKey pr1 = kf.generatePrivate(new DHPrivateKeySpec(x1, p, g));
-        PublicKey pu2 = kf.generatePublic(new DHPublicKeySpec(y2, p, g));
-        PublicKey pu3 = kf.generatePublic(new DHPublicKeySpec(y3, p, g));
+            PrivateKey pr1 = kf.generatePrivate(new DHPrivateKeySpec(x1, p, g));
+            PublicKey pu2 = kf.generatePublic(new DHPublicKeySpec(y2, p, g));
+            PublicKey pu3 = kf.generatePublic(new DHPublicKeySpec(y3, p, g));
 
-        ka.init(pr1);
-        ka.doPhase(pu2, true);
-        byte[] n2 = ka.generateSecret();
-        if (Arrays.equals(s2, n2) == false) {
-            throw new Exception("mismatch 2");
+            ka.init(pr1);
+            ka.doPhase(pu2, true);
+            byte[] n2 = ka.generateSecret();
+            if (Arrays.equals(s2, n2) == false) {
+                throw new Exception("mismatch 2");
+            }
+            System.out.println("short ok");
+
+            ka.init(pr1);
+            ka.doPhase(pu3, true);
+            byte[] n3 = ka.generateSecret();
+            if (Arrays.equals(s3, n3) == false) {
+                throw new Exception("mismatch 3");
+            }
+            System.out.println("normal ok");
+        } catch (Exception ex) {
+            System.out.println("Unexpected Exception: " + ex);
+            ex.printStackTrace();
+            throw ex;
         }
-        System.out.println("short ok");
-
-        ka.init(pr1);
-        ka.doPhase(pu3, true);
-        byte[] n3 = ka.generateSecret();
-        if (Arrays.equals(s3, n3) == false) {
-            throw new Exception("mismatch 3");
-        }
-        System.out.println("normal ok");
 
 /*
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", provider);

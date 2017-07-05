@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 0000000
+ * @bug 7146728
  * @summary DHKeyAgreement2
  * @author Jan Luehe
  */
@@ -52,14 +52,11 @@ import sun.misc.HexDumpEncoder;
 
 public class DHKeyAgreement2 {
 
+    private static final String SUNJCE = "SunJCE";
     private DHKeyAgreement2() {}
 
     public static void main(String argv[]) throws Exception {
             String mode = "USE_SKIP_DH_PARAMS";
-
-            // Add JCE to the list of providers
-            SunJCE jce = new SunJCE();
-            Security.addProvider(jce);
 
             DHKeyAgreement2 keyAgree = new DHKeyAgreement2();
 
@@ -86,7 +83,7 @@ public class DHKeyAgreement2 {
             // Some central authority creates new DH parameters
             System.err.println("Creating Diffie-Hellman parameters ...");
             AlgorithmParameterGenerator paramGen
-                = AlgorithmParameterGenerator.getInstance("DH");
+                = AlgorithmParameterGenerator.getInstance("DH", SUNJCE);
             paramGen.init(512);
             AlgorithmParameters params = paramGen.generateParameters();
             dhSkipParamSpec = (DHParameterSpec)params.getParameterSpec
@@ -103,7 +100,7 @@ public class DHKeyAgreement2 {
          * above
          */
         System.err.println("ALICE: Generate DH keypair ...");
-        KeyPairGenerator aliceKpairGen = KeyPairGenerator.getInstance("DH");
+        KeyPairGenerator aliceKpairGen = KeyPairGenerator.getInstance("DH", SUNJCE);
         aliceKpairGen.initialize(dhSkipParamSpec);
         KeyPair aliceKpair = aliceKpairGen.generateKeyPair();
         System.out.println("Alice DH public key:\n" +
@@ -112,14 +109,14 @@ public class DHKeyAgreement2 {
                            aliceKpair.getPrivate().toString());
         DHParameterSpec dhParamSpec =
             ((DHPublicKey)aliceKpair.getPublic()).getParams();
-        AlgorithmParameters algParams = AlgorithmParameters.getInstance("DH");
+        AlgorithmParameters algParams = AlgorithmParameters.getInstance("DH", SUNJCE);
         algParams.init(dhParamSpec);
         System.out.println("Alice DH parameters:\n"
                            + algParams.toString());
 
         // Alice executes Phase1 of her version of the DH protocol
         System.err.println("ALICE: Execute PHASE1 ...");
-        KeyAgreement aliceKeyAgree = KeyAgreement.getInstance("DH");
+        KeyAgreement aliceKeyAgree = KeyAgreement.getInstance("DH", SUNJCE);
         aliceKeyAgree.init(aliceKpair.getPrivate());
 
         // Alice encodes her public key, and sends it over to Bob.
@@ -130,7 +127,7 @@ public class DHKeyAgreement2 {
          * in encoded format.
          * He instantiates a DH public key from the encoded key material.
          */
-        KeyFactory bobKeyFac = KeyFactory.getInstance("DH");
+        KeyFactory bobKeyFac = KeyFactory.getInstance("DH", SUNJCE);
         X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec
             (alicePubKeyEnc);
         PublicKey alicePubKey = bobKeyFac.generatePublic(x509KeySpec);
@@ -144,7 +141,7 @@ public class DHKeyAgreement2 {
 
         // Bob creates his own DH key pair
         System.err.println("BOB: Generate DH keypair ...");
-        KeyPairGenerator bobKpairGen = KeyPairGenerator.getInstance("DH");
+        KeyPairGenerator bobKpairGen = KeyPairGenerator.getInstance("DH", SUNJCE);
         bobKpairGen.initialize(dhParamSpec);
         KeyPair bobKpair = bobKpairGen.generateKeyPair();
         System.out.println("Bob DH public key:\n" +
@@ -154,7 +151,7 @@ public class DHKeyAgreement2 {
 
         // Bob executes Phase1 of his version of the DH protocol
         System.err.println("BOB: Execute PHASE1 ...");
-        KeyAgreement bobKeyAgree = KeyAgreement.getInstance("DH");
+        KeyAgreement bobKeyAgree = KeyAgreement.getInstance("DH", SUNJCE);
         bobKeyAgree.init(bobKpair.getPrivate());
 
         // Bob encodes his public key, and sends it over to Alice.
@@ -166,7 +163,7 @@ public class DHKeyAgreement2 {
          * Before she can do so, she has to instanticate a DH public key
          * from Bob's encoded key material.
          */
-        KeyFactory aliceKeyFac = KeyFactory.getInstance("DH");
+        KeyFactory aliceKeyFac = KeyFactory.getInstance("DH", SUNJCE);
         x509KeySpec = new X509EncodedKeySpec(bobPubKeyEnc);
         PublicKey bobPubKey = aliceKeyFac.generatePublic(x509KeySpec);
         System.err.println("ALICE: Execute PHASE2 ...");
@@ -187,49 +184,32 @@ public class DHKeyAgreement2 {
         byte[] aliceSharedSecret = aliceKeyAgree.generateSecret();
         int aliceLen = aliceSharedSecret.length;
 
+        // check if alice's key agreement has been reset afterwards
+        try {
+            aliceKeyAgree.generateSecret();
+            throw new Exception("Error: alice's KeyAgreement not reset");
+        } catch (IllegalStateException e) {
+            System.out.println("EXPECTED:  " + e.getMessage());
+        }
+
         byte[] bobSharedSecret = new byte[aliceLen];
         int bobLen;
         try {
             // provide output buffer that is too short
             bobLen = bobKeyAgree.generateSecret(bobSharedSecret, 1);
-
-            /*
-             * Gatekeeper's note:
-             * We should not be getting here, but every so often, we
-             * get a failure, either a "ShortBufferException" or
-             * "Key agreement has not been completed yet" in the
-             * generateSecret(bobSharedSecret, 0) below.
-             *
-             * This will help to figure out why we're dropping through
-             * and not failing.
-             */
-            System.out.println("NIGHTLY:  Should *NOT* be here!!!\n" +
-                "aliceLen = " + aliceLen + "\n" +
-                "Alice's shared secret");
-
-            try {
-                HexDumpEncoder hd = new HexDumpEncoder();
-
-                hd.encodeBuffer(
-                    new ByteArrayInputStream(aliceSharedSecret), System.out);
-            } catch (IOException e) { }
-
-            System.out.println("bobLen = " + bobLen);
-
-            try {
-                HexDumpEncoder hd = new HexDumpEncoder();
-
-                hd.encodeBuffer(
-                    new ByteArrayInputStream(bobSharedSecret), System.out);
-            } catch (IOException e) { }
-
-            throw new Exception("Shouldn't be succeeding.");
         } catch (ShortBufferException e) {
             System.out.println("EXPECTED:  " + e.getMessage());
         }
-
-        // provide output buffer of required size
+        // retry w/ output buffer of required size
         bobLen = bobKeyAgree.generateSecret(bobSharedSecret, 0);
+
+        // check if bob's key agreement has been reset afterwards
+        try {
+            bobKeyAgree.generateSecret(bobSharedSecret, 0);
+            throw new Exception("Error: bob's KeyAgreement not reset");
+        } catch (IllegalStateException e) {
+            System.out.println("EXPECTED:  " + e.getMessage());
+        }
 
         System.out.println("Alice secret: " + toHexString(aliceSharedSecret));
         System.out.println("Bob secret: " + toHexString(bobSharedSecret));
