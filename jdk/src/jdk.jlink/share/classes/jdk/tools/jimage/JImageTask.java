@@ -39,6 +39,8 @@ import java.util.function.Predicate;
 import jdk.internal.jimage.BasicImageReader;
 import jdk.internal.jimage.ImageHeader;
 import jdk.internal.jimage.ImageLocation;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.tree.ClassNode;
 import jdk.tools.jlink.internal.ImageResourcesTree;
 import jdk.tools.jlink.internal.TaskHelper;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
@@ -354,16 +356,14 @@ class JImageTask {
     }
 
       void verify(BasicImageReader reader, String name, ImageLocation location) {
-        if (name.endsWith(".class")) {
-            byte[] bytes = reader.getResource(location);
-
-            if (bytes == null || bytes.length <= 4 ||
-                (bytes[0] & 0xFF) != 0xCA ||
-                (bytes[1] & 0xFF) != 0xFE ||
-                (bytes[2] & 0xFF) != 0xBA ||
-                (bytes[3] & 0xFF) != 0xBE) {
-                log.print(" NOT A CLASS: ");
-                print(reader, name);
+        if (name.endsWith(".class") && !name.endsWith("module-info.class")) {
+            try {
+                byte[] bytes = reader.getResource(location);
+                ClassReader cr =new ClassReader(bytes);
+                ClassNode cn = new ClassNode();
+                cr.accept(cn, ClassReader.EXPAND_FRAMES);
+            } catch (Exception ex) {
+                log.println("Error(s) in Class: " + name);
             }
         }
     }
