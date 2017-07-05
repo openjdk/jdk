@@ -94,7 +94,6 @@ endef
 ifeq ($(PROFILE), )
   NOT_JRE_BIN_FILES := \
       appletviewer$(EXE_SUFFIX) \
-      extcheck$(EXE_SUFFIX) \
       idlj$(EXE_SUFFIX) \
       jar$(EXE_SUFFIX) \
       jarsigner$(EXE_SUFFIX) \
@@ -326,7 +325,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   JDK_MAN_PAGES = \
       $(JRE_MAN_PAGES) \
       appletviewer.1 \
-      extcheck.1 \
       idlj.1 \
       jar.1 \
       jarsigner.1 \

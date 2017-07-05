@@ -1,0 +1,62 @@
+#
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include $(SPEC)
+include $(JDK_TOPDIR)/make/lib/LibCommon.gmk
+
+################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+
+  LIBJ2UCRYPTO_SRC := $(JDK_TOPDIR)/src/jdk.crypto.ucrypto/solaris/native/libj2ucrypto
+
+  $(eval $(call SetupNativeCompilation,BUILD_LIBJ2UCRYPTO, \
+      LIBRARY := j2ucrypto, \
+      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+      SRC := $(LIBJ2UCRYPTO_SRC), \
+      LANG := C, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          $(addprefix -I, $(LIBJ2UCRYPTO_SRC)), \
+      MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2ucrypto/mapfile-vers, \
+      LDFLAGS := $(LDFLAGS_JDKLIB), \
+      LDFLAGS_SUFFIX := $(LIBDL), \
+      LDFLAGS_SUFFIX_solaris := -lc, \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libj2ucrypto, \
+      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+  $(BUILD_LIBJ2UCRYPTO): $(BUILD_LIBJAVA)
+
+  SECURITY_UCRYPTO_LIBRARIES += $(BUILD_LIBJ2UCRYPTO)
+
+endif
+
+################################################################################
+
+jdk.crypto.ucrypto: $(SECURITY_UCRYPTO_LIBRARIES)
+
+all: jdk.crypto.ucrypto
+
+.PHONY: all jdk.crypto.ucrypto

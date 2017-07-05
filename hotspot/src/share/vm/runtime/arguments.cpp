@@ -1135,6 +1135,21 @@ static void no_shared_spaces(const char* message) {
 }
 #endif
 
+// Returns threshold scaled with CompileThresholdScaling
+intx Arguments::get_scaled_compile_threshold(intx threshold) {
+  return (intx)(threshold * CompileThresholdScaling);
+}
+
+// Returns freq_log scaled with CompileThresholdScaling
+intx Arguments::get_scaled_freq_log(intx freq_log) {
+  intx scaled_freq = get_scaled_compile_threshold((intx)1 << freq_log);
+  if (scaled_freq == 0) {
+    return 0;
+  } else {
+    return log2_intptr(scaled_freq);
+  }
+}
+
 void Arguments::set_tiered_flags() {
   // With tiered, set default policy to AdvancedThresholdPolicy, which is 3.
   if (FLAG_IS_DEFAULT(CompilationPolicyChoice)) {
@@ -1173,6 +1188,32 @@ void Arguments::set_tiered_flags() {
   if (!UseInterpreter) { // -Xcomp
     Tier3InvokeNotifyFreqLog = 0;
     Tier4InvocationThreshold = 0;
+  }
+  // Scale tiered compilation thresholds
+  if (!FLAG_IS_DEFAULT(CompileThresholdScaling)) {
+    FLAG_SET_ERGO(intx, Tier0InvokeNotifyFreqLog, get_scaled_freq_log(Tier0InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier0BackedgeNotifyFreqLog, get_scaled_freq_log(Tier0BackedgeNotifyFreqLog));
+
+    FLAG_SET_ERGO(intx, Tier3InvocationThreshold, get_scaled_compile_threshold(Tier3InvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier3MinInvocationThreshold, get_scaled_compile_threshold(Tier3MinInvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier3CompileThreshold, get_scaled_compile_threshold(Tier3CompileThreshold));
+    FLAG_SET_ERGO(intx, Tier3BackEdgeThreshold, get_scaled_compile_threshold(Tier3BackEdgeThreshold));
+
+    // Tier2{Invocation,MinInvocation,Compile,Backedge}Threshold should be scaled here
+    // once these thresholds become supported.
+
+    FLAG_SET_ERGO(intx, Tier2InvokeNotifyFreqLog, get_scaled_freq_log(Tier2InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier2BackedgeNotifyFreqLog, get_scaled_freq_log(Tier2BackedgeNotifyFreqLog));
+
+    FLAG_SET_ERGO(intx, Tier3InvokeNotifyFreqLog, get_scaled_freq_log(Tier3InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(intx, Tier3BackedgeNotifyFreqLog, get_scaled_freq_log(Tier3BackedgeNotifyFreqLog));
+
+    FLAG_SET_ERGO(intx, Tier23InlineeNotifyFreqLog, get_scaled_freq_log(Tier23InlineeNotifyFreqLog));
+
+    FLAG_SET_ERGO(intx, Tier4InvocationThreshold, get_scaled_compile_threshold(Tier4InvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier4MinInvocationThreshold, get_scaled_compile_threshold(Tier4MinInvocationThreshold));
+    FLAG_SET_ERGO(intx, Tier4CompileThreshold, get_scaled_compile_threshold(Tier4CompileThreshold));
+    FLAG_SET_ERGO(intx, Tier4BackEdgeThreshold, get_scaled_compile_threshold(Tier4BackEdgeThreshold));
   }
 }
 
@@ -3501,7 +3542,9 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     // not specified.
     set_mode_flags(_int);
   }
-  if (CompileThreshold == 0) {
+
+  if ((TieredCompilation && CompileThresholdScaling == 0)
+      || (!TieredCompilation && get_scaled_compile_threshold(CompileThreshold) == 0)) {
     set_mode_flags(_int);
   }
 
@@ -3739,6 +3782,8 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   bool settings_file_specified = false;
   bool needs_hotspotrc_warning = false;
 
+  ArgumentsExt::process_options(args);
+
   const char* flags_file;
   int index;
   for (index = 0; index < args->nOptions; index++) {
@@ -3926,7 +3971,20 @@ jint Arguments::apply_ergo() {
       vm_exit_during_initialization(
         "Incompatible compilation policy selected", NULL);
     }
+    // Scale CompileThreshold
+    if (!FLAG_IS_DEFAULT(CompileThresholdScaling)) {
+      FLAG_SET_ERGO(intx, CompileThreshold, get_scaled_compile_threshold(CompileThreshold));
+    }
   }
+
+#ifdef COMPILER2
+#ifndef PRODUCT
+  if (PrintIdealGraphLevel > 0) {
+    FLAG_SET_ERGO(bool, PrintIdealGraph, true);
+  }
+#endif
+#endif
+
   // Set NmethodSweepFraction after the size of the code cache is adapted (in case of tiered)
   if (FLAG_IS_DEFAULT(NmethodSweepFraction)) {
     FLAG_SET_DEFAULT(NmethodSweepFraction, 1 + ReservedCodeCacheSize / (16 * M));
