@@ -127,7 +127,7 @@ public class CheckGraalInvariants extends GraalTest {
         MetaAccessProvider metaAccess = providers.getMetaAccess();
 
         PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
-        Plugins plugins = new Plugins(new InvocationPlugins(metaAccess));
+        Plugins plugins = new Plugins(new InvocationPlugins());
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getDefault(plugins).withEagerResolving(true);
         graphBuilderSuite.appendPhase(new GraphBuilderPhase(config));
         HighTierContext context = new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.NONE);

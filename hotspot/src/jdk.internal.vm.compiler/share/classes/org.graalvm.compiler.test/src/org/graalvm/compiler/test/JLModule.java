@@ -96,6 +96,7 @@ public class JLModule {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public Set<String> getPackages() {
         try {
             return (Set<String>) getPackagesMethod.invoke(realModule);
