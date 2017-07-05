@@ -147,8 +147,8 @@ ifeq ($(SYSTEM_UNAME), SunOS)
   endif
   # Suffix for file bundles used in previous release
   BUNDLE_FILE_SUFFIX=.tar
-  # How much RAM does this machine have:
-  MB_OF_MEMORY=$(shell /usr/sbin/prtconf | fgrep 'Memory size:' | expand | cut -d' ' -f3)
+  # How much RAM does this machine have (zones send an error to stderr):
+  MB_OF_MEMORY:=$(shell /usr/sbin/prtconf 2>/dev/null | fgrep 'Memory size:' | expand | cut -d' ' -f3)
 endif
 
 # Platform settings specific to Linux

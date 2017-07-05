@@ -72,7 +72,6 @@ FDDLIBM_SUFFIX = a
 SCRIPT_SUFFIX =
 # CC compiler object code output directive flag value
 CC_OBJECT_OUTPUT_FLAG = -o #trailing blank required!
-CC_PROGRAM_OUTPUT_FLAG = -o #trailing blank required!
 
 ifdef ENABLE_FULL_DEBUG_SYMBOLS
 # Only check for Full Debug Symbols support on Solaris if it is
