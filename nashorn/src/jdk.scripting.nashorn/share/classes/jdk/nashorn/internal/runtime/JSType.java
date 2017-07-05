@@ -150,6 +150,12 @@ public enum JSType {
     /** Div exact wrapper for potentially integer division that turns into float point */
     public static final Call DIV_EXACT       = staticCall(JSTYPE_LOOKUP, JSType.class, "divExact", int.class, int.class, int.class, int.class);
 
+    /** Div zero wrapper for integer division that handles (0/0)|0 == 0 */
+    public static final Call DIV_ZERO        = staticCall(JSTYPE_LOOKUP, JSType.class, "divZero", int.class, int.class, int.class);
+
+    /** Mod zero wrapper for integer division that handles (0%0)|0 == 0 */
+    public static final Call REM_ZERO        = staticCall(JSTYPE_LOOKUP, JSType.class, "remZero", int.class, int.class, int.class);
+
     /** Mod exact wrapper for potentially integer remainders that turns into float point */
     public static final Call REM_EXACT       = staticCall(JSTYPE_LOOKUP, JSType.class, "remExact", int.class, int.class, int.class, int.class);
 
@@ -173,6 +179,12 @@ public enum JSType {
 
     /** Div exact wrapper for potentially integer division that turns into float point */
     public static final Call DIV_EXACT_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "divExact", long.class, long.class, long.class, int.class);
+
+    /** Div zero wrapper for long division that handles (0/0) >>> 0 == 0 */
+    public static final Call DIV_ZERO_LONG        = staticCall(JSTYPE_LOOKUP, JSType.class, "divZero", long.class, long.class, long.class);
+
+    /** Mod zero wrapper for long division that handles (0%0) >>> 0 == 0 */
+    public static final Call REM_ZERO_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "remZero", long.class, long.class, long.class);
 
     /** Mod exact wrapper for potentially integer remainders that turns into float point */
     public static final Call REM_EXACT_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "remExact", long.class, long.class, long.class, int.class);
@@ -1486,6 +1498,28 @@ public enum JSType {
     }
 
     /**
+     * Implements int division but allows {@code x / 0} to be represented as 0. Basically equivalent to
+     * {@code (x / y)|0} JavaScript expression (division of two ints coerced to int).
+     * @param x the dividend
+     * @param y the divisor
+     * @return the result
+     */
+    public static int divZero(final int x, final int y) {
+        return y == 0 ? 0 : x / y;
+    }
+
+    /**
+     * Implements int remainder but allows {@code x % 0} to be represented as 0. Basically equivalent to
+     * {@code (x % y)|0} JavaScript expression (remainder of two ints coerced to int).
+     * @param x the dividend
+     * @param y the divisor
+     * @return the remainder
+     */
+    public static int remZero(final int x, final int y) {
+        return y == 0 ? 0 : x % y;
+    }
+
+    /**
      * Wrapper for modExact. Throws UnwarrantedOptimismException if the modulo can't be represented as int.
      *
      * @param x first term
@@ -1526,6 +1560,28 @@ public enum JSType {
             return res;
         }
         throw new UnwarrantedOptimismException((double)x / (double)y, programPoint);
+    }
+
+    /**
+     * Implements long division but allows {@code x / 0} to be represented as 0. Useful when division of two longs
+     * is coerced to long.
+     * @param x the dividend
+     * @param y the divisor
+     * @return the result
+     */
+    public static long divZero(final long x, final long y) {
+        return y == 0L ? 0L : x / y;
+    }
+
+    /**
+     * Implements long remainder but allows {@code x % 0} to be represented as 0. Useful when remainder of two longs
+     * is coerced to long.
+     * @param x the dividend
+     * @param y the divisor
+     * @return the remainder
+     */
+    public static long remZero(final long x, final long y) {
+        return y == 0L ? 0L : x % y;
     }
 
     /**

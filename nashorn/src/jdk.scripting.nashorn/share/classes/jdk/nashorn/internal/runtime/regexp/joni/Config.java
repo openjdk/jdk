@@ -21,6 +21,7 @@ package jdk.nashorn.internal.runtime.regexp.joni;
 
 import java.io.PrintStream;
 
+@SuppressWarnings("javadoc")
 public interface Config {
     final int CHAR_TABLE_SIZE = 256;
 

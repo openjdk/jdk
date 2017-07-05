@@ -98,6 +98,10 @@ public abstract class ArrayData {
         @Override
         public ArrayData ensure(final long safeIndex) {
             if (safeIndex > 0L) {
+                if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH) {
+                    return new SparseArrayData(this, safeIndex + 1);
+                }
+                //known to fit in int
                 return toRealArrayData((int)safeIndex).ensure(safeIndex);
            }
            return this;

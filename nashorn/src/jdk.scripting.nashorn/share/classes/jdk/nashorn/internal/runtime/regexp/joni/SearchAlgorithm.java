@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni;
 
+@SuppressWarnings("javadoc")
 public abstract class SearchAlgorithm {
 
     public abstract String getName();
@@ -62,7 +63,9 @@ public abstract class SearchAlgorithm {
             int end = textEnd;
             end -= targetEnd - targetP - 1;
 
-            if (end > textRange) end = textRange;
+            if (end > textRange) {
+                end = textRange;
+            }
 
             int s = textP;
 
@@ -71,11 +74,15 @@ public abstract class SearchAlgorithm {
                     int p = s + 1;
                     int t = targetP + 1;
                     while (t < targetEnd) {
-                        if (target[t] != text[p++]) break;
+                        if (target[t] != text[p++]) {
+                            break;
+                        }
                         t++;
                     }
 
-                    if (t == targetEnd) return s;
+                    if (t == targetEnd) {
+                        return s;
+                    }
                 }
                 s++;
             }
@@ -101,10 +108,14 @@ public abstract class SearchAlgorithm {
                     int p = s + 1;
                     int t = targetP + 1;
                     while (t < targetEnd) {
-                        if (target[t] != text[p++]) break;
+                        if (target[t] != text[p++]) {
+                            break;
+                        }
                         t++;
                     }
-                    if (t == targetEnd) return s;
+                    if (t == targetEnd) {
+                        return s;
+                    }
                 }
                 // s = enc.prevCharHead or s = s <= adjustText ? -1 : s - 1;
                 s--;
@@ -114,10 +125,8 @@ public abstract class SearchAlgorithm {
     };
 
     public static final class SLOW_IC extends SearchAlgorithm {
-        private final int caseFoldFlag;
-
         public SLOW_IC(final Regex regex) {
-            this.caseFoldFlag = regex.caseFoldFlag;
+            //empty
         }
 
         @Override
@@ -134,11 +143,15 @@ public abstract class SearchAlgorithm {
             int end = textEnd;
             end -= targetEnd - targetP - 1;
 
-            if (end > textRange) end = textRange;
+            if (end > textRange) {
+                end = textRange;
+            }
             int s = textP;
 
             while (s < end) {
-                if (lowerCaseMatch(target, targetP, targetEnd, text, s, textEnd)) return s;
+                if (lowerCaseMatch(target, targetP, targetEnd, text, s, textEnd)) {
+                    return s;
+                }
                 s++;
             }
             return -1;
@@ -158,17 +171,21 @@ public abstract class SearchAlgorithm {
             }
 
             while (s >= textP) {
-                if (lowerCaseMatch(target, targetP, targetEnd, text, s, textEnd)) return s;
+                if (lowerCaseMatch(target, targetP, targetEnd, text, s, textEnd)) {
+                    return s;
+                }
                 s = EncodingHelper.prevCharHead(adjustText, s);
             }
             return -1;
         }
 
-        private boolean lowerCaseMatch(final char[] t, int tP, final int tEnd,
-                                       final char[] chars, int p, final int end) {
+        private static boolean lowerCaseMatch(final char[] t, final int tPp, final int tEnd,
+                                       final char[] chars, final int pp, final int end) {
 
-            while (tP < tEnd) {
-                if (t[tP++] != EncodingHelper.toLowerCase(chars[p++])) return false;
+            for (int tP = tPp, p = pp; tP < tEnd; ) {
+                if (t[tP++] != EncodingHelper.toLowerCase(chars[p++])) {
+                    return false;
+                }
             }
             return true;
         }
@@ -188,7 +205,9 @@ public abstract class SearchAlgorithm {
             final int targetEnd = regex.exactEnd;
 
             int end = textRange + (targetEnd - targetP) - 1;
-            if (end > textEnd) end = textEnd;
+            if (end > textEnd) {
+                end = textEnd;
+            }
 
             final int tail = targetEnd - 1;
             int s = textP + (targetEnd - targetP) - 1;
@@ -199,7 +218,9 @@ public abstract class SearchAlgorithm {
                     int t = tail;
 
                     while (text[p] == target[t]) {
-                        if (t == targetP) return p;
+                        if (t == targetP) {
+                            return p;
+                        }
                         p--; t--;
                     }
 
@@ -211,7 +232,9 @@ public abstract class SearchAlgorithm {
                     int t = tail;
 
                     while (text[p] == target[t]) {
-                        if (t == targetP) return p;
+                        if (t == targetP) {
+                            return p;
+                        }
                         p--; t--;
                     }
 
@@ -249,7 +272,9 @@ public abstract class SearchAlgorithm {
                 while (t < targetEnd && text[p] == target[t]) {
                     p++; t++;
                 }
-                if (t == targetEnd) return s;
+                if (t == targetEnd) {
+                    return s;
+                }
 
                 s -= regex.intMapBackward[text[s] & 0xff];
             }
@@ -268,8 +293,12 @@ public abstract class SearchAlgorithm {
 
             final int len = end - p;
 
-            for (int i=0; i<Config.CHAR_TABLE_SIZE; i++) skip[i] = len;
-            for (int i=len-1; i>0; i--) skip[chars[i] & 0xff] = i;
+            for (int i=0; i<Config.CHAR_TABLE_SIZE; i++) {
+                skip[i] = len;
+            }
+            for (int i=len-1; i>0; i--) {
+                skip[chars[i] & 0xff] = i;
+            }
         }
     };
 
@@ -286,7 +315,9 @@ public abstract class SearchAlgorithm {
             int s = textP;
 
             while (s < textRange) {
-                if (text[s] > 0xff || map[text[s]] != 0) return s;
+                if (text[s] > 0xff || map[text[s]] != 0) {
+                    return s;
+                }
                 s++;
             }
             return -1;
@@ -297,9 +328,13 @@ public abstract class SearchAlgorithm {
             final byte[] map = regex.map;
             int s = textStart;
 
-            if (s >= textEnd) s = textEnd - 1;
+            if (s >= textEnd) {
+                s = textEnd - 1;
+            }
             while (s >= textP) {
-                if (text[s] > 0xff || map[text[s]] != 0) return s;
+                if (text[s] > 0xff || map[text[s]] != 0) {
+                    return s;
+                }
                 s--;
             }
             return -1;

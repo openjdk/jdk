@@ -276,6 +276,7 @@ public class Sockets {
         set = new HashSet<>();
         set.add(StandardSocketOptions.SO_RCVBUF);
         set.add(StandardSocketOptions.SO_REUSEADDR);
+        set.add(StandardSocketOptions.IP_TOS);
         set = Collections.unmodifiableSet(set);
         options.put(ServerSocket.class, set);
 

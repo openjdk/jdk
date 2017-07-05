@@ -21,6 +21,7 @@ package jdk.nashorn.internal.runtime.regexp.joni.ast;
 
 import jdk.nashorn.internal.runtime.regexp.joni.constants.NodeStatus;
 
+@SuppressWarnings("javadoc")
 public abstract class StateNode extends Node implements NodeStatus {
     protected int state;
 

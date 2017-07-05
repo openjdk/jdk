@@ -25,6 +25,7 @@
 
 package jdk.nashorn.api.javaaccess;
 
+@SuppressWarnings("javadoc")
 public class Person {
 
     public int id = 0;

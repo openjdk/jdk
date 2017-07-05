@@ -52,6 +52,7 @@ import org.testng.annotations.Test;
  * class. Optionally, output from running the script is compared against the
  * corresponding .EXPECTED file.
  */
+@SuppressWarnings("javadoc")
 public final class ScriptRunnable extends AbstractScriptRunnable implements ITest {
     public ScriptRunnable(final String framework, final File testFile, final List<String> engineOptions, final Map<String, String> testOptions,  final List<String> scriptArguments) {
         super(framework, testFile, engineOptions, testOptions, scriptArguments);

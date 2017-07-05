@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.constants;
 
+@SuppressWarnings("javadoc")
 public interface MetaChar {
     final int ESCAPE            = 0;
     final int ANYCHAR           = 1;

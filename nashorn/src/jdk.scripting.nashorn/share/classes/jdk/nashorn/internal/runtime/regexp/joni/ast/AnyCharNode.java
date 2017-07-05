@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.ast;
 
+@SuppressWarnings("javadoc")
 public final class AnyCharNode extends Node {
     public AnyCharNode(){}
 

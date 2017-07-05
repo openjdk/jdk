@@ -28,7 +28,6 @@ package jdk.nashorn.internal.codegen;
 import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 import static jdk.nashorn.internal.ir.Expression.isAlwaysFalse;
 import static jdk.nashorn.internal.ir.Expression.isAlwaysTrue;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -236,12 +235,12 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         private byte conversions;
 
         void recordConversion(final LvarType from, final LvarType to) {
-            switch(from) {
+            switch (from) {
             case UNDEFINED:
                 return;
             case INT:
             case BOOLEAN:
-                switch(to) {
+                switch (to) {
                 case LONG:
                     recordConversion(I2L);
                     return;
@@ -256,7 +255,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                     return;
                 }
             case LONG:
-                switch(to) {
+                switch (to) {
                 case DOUBLE:
                     recordConversion(L2D);
                     return;
@@ -1425,6 +1424,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
      * @param symbol the symbol representing the variable
      * @param type the type
      */
+    @SuppressWarnings("unused")
     private void setType(final Symbol symbol, final LvarType type) {
         if(getLocalVariableTypeOrNull(symbol) == type) {
             return;

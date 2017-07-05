@@ -20,7 +20,6 @@
 package jdk.nashorn.internal.runtime.regexp.joni;
 
 import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsAt;
-
 import java.lang.ref.WeakReference;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.StackPopLevel;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.StackType;
@@ -61,12 +60,14 @@ abstract class StackMachine extends Matcher implements StackType {
 
     static final ThreadLocal<WeakReference<StackEntry[]>> stacks
             = new ThreadLocal<WeakReference<StackEntry[]>>() {
+        @SuppressWarnings("unused")
         @Override
         protected WeakReference<StackEntry[]> initialValue() {
             return new WeakReference<StackEntry[]>(allocateStack());
         }
     };
 
+    @SuppressWarnings("unused")
     private static StackEntry[] fetchStack() {
         WeakReference<StackEntry[]> ref = stacks.get();
         StackEntry[] stack = ref.get();
@@ -78,7 +79,9 @@ abstract class StackMachine extends Matcher implements StackType {
     }
 
     protected final void init() {
-        if (stack != null) pushEnsured(ALT, regex.codeLength - 1); /* bottom stack */
+        if (stack != null) {
+            pushEnsured(ALT, regex.codeLength - 1); /* bottom stack */
+        }
         if (repeatStk != null) {
             for (int i=1; i<=regex.numMem; i++) {
                 repeatStk[i + memStartStk] = repeatStk[i + memEndStk] = INVALID_INDEX;
@@ -87,9 +90,13 @@ abstract class StackMachine extends Matcher implements StackType {
     }
 
     protected final StackEntry ensure1() {
-        if (stk >= stack.length) doubleStack();
+        if (stk >= stack.length) {
+            doubleStack();
+        }
         StackEntry e = stack[stk];
-        if (e == null) stack[stk] = e = new StackEntry();
+        if (e == null) {
+            stack[stk] = e = new StackEntry();
+        }
         return e;
     }
 
@@ -190,7 +197,9 @@ abstract class StackMachine extends Matcher implements StackType {
             if ((e.type & MASK_MEM_END_OR_MARK) != 0 && e.getMemNum() == mnum) {
                 level++;
             } else if (e.type == MEM_START && e.getMemNum() == mnum) {
-                if (level == 0) break;
+                if (level == 0) {
+                    break;
+                }
                 level--;
             }
         }
@@ -371,9 +380,8 @@ abstract class StackMachine extends Matcher implements StackType {
                 if (e.getNullCheckNum() == id) {
                     if (level == 0) {
                         return e.getNullCheckPStr() == s ? 1 : 0;
-                    } else {
-                        level--;
                     }
+                    level--;
                 }
             } else if (e.type == NULL_CHECK_END) {
                 level++;
@@ -393,7 +401,52 @@ abstract class StackMachine extends Matcher implements StackType {
                     if (e.getNullCheckPStr() != s) {
                         isNull = 0;
                         break;
-                    } else {
+                    }
+                    int endp;
+                    isNull = 1;
+                    while (k < stk) {
+                        if (e.type == MEM_START) {
+                            if (e.getMemEnd() == INVALID_INDEX) {
+                                isNull = 0;
+                                break;
+                            }
+                            if (bsAt(regex.btMemEnd, e.getMemNum())) {
+                                endp = stack[e.getMemEnd()].getMemPStr();
+                            } else {
+                                endp = e.getMemEnd();
+                            }
+                            if (stack[e.getMemStart()].getMemPStr() != endp) {
+                                isNull = 0;
+                                break;
+                            } else if (endp != s) {
+                                isNull = -1; /* empty, but position changed */
+                            }
+                        }
+                        k++;
+                        e = stack[k]; // !!
+                    }
+                    break;
+                }
+            }
+        }
+        return isNull;
+    }
+
+    protected final int nullCheckMemStRec(final int id, final int s) {
+        int level = 0;
+        int k = stk;
+        int isNull;
+        while (true) {
+            k--;
+            StackEntry e = stack[k];
+
+            if (e.type == NULL_CHECK_START) {
+                if (e.getNullCheckNum() == id) {
+                    if (level == 0) {
+                        if (e.getNullCheckPStr() != s) {
+                            isNull = 0;
+                            break;
+                        }
                         int endp;
                         isNull = 1;
                         while (k < stk) {
@@ -415,62 +468,16 @@ abstract class StackMachine extends Matcher implements StackType {
                                 }
                             }
                             k++;
-                            e = stack[k]; // !!
+                            e = stack[k];
                         }
                         break;
                     }
-                }
-            }
-        }
-        return isNull;
-    }
-
-    protected final int nullCheckMemStRec(final int id, final int s) {
-        int level = 0;
-        int k = stk;
-        int isNull;
-        while (true) {
-            k--;
-            StackEntry e = stack[k];
-
-            if (e.type == NULL_CHECK_START) {
-                if (e.getNullCheckNum() == id) {
-                    if (level == 0) {
-                        if (e.getNullCheckPStr() != s) {
-                            isNull = 0;
-                            break;
-                        } else {
-                            int endp;
-                            isNull = 1;
-                            while (k < stk) {
-                                if (e.type == MEM_START) {
-                                    if (e.getMemEnd() == INVALID_INDEX) {
-                                        isNull = 0;
-                                        break;
-                                    }
-                                    if (bsAt(regex.btMemEnd, e.getMemNum())) {
-                                        endp = stack[e.getMemEnd()].getMemPStr();
-                                    } else {
-                                        endp = e.getMemEnd();
-                                    }
-                                    if (stack[e.getMemStart()].getMemPStr() != endp) {
-                                        isNull = 0;
-                                        break;
-                                    } else if (endp != s) {
-                                        isNull = -1; /* empty, but position changed */
-                                    }
-                                }
-                                k++;
-                                e = stack[k];
-                            }
-                            break;
-                        }
-                    } else {
-                        level--;
-                    }
+                    level--;
                 }
             } else if (e.type == NULL_CHECK_END) {
-                if (e.getNullCheckNum() == id) level++;
+                if (e.getNullCheckNum() == id) {
+                    level++;
+                }
             }
         }
         return isNull;
@@ -485,7 +492,9 @@ abstract class StackMachine extends Matcher implements StackType {
 
             if (e.type == REPEAT) {
                 if (level == 0) {
-                    if (e.getRepeatNum() == id) return k;
+                    if (e.getRepeatNum() == id) {
+                        return k;
+                    }
                 }
             } else if (e.type == CALL_FRAME) {
                 level--;
@@ -505,9 +514,8 @@ abstract class StackMachine extends Matcher implements StackType {
             if (e.type == CALL_FRAME) {
                 if (level == 0) {
                     return e.getCallFrameRetAddr();
-                } else {
-                    level--;
                 }
+                level--;
             } else if (e.type == RETURN) {
                 level++;
             }

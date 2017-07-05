@@ -34,7 +34,6 @@ import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_IGNORE_STD_
 import static jdk.nashorn.internal.test.framework.TestConfig.OPTIONS_RUN;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_FAIL_LIST;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_SHARED_CONTEXT;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -50,6 +49,7 @@ import java.util.regex.Matcher;
 /**
  * Abstract class to compile and run one .js script file.
  */
+@SuppressWarnings("javadoc")
 public abstract class AbstractScriptRunnable {
     // some test scripts need a "framework" script - whose features are used
     // in the test script. This optional framework script can be null.
@@ -274,14 +274,14 @@ public abstract class AbstractScriptRunnable {
     // compile and run this script
     protected abstract void execute();
 
-    private boolean equalsCompilerMsgs(final String es, final String as) {
+    private static boolean equalsCompilerMsgs(final String es, final String as) {
         final int split = es.indexOf(':');
         // Replace both types of separators ('/' and '\') with the one from
         // current environment
         return (split >= 0) && as.equals(es.substring(0, split).replaceAll("[/\\\\]", Matcher.quoteReplacement(File.separator)) + es.substring(split));
     }
 
-    private void escape(final String value, final StringBuilder out) {
+    private static void escape(final String value, final StringBuilder out) {
         final int len = value.length();
         for (int i = 0; i < len; i++) {
             final char ch = value.charAt(i);
@@ -297,7 +297,7 @@ public abstract class AbstractScriptRunnable {
         }
     }
 
-    private String escape(final String value) {
+    private static String escape(final String value) {
         final StringBuilder sb = new StringBuilder();
         escape(value, sb);
         return sb.toString();

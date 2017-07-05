@@ -42,6 +42,8 @@ import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
+import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
@@ -104,6 +106,12 @@ public final class Bootstrap {
             public GuardedInvocation filter(final GuardedInvocation inv, final LinkRequest request, final LinkerServices linkerServices) {
                 final CallSiteDescriptor desc = request.getCallSiteDescriptor();
                 return OptimisticReturnFilters.filterOptimisticReturnValue(inv, desc).asType(linkerServices, desc.getMethodType());
+            }
+        });
+        factory.setAutoConversionStrategy(new MethodTypeConversionStrategy() {
+            @Override
+            public MethodHandle asType(final MethodHandle target, final MethodType newType) {
+                return unboxReturnType(target, newType);
             }
         });
         final int relinkThreshold = Options.getIntProperty("nashorn.unstable.relink.threshold", NASHORN_DEFAULT_UNSTABLE_RELINK_THRESHOLD);
@@ -419,5 +427,30 @@ public final class Bootstrap {
      */
     static GuardedInvocation asTypeSafeReturn(final GuardedInvocation inv, final LinkerServices linkerServices, final CallSiteDescriptor desc) {
         return inv == null ? null : inv.asTypeSafeReturn(linkerServices, desc.getMethodType());
+    }
+
+    /**
+     * Adapts the return type of the method handle with {@code explicitCastArguments} when it is an unboxing
+     * conversion. This will ensure that nulls are unwrapped to false or 0.
+     * @param target the target method handle
+     * @param newType the desired new type. Note that this method does not adapt the method handle completely to the
+     * new type, it only adapts the return type; this is allowed as per
+     * {@link DynamicLinkerFactory#setAutoConversionStrategy(MethodTypeConversionStrategy)}, which is what this method
+     * is used for.
+     * @return the method handle with adapted return type, if it required an unboxing conversion.
+     */
+    private static MethodHandle unboxReturnType(final MethodHandle target, final MethodType newType) {
+        final MethodType targetType = target.type();
+        final Class<?> oldReturnType = targetType.returnType();
+        if (TypeUtilities.isWrapperType(oldReturnType)) {
+            final Class<?> newReturnType = newType.returnType();
+            if (newReturnType.isPrimitive()) {
+                // The contract of setAutoConversionStrategy is such that the difference between newType and targetType
+                // can only be JLS method invocation conversions.
+                assert TypeUtilities.isMethodInvocationConvertible(oldReturnType, newReturnType);
+                return MethodHandles.explicitCastArguments(target, targetType.changeReturnType(newReturnType));
+            }
+        }
+        return target;
     }
 }

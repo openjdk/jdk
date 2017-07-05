@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
-
 import jdk.nashorn.internal.IntDeque;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Block;
@@ -250,7 +249,7 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
     static Type getTypeForSlotDescriptor(final char typeDesc) {
         // Recognizing both lowercase and uppercase as we're using both to signify symbol boundaries; see
         // MethodEmitter.markSymbolBoundariesInLvarTypesDescriptor().
-        switch(typeDesc) {
+        switch (typeDesc) {
             case 'I':
             case 'i':
                 return Type.INT;

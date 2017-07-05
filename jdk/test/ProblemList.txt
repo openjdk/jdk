@@ -138,9 +138,6 @@ com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationTest.java
 # 8058492
 java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
 
-# 8058506
-java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java                              generic-all
-
 ############################################################################
 
 # jdk_jmx
@@ -285,6 +282,9 @@ com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
 # 8058616
 com/sun/jdi/RedefinePop.sh                                      generic-all
 
+# 8061114
+com/sun/jdi/Redefine-g.sh                                       generic-all
+
 ############################################################################
 
 # jdk_util
@@ -317,5 +317,8 @@ sun/tools/jps/TestJpsJarRelative.java				generic-all
 
 # 8057732
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    generic-all
+
+# 8060736
+sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
 
 ############################################################################
