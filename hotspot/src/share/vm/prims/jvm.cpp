@@ -35,6 +35,7 @@
 #include "oops/fieldStreams.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/methodOop.hpp"
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -2183,11 +2184,11 @@ JVM_QUICK_ENTRY(void, JVM_GetMethodIxExceptionTableEntry(JNIEnv *env, jclass cls
   klassOop k = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
   oop method = instanceKlass::cast(k)->methods()->obj_at(method_index);
-  typeArrayOop extable = methodOop(method)->exception_table();
-  entry->start_pc   = extable->int_at(entry_index * 4);
-  entry->end_pc     = extable->int_at(entry_index * 4 + 1);
-  entry->handler_pc = extable->int_at(entry_index * 4 + 2);
-  entry->catchType  = extable->int_at(entry_index * 4 + 3);
+  ExceptionTable extable((methodOop(method)));
+  entry->start_pc   = extable.start_pc(entry_index);
+  entry->end_pc     = extable.end_pc(entry_index);
+  entry->handler_pc = extable.handler_pc(entry_index);
+  entry->catchType  = extable.catch_type_index(entry_index);
 JVM_END
 
 
@@ -2196,7 +2197,7 @@ JVM_QUICK_ENTRY(jint, JVM_GetMethodIxExceptionTableLength(JNIEnv *env, jclass cl
   klassOop k = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
   oop method = instanceKlass::cast(k)->methods()->obj_at(method_index);
-  return methodOop(method)->exception_table()->length() / 4;
+  return methodOop(method)->exception_table_length();
 JVM_END
 
 
