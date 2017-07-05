@@ -1335,66 +1335,94 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 int maxNotifications,
                 long timeout)
                 throws IOException, ClassNotFoundException {
-            IOException org;
 
+            boolean retried = false;
             while (true) { // used for a successful re-connection
+                           // or a transient network problem
                 try {
                     return connection.fetchNotifications(clientSequenceNumber,
                             maxNotifications,
-                            timeout);
+                            timeout); // return normally
                 } catch (IOException ioe) {
-                    org = ioe;
+                    // Examine the chain of exceptions to determine whether this
+                    // is a deserialization issue. If so - we propagate the
+                    // appropriate exception to the caller, who will then
+                    // proceed with fetching notifications one by one
+                    rethrowDeserializationException(ioe);
 
-                    // inform of IOException
                     try {
                         communicatorAdmin.gotIOException(ioe);
-
-                        // The connection should be re-established.
-                        continue;
+                        // reconnection OK, back to "while" to do again
                     } catch (IOException ee) {
-                        // No more fetch, the Exception will be re-thrown.
-                        break;
-                    } // never reached
-                } // never reached
-            }
+                        boolean toClose = false;
 
-            // specially treating for an UnmarshalException
-            if (org instanceof UnmarshalException) {
-                UnmarshalException ume = (UnmarshalException)org;
+                        synchronized (this) {
+                            if (terminated) {
+                                // the connection is closed.
+                                throw ioe;
+                            } else if (retried) {
+                                toClose = true;
+                            }
+                        }
 
-                if (ume.detail instanceof ClassNotFoundException)
-                    throw (ClassNotFoundException) ume.detail;
+                        if (toClose) {
+                            // JDK-8049303
+                            // We received an IOException - but the communicatorAdmin
+                            // did not close the connection - possibly because
+                            // the original exception was raised by a transient network
+                            // problem?
+                            // We already know that this exception is not due to a deserialization
+                            // issue as we already took care of that before involving the
+                            // communicatorAdmin. Moreover - we already made one retry attempt
+                            // at fetching the same batch of notifications - and the
+                            // problem persisted.
+                            // Since trying again doesn't seem to solve the issue, we will now
+                            // close the connection. Doing otherwise might cause the
+                            // NotifFetcher thread to die silently.
+                            final Notification failedNotif =
+                                    new JMXConnectionNotification(
+                                    JMXConnectionNotification.FAILED,
+                                    this,
+                                    connectionId,
+                                    clientNotifSeqNo++,
+                                    "Failed to communicate with the server: " + ioe.toString(),
+                                    ioe);
 
-                /* In Sun's RMI implementation, if a method return
-                   contains an unserializable object, then we get
-                   UnmarshalException wrapping WriteAbortedException
-                   wrapping NotSerializableException.  In that case we
-                   extract the NotSerializableException so that our
-                   caller can realize it should try to skip past the
-                   notification that presumably caused it.  It's not
-                   certain that every other RMI implementation will
-                   generate this exact exception sequence.  If not, we
-                   will not detect that the problem is due to an
-                   unserializable object, and we will stop trying to
-                   receive notifications from the server.  It's not
-                   clear we can do much better.  */
-                if (ume.detail instanceof WriteAbortedException) {
-                    WriteAbortedException wae =
-                            (WriteAbortedException) ume.detail;
-                    if (wae.detail instanceof IOException)
-                        throw (IOException) wae.detail;
+                            sendNotification(failedNotif);
+
+                            try {
+                                close(true);
+                            } catch (Exception e) {
+                                // OK.
+                                // We are closing
+                            }
+                            throw ioe; // the connection is closed here.
+                        } else {
+                            // JDK-8049303 possible transient network problem,
+                            // let's try one more time
+                            retried = true;
+                        }
+                    }
                 }
-            } else if (org instanceof MarshalException) {
+            }
+        }
+
+        private void rethrowDeserializationException(IOException ioe)
+                throws ClassNotFoundException, IOException {
+            // specially treating for an UnmarshalException
+            if (ioe instanceof UnmarshalException) {
+                throw ioe; // the fix of 6937053 made ClientNotifForwarder.fetchNotifs
+                           // fetch one by one with UnmarshalException
+            } else if (ioe instanceof MarshalException) {
                 // IIOP will throw MarshalException wrapping a NotSerializableException
                 // when a server fails to serialize a response.
-                MarshalException me = (MarshalException)org;
+                MarshalException me = (MarshalException)ioe;
                 if (me.detail instanceof NotSerializableException) {
                     throw (NotSerializableException)me.detail;
                 }
             }
 
-            // Not serialization problem, simply re-throw the orginal exception
-            throw org;
+            // Not serialization problem, return.
         }
 
         protected Integer addListenerForMBeanRemovedNotif()

@@ -25,8 +25,6 @@
 
 package sun.security.jgss.spnego;
 
-import com.sun.security.jgss.ExtendedGSSContext;
-import com.sun.security.jgss.InquireType;
 import java.io.*;
 import java.security.Provider;
 import org.ietf.jgss.*;
@@ -174,9 +172,9 @@ public class SpNegoContext implements GSSContextSpi {
      */
     public final boolean getDelegPolicyState() {
         if (isInitiator() && mechContext != null &&
-                mechContext instanceof ExtendedGSSContext &&
+                mechContext instanceof GSSContextImpl &&
                 (state == STATE_IN_PROCESS || state == STATE_DONE)) {
-            return ((ExtendedGSSContext)mechContext).getDelegPolicyState();
+            return ((GSSContextImpl)mechContext).getDelegPolicyState();
         } else {
             return delegPolicyState;
         }
@@ -850,7 +848,7 @@ public class SpNegoContext implements GSSContextSpi {
                     myCred.getInternalCred());
             }
             mechContext =
-                factory.manager.createContext(serverName,
+                    factory.manager.createContext(serverName,
                     internal_mech, cred, GSSContext.DEFAULT_LIFETIME);
             mechContext.requestConf(confState);
             mechContext.requestInteg(integState);
@@ -858,8 +856,8 @@ public class SpNegoContext implements GSSContextSpi {
             mechContext.requestMutualAuth(mutualAuthState);
             mechContext.requestReplayDet(replayDetState);
             mechContext.requestSequenceDet(sequenceDetState);
-            if (mechContext instanceof ExtendedGSSContext) {
-                ((ExtendedGSSContext)mechContext).requestDelegPolicy(
+            if (mechContext instanceof GSSContextImpl) {
+                ((GSSContextImpl)mechContext).requestDelegPolicy(
                         delegPolicyState);
             }
         }
@@ -890,8 +888,7 @@ public class SpNegoContext implements GSSContextSpi {
                 cred = new GSSCredentialImpl(factory.manager,
                 myCred.getInternalCred());
             }
-            mechContext =
-                factory.manager.createContext(cred);
+            mechContext = factory.manager.createContext(cred);
         }
 
         // pass token to mechanism acceptSecContext
@@ -1217,14 +1214,14 @@ public class SpNegoContext implements GSSContextSpi {
     /**
      * Retrieve attribute of the context for {@code type}.
      */
-    public Object inquireSecContext(InquireType type)
+    public Object inquireSecContext(String type)
             throws GSSException {
         if (mechContext == null) {
             throw new GSSException(GSSException.NO_CONTEXT, -1,
                     "Underlying mech not established.");
         }
-        if (mechContext instanceof ExtendedGSSContext) {
-            return ((ExtendedGSSContext)mechContext).inquireSecContext(type);
+        if (mechContext instanceof GSSContextImpl) {
+            return ((GSSContextImpl)mechContext).inquireSecContext(type);
         } else {
             throw new GSSException(GSSException.BAD_MECH, -1,
                     "inquireSecContext not supported by underlying mech.");

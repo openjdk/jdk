@@ -231,6 +231,7 @@ typedef void*    (* _cmsDupUserDataFn)(cmsContext ContextID, const void* Data);
 #define cmsPluginMultiProcessElementSig      0x6D706548     // 'mpeH'
 #define cmsPluginOptimizationSig             0x6F707448     // 'optH'
 #define cmsPluginTransformSig                0x7A666D48     // 'xfmH'
+#define cmsPluginMutexSig                    0x6D747A48     // 'mtxH'
 
 typedef struct _cmsPluginBaseStruct {
 
@@ -247,19 +248,28 @@ typedef struct _cmsPluginBaseStruct {
 //----------------------------------------------------------------------------------------------------------
 
 // Memory handler. Each new plug-in type replaces current behaviour
+
+typedef void* (* _cmsMallocFnPtrType)(cmsContext ContextID, cmsUInt32Number size);
+typedef void  (* _cmsFreeFnPtrType)(cmsContext ContextID, void *Ptr);
+typedef void* (* _cmsReallocFnPtrType)(cmsContext ContextID, void* Ptr, cmsUInt32Number NewSize);
+
+typedef void* (* _cmsMalloZerocFnPtrType)(cmsContext ContextID, cmsUInt32Number size);
+typedef void* (* _cmsCallocFnPtrType)(cmsContext ContextID, cmsUInt32Number num, cmsUInt32Number size);
+typedef void* (* _cmsDupFnPtrType)(cmsContext ContextID, const void* Org, cmsUInt32Number size);
+
 typedef struct {
 
         cmsPluginBase base;
 
         // Required
-        void * (* MallocPtr)(cmsContext ContextID, cmsUInt32Number size);
-        void   (* FreePtr)(cmsContext ContextID, void *Ptr);
-        void * (* ReallocPtr)(cmsContext ContextID, void* Ptr, cmsUInt32Number NewSize);
+        _cmsMallocFnPtrType  MallocPtr;
+        _cmsFreeFnPtrType    FreePtr;
+        _cmsReallocFnPtrType ReallocPtr;
 
         // Optional
-        void * (* MallocZeroPtr)(cmsContext ContextID, cmsUInt32Number size);
-        void * (* CallocPtr)(cmsContext ContextID, cmsUInt32Number num, cmsUInt32Number size);
-        void * (* DupPtr)(cmsContext ContextID, const void* Org, cmsUInt32Number size);
+       _cmsMalloZerocFnPtrType MallocZeroPtr;
+       _cmsCallocFnPtrType     CallocPtr;
+       _cmsDupFnPtrType        DupPtr;
 
 } cmsPluginMemHandler;
 
@@ -621,6 +631,29 @@ typedef struct {
       _cmsTransformFactory  Factory;
 
 }  cmsPluginTransform;
+
+//----------------------------------------------------------------------------------------------------------
+// Mutex
+
+typedef void*    (* _cmsCreateMutexFnPtrType)(cmsContext ContextID);
+typedef void     (* _cmsDestroyMutexFnPtrType)(cmsContext ContextID, void* mtx);
+typedef cmsBool  (* _cmsLockMutexFnPtrType)(cmsContext ContextID, void* mtx);
+typedef void     (* _cmsUnlockMutexFnPtrType)(cmsContext ContextID, void* mtx);
+
+typedef struct {
+      cmsPluginBase     base;
+
+     _cmsCreateMutexFnPtrType  CreateMutexPtr;
+     _cmsDestroyMutexFnPtrType DestroyMutexPtr;
+     _cmsLockMutexFnPtrType    LockMutexPtr;
+     _cmsUnlockMutexFnPtrType  UnlockMutexPtr;
+
+}  cmsPluginMutex;
+
+CMSAPI void*   CMSEXPORT _cmsCreateMutex(cmsContext ContextID);
+CMSAPI void    CMSEXPORT _cmsDestroyMutex(cmsContext ContextID, void* mtx);
+CMSAPI cmsBool CMSEXPORT _cmsLockMutex(cmsContext ContextID, void* mtx);
+CMSAPI void    CMSEXPORT _cmsUnlockMutex(cmsContext ContextID, void* mtx);
 
 
 #ifndef CMS_USE_CPP_API

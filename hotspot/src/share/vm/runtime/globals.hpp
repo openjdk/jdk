@@ -2473,7 +2473,7 @@ class CommandLineFlags {
   develop(bool, CIPrintCompilerName, false,                                 \
           "when CIPrint is active, print the name of the active compiler")  \
                                                                             \
-  develop(bool, CIPrintCompileQueue, false,                                 \
+  diagnostic(bool, CIPrintCompileQueue, false,                              \
           "display the contents of the compile queue whenever a "           \
           "compilation is enqueued")                                        \
                                                                             \

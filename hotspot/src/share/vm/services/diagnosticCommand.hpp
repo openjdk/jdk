@@ -399,4 +399,68 @@ public:
   }
 };
 
+class CompileQueueDCmd : public DCmd {
+public:
+  CompileQueueDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  static const char* name() {
+    return "Compiler.queue";
+  }
+  static const char* description() {
+    return "Print methods queued for compilation.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments() { return 0; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class CodeListDCmd : public DCmd {
+public:
+  CodeListDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  static const char* name() {
+    return "Compiler.codelist";
+  }
+  static const char* description() {
+    return "Print all compiled methods in code cache.";
+  }
+  static const char* impact() {
+    return "Medium";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments() { return 0; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+
+class CodeCacheDCmd : public DCmd {
+public:
+  CodeCacheDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  static const char* name() {
+    return "Compiler.codecache";
+  }
+  static const char* description() {
+    return "Print code cache layout and bounds.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments() { return 0; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #endif // SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP
