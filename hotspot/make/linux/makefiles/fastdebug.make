@@ -58,7 +58,7 @@ CFLAGS$(HOTSPARC_GENERIC) += $(OPT_CFLAGS/BYFILE)
 # Linker mapfile
 MAPFILE = $(GAMMADIR)/make/linux/makefiles/mapfile-vers-debug
 
-G_SUFFIX =
+G_SUFFIX = _g
 VERSION = optimized
 SYSDEFS += -DASSERT -DFASTDEBUG
 PICFLAGS = DEFAULT

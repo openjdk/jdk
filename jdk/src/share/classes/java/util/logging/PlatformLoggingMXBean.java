@@ -51,7 +51,7 @@ import java.lang.management.PlatformManagedObject;
  * The {@link PlatformManagedObject#getObjectName} method
  * can be used to obtain its {@code ObjectName}.
  *
- * @See java.lang.management.PlatformManagedObject
+ * @see java.lang.management.PlatformManagedObject
  *
  * @author  Mandy Chung
  * @since   1.7

@@ -511,6 +511,8 @@ void CardTableModRefBS::mod_oop_in_space_iterate(Space* sp,
 }
 
 void CardTableModRefBS::dirty_MemRegion(MemRegion mr) {
+  assert((HeapWord*)align_size_down((uintptr_t)mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
+  assert((HeapWord*)align_size_up  ((uintptr_t)mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
   jbyte* cur  = byte_for(mr.start());
   jbyte* last = byte_after(mr.last());
   while (cur < last) {
@@ -520,6 +522,8 @@ void CardTableModRefBS::dirty_MemRegion(MemRegion mr) {
 }
 
 void CardTableModRefBS::invalidate(MemRegion mr, bool whole_heap) {
+  assert((HeapWord*)align_size_down((uintptr_t)mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
+  assert((HeapWord*)align_size_up  ((uintptr_t)mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
   for (int i = 0; i < _cur_covered_regions; i++) {
     MemRegion mri = mr.intersection(_covered[i]);
     if (!mri.is_empty()) dirty_MemRegion(mri);

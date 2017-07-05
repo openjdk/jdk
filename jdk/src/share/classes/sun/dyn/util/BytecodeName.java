@@ -298,6 +298,8 @@ public class BytecodeName {
      * The name {@code &lt;init&gt;} will be parsed into { '&lt;', "init", '&gt;'}}
      * The name {@code foo/bar$:baz} will be parsed into
      * {@code {"foo", '/', "bar", '$', ':', "baz"}}.
+     * The name {@code ::\=:foo:\=bar\!baz} will be parsed into
+     * {@code {':', ':', "", ':', "foo", ':', "bar:baz"}}.
      */
     public static Object[] parseBytecodeName(String s) {
         int slen = s.length();
@@ -315,7 +317,7 @@ public class BytecodeName {
                 if (lasti < i) {
                     // normal component
                     if (pass != 0)
-                        res[fillp] = s.substring(lasti, i);
+                        res[fillp] = toSourceName(s.substring(lasti, i));
                     fillp++;
                     lasti = i+1;
                 }
@@ -323,13 +325,14 @@ public class BytecodeName {
                     if (pass != 0)
                         res[fillp] = DANGEROUS_CHARS_CA[whichDC];
                     fillp++;
+                    lasti = i+1;
                 }
             }
             if (pass != 0)  break;
             // between passes, build the result array
-            res = new String[fillp];
-            if (fillp <= 1) {
-                if (fillp != 0)  res[0] = s;
+            res = new Object[fillp];
+            if (fillp <= 1 && lasti == 0) {
+                if (fillp != 0)  res[0] = toSourceName(s);
                 break;
             }
         }
@@ -348,9 +351,19 @@ public class BytecodeName {
      * @throws NullPointerException if any component is null
      */
     public static String unparseBytecodeName(Object[] components) {
-        for (Object c : components) {
-            if (c instanceof String)
-                checkSafeBytecodeName((String) c);  // may fail
+        Object[] components0 = components;
+        for (int i = 0; i < components.length; i++) {
+            Object c = components[i];
+            if (c instanceof String) {
+                String mc = toBytecodeName((String) c);
+                if (i == 0 && components.length == 1)
+                    return mc;  // usual case
+                if ((Object)mc != c) {
+                    if (components == components0)
+                        components = components.clone();
+                    components[i] = c = mc;
+                }
+            }
         }
         return appendAll(components);
     }
@@ -381,6 +394,14 @@ public class BytecodeName {
      * If the bytecode name contains dangerous characters,
      * assume that they are being used as punctuation,
      * and pass them through unchanged.
+     * Non-empty runs of non-dangerous characters are demangled
+     * if necessary, and the resulting names are quoted if
+     * they are not already valid Java identifiers, or if
+     * they contain a dangerous character (i.e., dollar sign "$").
+     * Single quotes are used when quoting.
+     * Within quoted names, embedded single quotes and backslashes
+     * are further escaped by prepended backslashes.
+     *
      * @param s the original bytecode name (which may be qualified)
      * @return a human-readable presentation
      */
@@ -389,10 +410,10 @@ public class BytecodeName {
         for (int i = 0; i < components.length; i++) {
             if (!(components[i] instanceof String))
                 continue;
-            String c = (String) components[i];
-            // pretty up the name by demangling it
-            String sn = toSourceName(c);
-            if ((Object)sn != c || !isJavaIdent(sn)) {
+            String sn = (String) components[i];
+            // note that the name is already demangled!
+            //sn = toSourceName(sn);
+            if (!isJavaIdent(sn) || sn.indexOf('$') >=0 ) {
                 components[i] = quoteDisplay(sn);
             }
         }
@@ -401,10 +422,10 @@ public class BytecodeName {
     private static boolean isJavaIdent(String s) {
         int slen = s.length();
         if (slen == 0)  return false;
-        if (!Character.isUnicodeIdentifierStart(s.charAt(0)))
+        if (!Character.isJavaIdentifierStart(s.charAt(0)))
             return false;
         for (int i = 1; i < slen; i++) {
-            if (!Character.isUnicodeIdentifierPart(s.charAt(0)))
+            if (!Character.isJavaIdentifierPart(s.charAt(i)))
                 return false;
         }
         return true;
@@ -602,110 +623,5 @@ public class BytecodeName {
         return -1;
     }
 
-    // test driver
-    static void main(String[] av) {
-        // If verbose is enabled, quietly check everything.
-        // Otherwise, print the output for the user to check.
-        boolean verbose = false;
 
-        int maxlen = 0;
-
-        while (av.length > 0 && av[0].startsWith("-")) {
-            String flag = av[0].intern();
-            av = java.util.Arrays.copyOfRange(av, 1, av.length); // Java 1.6 or later
-            if (flag == "-" || flag == "--")  break;
-            else if (flag == "-q")
-                verbose = false;
-            else if (flag == "-v")
-                verbose = true;
-            else if (flag.startsWith("-l"))
-                maxlen = Integer.valueOf(flag.substring(2));
-            else
-                throw new Error("Illegal flag argument: "+flag);
-        }
-
-        if (maxlen == 0)
-            maxlen = (verbose ? 2 : 4);
-        if (verbose)  System.out.println("Note: maxlen = "+maxlen);
-
-        switch (av.length) {
-        case 0: av = new String[] {
-                    DANGEROUS_CHARS.substring(0) +
-                    REPLACEMENT_CHARS.substring(0, 1) +
-                    NULL_ESCAPE + "x"
-                }; // and fall through:
-        case 1:
-            char[] cv = av[0].toCharArray();
-            av = new String[cv.length];
-            int avp = 0;
-            for (char c : cv) {
-                String s = String.valueOf(c);
-                if (c == 'x')  s = "foo";  // tradition...
-                av[avp++] = s;
-            }
-        }
-        if (verbose)
-            System.out.println("Note: Verbose output mode enabled.  Use '-q' to suppress.");
-        Tester t = new Tester();
-        t.maxlen = maxlen;
-        t.verbose = verbose;
-        t.tokens = av;
-        t.test("", 0);
-    }
-
-    static class Tester {
-        boolean verbose;
-        int maxlen;
-        java.util.Map<String,String> map = new java.util.HashMap<String,String>();
-        String[] tokens;
-
-        void test(String stringSoFar, int tokensSoFar) {
-            test(stringSoFar);
-            if (tokensSoFar <= maxlen) {
-                for (String token : tokens) {
-                    if (token.length() == 0)  continue;  // skip empty tokens
-                    if (stringSoFar.indexOf(token) != stringSoFar.lastIndexOf(token))
-                        continue;   // there are already two occs. of this token
-                    if (token.charAt(0) == ESCAPE_C && token.length() == 1 && maxlen < 4)
-                        test(stringSoFar+token, tokensSoFar);  // want lots of \'s
-                    else if (tokensSoFar < maxlen)
-                        test(stringSoFar+token, tokensSoFar+1);
-                }
-            }
-        }
-
-        void test(String s) {
-            // for small batches, do not test the null string
-            if (s.length() == 0 && maxlen >=1 && maxlen <= 2)  return;
-            String bn = testSourceName(s);
-            if (bn == null)  return;
-            if (bn == s) {
-                //if (verbose)  System.out.println(s+" == id");
-            } else {
-                if (verbose)  System.out.println(s+" => "+bn+" "+toDisplayName(bn));
-                String bnbn = testSourceName(bn);
-                if (bnbn == null)  return;
-                if (verbose)  System.out.println(bn+" => "+bnbn+" "+toDisplayName(bnbn));
-                /*
-                String bn3 = testSourceName(bnbn);
-                if (bn3 == null)  return;
-                if (verbose)  System.out.println(bnbn+" => "+bn3);
-                */
-            }
-        }
-
-        String testSourceName(String s) {
-            if (map.containsKey(s))  return null;
-            String bn = toBytecodeName(s);
-            map.put(s, bn);
-            String sn = toSourceName(bn);
-            if (!sn.equals(s)) {
-                String bad = (s+" => "+bn+" != "+sn);
-                if (!verbose)  throw new Error("Bad mangling: "+bad);
-                System.out.println("*** "+bad);
-                return null;
-            }
-            return bn;
-        }
-    }
 }

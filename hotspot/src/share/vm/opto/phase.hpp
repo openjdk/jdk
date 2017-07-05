@@ -44,6 +44,7 @@ public:
     BlockLayout,                // Linear ordering of blocks
     Register_Allocation,        // Register allocation, duh
     LIVE,                       // Dragon-book LIVE range problem
+    StringOpts,                 // StringBuilder related optimizations
     Interference_Graph,         // Building the IFG
     Coalesce,                   // Coalescing copies
     Ideal_Loop,                 // Find idealized trip-counted loops

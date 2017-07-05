@@ -2935,6 +2935,16 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    // generic method handle stubs
+    if (EnableMethodHandles && SystemDictionary::MethodHandle_klass() != NULL) {
+      for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
+           ek < MethodHandles::_EK_LIMIT;
+           ek = MethodHandles::EntryKind(1 + (int)ek)) {
+        StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
+        MethodHandles::generate_method_handle_stub(_masm, ek);
+      }
+    }
   }
 
  public:

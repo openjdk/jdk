@@ -24,8 +24,8 @@
 
 # Rules to build jvm_db/dtrace, used by vm.make
 
-# we build libjvm_dtrace/libjvm_db/dtrace for COMPILER1 and COMPILER2
-# but not for CORE configuration
+# We build libjvm_dtrace/libjvm_db/dtrace for COMPILER1 and COMPILER2
+# but not for CORE or KERNEL configurations.
 
 ifneq ("${TYPE}", "CORE")
 ifneq ("${TYPE}", "KERNEL")
@@ -37,12 +37,13 @@ dtraceCheck:
 
 else
 
-
 JVM_DB = libjvm_db
-LIBJVM_DB = libjvm$(G_SUFFIX)_db.so
+LIBJVM_DB = libjvm_db.so
+LIBJVM_DB_G = libjvm$(G_SUFFIX)_db.so
 
 JVM_DTRACE = jvm_dtrace
-LIBJVM_DTRACE = libjvm$(G_SUFFIX)_dtrace.so
+LIBJVM_DTRACE = libjvm_dtrace.so
+LIBJVM_DTRACE_G = libjvm$(G_SUFFIX)_dtrace.so
 
 JVMOFFS = JvmOffsets
 JVMOFFS.o = $(JVMOFFS).o
@@ -77,7 +78,7 @@ LFLAGS_JVM_DB += -D_REENTRANT $(PICFLAG)
 LFLAGS_JVM_DTRACE += -D_REENTRANT $(PICFLAG)
 else
 LFLAGS_JVM_DB += -mt $(PICFLAG) -xnolib
-LFLAGS_JVM_DTRACE += -mt $(PICFLAG) -xnolib
+LFLAGS_JVM_DTRACE += -mt $(PICFLAG) -xnolib -ldl
 endif
 
 ISA = $(subst i386,i486,$(shell isainfo -n))
@@ -86,18 +87,24 @@ ISA = $(subst i386,i486,$(shell isainfo -n))
 ifneq ("${ISA}","${BUILDARCH}")
 
 XLIBJVM_DB = 64/$(LIBJVM_DB)
+XLIBJVM_DB_G = 64/$(LIBJVM_DB_G)
 XLIBJVM_DTRACE = 64/$(LIBJVM_DTRACE)
+XLIBJVM_DTRACE_G = 64/$(LIBJVM_DTRACE_G)
 
 $(XLIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) mkdir -p 64/ ; \
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
+	[ -f $(XLIBJVM_DB_G) ] || { ln -s $(LIBJVM_DB) $(XLIBJVM_DB_G); }
+
 $(XLIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) mkdir -p 64/ ; \
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
+	[ -f $(XLIBJVM_DTRACE_G) ] || { ln -s $(LIBJVM_DTRACE) $(XLIBJVM_DTRACE_G); }
+
 endif # ifneq ("${ISA}","${BUILDARCH}")
 
 ifdef USE_GCC
@@ -142,11 +149,13 @@ $(LIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS.o) $(XLIBJVM_DB) $(LIBJVM_D
 	@echo Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
+	[ -f $(LIBJVM_DB_G) ] || { ln -s $@ $(LIBJVM_DB_G); }
 
 $(LIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(XLIBJVM_DTRACE) $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I.  \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
+	[ -f $(LIBJVM_DTRACE_G) ] || { ln -s $@ $(LIBJVM_DTRACE_G); }
 
 $(DTRACE).d: $(DTRACE_SRCDIR)/hotspot.d $(DTRACE_SRCDIR)/hotspot_jni.d \
              $(DTRACE_SRCDIR)/hs_private.d $(DTRACE_SRCDIR)/jhelper.d

@@ -282,18 +282,21 @@ void BytecodePrinter::print_field_or_method(int i, outputStream* st) {
   constantPoolOop constants = method()->constants();
   constantTag tag = constants->tag_at(i);
 
+  int nt_index = -1;
+
   switch (tag.value()) {
   case JVM_CONSTANT_InterfaceMethodref:
   case JVM_CONSTANT_Methodref:
   case JVM_CONSTANT_Fieldref:
+  case JVM_CONSTANT_NameAndType:
     break;
   default:
     st->print_cr(" bad tag=%d at %d", tag.value(), i);
     return;
   }
 
-  symbolOop name = constants->name_ref_at(orig_i);
-  symbolOop signature = constants->signature_ref_at(orig_i);
+  symbolOop name = constants->uncached_name_ref_at(i);
+  symbolOop signature = constants->uncached_signature_ref_at(i);
   st->print_cr(" %d <%s> <%s> ", i, name->as_C_string(), signature->as_C_string());
 }
 

@@ -38,7 +38,7 @@ _JUNK_ := $(shell echo -e >&2 ""\
  "Please use 'make jvmg' to build debug JVM.                            \n" \
  "----------------------------------------------------------------------\n")
 
-G_SUFFIX =
+G_SUFFIX = _g
 VERSION = debug
 SYSDEFS += -DASSERT -DDEBUG
 PICFLAGS = DEFAULT

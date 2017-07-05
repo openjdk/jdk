@@ -85,7 +85,7 @@
   diagnostic(bool, G1SummarizeZFStats, false,                               \
           "Summarize zero-filling info")                                    \
                                                                             \
-  develop(bool, G1TraceConcurrentRefinement, false,                         \
+  diagnostic(bool, G1TraceConcurrentRefinement, false,                      \
           "Trace G1 concurrent refinement")                                 \
                                                                             \
   product(intx, G1MarkStackSize, 2 * 1024 * 1024,                           \
@@ -93,19 +93,6 @@
                                                                             \
   product(intx, G1MarkRegionStackSize, 1024 * 1024,                         \
           "Size of the region stack for concurrent marking.")               \
-                                                                            \
-  develop(bool, G1ConcRefine, true,                                         \
-          "If true, run concurrent rem set refinement for G1")              \
-                                                                            \
-  develop(intx, G1ConcRefineTargTraversals, 4,                              \
-          "Number of concurrent refinement we try to achieve")              \
-                                                                            \
-  develop(intx, G1ConcRefineInitialDelta, 4,                                \
-          "Number of heap regions of alloc ahead of starting collection "   \
-          "pause to start concurrent refinement (initially)")               \
-                                                                            \
-  develop(bool, G1SmoothConcRefine, true,                                   \
-          "Attempts to smooth out the overhead of concurrent refinement")   \
                                                                             \
   develop(bool, G1ConcZeroFill, true,                                       \
           "If true, run concurrent zero-filling thread")                    \
@@ -178,13 +165,38 @@
   product(intx, G1UpdateBufferSize, 256,                                    \
           "Size of an update buffer")                                       \
                                                                             \
-  product(intx, G1UpdateBufferQueueProcessingThreshold, 5,                  \
+  product(intx, G1ConcRefineYellowZone, 0,                                  \
           "Number of enqueued update buffers that will "                    \
-          "trigger concurrent processing")                                  \
+          "trigger concurrent processing. Will be selected ergonomically "  \
+          "by default.")                                                    \
                                                                             \
-  product(intx, G1UpdateBufferQueueMaxLength, 30,                           \
+  product(intx, G1ConcRefineRedZone, 0,                                     \
           "Maximum number of enqueued update buffers before mutator "       \
-          "threads start processing new ones instead of enqueueing them")   \
+          "threads start processing new ones instead of enqueueing them. "  \
+          "Will be selected ergonomically by default. Zero will disable "   \
+          "concurrent processing.")                                         \
+                                                                            \
+  product(intx, G1ConcRefineGreenZone, 0,                                   \
+          "The number of update buffers that are left in the queue by the " \
+          "concurrent processing threads. Will be selected ergonomically "  \
+          "by default.")                                                    \
+                                                                            \
+  product(intx, G1ConcRefineServiceInterval, 300,                           \
+          "The last concurrent refinement thread wakes up every "           \
+          "specified number of milliseconds to do miscellaneous work.")     \
+                                                                            \
+  product(intx, G1ConcRefineThresholdStep, 0,                               \
+          "Each time the rset update queue increases by this amount "       \
+          "activate the next refinement thread if available. "              \
+          "Will be selected ergonomically by default.")                     \
+                                                                            \
+  product(intx, G1RSUpdatePauseFractionPercent, 10,                         \
+          "A target percentage of time that is allowed to be spend on "     \
+          "process RS update buffers during the collection pause.")         \
+                                                                            \
+  product(bool, G1AdaptiveConcRefine, true,                                 \
+          "Select green, yellow and red zones adaptively to meet the "      \
+          "the pause requirements.")                                        \
                                                                             \
   develop(intx, G1ConcRSLogCacheSize, 10,                                   \
           "Log base 2 of the length of conc RS hot-card cache.")            \
@@ -242,6 +254,10 @@
   product(bool, G1UseSurvivorSpaces, true,                                  \
           "When true, use survivor space.")                                 \
                                                                             \
+  develop(bool, G1FailOnFPError, false,                                     \
+          "When set, G1 will fail when it encounters an FP 'error', "       \
+          "so as to allow debugging")                                       \
+                                                                            \
   develop(bool, G1FixedTenuringThreshold, false,                            \
           "When set, G1 will not adjust the tenuring threshold")            \
                                                                             \
@@ -251,6 +267,9 @@
   develop(uintx, G1FixedSurvivorSpaceSize, 0,                               \
           "If non-0 is the size of the G1 survivor space, "                 \
           "otherwise SurvivorRatio is used to determine the size")          \
+                                                                            \
+  product(bool, G1ForgetfulMMUTracker, false,                               \
+          "If the MMU tracker's memory is full, forget the oldest entry")   \
                                                                             \
   product(uintx, G1HeapRegionSize, 0,                                       \
           "Size of the G1 regions.")                                        \

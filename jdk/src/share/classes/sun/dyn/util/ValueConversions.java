@@ -27,7 +27,10 @@ package sun.dyn.util;
 
 import java.dyn.*;
 import java.dyn.MethodHandles.Lookup;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.List;
 import sun.dyn.Access;
 import sun.dyn.AdapterMethodHandle;
 import sun.dyn.MethodHandleImpl;
@@ -37,6 +40,7 @@ public class ValueConversions {
     private static final Lookup IMPL_LOOKUP = MethodHandleImpl.getLookup(IMPL_TOKEN);
 
     private static EnumMap<Wrapper, MethodHandle>[] newWrapperCaches(int n) {
+        @SuppressWarnings("unchecked")
         EnumMap<Wrapper, MethodHandle>[] caches
                 = (EnumMap<Wrapper, MethodHandle>[]) new EnumMap[n];  // unchecked warning expected here
         for (int i = 0; i < n; i++)
@@ -114,7 +118,7 @@ public class ValueConversions {
     }
 
     private static MethodType unboxType(Wrapper wrap, boolean raw) {
-        return MethodType.make(rawWrapper(wrap, raw).primitiveType(), wrap.wrapperType());
+        return MethodType.methodType(rawWrapper(wrap, raw).primitiveType(), wrap.wrapperType());
     }
 
     private static final EnumMap<Wrapper, MethodHandle>[]
@@ -240,7 +244,7 @@ public class ValueConversions {
     private static MethodType boxType(Wrapper wrap, boolean raw) {
         // be exact, since return casts are hard to compose
         Class<?> boxType = wrap.wrapperType();
-        return MethodType.make(boxType, rawWrapper(wrap, raw).primitiveType());
+        return MethodType.methodType(boxType, rawWrapper(wrap, raw).primitiveType());
     }
 
     private static Wrapper rawWrapper(Wrapper wrap, boolean raw) {
@@ -305,29 +309,47 @@ public class ValueConversions {
 
     /// Kludges for when raw values get accidentally boxed.
 
+    static int unboxRawInteger(Object x) {
+        if (x instanceof Integer)
+            return unboxInteger(x);
+        else
+            return (int) unboxLong(x);
+    }
+
+    static Integer reboxRawInteger(Object x) {
+        if (x instanceof Integer)
+            return (Integer) x;
+        else
+            return (int) unboxLong(x);
+    }
+
     static Byte reboxRawByte(Object x) {
         if (x instanceof Byte)  return (Byte) x;
-        return boxByteRaw(unboxInteger(x));
+        return boxByteRaw(unboxRawInteger(x));
     }
 
     static Short reboxRawShort(Object x) {
         if (x instanceof Short)  return (Short) x;
-        return boxShortRaw(unboxInteger(x));
+        return boxShortRaw(unboxRawInteger(x));
     }
 
     static Boolean reboxRawBoolean(Object x) {
         if (x instanceof Boolean)  return (Boolean) x;
-        return boxBooleanRaw(unboxInteger(x));
+        return boxBooleanRaw(unboxRawInteger(x));
     }
 
     static Character reboxRawCharacter(Object x) {
         if (x instanceof Character)  return (Character) x;
-        return boxCharacterRaw(unboxInteger(x));
+        return boxCharacterRaw(unboxRawInteger(x));
     }
 
     static Float reboxRawFloat(Object x) {
         if (x instanceof Float)  return (Float) x;
-        return boxFloatRaw(unboxInteger(x));
+        return boxFloatRaw(unboxRawInteger(x));
+    }
+
+    static Long reboxRawLong(Object x) {
+        return (Long) x;  //never a rebox
     }
 
     static Double reboxRawDouble(Object x) {
@@ -337,12 +359,21 @@ public class ValueConversions {
 
     private static MethodType reboxType(Wrapper wrap) {
         Class<?> boxType = wrap.wrapperType();
-        return MethodType.make(boxType, Object.class);
+        return MethodType.methodType(boxType, Object.class);
     }
 
     private static final EnumMap<Wrapper, MethodHandle>[]
             REBOX_CONVERSIONS = newWrapperCaches(2);
 
+    /**
+     * Becase we normalize primitive types to reduce the number of signatures,
+     * primitives are sometimes manipulated under an "erased" type,
+     * either int (for types other than long/double) or long (for all types).
+     * When the erased primitive value is then boxed into an Integer or Long,
+     * the final boxed primitive is sometimes required.  This transformation
+     * is called a "rebox".  It takes an Integer or Long and produces some
+     * other boxed value.
+     */
     public static MethodHandle rebox(Wrapper wrap, boolean exact) {
         EnumMap<Wrapper, MethodHandle> cache = REBOX_CONVERSIONS[exact?1:0];
         MethodHandle mh = cache.get(wrap);
@@ -355,9 +386,6 @@ public class ValueConversions {
                 mh = IDENTITY; break;
             case VOID:
                 throw new IllegalArgumentException("cannot rebox a void");
-            case INT: case LONG:
-                mh = cast(wrap.wrapperType(), exact);
-                break;
         }
         if (mh != null) {
             cache.put(wrap, mh);
@@ -384,11 +412,19 @@ public class ValueConversions {
     /// Width-changing conversions between int and long.
 
     static long widenInt(int x) {
-        return x;
+        return (long) x;
+    }
+
+    static Long widenBoxedInt(Integer x) {
+        return (long)(int)x;
     }
 
     static int narrowLong(long x) {
         return (int) x;
+    }
+
+    static Integer narrowBoxedLong(Long x) {
+        return (int)(long) x;
     }
 
     /// Constant functions
@@ -432,7 +468,7 @@ public class ValueConversions {
             return mh;
         }
         // slow path
-        MethodType type = MethodType.make(wrap.primitiveType());
+        MethodType type = MethodType.methodType(wrap.primitiveType());
         switch (wrap) {
             case VOID:
                 mh = EMPTY;
@@ -500,11 +536,11 @@ public class ValueConversions {
     private static final MethodHandle IDENTITY, CAST_REFERENCE, ALWAYS_NULL, ALWAYS_ZERO, ZERO_OBJECT, IGNORE, EMPTY;
     static {
         try {
-            MethodType idType = MethodType.makeGeneric(1);
-            MethodType castType = idType.insertParameterType(0, Class.class);
+            MethodType idType = MethodType.genericMethodType(1);
+            MethodType castType = idType.insertParameterTypes(0, Class.class);
             MethodType alwaysZeroType = idType.changeReturnType(int.class);
             MethodType ignoreType = idType.changeReturnType(void.class);
-            MethodType zeroObjectType = MethodType.makeGeneric(0);
+            MethodType zeroObjectType = MethodType.genericMethodType(0);
             IDENTITY = IMPL_LOOKUP.findStatic(ValueConversions.class, "identity", idType);
             //CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
             CAST_REFERENCE = IMPL_LOOKUP.findStatic(ValueConversions.class, "castReference", castType);
@@ -512,7 +548,7 @@ public class ValueConversions {
             ALWAYS_ZERO = IMPL_LOOKUP.findStatic(ValueConversions.class, "alwaysZero", alwaysZeroType);
             ZERO_OBJECT = IMPL_LOOKUP.findStatic(ValueConversions.class, "zeroObject", zeroObjectType);
             IGNORE = IMPL_LOOKUP.findStatic(ValueConversions.class, "ignore", ignoreType);
-            EMPTY = IMPL_LOOKUP.findStatic(ValueConversions.class, "empty", ignoreType.dropParameterType(0));
+            EMPTY = IMPL_LOOKUP.findStatic(ValueConversions.class, "empty", ignoreType.dropParameterTypes(0, 1));
         } catch (RuntimeException ex) {
             throw ex;
         }
@@ -543,10 +579,10 @@ public class ValueConversions {
         else if (VerifyType.isNullType(type))
             mh = ALWAYS_NULL;
         else
-            mh = MethodHandles.insertArgument(CAST_REFERENCE, 0, type);
+            mh = MethodHandles.insertArguments(CAST_REFERENCE, 0, type);
         if (exact) {
-            MethodType xmt = MethodType.make(type, Object.class);
-            mh = AdapterMethodHandle.makeRawRetypeOnly(IMPL_TOKEN, xmt, mh);
+            MethodType xmt = MethodType.methodType(type, Object.class);
+            mh = AdapterMethodHandle.makeRetypeRaw(IMPL_TOKEN, xmt, mh);
         }
         if (cache != null)
             cache.put(wrap, mh);
@@ -560,4 +596,127 @@ public class ValueConversions {
     private static MethodHandle retype(MethodType type, MethodHandle mh) {
         return AdapterMethodHandle.makeRetypeOnly(IMPL_TOKEN, type, mh);
     }
+
+    private static final Object[] NO_ARGS_ARRAY = {};
+    private static Object[] makeArray(Object... args) { return args; }
+    private static Object[] array() { return NO_ARGS_ARRAY; }
+    private static Object[] array(Object a0)
+                { return makeArray(a0); }
+    private static Object[] array(Object a0, Object a1)
+                { return makeArray(a0, a1); }
+    private static Object[] array(Object a0, Object a1, Object a2)
+                { return makeArray(a0, a1, a2); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3)
+                { return makeArray(a0, a1, a2, a3); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4)
+                { return makeArray(a0, a1, a2, a3, a4); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5)
+                { return makeArray(a0, a1, a2, a3, a4, a5); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6)
+                { return makeArray(a0, a1, a2, a3, a4, a5, a6); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6, Object a7)
+                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6, Object a7,
+                                  Object a8)
+                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6, Object a7,
+                                  Object a8, Object a9)
+                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+    static MethodHandle[] makeArrays() {
+        ArrayList<MethodHandle> arrays = new ArrayList<MethodHandle>();
+        MethodHandles.Lookup lookup = IMPL_LOOKUP;
+        for (;;) {
+            int nargs = arrays.size();
+            MethodType type = MethodType.genericMethodType(nargs).changeReturnType(Object[].class);
+            String name = "array";
+            MethodHandle array = null;
+            try {
+                array = lookup.findStatic(ValueConversions.class, name, type);
+            } catch (NoAccessException ex) {
+            }
+            if (array == null)  break;
+            arrays.add(array);
+        }
+        assert(arrays.size() == 11);  // current number of methods
+        return arrays.toArray(new MethodHandle[0]);
+    }
+    static final MethodHandle[] ARRAYS = makeArrays();
+
+    /** Return a method handle that takes the indicated number of Object
+     *  arguments and returns an Object array of them, as if for varargs.
+     */
+    public static MethodHandle varargsArray(int nargs) {
+        if (nargs < ARRAYS.length)
+            return ARRAYS[nargs];
+        // else need to spin bytecode or do something else fancy
+        throw new UnsupportedOperationException("NYI");
+    }
+
+    private static final List<Object> NO_ARGS_LIST = Arrays.asList(NO_ARGS_ARRAY);
+    private static List<Object> makeList(Object... args) { return Arrays.asList(args); }
+    private static List<Object> list() { return NO_ARGS_LIST; }
+    private static List<Object> list(Object a0)
+                { return makeList(a0); }
+    private static List<Object> list(Object a0, Object a1)
+                { return makeList(a0, a1); }
+    private static List<Object> list(Object a0, Object a1, Object a2)
+                { return makeList(a0, a1, a2); }
+    private static List<Object> list(Object a0, Object a1, Object a2, Object a3)
+                { return makeList(a0, a1, a2, a3); }
+    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
+                                     Object a4)
+                { return makeList(a0, a1, a2, a3, a4); }
+    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
+                                     Object a4, Object a5)
+                { return makeList(a0, a1, a2, a3, a4, a5); }
+    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
+                                     Object a4, Object a5, Object a6)
+                { return makeList(a0, a1, a2, a3, a4, a5, a6); }
+    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
+                                     Object a4, Object a5, Object a6, Object a7)
+                { return makeList(a0, a1, a2, a3, a4, a5, a6, a7); }
+    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
+                                     Object a4, Object a5, Object a6, Object a7,
+                                     Object a8)
+                { return makeList(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
+                                     Object a4, Object a5, Object a6, Object a7,
+                                     Object a8, Object a9)
+                { return makeList(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+    static MethodHandle[] makeLists() {
+        ArrayList<MethodHandle> arrays = new ArrayList<MethodHandle>();
+        MethodHandles.Lookup lookup = IMPL_LOOKUP;
+        for (;;) {
+            int nargs = arrays.size();
+            MethodType type = MethodType.genericMethodType(nargs).changeReturnType(List.class);
+            String name = "list";
+            MethodHandle array = null;
+            try {
+                array = lookup.findStatic(ValueConversions.class, name, type);
+            } catch (NoAccessException ex) {
+            }
+            if (array == null)  break;
+            arrays.add(array);
+        }
+        assert(arrays.size() == 11);  // current number of methods
+        return arrays.toArray(new MethodHandle[0]);
+    }
+    static final MethodHandle[] LISTS = makeLists();
+
+    /** Return a method handle that takes the indicated number of Object
+     *  arguments and returns List.
+     */
+    public static MethodHandle varargsList(int nargs) {
+        if (nargs < LISTS.length)
+            return LISTS[nargs];
+        // else need to spin bytecode or do something else fancy
+        throw new UnsupportedOperationException("NYI");
+    }
 }
+

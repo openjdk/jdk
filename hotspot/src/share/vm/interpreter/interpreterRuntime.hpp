@@ -91,7 +91,6 @@ class InterpreterRuntime: AllStatic {
   // Calls
   static void    resolve_invoke       (JavaThread* thread, Bytecodes::Code bytecode);
   static void    resolve_invokedynamic(JavaThread* thread);
-  static void  bootstrap_invokedynamic(JavaThread* thread, oopDesc* call_site);
 
   // Breakpoints
   static void _breakpoint(JavaThread* thread, methodOopDesc* method, address bcp);
