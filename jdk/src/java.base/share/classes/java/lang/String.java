@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,14 @@ import java.util.Comparator;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Spliterator;
 import java.util.StringJoiner;
+import java.util.function.IntConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 /**
  * The {@code String} class represents character strings. All
@@ -2892,6 +2896,180 @@ public final class String
      */
     public String toString() {
         return this;
+    }
+
+    static class IntCharArraySpliterator implements Spliterator.OfInt {
+        private final char[] array;
+        private int index;        // current index, modified on advance/split
+        private final int fence;  // one past last index
+        private final int cs;
+
+        IntCharArraySpliterator(char[] array, int acs) {
+            this(array, 0, array.length, acs);
+        }
+
+        IntCharArraySpliterator(char[] array, int origin, int fence, int acs) {
+            this.array = array;
+            this.index = origin;
+            this.fence = fence;
+            this.cs = acs | Spliterator.ORDERED | Spliterator.SIZED
+                      | Spliterator.SUBSIZED;
+        }
+
+        @Override
+        public OfInt trySplit() {
+            int lo = index, mid = (lo + fence) >>> 1;
+            return (lo >= mid)
+                   ? null
+                   : new IntCharArraySpliterator(array, lo, index = mid, cs);
+        }
+
+        @Override
+        public void forEachRemaining(IntConsumer action) {
+            char[] a; int i, hi; // hoist accesses and checks from loop
+            if (action == null)
+                throw new NullPointerException();
+            if ((a = array).length >= (hi = fence) &&
+                (i = index) >= 0 && i < (index = hi)) {
+                do { action.accept(a[i]); } while (++i < hi);
+            }
+        }
+
+        @Override
+        public boolean tryAdvance(IntConsumer action) {
+            if (action == null)
+                throw new NullPointerException();
+            if (index >= 0 && index < fence) {
+                action.accept(array[index++]);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public long estimateSize() { return (long)(fence - index); }
+
+        @Override
+        public int characteristics() {
+            return cs;
+        }
+    }
+
+    /**
+     * Returns a stream of {@code int} zero-extending the {@code char} values
+     * from this sequence.  Any char which maps to a <a
+     * href="{@docRoot}/java/lang/Character.html#unicode">surrogate code
+     * point</a> is passed through uninterpreted.
+     *
+     * @return an IntStream of char values from this sequence
+     * @since 1.9
+     */
+    @Override
+    public IntStream chars() {
+        return StreamSupport.intStream(
+                new IntCharArraySpliterator(value, Spliterator.IMMUTABLE), false);
+    }
+
+    static class CodePointsSpliterator implements Spliterator.OfInt {
+        private final char[] array;
+        private int index;        // current index, modified on advance/split
+        private final int fence;  // one past last index
+        private final int cs;
+
+        CodePointsSpliterator(char[] array, int acs) {
+            this(array, 0, array.length, acs);
+        }
+
+        CodePointsSpliterator(char[] array, int origin, int fence, int acs) {
+            this.array = array;
+            this.index = origin;
+            this.fence = fence;
+            this.cs = acs | Spliterator.ORDERED;
+        }
+
+        @Override
+        public OfInt trySplit() {
+            int lo = index, mid = (lo + fence) >>> 1;
+            if (lo >= mid)
+                return null;
+
+            int midOneLess;
+            // If the mid-point intersects a surrogate pair
+            if (Character.isLowSurrogate(array[mid]) &&
+                Character.isHighSurrogate(array[midOneLess = (mid -1)])) {
+                // If there is only one pair it cannot be split
+                if (lo >= midOneLess)
+                    return null;
+                // Shift the mid-point to align with the surrogate pair
+                return new CodePointsSpliterator(array, lo, index = midOneLess, cs);
+            }
+            return new CodePointsSpliterator(array, lo, index = mid, cs);
+        }
+
+        @Override
+        public void forEachRemaining(IntConsumer action) {
+            char[] a; int i, hi; // hoist accesses and checks from loop
+            if (action == null)
+                throw new NullPointerException();
+            if ((a = array).length >= (hi = fence) &&
+                (i = index) >= 0 && i < (index = hi)) {
+                do {
+                    i = advance(a, i, hi, action);
+                } while (i < hi);
+            }
+        }
+
+        @Override
+        public boolean tryAdvance(IntConsumer action) {
+            if (action == null)
+                throw new NullPointerException();
+            if (index >= 0 && index < fence) {
+                index = advance(array, index, fence, action);
+                return true;
+            }
+            return false;
+        }
+
+        // Advance one code point from the index, i, and return the next
+        // index to advance from
+        private static int advance(char[] a, int i, int hi, IntConsumer action) {
+            char c1 = a[i++];
+            int cp = c1;
+            if (Character.isHighSurrogate(c1) && i < hi) {
+                char c2 = a[i];
+                if (Character.isLowSurrogate(c2)) {
+                    i++;
+                    cp = Character.toCodePoint(c1, c2);
+                }
+            }
+            action.accept(cp);
+            return i;
+        }
+
+        @Override
+        public long estimateSize() { return (long)(fence - index); }
+
+        @Override
+        public int characteristics() {
+            return cs;
+        }
+    }
+
+    /**
+     * Returns a stream of code point values from this sequence.  Any surrogate
+     * pairs encountered in the sequence are combined as if by {@linkplain
+     * Character#toCodePoint Character.toCodePoint} and the result is passed
+     * to the stream. Any other code units, including ordinary BMP characters,
+     * unpaired surrogates, and undefined code units, are zero-extended to
+     * {@code int} values which are then passed to the stream.
+     *
+     * @return an IntStream of Unicode code points from this sequence
+     * @since 1.9
+     */
+    @Override
+    public IntStream codePoints() {
+        return StreamSupport.intStream(
+                new CodePointsSpliterator(value, Spliterator.IMMUTABLE), false);
     }
 
     /**

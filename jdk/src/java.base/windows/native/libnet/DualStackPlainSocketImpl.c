@@ -48,6 +48,8 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_initIDs
     isa_ctorID = (*env)->GetMethodID(env, cls, "<init>",
                                      "(Ljava/net/InetAddress;I)V");
 
+    initInetAddressIDs(env);
+
     // implement read timeout with select.
     isRcvTimeoutSupported = 0;
 }
@@ -293,6 +295,8 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_accept0
         }
         return -1;
     }
+
+    SetHandleInformation((HANDLE)(UINT_PTR)newfd, HANDLE_FLAG_INHERIT, 0);
 
     ia = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
     isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);

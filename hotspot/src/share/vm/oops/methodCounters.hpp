@@ -26,7 +26,9 @@
 #define SHARE_VM_OOPS_METHODCOUNTERS_HPP
 
 #include "oops/metadata.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "runtime/arguments.hpp"
 
 class MethodCounters: public MetaspaceObj {
  friend class VMStructs;
@@ -45,7 +47,11 @@ class MethodCounters: public MetaspaceObj {
   // 3. (INT_MIN..0]                  - method is hot and will deopt and get
   //                                    recompiled without the counters
   int               _nmethod_age;
-
+  int               _interpreter_invocation_limit;        // per-method InterpreterInvocationLimit
+  int               _interpreter_backward_branch_limit;   // per-method InterpreterBackwardBranchLimit
+  int               _interpreter_profile_limit;           // per-method InterpreterProfileLimit
+  int               _invoke_mask;                         // per-method Tier0InvokeNotifyFreqLog
+  int               _backedge_mask;                       // per-method Tier0BackedgeNotifyFreqLog
 #ifdef TIERED
   float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
   jlong             _prev_time;                   // Previous time the rate was acquired
@@ -53,15 +59,15 @@ class MethodCounters: public MetaspaceObj {
   u1                _highest_osr_comp_level;      // Same for OSR level
 #endif
 
-  MethodCounters() : _interpreter_invocation_count(0),
-                     _interpreter_throwout_count(0),
-                     _number_of_breakpoints(0),
-                     _nmethod_age(INT_MAX)
+  MethodCounters(methodHandle mh) : _interpreter_invocation_count(0),
+                                    _interpreter_throwout_count(0),
+                                    _number_of_breakpoints(0),
+                                    _nmethod_age(INT_MAX)
 #ifdef TIERED
-                   , _rate(0),
-                     _prev_time(0),
-                     _highest_comp_level(0),
-                     _highest_osr_comp_level(0)
+                                 , _rate(0),
+                                   _prev_time(0),
+                                   _highest_comp_level(0),
+                                   _highest_osr_comp_level(0)
 #endif
   {
     invocation_counter()->init();
@@ -70,10 +76,28 @@ class MethodCounters: public MetaspaceObj {
     if (StressCodeAging) {
       set_nmethod_age(HotMethodDetectionLimit);
     }
+
+    // Set per-method thresholds.
+    double scale = 1.0;
+    CompilerOracle::has_option_value(mh, "CompileThresholdScaling", scale);
+
+    int compile_threshold = Arguments::scaled_compile_threshold(CompileThreshold, scale);
+    _interpreter_invocation_limit = compile_threshold << InvocationCounter::count_shift;
+    if (ProfileInterpreter) {
+      // If interpreter profiling is enabled, the backward branch limit
+      // is compared against the method data counter rather than an invocation
+      // counter, therefore no shifting of bits is required.
+      _interpreter_backward_branch_limit = (compile_threshold * (OnStackReplacePercentage - InterpreterProfilePercentage)) / 100;
+    } else {
+      _interpreter_backward_branch_limit = ((compile_threshold * OnStackReplacePercentage) / 100) << InvocationCounter::count_shift;
+    }
+    _interpreter_profile_limit = ((compile_threshold * InterpreterProfilePercentage) / 100) << InvocationCounter::count_shift;
+    _invoke_mask = right_n_bits(Arguments::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+    _backedge_mask = right_n_bits(Arguments::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
   }
 
  public:
-  static MethodCounters* allocate(ClassLoaderData* loader_data, TRAPS);
+  static MethodCounters* allocate(methodHandle mh, TRAPS);
 
   void deallocate_contents(ClassLoaderData* loader_data) {}
   DEBUG_ONLY(bool on_stack() { return false; })  // for template
@@ -161,5 +185,24 @@ class MethodCounters: public MetaspaceObj {
     return offset_of(MethodCounters, _interpreter_invocation_count);
   }
 
+  static ByteSize interpreter_invocation_limit_offset() {
+    return byte_offset_of(MethodCounters, _interpreter_invocation_limit);
+  }
+
+  static ByteSize interpreter_backward_branch_limit_offset() {
+    return byte_offset_of(MethodCounters, _interpreter_backward_branch_limit);
+  }
+
+  static ByteSize interpreter_profile_limit_offset() {
+    return byte_offset_of(MethodCounters, _interpreter_profile_limit);
+  }
+
+  static ByteSize invoke_mask_offset() {
+    return byte_offset_of(MethodCounters, _invoke_mask);
+  }
+
+  static ByteSize backedge_mask_offset() {
+    return byte_offset_of(MethodCounters, _backedge_mask);
+  }
 };
 #endif //SHARE_VM_OOPS_METHODCOUNTERS_HPP
