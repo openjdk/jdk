@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6249843
+ * @bug 6249843 6705893
  * @summary Tests engine, global scopes and scope hiding.
  */
 
@@ -34,7 +34,11 @@ public class Test5 {
         public static void main(String[] args) throws Exception {
                 System.out.println("\nTest5\n");
                 ScriptEngineManager m = new ScriptEngineManager();
-                ScriptEngine engine = m.getEngineByName("js");
+                ScriptEngine engine = Helper.getJsEngine(m);
+                if (engine == null) {
+                    System.out.println("Warning: No js engine found; test vacuously passes.");
+                    return;
+                }
                 Bindings g = new SimpleBindings();
                 Bindings e = new SimpleBindings();
                 g.put("key", "value in global");

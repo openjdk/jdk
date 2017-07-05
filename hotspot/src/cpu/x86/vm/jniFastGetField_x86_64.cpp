@@ -67,18 +67,18 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   ExternalAddress counter(SafepointSynchronize::safepoint_counter_addr());
   __ mov32 (rcounter, counter);
-  __ movq (robj, c_rarg1);
+  __ mov   (robj, c_rarg1);
   __ testb (rcounter, 1);
   __ jcc (Assembler::notZero, slow);
   if (os::is_MP()) {
-    __ xorq (robj, rcounter);
-    __ xorq (robj, rcounter);                   // obj, since
+    __ xorptr(robj, rcounter);
+    __ xorptr(robj, rcounter);                   // obj, since
                                                 // robj ^ rcounter ^ rcounter == robj
                                                 // robj is data dependent on rcounter.
   }
-  __ movq (robj, Address(robj, 0));             // *obj
-  __ movq (roffset, c_rarg2);
-  __ shrq (roffset, 2);                         // offset
+  __ movptr(robj, Address(robj, 0));             // *obj
+  __ mov   (roffset, c_rarg2);
+  __ shrptr(roffset, 2);                         // offset
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();
@@ -95,8 +95,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   if (os::is_MP()) {
     __ lea(rcounter_addr, counter);
     // ca is data dependent on rax.
-    __ xorq (rcounter_addr, rax);
-    __ xorq (rcounter_addr, rax);
+    __ xorptr(rcounter_addr, rax);
+    __ xorptr(rcounter_addr, rax);
     __ cmpl (rcounter, Address(rcounter_addr, 0));
   } else {
     __ cmp32 (rcounter, counter);
@@ -165,18 +165,18 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
 
   ExternalAddress counter(SafepointSynchronize::safepoint_counter_addr());
   __ mov32 (rcounter, counter);
-  __ movq (robj, c_rarg1);
+  __ mov   (robj, c_rarg1);
   __ testb (rcounter, 1);
   __ jcc (Assembler::notZero, slow);
   if (os::is_MP()) {
-    __ xorq (robj, rcounter);
-    __ xorq (robj, rcounter);                   // obj, since
+    __ xorptr(robj, rcounter);
+    __ xorptr(robj, rcounter);                   // obj, since
                                                 // robj ^ rcounter ^ rcounter == robj
                                                 // robj is data dependent on rcounter.
   }
-  __ movq (robj, Address(robj, 0));             // *obj
-  __ movq (roffset, c_rarg2);
-  __ shrq (roffset, 2);                         // offset
+  __ movptr(robj, Address(robj, 0));             // *obj
+  __ mov   (roffset, c_rarg2);
+  __ shrptr(roffset, 2);                         // offset
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();
@@ -190,8 +190,8 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
     __ lea(rcounter_addr, counter);
     __ movdq (rax, xmm0);
     // counter address is data dependent on xmm0.
-    __ xorq (rcounter_addr, rax);
-    __ xorq (rcounter_addr, rax);
+    __ xorptr(rcounter_addr, rax);
+    __ xorptr(rcounter_addr, rax);
     __ cmpl (rcounter, Address(rcounter_addr, 0));
   } else {
     __ cmp32 (rcounter, counter);

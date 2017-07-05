@@ -23,18 +23,29 @@
  */
 
 inline bool LinearScan::is_processed_reg_num(int reg_num) {
+#ifndef _LP64
   // rsp and rbp (numbers 6 ancd 7) are ignored
   assert(FrameMap::rsp_opr->cpu_regnr() == 6, "wrong assumption below");
   assert(FrameMap::rbp_opr->cpu_regnr() == 7, "wrong assumption below");
   assert(reg_num >= 0, "invalid reg_num");
 
   return reg_num < 6 || reg_num > 7;
+#else
+  // rsp and rbp, r10, r15 (numbers 6 ancd 7) are ignored
+  assert(FrameMap::r10_opr->cpu_regnr() == 12, "wrong assumption below");
+  assert(FrameMap::r15_opr->cpu_regnr() == 13, "wrong assumption below");
+  assert(FrameMap::rsp_opr->cpu_regnrLo() == 14, "wrong assumption below");
+  assert(FrameMap::rbp_opr->cpu_regnrLo() == 15, "wrong assumption below");
+  assert(reg_num >= 0, "invalid reg_num");
+
+  return reg_num < 12 || reg_num > 15;
+#endif // _LP64
 }
 
 inline int LinearScan::num_physical_regs(BasicType type) {
   // Intel requires two cpu registers for long,
   // but requires only one fpu register for double
-  if (type == T_LONG) {
+  if (LP64_ONLY(false &&) type == T_LONG) {
     return 2;
   }
   return 1;

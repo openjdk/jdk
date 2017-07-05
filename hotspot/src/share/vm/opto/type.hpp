@@ -581,7 +581,8 @@ public:
 
   virtual intptr_t get_con() const;
 
-  virtual const TypePtr *add_offset( int offset ) const;
+  int xadd_offset( intptr_t offset ) const;
+  virtual const TypePtr *add_offset( intptr_t offset ) const;
 
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
@@ -632,7 +633,7 @@ public:
 
   virtual intptr_t get_con() const;
 
-  virtual const TypePtr *add_offset( int offset ) const;
+  virtual const TypePtr *add_offset( intptr_t offset ) const;
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
@@ -659,7 +660,6 @@ public:
   };
 protected:
 
-  int xadd_offset( int offset ) const;
   // Oop is NULL, unless this is a constant oop.
   ciObject*     _const_oop;   // Constant oop
   // If _klass is NULL, then so is _sig.  This is an unloaded klass.
@@ -724,7 +724,7 @@ public:
   // corresponding pointer to klass, for a given instance
   const TypeKlassPtr* as_klass_type() const;
 
-  virtual const TypePtr *add_offset( int offset ) const;
+  virtual const TypePtr *add_offset( intptr_t offset ) const;
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
@@ -793,7 +793,7 @@ class TypeInstPtr : public TypeOopPtr {
 
   virtual const TypeOopPtr *cast_to_instance_id(int instance_id) const;
 
-  virtual const TypePtr *add_offset( int offset ) const;
+  virtual const TypePtr *add_offset( intptr_t offset ) const;
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const TypeInstPtr *xmeet_unloaded( const TypeInstPtr *t ) const;
@@ -842,7 +842,7 @@ public:
   virtual const TypeAryPtr* cast_to_size(const TypeInt* size) const;
 
   virtual bool empty(void) const;        // TRUE if type is vacuous
-  virtual const TypePtr *add_offset( int offset ) const;
+  virtual const TypePtr *add_offset( intptr_t offset ) const;
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
@@ -896,7 +896,7 @@ public:
   // corresponding pointer to instance, for a given class
   const TypeOopPtr* as_instance_type() const;
 
-  virtual const TypePtr *add_offset( int offset ) const;
+  virtual const TypePtr *add_offset( intptr_t offset ) const;
   virtual const Type    *xmeet( const Type *t ) const;
   virtual const Type    *xdual() const;      // Compute dual right now.
 

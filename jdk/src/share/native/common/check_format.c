@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ VerifyClassname(char *name, jboolean allowArrayClass)
         /* skip over the fieldname.  Slashes are okay */
         p = skip_over_fieldname(name, JNI_TRUE, length);
     }
-    return (p != 0 && p - name == length);
+    return (p != 0 && p - name == (ptrdiff_t)length);
 }
 
 /*

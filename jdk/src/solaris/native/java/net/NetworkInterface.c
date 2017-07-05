@@ -206,10 +206,10 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
 
 /*
  * Class:     java_net_NetworkInterface
- * Method:    getByIndex
+ * Method:    getByIndex0
  * Signature: (Ljava/lang/String;)Ljava/net/NetworkInterface;
  */
-JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex
+JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0
     (JNIEnv *env, jclass cls, jint index) {
 
     netif *ifs, *curr;

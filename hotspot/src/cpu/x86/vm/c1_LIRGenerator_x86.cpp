@@ -77,7 +77,7 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
   switch (type->tag()) {
     case intTag:     opr = FrameMap::rax_opr;          break;
     case objectTag:  opr = FrameMap::rax_oop_opr;      break;
-    case longTag:    opr = FrameMap::rax_rdx_long_opr; break;
+    case longTag:    opr = FrameMap::long0_opr;        break;
     case floatTag:   opr = UseSSE >= 1 ? FrameMap::xmm0_float_opr  : FrameMap::fpu0_float_opr;  break;
     case doubleTag:  opr = UseSSE >= 2 ? FrameMap::xmm0_double_opr : FrameMap::fpu0_double_opr;  break;
 
@@ -117,12 +117,14 @@ bool LIRGenerator::can_store_as_constant(Value v, BasicType type) const {
 
 
 bool LIRGenerator::can_inline_as_constant(Value v) const {
+  if (v->type()->tag() == longTag) return false;
   return v->type()->tag() != objectTag ||
     (v->type()->is_constant() && v->type()->as_ObjectType()->constant_value()->is_null_object());
 }
 
 
 bool LIRGenerator::can_inline_as_constant(LIR_Const* c) const {
+  if (c->type() == T_LONG) return false;
   return c->type() != T_OBJECT || c->as_jobject() == NULL;
 }
 
@@ -155,6 +157,13 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
     addr = new LIR_Address(array_opr,
                            offset_in_bytes + index_opr->as_jint() * elem_size, type);
   } else {
+#ifdef _LP64
+    if (index_opr->type() == T_INT) {
+      LIR_Opr tmp = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, index_opr, tmp);
+      index_opr = tmp;
+    }
+#endif // _LP64
     addr =  new LIR_Address(array_opr,
                             index_opr,
                             LIR_Address::scale(type),
@@ -164,7 +173,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
     // This store will need a precise card mark, so go ahead and
     // compute the full adddres instead of computing once for the
     // store and again for the card mark.
-    LIR_Opr tmp = new_register(T_INT);
+    LIR_Opr tmp = new_pointer_register();
     __ leal(LIR_OprFact::address(addr), tmp);
     return new LIR_Address(tmp, 0, type);
   } else {
@@ -174,9 +183,8 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 
 
 void LIRGenerator::increment_counter(address counter, int step) {
-  LIR_Opr temp = new_register(T_INT);
-  LIR_Opr pointer = new_register(T_INT);
-  __ move(LIR_OprFact::intConst((int)counter), pointer);
+  LIR_Opr pointer = new_pointer_register();
+  __ move(LIR_OprFact::intptrConst(counter), pointer);
   LIR_Address* addr = new LIR_Address(pointer, 0, T_INT);
   increment_counter(addr, step);
 }
@@ -481,7 +489,7 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
     left.load_item();
     right.load_item();
 
-    LIR_Opr reg = FrameMap::rax_rdx_long_opr;
+    LIR_Opr reg = FrameMap::long0_opr;
     arithmetic_op_long(x->op(), reg, left.result(), right.result(), NULL);
     LIR_Opr result = rlock_result(x);
     __ move(reg, result);
@@ -690,10 +698,10 @@ void LIRGenerator::do_AttemptUpdate(Intrinsic* x) {
   LIRItem new_value (x->argument_at(2), this);  // replace field with new_value if it matches cmp_value
 
   // compare value must be in rdx,eax (hi,lo); may be destroyed by cmpxchg8 instruction
-  cmp_value.load_item_force(FrameMap::rax_rdx_long_opr);
+  cmp_value.load_item_force(FrameMap::long0_opr);
 
   // new value must be in rcx,ebx (hi,lo)
-  new_value.load_item_force(FrameMap::rbx_rcx_long_opr);
+  new_value.load_item_force(FrameMap::long1_opr);
 
   // object pointer register is overwritten with field address
   obj.load_item();
@@ -720,7 +728,10 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   LIRItem val   (x->argument_at(3), this);  // replace field with val if matches cmp
 
   assert(obj.type()->tag() == objectTag, "invalid type");
-  assert(offset.type()->tag() == intTag, "invalid type");
+
+  // In 64bit the type can be long, sparc doesn't have this assert
+  // assert(offset.type()->tag() == intTag, "invalid type");
+
   assert(cmp.type()->tag() == type->tag(), "invalid type");
   assert(val.type()->tag() == type->tag(), "invalid type");
 
@@ -735,8 +746,8 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
     cmp.load_item_force(FrameMap::rax_opr);
     val.load_item();
   } else if (type == longType) {
-    cmp.load_item_force(FrameMap::rax_rdx_long_opr);
-    val.load_item_force(FrameMap::rbx_rcx_long_opr);
+    cmp.load_item_force(FrameMap::long0_opr);
+    val.load_item_force(FrameMap::long1_opr);
   } else {
     ShouldNotReachHere();
   }
@@ -833,12 +844,33 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   // operands for arraycopy must use fixed registers, otherwise
   // LinearScan will fail allocation (because arraycopy always needs a
   // call)
+
+#ifndef _LP64
   src.load_item_force     (FrameMap::rcx_oop_opr);
   src_pos.load_item_force (FrameMap::rdx_opr);
   dst.load_item_force     (FrameMap::rax_oop_opr);
   dst_pos.load_item_force (FrameMap::rbx_opr);
   length.load_item_force  (FrameMap::rdi_opr);
   LIR_Opr tmp =           (FrameMap::rsi_opr);
+#else
+
+  // The java calling convention will give us enough registers
+  // so that on the stub side the args will be perfect already.
+  // On the other slow/special case side we call C and the arg
+  // positions are not similar enough to pick one as the best.
+  // Also because the java calling convention is a "shifted" version
+  // of the C convention we can process the java args trivially into C
+  // args without worry of overwriting during the xfer
+
+  src.load_item_force     (FrameMap::as_oop_opr(j_rarg0));
+  src_pos.load_item_force (FrameMap::as_opr(j_rarg1));
+  dst.load_item_force     (FrameMap::as_oop_opr(j_rarg2));
+  dst_pos.load_item_force (FrameMap::as_opr(j_rarg3));
+  length.load_item_force  (FrameMap::as_opr(j_rarg4));
+
+  LIR_Opr tmp =           FrameMap::as_opr(j_rarg5);
+#endif // LP64
+
   set_no_result(x);
 
   int flags;
@@ -857,7 +889,7 @@ LIR_Opr fixed_register_for(BasicType type) {
     case T_FLOAT:  return FrameMap::fpu0_float_opr;
     case T_DOUBLE: return FrameMap::fpu0_double_opr;
     case T_INT:    return FrameMap::rax_opr;
-    case T_LONG:   return FrameMap::rax_rdx_long_opr;
+    case T_LONG:   return FrameMap::long0_opr;
     default:       ShouldNotReachHere(); return LIR_OprFact::illegalOpr;
   }
 }
@@ -1161,9 +1193,13 @@ void LIRGenerator::do_If(If* x) {
 
 
 LIR_Opr LIRGenerator::getThreadPointer() {
+#ifdef _LP64
+  return FrameMap::as_pointer_opr(r15_thread);
+#else
   LIR_Opr result = new_register(T_INT);
   __ get_thread(result);
   return result;
+#endif //
 }
 
 void LIRGenerator::trace_block_entry(BlockBegin* block) {
