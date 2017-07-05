@@ -86,7 +86,7 @@ bool VerificationType::is_reference_assignable_from(
     VerificationType comp_this = get_component(context, CHECK_false);
     VerificationType comp_from = from.get_component(context, CHECK_false);
     if (!comp_this.is_bogus() && !comp_from.is_bogus()) {
-      return comp_this.is_assignable_from(comp_from, context,
+      return comp_this.is_component_assignable_from(comp_from, context,
                                           from_field_is_protected, CHECK_false);
     }
   }

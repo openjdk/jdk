@@ -43,14 +43,14 @@ import sun.misc.SharedSecrets;
 import sun.security.util.SignatureFileVerifier;
 
 /**
- * The <code>JarFile</code> class is used to read the contents of a jar file
- * from any file that can be opened with <code>java.io.RandomAccessFile</code>.
- * It extends the class <code>java.util.zip.ZipFile</code> with support
- * for reading an optional <code>Manifest</code> entry. The
- * <code>Manifest</code> can be used to specify meta-information about the
+ * The {@code JarFile} class is used to read the contents of a jar file
+ * from any file that can be opened with {@code java.io.RandomAccessFile}.
+ * It extends the class {@code java.util.zip.ZipFile} with support
+ * for reading an optional {@code Manifest} entry. The
+ * {@code Manifest} can be used to specify meta-information about the
  * jar file and its entries.
  *
- * <p> Unless otherwise noted, passing a <tt>null</tt> argument to a constructor
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
@@ -91,8 +91,8 @@ class JarFile extends ZipFile {
     public static final String MANIFEST_NAME = "META-INF/MANIFEST.MF";
 
     /**
-     * Creates a new <code>JarFile</code> to read from the specified
-     * file <code>name</code>. The <code>JarFile</code> will be verified if
+     * Creates a new {@code JarFile} to read from the specified
+     * file {@code name}. The {@code JarFile} will be verified if
      * it is signed.
      * @param name the name of the jar file to be opened for reading
      * @throws IOException if an I/O error has occurred
@@ -104,8 +104,8 @@ class JarFile extends ZipFile {
     }
 
     /**
-     * Creates a new <code>JarFile</code> to read from the specified
-     * file <code>name</code>.
+     * Creates a new {@code JarFile} to read from the specified
+     * file {@code name}.
      * @param name the name of the jar file to be opened for reading
      * @param verify whether or not to verify the jar file if
      * it is signed.
@@ -118,8 +118,8 @@ class JarFile extends ZipFile {
     }
 
     /**
-     * Creates a new <code>JarFile</code> to read from the specified
-     * <code>File</code> object. The <code>JarFile</code> will be verified if
+     * Creates a new {@code JarFile} to read from the specified
+     * {@code File} object. The {@code JarFile} will be verified if
      * it is signed.
      * @param file the jar file to be opened for reading
      * @throws IOException if an I/O error has occurred
@@ -132,8 +132,8 @@ class JarFile extends ZipFile {
 
 
     /**
-     * Creates a new <code>JarFile</code> to read from the specified
-     * <code>File</code> object.
+     * Creates a new {@code JarFile} to read from the specified
+     * {@code File} object.
      * @param file the jar file to be opened for reading
      * @param verify whether or not to verify the jar file if
      * it is signed.
@@ -147,9 +147,9 @@ class JarFile extends ZipFile {
 
 
     /**
-     * Creates a new <code>JarFile</code> to read from the specified
-     * <code>File</code> object in the specified mode.  The mode argument
-     * must be either <tt>OPEN_READ</tt> or <tt>OPEN_READ | OPEN_DELETE</tt>.
+     * Creates a new {@code JarFile} to read from the specified
+     * {@code File} object in the specified mode.  The mode argument
+     * must be either {@code OPEN_READ} or {@code OPEN_READ | OPEN_DELETE}.
      *
      * @param file the jar file to be opened for reading
      * @param verify whether or not to verify the jar file if
@@ -157,7 +157,7 @@ class JarFile extends ZipFile {
      * @param mode the mode in which the file is to be opened
      * @throws IOException if an I/O error has occurred
      * @throws IllegalArgumentException
-     *         if the <tt>mode</tt> argument is invalid
+     *         if the {@code mode} argument is invalid
      * @throws SecurityException if access to the file is denied
      *         by the SecurityManager
      * @since 1.3
@@ -168,9 +168,9 @@ class JarFile extends ZipFile {
     }
 
     /**
-     * Returns the jar file manifest, or <code>null</code> if none.
+     * Returns the jar file manifest, or {@code null} if none.
      *
-     * @return the jar file manifest, or <code>null</code> if none
+     * @return the jar file manifest, or {@code null} if none
      *
      * @throws IllegalStateException
      *         may be thrown if the jar file has been closed
@@ -207,12 +207,12 @@ class JarFile extends ZipFile {
     private native String[] getMetaInfEntryNames();
 
     /**
-     * Returns the <code>JarEntry</code> for the given entry name or
-     * <code>null</code> if not found.
+     * Returns the {@code JarEntry} for the given entry name or
+     * {@code null} if not found.
      *
      * @param name the jar file entry name
-     * @return the <code>JarEntry</code> for the given entry name or
-     *         <code>null</code> if not found.
+     * @return the {@code JarEntry} for the given entry name or
+     *         {@code null} if not found.
      *
      * @throws IllegalStateException
      *         may be thrown if the jar file has been closed
@@ -224,12 +224,12 @@ class JarFile extends ZipFile {
     }
 
     /**
-     * Returns the <code>ZipEntry</code> for the given entry name or
-     * <code>null</code> if not found.
+     * Returns the {@code ZipEntry} for the given entry name or
+     * {@code null} if not found.
      *
      * @param name the jar file entry name
-     * @return the <code>ZipEntry</code> for the given entry name or
-     *         <code>null</code> if not found
+     * @return the {@code ZipEntry} for the given entry name or
+     *         {@code null} if not found
      *
      * @throws IllegalStateException
      *         may be thrown if the jar file has been closed

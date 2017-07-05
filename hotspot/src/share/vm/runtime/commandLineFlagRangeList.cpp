@@ -365,3 +365,63 @@ void CommandLineFlagRangeList::print(const char* name, outputStream* st, bool un
     st->print("[                           ...                           ]");
   }
 }
+
+bool CommandLineFlagRangeList::check_ranges() {
+//#define PRINT_RANGES_SIZES
+#ifdef PRINT_RANGES_SIZES
+  {
+    size_t size_ranges = sizeof(CommandLineFlagRangeList);
+    for (int i=0; i<length(); i++) {
+      size_ranges += sizeof(CommandLineFlagRange);
+      CommandLineFlagRange* range = at(i);
+      const char* name = range->name();
+      Flag* flag = Flag::find_flag(name, strlen(name), true, true);
+      if (flag->is_intx()) {
+        size_ranges += 2*sizeof(intx);
+        size_ranges += sizeof(CommandLineFlagRange*);
+      } else if (flag->is_uintx()) {
+        size_ranges += 2*sizeof(uintx);
+        size_ranges += sizeof(CommandLineFlagRange*);
+      } else if (flag->is_uint64_t()) {
+        size_ranges += 2*sizeof(uint64_t);
+        size_ranges += sizeof(CommandLineFlagRange*);
+      } else if (flag->is_size_t()) {
+        size_ranges += 2*sizeof(size_t);
+        size_ranges += sizeof(CommandLineFlagRange*);
+      } else if (flag->is_double()) {
+        size_ranges += 2*sizeof(double);
+        size_ranges += sizeof(CommandLineFlagRange*);
+      }
+    }
+    fprintf(stderr, "Size of %d ranges: " SIZE_FORMAT " bytes\n",
+            length(), size_ranges);
+  }
+#endif // PRINT_RANGES_SIZES
+
+  // Check ranges.
+  bool status = true;
+  for (int i=0; i<length(); i++) {
+    CommandLineFlagRange* range = at(i);
+    const char* name = range->name();
+    Flag* flag = Flag::find_flag(name, strlen(name), true, true);
+    if (flag != NULL) {
+      if (flag->is_intx()) {
+        intx value = flag->get_intx();
+        if (range->check_intx(value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_uintx()) {
+        uintx value = flag->get_uintx();
+        if (range->check_uintx(value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_uint64_t()) {
+        uint64_t value = flag->get_uint64_t();
+        if (range->check_uint64_t(value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_size_t()) {
+        size_t value = flag->get_size_t();
+        if (range->check_size_t(value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_double()) {
+        double value = flag->get_double();
+        if (range->check_double(value, true) != Flag::SUCCESS) status = false;
+      }
+    }
+  }
+  return status;
+}

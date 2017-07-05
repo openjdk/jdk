@@ -50,17 +50,16 @@ package sun.security.pkcs11.wrapper;
 
 
 /**
- * interface CK_CREATEMUTEX.<p>
+ * interface CK_CREATEMUTEX.
  *
- * @author Karl Scheibelhofer <Karl.Scheibelhofer@iaik.at>
- * @author Martin Schlaeffer <schlaeff@sbox.tugraz.at>
+ * @author Karl Scheibelhofer &lt;Karl.Scheibelhofer@iaik.at&gt;
+ * @author Martin Schlaeffer &lt;schlaeff@sbox.tugraz.at&gt;
  */
 public interface CK_CREATEMUTEX {
 
     /**
      * Method CK_CREATEMUTEX
      *
-     * @param ppMutex
      * @return The mutex (lock) object.
      * @exception PKCS11Exception
      */

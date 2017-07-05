@@ -26,6 +26,7 @@
  * @bug 4313885 4926319 4927634 5032610 5032622 5049968 5059533 6223711 6277261 6269946 6288823
  * @summary Basic tests of java.util.Scanner methods
  * @key randomness
+ * @run main/othervm ScanTest
  */
 
 import java.util.*;

@@ -39,7 +39,7 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 KRBSafeBody type.
  *
- * <xmp>
+ * <pre>{@code
  * KRB-SAFE-BODY   ::= SEQUENCE {
  *         user-data       [0] OCTET STRING,
  *         timestamp       [1] KerberosTime OPTIONAL,
@@ -48,7 +48,7 @@ import java.math.BigInteger;
  *         s-address       [4] HostAddress,
  *         r-address       [5] HostAddress OPTIONAL
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

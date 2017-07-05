@@ -29,6 +29,7 @@
 #  @summary REGRESSION: jdb rejects the syntax catch java.lang.IndexOutOfBoundsException
 #  @author Tim Bell
 #
+#  @key intermittent
 #  @run shell CatchAllTest.sh
 #
 classname=CatchAllTestTarg

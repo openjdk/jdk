@@ -36,10 +36,11 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
 
-void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
-                                                             OopsInGenClosure* cl,
-                                                             CardTableRS* ct,
-                                                             uint n_threads) {
+void CardTableModRefBSForCTRS::
+non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
+                                     OopsInGenClosure* cl,
+                                     CardTableRS* ct,
+                                     uint n_threads) {
   assert(n_threads > 0, "expected n_threads > 0");
   assert(n_threads <= ParallelGCThreads,
          err_msg("n_threads: %u > ParallelGCThreads: %u", n_threads, ParallelGCThreads));
@@ -81,7 +82,7 @@ void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegio
 }
 
 void
-CardTableModRefBS::
+CardTableModRefBSForCTRS::
 process_stride(Space* sp,
                MemRegion used,
                jint stride, int n_strides,
@@ -170,7 +171,7 @@ process_stride(Space* sp,
 #endif
 
 void
-CardTableModRefBS::
+CardTableModRefBSForCTRS::
 process_chunk_boundaries(Space* sp,
                          DirtyCardToOopClosure* dcto_cl,
                          MemRegion chunk_mr,
@@ -426,7 +427,7 @@ process_chunk_boundaries(Space* sp,
 #undef NOISY
 
 void
-CardTableModRefBS::
+CardTableModRefBSForCTRS::
 get_LNC_array_for_space(Space* sp,
                         jbyte**& lowest_non_clean,
                         uintptr_t& lowest_non_clean_base_chunk_index,

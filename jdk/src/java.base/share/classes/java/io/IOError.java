@@ -35,11 +35,11 @@ public class IOError extends Error {
     /**
      * Constructs a new instance of IOError with the specified cause. The
      * IOError is created with the detail message of
-     * <tt>(cause==null ? null : cause.toString())</tt> (which typically
+     * {@code (cause==null ? null : cause.toString())} (which typically
      * contains the class and detail message of cause).
      *
      * @param  cause
-     *         The cause of this error, or <tt>null</tt> if the cause
+     *         The cause of this error, or {@code null} if the cause
      *         is not known
      */
     public IOError(Throwable cause) {

@@ -35,13 +35,13 @@ package java.lang.management;
  * that can be obtained by calling
  * the {@link ManagementFactory#getRuntimeMXBean} method or
  * from the {@link ManagementFactory#getPlatformMBeanServer
- * platform <tt>MBeanServer</tt>} method.
+ * platform MBeanServer} method.
  *
- * <p>The <tt>ObjectName</tt> for uniquely identifying the MXBean for
+ * <p>The {@code ObjectName} for uniquely identifying the MXBean for
  * the runtime system within an MBeanServer is:
  * <blockquote>
  *    {@link ManagementFactory#RUNTIME_MXBEAN_NAME
- *           <tt>java.lang:type=Runtime</tt>}
+ *           java.lang:type=Runtime}
  * </blockquote>
  *
  * It can be obtained by calling the
@@ -81,7 +81,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * @throws  java.lang.SecurityException
      *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
+     *     {@code checkPropertiesAccess} method doesn't allow access
      *     to this system property.
      * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see java.lang.System#getProperty
@@ -97,7 +97,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * @throws  java.lang.SecurityException
      *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
+     *     {@code checkPropertiesAccess} method doesn't allow access
      *     to this system property.
      * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see java.lang.System#getProperty
@@ -113,7 +113,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * @throws  java.lang.SecurityException
      *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
+     *     {@code checkPropertiesAccess} method doesn't allow access
      *     to this system property.
      * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see java.lang.System#getProperty
@@ -129,7 +129,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * @throws  java.lang.SecurityException
      *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
+     *     {@code checkPropertiesAccess} method doesn't allow access
      *     to this system property.
      * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see java.lang.System#getProperty
@@ -145,7 +145,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * @throws  java.lang.SecurityException
      *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
+     *     {@code checkPropertiesAccess} method doesn't allow access
      *     to this system property.
      * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see java.lang.System#getProperty
@@ -161,7 +161,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * @throws  java.lang.SecurityException
      *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
+     *     {@code checkPropertiesAccess} method doesn't allow access
      *     to this system property.
      * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see java.lang.System#getProperty
@@ -192,7 +192,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * @throws  java.lang.SecurityException
      *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
+     *     {@code checkPropertiesAccess} method doesn't allow access
      *     to this system property.
      * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see java.lang.System#getProperty
@@ -212,7 +212,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * @throws  java.lang.SecurityException
      *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
+     *     {@code checkPropertiesAccess} method doesn't allow access
      *     to this system property.
      * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see java.lang.System#getProperty
@@ -224,8 +224,8 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      * mechanism used by the bootstrap class loader to search for class
      * files.
      *
-     * @return <tt>true</tt> if the Java virtual machine supports the
-     * class path mechanism; <tt>false</tt> otherwise.
+     * @return {@code true} if the Java virtual machine supports the
+     * class path mechanism; {@code false} otherwise.
      */
     public boolean isBootClassPathSupported();
 
@@ -256,7 +256,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
 
     /**
      * Returns the input arguments passed to the Java virtual machine
-     * which does not include the arguments to the <tt>main</tt> method.
+     * which does not include the arguments to the {@code main} method.
      * This method returns an empty list if there is no input argument
      * to the Java virtual machine.
      * <p>
@@ -272,9 +272,9 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of {@code List<String>} is <tt>String[]</tt>.
+     * The mapped type of {@code List<String>} is {@code String[]}.
      *
-     * @return a list of <tt>String</tt> objects; each element
+     * @return a list of {@code String} objects; each element
      * is an argument passed to the Java virtual machine.
      *
      * @throws  java.lang.SecurityException
@@ -304,7 +304,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      * Returns a map of names and values of all system properties.
      * This method calls {@link System#getProperties} to get all
      * system properties.  Properties whose name or value is not
-     * a <tt>String</tt> are omitted.
+     * a {@code String} are omitted.
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
@@ -318,12 +318,12 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *   <th>Item Type</th>
      *   </tr>
      * <tr>
-     *   <td><tt>key</tt></td>
-     *   <td><tt>String</tt></td>
+     *   <td>{@code key}</td>
+     *   <td>{@code String}</td>
      *   </tr>
      * <tr>
-     *   <td><tt>value</tt></td>
-     *   <td><tt>String</tt></td>
+     *   <td>{@code value}</td>
+     *   <td>{@code String}</td>
      *   </tr>
      * </table>
      * </blockquote>
@@ -332,7 +332,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      *
      * @throws  java.lang.SecurityException
      *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
+     *     {@code checkPropertiesAccess} method doesn't allow access
      *     to the system properties.
      */
     public java.util.Map<String, String> getSystemProperties();

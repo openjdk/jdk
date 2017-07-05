@@ -38,7 +38,7 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 KDC-REP type.
  *
- * <xmp>
+ * <pre>{@code
  * KDC-REP         ::= SEQUENCE {
  *         pvno            [0] INTEGER (5),
  *         msg-type        [1] INTEGER (11 -- AS -- | 13 -- TGS --),
@@ -51,7 +51,7 @@ import java.math.BigInteger;
  *                                   -- EncASRepPart or EncTGSRepPart,
  *                                   -- as appropriate
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

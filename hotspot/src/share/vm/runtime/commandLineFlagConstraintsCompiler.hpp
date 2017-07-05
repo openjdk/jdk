@@ -36,4 +36,6 @@
 
 Flag::Error AliasLevelConstraintFunc(bool verbose, intx* value);
 
+Flag::Error CICompilerCountConstraintFunc(bool verbose, intx* value);
+
 #endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSCOMPILER_HPP */

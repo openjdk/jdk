@@ -26,7 +26,7 @@
 package javax.naming.ldap;
 
 /**
- * This class provides a basic implementation of the <tt>Control</tt>
+ * This class provides a basic implementation of the {@code Control}
  * interface. It represents an LDAPv3 Control as defined in
  * <a href="http://www.ietf.org/rfc/rfc2251.txt">RFC 2251</a>.
  *

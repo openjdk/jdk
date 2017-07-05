@@ -60,7 +60,7 @@ public interface OpenMBeanConstructorInfo {
 
     /**
      * Returns a human readable description of the constructor
-     * described by this <tt>OpenMBeanConstructorInfo</tt> instance.
+     * described by this {@code OpenMBeanConstructorInfo} instance.
      *
      * @return the description.
      */
@@ -68,16 +68,16 @@ public interface OpenMBeanConstructorInfo {
 
     /**
      * Returns the name of the constructor
-     * described by this <tt>OpenMBeanConstructorInfo</tt> instance.
+     * described by this {@code OpenMBeanConstructorInfo} instance.
      *
      * @return the name.
      */
     public String getName() ;
 
     /**
-     * Returns an array of <tt>OpenMBeanParameterInfo</tt> instances
+     * Returns an array of {@code OpenMBeanParameterInfo} instances
      * describing each parameter in the signature of the constructor
-     * described by this <tt>OpenMBeanConstructorInfo</tt> instance.
+     * described by this {@code OpenMBeanConstructorInfo} instance.
      *
      * @return the signature.
      */
@@ -88,48 +88,49 @@ public interface OpenMBeanConstructorInfo {
     //
 
     /**
-     * Compares the specified <var>obj</var> parameter with this <code>OpenMBeanConstructorInfo</code> instance for equality.
+     * Compares the specified <var>obj</var> parameter with this {@code OpenMBeanConstructorInfo} instance for equality.
      * <p>
-     * Returns <tt>true</tt> if and only if all of the following statements are true:
+     * Returns {@code true} if and only if all of the following statements are true:
      * <ul>
      * <li><var>obj</var> is non null,</li>
-     * <li><var>obj</var> also implements the <code>OpenMBeanConstructorInfo</code> interface,</li>
+     * <li><var>obj</var> also implements the {@code OpenMBeanConstructorInfo} interface,</li>
      * <li>their names are equal</li>
      * <li>their signatures are equal.</li>
      * </ul>
-     * This ensures that this <tt>equals</tt> method works properly for <var>obj</var> parameters which are
-     * different implementations of the <code>OpenMBeanConstructorInfo</code> interface.
+     * This ensures that this {@code equals} method works properly for <var>obj</var> parameters which are
+     * different implementations of the {@code OpenMBeanConstructorInfo} interface.
      * <br>&nbsp;
-     * @param  obj  the object to be compared for equality with this <code>OpenMBeanConstructorInfo</code> instance;
+     * @param  obj  the object to be compared for equality with this {@code OpenMBeanConstructorInfo} instance;
      *
-     * @return  <code>true</code> if the specified object is equal to this <code>OpenMBeanConstructorInfo</code> instance.
+     * @return  {@code true} if the specified object is equal to this {@code OpenMBeanConstructorInfo} instance.
      */
     public boolean equals(Object obj);
 
     /**
-     * Returns the hash code value for this <code>OpenMBeanConstructorInfo</code> instance.
+     * Returns the hash code value for this {@code OpenMBeanConstructorInfo} instance.
      * <p>
-     * The hash code of an <code>OpenMBeanConstructorInfo</code> instance is the sum of the hash codes
-     * of all elements of information used in <code>equals</code> comparisons
+     * The hash code of an {@code OpenMBeanConstructorInfo} instance is the sum of the hash codes
+     * of all elements of information used in {@code equals} comparisons
      * (ie: its name and signature, where the signature hashCode is calculated by a call to
-     *  <tt>java.util.Arrays.asList(this.getSignature).hashCode()</tt>).
+     *  {@code java.util.Arrays.asList(this.getSignature).hashCode()}).
      * <p>
-     * This ensures that <code> t1.equals(t2) </code> implies that <code> t1.hashCode()==t2.hashCode() </code>
-     * for any two <code>OpenMBeanConstructorInfo</code> instances <code>t1</code> and <code>t2</code>,
+     * This ensures that {@code t1.equals(t2)} implies that {@code t1.hashCode()==t2.hashCode()}
+     * for any two {@code OpenMBeanConstructorInfo} instances {@code t1} and {@code t2},
      * as required by the general contract of the method
      * {@link Object#hashCode() Object.hashCode()}.
      *
-     * @return  the hash code value for this <code>OpenMBeanConstructorInfo</code> instance
+     * @return  the hash code value for this {@code OpenMBeanConstructorInfo} instance
      */
     public int hashCode();
 
     /**
-     * Returns a string representation of this <code>OpenMBeanConstructorInfo</code> instance.
+     * Returns a string representation of this {@code OpenMBeanConstructorInfo} instance.
      * <p>
-     * The string representation consists of the name of this class (ie <code>javax.management.openmbean.OpenMBeanConstructorInfo</code>),
+     * The string representation consists of the name of this class
+     * (ie {@code javax.management.openmbean.OpenMBeanConstructorInfo}),
      * and the name and signature of the described constructor.
      *
-     * @return  a string representation of this <code>OpenMBeanConstructorInfo</code> instance
+     * @return  a string representation of this {@code OpenMBeanConstructorInfo} instance
      */
     public String toString();
 
