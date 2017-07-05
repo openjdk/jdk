@@ -193,10 +193,10 @@ class Bytecode_member_ref: public Bytecode {
  public:
   int          index() const;                    // cache index (loaded from instruction)
   int          pool_index() const;               // constant pool index
-  symbolOop    name() const;                     // returns the name of the method or field
-  symbolOop    signature() const;                // returns the signature of the method or field
+  Symbol*      name() const;                     // returns the name of the method or field
+  Symbol*      signature() const;                // returns the signature of the method or field
 
-  BasicType    result_type(Thread* thread) const; // returns the result type of the getfield or invoke
+  BasicType    result_type() const;              // returns the result type of the getfield or invoke
 };
 
 // Abstraction for invoke_{virtual, static, interface, special}

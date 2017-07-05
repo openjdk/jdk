@@ -428,6 +428,36 @@ public class CommandProcessor {
                 }
             }
         },
+        new Command("symbol", "symbol address", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1) {
+                    usage();
+                } else {
+                    Address a = VM.getVM().getDebugger().parseAddress(t.nextToken());
+                    Symbol.create(a).printValueOn(out);
+                    out.println();
+                }
+            }
+        },
+        new Command("symboltable", "symboltable name", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1) {
+                    usage();
+                } else {
+                    out.println(SymbolTable.getTheTable().probe(t.nextToken()));
+                }
+            }
+        },
+        new Command("symboldump", "symboldump", false) {
+            public void doit(Tokens t) {
+                SymbolTable.getTheTable().symbolsDo(new SymbolTable.SymbolVisitor() {
+                        public void visit(Symbol sym) {
+                            sym.printValueOn(out);
+                            out.println();
+                        }
+                    });
+            }
+        },
         new Command("flags", "flags [ flag ]", false) {
             public void doit(Tokens t) {
                 int tokens = t.countTokens();
@@ -626,17 +656,6 @@ public class CommandProcessor {
                     out.println("pointer to " + type + " @ " + a +
                                 " (size = " + type.getSize() + ")");
                     printNode(node);
-                }
-            }
-        },
-        new Command("symbol", "symbol name", false) {
-            public void doit(Tokens t) {
-                if (t.countTokens() != 1) {
-                    usage();
-                } else {
-                    String symbol = t.nextToken();
-                    Address a = lookup(symbol);
-                    out.println(symbol + " = " + a);
                 }
             }
         },
@@ -1262,6 +1281,9 @@ public class CommandProcessor {
         this.err = err;
         for (int i = 0; i < commandList.length; i++) {
             Command c = commandList[i];
+            if (commands.get(c.name) != null) {
+                throw new InternalError(c.name + " has multiple definitions");
+            }
             commands.put(c.name, c);
         }
         if (debugger.isAttached()) {

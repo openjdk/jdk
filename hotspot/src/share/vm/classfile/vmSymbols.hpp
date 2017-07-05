@@ -25,17 +25,15 @@
 #ifndef SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
 #define SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
 
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
+#include "memory/iterator.hpp"
 
-// The classes vmSymbols and vmSymbolHandles are a name spaces for fast lookup of
-// symbols commonly used in the VM. The first class return a symbolOop, while the
-// second class returns a SymbolHandle. The underlying data structure is shared
-// between the two classes.
+// The class vmSymbols is a name space for fast lookup of
+// symbols commonly used in the VM.
 //
 // Sample usage:
 //
-//   symbolOop obj       = vmSymbols::java_lang_Object()();
-//   SymbolHandle handle = vmSymbolHandles::java_lang_Object();
+//   Symbol* obj       = vmSymbols::java_lang_Object();
 
 
 // Useful sub-macros exported by this header file:
@@ -459,7 +457,7 @@
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, do_alias)           \
                                                                                                                   \
   /* returned by the C1 compiler in case there's not enough memory to allocate a new symbol*/                     \
-  template(dummy_symbol_oop,                          "illegal symbol")                                           \
+  template(dummy_symbol,                              "illegal symbol")                                           \
                                                                                                                   \
   /* used by ClassFormatError when class name is not known yet */                                                 \
   template(unknown_class_name,                        "<Unknown>")                                                \
@@ -938,10 +936,9 @@
 // Class vmSymbols
 
 class vmSymbols: AllStatic {
- friend class vmSymbolHandles;
  friend class vmIntrinsics;
  public:
-  // enum for figuring positions and size of array holding symbolOops
+  // enum for figuring positions and size of array holding Symbol*s
   enum SID {
     NO_SID = 0,
 
@@ -963,72 +960,47 @@ class vmSymbols: AllStatic {
 
  private:
   // The symbol array
-  static symbolOop _symbols[];
+  static Symbol* _symbols[];
 
   // Field signatures indexed by BasicType.
-  static symbolOop _type_signatures[T_VOID+1];
+  static Symbol* _type_signatures[T_VOID+1];
 
  public:
   // Initialization
   static void initialize(TRAPS);
   // Accessing
-  #define VM_SYMBOL_DECLARE(name, ignore) \
-    static symbolOop name() { return _symbols[VM_SYMBOL_ENUM_NAME(name)]; }
+  #define VM_SYMBOL_DECLARE(name, ignore)                 \
+    static Symbol* name() {                               \
+      return _symbols[VM_SYMBOL_ENUM_NAME(name)];         \
+    }
   VM_SYMBOLS_DO(VM_SYMBOL_DECLARE, VM_SYMBOL_DECLARE)
   #undef VM_SYMBOL_DECLARE
 
-  // GC support
-  static void oops_do(OopClosure* f, bool do_all = false);
+  // Sharing support
+  static void symbols_do(SymbolClosure* f);
+  static void serialize(SerializeOopClosure* soc);
 
-  static symbolOop type_signature(BasicType t) {
+  static Symbol* type_signature(BasicType t) {
     assert((uint)t < T_VOID+1, "range check");
     assert(_type_signatures[t] != NULL, "domain check");
     return _type_signatures[t];
   }
   // inverse of type_signature; returns T_OBJECT if s is not recognized
-  static BasicType signature_type(symbolOop s);
+  static BasicType signature_type(Symbol* s);
 
-  static symbolOop symbol_at(SID id) {
+  static Symbol* symbol_at(SID id) {
     assert(id >= FIRST_SID && id < SID_LIMIT, "oob");
     assert(_symbols[id] != NULL, "init");
     return _symbols[id];
   }
 
   // Returns symbol's SID if one is assigned, else NO_SID.
-  static SID find_sid(symbolOop symbol);
+  static SID find_sid(Symbol* symbol);
 
 #ifndef PRODUCT
   // No need for this in the product:
   static const char* name_for(SID sid);
 #endif //PRODUCT
-};
-
-
-// Class vmSymbolHandles
-
-class vmSymbolHandles: AllStatic {
-  friend class vmIntrinsics;
-  friend class ciObjectFactory;
-
- public:
-  // Accessing
-  #define VM_SYMBOL_HANDLE_DECLARE(name, ignore) \
-    static symbolHandle name() { return symbol_handle_at(vmSymbols::VM_SYMBOL_ENUM_NAME(name)); }
-  VM_SYMBOLS_DO(VM_SYMBOL_HANDLE_DECLARE, VM_SYMBOL_HANDLE_DECLARE)
-  #undef VM_SYMBOL_HANDLE_DECLARE
-
-  static symbolHandle symbol_handle_at(vmSymbols::SID id) {
-    return symbolHandle(&vmSymbols::_symbols[(int)id], false);
-  }
-
-  static symbolHandle type_signature(BasicType t) {
-    assert(vmSymbols::type_signature(t) != NULL, "domain check");
-    return symbolHandle(&vmSymbols::_type_signatures[t], false);
-  }
-  // inverse of type_signature; returns T_OBJECT if s is not recognized
-  static BasicType signature_type(symbolHandle s) {
-    return vmSymbols::signature_type(s());
-  }
 };
 
 // VM Intrinsic ID's uniquely identify some very special methods

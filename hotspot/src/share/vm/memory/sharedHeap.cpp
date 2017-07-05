@@ -46,7 +46,6 @@ enum SH_process_strong_roots_tasks {
   SH_PS_Management_oops_do,
   SH_PS_SystemDictionary_oops_do,
   SH_PS_jvmti_oops_do,
-  SH_PS_vmSymbols_oops_do,
   SH_PS_SymbolTable_oops_do,
   SH_PS_StringTable_oops_do,
   SH_PS_CodeCache_oops_do,
@@ -169,11 +168,6 @@ void SharedHeap::process_strong_roots(bool activate_scope,
   }
 
   if (!_process_strong_tasks->is_task_claimed(SH_PS_SymbolTable_oops_do)) {
-    if (so & SO_Symbols) {
-      SymbolTable::oops_do(roots);
-    }
-    // Verify if the symbol table contents are in the perm gen
-    NOT_PRODUCT(SymbolTable::oops_do(&assert_is_perm_closure));
   }
 
   if (!_process_strong_tasks->is_task_claimed(SH_PS_StringTable_oops_do)) {
@@ -208,20 +202,6 @@ void SharedHeap::process_strong_roots(bool activate_scope,
     // Verify if the code cache contents are in the perm gen
     NOT_PRODUCT(CodeBlobToOopClosure assert_code_is_perm(&assert_is_perm_closure, /*do_marking=*/ false));
     NOT_PRODUCT(CodeCache::asserted_non_scavengable_nmethods_do(&assert_code_is_perm));
-  }
-
-  // Roots that should point only into permanent generation.
-  {
-    OopClosure* blk = NULL;
-    if (collecting_perm_gen) {
-      blk = roots;
-    } else {
-      debug_only(blk = &assert_is_perm_closure);
-    }
-    if (blk != NULL) {
-      if (!_process_strong_tasks->is_task_claimed(SH_PS_vmSymbols_oops_do))
-        vmSymbols::oops_do(blk);
-    }
   }
 
   if (!collecting_perm_gen) {
@@ -273,7 +253,6 @@ void SharedHeap::process_weak_roots(OopClosure* root_closure,
   JNIHandles::weak_oops_do(&always_true, root_closure);
 
   CodeCache::blobs_do(code_roots);
-  SymbolTable::oops_do(root_closure);
   if (UseSharedSpaces && !DumpSharedSpaces) {
     SkipAdjustingSharedStrings skip_closure(root_closure);
     StringTable::oops_do(&skip_closure);

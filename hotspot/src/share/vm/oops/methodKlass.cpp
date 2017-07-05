@@ -36,7 +36,7 @@
 #include "oops/methodKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 
 klassOop methodKlass::create_klass(TRAPS) {
@@ -353,10 +353,6 @@ void methodKlass::oop_verify_on(oop obj, outputStream* st) {
   if (!obj->partially_loaded()) {
     methodOop m = methodOop(obj);
     guarantee(m->is_perm(),  "should be in permspace");
-    guarantee(m->name()->is_perm(), "should be in permspace");
-    guarantee(m->name()->is_symbol(), "should be symbol");
-    guarantee(m->signature()->is_perm(), "should be in permspace");
-    guarantee(m->signature()->is_symbol(), "should be symbol");
     guarantee(m->constants()->is_perm(), "should be in permspace");
     guarantee(m->constants()->is_constantPool(), "should be constant pool");
     guarantee(m->constMethod()->is_constMethod(), "should be constMethodOop");
