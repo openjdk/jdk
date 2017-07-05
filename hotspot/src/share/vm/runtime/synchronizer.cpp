@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/padded.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/markOop.hpp"
@@ -638,11 +639,11 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread * Self, oop obj) {
 
   // hashCode() is a heap mutator ...
   // Relaxing assertion for bug 6320749.
-  assert(Universe::verify_in_progress() ||
+  assert(Universe::verify_in_progress() || DumpSharedSpaces ||
          !SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(Universe::verify_in_progress() ||
+  assert(Universe::verify_in_progress() || DumpSharedSpaces ||
          Self->is_Java_thread() , "invariant");
-  assert(Universe::verify_in_progress() ||
+  assert(Universe::verify_in_progress() || DumpSharedSpaces ||
          ((JavaThread *)Self)->thread_state() != _thread_blocked, "invariant");
 
   ObjectMonitor* monitor = NULL;

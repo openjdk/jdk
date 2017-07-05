@@ -1188,28 +1188,11 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         OTHER_JDK="$OTHER/install/jdk"
         OTHER_JRE="$OTHER/install/jre"
         echo "Selecting install images for compare"
-    elif [ -d "$THIS/deploy/jdk" -o -d "$THIS/deploy/images/jdk" ] \
-	     && [ -d "$OTHER/deploy/jdk" -o -d "$OTHER/deploy/images/jdk" ]; then
-	if [ -d "$THIS/deploy/images/jdk" ]; then
-            THIS_JDK="$THIS/deploy/images/jdk"
-            THIS_JRE="$THIS/deploy/images/jre"
-	else
-            THIS_JDK="$THIS/deploy/jdk"
-            THIS_JRE="$THIS/deploy/jre"
-	fi
-	if [ -d "$OTHER/deploy/images/jdk" ]; then
-            OTHER_JDK="$OTHER/deploy/images/jdk"
-            OTHER_JRE="$OTHER/deploy/images/jre"
-	else
-            OTHER_JDK="$OTHER/deploy/jdk"
-            OTHER_JRE="$OTHER/deploy/jre"
-	fi
-        echo "Selecting deploy images for compare"
-    elif [ -d "$THIS/deploy/images/jdk" ] && [ -d "$OTHER/deploy/jdk" ]; then
-        THIS_JDK="$THIS/deploy/jdk"
-        THIS_JRE="$THIS/deploy/jre"
-        OTHER_JDK="$OTHER/deploy/jdk"
-        OTHER_JRE="$OTHER/deploy/jre"
+    elif [ -d "$THIS/images/jdk" ] && [ -d "$OTHER/deploy/images/jdk" ]; then
+        THIS_JDK="$THIS/images/jdk"
+        THIS_JRE="$THIS/images/jre"
+        OTHER_JDK="$OTHER/deploy/images/jdk"
+        OTHER_JRE="$OTHER/deploy/images/jre"
         echo "Selecting deploy images for compare"
     elif [ -d "$THIS/images/jdk" ] && [ -d "$OTHER/images/jdk" ]; then
         THIS_JDK="$THIS/images/jdk"
@@ -1221,30 +1204,28 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         echo "No common images found."
         exit 1
     fi
+    echo "  $THIS_JDK"
+    echo "  $OTHER_JDK"
 
-    if [ -d "$THIS/deploy/jdk-bundle" -o -d "$THIS/deploy/images/jdk-bundle" ] \
-	     && [ -d "$OTHER/deploy/jdk-bundle" -o -d "$OTHER/deploy/images/jdk-bundle" ]; then
+    if [ -d "$THIS/images/jdk-bundle" -o -d "$THIS/deploy/images/jdk-bundle" ] \
+	     && [ -d "$OTHER/images/jdk-bundle" -o -d "$OTHER/deploy/images/jdk-bundle" ]; then
 	if [ -d "$THIS/deploy/images/jdk-bundle" ]; then
             THIS_JDK_BUNDLE="$THIS/deploy/images/jdk-bundle"
             THIS_JRE_BUNDLE="$THIS/deploy/images/jre-bundle"
 	else
-            THIS_JDK_BUNDLE="$THIS/deploy/jdk-bundle"
-            THIS_JRE_BUNDLE="$THIS/deploy/jre-bundle"
+            THIS_JDK_BUNDLE="$THIS/images/jdk-bundle"
+            THIS_JRE_BUNDLE="$THIS/images/jre-bundle"
 	fi
 	if [ -d "$OTHER/deploy/images/jdk-bundle" ]; then
             OTHER_JDK_BUNDLE="$OTHER/deploy/images/jdk-bundle"
             OTHER_JRE_BUNDLE="$OTHER/deploy/images/jre-bundle"
 	else
-            OTHER_JDK_BUNDLE="$OTHER/deploy/jdk-bundle"
-            OTHER_JRE_BUNDLE="$OTHER/deploy/jre-bundle"
+            OTHER_JDK_BUNDLE="$OTHER/images/jdk-bundle"
+            OTHER_JRE_BUNDLE="$OTHER/images/jre-bundle"
 	fi
-        echo "Also comparing deploy macosx bundles"
-    elif [ -d "$THIS/images/jdk-bundle" ] && [ -d "$OTHER/images/jdk-bundle" ]; then
-        THIS_JDK_BUNDLE="$THIS/images/jdk-bundle"
-        THIS_JRE_BUNDLE="$THIS/images/jre-bundle"
-        OTHER_JDK_BUNDLE="$OTHER/images/jdk-bundle"
-        OTHER_JRE_BUNDLE="$OTHER/images/jre-bundle"
         echo "Also comparing macosx bundles"
+        echo "  $THIS_JDK_BUNDLE"
+        echo "  $OTHER_JDK_BUNDLE"
     fi
 
     if [ -d "$THIS/deploy/bundles" -o -d "$THIS/deploy/images/bundles" ] \
@@ -1262,19 +1243,21 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         echo "Also comparing deploy javadoc bundles"
     fi
 
-    if [ -d "$THIS/deploy/JavaAppletPlugin.plugin" -o -d "$THIS/deploy/images/JavaAppletPlugin.plugin" ] \
-	     && [ -d "$OTHER/deploy/JavaAppletPlugin.plugin" -o -d "$OTHER/deploy/images/JavaAppletPlugin.plugin" ]; then
-	if [ -d "$THIS/deploy/images/bundles" ]; then
+    if [ -d "$THIS/images/JavaAppletPlugin.plugin" ] \
+	     && [ -d "$OTHER/images/JavaAppletPlugin.plugin" -o -d "$OTHER/deploy/images/JavaAppletPlugin.plugin" ]; then
+	if [ -d "$THIS/images/JavaAppletPlugin.plugin" ]; then
+            THIS_DEPLOY_APPLET_PLUGIN_DIR="$THIS/images/JavaAppletPlugin.plugin"
+	else
             THIS_DEPLOY_APPLET_PLUGIN_DIR="$THIS/deploy/images/JavaAppletPlugin.plugin"
-	else
-            THIS_DEPLOY_APPLET_PLUGIN_DIR="$THIS/deploy/JavaAppletPlugin.plugin"
 	fi
-	if [ -d "$OTHER/deploy/images/bundles" ]; then
-            OTHER_DEPLOY_APPLET_PLUGIN_DIR="$OTHER/deploy/images/JavaAppletPlugin.plugin"
+	if [ -d "$OTHER/images/JavaAppletPlugin.plugin" ]; then
+            OTHER_DEPLOY_APPLET_PLUGIN_DIR="$OTHER/images/JavaAppletPlugin.plugin"
 	else
-            OTHER_DEPLOY_APPLET_PLUGIN_DIR="$OTHER/deploy/JavaAppletPlugin.plugin"
+            OTHER_DEPLOY_APPLET_PLUGIN_DIR="$OTHER/deploy/images/JavaAppletPlugin.plugin"
 	fi
         echo "Also comparing deploy applet image"
+        echo "  $THIS_DEPLOY_APPLET_PLUGIN_DIR"
+        echo "  $OTHER_DEPLOY_APPLET_PLUGIN_DIR"
     fi
 
     if [ -d "$OTHER/images" ]; then

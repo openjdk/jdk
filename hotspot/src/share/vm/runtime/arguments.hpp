@@ -328,7 +328,6 @@ class Arguments : AllStatic {
 
   // Tiered
   static void set_tiered_flags();
-  static int  get_min_number_of_compiler_threads();
   // CMS/ParNew garbage collectors
   static void set_parnew_gc_flags();
   static void set_cms_and_parnew_gc_flags();
@@ -384,14 +383,6 @@ class Arguments : AllStatic {
     return is_bad_option(option, ignore, NULL);
   }
 
-  static bool is_percentage(uintx val) {
-    return val <= 100;
-  }
-
-  static bool verify_interval(uintx val, uintx min,
-                              uintx max, const char* name);
-  static bool verify_min_value(intx val, intx min, const char* name);
-  static bool verify_percentage(uintx value, const char* name);
   static void describe_range_error(ArgsRange errcode);
   static ArgsRange check_memory_size(julong size, julong min_size);
   static ArgsRange parse_memory_size(const char* s, julong* long_arg,
@@ -447,6 +438,9 @@ class Arguments : AllStatic {
   static char*  SharedArchivePath;
 
  public:
+  // Tiered
+  static int  get_min_number_of_compiler_threads();
+
   // Scale compile thresholds
   // Returns threshold scaled with CompileThresholdScaling
   static intx scaled_compile_threshold(intx threshold, double scale);
@@ -465,26 +459,18 @@ class Arguments : AllStatic {
   static jint apply_ergo();
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
+  // Set any arguments that need to be set after the final range and constraint check
+  static void post_final_range_and_constraint_check(bool check_passed);
 
   static void set_gc_specific_flags();
   static inline bool gc_selected(); // whether a gc has been selected
   static void select_gc_ergonomically();
-
-  // Verifies that the given value will fit as a MinHeapFreeRatio. If not, an error
-  // message is returned in the provided buffer.
-  static bool verify_MinHeapFreeRatio(FormatBuffer<80>& err_msg, uintx min_heap_free_ratio);
-
-  // Verifies that the given value will fit as a MaxHeapFreeRatio. If not, an error
-  // message is returned in the provided buffer.
-  static bool verify_MaxHeapFreeRatio(FormatBuffer<80>& err_msg, uintx max_heap_free_ratio);
 
   // Check for consistency in the selection of the garbage collector.
   static bool check_gc_consistency();        // Check user-selected gc
   static void check_deprecated_gc_flags();
   // Check consistency or otherwise of VM argument settings
   static bool check_vm_args_consistency();
-  // Check stack pages settings
-  static bool check_stack_pages();
   // Used by os_solaris
   static bool process_settings_file(const char* file_name, bool should_exist, jboolean ignore_unrecognized);
 

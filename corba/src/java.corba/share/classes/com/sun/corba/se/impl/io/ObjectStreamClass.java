@@ -65,7 +65,7 @@ import org.omg.CORBA.ValueMember;
 import sun.corba.Bridge;
 
 /**
- * A ObjectStreamClass describes a class that can be serialized to a stream
+ * An ObjectStreamClass describes a class that can be serialized to a stream
  * or a class that was serialized to a stream.  It contains the name
  * and the serialVersionUID of the class.
  * <br>
@@ -788,9 +788,9 @@ public class ObjectStreamClass implements java.io.Serializable {
     /* Compare the base class names of streamName and localName.
      *
      * @return  Return true iff the base class name compare.
-     * @parameter streamName    Fully qualified class name.
-     * @parameter localName     Fully qualified class name.
-     * @parameter pkgSeparator  class names use either '.' or '/'.
+     * @param streamName    Fully qualified class name.
+     * @param localName     Fully qualified class name.
+     * @param pkgSeparator  class names use either '.' or '/'.
      *
      * Only compare base class name to allow package renaming.
      */

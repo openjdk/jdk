@@ -28,10 +28,10 @@ package org.omg.CORBA.ORBPackage;
 
 /**
  * This Helper class is used to facilitate the marshalling of
- * <tt>ORBPackage/InvalidName</tt>.
+ * {@code ORBPackage/InvalidName}.
  * For more information on Helper files, see
  * <a href="doc-files/generatedfiles.html#helper">
- * "Generated Files: Helper Files"</a>.<P>
+ * "Generated Files: Helper Files"</a>.
  */
 
 abstract public class InvalidNameHelper

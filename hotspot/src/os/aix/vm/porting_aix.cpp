@@ -114,7 +114,8 @@ extern "C" int getFuncName(
     int* p_displacement,             // [out] optional: displacement (-1 if not available)
     const struct tbtable** p_tb,     // [out] optional: ptr to traceback table to get further
                                      //                 information (NULL if not available)
-    char* p_errmsg, size_t errmsglen // [out] optional: user provided buffer for error messages
+    char* p_errmsg, size_t errmsglen,// [out] optional: user provided buffer for error messages
+    bool demangle                    // [in] whether to demangle the name
   ) {
   struct tbtable* tb = 0;
   unsigned int searchcount = 0;
@@ -216,15 +217,17 @@ extern "C" int getFuncName(
       p_name[0] = '\0';
 
       // If it is a C++ name, try and demangle it using the Demangle interface (see demangle.h).
-      char* rest;
-      Name* const name = Demangle(buf, rest);
-      if (name) {
-        const char* const demangled_name = name->Text();
-        if (demangled_name) {
-          strncpy(p_name, demangled_name, namelen-1);
-          p_name[namelen-1] = '\0';
+      if (demangle) {
+        char* rest;
+        Name* const name = Demangle(buf, rest);
+        if (name) {
+          const char* const demangled_name = name->Text();
+          if (demangled_name) {
+            strncpy(p_name, demangled_name, namelen-1);
+            p_name[namelen-1] = '\0';
+          }
+          delete name;
         }
-        delete name;
       }
 
       // Fallback: if demangling did not work, just provide the unmangled name.
@@ -325,7 +328,7 @@ int dladdr(void* addr, Dl_info* info) {
       int displacement = 0;
 
       if (getFuncName((codeptr_t) p, funcname, sizeof(funcname), &displacement,
-                      NULL, NULL, 0) == 0) {
+                      NULL, NULL, 0, true /* demangle */) == 0) {
         if (funcname[0] != '\0') {
           const char* const interned = dladdr_fixed_strings.intern(funcname);
           info->dli_sname = interned;

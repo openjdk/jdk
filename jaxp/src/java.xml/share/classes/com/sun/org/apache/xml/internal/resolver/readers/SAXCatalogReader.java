@@ -233,7 +233,13 @@ public class SAXCatalogReader implements CatalogReader, ContentHandler, Document
                 }
                 parser.parse(new InputSource(is), spHandler);
             } else {
-                Parser parser = (Parser) ReflectUtil.forName(parserClass).newInstance();
+                Class<?> c =  ReflectUtil.forName(parserClass);
+                if (!Parser.class.isAssignableFrom(c)) {
+                    throw new ClassCastException(parserClass
+                                + " cannot be cast to "
+                                + Parser.class.getName());
+                }
+                Parser parser = (Parser) c.newInstance();
                 parser.setDocumentHandler(this);
                 if (bResolver != null) {
                     parser.setEntityResolver(bResolver);

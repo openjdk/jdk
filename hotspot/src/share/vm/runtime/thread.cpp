@@ -54,6 +54,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
@@ -3273,6 +3274,9 @@ void Threads::initialize_jsr292_core_classes(TRAPS) {
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   extern void JDK_Version_init();
 
+  // Preinitialize version info.
+  VM_Version::early_initialize();
+
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
 
@@ -3302,6 +3306,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   jint ergo_result = Arguments::apply_ergo();
   if (ergo_result != JNI_OK) return ergo_result;
+
+  // Final check of all arguments after ergonomics which may change values.
+  if (!CommandLineFlags::check_all_ranges_and_constraints()) {
+    return JNI_EINVAL;
+  }
 
   if (PauseAtStartup) {
     os::pause();

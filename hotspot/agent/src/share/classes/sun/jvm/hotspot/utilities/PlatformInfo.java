@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,27 +52,54 @@ public class PlatformInfo {
     }
   }
 
-  /* Returns "sparc" for SPARC based platforms and "x86" for x86 based
-     platforms. Otherwise returns the value of os.arch.  If the value
-     is not recognized as supported, an exception is thrown instead. */
+  public static boolean knownCPU(String cpu) {
+    final String[] KNOWN =
+        new String[] {"i386", "x86", "x86_64", "amd64", "sparc", "sparcv9", "ppc64", "aarch64"};
+
+    for(String s : KNOWN) {
+      if(s.equals(cpu))
+        return true;
+    }
+
+    return false;
+  }
+
+  /* Returns "sparc" for SPARC based platforms "x86" for x86 based
+     platforms and x86_64 for 64bit x86 based platform. Otherwise
+     returns the value of os.arch. If the value is not recognized as supported,
+     an exception is thrown instead. */
+
   public static String getCPU() throws UnsupportedPlatformException {
     String cpu = System.getProperty("os.arch");
-    if (cpu.equals("i386") || cpu.equals("x86")) {
-      return "x86";
-    } else if (cpu.equals("sparc") || cpu.equals("sparcv9")) {
-      return "sparc";
-    } else if (cpu.equals("ia64") || cpu.equals("amd64") || cpu.equals("x86_64") || cpu.equals("ppc64") || cpu.equals("aarch64")) {
-      return cpu;
-    } else {
-      try {
-        Class pic = Class.forName("sun.jvm.hotspot.utilities.PlatformInfoClosed");
-        AltPlatformInfo api = (AltPlatformInfo)pic.newInstance();
-        if (api.knownCPU(cpu)) {
-          return cpu;
-        }
-      } catch (Exception e) {}
-      throw new UnsupportedPlatformException("CPU type " + cpu + " not yet supported");
+
+    // Let any additional CPU mangling fire first
+    try {
+      Class pic = Class.forName("sun.jvm.hotspot.utilities.PlatformInfoClosed");
+      AltPlatformInfo api = (AltPlatformInfo) pic.newInstance();
+      if (api.knownCPU(cpu)) {
+        return api.getCPU(cpu);
+      }
+    } catch (Exception e) {
+       // Ignored
     }
+
+    // Check that CPU is supported
+    if (!knownCPU(cpu)) {
+       throw new UnsupportedPlatformException("CPU type " + cpu + " not yet supported");
+    }
+
+    // Tweeks
+    if (cpu.equals("i386"))
+      return "x86";
+
+    if (cpu.equals("sparcv9"))
+      return "sparc";
+
+    if (cpu.equals("x86_64"))
+      return "amd64";
+
+    return cpu;
+
   }
 
   // this main is invoked from Makefile to make platform specific agent Makefile(s).

@@ -36,11 +36,6 @@ import jdk.test.lib.*;
 import java.util.regex.*;
 
 public class TestSelectDefaultGC {
-    public static boolean versionStringContains(OutputAnalyzer output, String pattern) {
-        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(output.getStderr());
-        return matcher.find();
-    }
-
     public static void assertVMOption(OutputAnalyzer output, String option, boolean value) {
         output.shouldMatch(" " + option + " .*=.* " + value + " ");
     }
@@ -51,14 +46,18 @@ public class TestSelectDefaultGC {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 
-        boolean isServerVM = versionStringContains(output, "Server VM");
+        boolean isServerVM = Platform.isServer();
+        boolean isEmbeddedVM = Platform.isEmbedded();
 
         // Verify GC selection
-        assertVMOption(output, "UseParallelGC",      isServerVM);
-        assertVMOption(output, "UseParallelOldGC",   isServerVM);
+        // G1 is default for non-embedded server VMs
+        assertVMOption(output, "UseG1GC",            isServerVM && !isEmbeddedVM);
+        // Parallel is default for embedded server VMs
+        assertVMOption(output, "UseParallelGC",      isServerVM && isEmbeddedVM);
+        assertVMOption(output, "UseParallelOldGC",   isServerVM && isEmbeddedVM);
+        // Serial is default for non-server VMs
         assertVMOption(output, "UseSerialGC",        !isServerVM);
         assertVMOption(output, "UseConcMarkSweepGC", false);
-        assertVMOption(output, "UseG1GC",            false);
         assertVMOption(output, "UseParNewGC",        false);
     }
 }

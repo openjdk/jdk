@@ -278,6 +278,55 @@ uint HeapRegionManager::find_unavailable_from_idx(uint start_idx, uint* res_idx)
   return num_regions;
 }
 
+uint HeapRegionManager::find_highest_free(bool* expanded) {
+  // Loop downwards from the highest region index, looking for an
+  // entry which is either free or not yet committed.  If not yet
+  // committed, expand_at that index.
+  uint curr = max_length() - 1;
+  while (true) {
+    HeapRegion *hr = _regions.get_by_index(curr);
+    if (hr == NULL) {
+      uint res = expand_at(curr, 1);
+      if (res == 1) {
+        *expanded = true;
+        return curr;
+      }
+    } else {
+      if (hr->is_free()) {
+        *expanded = false;
+        return curr;
+      }
+    }
+    if (curr == 0) {
+      return G1_NO_HRM_INDEX;
+    }
+    curr--;
+  }
+}
+
+bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count) {
+  size_t commits = 0;
+  uint start_index = (uint)_regions.get_index_by_address(range.start());
+  uint last_index = (uint)_regions.get_index_by_address(range.last());
+
+  // Ensure that each G1 region in the range is free, returning false if not.
+  // Commit those that are not yet available, and keep count.
+  for (uint curr_index = start_index; curr_index <= last_index; curr_index++) {
+    if (!is_available(curr_index)) {
+      commits++;
+      expand_at(curr_index, 1);
+    }
+    HeapRegion* curr_region  = _regions.get_by_index(curr_index);
+    if (!curr_region->is_free()) {
+      return false;
+    }
+  }
+
+  allocate_free_regions_starting_at(start_index, (last_index - start_index) + 1);
+  *commit_count = commits;
+  return true;
+}
+
 void HeapRegionManager::par_iterate(HeapRegionClosure* blk, uint worker_id, HeapRegionClaimer* hrclaimer, bool concurrent) const {
   const uint start_index = hrclaimer->start_region_for_worker(worker_id);
 

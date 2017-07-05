@@ -261,8 +261,6 @@ class GenCollectorPolicy : public CollectorPolicy {
   size_t initial_old_size()   { return _initial_old_size; }
   size_t max_old_size()       { return _max_old_size; }
 
-  int number_of_generations() { return 2; }
-
   GenerationSpec* young_gen_spec() const {
     assert(_young_gen_spec != NULL, "_young_gen_spec should have been initialized");
     return _young_gen_spec;

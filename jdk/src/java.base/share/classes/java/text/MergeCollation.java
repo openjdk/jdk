@@ -329,8 +329,8 @@ final class MergeCollation {
                 PatternEntry e = patterns.get(i);
                 if (e.chars.regionMatches(0,entry.chars,0,
                                               e.chars.length())) {
-                    excessChars.append(entry.chars.substring(e.chars.length(),
-                                                            entry.chars.length()));
+                    excessChars.append(entry.chars, e.chars.length(),
+                            entry.chars.length());
                     break;
                 }
             }

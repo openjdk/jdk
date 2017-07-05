@@ -26,6 +26,8 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import com.sun.org.apache.xerces.internal.util.EncodingMap;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 
 /**
  * This class represents an encoding.
@@ -37,9 +39,6 @@ import com.sun.org.apache.xerces.internal.util.EncodingMap;
  */
 public class EncodingInfo {
 
-    // An array to hold the argument for a method of Charset, CharsetEncoder or CharToByteConverter.
-    private Object [] fArgsForMethod = null;
-
     // name of encoding as registered with IANA;
     // preferably a MIME name, but aliases are fine too.
     String ianaName;
@@ -47,15 +46,7 @@ public class EncodingInfo {
     int lastPrintable;
 
     // The CharsetEncoder with which we test unusual characters.
-    Object fCharsetEncoder = null;
-
-    // The CharToByteConverter with which we test unusual characters.
-    Object fCharToByteConverter = null;
-
-    // Is the converter null because it can't be instantiated
-    // for some reason (perhaps we're running with insufficient authority as
-    // an applet?
-    boolean fHaveTriedCToB = false;
+    CharsetEncoder fCharsetEncoder = null;
 
     // Is the charset encoder usable or available.
     boolean fHaveTriedCharsetEncoder = false;
@@ -118,16 +109,12 @@ public class EncodingInfo {
     private boolean isPrintable0(char ch) {
 
         // Attempt to get a CharsetEncoder for this encoding.
-        if (fCharsetEncoder == null && CharsetMethods.fgNIOCharsetAvailable && !fHaveTriedCharsetEncoder) {
-            if (fArgsForMethod == null) {
-                fArgsForMethod = new Object [1];
-            }
+        if (fCharsetEncoder == null && !fHaveTriedCharsetEncoder) {
             // try and create the CharsetEncoder
             try {
-                fArgsForMethod[0] = javaName;
-                Object charset = CharsetMethods.fgCharsetForNameMethod.invoke(null, fArgsForMethod);
-                if (((Boolean) CharsetMethods.fgCharsetCanEncodeMethod.invoke(charset, (Object[]) null)).booleanValue()) {
-                    fCharsetEncoder = CharsetMethods.fgCharsetNewEncoderMethod.invoke(charset, (Object[]) null);
+                Charset charset = java.nio.charset.Charset.forName(javaName);
+                if (charset.canEncode()) {
+                    fCharsetEncoder = charset.newEncoder();
                 }
                 // This charset cannot be used for encoding, don't try it again...
                 else {
@@ -142,8 +129,7 @@ public class EncodingInfo {
         // Attempt to use the CharsetEncoder to determine whether the character is printable.
         if (fCharsetEncoder != null) {
             try {
-                fArgsForMethod[0] = new Character(ch);
-                return ((Boolean) CharsetMethods.fgCharsetEncoderCanEncodeMethod.invoke(fCharsetEncoder, fArgsForMethod)).booleanValue();
+                return fCharsetEncoder.canEncode(ch);
             }
             catch (Exception e) {
                 // obviously can't use this charset encoder; possibly a JDK bug
@@ -152,39 +138,7 @@ public class EncodingInfo {
             }
         }
 
-        // As a last resort try to use a sun.io.CharToByteConverter to
-        // determine whether this character is printable. We will always
-        // reach here on JDK 1.3 or below.
-        if (fCharToByteConverter == null) {
-            if (fHaveTriedCToB || !CharToByteConverterMethods.fgConvertersAvailable) {
-                // forget it; nothing we can do...
-                return false;
-            }
-            if (fArgsForMethod == null) {
-                fArgsForMethod = new Object [1];
-            }
-            // try and create the CharToByteConverter
-            try {
-                fArgsForMethod[0] = javaName;
-                fCharToByteConverter = CharToByteConverterMethods.fgGetConverterMethod.invoke(null, fArgsForMethod);
-            }
-            catch (Exception e) {
-                // don't try it again...
-                fHaveTriedCToB = true;
-                return false;
-            }
-        }
-        try {
-            fArgsForMethod[0] = new Character(ch);
-            return ((Boolean) CharToByteConverterMethods.fgCanConvertMethod.invoke(fCharToByteConverter, fArgsForMethod)).booleanValue();
-        }
-        catch (Exception e) {
-            // obviously can't use this converter; probably some kind of
-            // security restriction
-            fCharToByteConverter = null;
-            fHaveTriedCToB = false;
-            return false;
-        }
+        return false;
     }
 
     // is this an encoding name recognized by this JDK?
@@ -194,82 +148,4 @@ public class EncodingInfo {
         String s = new String(bTest, name);
     }
 
-    /**
-     * Holder of methods from java.nio.charset.Charset and java.nio.charset.CharsetEncoder.
-     */
-    static class CharsetMethods {
-
-        // Method: java.nio.charset.Charset.forName(java.lang.String)
-        private static java.lang.reflect.Method fgCharsetForNameMethod = null;
-
-        // Method: java.nio.charset.Charset.canEncode()
-        private static java.lang.reflect.Method fgCharsetCanEncodeMethod = null;
-
-        // Method: java.nio.charset.Charset.newEncoder()
-        private static java.lang.reflect.Method fgCharsetNewEncoderMethod = null;
-
-        // Method: java.nio.charset.CharsetEncoder.canEncode(char)
-        private static java.lang.reflect.Method fgCharsetEncoderCanEncodeMethod = null;
-
-        // Flag indicating whether or not java.nio.charset.* is available.
-        private static boolean fgNIOCharsetAvailable = false;
-
-        private CharsetMethods() {}
-
-        // Attempt to get methods for Charset and CharsetEncoder on class initialization.
-        static {
-            try {
-                Class charsetClass = Class.forName("java.nio.charset.Charset");
-                Class charsetEncoderClass = Class.forName("java.nio.charset.CharsetEncoder");
-                fgCharsetForNameMethod = charsetClass.getMethod("forName", new Class [] {String.class});
-                fgCharsetCanEncodeMethod = charsetClass.getMethod("canEncode", new Class [] {});
-                fgCharsetNewEncoderMethod = charsetClass.getMethod("newEncoder", new Class [] {});
-                fgCharsetEncoderCanEncodeMethod = charsetEncoderClass.getMethod("canEncode", new Class [] {Character.TYPE});
-                fgNIOCharsetAvailable = true;
-            }
-            // ClassNotFoundException, NoSuchMethodException or SecurityException
-            // Whatever the case, we cannot use java.nio.charset.*.
-            catch (Exception exc) {
-                fgCharsetForNameMethod = null;
-                fgCharsetCanEncodeMethod = null;
-                fgCharsetEncoderCanEncodeMethod = null;
-                fgCharsetNewEncoderMethod = null;
-                fgNIOCharsetAvailable = false;
-            }
-        }
-    }
-
-    /**
-     * Holder of methods from sun.io.CharToByteConverter.
-     */
-    static class CharToByteConverterMethods {
-
-        // Method: sun.io.CharToByteConverter.getConverter(java.lang.String)
-        private static java.lang.reflect.Method fgGetConverterMethod = null;
-
-        // Method: sun.io.CharToByteConverter.canConvert(char)
-        private static java.lang.reflect.Method fgCanConvertMethod = null;
-
-        // Flag indicating whether or not sun.io.CharToByteConverter is available.
-        private static boolean fgConvertersAvailable = false;
-
-        private CharToByteConverterMethods() {}
-
-        // Attempt to get methods for char to byte converter on class initialization.
-        static {
-            try {
-                Class clazz = Class.forName("sun.io.CharToByteConverter");
-                fgGetConverterMethod = clazz.getMethod("getConverter", new Class [] {String.class});
-                fgCanConvertMethod = clazz.getMethod("canConvert", new Class [] {Character.TYPE});
-                fgConvertersAvailable = true;
-            }
-            // ClassNotFoundException, NoSuchMethodException or SecurityException
-            // Whatever the case, we cannot use sun.io.CharToByteConverter.
-            catch (Exception exc) {
-                fgGetConverterMethod = null;
-                fgCanConvertMethod = null;
-                fgConvertersAvailable = false;
-            }
-        }
-    }
 }

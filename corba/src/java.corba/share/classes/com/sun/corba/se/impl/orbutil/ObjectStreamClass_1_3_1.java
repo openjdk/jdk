@@ -656,9 +656,9 @@ public class ObjectStreamClass_1_3_1 implements java.io.Serializable {
     /* Compare the base class names of streamName and localName.
      *
      * @return  Return true iff the base class name compare.
-     * @parameter streamName    Fully qualified class name.
-     * @parameter localName     Fully qualified class name.
-     * @parameter pkgSeparator  class names use either '.' or '/'.
+     * @param streamName    Fully qualified class name.
+     * @param localName     Fully qualified class name.
+     * @param pkgSeparator  class names use either '.' or '/'.
      *
      * Only compare base class name to allow package renaming.
      */

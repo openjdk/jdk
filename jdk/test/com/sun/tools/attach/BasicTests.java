@@ -21,17 +21,21 @@
  * questions.
  */
 
-import com.sun.tools.attach.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.io.IOException;
-import java.util.Properties;
 import java.util.List;
-import java.io.File;
+import java.util.Properties;
+
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.JDKToolLauncher;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.ProcessThread;
+import jdk.testlibrary.ProcessTools;
+
+import com.sun.tools.attach.AgentInitializationException;
+import com.sun.tools.attach.AgentLoadException;
+import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.VirtualMachineDescriptor;
 
 /*
  * @test

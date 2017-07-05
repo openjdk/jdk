@@ -25,15 +25,6 @@
  * @test
  * @bug 6894643 6913636 8005523 8025123
  * @summary Test JSSE Kerberos ciphersuite
-
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.jgss
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA
  * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA unbound
  * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA unbound sni

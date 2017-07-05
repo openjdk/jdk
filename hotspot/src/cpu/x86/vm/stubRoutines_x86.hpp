@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,15 @@
   // masks and table for CRC32
   static uint64_t _crc_by128_masks[];
   static juint    _crc_table[];
+  // swap mask for ghash
+  static address _ghash_long_swap_mask_addr;
+  static address _ghash_byte_swap_mask_addr;
 
  public:
   static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
   static address key_shuffle_mask_addr() { return _key_shuffle_mask_addr; }
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
+  static address ghash_long_swap_mask_addr() { return _ghash_long_swap_mask_addr; }
+  static address ghash_byte_swap_mask_addr() { return _ghash_byte_swap_mask_addr; }
 
 #endif // CPU_X86_VM_STUBROUTINES_X86_32_HPP

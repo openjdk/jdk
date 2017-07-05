@@ -258,6 +258,27 @@ struct Flag {
     KIND_MASK = ~VALUE_ORIGIN_MASK
   };
 
+  enum Error {
+    // no error
+    SUCCESS = 0,
+    // flag name is missing
+    MISSING_NAME,
+    // flag value is missing
+    MISSING_VALUE,
+    // error parsing the textual form of the value
+    WRONG_FORMAT,
+    // flag is not writeable
+    NON_WRITABLE,
+    // flag value is outside of its bounds
+    OUT_OF_BOUNDS,
+    // flag value violates its constraint
+    VIOLATES_CONSTRAINT,
+    // there is no flag with the given name
+    INVALID_FLAG,
+    // other, unspecified error related to setting the flag
+    ERR_OTHER
+  };
+
   const char* _type;
   const char* _name;
   void* _addr;
@@ -270,6 +291,7 @@ struct Flag {
   // number of flags
   static size_t numFlags;
 
+  static Flag* find_flag(const char* name) { return find_flag(name, strlen(name), true, true); };
   static Flag* find_flag(const char* name, size_t length, bool allow_locked = false, bool return_flag = false);
   static Flag* fuzzy_match(const char* name, size_t length, bool allow_locked = false);
 
@@ -345,9 +367,24 @@ struct Flag {
   void get_locked_message(char*, int) const;
   void get_locked_message_ext(char*, int) const;
 
-  void print_on(outputStream* st, bool withComments = false );
+  // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
+  void print_on(outputStream* st, bool withComments = false, bool printRanges = false);
   void print_kind(outputStream* st);
   void print_as_flag(outputStream* st);
+
+  static const char* flag_error_str(Flag::Error error) {
+    switch (error) {
+      case Flag::MISSING_NAME: return "MISSING_NAME";
+      case Flag::MISSING_VALUE: return "MISSING_VALUE";
+      case Flag::NON_WRITABLE: return "NON_WRITABLE";
+      case Flag::OUT_OF_BOUNDS: return "OUT_OF_BOUNDS";
+      case Flag::VIOLATES_CONSTRAINT: return "VIOLATES_CONSTRAINT";
+      case Flag::INVALID_FLAG: return "INVALID_FLAG";
+      case Flag::ERR_OTHER: return "ERR_OTHER";
+      case Flag::SUCCESS: return "SUCCESS";
+      default: return "NULL";
+    }
+  }
 };
 
 // debug flags control various aspects of the VM and are global accessible
@@ -413,59 +450,67 @@ class SizeTFlagSetting {
 
 
 class CommandLineFlags {
- public:
-  static bool boolAt(const char* name, size_t len, bool* value, bool allow_locked = false, bool return_flag = false);
-  static bool boolAt(const char* name, bool* value, bool allow_locked = false, bool return_flag = false)      { return boolAt(name, strlen(name), value, allow_locked, return_flag); }
-  static bool boolAtPut(const char* name, size_t len, bool* value, Flag::Flags origin);
-  static bool boolAtPut(const char* name, bool* value, Flag::Flags origin)   { return boolAtPut(name, strlen(name), value, origin); }
+  static bool _finished_initializing;
+public:
+  static Flag::Error boolAt(const char* name, size_t len, bool* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error boolAt(const char* name, bool* value, bool allow_locked = false, bool return_flag = false)      { return boolAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error boolAtPut(const char* name, size_t len, bool* value, Flag::Flags origin);
+  static Flag::Error boolAtPut(const char* name, bool* value, Flag::Flags origin)   { return boolAtPut(name, strlen(name), value, origin); }
 
-  static bool intAt(const char* name, size_t len, int* value, bool allow_locked = false, bool return_flag = false);
-  static bool intAt(const char* name, int* value, bool allow_locked = false, bool return_flag = false)      { return intAt(name, strlen(name), value, allow_locked, return_flag); }
-  static bool intAtPut(const char* name, size_t len, int* value, Flag::Flags origin);
-  static bool intAtPut(const char* name, int* value, Flag::Flags origin)   { return intAtPut(name, strlen(name), value, origin); }
+  static Flag::Error intAt(const char* name, size_t len, int* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error intAt(const char* name, int* value, bool allow_locked = false, bool return_flag = false)      { return intAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error intAtPut(const char* name, size_t len, int* value, Flag::Flags origin);
+  static Flag::Error intAtPut(const char* name, int* value, Flag::Flags origin)   { return intAtPut(name, strlen(name), value, origin); }
 
-  static bool uintAt(const char* name, size_t len, uint* value, bool allow_locked = false, bool return_flag = false);
-  static bool uintAt(const char* name, uint* value, bool allow_locked = false, bool return_flag = false)      { return uintAt(name, strlen(name), value, allow_locked, return_flag); }
-  static bool uintAtPut(const char* name, size_t len, uint* value, Flag::Flags origin);
-  static bool uintAtPut(const char* name, uint* value, Flag::Flags origin)   { return uintAtPut(name, strlen(name), value, origin); }
+  static Flag::Error uintAt(const char* name, size_t len, uint* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error uintAt(const char* name, uint* value, bool allow_locked = false, bool return_flag = false)      { return uintAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error uintAtPut(const char* name, size_t len, uint* value, Flag::Flags origin);
+  static Flag::Error uintAtPut(const char* name, uint* value, Flag::Flags origin)   { return uintAtPut(name, strlen(name), value, origin); }
 
-  static bool intxAt(const char* name, size_t len, intx* value, bool allow_locked = false, bool return_flag = false);
-  static bool intxAt(const char* name, intx* value, bool allow_locked = false, bool return_flag = false)      { return intxAt(name, strlen(name), value, allow_locked, return_flag); }
-  static bool intxAtPut(const char* name, size_t len, intx* value, Flag::Flags origin);
-  static bool intxAtPut(const char* name, intx* value, Flag::Flags origin)   { return intxAtPut(name, strlen(name), value, origin); }
+  static Flag::Error intxAt(const char* name, size_t len, intx* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error intxAt(const char* name, intx* value, bool allow_locked = false, bool return_flag = false)      { return intxAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error intxAtPut(const char* name, size_t len, intx* value, Flag::Flags origin);
+  static Flag::Error intxAtPut(const char* name, intx* value, Flag::Flags origin)   { return intxAtPut(name, strlen(name), value, origin); }
 
-  static bool uintxAt(const char* name, size_t len, uintx* value, bool allow_locked = false, bool return_flag = false);
-  static bool uintxAt(const char* name, uintx* value, bool allow_locked = false, bool return_flag = false)    { return uintxAt(name, strlen(name), value, allow_locked, return_flag); }
-  static bool uintxAtPut(const char* name, size_t len, uintx* value, Flag::Flags origin);
-  static bool uintxAtPut(const char* name, uintx* value, Flag::Flags origin) { return uintxAtPut(name, strlen(name), value, origin); }
+  static Flag::Error uintxAt(const char* name, size_t len, uintx* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error uintxAt(const char* name, uintx* value, bool allow_locked = false, bool return_flag = false)    { return uintxAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error uintxAtPut(const char* name, size_t len, uintx* value, Flag::Flags origin);
+  static Flag::Error uintxAtPut(const char* name, uintx* value, Flag::Flags origin) { return uintxAtPut(name, strlen(name), value, origin); }
 
-  static bool size_tAt(const char* name, size_t len, size_t* value, bool allow_locked = false, bool return_flag = false);
-  static bool size_tAt(const char* name, size_t* value, bool allow_locked = false, bool return_flag = false)    { return size_tAt(name, strlen(name), value, allow_locked, return_flag); }
-  static bool size_tAtPut(const char* name, size_t len, size_t* value, Flag::Flags origin);
-  static bool size_tAtPut(const char* name, size_t* value, Flag::Flags origin) { return size_tAtPut(name, strlen(name), value, origin); }
+  static Flag::Error size_tAt(const char* name, size_t len, size_t* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error size_tAt(const char* name, size_t* value, bool allow_locked = false, bool return_flag = false)    { return size_tAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error size_tAtPut(const char* name, size_t len, size_t* value, Flag::Flags origin);
+  static Flag::Error size_tAtPut(const char* name, size_t* value, Flag::Flags origin) { return size_tAtPut(name, strlen(name), value, origin); }
 
-  static bool uint64_tAt(const char* name, size_t len, uint64_t* value, bool allow_locked = false, bool return_flag = false);
-  static bool uint64_tAt(const char* name, uint64_t* value, bool allow_locked = false, bool return_flag = false) { return uint64_tAt(name, strlen(name), value, allow_locked, return_flag); }
-  static bool uint64_tAtPut(const char* name, size_t len, uint64_t* value, Flag::Flags origin);
-  static bool uint64_tAtPut(const char* name, uint64_t* value, Flag::Flags origin) { return uint64_tAtPut(name, strlen(name), value, origin); }
+  static Flag::Error uint64_tAt(const char* name, size_t len, uint64_t* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error uint64_tAt(const char* name, uint64_t* value, bool allow_locked = false, bool return_flag = false) { return uint64_tAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error uint64_tAtPut(const char* name, size_t len, uint64_t* value, Flag::Flags origin);
+  static Flag::Error uint64_tAtPut(const char* name, uint64_t* value, Flag::Flags origin) { return uint64_tAtPut(name, strlen(name), value, origin); }
 
-  static bool doubleAt(const char* name, size_t len, double* value, bool allow_locked = false, bool return_flag = false);
-  static bool doubleAt(const char* name, double* value, bool allow_locked = false, bool return_flag = false)    { return doubleAt(name, strlen(name), value, allow_locked, return_flag); }
-  static bool doubleAtPut(const char* name, size_t len, double* value, Flag::Flags origin);
-  static bool doubleAtPut(const char* name, double* value, Flag::Flags origin) { return doubleAtPut(name, strlen(name), value, origin); }
+  static Flag::Error doubleAt(const char* name, size_t len, double* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error doubleAt(const char* name, double* value, bool allow_locked = false, bool return_flag = false)    { return doubleAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error doubleAtPut(const char* name, size_t len, double* value, Flag::Flags origin);
+  static Flag::Error doubleAtPut(const char* name, double* value, Flag::Flags origin) { return doubleAtPut(name, strlen(name), value, origin); }
 
-  static bool ccstrAt(const char* name, size_t len, ccstr* value, bool allow_locked = false, bool return_flag = false);
-  static bool ccstrAt(const char* name, ccstr* value, bool allow_locked = false, bool return_flag = false)    { return ccstrAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error ccstrAt(const char* name, size_t len, ccstr* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error ccstrAt(const char* name, ccstr* value, bool allow_locked = false, bool return_flag = false)    { return ccstrAt(name, strlen(name), value, allow_locked, return_flag); }
   // Contract:  Flag will make private copy of the incoming value.
   // Outgoing value is always malloc-ed, and caller MUST call free.
-  static bool ccstrAtPut(const char* name, size_t len, ccstr* value, Flag::Flags origin);
-  static bool ccstrAtPut(const char* name, ccstr* value, Flag::Flags origin) { return ccstrAtPut(name, strlen(name), value, origin); }
+  static Flag::Error ccstrAtPut(const char* name, size_t len, ccstr* value, Flag::Flags origin);
+  static Flag::Error ccstrAtPut(const char* name, ccstr* value, Flag::Flags origin) { return ccstrAtPut(name, strlen(name), value, origin); }
 
   // Returns false if name is not a command line flag.
   static bool wasSetOnCmdline(const char* name, bool* value);
   static void printSetFlags(outputStream* out);
 
-  static void printFlags(outputStream* out, bool withComments);
+  // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
+  static void printFlags(outputStream* out, bool withComments, bool printRanges = false);
+
+  // Returns true if all flags have their final values set (ready for ranges and constraint check)
+  static bool finishedInitializing() { return _finished_initializing; }
+
+  // Check the final values of all flags for ranges and constraints
+  static bool check_all_ranges_and_constraints();
 
   static void verify() PRODUCT_RETURN;
 };
@@ -559,8 +604,15 @@ class CommandLineFlags {
 //
 // Note that when there is a need to support develop flags to be writeable,
 // it can be done in the same way as product_rw.
+//
+// range is a macro that will expand to min and max arguments for range
+//    checking code if provided - see commandLineFlagRangeList.hpp
+//
+// constraint is a macro that will expand to custom function call
+//    for constraint checking if provided - see commandLineFlagConstraintList.hpp
+//
 
-#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, lp64_product) \
+#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, lp64_product, range, constraint) \
                                                                             \
   lp64_product(bool, UseCompressedOops, false,                              \
           "Use 32-bit object references in 64-bit VM. "                     \
@@ -580,19 +632,22 @@ class CommandLineFlags {
           "Heap allocation steps through preferred address regions to find" \
           " where it can allocate the heap. Number of steps to take per "   \
           "region.")                                                        \
+          range(1, max_uintx)                                               \
                                                                             \
   diagnostic(bool, PrintCompressedOopsMode, false,                          \
           "Print compressed oops base address and encoding mode")           \
                                                                             \
   lp64_product(intx, ObjectAlignmentInBytes, 8,                             \
           "Default object alignment in bytes, 8 is minimum")                \
+          range(8, 256)                                                     \
+          constraint(ObjectAlignmentInBytesConstraintFunc)                  \
                                                                             \
   product(bool, AssumeMP, false,                                            \
           "Instruct the VM to assume multiple processors are available")    \
                                                                             \
-  /* UseMembar is theoretically a temp flag used for memory barrier         \
-   * removal testing.  It was supposed to be removed before FCS but has     \
-   * been re-added (see 6401008) */                                         \
+  /* UseMembar is theoretically a temp flag used for memory barrier      */ \
+  /* removal testing.  It was supposed to be removed before FCS but has  */ \
+  /* been re-added (see 6401008)                                         */ \
   product_pd(bool, UseMembar,                                               \
           "(Unstable) Issues membars on thread state transitions")          \
                                                                             \
@@ -649,6 +704,7 @@ class CommandLineFlags {
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for "                   \
           "AdaptiveNUMAChunkSizing")                                        \
+          range(0, 100)                                                     \
                                                                             \
   product(size_t, NUMASpaceResizeRate, 1*G,                                 \
           "Do not reallocate more than this amount per collection")         \
@@ -673,6 +729,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseSHA, false,                                              \
           "Control whether SHA instructions can be used on SPARC")          \
+                                                                            \
+  product(bool, UseGHASHIntrinsics, false,                                  \
+          "Use intrinsics for GHASH versions of crypto")                    \
                                                                             \
   product(size_t, LargePageSizeInBytes, 0,                                  \
           "Large page size (0 to let VM choose the page size)")             \
@@ -838,7 +897,7 @@ class CommandLineFlags {
           "Die upon failure to reach safepoint (see SafepointTimeout)")     \
                                                                             \
   /* 50 retries * (5 * current_retry_count) millis = ~6.375 seconds */      \
-  /* typically, at most a few retries are needed */                         \
+  /* typically, at most a few retries are needed                    */      \
   product(intx, SuspendRetryCount, 50,                                      \
           "Maximum retry count for an external suspend request")            \
                                                                             \
@@ -859,6 +918,7 @@ class CommandLineFlags {
                                                                             \
   diagnostic(uintx, LogEventsBufferEntries, 10,                             \
           "Number of ring buffer event logs")                               \
+          range(1, NOT_LP64(1*K) LP64_ONLY(1*M))                            \
                                                                             \
   product(bool, BytecodeVerificationRemote, true,                           \
           "Enable the Java bytecode verifier for remote classes")           \
@@ -1031,6 +1091,7 @@ class CommandLineFlags {
           "0: do not allow scavengable oops in the code cache; "            \
           "1: allow scavenging from the code cache; "                       \
           "2: emit as many constants as the compiler can see")              \
+          range(0, 2)                                                       \
                                                                             \
   product(bool, AlwaysRestoreFPU, false,                                    \
           "Restore the FPU control word after every JNI call (expensive)")  \
@@ -1304,8 +1365,10 @@ class CommandLineFlags {
           "Use SSE2 MOVQ instruction for Arraycopy")                        \
                                                                             \
   product(intx, FieldsAllocationStyle, 1,                                   \
-          "0 - type based with oops first, 1 - with oops last, "            \
+          "0 - type based with oops first, "                                \
+          "1 - with oops last, "                                            \
           "2 - oops in super and sub classes are together")                 \
+          range(0, 2)                                                       \
                                                                             \
   product(bool, CompactFields, true,                                        \
           "Allocate nonstatic fields in gaps between previous fields")      \
@@ -1313,8 +1376,14 @@ class CommandLineFlags {
   notproduct(bool, PrintFieldLayout, false,                                 \
           "Print field layout for each class")                              \
                                                                             \
+  /* Need to limit the extent of the padding to reasonable size.          */\
+  /* 8K is well beyond the reasonable HW cache line size, even with       */\
+  /* aggressive prefetching, while still leaving the room for segregating */\
+  /* among the distinct pages.                                            */\
   product(intx, ContendedPaddingWidth, 128,                                 \
           "How many bytes to pad the fields/classes marked @Contended with")\
+          range(0, 8192)                                                    \
+          constraint(ContendedPaddingWidthConstraintFunc)                   \
                                                                             \
   product(bool, EnableContended, true,                                      \
           "Enable @Contended annotation support")                           \
@@ -1362,7 +1431,7 @@ class CommandLineFlags {
                                                                             \
   /* This option can change an EMCP method into an obsolete method. */      \
   /* This can affect tests that except specific methods to be EMCP. */      \
-  /* This option should be used with caution. */                            \
+  /* This option should be used with caution.                       */      \
   product(bool, StressLdcRewrite, false,                                    \
           "Force ldc -> ldc_w rewrite during RedefineClasses")              \
                                                                             \
@@ -1476,12 +1545,14 @@ class CommandLineFlags {
   product(uintx, ParallelOldDeadWoodLimiterMean, 50,                        \
           "The mean used by the parallel compact dead wood "                \
           "limiter (a number between 0-100)")                               \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, ParallelOldDeadWoodLimiterStdDev, 80,                      \
           "The standard deviation used by the parallel compact dead wood "  \
           "limiter (a number between 0-100)")                               \
+          range(0, 100)                                                     \
                                                                             \
-  product(uintx, ParallelGCThreads, 0,                                      \
+  product(uint, ParallelGCThreads, 0,                                       \
           "Number of parallel threads parallel gc will use")                \
                                                                             \
   product(bool, UseDynamicNumberOfGCThreads, false,                         \
@@ -1495,6 +1566,7 @@ class CommandLineFlags {
   product(size_t, HeapSizePerGCThread, ScaleForWordSize(64*M),              \
           "Size of heap (bytes) per GC thread used in calculating the "     \
           "number of GC threads")                                           \
+          range((uintx)os::vm_page_size(), max_uintx)                       \
                                                                             \
   product(bool, TraceDynamicGCThreads, false,                               \
           "Trace the dynamic GC thread usage")                              \
@@ -1505,8 +1577,9 @@ class CommandLineFlags {
                                                                             \
   develop(uintx, ParallelOldGCSplitInterval, 3,                             \
           "How often to provoke splitting a young gen space")               \
+          range(0, max_uintx)                                               \
                                                                             \
-  product(uintx, ConcGCThreads, 0,                                          \
+  product(uint, ConcGCThreads, 0,                                           \
           "Number of threads concurrent gc will use")                       \
                                                                             \
   product(size_t, YoungPLABSize, 4096,                                      \
@@ -1518,6 +1591,7 @@ class CommandLineFlags {
                                                                             \
   product(uintx, GCTaskTimeStampEntries, 200,                               \
           "Number of time stamp entries per gc worker thread")              \
+          range(1, max_uintx)                                               \
                                                                             \
   product(bool, AlwaysTenure, false,                                        \
           "Always tenure objects in eden (ParallelGC only)")                \
@@ -1551,6 +1625,7 @@ class CommandLineFlags {
   product(uintx, GCLockerEdenExpansionPercent, 5,                           \
           "How much the GC can expand the eden by while the GC locker "     \
           "is active (as a percentage)")                                    \
+          range(0, 100)                                                     \
                                                                             \
   diagnostic(uintx, GCLockerRetryAllocationCount, 2,                        \
           "Number of times to retry allocations when "                      \
@@ -1576,14 +1651,17 @@ class CommandLineFlags {
                                                                             \
   product(uintx, ParallelGCBufferWastePct, 10,                              \
           "Wasted fraction of parallel allocation buffer")                  \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, TargetPLABWastePct, 10,                                    \
           "Target wasted space in last buffer as percent of overall "       \
           "allocation")                                                     \
+          range(1, 100)                                                     \
                                                                             \
   product(uintx, PLABWeight, 75,                                            \
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for ResizePLAB")        \
+          range(0, 100)                                                     \
                                                                             \
   product(bool, ResizePLAB, true,                                           \
           "Dynamically resize (survivor space) promotion LAB's")            \
@@ -1594,6 +1672,7 @@ class CommandLineFlags {
   product(intx, ParGCArrayScanChunk, 50,                                    \
           "Scan a subset of object array and push remainder, if array is "  \
           "bigger than this")                                               \
+          range(1, max_intx)                                                \
                                                                             \
   product(bool, ParGCUseLocalOverflow, false,                               \
           "Instead of a global overflow list, use local overflow stacks")   \
@@ -1615,15 +1694,18 @@ class CommandLineFlags {
   diagnostic(uintx, ParGCStridesPerThread, 2,                               \
           "The number of strides per worker thread that we divide up the "  \
           "card table scanning work into")                                  \
+          range(1, max_uintx)                                               \
                                                                             \
   diagnostic(intx, ParGCCardsPerStrideChunk, 256,                           \
           "The number of cards in each chunk of the parallel chunks used "  \
           "during card table scanning")                                     \
+          range(1, max_intx)                                                \
                                                                             \
   product(uintx, OldPLABWeight, 50,                                         \
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for resizing "          \
           "OldPLABSize")                                                    \
+          range(0, 100)                                                     \
                                                                             \
   product(bool, ResizeOldPLAB, true,                                        \
           "Dynamically resize (old gen) promotion LAB's")                   \
@@ -1631,17 +1713,21 @@ class CommandLineFlags {
   product(bool, PrintOldPLAB, false,                                        \
           "Print (old gen) promotion LAB's sizing decisions")               \
                                                                             \
-  product(size_t, CMSOldPLABMin, 16,                                        \
-          "Minimum size of CMS gen promotion LAB caches per worker "        \
-          "per block size")                                                 \
-                                                                            \
   product(size_t, CMSOldPLABMax, 1024,                                      \
           "Maximum size of CMS gen promotion LAB caches per worker "        \
           "per block size")                                                 \
+          range(1, max_uintx)                                               \
+                                                                            \
+  product(size_t, CMSOldPLABMin, 16,                                        \
+          "Minimum size of CMS gen promotion LAB caches per worker "        \
+          "per block size")                                                 \
+          range(1, max_uintx)                                               \
+          constraint(CMSOldPLABMinConstraintFunc)                           \
                                                                             \
   product(uintx, CMSOldPLABNumRefills, 4,                                   \
           "Nominal number of refills of CMS gen promotion LAB cache "       \
           "per worker per block size")                                      \
+          range(1, max_uintx)                                               \
                                                                             \
   product(bool, CMSOldPLABResizeQuicker, false,                             \
           "React on-the-fly during a scavenge to a sudden "                 \
@@ -1650,6 +1736,7 @@ class CommandLineFlags {
   product(uintx, CMSOldPLABToleranceFactor, 4,                              \
           "The tolerance of the phase-change detector for on-the-fly "      \
           "PLAB resizing during a scavenge")                                \
+          range(1, max_uintx)                                               \
                                                                             \
   product(uintx, CMSOldPLABReactivityFactor, 2,                             \
           "The gain in the feedback loop for on-the-fly PLAB resizing "     \
@@ -1661,19 +1748,23 @@ class CommandLineFlags {
   product_pd(size_t, CMSYoungGenPerWorker,                                  \
           "The maximum size of young gen chosen by default per GC worker "  \
           "thread available")                                               \
+          range(1, max_uintx)                                               \
                                                                             \
   product(uintx, CMSIncrementalSafetyFactor, 10,                            \
           "Percentage (0-100) used to add conservatism when computing the " \
           "duty cycle")                                                     \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, CMSExpAvgFactor, 50,                                       \
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponential averages for CMS statistics")              \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, CMS_FLSWeight, 75,                                         \
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying averages for CMS FLS "          \
           "statistics")                                                     \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, CMS_FLSPadding, 1,                                         \
           "The multiple of deviation from mean to use for buffering "       \
@@ -1682,6 +1773,7 @@ class CommandLineFlags {
   product(uintx, FLSCoalescePolicy, 2,                                      \
           "CMS: aggressiveness level for coalescing, increasing "           \
           "from 0 to 4")                                                    \
+          range(0, 4)                                                       \
                                                                             \
   product(bool, FLSAlwaysCoalesceLarge, false,                              \
           "CMS: larger free blocks are always available for coalescing")    \
@@ -1715,6 +1807,7 @@ class CommandLineFlags {
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for inter-sweep "       \
           "duration")                                                       \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, CMS_SweepPadding, 1,                                       \
           "The multiple of deviation from mean to use for buffering "       \
@@ -1755,6 +1848,7 @@ class CommandLineFlags {
                                                                             \
   product(size_t, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),         \
           "Maximum size of marking stack")                                  \
+          range(1, (max_jint - 1))                                          \
                                                                             \
   notproduct(bool, CMSMarkStackOverflowALot, false,                         \
           "Simulate frequent marking stack / work queue overflow")          \
@@ -1778,9 +1872,11 @@ class CommandLineFlags {
                                                                             \
   product(size_t, CMSRescanMultiple, 32,                                    \
           "Size (in cards) of CMS parallel rescan task")                    \
+          range(1, max_uintx)                                               \
                                                                             \
   product(size_t, CMSConcMarkMultiple, 32,                                  \
           "Size (in cards) of CMS concurrent MT marking task")              \
+          range(1, max_uintx)                                               \
                                                                             \
   product(bool, CMSAbortSemantics, false,                                   \
           "Whether abort-on-overflow semantics is implemented")             \
@@ -1816,14 +1912,19 @@ class CommandLineFlags {
                                                                             \
   product(uintx, CMSPrecleanIter, 3,                                        \
           "Maximum number of precleaning iteration passes")                 \
-                                                                            \
-  product(uintx, CMSPrecleanNumerator, 2,                                   \
-          "CMSPrecleanNumerator:CMSPrecleanDenominator yields convergence " \
-          "ratio")                                                          \
+          range(0, 9)                                                       \
                                                                             \
   product(uintx, CMSPrecleanDenominator, 3,                                 \
           "CMSPrecleanNumerator:CMSPrecleanDenominator yields convergence " \
           "ratio")                                                          \
+          range(1, max_uintx)                                               \
+          constraint(CMSPrecleanDenominatorConstraintFunc)                  \
+                                                                            \
+  product(uintx, CMSPrecleanNumerator, 2,                                   \
+          "CMSPrecleanNumerator:CMSPrecleanDenominator yields convergence " \
+          "ratio")                                                          \
+          range(0, max_uintx-1)                                             \
+          constraint(CMSPrecleanNumeratorConstraintFunc)                    \
                                                                             \
   product(bool, CMSPrecleanRefLists1, true,                                 \
           "Preclean ref lists during (initial) preclean phase")             \
@@ -1839,12 +1940,14 @@ class CommandLineFlags {
                                                                             \
   product(uintx, CMSPrecleanThreshold, 1000,                                \
           "Do not iterate again if number of dirty cards is less than this")\
+          range(100, max_uintx)                                             \
                                                                             \
   product(bool, CMSCleanOnEnter, true,                                      \
           "Clean-on-enter optimization for reducing number of dirty cards") \
                                                                             \
   product(uintx, CMSRemarkVerifyVariant, 1,                                 \
           "Choose variant (1,2) of verification following remark")          \
+          range(1, 2)                                                       \
                                                                             \
   product(size_t, CMSScheduleRemarkEdenSizeThreshold, 2*M,                  \
           "If Eden size is below this, do not try to schedule remark")      \
@@ -1852,14 +1955,17 @@ class CommandLineFlags {
   product(uintx, CMSScheduleRemarkEdenPenetration, 50,                      \
           "The Eden occupancy percentage (0-100) at which "                 \
           "to try and schedule remark pause")                               \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, CMSScheduleRemarkSamplingRatio, 5,                         \
           "Start sampling eden top at least before young gen "              \
           "occupancy reaches 1/<ratio> of the size at which "               \
           "we plan to schedule remark")                                     \
+          range(1, max_uintx)                                               \
                                                                             \
   product(uintx, CMSSamplingGrain, 16*K,                                    \
           "The minimum distance between eden samples for CMS (see above)")  \
+          range(1, max_uintx)                                               \
                                                                             \
   product(bool, CMSScavengeBeforeRemark, false,                             \
           "Attempt scavenge before the CMS remark step")                    \
@@ -1883,6 +1989,7 @@ class CommandLineFlags {
   product(size_t, CMSBitMapYieldQuantum, 10*M,                              \
           "Bitmap operations should process at most this many bits "        \
           "between yields")                                                 \
+          range(1, max_uintx)                                               \
                                                                             \
   product(bool, CMSDumpAtPromotionFailure, false,                           \
           "Dump useful information about the state of the CMS old "         \
@@ -1922,6 +2029,8 @@ class CommandLineFlags {
   product(intx, RefDiscoveryPolicy, 0,                                      \
           "Select type of reference discovery policy: "                     \
           "reference-based(0) or referent-based(1)")                        \
+          range(ReferenceProcessor::DiscoveryPolicyMin,                     \
+                ReferenceProcessor::DiscoveryPolicyMax)                     \
                                                                             \
   product(bool, ParallelRefProcEnabled, false,                              \
           "Enable parallel reference processing whenever possible")         \
@@ -1932,14 +2041,17 @@ class CommandLineFlags {
   product(uintx, CMSTriggerRatio, 80,                                       \
           "Percentage of MinHeapFreeRatio in CMS generation that is "       \
           "allocated before a CMS collection cycle commences")              \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, CMSBootstrapOccupancy, 50,                                 \
           "Percentage CMS generation occupancy at which to "                \
           "initiate CMS collection for bootstrapping collection stats")     \
+          range(0, 100)                                                     \
                                                                             \
   product(intx, CMSInitiatingOccupancyFraction, -1,                         \
           "Percentage CMS generation occupancy to start a CMS collection "  \
           "cycle. A negative value means that CMSTriggerRatio is used")     \
+          range(min_intx, 100)                                              \
                                                                             \
   product(uintx, InitiatingHeapOccupancyPercent, 45,                        \
           "Percentage of the (entire) heap occupancy to start a "           \
@@ -1947,10 +2059,12 @@ class CommandLineFlags {
           "concurrent GC cycle based on the occupancy of the entire heap, " \
           "not just one of the generations (e.g., G1). A value of 0 "       \
           "denotes 'do constant GC cycles'.")                               \
+          range(0, 100)                                                     \
                                                                             \
   manageable(intx, CMSTriggerInterval, -1,                                  \
           "Commence a CMS collection cycle (at least) every so many "       \
           "milliseconds (0 permanently, -1 disabled)")                      \
+          range(-1, max_intx)                                               \
                                                                             \
   product(bool, UseCMSInitiatingOccupancyOnly, false,                       \
           "Only use occupancy as a criterion for starting a CMS collection")\
@@ -1958,6 +2072,7 @@ class CommandLineFlags {
   product(uintx, CMSIsTooFullPercentage, 98,                                \
           "An absolute ceiling above which CMS will always consider the "   \
           "unloading of classes when class unloading is enabled")           \
+          range(0, 100)                                                     \
                                                                             \
   develop(bool, CMSTestInFreeList, false,                                   \
           "Check if the coalesced range is already in the "                 \
@@ -2067,17 +2182,21 @@ class CommandLineFlags {
   product(uintx, MaxRAMFraction, 4,                                         \
           "Maximum fraction (1/n) of real memory used for maximum heap "    \
           "size")                                                           \
+          range(1, max_uintx)                                               \
                                                                             \
   product(uintx, DefaultMaxRAMFraction, 4,                                  \
           "Maximum fraction (1/n) of real memory used for maximum heap "    \
           "size; deprecated: to be renamed to MaxRAMFraction")              \
+          range(1, max_uintx)                                               \
                                                                             \
   product(uintx, MinRAMFraction, 2,                                         \
           "Minimum fraction (1/n) of real memory used for maximum heap "    \
           "size on systems with small physical memory size")                \
+          range(1, max_uintx)                                               \
                                                                             \
   product(uintx, InitialRAMFraction, 64,                                    \
           "Fraction (1/n) of real memory used for initial heap size")       \
+          range(1, max_uintx)                                               \
                                                                             \
   develop(uintx, MaxVirtMemFraction, 2,                                     \
           "Maximum fraction (1/n) of virtual memory used for ergonomically "\
@@ -2136,9 +2255,11 @@ class CommandLineFlags {
                                                                             \
   product(uintx, AdaptiveSizePolicyWeight, 10,                              \
           "Weight given to exponential resizing, between 0 and 100")        \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, AdaptiveTimeWeight,       25,                              \
           "Weight given to time in adaptive policy, between 0 and 100")     \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, PausePadding, 1,                                           \
           "How much buffer to keep for pause time")                         \
@@ -2151,6 +2272,7 @@ class CommandLineFlags {
                                                                             \
   product(uintx, ThresholdTolerance, 10,                                    \
           "Allowed collection cost difference between generations")         \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, AdaptiveSizePolicyCollectionCostMargin, 50,                \
           "If collection costs are within margin, reduce both by full "     \
@@ -2158,21 +2280,27 @@ class CommandLineFlags {
                                                                             \
   product(uintx, YoungGenerationSizeIncrement, 20,                          \
           "Adaptive size percentage change in young generation")            \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, YoungGenerationSizeSupplement, 80,                         \
           "Supplement to YoungedGenerationSizeIncrement used at startup")   \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, YoungGenerationSizeSupplementDecay, 8,                     \
           "Decay factor to YoungedGenerationSizeSupplement")                \
+          range(1, max_uintx)                                               \
                                                                             \
   product(uintx, TenuredGenerationSizeIncrement, 20,                        \
           "Adaptive size percentage change in tenured generation")          \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, TenuredGenerationSizeSupplement, 80,                       \
           "Supplement to TenuredGenerationSizeIncrement used at startup")   \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, TenuredGenerationSizeSupplementDecay, 2,                   \
           "Decay factor to TenuredGenerationSizeIncrement")                 \
+          range(1, max_uintx)                                               \
                                                                             \
   product(uintx, MaxGCPauseMillis, max_uintx,                               \
           "Adaptive size policy maximum GC pause time goal in millisecond, "\
@@ -2190,6 +2318,7 @@ class CommandLineFlags {
                                                                             \
   product(uintx, AdaptiveSizeDecrementScaleFactor, 4,                       \
           "Adaptive size scale down factor for shrinking")                  \
+          range(1, max_uintx)                                               \
                                                                             \
   product(bool, UseAdaptiveSizeDecayMajorGCCost, true,                      \
           "Adaptive size decays the major cost for long major intervals")   \
@@ -2213,10 +2342,12 @@ class CommandLineFlags {
   product(uintx, GCTimeLimit, 98,                                           \
           "Limit of the proportion of time spent in GC before "             \
           "an OutOfMemoryError is thrown (used with GCHeapFreeLimit)")      \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, GCHeapFreeLimit, 2,                                        \
           "Minimum percentage of free space after a full GC before an "     \
           "OutOfMemoryError is thrown (used with GCTimeLimit)")             \
+          range(0, 100)                                                     \
                                                                             \
   develop(uintx, AdaptiveSizePolicyGCTimeLimitThreshold, 5,                 \
           "Number of consecutive collections before gc time limit fires")   \
@@ -2501,11 +2632,16 @@ class CommandLineFlags {
                                                                             \
   /* compiler */                                                            \
                                                                             \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
   product(intx, CICompilerCount, CI_COMPILER_COUNT,                         \
           "Number of compiler threads to run")                              \
+          range((intx)Arguments::get_min_number_of_compiler_threads(),      \
+                max_jint)                                                   \
                                                                             \
   product(intx, CompilationPolicyChoice, 0,                                 \
           "which compilation policy (0-3)")                                 \
+          range(0, 3)                                                       \
                                                                             \
   develop(bool, UseStackBanging, true,                                      \
           "use stack banging for stack overflow checks (required for "      \
@@ -2621,6 +2757,9 @@ class CommandLineFlags {
   notproduct(bool, PrintFlagsWithComments, false,                           \
           "Print all VM flags with default values and descriptions and "    \
           "exit")                                                           \
+                                                                            \
+  product(bool, PrintFlagsRanges, false,                                    \
+          "Print VM flags and their ranges and exit VM")                    \
                                                                             \
   diagnostic(bool, SerializeVMOutput, true,                                 \
           "Use a mutex to serialize output to tty and LogFile")             \
@@ -2860,6 +2999,7 @@ class CommandLineFlags {
   product(intx, ProfileMaturityPercentage, 20,                              \
           "number of method invocations/branches (expressed as % of "       \
           "CompileThreshold) before using the method's profile")            \
+          range(0, 100)                                                     \
                                                                             \
   diagnostic(bool, PrintMethodData, false,                                  \
           "Print the results of +ProfileInterpreter at end of run")         \
@@ -2920,6 +3060,7 @@ class CommandLineFlags {
           "1 = prefetch instructions for each allocation, "                 \
           "2 = use TLAB watermark to gate allocation prefetch, "            \
           "3 = use BIS instruction on Sparc for allocation prefetch")       \
+          range(0, 3)                                                       \
                                                                             \
   product(intx,  AllocatePrefetchDistance, -1,                              \
           "Distance to prefetch ahead of allocation pointer")               \
@@ -2966,6 +3107,7 @@ class CommandLineFlags {
   product(intx, NmethodSweepActivity, 10,                                   \
           "Removes cold nmethods from code cache if > 0. Higher values "    \
           "result in more aggressive sweeping")                             \
+          range(0, 2000)                                                    \
                                                                             \
   notproduct(bool, LogSweeper, false,                                       \
           "Keep a ring buffer of sweeper activity")                         \
@@ -3094,15 +3236,18 @@ class CommandLineFlags {
                                                                             \
   product(intx, PerMethodRecompilationCutoff, 400,                          \
           "After recompiling N times, stay in the interpreter (-1=>'Inf')") \
+          range(-1, max_intx)                                               \
                                                                             \
   product(intx, PerBytecodeRecompilationCutoff, 200,                        \
           "Per-BCI limit on repeated recompilation (-1=>'Inf')")            \
+          range(-1, max_intx)                                               \
                                                                             \
   product(intx, PerMethodTrapLimit,  100,                                   \
           "Limit on traps (of one kind) in a method (includes inlines)")    \
                                                                             \
   experimental(intx, PerMethodSpecTrapLimit,  5000,                         \
-          "Limit on speculative traps (of one kind) in a method (includes inlines)") \
+          "Limit on speculative traps (of one kind) in a method "           \
+          "(includes inlines)")                                             \
                                                                             \
   product(intx, PerBytecodeTrapLimit,  4,                                   \
           "Limit on traps (of one kind) at a particular BCI")               \
@@ -3155,15 +3300,21 @@ class CommandLineFlags {
                                                                             \
   product(size_t, MinTLABSize, 2*K,                                         \
           "Minimum allowed TLAB size (in bytes)")                           \
+          range(1, max_uintx)                                               \
                                                                             \
   product(uintx, TLABAllocationWeight, 35,                                  \
           "Allocation averaging weight")                                    \
+          range(0, 100)                                                     \
                                                                             \
+  /* Limit the lower bound of this flag to 1 as it is used  */              \
+  /* in a division expression.                              */              \
   product(uintx, TLABWasteTargetPercent, 1,                                 \
           "Percentage of Eden that can be wasted")                          \
+          range(1, 100)                                                     \
                                                                             \
   product(uintx, TLABRefillWasteFraction,    64,                            \
           "Maximum TLAB waste at a refill (internal fragmentation)")        \
+          range(1, max_uintx)                                               \
                                                                             \
   product(uintx, TLABWasteIncrement,    4,                                  \
           "Increment allowed waste at slow allocation")                     \
@@ -3187,16 +3338,21 @@ class CommandLineFlags {
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
           "class pointers are used")                                        \
+          range(1*M, 3*G)                                                   \
                                                                             \
   manageable(uintx, MinHeapFreeRatio, 40,                                   \
           "The minimum percentage of heap free after GC to avoid expansion."\
           " For most GCs this applies to the old generation. In G1 and"     \
           " ParallelGC it applies to the whole heap.")                      \
+          range(0, 100)                                                     \
+          constraint(MinHeapFreeRatioConstraintFunc)                        \
                                                                             \
   manageable(uintx, MaxHeapFreeRatio, 70,                                   \
           "The maximum percentage of heap free after GC to avoid shrinking."\
           " For most GCs this applies to the old generation. In G1 and"     \
           " ParallelGC it applies to the whole heap.")                      \
+          range(0, 100)                                                     \
+          constraint(MaxHeapFreeRatioConstraintFunc)                        \
                                                                             \
   product(intx, SoftRefLRUPolicyMSPerMB, 1000,                              \
           "Number of milliseconds per MB of free space in the heap")        \
@@ -3207,13 +3363,17 @@ class CommandLineFlags {
   product(size_t, MinMetaspaceExpansion, ScaleForWordSize(256*K),           \
           "The minimum expansion of Metaspace (in bytes)")                  \
                                                                             \
-  product(uintx, MinMetaspaceFreeRatio,    40,                              \
-          "The minimum percentage of Metaspace free after GC to avoid "     \
-          "expansion")                                                      \
-                                                                            \
   product(uintx, MaxMetaspaceFreeRatio,    70,                              \
           "The maximum percentage of Metaspace free after GC to avoid "     \
           "shrinking")                                                      \
+          range(0, 100)                                                     \
+          constraint(MaxMetaspaceFreeRatioConstraintFunc)                   \
+                                                                            \
+  product(uintx, MinMetaspaceFreeRatio,    40,                              \
+          "The minimum percentage of Metaspace free after GC to avoid "     \
+          "expansion")                                                      \
+          range(0, 99)                                                      \
+          constraint(MinMetaspaceFreeRatioConstraintFunc)                   \
                                                                             \
   product(size_t, MaxMetaspaceExpansion, ScaleForWordSize(4*M),             \
           "The maximum expansion of Metaspace without full GC (in bytes)")  \
@@ -3230,12 +3390,17 @@ class CommandLineFlags {
                                                                             \
   product(uintx, MaxTenuringThreshold,    15,                               \
           "Maximum value for tenuring threshold")                           \
+          range(0, markOopDesc::max_age + 1)                                \
+          constraint(MaxTenuringThresholdConstraintFunc)                    \
                                                                             \
   product(uintx, InitialTenuringThreshold,    7,                            \
           "Initial value for tenuring threshold")                           \
+          range(0, markOopDesc::max_age + 1)                                \
+          constraint(InitialTenuringThresholdConstraintFunc)                \
                                                                             \
   product(uintx, TargetSurvivorRatio,    50,                                \
           "Desired percentage of survivor space used after scavenge")       \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, MarkSweepDeadRatio,     5,                                 \
           "Percentage (0-100) of the old gen allowed as dead wood. "        \
@@ -3246,10 +3411,12 @@ class CommandLineFlags {
           "generation and treats this as the maximum value when the heap "  \
           "is either completely full or completely empty.  Par compact "    \
           "also has a smaller default value; see arguments.cpp.")           \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, MarkSweepAlwaysCompactCount,     4,                        \
           "How often should we fully compact the heap (ignoring the dead "  \
           "space parameters)")                                              \
+          range(1, max_uintx)                                               \
                                                                             \
   product(intx, PrintCMSStatistics, 0,                                      \
           "Statistics for CMS")                                             \
@@ -3289,13 +3456,17 @@ class CommandLineFlags {
   /* stack parameters */                                                    \
   product_pd(intx, StackYellowPages,                                        \
           "Number of yellow zone (recoverable overflows) pages")            \
+          range(1, max_intx)                                                \
                                                                             \
   product_pd(intx, StackRedPages,                                           \
           "Number of red zone (unrecoverable overflows) pages")             \
+          range(1, max_intx)                                                \
                                                                             \
+  /* greater stack shadow pages can't generate instruction to bang stack */ \
   product_pd(intx, StackShadowPages,                                        \
           "Number of shadow zone (for overflow checking) pages "            \
           "this should exceed the depth of the VM and native call stack")   \
+          range(1, 50)                                                      \
                                                                             \
   product_pd(intx, ThreadStackSize,                                         \
           "Thread Stack Size (in Kbytes)")                                  \
@@ -3309,16 +3480,12 @@ class CommandLineFlags {
   develop_pd(size_t, JVMInvokeMethodSlack,                                  \
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
                                                                             \
-  product(size_t, ThreadSafetyMargin, 50*M,                                 \
-          "Thread safety margin is used on fixed-stack LinuxThreads (on "   \
-          "Linux/x86 only) to prevent heap-stack collision. Set to 0 to "   \
-          "disable this feature")                                           \
-                                                                            \
-  /* code cache parameters */                                               \
+  /* code cache parameters                                    */            \
   /* ppc64/tiered compilation has large code-entry alignment. */            \
   develop(uintx, CodeCacheSegmentSize, 64 PPC64_ONLY(+64) NOT_PPC64(TIERED_ONLY(+64)),\
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
+          range(1, 1024)                                                    \
                                                                             \
   develop_pd(intx, CodeEntryAlignment,                                      \
           "Code entry alignment for generated code (in bytes)")             \
@@ -3352,6 +3519,7 @@ class CommandLineFlags {
                                                                             \
   develop_pd(uintx, CodeCacheMinBlockLength,                                \
           "Minimum number of segments in a code cache block")               \
+          range(1, 100)                                                     \
                                                                             \
   notproduct(bool, ExitOnFullCodeCache, false,                              \
           "Exit the VM if we fill the code cache")                          \
@@ -3363,6 +3531,7 @@ class CommandLineFlags {
           "Start aggressive sweeping if X[%] of the code cache is free."    \
           "Segmented code cache: X[%] of the non-profiled heap."            \
           "Non-segmented code cache: X[%] of the total code cache")         \
+          range(0, 100)                                                     \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
@@ -3423,6 +3592,7 @@ class CommandLineFlags {
           "2 - treat class initializers for application classes as empty; " \
           "3 - allow all class initializers to run during bootstrap but "   \
           "    pretend they are empty after starting replay")               \
+          range(0, 3)                                                       \
                                                                             \
   develop(bool, ReplayIgnoreInitErrors, false,                              \
           "Ignore exceptions thrown during initialization for replay")      \
@@ -3467,6 +3637,7 @@ class CommandLineFlags {
           "    used with care, as sometimes it can cause performance       "\
           "    degradation in the application and/or the entire system. On "\
           "    Linux this policy requires root privilege.")                 \
+          range(0, 1)                                                       \
                                                                             \
   product(bool, ThreadPriorityVerbose, false,                               \
           "Print priority changes")                                         \
@@ -3650,6 +3821,7 @@ class CommandLineFlags {
   product(uintx, IncreaseFirstTierCompileThresholdAt, 50,                   \
           "Increase the compile threshold for C1 compilation if the code "  \
           "cache is filled by the specified percentage")                    \
+          range(0, 99)                                                      \
                                                                             \
   product(intx, TieredRateUpdateMinTime, 1,                                 \
           "Minimum rate sampling interval (in milliseconds)")               \
@@ -3670,6 +3842,7 @@ class CommandLineFlags {
   product(intx, InterpreterProfilePercentage, 33,                           \
           "NON_TIERED number of method invocations/branches (expressed as " \
           "% of CompileThreshold) before profiling in the interpreter")     \
+          range(0, 100)                                                     \
                                                                             \
   develop(intx, MaxRecompilationSearchLength,    10,                        \
           "The maximum number of frames to inspect when searching for "     \
@@ -3749,6 +3922,7 @@ class CommandLineFlags {
   product(intx, UnguardOnExecutionViolation, 0,                             \
           "Unguard page and retry on no-execute fault (Win32 only) "        \
           "0=off, 1=conservative, 2=aggressive")                            \
+          range(0, 2)                                                       \
                                                                             \
   /* Serviceability Support */                                              \
                                                                             \
@@ -3869,9 +4043,11 @@ class CommandLineFlags {
                                                                             \
   product(uintx, StringTableSize, defaultStringTableSize,                   \
           "Number of buckets in the interned String table")                 \
+          range(minimumStringTableSize, 111*defaultStringTableSize)         \
                                                                             \
   experimental(uintx, SymbolTableSize, defaultSymbolTableSize,              \
           "Number of buckets in the JVM internal Symbol table")             \
+          range(minimumSymbolTableSize, 111*defaultSymbolTableSize)         \
                                                                             \
   product(bool, UseStringDeduplication, false,                              \
           "Use string deduplication")                                       \
@@ -3882,6 +4058,7 @@ class CommandLineFlags {
   product(uintx, StringDeduplicationAgeThreshold, 3,                        \
           "A string must reach this age (or be promoted to an old region) " \
           "to be considered for deduplication")                             \
+          range(1, markOopDesc::max_age)                                    \
                                                                             \
   diagnostic(bool, StringDeduplicationResizeALot, false,                    \
           "Force table resize every time the table is scanned")             \
@@ -3903,6 +4080,7 @@ class CommandLineFlags {
                                                                             \
   experimental(intx, SurvivorAlignmentInBytes, 0,                           \
            "Default survivor space alignment in bytes")                     \
+           constraint(SurvivorAlignmentInBytesConstraintFunc)               \
                                                                             \
   product(bool , AllowNonVirtualCalls, false,                               \
           "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \
@@ -3960,7 +4138,7 @@ class CommandLineFlags {
 #define DECLARE_DEVELOPER_FLAG(type, name, value, doc)    extern "C" type name;
 #define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)        extern "C" type name;
 #define DECLARE_NOTPRODUCT_FLAG(type, name, value, doc)   extern "C" type name;
-#endif
+#endif // PRODUCT
 // Special LP64 flags, product only needed for now.
 #ifdef _LP64
 #define DECLARE_LP64_PRODUCT_FLAG(type, name, value, doc) extern "C" type name;
@@ -3983,18 +4161,47 @@ class CommandLineFlags {
 #define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc)    type name = value;
 #define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)        type name = pd_##name;
 #define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc)   type name = value;
-#endif
+#endif // PRODUCT
 #ifdef _LP64
 #define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc) type name = value;
 #else
 #define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc) /* flag is constant */
 #endif // _LP64
 
-RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
+// Only materialize src code for range checking when required, ignore otherwise
+#define IGNORE_RANGE(a, b)
+// Only materialize src code for contraint checking when required, ignore otherwise
+#define IGNORE_CONSTRAINT(func)
 
-RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)
+RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, \
+              DECLARE_PD_DEVELOPER_FLAG, \
+              DECLARE_PRODUCT_FLAG, \
+              DECLARE_PD_PRODUCT_FLAG, \
+              DECLARE_DIAGNOSTIC_FLAG, \
+              DECLARE_EXPERIMENTAL_FLAG, \
+              DECLARE_NOTPRODUCT_FLAG, \
+              DECLARE_MANAGEABLE_FLAG, \
+              DECLARE_PRODUCT_RW_FLAG, \
+              DECLARE_LP64_PRODUCT_FLAG, \
+              IGNORE_RANGE, \
+              IGNORE_CONSTRAINT)
 
-ARCH_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG)
+RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, \
+                 DECLARE_PD_DEVELOPER_FLAG, \
+                 DECLARE_PRODUCT_FLAG, \
+                 DECLARE_PD_PRODUCT_FLAG, \
+                 DECLARE_DIAGNOSTIC_FLAG, \
+                 DECLARE_NOTPRODUCT_FLAG, \
+                 IGNORE_RANGE, \
+                 IGNORE_CONSTRAINT)
+
+ARCH_FLAGS(DECLARE_DEVELOPER_FLAG, \
+           DECLARE_PRODUCT_FLAG, \
+           DECLARE_DIAGNOSTIC_FLAG, \
+           DECLARE_EXPERIMENTAL_FLAG, \
+           DECLARE_NOTPRODUCT_FLAG, \
+           IGNORE_RANGE, \
+           IGNORE_CONSTRAINT)
 
 // Extensions
 
