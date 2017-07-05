@@ -31,10 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.MalformedInputException;
-import java.nio.charset.UnmappableCharacterException;
-
+import java.util.Arrays;
 
 public class US_ASCII
     extends Charset
@@ -61,7 +58,8 @@ public class US_ASCII
         return new Encoder(this);
     }
 
-    private static class Decoder extends CharsetDecoder {
+    private static class Decoder extends CharsetDecoder
+                                 implements ArrayDecoder {
 
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
@@ -131,9 +129,27 @@ public class US_ASCII
                 return decodeBufferLoop(src, dst);
         }
 
+        private char repl = '\uFFFD';
+        protected void implReplaceWith(String newReplacement) {
+            repl = newReplacement.charAt(0);
+        }
+
+        public int decode(byte[] src, int sp, int len, char[] dst) {
+            int dp = 0;
+            len = Math.min(len, dst.length);
+            while (dp < len) {
+                byte b = src[sp++];
+                if (b >= 0)
+                    dst[dp++] = (char)b;
+                else
+                    dst[dp++] = repl;
+            }
+            return dp;
+        }
     }
 
-    private static class Encoder extends CharsetEncoder {
+    private static class Encoder extends CharsetEncoder
+                                 implements ArrayEncoder {
 
         private Encoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
@@ -143,8 +159,11 @@ public class US_ASCII
             return c < 0x80;
         }
 
-        private final Surrogate.Parser sgp = new Surrogate.Parser();
+        public boolean isLegalReplacement(byte[] repl) {
+            return (repl.length == 1 && repl[0] >= 0);
+        }
 
+        private final Surrogate.Parser sgp = new Surrogate.Parser();
         private CoderResult encodeArrayLoop(CharBuffer src,
                                             ByteBuffer dst)
         {
@@ -213,6 +232,32 @@ public class US_ASCII
                 return encodeBufferLoop(src, dst);
         }
 
+        private byte repl = (byte)'?';
+        protected void implReplaceWith(byte[] newReplacement) {
+            repl = newReplacement[0];
+        }
+
+        public int encode(char[] src, int sp, int len, byte[] dst) {
+            int dp = 0;
+            int sl = sp + Math.min(len, dst.length);
+            while (sp < sl) {
+                char c = src[sp++];
+                if (c < 0x80) {
+                    dst[dp++] = (byte)c;
+                    continue;
+                }
+                if (Surrogate.isHigh(c) && sp < sl &&
+                    Surrogate.isLow(src[sp])) {
+                    if (len > dst.length) {
+                        sl++;
+                        len--;
+                    }
+                    sp++;
+                }
+                dst[dp++] = repl;
+            }
+            return dp;
+        }
     }
 
 }

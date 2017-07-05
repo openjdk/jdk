@@ -145,14 +145,9 @@ void ConcurrentG1Refine::set_pya_restart() {
   if (G1RSBarrierUseQueue) {
     DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
     dcqs.abandon_logs();
-    if (_cg1rThread->do_traversal()) {
-      _pya = PYA_restart;
-    } else {
-      _cg1rThread->set_do_traversal(true);
-      // Reset the post-yield actions.
-      _pya = PYA_continue;
-      _last_pya = PYA_continue;
-    }
+    // Reset the post-yield actions.
+    _pya = PYA_continue;
+    _last_pya = PYA_continue;
   } else {
     _pya = PYA_restart;
   }

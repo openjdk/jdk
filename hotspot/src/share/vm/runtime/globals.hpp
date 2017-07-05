@@ -303,11 +303,14 @@ class CommandLineFlags {
             "Use 32-bit object references in 64-bit VM. "                   \
             "lp64_product means flag is always constant in 32 bit VM")      \
                                                                             \
-  lp64_product(bool, CheckCompressedOops, trueInDebug,                      \
-            "generate checks in encoding/decoding code")                    \
+  notproduct(bool, CheckCompressedOops, true,                               \
+            "generate checks in encoding/decoding code in debug VM")        \
                                                                             \
-  product(bool, UseImplicitNullCheckForNarrowOop, true,                     \
-            "generate implicit null check in indexed addressing mode.")     \
+  product_pd(uintx, HeapBaseMinAddress,                                     \
+            "OS specific low limit for heap base address")                  \
+                                                                            \
+  diagnostic(bool, PrintCompressedOopsMode, false,                          \
+            "Print compressed oops base address and encoding mode")         \
                                                                             \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
@@ -2168,6 +2171,9 @@ class CommandLineFlags {
                                                                             \
   diagnostic(bool, PrintIntrinsics, false,                                  \
           "prints attempted and successful inlining of intrinsics")         \
+                                                                            \
+  product(bool, UsePopCountInstruction, false,                              \
+          "Use population count instruction")                               \
                                                                             \
   diagnostic(ccstrlist, DisableIntrinsic, "",                               \
           "do not expand intrinsics whose (internal) names appear here")    \
