@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
  * have any questions.
  */
 
+#include "awt.h"
+
 #include "stdhdrs.h"
 #include <commdlg.h>
 #include <winspool.h>
 #include <limits.h>
 #include <float.h>
 
-#include "awt.h"
-#include "awt_dlls.h"
 #include "awt_Toolkit.h"
 #include "awt_PrintControl.h"
 
@@ -74,7 +74,6 @@ Java_sun_print_Win32PrintServiceLookup_getDefaultPrinterName(JNIEnv *env,
     TRY;
 
     TCHAR cBuffer[250];
-    BOOL bFlag;
     OSVERSIONINFO osv;
     PRINTER_INFO_2 *ppi2 = NULL;
     DWORD dwNeeded = 0;
@@ -86,39 +85,8 @@ Java_sun_print_Win32PrintServiceLookup_getDefaultPrinterName(JNIEnv *env,
     osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
     GetVersionEx(&osv);
 
-    // If Windows 95 or 98, use EnumPrinters...
-    if (osv.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) {
-
-        // The first EnumPrinters() tells you how big our buffer should
-        // be in order to hold ALL of PRINTER_INFO_2. Note that this will
-        // usually return FALSE. This only means that the buffer (the 4th
-        // parameter) was not filled in. You don't want it filled in here...
-
-        EnumPrinters(PRINTER_ENUM_DEFAULT, NULL, 2,
-                     NULL, 0, &dwNeeded, &dwReturned);
-        if (dwNeeded == 0) {
-            return NULL;
-        }
-
-        // Allocate enough space for PRINTER_INFO_2...
-        ppi2 = (PRINTER_INFO_2 *)GlobalAlloc(GPTR, dwNeeded);
-        if (!ppi2) {
-           return NULL;
-        }
-
-        // The second EnumPrinters() will fill in all the current information.
-        bFlag = EnumPrinters(PRINTER_ENUM_DEFAULT, NULL, 2,
-                             (LPBYTE)ppi2, dwNeeded, &dwNeeded, &dwReturned);
-        if (!bFlag) {
-            GlobalFree(ppi2);
-            return NULL;
-        }
-
-        jPrinterName = JNU_NewStringPlatform(env, ppi2->pPrinterName);
-        GlobalFree(ppi2);
-        return jPrinterName;
-
-   } else if (osv.dwPlatformId == VER_PLATFORM_WIN32_NT) {
+    // If Windows 2000, XP, Vista
+    if (osv.dwPlatformId == VER_PLATFORM_WIN32_NT) {
 
        // Retrieve the default string from Win.ini (the registry).
        // String will be in form "printername,drivername,portname".
@@ -165,62 +133,32 @@ Java_sun_print_Win32PrintServiceLookup_getAllPrinterNames(JNIEnv *env,
     jobjectArray nameArray;
 
     try {
-        if (IS_NT) {
-            ::EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
-                           NULL, 4, NULL, 0, &cbNeeded, &cReturned);
-            pPrinterEnum = new BYTE[cbNeeded];
-            ::EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
-                           NULL, 4, pPrinterEnum, cbNeeded, &cbNeeded,
-                           &cReturned);
+        ::EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
+                       NULL, 4, NULL, 0, &cbNeeded, &cReturned);
+        pPrinterEnum = new BYTE[cbNeeded];
+        ::EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
+                       NULL, 4, pPrinterEnum, cbNeeded, &cbNeeded,
+                       &cReturned);
 
-            if (cReturned > 0) {
-                nameArray = env->NewObjectArray(cReturned, clazz, NULL);
-                if (nameArray == NULL) {
-                    throw std::bad_alloc();
-                }
-            } else {
-                nameArray = NULL;
-            }
-
-
-            for (DWORD i = 0; i < cReturned; i++) {
-                PRINTER_INFO_4 *info4 = (PRINTER_INFO_4 *)
-                    (pPrinterEnum + i * sizeof(PRINTER_INFO_4));
-                utf_str = JNU_NewStringPlatform(env, info4->pPrinterName);
-                if (utf_str == NULL) {
-                    throw std::bad_alloc();
-                }
-                env->SetObjectArrayElement(nameArray, i, utf_str);
-                env->DeleteLocalRef(utf_str);
+        if (cReturned > 0) {
+            nameArray = env->NewObjectArray(cReturned, clazz, NULL);
+            if (nameArray == NULL) {
+                throw std::bad_alloc();
             }
         } else {
-            ::EnumPrinters(PRINTER_ENUM_LOCAL,
-                           NULL, 5, NULL, 0, &cbNeeded, &cReturned);
-            pPrinterEnum = new BYTE[cbNeeded];
-            ::EnumPrinters(PRINTER_ENUM_LOCAL,
-                           NULL, 5, pPrinterEnum, cbNeeded, &cbNeeded,
-                           &cReturned);
+            nameArray = NULL;
+        }
 
-            if (cReturned > 0) {
-                nameArray = env->NewObjectArray(cReturned, clazz, NULL);
-                if (nameArray == NULL) {
-                    throw std::bad_alloc();
-                }
-            } else {
-                nameArray = NULL;
+
+        for (DWORD i = 0; i < cReturned; i++) {
+            PRINTER_INFO_4 *info4 = (PRINTER_INFO_4 *)
+                (pPrinterEnum + i * sizeof(PRINTER_INFO_4));
+            utf_str = JNU_NewStringPlatform(env, info4->pPrinterName);
+            if (utf_str == NULL) {
+                throw std::bad_alloc();
             }
-
-
-            for (DWORD i = 0; i < cReturned; i++) {
-                PRINTER_INFO_5 *info5 = (PRINTER_INFO_5 *)
-                    (pPrinterEnum + i * sizeof(PRINTER_INFO_5));
-                utf_str = JNU_NewStringPlatform(env, info5->pPrinterName);
-                if (utf_str == NULL) {
-                    throw std::bad_alloc();
-                }
-                env->SetObjectArrayElement(nameArray, i, utf_str);
-                env->DeleteLocalRef(utf_str);
-            }
+            env->SetObjectArrayElement(nameArray, i, utf_str);
+            env->DeleteLocalRef(utf_str);
         }
     } catch (std::bad_alloc&) {
         delete [] pPrinterEnum;
@@ -872,7 +810,7 @@ Java_sun_print_Win32PrintService_getDefaultSettings(JNIEnv *env,
       int numSizes = ::DeviceCapabilities(printerName, printerPort,
                                           DC_PAPERS, NULL, NULL);
       if (numSizes > 0) {
-          LPWORD papers = (LPWORD)safe_Malloc(numSizes * sizeof(WORD));
+          LPTSTR papers = (LPTSTR)safe_Malloc(numSizes * sizeof(WORD));
           if (papers != NULL &&
               ::DeviceCapabilities(printerName, printerPort,
                                    DC_PAPERS, papers, NULL) != -1) {

@@ -100,6 +100,13 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
+ *   <td>closeClassLoader</td>
+ *   <td>Closing of a ClassLoader</td>
+ *   <td>Granting this permission allows code to close any URLClassLoader
+ * that it has a reference to.</td>
+ * </tr>
+ *
+ * <tr>
  *   <td>setSecurityManager</td>
  *   <td>Setting of the security manager (possibly replacing an existing one)
  * </td>

@@ -23,6 +23,8 @@
  * have any questions.
  */
 
+#include "D3DPipeline.h"
+
 #include "sun_java2d_d3d_D3DRenderer.h"
 
 #include "D3DContext.h"

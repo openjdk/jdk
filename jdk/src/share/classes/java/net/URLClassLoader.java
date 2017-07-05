@@ -31,10 +31,12 @@ import java.io.File;
 import java.io.FilePermission;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.Closeable;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandlerFactory;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.jar.Manifest;
@@ -70,7 +72,7 @@ import sun.security.util.SecurityConstants;
  * @author  David Connelly
  * @since   1.2
  */
-public class URLClassLoader extends SecureClassLoader {
+public class URLClassLoader extends SecureClassLoader implements Closeable {
     /* The search path for classes and resources */
     URLClassPath ucp;
 
@@ -85,13 +87,13 @@ public class URLClassLoader extends SecureClassLoader {
      * to refer to a JAR file which will be downloaded and opened as needed.
      *
      * <p>If there is a security manager, this method first
-     * calls the security manager's <code>checkCreateClassLoader</code> method
+     * calls the security manager's {@code checkCreateClassLoader} method
      * to ensure creation of a class loader is allowed.
      *
      * @param urls the URLs from which to load classes and resources
      * @param parent the parent class loader for delegation
      * @exception  SecurityException  if a security manager exists and its
-     *             <code>checkCreateClassLoader</code> method doesn't allow
+     *             {@code checkCreateClassLoader} method doesn't allow
      *             creation of a class loader.
      * @see SecurityManager#checkCreateClassLoader
      */
@@ -169,12 +171,65 @@ public class URLClassLoader extends SecureClassLoader {
         acc = AccessController.getContext();
     }
 
+
+   /**
+    * Closes this URLClassLoader, so that it can no longer be used to load
+    * new classes or resources that are defined by this loader.
+    * Classes and resources defined by any of this loader's parents in the
+    * delegation hierarchy are still accessible. Also, any classes or resources
+    * that are already loaded, are still accessible.
+    * <p>
+    * In the case of jar: and file: URLs, it also closes any class files,
+    * or JAR files that were opened by it. If another thread is loading a
+    * class when the {@code close} method is invoked, then the result of
+    * that load is undefined.
+    * <p>
+    * The method makes a best effort attempt to close all opened files,
+    * by catching {@link IOException}s internally. Unchecked exceptions
+    * and errors are not caught. Calling close on an already closed
+    * loader has no effect.
+    * <p>
+    * @throws IOException if closing any file opened by this class loader
+    * resulted in an IOException. Any such exceptions are caught, and a
+    * single IOException is thrown after the last file has been closed.
+    * If only one exception was thrown, it will be set as the <i>cause</i>
+    * of this IOException.
+    *
+    * @throws SecurityException if a security manager is set, and it denies
+    *   {@link RuntimePermission}<tt>("closeClassLoader")</tt>
+    *
+    * @since 1.7
+    */
+    public void close() throws IOException {
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkPermission(new RuntimePermission("closeClassLoader"));
+        }
+        List<IOException> errors = ucp.closeLoaders();
+        if (errors.isEmpty()) {
+            return;
+        }
+        if (errors.size() == 1) {
+            throw new IOException (
+                "Error closing URLClassLoader resource",
+                errors.get(0)
+            );
+        }
+        // Several exceptions. So, just combine the error messages
+        String errormsg = "Error closing resources: ";
+        for (IOException error: errors) {
+            errormsg = errormsg + "[" + error.toString() + "] ";
+        }
+        throw new IOException (errormsg);
+    }
+
     /**
      * Appends the specified URL to the list of URLs to search for
      * classes and resources.
      * <p>
      * If the URL specified is <code>null</code> or is already in the
-     * list of URLs, then invoking this method has no effect.
+     * list of URLs, or if this loader is closed, then invoking this
+     * method has no effect.
      *
      * @param url the URL to be added to the search path of URLs
      */
@@ -199,7 +254,8 @@ public class URLClassLoader extends SecureClassLoader {
      *
      * @param name the name of the class
      * @return the resulting class
-     * @exception ClassNotFoundException if the class could not be found
+     * @exception ClassNotFoundException if the class could not be found,
+     *            or if the loader is closed.
      */
     protected Class<?> findClass(final String name)
          throws ClassNotFoundException
@@ -370,7 +426,7 @@ public class URLClassLoader extends SecureClassLoader {
      *
      * @param name the name of the resource
      * @return a <code>URL</code> for the resource, or <code>null</code>
-     * if the resource could not be found.
+     * if the resource could not be found, or if the loader is closed.
      */
     public URL findResource(final String name) {
         /*
@@ -393,6 +449,7 @@ public class URLClassLoader extends SecureClassLoader {
      * @param name the resource name
      * @exception IOException if an I/O exception occurs
      * @return an <code>Enumeration</code> of <code>URL</code>s
+     *         If the loader is closed, the Enumeration will be empty.
      */
     public Enumeration<URL> findResources(final String name)
         throws IOException

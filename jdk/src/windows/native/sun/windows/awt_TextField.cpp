@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "awt_Toolkit.h"
 #include "awt_TextField.h"
 #include "awt_TextComponent.h"
-#include "awt_dlls.h"
 #include "awt_KeyboardFocusManager.h"
 #include "awt_Canvas.h"
 
@@ -69,9 +68,8 @@ AwtTextField* AwtTextField::Create(jobject peer, jobject parent)
 
         {
             DWORD style = WS_CHILD | WS_CLIPSIBLINGS |
-                ES_LEFT | ES_AUTOHSCROLL |
-                (IS_WIN4X ? 0 : WS_BORDER);
-            DWORD exStyle = IS_WIN4X ? WS_EX_CLIENTEDGE : 0;
+                ES_LEFT | ES_AUTOHSCROLL;
+            DWORD exStyle = WS_EX_CLIENTEDGE;
             if (GetRTL()) {
                 exStyle |= WS_EX_RIGHT | WS_EX_LEFTSCROLLBAR;
                 if (GetRTLReadingOrder())

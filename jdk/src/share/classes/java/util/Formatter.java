@@ -59,7 +59,7 @@ import sun.misc.FormattedFloatingDecimal;
  * An interpreter for printf-style format strings.  This class provides support
  * for layout justification and alignment, common formats for numeric, string,
  * and date/time data, and locale-specific output.  Common Java types such as
- * <tt>byte</tt>, {@link java.math.BigDecimal BigDecimal}, and {@link Calendar}
+ * {@code byte}, {@link java.math.BigDecimal BigDecimal}, and {@link Calendar}
  * are supported.  Limited formatting customization for arbitrary user types is
  * provided through the {@link Formattable} interface.
  *
@@ -68,7 +68,7 @@ import sun.misc.FormattedFloatingDecimal;
  * class.
  *
  * <p> Formatted printing for the Java language is heavily inspired by C's
- * <tt>printf</tt>.  Although the format strings are similar to C, some
+ * {@code printf}.  Although the format strings are similar to C, some
  * customizations have been made to accommodate the Java language and exploit
  * some of its features.  Also, Java formatting is more strict than C's; for
  * example, if a conversion is incompatible with a flag, an exception will be
@@ -115,7 +115,7 @@ import sun.misc.FormattedFloatingDecimal;
  *   // -&gt; "Unable to open file 'food': No such file or directory"
  * </pre></blockquote>
  *
- * <p> Like C's <tt>sprintf(3)</tt>, Strings may be formatted using the static
+ * <p> Like C's {@code sprintf(3)}, Strings may be formatted using the static
  * method {@link String#format(String,Object...) String.format}:
  *
  * <blockquote><pre>
@@ -157,16 +157,16 @@ import sun.misc.FormattedFloatingDecimal;
  *   String s = String.format("Duke's Birthday: %1$tm %1$te,%1$tY", c);
  * </pre></blockquote>
  *
- * This format string is the first argument to the <tt>format</tt> method.  It
- * contains three format specifiers "<tt>%1$tm</tt>", "<tt>%1$te</tt>", and
- * "<tt>%1$tY</tt>" which indicate how the arguments should be processed and
+ * This format string is the first argument to the {@code format} method.  It
+ * contains three format specifiers "{@code %1$tm}", "{@code %1$te}", and
+ * "{@code %1$tY}" which indicate how the arguments should be processed and
  * where they should be inserted in the text.  The remaining portions of the
- * format string are fixed text including <tt>"Dukes Birthday: "</tt> and any
+ * format string are fixed text including {@code "Dukes Birthday: "} and any
  * other spaces or punctuation.
  *
  * The argument list consists of all arguments passed to the method after the
  * format string.  In the above example, the argument list is of size one and
- * consists of the {@link java.util.Calendar Calendar} object <tt>c</tt>.
+ * consists of the {@link java.util.Calendar Calendar} object {@code c}.
  *
  * <ul>
  *
@@ -179,7 +179,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <p> The optional <i>argument_index</i> is a decimal integer indicating the
  * position of the argument in the argument list.  The first argument is
- * referenced by "<tt>1$</tt>", the second by "<tt>2$</tt>", etc.
+ * referenced by "{@code 1$}", the second by "{@code 2$}", etc.
  *
  * <p> The optional <i>flags</i> is a set of characters that modify the output
  * format.  The set of valid flags depends on the conversion.
@@ -206,10 +206,10 @@ import sun.misc.FormattedFloatingDecimal;
  * defined as above.
  *
  * <p> The required <i>conversion</i> is a two character sequence.  The first
- * character is <tt>'t'</tt> or <tt>'T'</tt>.  The second character indicates
+ * character is {@code 't'} or {@code 'T'}.  The second character indicates
  * the format to be used.  These characters are similar to but not completely
- * identical to those defined by GNU <tt>date</tt> and POSIX
- * <tt>strftime(3c)</tt>.
+ * identical to those defined by GNU {@code date} and POSIX
+ * {@code strftime(3c)}.
  *
  * <li> The format specifiers which do not correspond to arguments have the
  * following syntax:
@@ -235,31 +235,31 @@ import sun.misc.FormattedFloatingDecimal;
  * type
  *
  * <li> <b>Character</b> - may be applied to basic types which represent
- * Unicode characters: <tt>char</tt>, {@link Character}, <tt>byte</tt>, {@link
- * Byte}, <tt>short</tt>, and {@link Short}. This conversion may also be
- * applied to the types <tt>int</tt> and {@link Integer} when {@link
- * Character#isValidCodePoint} returns <tt>true</tt>
+ * Unicode characters: {@code char}, {@link Character}, {@code byte}, {@link
+ * Byte}, {@code short}, and {@link Short}. This conversion may also be
+ * applied to the types {@code int} and {@link Integer} when {@link
+ * Character#isValidCodePoint} returns {@code true}
  *
  * <li> <b>Numeric</b>
  *
  * <ol>
  *
- * <li> <b>Integral</b> - may be applied to Java integral types: <tt>byte</tt>,
- * {@link Byte}, <tt>short</tt>, {@link Short}, <tt>int</tt> and {@link
- * Integer}, <tt>long</tt>, {@link Long}, and {@link java.math.BigInteger
+ * <li> <b>Integral</b> - may be applied to Java integral types: {@code byte},
+ * {@link Byte}, {@code short}, {@link Short}, {@code int} and {@link
+ * Integer}, {@code long}, {@link Long}, and {@link java.math.BigInteger
  * BigInteger}
  *
  * <li><b>Floating Point</b> - may be applied to Java floating-point types:
- * <tt>float</tt>, {@link Float}, <tt>double</tt>, {@link Double}, and {@link
+ * {@code float}, {@link Float}, {@code double}, {@link Double}, and {@link
  * java.math.BigDecimal BigDecimal}
  *
  * </ol>
  *
  * <li> <b>Date/Time</b> - may be applied to Java types which are capable of
- * encoding a date or time: <tt>long</tt>, {@link Long}, {@link Calendar}, and
+ * encoding a date or time: {@code long}, {@link Long}, {@link Calendar}, and
  * {@link Date}.
  *
- * <li> <b>Percent</b> - produces a literal <tt>'%'</tt>
+ * <li> <b>Percent</b> - produces a literal {@code '%'}
  * (<tt>'&#92;u0025'</tt>)
  *
  * <li> <b>Line Separator</b> - produces the platform-specific line separator
@@ -267,9 +267,9 @@ import sun.misc.FormattedFloatingDecimal;
  * </ol>
  *
  * <p> The following table summarizes the supported conversions.  Conversions
- * denoted by an upper-case character (i.e. <tt>'B'</tt>, <tt>'H'</tt>,
- * <tt>'S'</tt>, <tt>'C'</tt>, <tt>'X'</tt>, <tt>'E'</tt>, <tt>'G'</tt>,
- * <tt>'A'</tt>, and <tt>'T'</tt>) are the same as those for the corresponding
+ * denoted by an upper-case character (i.e. {@code 'B'}, {@code 'H'},
+ * {@code 'S'}, {@code 'C'}, {@code 'X'}, {@code 'E'}, {@code 'G'},
+ * {@code 'A'}, and {@code 'T'}) are the same as those for the corresponding
  * lower-case conversion characters except that the result is converted to
  * upper case according to the rules of the prevailing {@link java.util.Locale
  * Locale}.  The result is equivalent to the following invocation of {@link
@@ -284,72 +284,72 @@ import sun.misc.FormattedFloatingDecimal;
  *     <th valign="bottom"> Argument Category
  *     <th valign="bottom"> Description
  *
- * <tr><td valign="top"> <tt>'b'</tt>, <tt>'B'</tt>
+ * <tr><td valign="top"> {@code 'b'}, {@code 'B'}
  *     <td valign="top"> general
- *     <td> If the argument <i>arg</i> is <tt>null</tt>, then the result is
- *     "<tt>false</tt>".  If <i>arg</i> is a <tt>boolean</tt> or {@link
+ *     <td> If the argument <i>arg</i> is {@code null}, then the result is
+ *     "{@code false}".  If <i>arg</i> is a {@code boolean} or {@link
  *     Boolean}, then the result is the string returned by {@link
  *     String#valueOf(boolean) String.valueOf(arg)}.  Otherwise, the result is
  *     "true".
  *
- * <tr><td valign="top"> <tt>'h'</tt>, <tt>'H'</tt>
+ * <tr><td valign="top"> {@code 'h'}, {@code 'H'}
  *     <td valign="top"> general
- *     <td> If the argument <i>arg</i> is <tt>null</tt>, then the result is
- *     "<tt>null</tt>".  Otherwise, the result is obtained by invoking
- *     <tt>Integer.toHexString(arg.hashCode())</tt>.
+ *     <td> If the argument <i>arg</i> is {@code null}, then the result is
+ *     "{@code null}".  Otherwise, the result is obtained by invoking
+ *     {@code Integer.toHexString(arg.hashCode())}.
  *
- * <tr><td valign="top"> <tt>'s'</tt>, <tt>'S'</tt>
+ * <tr><td valign="top"> {@code 's'}, {@code 'S'}
  *     <td valign="top"> general
- *     <td> If the argument <i>arg</i> is <tt>null</tt>, then the result is
- *     "<tt>null</tt>".  If <i>arg</i> implements {@link Formattable}, then
+ *     <td> If the argument <i>arg</i> is {@code null}, then the result is
+ *     "{@code null}".  If <i>arg</i> implements {@link Formattable}, then
  *     {@link Formattable#formatTo arg.formatTo} is invoked. Otherwise, the
- *     result is obtained by invoking <tt>arg.toString()</tt>.
+ *     result is obtained by invoking {@code arg.toString()}.
  *
- * <tr><td valign="top"><tt>'c'</tt>, <tt>'C'</tt>
+ * <tr><td valign="top">{@code 'c'}, {@code 'C'}
  *     <td valign="top"> character
  *     <td> The result is a Unicode character
  *
- * <tr><td valign="top"><tt>'d'</tt>
+ * <tr><td valign="top">{@code 'd'}
  *     <td valign="top"> integral
  *     <td> The result is formatted as a decimal integer
  *
- * <tr><td valign="top"><tt>'o'</tt>
+ * <tr><td valign="top">{@code 'o'}
  *     <td valign="top"> integral
  *     <td> The result is formatted as an octal integer
  *
- * <tr><td valign="top"><tt>'x'</tt>, <tt>'X'</tt>
+ * <tr><td valign="top">{@code 'x'}, {@code 'X'}
  *     <td valign="top"> integral
  *     <td> The result is formatted as a hexadecimal integer
  *
- * <tr><td valign="top"><tt>'e'</tt>, <tt>'E'</tt>
+ * <tr><td valign="top">{@code 'e'}, {@code 'E'}
  *     <td valign="top"> floating point
  *     <td> The result is formatted as a decimal number in computerized
  *     scientific notation
  *
- * <tr><td valign="top"><tt>'f'</tt>
+ * <tr><td valign="top">{@code 'f'}
  *     <td valign="top"> floating point
  *     <td> The result is formatted as a decimal number
  *
- * <tr><td valign="top"><tt>'g'</tt>, <tt>'G'</tt>
+ * <tr><td valign="top">{@code 'g'}, {@code 'G'}
  *     <td valign="top"> floating point
  *     <td> The result is formatted using computerized scientific notation or
  *     decimal format, depending on the precision and the value after rounding.
  *
- * <tr><td valign="top"><tt>'a'</tt>, <tt>'A'</tt>
+ * <tr><td valign="top">{@code 'a'}, {@code 'A'}
  *     <td valign="top"> floating point
  *     <td> The result is formatted as a hexadecimal floating-point number with
  *     a significand and an exponent
  *
- * <tr><td valign="top"><tt>'t'</tt>, <tt>'T'</tt>
+ * <tr><td valign="top">{@code 't'}, {@code 'T'}
  *     <td valign="top"> date/time
  *     <td> Prefix for date and time conversion characters.  See <a
  *     href="#dt">Date/Time Conversions</a>.
  *
- * <tr><td valign="top"><tt>'%'</tt>
+ * <tr><td valign="top">{@code '%'}
  *     <td valign="top"> percent
- *     <td> The result is a literal <tt>'%'</tt> (<tt>'&#92;u0025'</tt>)
+ *     <td> The result is a literal {@code '%'} (<tt>'&#92;u0025'</tt>)
  *
- * <tr><td valign="top"><tt>'n'</tt>
+ * <tr><td valign="top">{@code 'n'}
  *     <td valign="top"> line separator
  *     <td> The result is the platform-specific line separator
  *
@@ -361,78 +361,78 @@ import sun.misc.FormattedFloatingDecimal;
  * <h4><a name="dt">Date/Time Conversions</a></h4>
  *
  * <p> The following date and time conversion suffix characters are defined for
- * the <tt>'t'</tt> and <tt>'T'</tt> conversions.  The types are similar to but
- * not completely identical to those defined by GNU <tt>date</tt> and POSIX
- * <tt>strftime(3c)</tt>.  Additional conversion types are provided to access
- * Java-specific functionality (e.g. <tt>'L'</tt> for milliseconds within the
+ * the {@code 't'} and {@code 'T'} conversions.  The types are similar to but
+ * not completely identical to those defined by GNU {@code date} and POSIX
+ * {@code strftime(3c)}.  Additional conversion types are provided to access
+ * Java-specific functionality (e.g. {@code 'L'} for milliseconds within the
  * second).
  *
  * <p> The following conversion characters are used for formatting times:
  *
  * <table cellpadding=5 summary="time">
  *
- * <tr><td valign="top"> <tt>'H'</tt>
+ * <tr><td valign="top"> {@code 'H'}
  *     <td> Hour of the day for the 24-hour clock, formatted as two digits with
- *     a leading zero as necessary i.e. <tt>00 - 23</tt>.
+ *     a leading zero as necessary i.e. {@code 00 - 23}.
  *
- * <tr><td valign="top"><tt>'I'</tt>
+ * <tr><td valign="top">{@code 'I'}
  *     <td> Hour for the 12-hour clock, formatted as two digits with a leading
- *     zero as necessary, i.e.  <tt>01 - 12</tt>.
+ *     zero as necessary, i.e.  {@code 01 - 12}.
  *
- * <tr><td valign="top"><tt>'k'</tt>
- *     <td> Hour of the day for the 24-hour clock, i.e. <tt>0 - 23</tt>.
+ * <tr><td valign="top">{@code 'k'}
+ *     <td> Hour of the day for the 24-hour clock, i.e. {@code 0 - 23}.
  *
- * <tr><td valign="top"><tt>'l'</tt>
- *     <td> Hour for the 12-hour clock, i.e. <tt>1 - 12</tt>.
+ * <tr><td valign="top">{@code 'l'}
+ *     <td> Hour for the 12-hour clock, i.e. {@code 1 - 12}.
  *
- * <tr><td valign="top"><tt>'M'</tt>
+ * <tr><td valign="top">{@code 'M'}
  *     <td> Minute within the hour formatted as two digits with a leading zero
- *     as necessary, i.e.  <tt>00 - 59</tt>.
+ *     as necessary, i.e.  {@code 00 - 59}.
  *
- * <tr><td valign="top"><tt>'S'</tt>
+ * <tr><td valign="top">{@code 'S'}
  *     <td> Seconds within the minute, formatted as two digits with a leading
- *     zero as necessary, i.e. <tt>00 - 60</tt> ("<tt>60</tt>" is a special
+ *     zero as necessary, i.e. {@code 00 - 60} ("{@code 60}" is a special
  *     value required to support leap seconds).
  *
- * <tr><td valign="top"><tt>'L'</tt>
+ * <tr><td valign="top">{@code 'L'}
  *     <td> Millisecond within the second formatted as three digits with
- *     leading zeros as necessary, i.e. <tt>000 - 999</tt>.
+ *     leading zeros as necessary, i.e. {@code 000 - 999}.
  *
- * <tr><td valign="top"><tt>'N'</tt>
+ * <tr><td valign="top">{@code 'N'}
  *     <td> Nanosecond within the second, formatted as nine digits with leading
- *     zeros as necessary, i.e. <tt>000000000 - 999999999</tt>.
+ *     zeros as necessary, i.e. {@code 000000000 - 999999999}.
  *
- * <tr><td valign="top"><tt>'p'</tt>
+ * <tr><td valign="top">{@code 'p'}
  *     <td> Locale-specific {@linkplain
  *     java.text.DateFormatSymbols#getAmPmStrings morning or afternoon} marker
- *     in lower case, e.g."<tt>am</tt>" or "<tt>pm</tt>". Use of the conversion
- *     prefix <tt>'T'</tt> forces this output to upper case.
+ *     in lower case, e.g."{@code am}" or "{@code pm}". Use of the conversion
+ *     prefix {@code 'T'} forces this output to upper case.
  *
- * <tr><td valign="top"><tt>'z'</tt>
+ * <tr><td valign="top">{@code 'z'}
  *     <td> <a href="http://www.ietf.org/rfc/rfc0822.txt">RFC&nbsp;822</a>
- *     style numeric time zone offset from GMT, e.g. <tt>-0800</tt>.  This
+ *     style numeric time zone offset from GMT, e.g. {@code -0800}.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
- *     <tt>long</tt>, {@link Long}, and {@link Date} the time zone used is
- *     the {@plainlink TimeZone#getDefault() default time zone} for this
+ *     {@code long}, {@link Long}, and {@link Date} the time zone used is
+ *     the {@linkplain TimeZone#getDefault() default time zone} for this
  *     instance of the Java virtual machine.
  *
- * <tr><td valign="top"><tt>'Z'</tt>
+ * <tr><td valign="top">{@code 'Z'}
  *     <td> A string representing the abbreviation for the time zone.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
- *     <tt>long</tt>, {@link Long}, and {@link Date} the  time zone used is
- *     the {@plainlink TimeZone#getDefault() default time zone} for this
+ *     {@code long}, {@link Long}, and {@link Date} the  time zone used is
+ *     the {@linkplain TimeZone#getDefault() default time zone} for this
  *     instance of the Java virtual machine.  The Formatter's locale will
  *     supersede the locale of the argument (if any).
  *
- * <tr><td valign="top"><tt>'s'</tt>
+ * <tr><td valign="top">{@code 's'}
  *     <td> Seconds since the beginning of the epoch starting at 1 January 1970
- *     <tt>00:00:00</tt> UTC, i.e. <tt>Long.MIN_VALUE/1000</tt> to
- *     <tt>Long.MAX_VALUE/1000</tt>.
+ *     {@code 00:00:00} UTC, i.e. {@code Long.MIN_VALUE/1000} to
+ *     {@code Long.MAX_VALUE/1000}.
  *
- * <tr><td valign="top"><tt>'Q'</tt>
+ * <tr><td valign="top">{@code 'Q'}
  *     <td> Milliseconds since the beginning of the epoch starting at 1 January
- *     1970 <tt>00:00:00</tt> UTC, i.e. <tt>Long.MIN_VALUE</tt> to
- *     <tt>Long.MAX_VALUE</tt>.
+ *     1970 {@code 00:00:00} UTC, i.e. {@code Long.MIN_VALUE} to
+ *     {@code Long.MAX_VALUE}.
  *
  * </table>
  *
@@ -440,55 +440,55 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="date">
  *
- * <tr><td valign="top"><tt>'B'</tt>
+ * <tr><td valign="top">{@code 'B'}
  *     <td> Locale-specific {@linkplain java.text.DateFormatSymbols#getMonths
- *     full month name}, e.g. <tt>"January"</tt>, <tt>"February"</tt>.
+ *     full month name}, e.g. {@code "January"}, {@code "February"}.
  *
- * <tr><td valign="top"><tt>'b'</tt>
+ * <tr><td valign="top">{@code 'b'}
  *     <td> Locale-specific {@linkplain
  *     java.text.DateFormatSymbols#getShortMonths abbreviated month name},
- *     e.g. <tt>"Jan"</tt>, <tt>"Feb"</tt>.
+ *     e.g. {@code "Jan"}, {@code "Feb"}.
  *
- * <tr><td valign="top"><tt>'h'</tt>
- *     <td> Same as <tt>'b'</tt>.
+ * <tr><td valign="top">{@code 'h'}
+ *     <td> Same as {@code 'b'}.
  *
- * <tr><td valign="top"><tt>'A'</tt>
+ * <tr><td valign="top">{@code 'A'}
  *     <td> Locale-specific full name of the {@linkplain
  *     java.text.DateFormatSymbols#getWeekdays day of the week},
- *     e.g. <tt>"Sunday"</tt>, <tt>"Monday"</tt>
+ *     e.g. {@code "Sunday"}, {@code "Monday"}
  *
- * <tr><td valign="top"><tt>'a'</tt>
+ * <tr><td valign="top">{@code 'a'}
  *     <td> Locale-specific short name of the {@linkplain
  *     java.text.DateFormatSymbols#getShortWeekdays day of the week},
- *     e.g. <tt>"Sun"</tt>, <tt>"Mon"</tt>
+ *     e.g. {@code "Sun"}, {@code "Mon"}
  *
- * <tr><td valign="top"><tt>'C'</tt>
- *     <td> Four-digit year divided by <tt>100</tt>, formatted as two digits
- *     with leading zero as necessary, i.e. <tt>00 - 99</tt>
+ * <tr><td valign="top">{@code 'C'}
+ *     <td> Four-digit year divided by {@code 100}, formatted as two digits
+ *     with leading zero as necessary, i.e. {@code 00 - 99}
  *
- * <tr><td valign="top"><tt>'Y'</tt>
+ * <tr><td valign="top">{@code 'Y'}
  *     <td> Year, formatted as at least four digits with leading zeros as
- *     necessary, e.g. <tt>0092</tt> equals <tt>92</tt> CE for the Gregorian
+ *     necessary, e.g. {@code 0092} equals {@code 92} CE for the Gregorian
  *     calendar.
  *
- * <tr><td valign="top"><tt>'y'</tt>
+ * <tr><td valign="top">{@code 'y'}
  *     <td> Last two digits of the year, formatted with leading zeros as
- *     necessary, i.e. <tt>00 - 99</tt>.
+ *     necessary, i.e. {@code 00 - 99}.
  *
- * <tr><td valign="top"><tt>'j'</tt>
+ * <tr><td valign="top">{@code 'j'}
  *     <td> Day of year, formatted as three digits with leading zeros as
- *     necessary, e.g. <tt>001 - 366</tt> for the Gregorian calendar.
+ *     necessary, e.g. {@code 001 - 366} for the Gregorian calendar.
  *
- * <tr><td valign="top"><tt>'m'</tt>
+ * <tr><td valign="top">{@code 'm'}
  *     <td> Month, formatted as two digits with leading zeros as necessary,
- *     i.e. <tt>01 - 13</tt>.
+ *     i.e. {@code 01 - 13}.
  *
- * <tr><td valign="top"><tt>'d'</tt>
+ * <tr><td valign="top">{@code 'd'}
  *     <td> Day of month, formatted as two digits with leading zeros as
- *     necessary, i.e. <tt>01 - 31</tt>
+ *     necessary, i.e. {@code 01 - 31}
  *
- * <tr><td valign="top"><tt>'e'</tt>
- *     <td> Day of month, formatted as two digits, i.e. <tt>1 - 31</tt>.
+ * <tr><td valign="top">{@code 'e'}
+ *     <td> Day of month, formatted as two digits, i.e. {@code 1 - 31}.
  *
  * </table>
  *
@@ -497,27 +497,27 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="composites">
  *
- * <tr><td valign="top"><tt>'R'</tt>
- *     <td> Time formatted for the 24-hour clock as <tt>"%tH:%tM"</tt>
+ * <tr><td valign="top">{@code 'R'}
+ *     <td> Time formatted for the 24-hour clock as {@code "%tH:%tM"}
  *
- * <tr><td valign="top"><tt>'T'</tt>
- *     <td> Time formatted for the 24-hour clock as <tt>"%tH:%tM:%tS"</tt>.
+ * <tr><td valign="top">{@code 'T'}
+ *     <td> Time formatted for the 24-hour clock as {@code "%tH:%tM:%tS"}.
  *
- * <tr><td valign="top"><tt>'r'</tt>
- *     <td> Time formatted for the 12-hour clock as <tt>"%tI:%tM:%tS %Tp"</tt>.
- *     The location of the morning or afternoon marker (<tt>'%Tp'</tt>) may be
+ * <tr><td valign="top">{@code 'r'}
+ *     <td> Time formatted for the 12-hour clock as {@code "%tI:%tM:%tS %Tp"}.
+ *     The location of the morning or afternoon marker ({@code '%Tp'}) may be
  *     locale-dependent.
  *
- * <tr><td valign="top"><tt>'D'</tt>
- *     <td> Date formatted as <tt>"%tm/%td/%ty"</tt>.
+ * <tr><td valign="top">{@code 'D'}
+ *     <td> Date formatted as {@code "%tm/%td/%ty"}.
  *
- * <tr><td valign="top"><tt>'F'</tt>
+ * <tr><td valign="top">{@code 'F'}
  *     <td> <a href="http://www.w3.org/TR/NOTE-datetime">ISO&nbsp;8601</a>
- *     complete date formatted as <tt>"%tY-%tm-%td"</tt>.
+ *     complete date formatted as {@code "%tY-%tm-%td"}.
  *
- * <tr><td valign="top"><tt>'c'</tt>
- *     <td> Date and time formatted as <tt>"%ta %tb %td %tT %tZ %tY"</tt>,
- *     e.g. <tt>"Sun Jul 20 16:17:00 EDT 1969"</tt>.
+ * <tr><td valign="top">{@code 'c'}
+ *     <td> Date and time formatted as {@code "%ta %tb %td %tT %tZ %tY"},
+ *     e.g. {@code "Sun Jul 20 16:17:00 EDT 1969"}.
  *
  * </table>
  *
@@ -591,18 +591,18 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <p> <sup>1</sup> Depends on the definition of {@link Formattable}.
  *
- * <p> <sup>2</sup> For <tt>'d'</tt> conversion only.
+ * <p> <sup>2</sup> For {@code 'd'} conversion only.
  *
- * <p> <sup>3</sup> For <tt>'o'</tt>, <tt>'x'</tt>, and <tt>'X'</tt>
+ * <p> <sup>3</sup> For {@code 'o'}, {@code 'x'}, and {@code 'X'}
  * conversions only.
  *
- * <p> <sup>4</sup> For <tt>'d'</tt>, <tt>'o'</tt>, <tt>'x'</tt>, and
- * <tt>'X'</tt> conversions applied to {@link java.math.BigInteger BigInteger}
- * or <tt>'d'</tt> applied to <tt>byte</tt>, {@link Byte}, <tt>short</tt>, {@link
- * Short}, <tt>int</tt> and {@link Integer}, <tt>long</tt>, and {@link Long}.
+ * <p> <sup>4</sup> For {@code 'd'}, {@code 'o'}, {@code 'x'}, and
+ * {@code 'X'} conversions applied to {@link java.math.BigInteger BigInteger}
+ * or {@code 'd'} applied to {@code byte}, {@link Byte}, {@code short}, {@link
+ * Short}, {@code int} and {@link Integer}, {@code long}, and {@link Long}.
  *
- * <p> <sup>5</sup> For <tt>'e'</tt>, <tt>'E'</tt>, <tt>'f'</tt>,
- * <tt>'g'</tt>, and <tt>'G'</tt> conversions only.
+ * <p> <sup>5</sup> For {@code 'e'}, {@code 'E'}, {@code 'f'},
+ * {@code 'g'}, and {@code 'G'} conversions only.
  *
  * <p> Any characters not explicitly defined as flags are illegal and are
  * reserved for future extensions.
@@ -618,11 +618,11 @@ import sun.misc.FormattedFloatingDecimal;
  * <p> For general argument types, the precision is the maximum number of
  * characters to be written to the output.
  *
- * <p> For the floating-point conversions <tt>'e'</tt>, <tt>'E'</tt>, and
- * <tt>'f'</tt> the precision is the number of digits after the decimal
- * separator.  If the conversion is <tt>'g'</tt> or <tt>'G'</tt>, then the
+ * <p> For the floating-point conversions {@code 'e'}, {@code 'E'}, and
+ * {@code 'f'} the precision is the number of digits after the decimal
+ * separator.  If the conversion is {@code 'g'} or {@code 'G'}, then the
  * precision is the total number of digits in the resulting magnitude after
- * rounding.  If the conversion is <tt>'a'</tt> or <tt>'A'</tt>, then the
+ * rounding.  If the conversion is {@code 'a'} or {@code 'A'}, then the
  * precision must not be specified.
  *
  * <p> For character, integral, and date/time argument types and the percent
@@ -633,10 +633,10 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <p> The argument index is a decimal integer indicating the position of the
  * argument in the argument list.  The first argument is referenced by
- * "<tt>1$</tt>", the second by "<tt>2$</tt>", etc.
+ * "{@code 1$}", the second by "{@code 2$}", etc.
  *
  * <p> Another way to reference arguments by position is to use the
- * <tt>'&lt;'</tt> (<tt>'&#92;u003c'</tt>) flag, which causes the argument for
+ * {@code '<'} (<tt>'&#92;u003c'</tt>) flag, which causes the argument for
  * the previous format specifier to be re-used.  For example, the following two
  * statements would produce identical strings:
  *
@@ -670,14 +670,14 @@ import sun.misc.FormattedFloatingDecimal;
  * applicable to the corresponding argument, then an {@link
  * IllegalFormatConversionException} will be thrown.
  *
- * <p> All specified exceptions may be thrown by any of the <tt>format</tt>
- * methods of <tt>Formatter</tt> as well as by any <tt>format</tt> convenience
+ * <p> All specified exceptions may be thrown by any of the {@code format}
+ * methods of {@code Formatter} as well as by any {@code format} convenience
  * methods such as {@link String#format(String,Object...) String.format} and
  * {@link java.io.PrintStream#printf(String,Object...) PrintStream.printf}.
  *
- * <p> Conversions denoted by an upper-case character (i.e. <tt>'B'</tt>,
- * <tt>'H'</tt>, <tt>'S'</tt>, <tt>'C'</tt>, <tt>'X'</tt>, <tt>'E'</tt>,
- * <tt>'G'</tt>, <tt>'A'</tt>, and <tt>'T'</tt>) are the same as those for the
+ * <p> Conversions denoted by an upper-case character (i.e. {@code 'B'},
+ * {@code 'H'}, {@code 'S'}, {@code 'C'}, {@code 'X'}, {@code 'E'},
+ * {@code 'G'}, {@code 'A'}, and {@code 'T'}) are the same as those for the
  * corresponding lower-case conversion characters except that the result is
  * converted to upper case according to the rules of the prevailing {@link
  * java.util.Locale Locale}.  The result is equivalent to the following
@@ -692,56 +692,56 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="dgConv">
  *
- * <tr><td valign="top"> <tt>'b'</tt>
+ * <tr><td valign="top"> {@code 'b'}
  *     <td valign="top"> <tt>'&#92;u0062'</tt>
- *     <td> Produces either "<tt>true</tt>" or "<tt>false</tt>" as returned by
+ *     <td> Produces either "{@code true}" or "{@code false}" as returned by
  *     {@link Boolean#toString(boolean)}.
  *
- *     <p> If the argument is <tt>null</tt>, then the result is
- *     "<tt>false</tt>".  If the argument is a <tt>boolean</tt> or {@link
+ *     <p> If the argument is {@code null}, then the result is
+ *     "{@code false}".  If the argument is a {@code boolean} or {@link
  *     Boolean}, then the result is the string returned by {@link
  *     String#valueOf(boolean) String.valueOf()}.  Otherwise, the result is
- *     "<tt>true</tt>".
+ *     "{@code true}".
  *
- *     <p> If the <tt>'#'</tt> flag is given, then a {@link
+ *     <p> If the {@code '#'} flag is given, then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'B'</tt>
+ * <tr><td valign="top"> {@code 'B'}
  *     <td valign="top"> <tt>'&#92;u0042'</tt>
- *     <td> The upper-case variant of <tt>'b'</tt>.
+ *     <td> The upper-case variant of {@code 'b'}.
  *
- * <tr><td valign="top"> <tt>'h'</tt>
+ * <tr><td valign="top"> {@code 'h'}
  *     <td valign="top"> <tt>'&#92;u0068'</tt>
  *     <td> Produces a string representing the hash code value of the object.
  *
- *     <p> If the argument, <i>arg</i> is <tt>null</tt>, then the
- *     result is "<tt>null</tt>".  Otherwise, the result is obtained
- *     by invoking <tt>Integer.toHexString(arg.hashCode())</tt>.
+ *     <p> If the argument, <i>arg</i> is {@code null}, then the
+ *     result is "{@code null}".  Otherwise, the result is obtained
+ *     by invoking {@code Integer.toHexString(arg.hashCode())}.
  *
- *     <p> If the <tt>'#'</tt> flag is given, then a {@link
+ *     <p> If the {@code '#'} flag is given, then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'H'</tt>
+ * <tr><td valign="top"> {@code 'H'}
  *     <td valign="top"> <tt>'&#92;u0048'</tt>
- *     <td> The upper-case variant of <tt>'h'</tt>.
+ *     <td> The upper-case variant of {@code 'h'}.
  *
- * <tr><td valign="top"> <tt>'s'</tt>
+ * <tr><td valign="top"> {@code 's'}
  *     <td valign="top"> <tt>'&#92;u0073'</tt>
  *     <td> Produces a string.
  *
- *     <p> If the argument is <tt>null</tt>, then the result is
- *     "<tt>null</tt>".  If the argument implements {@link Formattable}, then
+ *     <p> If the argument is {@code null}, then the result is
+ *     "{@code null}".  If the argument implements {@link Formattable}, then
  *     its {@link Formattable#formatTo formatTo} method is invoked.
  *     Otherwise, the result is obtained by invoking the argument's
- *     <tt>toString()</tt> method.
+ *     {@code toString()} method.
  *
- *     <p> If the <tt>'#'</tt> flag is given and the argument is not a {@link
+ *     <p> If the {@code '#'} flag is given and the argument is not a {@link
  *     Formattable} , then a {@link FormatFlagsConversionMismatchException}
  *     will be thrown.
  *
- * <tr><td valign="top"> <tt>'S'</tt>
+ * <tr><td valign="top"> {@code 'S'}
  *     <td valign="top"> <tt>'&#92;u0053'</tt>
- *     <td> The upper-case variant of <tt>'s'</tt>.
+ *     <td> The upper-case variant of {@code 's'}.
  *
  * </table>
  *
@@ -749,7 +749,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="dFlags">
  *
- * <tr><td valign="top"> <tt>'-'</tt>
+ * <tr><td valign="top"> {@code '-'}
  *     <td valign="top"> <tt>'&#92;u002d'</tt>
  *     <td> Left justifies the output.  Spaces (<tt>'&#92;u0020'</tt>) will be
  *     added at the end of the converted value as required to fill the minimum
@@ -757,7 +757,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     MissingFormatWidthException} will be thrown.  If this flag is not given
  *     then the output will be right-justified.
  *
- * <tr><td valign="top"> <tt>'#'</tt>
+ * <tr><td valign="top"> {@code '#'}
  *     <td valign="top"> <tt>'&#92;u0023'</tt>
  *     <td> Requires the output use an alternate form.  The definition of the
  *     form is specified by the conversion.
@@ -767,47 +767,47 @@ import sun.misc.FormattedFloatingDecimal;
  * <p> The <a name="genWidth">width</a> is the minimum number of characters to
  * be written to the
  * output.  If the length of the converted value is less than the width then
- * the output will be padded by <tt>'&nbsp;&nbsp;'</tt> (<tt>&#92;u0020'</tt>)
+ * the output will be padded by <tt>'&nbsp;&nbsp;'</tt> (<tt>'&#92;u0020'</tt>)
  * until the total number of characters equals the width.  The padding is on
- * the left by default.  If the <tt>'-'</tt> flag is given, then the padding
+ * the left by default.  If the {@code '-'} flag is given, then the padding
  * will be on the right.  If the width is not specified then there is no
  * minimum.
  *
  * <p> The precision is the maximum number of characters to be written to the
  * output.  The precision is applied before the width, thus the output will be
- * truncated to <tt>precision</tt> characters even if the width is greater than
+ * truncated to {@code precision} characters even if the width is greater than
  * the precision.  If the precision is not specified then there is no explicit
  * limit on the number of characters.
  *
  * <h4><a name="dchar">Character</a></h4>
  *
- * This conversion may be applied to <tt>char</tt> and {@link Character}.  It
- * may also be applied to the types <tt>byte</tt>, {@link Byte},
- * <tt>short</tt>, and {@link Short}, <tt>int</tt> and {@link Integer} when
- * {@link Character#isValidCodePoint} returns <tt>true</tt>.  If it returns
- * <tt>false</tt> then an {@link IllegalFormatCodePointException} will be
+ * This conversion may be applied to {@code char} and {@link Character}.  It
+ * may also be applied to the types {@code byte}, {@link Byte},
+ * {@code short}, and {@link Short}, {@code int} and {@link Integer} when
+ * {@link Character#isValidCodePoint} returns {@code true}.  If it returns
+ * {@code false} then an {@link IllegalFormatCodePointException} will be
  * thrown.
  *
  * <table cellpadding=5 summary="charConv">
  *
- * <tr><td valign="top"> <tt>'c'</tt>
+ * <tr><td valign="top"> {@code 'c'}
  *     <td valign="top"> <tt>'&#92;u0063'</tt>
  *     <td> Formats the argument as a Unicode character as described in <a
  *     href="../lang/Character.html#unicode">Unicode Character
- *     Representation</a>.  This may be more than one 16-bit <tt>char</tt> in
+ *     Representation</a>.  This may be more than one 16-bit {@code char} in
  *     the case where the argument represents a supplementary character.
  *
- *     <p> If the <tt>'#'</tt> flag is given, then a {@link
+ *     <p> If the {@code '#'} flag is given, then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'C'</tt>
+ * <tr><td valign="top"> {@code 'C'}
  *     <td valign="top"> <tt>'&#92;u0043'</tt>
- *     <td> The upper-case variant of <tt>'c'</tt>.
+ *     <td> The upper-case variant of {@code 'c'}.
  *
  * </table>
  *
- * <p> The <tt>'-'</tt> flag defined for <a href="#dFlags">General
- * conversions</a> applies.  If the <tt>'#'</tt> flag is given, then a {@link
+ * <p> The {@code '-'} flag defined for <a href="#dFlags">General
+ * conversions</a> applies.  If the {@code '#'} flag is given, then a {@link
  * FormatFlagsConversionMismatchException} will be thrown.
  *
  * <p> The width is defined as for <a href="#genWidth">General conversions</a>.
@@ -844,14 +844,14 @@ import sun.misc.FormattedFloatingDecimal;
  * <li> Each digit character <i>d</i> in the string is replaced by a
  * locale-specific digit computed relative to the current locale's
  * {@linkplain java.text.DecimalFormatSymbols#getZeroDigit() zero digit}
- * <i>z</i>; that is <i>d&nbsp;-&nbsp;</i> <tt>'0'</tt>
+ * <i>z</i>; that is <i>d&nbsp;-&nbsp;</i> {@code '0'}
  * <i>&nbsp;+&nbsp;z</i>.
  *
  * <li> If a decimal separator is present, a locale-specific {@linkplain
  * java.text.DecimalFormatSymbols#getDecimalSeparator decimal separator} is
  * substituted.
  *
- * <li> If the <tt>','</tt> (<tt>'&#92;u002c'</tt>)
+ * <li> If the {@code ','} (<tt>'&#92;u002c'</tt>)
  * <a name="l10n group">flag</a> is given, then the locale-specific {@linkplain
  * java.text.DecimalFormatSymbols#getGroupingSeparator grouping separator} is
  * inserted by scanning the integer part of the string from least significant
@@ -859,111 +859,111 @@ import sun.misc.FormattedFloatingDecimal;
  * the locale's {@linkplain java.text.DecimalFormat#getGroupingSize() grouping
  * size}.
  *
- * <li> If the <tt>'0'</tt> flag is given, then the locale-specific {@linkplain
+ * <li> If the {@code '0'} flag is given, then the locale-specific {@linkplain
  * java.text.DecimalFormatSymbols#getZeroDigit() zero digits} are inserted
  * after the sign character, if any, and before the first non-zero digit, until
  * the length of the string is equal to the requested field width.
  *
- * <li> If the value is negative and the <tt>'('</tt> flag is given, then a
- * <tt>'('</tt> (<tt>'&#92;u0028'</tt>) is prepended and a <tt>')'</tt>
+ * <li> If the value is negative and the {@code '('} flag is given, then a
+ * {@code '('} (<tt>'&#92;u0028'</tt>) is prepended and a {@code ')'}
  * (<tt>'&#92;u0029'</tt>) is appended.
  *
  * <li> If the value is negative (or floating-point negative zero) and
- * <tt>'('</tt> flag is not given, then a <tt>'-'</tt> (<tt>'&#92;u002d'</tt>)
+ * {@code '('} flag is not given, then a {@code '-'} (<tt>'&#92;u002d'</tt>)
  * is prepended.
  *
- * <li> If the <tt>'+'</tt> flag is given and the value is positive or zero (or
- * floating-point positive zero), then a <tt>'+'</tt> (<tt>'&#92;u002b'</tt>)
+ * <li> If the {@code '+'} flag is given and the value is positive or zero (or
+ * floating-point positive zero), then a {@code '+'} (<tt>'&#92;u002b'</tt>)
  * will be prepended.
  *
  * </ol>
  *
  * <p> If the value is NaN or positive infinity the literal strings "NaN" or
  * "Infinity" respectively, will be output.  If the value is negative infinity,
- * then the output will be "(Infinity)" if the <tt>'('</tt> flag is given
+ * then the output will be "(Infinity)" if the {@code '('} flag is given
  * otherwise the output will be "-Infinity".  These values are not localized.
  *
  * <p><a name="dnint"><b> Byte, Short, Integer, and Long </b></a>
  *
- * <p> The following conversions may be applied to <tt>byte</tt>, {@link Byte},
- * <tt>short</tt>, {@link Short}, <tt>int</tt> and {@link Integer},
- * <tt>long</tt>, and {@link Long}.
+ * <p> The following conversions may be applied to {@code byte}, {@link Byte},
+ * {@code short}, {@link Short}, {@code int} and {@link Integer},
+ * {@code long}, and {@link Long}.
  *
  * <table cellpadding=5 summary="IntConv">
  *
- * <tr><td valign="top"> <tt>'d'</tt>
+ * <tr><td valign="top"> {@code 'd'}
  *     <td valign="top"> <tt>'&#92;u0054'</tt>
  *     <td> Formats the argument as a decimal integer. The <a
  *     href="#l10n algorithm">localization algorithm</a> is applied.
  *
- *     <p> If the <tt>'0'</tt> flag is given and the value is negative, then
+ *     <p> If the {@code '0'} flag is given and the value is negative, then
  *     the zero padding will occur after the sign.
  *
- *     <p> If the <tt>'#'</tt> flag is given then a {@link
+ *     <p> If the {@code '#'} flag is given then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'o'</tt>
+ * <tr><td valign="top"> {@code 'o'}
  *     <td valign="top"> <tt>'&#92;u006f'</tt>
  *     <td> Formats the argument as an integer in base eight.  No localization
  *     is applied.
  *
  *     <p> If <i>x</i> is negative then the result will be an unsigned value
- *     generated by adding 2<sup>n</sup> to the value where <tt>n</tt> is the
- *     number of bits in the type as returned by the static <tt>SIZE</tt> field
+ *     generated by adding 2<sup>n</sup> to the value where {@code n} is the
+ *     number of bits in the type as returned by the static {@code SIZE} field
  *     in the {@linkplain Byte#SIZE Byte}, {@linkplain Short#SIZE Short},
  *     {@linkplain Integer#SIZE Integer}, or {@linkplain Long#SIZE Long}
  *     classes as appropriate.
  *
- *     <p> If the <tt>'#'</tt> flag is given then the output will always begin
- *     with the radix indicator <tt>'0'</tt>.
+ *     <p> If the {@code '#'} flag is given then the output will always begin
+ *     with the radix indicator {@code '0'}.
  *
- *     <p> If the <tt>'0'</tt> flag is given then the output will be padded
+ *     <p> If the {@code '0'} flag is given then the output will be padded
  *     with leading zeros to the field width following any indication of sign.
  *
- *     <p> If <tt>'('</tt>, <tt>'+'</tt>, '&nbsp&nbsp;', or <tt>','</tt> flags
+ *     <p> If {@code '('}, {@code '+'}, '&nbsp&nbsp;', or {@code ','} flags
  *     are given then a {@link FormatFlagsConversionMismatchException} will be
  *     thrown.
  *
- * <tr><td valign="top"> <tt>'x'</tt>
+ * <tr><td valign="top"> {@code 'x'}
  *     <td valign="top"> <tt>'&#92;u0078'</tt>
  *     <td> Formats the argument as an integer in base sixteen. No
  *     localization is applied.
  *
  *     <p> If <i>x</i> is negative then the result will be an unsigned value
- *     generated by adding 2<sup>n</sup> to the value where <tt>n</tt> is the
- *     number of bits in the type as returned by the static <tt>SIZE</tt> field
+ *     generated by adding 2<sup>n</sup> to the value where {@code n} is the
+ *     number of bits in the type as returned by the static {@code SIZE} field
  *     in the {@linkplain Byte#SIZE Byte}, {@linkplain Short#SIZE Short},
  *     {@linkplain Integer#SIZE Integer}, or {@linkplain Long#SIZE Long}
  *     classes as appropriate.
  *
- *     <p> If the <tt>'#'</tt> flag is given then the output will always begin
- *     with the radix indicator <tt>"0x"</tt>.
+ *     <p> If the {@code '#'} flag is given then the output will always begin
+ *     with the radix indicator {@code "0x"}.
  *
- *     <p> If the <tt>'0'</tt> flag is given then the output will be padded to
+ *     <p> If the {@code '0'} flag is given then the output will be padded to
  *     the field width with leading zeros after the radix indicator or sign (if
  *     present).
  *
- *     <p> If <tt>'('</tt>, <tt>'&nbsp;&nbsp;'</tt>, <tt>'+'</tt>, or
- *     <tt>','</tt> flags are given then a {@link
+ *     <p> If {@code '('}, <tt>'&nbsp;&nbsp;'</tt>, {@code '+'}, or
+ *     {@code ','} flags are given then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'X'</tt>
+ * <tr><td valign="top"> {@code 'X'}
  *     <td valign="top"> <tt>'&#92;u0058'</tt>
- *     <td> The upper-case variant of <tt>'x'</tt>.  The entire string
+ *     <td> The upper-case variant of {@code 'x'}.  The entire string
  *     representing the number will be converted to {@linkplain
- *     String#toUpperCase upper case} including the <tt>'x'</tt> (if any) and
- *     all hexadecimal digits <tt>'a'</tt> - <tt>'f'</tt>
+ *     String#toUpperCase upper case} including the {@code 'x'} (if any) and
+ *     all hexadecimal digits {@code 'a'} - {@code 'f'}
  *     (<tt>'&#92;u0061'</tt> -  <tt>'&#92;u0066'</tt>).
  *
  * </table>
  *
- * <p> If the conversion is <tt>'o'</tt>, <tt>'x'</tt>, or <tt>'X'</tt> and
- * both the <tt>'#'</tt> and the <tt>'0'</tt> flags are given, then result will
- * contain the radix indicator (<tt>'0'</tt> for octal and <tt>"0x"</tt> or
- * <tt>"0X"</tt> for hexadecimal), some number of zeros (based on the width),
+ * <p> If the conversion is {@code 'o'}, {@code 'x'}, or {@code 'X'} and
+ * both the {@code '#'} and the {@code '0'} flags are given, then result will
+ * contain the radix indicator ({@code '0'} for octal and {@code "0x"} or
+ * {@code "0X"} for hexadecimal), some number of zeros (based on the width),
  * and the value.
  *
- * <p> If the <tt>'-'</tt> flag is not given, then the space padding will occur
+ * <p> If the {@code '-'} flag is not given, then the space padding will occur
  * before the sign.
  *
  * <p> The following <a name="intFlags">flags</a> apply to numeric integral
@@ -971,13 +971,13 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="intFlags">
  *
- * <tr><td valign="top"> <tt>'+'</tt>
+ * <tr><td valign="top"> {@code '+'}
  *     <td valign="top"> <tt>'&#92;u002b'</tt>
  *     <td> Requires the output to include a positive sign for all positive
  *     numbers.  If this flag is not given then only negative values will
  *     include a sign.
  *
- *     <p> If both the <tt>'+'</tt> and <tt>'&nbsp;&nbsp;'</tt> flags are given
+ *     <p> If both the {@code '+'} and <tt>'&nbsp;&nbsp;'</tt> flags are given
  *     then an {@link IllegalFormatFlagsException} will be thrown.
  *
  * <tr><td valign="top"> <tt>'&nbsp;&nbsp;'</tt>
@@ -985,10 +985,10 @@ import sun.misc.FormattedFloatingDecimal;
  *     <td> Requires the output to include a single extra space
  *     (<tt>'&#92;u0020'</tt>) for non-negative values.
  *
- *     <p> If both the <tt>'+'</tt> and <tt>'&nbsp;&nbsp;'</tt> flags are given
+ *     <p> If both the {@code '+'} and <tt>'&nbsp;&nbsp;'</tt> flags are given
  *     then an {@link IllegalFormatFlagsException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'0'</tt>
+ * <tr><td valign="top"> {@code '0'}
  *     <td valign="top"> <tt>'&#92;u0030'</tt>
  *     <td> Requires the output to be padded with leading {@linkplain
  *     java.text.DecimalFormatSymbols#getZeroDigit zeros} to the minimum field
@@ -996,20 +996,20 @@ import sun.misc.FormattedFloatingDecimal;
  *     or infinity.  If the width is not provided, then a {@link
  *     MissingFormatWidthException} will be thrown.
  *
- *     <p> If both the <tt>'-'</tt> and <tt>'0'</tt> flags are given then an
+ *     <p> If both the {@code '-'} and {@code '0'} flags are given then an
  *     {@link IllegalFormatFlagsException} will be thrown.
  *
- * <tr><td valign="top"> <tt>','</tt>
+ * <tr><td valign="top"> {@code ','}
  *     <td valign="top"> <tt>'&#92;u002c'</tt>
  *     <td> Requires the output to include the locale-specific {@linkplain
  *     java.text.DecimalFormatSymbols#getGroupingSeparator group separators} as
  *     described in the <a href="#l10n group">"group" section</a> of the
  *     localization algorithm.
  *
- * <tr><td valign="top"> <tt>'('</tt>
+ * <tr><td valign="top"> {@code '('}
  *     <td valign="top"> <tt>'&#92;u0028'</tt>
- *     <td> Requires the output to prepend a <tt>'('</tt>
- *     (<tt>'&#92;u0028'</tt>) and append a <tt>')'</tt>
+ *     <td> Requires the output to prepend a {@code '('}
+ *     (<tt>'&#92;u0028'</tt>) and append a {@code ')'}
  *     (<tt>'&#92;u0029'</tt>) to negative values.
  *
  * </table>
@@ -1019,9 +1019,9 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <ul>
  *
- * <li> The output is right-justified within the <tt>width</tt>
+ * <li> The output is right-justified within the {@code width}
  *
- * <li> Negative numbers begin with a <tt>'-'</tt> (<tt>'&#92;u002d'</tt>)
+ * <li> Negative numbers begin with a {@code '-'} (<tt>'&#92;u002d'</tt>)
  *
  * <li> Positive numbers and zero do not include a sign or extra leading
  * space
@@ -1035,7 +1035,7 @@ import sun.misc.FormattedFloatingDecimal;
  * separators, radix indicator, and parentheses.  If the length of the
  * converted value is less than the width then the output will be padded by
  * spaces (<tt>'&#92;u0020'</tt>) until the total number of characters equals
- * width.  The padding is on the left by default.  If <tt>'-'</tt> flag is
+ * width.  The padding is on the left by default.  If {@code '-'} flag is
  * given then the padding will be on the right.  If width is not specified then
  * there is no minimum.
  *
@@ -1049,81 +1049,81 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="BIntConv">
  *
- * <tr><td valign="top"> <tt>'d'</tt>
+ * <tr><td valign="top"> {@code 'd'}
  *     <td valign="top"> <tt>'&#92;u0054'</tt>
  *     <td> Requires the output to be formatted as a decimal integer. The <a
  *     href="#l10n algorithm">localization algorithm</a> is applied.
  *
- *     <p> If the <tt>'#'</tt> flag is given {@link
+ *     <p> If the {@code '#'} flag is given {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'o'</tt>
+ * <tr><td valign="top"> {@code 'o'}
  *     <td valign="top"> <tt>'&#92;u006f'</tt>
  *     <td> Requires the output to be formatted as an integer in base eight.
  *     No localization is applied.
  *
  *     <p> If <i>x</i> is negative then the result will be a signed value
- *     beginning with <tt>'-'</tt> (<tt>'&#92;u002d'</tt>).  Signed output is
+ *     beginning with {@code '-'} (<tt>'&#92;u002d'</tt>).  Signed output is
  *     allowed for this type because unlike the primitive types it is not
  *     possible to create an unsigned equivalent without assuming an explicit
  *     data-type size.
  *
- *     <p> If <i>x</i> is positive or zero and the <tt>'+'</tt> flag is given
- *     then the result will begin with <tt>'+'</tt> (<tt>'&#92;u002b'</tt>).
+ *     <p> If <i>x</i> is positive or zero and the {@code '+'} flag is given
+ *     then the result will begin with {@code '+'} (<tt>'&#92;u002b'</tt>).
  *
- *     <p> If the <tt>'#'</tt> flag is given then the output will always begin
- *     with <tt>'0'</tt> prefix.
+ *     <p> If the {@code '#'} flag is given then the output will always begin
+ *     with {@code '0'} prefix.
  *
- *     <p> If the <tt>'0'</tt> flag is given then the output will be padded
+ *     <p> If the {@code '0'} flag is given then the output will be padded
  *     with leading zeros to the field width following any indication of sign.
  *
- *     <p> If the <tt>','</tt> flag is given then a {@link
+ *     <p> If the {@code ','} flag is given then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'x'</tt>
+ * <tr><td valign="top"> {@code 'x'}
  *     <td valign="top"> <tt>'&#92;u0078'</tt>
  *     <td> Requires the output to be formatted as an integer in base
  *     sixteen.  No localization is applied.
  *
  *     <p> If <i>x</i> is negative then the result will be a signed value
- *     beginning with <tt>'-'</tt> (<tt>'&#92;u002d'</tt>).  Signed output is
+ *     beginning with {@code '-'} (<tt>'&#92;u002d'</tt>).  Signed output is
  *     allowed for this type because unlike the primitive types it is not
  *     possible to create an unsigned equivalent without assuming an explicit
  *     data-type size.
  *
- *     <p> If <i>x</i> is positive or zero and the <tt>'+'</tt> flag is given
- *     then the result will begin with <tt>'+'</tt> (<tt>'&#92;u002b'</tt>).
+ *     <p> If <i>x</i> is positive or zero and the {@code '+'} flag is given
+ *     then the result will begin with {@code '+'} (<tt>'&#92;u002b'</tt>).
  *
- *     <p> If the <tt>'#'</tt> flag is given then the output will always begin
- *     with the radix indicator <tt>"0x"</tt>.
+ *     <p> If the {@code '#'} flag is given then the output will always begin
+ *     with the radix indicator {@code "0x"}.
  *
- *     <p> If the <tt>'0'</tt> flag is given then the output will be padded to
+ *     <p> If the {@code '0'} flag is given then the output will be padded to
  *     the field width with leading zeros after the radix indicator or sign (if
  *     present).
  *
- *     <p> If the <tt>','</tt> flag is given then a {@link
+ *     <p> If the {@code ','} flag is given then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'X'</tt>
+ * <tr><td valign="top"> {@code 'X'}
  *     <td valign="top"> <tt>'&#92;u0058'</tt>
- *     <td> The upper-case variant of <tt>'x'</tt>.  The entire string
+ *     <td> The upper-case variant of {@code 'x'}.  The entire string
  *     representing the number will be converted to {@linkplain
- *     String#toUpperCase upper case} including the <tt>'x'</tt> (if any) and
- *     all hexadecimal digits <tt>'a'</tt> - <tt>'f'</tt>
+ *     String#toUpperCase upper case} including the {@code 'x'} (if any) and
+ *     all hexadecimal digits {@code 'a'} - {@code 'f'}
  *     (<tt>'&#92;u0061'</tt> - <tt>'&#92;u0066'</tt>).
  *
  * </table>
  *
- * <p> If the conversion is <tt>'o'</tt>, <tt>'x'</tt>, or <tt>'X'</tt> and
- * both the <tt>'#'</tt> and the <tt>'0'</tt> flags are given, then result will
- * contain the base indicator (<tt>'0'</tt> for octal and <tt>"0x"</tt> or
- * <tt>"0X"</tt> for hexadecimal), some number of zeros (based on the width),
+ * <p> If the conversion is {@code 'o'}, {@code 'x'}, or {@code 'X'} and
+ * both the {@code '#'} and the {@code '0'} flags are given, then result will
+ * contain the base indicator ({@code '0'} for octal and {@code "0x"} or
+ * {@code "0X"} for hexadecimal), some number of zeros (based on the width),
  * and the value.
  *
- * <p> If the <tt>'0'</tt> flag is given and the value is negative, then the
+ * <p> If the {@code '0'} flag is given and the value is negative, then the
  * zero padding will occur after the sign.
  *
- * <p> If the <tt>'-'</tt> flag is not given, then the space padding will occur
+ * <p> If the {@code '-'} flag is not given, then the space padding will occur
  * before the sign.
  *
  * <p> All <a href="#intFlags">flags</a> defined for Byte, Short, Integer, and
@@ -1138,12 +1138,12 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <p><a name="dndec"><b> Float and Double</b></a>
  *
- * <p> The following conversions may be applied to <tt>float</tt>, {@link
- * Float}, <tt>double</tt> and {@link Double}.
+ * <p> The following conversions may be applied to {@code float}, {@link
+ * Float}, {@code double} and {@link Double}.
  *
  * <table cellpadding=5 summary="floatConv">
  *
- * <tr><td valign="top"> <tt>'e'</tt>
+ * <tr><td valign="top"> {@code 'e'}
  *     <td valign="top"> <tt>'&#92;u0065'</tt>
  *     <td> Requires the output to be formatted using <a
  *     name="scientific">computerized scientific notation</a>.  The <a
@@ -1156,7 +1156,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     localized.
  *
  *     <p> If <i>m</i> is positive-zero or negative-zero, then the exponent
- *     will be <tt>"+00"</tt>.
+ *     will be {@code "+00"}.
  *
  *     <p> Otherwise, the result is a string that represents the sign and
  *     magnitude (absolute value) of the argument.  The formatting of the sign
@@ -1170,7 +1170,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     that 1 &lt;= <i>a</i> &lt; 10. The magnitude is then represented as the
  *     integer part of <i>a</i>, as a single decimal digit, followed by the
  *     decimal separator followed by decimal digits representing the fractional
- *     part of <i>a</i>, followed by the exponent symbol <tt>'e'</tt>
+ *     part of <i>a</i>, followed by the exponent symbol {@code 'e'}
  *     (<tt>'&#92;u0065'</tt>), followed by the sign of the exponent, followed
  *     by a representation of <i>n</i> as a decimal integer, as produced by the
  *     method {@link Long#toString(long, int)}, and zero-padded to include at
@@ -1178,7 +1178,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  *     <p> The number of digits in the result for the fractional part of
  *     <i>m</i> or <i>a</i> is equal to the precision.  If the precision is not
- *     specified then the default value is <tt>6</tt>. If the precision is less
+ *     specified then the default value is {@code 6}. If the precision is less
  *     than the number of digits which would appear after the decimal point in
  *     the string returned by {@link Float#toString(float)} or {@link
  *     Double#toString(double)} respectively, then the value will be rounded
@@ -1188,15 +1188,15 @@ import sun.misc.FormattedFloatingDecimal;
  *     Float#toString(float)} or {@link Double#toString(double)} as
  *     appropriate.
  *
- *     <p>If the <tt>','</tt> flag is given, then an {@link
+ *     <p>If the {@code ','} flag is given, then an {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'E'</tt>
+ * <tr><td valign="top"> {@code 'E'}
  *     <td valign="top"> <tt>'&#92;u0045'</tt>
- *     <td> The upper-case variant of <tt>'e'</tt>.  The exponent symbol
- *     will be <tt>'E'</tt> (<tt>'&#92;u0045'</tt>).
+ *     <td> The upper-case variant of {@code 'e'}.  The exponent symbol
+ *     will be {@code 'E'} (<tt>'&#92;u0045'</tt>).
  *
- * <tr><td valign="top"> <tt>'g'</tt>
+ * <tr><td valign="top"> {@code 'g'}
  *     <td valign="top"> <tt>'&#92;u0067'</tt>
  *     <td> Requires the output to be formatted in general scientific notation
  *     as described below. The <a href="#l10n algorithm">localization
@@ -1215,17 +1215,17 @@ import sun.misc.FormattedFloatingDecimal;
  *
  *     <p> The total number of significant digits in <i>m</i> is equal to the
  *     precision.  If the precision is not specified, then the default value is
- *     <tt>6</tt>.  If the precision is <tt>0</tt>, then it is taken to be
- *     <tt>1</tt>.
+ *     {@code 6}.  If the precision is {@code 0}, then it is taken to be
+ *     {@code 1}.
  *
- *     <p> If the <tt>'#'</tt> flag is given then an {@link
+ *     <p> If the {@code '#'} flag is given then an {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'G'</tt>
+ * <tr><td valign="top"> {@code 'G'}
  *     <td valign="top"> <tt>'&#92;u0047'</tt>
- *     <td> The upper-case variant of <tt>'g'</tt>.
+ *     <td> The upper-case variant of {@code 'g'}.
  *
- * <tr><td valign="top"> <tt>'f'</tt>
+ * <tr><td valign="top"> {@code 'f'}
  *     <td valign="top"> <tt>'&#92;u0066'</tt>
  *     <td> Requires the output to be formatted using <a name="decimal">decimal
  *     format</a>.  The <a href="#l10n algorithm">localization algorithm</a> is
@@ -1247,7 +1247,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  *     <p> The number of digits in the result for the fractional part of
  *     <i>m</i> or <i>a</i> is equal to the precision.  If the precision is not
- *     specified then the default value is <tt>6</tt>. If the precision is less
+ *     specified then the default value is {@code 6}. If the precision is less
  *     than the number of digits which would appear after the decimal point in
  *     the string returned by {@link Float#toString(float)} or {@link
  *     Double#toString(double)} respectively, then the value will be rounded
@@ -1257,7 +1257,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     Float#toString(float)} or {@link Double#toString(double)} as
  *     appropriate.
  *
- * <tr><td valign="top"> <tt>'a'</tt>
+ * <tr><td valign="top"> {@code 'a'}
  *     <td valign="top"> <tt>'&#92;u0061'</tt>
  *     <td> Requires the output to be formatted in hexadecimal exponential
  *     form.  No localization is applied.
@@ -1266,10 +1266,10 @@ import sun.misc.FormattedFloatingDecimal;
  *     (absolute value) of the argument <i>x</i>.
  *
  *     <p> If <i>x</i> is negative or a negative-zero value then the result
- *     will begin with <tt>'-'</tt> (<tt>'&#92;u002d'</tt>).
+ *     will begin with {@code '-'} (<tt>'&#92;u002d'</tt>).
  *
  *     <p> If <i>x</i> is positive or a positive-zero value and the
- *     <tt>'+'</tt> flag is given then the result will begin with <tt>'+'</tt>
+ *     {@code '+'} flag is given then the result will begin with {@code '+'}
  *     (<tt>'&#92;u002b'</tt>).
  *
  *     <p> The formatting of the magnitude <i>m</i> depends upon its value.
@@ -1280,43 +1280,43 @@ import sun.misc.FormattedFloatingDecimal;
  *     "Infinity", respectively, will be output.
  *
  *     <li> If <i>m</i> is zero then it is represented by the string
- *     <tt>"0x0.0p0"</tt>.
+ *     {@code "0x0.0p0"}.
  *
- *     <li> If <i>m</i> is a <tt>double</tt> value with a normalized
+ *     <li> If <i>m</i> is a {@code double} value with a normalized
  *     representation then substrings are used to represent the significand and
  *     exponent fields.  The significand is represented by the characters
- *     <tt>"0x1."</tt> followed by the hexadecimal representation of the rest
+ *     {@code "0x1."} followed by the hexadecimal representation of the rest
  *     of the significand as a fraction.  The exponent is represented by
- *     <tt>'p'</tt> (<tt>'&#92;u0070'</tt>) followed by a decimal string of the
+ *     {@code 'p'} (<tt>'&#92;u0070'</tt>) followed by a decimal string of the
  *     unbiased exponent as if produced by invoking {@link
  *     Integer#toString(int) Integer.toString} on the exponent value.
  *
- *     <li> If <i>m</i> is a <tt>double</tt> value with a subnormal
+ *     <li> If <i>m</i> is a {@code double} value with a subnormal
  *     representation then the significand is represented by the characters
- *     <tt>'0x0.'</tt> followed by the hexadecimal representation of the rest
+ *     {@code '0x0.'} followed by the hexadecimal representation of the rest
  *     of the significand as a fraction.  The exponent is represented by
- *     <tt>'p-1022'</tt>.  Note that there must be at least one nonzero digit
+ *     {@code 'p-1022'}.  Note that there must be at least one nonzero digit
  *     in a subnormal significand.
  *
  *     </ul>
  *
- *     <p> If the <tt>'('</tt> or <tt>','</tt> flags are given, then a {@link
+ *     <p> If the {@code '('} or {@code ','} flags are given, then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'A'</tt>
+ * <tr><td valign="top"> {@code 'A'}
  *     <td valign="top"> <tt>'&#92;u0041'</tt>
- *     <td> The upper-case variant of <tt>'a'</tt>.  The entire string
+ *     <td> The upper-case variant of {@code 'a'}.  The entire string
  *     representing the number will be converted to upper case including the
- *     <tt>'x'</tt> (<tt>'&#92;u0078'</tt>) and <tt>'p'</tt>
- *     (<tt>'&#92;u0070'</tt> and all hexadecimal digits <tt>'a'</tt> -
- *     <tt>'f'</tt> (<tt>'&#92;u0061'</tt> - <tt>'&#92;u0066'</tt>).
+ *     {@code 'x'} (<tt>'&#92;u0078'</tt>) and {@code 'p'}
+ *     (<tt>'&#92;u0070'</tt> and all hexadecimal digits {@code 'a'} -
+ *     {@code 'f'} (<tt>'&#92;u0061'</tt> - <tt>'&#92;u0066'</tt>).
  *
  * </table>
  *
  * <p> All <a href="#intFlags">flags</a> defined for Byte, Short, Integer, and
  * Long apply.
  *
- * <p> If the <tt>'#'</tt> flag is given, then the decimal separator will
+ * <p> If the {@code '#'} flag is given, then the decimal separator will
  * always be present.
  *
  * <p> If no <a name="floatdFlags">flags</a> are given the default formatting
@@ -1324,9 +1324,9 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <ul>
  *
- * <li> The output is right-justified within the <tt>width</tt>
+ * <li> The output is right-justified within the {@code width}
  *
- * <li> Negative numbers begin with a <tt>'-'</tt>
+ * <li> Negative numbers begin with a {@code '-'}
  *
  * <li> Positive numbers and positive zero do not include a sign or extra
  * leading space
@@ -1344,21 +1344,21 @@ import sun.misc.FormattedFloatingDecimal;
  * the length of the converted value is less than the width then the output
  * will be padded by spaces (<tt>'&#92;u0020'</tt>) until the total number of
  * characters equals width.  The padding is on the left by default.  If the
- * <tt>'-'</tt> flag is given then the padding will be on the right.  If width
+ * {@code '-'} flag is given then the padding will be on the right.  If width
  * is not specified then there is no minimum.
  *
- * <p> If the <a name="floatDPrec">conversion</a> is <tt>'e'</tt>,
- * <tt>'E'</tt> or <tt>'f'</tt>, then the precision is the number of digits
+ * <p> If the <a name="floatDPrec">conversion</a> is {@code 'e'},
+ * {@code 'E'} or {@code 'f'}, then the precision is the number of digits
  * after the decimal separator.  If the precision is not specified, then it is
- * assumed to be <tt>6</tt>.
+ * assumed to be {@code 6}.
  *
- * <p> If the conversion is <tt>'g'</tt> or <tt>'G'</tt>, then the precision is
+ * <p> If the conversion is {@code 'g'} or {@code 'G'}, then the precision is
  * the total number of significant digits in the resulting magnitude after
  * rounding.  If the precision is not specified, then the default value is
- * <tt>6</tt>.  If the precision is <tt>0</tt>, then it is taken to be
- * <tt>1</tt>.
+ * {@code 6}.  If the precision is {@code 0}, then it is taken to be
+ * {@code 1}.
  *
- * <p> If the conversion is <tt>'a'</tt> or <tt>'A'</tt>, then the precision
+ * <p> If the conversion is {@code 'a'} or {@code 'A'}, then the precision
  * is the number of hexadecimal digits after the decimal separator.  If the
  * precision is not provided, then all of the digits as returned by {@link
  * Double#toHexString(double)} will be output.
@@ -1370,7 +1370,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="floatConv">
  *
- * <tr><td valign="top"> <tt>'e'</tt>
+ * <tr><td valign="top"> {@code 'e'}
  *     <td valign="top"> <tt>'&#92;u0065'</tt>
  *     <td> Requires the output to be formatted using <a
  *     name="scientific">computerized scientific notation</a>.  The <a
@@ -1379,7 +1379,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     <p> The formatting of the magnitude <i>m</i> depends upon its value.
  *
  *     <p> If <i>m</i> is positive-zero or negative-zero, then the exponent
- *     will be <tt>"+00"</tt>.
+ *     will be {@code "+00"}.
  *
  *     <p> Otherwise, the result is a string that represents the sign and
  *     magnitude (absolute value) of the argument.  The formatting of the sign
@@ -1393,7 +1393,7 @@ import sun.misc.FormattedFloatingDecimal;
  *     that 1 &lt;= <i>a</i> &lt; 10. The magnitude is then represented as the
  *     integer part of <i>a</i>, as a single decimal digit, followed by the
  *     decimal separator followed by decimal digits representing the fractional
- *     part of <i>a</i>, followed by the exponent symbol <tt>'e'</tt>
+ *     part of <i>a</i>, followed by the exponent symbol {@code 'e'}
  *     (<tt>'&#92;u0065'</tt>), followed by the sign of the exponent, followed
  *     by a representation of <i>n</i> as a decimal integer, as produced by the
  *     method {@link Long#toString(long, int)}, and zero-padded to include at
@@ -1401,7 +1401,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  *     <p> The number of digits in the result for the fractional part of
  *     <i>m</i> or <i>a</i> is equal to the precision.  If the precision is not
- *     specified then the default value is <tt>6</tt>.  If the precision is
+ *     specified then the default value is {@code 6}.  If the precision is
  *     less than the number of digits which would appear after the decimal
  *     point in the string returned by {@link Float#toString(float)} or {@link
  *     Double#toString(double)} respectively, then the value will be rounded
@@ -1410,15 +1410,15 @@ import sun.misc.FormattedFloatingDecimal;
  *     For a canonical representation of the value, use {@link
  *     BigDecimal#toString()}.
  *
- *     <p> If the <tt>','</tt> flag is given, then an {@link
+ *     <p> If the {@code ','} flag is given, then an {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'E'</tt>
+ * <tr><td valign="top"> {@code 'E'}
  *     <td valign="top"> <tt>'&#92;u0045'</tt>
- *     <td> The upper-case variant of <tt>'e'</tt>.  The exponent symbol
- *     will be <tt>'E'</tt> (<tt>'&#92;u0045'</tt>).
+ *     <td> The upper-case variant of {@code 'e'}.  The exponent symbol
+ *     will be {@code 'E'} (<tt>'&#92;u0045'</tt>).
  *
- * <tr><td valign="top"> <tt>'g'</tt>
+ * <tr><td valign="top"> {@code 'g'}
  *     <td valign="top"> <tt>'&#92;u0067'</tt>
  *     <td> Requires the output to be formatted in general scientific notation
  *     as described below. The <a href="#l10n algorithm">localization
@@ -1437,17 +1437,17 @@ import sun.misc.FormattedFloatingDecimal;
  *
  *     <p> The total number of significant digits in <i>m</i> is equal to the
  *     precision.  If the precision is not specified, then the default value is
- *     <tt>6</tt>.  If the precision is <tt>0</tt>, then it is taken to be
- *     <tt>1</tt>.
+ *     {@code 6}.  If the precision is {@code 0}, then it is taken to be
+ *     {@code 1}.
  *
- *     <p> If the <tt>'#'</tt> flag is given then an {@link
+ *     <p> If the {@code '#'} flag is given then an {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> <tt>'G'</tt>
+ * <tr><td valign="top"> {@code 'G'}
  *     <td valign="top"> <tt>'&#92;u0047'</tt>
- *     <td> The upper-case variant of <tt>'g'</tt>.
+ *     <td> The upper-case variant of {@code 'g'}.
  *
- * <tr><td valign="top"> <tt>'f'</tt>
+ * <tr><td valign="top"> {@code 'f'}
  *     <td valign="top"> <tt>'&#92;u0066'</tt>
  *     <td> Requires the output to be formatted using <a name="decimal">decimal
  *     format</a>.  The <a href="#l10n algorithm">localization algorithm</a> is
@@ -1465,7 +1465,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  *     <p> The number of digits in the result for the fractional part of
  *     <i>m</i> or <i>a</i> is equal to the precision.  If the precision is not
- *     specified then the default value is <tt>6</tt>.  If the precision is
+ *     specified then the default value is {@code 6}.  If the precision is
  *     less than the number of digits which would appear after the decimal
  *     point in the string returned by {@link Float#toString(float)} or {@link
  *     Double#toString(double)} respectively, then the value will be rounded
@@ -1479,7 +1479,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <p> All <a href="#intFlags">flags</a> defined for Byte, Short, Integer, and
  * Long apply.
  *
- * <p> If the <tt>'#'</tt> flag is given, then the decimal separator will
+ * <p> If the {@code '#'} flag is given, then the decimal separator will
  * always be present.
  *
  * <p> The <a href="#floatdFlags">default behavior</a> when no flags are
@@ -1491,114 +1491,114 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <h4><a name="ddt">Date/Time</a></h4>
  *
- * <p> This conversion may be applied to <tt>long</tt>, {@link Long}, {@link
+ * <p> This conversion may be applied to {@code long}, {@link Long}, {@link
  * Calendar}, and {@link Date}.
  *
  * <table cellpadding=5 summary="DTConv">
  *
- * <tr><td valign="top"> <tt>'t'</tt>
+ * <tr><td valign="top"> {@code 't'}
  *     <td valign="top"> <tt>'&#92;u0074'</tt>
  *     <td> Prefix for date and time conversion characters.
- * <tr><td valign="top"> <tt>'T'</tt>
+ * <tr><td valign="top"> {@code 'T'}
  *     <td valign="top"> <tt>'&#92;u0054'</tt>
- *     <td> The upper-case variant of <tt>'t'</tt>.
+ *     <td> The upper-case variant of {@code 't'}.
  *
  * </table>
  *
  * <p> The following date and time conversion character suffixes are defined
- * for the <tt>'t'</tt> and <tt>'T'</tt> conversions.  The types are similar to
- * but not completely identical to those defined by GNU <tt>date</tt> and
- * POSIX <tt>strftime(3c)</tt>.  Additional conversion types are provided to
- * access Java-specific functionality (e.g. <tt>'L'</tt> for milliseconds
+ * for the {@code 't'} and {@code 'T'} conversions.  The types are similar to
+ * but not completely identical to those defined by GNU {@code date} and
+ * POSIX {@code strftime(3c)}.  Additional conversion types are provided to
+ * access Java-specific functionality (e.g. {@code 'L'} for milliseconds
  * within the second).
  *
  * <p> The following conversion characters are used for formatting times:
  *
  * <table cellpadding=5 summary="time">
  *
- * <tr><td valign="top"> <tt>'H'</tt>
+ * <tr><td valign="top"> {@code 'H'}
  *     <td valign="top"> <tt>'&#92;u0048'</tt>
  *     <td> Hour of the day for the 24-hour clock, formatted as two digits with
- *     a leading zero as necessary i.e. <tt>00 - 23</tt>. <tt>00</tt>
+ *     a leading zero as necessary i.e. {@code 00 - 23}. {@code 00}
  *     corresponds to midnight.
  *
- * <tr><td valign="top"><tt>'I'</tt>
+ * <tr><td valign="top">{@code 'I'}
  *     <td valign="top"> <tt>'&#92;u0049'</tt>
  *     <td> Hour for the 12-hour clock, formatted as two digits with a leading
- *     zero as necessary, i.e.  <tt>01 - 12</tt>.  <tt>01</tt> corresponds to
+ *     zero as necessary, i.e.  {@code 01 - 12}.  {@code 01} corresponds to
  *     one o'clock (either morning or afternoon).
  *
- * <tr><td valign="top"><tt>'k'</tt>
+ * <tr><td valign="top">{@code 'k'}
  *     <td valign="top"> <tt>'&#92;u006b'</tt>
- *     <td> Hour of the day for the 24-hour clock, i.e. <tt>0 - 23</tt>.
- *     <tt>0</tt> corresponds to midnight.
+ *     <td> Hour of the day for the 24-hour clock, i.e. {@code 0 - 23}.
+ *     {@code 0} corresponds to midnight.
  *
- * <tr><td valign="top"><tt>'l'</tt>
+ * <tr><td valign="top">{@code 'l'}
  *     <td valign="top"> <tt>'&#92;u006c'</tt>
- *     <td> Hour for the 12-hour clock, i.e. <tt>1 - 12</tt>.  <tt>1</tt>
+ *     <td> Hour for the 12-hour clock, i.e. {@code 1 - 12}.  {@code 1}
  *     corresponds to one o'clock (either morning or afternoon).
  *
- * <tr><td valign="top"><tt>'M'</tt>
+ * <tr><td valign="top">{@code 'M'}
  *     <td valign="top"> <tt>'&#92;u004d'</tt>
  *     <td> Minute within the hour formatted as two digits with a leading zero
- *     as necessary, i.e.  <tt>00 - 59</tt>.
+ *     as necessary, i.e.  {@code 00 - 59}.
  *
- * <tr><td valign="top"><tt>'S'</tt>
+ * <tr><td valign="top">{@code 'S'}
  *     <td valign="top"> <tt>'&#92;u0053'</tt>
  *     <td> Seconds within the minute, formatted as two digits with a leading
- *     zero as necessary, i.e. <tt>00 - 60</tt> ("<tt>60</tt>" is a special
+ *     zero as necessary, i.e. {@code 00 - 60} ("{@code 60}" is a special
  *     value required to support leap seconds).
  *
- * <tr><td valign="top"><tt>'L'</tt>
+ * <tr><td valign="top">{@code 'L'}
  *     <td valign="top"> <tt>'&#92;u004c'</tt>
  *     <td> Millisecond within the second formatted as three digits with
- *     leading zeros as necessary, i.e. <tt>000 - 999</tt>.
+ *     leading zeros as necessary, i.e. {@code 000 - 999}.
  *
- * <tr><td valign="top"><tt>'N'</tt>
+ * <tr><td valign="top">{@code 'N'}
  *     <td valign="top"> <tt>'&#92;u004e'</tt>
  *     <td> Nanosecond within the second, formatted as nine digits with leading
- *     zeros as necessary, i.e. <tt>000000000 - 999999999</tt>.  The precision
+ *     zeros as necessary, i.e. {@code 000000000 - 999999999}.  The precision
  *     of this value is limited by the resolution of the underlying operating
  *     system or hardware.
  *
- * <tr><td valign="top"><tt>'p'</tt>
+ * <tr><td valign="top">{@code 'p'}
  *     <td valign="top"> <tt>'&#92;u0070'</tt>
  *     <td> Locale-specific {@linkplain
  *     java.text.DateFormatSymbols#getAmPmStrings morning or afternoon} marker
- *     in lower case, e.g."<tt>am</tt>" or "<tt>pm</tt>".  Use of the
- *     conversion prefix <tt>'T'</tt> forces this output to upper case.  (Note
- *     that <tt>'p'</tt> produces lower-case output.  This is different from
- *     GNU <tt>date</tt> and POSIX <tt>strftime(3c)</tt> which produce
+ *     in lower case, e.g."{@code am}" or "{@code pm}".  Use of the
+ *     conversion prefix {@code 'T'} forces this output to upper case.  (Note
+ *     that {@code 'p'} produces lower-case output.  This is different from
+ *     GNU {@code date} and POSIX {@code strftime(3c)} which produce
  *     upper-case output.)
  *
- * <tr><td valign="top"><tt>'z'</tt>
+ * <tr><td valign="top">{@code 'z'}
  *     <td valign="top"> <tt>'&#92;u007a'</tt>
  *     <td> <a href="http://www.ietf.org/rfc/rfc0822.txt">RFC&nbsp;822</a>
- *     style numeric time zone offset from GMT, e.g. <tt>-0800</tt>.  This
+ *     style numeric time zone offset from GMT, e.g. {@code -0800}.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
- *     <tt>long</tt>, {@link Long}, and {@link Date} the time zone used is
- *     the {@plainlink TimeZone#getDefault() default time zone} for this
+ *     {@code long}, {@link Long}, and {@link Date} the time zone used is
+ *     the {@linkplain TimeZone#getDefault() default time zone} for this
  *     instance of the Java virtual machine.
  *
- * <tr><td valign="top"><tt>'Z'</tt>
+ * <tr><td valign="top">{@code 'Z'}
  *     <td> A string representing the abbreviation for the time zone.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
- *     <tt>long</tt>, {@link Long}, and {@link Date} the time zone used is
- *     the {@plainlink TimeZone#getDefault() default time zone} for this
+ *     {@code long}, {@link Long}, and {@link Date} the time zone used is
+ *     the {@linkplain TimeZone#getDefault() default time zone} for this
  *     instance of the Java virtual machine.  The Formatter's locale will
  *     supersede the locale of the argument (if any).
  *
- * <tr><td valign="top"><tt>'s'</tt>
+ * <tr><td valign="top">{@code 's'}
  *     <td valign="top"> <tt>'&#92;u0073'</tt>
  *     <td> Seconds since the beginning of the epoch starting at 1 January 1970
- *     <tt>00:00:00</tt> UTC, i.e. <tt>Long.MIN_VALUE/1000</tt> to
- *     <tt>Long.MAX_VALUE/1000</tt>.
+ *     {@code 00:00:00} UTC, i.e. {@code Long.MIN_VALUE/1000} to
+ *     {@code Long.MAX_VALUE/1000}.
  *
- * <tr><td valign="top"><tt>'Q'</tt>
+ * <tr><td valign="top">{@code 'Q'}
  *     <td valign="top"> <tt>'&#92;u004f'</tt>
  *     <td> Milliseconds since the beginning of the epoch starting at 1 January
- *     1970 <tt>00:00:00</tt> UTC, i.e. <tt>Long.MIN_VALUE</tt> to
- *     <tt>Long.MAX_VALUE</tt>. The precision of this value is limited by
+ *     1970 {@code 00:00:00} UTC, i.e. {@code Long.MIN_VALUE} to
+ *     {@code Long.MAX_VALUE}. The precision of this value is limited by
  *     the resolution of the underlying operating system or hardware.
  *
  * </table>
@@ -1607,71 +1607,71 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="date">
  *
- * <tr><td valign="top"><tt>'B'</tt>
+ * <tr><td valign="top">{@code 'B'}
  *     <td valign="top"> <tt>'&#92;u0042'</tt>
  *     <td> Locale-specific {@linkplain java.text.DateFormatSymbols#getMonths
- *     full month name}, e.g. <tt>"January"</tt>, <tt>"February"</tt>.
+ *     full month name}, e.g. {@code "January"}, {@code "February"}.
  *
- * <tr><td valign="top"><tt>'b'</tt>
+ * <tr><td valign="top">{@code 'b'}
  *     <td valign="top"> <tt>'&#92;u0062'</tt>
  *     <td> Locale-specific {@linkplain
  *     java.text.DateFormatSymbols#getShortMonths abbreviated month name},
- *     e.g. <tt>"Jan"</tt>, <tt>"Feb"</tt>.
+ *     e.g. {@code "Jan"}, {@code "Feb"}.
  *
- * <tr><td valign="top"><tt>'h'</tt>
+ * <tr><td valign="top">{@code 'h'}
  *     <td valign="top"> <tt>'&#92;u0068'</tt>
- *     <td> Same as <tt>'b'</tt>.
+ *     <td> Same as {@code 'b'}.
  *
- * <tr><td valign="top"><tt>'A'</tt>
+ * <tr><td valign="top">{@code 'A'}
  *     <td valign="top"> <tt>'&#92;u0041'</tt>
  *     <td> Locale-specific full name of the {@linkplain
  *     java.text.DateFormatSymbols#getWeekdays day of the week},
- *     e.g. <tt>"Sunday"</tt>, <tt>"Monday"</tt>
+ *     e.g. {@code "Sunday"}, {@code "Monday"}
  *
- * <tr><td valign="top"><tt>'a'</tt>
+ * <tr><td valign="top">{@code 'a'}
  *     <td valign="top"> <tt>'&#92;u0061'</tt>
  *     <td> Locale-specific short name of the {@linkplain
  *     java.text.DateFormatSymbols#getShortWeekdays day of the week},
- *     e.g. <tt>"Sun"</tt>, <tt>"Mon"</tt>
+ *     e.g. {@code "Sun"}, {@code "Mon"}
  *
- * <tr><td valign="top"><tt>'C'</tt>
+ * <tr><td valign="top">{@code 'C'}
  *     <td valign="top"> <tt>'&#92;u0043'</tt>
- *     <td> Four-digit year divided by <tt>100</tt>, formatted as two digits
- *     with leading zero as necessary, i.e. <tt>00 - 99</tt>
+ *     <td> Four-digit year divided by {@code 100}, formatted as two digits
+ *     with leading zero as necessary, i.e. {@code 00 - 99}
  *
- * <tr><td valign="top"><tt>'Y'</tt>
+ * <tr><td valign="top">{@code 'Y'}
  *     <td valign="top"> <tt>'&#92;u0059'</tt> <td> Year, formatted to at least
- *     four digits with leading zeros as necessary, e.g. <tt>0092</tt> equals
- *     <tt>92</tt> CE for the Gregorian calendar.
+ *     four digits with leading zeros as necessary, e.g. {@code 0092} equals
+ *     {@code 92} CE for the Gregorian calendar.
  *
- * <tr><td valign="top"><tt>'y'</tt>
+ * <tr><td valign="top">{@code 'y'}
  *     <td valign="top"> <tt>'&#92;u0079'</tt>
  *     <td> Last two digits of the year, formatted with leading zeros as
- *     necessary, i.e. <tt>00 - 99</tt>.
+ *     necessary, i.e. {@code 00 - 99}.
  *
- * <tr><td valign="top"><tt>'j'</tt>
+ * <tr><td valign="top">{@code 'j'}
  *     <td valign="top"> <tt>'&#92;u006a'</tt>
  *     <td> Day of year, formatted as three digits with leading zeros as
- *     necessary, e.g. <tt>001 - 366</tt> for the Gregorian calendar.
- *     <tt>001</tt> corresponds to the first day of the year.
+ *     necessary, e.g. {@code 001 - 366} for the Gregorian calendar.
+ *     {@code 001} corresponds to the first day of the year.
  *
- * <tr><td valign="top"><tt>'m'</tt>
+ * <tr><td valign="top">{@code 'm'}
  *     <td valign="top"> <tt>'&#92;u006d'</tt>
  *     <td> Month, formatted as two digits with leading zeros as necessary,
- *     i.e. <tt>01 - 13</tt>, where "<tt>01</tt>" is the first month of the
- *     year and ("<tt>13</tt>" is a special value required to support lunar
+ *     i.e. {@code 01 - 13}, where "{@code 01}" is the first month of the
+ *     year and ("{@code 13}" is a special value required to support lunar
  *     calendars).
  *
- * <tr><td valign="top"><tt>'d'</tt>
+ * <tr><td valign="top">{@code 'd'}
  *     <td valign="top"> <tt>'&#92;u0064'</tt>
  *     <td> Day of month, formatted as two digits with leading zeros as
- *     necessary, i.e. <tt>01 - 31</tt>, where "<tt>01</tt>" is the first day
+ *     necessary, i.e. {@code 01 - 31}, where "{@code 01}" is the first day
  *     of the month.
  *
- * <tr><td valign="top"><tt>'e'</tt>
+ * <tr><td valign="top">{@code 'e'}
  *     <td valign="top"> <tt>'&#92;u0065'</tt>
- *     <td> Day of month, formatted as two digits, i.e. <tt>1 - 31</tt> where
- *     "<tt>1</tt>" is the first day of the month.
+ *     <td> Day of month, formatted as two digits, i.e. {@code 1 - 31} where
+ *     "{@code 1}" is the first day of the month.
  *
  * </table>
  *
@@ -1680,45 +1680,45 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="composites">
  *
- * <tr><td valign="top"><tt>'R'</tt>
+ * <tr><td valign="top">{@code 'R'}
  *     <td valign="top"> <tt>'&#92;u0052'</tt>
- *     <td> Time formatted for the 24-hour clock as <tt>"%tH:%tM"</tt>
+ *     <td> Time formatted for the 24-hour clock as {@code "%tH:%tM"}
  *
- * <tr><td valign="top"><tt>'T'</tt>
+ * <tr><td valign="top">{@code 'T'}
  *     <td valign="top"> <tt>'&#92;u0054'</tt>
- *     <td> Time formatted for the 24-hour clock as <tt>"%tH:%tM:%tS"</tt>.
+ *     <td> Time formatted for the 24-hour clock as {@code "%tH:%tM:%tS"}.
  *
- * <tr><td valign="top"><tt>'r'</tt>
+ * <tr><td valign="top">{@code 'r'}
  *     <td valign="top"> <tt>'&#92;u0072'</tt>
- *     <td> Time formatted for the 12-hour clock as <tt>"%tI:%tM:%tS
- *     %Tp"</tt>.  The location of the morning or afternoon marker
- *     (<tt>'%Tp'</tt>) may be locale-dependent.
+ *     <td> Time formatted for the 12-hour clock as {@code "%tI:%tM:%tS
+ *     %Tp"}.  The location of the morning or afternoon marker
+ *     ({@code '%Tp'}) may be locale-dependent.
  *
- * <tr><td valign="top"><tt>'D'</tt>
+ * <tr><td valign="top">{@code 'D'}
  *     <td valign="top"> <tt>'&#92;u0044'</tt>
- *     <td> Date formatted as <tt>"%tm/%td/%ty"</tt>.
+ *     <td> Date formatted as {@code "%tm/%td/%ty"}.
  *
- * <tr><td valign="top"><tt>'F'</tt>
+ * <tr><td valign="top">{@code 'F'}
  *     <td valign="top"> <tt>'&#92;u0046'</tt>
  *     <td> <a href="http://www.w3.org/TR/NOTE-datetime">ISO&nbsp;8601</a>
- *     complete date formatted as <tt>"%tY-%tm-%td"</tt>.
+ *     complete date formatted as {@code "%tY-%tm-%td"}.
  *
- * <tr><td valign="top"><tt>'c'</tt>
+ * <tr><td valign="top">{@code 'c'}
  *     <td valign="top"> <tt>'&#92;u0063'</tt>
- *     <td> Date and time formatted as <tt>"%ta %tb %td %tT %tZ %tY"</tt>,
- *     e.g. <tt>"Sun Jul 20 16:17:00 EDT 1969"</tt>.
+ *     <td> Date and time formatted as {@code "%ta %tb %td %tT %tZ %tY"},
+ *     e.g. {@code "Sun Jul 20 16:17:00 EDT 1969"}.
  *
  * </table>
  *
- * <p> The <tt>'-'</tt> flag defined for <a href="#dFlags">General
- * conversions</a> applies.  If the <tt>'#'</tt> flag is given, then a {@link
+ * <p> The {@code '-'} flag defined for <a href="#dFlags">General
+ * conversions</a> applies.  If the {@code '#'} flag is given, then a {@link
  * FormatFlagsConversionMismatchException} will be thrown.
  *
  * <p> The <a name="dtWidth">width</a> is the minimum number of characters to
  * be written to the output.  If the length of the converted value is less than
- * the <tt>width</tt> then the output will be padded by spaces
+ * the {@code width} then the output will be padded by spaces
  * (<tt>'&#92;u0020'</tt>) until the total number of characters equals width.
- * The padding is on the left by default.  If the <tt>'-'</tt> flag is given
+ * The padding is on the left by default.  If the {@code '-'} flag is given
  * then the padding will be on the right.  If width is not specified then there
  * is no minimum.
  *
@@ -1731,17 +1731,17 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="DTConv">
  *
- * <tr><td valign="top"><tt>'%'</tt>
- *     <td> The result is a literal <tt>'%'</tt> (<tt>'&#92;u0025'</tt>)
+ * <tr><td valign="top">{@code '%'}
+ *     <td> The result is a literal {@code '%'} (<tt>'&#92;u0025'</tt>)
  *
  * <p> The <a name="dtWidth">width</a> is the minimum number of characters to
- * be written to the output including the <tt>'%'</tt>.  If the length of the
- * converted value is less than the <tt>width</tt> then the output will be
+ * be written to the output including the {@code '%'}.  If the length of the
+ * converted value is less than the {@code width} then the output will be
  * padded by spaces (<tt>'&#92;u0020'</tt>) until the total number of
  * characters equals width.  The padding is on the left.  If width is not
- * specified then just the <tt>'%'</tt> is output.
+ * specified then just the {@code '%'} is output.
  *
- * <p> The <tt>'-'</tt> flag defined for <a href="#dFlags">General
+ * <p> The {@code '-'} flag defined for <a href="#dFlags">General
  * conversions</a> applies.  If any other flags are provided, then a
  * {@link FormatFlagsConversionMismatchException} will be thrown.
  *
@@ -1756,7 +1756,7 @@ import sun.misc.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="DTConv">
  *
- * <tr><td valign="top"><tt>'n'</tt>
+ * <tr><td valign="top">{@code 'n'}
  *     <td> the platform-specific line separator as returned by {@link
  *     System#getProperty System.getProperty("line.separator")}.
  *
@@ -1775,7 +1775,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <li> <i>Explicit indexing</i> is used when the format specifier contains an
  * argument index.  The argument index is a decimal integer indicating the
  * position of the argument in the argument list.  The first argument is
- * referenced by "<tt>1$</tt>", the second by "<tt>2$</tt>", etc.  An argument
+ * referenced by "{@code 1$}", the second by "{@code 2$}", etc.  An argument
  * may be referenced more than once.
  *
  * <p> For example:
@@ -1787,7 +1787,7 @@ import sun.misc.FormattedFloatingDecimal;
  * </pre></blockquote>
  *
  * <li> <i>Relative indexing</i> is used when the format specifier contains a
- * <tt>'&lt;'</tt> (<tt>'&#92;u003c'</tt>) flag which causes the argument for
+ * {@code '<'} (<tt>'&#92;u003c'</tt>) flag which causes the argument for
  * the previous format specifier to be re-used.  If there is no previous
  * argument, then a {@link MissingFormatArgumentException} is thrown.
  *
@@ -1798,7 +1798,7 @@ import sun.misc.FormattedFloatingDecimal;
  * </pre></blockquote>
  *
  * <li> <i>Ordinary indexing</i> is used when the format specifier contains
- * neither an argument index nor a <tt>'&lt;'</tt> flag.  Each format specifier
+ * neither an argument index nor a {@code '<'} flag.  Each format specifier
  * which uses ordinary indexing is assigned a sequential implicit index into
  * argument list which is independent of the indices used by explicit or
  * relative indexing.
@@ -1828,7 +1828,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <p> If there are more arguments than format specifiers, the extra arguments
  * are ignored.
  *
- * <p> Unless otherwise specified, passing a <tt>null</tt> argument to any
+ * <p> Unless otherwise specified, passing a {@code null} argument to any
  * method or constructor in this class will cause a {@link
  * NullPointerException} to be thrown.
  *
@@ -1876,8 +1876,8 @@ public final class Formatter implements Closeable, Flushable {
      * locale} for this instance of the Java virtual machine.
      *
      * @param  a
-     *         Destination for the formatted output.  If <tt>a</tt> is
-     *         <tt>null</tt> then a {@link StringBuilder} will be created.
+     *         Destination for the formatted output.  If {@code a} is
+     *         {@code null} then a {@link StringBuilder} will be created.
      */
     public Formatter(Appendable a) {
         if (a == null)
@@ -1895,7 +1895,7 @@ public final class Formatter implements Closeable, Flushable {
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
-     *         formatting.  If <tt>l</tt> is <tt>null</tt> then no localization
+     *         formatting.  If {@code l} is {@code null} then no localization
      *         is applied.
      */
     public Formatter(Locale l) {
@@ -1906,12 +1906,12 @@ public final class Formatter implements Closeable, Flushable {
      * Constructs a new formatter with the specified destination and locale.
      *
      * @param  a
-     *         Destination for the formatted output.  If <tt>a</tt> is
-     *         <tt>null</tt> then a {@link StringBuilder} will be created.
+     *         Destination for the formatted output.  If {@code a} is
+     *         {@code null} then a {@link StringBuilder} will be created.
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
-     *         formatting.  If <tt>l</tt> is <tt>null</tt> then no localization
+     *         formatting.  If {@code l} is {@code null} then no localization
      *         is applied.
      */
     public Formatter(Appendable a, Locale l) {
@@ -2004,7 +2004,7 @@ public final class Formatter implements Closeable, Flushable {
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
-     *         formatting.  If <tt>l</tt> is <tt>null</tt> then no localization
+     *         formatting.  If {@code l} is {@code null} then no localization
      *         is applied.
      *
      * @throws  FileNotFoundException
@@ -2112,7 +2112,7 @@ public final class Formatter implements Closeable, Flushable {
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
-     *         formatting.  If <tt>l</tt> is <tt>null</tt> then no localization
+     *         formatting.  If {@code l} is {@code null} then no localization
      *         is applied.
      *
      * @throws  FileNotFoundException
@@ -2212,7 +2212,7 @@ public final class Formatter implements Closeable, Flushable {
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
-     *         formatting.  If <tt>l</tt> is <tt>null</tt> then no localization
+     *         formatting.  If {@code l} is {@code null} then no localization
      *         is applied.
      *
      * @throws  UnsupportedEncodingException
@@ -2237,7 +2237,7 @@ public final class Formatter implements Closeable, Flushable {
      * <p> The {@link #format(java.util.Locale,String,Object...) format} method
      * for this object which has a locale argument does not change this value.
      *
-     * @return  <tt>null</tt> if no localization is applied, otherwise a
+     * @return  {@code null} if no localization is applied, otherwise a
      *          locale
      *
      * @throws  FormatterClosedException
@@ -2264,7 +2264,7 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     /**
-     * Returns the result of invoking <tt>toString()</tt> on the destination
+     * Returns the result of invoking {@code toString()} on the destination
      * for the output.  For example, the following code formats text into a
      * {@link StringBuilder} then retrieves the resultant string:
      *
@@ -2281,13 +2281,13 @@ public final class Formatter implements Closeable, Flushable {
      * <pre>
      *     out().toString() </pre>
      *
-     * <p> Depending on the specification of <tt>toString</tt> for the {@link
+     * <p> Depending on the specification of {@code toString} for the {@link
      * Appendable}, the returned string may or may not contain the characters
      * written to the destination.  For instance, buffers typically return
-     * their contents in <tt>toString()</tt>, but streams cannot since the
+     * their contents in {@code toString()}, but streams cannot since the
      * data is discarded.
      *
-     * @return  The result of invoking <tt>toString()</tt> on the destination
+     * @return  The result of invoking {@code toString()} on the destination
      *          for the output
      *
      * @throws  FormatterClosedException
@@ -2301,7 +2301,7 @@ public final class Formatter implements Closeable, Flushable {
 
     /**
      * Flushes this formatter.  If the destination implements the {@link
-     * java.io.Flushable} interface, its <tt>flush</tt> method will be invoked.
+     * java.io.Flushable} interface, its {@code flush} method will be invoked.
      *
      * <p> Flushing a formatter writes any buffered output in the destination
      * to the underlying stream.
@@ -2323,7 +2323,7 @@ public final class Formatter implements Closeable, Flushable {
 
     /**
      * Closes this formatter.  If the destination implements the {@link
-     * java.io.Closeable} interface, its <tt>close</tt> method will be invoked.
+     * java.io.Closeable} interface, its {@code close} method will be invoked.
      *
      * <p> Closing a formatter allows it to release resources it may be holding
      * (such as open files).  If the formatter is already closed, then invoking
@@ -2352,13 +2352,13 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     /**
-     * Returns the <tt>IOException</tt> last thrown by this formatter's {@link
+     * Returns the {@code IOException} last thrown by this formatter's {@link
      * Appendable}.
      *
-     * <p> If the destination's <tt>append()</tt> method never throws
-     * <tt>IOException</tt>, then this method will always return <tt>null</tt>.
+     * <p> If the destination's {@code append()} method never throws
+     * {@code IOException}, then this method will always return {@code null}.
      *
-     * @return  The last exception thrown by the Appendable or <tt>null</tt> if
+     * @return  The last exception thrown by the Appendable or {@code null} if
      *          no such exception exists.
      */
     public IOException ioException() {
@@ -2406,7 +2406,7 @@ public final class Formatter implements Closeable, Flushable {
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
-     *         formatting.  If <tt>l</tt> is <tt>null</tt> then no localization
+     *         formatting.  If {@code l} is {@code null} then no localization
      *         is applied.  This does not change this object's locale that was
      *         set during construction.
      *
@@ -4196,7 +4196,7 @@ public final class Formatter implements Closeable, Flushable {
             }
         }
 
-        // Returns a string representation of the current <tt>Flags</tt>.
+        // Returns a string representation of the current {@code Flags}.
         public static String toString(Flags f) {
             return f.toString();
         }

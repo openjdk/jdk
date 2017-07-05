@@ -25,9 +25,6 @@
 
 #include "awt_Object.h"
 #include "ObjectList.h"
-#ifdef DEBUG
-#include "awt_Unicode.h"
-#endif
 
 #ifdef DEBUG
 static BOOL reportEvents = FALSE;
@@ -116,8 +113,9 @@ AwtObject::DoCallback(const char* methodName, const char* methodSig, ...)
                                               "getName",
                                               "()Ljava/lang/String;").l;
             DASSERT(!safe_ExceptionOccurred(env));
-            printf("Posting %s%s method to %S\n", methodName, methodSig,
-                   TO_WSTRING(targetStr));
+            LPCWSTR targetStrW = JNU_GetStringPlatformChars(env, targetStr, NULL);
+            printf("Posting %s%s method to %S\n", methodName, methodSig, targetStrW);
+            JNU_ReleaseStringPlatformChars(env, targetStr, targetStrW);
         }
 #endif
         /* caching would do much good here */
@@ -148,8 +146,11 @@ void AwtObject::SendEvent(jobject event)
             (jstring)JNU_CallMethodByName(env, NULL, GetTarget(env),"getName",
                                           "()Ljava/lang/String;").l;
         DASSERT(!safe_ExceptionOccurred(env));
-        printf("Posting %S to %S\n", TO_WSTRING(eventStr),
-               TO_WSTRING(targetStr));
+        LPCWSTR eventStrW = JNU_GetStringPlatformChars(env, eventStr, NULL);
+        LPCWSTR targetStrW = JNU_GetStringPlatformChars(env, targetStr, NULL);
+        printf("Posting %S to %S\n", eventStrW, targetStrW);
+        JNU_ReleaseStringPlatformChars(env, eventStr, eventStrW);
+        JNU_ReleaseStringPlatformChars(env, targetStr, targetStrW);
     }
 #endif
     /* Post event to the system EventQueue. */

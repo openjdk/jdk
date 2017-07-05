@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5003916
+ * @bug 5003916 6704655
  * @summary Testing parsing of signatures attributes of nested classes
  * @author Joseph D. Darcy
  * @compile -source 1.5 Probe.java
@@ -32,8 +32,10 @@
 
 import java.lang.reflect.*;
 import java.lang.annotation.*;
+import java.util.*;
+import static java.util.Arrays.*;
 
-@Classes({
+@Classes(value={
         "java.util.concurrent.FutureTask",
         "java.util.concurrent.ConcurrentHashMap$EntryIterator",
         "java.util.concurrent.ConcurrentHashMap$KeyIterator",
@@ -56,7 +58,9 @@ import java.lang.annotation.*;
         "java.util.HashMap$ValueIterator",
         "java.util.LinkedHashMap$EntryIterator",
         "java.util.LinkedHashMap$KeyIterator",
-        "java.util.LinkedHashMap$ValueIterator",
+        "java.util.LinkedHashMap$ValueIterator"
+        },
+        sunClasses={
         "javax.crypto.SunJCE_c",
         "javax.crypto.SunJCE_e",
         "javax.crypto.SunJCE_f",
@@ -66,7 +70,15 @@ import java.lang.annotation.*;
         })
 public class Probe {
     public static void main (String[] args) throws Throwable {
-        String [] names = (Probe.class).getAnnotation(Classes.class).value();
+        Classes classesAnnotation = (Probe.class).getAnnotation(Classes.class);
+        List<String> names =
+            new ArrayList<String>(asList(classesAnnotation.value()));
+
+        if (System.getProperty("java.runtime.name").startsWith("Java(TM)")) {
+            // Sun production JDK; test crypto classes too
+            for(String name: classesAnnotation.sunClasses())
+                names.add(name);
+        }
 
         int errs = 0;
         for(String name: names) {
@@ -140,4 +152,5 @@ public class Probe {
 @Retention(RetentionPolicy.RUNTIME)
 @interface Classes {
     String [] value(); // list of classes to probe
+    String [] sunClasses(); // list of Sun-production JDK specific classes to probe
 }

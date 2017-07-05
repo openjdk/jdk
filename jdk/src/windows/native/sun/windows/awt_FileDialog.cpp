@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "awt_FileDialog.h"
 #include "awt_Dialog.h"
 #include "awt_Toolkit.h"
-#include "awt_dlls.h"
 #include "ComCtl32Util.h"
 #include <commdlg.h>
 #include <cderr.h>
@@ -65,7 +64,7 @@ AwtFileDialog::Initialize(JNIEnv *env, jstring filterDescription)
 {
     int length = env->GetStringLength(filterDescription);
     DASSERT(length + 1 < MAX_FILTER_STRING);
-    LPCTSTR tmp = (LPTSTR)JNU_GetStringPlatformChars(env, filterDescription, NULL);
+    LPCTSTR tmp = JNU_GetStringPlatformChars(env, filterDescription, NULL);
     _tcscpy(s_fileFilterString, tmp);
     JNU_ReleaseStringPlatformChars(env, filterDescription, tmp);
 
@@ -156,7 +155,7 @@ FileDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
                     LPITEMIDLIST pidl = (LPITEMIDLIST)notifyEx->pidl;
                     // Get the filename and directory
                     TCHAR szPath[MAX_PATH];
-                    if (!get_path_from_idlist(pidl,szPath)) {
+                    if (!::SHGetPathFromIDList(pidl, szPath)) {
                         return TRUE;
                     }
                     jstring strPath = JNU_NewStringPlatform(env, szPath);
@@ -190,7 +189,7 @@ AwtFileDialog::Show(void *p)
     WCHAR unicodeChar = L' ';
     LPTSTR fileBuffer = NULL;
     LPTSTR currentDirectory = NULL;
-    AWTOPENFILENAME ofn;
+    OPENFILENAME ofn;
     jint mode = 0;
     BOOL result = FALSE;
     DWORD dlgerr;
@@ -222,7 +221,7 @@ AwtFileDialog::Show(void *p)
         HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
 
         if (title == NULL || env->GetStringLength(title)==0) {
-            title = env->NewString(&unicodeChar, 1);
+            title = JNU_NewStringPlatform(env, &unicodeChar);
         }
 
         JavaStringBuffer titleBuffer(env, title);
@@ -243,14 +242,7 @@ AwtFileDialog::Show(void *p)
 
         memset(&ofn, 0, sizeof(ofn));
 
-    // According to the MSDN docs, lStructSize must be set to
-    // OPENFILENAME_SIZE_VERSION_400 on NT4.0.
-    if (IS_NT && !(IS_WIN2000)) {
-        ofn.lStructSize = OPENFILENAME_SIZE_VERSION_400;
-    }
-    else {
         ofn.lStructSize = sizeof(ofn);
-    }
         ofn.lpstrFilter = s_fileFilterString;
         ofn.nFilterIndex = 1;
         /*
@@ -289,9 +281,6 @@ AwtFileDialog::Show(void *p)
 
         mode = env->GetIntField(target, AwtFileDialog::modeID);
 
-        // Fix for 4364256 : call load_shell_procs()
-        load_shell_procs();
-
         AwtDialog::CheckInstallModalHook();
 
         // show the Win32 file dialog
@@ -304,7 +293,7 @@ AwtFileDialog::Show(void *p)
         // If the dialog is not shown because of invalid file name
         // replace the file name by empty string.
         if (!result) {
-            dlgerr = AwtCommDialog::CommDlgExtendedError();
+            dlgerr = ::CommDlgExtendedError();
             if (dlgerr == FNERR_INVALIDFILENAME) {
                 _tcscpy(fileBuffer, TEXT(""));
                 if (mode == java_awt_FileDialog_LOAD) {
@@ -326,7 +315,7 @@ AwtFileDialog::Show(void *p)
         // Report result to peer.
         if (result) {
             jstring tmpJString = (_tcslen(ofn.lpstrFile) == 0 ?
-                env->NewStringUTF("") :
+                JNU_NewStringPlatform(env, L"") :
                 JNU_NewStringPlatform(env, ofn.lpstrFile));
             env->CallVoidMethod(peer, AwtFileDialog::handleSelectedMID, tmpJString);
             env->DeleteLocalRef(tmpJString);
@@ -362,20 +351,18 @@ AwtFileDialog::Show(void *p)
 }
 
 BOOL
-AwtFileDialog::GetOpenFileName(LPAWTOPENFILENAME data) {
-    AwtCommDialog::load_comdlg_procs();
+AwtFileDialog::GetOpenFileName(LPOPENFILENAME data) {
     return static_cast<BOOL>(reinterpret_cast<INT_PTR>(
         AwtToolkit::GetInstance().InvokeFunction((void*(*)(void*))
-                     AwtCommDialog::GetOpenFileNameWrapper, data)));
+                     ::GetOpenFileName, data)));
 
 }
 
 BOOL
-AwtFileDialog::GetSaveFileName(LPAWTOPENFILENAME data) {
-    AwtCommDialog::load_comdlg_procs();
+AwtFileDialog::GetSaveFileName(LPOPENFILENAME data) {
     return static_cast<BOOL>(reinterpret_cast<INT_PTR>(
         AwtToolkit::GetInstance().InvokeFunction((void *(*)(void *))
-                     AwtCommDialog::GetSaveFileNameWrapper, data)));
+                     ::GetSaveFileName, data)));
 
 }
 
