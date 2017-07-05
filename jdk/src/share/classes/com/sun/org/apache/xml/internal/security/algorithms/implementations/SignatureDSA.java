@@ -31,13 +31,15 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.interfaces.DSAKey;
 import java.security.spec.AlgorithmParameterSpec;
 
 import com.sun.org.apache.xml.internal.security.algorithms.JCEMapper;
 import com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithmSpi;
+import com.sun.org.apache.xml.internal.security.signature.XMLSignature;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
 import com.sun.org.apache.xml.internal.security.utils.Base64;
-import com.sun.org.apache.xml.internal.security.utils.Constants;
+import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 
 public class SignatureDSA extends SignatureAlgorithmSpi {
 
@@ -45,11 +47,11 @@ public class SignatureDSA extends SignatureAlgorithmSpi {
     private static java.util.logging.Logger log =
         java.util.logging.Logger.getLogger(SignatureDSA.class.getName());
 
-    /** Field URI */
-    public static final String URI = Constants.SignatureSpecNS + "dsa-sha1";
-
     /** Field algorithm */
     private java.security.Signature signatureAlgorithm = null;
+
+    /** size of Q */
+    private int size;
 
     /**
      * Method engineGetURI
@@ -57,7 +59,7 @@ public class SignatureDSA extends SignatureAlgorithmSpi {
      * @inheritDoc
      */
     protected String engineGetURI() {
-        return SignatureDSA.URI;
+        return XMLSignature.ALGO_ID_SIGNATURE_DSA;
     }
 
     /**
@@ -66,7 +68,7 @@ public class SignatureDSA extends SignatureAlgorithmSpi {
      * @throws XMLSignatureException
      */
     public SignatureDSA() throws XMLSignatureException {
-        String algorithmID = JCEMapper.translateURItoJCEID(SignatureDSA.URI);
+        String algorithmID = JCEMapper.translateURItoJCEID(engineGetURI());
         if (log.isLoggable(java.util.logging.Level.FINE)) {
             log.log(java.util.logging.Level.FINE, "Created SignatureDSA using " + algorithmID);
         }
@@ -110,7 +112,8 @@ public class SignatureDSA extends SignatureAlgorithmSpi {
                 log.log(java.util.logging.Level.FINE, "Called DSA.verify() on " + Base64.encode(signature));
             }
 
-            byte[] jcebytes = SignatureDSA.convertXMLDSIGtoASN1(signature);
+            byte[] jcebytes = JavaUtils.convertDsaXMLDSIGtoASN1(signature,
+                                                                size/8);
 
             return this.signatureAlgorithm.verify(jcebytes);
         } catch (SignatureException ex) {
@@ -150,6 +153,7 @@ public class SignatureDSA extends SignatureAlgorithmSpi {
             }
             throw new XMLSignatureException("empty", ex);
         }
+        size = ((DSAKey)publicKey).getParams().getQ().bitLength();
     }
 
     /**
@@ -159,7 +163,7 @@ public class SignatureDSA extends SignatureAlgorithmSpi {
         try {
             byte jcebytes[] = this.signatureAlgorithm.sign();
 
-            return SignatureDSA.convertASN1toXMLDSIG(jcebytes);
+            return JavaUtils.convertDsaASN1toXMLDSIG(jcebytes, size/8);
         } catch (IOException ex) {
             throw new XMLSignatureException("empty", ex);
         } catch (SignatureException ex) {
@@ -185,6 +189,7 @@ public class SignatureDSA extends SignatureAlgorithmSpi {
         } catch (InvalidKeyException ex) {
             throw new XMLSignatureException("empty", ex);
         }
+        size = ((DSAKey)privateKey).getParams().getQ().bitLength();
     }
 
     /**
@@ -204,6 +209,7 @@ public class SignatureDSA extends SignatureAlgorithmSpi {
         } catch (InvalidKeyException ex) {
             throw new XMLSignatureException("empty", ex);
         }
+        size = ((DSAKey)privateKey).getParams().getQ().bitLength();
     }
 
     /**
@@ -258,100 +264,6 @@ public class SignatureDSA extends SignatureAlgorithmSpi {
     }
 
     /**
-     * Converts an ASN.1 DSA value to a XML Signature DSA Value.
-     *
-     * The JAVA JCE DSA Signature algorithm creates ASN.1 encoded (r,s) value
-     * pairs; the XML Signature requires the core BigInteger values.
-     *
-     * @param asn1Bytes
-     * @return the decode bytes
-     *
-     * @throws IOException
-     * @see <A HREF="http://www.w3.org/TR/xmldsig-core/#dsa-sha1">6.4.1 DSA</A>
-     */
-    private static byte[] convertASN1toXMLDSIG(byte asn1Bytes[]) throws IOException {
-
-        byte rLength = asn1Bytes[3];
-        int i;
-
-        for (i = rLength; (i > 0) && (asn1Bytes[(4 + rLength) - i] == 0); i--);
-
-        byte sLength = asn1Bytes[5 + rLength];
-        int j;
-
-        for (j = sLength;
-            (j > 0) && (asn1Bytes[(6 + rLength + sLength) - j] == 0); j--);
-
-        if ((asn1Bytes[0] != 48) || (asn1Bytes[1] != asn1Bytes.length - 2)
-            || (asn1Bytes[2] != 2) || (i > 20)
-            || (asn1Bytes[4 + rLength] != 2) || (j > 20)) {
-            throw new IOException("Invalid ASN.1 format of DSA signature");
-        }
-        byte xmldsigBytes[] = new byte[40];
-
-        System.arraycopy(asn1Bytes, (4 + rLength) - i, xmldsigBytes, 20 - i, i);
-        System.arraycopy(asn1Bytes, (6 + rLength + sLength) - j, xmldsigBytes,
-                         40 - j, j);
-
-        return xmldsigBytes;
-    }
-
-    /**
-     * Converts a XML Signature DSA Value to an ASN.1 DSA value.
-     *
-     * The JAVA JCE DSA Signature algorithm creates ASN.1 encoded (r,s) value
-     * pairs; the XML Signature requires the core BigInteger values.
-     *
-     * @param xmldsigBytes
-     * @return the encoded ASN.1 bytes
-     *
-     * @throws IOException
-     * @see <A HREF="http://www.w3.org/TR/xmldsig-core/#dsa-sha1">6.4.1 DSA</A>
-     */
-    private static byte[] convertXMLDSIGtoASN1(byte xmldsigBytes[]) throws IOException {
-
-        if (xmldsigBytes.length != 40) {
-            throw new IOException("Invalid XMLDSIG format of DSA signature");
-        }
-
-        int i;
-
-        for (i = 20; (i > 0) && (xmldsigBytes[20 - i] == 0); i--);
-
-        int j = i;
-
-        if (xmldsigBytes[20 - i] < 0) {
-            j += 1;
-        }
-
-        int k;
-
-        for (k = 20; (k > 0) && (xmldsigBytes[40 - k] == 0); k--);
-
-        int l = k;
-
-        if (xmldsigBytes[40 - k] < 0) {
-            l += 1;
-        }
-
-        byte asn1Bytes[] = new byte[6 + j + l];
-
-        asn1Bytes[0] = 48;
-        asn1Bytes[1] = (byte) (4 + j + l);
-        asn1Bytes[2] = 2;
-        asn1Bytes[3] = (byte) j;
-
-        System.arraycopy(xmldsigBytes, 20 - i, asn1Bytes, (4 + j) - i, i);
-
-        asn1Bytes[4 + j] = 2;
-        asn1Bytes[5 + j] = (byte) l;
-
-        System.arraycopy(xmldsigBytes, 40 - k, asn1Bytes, (6 + j + l) - k, k);
-
-        return asn1Bytes;
-    }
-
-    /**
      * Method engineSetHMACOutputLength
      *
      * @param HMACOutputLength
@@ -372,5 +284,16 @@ public class SignatureDSA extends SignatureAlgorithmSpi {
         Key signingKey, AlgorithmParameterSpec algorithmParameterSpec
     ) throws XMLSignatureException {
         throw new XMLSignatureException("algorithms.CannotUseAlgorithmParameterSpecOnDSA");
+    }
+
+    public static class SHA256 extends SignatureDSA {
+
+        public SHA256() throws XMLSignatureException {
+            super();
+        }
+
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_DSA_SHA256;
+        }
     }
 }

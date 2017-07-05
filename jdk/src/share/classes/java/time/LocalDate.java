@@ -280,7 +280,7 @@ public final class LocalDate
      * @param dayOfYear  the day-of-year to represent, from 1 to 366
      * @return the local date, not null
      * @throws DateTimeException if the value of any field is out of range,
-     *  or if the day-of-year is invalid for the month-year
+     *  or if the day-of-year is invalid for the year
      */
     public static LocalDate ofYearDay(int year, int dayOfYear) {
         YEAR.checkValidValue(year);
@@ -308,7 +308,7 @@ public final class LocalDate
      *
      * @param epochDay  the Epoch Day to convert, based on the epoch 1970-01-01
      * @return the local date, not null
-     * @throws DateTimeException if the epoch days exceeds the supported date range
+     * @throws DateTimeException if the epoch day exceeds the supported date range
      */
     public static LocalDate ofEpochDay(long epochDay) {
         long zeroDay = epochDay + DAYS_0000_TO_1970;
@@ -515,7 +515,7 @@ public final class LocalDate
     /**
      * Checks if the specified unit is supported.
      * <p>
-     * This checks if the specified unit can be added to, or subtracted from, this date-time.
+     * This checks if the specified unit can be added to, or subtracted from, this date.
      * If false, then calling the {@link #plus(long, TemporalUnit)} and
      * {@link #minus(long, TemporalUnit) minus} methods will throw an exception.
      * <p>
@@ -592,7 +592,7 @@ public final class LocalDate
     /**
      * Gets the value of the specified field from this date as an {@code int}.
      * <p>
-     * This queries this date for the value for the specified field.
+     * This queries this date for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -600,7 +600,7 @@ public final class LocalDate
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date, except {@code EPOCH_DAY} and {@code PROLEPTIC_MONTH}
-     * which are too large to fit in an {@code int} and throw a {@code DateTimeException}.
+     * which are too large to fit in an {@code int} and throw an {@code UnsupportedTemporalTypeException}.
      * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
@@ -627,7 +627,7 @@ public final class LocalDate
     /**
      * Gets the value of the specified field from this date as a {@code long}.
      * <p>
-     * This queries this date for the value for the specified field.
+     * This queries this date for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>
@@ -875,7 +875,9 @@ public final class LocalDate
      * <p>
      * A simple adjuster might simply set the one of the fields, such as the year field.
      * A more complex adjuster might set the date to the last day of the month.
-     * A selection of common adjustments is provided in {@link TemporalAdjuster}.
+     * <p>
+     * A selection of common adjustments is provided in
+     * {@link java.time.temporal.TemporalAdjusters TemporalAdjusters}.
      * These include finding the "last day of the month" and "next Wednesday".
      * Key date-time classes also implement the {@code TemporalAdjuster} interface,
      * such as {@link Month} and {@link java.time.MonthDay MonthDay}.
@@ -885,7 +887,7 @@ public final class LocalDate
      * For example this code returns a date on the last day of July:
      * <pre>
      *  import static java.time.Month.*;
-     *  import static java.time.temporal.Adjusters.*;
+     *  import static java.time.temporal.TemporalAdjusters.*;
      *
      *  result = localDate.with(JULY).with(lastDayOfMonth());
      * </pre>
@@ -1041,7 +1043,8 @@ public final class LocalDate
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this date with the year altered.
+     * Returns a copy of this {@code LocalDate} with the year altered.
+     * <p>
      * If the day-of-month is invalid for the year, it will be changed to the last valid day of the month.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1059,7 +1062,8 @@ public final class LocalDate
     }
 
     /**
-     * Returns a copy of this date with the month-of-year altered.
+     * Returns a copy of this {@code LocalDate} with the month-of-year altered.
+     * <p>
      * If the day-of-month is invalid for the year, it will be changed to the last valid day of the month.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1077,7 +1081,8 @@ public final class LocalDate
     }
 
     /**
-     * Returns a copy of this date with the day-of-month altered.
+     * Returns a copy of this {@code LocalDate} with the day-of-month altered.
+     * <p>
      * If the resulting date is invalid, an exception is thrown.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1095,7 +1100,8 @@ public final class LocalDate
     }
 
     /**
-     * Returns a copy of this date with the day-of-year altered.
+     * Returns a copy of this {@code LocalDate} with the day-of-year altered.
+     * <p>
      * If the resulting date is invalid, an exception is thrown.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1245,7 +1251,7 @@ public final class LocalDate
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code LocalDate} with the specified period in years added.
+     * Returns a copy of this {@code LocalDate} with the specified number of years added.
      * <p>
      * This method adds the specified amount to the years field in three steps:
      * <ol>
@@ -1273,7 +1279,7 @@ public final class LocalDate
     }
 
     /**
-     * Returns a copy of this {@code LocalDate} with the specified period in months added.
+     * Returns a copy of this {@code LocalDate} with the specified number of months added.
      * <p>
      * This method adds the specified amount to the months field in three steps:
      * <ol>
@@ -1304,7 +1310,7 @@ public final class LocalDate
     }
 
     /**
-     * Returns a copy of this {@code LocalDate} with the specified period in weeks added.
+     * Returns a copy of this {@code LocalDate} with the specified number of weeks added.
      * <p>
      * This method adds the specified amount in weeks to the days field incrementing
      * the month and year fields as necessary to ensure the result remains valid.
@@ -1402,11 +1408,11 @@ public final class LocalDate
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code LocalDate} with the specified period in years subtracted.
+     * Returns a copy of this {@code LocalDate} with the specified number of years subtracted.
      * <p>
      * This method subtracts the specified amount from the years field in three steps:
      * <ol>
-     * <li>Subtract the input years to the year field</li>
+     * <li>Subtract the input years from the year field</li>
      * <li>Check if the resulting date would be invalid</li>
      * <li>Adjust the day-of-month to the last valid day if necessary</li>
      * </ol>
@@ -1426,11 +1432,11 @@ public final class LocalDate
     }
 
     /**
-     * Returns a copy of this {@code LocalDate} with the specified period in months subtracted.
+     * Returns a copy of this {@code LocalDate} with the specified number of months subtracted.
      * <p>
      * This method subtracts the specified amount from the months field in three steps:
      * <ol>
-     * <li>Subtract the input months to the month-of-year field</li>
+     * <li>Subtract the input months from the month-of-year field</li>
      * <li>Check if the resulting date would be invalid</li>
      * <li>Adjust the day-of-month to the last valid day if necessary</li>
      * </ol>
@@ -1450,7 +1456,7 @@ public final class LocalDate
     }
 
     /**
-     * Returns a copy of this {@code LocalDate} with the specified period in weeks subtracted.
+     * Returns a copy of this {@code LocalDate} with the specified number of weeks subtracted.
      * <p>
      * This method subtracts the specified amount in weeks from the days field decrementing
      * the month and year fields as necessary to ensure the result remains valid.

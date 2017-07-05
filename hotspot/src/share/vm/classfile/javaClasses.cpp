@@ -421,6 +421,15 @@ char* java_lang_String::as_utf8_string(oop java_string, int start, int len) {
   return UNICODE::as_utf8(position, len);
 }
 
+char* java_lang_String::as_utf8_string(oop java_string, int start, int len, char* buf, int buflen) {
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          offset = java_lang_String::offset(java_string);
+  int          length = java_lang_String::length(java_string);
+  assert(start + len <= length, "just checking");
+  jchar* position = value->char_at_addr(offset + start);
+  return UNICODE::as_utf8(position, len, buf, buflen);
+}
+
 bool java_lang_String::equals(oop java_string, jchar* chars, int len) {
   assert(java_string->klass() == SystemDictionary::String_klass(),
          "must be java_string");

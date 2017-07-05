@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,27 +29,28 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * Prints unique lines from a given file.
- */
+// Usage: jjs uniq.js
+// or: jjs uniq.js -- <file>
 
-if (arguments.length != 1) {
-    print("Usage: jjs uniq.js -- <file>");
-    java.lang.System.exit(1);
-}
+// omit repeated lines and print unique lines
 
-var imports = new JavaImporter(java.io);
+var BufferedReader = Java.type("java.io.BufferedReader");
+var FileReader = Java.type("java.io.FileReader");
+var InputStreamReader = Java.type("java.io.InputStreamReader");
+var System = Java.type("java.lang.System");
 
+// use object as set - but insertion order preserved
 var uniqueLines = {};
-with (imports) {
-    var reader = new BufferedReader(new FileReader(arguments[0]));
-    while ((line = reader.readLine()) != null) {
-        // using a JS object as a map...
-        uniqueLines[line] = true;
-    }
-}
+var reader = arguments.length > 0 ?
+    new FileReader(arguments[0])  :
+    new InputStreamReader(System.in);
+reader = new BufferedReader(reader);
 
-// now print the collected lines
-for (i in uniqueLines) {
-    print(i);
+// add unique lines
+reader.lines().forEach(function(line) {
+    uniqueLines[line] = true;
+})
+
+for (line in uniqueLines) {
+    print(line);
 }

@@ -448,6 +448,8 @@ public class FormView extends ComponentView implements ActionListener {
     /**
      * This method is responsible for submitting the form data.
      * A thread is forked to undertake the submission.
+     *
+     * @param data data to submit
      */
     protected void submitData(String data) {
         Element form = getFormElement();

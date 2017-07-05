@@ -26,6 +26,9 @@ import org.testng.annotations.Test;
 
 import java.util.*;
 import java.util.Spliterators;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.*;
@@ -122,24 +125,33 @@ public class SortedOpTest extends OpTestCase {
 
     @Test(groups = { "serialization-hostile" })
     public void testSequentialShortCircuitTerminal() {
-        // The sorted op for sequential evaluation will buffer all elements when accepting
-        // then at the end sort those elements and push those elements downstream
+        // The sorted op for sequential evaluation will buffer all elements when
+        // accepting then at the end sort those elements and push those elements
+        // downstream
+        // A peek operation is added in-between the sorted() and terminal
+        // operation that counts the number of calls to its consumer and
+        // asserts that the number of calls is at most the required quantity
 
         List<Integer> l = Arrays.asList(5, 4, 3, 2, 1);
 
+        Function<Integer, Stream<Integer>> knownSize = i -> assertNCallsOnly(
+                l.stream().sorted(), Stream::peek, i);
+        Function<Integer, Stream<Integer>> unknownSize = i -> assertNCallsOnly
+                (unknownSizeStream(l).sorted(), Stream::peek, i);
+
         // Find
-        assertEquals(l.stream().sorted().findFirst(), Optional.of(1));
-        assertEquals(l.stream().sorted().findAny(), Optional.of(1));
-        assertEquals(unknownSizeStream(l).sorted().findFirst(), Optional.of(1));
-        assertEquals(unknownSizeStream(l).sorted().findAny(), Optional.of(1));
+        assertEquals(knownSize.apply(1).findFirst(), Optional.of(1));
+        assertEquals(knownSize.apply(1).findAny(), Optional.of(1));
+        assertEquals(unknownSize.apply(1).findFirst(), Optional.of(1));
+        assertEquals(unknownSize.apply(1).findAny(), Optional.of(1));
 
         // Match
-        assertEquals(l.stream().sorted().anyMatch(i -> i == 2), true);
-        assertEquals(l.stream().sorted().noneMatch(i -> i == 2), false);
-        assertEquals(l.stream().sorted().allMatch(i -> i == 2), false);
-        assertEquals(unknownSizeStream(l).sorted().anyMatch(i -> i == 2), true);
-        assertEquals(unknownSizeStream(l).sorted().noneMatch(i -> i == 2), false);
-        assertEquals(unknownSizeStream(l).sorted().allMatch(i -> i == 2), false);
+        assertEquals(knownSize.apply(2).anyMatch(i -> i == 2), true);
+        assertEquals(knownSize.apply(2).noneMatch(i -> i == 2), false);
+        assertEquals(knownSize.apply(2).allMatch(i -> i == 2), false);
+        assertEquals(unknownSize.apply(2).anyMatch(i -> i == 2), true);
+        assertEquals(unknownSize.apply(2).noneMatch(i -> i == 2), false);
+        assertEquals(unknownSize.apply(2).allMatch(i -> i == 2), false);
     }
 
     private <T> Stream<T> unknownSizeStream(List<T> l) {
@@ -199,19 +211,24 @@ public class SortedOpTest extends OpTestCase {
     public void testIntSequentialShortCircuitTerminal() {
         int[] a = new int[]{5, 4, 3, 2, 1};
 
+        Function<Integer, IntStream> knownSize = i -> assertNCallsOnly(
+                Arrays.stream(a).sorted(), (s, c) -> s.peek(c::accept), i);
+        Function<Integer, IntStream> unknownSize = i -> assertNCallsOnly
+                (unknownSizeIntStream(a).sorted(), (s, c) -> s.peek(c::accept), i);
+
         // Find
-        assertEquals(Arrays.stream(a).sorted().findFirst(), OptionalInt.of(1));
-        assertEquals(Arrays.stream(a).sorted().findAny(), OptionalInt.of(1));
-        assertEquals(unknownSizeIntStream(a).sorted().findFirst(), OptionalInt.of(1));
-        assertEquals(unknownSizeIntStream(a).sorted().findAny(), OptionalInt.of(1));
+        assertEquals(knownSize.apply(1).findFirst(), OptionalInt.of(1));
+        assertEquals(knownSize.apply(1).findAny(), OptionalInt.of(1));
+        assertEquals(unknownSize.apply(1).findFirst(), OptionalInt.of(1));
+        assertEquals(unknownSize.apply(1).findAny(), OptionalInt.of(1));
 
         // Match
-        assertEquals(Arrays.stream(a).sorted().anyMatch(i -> i == 2), true);
-        assertEquals(Arrays.stream(a).sorted().noneMatch(i -> i == 2), false);
-        assertEquals(Arrays.stream(a).sorted().allMatch(i -> i == 2), false);
-        assertEquals(unknownSizeIntStream(a).sorted().anyMatch(i -> i == 2), true);
-        assertEquals(unknownSizeIntStream(a).sorted().noneMatch(i -> i == 2), false);
-        assertEquals(unknownSizeIntStream(a).sorted().allMatch(i -> i == 2), false);
+        assertEquals(knownSize.apply(2).anyMatch(i -> i == 2), true);
+        assertEquals(knownSize.apply(2).noneMatch(i -> i == 2), false);
+        assertEquals(knownSize.apply(2).allMatch(i -> i == 2), false);
+        assertEquals(unknownSize.apply(2).anyMatch(i -> i == 2), true);
+        assertEquals(unknownSize.apply(2).noneMatch(i -> i == 2), false);
+        assertEquals(unknownSize.apply(2).allMatch(i -> i == 2), false);
     }
 
     private IntStream unknownSizeIntStream(int[] a) {
@@ -242,19 +259,24 @@ public class SortedOpTest extends OpTestCase {
     public void testLongSequentialShortCircuitTerminal() {
         long[] a = new long[]{5, 4, 3, 2, 1};
 
+        Function<Integer, LongStream> knownSize = i -> assertNCallsOnly(
+                Arrays.stream(a).sorted(), (s, c) -> s.peek(c::accept), i);
+        Function<Integer, LongStream> unknownSize = i -> assertNCallsOnly
+                (unknownSizeLongStream(a).sorted(), (s, c) -> s.peek(c::accept), i);
+
         // Find
-        assertEquals(Arrays.stream(a).sorted().findFirst(), OptionalLong.of(1));
-        assertEquals(Arrays.stream(a).sorted().findAny(), OptionalLong.of(1));
-        assertEquals(unknownSizeLongStream(a).sorted().findFirst(), OptionalLong.of(1));
-        assertEquals(unknownSizeLongStream(a).sorted().findAny(), OptionalLong.of(1));
+        assertEquals(knownSize.apply(1).findFirst(), OptionalLong.of(1));
+        assertEquals(knownSize.apply(1).findAny(), OptionalLong.of(1));
+        assertEquals(unknownSize.apply(1).findFirst(), OptionalLong.of(1));
+        assertEquals(unknownSize.apply(1).findAny(), OptionalLong.of(1));
 
         // Match
-        assertEquals(Arrays.stream(a).sorted().anyMatch(i -> i == 2), true);
-        assertEquals(Arrays.stream(a).sorted().noneMatch(i -> i == 2), false);
-        assertEquals(Arrays.stream(a).sorted().allMatch(i -> i == 2), false);
-        assertEquals(unknownSizeLongStream(a).sorted().anyMatch(i -> i == 2), true);
-        assertEquals(unknownSizeLongStream(a).sorted().noneMatch(i -> i == 2), false);
-        assertEquals(unknownSizeLongStream(a).sorted().allMatch(i -> i == 2), false);
+        assertEquals(knownSize.apply(2).anyMatch(i -> i == 2), true);
+        assertEquals(knownSize.apply(2).noneMatch(i -> i == 2), false);
+        assertEquals(knownSize.apply(2).allMatch(i -> i == 2), false);
+        assertEquals(unknownSize.apply(2).anyMatch(i -> i == 2), true);
+        assertEquals(unknownSize.apply(2).noneMatch(i -> i == 2), false);
+        assertEquals(unknownSize.apply(2).allMatch(i -> i == 2), false);
     }
 
     private LongStream unknownSizeLongStream(long[] a) {
@@ -285,19 +307,24 @@ public class SortedOpTest extends OpTestCase {
     public void testDoubleSequentialShortCircuitTerminal() {
         double[] a = new double[]{5.0, 4.0, 3.0, 2.0, 1.0};
 
+        Function<Integer, DoubleStream> knownSize = i -> assertNCallsOnly(
+                Arrays.stream(a).sorted(), (s, c) -> s.peek(c::accept), i);
+        Function<Integer, DoubleStream> unknownSize = i -> assertNCallsOnly
+                (unknownSizeDoubleStream(a).sorted(), (s, c) -> s.peek(c::accept), i);
+
         // Find
-        assertEquals(Arrays.stream(a).sorted().findFirst(), OptionalDouble.of(1));
-        assertEquals(Arrays.stream(a).sorted().findAny(), OptionalDouble.of(1));
-        assertEquals(unknownSizeDoubleStream(a).sorted().findFirst(), OptionalDouble.of(1));
-        assertEquals(unknownSizeDoubleStream(a).sorted().findAny(), OptionalDouble.of(1));
+        assertEquals(knownSize.apply(1).findFirst(), OptionalDouble.of(1));
+        assertEquals(knownSize.apply(1).findAny(), OptionalDouble.of(1));
+        assertEquals(unknownSize.apply(1).findFirst(), OptionalDouble.of(1));
+        assertEquals(unknownSize.apply(1).findAny(), OptionalDouble.of(1));
 
         // Match
-        assertEquals(Arrays.stream(a).sorted().anyMatch(i -> i == 2.0), true);
-        assertEquals(Arrays.stream(a).sorted().noneMatch(i -> i == 2.0), false);
-        assertEquals(Arrays.stream(a).sorted().allMatch(i -> i == 2.0), false);
-        assertEquals(unknownSizeDoubleStream(a).sorted().anyMatch(i -> i == 2.0), true);
-        assertEquals(unknownSizeDoubleStream(a).sorted().noneMatch(i -> i == 2.0), false);
-        assertEquals(unknownSizeDoubleStream(a).sorted().allMatch(i -> i == 2.0), false);
+        assertEquals(knownSize.apply(2).anyMatch(i -> i == 2.0), true);
+        assertEquals(knownSize.apply(2).noneMatch(i -> i == 2.0), false);
+        assertEquals(knownSize.apply(2).allMatch(i -> i == 2.0), false);
+        assertEquals(unknownSize.apply(2).anyMatch(i -> i == 2.0), true);
+        assertEquals(unknownSize.apply(2).noneMatch(i -> i == 2.0), false);
+        assertEquals(unknownSize.apply(2).allMatch(i -> i == 2.0), false);
     }
 
     private DoubleStream unknownSizeDoubleStream(double[] a) {
@@ -320,5 +347,15 @@ public class SortedOpTest extends OpTestCase {
 
         assertSorted(result);
         assertContentsUnordered(data, result);
+    }
+
+    /**
+     * Interpose a consumer that asserts it is called at most N times.
+     */
+    <T, S extends BaseStream<T, S>, R> S assertNCallsOnly(S s, BiFunction<S, Consumer<T>, S> pf, int n) {
+        AtomicInteger boxedInt = new AtomicInteger();
+        return pf.apply(s, i -> {
+            assertFalse(boxedInt.incrementAndGet() > n, "Intermediate op called more than " + n + " time(s)");
+        });
     }
 }
