@@ -1096,7 +1096,7 @@ java.io.Serializable {
                 }
 
                 /* Adjust the grid width and height
-                 *  fix for 5005945: unneccessary loops removed
+                 *  fix for 5005945: unnecessary loops removed
                  */
                 px = curX + curWidth;
                 if (layoutWidth < px) {
@@ -1358,7 +1358,7 @@ java.io.Serializable {
             /*
              * Pass #3
              *
-             * Distribute the minimun widths and weights:
+             * Distribute the minimum widths and weights:
              */
 
             nextSize = Integer.MAX_VALUE;
@@ -1578,7 +1578,7 @@ java.io.Serializable {
                     // Component has a baseline resize behavior of
                     // CENTER_OFFSET, calculate centerPadding and
                     // centerOffset (see the description of
-                    // CENTER_OFFSET in the enum for detais on this
+                    // CENTER_OFFSET in the enum for details on this
                     // algorithm).
                     int nextBaseline = c.getBaseline(w, h + 1);
                     constraints.centerOffset = baseline - h / 2;

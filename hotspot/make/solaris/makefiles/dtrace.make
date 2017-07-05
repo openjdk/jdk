@@ -32,7 +32,7 @@ ifneq ("${TYPE}", "CORE")
 ifdef USE_GCC
 
 dtraceCheck:
-	$(QUIETLY) echo "**NOTICE** Dtrace support disabled for gcc builds"
+	$(QUIETLY) echo $(LOG_INFO) "**NOTICE** Dtrace support disabled for gcc builds"
 
 else
 
@@ -102,7 +102,7 @@ XLIBJVM_DTRACE_DEBUGINFO   = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_DEBUGINFO)
 XLIBJVM_DTRACE_DIZ         = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_DIZ)
 
 $(XLIBJVM_DB): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
-	@echo Making $@
+	@echo $(LOG_INFO) Making $@
 	$(QUIETLY) mkdir -p $(XLIBJVM_DIR) ; \
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
@@ -137,7 +137,7 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 endif
 
 $(XLIBJVM_DTRACE): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
-	@echo Making $@
+	@echo $(LOG_INFO) Making $@
 	$(QUIETLY) mkdir -p $(XLIBJVM_DIR) ; \
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
@@ -207,7 +207,7 @@ $(JVMOFFS.o): $(JVMOFFS).h $(JVMOFFS).cpp
 	$(QUIETLY) $(CXX) -c -I. -o $@ $(ARCHFLAG) -D$(TYPE) $(JVMOFFS).cpp
 
 $(LIBJVM_DB): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS.o) $(XLIBJVM_DB) $(LIBJVM_DB_MAPFILE)
-	@echo Making $@
+	@echo $(LOG_INFO) Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
@@ -232,7 +232,7 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 endif
 
 $(LIBJVM_DTRACE): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(XLIBJVM_DTRACE) $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
-	@echo Making $@
+	@echo $(LOG_INFO) Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I.  \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
@@ -286,7 +286,7 @@ DTraced_Files = ciEnv.o \
 
 # Dtrace is available, so we build $(DTRACE.o)  
 $(DTRACE.o): $(DTRACE).d $(DTraced_Files)
-	@echo Compiling $(DTRACE).d
+	@echo $(LOG_INFO) Compiling $(DTRACE).d
 
 	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -G -xlazyload -o $@ -s $(DTRACE).d \
      $(DTraced_Files) ||\
@@ -352,7 +352,7 @@ dtrace_gen_headers: $(DtraceOutDir)/hotspot.h $(DtraceOutDir)/hotspot_jni.h $(Dt
 # The jhelper.d and hotspot probes are separated into two different SUNW_dof sections.
 # Now the jhelper.d is built without the -Xlazyload flag.
 $(DTRACE_JHELPER.o) : $(DTRACE_JHELPER).d $(JVMOFFS).h $(JVMOFFS)Index.h
-	@echo Compiling $(DTRACE_JHELPER).d
+	@echo $(LOG_INFO) Compiling $(DTRACE_JHELPER).d
 	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -G -o $@ -s $(DTRACE_JHELPER).d
 
 .PHONY: dtraceCheck
@@ -391,14 +391,14 @@ dtraceCheck:
 else # manually disabled
 
 dtraceCheck:
-	$(QUIETLY) echo "**NOTICE** Dtrace support disabled via environment variable"
+	$(QUIETLY) echo $(LOG_INFO) "**NOTICE** Dtrace support disabled via environment variable"
 
 endif # ifeq ("${HOTSPOT_DISABLE_DTRACE_PROBES}", "")
 
 else # No dtrace program found
 
 dtraceCheck:
-	$(QUIETLY) echo "**NOTICE** Dtrace support disabled: not supported by system"
+	$(QUIETLY) echo $(LOG_INFO) "**NOTICE** Dtrace support disabled: not supported by system"
 
 endif # ifneq ("${dtraceFound}", "")
 
@@ -407,6 +407,6 @@ endif # ifdef USE_GCC
 else # CORE build
 
 dtraceCheck:
-	$(QUIETLY) echo "**NOTICE** Dtrace support disabled for CORE builds"
+	$(QUIETLY) echo $(LOG_INFO) "**NOTICE** Dtrace support disabled for CORE builds"
 
 endif # ifneq ("${TYPE}", "CORE")

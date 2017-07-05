@@ -631,7 +631,7 @@ public abstract class ColorModel implements Transparency{
      *  <code>inData</code> is not large enough to hold a pixel value
      *  for this <code>ColorModel</code>
      * @throws UnsupportedOperationException if this
-     *  <code>tranferType</code> is not supported by this
+     *  <code>transferType</code> is not supported by this
      *  <code>ColorModel</code>
      */
     public int getRed(Object inData) {
@@ -698,7 +698,7 @@ public abstract class ColorModel implements Transparency{
      *  <code>inData</code> is not large enough to hold a pixel value
      *  for this <code>ColorModel</code>
      * @throws UnsupportedOperationException if this
-     *  <code>tranferType</code> is not supported by this
+     *  <code>transferType</code> is not supported by this
      *  <code>ColorModel</code>
      */
     public int getGreen(Object inData) {
@@ -765,7 +765,7 @@ public abstract class ColorModel implements Transparency{
      *  <code>inData</code> is not large enough to hold a pixel value
      *  for this <code>ColorModel</code>
      * @throws UnsupportedOperationException if this
-     *  <code>tranferType</code> is not supported by this
+     *  <code>transferType</code> is not supported by this
      *  <code>ColorModel</code>
      */
     public int getBlue(Object inData) {
@@ -1722,7 +1722,7 @@ public abstract class ColorModel implements Transparency{
             // is from the IEC 61966-2-1 International Standard,
             // Colour Management - Default RGB colour space - sRGB,
             // First Edition, 1999-10,
-            // avaiable for order at http://www.iec.ch
+            // available for order at http://www.iec.ch
             for (int i = 0; i <= 255; i++) {
                 input = ((float) i) / 255.0f;
                 if (input <= 0.0031308f) {

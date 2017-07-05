@@ -28,11 +28,13 @@ import java.awt.image.BufferedImage;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 
 /* @test
  * @bug 8032667
  * @summary [macosx] Components cannot be rendered in HiDPI to BufferedImage
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run main bug8032667_image_diff
  */
 public class bug8032667_image_diff {

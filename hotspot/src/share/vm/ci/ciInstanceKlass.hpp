@@ -71,8 +71,6 @@ private:
   //   Itsef: more than one implementors.
   ciInstanceKlass*       _implementor;
 
-  GrowableArray<ciField*>* _non_static_fields;
-
 protected:
   ciInstanceKlass(KlassHandle h_k);
   ciInstanceKlass(ciSymbol* name, jobject loader, jobject protection_domain);
@@ -180,8 +178,6 @@ public:
   ciInstanceKlass* get_canonical_holder(int offset);
   ciField* get_field_by_offset(int field_offset, bool is_static);
   ciField* get_field_by_name(ciSymbol* name, ciSymbol* signature, bool is_static);
-
-  GrowableArray<ciField*>* non_static_fields();
 
   // total number of nonstatic fields (including inherited):
   int nof_nonstatic_fields() {

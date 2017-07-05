@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
@@ -58,7 +57,7 @@ public abstract class ArrayData {
     /**
      * Length of the array data. Not necessarily length of the wrapped array.
      */
-    private long length;
+    protected long length;
 
     /**
      * Method handle to throw an {@link UnwarrantedOptimismException} when getting an element
@@ -520,7 +519,7 @@ public abstract class ArrayData {
      * @param type new element type
      * @return new array data
      */
-    protected abstract ArrayData convert(Class<?> type);
+    public abstract ArrayData convert(Class<?> type);
 
     /**
      * Push an array of items to the end of the array
@@ -655,7 +654,7 @@ public abstract class ArrayData {
      * @param size current size
      * @return next size to allocate for internal array
      */
-    protected static int nextSize(final int size) {
+    public static int nextSize(final int size) {
         return alignUp(size + 1) * 2;
     }
 
@@ -679,6 +678,18 @@ public abstract class ArrayData {
         } catch (final Throwable t) {
             throw new RuntimeException(t);
         }
+    }
+
+   /**
+     * Find a fast call if one exists
+     *
+     * @param clazz    array data class
+     * @param desc     callsite descriptor
+     * @param request  link request
+     * @return fast property getter if one is found
+     */
+    public GuardedInvocation findFastCallMethod(final Class<? extends ArrayData> clazz, final CallSiteDescriptor desc, final LinkRequest request) {
+        return null;
     }
 
     /**

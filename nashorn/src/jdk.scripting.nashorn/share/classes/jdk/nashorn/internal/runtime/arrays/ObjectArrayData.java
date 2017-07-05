@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
@@ -57,8 +56,13 @@ final class ObjectArrayData extends ContinuousArrayData {
     }
 
     @Override
+    public Class<?> getElementType() {
+        return Object.class;
+    }
+
+    @Override
     public ArrayData copy() {
-        return new ObjectArrayData(array.clone(), (int) length());
+        return new ObjectArrayData(array.clone(), (int)length);
     }
 
     @Override
@@ -229,6 +233,42 @@ final class ObjectArrayData extends ContinuousArrayData {
     public ArrayData delete(final long fromIndex, final long toIndex) {
         setEmpty(fromIndex, toIndex);
         return new DeletedRangeArrayFilter(this, fromIndex, toIndex);
+    }
+
+    @Override
+    public long fastPush(final int arg) {
+        return fastPush((Object)arg);
+    }
+
+    @Override
+    public long fastPush(final long arg) {
+        return fastPush((Object)arg);
+    }
+
+    @Override
+    public long fastPush(final double arg) {
+        return fastPush((Object)arg);
+    }
+
+    @Override
+    public long fastPush(final Object arg) {
+        final int len = (int)length;
+        if (len == array.length) {
+            array = Arrays.copyOf(array, nextSize(len));
+        }
+        array[len] = arg;
+        return ++length;
+    }
+
+    @Override
+    public Object fastPopObject() {
+        if (length == 0) {
+            return ScriptRuntime.UNDEFINED;
+        }
+        final int newLength = (int)--length;
+        final Object elem = array[newLength];
+        array[newLength] = ScriptRuntime.EMPTY;
+        return elem;
     }
 
     @Override

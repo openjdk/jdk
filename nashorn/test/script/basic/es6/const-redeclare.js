@@ -34,5 +34,5 @@ try {
          'const x = 2;\n' +
          'const x = 2;\n');
 } catch (e) {
-    print(e);
+    print(String(e).replace(/\\/g, "/"));
 }

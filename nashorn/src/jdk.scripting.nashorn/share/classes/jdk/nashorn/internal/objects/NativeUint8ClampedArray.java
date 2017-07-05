@@ -28,7 +28,6 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
@@ -96,6 +95,11 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
         @Override
         protected MethodHandle getSetElem() {
             return SET_ELEM;
+        }
+
+        @Override
+        public Class<?> getElementType() {
+            return int.class;
         }
 
         private int getElem(final int index) {

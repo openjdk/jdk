@@ -952,7 +952,7 @@ public class TextComponent extends Component implements Accessible {
         }
 
         /**
-         * Returns the number of characters (valid indicies)
+         * Returns the number of characters (valid indices)
          *
          * @return the number of characters &gt;= 0
          */

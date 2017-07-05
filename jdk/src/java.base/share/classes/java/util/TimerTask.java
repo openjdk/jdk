@@ -26,10 +26,14 @@
 package java.util;
 
 /**
- * A task that can be scheduled for one-time or repeated execution by a Timer.
+ * A task that can be scheduled for one-time or repeated execution by a
+ * {@link Timer}.
+ *
+ * <p>A timer task is <em>not</em> reusable.  Once a task has been scheduled
+ * for execution on a {@code Timer} or cancelled, subsequent attempts to
+ * schedule it for execution will throw {@code IllegalStateException}.
  *
  * @author  Josh Bloch
- * @see     Timer
  * @since   1.3
  */
 

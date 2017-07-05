@@ -44,7 +44,7 @@
 //
 // Loaded instance klass.
 ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
-  ciKlass(h_k), _non_static_fields(NULL)
+  ciKlass(h_k)
 {
   assert(get_Klass()->oop_is_instance(), "wrong type");
   assert(get_instanceKlass()->is_loaded(), "must be at least loaded");
@@ -407,37 +407,6 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
   return field;
 }
 
-// ------------------------------------------------------------------
-// ciInstanceKlass::non_static_fields.
-
-class NonStaticFieldFiller: public FieldClosure {
-  GrowableArray<ciField*>* _arr;
-  ciEnv* _curEnv;
-public:
-  NonStaticFieldFiller(ciEnv* curEnv, GrowableArray<ciField*>* arr) :
-    _curEnv(curEnv), _arr(arr)
-  {}
-  void do_field(fieldDescriptor* fd) {
-    ciField* field = new (_curEnv->arena()) ciField(fd);
-    _arr->append(field);
-  }
-};
-
-GrowableArray<ciField*>* ciInstanceKlass::non_static_fields() {
-  if (_non_static_fields == NULL) {
-    VM_ENTRY_MARK;
-    ciEnv* curEnv = ciEnv::current();
-    InstanceKlass* ik = get_instanceKlass();
-    int max_n_fields = ik->java_fields_count();
-
-    Arena* arena = curEnv->arena();
-    _non_static_fields =
-      new (arena) GrowableArray<ciField*>(arena, max_n_fields, 0, NULL);
-    NonStaticFieldFiller filler(curEnv, _non_static_fields);
-    ik->do_nonstatic_fields(&filler);
-  }
-  return _non_static_fields;
-}
 
 static int sort_field_by_offset(ciField** a, ciField** b) {
   return (*a)->offset_in_bytes() - (*b)->offset_in_bytes();
