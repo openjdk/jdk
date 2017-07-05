@@ -713,12 +713,16 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
   TempNewSymbol type = lookup_signature(type_str(), (mh_invoke_id != vmIntrinsics::_none), CHECK_(empty));
   if (type == NULL)  return empty;  // no such signature exists in the VM
 
+  LinkInfo::AccessCheck access_check = caller.not_null() ?
+                                              LinkInfo::needs_access_check :
+                                              LinkInfo::skip_access_check;
+
   // Time to do the lookup.
   switch (flags & ALL_KINDS) {
   case IS_METHOD:
     {
       CallInfo result;
-      LinkInfo link_info(defc, name, type, caller, caller.not_null());
+      LinkInfo link_info(defc, name, type, caller, access_check);
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (ref_kind == JVM_REF_invokeStatic) {
@@ -755,7 +759,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
   case IS_CONSTRUCTOR:
     {
       CallInfo result;
-      LinkInfo link_info(defc, name, type, caller, caller.not_null());
+      LinkInfo link_info(defc, name, type, caller, access_check);
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (name == vmSymbols::object_initializer_name()) {
@@ -776,7 +780,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
       fieldDescriptor result; // find_field initializes fd if found
       {
         assert(!HAS_PENDING_EXCEPTION, "");
-        LinkInfo link_info(defc, name, type, caller, /*check_access*/false);
+        LinkInfo link_info(defc, name, type, caller, LinkInfo::skip_access_check);
         LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, false, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           return empty;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Set;
-
-import com.sun.nio.file.ExtendedOpenOption;
 
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.SharedSecrets;
@@ -103,21 +101,24 @@ class WindowsChannelFactory {
                     }
                     continue;
                 }
-                if (option instanceof ExtendedOpenOption) {
-                    switch ((ExtendedOpenOption)option) {
-                        case NOSHARE_READ : flags.shareRead = false; break;
-                        case NOSHARE_WRITE : flags.shareWrite = false; break;
-                        case NOSHARE_DELETE : flags.shareDelete = false; break;
-                        default: throw new UnsupportedOperationException();
-                    }
-                    continue;
-                }
                 if (option == LinkOption.NOFOLLOW_LINKS) {
                     flags.noFollowLinks = true;
                     continue;
                 }
                 if (option == OPEN_REPARSE_POINT) {
                     flags.openReparsePoint = true;
+                    continue;
+                }
+                if (ExtendedOptions.NOSHARE_READ.matches(option)) {
+                    flags.shareRead = false;
+                    continue;
+                }
+                if (ExtendedOptions.NOSHARE_WRITE.matches(option)) {
+                    flags.shareWrite = false;
+                    continue;
+                }
+                if (ExtendedOptions.NOSHARE_DELETE.matches(option)) {
+                    flags.shareDelete = false;
                     continue;
                 }
                 if (option == null)

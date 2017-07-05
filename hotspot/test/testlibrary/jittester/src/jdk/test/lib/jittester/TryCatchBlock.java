@@ -29,6 +29,7 @@ import jdk.test.lib.jittester.visitors.Visitor;
 
 public class TryCatchBlock extends IRNode {
     public TryCatchBlock(IRNode body, IRNode finallyBlock, List<CatchBlock> catchBlocks, int level) {
+        super(body.getResultType());
         this.level = level;
         addChild(body);
         addChild(finallyBlock);

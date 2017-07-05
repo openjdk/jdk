@@ -42,7 +42,6 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jittester.functions.FunctionInfo;
 import jdk.test.lib.jittester.types.TypeArray;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeVoid;
 
 /**
  * Class used for parsing included classes file and excluded methods file
@@ -62,7 +61,7 @@ public class TypesParser {
     public static void parseTypesAndMethods(String klassesFileName, String exMethodsFileName) {
         Asserts.assertNotNull(klassesFileName, "Classes input file name is null");
         Asserts.assertFalse(klassesFileName.isEmpty(), "Classes input file name is empty");
-        Set<Class<?>> klasses = parseKlasses(klassesFileName);
+        List<Class<?>> klasses = parseKlasses(klassesFileName);
         Set<Executable> methodsToExclude;
         if (exMethodsFileName != null && !exMethodsFileName.isEmpty()) {
             methodsToExclude = parseMethods(exMethodsFileName);
@@ -119,15 +118,18 @@ public class TypesParser {
         }
         if (klass.isPrimitive()) {
             if (klass.equals(void.class)) {
-                type = new TypeVoid();
+                type = TypeList.VOID;
             } else {
                 type = TypeList.find(klass.getName());
             }
         } else {
             int flags = getKlassFlags(klass);
             if (klass.isArray()) {
-                TypeKlass elementType
-                        = new TypeKlass(klass.getCanonicalName().replaceAll("\\[\\]", ""), flags);
+                Class<?> elementKlass  = klass.getComponentType();
+                while (elementKlass.isArray()) {
+                    elementKlass = elementKlass.getComponentType();
+                }
+                Type elementType = getType(elementKlass);
                 int dim = getArrayClassDimension(klass);
                 type = new TypeArray(elementType, dim);
             } else {
@@ -138,10 +140,14 @@ public class TypesParser {
                 type = new TypeKlass(canonicalName, flags);
             }
             Class<?> parentKlass = klass.getSuperclass();
+            TypeKlass typeKlass = (TypeKlass) type;
             if (parentKlass != null) {
                 TypeKlass parentTypeKlass = (TypeKlass) getType(parentKlass);
-                ((TypeKlass) type).addParent(parentTypeKlass.getName());
-                ((TypeKlass) type).setParent(parentTypeKlass);
+                typeKlass.addParent(parentTypeKlass.getName());
+                typeKlass.setParent(parentTypeKlass);
+            }
+            for (Class<?> iface : klass.getInterfaces()) {
+                typeKlass.addParent(getType(iface).getName());
             }
         }
         TYPE_CACHE.put(klass, type);
@@ -197,10 +203,10 @@ public class TypesParser {
         return flags;
     }
 
-    private static Set<Class<?>> parseKlasses(String klassesFileName) {
+    private static List<Class<?>> parseKlasses(String klassesFileName) {
         Asserts.assertNotNull(klassesFileName, "Classes input file name is null");
         Asserts.assertFalse(klassesFileName.isEmpty(), "Classes input file name is empty");
-        Set<String> klassNamesSet = new HashSet<>();
+        List<String> klassNamesList = new ArrayList<>();
         Path klassesFilePath = (new File(klassesFileName)).toPath();
         try {
             Files.lines(klassesFilePath).forEach(line -> {
@@ -211,20 +217,20 @@ public class TypesParser {
                 String msg = String.format("Format of the classes input file \"%s\" is incorrect,"
                         + " line \"%s\" has wrong format", klassesFileName, line);
                 Asserts.assertTrue(line.matches("\\w[\\w\\.$]*"), msg);
-                klassNamesSet.add(line.replaceAll(";", ""));
+                klassNamesList.add(line.replaceAll(";", ""));
             });
         } catch (IOException ex) {
             throw new Error("Error reading klasses file", ex);
         }
-        Set<Class<?>> klassesSet = new HashSet<>();
-        klassNamesSet.stream().forEach(klassName -> {
+        List<Class<?>> klassesList = new ArrayList<>();
+        klassNamesList.stream().forEach(klassName -> {
             try {
-                klassesSet.add(Class.forName(klassName));
+                klassesList.add(Class.forName(klassName));
             } catch (ClassNotFoundException ex) {
                 throw new Error("Unexpected exception while parsing klasses file", ex);
             }
         });
-        return klassesSet;
+        return klassesList;
     }
 
     private static Set<Executable> parseMethods(String methodsFileName) {

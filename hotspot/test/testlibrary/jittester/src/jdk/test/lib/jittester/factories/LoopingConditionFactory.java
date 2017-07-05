@@ -29,12 +29,12 @@ import jdk.test.lib.jittester.Literal;
 import jdk.test.lib.jittester.LocalVariable;
 import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.loops.LoopingCondition;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeBoolean;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class LoopingConditionFactory extends Factory {
+class LoopingConditionFactory extends Factory<LoopingCondition> {
     private final LocalVariable counter;
     private final Literal limiter;
     private final int operatorLimit;
@@ -51,11 +51,11 @@ class LoopingConditionFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public LoopingCondition produce() throws ProductionFailedException {
         IRNode leftExpression = null;
         IRNode rightExpression = null;
-        LimitedExpressionFactory exprFactory = new IRNodeBuilder()
-                .setResultType(new TypeBoolean())
+        Factory<IRNode> exprFactory = new IRNodeBuilder()
+                .setResultType(TypeList.BOOLEAN)
                 .setComplexityLimit((complexityLimit - 1) / 2)
                 .setOperatorLimit((operatorLimit - 1) / 2)
                 .setOwnerKlass(ownerClass)
@@ -75,10 +75,10 @@ class LoopingConditionFactory extends Factory {
         // Just as a temporary solution we'll assume that the counter is monotonically increasing.
         // And use counter < n condition to limit the loop.
         // In future we may introduce other equivalent relations as well.
-        IRNode condition = new BinaryOperator(OperatorKind.LT, counter, limiter);
-        condition = (rightExpression != null) ? new BinaryOperator(OperatorKind.AND, condition,
+        BinaryOperator condition = new BinaryOperator(OperatorKind.LT, TypeList.BOOLEAN, counter, limiter);
+        condition = (rightExpression != null) ? new BinaryOperator(OperatorKind.AND, TypeList.BOOLEAN, condition,
                 rightExpression) : condition;
-        condition = (leftExpression != null) ? new BinaryOperator(OperatorKind.AND, leftExpression,
+        condition = (leftExpression != null) ? new BinaryOperator(OperatorKind.AND, TypeList.BOOLEAN, leftExpression,
                 condition) : condition;
         return new LoopingCondition(condition);
     }

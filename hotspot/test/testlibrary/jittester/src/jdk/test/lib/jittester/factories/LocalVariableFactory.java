@@ -24,7 +24,7 @@
 package jdk.test.lib.jittester.factories;
 
 import java.util.ArrayList;
-import jdk.test.lib.jittester.IRNode;
+
 import jdk.test.lib.jittester.LocalVariable;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Symbol;
@@ -33,7 +33,7 @@ import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class LocalVariableFactory extends Factory {
+class LocalVariableFactory extends Factory<LocalVariable> {
     private final Type type;
     private final int flags;
 
@@ -43,7 +43,7 @@ class LocalVariableFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public LocalVariable produce() throws ProductionFailedException {
         // Get the variables of the requested type from SymbolTable
         ArrayList<Symbol> allVariables = new ArrayList<>(SymbolTable.get(type, VariableInfo.class));
         if (!allVariables.isEmpty()) {

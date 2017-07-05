@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.io.*;
 import java.net.URI;
 import java.util.*;
 import java.lang.ref.WeakReference;
-
-import com.sun.nio.file.ExtendedWatchEventModifier;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsConstants.*;
@@ -864,7 +862,7 @@ class WindowsPath implements Path {
                 modifiers = Arrays.copyOf(modifiers, ml);
                 int i=0;
                 while (i < ml) {
-                    if (modifiers[i++] == ExtendedWatchEventModifier.FILE_TREE) {
+                    if (ExtendedOptions.FILE_TREE.matches(modifiers[i++])) {
                         watchSubtree = true;
                         break;
                     }

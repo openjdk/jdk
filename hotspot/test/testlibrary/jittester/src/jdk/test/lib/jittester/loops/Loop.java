@@ -23,11 +23,10 @@
 
 package jdk.test.lib.jittester.loops;
 
-import jdk.test.lib.jittester.IRNode;
 
 // Just a structure to hold the values needed to handle basic loop production
 public class Loop {
-    public IRNode initialization;
-    public IRNode condition;
-    public IRNode manipulator;
+    public CounterInitializer initialization;
+    public LoopingCondition condition;
+    public CounterManipulator manipulator;
 }

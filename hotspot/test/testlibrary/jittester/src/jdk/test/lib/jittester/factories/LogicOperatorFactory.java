@@ -23,15 +23,15 @@
 
 package jdk.test.lib.jittester.factories;
 
-import jdk.test.lib.jittester.IRNode;
+import jdk.test.lib.jittester.Operator;
 import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Rule;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.types.TypeKlass;
 
-class LogicOperatorFactory extends Factory {
-    private final Rule rule;
+class LogicOperatorFactory extends Factory<Operator> {
+    private final Rule<Operator> rule;
 
     LogicOperatorFactory(long complexityLimit, int operatorLimit, TypeKlass ownerClass, Type resultType,
             boolean exceptionSafe, boolean noconsts) throws ProductionFailedException {
@@ -42,7 +42,7 @@ class LogicOperatorFactory extends Factory {
                 .setResultType(resultType)
                 .setExceptionSafe(exceptionSafe)
                 .setNoConsts(noconsts);
-        rule = new Rule("arithmetic");
+        rule = new Rule<>("arithmetic");
         rule.add("land", builder.setOperatorKind(OperatorKind.AND).getBinaryOperatorFactory());
         rule.add("lor", builder.setOperatorKind(OperatorKind.OR).getBinaryOperatorFactory());
         rule.add("greater", builder.setOperatorKind(OperatorKind.GT).getBinaryOperatorFactory());
@@ -55,7 +55,7 @@ class LogicOperatorFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public Operator produce() throws ProductionFailedException {
         return rule.produce();
     }
 }

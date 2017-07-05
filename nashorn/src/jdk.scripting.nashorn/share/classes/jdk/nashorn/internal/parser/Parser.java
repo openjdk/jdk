@@ -4626,6 +4626,9 @@ public class Parser extends AbstractParser implements Loggable {
      *   ArrowFunction[?In, ?Yield]
      *   LeftHandSideExpression[?Yield] = AssignmentExpression[?In, ?Yield]
      *   LeftHandSideExpression[?Yield] AssignmentOperator AssignmentExpression[?In, ?Yield]
+     *
+     * @param noIn {@code true} if IN operator should be ignored.
+     * @return the assignment expression
      */
     protected Expression assignmentExpression(final boolean noIn) {
         // This method is protected so that subclass can get details

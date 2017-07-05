@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8087112
+ * @key intermittent
  * @library /lib/testlibrary
  * @build jdk.testlibrary.SimpleSSLContext
  * @modules java.httpclient

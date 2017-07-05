@@ -27,11 +27,10 @@ import jdk.test.lib.jittester.visitors.Visitor;
 
 public class Literal extends IRNode {
     public final Object value;
-    protected final Type resultType;
 
     public Literal(Object v, Type t) {
+        super(t);
         value = v;
-        resultType = t;
     }
 
     @Override
@@ -42,10 +41,6 @@ public class Literal extends IRNode {
     @Override
     public<T> T accept(Visitor<T> v) {
         return v.visit(this);
-    }
-
-    public Type getResultType() {
-        return resultType;
     }
 
     public Object getValue() {
