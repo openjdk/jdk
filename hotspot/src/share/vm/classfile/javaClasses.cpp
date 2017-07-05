@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -347,13 +348,26 @@ jchar* java_lang_String::as_unicode_string(oop java_string, int& length) {
   return result;
 }
 
-unsigned int java_lang_String::hash_string(oop java_string) {
+unsigned int java_lang_String::to_hash(oop java_string) {
+  int          length = java_lang_String::length(java_string);
+  // Zero length string will hash to zero with String.toHash() function.
+  if (length == 0) return 0;
+
   typeArrayOop value  = java_lang_String::value(java_string);
   int          offset = java_lang_String::offset(java_string);
-  int          length = java_lang_String::length(java_string);
+  return java_lang_String::to_hash(value->char_at_addr(offset), length);
+}
 
-  if (length == 0) return 0;
-  return hash_string(value->char_at_addr(offset), length);
+unsigned int java_lang_String::hash_string(oop java_string) {
+  int          length = java_lang_String::length(java_string);
+  // Zero length string doesn't hash necessarily hash to zero.
+  if (length == 0) {
+    return StringTable::hash_string(NULL, 0);
+  }
+
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          offset = java_lang_String::offset(java_string);
+  return StringTable::hash_string(value->char_at_addr(offset), length);
 }
 
 Symbol* java_lang_String::as_symbol(Handle java_string, TRAPS) {
