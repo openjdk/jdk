@@ -405,7 +405,8 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
          */
         perms.add(new SocketPermission("*", "connect,accept"));
 
-        perms.add(new RuntimePermission("accessClassInPackage.sun.*"));
+        perms.add(new RuntimePermission("accessClassInPackage.sun.jvmstat.*"));
+        perms.add(new RuntimePermission("accessClassInPackage.sun.jvm.hotspot.*"));
 
         perms.add(new FilePermission("<<ALL FILES>>", "read"));
 

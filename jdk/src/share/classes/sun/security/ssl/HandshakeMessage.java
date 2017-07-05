@@ -256,13 +256,9 @@ static final class ClientHello extends HandshakeMessage {
     }
 
     // add server_name extension
-    void addServerNameIndicationExtension(String hostname) {
-        // We would have checked that the hostname ia a FQDN.
-        ArrayList<String> hostnames = new ArrayList<>(1);
-        hostnames.add(hostname);
-
+    void addSNIExtension(List<SNIServerName> serverNames) {
         try {
-            extensions.add(new ServerNameExtension(hostnames));
+            extensions.add(new ServerNameExtension(serverNames));
         } catch (IOException ioe) {
             // ignore the exception and return
         }

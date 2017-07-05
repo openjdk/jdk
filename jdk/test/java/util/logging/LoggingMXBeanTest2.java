@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,14 @@ public class LoggingMXBeanTest2
     static String LOGGER_NAME_1 = "com.sun.management.Logger";
     static String LOGGER_NAME_2 = "com.sun.management.Logger.Logger2";
     static String UNKNOWN_LOGGER_NAME = "com.sun.management.Unknown";
+    static Logger logger1;
+    static Logger logger2;
 
     public LoggingMXBeanTest2() throws Exception {
 
-        Logger logger1 = Logger.getLogger( LOGGER_NAME_1 );
+        logger1 = Logger.getLogger( LOGGER_NAME_1 );
         logger1.setLevel(Level.FINE);
-        Logger logger2 = Logger.getLogger( LOGGER_NAME_2 );
+        logger2 = Logger.getLogger( LOGGER_NAME_2 );
         logger2.setLevel(null);
 
         /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,41 @@ public class Basic {
                                                      eq, s1, s2));
     }
 
-    public static void main(String[] args) {
+    static abstract class TestLoader {
+        String name;
 
-        ServiceLoader<FooService> sl = ServiceLoader.load(FooService.class);
-        out.format("%s%n", sl);
+        TestLoader(String name) { this.name = name; }
+
+        abstract ServiceLoader<FooService> load();
+    }
+
+    static TestLoader tcclLoader = new TestLoader("Thread context class loader") {
+        ServiceLoader<FooService> load() {
+            return ServiceLoader.load(FooService.class);
+        }
+    };
+
+    static TestLoader systemClLoader = new TestLoader("System class loader") {
+        ServiceLoader<FooService> load() {
+            return ServiceLoader.load(FooService.class, ClassLoader.getSystemClassLoader());
+        }
+    };
+
+    static TestLoader nullClLoader = new TestLoader("null (defer to system class loader)") {
+        ServiceLoader<FooService> load() {
+            return ServiceLoader.load(FooService.class, null);
+        }
+    };
+
+    public static void main(String[] args) {
+        for (TestLoader tl : Arrays.asList(tcclLoader, systemClLoader, nullClLoader)) {
+            test(tl);
+        }
+    }
+
+    static void test(TestLoader tl) {
+        ServiceLoader<FooService> sl = tl.load();
+        out.format("%s: %s%n", tl.name, sl);
 
         // Providers are cached
         Set<FooService> ps = setOf(sl);
@@ -58,5 +89,4 @@ public class Basic {
         checkEquals(ps, setOf(sl), false);
 
     }
-
 }

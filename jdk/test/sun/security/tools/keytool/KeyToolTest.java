@@ -56,7 +56,6 @@
  */
 
 import java.security.KeyStore;
-import sun.security.tools.KeyTool;
 import sun.security.x509.*;
 import java.io.*;
 import java.security.KeyPairGenerator;
@@ -149,12 +148,13 @@ public class KeyToolTest {
             System.setOut(new PrintStream(b1));
             System.setErr(new PrintStream(b2));
 
-            // since System.in is overrided, the KeyTool.main() method will
+            // since System.in is overrided, the
+            // sun.security.tools.keytool.Main.main() method will
             // never block at user input
 
-            // use -debug so that KeyTool.main() will throw an Exception
+            // use -debug so that main() will throw an Exception
             // instead of calling System.exit()
-            KeyTool.main(("-debug "+cmd).split("\\s+"));
+            sun.security.tools.keytool.Main.main(("-debug "+cmd).split("\\s+"));
         } finally {
             out = b1.toString();
             err = b2.toString();

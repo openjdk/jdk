@@ -1099,7 +1099,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                                     ? SwingConstants.CENTER
                                     : SwingConstants.LEADING);
 
-                            column.setComparator(new ColumnComparator(getIShellFolder(), i));
+                            column.setComparator(new ColumnComparator(Win32ShellFolder2.this, i));
 
                             notNullColumns.add(column);
                         }
@@ -1135,7 +1135,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         // synchronize the whole code of the sort method once
         invoke(new Callable<Void>() {
             public Void call() {
-                Collections.sort(files, new ColumnComparator(getIShellFolder(), 0));
+                Collections.sort(files, new ColumnComparator(Win32ShellFolder2.this, 0));
 
                 return null;
             }
@@ -1143,12 +1143,12 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     private static class ColumnComparator implements Comparator<File> {
-        private final long parentIShellFolder;
+        private final Win32ShellFolder2 shellFolder;
 
         private final int columnIdx;
 
-        public ColumnComparator(long parentIShellFolder, int columnIdx) {
-            this.parentIShellFolder = parentIShellFolder;
+        public ColumnComparator(Win32ShellFolder2 shellFolder, int columnIdx) {
+            this.shellFolder = shellFolder;
             this.columnIdx = columnIdx;
         }
 
@@ -1159,7 +1159,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                     if (o instanceof Win32ShellFolder2
                         && o1 instanceof Win32ShellFolder2) {
                         // delegates comparison to native method
-                        return compareIDsByColumn(parentIShellFolder,
+                        return compareIDsByColumn(shellFolder.getIShellFolder(),
                             ((Win32ShellFolder2) o).getRelativePIDL(),
                             ((Win32ShellFolder2) o1).getRelativePIDL(),
                             columnIdx);
