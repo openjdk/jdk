@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,10 @@
  *     <td>Can read/write to/from a&nbsp;buffer</td></tr>
  * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.SeekableByteChannel}</i></tt></td>
  *     <td>A {@code ByteChannel} connected to an entity that contains a variable-length sequence of bytes</td></tr>
+ * <tr><td valign=top><tt>&nbsp;&nbsp;<i>{@link java.nio.channels.AsynchronousChannel}</i></tt></td>
+ *     <td>Supports asynchronous I/O operations.</td></tr>
+ * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.AsynchronousByteChannel}</i></tt></td>
+ *     <td>Can read and write bytes asynchronously</td></tr>
  * <tr><td valign=top><tt>&nbsp;&nbsp;<i>{@link java.nio.channels.NetworkChannel}</i></tt></td>
  *     <td>A channel to a network socket</td></tr>
  * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.channels.MulticastChannel}</i></tt></td>
@@ -218,12 +222,70 @@
  * directly; custom channel classes should extend the appropriate {@link
  * java.nio.channels.SelectableChannel} subclasses defined in this package.
  *
+ * <a name="async"></a>
+ *
+ * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists asynchronous channels and their descriptions">
+ * <tr><th><p align="left">Asynchronous I/O</p></th><th><p align="left">Description</p></th></tr>
+ * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousFileChannel}</tt></td>
+ *     <td>An asynchronous channel for reading, writing, and manipulating a file</td></tr>
+ * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousSocketChannel}</tt></td>
+ *     <td>An asynchronous channel to a stream-oriented connecting socket</td></tr>
+ * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousServerSocketChannel}&nbsp;&nbsp;</tt></td>
+ *     <td>An asynchronous channel to a stream-oriented listening socket</td></tr>
+ * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousDatagramChannel}</tt></td>
+ *     <td>An asynchronous channel to a datagram-oriented socket</td></tr>
+ * <tr><td valign=top><tt>{@link java.nio.channels.CompletionHandler}</tt></td>
+ *     <td>A handler for consuming the result of an asynchronous operation</td></tr>
+ * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousChannelGroup}</tt></td>
+ *     <td>A grouping of asynchronous channels for the purpose of resource sharing</td></tr>
+ * </table></blockquote>
+ *
+ * <p> {@link java.nio.channels.AsynchronousChannel Asynchronous channels} are a
+ * special type of channel capable of asynchronous I/O operations. Asynchronous
+ * channels are non-blocking and define methods to initiate asynchronous
+ * operations, returning a {@link java.util.concurrent.Future} representing the
+ * pending result of each operation. The {@code Future} can be used to poll or
+ * wait for the result of the operation. Asynchronous I/O operations can also
+ * specify a {@link java.nio.channels.CompletionHandler} to invoke when the
+ * operation completes. A completion handler is user provided code that is executed
+ * to consume the result of I/O operation.
+ *
+ * <p> This package defines asynchronous-channel classes that are connected to
+ * a stream-oriented connecting or listening socket, or a datagram-oriented socket.
+ * It also defines the {@link java.nio.channels.AsynchronousFileChannel} class
+ * for asynchronous reading, writing, and manipulating a file. As with the {@link
+ * java.nio.channels.FileChannel} it supports operations to truncate the file
+ * to a specific size, force updates to the file to be written to the storage
+ * device, or acquire locks on the whole file or on a specific region of the file.
+ * Unlike the {@code FileChannel} it does not define methods for mapping a
+ * region of the file directly into memory. Where memory mapped I/O is required,
+ * then a {@code FileChannel} can be used.
+ *
+ * <p> Asynchronous channels are bound to an asynchronous channel group for the
+ * purpose of resource sharing. A group has an associated {@link
+ * java.util.concurrent.ExecutorService} to which tasks are submitted to handle
+ * I/O events and dispatch to completion handlers that consume the result of
+ * asynchronous operations performed on channels in the group. The group can
+ * optionally be specified when creating the channel or the channel can be bound
+ * to a <em>default group</em>. Sophisticated users may wish to create their
+ * own asynchronous channel groups or configure the {@code ExecutorService}
+ * that will be used for the default group.
+ *
+ * <p> As with selectors, the implementatin of asynchronous channels can be
+ * replaced by "plugging in" an alternative definition or instance of the {@link
+ * java.nio.channels.spi.AsynchronousChannelProvider} class defined in the
+ * <tt>{@link java.nio.channels.spi}</tt> package.  It is not expected that many
+ * developers will actually make use of this facility; it is provided primarily
+ * so that sophisticated users can take advantage of operating-system-specific
+ * asynchronous I/O mechanisms when very high performance is required.
+ *
  * <hr width="80%">
  * <p> Unless otherwise noted, passing a <tt>null</tt> argument to a constructor
  * or method in any class or interface in this package will cause a {@link
  * java.lang.NullPointerException NullPointerException} to be thrown.
  *
  * @since 1.4
+ * @updated 1.7
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  */

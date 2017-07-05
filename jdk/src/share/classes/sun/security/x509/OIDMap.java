@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,8 @@ public class OIDMap {
 
     private static final String CERT_ISSUER = ROOT + "." +
                                         CertificateIssuerExtension.NAME;
+    private static final String SUBJECT_INFO_ACCESS = ROOT + "." +
+                                          SubjectInfoAccessExtension.NAME;
     private static final String AUTH_INFO_ACCESS = ROOT + "." +
                                           AuthorityInfoAccessExtension.NAME;
     private static final String ISSUING_DIST_POINT = ROOT + "." +
@@ -148,6 +150,8 @@ public class OIDMap {
                     "sun.security.x509.CRLDistributionPointsExtension");
         addInternal(CERT_ISSUER, PKIXExtensions.CertificateIssuer_Id,
                     "sun.security.x509.CertificateIssuerExtension");
+        addInternal(SUBJECT_INFO_ACCESS, PKIXExtensions.SubjectInfoAccess_Id,
+                    "sun.security.x509.SubjectInfoAccessExtension");
         addInternal(AUTH_INFO_ACCESS, PKIXExtensions.AuthInfoAccess_Id,
                     "sun.security.x509.AuthorityInfoAccessExtension");
         addInternal(ISSUING_DIST_POINT,

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,6 +229,15 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
             throw new IOException("No extension found with name " + name);
         }
         map.remove(name);
+    }
+
+    public String getNameByOid(ObjectIdentifier oid) throws IOException {
+        for (String name: map.keySet()) {
+            if (map.get(name).getExtensionId().equals(oid)) {
+                return name;
+            }
+        }
+        return null;
     }
 
     /**
