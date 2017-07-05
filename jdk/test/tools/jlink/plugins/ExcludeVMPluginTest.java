@@ -27,6 +27,7 @@
  * @author Jean-Francois Denise
  * @modules jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
+ *          jdk.jlink/jdk.tools.jlink.plugin
  * @run main ExcludeVMPluginTest
  */
 import java.io.ByteArrayInputStream;

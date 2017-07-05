@@ -673,8 +673,11 @@ final class ClientHandshaker extends Handshaker {
             } else {
                 // we wanted to resume, but the server refused
                 //
-                // Invalidate the session in case of reusing next time.
-                session.invalidate();
+                // Invalidate the session for initial handshake in case
+                // of reusing next time.
+                if (isInitialHandshake) {
+                    session.invalidate();
+                }
                 session = null;
                 if (!enableNewSession) {
                     throw new SSLException("New session creation is disabled");

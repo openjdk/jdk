@@ -63,9 +63,8 @@ public class NTSidGroupPrincipal extends NTSid {
      */
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
-                (sun.security.util.ResourcesMgr.getString
-                        ("NTSidGroupPrincipal.name",
-                        "sun.security.util.AuthResources"));
+                (sun.security.util.ResourcesMgr.getAuthResourceString
+                        ("NTSidGroupPrincipal.name"));
         Object[] source = {getName()};
         return form.format(source);
     }

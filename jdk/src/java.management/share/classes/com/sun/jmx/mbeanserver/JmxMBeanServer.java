@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -1229,16 +1229,14 @@ public final class JmxMBeanServer
                 }
             });
         } catch (SecurityException e) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
-                MBEANSERVER_LOGGER.logp(Level.FINEST,
-                        JmxMBeanServer.class.getName(), "initialize",
+            if (MBEANSERVER_LOGGER.isLoggable(Level.DEBUG)) {
+                MBEANSERVER_LOGGER.log(Level.DEBUG,
                         "Unexpected security exception occurred", e);
             }
             throw e;
         } catch (Exception e) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
-                MBEANSERVER_LOGGER.logp(Level.FINEST,
-                        JmxMBeanServer.class.getName(), "initialize",
+            if (MBEANSERVER_LOGGER.isLoggable(Level.DEBUG)) {
+                MBEANSERVER_LOGGER.log(Level.DEBUG,
                         "Unexpected exception occurred", e);
             }
             throw new

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,26 +383,19 @@ JNIEXPORT jlong JNICALL
 Java_sun_lwawt_macosx_CMenuBar_nativeCreateMenuBar
     (JNIEnv *env, jobject peer)
 {
-    CMenuBar *aCMenuBar = nil;
+    __block CMenuBar *aCMenuBar = nil;
     JNF_COCOA_ENTER(env);
 
     jobject cPeerObjGlobal = (*env)->NewGlobalRef(env, peer);
 
-    // We use an array here only to be able to get a return value
-    NSMutableArray *args = [[NSMutableArray alloc] initWithObjects:[NSValue valueWithBytes:&cPeerObjGlobal objCType:@encode(jobject)], nil];
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
 
-    [ThreadUtilities performOnMainThread:@selector(_create_OnAppKitThread:) on:[CMenuBar alloc] withObject:args waitUntilDone:YES];
-
-    aCMenuBar = (CMenuBar *)[args objectAtIndex: 0];
-
+        aCMenuBar = [[CMenuBar alloc] initWithPeer:cPeerObjGlobal];
+        // the aCMenuBar is released in CMenuComponent.dispose()
+    }];
     if (aCMenuBar == nil) {
         return 0L;
     }
-
-    // [args release];
-
-    // A strange memory managment after that.
-
 
     JNF_COCOA_EXIT(env);
     return ptr_to_jlong(aCMenuBar);

@@ -77,11 +77,13 @@ struct hb_ot_shape_planner_t
                          map (face, &props) {}
   ~hb_ot_shape_planner_t (void) { map.finish (); }
 
-  inline void compile (hb_ot_shape_plan_t &plan)
+  inline void compile (hb_ot_shape_plan_t &plan,
+                       const int          *coords,
+                       unsigned int        num_coords)
   {
     plan.props = props;
     plan.shaper = shaper;
-    map.compile (plan.map);
+    map.compile (plan.map, coords, num_coords);
 
     plan.rtlm_mask = plan.map.get_1_mask (HB_TAG ('r','t','l','m'));
     plan.frac_mask = plan.map.get_1_mask (HB_TAG ('f','r','a','c'));

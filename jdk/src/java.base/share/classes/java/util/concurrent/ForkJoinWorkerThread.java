@@ -185,7 +185,14 @@ public class ForkJoinWorkerThread extends Thread {
     static final class InnocuousForkJoinWorkerThread extends ForkJoinWorkerThread {
         /** The ThreadGroup for all InnocuousForkJoinWorkerThreads */
         private static final ThreadGroup innocuousThreadGroup =
-            ThreadLocalRandom.createThreadGroup("InnocuousForkJoinWorkerThreadGroup");
+                java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<>() {
+                        public ThreadGroup run() {
+                            ThreadGroup group = Thread.currentThread().getThreadGroup();
+                            for (ThreadGroup p; (p = group.getParent()) != null; )
+                                group = p;
+                            return new ThreadGroup(group, "InnocuousForkJoinWorkerThreadGroup");
+                        }});
 
         /** An AccessControlContext supporting no privileges */
         private static final AccessControlContext INNOCUOUS_ACC =
@@ -215,6 +222,5 @@ public class ForkJoinWorkerThread extends Thread {
         public void setContextClassLoader(ClassLoader cl) {
             throw new SecurityException("setContextClassLoader");
         }
-
     }
 }

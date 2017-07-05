@@ -41,7 +41,6 @@ import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.LongBinaryOperator;
-import jdk.internal.misc.Unsafe;
 
 /**
  * A package-local class holding common representation and mechanics
@@ -191,7 +190,7 @@ abstract class Striped64 extends Number {
      * Duplicated from ThreadLocalRandom because of packaging restrictions.
      */
     static final int getProbe() {
-        return U.getInt(Thread.currentThread(), PROBE);
+        return (int) THREAD_PROBE.get(Thread.currentThread());
     }
 
     /**
@@ -203,7 +202,7 @@ abstract class Striped64 extends Number {
         probe ^= probe << 13;   // xorshift
         probe ^= probe >>> 17;
         probe ^= probe << 5;
-        U.putInt(Thread.currentThread(), PROBE, probe);
+        THREAD_PROBE.set(Thread.currentThread(), probe);
         return probe;
     }
 
@@ -373,18 +372,28 @@ abstract class Striped64 extends Number {
         }
     }
 
-    // Unsafe and VarHandle mechanics
-    private static final Unsafe U = Unsafe.getUnsafe();
+    // VarHandle mechanics
     private static final VarHandle BASE;
     private static final VarHandle CELLSBUSY;
-    private static final long PROBE;
+    private static final VarHandle THREAD_PROBE;
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
-            BASE = l.findVarHandle(Striped64.class, "base", long.class);
-            CELLSBUSY = l.findVarHandle(Striped64.class, "cellsBusy", int.class);
-            PROBE = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocalRandomProbe"));
+            BASE = l.findVarHandle(Striped64.class,
+                    "base", long.class);
+            CELLSBUSY = l.findVarHandle(Striped64.class,
+                    "cellsBusy", int.class);
+            l = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<>() {
+                        public MethodHandles.Lookup run() {
+                            try {
+                                return MethodHandles.privateLookupIn(Thread.class, MethodHandles.lookup());
+                            } catch (ReflectiveOperationException e) {
+                                throw new Error(e);
+                            }
+                        }});
+            THREAD_PROBE = l.findVarHandle(Thread.class,
+                    "threadLocalRandomProbe", int.class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }

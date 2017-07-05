@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMSignatureMethod.java 1333415 2012-05-03 12:03:51Z coheigea $
@@ -41,6 +41,7 @@ import org.w3c.dom.Element;
 import com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA;
 import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import org.jcp.xml.dsig.internal.SignerOutputStream;
+import sun.security.util.KeyUtil;
 
 /**
  * DOM-based abstract implementation of SignatureMethod.
@@ -207,6 +208,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         if (!(key instanceof PublicKey)) {
             throw new InvalidKeyException("key must be PublicKey");
         }
+        checkKeySize(context, key);
         if (signature == null) {
             Provider p = (Provider)context.getProperty(
                     "org.jcp.xml.dsig.internal.dom.SignatureProvider");
@@ -234,6 +236,37 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         return signature.verify(s);
     }
 
+    /**
+     * If secure validation mode is enabled, checks that the key size is
+     * restricted.
+     *
+     * @param context the context
+     * @param key the key to check
+     * @throws XMLSignatureException if the key size is restricted
+     */
+    private static void checkKeySize(XMLCryptoContext context, Key key)
+        throws XMLSignatureException {
+        if (Utils.secureValidation(context)) {
+            int size = KeyUtil.getKeySize(key);
+            if (size == -1) {
+                // key size cannot be determined, so we cannot check against
+                // restrictions. Note that a DSA key w/o params will be
+                // rejected later if the certificate chain is validated.
+                if (log.isLoggable(java.util.logging.Level.FINE)) {
+                    log.log(java.util.logging.Level.FINE, "Size for " +
+                            key.getAlgorithm() + " key cannot be determined");
+                }
+                return;
+            }
+            if (Policy.restrictKey(key.getAlgorithm(), size)) {
+                throw new XMLSignatureException(key.getAlgorithm() +
+                    " keys less than " +
+                    Policy.minKeySize(key.getAlgorithm()) + " bits are" +
+                    " forbidden when secure validation is enabled");
+            }
+        }
+    }
+
     byte[] sign(Key key, SignedInfo si, XMLSignContext context)
         throws InvalidKeyException, XMLSignatureException
     {
@@ -244,6 +277,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         if (!(key instanceof PrivateKey)) {
             throw new InvalidKeyException("key must be PrivateKey");
         }
+        checkKeySize(context, key);
         if (signature == null) {
             Provider p = (Provider)context.getProperty(
                     "org.jcp.xml.dsig.internal.dom.SignatureProvider");

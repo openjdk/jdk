@@ -25,8 +25,9 @@
  * @test
  * @summary Test last sorter property
  * @author Jean-Francois Denise
- * @modules jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink
+ * @modules jdk.jlink/jdk.tools.jlink
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
  * @run main/othervm LastSorterTest
  */
 

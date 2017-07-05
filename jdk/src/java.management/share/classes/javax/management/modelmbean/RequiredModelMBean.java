@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.security.PrivilegedAction;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import java.util.Map;
 import java.util.Set;
 
@@ -166,16 +166,12 @@ public class RequiredModelMBean
      **/
     public RequiredModelMBean()
         throws MBeanException, RuntimeOperationsException {
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                    "RequiredModelMBean()", "Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
         modelMBeanInfo = createDefaultModelMBeanInfo();
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                    "RequiredModelMBean()", "Exit");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
     }
 
@@ -202,17 +198,13 @@ public class RequiredModelMBean
     public RequiredModelMBean(ModelMBeanInfo mbi)
         throws MBeanException, RuntimeOperationsException {
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                    "RequiredModelMBean(MBeanInfo)", "Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
         setModelMBeanInfo(mbi);
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                    "RequiredModelMBean(MBeanInfo)", "Exit");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
     }
 
@@ -257,17 +249,13 @@ public class RequiredModelMBean
     public void setModelMBeanInfo(ModelMBeanInfo mbi)
         throws MBeanException, RuntimeOperationsException {
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "setModelMBeanInfo(ModelMBeanInfo)","Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (mbi == null) {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                    "setModelMBeanInfo(ModelMBeanInfo)",
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE,
                     "ModelMBeanInfo is null: Raising exception.");
             }
             final RuntimeException x = new
@@ -279,10 +267,8 @@ public class RequiredModelMBean
         }
 
         if (registered) {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                    "setModelMBeanInfo(ModelMBeanInfo)",
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE,
                     "RequiredMBean is registered: Raising exception.");
             }
             final String exceptionText =
@@ -293,32 +279,24 @@ public class RequiredModelMBean
             throw new RuntimeOperationsException(x,exceptionText);
         }
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "setModelMBeanInfo(ModelMBeanInfo)",
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE,
                 "Setting ModelMBeanInfo to " + printModelMBeanInfo(mbi));
             int noOfNotifications = 0;
             if (mbi.getNotifications() != null) {
                 noOfNotifications = mbi.getNotifications().length;
             }
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "setModelMBeanInfo(ModelMBeanInfo)",
+            MODELMBEAN_LOGGER.log(Level.TRACE,
                 "ModelMBeanInfo notifications has " +
                 noOfNotifications + " elements");
         }
 
         modelMBeanInfo = (ModelMBeanInfo)mbi.clone();
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "setModelMBeanInfo(ModelMBeanInfo)","set mbeanInfo to: "+
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "set mbeanInfo to: "+
                  printModelMBeanInfo(modelMBeanInfo));
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "setModelMBeanInfo(ModelMBeanInfo)","Exit");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
     }
 
@@ -346,37 +324,29 @@ public class RequiredModelMBean
     public void setManagedResource(Object mr, String mr_type)
         throws MBeanException, RuntimeOperationsException,
                InstanceNotFoundException, InvalidTargetObjectTypeException {
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "setManagedResource(Object,String)","Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         // check that the mr_type is supported by this JMXAgent
         // only "objectReference" is supported
         if ((mr_type == null) ||
             (! mr_type.equalsIgnoreCase("objectReference"))) {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                    "setManagedResource(Object,String)",
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE,
                     "Managed Resource Type is not supported: " + mr_type);
             }
             throw new InvalidTargetObjectTypeException(mr_type);
         }
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "setManagedResource(Object,String)",
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE,
                 "Managed Resource is valid");
         }
         managedResource = mr;
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "setManagedResource(Object, String)", "Exit");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
     }
 
@@ -482,11 +452,9 @@ public class RequiredModelMBean
     private Object resolveForCacheValue(Descriptor descr)
         throws MBeanException, RuntimeOperationsException {
 
-        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.FINER);
-        final String mth = "resolveForCacheValue(Descriptor)";
+        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.TRACE);
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,"Entry");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         Object response = null;
@@ -495,25 +463,22 @@ public class RequiredModelMBean
 
         if (descr == null) {
             if (tracing) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),mth,
+                MODELMBEAN_LOGGER.log(Level.TRACE,
                     "Input Descriptor is null");
             }
             return response;
         }
 
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                    mth, "descriptor is " + descr);
+            MODELMBEAN_LOGGER.log(Level.TRACE,
+                    "descriptor is " + descr);
         }
 
         final Descriptor mmbDescr = modelMBeanInfo.getMBeanDescriptor();
         if (mmbDescr == null) {
             if (tracing) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                        mth,"MBean Descriptor is null");
+                MODELMBEAN_LOGGER.log(Level.TRACE,
+                        "MBean Descriptor is null");
             }
             //return response;
         }
@@ -538,9 +503,8 @@ public class RequiredModelMBean
 
         if (expTime != null) {
             if (tracing) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                        mth,"currencyTimeLimit: " + expTime);
+                MODELMBEAN_LOGGER.log(Level.TRACE,
+                        "currencyTimeLimit: " + expTime);
             }
 
             // convert seconds to milliseconds for time comparison
@@ -550,8 +514,7 @@ public class RequiredModelMBean
                 returnCachedValue = false;
                 resetValue = true;
                 if (tracing) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            RequiredModelMBean.class.getName(),mth,
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                         currencyPeriod + ": never Cached");
                 }
             } else if (currencyPeriod == 0) {
@@ -559,9 +522,7 @@ public class RequiredModelMBean
                 returnCachedValue = true;
                 resetValue = false;
                 if (tracing) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            RequiredModelMBean.class.getName(),mth,
-                        "always valid Cache");
+                    MODELMBEAN_LOGGER.log(Level.TRACE, "always valid Cache");
                 }
             } else {
                 Object objtStamp =
@@ -572,8 +533,7 @@ public class RequiredModelMBean
                 else tStamp = null;
 
                 if (tracing) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            RequiredModelMBean.class.getName(),mth,
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                         "lastUpdatedTimeStamp: " + tStamp);
                 }
 
@@ -583,8 +543,7 @@ public class RequiredModelMBean
                 long lastTime = Long.parseLong(tStamp);
 
                 if (tracing) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            RequiredModelMBean.class.getName(),mth,
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                         "currencyPeriod:" + currencyPeriod +
                         " lastUpdatedTimeStamp:" + lastTime);
                 }
@@ -595,8 +554,7 @@ public class RequiredModelMBean
                     returnCachedValue = true;
                     resetValue = false;
                     if (tracing) {
-                        MODELMBEAN_LOGGER.logp(Level.FINER,
-                                RequiredModelMBean.class.getName(),mth,
+                        MODELMBEAN_LOGGER.log(Level.TRACE,
                             " timed valid Cache for " + now + " < " +
                             (lastTime + currencyPeriod));
                     }
@@ -604,16 +562,14 @@ public class RequiredModelMBean
                     returnCachedValue = false;
                     resetValue = true;
                     if (tracing) {
-                        MODELMBEAN_LOGGER.logp(Level.FINER,
-                                RequiredModelMBean.class.getName(),mth,
+                        MODELMBEAN_LOGGER.log(Level.TRACE,
                             "timed expired cache for " + now + " > " +
                             (lastTime + currencyPeriod));
                     }
                 }
             }
             if (tracing) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),mth,
+                MODELMBEAN_LOGGER.log(Level.TRACE,
                     "returnCachedValue:" + returnCachedValue +
                     " resetValue: " + resetValue);
             }
@@ -625,17 +581,15 @@ public class RequiredModelMBean
                     response = currValue;
                     /* need to cast string cached value to type */
                     if (tracing) {
-                        MODELMBEAN_LOGGER.logp(Level.FINER,
-                                RequiredModelMBean.class.getName(),mth,
+                        MODELMBEAN_LOGGER.log(Level.TRACE,
                             "valid Cache value: " + currValue);
                     }
 
                 } else {
                     response = null;
                     if (tracing) {
-                        MODELMBEAN_LOGGER.logp(Level.FINER,
-                            RequiredModelMBean.class.getName(),
-                                mth,"no Cached value");
+                        MODELMBEAN_LOGGER.log(Level.TRACE,
+                                 "no Cached value");
                     }
                 }
             }
@@ -647,16 +601,14 @@ public class RequiredModelMBean
                 response = null;
                 modelMBeanInfo.setDescriptor(descr,null);
                 if (tracing) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                            mth,"reset cached value to null");
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
+                        "reset cached value to null");
                 }
             }
         }
 
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,"Exit");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
 
         return response;
@@ -672,31 +624,24 @@ public class RequiredModelMBean
      **/
     public MBeanInfo getMBeanInfo() {
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                    "getMBeanInfo()","Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (modelMBeanInfo == null) {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                    "getMBeanInfo()","modelMBeanInfo is null");
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE, "modelMBeanInfo is null");
             }
             modelMBeanInfo = createDefaultModelMBeanInfo();
             //return new ModelMBeanInfo(" ", "", null, null, null, null);
         }
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "getMBeanInfo()","ModelMBeanInfo is " +
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "ModelMBeanInfo is " +
                   modelMBeanInfo.getClassName() + " for " +
                   modelMBeanInfo.getDescription());
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "getMBeanInfo()",printModelMBeanInfo(modelMBeanInfo));
+            MODELMBEAN_LOGGER.log(Level.TRACE,
+                    printModelMBeanInfo(modelMBeanInfo));
         }
 
         return((MBeanInfo) modelMBeanInfo.clone());
@@ -705,10 +650,8 @@ public class RequiredModelMBean
     private String printModelMBeanInfo(ModelMBeanInfo info) {
         final StringBuilder retStr = new StringBuilder();
         if (info == null) {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                        "printModelMBeanInfo(ModelMBeanInfo)",
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE,
                         "ModelMBeanInfo to print is null, " +
                         "printing local ModelMBeanInfo");
             }
@@ -909,12 +852,10 @@ public class RequiredModelMBean
     public Object invoke(String opName, Object[] opArgs, String[] sig)
             throws MBeanException, ReflectionException {
 
-        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.FINER);
-        final String mth = "invoke(String, Object[], String[])";
+        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.TRACE);
 
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(), mth, "Entry");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (opName == null) {
@@ -943,9 +884,8 @@ public class RequiredModelMBean
             opMethodName = opMethodName.substring(0,opSplitter);
 
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                    mth, "Finding operation " + opName + " as " + opMethodName);
+            MODELMBEAN_LOGGER.log(Level.TRACE,
+                    "Finding operation " + opName + " as " + opMethodName);
         }
 
         ModelMBeanOperationInfo opInfo =
@@ -965,10 +905,7 @@ public class RequiredModelMBean
         final Object cached = resolveForCacheValue(opDescr);
         if (cached != null) {
             if (tracing) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                        mth,
-                        "Returning cached value");
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Returning cached value");
             }
             return cached;
         }
@@ -996,9 +933,8 @@ public class RequiredModelMBean
 
         final Object targetObjectField = opDescr.getFieldValue("targetObject");
         if (tracing && targetObjectField != null)
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                        mth, "Found target object in descriptor");
+                MODELMBEAN_LOGGER.log(Level.TRACE,
+                        "Found target object in descriptor");
 
         /* Now look for the method, either in RequiredModelMBean itself
            or in the target object.  Set "method" and "targetObject"
@@ -1013,9 +949,8 @@ public class RequiredModelMBean
             targetObject = this;
         else {
             if (tracing) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                        mth, "looking for method in managedResource class");
+                MODELMBEAN_LOGGER.log(Level.TRACE,
+                        "looking for method in managedResource class");
             }
             if (targetObjectField != null)
                 targetObject = targetObjectField;
@@ -1071,18 +1006,15 @@ public class RequiredModelMBean
         }
 
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                RequiredModelMBean.class.getName(),
-                    mth, "found " + opMethodName + ", now invoking");
+            MODELMBEAN_LOGGER.log(Level.TRACE,
+                    "found " + opMethodName + ", now invoking");
         }
 
         final Object result =
             invokeMethod(opName, method, targetObject, opArgs);
 
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                RequiredModelMBean.class.getName(),
-                    mth, "successfully invoked method");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "successfully invoked method");
         }
 
         if (result != null)
@@ -1095,12 +1027,11 @@ public class RequiredModelMBean
                                         String opMethodName,
                                         final String[] sig)
             throws ReflectionException {
-        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.FINER);
+        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.TRACE);
 
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                RequiredModelMBean.class.getName(),"resolveMethod",
-                  "resolving " + targetClass.getName() + "." + opMethodName);
+            MODELMBEAN_LOGGER.log(Level.TRACE,
+                    "resolving " + targetClass.getName() + "." + opMethodName);
         }
 
         final Class<?>[] argClasses;
@@ -1119,8 +1050,7 @@ public class RequiredModelMBean
                 public Void run() {
                     for (int i = 0; i < sig.length; i++) {
                         if (tracing) {
-                            MODELMBEAN_LOGGER.logp(Level.FINER,
-                                RequiredModelMBean.class.getName(),"resolveMethod",
+                            MODELMBEAN_LOGGER.log(Level.TRACE,
                                     "resolve type " + sig[i]);
                         }
                         argClasses[i] = (Class<?>) primitiveClassMap.get(sig[i]);
@@ -1131,9 +1061,7 @@ public class RequiredModelMBean
                                     Class.forName(sig[i], false, targetClassLoader);
                             } catch (ClassNotFoundException e) {
                                 if (tracing) {
-                                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                                            RequiredModelMBean.class.getName(),
-                                            "resolveMethod",
+                                    MODELMBEAN_LOGGER.log(Level.TRACE,
                                             "class not found");
                                 }
                                 final String msg = "Parameter class not found";
@@ -1182,12 +1110,10 @@ public class RequiredModelMBean
                                          Object targetObjectField,
                                          String opClassName,
                                          String[] sig) {
-        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.FINER);
+        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.TRACE);
 
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                RequiredModelMBean.class.getName(),
-                    "invoke(String, Object[], String[])",
+            MODELMBEAN_LOGGER.log(Level.TRACE,
                   "looking for method in RequiredModelMBean class");
         }
 
@@ -1340,10 +1266,8 @@ public class RequiredModelMBean
 
             modelMBeanInfo.setDescriptor(opDescr,
                                          "operation");
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                        "invoke(String,Object[],Object[])",
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE,
                         "new descriptor is " + opDescr);
             }
         }
@@ -1495,12 +1419,9 @@ public class RequiredModelMBean
                 IllegalArgumentException("attributeName must not be null"),
                 "Exception occurred trying to get attribute of a " +
                 "RequiredModelMBean");
-        final String mth = "getAttribute(String)";
-        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.FINER);
+        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.TRACE);
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                mth, "Entry with " + attrName);
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry with " + attrName);
         }
 
         /* Check attributeDescriptor for getMethod */
@@ -1530,16 +1451,14 @@ public class RequiredModelMBean
 
                 /* return current cached value */
                 if (tracing) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            RequiredModelMBean.class.getName(), mth,
-                        "*** cached value is " + response);
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
+                            "*** cached value is " + response);
                 }
 
                 if (response == null) {
                     /* no cached value, run getMethod */
                     if (tracing) {
-                        MODELMBEAN_LOGGER.logp(Level.FINER,
-                                RequiredModelMBean.class.getName(), mth,
+                        MODELMBEAN_LOGGER.log(Level.TRACE,
                             "**** cached value is null - getting getMethod");
                     }
                     String attrGetMethod =
@@ -1548,9 +1467,8 @@ public class RequiredModelMBean
                     if (attrGetMethod != null) {
                         /* run method from operations descriptor */
                         if (tracing) {
-                            MODELMBEAN_LOGGER.logp(Level.FINER,
-                                    RequiredModelMBean.class.getName(),
-                                mth, "invoking a getMethod for " +  attrName);
+                            MODELMBEAN_LOGGER.log(Level.TRACE,
+                                "invoking a getMethod for " +  attrName);
                         }
 
                         Object getResponse =
@@ -1560,9 +1478,8 @@ public class RequiredModelMBean
                         if (getResponse != null) {
                             // error/validity check return value here
                             if (tracing) {
-                                MODELMBEAN_LOGGER.logp(Level.FINER,
-                                        RequiredModelMBean.class.getName(),
-                                        mth, "got a non-null response " +
+                                MODELMBEAN_LOGGER.log(Level.TRACE,
+                                        "got a non-null response " +
                                         "from getMethod\n");
                             }
 
@@ -1585,9 +1502,7 @@ public class RequiredModelMBean
 
                             if ((ctl != null) && !(ctl.equals("-1"))) {
                                 if (tracing) {
-                                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                                            RequiredModelMBean.class.getName(),
-                                            mth,
+                                    MODELMBEAN_LOGGER.log(Level.TRACE,
                                             "setting cached value and " +
                                             "lastUpdatedTime in descriptor");
                                 }
@@ -1600,19 +1515,15 @@ public class RequiredModelMBean
                                 modelMBeanInfo.setDescriptor(attrDescr,
                                                              "attribute");
                                 if (tracing) {
-                                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                                            RequiredModelMBean.class.getName(),
-                                        mth,"new descriptor is " +attrDescr);
-                                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                                            RequiredModelMBean.class.getName(),
-                                        mth,"AttributeInfo descriptor is " +
+                                    MODELMBEAN_LOGGER.log(Level.TRACE,
+                                            "new descriptor is " +attrDescr);
+                                    MODELMBEAN_LOGGER.log(Level.TRACE,
+                                            "AttributeInfo descriptor is " +
                                             attrInfo.getDescriptor());
                                     final String attStr = modelMBeanInfo.
                                         getDescriptor(attrName,"attribute").
                                             toString();
-                                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                                            RequiredModelMBean.class.getName(),
-                                            mth,
+                                    MODELMBEAN_LOGGER.log(Level.TRACE,
                                             "modelMBeanInfo: AttributeInfo " +
                                             "descriptor is " + attStr);
                                 }
@@ -1620,8 +1531,7 @@ public class RequiredModelMBean
                         } else {
                             // response was invalid or really returned null
                             if (tracing) {
-                                MODELMBEAN_LOGGER.logp(Level.FINER,
-                                        RequiredModelMBean.class.getName(), mth,
+                                MODELMBEAN_LOGGER.log(Level.TRACE,
                                     "got a null response from getMethod\n");
                             }
                             response = null;
@@ -1635,8 +1545,7 @@ public class RequiredModelMBean
                             response = attrDescr.getFieldValue("default");
                         }
                         if (tracing) {
-                            MODELMBEAN_LOGGER.logp(Level.FINER,
-                                    RequiredModelMBean.class.getName(), mth,
+                            MODELMBEAN_LOGGER.log(Level.TRACE,
                                 "could not find getMethod for " +attrName +
                                 ", returning descriptor " +qualifier + "value");
                         }
@@ -1698,9 +1607,8 @@ public class RequiredModelMBean
                                 subtype = false;
 
                                 if (tracing) {
-                                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                                            RequiredModelMBean.class.getName(),
-                                        mth, "Exception: ",e);
+                                    MODELMBEAN_LOGGER.log(Level.TRACE,
+                                            "Exception: ", e);
                                 }
                             }
                             if (!subtype)
@@ -1708,9 +1616,8 @@ public class RequiredModelMBean
                         }
                         if (wrongType) {
                             if (tracing) {
-                                MODELMBEAN_LOGGER.logp(Level.FINER,
-                                        RequiredModelMBean.class.getName(), mth,
-                                    "Wrong response type '" + respType + "'");
+                                MODELMBEAN_LOGGER.log(Level.TRACE,
+                                     "Wrong response type '" + respType + "'");
                             }
                             // throw exception, didn't get
                             // back right attribute type
@@ -1724,8 +1631,7 @@ public class RequiredModelMBean
                 }
             } else {
                 if (tracing) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            RequiredModelMBean.class.getName(), mth,
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                             "getMethod failed " + attrName +
                             " not in attributeDescriptor\n");
                 }
@@ -1743,8 +1649,7 @@ public class RequiredModelMBean
             throw t;
         } catch (Exception e) {
             if (tracing) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(), mth,
+                MODELMBEAN_LOGGER.log(Level.TRACE,
                         "getMethod failed with " + e.getMessage() +
                         " exception type " + (e.getClass()).toString());
             }
@@ -1753,8 +1658,7 @@ public class RequiredModelMBean
         }
 
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(), mth, "Exit");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
 
         return response;
@@ -1777,10 +1681,9 @@ public class RequiredModelMBean
      * @see #setAttributes(javax.management.AttributeList)
      */
     public AttributeList getAttributes(String[] attrNames)      {
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-            "getAttributes(String[])","Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE,
+                    RequiredModelMBean.class.getName(), "Entry");
         }
 
         if (attrNames == null)
@@ -1797,19 +1700,15 @@ public class RequiredModelMBean
             } catch (Exception e) {
                 // eat exceptions because interface doesn't have an
                 // exception on it
-                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            RequiredModelMBean.class.getName(),
-                        "getAttributes(String[])",
+                if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                             "Failed to get \"" + attrNames[i] + "\": ", e);
                 }
             }
         }
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                RequiredModelMBean.class.getName(),
-                    "getAttributes(String[])","Exit");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
 
         return responseList;
@@ -1894,11 +1793,9 @@ public class RequiredModelMBean
     public void setAttribute(Attribute attribute)
         throws AttributeNotFoundException, InvalidAttributeValueException,
                MBeanException, ReflectionException {
-        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.FINER);
+        final boolean tracing = MODELMBEAN_LOGGER.isLoggable(Level.TRACE);
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "setAttribute()","Entry");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (attribute == null)
@@ -1958,11 +1855,9 @@ public class RequiredModelMBean
                                             attrValue.getClass().getName() +
                                                            " received.");
                     } catch (ClassNotFoundException x) {
-                        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                            MODELMBEAN_LOGGER.logp(Level.FINER,
-                                    RequiredModelMBean.class.getName(),
-                                "setAttribute(Attribute)","Class " +
-                                    attrType + " for attribute "
+                        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                            MODELMBEAN_LOGGER.log(Level.TRACE,
+                                "Class " + attrType + " for attribute "
                                 + attrName + " not found: ", x);
                         }
                     }
@@ -1996,9 +1891,7 @@ public class RequiredModelMBean
 
             if (updateCache || updateDescriptor) {
                 if (tracing) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                            "setAttribute(Attribute)",
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                             "setting cached value of " +
                             attrName + " to " + attrValue);
                 }
@@ -2022,26 +1915,22 @@ public class RequiredModelMBean
                     .append(attrInfo.getDescriptor())
                     .append(". AttributeInfo descriptor is ")
                     .append(modelMBeanInfo.getDescriptor(attrName,"attribute"));
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            RequiredModelMBean.class.getName(),
-                            "setAttribute(Attribute)",strb.toString());
+                    MODELMBEAN_LOGGER.log(Level.TRACE, strb::toString);
                 }
 
             }
 
             if (tracing) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                "setAttribute(Attribute)","sending sendAttributeNotification");
+                MODELMBEAN_LOGGER.log(Level.TRACE,
+                        "sending sendAttributeNotification");
             }
             sendAttributeChangeNotification(oldAttr,attribute);
 
         } else { // if descriptor ... else no descriptor
 
             if (tracing) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            RequiredModelMBean.class.getName(),
-                        "setAttribute(Attribute)","setMethod failed "+attrName+
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
+                        "setMethod failed " + attrName +
                         " not in attributeDescriptor\n");
             }
 
@@ -2051,9 +1940,7 @@ public class RequiredModelMBean
         } // else no descriptor
 
         if (tracing) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "setAttribute(Attribute)", "Exit");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
 
     }
@@ -2076,10 +1963,8 @@ public class RequiredModelMBean
      **/
     public AttributeList setAttributes(AttributeList attributes) {
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "setAttribute(Attribute)", "Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (attributes == null)
@@ -2118,17 +2003,13 @@ public class RequiredModelMBean
     private synchronized void writeToLog(String logFileName,
                                          String logEntry) throws Exception {
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "writeToLog(String, String)",
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE,
                 "Notification Logging to " + logFileName + ": " + logEntry);
         }
         if ((logFileName == null) || (logEntry == null)) {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                    "writeToLog(String, String)",
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE,
                     "Bad input parameters, will not log this entry.");
             }
             return;
@@ -2139,17 +2020,13 @@ public class RequiredModelMBean
             PrintStream logOut = new PrintStream(fos);
             logOut.println(logEntry);
             logOut.close();
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(),
-                    "writeToLog(String, String)","Successfully opened log " +
-                        logFileName);
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE,
+                    "Successfully opened log " + logFileName);
             }
         } catch (Exception e) {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                        "writeToLog(String, String)",
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE,
                         "Exception " + e.toString() +
                         " trying to write to the Notification log file " +
                         logFileName);
@@ -2184,11 +2061,8 @@ public class RequiredModelMBean
                                         NotificationFilter filter,
                                         Object handback)
         throws java.lang.IllegalArgumentException {
-        final String mth = "addNotificationListener(" +
-                "NotificationListener, NotificationFilter, Object)";
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(), mth, "Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (listener == null)
@@ -2200,12 +2074,10 @@ public class RequiredModelMBean
 
         generalBroadcaster.addNotificationListener(listener, filter,
                                                    handback);
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(), mth,
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE,
                     "NotificationListener added");
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        RequiredModelMBean.class.getName(), mth, "Exit");
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
     }
 
@@ -2227,10 +2099,8 @@ public class RequiredModelMBean
             throw new ListenerNotFoundException(
                       "Notification listener is null");
 
-        final String mth="removeNotificationListener(NotificationListener)";
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(), mth, "Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (generalBroadcaster == null)
@@ -2239,9 +2109,8 @@ public class RequiredModelMBean
 
 
         generalBroadcaster.removeNotificationListener(listener);
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(), mth, "Exit");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
 
     }
@@ -2255,12 +2124,8 @@ public class RequiredModelMBean
             throw new ListenerNotFoundException(
                       "Notification listener is null");
 
-        final String mth = "removeNotificationListener(" +
-                "NotificationListener, NotificationFilter, Object)";
-
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(), mth, "Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (generalBroadcaster == null)
@@ -2271,19 +2136,16 @@ public class RequiredModelMBean
         generalBroadcaster.removeNotificationListener(listener,filter,
                                                       handback);
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(), mth, "Exit");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
 
     }
 
     public void sendNotification(Notification ntfyObj)
         throws MBeanException, RuntimeOperationsException {
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "sendNotification(Notification)", "Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (ntfyObj == null)
@@ -2324,10 +2186,8 @@ public class RequiredModelMBean
                             ntfyObj.getMessage() + " Severity = " +
                             (String)ntfyDesc.getFieldValue("severity"));
                     } catch (Exception e) {
-                        if (MODELMBEAN_LOGGER.isLoggable(Level.FINE)) {
-                            MODELMBEAN_LOGGER.logp(Level.FINE,
-                                    RequiredModelMBean.class.getName(),
-                                    "sendNotification(Notification)",
+                        if (MODELMBEAN_LOGGER.isLoggable(Level.DEBUG)) {
+                            MODELMBEAN_LOGGER.log(Level.DEBUG,
                                     "Failed to log " +
                                     ntfyObj.getType() + " notification: ", e);
                         }
@@ -2339,14 +2199,10 @@ public class RequiredModelMBean
             generalBroadcaster.sendNotification(ntfyObj);
         }
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                RequiredModelMBean.class.getName(),
-                    "sendNotification(Notification)",
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE,
                     "sendNotification sent provided notification object");
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                RequiredModelMBean.class.getName(),
-                    "sendNotification(Notification)"," Exit");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
 
     }
@@ -2354,10 +2210,8 @@ public class RequiredModelMBean
 
     public void sendNotification(String ntfyText)
         throws MBeanException, RuntimeOperationsException {
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "sendNotification(String)","Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (ntfyText == null)
@@ -2370,13 +2224,9 @@ public class RequiredModelMBean
         Notification myNtfyObj = new Notification("jmx.modelmbean.generic",
                                                   this, 1, ntfyText);
         sendNotification(myNtfyObj);
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "sendNotification(String)","Notification sent");
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "sendNotification(String)","Exit");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Notification sent");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
     }
 
@@ -2456,10 +2306,8 @@ public class RequiredModelMBean
      *
      **/
     public MBeanNotificationInfo[] getNotificationInfo() {
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "getNotificationInfo()","Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         // Using hasNotification() is not optimal, but shouldn't really
@@ -2518,10 +2366,8 @@ public class RequiredModelMBean
             respInfo[offset+j] = currInfo[j];
         }
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),
-                "getNotificationInfo()","Exit");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
 
         return respInfo;
@@ -2535,12 +2381,8 @@ public class RequiredModelMBean
                                                        Object inhandback)
         throws MBeanException, RuntimeOperationsException,
                IllegalArgumentException {
-        final String mth="addAttributeChangeNotificationListener(" +
-                "NotificationListener, String, Object)";
-
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,"Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (inlistener == null)
@@ -2581,24 +2423,21 @@ public class RequiredModelMBean
             }
         }
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
             Vector<String> enabledAttrs = currFilter.getEnabledAttributes();
             String s = (enabledAttrs.size() > 1) ?
                         "[" + enabledAttrs.firstElement() + ", ...]" :
                         enabledAttrs.toString();
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(), mth,
+            MODELMBEAN_LOGGER.log(Level.TRACE,
                 "Set attribute change filter to " + s);
         }
 
         attributeBroadcaster.addNotificationListener(inlistener,currFilter,
                                                      inhandback);
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE,
                     "Notification listener added for " + inAttributeName);
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,"Exit");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
     }
 
@@ -2609,12 +2448,9 @@ public class RequiredModelMBean
         if (inlistener == null) throw new
             ListenerNotFoundException("Notification listener is null");
 
-        final String mth = "removeAttributeChangeNotificationListener(" +
-                "NotificationListener, String)";
-
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,"Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE,
+                    RequiredModelMBean.class.getName(), "Entry");
         }
 
 
@@ -2648,21 +2484,17 @@ public class RequiredModelMBean
 
         attributeBroadcaster.removeNotificationListener(inlistener);
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,"Exit");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
     }
 
     public void sendAttributeChangeNotification(AttributeChangeNotification
                                                 ntfyObj)
         throws MBeanException, RuntimeOperationsException {
-        final String mth = "sendAttributeChangeNotification(" +
-                "AttributeChangeNotification)";
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,"Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         if (ntfyObj == null)
@@ -2678,9 +2510,8 @@ public class RequiredModelMBean
         if (oldv == null) oldv = "null";
         if (newv == null) newv = "null";
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE,
                 "Sending AttributeChangeNotification with " +
                 ntfyObj.getAttributeName() + ntfyObj.getAttributeType() +
                 ntfyObj.getNewValue() + ntfyObj.getOldValue());
@@ -2718,9 +2549,8 @@ public class RequiredModelMBean
                            " Old value = " + oldv +
                            " New value = " + newv);
                     } catch (Exception e) {
-                        if (MODELMBEAN_LOGGER.isLoggable(Level.FINE)) {
-                            MODELMBEAN_LOGGER.logp(Level.FINE,
-                                    RequiredModelMBean.class.getName(),mth,
+                        if (MODELMBEAN_LOGGER.isLoggable(Level.DEBUG)) {
+                            MODELMBEAN_LOGGER.log(Level.DEBUG,
                                 "Failed to log " + ntfyObj.getType() +
                                     " notification: ", e);
                         }
@@ -2744,9 +2574,8 @@ public class RequiredModelMBean
                            " Old value = " + oldv +
                            " New value = " + newv);
                     } catch (Exception e) {
-                        if (MODELMBEAN_LOGGER.isLoggable(Level.FINE)) {
-                            MODELMBEAN_LOGGER.logp(Level.FINE,
-                                    RequiredModelMBean.class.getName(),mth,
+                        if (MODELMBEAN_LOGGER.isLoggable(Level.DEBUG)) {
+                            MODELMBEAN_LOGGER.log(Level.DEBUG,
                                 "Failed to log " + ntfyObj.getType() +
                                     " notification: ", e);
                         }
@@ -2768,25 +2597,17 @@ public class RequiredModelMBean
             generalBroadcaster.sendNotification(ntfyObj);
         }
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,
-                "sent notification");
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,
-                "Exit");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "sent notification");
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
     }
 
     public void sendAttributeChangeNotification(Attribute inOldVal,
                                                 Attribute inNewVal)
         throws MBeanException, RuntimeOperationsException {
-        final String mth =
-            "sendAttributeChangeNotification(Attribute, Attribute)";
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,
-                "Entry");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
         }
 
         // do we really want to do this?
@@ -2824,10 +2645,8 @@ public class RequiredModelMBean
 
         sendAttributeChangeNotification(myNtfyObj);
 
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-            MODELMBEAN_LOGGER.logp(Level.FINER,
-                    RequiredModelMBean.class.getName(),mth,
-                "Exit");
+        if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+            MODELMBEAN_LOGGER.log(Level.TRACE, "Exit");
         }
 
     }

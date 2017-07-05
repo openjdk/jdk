@@ -735,7 +735,11 @@ public class PNGImageReader extends ImageReader {
                     parse_iCCP_chunk(chunkLength);
                     break;
                 case iTXt_TYPE:
-                    parse_iTXt_chunk(chunkLength);
+                    if (ignoreMetadata) {
+                        stream.skipBytes(chunkLength);
+                    } else {
+                        parse_iTXt_chunk(chunkLength);
+                    }
                     break;
                 case pHYs_TYPE:
                     parse_pHYs_chunk();
@@ -759,7 +763,11 @@ public class PNGImageReader extends ImageReader {
                     parse_tRNS_chunk(chunkLength);
                     break;
                 case zTXt_TYPE:
-                    parse_zTXt_chunk(chunkLength);
+                    if (ignoreMetadata) {
+                        stream.skipBytes(chunkLength);
+                    } else {
+                        parse_zTXt_chunk(chunkLength);
+                    }
                     break;
                 default:
                     // Read an unknown chunk

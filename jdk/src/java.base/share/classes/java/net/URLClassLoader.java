@@ -115,8 +115,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        this.ucp = new URLClassPath(urls);
         this.acc = AccessController.getContext();
+        this.ucp = new URLClassPath(urls, acc);
     }
 
     URLClassLoader(String name, URL[] urls, ClassLoader parent,
@@ -127,8 +127,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        this.ucp = new URLClassPath(urls);
         this.acc = acc;
+        this.ucp = new URLClassPath(urls, acc);
     }
 
     /**
@@ -159,8 +159,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        this.ucp = new URLClassPath(urls);
         this.acc = AccessController.getContext();
+        this.ucp = new URLClassPath(urls, acc);
     }
 
     URLClassLoader(URL[] urls, AccessControlContext acc) {
@@ -170,8 +170,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        this.ucp = new URLClassPath(urls);
         this.acc = acc;
+        this.ucp = new URLClassPath(urls, acc);
     }
 
     /**
@@ -203,8 +203,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        this.ucp = new URLClassPath(urls, factory);
         this.acc = AccessController.getContext();
+        this.ucp = new URLClassPath(urls, factory, acc);
     }
 
 
@@ -238,8 +238,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        this.ucp = new URLClassPath(urls);
         this.acc = AccessController.getContext();
+        this.ucp = new URLClassPath(urls, acc);
     }
 
     /**
@@ -271,8 +271,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         if (security != null) {
             security.checkCreateClassLoader();
         }
-        this.ucp = new URLClassPath(urls, factory);
         this.acc = AccessController.getContext();
+        this.ucp = new URLClassPath(urls, factory, acc);
     }
 
     /* A map (used as a set) to keep track of closeable local resources

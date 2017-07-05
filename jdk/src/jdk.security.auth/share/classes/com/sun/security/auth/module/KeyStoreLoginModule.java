@@ -51,6 +51,7 @@ import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
 
 import sun.security.util.Password;
+import static sun.security.util.ResourcesMgr.getAuthResourceString;
 
 /**
  * Provides a JAAS login module that prompts for a key store alias and
@@ -112,9 +113,6 @@ import sun.security.util.Password;
  */
 public class KeyStoreLoginModule implements LoginModule {
 
-    private static final ResourceBundle rb =
-        ResourceBundle.getBundle("sun.security.util.AuthResources");
-
     /* -- Fields -- */
 
     private static final int UNINITIALIZED = 0;
@@ -132,7 +130,7 @@ public class KeyStoreLoginModule implements LoginModule {
     private static final TextOutputCallback bannerCallback =
                 new TextOutputCallback
                         (TextOutputCallback.INFORMATION,
-                        rb.getString("Please.enter.keystore.information"));
+                        getAuthResourceString("Please.enter.keystore.information"));
     private final ConfirmationCallback confirmationCallback =
                 new ConfirmationCallback
                         (ConfirmationCallback.INFORMATION,
@@ -344,11 +342,10 @@ public class KeyStoreLoginModule implements LoginModule {
 
             NameCallback aliasCallback;
             if (keyStoreAlias == null || keyStoreAlias.length() == 0) {
-                aliasCallback = new NameCallback(
-                                        rb.getString("Keystore.alias."));
+                aliasCallback = new NameCallback(getAuthResourceString("Keystore.alias."));
             } else {
                 aliasCallback =
-                    new NameCallback(rb.getString("Keystore.alias."),
+                    new NameCallback(getAuthResourceString("Keystore.alias."),
                                      keyStoreAlias);
             }
 
@@ -360,11 +357,11 @@ public class KeyStoreLoginModule implements LoginModule {
                 break;
             case NORMAL:
                 keyPassCallback = new PasswordCallback
-                    (rb.getString("Private.key.password.optional."), false);
+                    (getAuthResourceString("Private.key.password.optional."), false);
                 // fall thru
             case TOKEN:
                 storePassCallback = new PasswordCallback
-                    (rb.getString("Keystore.password."), false);
+                    (getAuthResourceString("Keystore.password."), false);
                 break;
             }
             prompt(aliasCallback, storePassCallback, keyPassCallback);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -818,6 +818,11 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             checker.init(false);
         } catch (CertPathValidatorException cpve) {
             // unlikely to happen
+            if (useDebug) {
+                debug.println(
+                    "Cannot initialize algorithm constraints checker: " + cpve);
+            }
+
             return false;
         }
 
@@ -828,6 +833,11 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 // We don't care about the unresolved critical extensions.
                 checker.check(cert, Collections.<String>emptySet());
             } catch (CertPathValidatorException cpve) {
+                if (useDebug) {
+                    debug.println("Certificate (" + cert +
+                        ") does not conform to algorithm constraints: " + cpve);
+                }
+
                 return false;
             }
         }

@@ -331,9 +331,8 @@ public final class ConfigFile extends Configuration {
                 if (debugConfig != null) {
                     debugConfig.println(fnfe.toString());
                 }
-                throw new IOException(ResourcesMgr.getString
-                    ("Configuration.Error.No.such.file.or.directory",
-                    "sun.security.util.AuthResources"));
+                throw new IOException(ResourcesMgr.getAuthResourceString
+                    ("Configuration.Error.No.such.file.or.directory"));
             }
         }
 
@@ -661,8 +660,8 @@ public final class ConfigFile extends Configuration {
         }
 
         private IOException ioException(String resourceKey, Object... args) {
-            MessageFormat form = new MessageFormat(ResourcesMgr.getString
-                (resourceKey, "sun.security.util.AuthResources"));
+            MessageFormat form = new MessageFormat(
+                ResourcesMgr.getAuthResourceString(resourceKey));
             return new IOException(form.format(args));
         }
     }
