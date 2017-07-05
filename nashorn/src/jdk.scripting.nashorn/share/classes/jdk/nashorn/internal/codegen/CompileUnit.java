@@ -56,7 +56,7 @@ public final class CompileUnit implements Comparable<CompileUnit>, Serializable 
 
     private transient Class<?> clazz;
 
-    private transient Map<FunctionNode, RecompilableScriptFunctionData> functions = new IdentityHashMap<>();
+    private final transient Map<FunctionNode, RecompilableScriptFunctionData> functions = new IdentityHashMap<>();
 
     private transient boolean isUsed;
 

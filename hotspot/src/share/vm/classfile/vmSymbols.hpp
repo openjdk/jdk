@@ -863,6 +863,12 @@
    do_name(     updateByteBuffer_name,                           "updateByteBuffer")                                    \
    do_signature(updateByteBuffer_signature,                      "(IJII)I")                                             \
                                                                                                                         \
+  /* support for java.util.zip.CRC32C */                                                                                \
+  do_class(java_util_zip_CRC32C,          "java/util/zip/CRC32C")                                                       \
+  do_intrinsic(_updateBytesCRC32C,         java_util_zip_CRC32C,  updateBytes_name, updateBytes_signature,       F_S)   \
+  do_intrinsic(_updateDirectByteBufferCRC32C, java_util_zip_CRC32C, updateDirectByteBuffer_name, updateByteBuffer_signature, F_S) \
+   do_name(     updateDirectByteBuffer_name,                     "updateDirectByteBuffer")                              \
+                                                                                                                        \
   /* support for sun.misc.Unsafe */                                                                                     \
   do_class(sun_misc_Unsafe,               "sun/misc/Unsafe")                                                            \
                                                                                                                         \

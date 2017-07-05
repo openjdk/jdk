@@ -357,7 +357,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         if (DEBUG) {
             System.out.println(">>>DEBUG <CCacheInputStream> key type: " + key.getEType());
         }
-        long times[] = readTimes();
+        long[] times = readTimes();
         KerberosTime authtime = new KerberosTime(times[0]);
         KerberosTime starttime =
                 (times[1]==0) ? null : new KerberosTime(times[1]);
@@ -374,9 +374,9 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
                     ((renewTill==null)?"null":renewTill.toDate().toString()));
         }
         boolean skey = readskey();
-        boolean flags[] = readFlags();
+        boolean[] flags = readFlags();
         TicketFlags tFlags = new TicketFlags(flags);
-        HostAddress addr[] = readAddr();
+        HostAddress[] addr = readAddr();
         HostAddresses addrs = null;
         if (addr != null) {
             addrs = new HostAddresses(addr);

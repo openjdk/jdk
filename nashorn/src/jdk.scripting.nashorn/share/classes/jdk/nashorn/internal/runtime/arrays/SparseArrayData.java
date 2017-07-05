@@ -95,11 +95,11 @@ class SparseArrayData extends ArrayData {
         final TreeMap<Long, Object> newSparseMap = new TreeMap<>();
 
         for (final Map.Entry<Long, Object> entry : sparseMap.entrySet()) {
-            final long newIndex = entry.getKey().longValue() - by;
+            final long newIndex = entry.getKey() - by;
             if (newIndex < maxDenseLength) {
                 underlying = underlying.set((int) newIndex, entry.getValue(), false);
             } else if (newIndex >= 0) {
-                newSparseMap.put(Long.valueOf(newIndex), entry.getValue());
+                newSparseMap.put(newIndex, entry.getValue());
             }
         }
 
@@ -114,7 +114,7 @@ class SparseArrayData extends ArrayData {
         if (len + by > maxDenseLength) {
             for (long i = maxDenseLength - by; i < len; i++) {
                 if (underlying.has((int) i)) {
-                    newSparseMap.put(Long.valueOf(i + by), underlying.getObject((int) i));
+                    newSparseMap.put(i + by, underlying.getObject((int) i));
                 }
             }
             underlying = underlying.shrink((int) (maxDenseLength - by));
@@ -123,8 +123,8 @@ class SparseArrayData extends ArrayData {
         underlying.shiftRight(by);
 
         for (final Map.Entry<Long, Object> entry : sparseMap.entrySet()) {
-            final long newIndex = entry.getKey().longValue() + by;
-            newSparseMap.put(Long.valueOf(newIndex), entry.getValue());
+            final long newIndex = entry.getKey() + by;
+            newSparseMap.put(newIndex, entry.getValue());
         }
 
         sparseMap = newSparseMap;
@@ -158,7 +158,7 @@ class SparseArrayData extends ArrayData {
             setLength(newLength);
         }
 
-        sparseMap.subMap(Long.valueOf(newLength), Long.MAX_VALUE).clear();
+        sparseMap.subMap(newLength, Long.MAX_VALUE).clear();
         setLength(newLength);
         return this;
     }
@@ -333,7 +333,7 @@ class SparseArrayData extends ArrayData {
     }
 
     private static Long indexToKey(final int index) {
-        return Long.valueOf(ArrayIndex.toLongIndex(index));
+        return ArrayIndex.toLongIndex(index);
     }
 
     @Override
@@ -355,7 +355,7 @@ class SparseArrayData extends ArrayData {
             return result;
         }
         setLength(len - 1);
-        final Long key = Long.valueOf(len - 1);
+        final Long key = len - 1;
         return sparseMap.containsKey(key) ? sparseMap.remove(key) : ScriptRuntime.UNDEFINED;
     }
 

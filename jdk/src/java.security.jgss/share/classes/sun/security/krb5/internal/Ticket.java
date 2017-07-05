@@ -135,7 +135,7 @@ public class Ticket implements Cloneable {
     public byte[] asn1Encode() throws Asn1Exception, IOException {
         DerOutputStream bytes = new DerOutputStream();
         DerOutputStream temp = new DerOutputStream();
-        DerValue der[] = new DerValue[4];
+        DerValue[] der = new DerValue[4];
         temp.putInteger(BigInteger.valueOf(tkt_vno));
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x00), temp);
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x01), sname.getRealm().asn1Encode());

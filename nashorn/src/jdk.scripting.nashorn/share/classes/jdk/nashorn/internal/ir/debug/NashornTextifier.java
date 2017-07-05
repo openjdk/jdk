@@ -535,7 +535,7 @@ public final class NashornTextifier extends Printer {
         addText(sb);
     }
 
-    private static final boolean noFallThru(final int opcode) {
+    private static boolean noFallThru(final int opcode) {
         switch (opcode) {
         case Opcodes.GOTO:
         case Opcodes.ATHROW:
@@ -901,7 +901,7 @@ public final class NashornTextifier extends Printer {
                     appendDescriptor(sb, INTERNAL_NAME, desc);
                 }
             } else if (o[i] instanceof Integer) {
-                switch (((Integer)o[i]).intValue()) {
+                switch (((Integer)o[i])) {
                 case 0:
                     appendDescriptor(sb, FIELD_DESCRIPTOR, "T");
                     break;
@@ -1090,7 +1090,7 @@ public final class NashornTextifier extends Printer {
         public String toString() {
 
             final StringBuilder sb = new StringBuilder();
-            sb.append("digraph " + dottyFriendly(name) + " {");
+            sb.append("digraph ").append(dottyFriendly(name)).append(" {");
             sb.append("\n");
             sb.append("\tgraph [fontname=courier]\n");
             sb.append("\tnode [style=filled,color="+COLOR_DEFAULT+",fontname=courier]\n");

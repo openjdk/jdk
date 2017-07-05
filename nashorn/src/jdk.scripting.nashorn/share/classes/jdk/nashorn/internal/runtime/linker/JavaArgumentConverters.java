@@ -107,7 +107,7 @@ final class JavaArgumentConverters {
         if (o instanceof Number) {
             final int ival = ((Number)o).intValue();
             if (ival >= Character.MIN_VALUE && ival <= Character.MAX_VALUE) {
-                return Character.valueOf((char) ival);
+                return (char) ival;
             }
 
             throw typeError("cant.convert.number.to.char");
@@ -196,13 +196,13 @@ final class JavaArgumentConverters {
                 return ((Integer)obj).longValue();
             } else if (obj instanceof Double) {
                 final Double d = (Double)obj;
-                if(Double.isInfinite(d.doubleValue())) {
+                if(Double.isInfinite(d)) {
                     return 0L;
                 }
                 return d.longValue();
             } else if (obj instanceof Float) {
                 final Float f = (Float)obj;
-                if(Float.isInfinite(f.floatValue())) {
+                if(Float.isInfinite(f)) {
                     return 0L;
                 }
                 return f.longValue();
