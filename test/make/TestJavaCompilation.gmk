@@ -67,7 +67,7 @@ $(OUTPUT_DIR)/_jar1_created: $(DEPS)
 	$(TOUCH) $@
 
 $(eval $(call SetupArchive,BUILD_JAR1, \
-    $(OUTPUT_DIR)/_jar1_created, \
+    DEPENDENCIES := $(OUTPUT_DIR)/_jar1_created, \
     SRCS := $(JAR1_SRC_ROOT), \
     MANIFEST := $(JAR1_MANIFEST), \
     JAR := $(JAR1_FILE)))
@@ -143,7 +143,7 @@ $(OUTPUT_DIR)/_jar2_created: $(DEPS)
 	$(TOUCH) $@
 
 $(eval $(call SetupArchive,BUILD_JAR2, \
-    $(OUTPUT_DIR)/_jar2_created, \
+    DEPENDENCIES := $(OUTPUT_DIR)/_jar2_created, \
     SRCS := $(JAR2_SRC_ROOT1) $(JAR2_SRC_ROOT2), \
     JAR := $(JAR2_FILE)))
 
@@ -196,7 +196,7 @@ $(OUTPUT_DIR)/_jar3_created: $(DEPS)
 	$(TOUCH) $@
 
 $(eval $(call SetupArchive,BUILD_JAR3, \
-    $(OUTPUT_DIR)/_jar3_created, \
+    DEPENDENCIES := $(OUTPUT_DIR)/_jar3_created, \
     SRCS := $(JAR3_SRC_ROOT1) $(JAR3_SRC_ROOT2), \
     EXTRA_FILES := extra-file \
         dir2/file$$$$foo.dollar \
