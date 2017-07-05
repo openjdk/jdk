@@ -91,34 +91,118 @@ HeapRegionSeq::alloc_obj_from_region_index(int ind, size_t word_size) {
   }
   if (sumSizes >= word_size) {
     _alloc_search_start = cur;
-    // Mark the allocated regions as allocated.
+
+    // We need to initialize the region(s) we just discovered. This is
+    // a bit tricky given that it can happen concurrently with
+    // refinement threads refining cards on these regions and
+    // potentially wanting to refine the BOT as they are scanning
+    // those cards (this can happen shortly after a cleanup; see CR
+    // 6991377). So we have to set up the region(s) carefully and in
+    // a specific order.
+
+    // Currently, allocs_are_zero_filled() returns false. The zero
+    // filling infrastructure will be going away soon (see CR 6977804).
+    // So no need to do anything else here.
     bool zf = G1CollectedHeap::heap()->allocs_are_zero_filled();
+    assert(!zf, "not supported");
+
+    // This will be the "starts humongous" region.
     HeapRegion* first_hr = _regions.at(first);
-    for (int i = first; i < cur; i++) {
-      HeapRegion* hr = _regions.at(i);
-      if (zf)
-        hr->ensure_zero_filled();
+    {
+      MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
+      first_hr->set_zero_fill_allocated();
+    }
+    // The header of the new object will be placed at the bottom of
+    // the first region.
+    HeapWord* new_obj = first_hr->bottom();
+    // This will be the new end of the first region in the series that
+    // should also match the end of the last region in the seriers.
+    // (Note: sumSizes = "region size" x "number of regions we found").
+    HeapWord* new_end = new_obj + sumSizes;
+    // This will be the new top of the first region that will reflect
+    // this allocation.
+    HeapWord* new_top = new_obj + word_size;
+
+    // First, we need to zero the header of the space that we will be
+    // allocating. When we update top further down, some refinement
+    // threads might try to scan the region. By zeroing the header we
+    // ensure that any thread that will try to scan the region will
+    // come across the zero klass word and bail out.
+    //
+    // NOTE: It would not have been correct to have used
+    // CollectedHeap::fill_with_object() and make the space look like
+    // an int array. The thread that is doing the allocation will
+    // later update the object header to a potentially different array
+    // type and, for a very short period of time, the klass and length
+    // fields will be inconsistent. This could cause a refinement
+    // thread to calculate the object size incorrectly.
+    Copy::fill_to_words(new_obj, oopDesc::header_size(), 0);
+
+    // We will set up the first region as "starts humongous". This
+    // will also update the BOT covering all the regions to reflect
+    // that there is a single object that starts at the bottom of the
+    // first region.
+    first_hr->set_startsHumongous(new_end);
+
+    // Then, if there are any, we will set up the "continues
+    // humongous" regions.
+    HeapRegion* hr = NULL;
+    for (int i = first + 1; i < cur; ++i) {
+      hr = _regions.at(i);
       {
         MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
         hr->set_zero_fill_allocated();
       }
-      size_t sz = hr->capacity() / HeapWordSize;
-      HeapWord* tmp = hr->allocate(sz);
-      assert(tmp != NULL, "Humongous allocation failure");
-      MemRegion mr = MemRegion(tmp, sz);
-      CollectedHeap::fill_with_object(mr);
-      hr->declare_filled_region_to_BOT(mr);
-      if (i == first) {
-        first_hr->set_startsHumongous();
+      hr->set_continuesHumongous(first_hr);
+    }
+    // If we have "continues humongous" regions (hr != NULL), then the
+    // end of the last one should match new_end.
+    assert(hr == NULL || hr->end() == new_end, "sanity");
+
+    // Up to this point no concurrent thread would have been able to
+    // do any scanning on any region in this series. All the top
+    // fields still point to bottom, so the intersection between
+    // [bottom,top] and [card_start,card_end] will be empty. Before we
+    // update the top fields, we'll do a storestore to make sure that
+    // no thread sees the update to top before the zeroing of the
+    // object header and the BOT initialization.
+    OrderAccess::storestore();
+
+    // Now that the BOT and the object header have been initialized,
+    // we can update top of the "starts humongous" region.
+    assert(first_hr->bottom() < new_top && new_top <= first_hr->end(),
+           "new_top should be in this region");
+    first_hr->set_top(new_top);
+
+    // Now, we will update the top fields of the "continues humongous"
+    // regions. The reason we need to do this is that, otherwise,
+    // these regions would look empty and this will confuse parts of
+    // G1. For example, the code that looks for a consecutive number
+    // of empty regions will consider them empty and try to
+    // re-allocate them. We can extend is_empty() to also include
+    // !continuesHumongous(), but it is easier to just update the top
+    // fields here.
+    hr = NULL;
+    for (int i = first + 1; i < cur; ++i) {
+      hr = _regions.at(i);
+      if ((i + 1) == cur) {
+        // last continues humongous region
+        assert(hr->bottom() < new_top && new_top <= hr->end(),
+               "new_top should fall on this region");
+        hr->set_top(new_top);
       } else {
-        assert(i > first, "sanity");
-        hr->set_continuesHumongous(first_hr);
+        // not last one
+        assert(new_top > hr->end(), "new_top should be above this region");
+        hr->set_top(hr->end());
       }
     }
-    HeapWord* first_hr_bot = first_hr->bottom();
-    HeapWord* obj_end = first_hr_bot + word_size;
-    first_hr->set_top(obj_end);
-    return first_hr_bot;
+    // If we have continues humongous regions (hr != NULL), then the
+    // end of the last one should match new_end and its top should
+    // match new_top.
+    assert(hr == NULL ||
+           (hr->end() == new_end && hr->top() == new_top), "sanity");
+
+    return new_obj;
   } else {
     // If we started from the beginning, we want to know why we can't alloc.
     return NULL;
