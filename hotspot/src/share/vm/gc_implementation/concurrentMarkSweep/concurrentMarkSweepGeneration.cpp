@@ -2395,7 +2395,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
 
   if (VerifyBeforeGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    Universe::verify(true);
+    Universe::verify();
   }
 
   // Snapshot the soft reference policy to be used in this collection cycle.
@@ -2419,7 +2419,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
           gclog_or_tty->print("Verify before initial mark: ");
-          Universe::verify(true);
+          Universe::verify();
         }
         {
           bool res = markFromRoots(false);
@@ -2431,7 +2431,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
           gclog_or_tty->print("Verify before re-mark: ");
-          Universe::verify(true);
+          Universe::verify();
         }
         checkpointRootsFinal(false, clear_all_soft_refs,
                              init_mark_was_synchronous);
@@ -2443,7 +2443,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
           gclog_or_tty->print("Verify before sweep: ");
-          Universe::verify(true);
+          Universe::verify();
         }
         sweep(false);
         assert(_collectorState == Resizing, "Incorrect state");
@@ -2459,7 +2459,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
         if (VerifyDuringGC &&
             GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
           gclog_or_tty->print("Verify before reset: ");
-          Universe::verify(true);
+          Universe::verify();
         }
         reset(false);
         assert(_collectorState == Idling, "Collector state should "
@@ -2486,7 +2486,7 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
 
   if (VerifyAfterGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    Universe::verify(true);
+    Universe::verify();
   }
   if (TraceCMSState) {
     gclog_or_tty->print_cr("CMS Thread " INTPTR_FORMAT
@@ -5668,7 +5668,7 @@ void CMSCollector::do_remark_non_parallel() {
   if (VerifyDuringGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
-    Universe::verify(true);
+    Universe::verify();
   }
   {
     TraceTime t("root rescan", PrintGCDetails, false, gclog_or_tty);

@@ -1135,7 +1135,7 @@ static jint invoke_primitive_field_callback_for_static_fields
 
     // get offset and field value
     int offset = field->field_offset();
-    address addr = (address)klass + offset;
+    address addr = (address)klass->java_mirror() + offset;
     jvalue value;
     copy_to_jvalue(&value, addr, value_type);
 
