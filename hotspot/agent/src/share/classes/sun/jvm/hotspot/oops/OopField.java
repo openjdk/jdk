@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package sun.jvm.hotspot.oops;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.runtime.VMObject;
 
 // The class for an oop field simply provides access to the value.
 public class OopField extends Field {
@@ -53,6 +55,15 @@ public class OopField extends Field {
       throw new InternalError(obj.toString());
     }
     return obj.getHandle().getOopHandleAt(getOffset());
+  }
+
+  public Oop getValue(VMObject obj) {
+    return VM.getVM().getObjectHeap().newOop(getValueAsOopHandle(obj));
+  }
+
+  /** Debugging support */
+  public OopHandle getValueAsOopHandle(VMObject obj) {
+    return obj.getAddress().getOopHandleAt(getOffset());
   }
 
   public void setValue(Oop obj) throws MutationException {

@@ -128,6 +128,14 @@ class HeapWord {
 #endif
 };
 
+// Analogous opaque struct for metadata allocated from
+// metaspaces.
+class MetaWord {
+  friend class VMStructs;
+ private:
+  char* i;
+};
+
 // HeapWordSize must be 2^LogHeapWordSize.
 const int HeapWordSize        = sizeof(HeapWord);
 #ifdef _LP64
@@ -271,6 +279,10 @@ inline size_t pointer_delta(const void* left,
 // A version specialized for HeapWord*'s.
 inline size_t pointer_delta(const HeapWord* left, const HeapWord* right) {
   return pointer_delta(left, right, sizeof(HeapWord));
+}
+// A version specialized for MetaWord*'s.
+inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
+  return pointer_delta(left, right, sizeof(MetaWord));
 }
 
 //
@@ -482,7 +494,8 @@ enum BasicType {
   T_VOID     = 14,
   T_ADDRESS  = 15,
   T_NARROWOOP= 16,
-  T_CONFLICT = 17, // for stack value type with conflicting contents
+  T_METADATA = 17,
+  T_CONFLICT = 18, // for stack value type with conflicting contents
   T_ILLEGAL  = 99
 };
 
@@ -854,6 +867,7 @@ class PeriodicTask;
 class JavaCallWrapper;
 
 class   oopDesc;
+class   metaDataOopDesc;
 
 class NativeCall;
 
@@ -911,6 +925,7 @@ const int      freeBlockPad     = 0xBA;                     // value used to pad
 const int      uninitBlockPad   = 0xF1;                     // value used to zap newly malloc'd blocks.
 const intptr_t badJNIHandleVal  = (intptr_t) CONST64(0xFEFEFEFEFEFEFEFE); // value used to zap jni handle area
 const juint    badHeapWordVal   = 0xBAADBABE;               // value used to zap heap after GC
+const juint    badMetaWordVal   = 0xBAADFADE;               // value used to zap metadata heap after GC
 const int      badCodeHeapNewVal= 0xCC;                     // value used to zap Code heap at allocation
 const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap Code heap at deallocation
 

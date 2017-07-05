@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "ci/ciMethod.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.inline.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
@@ -99,7 +99,7 @@ void CompileLog::pop_tag(const char* tag) {
 
 // ------------------------------------------------------------------
 // CompileLog::identify
-int CompileLog::identify(ciObject* obj) {
+int CompileLog::identify(ciBaseObject* obj) {
   if (obj == NULL)  return 0;
   int id = obj->ident();
   if (id < 0)  return id;
@@ -121,8 +121,10 @@ int CompileLog::identify(ciObject* obj) {
   _identities[id] = 1;  // mark
 
   // Now, print the object's identity once, in detail.
-  if (obj->is_klass()) {
-    ciKlass* klass = obj->as_klass();
+  if (obj->is_metadata()) {
+    ciMetadata* mobj = obj->as_metadata();
+    if (mobj->is_klass()) {
+      ciKlass* klass = mobj->as_klass();
     begin_elem("klass id='%d'", id);
     name(klass->name());
     if (!klass->is_loaded()) {
@@ -131,8 +133,8 @@ int CompileLog::identify(ciObject* obj) {
       print(" flags='%d'", klass->modifier_flags());
     }
     end_elem();
-  } else if (obj->is_method()) {
-    ciMethod* method = obj->as_method();
+    } else if (mobj->is_method()) {
+      ciMethod* method = mobj->as_method();
     ciSignature* sig = method->signature();
     // Pre-identify items that we will need!
     identify(sig->return_type());
@@ -163,15 +165,18 @@ int CompileLog::identify(ciObject* obj) {
       print(" iicount='%d'", method->interpreter_invocation_count());
     }
     end_elem();
+    } else if (mobj->is_type()) {
+      BasicType type = mobj->as_type()->basic_type();
+      elem("type id='%d' name='%s'", id, type2name(type));
+    } else {
+      // Should not happen.
+      elem("unknown id='%d'", id);
+      ShouldNotReachHere();
+    }
   } else if (obj->is_symbol()) {
     begin_elem("symbol id='%d'", id);
     name(obj->as_symbol());
     end_elem();
-  } else if (obj->is_null_object()) {
-    elem("null_object id='%d'", id);
-  } else if (obj->is_type()) {
-    BasicType type = obj->as_type()->basic_type();
-    elem("type id='%d' name='%s'", id, type2name(type));
   } else {
     // Should not happen.
     elem("unknown id='%d'", id);

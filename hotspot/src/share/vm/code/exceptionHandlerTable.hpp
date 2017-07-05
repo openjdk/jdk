@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_CODE_EXCEPTIONHANDLERTABLE_HPP
 
 #include "memory/allocation.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 
 // A HandlerTableEntry describes an individual entry of a subtable
 // of ExceptionHandlerTable. An entry consists of a pair(bci, pco),

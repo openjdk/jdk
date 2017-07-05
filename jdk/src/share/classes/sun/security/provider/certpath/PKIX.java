@@ -26,7 +26,9 @@ package sun.security.provider.certpath;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
+import java.security.PublicKey;
 import java.security.cert.*;
+import java.security.interfaces.DSAPublicKey;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
@@ -41,6 +43,11 @@ class PKIX {
     private static final Debug debug = Debug.getInstance("certpath");
 
     private PKIX() { }
+
+    static boolean isDSAPublicKeyWithoutParams(PublicKey publicKey) {
+        return (publicKey instanceof DSAPublicKey &&
+               ((DSAPublicKey)publicKey).getParams() == null);
+    }
 
     static ValidatorParams checkParams(CertPath cp, CertPathParameters params)
         throws InvalidAlgorithmParameterException
@@ -267,6 +274,24 @@ class PKIX {
             }
             throw new InvalidAlgorithmParameterException
                 ("Could not determine unique target subject");
+        }
+    }
+
+    /**
+     * A CertStoreException with additional information about the type of
+     * CertStore that generated the exception.
+     */
+    static class CertStoreTypeException extends CertStoreException {
+        private static final long serialVersionUID = 7463352639238322556L;
+
+        private final String type;
+
+        CertStoreTypeException(String type, CertStoreException cse) {
+            super(cse.getMessage(), cse.getCause());
+            this.type = type;
+        }
+        String getType() {
+            return type;
         }
     }
 

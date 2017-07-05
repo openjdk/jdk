@@ -273,7 +273,7 @@ OtherRegionsTable::OtherRegionsTable(HeapRegion* hr) :
   if (_max_fine_entries == 0) {
     assert(_mod_max_fine_entries_mask == 0, "Both or none.");
     size_t max_entries_log = (size_t)log2_long((jlong)G1RSetRegionEntries);
-    _max_fine_entries = (size_t)(1 << max_entries_log);
+    _max_fine_entries = (size_t)1 << max_entries_log;
     _mod_max_fine_entries_mask = _max_fine_entries - 1;
 
     assert(_fine_eviction_sample_size == 0

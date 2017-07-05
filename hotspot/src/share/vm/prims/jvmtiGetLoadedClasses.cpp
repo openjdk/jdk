@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,10 +166,10 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
   }
 
   // Finally, the static methods that are the callbacks
-  static void increment(klassOop k) {
+  static void increment(Klass* k) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     if (that->get_initiatingLoader() == NULL) {
-      for (klassOop l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+      for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
         that->set_count(that->get_count() + 1);
       }
     } else if (k != NULL) {
@@ -178,27 +178,29 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     }
   }
 
-  static void increment_with_loader(klassOop k, oop loader) {
+  static void increment_with_loader(Klass* k, ClassLoaderData* loader_data) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
-    if (loader == JNIHandles::resolve(that->get_initiatingLoader())) {
-      for (klassOop l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+    oop class_loader = loader_data->class_loader();
+    if (class_loader == JNIHandles::resolve(that->get_initiatingLoader())) {
+      for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
         that->set_count(that->get_count() + 1);
       }
     }
   }
 
-  static void prim_array_increment_with_loader(klassOop array, oop loader) {
+  static void prim_array_increment_with_loader(Klass* array, ClassLoaderData* loader_data) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
-    if (loader == JNIHandles::resolve(that->get_initiatingLoader())) {
+    oop class_loader = loader_data->class_loader();
+    if (class_loader == JNIHandles::resolve(that->get_initiatingLoader())) {
       that->set_count(that->get_count() + 1);
     }
   }
 
-  static void add(klassOop k) {
+  static void add(Klass* k) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     if (that->available()) {
       if (that->get_initiatingLoader() == NULL) {
-        for (klassOop l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+        for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
           oop mirror = Klass::cast(l)->java_mirror();
           that->set_element(that->get_index(), mirror);
           that->set_index(that->get_index() + 1);
@@ -212,11 +214,12 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     }
   }
 
-  static void add_with_loader(klassOop k, oop loader) {
+  static void add_with_loader(Klass* k, ClassLoaderData* loader_data) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     if (that->available()) {
-      if (loader == JNIHandles::resolve(that->get_initiatingLoader())) {
-        for (klassOop l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+      oop class_loader = loader_data->class_loader();
+      if (class_loader == JNIHandles::resolve(that->get_initiatingLoader())) {
+        for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
           oop mirror = Klass::cast(l)->java_mirror();
           that->set_element(that->get_index(), mirror);
           that->set_index(that->get_index() + 1);
@@ -228,20 +231,20 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
   // increment the count for the given basic type array class (and any
   // multi-dimensional arrays). For example, for [B we check for
   // [[B, [[[B, .. and the count is incremented for each one that exists.
-  static void increment_for_basic_type_arrays(klassOop k) {
+  static void increment_for_basic_type_arrays(Klass* k) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     assert(that != NULL, "no JvmtiGetLoadedClassesClosure");
-    for (klassOop l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+    for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
       that->set_count(that->get_count() + 1);
     }
   }
 
   // add the basic type array class and its multi-dimensional array classes to the list
-  static void add_for_basic_type_arrays(klassOop k) {
+  static void add_for_basic_type_arrays(Klass* k) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     assert(that != NULL, "no JvmtiGetLoadedClassesClosure");
     assert(that->available(), "no list");
-    for (klassOop l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
+    for (Klass* l = k; l != NULL; l = Klass::cast(l)->array_klass_or_null()) {
       oop mirror = Klass::cast(l)->java_mirror();
       that->set_element(that->get_index(), mirror);
       that->set_index(that->get_index() + 1);

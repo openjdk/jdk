@@ -75,8 +75,8 @@ public class X509CertInfo implements CertAttrSet<String> {
     public static final String VALIDITY = CertificateValidity.NAME;
     public static final String SUBJECT = CertificateSubjectName.NAME;
     public static final String KEY = CertificateX509Key.NAME;
-    public static final String ISSUER_ID = CertificateIssuerUniqueIdentity.NAME;
-    public static final String SUBJECT_ID = CertificateSubjectUniqueIdentity.NAME;
+    public static final String ISSUER_ID = "issuerID";
+    public static final String SUBJECT_ID = "subjectID";
     public static final String EXTENSIONS = CertificateExtensions.NAME;
 
     // X509.v1 data
@@ -89,8 +89,8 @@ public class X509CertInfo implements CertAttrSet<String> {
     protected CertificateX509Key        pubKey = null;
 
     // X509.v2 & v3 extensions
-    protected CertificateIssuerUniqueIdentity   issuerUniqueId = null;
-    protected CertificateSubjectUniqueIdentity  subjectUniqueId = null;
+    protected UniqueIdentity   issuerUniqueId = null;
+    protected UniqueIdentity  subjectUniqueId = null;
 
     // X509.v3 extensions
     protected CertificateExtensions     extensions = null;
@@ -431,19 +431,11 @@ public class X509CertInfo implements CertAttrSet<String> {
             break;
 
         case ATTR_ISSUER_ID:
-            if (suffix == null) {
-                setIssuerUniqueId(val);
-            } else {
-                issuerUniqueId.set(suffix, val);
-            }
+            setIssuerUniqueId(val);
             break;
 
         case ATTR_SUBJECT_ID:
-            if (suffix == null) {
-                setSubjectUniqueId(val);
-            } else {
-                subjectUniqueId.set(suffix, val);
-            }
+            setSubjectUniqueId(val);
             break;
 
         case ATTR_EXTENSIONS:
@@ -529,18 +521,10 @@ public class X509CertInfo implements CertAttrSet<String> {
             }
             break;
         case (ATTR_ISSUER_ID):
-            if (suffix == null) {
-                issuerUniqueId = null;
-            } else {
-                issuerUniqueId.delete(suffix);
-            }
+            issuerUniqueId = null;
             break;
         case (ATTR_SUBJECT_ID):
-            if (suffix == null) {
-                subjectUniqueId = null;
-            } else {
-                subjectUniqueId.delete(suffix);
-            }
+            subjectUniqueId = null;
             break;
         case (ATTR_EXTENSIONS):
             if (suffix == null) {
@@ -626,23 +610,9 @@ public class X509CertInfo implements CertAttrSet<String> {
                 return(serialNum.get(suffix));
             }
         case (ATTR_ISSUER_ID):
-            if (suffix == null) {
-                return(issuerUniqueId);
-            } else {
-                if (issuerUniqueId == null)
-                    return null;
-                else
-                    return(issuerUniqueId.get(suffix));
-            }
+            return(issuerUniqueId);
         case (ATTR_SUBJECT_ID):
-            if (suffix == null) {
-                return(subjectUniqueId);
-            } else {
-                if (subjectUniqueId == null)
-                    return null;
-                else
-                    return(subjectUniqueId.get(suffix));
-            }
+            return(subjectUniqueId);
         }
         return null;
     }
@@ -711,7 +681,7 @@ public class X509CertInfo implements CertAttrSet<String> {
         // Get the issuerUniqueId if present
         tmp = in.getDerValue();
         if (tmp.isContextSpecific((byte)1)) {
-            issuerUniqueId = new CertificateIssuerUniqueIdentity(tmp);
+            issuerUniqueId = new UniqueIdentity(tmp);
             if (in.available() == 0)
                 return;
             tmp = in.getDerValue();
@@ -719,7 +689,7 @@ public class X509CertInfo implements CertAttrSet<String> {
 
         // Get the subjectUniqueId if present.
         if (tmp.isContextSpecific((byte)2)) {
-            subjectUniqueId = new CertificateSubjectUniqueIdentity(tmp);
+            subjectUniqueId = new UniqueIdentity(tmp);
             if (in.available() == 0)
                 return;
             tmp = in.getDerValue();
@@ -814,10 +784,12 @@ public class X509CertInfo implements CertAttrSet<String> {
 
         // Encode issuerUniqueId & subjectUniqueId.
         if (issuerUniqueId != null) {
-            issuerUniqueId.encode(tmp);
+            issuerUniqueId.encode(tmp, DerValue.createTag(DerValue.TAG_CONTEXT,
+                                                          false,(byte)1));
         }
         if (subjectUniqueId != null) {
-            subjectUniqueId.encode(tmp);
+            subjectUniqueId.encode(tmp, DerValue.createTag(DerValue.TAG_CONTEXT,
+                                                           false,(byte)2));
         }
 
         // Write all the extensions.
@@ -946,11 +918,11 @@ public class X509CertInfo implements CertAttrSet<String> {
         if (version.compare(CertificateVersion.V2) < 0) {
             throw new CertificateException("Invalid version");
         }
-        if (!(val instanceof CertificateIssuerUniqueIdentity)) {
+        if (!(val instanceof UniqueIdentity)) {
             throw new CertificateException(
                              "IssuerUniqueId class type invalid.");
         }
-        issuerUniqueId = (CertificateIssuerUniqueIdentity)val;
+        issuerUniqueId = (UniqueIdentity)val;
     }
 
     /**
@@ -963,11 +935,11 @@ public class X509CertInfo implements CertAttrSet<String> {
         if (version.compare(CertificateVersion.V2) < 0) {
             throw new CertificateException("Invalid version");
         }
-        if (!(val instanceof CertificateSubjectUniqueIdentity)) {
+        if (!(val instanceof UniqueIdentity)) {
             throw new CertificateException(
                              "SubjectUniqueId class type invalid.");
         }
-        subjectUniqueId = (CertificateSubjectUniqueIdentity)val;
+        subjectUniqueId = (UniqueIdentity)val;
     }
 
     /**

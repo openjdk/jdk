@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "ci/ciArray.hpp"
 #include "ci/ciArrayKlass.hpp"
-#include "ci/ciArrayKlassKlass.hpp"
 #include "ci/ciCallProfile.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciEnv.hpp"
@@ -36,22 +35,17 @@
 #include "ci/ciFlags.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
-#include "ci/ciInstanceKlassKlass.hpp"
 #include "ci/ciKlass.hpp"
-#include "ci/ciKlassKlass.hpp"
 #include "ci/ciMethod.hpp"
-#include "ci/ciMethodKlass.hpp"
 #include "ci/ciNullObject.hpp"
 #include "ci/ciObjArray.hpp"
 #include "ci/ciObjArrayKlass.hpp"
-#include "ci/ciObjArrayKlassKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciSignature.hpp"
 #include "ci/ciStreams.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciTypeArray.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
-#include "ci/ciTypeArrayKlassKlass.hpp"
 
 // This is a dummy file used for including the complete
 // compiler interface.

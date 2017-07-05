@@ -31,148 +31,54 @@
 #include "services/memSnapshot.hpp"
 #include "services/memTracker.hpp"
 
+static int sort_in_seq_order(const void* p1, const void* p2) {
+  assert(p1 != NULL && p2 != NULL, "Sanity check");
+  const MemPointerRecord* mp1 = (MemPointerRecord*)p1;
+  const MemPointerRecord* mp2 = (MemPointerRecord*)p2;
+  return (mp1->seq() - mp2->seq());
+}
 
-// stagging data groups the data of a VM memory range, so we can consolidate
-// them into one record during the walk
-bool StagingWalker::consolidate_vm_records(VMMemRegionEx* vm_rec) {
-  MemPointerRecord* cur = (MemPointerRecord*)_itr.current();
-  assert(cur != NULL && cur->is_vm_pointer(), "not a virtual memory pointer");
-
-  jint cur_seq;
-  jint next_seq;
-
-  bool trackCallsite = MemTracker::track_callsite();
-
-  if (trackCallsite) {
-    vm_rec->init((MemPointerRecordEx*)cur);
-    cur_seq = ((SeqMemPointerRecordEx*)cur)->seq();
+bool StagingArea::init() {
+  if (MemTracker::track_callsite()) {
+    _malloc_data = new (std::nothrow)MemPointerArrayImpl<SeqMemPointerRecordEx>();
+    _vm_data = new (std::nothrow)MemPointerArrayImpl<SeqMemPointerRecordEx>();
   } else {
-    vm_rec->init((MemPointerRecord*)cur);
-    cur_seq = ((SeqMemPointerRecord*)cur)->seq();
+    _malloc_data = new (std::nothrow)MemPointerArrayImpl<SeqMemPointerRecord>();
+    _vm_data = new (std::nothrow)MemPointerArrayImpl<SeqMemPointerRecord>();
   }
 
-  // only can consolidate when we have allocation record,
-  // which contains virtual memory range
-  if (!cur->is_allocation_record()) {
-    _itr.next();
+  if (_malloc_data != NULL && _vm_data != NULL &&
+      !_malloc_data->out_of_memory() &&
+      !_vm_data->out_of_memory()) {
     return true;
+  } else {
+    if (_malloc_data != NULL) delete _malloc_data;
+    if (_vm_data != NULL) delete _vm_data;
+    _malloc_data = NULL;
+    _vm_data = NULL;
+    return false;
   }
-
-  // allocation range
-  address base = cur->addr();
-  address end = base + cur->size();
-
-  MemPointerRecord* next = (MemPointerRecord*)_itr.peek_next();
-  // if the memory range is alive
-  bool live_vm_rec = true;
-  while (next != NULL && next->is_vm_pointer()) {
-    if (next->is_allocation_record()) {
-      assert(next->addr() >= base, "sorting order or overlapping");
-      break;
-    }
-
-    if (trackCallsite) {
-      next_seq = ((SeqMemPointerRecordEx*)next)->seq();
-    } else {
-      next_seq = ((SeqMemPointerRecord*)next)->seq();
-    }
-
-    if (next_seq < cur_seq) {
-      _itr.next();
-      next = (MemPointerRecord*)_itr.peek_next();
-      continue;
-    }
-
-    if (next->is_deallocation_record()) {
-      if (next->addr() == base && next->size() == cur->size()) {
-        // the virtual memory range has been released
-        _itr.next();
-        live_vm_rec = false;
-        break;
-      } else if (next->addr() < end) { // partial release
-        vm_rec->partial_release(next->addr(), next->size());
-        _itr.next();
-      } else {
-        break;
-      }
-    } else if (next->is_commit_record()) {
-      if (next->addr() >= base && next->addr() + next->size() <= end) {
-        vm_rec->commit(next->size());
-        _itr.next();
-      } else {
-        assert(next->addr() >= base, "sorting order or overlapping");
-        break;
-      }
-    } else if (next->is_uncommit_record()) {
-      if (next->addr() >= base && next->addr() + next->size() <= end) {
-        vm_rec->uncommit(next->size());
-        _itr.next();
-      } else {
-        assert(next->addr() >= end, "sorting order or overlapping");
-        break;
-      }
-    } else if (next->is_type_tagging_record()) {
-      if (next->addr() >= base && next->addr() < end ) {
-        vm_rec->tag(next->flags());
-        _itr.next();
-      } else {
-          break;
-      }
-    } else {
-      assert(false, "unknown record type");
-    }
-    next = (MemPointerRecord*)_itr.peek_next();
-  }
-  _itr.next();
-  return live_vm_rec;
 }
 
-MemPointer* StagingWalker::next() {
-  MemPointerRecord* cur_p = (MemPointerRecord*)_itr.current();
-  if (cur_p == NULL) {
-    _end_of_array = true;
-    return NULL;
-  }
 
-  MemPointerRecord* next_p;
-  if (cur_p->is_vm_pointer()) {
-    _is_vm_record = true;
-    if (!consolidate_vm_records(&_vm_record)) {
-      return next();
-    }
-  } else { // malloc-ed pointer
-    _is_vm_record = false;
-    next_p = (MemPointerRecord*)_itr.peek_next();
-    if (next_p != NULL && next_p->addr() == cur_p->addr()) {
-      assert(cur_p->is_allocation_record(), "sorting order");
-      assert(!next_p->is_allocation_record(), "sorting order");
-      _itr.next();
-      if (cur_p->seq() < next_p->seq()) {
-        cur_p = next_p;
-      }
-    }
-    if (MemTracker::track_callsite()) {
-      _malloc_record.init((MemPointerRecordEx*)cur_p);
-    } else {
-      _malloc_record.init((MemPointerRecord*)cur_p);
-    }
-
-    _itr.next();
-  }
-  return current();
+MemPointerArrayIteratorImpl StagingArea::virtual_memory_record_walker() {
+  MemPointerArray* arr = vm_data();
+  // sort into seq number order
+  arr->sort((FN_SORT)sort_in_seq_order);
+  return MemPointerArrayIteratorImpl(arr);
 }
+
 
 MemSnapshot::MemSnapshot() {
   if (MemTracker::track_callsite()) {
     _alloc_ptrs = new (std::nothrow) MemPointerArrayImpl<MemPointerRecordEx>();
     _vm_ptrs = new (std::nothrow)MemPointerArrayImpl<VMMemRegionEx>(64, true);
-    _staging_area = new (std::nothrow)MemPointerArrayImpl<SeqMemPointerRecordEx>();
   } else {
     _alloc_ptrs = new (std::nothrow) MemPointerArrayImpl<MemPointerRecord>();
     _vm_ptrs = new (std::nothrow)MemPointerArrayImpl<VMMemRegion>(64, true);
-    _staging_area = new (std::nothrow)MemPointerArrayImpl<SeqMemPointerRecord>();
   }
 
+  _staging_area.init();
   _lock = new (std::nothrow) Mutex(Monitor::max_nonleaf - 1, "memSnapshotLock");
   NOT_PRODUCT(_untracked_count = 0;)
 }
@@ -181,11 +87,6 @@ MemSnapshot::~MemSnapshot() {
   assert(MemTracker::shutdown_in_progress(), "native memory tracking still on");
   {
     MutexLockerEx locker(_lock);
-    if (_staging_area != NULL) {
-      delete _staging_area;
-      _staging_area = NULL;
-    }
-
     if (_alloc_ptrs != NULL) {
       delete _alloc_ptrs;
       _alloc_ptrs = NULL;
@@ -221,61 +122,63 @@ void MemSnapshot::copy_pointer(MemPointerRecord* dest, const MemPointerRecord* s
 bool MemSnapshot::merge(MemRecorder* rec) {
   assert(rec != NULL && !rec->out_of_memory(), "Just check");
 
-  // out of memory
-  if (_staging_area == NULL || _staging_area->out_of_memory()) {
-    return false;
-  }
-
   SequencedRecordIterator itr(rec->pointer_itr());
 
   MutexLockerEx lock(_lock, true);
-  MemPointerIterator staging_itr(_staging_area);
+  MemPointerIterator malloc_staging_itr(_staging_area.malloc_data());
   MemPointerRecord *p1, *p2;
   p1 = (MemPointerRecord*) itr.current();
   while (p1 != NULL) {
-    p2 = (MemPointerRecord*)staging_itr.locate(p1->addr());
-    // we have not seen this memory block, so just add to staging area
-    if (p2 == NULL) {
-      if (!staging_itr.insert(p1)) {
-        return false;
-      }
-    } else if (p1->addr() == p2->addr()) {
-      MemPointerRecord* staging_next = (MemPointerRecord*)staging_itr.peek_next();
-      // a memory block can have many tagging records, find right one to replace or
-      // right position to insert
-      while (staging_next != NULL && staging_next->addr() == p1->addr()) {
-        if ((staging_next->flags() & MemPointerRecord::tag_masks) <=
-          (p1->flags() & MemPointerRecord::tag_masks)) {
-          p2 = (MemPointerRecord*)staging_itr.next();
-          staging_next = (MemPointerRecord*)staging_itr.peek_next();
-        } else {
-          break;
-        }
-      }
-      int df = (p1->flags() & MemPointerRecord::tag_masks) -
-        (p2->flags() & MemPointerRecord::tag_masks);
-      if (df == 0) {
-        assert(p1->seq() > 0, "not sequenced");
-        assert(p2->seq() > 0, "not sequenced");
-        if (p1->seq() > p2->seq()) {
-          copy_pointer(p2, p1);
-        }
-      } else if (df < 0) {
-        if (!staging_itr.insert(p1)) {
-          return false;
-        }
-      } else {
-        if (!staging_itr.insert_after(p1)) {
-          return false;
-        }
-      }
-    } else if (p1->addr() < p2->addr()) {
-      if (!staging_itr.insert(p1)) {
+    if (p1->is_vm_pointer()) {
+      // we don't do anything with virtual memory records during merge
+      if (!_staging_area.vm_data()->append(p1)) {
         return false;
       }
     } else {
-      if (!staging_itr.insert_after(p1)) {
-        return false;
+      p2 = (MemPointerRecord*)malloc_staging_itr.locate(p1->addr());
+      // we have not seen this memory block, so just add to staging area
+      if (p2 == NULL) {
+        if (!malloc_staging_itr.insert(p1)) {
+          return false;
+        }
+      } else if (p1->addr() == p2->addr()) {
+        MemPointerRecord* staging_next = (MemPointerRecord*)malloc_staging_itr.peek_next();
+        // a memory block can have many tagging records, find right one to replace or
+        // right position to insert
+        while (staging_next != NULL && staging_next->addr() == p1->addr()) {
+          if ((staging_next->flags() & MemPointerRecord::tag_masks) <=
+            (p1->flags() & MemPointerRecord::tag_masks)) {
+            p2 = (MemPointerRecord*)malloc_staging_itr.next();
+            staging_next = (MemPointerRecord*)malloc_staging_itr.peek_next();
+          } else {
+            break;
+          }
+        }
+        int df = (p1->flags() & MemPointerRecord::tag_masks) -
+          (p2->flags() & MemPointerRecord::tag_masks);
+        if (df == 0) {
+          assert(p1->seq() > 0, "not sequenced");
+          assert(p2->seq() > 0, "not sequenced");
+          if (p1->seq() > p2->seq()) {
+            copy_pointer(p2, p1);
+          }
+        } else if (df < 0) {
+          if (!malloc_staging_itr.insert(p1)) {
+            return false;
+          }
+        } else {
+          if (!malloc_staging_itr.insert_after(p1)) {
+            return false;
+          }
+        }
+      } else if (p1->addr() < p2->addr()) {
+        if (!malloc_staging_itr.insert(p1)) {
+          return false;
+        }
+      } else {
+        if (!malloc_staging_itr.insert_after(p1)) {
+          return false;
+        }
       }
     }
     p1 = (MemPointerRecord*)itr.next();
@@ -287,122 +190,179 @@ bool MemSnapshot::merge(MemRecorder* rec) {
 
 
 // promote data to next generation
-void MemSnapshot::promote() {
-  assert(_alloc_ptrs != NULL && _staging_area != NULL && _vm_ptrs != NULL,
-    "Just check");
+bool MemSnapshot::promote() {
+  assert(_alloc_ptrs != NULL && _vm_ptrs != NULL, "Just check");
+  assert(_staging_area.malloc_data() != NULL && _staging_area.vm_data() != NULL,
+         "Just check");
   MutexLockerEx lock(_lock, true);
-  StagingWalker walker(_staging_area);
-  MemPointerIterator malloc_itr(_alloc_ptrs);
-  VMMemPointerIterator vm_itr(_vm_ptrs);
-  MemPointer* cur = walker.current();
-  while (cur != NULL) {
-    if (walker.is_vm_record()) {
-      VMMemRegion* cur_vm = (VMMemRegion*)cur;
-      VMMemRegion* p = (VMMemRegion*)vm_itr.locate(cur_vm->addr());
-      cur_vm = (VMMemRegion*)cur;
-      if (p != NULL && (p->contains(cur_vm) || p->base() == cur_vm->base())) {
-        assert(p->is_reserve_record() ||
-          p->is_commit_record(), "wrong vm record type");
-        // resize existing reserved range
-        if (cur_vm->is_reserve_record() && p->base() == cur_vm->base()) {
-          assert(cur_vm->size() >= p->committed_size(), "incorrect resizing");
-          p->set_reserved_size(cur_vm->size());
-        } else if (cur_vm->is_commit_record()) {
-          p->commit(cur_vm->committed_size());
-        } else if (cur_vm->is_uncommit_record()) {
-          p->uncommit(cur_vm->committed_size());
-          if (!p->is_reserve_record() && p->committed_size() == 0) {
-            vm_itr.remove();
-          }
-        } else if (cur_vm->is_type_tagging_record()) {
-          p->tag(cur_vm->flags());
-        } else if (cur_vm->is_release_record()) {
-          if (cur_vm->base() == p->base() && cur_vm->size() == p->size()) {
-            // release the whole range
-            vm_itr.remove();
-          } else {
-            // partial release
-            p->partial_release(cur_vm->base(), cur_vm->size());
-          }
-        } else {
-          // we do see multiple reserver on the same vm range
-          assert((cur_vm->is_commit_record() || cur_vm->is_reserve_record()) &&
-             cur_vm->base() == p->base() && cur_vm->size() == p->size(), "bad record");
-          p->tag(cur_vm->flags());
-        }
-      } else {
-        if(cur_vm->is_reserve_record()) {
-          if (p == NULL || p->base() > cur_vm->base()) {
-            vm_itr.insert(cur_vm);
-          } else {
-            vm_itr.insert_after(cur_vm);
-          }
-        } else {
-          // In theory, we should assert without conditions. However, in case of native
-          // thread stack, NMT explicitly releases the thread stack in Thread's destructor,
-          // due to platform dependent behaviors. On some platforms, we see uncommit/release
-          // native thread stack, but some, we don't.
-          assert(cur_vm->is_uncommit_record() || cur_vm->is_deallocation_record(),
-            err_msg("Should not reach here, pointer addr = [" INTPTR_FORMAT "], flags = [%x]",
-               cur_vm->addr(), cur_vm->flags()));
-        }
-      }
-    } else {
-      MemPointerRecord* cur_p = (MemPointerRecord*)cur;
-      MemPointerRecord* p = (MemPointerRecord*)malloc_itr.locate(cur->addr());
-      if (p != NULL && cur_p->addr() == p->addr()) {
-        assert(p->is_allocation_record() || p->is_arena_size_record(), "untracked");
-        if (cur_p->is_allocation_record() || cur_p->is_arena_size_record()) {
-          copy_pointer(p, cur_p);
-        } else {   // deallocation record
-          assert(cur_p->is_deallocation_record(), "wrong record type");
 
-          // we are removing an arena record, we also need to remove its 'size'
-          // record behind it
-          if (p->is_arena_record()) {
-            MemPointerRecord* next_p = (MemPointerRecord*)malloc_itr.peek_next();
-            if (next_p->is_arena_size_record()) {
-              assert(next_p->is_size_record_of_arena(p), "arena records dont match");
-              malloc_itr.remove();
-            }
-          }
-          malloc_itr.remove();
-        }
-      } else {
-        if (cur_p->is_arena_size_record()) {
-          MemPointerRecord* prev_p = (MemPointerRecord*)malloc_itr.peek_prev();
-          if (prev_p != NULL &&
-             (!prev_p->is_arena_record() || !cur_p->is_size_record_of_arena(prev_p))) {
-            // arena already deallocated
-            cur_p = NULL;
-          }
-        }
-        if (cur_p != NULL) {
-          if (cur_p->is_allocation_record() || cur_p->is_arena_size_record()) {
-            if (p != NULL && cur_p->addr() > p->addr()) {
-              malloc_itr.insert_after(cur);
-            } else {
-              malloc_itr.insert(cur);
-            }
-          }
-#ifndef PRODUCT
-          else if (!has_allocation_record(cur_p->addr())){
-            // NMT can not track some startup memory, which allocated before NMT
-            // is enabled
-            _untracked_count ++;
-          }
-#endif
-        }
-      }
+  MallocRecordIterator  malloc_itr = _staging_area.malloc_record_walker();
+  bool promoted = false;
+  if (promote_malloc_records(&malloc_itr)) {
+    MemPointerArrayIteratorImpl vm_itr = _staging_area.virtual_memory_record_walker();
+    if (promote_virtual_memory_records(&vm_itr)) {
+      promoted = true;
     }
-
-    cur = walker.next();
   }
+
   NOT_PRODUCT(check_malloc_pointers();)
-  _staging_area->shrink();
-  _staging_area->clear();
+  _staging_area.clear();
+  return promoted;
 }
 
+bool MemSnapshot::promote_malloc_records(MemPointerArrayIterator* itr) {
+  MemPointerIterator malloc_snapshot_itr(_alloc_ptrs);
+  MemPointerRecord* new_rec = (MemPointerRecord*)itr->current();
+  MemPointerRecord* matched_rec;
+  while (new_rec != NULL) {
+    matched_rec = (MemPointerRecord*)malloc_snapshot_itr.locate(new_rec->addr());
+    // found matched memory block
+    if (matched_rec != NULL && new_rec->addr() == matched_rec->addr()) {
+      // snapshot already contains 'lived' records
+      assert(matched_rec->is_allocation_record() || matched_rec->is_arena_size_record(),
+             "Sanity check");
+      // update block states
+      if (new_rec->is_allocation_record() || new_rec->is_arena_size_record()) {
+        copy_pointer(matched_rec, new_rec);
+      } else {
+        // a deallocation record
+        assert(new_rec->is_deallocation_record(), "Sanity check");
+        // an arena record can be followed by a size record, we need to remove both
+        if (matched_rec->is_arena_record()) {
+          MemPointerRecord* next = (MemPointerRecord*)malloc_snapshot_itr.peek_next();
+          if (next->is_arena_size_record()) {
+            // it has to match the arena record
+            assert(next->is_size_record_of_arena(matched_rec), "Sanity check");
+            malloc_snapshot_itr.remove();
+          }
+        }
+        // the memory is deallocated, remove related record(s)
+        malloc_snapshot_itr.remove();
+      }
+    } else {
+      // it is a new record, insert into snapshot
+      if (new_rec->is_arena_size_record()) {
+        MemPointerRecord* prev = (MemPointerRecord*)malloc_snapshot_itr.peek_prev();
+        if (prev == NULL || !prev->is_arena_record() || !new_rec->is_size_record_of_arena(prev)) {
+          // no matched arena record, ignore the size record
+          new_rec = NULL;
+        }
+      }
+      // only 'live' record can go into snapshot
+      if (new_rec != NULL) {
+        if  (new_rec->is_allocation_record() || new_rec->is_arena_size_record()) {
+          if (matched_rec != NULL && new_rec->addr() > matched_rec->addr()) {
+            if (!malloc_snapshot_itr.insert_after(new_rec)) {
+              return false;
+            }
+          } else {
+            if (!malloc_snapshot_itr.insert(new_rec)) {
+              return false;
+            }
+          }
+        }
+#ifndef PRODUCT
+        else if (!has_allocation_record(new_rec->addr())) {
+          // NMT can not track some startup memory, which is allocated before NMT is on
+          _untracked_count ++;
+        }
+#endif
+      }
+    }
+    new_rec = (MemPointerRecord*)itr->next();
+  }
+  return true;
+}
+
+bool MemSnapshot::promote_virtual_memory_records(MemPointerArrayIterator* itr) {
+  VMMemPointerIterator vm_snapshot_itr(_vm_ptrs);
+  MemPointerRecord* new_rec = (MemPointerRecord*)itr->current();
+  VMMemRegionEx new_vm_rec;
+  VMMemRegion*  matched_rec;
+  while (new_rec != NULL) {
+    assert(new_rec->is_vm_pointer(), "Sanity check");
+    if (MemTracker::track_callsite()) {
+      new_vm_rec.init((MemPointerRecordEx*)new_rec);
+    } else {
+      new_vm_rec.init(new_rec);
+    }
+    matched_rec = (VMMemRegion*)vm_snapshot_itr.locate(new_rec->addr());
+    if (matched_rec != NULL &&
+        (matched_rec->contains(&new_vm_rec) || matched_rec->base() == new_vm_rec.base())) {
+      // snapshot can only have 'live' records
+      assert(matched_rec->is_reserve_record(), "Sanity check");
+      if (new_vm_rec.is_reserve_record() && matched_rec->base() == new_vm_rec.base()) {
+        // resize reserved virtual memory range
+        // resize has to cover committed area
+        assert(new_vm_rec.size() >= matched_rec->committed_size(), "Sanity check");
+        matched_rec->set_reserved_size(new_vm_rec.size());
+      } else if (new_vm_rec.is_commit_record()) {
+        // commit memory inside reserved memory range
+        assert(new_vm_rec.committed_size() <= matched_rec->reserved_size(), "Sanity check");
+        // thread stacks are marked committed, so we ignore 'commit' record for creating
+        // stack guard pages
+        if (FLAGS_TO_MEMORY_TYPE(matched_rec->flags()) != mtThreadStack) {
+          matched_rec->commit(new_vm_rec.committed_size());
+        }
+      } else if (new_vm_rec.is_uncommit_record()) {
+        if (FLAGS_TO_MEMORY_TYPE(matched_rec->flags()) == mtThreadStack) {
+          // ignore 'uncommit' record from removing stack guard pages, uncommit
+          // thread stack as whole
+          if (matched_rec->committed_size() == new_vm_rec.committed_size()) {
+            matched_rec->uncommit(new_vm_rec.committed_size());
+          }
+        } else {
+          // uncommit memory inside reserved memory range
+          assert(new_vm_rec.committed_size() <= matched_rec->committed_size(),
+                "Sanity check");
+          matched_rec->uncommit(new_vm_rec.committed_size());
+        }
+      } else if (new_vm_rec.is_type_tagging_record()) {
+        // tag this virtual memory range to a memory type
+        // can not re-tag a memory range to different type
+        assert(FLAGS_TO_MEMORY_TYPE(matched_rec->flags()) == mtNone ||
+               FLAGS_TO_MEMORY_TYPE(matched_rec->flags()) == FLAGS_TO_MEMORY_TYPE(new_vm_rec.flags()),
+               "Sanity check");
+        matched_rec->tag(new_vm_rec.flags());
+      } else if (new_vm_rec.is_release_record()) {
+        // release part or whole memory range
+        if (new_vm_rec.base() == matched_rec->base() &&
+            new_vm_rec.size() == matched_rec->size()) {
+          // release whole virtual memory range
+          assert(matched_rec->committed_size() == 0, "Sanity check");
+          vm_snapshot_itr.remove();
+        } else {
+          // partial release
+          matched_rec->partial_release(new_vm_rec.base(), new_vm_rec.size());
+        }
+      } else {
+        // multiple reserve/commit on the same virtual memory range
+        assert((new_vm_rec.is_reserve_record() || new_vm_rec.is_commit_record()) &&
+          (new_vm_rec.base() == matched_rec->base() && new_vm_rec.size() == matched_rec->size()),
+          "Sanity check");
+        matched_rec->tag(new_vm_rec.flags());
+      }
+    } else {
+      // no matched record
+      if (new_vm_rec.is_reserve_record()) {
+        if (matched_rec == NULL || matched_rec->base() > new_vm_rec.base()) {
+          if (!vm_snapshot_itr.insert(&new_vm_rec)) {
+            return false;
+          }
+        } else {
+          if (!vm_snapshot_itr.insert_after(&new_vm_rec)) {
+            return false;
+          }
+        }
+      } else {
+        // throw out obsolete records, which are the commit/uncommit/release/tag records
+        // on memory regions that are already released.
+      }
+  }
+    new_rec = (MemPointerRecord*)itr->next();
+  }
+  return true;
+}
 
 #ifndef PRODUCT
 void MemSnapshot::print_snapshot_stats(outputStream* st) {
@@ -413,8 +373,15 @@ void MemSnapshot::print_snapshot_stats(outputStream* st) {
   st->print_cr("\tVM: %d/%d [%5.2f%%] %dKB", _vm_ptrs->length(), _vm_ptrs->capacity(),
     (100.0 * (float)_vm_ptrs->length()) / (float)_vm_ptrs->capacity(), _vm_ptrs->instance_size()/K);
 
-  st->print_cr("\tStaging:     %d/%d [%5.2f%%] %dKB", _staging_area->length(), _staging_area->capacity(),
-    (100.0 * (float)_staging_area->length()) / (float)_staging_area->capacity(), _staging_area->instance_size()/K);
+  st->print_cr("\tMalloc staging Area:     %d/%d [%5.2f%%] %dKB", _staging_area.malloc_data()->length(),
+    _staging_area.malloc_data()->capacity(),
+    (100.0 * (float)_staging_area.malloc_data()->length()) / (float)_staging_area.malloc_data()->capacity(),
+    _staging_area.malloc_data()->instance_size()/K);
+
+  st->print_cr("\tVirtual memory staging Area:     %d/%d [%5.2f%%] %dKB", _staging_area.vm_data()->length(),
+    _staging_area.vm_data()->capacity(),
+    (100.0 * (float)_staging_area.vm_data()->length()) / (float)_staging_area.vm_data()->capacity(),
+    _staging_area.vm_data()->instance_size()/K);
 
   st->print_cr("\tUntracked allocation: %d", _untracked_count);
 }
@@ -433,7 +400,7 @@ void MemSnapshot::check_malloc_pointers() {
 }
 
 bool MemSnapshot::has_allocation_record(address addr) {
-  MemPointerArrayIteratorImpl itr(_staging_area);
+  MemPointerArrayIteratorImpl itr(_staging_area.malloc_data());
   MemPointerRecord* cur = (MemPointerRecord*)itr.current();
   while (cur != NULL) {
     if (cur->addr() == addr && cur->is_allocation_record()) {
@@ -447,7 +414,7 @@ bool MemSnapshot::has_allocation_record(address addr) {
 
 #ifdef ASSERT
 void MemSnapshot::check_staging_data() {
-  MemPointerArrayIteratorImpl itr(_staging_area);
+  MemPointerArrayIteratorImpl itr(_staging_area.malloc_data());
   MemPointerRecord* cur = (MemPointerRecord*)itr.current();
   MemPointerRecord* next = (MemPointerRecord*)itr.next();
   while (next != NULL) {
@@ -457,6 +424,13 @@ void MemSnapshot::check_staging_data() {
        "sorting order");
     cur = next;
     next = (MemPointerRecord*)itr.next();
+  }
+
+  MemPointerArrayIteratorImpl vm_itr(_staging_area.vm_data());
+  cur = (MemPointerRecord*)vm_itr.current();
+  while (cur != NULL) {
+    assert(cur->is_vm_pointer(), "virtual memory pointer only");
+    cur = (MemPointerRecord*)vm_itr.next();
   }
 }
 #endif // ASSERT

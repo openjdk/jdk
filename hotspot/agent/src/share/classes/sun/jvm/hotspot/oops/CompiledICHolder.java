@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
-public class CompiledICHolder extends Oop {
+public class CompiledICHolder extends VMObject {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -40,14 +40,14 @@ public class CompiledICHolder extends Oop {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type    = db.lookupType("compiledICHolderOopDesc");
-    holderMethod = new OopField(type.getOopField("_holder_method"), 0);
-    holderKlass  = new OopField(type.getOopField("_holder_klass"), 0);
+    Type type    = db.lookupType("CompiledICHolder");
+    holderMethod = new MetadataField(type.getAddressField("_holder_method"), 0);
+    holderKlass  = new MetadataField(type.getAddressField("_holder_klass"), 0);
     headerSize   = type.getSize();
   }
 
-  CompiledICHolder(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public CompiledICHolder(Address addr) {
+      super(addr);
   }
 
   public boolean isCompiledICHolder()  { return true; }
@@ -55,8 +55,8 @@ public class CompiledICHolder extends Oop {
   private static long headerSize;
 
   // Fields
-  private static OopField holderMethod;
-  private static OopField holderKlass;
+  private static MetadataField holderMethod;
+  private static MetadataField holderKlass;
 
   // Accessors for declared fields
   public Method getHolderMethod() { return (Method) holderMethod.getValue(this); }
@@ -65,16 +65,4 @@ public class CompiledICHolder extends Oop {
   public void printValueOn(PrintStream tty) {
     tty.print("CompiledICHolder");
   }
-
-  public long getObjectSize() {
-    return alignObjectSize(headerSize);
   }
-
-  void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
-      visitor.doOop(holderMethod, true);
-      visitor.doOop(holderKlass, true);
-    }
-  }
-}

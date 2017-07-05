@@ -25,7 +25,7 @@
  * @test
  * @bug 4769350
  * @library ../../../sun/net/www/httptest/
- * @build HttpCallback HttpServer ClosedChannelList HttpTransaction AbstractCallback
+ * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction AbstractCallback
  * @run main/othervm B4769350 server
  * @run main/othervm B4769350 proxy
  * @summary proxy authentication username and password caching only works in serial case
@@ -142,10 +142,10 @@ public class B4769350 {
             switch (count) {
             case 0:
                 errorReply (req, "Basic realm=\"realm1\"");
-                HttpServer.rendezvous ("one", 2);
+                TestHttpServer.rendezvous ("one", 2);
                 break;
             case 1:
-                HttpServer.waitForCondition ("cond2");
+                TestHttpServer.waitForCondition ("cond2");
                 okReply (req);
                 break;
             default:
@@ -158,11 +158,11 @@ public class B4769350 {
             switch (count) {
             case 0:
                 errorReply (req, "Basic realm=\"realm2\"");
-                HttpServer.rendezvous ("one", 2);
-                HttpServer.setCondition ("cond1");
+                TestHttpServer.rendezvous ("one", 2);
+                TestHttpServer.setCondition ("cond1");
                 break;
             case 1:
-                HttpServer.waitForCondition ("cond2");
+                TestHttpServer.waitForCondition ("cond2");
                 okReply (req);
                 break;
             default:
@@ -174,7 +174,7 @@ public class B4769350 {
             switch (count) {
             case 0:
                 errorReply (req, "Basic realm=\"realm1\"");
-                HttpServer.rendezvous ("two", 2);
+                TestHttpServer.rendezvous ("two", 2);
                 break;
             case 1:
                 okReply (req);
@@ -188,8 +188,8 @@ public class B4769350 {
             switch (count) {
             case 0:
                 errorReply (req, "Basic realm=\"realm2\"");
-                HttpServer.rendezvous ("two", 2);
-                HttpServer.setCondition ("cond2");
+                TestHttpServer.rendezvous ("two", 2);
+                TestHttpServer.setCondition ("cond2");
                 break;
             case 1:
                 okReply (req);
@@ -207,7 +207,7 @@ public class B4769350 {
         void doT2a (HttpTransaction req, int count) throws IOException {
             /* This will be called several times */
             if (count == 1) {
-                HttpServer.setCondition ("T2cond1");
+                TestHttpServer.setCondition ("T2cond1");
             }
             errorReply (req, "Basic realm=\"realm3\"");
         }
@@ -233,7 +233,7 @@ public class B4769350 {
             switch (count) {
             case 0:
                 proxyReply (req, "Basic realm=\"proxy\"");
-                HttpServer.setCondition ("T3cond1");
+                TestHttpServer.setCondition ("T3cond1");
                 break;
             case 1:
                 errorReply (req, "Basic realm=\"realm4\"");
@@ -260,7 +260,7 @@ public class B4769350 {
         }
     };
 
-    static HttpServer server;
+    static TestHttpServer server;
     static MyAuthenticator auth = new MyAuthenticator ();
 
     static int redirects = 4;
@@ -276,7 +276,7 @@ public class B4769350 {
         c4 = new Client (authority, "/test/realm2/t1d", false);
 
         c1.start(); c2.start();
-        HttpServer.waitForCondition ("cond1");
+        TestHttpServer.waitForCondition ("cond1");
         c3.start(); c4.start();
         c1.join(); c2.join(); c3.join(); c4.join();
 
@@ -294,7 +294,7 @@ public class B4769350 {
         c5 = new Client (authority, "/test/realm3/t2a", true);
         c6 = new Client (authority, "/test/realm3/t2b", false);
         c5.start ();
-        HttpServer.waitForCondition ("T2cond1");
+        TestHttpServer.waitForCondition ("T2cond1");
         c6.start ();
         c5.join(); c6.join();
 
@@ -313,7 +313,7 @@ public class B4769350 {
         c8 = new Client (authority, "/test/realm4/t3b", false);
         c9 = new Client (authority, "/test/realm4/t3c", false);
         c7.start ();
-        HttpServer.waitForCondition ("T3cond1");
+        TestHttpServer.waitForCondition ("T3cond1");
         c8.start ();
         c9.start ();
         c7.join(); c8.join(); c9.join();
@@ -333,7 +333,7 @@ public class B4769350 {
         Authenticator.setDefault (auth);
         boolean proxy = args[0].equals ("proxy");
         try {
-            server = new HttpServer (new CallBack(), 10, 1, 0);
+            server = new TestHttpServer (new CallBack(), 10, 1, 0);
             System.out.println ("Server: listening on port: " + server.getLocalPort());
             if (proxy) {
                 System.setProperty ("http.proxyHost", "localhost");

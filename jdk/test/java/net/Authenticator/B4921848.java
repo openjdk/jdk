@@ -25,7 +25,7 @@
  * @test
  * @bug 4921848
  * @library ../../../sun/net/www/httptest/
- * @build HttpCallback HttpServer ClosedChannelList HttpTransaction
+ * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main/othervm -Dhttp.auth.preference=basic B4921848
  * @summary Allow user control over authentication schemes
  */
@@ -82,13 +82,13 @@ public class B4921848 implements HttpCallback {
         is.close();
     }
 
-    static HttpServer server;
+    static TestHttpServer server;
 
     public static void main (String[] args) throws Exception {
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
         try {
-            server = new HttpServer (new B4921848(), 1, 10, 0);
+            server = new TestHttpServer (new B4921848(), 1, 10, 0);
             System.out.println ("Server started: listening on port: " + server.getLocalPort());
             client ("http://localhost:"+server.getLocalPort()+"/d1/d2/d3/foo.html");
         } catch (Exception e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -486,6 +486,9 @@ class CodeBuffer: public StackObj {
   bool insts_contains(address pc) const  { return _insts.contains(pc); }
   bool insts_contains2(address pc) const { return _insts.contains2(pc); }
 
+  // Record any extra oops required to keep embedded metadata alive
+  void finalize_oop_references(methodHandle method);
+
   // Allocated size in all sections, when aligned and concatenated
   // (this is the eventual state of the content in its final
   // CodeBlob).
@@ -502,6 +505,12 @@ class CodeBuffer: public StackObj {
   csize_t total_oop_size() const {
     OopRecorder* recorder = oop_recorder();
     return (recorder == NULL)? 0: recorder->oop_size();
+  }
+
+  // allocated size of any and all recorded metadata
+  csize_t total_metadata_size() const {
+    OopRecorder* recorder = oop_recorder();
+    return (recorder == NULL)? 0: recorder->metadata_size();
   }
 
   // Configuration functions, called immediately after the CB is constructed.
@@ -532,9 +541,9 @@ class CodeBuffer: public StackObj {
     copy_relocations_to(blob);
     copy_code_to(blob);
   }
-  void copy_oops_to(nmethod* nm) {
+  void copy_values_to(nmethod* nm) {
     if (!oop_recorder()->is_unused()) {
-      oop_recorder()->copy_to(nm);
+      oop_recorder()->copy_values_to(nm);
     }
   }
 

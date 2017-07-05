@@ -57,7 +57,7 @@ bool VerificationType::is_reference_assignable_from(
       // any object or array is assignable to java.lang.Object
       return true;
     }
-    klassOop obj = SystemDictionary::resolve_or_fail(
+    Klass* obj = SystemDictionary::resolve_or_fail(
         name(), Handle(THREAD, klass->class_loader()),
         Handle(THREAD, klass->protection_domain()), true, CHECK_false);
     KlassHandle this_class(THREAD, obj);
@@ -67,10 +67,10 @@ bool VerificationType::is_reference_assignable_from(
       // java.lang.Cloneable and java.io.Serializable
       return true;
     } else if (from.is_object()) {
-      klassOop from_class = SystemDictionary::resolve_or_fail(
+      Klass* from_class = SystemDictionary::resolve_or_fail(
           from.name(), Handle(THREAD, klass->class_loader()),
           Handle(THREAD, klass->protection_domain()), true, CHECK_false);
-      return instanceKlass::cast(from_class)->is_subclass_of(this_class());
+      return InstanceKlass::cast(from_class)->is_subclass_of(this_class());
     }
   } else if (is_array() && from.is_array()) {
     VerificationType comp_this = get_component(context, CHECK_false);

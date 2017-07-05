@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,23 +61,6 @@ class JNIHandles : AllStatic {
   // Weak global handles
   static jobject make_weak_global(Handle obj);
   static void destroy_weak_global(jobject handle);
-
-  // jmethodID handling (as Weak global handles).
-  // Because the useful life-span of a jmethodID cannot be determined, once created they are
-  // never reclaimed.  The methods to which they refer, however, can be GC'ed away if the class
-  // is unloaded or if the method is made obsolete or deleted -- in these cases, the jmethodID
-  // refers to NULL (as is the case for any weak reference).
-  static jmethodID make_jmethod_id(methodHandle mh);
-  static void destroy_jmethod_id(jmethodID mid);
-  // Use resolve_jmethod_id() in situations where the caller is expected
-  // to provide a valid jmethodID; the only sanity checks are in asserts;
-  // result guaranteed not to be NULL.
-  inline static methodOop resolve_jmethod_id(jmethodID mid);
-  // Use checked_resolve_jmethod_id() in situations where the caller
-  // should provide a valid jmethodID, but might not. NULL is returned
-  // when the jmethodID does not refer to a valid method.
-  inline static methodOop checked_resolve_jmethod_id(jmethodID mid);
-  static void change_method_associated_with_jmethod_id(jmethodID jmid, methodHandle mh);
 
   // Sentinel marking deleted handles in block. Note that we cannot store NULL as
   // the sentinel, since clearing weak global JNI refs are done by storing NULL in
@@ -206,20 +189,6 @@ inline oop JNIHandles::resolve_non_null(jobject handle) {
   assert(result != deleted_handle(), "Used a deleted global handle.");
   return result;
 };
-
-inline methodOop JNIHandles::resolve_jmethod_id(jmethodID mid) {
-  return (methodOop) resolve_non_null((jobject)mid);
-};
-
-inline methodOop JNIHandles::checked_resolve_jmethod_id(jmethodID mid) {
-  oop o = resolve_external_guard((jobject) mid);
-  if (o == NULL || !o->is_method()) {
-    return (methodOop) NULL;
-  }
-
-  return (methodOop) o;
-};
-
 
 inline void JNIHandles::destroy_local(jobject handle) {
   if (handle != NULL) {

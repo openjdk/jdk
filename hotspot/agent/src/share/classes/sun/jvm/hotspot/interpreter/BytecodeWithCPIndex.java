@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,17 @@ public abstract class BytecodeWithCPIndex extends Bytecode {
   }
 
   // the constant pool index for this bytecode
-  public int index() { return getIndexU2(code(), false); }
-
-  public int getSecondaryIndex() {
-     throw new IllegalArgumentException("must be invokedynamic");
+  public int index() {
+    if (code() == Bytecodes._invokedynamic) {
+      int index = getIndexU4();
+      if (ConstantPool.isInvokedynamicIndex(index)) {
+        return ConstantPool.decodeInvokedynamicIndex(index);
+      } else {
+        return index;
+      }
+    } else {
+      return getIndexU2(code(), false);
+    }
   }
 
   protected int indexForFieldOrMethod() {
@@ -47,12 +54,8 @@ public abstract class BytecodeWithCPIndex extends Bytecode {
      int cpCacheIndex = index();
      if (cpCache == null) {
         return cpCacheIndex;
-     } else if (code() == Bytecodes._invokedynamic) {
-        int secondaryIndex = getSecondaryIndex();
-        return cpCache.getMainEntryAt(secondaryIndex).getConstantPoolIndex();
      } else {
-        // change byte-ordering and go via cache
-        return cpCache.getEntryAt((int) (0xFFFF & VM.getVM().getBytes().swapShort((short) cpCacheIndex))).getConstantPoolIndex();
+      return cpCache.getEntryAt((int) (0xFFFF & cpCacheIndex)).getConstantPoolIndex();
      }
   }
 }

@@ -47,15 +47,6 @@ inline void ParallelScavengeHeap::invoke_scavenge()
   PSScavenge::invoke();
 }
 
-inline void ParallelScavengeHeap::invoke_full_gc(bool maximum_compaction)
-{
-  if (UseParallelOldGC) {
-    PSParallelCompact::invoke(maximum_compaction);
-  } else {
-    PSMarkSweep::invoke(maximum_compaction);
-  }
-}
-
 inline bool ParallelScavengeHeap::is_in_young(oop p) {
   // Assumes the the old gen address range is lower than that of the young gen.
   const void* loc = (void*) p;
@@ -64,9 +55,4 @@ inline bool ParallelScavengeHeap::is_in_young(oop p) {
         err_msg("incorrect test - result=%d, p=" PTR_FORMAT, result, (void*)p));
   return result;
 }
-
-inline bool ParallelScavengeHeap::is_in_old_or_perm(oop p) {
-  return old_gen()->is_in_reserved(p) || perm_gen()->is_in_reserved(p);
-}
-
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_INLINE_HPP

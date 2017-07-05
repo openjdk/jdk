@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,12 @@
 
 #include "gc_interface/collectedHeap.hpp"
 #include "memory/generation.hpp"
-#include "memory/permGen.hpp"
 
 // A "SharedHeap" is an implementation of a java heap for HotSpot.  This
 // is an abstract class: there may be many different kinds of heaps.  This
 // class defines the functions that a heap must implement, and contains
 // infrastructure common to all heaps.
 
-class PermGen;
 class Generation;
 class BarrierSet;
 class GenRemSet;
@@ -47,7 +45,7 @@ class SubTasksDone;
 class WorkGang;
 class FlexibleWorkGang;
 class CollectorPolicy;
-class KlassHandle;
+class KlassClosure;
 
 // Note on use of FlexibleWorkGang's for GC.
 // There are three places where task completion is determined.
@@ -73,14 +71,13 @@ class KlassHandle;
 // Example of using SubTasksDone and SequentialSubTasksDone
 // G1CollectedHeap::g1_process_strong_roots() calls
 //  process_strong_roots(false, // no scoping; this is parallel code
-//                       collecting_perm_gen, so,
+//                       is_scavenging, so,
 //                       &buf_scan_non_heap_roots,
-//                       &eager_scan_code_roots,
-//                       &buf_scan_perm);
+//                       &eager_scan_code_roots);
 //  which delegates to SharedHeap::process_strong_roots() and uses
 //  SubTasksDone* _process_strong_tasks to claim tasks.
 //  process_strong_roots() calls
-//      rem_set()->younger_refs_iterate(perm_gen(), perm_blk);
+//      rem_set()->younger_refs_iterate()
 //  to scan the card table and which eventually calls down into
 //  CardTableModRefBS::par_non_clean_card_iterate_work().  This method
 //  uses SequentialSubTasksDone* _pst to claim tasks.
@@ -121,11 +118,6 @@ protected:
   // set the static pointer "_sh" to that instance.
   static SharedHeap* _sh;
 
-  // All heaps contain a "permanent generation."  This is some ways
-  // similar to a generation in a generational system, in other ways not.
-  // See the "PermGen" class.
-  PermGen* _perm_gen;
-
   // and the Gen Remembered Set, at least one good enough to scan the perm
   // gen.
   GenRemSet* _rem_set;
@@ -155,8 +147,6 @@ protected:
 public:
   static SharedHeap* heap() { return _sh; }
 
-  CollectorPolicy *collector_policy() const { return _collector_policy; }
-
   void set_barrier_set(BarrierSet* bs);
   SubTasksDone* process_strong_tasks() { return _process_strong_tasks; }
 
@@ -166,24 +156,15 @@ public:
   // Initialization of ("weak") reference processing support
   virtual void ref_processing_init();
 
-  void set_perm(PermGen* perm_gen) { _perm_gen = perm_gen; }
-
   // This function returns the "GenRemSet" object that allows us to scan
-  // generations; at least the perm gen, possibly more in a fully
-  // generational heap.
+  // generations in a fully generational heap.
   GenRemSet* rem_set() { return _rem_set; }
 
-  // These function return the "permanent" generation, in which
-  // reflective objects are allocated and stored.  Two versions, the second
-  // of which returns the view of the perm gen as a generation.
-  PermGen* perm() const { return _perm_gen; }
-  Generation* perm_gen() const { return _perm_gen->as_gen(); }
-
   // Iteration functions.
-  void oop_iterate(OopClosure* cl) = 0;
+  void oop_iterate(ExtendedOopClosure* cl) = 0;
 
   // Same as above, restricted to a memory region.
-  virtual void oop_iterate(MemRegion mr, OopClosure* cl) = 0;
+  virtual void oop_iterate(MemRegion mr, ExtendedOopClosure* cl) = 0;
 
   // Iterate over all objects allocated since the last collection, calling
   // "cl->do_object" on each.  The heap must have been initialized properly
@@ -251,22 +232,18 @@ public:
   FlexibleWorkGang* workers() const { return _workers; }
 
   // Invoke the "do_oop" method the closure "roots" on all root locations.
-  // If "collecting_perm_gen" is false, then roots that may only contain
-  // references to permGen objects are not scanned; instead, in that case,
-  // the "perm_blk" closure is applied to all outgoing refs in the
-  // permanent generation.  The "so" argument determines which of roots
-  // the closure is applied to:
+  // The "so" argument determines which roots the closure is applied to:
   // "SO_None" does none;
   // "SO_AllClasses" applies the closure to all entries in the SystemDictionary;
   // "SO_SystemClasses" to all the "system" classes and loaders;
   // "SO_Strings" applies the closure to all entries in StringTable;
   // "SO_CodeCache" applies the closure to all elements of the CodeCache.
   void process_strong_roots(bool activate_scope,
-                            bool collecting_perm_gen,
+                            bool is_scavenging,
                             ScanningOption so,
                             OopClosure* roots,
                             CodeBlobClosure* code_roots,
-                            OopsInGenClosure* perm_blk);
+                            KlassClosure* klass_closure);
 
   // Apply "blk" to all the weak roots of the system.  These include
   // JNI weak roots, the code cache, system dictionary, symbol table,
@@ -295,46 +272,6 @@ public:
   //
   // New methods from CollectedHeap
   //
-
-  size_t permanent_capacity() const {
-    assert(perm_gen(), "NULL perm gen");
-    return perm_gen()->capacity();
-  }
-
-  size_t permanent_used() const {
-    assert(perm_gen(), "NULL perm gen");
-    return perm_gen()->used();
-  }
-
-  bool is_in_permanent(const void *p) const {
-    assert(perm_gen(), "NULL perm gen");
-    return perm_gen()->is_in_reserved(p);
-  }
-
-  // Different from is_in_permanent in that is_in_permanent
-  // only checks if p is in the reserved area of the heap
-  // and this checks to see if it in the commited area.
-  // This is typically used by things like the forte stackwalker
-  // during verification of suspicious frame values.
-  bool is_permanent(const void *p) const {
-    assert(perm_gen(), "NULL perm gen");
-    return perm_gen()->is_in(p);
-  }
-
-  HeapWord* permanent_mem_allocate(size_t size) {
-    assert(perm_gen(), "NULL perm gen");
-    return _perm_gen->mem_allocate(size);
-  }
-
-  void permanent_oop_iterate(OopClosure* cl) {
-    assert(perm_gen(), "NULL perm gen");
-    _perm_gen->oop_iterate(cl);
-  }
-
-  void permanent_object_iterate(ObjectClosure* cl) {
-    assert(perm_gen(), "NULL perm gen");
-    _perm_gen->object_iterate(cl);
-  }
 
   // Some utilities.
   void print_size_transition(outputStream* out,

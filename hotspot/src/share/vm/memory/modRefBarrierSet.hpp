@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ public:
 
   bool read_ref_needs_barrier(void* field) { return false; }
   bool read_prim_needs_barrier(HeapWord* field, size_t bytes) { return false; }
-  virtual bool write_ref_needs_barrier(void* field, oop new_val) = 0;
   bool write_prim_needs_barrier(HeapWord* field, size_t bytes,
                                 juint val1, juint val2) { return false; }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,6 @@ public abstract class ProfileData {
   int uintAt(int index) {
     return (int)intptrAt(index);
   }
-  Oop oopAt(int index) {
-    return data().oopAt(index);
-  }
-
   public Address addressAt(int index) {
     return data().addressAt(index);
   }

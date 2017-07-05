@@ -30,8 +30,8 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/methodDataOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/methodData.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -194,7 +194,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   }
   __ get_cache_and_index_at_bcp(cache, G1_scratch, 1);
   __ bind(L_got_cache);
-  __ ld_ptr(cache, constantPoolCacheOopDesc::base_offset() +
+  __ ld_ptr(cache, ConstantPoolCache::base_offset() +
                    ConstantPoolCacheEntry::flags_offset(), size);
   __ and3(size, 0xFF, size);                   // argument size in words
   __ sll(size, Interpreter::logStackElementSize, size); // each argument size in bytes
@@ -291,18 +291,18 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 // ??: invocation counter
 //
 void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue) {
-  // Note: In tiered we increment either counters in methodOop or in MDO depending if we're profiling or not.
+  // Note: In tiered we increment either counters in Method* or in MDO depending if we're profiling or not.
   if (TieredCompilation) {
     const int increment = InvocationCounter::count_increment;
     const int mask = ((1 << Tier0InvokeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
     Label no_mdo, done;
     if (ProfileInterpreter) {
       // If no method data exists, go to profile_continue.
-      __ ld_ptr(Lmethod, methodOopDesc::method_data_offset(), G4_scratch);
+      __ ld_ptr(Lmethod, Method::method_data_offset(), G4_scratch);
       __ br_null_short(G4_scratch, Assembler::pn, no_mdo);
       // Increment counter
       Address mdo_invocation_counter(G4_scratch,
-                                     in_bytes(methodDataOopDesc::invocation_counter_offset()) +
+                                     in_bytes(MethodData::invocation_counter_offset()) +
                                      in_bytes(InvocationCounter::counter_offset()));
       __ increment_mask_and_jump(mdo_invocation_counter, increment, mask,
                                  G3_scratch, Lscratch,
@@ -310,10 +310,10 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
       __ ba_short(done);
     }
 
-    // Increment counter in methodOop
+    // Increment counter in Method*
     __ bind(no_mdo);
     Address invocation_counter(Lmethod,
-                               in_bytes(methodOopDesc::invocation_counter_offset()) +
+                               in_bytes(Method::invocation_counter_offset()) +
                                in_bytes(InvocationCounter::counter_offset()));
     __ increment_mask_and_jump(invocation_counter, increment, mask,
                                G3_scratch, Lscratch,
@@ -322,8 +322,8 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
   } else {
     // Update standard invocation counters
     __ increment_invocation_counter(O0, G3_scratch);
-    if (ProfileInterpreter) {  // %%% Merge this into methodDataOop
-      Address interpreter_invocation_counter(Lmethod,in_bytes(methodOopDesc::interpreter_invocation_counter_offset()));
+    if (ProfileInterpreter) {  // %%% Merge this into MethodData*
+      Address interpreter_invocation_counter(Lmethod,in_bytes(Method::interpreter_invocation_counter_offset()));
       __ ld(interpreter_invocation_counter, G3_scratch);
       __ inc(G3_scratch);
       __ st(G3_scratch, interpreter_invocation_counter);
@@ -349,10 +349,10 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
 }
 
 // Allocate monitor and lock method (asm interpreter)
-// ebx - methodOop
+// ebx - Method*
 //
 void InterpreterGenerator::lock_method(void) {
-  __ ld(Lmethod, in_bytes(methodOopDesc::access_flags_offset()), O0);  // Load access flags.
+  __ ld(Lmethod, in_bytes(Method::access_flags_offset()), O0);  // Load access flags.
 
 #ifdef ASSERT
  { Label ok;
@@ -371,11 +371,11 @@ void InterpreterGenerator::lock_method(void) {
     __ br( Assembler::zero, true, Assembler::pt, done);
     __ delayed()->ld_ptr(Llocals, Interpreter::local_offset_in_bytes(0), O0); // get receiver for not-static case
 
-    __ ld_ptr( Lmethod, in_bytes(methodOopDesc::const_offset()), O0);
-    __ ld_ptr( O0, in_bytes(constMethodOopDesc::constants_offset()), O0);
-    __ ld_ptr( O0, constantPoolOopDesc::pool_holder_offset_in_bytes(), O0);
+    __ ld_ptr( Lmethod, in_bytes(Method::const_offset()), O0);
+    __ ld_ptr( O0, in_bytes(ConstMethod::constants_offset()), O0);
+    __ ld_ptr( O0, ConstantPool::pool_holder_offset_in_bytes(), O0);
 
-    // lock the mirror, not the klassOop
+    // lock the mirror, not the Klass*
     __ ld_ptr( O0, mirror_offset, O0);
 
 #ifdef ASSERT
@@ -494,14 +494,14 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // (gri - 2/25/2000)
 
 
-  const Address size_of_parameters(G5_method, methodOopDesc::size_of_parameters_offset());
-  const Address size_of_locals    (G5_method, methodOopDesc::size_of_locals_offset());
-  const Address max_stack         (G5_method, methodOopDesc::max_stack_offset());
+  const Address size_of_parameters(G5_method, Method::size_of_parameters_offset());
+  const Address size_of_locals    (G5_method, Method::size_of_locals_offset());
+  const Address max_stack         (G5_method, Method::max_stack_offset());
   int rounded_vm_local_words = round_to( frame::interpreter_frame_vm_local_words, WordsPerLong );
 
   const int extra_space =
     rounded_vm_local_words +                   // frame local scratch space
-    //6815692//methodOopDesc::extra_stack_words() +       // extra push slots for MH adapters
+    //6815692//Method::extra_stack_words() +       // extra push slots for MH adapters
     frame::memory_parameter_word_sp_offset +   // register save area
     (native_call ? frame::interpreter_frame_extra_outgoing_argument_words : 0);
 
@@ -573,8 +573,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   if (native_call) {
     __ mov(G0, Lbcp);
   } else {
-    __ ld_ptr(G5_method, methodOopDesc::const_offset(), Lbcp);
-    __ add(Lbcp, in_bytes(constMethodOopDesc::codes_offset()), Lbcp);
+    __ ld_ptr(G5_method, Method::const_offset(), Lbcp);
+    __ add(Lbcp, in_bytes(ConstMethod::codes_offset()), Lbcp);
   }
   __ mov( G5_method, Lmethod);                 // set Lmethod
   __ get_constant_pool_cache( LcpoolCache );   // set LcpoolCache
@@ -606,8 +606,6 @@ address InterpreterGenerator::generate_empty_entry(void) {
 
   address entry = __ pc();
   Label slow_path;
-
-  __ verify_oop(G5_method);
 
   // do nothing for empty methods (do not even increment invocation counter)
   if ( UseFastEmptyMethods) {
@@ -662,8 +660,8 @@ address InterpreterGenerator::generate_accessor_entry(void) {
 
     // read first instruction word and extract bytecode @ 1 and index @ 2
     // get first 4 bytes of the bytecodes (big endian!)
-    __ ld_ptr(G5_method, methodOopDesc::const_offset(), G1_scratch);
-    __ ld(G1_scratch, constMethodOopDesc::codes_offset(), G1_scratch);
+    __ ld_ptr(G5_method, Method::const_offset(), G1_scratch);
+    __ ld(G1_scratch, ConstMethod::codes_offset(), G1_scratch);
 
     // move index @ 2 far left then to the right most two bytes.
     __ sll(G1_scratch, 2*BitsPerByte, G1_scratch);
@@ -671,16 +669,16 @@ address InterpreterGenerator::generate_accessor_entry(void) {
                       ConstantPoolCacheEntry::size()) * BytesPerWord), G1_scratch);
 
     // get constant pool cache
-    __ ld_ptr(G5_method, methodOopDesc::const_offset(), G3_scratch);
-    __ ld_ptr(G3_scratch, constMethodOopDesc::constants_offset(), G3_scratch);
-    __ ld_ptr(G3_scratch, constantPoolOopDesc::cache_offset_in_bytes(), G3_scratch);
+    __ ld_ptr(G5_method, Method::const_offset(), G3_scratch);
+    __ ld_ptr(G3_scratch, ConstMethod::constants_offset(), G3_scratch);
+    __ ld_ptr(G3_scratch, ConstantPool::cache_offset_in_bytes(), G3_scratch);
 
     // get specific constant pool cache entry
     __ add(G3_scratch, G1_scratch, G3_scratch);
 
     // Check the constant Pool cache entry to see if it has been resolved.
     // If not, need the slow path.
-    ByteSize cp_base_offset = constantPoolCacheOopDesc::base_offset();
+    ByteSize cp_base_offset = ConstantPoolCache::base_offset();
     __ ld_ptr(G3_scratch, cp_base_offset + ConstantPoolCacheEntry::indices_offset(), G1_scratch);
     __ srl(G1_scratch, 2*BitsPerByte, G1_scratch);
     __ and3(G1_scratch, 0xFF, G1_scratch);
@@ -827,9 +825,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // make sure registers are different!
   assert_different_registers(G2_thread, G5_method, Gargs, Gtmp1, Gtmp2);
 
-  const Address Laccess_flags(Lmethod, methodOopDesc::access_flags_offset());
-
-  __ verify_oop(G5_method);
+  const Address Laccess_flags(Lmethod, Method::access_flags_offset());
 
   const Register Glocals_size = G3;
   assert_different_registers(Glocals_size, G4_scratch, Gframe_size);
@@ -837,7 +833,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // make sure method is native & not abstract
   // rethink these assertions - they can be simplified and shared (gri 2/25/2000)
 #ifdef ASSERT
-  __ ld(G5_method, methodOopDesc::access_flags_offset(), Gtmp1);
+  __ ld(G5_method, Method::access_flags_offset(), Gtmp1);
   {
     Label L;
     __ btst(JVM_ACC_NATIVE, Gtmp1);
@@ -934,7 +930,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // get signature handler
   { Label L;
-    Address signature_handler(Lmethod, methodOopDesc::signature_handler_offset());
+    Address signature_handler(Lmethod, Method::signature_handler_offset());
     __ ld_ptr(signature_handler, G3_scratch);
     __ br_notnull_short(G3_scratch, Assembler::pt, L);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::prepare_native_call), Lmethod);
@@ -991,13 +987,13 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ btst(JVM_ACC_STATIC, O0);
     __ br( Assembler::zero, false, Assembler::pt, not_static);
     // get native function entry point(O0 is a good temp until the very end)
-    __ delayed()->ld_ptr(Lmethod, in_bytes(methodOopDesc::native_function_offset()), O0);
+    __ delayed()->ld_ptr(Lmethod, in_bytes(Method::native_function_offset()), O0);
     // for static methods insert the mirror argument
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
 
-    __ ld_ptr(Lmethod, methodOopDesc:: const_offset(), O1);
-    __ ld_ptr(O1, constMethodOopDesc::constants_offset(), O1);
-    __ ld_ptr(O1, constantPoolOopDesc::pool_holder_offset_in_bytes(), O1);
+    __ ld_ptr(Lmethod, Method:: const_offset(), O1);
+    __ ld_ptr(O1, ConstMethod::constants_offset(), O1);
+    __ ld_ptr(O1, ConstantPool::pool_holder_offset_in_bytes(), O1);
     __ ld_ptr(O1, mirror_offset, O1);
 #ifdef ASSERT
     if (!PrintSignatureHandlers)  // do not dirty the output with this
@@ -1259,13 +1255,11 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // make sure registers are different!
   assert_different_registers(G2_thread, G5_method, Gargs, Gtmp1, Gtmp2);
 
-  const Address size_of_parameters(G5_method, methodOopDesc::size_of_parameters_offset());
-  const Address size_of_locals    (G5_method, methodOopDesc::size_of_locals_offset());
+  const Address size_of_parameters(G5_method, Method::size_of_parameters_offset());
+  const Address size_of_locals    (G5_method, Method::size_of_locals_offset());
   // Seems like G5_method is live at the point this is used. So we could make this look consistent
   // and use in the asserts.
-  const Address access_flags      (Lmethod,   methodOopDesc::access_flags_offset());
-
-  __ verify_oop(G5_method);
+  const Address access_flags      (Lmethod,   Method::access_flags_offset());
 
   const Register Glocals_size = G3;
   assert_different_registers(Glocals_size, G4_scratch, Gframe_size);
@@ -1273,7 +1267,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // make sure method is not native & not abstract
   // rethink these assertions - they can be simplified and shared (gri 2/25/2000)
 #ifdef ASSERT
-  __ ld(G5_method, methodOopDesc::access_flags_offset(), Gtmp1);
+  __ ld(G5_method, Method::access_flags_offset(), Gtmp1);
   {
     Label L;
     __ btst(JVM_ACC_NATIVE, Gtmp1);
@@ -1429,7 +1423,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
 //
 // The entry code below assumes that the following registers are set
 // when coming in:
-//    G5_method: holds the methodOop of the method to call
+//    G5_method: holds the Method* of the method to call
 //    Lesp:    points to the TOS of the callers expression stack
 //             after having pushed all the parameters
 //
@@ -1547,7 +1541,7 @@ static int size_activation_helper(int callee_extra_locals, int max_stack, int mo
        round_to(callee_extra_locals * Interpreter::stackElementWords, WordsPerLong);
   const int max_stack_words = max_stack * Interpreter::stackElementWords;
   return (round_to((max_stack_words
-                   //6815692//+ methodOopDesc::extra_stack_words()
+                   //6815692//+ Method::extra_stack_words()
                    + rounded_vm_local_words
                    + frame::memory_parameter_word_sp_offset), WordsPerLong)
                    // already rounded
@@ -1555,7 +1549,7 @@ static int size_activation_helper(int callee_extra_locals, int max_stack, int mo
 }
 
 // How much stack a method top interpreter activation needs in words.
-int AbstractInterpreter::size_top_interpreter_activation(methodOop method) {
+int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
 
   // See call_stub code
   int call_stub_size  = round_to(7 + frame::memory_parameter_word_sp_offset,
@@ -1569,7 +1563,7 @@ int AbstractInterpreter::size_top_interpreter_activation(methodOop method) {
                                  monitor_size) + call_stub_size;
 }
 
-int AbstractInterpreter::layout_activation(methodOop method,
+int AbstractInterpreter::layout_activation(Method* method,
                                            int tempcount,
                                            int popframe_extra_args,
                                            int moncount,
@@ -1830,7 +1824,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     const Register Gtmp2 = G1_scratch;
 
     // Compute size of arguments for saving when returning to deoptimized caller
-    __ lduh(Lmethod, in_bytes(methodOopDesc::size_of_parameters_offset()), Gtmp1);
+    __ lduh(Lmethod, in_bytes(Method::size_of_parameters_offset()), Gtmp1);
     __ sll(Gtmp1, Interpreter::logStackElementSize, Gtmp1);
     __ sub(Llocals, Gtmp1, Gtmp2);
     __ add(Gtmp2, wordSize, Gtmp2);
@@ -1877,7 +1871,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // They remove the activation without checking for bad monitor state.
   // %%% We should make sure this is the right semantics before implementing.
 
-  // %%% changed set_vm_result_2 to set_vm_result and get_vm_result_2 to get_vm_result. Is there a bug here?
   __ set_vm_result(Oexception);
   __ unlock_if_synchronized_method(vtos, /* throw_monitor_exception */ false);
 

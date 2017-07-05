@@ -24,8 +24,6 @@
 /**
  * @test
  * @bug 4333920 4994372
- * @library ../../../../../sun/net/www/httptest/
- * @build HttpCallback HttpServer ClosedChannelList HttpTransaction
  * @run main ChunkedEncodingWithProgressMonitorTest
  * @summary ChunkedEncoding unit test; MeteredStream/ProgressData problem
  */

@@ -39,7 +39,7 @@
 #include "thread_solaris.inline.hpp"
 #endif
 
-#ifdef _DEBUG_
+#ifdef _DEBUG
   #define DEBUG_CALLER_PC  os::get_caller_pc(3)
 #else
   #define DEBUG_CALLER_PC  0
@@ -223,12 +223,33 @@ class MemTracker : AllStatic {
     }
   }
 
+  static inline void record_thread_stack(address addr, size_t size, Thread* thr,
+                           address pc = 0) {
+    if (is_on()) {
+      assert(size > 0 && thr != NULL, "Sanity check");
+      create_memory_record(addr, MemPointerRecord::virtual_memory_reserve_tag() | mtThreadStack,
+                          size, pc, thr);
+      create_memory_record(addr, MemPointerRecord::virtual_memory_commit_tag() | mtThreadStack,
+                          size, pc, thr);
+    }
+  }
+
+  static inline void release_thread_stack(address addr, size_t size, Thread* thr) {
+    if (is_on()) {
+      assert(size > 0 && thr != NULL, "Sanity check");
+      create_memory_record(addr, MemPointerRecord::virtual_memory_uncommit_tag() | mtThreadStack,
+                          size, DEBUG_CALLER_PC, thr);
+      create_memory_record(addr, MemPointerRecord::virtual_memory_release_tag() | mtThreadStack,
+                          size, DEBUG_CALLER_PC, thr);
+    }
+  }
+
   // record a virtual memory 'commit' call
   static inline void record_virtual_memory_commit(address addr, size_t size,
                             address pc = 0, Thread* thread = NULL) {
     if (is_on()) {
       create_memory_record(addr, MemPointerRecord::virtual_memory_commit_tag(),
-                           size, pc, thread);
+                           size, DEBUG_CALLER_PC, thread);
     }
   }
 
@@ -237,7 +258,7 @@ class MemTracker : AllStatic {
                             Thread* thread = NULL) {
     if (is_on()) {
       create_memory_record(addr, MemPointerRecord::virtual_memory_uncommit_tag(),
-                           size, 0, thread);
+                           size, DEBUG_CALLER_PC, thread);
     }
   }
 
@@ -246,7 +267,7 @@ class MemTracker : AllStatic {
                             Thread* thread = NULL) {
     if (is_on()) {
       create_memory_record(addr, MemPointerRecord::virtual_memory_release_tag(),
-                           size, 0, thread);
+                           size, DEBUG_CALLER_PC, thread);
     }
   }
 
@@ -257,7 +278,7 @@ class MemTracker : AllStatic {
       assert(base > 0, "wrong base address");
       assert((flags & (~mt_masks)) == 0, "memory type only");
       create_memory_record(base, (flags | MemPointerRecord::virtual_memory_type_tag()),
-                           0, 0, thread);
+                           0, DEBUG_CALLER_PC, thread);
     }
   }
 
