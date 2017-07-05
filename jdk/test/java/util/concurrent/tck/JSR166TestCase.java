@@ -36,7 +36,8 @@
 /*
  * @test
  * @summary JSR-166 tck tests
- * @modules java.management
+ * @modules java.base/java.util.concurrent:open
+ *          java.management
  * @build *
  * @run junit/othervm/timeout=1000 -Djsr166.testImplementationDetails=true JSR166TestCase
  * @run junit/othervm/timeout=1000 -Djava.util.concurrent.ForkJoinPool.common.parallelism=0 -Djsr166.testImplementationDetails=true JSR166TestCase
@@ -68,6 +69,7 @@ import java.security.ProtectionDomain;
 import java.security.SecurityPermission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -474,6 +476,7 @@ public class JSR166TestCase extends TestCase {
             AbstractQueuedLongSynchronizerTest.suite(),
             ArrayBlockingQueueTest.suite(),
             ArrayDequeTest.suite(),
+            ArrayListTest.suite(),
             AtomicBooleanTest.suite(),
             AtomicIntegerArrayTest.suite(),
             AtomicIntegerFieldUpdaterTest.suite(),
@@ -496,6 +499,7 @@ public class JSR166TestCase extends TestCase {
             CopyOnWriteArrayListTest.suite(),
             CopyOnWriteArraySetTest.suite(),
             CountDownLatchTest.suite(),
+            CountedCompleterTest.suite(),
             CyclicBarrierTest.suite(),
             DelayQueueTest.suite(),
             EntryTest.suite(),
@@ -524,15 +528,17 @@ public class JSR166TestCase extends TestCase {
             TreeMapTest.suite(),
             TreeSetTest.suite(),
             TreeSubMapTest.suite(),
-            TreeSubSetTest.suite());
+            TreeSubSetTest.suite(),
+            VectorTest.suite());
 
         // Java8+ test classes
         if (atLeastJava8()) {
             String[] java8TestClassNames = {
+                "ArrayDeque8Test",
                 "Atomic8Test",
                 "CompletableFutureTest",
                 "ConcurrentHashMap8Test",
-                "CountedCompleterTest",
+                "CountedCompleter8Test",
                 "DoubleAccumulatorTest",
                 "DoubleAdderTest",
                 "ForkJoinPool8Test",
@@ -1850,18 +1856,68 @@ public class JSR166TestCase extends TestCase {
         }
     }
 
+    void assertImmutable(final Object o) {
+        if (o instanceof Collection) {
+            assertThrows(
+                UnsupportedOperationException.class,
+                new Runnable() { public void run() {
+                        ((Collection) o).add(null);}});
+        }
+    }
+
     @SuppressWarnings("unchecked")
     <T> T serialClone(T o) {
         try {
             ObjectInputStream ois = new ObjectInputStream
                 (new ByteArrayInputStream(serialBytes(o)));
             T clone = (T) ois.readObject();
+            if (o == clone) assertImmutable(o);
             assertSame(o.getClass(), clone.getClass());
             return clone;
         } catch (Throwable fail) {
             threadUnexpectedException(fail);
             return null;
         }
+    }
+
+    /**
+     * A version of serialClone that leaves error handling (for
+     * e.g. NotSerializableException) up to the caller.
+     */
+    @SuppressWarnings("unchecked")
+    <T> T serialClonePossiblyFailing(T o)
+        throws ReflectiveOperationException, java.io.IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(o);
+        oos.flush();
+        oos.close();
+        ObjectInputStream ois = new ObjectInputStream
+            (new ByteArrayInputStream(bos.toByteArray()));
+        T clone = (T) ois.readObject();
+        if (o == clone) assertImmutable(o);
+        assertSame(o.getClass(), clone.getClass());
+        return clone;
+    }
+
+    /**
+     * If o implements Cloneable and has a public clone method,
+     * returns a clone of o, else null.
+     */
+    @SuppressWarnings("unchecked")
+    <T> T cloneableClone(T o) {
+        if (!(o instanceof Cloneable)) return null;
+        final T clone;
+        try {
+            clone = (T) o.getClass().getMethod("clone").invoke(o);
+        } catch (NoSuchMethodException ok) {
+            return null;
+        } catch (ReflectiveOperationException unexpected) {
+            throw new Error(unexpected);
+        }
+        assertNotSame(o, clone); // not 100% guaranteed by spec
+        assertSame(o.getClass(), clone.getClass());
+        return clone;
     }
 
     public void assertThrows(Class<? extends Throwable> expectedExceptionClass,

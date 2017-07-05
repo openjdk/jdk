@@ -2001,37 +2001,6 @@ JNI_ENTRY_CHECKED(jobject,
     return result;
 JNI_END
 
-JNI_ENTRY_CHECKED(void,
-  checked_jni_AddModuleReads(JNIEnv *env,
-                             jobject fromModule,
-                             jobject sourceModule))
-    functionEnter(thr);
-    IN_VM(
-      jniCheck::validate_object(thr, fromModule);
-      if (sourceModule != NULL) {
-        jniCheck::validate_object(thr, sourceModule);
-      }
-    )
-    UNCHECKED()->AddModuleReads(env,fromModule,sourceModule);
-    functionExit(thr);
-JNI_END
-
-JNI_ENTRY_CHECKED(jboolean,
-  checked_jni_CanReadModule(JNIEnv *env,
-                            jobject askingModule,
-                            jobject sourceModule))
-    functionEnter(thr);
-    IN_VM(
-      jniCheck::validate_object(thr, askingModule);
-      if (sourceModule != NULL) {
-        jniCheck::validate_object(thr, sourceModule);
-      }
-    )
-    jboolean result = UNCHECKED()->CanReadModule(env,askingModule,sourceModule);
-    functionExit(thr);
-    return result;
-JNI_END
-
 /*
  * Structure containing all checked jni functions
  */
@@ -2317,9 +2286,7 @@ struct JNINativeInterface_  checked_jni_NativeInterface = {
 
     // Module Features
 
-    checked_jni_GetModule,
-    checked_jni_AddModuleReads,
-    checked_jni_CanReadModule
+    checked_jni_GetModule
 };
 
 

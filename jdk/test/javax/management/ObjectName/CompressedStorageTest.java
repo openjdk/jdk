@@ -27,7 +27,7 @@
  * @summary Tests the limits imposed on the domain name part of an
  *          ObjectName instance
  * @author Jaroslav Bachorik
- * @modules java.management
+ * @modules java.management/javax.management:open
  * @run main CompressedStorageTest
  */
 

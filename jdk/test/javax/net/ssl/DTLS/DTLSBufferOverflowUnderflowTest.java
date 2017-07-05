@@ -30,8 +30,8 @@
  * @modules java.security.jgss
  *          jdk.security.auth
  *          java.base/sun.security.util
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
+ *          java.security.jgss/sun.security.krb5:+open
+ *          java.security.jgss/sun.security.krb5.internal:+open
  *          java.security.jgss/sun.security.krb5.internal.ccache
  *          java.security.jgss/sun.security.krb5.internal.crypto
  *          java.security.jgss/sun.security.krb5.internal.ktab

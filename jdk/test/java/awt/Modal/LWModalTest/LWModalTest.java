@@ -28,6 +28,7 @@
   @summary The test checks that Container's method startLWModal
 and stopLWModal work correctly. The test scenario is very close
 to JOptionPane.showInternal*Dialog methods
+  @modules java.desktop/java.awt:open
   @author artem.ananiev@...: area=awt.modal
   @library ../../regtesthelpers
   @build Util

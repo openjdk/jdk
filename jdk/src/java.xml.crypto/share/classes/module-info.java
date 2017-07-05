@@ -27,7 +27,7 @@
  * Defines an API for XML cryptography.
  */
 module java.xml.crypto {
-    requires public java.xml;
+    requires transitive java.xml;
     requires java.logging;
 
     exports javax.xml.crypto;

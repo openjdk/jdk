@@ -27,9 +27,10 @@
  * @bug 8161068
  * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
  * @library /test/lib /compiler/jvmci/jdk.vm.ci.hotspot.test/src
+ * @modules java.base/java.lang.invoke:+open
  * @modules jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.runtime
- *          jdk.vm.ci/jdk.vm.ci.hotspot
+ * @modules         jdk.vm.ci/jdk.vm.ci.hotspot:+open
  * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *      jdk.vm.ci.hotspot.test.MethodHandleAccessProviderTest
  */

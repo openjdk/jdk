@@ -26,6 +26,7 @@
  * @bug 6938813
  * @summary Swing mutable statics
  * @author Pavel Porvatov
+ * @modules java.desktop/javax.swing.text.html.parser:open
  * @modules java.desktop/sun.awt
  */
 

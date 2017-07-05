@@ -52,7 +52,7 @@ import java.lang.reflect.Module;
  * @summary JDK implementation specific unit test for JDK internal artifacts.
             Tests the behavior of bootstrap loggers (and SimpleConsoleLoggers
  *          too).
- * @modules java.base/jdk.internal.logger
+ * @modules java.base/jdk.internal.logger:+open
  *          java.logging
  * @build BootstrapLoggerUtils LogStream
  * @run main/othervm BootstrapLoggerTest NO_SECURITY

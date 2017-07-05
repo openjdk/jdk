@@ -162,7 +162,7 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU variables.
   PLATFORM_EXTRACT_VARS_FROM_OS($build_os)
   PLATFORM_EXTRACT_VARS_FROM_CPU($build_cpu)
-  # ..and setup our own variables. (Do this explicitely to facilitate searching)
+  # ..and setup our own variables. (Do this explicitly to facilitate searching)
   OPENJDK_BUILD_OS="$VAR_OS"
   if test "x$VAR_OS_TYPE" != x; then
     OPENJDK_BUILD_OS_TYPE="$VAR_OS_TYPE"
@@ -192,7 +192,7 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU variables.
   PLATFORM_EXTRACT_VARS_FROM_OS($host_os)
   PLATFORM_EXTRACT_VARS_FROM_CPU($host_cpu)
-  # ... and setup our own variables. (Do this explicitely to facilitate searching)
+  # ... and setup our own variables. (Do this explicitly to facilitate searching)
   OPENJDK_TARGET_OS="$VAR_OS"
   if test "x$VAR_OS_TYPE" != x; then
     OPENJDK_TARGET_OS_TYPE="$VAR_OS_TYPE"

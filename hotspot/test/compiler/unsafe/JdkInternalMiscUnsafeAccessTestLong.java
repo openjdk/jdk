@@ -26,7 +26,7 @@
  * @bug 8143628
  * @summary Test unsafe access for long
  *
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc:+open
  * @run testng/othervm -Diters=100   -Xint                   compiler.unsafe.JdkInternalMiscUnsafeAccessTestLong
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 compiler.unsafe.JdkInternalMiscUnsafeAccessTestLong
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  compiler.unsafe.JdkInternalMiscUnsafeAccessTestLong

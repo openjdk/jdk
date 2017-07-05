@@ -23,7 +23,7 @@
 
 module test {
     requires m1;
-    requires m3;   // requires public m2
+    requires m3;   // requires transitive m2
 
     exports jdk.test;
 }

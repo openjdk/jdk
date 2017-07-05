@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,9 @@ public class TestCipherPBE {
 
         out.println("=> Testing: " + algorithm);
 
+        boolean isUnlimited =
+            (Cipher.getMaxAllowedKeyLength(algorithm) == Integer.MAX_VALUE);
+
         try {
             // Initialization
             AlgorithmParameterSpec algoParamSpec
@@ -98,9 +101,9 @@ public class TestCipherPBE {
             ci.init(Cipher.DECRYPT_MODE, secretKey, algoParamSpec);
             byte[] recoveredText = ci.doFinal(cipherText);
 
-            if (algorithm.contains("TripleDES")) {
+            if (algorithm.contains("TripleDES") && !isUnlimited) {
                 throw new RuntimeException(
-                        "Expected InvalidKeyException exception uncaugh");
+                        "Expected InvalidKeyException not thrown");
             }
 
             // Comparison
@@ -110,8 +113,8 @@ public class TestCipherPBE {
             }
             out.println("Test Passed.");
         } catch (InvalidKeyException ex) {
-            if (algorithm.contains("TripleDES")) {
-                out.println("Expected InvalidKeyException raised");
+            if (algorithm.contains("TripleDES") && !isUnlimited) {
+                out.println("Expected InvalidKeyException thrown");
             } else {
                 throw new RuntimeException(ex);
             }

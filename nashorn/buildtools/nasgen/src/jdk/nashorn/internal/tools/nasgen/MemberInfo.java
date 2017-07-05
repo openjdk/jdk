@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJECT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJ_PKG;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.RUNTIME_PKG;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTS_PKG;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTOBJECT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.STRING_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.TYPE_SYMBOL;
 
@@ -111,6 +110,8 @@ public final class MemberInfo implements Cloneable {
 
     private boolean isOptimistic;
 
+    private boolean convertsNumericArgs;
+
     /**
      * @return the kind
      */
@@ -169,6 +170,23 @@ public final class MemberInfo implements Cloneable {
      */
     public void setIsOptimistic(final boolean isOptimistic) {
         this.isOptimistic = isOptimistic;
+    }
+
+    /**
+     * Check if this function converts arguments for numeric parameters to numbers
+     * so it's safe to pass booleans as 0 and 1
+     * @return true if it is safe to convert arguments to numbers
+     */
+    public boolean convertsNumericArgs() {
+        return convertsNumericArgs;
+    }
+
+    /**
+     * Tag this as a function that converts arguments for numeric params to numbers
+     * @param convertsNumericArgs if true args can be safely converted to numbers
+     */
+    public void setConvertsNumericArgs(final boolean convertsNumericArgs) {
+        this.convertsNumericArgs = convertsNumericArgs;
     }
 
     /**

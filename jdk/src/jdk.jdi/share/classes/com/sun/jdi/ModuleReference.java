@@ -30,17 +30,17 @@ package com.sun.jdi;
  * A module in the target VM.
  * <p>
  * Any method on {@code ModuleReference} which directly or
- * indirectly takes {@code ModuleReference} as an parameter may throw
+ * indirectly takes {@code ModuleReference} as a parameter may throw
  * {@link com.sun.jdi.VMDisconnectedException} if the target VM is
  * disconnected and the {@link com.sun.jdi.event.VMDisconnectEvent} has been or is
  * available to be read from the {@link com.sun.jdi.event.EventQueue}.
  * <p>
  * Any method on {@code ModuleReference} which directly or
- * indirectly takes {@code ModuleReference} as an parameter may throw
+ * indirectly takes {@code ModuleReference} as a parameter may throw
  * {@link com.sun.jdi.VMOutOfMemoryException} if the target VM has run out of memory.
  * <p>
  * Any method on {@code ModuleReference} or which directly or indirectly takes
- * {@code ModuleReference} as parameter may throw
+ * {@code ModuleReference} as a parameter may throw
  * {@link com.sun.jdi.InvalidModuleException} if the mirrored module
  * has been unloaded.
  *
@@ -67,12 +67,4 @@ public interface ModuleReference extends ObjectReference {
      * @return the {@link ClassLoaderReference} object for this module.
      */
     ClassLoaderReference classLoader();
-
-    /**
-     * Indicates if this module reads another module.
-     *
-     * @return {@code true} if this module reads {@code other},
-     *         {@code false} otherwise
-     */
-    boolean canRead(ModuleReference other);
 }

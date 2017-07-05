@@ -215,4 +215,14 @@ public @interface SpecializedFunction {
      * @return whether this function can throw {@link UnwarrantedOptimismException}.
      */
     boolean isOptimistic() default false;
+
+    /**
+     * Is it safe to convert non-numeric arguments to numbers for this function's primitive numeric parameters?
+     * This is true for many built-in functions which expect numeric arguments, but not for those that
+     * expect generic arguments and just have specializations with numeric params to avoid boxing overhead.
+     * The default value is {@code true} because that is by far the most common case.
+     *
+     * @return true if it is safe to convert arguments to numbers
+     */
+    boolean convertsNumericArgs() default true;
 }

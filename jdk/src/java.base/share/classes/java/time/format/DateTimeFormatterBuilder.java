@@ -119,6 +119,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
 import sun.util.locale.provider.TimeZoneNameUtility;
@@ -212,9 +213,10 @@ public final class DateTimeFormatterBuilder {
         if (dateStyle == null && timeStyle == null) {
             throw new IllegalArgumentException("Either dateStyle or timeStyle must be non-null");
         }
-        LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased().getLocaleResources(locale);
-        String pattern = lr.getJavaTimeDateTimePattern(
-                convertStyle(timeStyle), convertStyle(dateStyle), chrono.getCalendarType());
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, locale);
+        JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
+        String pattern = provider.getJavaTimeDateTimePattern(convertStyle(timeStyle),
+                         convertStyle(dateStyle), chrono.getCalendarType(), locale);
         return pattern;
     }
 

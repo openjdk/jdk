@@ -849,35 +849,35 @@ jdk.tls.legacyAlgorithms= \
 #       FFFFFFFF FFFFFFFF, 2}
 
 # Cryptographic Jurisdiction Policy defaults
-# 
+#
 # Due to the import control restrictions of some countries, the default
 # JCE policy files allow for strong but "limited" cryptographic key
 # lengths to be used.  If your country's cryptographic regulations allow,
 # the "unlimited" strength policy files can be used instead, which contain
 # no restrictions on cryptographic strengths.
-# 
+#
 # If your country has restrictions that don't fit either "limited" or
 # "unlimited", an appropriate set of policy files should be created and
 # configured before using this distribution.  The jurisdiction policy file
 # configuration must reflect the cryptographic restrictions appropriate
 # for your country.
-# 
+#
 # YOU ARE ADVISED TO CONSULT YOUR EXPORT/IMPORT CONTROL COUNSEL OR ATTORNEY
 # TO DETERMINE THE EXACT REQUIREMENTS.
-# 
+#
 # The policy files are flat text files organized into subdirectories of
 # <java-home>/conf/security/policy.  Each directory contains a complete
 # set of policy files.
 #
 # The "crypto.policy" Security property controls the directory selection,
 # and thus the effective cryptographic policy.
-# 
-# The default set of directories is:  
-# 
-#     limited | unlimited 
-# 
+#
+# The default set of directories is:
+#
+#     limited | unlimited
+#
 # however other directories can be created and configured.
-# 
+#
 # Within a directory, the effective policy is the combined minimum
 # permissions of the grant statements in the file(s) with the filename
 # pattern "default_*.policy".  At least one grant is required.  For
@@ -891,11 +891,15 @@ jdk.tls.legacyAlgorithms= \
 # "exempt_*.policy".  Exemption grants are optional.
 #
 #     limited   =  grants exemption permissions, by which the
-#                  effective policy can be circumvented. 
+#                  effective policy can be circumvented.
 #                  e.g.  KeyRecovery/Escrow/Weakening.
-# 
+#
 # Please see the JCA documentation for additional information on these
 # files and formats.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
 crypto.policy=crypto.policydir-tbd
 
 #
@@ -951,7 +955,8 @@ jdk.xml.dsig.secureValidationPolicy=\
 #
 # If a pattern includes a "=", it sets a limit.
 # If a limit appears more than once the last value is used.
-# Limits are checked before classes regardless of the order in the sequence of patterns.
+# Limits are checked before classes regardless of the order in the
+# sequence of patterns.
 # If any of the limits are exceeded, the filter status is REJECTED.
 #
 #   maxdepth=value - the maximum depth of a graph
@@ -961,20 +966,24 @@ jdk.xml.dsig.secureValidationPolicy=\
 #
 # Other patterns, from left to right, match the class or package name as
 # returned from Class.getName.
-# If the class is an array type, the class or package to be matched is the element type.
+# If the class is an array type, the class or package to be matched is the
+# element type.
 # Arrays of any number of dimensions are treated the same as the element type.
 # For example, a pattern of "!example.Foo", rejects creation of any instance or
 # array of example.Foo.
 #
-# If the pattern starts with "!", the status is REJECTED if the remaining pattern
-#   is matched; otherwise the status is ALLOWED if the pattern matches.
-# If the pattern contains "/", the non-empty prefix up to the "/" is the module name;
+# If the pattern starts with "!", the status is REJECTED if the remaining
+# pattern is matched; otherwise the status is ALLOWED if the pattern matches.
+# If the pattern contains "/", the non-empty prefix up to the "/" is the
+# module name;
 #   if the module name matches the module name of the class then
 #   the remaining pattern is matched with the class name.
 #   If there is no "/", the module name is not compared.
-# If the pattern ends with ".**" it matches any class in the package and all subpackages.
+# If the pattern ends with ".**" it matches any class in the package and all
+# subpackages.
 # If the pattern ends with ".*" it matches any class in the package.
-# If the pattern ends with "*", it matches any class with the pattern as a prefix.
+# If the pattern ends with "*", it matches any class with the pattern as a
+# prefix.
 # If the pattern is equal to the class name, it matches.
 # Otherwise, the status is UNDECIDED.
 #

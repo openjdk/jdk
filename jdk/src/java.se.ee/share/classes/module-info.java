@@ -29,16 +29,17 @@
  * This module requires {@code java.se} and supplements it with modules
  * that define CORBA and Java EE APIs. These modules are upgradeable.
  */
+@SuppressWarnings("deprecation")
 module java.se.ee {
 
-    requires public java.se;
+    requires transitive java.se;
 
     // Upgradeable modules for Java EE technologies
-    requires public java.activation;
-    requires public java.annotations.common;
-    requires public java.corba;
-    requires public java.transaction;
-    requires public java.xml.bind;
-    requires public java.xml.ws;
+    requires transitive java.activation;
+    requires transitive java.annotations.common;
+    requires transitive java.corba;
+    requires transitive java.transaction;
+    requires transitive java.xml.bind;
+    requires transitive java.xml.ws;
 
 }

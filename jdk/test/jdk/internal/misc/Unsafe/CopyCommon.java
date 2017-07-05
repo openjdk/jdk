@@ -22,7 +22,6 @@
  */
 
 import jdk.internal.misc.Unsafe;
-import java.lang.reflect.Field;
 
 /**
  * Helper class to support testing of Unsafe.copyMemory and Unsafe.copySwapMemory
@@ -37,17 +36,7 @@ public class CopyCommon {
     static final int SMALL_COPY_SIZE = 32;
     static final int BASE_ALIGNMENT = 16;
 
-    protected static final Unsafe UNSAFE;
-
-    static {
-        try {
-            Field f = jdk.internal.misc.Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            UNSAFE = (jdk.internal.misc.Unsafe) f.get(null);
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to get Unsafe instance.", e);
-        }
-    }
+    protected static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     static long alignDown(long value, long alignment) {
         return value & ~(alignment - 1);

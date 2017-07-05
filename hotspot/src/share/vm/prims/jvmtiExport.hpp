@@ -218,6 +218,21 @@ class JvmtiExport : public AllStatic {
   // Add read edges to the unnamed modules of the bootstrap and app class loaders
   static void add_default_read_edges(Handle h_module, TRAPS) NOT_JVMTI_RETURN;
 
+  // Add a read edge to the module
+  static jvmtiError add_module_reads(Handle module, Handle to_module, TRAPS);
+
+  // Updates a module to export a package
+  static jvmtiError add_module_exports(Handle module, Handle pkg_name, Handle to_module, TRAPS);
+
+  // Updates a module to open a package
+  static jvmtiError add_module_opens(Handle module, Handle pkg_name, Handle to_module, TRAPS);
+
+  // Add a used service to the module
+  static jvmtiError add_module_uses(Handle module, Handle service, TRAPS);
+
+  // Add a service provider to the module
+  static jvmtiError add_module_provides(Handle module, Handle service, Handle impl_class, TRAPS);
+
   // let JVMTI know that the JVM_OnLoad code is running
   static void enter_onload_phase() NOT_JVMTI_RETURN;
 

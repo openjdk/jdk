@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6215625 7161229
+ * @modules java.base/java.util.concurrent:open
  * @summary Check correct behavior when last element is removed.
  * @author Martin Buchholz
  */

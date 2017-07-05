@@ -26,19 +26,22 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
+ * Written by Doug Lea and Martin Buchholz with assistance from
+ * members of JCP JSR-166 Expert Group and released to the public
+ * domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -49,20 +52,60 @@ public class ArrayDequeTest extends JSR166TestCase {
     }
 
     public static Test suite() {
-        return new TestSuite(ArrayDequeTest.class);
+        class Implementation implements CollectionImplementation {
+            public Class<?> klazz() { return ArrayDeque.class; }
+            public Collection emptyCollection() { return populatedDeque(0); }
+            public Object makeElement(int i) { return i; }
+            public boolean isConcurrent() { return false; }
+            public boolean permitsNulls() { return false; }
+        }
+        return newTestSuite(ArrayDequeTest.class,
+                            CollectionTest.testSuite(new Implementation()));
     }
 
     /**
      * Returns a new deque of given size containing consecutive
-     * Integers 0 ... n.
+     * Integers 0 ... n - 1.
      */
-    private ArrayDeque<Integer> populatedDeque(int n) {
-        ArrayDeque<Integer> q = new ArrayDeque<Integer>();
+    private static ArrayDeque<Integer> populatedDeque(int n) {
+        // Randomize various aspects of memory layout, including
+        // capacity slop and wraparound.
+        final ArrayDeque<Integer> q;
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        switch (rnd.nextInt(6)) {
+        case 0: q = new ArrayDeque<Integer>();      break;
+        case 1: q = new ArrayDeque<Integer>(0);     break;
+        case 2: q = new ArrayDeque<Integer>(1);     break;
+        case 3: q = new ArrayDeque<Integer>(Math.max(0, n - 1)); break;
+        case 4: q = new ArrayDeque<Integer>(n);     break;
+        case 5: q = new ArrayDeque<Integer>(n + 1); break;
+        default: throw new AssertionError();
+        }
+        switch (rnd.nextInt(3)) {
+        case 0:
+            q.addFirst(42);
+            assertEquals((Integer) 42, q.removeLast());
+            break;
+        case 1:
+            q.addLast(42);
+            assertEquals((Integer) 42, q.removeFirst());
+            break;
+        case 2: /* do nothing */ break;
+        default: throw new AssertionError();
+        }
         assertTrue(q.isEmpty());
-        for (int i = 0; i < n; ++i)
-            assertTrue(q.offerLast(new Integer(i)));
-        assertFalse(q.isEmpty());
+        if (rnd.nextBoolean())
+            for (int i = 0; i < n; i++)
+                assertTrue(q.offerLast((Integer) i));
+        else
+            for (int i = n; --i >= 0; )
+                q.addFirst((Integer) i);
         assertEquals(n, q.size());
+        if (n > 0) {
+            assertFalse(q.isEmpty());
+            assertEquals((Integer) 0, q.peekFirst());
+            assertEquals((Integer) (n - 1), q.peekLast());
+        }
         return q;
     }
 
@@ -556,30 +599,48 @@ public class ArrayDequeTest extends JSR166TestCase {
      * removeFirstOccurrence(x) removes x and returns true if present
      */
     public void testRemoveFirstOccurrence() {
-        ArrayDeque q = populatedDeque(SIZE);
+        Deque<Integer> q = populatedDeque(SIZE);
+        assertFalse(q.removeFirstOccurrence(null));
         for (int i = 1; i < SIZE; i += 2) {
-            assertTrue(q.removeFirstOccurrence(new Integer(i)));
+            assertTrue(q.removeFirstOccurrence(i));
+            assertFalse(q.contains(i));
         }
         for (int i = 0; i < SIZE; i += 2) {
-            assertTrue(q.removeFirstOccurrence(new Integer(i)));
-            assertFalse(q.removeFirstOccurrence(new Integer(i + 1)));
+            assertTrue(q.removeFirstOccurrence(i));
+            assertFalse(q.removeFirstOccurrence(i + 1));
+            assertFalse(q.contains(i));
+            assertFalse(q.contains(i + 1));
         }
         assertTrue(q.isEmpty());
+        assertFalse(q.removeFirstOccurrence(null));
+        assertFalse(q.removeFirstOccurrence(42));
+        q = new ArrayDeque();
+        assertFalse(q.removeFirstOccurrence(null));
+        assertFalse(q.removeFirstOccurrence(42));
     }
 
     /**
      * removeLastOccurrence(x) removes x and returns true if present
      */
     public void testRemoveLastOccurrence() {
-        ArrayDeque q = populatedDeque(SIZE);
+        Deque<Integer> q = populatedDeque(SIZE);
+        assertFalse(q.removeLastOccurrence(null));
         for (int i = 1; i < SIZE; i += 2) {
-            assertTrue(q.removeLastOccurrence(new Integer(i)));
+            assertTrue(q.removeLastOccurrence(i));
+            assertFalse(q.contains(i));
         }
         for (int i = 0; i < SIZE; i += 2) {
-            assertTrue(q.removeLastOccurrence(new Integer(i)));
-            assertFalse(q.removeLastOccurrence(new Integer(i + 1)));
+            assertTrue(q.removeLastOccurrence(i));
+            assertFalse(q.removeLastOccurrence(i + 1));
+            assertFalse(q.contains(i));
+            assertFalse(q.contains(i + 1));
         }
         assertTrue(q.isEmpty());
+        assertFalse(q.removeLastOccurrence(null));
+        assertFalse(q.removeLastOccurrence(42));
+        q = new ArrayDeque();
+        assertFalse(q.removeLastOccurrence(null));
+        assertFalse(q.removeLastOccurrence(42));
     }
 
     /**
@@ -652,89 +713,57 @@ public class ArrayDequeTest extends JSR166TestCase {
         }
     }
 
-    void checkToArray(ArrayDeque q) {
+    void checkToArray(ArrayDeque<Integer> q) {
         int size = q.size();
-        Object[] o = q.toArray();
-        assertEquals(size, o.length);
+        Object[] a1 = q.toArray();
+        assertEquals(size, a1.length);
+        Integer[] a2 = q.toArray(new Integer[0]);
+        assertEquals(size, a2.length);
+        Integer[] a3 = q.toArray(new Integer[Math.max(0, size - 1)]);
+        assertEquals(size, a3.length);
+        Integer[] a4 = new Integer[size];
+        assertSame(a4, q.toArray(a4));
+        Integer[] a5 = new Integer[size + 1];
+        Arrays.fill(a5, 42);
+        assertSame(a5, q.toArray(a5));
+        Integer[] a6 = new Integer[size + 2];
+        Arrays.fill(a6, 42);
+        assertSame(a6, q.toArray(a6));
+        Object[][] as = { a1, a2, a3, a4, a5, a6 };
+        for (Object[] a : as) {
+            if (a.length > size) assertNull(a[size]);
+            if (a.length > size + 1) assertEquals(42, a[size + 1]);
+        }
         Iterator it = q.iterator();
+        Integer s = q.peekFirst();
         for (int i = 0; i < size; i++) {
             Integer x = (Integer) it.next();
-            assertEquals((Integer)o[0] + i, (int) x);
-            assertSame(o[i], x);
+            assertEquals(s + i, (int) x);
+            for (Object[] a : as)
+                assertSame(a1[i], x);
         }
     }
 
     /**
-     * toArray() contains all elements in FIFO order
+     * toArray() and toArray(a) contain all elements in FIFO order
      */
     public void testToArray() {
-        ArrayDeque q = new ArrayDeque();
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray(q);
-            q.addLast(i);
-        }
-        // Provoke wraparound
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray(q);
-            assertEquals(i, q.poll());
-            q.addLast(SIZE + i);
-        }
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray(q);
-            assertEquals(SIZE + i, q.poll());
-        }
-    }
-
-    void checkToArray2(ArrayDeque q) {
-        int size = q.size();
-        Integer[] a1 = (size == 0) ? null : new Integer[size - 1];
-        Integer[] a2 = new Integer[size];
-        Integer[] a3 = new Integer[size + 2];
-        if (size > 0) Arrays.fill(a1, 42);
-        Arrays.fill(a2, 42);
-        Arrays.fill(a3, 42);
-        Integer[] b1 = (size == 0) ? null : (Integer[]) q.toArray(a1);
-        Integer[] b2 = (Integer[]) q.toArray(a2);
-        Integer[] b3 = (Integer[]) q.toArray(a3);
-        assertSame(a2, b2);
-        assertSame(a3, b3);
-        Iterator it = q.iterator();
+        final int size = ThreadLocalRandom.current().nextInt(10);
+        ArrayDeque<Integer> q = new ArrayDeque<>(size);
         for (int i = 0; i < size; i++) {
-            Integer x = (Integer) it.next();
-            assertSame(b1[i], x);
-            assertEquals(b1[0] + i, (int) x);
-            assertSame(b2[i], x);
-            assertSame(b3[i], x);
-        }
-        assertNull(a3[size]);
-        assertEquals(42, (int) a3[size + 1]);
-        if (size > 0) {
-            assertNotSame(a1, b1);
-            assertEquals(size, b1.length);
-            for (int i = 0; i < a1.length; i++) {
-                assertEquals(42, (int) a1[i]);
-            }
-        }
-    }
-
-    /**
-     * toArray(a) contains all elements in FIFO order
-     */
-    public void testToArray2() {
-        ArrayDeque q = new ArrayDeque();
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray2(q);
+            checkToArray(q);
             q.addLast(i);
         }
         // Provoke wraparound
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray2(q);
-            assertEquals(i, q.poll());
-            q.addLast(SIZE + i);
+        int added = size * 2;
+        for (int i = 0; i < added; i++) {
+            checkToArray(q);
+            assertEquals((Integer) i, q.poll());
+            q.addLast(size + i);
         }
-        for (int i = 0; i < SIZE; i++) {
-            checkToArray2(q);
-            assertEquals(SIZE + i, q.poll());
+        for (int i = 0; i < size; i++) {
+            checkToArray(q);
+            assertEquals((Integer) (added + i), q.poll());
         }
     }
 
@@ -753,11 +782,15 @@ public class ArrayDequeTest extends JSR166TestCase {
     /**
      * toArray(incompatible array type) throws ArrayStoreException
      */
-    public void testToArray1_BadArg() {
+    public void testToArray_incompatibleArrayType() {
         ArrayDeque l = new ArrayDeque();
         l.add(new Integer(5));
         try {
             l.toArray(new String[10]);
+            shouldThrow();
+        } catch (ArrayStoreException success) {}
+        try {
+            l.toArray(new String[0]);
             shouldThrow();
         } catch (ArrayStoreException success) {}
     }
@@ -913,6 +946,25 @@ public class ArrayDequeTest extends JSR166TestCase {
     public void testSerialization() throws Exception {
         Queue x = populatedDeque(SIZE);
         Queue y = serialClone(x);
+
+        assertNotSame(y, x);
+        assertEquals(x.size(), y.size());
+        assertEquals(x.toString(), y.toString());
+        assertEquals(Arrays.toString(x.toArray()), Arrays.toString(y.toArray()));
+        assertTrue(Arrays.equals(x.toArray(), y.toArray()));
+        while (!x.isEmpty()) {
+            assertFalse(y.isEmpty());
+            assertEquals(x.remove(), y.remove());
+        }
+        assertTrue(y.isEmpty());
+    }
+
+    /**
+     * A cloned deque has same elements in same order
+     */
+    public void testClone() throws Exception {
+        ArrayDeque<Integer> x = populatedDeque(SIZE);
+        ArrayDeque<Integer> y = x.clone();
 
         assertNotSame(y, x);
         assertEquals(x.size(), y.size());
