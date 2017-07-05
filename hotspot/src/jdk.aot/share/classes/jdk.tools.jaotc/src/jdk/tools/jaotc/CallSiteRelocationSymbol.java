@@ -59,12 +59,6 @@ abstract class CallSiteRelocationSymbol {
         addExternalPltToGotRelocation(binaryContainer, symbol, relocationOffset);
     }
 
-    protected static void addMetaspaceGotRelocation(BinaryContainer binaryContainer, String symbolName, int symbolOffset, int relocationOffset) {
-        ByteContainer container = binaryContainer.getMetaspaceGotContainer();
-        Symbol symbol = container.createGotSymbol(symbolOffset, symbolName);
-        addExternalPltToGotRelocation(binaryContainer, symbol, relocationOffset);
-    }
-
     /**
      * Add an {@link RelocType#EXTERNAL_GOT_TO_PLT} relocation to the
      * {@link BinaryContainer#getExtLinkageGOTContainer()}.

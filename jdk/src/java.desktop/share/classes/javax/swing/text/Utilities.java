@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1245,7 +1245,7 @@ public class Utilities {
      *
      * @param v View to query
      * @param pos the position to convert &gt;= 0
-     * @param a the allocated region to render into
+     * @param alloc the allocated region to render into
      * @param direction the direction from the current position that can
      *  be thought of as the arrow keys typically found on a keyboard;
      *  this may be one of the following:

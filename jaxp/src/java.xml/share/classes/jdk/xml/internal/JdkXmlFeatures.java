@@ -27,6 +27,7 @@ package jdk.xml.internal;
 
 import javax.xml.XMLConstants;
 import static jdk.xml.internal.JdkXmlUtils.SP_USE_CATALOG;
+import static jdk.xml.internal.JdkXmlUtils.RESET_SYMBOL_TABLE;
 
 /**
  * This class manages JDK's XML Features. Previously added features and properties
@@ -61,7 +62,13 @@ public class JdkXmlFeatures {
          * The {@link javax.xml.XMLConstants.USE_CATALOG} feature.
          * FSP: USE_CATALOG is not enforced by FSP.
          */
-        USE_CATALOG(PROPERTY_USE_CATALOG, SP_USE_CATALOG, true, false, true, false);
+        USE_CATALOG(PROPERTY_USE_CATALOG, SP_USE_CATALOG, true, false, true, false),
+
+        /**
+         * Feature resetSymbolTable
+         * FSP: RESET_SYMBOL_TABLE_FEATURE is not enforced by FSP.
+         */
+        RESET_SYMBOL_TABLE_FEATURE(RESET_SYMBOL_TABLE, RESET_SYMBOL_TABLE, false, false, true, false);
 
         private final String name;
         private final String nameSP;

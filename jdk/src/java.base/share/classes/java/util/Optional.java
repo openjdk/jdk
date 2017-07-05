@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,22 @@ import java.util.stream.Stream;
  * {@code get()} returns the value.
  *
  * <p>Additional methods that depend on the presence or absence of a contained
- * value are provided, such as {@link #orElse(java.lang.Object) orElse()}
+ * value are provided, such as {@link #orElse(Object) orElse()}
  * (returns a default value if no value is present) and
- * {@link #ifPresent(java.util.function.Consumer) ifPresent()} (performs an
+ * {@link #ifPresent(Consumer) ifPresent()} (performs an
  * action if a value is present).
  *
  * <p>This is a <a href="../lang/doc-files/ValueBased.html">value-based</a>
  * class; use of identity-sensitive operations (including reference equality
  * ({@code ==}), identity hash code, or synchronization) on instances of
  * {@code Optional} may have unpredictable results and should be avoided.
+ *
+ * @apiNote
+ * {@code Optional} is primarily intended for use as a method return type where
+ * there is a clear need to represent "no result," and where using {@code null}
+ * is likely to cause errors. A variable whose type is {@code Optional} should
+ * never itself be {@code null}; it should always point to an {@code Optional}
+ * instance.
  *
  * @param <T> the type of value
  * @since 1.8
@@ -128,6 +135,12 @@ public final class Optional<T> {
     /**
      * If a value is present, returns the value, otherwise throws
      * {@code NoSuchElementException}.
+     *
+     * @apiNote
+     * The methods {@link #orElse(Object) orElse} and
+     * {@link #orElseGet(Supplier) orElseGet}
+     * are generally preferable to this method, as they return a substitute
+     * value if the value is absent, instead of throwing an exception.
      *
      * @return the non-{@code null} value described by this {@code Optional}
      * @throws NoSuchElementException if no value is present

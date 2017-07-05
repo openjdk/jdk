@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ class CPlatformComponent extends CFRetainedResource
         super(0, true);
     }
 
+    /**
+     * Used by JAWT.
+     */
     public long getPointer() {
         return ptr;
     }
@@ -61,7 +64,7 @@ class CPlatformComponent extends CFRetainedResource
         // translates values from the coordinate system of the top-level window
         // to the coordinate system of the content view
         final Insets insets = platformWindow.getPeer().getInsets();
-        nativeSetBounds(getPointer(), x - insets.left, y - insets.top, w, h);
+        execute(ptr->nativeSetBounds(ptr, x - insets.left, y - insets.top, w, h));
     }
 
     @Override
