@@ -29,8 +29,6 @@ import java.awt.*;
 import java.awt.peer.*;
 import java.awt.event.*;
 
-import java.util.logging.*;
-
 import java.lang.reflect.Field;
 import sun.awt.SunToolkit;
 
@@ -41,8 +39,6 @@ class XCheckboxMenuItemPeer extends XMenuItemPeer implements CheckboxMenuItemPee
      * Data members
      *
      ************************************************/
-
-    private static Logger log = Logger.getLogger("sun.awt.X11.XCheckboxMenuItemPeer");
 
     /*
      * CheckboxMenuItem's fields

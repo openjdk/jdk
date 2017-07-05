@@ -26,7 +26,6 @@
 package sun.awt.X11;
 
 import java.awt.*;
-import java.util.logging.*;
 
 /**
  * This class represent focus holder window implementation. When toplevel requests or receives focus
@@ -34,7 +33,6 @@ import java.util.logging.*;
  * and therefore X doesn't control focus after we have set it to proxy.
  */
 public class XFocusProxyWindow extends XBaseWindow {
-    private static final Logger focusLog = Logger.getLogger("sun.awt.X11.focus.XFocusProxyWindow");
     XWindowPeer owner;
 
     public XFocusProxyWindow(XWindowPeer owner) {

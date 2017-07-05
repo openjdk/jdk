@@ -267,7 +267,7 @@ void Parse::do_put_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool 
 }
 
 
-bool Parse::push_constant(ciConstant constant) {
+bool Parse::push_constant(ciConstant constant, bool require_constant) {
   switch (constant.basic_type()) {
   case T_BOOLEAN:  push( intcon(constant.as_boolean()) ); break;
   case T_INT:      push( intcon(constant.as_int())     ); break;
@@ -279,13 +279,16 @@ bool Parse::push_constant(ciConstant constant) {
   case T_LONG:     push_pair( longcon(constant.as_long()) ); break;
   case T_ARRAY:
   case T_OBJECT: {
-    // the oop is in perm space if the ciObject "has_encoding"
+    // cases:
+    //   can_be_constant    = (oop not scavengable || ScavengeRootsInCode != 0)
+    //   should_be_constant = (oop not scavengable || ScavengeRootsInCode >= 2)
+    // An oop is not scavengable if it is in the perm gen.
     ciObject* oop_constant = constant.as_object();
     if (oop_constant->is_null_object()) {
       push( zerocon(T_OBJECT) );
       break;
-    } else if (oop_constant->has_encoding()) {
-      push( makecon(TypeOopPtr::make_from_constant(oop_constant)) );
+    } else if (require_constant || oop_constant->should_be_constant()) {
+      push( makecon(TypeOopPtr::make_from_constant(oop_constant, require_constant)) );
       break;
     } else {
       // we cannot inline the oop, but we can use it later to narrow a type

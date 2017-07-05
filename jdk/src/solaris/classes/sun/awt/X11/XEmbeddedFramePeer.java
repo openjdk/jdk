@@ -30,15 +30,14 @@ import java.awt.*;
 import java.util.LinkedList;
 import java.util.Iterator;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 
 import sun.awt.EmbeddedFrame;
 import sun.awt.SunToolkit;
 
 public class XEmbeddedFramePeer extends XFramePeer {
 
-    private static final Logger xembedLog = Logger.getLogger("sun.awt.X11.xembed.XEmbeddedFramePeer");
+    private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed.XEmbeddedFramePeer");
 
     LinkedList<AWTKeyStroke> strokes;
 
@@ -138,7 +137,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
     {
         assert (SunToolkit.isAWTLockHeldByCurrentThread());
         XConfigureEvent xe = xev.get_xconfigure();
-        if (xembedLog.isLoggable(Level.FINE)) {
+        if (xembedLog.isLoggable(PlatformLogger.FINE)) {
             xembedLog.fine(xe.toString());
         }
 

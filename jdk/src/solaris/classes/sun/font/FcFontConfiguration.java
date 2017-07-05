@@ -35,18 +35,19 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.logging.Logger;
 import java.util.Properties;
 import java.util.Scanner;
 import sun.awt.FontConfiguration;
 import sun.awt.FontDescriptor;
 import sun.awt.SunToolkit;
+import sun.awt.X11FontManager;
 import sun.font.CompositeFontDescriptor;
 import sun.font.FontManager;
-import sun.font.FontManager.FontConfigInfo;
-import sun.font.FontManager.FcCompFont;
-import sun.font.FontManager.FontConfigFont;
+import sun.font.FontConfigManager.FontConfigInfo;
+import sun.font.FontConfigManager.FcCompFont;
+import sun.font.FontConfigManager.FontConfigFont;
 import sun.java2d.SunGraphicsEnvironment;
+import sun.util.logging.PlatformLogger;
 
 public class FcFontConfiguration extends FontConfiguration {
 
@@ -68,16 +69,16 @@ public class FcFontConfiguration extends FontConfiguration {
 
     private FcCompFont[] fcCompFonts = null;
 
-    public FcFontConfiguration(SunGraphicsEnvironment environment) {
-        super(environment);
+    public FcFontConfiguration(SunFontManager fm) {
+        super(fm);
         init();
     }
 
     /* This isn't called but is needed to satisfy super-class contract. */
-    public FcFontConfiguration(SunGraphicsEnvironment environment,
+    public FcFontConfiguration(SunFontManager fm,
                                boolean preferLocaleFonts,
                                boolean preferPropFonts) {
-        super(environment, preferLocaleFonts, preferPropFonts);
+        super(fm, preferLocaleFonts, preferPropFonts);
         init();
     }
 
@@ -89,24 +90,23 @@ public class FcFontConfiguration extends FontConfiguration {
 
         setFontConfiguration();
         readFcInfo();
+        X11FontManager fm = (X11FontManager) fontManager;
+        FontConfigManager fcm = fm.getFontConfigManager();
         if (fcCompFonts == null) {
-            fcCompFonts = FontManager.loadFontConfig();
+            fcCompFonts = fcm.loadFontConfig();
             if (fcCompFonts != null) {
                 try {
                     writeFcInfo();
                 } catch (Exception e) {
-                    if (SunGraphicsEnvironment.debugFonts) {
-                        Logger logger =
-                            Logger.getLogger("sun.awt.FontConfiguration");
-                        logger.warning("Exception writing fcInfo " + e);
+                    if (FontUtilities.debugFonts()) {
+                        warning("Exception writing fcInfo " + e);
                     }
                 }
-            } else if (SunGraphicsEnvironment.debugFonts) {
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning("Failed to get info from libfontconfig");
+            } else if (FontUtilities.debugFonts()) {
+                warning("Failed to get info from libfontconfig");
             }
         } else {
-            FontManager.populateFontConfig(fcCompFonts);
+            fcm.populateFontConfig(fcCompFonts);
         }
 
         if (fcCompFonts == null) {
@@ -184,7 +184,9 @@ public class FcFontConfiguration extends FontConfiguration {
     @Override
     public String[] getPlatformFontNames() {
         HashSet<String> nameSet = new HashSet<String>();
-        FcCompFont[] fcCompFonts = FontManager.loadFontConfig();
+        X11FontManager fm = (X11FontManager) fontManager;
+        FontConfigManager fcm = fm.getFontConfigManager();
+        FcCompFont[] fcCompFonts = fcm.loadFontConfig();
         for (int i=0; i<fcCompFonts.length; i++) {
             for (int j=0; j<fcCompFonts[i].allFonts.length; j++) {
                 nameSet.add(fcCompFonts[i].allFonts[j].fontFile);
@@ -223,7 +225,9 @@ public class FcFontConfiguration extends FontConfiguration {
     @Override
     public CompositeFontDescriptor[] get2DCompositeFontInfo() {
 
-        FcCompFont[] fcCompFonts = FontManager.loadFontConfig();
+        X11FontManager fm = (X11FontManager) fontManager;
+        FontConfigManager fcm = fm.getFontConfigManager();
+        FcCompFont[] fcCompFonts = fcm.loadFontConfig();
 
         CompositeFontDescriptor[] result =
                 new CompositeFontDescriptor[NUM_FONTS * NUM_STYLES];
@@ -321,9 +325,8 @@ public class FcFontConfiguration extends FontConfiguration {
                 osVersion = getVersionString(f);
             }
         } catch (Exception e) {
-            if (SunGraphicsEnvironment.debugFonts) {
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning("Exception identifying Linux distro.");
+            if (FontUtilities.debugFonts()) {
+                warning("Exception identifying Linux distro.");
             }
         }
     }
@@ -356,7 +359,9 @@ public class FcFontConfiguration extends FontConfiguration {
     private void writeFcInfo() {
         Properties props = new Properties();
         props.setProperty("version", fileVersion);
-        FontConfigInfo fcInfo = FontManager.getFontConfigInfo();
+        X11FontManager fm = (X11FontManager) fontManager;
+        FontConfigManager fcm = fm.getFontConfigManager();
+        FontConfigInfo fcInfo = fcm.getFontConfigInfo();
         props.setProperty("fcversion", Integer.toString(fcInfo.fcVersion));
         if (fcInfo.cacheDirs != null) {
             for (int i=0;i<fcInfo.cacheDirs.length;i++) {
@@ -391,15 +396,13 @@ public class FcFontConfiguration extends FontConfiguration {
                       "JDK Font Configuration Generated File: *Do Not Edit*");
             fos.close();
             boolean renamed = tempFile.renameTo(fcInfoFile);
-            if (!renamed && SunGraphicsEnvironment.debugFonts) {
+            if (!renamed && FontUtilities.debugFonts()) {
                 System.out.println("rename failed");
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning("Failed renaming file to "+ getFcInfoFile());
+                warning("Failed renaming file to "+ getFcInfoFile());
             }
         } catch (Exception e) {
-            if (SunGraphicsEnvironment.debugFonts) {
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning("IOException writing to "+ getFcInfoFile());
+            if (FontUtilities.debugFonts()) {
+                warning("IOException writing to "+ getFcInfoFile());
             }
         }
     }
@@ -415,14 +418,15 @@ public class FcFontConfiguration extends FontConfiguration {
             return;
         }
         Properties props = new Properties();
+        X11FontManager fm = (X11FontManager) fontManager;
+        FontConfigManager fcm = fm.getFontConfigManager();
         try {
             FileInputStream fis = new FileInputStream(fcFile);
             props.load(fis);
             fis.close();
         } catch (IOException e) {
-            if (SunGraphicsEnvironment.debugFonts) {
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning("IOException reading from "+fcFile.toString());
+            if (FontUtilities.debugFonts()) {
+                warning("IOException reading from "+fcFile.toString());
             }
             return;
         }
@@ -439,15 +443,12 @@ public class FcFontConfiguration extends FontConfiguration {
             try {
                 fcVersion = Integer.parseInt(fcVersionStr);
                 if (fcVersion != 0 &&
-                    fcVersion != FontManager.getFontConfigVersion()) {
+                    fcVersion != fcm.getFontConfigVersion()) {
                     return;
                 }
             } catch (Exception e) {
-                if (SunGraphicsEnvironment.debugFonts) {
-                    Logger logger =
-                        Logger.getLogger("sun.awt.FontConfiguration");
-                    logger.warning("Exception parsing version " +
-                                   fcVersionStr);
+                if (FontUtilities.debugFonts()) {
+                    warning("Exception parsing version " + fcVersionStr);
                 }
                 return;
             }
@@ -509,10 +510,14 @@ public class FcFontConfiguration extends FontConfiguration {
             }
             fcCompFonts = fci;
         } catch (Throwable t) {
-            if (SunGraphicsEnvironment.debugFonts) {
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning(t.toString());
+            if (FontUtilities.debugFonts()) {
+                warning(t.toString());
             }
         }
+    }
+
+    private static void warning(String msg) {
+        PlatformLogger logger = PlatformLogger.getLogger("sun.awt.FontConfiguration");
+        logger.warning(msg);
     }
 }

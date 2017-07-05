@@ -36,6 +36,8 @@
 #include "LETypes.h"
 #include "DefaultCharMapper.h"
 
+U_NAMESPACE_BEGIN
+
 const LEUnicode32 DefaultCharMapper::mirroredChars[] = {
     0x0028, 0x0029, 0x003C, 0x003E, 0x005B, 0x005D, 0x007B, 0x007D,
     0x00AB, 0x00BB, 0x2039, 0x203A, 0x2045, 0x2046, 0x207D, 0x207E,
@@ -127,3 +129,5 @@ const LEUnicode32 DefaultCharMapper::srahCderorrim[] = {
 };
 
 const le_int32 DefaultCharMapper::mirroredCharsCount = 332;
+
+U_NAMESPACE_END

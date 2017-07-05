@@ -48,7 +48,7 @@ import java.io.File;
 import java.io.FileInputStream;
 
 import java.util.*;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -1956,7 +1956,7 @@ public abstract class Toolkit {
      */
     public abstract boolean isModalExclusionTypeSupported(Dialog.ModalExclusionType modalExclusionType);
 
-    private static final Logger log = Logger.getLogger("java.awt.Toolkit");
+    private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.Toolkit");
 
     private static final int LONG_BITS = 64;
     private int[] calls = new int[LONG_BITS];
@@ -2025,7 +2025,7 @@ public abstract class Toolkit {
         }
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-          security.checkPermission(SecurityConstants.ALL_AWT_EVENTS_PERMISSION);
+          security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             SelectiveAWTEventListener selectiveListener =
@@ -2094,7 +2094,7 @@ public abstract class Toolkit {
         }
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
         }
 
         synchronized (this) {
@@ -2123,9 +2123,9 @@ public abstract class Toolkit {
         }
 
     synchronized int countAWTEventListeners(long eventMask) {
-        if (log.isLoggable(Level.FINE)) {
+        if (log.isLoggable(PlatformLogger.FINE)) {
             if (eventMask == 0) {
-                log.log(Level.FINE, "Assertion (eventMask != 0) failed");
+                log.fine("Assertion (eventMask != 0) failed");
             }
         }
 
@@ -2165,7 +2165,7 @@ public abstract class Toolkit {
     public AWTEventListener[] getAWTEventListeners() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             EventListener[] la = ToolkitEventMulticaster.getListeners(eventListener,AWTEventListener.class);
@@ -2217,7 +2217,7 @@ public abstract class Toolkit {
     public AWTEventListener[] getAWTEventListeners(long eventMask) {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             EventListener[] la = ToolkitEventMulticaster.getListeners(eventListener,AWTEventListener.class);

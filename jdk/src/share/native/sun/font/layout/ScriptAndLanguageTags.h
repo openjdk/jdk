@@ -36,6 +36,13 @@
 
 #include "LETypes.h"
 
+U_NAMESPACE_BEGIN
+
+/**
+ * \file
+ * \internal
+ */
+
 const LETag zyyyScriptTag = 0x7A797979; /* 'zyyy' (COMMON) */
 const LETag qaaiScriptTag = 0x71616169; /* 'qaai' (INHERITED) */
 const LETag arabScriptTag = 0x61726162; /* 'arab' (ARABIC) */
@@ -126,4 +133,6 @@ const LETag zhpLanguageTag = 0x5A485020; /* 'ZHP' (Chinese (Phonetic)) */
 const LETag zhsLanguageTag = 0x5A485320; /* 'ZHS' (Chinese (Simplified)) */
 const LETag zhtLanguageTag = 0x5A485420; /* 'ZHT' (Chinese (Traditional)) */
 
+
+U_NAMESPACE_END
 #endif

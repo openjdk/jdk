@@ -35,10 +35,6 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 _OPT = $(CC_HIGHEST_OPT)
 
-# This re-directs all the class files to a separate location
-CLASSDESTDIR = $(TEMPDIR)/classes
-
-
 #
 # Java source files
 #

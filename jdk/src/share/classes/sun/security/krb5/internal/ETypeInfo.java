@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.krb5.internal;
 import sun.security.util.*;
 import sun.security.krb5.Asn1Exception;
 import java.io.IOException;
+import sun.security.krb5.internal.util.KerberosString;
 
 /**
  * Implements the ASN.1 ETYPE-INFO-ENTRY type.
@@ -43,7 +44,7 @@ import java.io.IOException;
 public class ETypeInfo {
 
     private int etype;
-    private byte[] salt = null;
+    private String salt = null;
 
     private static final byte TAG_TYPE = 0;
     private static final byte TAG_VALUE = 1;
@@ -51,21 +52,13 @@ public class ETypeInfo {
     private ETypeInfo() {
     }
 
-    public ETypeInfo(int etype, byte[] salt) {
+    public ETypeInfo(int etype, String salt) {
         this.etype = etype;
-        if (salt != null) {
-            this.salt = salt.clone();
-        }
+        this.salt = salt;
     }
 
     public Object clone() {
-        ETypeInfo etypeInfo = new ETypeInfo();
-        etypeInfo.etype = etype;
-        if (salt != null) {
-            etypeInfo.salt = new byte[salt.length];
-            System.arraycopy(salt, 0, etypeInfo.salt, 0, salt.length);
-        }
-        return etypeInfo;
+        return new ETypeInfo(etype, salt);
     }
 
     /**
@@ -94,7 +87,22 @@ public class ETypeInfo {
         if (encoding.getData().available() > 0) {
             der = encoding.getData().getDerValue();
             if ((der.getTag() & 0x1F) == 0x01) {
-                this.salt = der.getData().getOctetString();
+                byte[] saltBytes = der.getData().getOctetString();
+
+                // Although salt is defined as an OCTET STRING, it's the
+                // encoding from of a string. As RFC 4120 says:
+                //
+                // "The salt, ..., is also completely unspecified with respect
+                // to character set and is probably locale-specific".
+                //
+                // It's known that this field is using the same encoding as
+                // KerberosString in most implementations.
+
+                if (KerberosString.MSNAME) {
+                    this.salt = new String(saltBytes, "UTF8");
+                } else {
+                    this.salt = new String(saltBytes);
+                }
             }
         }
 
@@ -120,7 +128,11 @@ public class ETypeInfo {
 
         if (salt != null) {
             temp = new DerOutputStream();
-            temp.putOctetString(salt);
+            if (KerberosString.MSNAME) {
+                temp.putOctetString(salt.getBytes("UTF8"));
+            } else {
+                temp.putOctetString(salt.getBytes());
+            }
             bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true,
                                         TAG_VALUE), temp);
         }
@@ -135,8 +147,8 @@ public class ETypeInfo {
         return etype;
     }
 
-    public byte[] getSalt() {
-        return ((salt == null) ? null : salt.clone());
+    public String getSalt() {
+        return salt;
     }
 
 }

@@ -39,9 +39,13 @@
 #include "LEGlyphStorage.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 #define ExtendedComplement(m) ((le_int32) (~((le_uint32) (m))))
 #define SignBit(m) ((ExtendedComplement(m) >> 1) & (le_int32)(m))
 #define SignExtend(v,m) (((v) & SignBit(m))? ((v) | ExtendedComplement(m)): (v))
+
+UOBJECT_DEFINE_RTTI_IMPLEMENTATION(LigatureSubstitutionProcessor)
 
 LigatureSubstitutionProcessor::LigatureSubstitutionProcessor(const MorphSubtableHeader *morphSubtableHeader)
   : StateTableProcessor(morphSubtableHeader)
@@ -63,8 +67,7 @@ void LigatureSubstitutionProcessor::beginStateTable()
     m = -1;
 }
 
-ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyphStorage,
-    le_int32 &currGlyph, EntryTableIndex index)
+ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index)
 {
     const LigatureSubstitutionStateEntry *entry = &entryTable[index];
     ByteOffset newState = SWAPW(entry->newStateOffset);
@@ -135,3 +138,5 @@ ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyp
 void LigatureSubstitutionProcessor::endStateTable()
 {
 }
+
+U_NAMESPACE_END

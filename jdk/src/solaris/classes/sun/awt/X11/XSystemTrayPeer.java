@@ -27,14 +27,14 @@ package sun.awt.X11;
 
 import java.awt.*;
 import java.awt.peer.SystemTrayPeer;
-import java.util.logging.Logger;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import sun.awt.SunToolkit;
 import sun.awt.AppContext;
+import sun.util.logging.PlatformLogger;
 
 public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
-    private static final Logger log = Logger.getLogger("sun.awt.X11.XSystemTrayPeer");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XSystemTrayPeer");
 
     SystemTray target;
     static XSystemTrayPeer peerInstance; // there is only one SystemTray peer per application

@@ -32,11 +32,18 @@
 #ifndef __TRIMMEDARRAYPROCESSOR_H
 #define __TRIMMEDARRAYPROCESSOR_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "MorphTables.h"
 #include "SubtableProcessor.h"
 #include "NonContextualGlyphSubst.h"
 #include "NonContextualGlyphSubstProc.h"
+
+U_NAMESPACE_BEGIN
 
 class LEGlyphStorage;
 
@@ -49,6 +56,20 @@ public:
 
     virtual ~TrimmedArrayProcessor();
 
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for the actual class.
+     *
+     * @stable ICU 2.8
+     */
+    virtual UClassID getDynamicClassID() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for this class.
+     *
+     * @stable ICU 2.8
+     */
+    static UClassID getStaticClassID();
+
 private:
     TrimmedArrayProcessor();
 
@@ -56,6 +77,9 @@ protected:
     TTGlyphID firstGlyph;
     TTGlyphID lastGlyph;
     const TrimmedArrayLookupTable *trimmedArrayLookupTable;
+
 };
 
+U_NAMESPACE_END
 #endif
+

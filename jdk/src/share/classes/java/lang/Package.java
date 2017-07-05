@@ -320,7 +320,7 @@ public class Package implements java.lang.reflect.AnnotatedElement {
      * @param class the class to get the package of.
      * @return the package of the class. It may be null if no package
      *          information is available from the archive or codebase.  */
-    static Package getPackage(Class c) {
+    static Package getPackage(Class<?> c) {
         String name = c.getName();
         int i = name.lastIndexOf('.');
         if (i != -1) {

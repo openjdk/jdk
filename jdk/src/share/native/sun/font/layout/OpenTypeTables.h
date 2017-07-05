@@ -32,7 +32,14 @@
 #ifndef __OPENTYPETABLES_H
 #define __OPENTYPETABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
+
+U_NAMESPACE_BEGIN
 
 #define ANY_NUMBER 1
 
@@ -62,4 +69,5 @@ struct FeatureMap
     FeatureMask mask;
 };
 
+U_NAMESPACE_END
 #endif

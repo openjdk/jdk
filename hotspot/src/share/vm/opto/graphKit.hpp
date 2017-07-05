@@ -603,7 +603,8 @@ class GraphKit : public Phase {
   void sync_kit(IdealKit& ideal);
 
   // vanilla/CMS post barrier
-  void write_barrier_post(Node *store, Node* obj, Node* adr, Node* val, bool use_precise);
+  void write_barrier_post(Node *store, Node* obj,
+                          Node* adr,  uint adr_idx, Node* val, bool use_precise);
 
   // G1 pre/post barriers
   void g1_write_barrier_pre(Node* obj,
@@ -622,7 +623,8 @@ class GraphKit : public Phase {
                              bool use_precise);
   // Helper function for g1
   private:
-  void g1_mark_card(IdealKit& ideal, Node* card_adr, Node* store,  Node* index, Node* index_adr,
+  void g1_mark_card(IdealKit& ideal, Node* card_adr, Node* store, uint oop_alias_idx,
+                    Node* index, Node* index_adr,
                     Node* buffer, const TypeFunc* tf);
 
   public:

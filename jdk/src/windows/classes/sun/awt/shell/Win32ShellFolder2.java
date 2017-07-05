@@ -922,7 +922,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     // Dispose the HICON
     private static native void disposeIcon(long hIcon);
 
-    public static native int[] getFileChooserBitmapBits();
+    static native int[] getStandardViewButton0(int iconIndex);
 
     // Should be called from the COM thread
     private long getIShellIcon() {
@@ -932,34 +932,6 @@ final class Win32ShellFolder2 extends ShellFolder {
 
         return pIShellIcon;
     }
-
-
-    static int[] fileChooserBitmapBits = null;
-    static Image[] fileChooserIcons = new Image[47];
-
-    static Image getFileChooserIcon(int i) {
-        if (fileChooserIcons[i] != null) {
-            return fileChooserIcons[i];
-        } else {
-            if (fileChooserBitmapBits == null) {
-                fileChooserBitmapBits = getFileChooserBitmapBits();
-            }
-            if (fileChooserBitmapBits != null) {
-                int nImages = fileChooserBitmapBits.length / (16*16);
-                int[] bitmapBits = new int[16 * 16];
-                for (int y = 0; y < 16; y++) {
-                    for (int x = 0; x < 16; x++) {
-                        bitmapBits[y * 16 + x] = fileChooserBitmapBits[y * (nImages * 16) + (i * 16) + x];
-                    }
-                }
-                BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-                img.setRGB(0, 0, 16, 16, bitmapBits, 0, 16);
-                fileChooserIcons[i] = img;
-            }
-        }
-        return fileChooserIcons[i];
-    }
-
 
     private static Image makeIcon(long hIcon, boolean getLargeIcon) {
         if (hIcon != 0L && hIcon != -1L) {

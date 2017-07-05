@@ -510,7 +510,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         if ((e.getModifiers() & ActionEvent.SHIFT_MASK) != 0 &&
             getDot() != -1) {
             moveCaret(e);
-        } else {
+        } else if (!e.isPopupTrigger()) {
             positionCaret(e);
         }
     }

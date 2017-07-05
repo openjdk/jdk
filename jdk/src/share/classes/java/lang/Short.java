@@ -170,7 +170,7 @@ public final class Short extends Number implements Comparable<Short> {
      */
     public static Short valueOf(String s, int radix)
         throws NumberFormatException {
-        return new Short(parseShort(s, radix));
+        return valueOf(parseShort(s, radix));
     }
 
     /**
@@ -282,7 +282,7 @@ public final class Short extends Number implements Comparable<Short> {
         if (i < MIN_VALUE || i > MAX_VALUE)
             throw new NumberFormatException(
                     "Value " + i + " out of range from input " + nm);
-        return (short)i;
+        return valueOf((short)i);
     }
 
     /**
@@ -379,11 +379,14 @@ public final class Short extends Number implements Comparable<Short> {
      *          base&nbsp;10.
      */
     public String toString() {
-        return String.valueOf((int)value);
+        return Integer.toString((int)value);
     }
 
     /**
-     * Returns a hash code for this {@code Short}.
+     * Returns a hash code for this {@code Short}; equal to the result
+     * of invoking {@code intValue()}.
+     *
+     * @return a hash code value for this {@code Short}
      */
     public int hashCode() {
         return (int)value;
@@ -420,7 +423,25 @@ public final class Short extends Number implements Comparable<Short> {
      * @since   1.2
      */
     public int compareTo(Short anotherShort) {
-        return this.value - anotherShort.value;
+        return compare(this.value, anotherShort.value);
+    }
+
+    /**
+     * Compares two {@code short} values numerically.
+     * The value returned is identical to what would be returned by:
+     * <pre>
+     *    Short.valueOf(x).compareTo(Short.valueOf(y))
+     * </pre>
+     *
+     * @param  x the first {@code short} to compare
+     * @param  y the second {@code short} to compare
+     * @return the value {@code 0} if {@code x == y};
+     *         a value less than {@code 0} if {@code x < y}; and
+     *         a value greater than {@code 0} if {@code x > y}
+     * @since 1.7
+     */
+    public static int compare(short x, short y) {
+        return x - y;
     }
 
     /**

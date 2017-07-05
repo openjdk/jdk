@@ -24,7 +24,6 @@
  */
 
 /*
- *
  * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
  *
  */
@@ -40,18 +39,18 @@
 #include "LEGlyphStorage.h"
 #include "GlyphPositionAdjustments.h"
 
-void GlyphPositioningTableHeader::process(LEGlyphStorage &glyphStorage,
-    GlyphPositionAdjustments *glyphPositionAdjustments, le_bool rightToLeft,
-    LETag scriptTag, LETag languageTag,
-    const GlyphDefinitionTableHeader *glyphDefinitionTableHeader,
-    const LEFontInstance *fontInstance,
-    const FeatureMap *featureMap, le_int32 featureMapCount, le_bool featureOrder) const
-{
-    GlyphPositioningLookupProcessor processor(this, scriptTag, languageTag, featureMap,
-        featureMapCount, featureOrder);
+U_NAMESPACE_BEGIN
 
-    processor.process(glyphStorage, glyphPositionAdjustments, rightToLeft,
-                      glyphDefinitionTableHeader, fontInstance);
+void GlyphPositioningTableHeader::process(LEGlyphStorage &glyphStorage, GlyphPositionAdjustments *glyphPositionAdjustments, le_bool rightToLeft,
+                                          LETag scriptTag, LETag languageTag,
+                                          const GlyphDefinitionTableHeader *glyphDefinitionTableHeader,
+                                          const LEFontInstance *fontInstance, const FeatureMap *featureMap, le_int32 featureMapCount, le_bool featureOrder) const
+{
+    GlyphPositioningLookupProcessor processor(this, scriptTag, languageTag, featureMap, featureMapCount, featureOrder);
+
+    processor.process(glyphStorage, glyphPositionAdjustments, rightToLeft, glyphDefinitionTableHeader, fontInstance);
 
     glyphPositionAdjustments->applyCursiveAdjustments(glyphStorage, rightToLeft, fontInstance);
 }
+
+U_NAMESPACE_END
