@@ -27,6 +27,9 @@
 #include "gc/parallel/adjoiningVirtualSpaces.hpp"
 #include "gc/parallel/generationSizer.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
+#include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
+#include "utilities/ostream.hpp"
 
 // If boundary moving is being used, create the young gen and old
 // gen with ASPSYoungGen and ASPSOldGen, respectively.  Revert to
@@ -116,6 +119,29 @@ size_t AdjoiningGenerations::reserved_byte_size() {
   return virtual_spaces()->reserved_space().size();
 }
 
+void log_before_expansion(bool old, size_t expand_in_bytes, size_t change_in_bytes, size_t max_size) {
+  LogHandle(heap, ergo) log;
+  if (!log.is_debug()) {
+   return;
+  }
+  log.debug("Before expansion of %s gen with boundary move", old ? "old" : "young");
+  log.debug("  Requested change: " SIZE_FORMAT_HEX "  Attempted change: " SIZE_FORMAT_HEX,
+                        expand_in_bytes, change_in_bytes);
+  ResourceMark rm;
+  ParallelScavengeHeap::heap()->print_on(log.debug_stream());
+  log.debug("  PS%sGen max size: " SIZE_FORMAT "K", old ? "Old" : "Young", max_size/K);
+}
+
+void log_after_expansion(bool old, size_t max_size) {
+  LogHandle(heap, ergo) log;
+  if (!log.is_debug()) {
+   return;
+  }
+  log.debug("After expansion of %s gen with boundary move", old ? "old" : "young");
+  ResourceMark rm;
+  ParallelScavengeHeap::heap()->print_on(log.debug_stream());
+  log.debug("  PS%sGen max size: " SIZE_FORMAT "K", old ? "Old" : "Young", max_size/K);
+}
 
 // Make checks on the current sizes of the generations and
 // the constraints on the sizes of the generations.  Push
@@ -141,17 +167,7 @@ void AdjoiningGenerations::request_old_gen_expansion(size_t expand_in_bytes) {
     return;
   }
 
-  if (TraceAdaptiveGCBoundary) {
-    gclog_or_tty->print_cr("Before expansion of old gen with boundary move");
-    gclog_or_tty->print_cr("  Requested change: " SIZE_FORMAT_HEX
-                           "  Attempted change: " SIZE_FORMAT_HEX,
-      expand_in_bytes, change_in_bytes);
-    if (!PrintHeapAtGC) {
-      Universe::print_on(gclog_or_tty);
-    }
-    gclog_or_tty->print_cr("  PSOldGen max size: " SIZE_FORMAT "K",
-      old_gen()->max_gen_size()/K);
-  }
+  log_before_expansion(true, expand_in_bytes, change_in_bytes, old_gen()->max_gen_size());
 
   // Move the boundary between the generations up (smaller young gen).
   if (virtual_spaces()->adjust_boundary_up(change_in_bytes)) {
@@ -167,14 +183,7 @@ void AdjoiningGenerations::request_old_gen_expansion(size_t expand_in_bytes) {
   young_gen()->space_invariants();
   old_gen()->space_invariants();
 
-  if (TraceAdaptiveGCBoundary) {
-    gclog_or_tty->print_cr("After expansion of old gen with boundary move");
-    if (!PrintHeapAtGC) {
-      Universe::print_on(gclog_or_tty);
-    }
-    gclog_or_tty->print_cr("  PSOldGen max size: " SIZE_FORMAT "K",
-      old_gen()->max_gen_size()/K);
-  }
+  log_after_expansion(true, old_gen()->max_gen_size());
 }
 
 // See comments on request_old_gen_expansion()
@@ -200,16 +209,7 @@ bool AdjoiningGenerations::request_young_gen_expansion(size_t expand_in_bytes) {
     return false;
   }
 
-  if (TraceAdaptiveGCBoundary) {
-    gclog_or_tty->print_cr("Before expansion of young gen with boundary move");
-    gclog_or_tty->print_cr("  Requested change: " SIZE_FORMAT_HEX "  Attempted change: " SIZE_FORMAT_HEX,
-      expand_in_bytes, change_in_bytes);
-    if (!PrintHeapAtGC) {
-      Universe::print_on(gclog_or_tty);
-    }
-    gclog_or_tty->print_cr("  PSYoungGen max size: " SIZE_FORMAT "K",
-      young_gen()->max_size()/K);
-  }
+  log_before_expansion(false, expand_in_bytes, change_in_bytes, young_gen()->max_size());
 
   // Move the boundary between the generations down (smaller old gen).
   MutexLocker x(ExpandHeap_lock);
@@ -227,14 +227,7 @@ bool AdjoiningGenerations::request_young_gen_expansion(size_t expand_in_bytes) {
   young_gen()->space_invariants();
   old_gen()->space_invariants();
 
-  if (TraceAdaptiveGCBoundary) {
-    gclog_or_tty->print_cr("After expansion of young gen with boundary move");
-    if (!PrintHeapAtGC) {
-      Universe::print_on(gclog_or_tty);
-    }
-    gclog_or_tty->print_cr("  PSYoungGen max size: " SIZE_FORMAT "K",
-      young_gen()->max_size()/K);
-  }
+  log_after_expansion(false, young_gen()->max_size());
 
   return result;
 }

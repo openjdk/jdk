@@ -187,6 +187,33 @@ inline void MacroAssembler::st_long( Register d, const Address& a, int offset ) 
 #endif
 }
 
+inline void MacroAssembler::stbool(Register d, const Address& a) { stb(d, a); }
+inline void MacroAssembler::ldbool(const Address& a, Register d) { ldub(a, d); }
+inline void MacroAssembler::movbool( bool boolconst, Register d) { mov( (int) boolconst, d); }
+
+
+inline void MacroAssembler::signx( Register s, Register d ) { sra( s, G0, d); }
+inline void MacroAssembler::signx( Register d )             { sra( d, G0, d); }
+
+inline void MacroAssembler::not1( Register s, Register d ) { xnor( s, G0, d ); }
+inline void MacroAssembler::not1( Register d )             { xnor( d, G0, d ); }
+
+inline void MacroAssembler::neg( Register s, Register d ) { sub( G0, s, d ); }
+inline void MacroAssembler::neg( Register d )             { sub( G0, d, d ); }
+
+inline void MacroAssembler::cas(  Register s1, Register s2, Register d) { casa( s1, s2, d, ASI_PRIMARY); }
+inline void MacroAssembler::casx( Register s1, Register s2, Register d) { casxa(s1, s2, d, ASI_PRIMARY); }
+
+// Functions for isolating 64 bit atomic swaps for LP64
+// cas_ptr will perform cas for 32 bit VM's and casx for 64 bit VM's
+inline void MacroAssembler::cas_ptr(  Register s1, Register s2, Register d) {
+#ifdef _LP64
+  casx( s1, s2, d );
+#else
+  cas( s1, s2, d );
+#endif
+}
+
 // Functions for isolating 64 bit shifts for LP64
 
 inline void MacroAssembler::sll_ptr( Register s1, Register s2, Register d ) {
@@ -225,6 +252,15 @@ inline void MacroAssembler::sll_ptr( Register s1, RegisterOrConstant s2, Registe
   if (s2.is_register())  sll_ptr(s1, s2.as_register(), d);
   else                   sll_ptr(s1, s2.as_constant(), d);
 }
+
+inline void MacroAssembler::casl(  Register s1, Register s2, Register d) { casa( s1, s2, d, ASI_PRIMARY_LITTLE); }
+inline void MacroAssembler::casxl( Register s1, Register s2, Register d) { casxa(s1, s2, d, ASI_PRIMARY_LITTLE); }
+
+inline void MacroAssembler::inc(   Register d,  int const13 ) { add(   d, const13, d); }
+inline void MacroAssembler::inccc( Register d,  int const13 ) { addcc( d, const13, d); }
+
+inline void MacroAssembler::dec(   Register d,  int const13 ) { sub(   d, const13, d); }
+inline void MacroAssembler::deccc( Register d,  int const13 ) { subcc( d, const13, d); }
 
 // Use the right branch for the platform
 
@@ -298,6 +334,10 @@ inline bool MacroAssembler::is_far_target(address d) {
 // expense of relocation and if we overflow the displacement
 // of the quick call instruction.
 inline void MacroAssembler::call( address d, relocInfo::relocType rt ) {
+  MacroAssembler::call(d, Relocation::spec_simple(rt));
+}
+
+inline void MacroAssembler::call( address d, RelocationHolder const& rspec ) {
 #ifdef _LP64
   intptr_t disp;
   // NULL is ok because it will be relocated later.
@@ -309,14 +349,14 @@ inline void MacroAssembler::call( address d, relocInfo::relocType rt ) {
   // Is this address within range of the call instruction?
   // If not, use the expensive instruction sequence
   if (is_far_target(d)) {
-    relocate(rt);
+    relocate(rspec);
     AddressLiteral dest(d);
     jumpl_to(dest, O7, O7);
   } else {
-    Assembler::call(d, rt);
+    Assembler::call(d, rspec);
   }
 #else
-  Assembler::call( d, rt );
+  Assembler::call( d, rspec );
 #endif
 }
 
@@ -337,6 +377,24 @@ inline void MacroAssembler::iprefetch( address d, relocInfo::relocType rt ) {
 }
 inline void MacroAssembler::iprefetch( Label& L) { iprefetch( target(L) ); }
 
+inline void MacroAssembler::tst( Register s ) { orcc( G0, s, G0 ); }
+
+inline void MacroAssembler::ret( bool trace ) {
+  if (trace) {
+    mov(I7, O7); // traceable register
+    JMP(O7, 2 * BytesPerInstWord);
+  } else {
+    jmpl( I7, 2 * BytesPerInstWord, G0 );
+  }
+}
+
+inline void MacroAssembler::retl( bool trace ) {
+  if (trace) {
+    JMP(O7, 2 * BytesPerInstWord);
+  } else {
+    jmpl( O7, 2 * BytesPerInstWord, G0 );
+  }
+}
 
 // clobbers o7 on V8!!
 // returns delta from gotten pc to addr after
@@ -346,6 +404,8 @@ inline int MacroAssembler::get_pc( Register d ) {
   return offset() - x;
 }
 
+inline void MacroAssembler::cmp(  Register s1, Register s2 ) { subcc( s1, s2, G0 ); }
+inline void MacroAssembler::cmp(  Register s1, int simm13a ) { subcc( s1, simm13a, G0 ); }
 
 // Note:  All MacroAssembler::set_foo functions are defined out-of-line.
 
@@ -521,6 +581,12 @@ inline void MacroAssembler::store_long_argument( Register s, Argument& a ) {
 }
 #endif
 
+inline void MacroAssembler::round_to( Register r, int modulus ) {
+  assert_not_delayed();
+  inc( r, modulus - 1 );
+  and3( r, -modulus, r );
+}
+
 inline void MacroAssembler::add(Register s1, int simm13a, Register d, relocInfo::relocType rtype) {
   relocate(rtype);
   add(s1, simm13a, d);
@@ -547,6 +613,20 @@ inline void MacroAssembler::andn(Register s1, RegisterOrConstant s2, Register d)
   else                   andn(s1, s2.as_constant(), d);
 }
 
+inline void MacroAssembler::btst( Register s1,  Register s2 ) { andcc( s1, s2, G0 ); }
+inline void MacroAssembler::btst( int simm13a,  Register s )  { andcc( s,  simm13a, G0 ); }
+
+inline void MacroAssembler::bset( Register s1,  Register s2 ) { or3( s1, s2, s2 ); }
+inline void MacroAssembler::bset( int simm13a,  Register s )  { or3( s,  simm13a, s ); }
+
+inline void MacroAssembler::bclr( Register s1,  Register s2 ) { andn( s1, s2, s2 ); }
+inline void MacroAssembler::bclr( int simm13a,  Register s )  { andn( s,  simm13a, s ); }
+
+inline void MacroAssembler::btog( Register s1,  Register s2 ) { xor3( s1, s2, s2 ); }
+inline void MacroAssembler::btog( int simm13a,  Register s )  { xor3( s,  simm13a, s ); }
+
+inline void MacroAssembler::clr( Register d ) { or3( G0, G0, d ); }
+
 inline void MacroAssembler::clrb( Register s1, Register s2) { stb( G0, s1, s2 ); }
 inline void MacroAssembler::clrh( Register s1, Register s2) { sth( G0, s1, s2 ); }
 inline void MacroAssembler::clr(  Register s1, Register s2) { stw( G0, s1, s2 ); }
@@ -556,6 +636,9 @@ inline void MacroAssembler::clrb( Register s1, int simm13a) { stb( G0, s1, simm1
 inline void MacroAssembler::clrh( Register s1, int simm13a) { sth( G0, s1, simm13a); }
 inline void MacroAssembler::clr(  Register s1, int simm13a) { stw( G0, s1, simm13a); }
 inline void MacroAssembler::clrx( Register s1, int simm13a) { stx( G0, s1, simm13a); }
+
+inline void MacroAssembler::clruw( Register s, Register d ) { srl( s, G0, d); }
+inline void MacroAssembler::clruwu( Register d ) { srl( d, G0, d); }
 
 #ifdef _LP64
 // Make all 32 bit loads signed so 64 bit registers maintain proper sign
@@ -638,6 +721,11 @@ inline void MacroAssembler::ldf(FloatRegisterImpl::Width w, const Address& a, Fl
   }
 }
 
+inline void MacroAssembler::lduwl(Register s1, Register s2, Register d) { lduwa(s1, s2, ASI_PRIMARY_LITTLE, d); }
+inline void MacroAssembler::ldswl(Register s1, Register s2, Register d) { ldswa(s1, s2, ASI_PRIMARY_LITTLE, d);}
+inline void MacroAssembler::ldxl( Register s1, Register s2, Register d) { ldxa(s1, s2, ASI_PRIMARY_LITTLE, d); }
+inline void MacroAssembler::ldfl(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d) { ldfa(w, s1, s2, ASI_PRIMARY_LITTLE, d); }
+
 // returns if membar generates anything, obviously this code should mirror
 // membar below.
 inline bool MacroAssembler::membar_has_effect( Membar_mask_bits const7a ) {
@@ -663,6 +751,24 @@ inline void MacroAssembler::membar( Membar_mask_bits const7a ) {
     Assembler::membar(effective_mask);
   }
 }
+
+inline void MacroAssembler::mov(Register s, Register d) {
+  if (s != d) {
+    or3(G0, s, d);
+  } else {
+    assert_not_delayed();  // Put something useful in the delay slot!
+  }
+}
+
+inline void MacroAssembler::mov_or_nop(Register s, Register d) {
+  if (s != d) {
+    or3(G0, s, d);
+  } else {
+    nop();
+  }
+}
+
+inline void MacroAssembler::mov( int simm13a, Register d) { or3( G0, simm13a, d); }
 
 inline void MacroAssembler::prefetch(const Address& a, PrefetchFcn f, int offset) {
   relocate(a.rspec(offset));
@@ -732,6 +838,13 @@ inline void MacroAssembler::swap(const Address& a, Register d, int offset) {
   relocate(a.rspec(offset));
   if (a.has_index()) { assert(offset == 0, ""); swap(a.base(), a.index(), d        ); }
   else               {                          swap(a.base(), a.disp() + offset, d); }
+}
+
+inline void MacroAssembler::bang_stack_with_offset(int offset) {
+  // stack grows down, caller passes positive offset
+  assert(offset > 0, "must bang with negative offset");
+  set((-offset)+STACK_BIAS, G3_scratch);
+  st(G0, SP, G3_scratch);
 }
 
 #endif // CPU_SPARC_VM_MACROASSEMBLER_SPARC_INLINE_HPP

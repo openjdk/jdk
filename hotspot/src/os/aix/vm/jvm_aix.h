@@ -81,11 +81,7 @@
 #define JNI_LIB_PREFIX "lib"
 #define JNI_LIB_SUFFIX ".so"
 
-// Hack: MAXPATHLEN is 4095 on some Linux and 4096 on others. This may
-//       cause problems if JVM and the rest of JDK are built on different
-//       Linux releases. Here we define JVM_MAXPATHLEN to be MAXPATHLEN + 1,
-//       so buffers declared in VM are always >= 4096.
-#define JVM_MAXPATHLEN MAXPATHLEN + 1
+#define JVM_MAXPATHLEN MAXPATHLEN
 
 #define JVM_R_OK    R_OK
 #define JVM_W_OK    W_OK

@@ -53,6 +53,7 @@ class CompileTask;
 class JVMCIEnv : StackObj {
   CI_PACKAGE_ACCESS_TO
 
+  friend class JVMCIVMStructs;
   friend class CompileBroker;
   friend class Dependencies;  // for get_object, during logging
 

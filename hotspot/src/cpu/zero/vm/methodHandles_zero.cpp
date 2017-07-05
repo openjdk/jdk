@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "interpreter/interpreterGenerator.hpp"
+#include "interpreter/cppInterpreterGenerator.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -167,16 +167,16 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     // Perhaps surprisingly, the symbolic references visible to Java are not directly used.
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all allow an appendix argument.
-    return InterpreterGenerator::generate_entry_impl(masm, (address) MethodHandles::method_handle_entry_invalid);
+    return CppInterpreterGenerator::generate_entry_impl(masm, (address) MethodHandles::method_handle_entry_invalid);
   case vmIntrinsics::_invokeBasic:
-    return InterpreterGenerator::generate_entry_impl(masm, (address) MethodHandles::method_handle_entry_invokeBasic);
+    return CppInterpreterGenerator::generate_entry_impl(masm, (address) MethodHandles::method_handle_entry_invokeBasic);
   case vmIntrinsics::_linkToStatic:
   case vmIntrinsics::_linkToSpecial:
-    return InterpreterGenerator::generate_entry_impl(masm, (address) MethodHandles::method_handle_entry_linkToStaticOrSpecial);
+    return CppInterpreterGenerator::generate_entry_impl(masm, (address) MethodHandles::method_handle_entry_linkToStaticOrSpecial);
   case vmIntrinsics::_linkToInterface:
-    return InterpreterGenerator::generate_entry_impl(masm, (address) MethodHandles::method_handle_entry_linkToInterface);
+    return CppInterpreterGenerator::generate_entry_impl(masm, (address) MethodHandles::method_handle_entry_linkToInterface);
   case vmIntrinsics::_linkToVirtual:
-    return InterpreterGenerator::generate_entry_impl(masm, (address) MethodHandles::method_handle_entry_linkToVirtual);
+    return CppInterpreterGenerator::generate_entry_impl(masm, (address) MethodHandles::method_handle_entry_linkToVirtual);
   default:
     ShouldNotReachHere();
     return NULL;

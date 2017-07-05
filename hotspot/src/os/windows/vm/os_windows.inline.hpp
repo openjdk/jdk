@@ -26,6 +26,7 @@
 #define OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
 
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 
 inline const char* os::dll_file_extension()            { return ".dll"; }
 
@@ -49,11 +50,10 @@ inline bool os::obsolete_option(const JavaVMOption *option) {
 }
 
 inline bool os::uses_stack_guard_pages() {
-  return os::win32::is_nt();
+  return true;
 }
 
 inline bool os::allocate_stack_guard_pages() {
-  assert(uses_stack_guard_pages(), "sanity check");
   return true;
 }
 
@@ -72,7 +72,7 @@ inline void os::bang_stack_shadow_pages() {
   // the OS may not map an intervening page into our space
   // and may fault on a memory access to interior of our frame.
   address sp = current_stack_pointer();
-  for (int pages = 1; pages <= StackShadowPages; pages++) {
+  for (size_t pages = 1; pages <= (JavaThread::stack_shadow_zone_size() / os::vm_page_size()); pages++) {
     *((int *)(sp - (pages * vm_page_size()))) = 0;
   }
 }
@@ -97,7 +97,7 @@ inline int os::close(int fd) {
 }
 
 inline bool os::supports_monotonic_clock() {
-  return win32::_has_performance_count;
+  return true;
 }
 
 inline void os::exit(int num) {

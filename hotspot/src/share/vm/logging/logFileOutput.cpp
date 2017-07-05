@@ -26,7 +26,6 @@
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/defaultStream.hpp"
@@ -43,8 +42,7 @@ char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
 LogFileOutput::LogFileOutput(const char* name)
     : LogFileStreamOutput(NULL), _name(os::strdup_check_oom(name, mtLogging)),
       _file_name(NULL), _archive_name(NULL), _archive_name_len(0), _current_size(0),
-      _rotate_size(0), _current_file(1), _file_count(0),
-      _rotation_lock(Mutex::leaf, "LogFileOutput rotation lock", true, Mutex::_safepoint_check_sometimes) {
+      _rotate_size(0), _current_file(1), _file_count(0), _rotation_semaphore(1) {
   _file_name = make_file_name(name, _pid_str, _vm_start_time_str);
 }
 
@@ -152,10 +150,15 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
     // An error has occurred with this output, avoid writing to it.
     return 0;
   }
+
+  _rotation_semaphore.wait();
   int written = LogFileStreamOutput::write(decorations, msg);
   _current_size += written;
 
-  rotate(false);
+  if (should_rotate()) {
+    rotate();
+  }
+  _rotation_semaphore.signal();
 
   return written;
 }
@@ -177,19 +180,28 @@ void LogFileOutput::archive() {
   }
 }
 
-void LogFileOutput::rotate(bool force) {
-
-  if (!should_rotate(force)) {
+void LogFileOutput::force_rotate() {
+  if (_file_count == 0) {
+    // Rotation not possible
     return;
   }
+  _rotation_semaphore.wait();
+  rotate();
+  _rotation_semaphore.signal();
+}
 
-  MutexLockerEx ml(&_rotation_lock, true /* no safepoint check */);
+void LogFileOutput::rotate() {
+
+  if (fclose(_stream)) {
+    jio_fprintf(defaultStream::error_stream(), "Error closing file '%s' during log rotation (%s).\n",
+                _file_name, strerror(errno));
+  }
 
   // Archive the current log file
   archive();
 
   // Open the active log file using the same stream as before
-  _stream = freopen(_file_name, FileOpenMode, _stream);
+  _stream = fopen(_file_name, FileOpenMode);
   if (_stream == NULL) {
     jio_fprintf(defaultStream::error_stream(), "Could not reopen file '%s' during log rotation (%s).\n",
                 _file_name, strerror(errno));

@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1ErgoVerbose.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "logging/log.hpp"
 
 G1IHOPControl::G1IHOPControl(double initial_ihop_percent, size_t target_occupancy) :
   _initial_ihop_percent(initial_ihop_percent),
@@ -47,20 +47,14 @@ void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t allo
 
 void G1IHOPControl::print() {
   size_t cur_conc_mark_start_threshold = get_conc_mark_start_threshold();
-  ergo_verbose6(ErgoIHOP,
-                "basic information",
-                ergo_format_reason("value update")
-                ergo_format_byte_perc("threshold")
-                ergo_format_byte("target occupancy")
-                ergo_format_byte("current occupancy")
-                ergo_format_double("recent old gen allocation rate")
-                ergo_format_double("recent marking phase length"),
-                cur_conc_mark_start_threshold,
-                cur_conc_mark_start_threshold * 100.0 / _target_occupancy,
-                _target_occupancy,
-                G1CollectedHeap::heap()->used(),
-                _last_allocation_time_s > 0.0 ? _last_allocated_bytes / _last_allocation_time_s : 0.0,
-                last_marking_length_s());
+  log_debug(gc, ihop)("Basic information (value update), threshold: " SIZE_FORMAT "B (%1.2f), target occupancy: " SIZE_FORMAT "B, current occupancy: " SIZE_FORMAT "B,"
+                      " recent old gen allocation rate: %1.2f, recent marking phase length: %1.2f",
+                      cur_conc_mark_start_threshold,
+                      cur_conc_mark_start_threshold * 100.0 / _target_occupancy,
+                      _target_occupancy,
+                      G1CollectedHeap::heap()->used(),
+                      _last_allocation_time_s > 0.0 ? _last_allocated_bytes / _last_allocation_time_s : 0.0,
+                      last_marking_length_s());
 }
 
 void G1IHOPControl::send_trace_event(G1NewTracer* tracer) {
@@ -144,7 +138,7 @@ size_t G1AdaptiveIHOPControl::actual_target_threshold() const {
 
   double safe_total_heap_percentage = MIN2((double)(_heap_reserve_percent + _heap_waste_percent), 100.0);
 
-  return MIN2(
+  return (size_t)MIN2(
     G1CollectedHeap::heap()->max_capacity() * (100.0 - safe_total_heap_percentage) / 100.0,
     _target_occupancy * (100.0 - _heap_waste_percent) / 100.0
     );
@@ -159,10 +153,13 @@ size_t G1AdaptiveIHOPControl::get_conc_mark_start_threshold() {
   if (have_enough_data_for_prediction()) {
     double pred_marking_time = _predictor->get_new_prediction(&_marking_times_s);
     double pred_promotion_rate = _predictor->get_new_prediction(&_allocation_rate_s);
+    size_t pred_promotion_size = (size_t)(pred_marking_time * pred_promotion_rate);
 
     size_t predicted_needed_bytes_during_marking =
-      (pred_marking_time * pred_promotion_rate +
-      _last_unrestrained_young_size); // In reality we would need the maximum size of the young gen during marking. This is a conservative estimate.
+      pred_promotion_size +
+      // In reality we would need the maximum size of the young gen during
+      // marking. This is a conservative estimate.
+      _last_unrestrained_young_size;
 
     size_t internal_threshold = actual_target_threshold();
     size_t predicted_initiating_threshold = predicted_needed_bytes_during_marking < internal_threshold ?
@@ -171,11 +168,13 @@ size_t G1AdaptiveIHOPControl::get_conc_mark_start_threshold() {
     return predicted_initiating_threshold;
   } else {
     // Use the initial value.
-    return _initial_ihop_percent * _target_occupancy / 100.0;
+    return (size_t)(_initial_ihop_percent * _target_occupancy / 100.0);
   }
 }
 
-void G1AdaptiveIHOPControl::update_allocation_info(double allocation_time_s, size_t allocated_bytes, size_t additional_buffer_size) {
+void G1AdaptiveIHOPControl::update_allocation_info(double allocation_time_s,
+                                                   size_t allocated_bytes,
+                                                   size_t additional_buffer_size) {
   G1IHOPControl::update_allocation_info(allocation_time_s, allocated_bytes, additional_buffer_size);
 
   double allocation_rate = (double) allocated_bytes / allocation_time_s;
@@ -192,21 +191,14 @@ void G1AdaptiveIHOPControl::update_marking_length(double marking_length_s) {
 void G1AdaptiveIHOPControl::print() {
   G1IHOPControl::print();
   size_t actual_target = actual_target_threshold();
-  ergo_verbose6(ErgoIHOP,
-                "adaptive IHOP information",
-                ergo_format_reason("value update")
-                ergo_format_byte_perc("threshold")
-                ergo_format_byte("internal target occupancy")
-                ergo_format_double("predicted old gen allocation rate")
-                ergo_format_double("predicted marking phase length")
-                ergo_format_str("prediction active"),
-                get_conc_mark_start_threshold(),
-                percent_of(get_conc_mark_start_threshold(), actual_target),
-                actual_target,
-                _predictor->get_new_prediction(&_allocation_rate_s),
-                _predictor->get_new_prediction(&_marking_times_s),
-                have_enough_data_for_prediction() ? "true" : "false"
-                );
+  log_debug(gc, ihop)("Adaptive IHOP information (value update), threshold: " SIZE_FORMAT "B (%1.2f), internal target occupancy: " SIZE_FORMAT "B,"
+                      " predicted old gen allocation rate: %1.2f, predicted marking phase length: %1.2f, prediction active: %s",
+                      get_conc_mark_start_threshold(),
+                      percent_of(get_conc_mark_start_threshold(), actual_target),
+                      actual_target,
+                      _predictor->get_new_prediction(&_allocation_rate_s),
+                      _predictor->get_new_prediction(&_marking_times_s),
+                      have_enough_data_for_prediction() ? "true" : "false");
 }
 
 void G1AdaptiveIHOPControl::send_trace_event(G1NewTracer* tracer) {

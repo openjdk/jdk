@@ -359,7 +359,7 @@ cmpxchg_long_func_t* os::atomic_cmpxchg_long_func = os::atomic_cmpxchg_long_boot
  *     while (...) {...  fr = os::get_sender_for_C_frame(&fr); }
  * loop in vmError.cpp. We need to roll our own loop.
  */
-bool os::platform_print_native_stack(outputStream* st, void* context,
+bool os::platform_print_native_stack(outputStream* st, const void* context,
                                      char *buf, int buf_size)
 {
   CONTEXT ctx;
@@ -435,7 +435,7 @@ bool os::platform_print_native_stack(outputStream* st, void* context,
 }
 #endif // AMD64
 
-ExtendedPC os::fetch_frame_from_context(void* ucVoid,
+ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
 
   ExtendedPC  epc;
@@ -455,7 +455,7 @@ ExtendedPC os::fetch_frame_from_context(void* ucVoid,
   return epc;
 }
 
-frame os::fetch_frame_from_context(void* ucVoid) {
+frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, &fp);
@@ -527,10 +527,10 @@ frame os::current_frame() {
   }
 }
 
-void os::print_context(outputStream *st, void *context) {
+void os::print_context(outputStream *st, const void *context) {
   if (context == NULL) return;
 
-  CONTEXT* uc = (CONTEXT*)context;
+  const CONTEXT* uc = (const CONTEXT*)context;
 
   st->print_cr("Registers:");
 #ifdef AMD64
@@ -588,10 +588,10 @@ void os::print_context(outputStream *st, void *context) {
 }
 
 
-void os::print_register_info(outputStream *st, void *context) {
+void os::print_register_info(outputStream *st, const void *context) {
   if (context == NULL) return;
 
-  CONTEXT* uc = (CONTEXT*)context;
+  const CONTEXT* uc = (const CONTEXT*)context;
 
   st->print_cr("Register to memory mapping:");
   st->cr();

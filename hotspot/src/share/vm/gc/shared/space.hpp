@@ -220,7 +220,6 @@ class Space: public CHeapObj<mtGC> {
   // moving as a part of compaction.
   virtual void adjust_pointers() = 0;
 
-  // PrintHeapAtGC support
   virtual void print() const;
   virtual void print_on(outputStream* st) const;
   virtual void print_short() const;
@@ -659,7 +658,6 @@ class ContiguousSpace: public CompactibleSpace {
   // Overrides for more efficient compaction support.
   void prepare_for_compaction(CompactPoint* cp);
 
-  // PrintHeapAtGC support.
   virtual void print_on(outputStream* st) const;
 
   // Checked dynamic downcasts.

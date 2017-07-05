@@ -1201,6 +1201,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       mcall_java->_optimized_virtual = call_java->is_optimized_virtual();
       is_method_handle_invoke = call_java->is_method_handle_invoke();
       mcall_java->_method_handle_invoke = is_method_handle_invoke;
+      mcall_java->_override_symbolic_info = call_java->override_symbolic_info();
       if (is_method_handle_invoke) {
         C->set_has_method_handle_invokes(true);
       }

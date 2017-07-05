@@ -87,7 +87,7 @@
   // ***************************************************************
 
  public:
-  // flags that support signal based suspend/resume on Linux are in a
+  // flags that support signal based suspend/resume on Aix are in a
   // separate class to avoid confusion with many flags in OSThread that
   // are used by VM level suspend/resume.
   os::SuspendResume sr;

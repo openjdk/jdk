@@ -47,8 +47,6 @@ void InterpreterMacroAssembler::jump_to_entry(address entry) {
   b(entry);
 }
 
-#ifndef CC_INTERP
-
 void InterpreterMacroAssembler::check_and_handle_popframe(Register java_thread) {
   if (JvmtiExport::can_pop_frame()) {
     Label L;
@@ -595,8 +593,6 @@ void InterpreterMacroAssembler::remove_activation(
   andr(sp, esp, -16);
 }
 
-#endif // C_INTERP
-
 // Lock object
 //
 // Args:
@@ -757,8 +753,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     restore_bcp();
   }
 }
-
-#ifndef CC_INTERP
 
 void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
                                                          Label& zero_continue) {
@@ -1060,12 +1054,38 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
+#if INCLUDE_JVMCI
+    if (MethodProfileWidth == 0) {
+      update_mdp_by_constant(mdp, in_bytes(VirtualCallData::virtual_call_data_size()));
+    }
+#else // INCLUDE_JVMCI
     update_mdp_by_constant(mdp,
                            in_bytes(VirtualCallData::
                                     virtual_call_data_size()));
+#endif // INCLUDE_JVMCI
     bind(profile_continue);
   }
 }
+
+#if INCLUDE_JVMCI
+void InterpreterMacroAssembler::profile_called_method(Register method, Register mdp, Register reg2) {
+  assert_different_registers(method, mdp, reg2);
+  if (ProfileInterpreter && MethodProfileWidth > 0) {
+    Label profile_continue;
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(mdp, profile_continue);
+
+    Label done;
+    record_item_in_profile_helper(method, mdp, reg2, 0, done, MethodProfileWidth,
+      &VirtualCallData::method_offset, &VirtualCallData::method_count_offset, in_bytes(VirtualCallData::nonprofiled_receiver_count_offset()));
+    bind(done);
+
+    update_mdp_by_constant(mdp, in_bytes(VirtualCallData::virtual_call_data_size()));
+    bind(profile_continue);
+  }
+}
+#endif // INCLUDE_JVMCI
 
 // This routine creates a state machine for updating the multi-row
 // type profile at a virtual call site (or other type-sensitive bytecode).
@@ -1086,14 +1106,36 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
     if (is_virtual_call) {
       increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
     }
-    return;
-  }
+#if INCLUDE_JVMCI
+    else if (EnableJVMCI) {
+      increment_mdp_data_at(mdp, in_bytes(ReceiverTypeData::nonprofiled_receiver_count_offset()));
+    }
+#endif // INCLUDE_JVMCI
+  } else {
+    int non_profiled_offset = -1;
+    if (is_virtual_call) {
+      non_profiled_offset = in_bytes(CounterData::count_offset());
+    }
+#if INCLUDE_JVMCI
+    else if (EnableJVMCI) {
+      non_profiled_offset = in_bytes(ReceiverTypeData::nonprofiled_receiver_count_offset());
+    }
+#endif // INCLUDE_JVMCI
 
-  int last_row = VirtualCallData::row_limit() - 1;
+    record_item_in_profile_helper(receiver, mdp, reg2, 0, done, TypeProfileWidth,
+        &VirtualCallData::receiver_offset, &VirtualCallData::receiver_count_offset, non_profiled_offset);
+  }
+}
+
+void InterpreterMacroAssembler::record_item_in_profile_helper(Register item, Register mdp,
+                                        Register reg2, int start_row, Label& done, int total_rows,
+                                        OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn,
+                                        int non_profiled_offset) {
+  int last_row = total_rows - 1;
   assert(start_row <= last_row, "must be work left to do");
-  // Test this row for both the receiver and for null.
+  // Test this row for both the item and for null.
   // Take any of three different outcomes:
-  //   1. found receiver => increment count and goto done
+  //   1. found item => increment count and goto done
   //   2. found null => keep looking for case 1, maybe allocate this cell
   //   3. found something else => keep looking for cases 1 and 2
   // Case 3 is handled by a recursive call.
@@ -1101,55 +1143,56 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
     Label next_test;
     bool test_for_null_also = (row == start_row);
 
-    // See if the receiver is receiver[n].
-    int recvr_offset = in_bytes(VirtualCallData::receiver_offset(row));
-    test_mdp_data_at(mdp, recvr_offset, receiver,
+    // See if the item is item[n].
+    int item_offset = in_bytes(item_offset_fn(row));
+    test_mdp_data_at(mdp, item_offset, item,
                      (test_for_null_also ? reg2 : noreg),
                      next_test);
-    // (Reg2 now contains the receiver from the CallData.)
+    // (Reg2 now contains the item from the CallData.)
 
-    // The receiver is receiver[n].  Increment count[n].
-    int count_offset = in_bytes(VirtualCallData::receiver_count_offset(row));
+    // The item is item[n].  Increment count[n].
+    int count_offset = in_bytes(item_count_offset_fn(row));
     increment_mdp_data_at(mdp, count_offset);
     b(done);
     bind(next_test);
 
     if (test_for_null_also) {
       Label found_null;
-      // Failed the equality check on receiver[n]...  Test for null.
+      // Failed the equality check on item[n]...  Test for null.
       if (start_row == last_row) {
         // The only thing left to do is handle the null case.
-        if (is_virtual_call) {
+        if (non_profiled_offset >= 0) {
           cbz(reg2, found_null);
-          // Receiver did not match any saved receiver and there is no empty row for it.
+          // Item did not match any saved item and there is no empty row for it.
           // Increment total counter to indicate polymorphic case.
-          increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
+          increment_mdp_data_at(mdp, non_profiled_offset);
           b(done);
           bind(found_null);
         } else {
-          cbz(reg2, done);
+          cbnz(reg2, done);
         }
         break;
       }
       // Since null is rare, make it be the branch-taken case.
-      cbz(reg2,found_null);
+      cbz(reg2, found_null);
 
       // Put all the "Case 3" tests here.
-      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done, is_virtual_call);
+      record_item_in_profile_helper(item, mdp, reg2, start_row + 1, done, total_rows,
+        item_offset_fn, item_count_offset_fn, non_profiled_offset);
 
-      // Found a null.  Keep searching for a matching receiver,
+      // Found a null.  Keep searching for a matching item,
       // but remember that this is an empty (unused) slot.
       bind(found_null);
     }
   }
 
-  // In the fall-through case, we found no matching receiver, but we
-  // observed the receiver[start_row] is NULL.
+  // In the fall-through case, we found no matching item, but we
+  // observed the item[start_row] is NULL.
 
-  // Fill in the receiver field and increment the count.
-  int recvr_offset = in_bytes(VirtualCallData::receiver_offset(start_row));
-  set_mdp_data_at(mdp, recvr_offset, receiver);
-  int count_offset = in_bytes(VirtualCallData::receiver_count_offset(start_row));
+  // Fill in the item field and increment the count.
+  int item_offset = in_bytes(item_offset_fn(start_row));
+  set_mdp_data_at(mdp, item_offset, item);
+  int count_offset = in_bytes(item_count_offset_fn(start_row));
   mov(reg2, DataLayout::counter_increment);
   set_mdp_data_at(mdp, count_offset, reg2);
   if (start_row > 0) {
@@ -1345,7 +1388,6 @@ void InterpreterMacroAssembler::verify_oop(Register reg, TosState state) {
 }
 
 void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) { ; }
-#endif // !CC_INTERP
 
 
 void InterpreterMacroAssembler::notify_method_entry() {
@@ -1354,9 +1396,8 @@ void InterpreterMacroAssembler::notify_method_entry() {
   // the code to check if the event should be sent.
   if (JvmtiExport::can_post_interpreter_events()) {
     Label L;
-    ldr(r3, Address(rthread, JavaThread::interp_only_mode_offset()));
-    tst(r3, ~0);
-    br(Assembler::EQ, L);
+    ldrw(r3, Address(rthread, JavaThread::interp_only_mode_offset()));
+    cbzw(r3, L);
     call_VM(noreg, CAST_FROM_FN_PTR(address,
                                     InterpreterRuntime::post_method_entry));
     bind(L);
@@ -1392,24 +1433,23 @@ void InterpreterMacroAssembler::notify_method_exit(
     // is changed then the interpreter_frame_result implementation will
     // need to be updated too.
 
-    // For c++ interpreter the result is always stored at a known location in the frame
-    // template interpreter will leave it on the top of the stack.
-    NOT_CC_INTERP(push(state);)
+    // template interpreter will leave the result on the top of the stack.
+    push(state);
     ldrw(r3, Address(rthread, JavaThread::interp_only_mode_offset()));
     cbz(r3, L);
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
     bind(L);
-    NOT_CC_INTERP(pop(state));
+    pop(state);
   }
 
   {
     SkipIfEqual skip(this, &DTraceMethodProbes, false);
-    NOT_CC_INTERP(push(state));
+    push(state);
     get_method(c_rarg1);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
                  rthread, c_rarg1);
-    NOT_CC_INTERP(pop(state));
+    pop(state);
   }
 }
 

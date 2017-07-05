@@ -29,22 +29,13 @@ $(eval $(call IncludeCustomExtension, hotspot, lib/Lib-jdk.hotspot.agent.gmk))
 
 ################################################################################
 
-SA_TOPDIR := $(HOTSPOT_TOPDIR)/agent
-
-# SA has a slightly different OS naming scheme
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  SA_TARGET_OS := win32
-else ifeq ($(OPENJDK_TARGET_OS), macosx)
-  SA_TARGET_OS := bsd
-else
-  SA_TARGET_OS := $(OPENJDK_TARGET_OS)
-endif
+SA_TOPDIR := $(HOTSPOT_TOPDIR)/src/jdk.hotspot.agent
 
 # Defaults for most platforms
 SA_TOOLCHAIN := TOOLCHAIN_DEFAULT
 SA_NAME := saproc
-SA_SRC += $(SA_TOPDIR)/src/share/native $(SA_TOPDIR)/src/os/$(SA_TARGET_OS)
-SA_MAPFILE := $(SA_TOPDIR)/src/os/$(OPENJDK_TARGET_OS)/mapfile
+SA_SRC += $(SA_TOPDIR)/share/native/libsaproc $(SA_TOPDIR)/$(OPENJDK_TARGET_OS)/native/libsaproc
+SA_MAPFILE := $(HOTSPOT_TOPDIR)/make/mapfiles/libsaproc/mapfile-$(OPENJDK_TARGET_OS)
 SA_INCLUDES := \
     $(addprefix -I, $(SA_SRC)) \
     -I$(SUPPORT_OUTPUTDIR)/headers/jdk.hotspot.agent \
@@ -66,9 +57,7 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
 
 else ifeq ($(OPENJDK_TARGET_OS), solaris)
   SA_TOOLCHAIN := TOOLCHAIN_LINK_CXX
-  SA_MAPFILE := $(SA_TOPDIR)/src/os/solaris/proc/mapfile
-  COMMON_CFLAGS := -I$(SA_TOPDIR)/src/os/$(OPENJDK_TARGET_OS)/proc \
-      -DSOLARIS_11_B159_OR_LATER
+  COMMON_CFLAGS := -DSOLARIS_11_B159_OR_LATER
   SA_CFLAGS := $(CFLAGS_JDKLIB) $(COMMON_CFLAGS)
   SA_CXXFLAGS := $(CXXFLAGS_JDKLIB) $(COMMON_CFLAGS)
   SA_LDFLAGS := $(subst -Wl$(COMMA)-z$(COMMA)defs,, $(LDFLAGS_JDKLIB)) \
@@ -121,7 +110,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBSA, \
     LIBS := $(SA_LIBS), \
     MAPFILE := $(SA_MAPFILE), \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsa, \
-    DEBUG_SYMBOLS := true, \
     STRIP_SYMBOLS := true, \
 ))
 

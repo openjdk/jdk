@@ -31,9 +31,6 @@
 
 class VM_Version : public Abstract_VM_Version {
  public:
-  static const char* cpu_features() {
-    return "";
-  }
   static void initialize();
 };
 

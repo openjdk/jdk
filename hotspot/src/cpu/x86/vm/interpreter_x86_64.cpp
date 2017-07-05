@@ -26,9 +26,9 @@
 #include "asm/macroAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -199,7 +199,7 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
 // Various method entries
 //
 
-address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
 
   // rbx,: Method*
   // rcx: scratrch
@@ -255,6 +255,10 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
   } else if (kind == Interpreter::java_lang_math_log) {
     __ movdbl(xmm0, Address(rsp, wordSize));
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog())));
+  } else if (kind == Interpreter::java_lang_math_pow) {
+    __ movdbl(xmm1, Address(rsp, wordSize));
+    __ movdbl(xmm0, Address(rsp, 3 * wordSize));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dpow())));
   } else {
     __ fld_d(Address(rsp, wordSize));
     switch (kind) {
@@ -272,11 +276,6 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
           break;
       case Interpreter::java_lang_math_log10:
           __ flog10();
-          break;
-      case Interpreter::java_lang_math_pow:
-          __ fld_d(Address(rsp, 3*wordSize)); // second argument (one
-                                              // empty stack slot)
-          __ pow_with_fallback(0);
           break;
       default                              :
           ShouldNotReachHere();

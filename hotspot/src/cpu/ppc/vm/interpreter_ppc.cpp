@@ -27,9 +27,9 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -416,7 +416,7 @@ address AbstractInterpreterGenerator::generate_result_handler_for(BasicType type
 
 // Abstract method entry.
 //
-address InterpreterGenerator::generate_abstract_entry(void) {
+address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   address entry = __ pc();
 
   //
@@ -457,17 +457,12 @@ address InterpreterGenerator::generate_abstract_entry(void) {
   // Reset JavaFrameAnchor from call_VM_leaf above.
   __ reset_last_Java_frame();
 
-#ifdef CC_INTERP
-  // Return to frame manager, it will handle the pending exception.
-  __ blr();
-#else
   // We don't know our caller, so jump to the general forward exception stub,
   // which will also pop our full frame off. Satisfy the interface of
   // SharedRuntime::generate_forward_exception()
   __ load_const_optimized(R11_scratch1, StubRoutines::forward_exception_entry(), R0);
   __ mtctr(R11_scratch1);
   __ bctr();
-#endif
 
   return entry;
 }
@@ -479,7 +474,7 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 //    It contains a GC barrier which puts the reference into the satb buffer
 //    to indicate that someone holds a strong reference to the object the
 //    weak ref points to!
-address InterpreterGenerator::generate_Reference_get_entry(void) {
+address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Code: _aload_0, _getfield, _areturn
   // parameter size = 1
   //
@@ -518,7 +513,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
     // continue and the thread will safepoint at the next bytecode dispatch.
 
     // If the receiver is null then it is OK to jump to the slow path.
-    __ ld(R3_RET, Interpreter::stackElementSize, CC_INTERP_ONLY(R17_tos) NOT_CC_INTERP(R15_esp)); // get receiver
+    __ ld(R3_RET, Interpreter::stackElementSize, R15_esp); // get receiver
 
     // Check if receiver == NULL and go the slow path.
     __ cmpdi(CCR0, R3_RET, 0);

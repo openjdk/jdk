@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ void StackMapFrame::initialize_object(
 }
 
 VerificationType StackMapFrame::set_locals_from_arg(
-    const methodHandle m, VerificationType thisKlass, TRAPS) {
+    const methodHandle& m, VerificationType thisKlass, TRAPS) {
   SignatureStream ss(m->signature());
   int init_local_num = 0;
   if (!m->is_static()) {

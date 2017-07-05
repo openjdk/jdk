@@ -33,6 +33,10 @@
   static address _verify_mxcsr_entry;
   // shuffle mask for fixing up 128-bit words consisting of big-endian 32-bit integers
   static address _key_shuffle_mask_addr;
+
+  //shuffle mask for big-endian 128-bit integers
+  static address _counter_shuffle_mask_addr;
+
   // masks and table for CRC32
   static uint64_t _crc_by128_masks[];
   static juint    _crc_table[];
@@ -45,9 +49,9 @@
  public:
   static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
   static address key_shuffle_mask_addr() { return _key_shuffle_mask_addr; }
+  static address counter_shuffle_mask_addr() { return _counter_shuffle_mask_addr; }
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
   static address ghash_long_swap_mask_addr() { return _ghash_long_swap_mask_addr; }
   static address ghash_byte_swap_mask_addr() { return _ghash_byte_swap_mask_addr; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
-
 #endif // CPU_X86_VM_STUBROUTINES_X86_32_HPP

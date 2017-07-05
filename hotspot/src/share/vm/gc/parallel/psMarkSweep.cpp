@@ -41,11 +41,12 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcTraceTime.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fprofiler.hpp"
@@ -137,8 +138,6 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   // We need to track unique mark sweep invocations as well.
   _total_invocations++;
 
-  AdaptiveSizePolicyOutput(size_policy, heap->total_collections());
-
   heap->print_heap_before_gc();
   heap->trace_heap_before_gc(_gc_tracer);
 
@@ -148,7 +147,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
   if (VerifyBeforeGC && heap->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
-    Universe::verify(" VerifyBeforeGC:");
+    Universe::verify("Before GC");
   }
 
   // Verify object start arrays
@@ -167,8 +166,8 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   {
     HandleMark hm;
 
-    TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    GCTraceTime t1(GCCauseString("Full GC", gc_cause), PrintGC, !PrintGCDetails, NULL);
+    GCTraceCPUTime tcpu;
+    GCTraceTime(Info, gc) t("Pause Full", NULL, gc_cause, true);
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 
@@ -180,13 +179,9 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     CodeCache::gc_prologue();
     BiasedLocking::preserve_marks();
 
-    // Capture heap size before collection for printing.
-    size_t prev_used = heap->used();
-
     // Capture metadata size before collection for sizing.
     size_t metadata_prev_used = MetaspaceAux::used_bytes();
 
-    // For PrintGCDetails
     size_t old_gen_prev_used = old_gen->used_in_bytes();
     size_t young_gen_prev_used = young_gen->used_in_bytes();
 
@@ -266,17 +261,9 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     if (UseAdaptiveSizePolicy) {
 
-      if (PrintAdaptiveSizePolicy) {
-        gclog_or_tty->print("AdaptiveSizeStart: ");
-        gclog_or_tty->stamp();
-        gclog_or_tty->print_cr(" collection: %d ",
-                       heap->total_collections());
-        if (Verbose) {
-          gclog_or_tty->print("old_gen_capacity: " SIZE_FORMAT
-            " young_gen_capacity: " SIZE_FORMAT,
-            old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
-        }
-      }
+     log_debug(gc, ergo)("AdaptiveSizeStart: collection: %d ", heap->total_collections());
+     log_trace(gc, ergo)("old_gen_capacity: " SIZE_FORMAT " young_gen_capacity: " SIZE_FORMAT,
+                         old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
 
       // Don't check if the size_policy is ready here.  Let
       // the size_policy check that internally.
@@ -333,10 +320,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
         heap->resize_young_gen(size_policy->calculated_eden_size_in_bytes(),
                                size_policy->calculated_survivor_size_in_bytes());
       }
-      if (PrintAdaptiveSizePolicy) {
-        gclog_or_tty->print_cr("AdaptiveSizeStop: collection: %d ",
-                       heap->total_collections());
-      }
+      log_debug(gc, ergo)("AdaptiveSizeStop: collection: %d ", heap->total_collections());
     }
 
     if (UsePerfData) {
@@ -354,18 +338,9 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     if (TraceOldGenTime) accumulated_time()->stop();
 
-    if (PrintGC) {
-      if (PrintGCDetails) {
-        // Don't print a GC timestamp here.  This is after the GC so
-        // would be confusing.
-        young_gen->print_used_change(young_gen_prev_used);
-        old_gen->print_used_change(old_gen_prev_used);
-      }
-      heap->print_heap_change(prev_used);
-      if (PrintGCDetails) {
-        MetaspaceAux::print_metaspace_change(metadata_prev_used);
-      }
-    }
+    young_gen->print_used_change(young_gen_prev_used);
+    old_gen->print_used_change(old_gen_prev_used);
+    MetaspaceAux::print_metaspace_change(metadata_prev_used);
 
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
@@ -374,7 +349,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
-    Universe::verify(" VerifyAfterGC:");
+    Universe::verify("After GC");
   }
 
   // Re-verify object start arrays
@@ -397,6 +372,8 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();
 #endif
+
+  AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
 
   _gc_timer->register_gc_end();
 
@@ -443,8 +420,7 @@ bool PSMarkSweep::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,
     return false; // Respect young gen minimum size.
   }
 
-  if (TraceAdaptiveGCBoundary && Verbose) {
-    gclog_or_tty->print(" absorbing " SIZE_FORMAT "K:  "
+  log_trace(heap, ergo)(" absorbing " SIZE_FORMAT "K:  "
                         "eden " SIZE_FORMAT "K->" SIZE_FORMAT "K "
                         "from " SIZE_FORMAT "K, to " SIZE_FORMAT "K "
                         "young_gen " SIZE_FORMAT "K->" SIZE_FORMAT "K ",
@@ -453,7 +429,6 @@ bool PSMarkSweep::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,
                         young_gen->from_space()->used_in_bytes() / K,
                         young_gen->to_space()->used_in_bytes() / K,
                         young_gen->capacity_in_bytes() / K, new_young_size / K);
-  }
 
   // Fill the unused part of the old gen.
   MutableSpace* const old_space = old_gen->object_space();
@@ -517,7 +492,7 @@ void PSMarkSweep::deallocate_stacks() {
 
 void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  GCTraceTime tm("phase 1", PrintGCDetails && Verbose, true, _gc_timer);
+  GCTraceTime(Trace, gc) tm("Phase 1: Mark live objects", _gc_timer);
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -576,7 +551,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
 
 void PSMarkSweep::mark_sweep_phase2() {
-  GCTraceTime tm("phase 2", PrintGCDetails && Verbose, true, _gc_timer);
+  GCTraceTime(Trace, gc) tm("Phase 2: Compute new object addresses", _gc_timer);
 
   // Now all live objects are marked, compute the new object addresses.
 
@@ -603,7 +578,7 @@ static PSAlwaysTrueClosure always_true;
 
 void PSMarkSweep::mark_sweep_phase3() {
   // Adjust the pointers to reflect the new locations
-  GCTraceTime tm("phase 3", PrintGCDetails && Verbose, true, _gc_timer);
+  GCTraceTime(Trace, gc) tm("Phase 3: Adjust pointers", _gc_timer);
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
@@ -643,7 +618,7 @@ void PSMarkSweep::mark_sweep_phase3() {
 
 void PSMarkSweep::mark_sweep_phase4() {
   EventMark m("4 compact heap");
-  GCTraceTime tm("phase 4", PrintGCDetails && Verbose, true, _gc_timer);
+  GCTraceTime(Trace, gc) tm("Phase 4: Move objects", _gc_timer);
 
   // All pointers are now adjusted, move objects accordingly
 

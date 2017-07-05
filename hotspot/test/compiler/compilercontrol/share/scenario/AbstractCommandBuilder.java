@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 /**
@@ -48,38 +49,12 @@ public abstract class AbstractCommandBuilder
     @Override
     public void add(CompileCommand command) {
         compileCommands.add(command);
+        CommandStateBuilder.getInstance().add(command);
     }
 
     @Override
     public Map<Executable, State> getStates() {
-        Map<Executable, State> states = new HashMap<>();
-        for (CompileCommand compileCommand : compileCommands) {
-            if (compileCommand.isValid()) {
-                CompileCommand cc = new CompileCommand(compileCommand.command,
-                        compileCommand.methodDescriptor,
-                        /* CompileCommand option and file doesn't support
-                           compiler setting */
-                        null,
-                        compileCommand.type);
-                MethodDescriptor md = cc.methodDescriptor;
-                for (Pair<Executable, Callable<?>> pair: METHODS) {
-                    Executable exec = pair.first;
-                    State state = states.getOrDefault(exec, new State());
-                    MethodDescriptor execDesc = new MethodDescriptor(exec);
-                    // if executable matches regex then apply the state
-                    if (execDesc.getCanonicalString().matches(md.getRegexp())) {
-                        state.apply(cc);
-                    } else {
-                        if (cc.command == Command.COMPILEONLY) {
-                            state.setC1Compilable(false);
-                            state.setC2Compilable(false);
-                        }
-                    }
-                    states.put(exec, state);
-                }
-            }
-        }
-        return states;
+        return CommandStateBuilder.getInstance().getStates();
     }
 
     @Override
@@ -89,7 +64,102 @@ public abstract class AbstractCommandBuilder
 
     @Override
     public boolean isValid() {
-        // CompileCommand ignores invalid items
+        // -XX:CompileCommand(File) ignores invalid items
         return true;
+    }
+
+    /*
+     * This is an internal class used to build states for commands given from
+     * options and a file. As all commands are added into a single set in
+     * CompilerOracle, we need a class that builds states in the same manner
+     */
+    private static class CommandStateBuilder {
+        private static final CommandStateBuilder INSTANCE
+                = new CommandStateBuilder();
+        private final List<CompileCommand> optionCommands = new ArrayList<>();
+        private final List<CompileCommand> fileCommands = new ArrayList<>();
+
+        private CommandStateBuilder() { }
+
+        public static CommandStateBuilder getInstance() {
+            return INSTANCE;
+        }
+
+        public void add(CompileCommand command) {
+            switch (command.type) {
+                case OPTION:
+                    optionCommands.add(command);
+                    break;
+                case FILE:
+                    fileCommands.add(command);
+                    break;
+                default:
+                    throw new Error("TESTBUG: wrong type: " + command.type);
+            }
+        }
+
+        public Map<Executable, State> getStates() {
+            List<CompileCommand> commandList = new ArrayList<>();
+            commandList.addAll(optionCommands);
+            commandList.addAll(fileCommands);
+            Map<Executable, State> states = new HashMap<>();
+            for (Pair<Executable, Callable<?>> pair : METHODS) {
+                Executable exec = pair.first;
+                State state = getState(commandList, states, exec);
+                states.put(exec, state);
+            }
+            return states;
+        }
+
+        private State getState(List<CompileCommand> commandList,
+                Map<Executable, State> states, Executable exec) {
+            State state = states.getOrDefault(exec, new State());
+            MethodDescriptor execDesc = new MethodDescriptor(exec);
+            for (CompileCommand compileCommand : commandList) {
+                if (compileCommand.isValid()) {
+                    // Create a copy without compiler set
+                    CompileCommand cc = new CompileCommand(
+                            compileCommand.command,
+                            compileCommand.methodDescriptor,
+                            /* CompileCommand option and file doesn't support
+                               compiler setting */
+                            null,
+                            compileCommand.type);
+                    MethodDescriptor md = cc.methodDescriptor;
+                    // if executable matches regex then apply the state
+                    if (execDesc.getCanonicalString().matches(md.getRegexp())) {
+                        if (cc.command == Command.COMPILEONLY
+                                && !state.isCompilable()) {
+                        /* if the method was already excluded it will not
+                           be compilable again */
+                        } else {
+                            state.apply(cc);
+                        }
+                    }
+                }
+            }
+
+            /*
+             * Set compilation states for methods that don't match
+             * any compileonly command. Such methods should be excluded
+             * from compilation
+             */
+            for (CompileCommand compileCommand : commandList) {
+                if (compileCommand.isValid()
+                        && (compileCommand.command == Command.COMPILEONLY)) {
+                    MethodDescriptor md = compileCommand.methodDescriptor;
+                    if (!execDesc.getCanonicalString().matches(md.getRegexp())
+                            && (state.getCompilableOptional(
+                                    // no matter C1, C2 or both
+                                    Scenario.Compiler.C2).isPresent())) {
+                        /* compileonly excludes only methods that haven't been
+                           already set to be compilable or excluded */
+                        state.setC1Compilable(false);
+                        state.setC2Compilable(false);
+                    }
+                }
+            }
+            return state;
+        }
     }
 }

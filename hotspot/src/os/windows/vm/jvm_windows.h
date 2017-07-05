@@ -44,19 +44,7 @@
 
 #include <windows.h>
 
-#if _MSC_VER <= 1200
-// Psapi.h doesn't come with Visual Studio 6; it can be downloaded as Platform
-// SDK from Microsoft.  Here are the definitions copied from Psapi.h
-typedef struct _MODULEINFO {
-    LPVOID lpBaseOfDll;
-    DWORD SizeOfImage;
-    LPVOID EntryPoint;
-} MODULEINFO, *LPMODULEINFO;
-
-#else
 #include <Psapi.h>
-#endif
-
 #include <Tlhelp32.h>
 
 typedef int socklen_t;

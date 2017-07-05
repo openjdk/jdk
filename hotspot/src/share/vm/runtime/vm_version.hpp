@@ -31,10 +31,17 @@
 // VM_Version provides information about the VM.
 
 class Abstract_VM_Version: AllStatic {
- protected:
   friend class VMStructs;
+  friend class JVMCIVMStructs;
+
+ protected:
   static const char*  _s_vm_release;
   static const char*  _s_internal_vm_info_string;
+
+  // CPU feature flags.
+  static uint64_t _features;
+  static const char* _features_string;
+
   // These are set by machine-dependent initializations
   static bool         _supports_cx8;
   static bool         _supports_atomic_getset4;
@@ -56,6 +63,12 @@ class Abstract_VM_Version: AllStatic {
                                                   unsigned int dem,
                                                   unsigned int switch_pt);
  public:
+  // Called as part of the runtime services initialization which is
+  // called from the management module initialization (via init_globals())
+  // after argument parsing and attaching of the main thread has
+  // occurred.  Examines a variety of the hardware capabilities of
+  // the platform to determine which features can be used to execute the
+  // program.
   static void initialize();
 
   // This allows for early initialization of VM_Version information
@@ -64,6 +77,11 @@ class Abstract_VM_Version: AllStatic {
   // other part of the VM being initialized when called. Platforms that
   // need to specialize this define VM_Version::early_initialize().
   static void early_initialize() { }
+
+  // Called to initialize VM variables needing initialization
+  // after command line parsing. Platforms that need to specialize
+  // this should define VM_Version::init_before_ergo().
+  static void init_before_ergo() {}
 
   // Name
   static const char* vm_name();
@@ -88,6 +106,14 @@ class Abstract_VM_Version: AllStatic {
   static const char* internal_vm_info_string();
   static const char* jre_release_version();
   static const char* jdk_debug_level();
+
+  static uint64_t features() {
+    return _features;
+  }
+
+  static const char* features_string() {
+    return _features_string;
+  }
 
   // does HW support an 8-byte compare-exchange operation?
   static bool supports_cx8()  {
