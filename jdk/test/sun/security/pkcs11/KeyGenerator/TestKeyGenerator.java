@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,16 @@
  * @summary test the KeyGenerator
  * @author Andreas Sterbenz
  * @library ..
+ * @run main/othervm TestKeyGenerator
+ * @run main/othervm TestKeyGenerator sm
  */
 
-import java.util.*;
-
-import java.security.*;
-
-import javax.crypto.*;
+import java.security.InvalidParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.ProviderException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 
 enum TestResult {
     PASS,
@@ -44,7 +47,7 @@ enum TestResult {
 public class TestKeyGenerator extends PKCS11Test {
 
     public static void main(String[] args) throws Exception {
-        main(new TestKeyGenerator());
+        main(new TestKeyGenerator(), args);
     }
 
     private TestResult test(String algorithm, int keyLen, Provider p,
@@ -85,6 +88,7 @@ public class TestKeyGenerator extends PKCS11Test {
         return actual;
     }
 
+    @Override
     public void main(Provider p) throws Exception {
         test("DES", 0, p, TestResult.FAIL);
         test("DES", 56, p, TestResult.PASS); // ensure JCE-Compatibility
