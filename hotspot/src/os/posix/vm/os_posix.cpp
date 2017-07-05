@@ -1096,6 +1096,8 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   int detachstate = 0;
   pthread_attr_getstacksize(attr, &stack_size);
   pthread_attr_getguardsize(attr, &guard_size);
+  // Work around linux NPTL implementation error, see also os::create_thread() in os_linux.cpp.
+  LINUX_ONLY(stack_size -= guard_size);
   pthread_attr_getdetachstate(attr, &detachstate);
   jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
     stack_size / 1024, guard_size / 1024,
@@ -1105,14 +1107,18 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
 
 // Check minimum allowable stack sizes for thread creation and to initialize
 // the java system classes, including StackOverflowError - depends on page
-// size.  Add two 4K pages for compiler2 recursion in main thread.
-// Add in 4*BytesPerWord 4K pages to account for VM stack during
-// class initialization depending on 32 or 64 bit VM.
+// size.
+// The space needed for frames during startup is platform dependent. It
+// depends on word size, platform calling conventions, C frame layout and
+// interpreter/C1/C2 design decisions. Therefore this is given in a
+// platform (os/cpu) dependent constant.
+// To this, space for guard mechanisms is added, which depends on the
+// page size which again depends on the concrete system the VM is running
+// on. Space for libc guard pages is not included in this size.
 jint os::Posix::set_minimum_stack_sizes() {
-  _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed,
-                                        JavaThread::stack_guard_zone_size() +
-                                        JavaThread::stack_shadow_zone_size() +
-                                        (4 * BytesPerWord COMPILER2_PRESENT(+ 2)) * 4 * K);
+  _java_thread_min_stack_allowed = _java_thread_min_stack_allowed +
+                                   JavaThread::stack_guard_zone_size() +
+                                   JavaThread::stack_shadow_zone_size();
 
   _java_thread_min_stack_allowed = align_size_up(_java_thread_min_stack_allowed, vm_page_size());
 
@@ -1128,28 +1134,14 @@ jint os::Posix::set_minimum_stack_sizes() {
     return JNI_ERR;
   }
 
-#ifdef SOLARIS
-  // For 64kbps there will be a 64kb page size, which makes
-  // the usable default stack size quite a bit less.  Increase the
-  // stack for 64kb (or any > than 8kb) pages, this increases
-  // virtual memory fragmentation (since we're not creating the
-  // stack on a power of 2 boundary.  The real fix for this
-  // should be to fix the guard page mechanism.
-
-  if (vm_page_size() > 8*K) {
-    stack_size_in_bytes = (stack_size_in_bytes != 0)
-       ? stack_size_in_bytes +
-         JavaThread::stack_red_zone_size() +
-         JavaThread::stack_yellow_zone_size()
-       : 0;
-    ThreadStackSize = stack_size_in_bytes/K;
-  }
-#endif // SOLARIS
-
   // Make the stack size a multiple of the page size so that
   // the yellow/red zones can be guarded.
-  JavaThread::set_stack_size_at_create(round_to(stack_size_in_bytes,
-                                                vm_page_size()));
+  JavaThread::set_stack_size_at_create(round_to(stack_size_in_bytes, vm_page_size()));
+
+  // Reminder: a compiler thread is a Java thread.
+  _compiler_thread_min_stack_allowed = _compiler_thread_min_stack_allowed +
+                                       JavaThread::stack_guard_zone_size() +
+                                       JavaThread::stack_shadow_zone_size();
 
   _compiler_thread_min_stack_allowed = align_size_up(_compiler_thread_min_stack_allowed, vm_page_size());
 

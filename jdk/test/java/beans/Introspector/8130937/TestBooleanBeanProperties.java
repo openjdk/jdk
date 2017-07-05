@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.beans.PropertyDescriptor;
 
 /**
  * @test
- * @bug 8130937
+ * @bug 8130937 8131347
  * @summary Tests the booleans properties of the BeanProperty annotation
  * @library ..
  */
@@ -76,6 +76,9 @@ public final class TestBooleanBeanProperties {
         if (getValue(pd, "visualUpdate") != isVS) {
             throw new RuntimeException("required should be: " + isVS);
         }
+        if (pd.getValue("enumerationValues") == null) {
+            throw new RuntimeException("enumerationValues should be empty array");
+        }
     }
 
     private static boolean getValue(PropertyDescriptor pd, String value) {
@@ -107,7 +110,8 @@ public final class TestBooleanBeanProperties {
         }
 
         @BeanProperty(bound = true, expert = true, hidden = true,
-                      preferred = true, required = true, visualUpdate = true)
+                      preferred = true, required = true, visualUpdate = true,
+                      enumerationValues = {})
         public void setValue(int value) {
             this.value = value;
         }

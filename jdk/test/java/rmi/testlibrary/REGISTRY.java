@@ -33,28 +33,48 @@ import java.io.IOException;
  */
 public class REGISTRY extends JavaVM {
 
-    private static double startTimeout = 20_000 * TestLibrary.getTimeoutFactor();
+    private static final double START_TIMEOUT =
+            20_000 * TestLibrary.getTimeoutFactor();
+    private static final String DEFAULT_RUNNER = "RegistryRunner";
 
     private int port = -1;
 
-    private REGISTRY(OutputStream out, OutputStream err,
+    private REGISTRY(String runner, OutputStream out, OutputStream err,
                     String options, int port) {
-        super("RegistryRunner", options, Integer.toString(port), out, err);
+        super(runner, options, Integer.toString(port), out, err);
+        try {
+            Class runnerClass = Class.forName(runner);
+            if (!RegistryRunner.class.isAssignableFrom(runnerClass)) {
+                throw new RuntimeException("runner class must be RegistryRunner"
+                        + " or its sub class");
+            }
+        } catch (ClassNotFoundException ex) {
+            throw new RuntimeException(ex);
+        }
         this.port = port;
     }
 
     public static REGISTRY createREGISTRY() {
-        return createREGISTRY(System.out, System.err, "", 0);
+        return createREGISTRYWithRunner(DEFAULT_RUNNER, System.out, System.err, "", 0);
     }
 
     public static REGISTRY createREGISTRY(OutputStream out, OutputStream err,
                                     String options, int port) {
+        return createREGISTRYWithRunner(DEFAULT_RUNNER, out, err, options, port);
+    }
+
+    public static REGISTRY createREGISTRYWithRunner(String runner, String options) {
+        return createREGISTRYWithRunner(runner, System.out, System.err, options, 0);
+    }
+
+    public static REGISTRY createREGISTRYWithRunner(String runner, OutputStream out,
+                                        OutputStream err, String options, int port) {
         options += " --add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED"
-                 + " --add-exports=java.rmi/sun.rmi.server=ALL-UNNAMED"
-                 + " --add-exports=java.rmi/sun.rmi.transport=ALL-UNNAMED"
-                 + " --add-exports=java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED";
-        REGISTRY reg = new REGISTRY(out, err, options, port);
-        return reg;
+                + " --add-exports=java.rmi/sun.rmi.server=ALL-UNNAMED"
+                + " --add-exports=java.rmi/sun.rmi.transport=ALL-UNNAMED"
+                + " --add-exports=java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED";
+       REGISTRY reg = new REGISTRY(runner, out, err, options, port);
+       return reg;
     }
 
     /**
@@ -65,7 +85,7 @@ public class REGISTRY extends JavaVM {
     public void start() throws IOException {
         super.start();
         long startTime = System.currentTimeMillis();
-        long deadline = TestLibrary.computeDeadline(startTime, (long)startTimeout);
+        long deadline = TestLibrary.computeDeadline(startTime, (long)START_TIMEOUT);
         while (true) {
             try {
                 Thread.sleep(1000);

@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 4290801 4692419 4693631 5101540 5104960 6296410 6336600 6371531
- *    6488442 7036905 8008577 8039317 8074350 8074351 8150324
+ *    6488442 7036905 8008577 8039317 8074350 8074351 8150324 8167143
  * @summary Basic tests for Currency class.
  * @modules java.base/java.util:open
  *          jdk.localedata
@@ -188,7 +188,7 @@ public class CurrencyTest {
     static void testSymbols() {
         testSymbol("USD", Locale.US, "$");
         testSymbol("EUR", Locale.GERMANY, "\u20AC");
-        testSymbol("USD", Locale.PRC, "USD");
+        testSymbol("USD", Locale.PRC, "US$");
     }
 
     static void testSymbol(String currencyCode, Locale locale, String expectedSymbol) {
@@ -262,7 +262,7 @@ public class CurrencyTest {
         testDisplayName("KRW", Locale.KOREAN, "\ub300\ud55c\ubbfc\uad6d \uc6d0");
         testDisplayName("SEK", new Locale("sv"), "svensk krona");
         testDisplayName("CNY", Locale.SIMPLIFIED_CHINESE, "\u4eba\u6c11\u5e01");
-        testDisplayName("TWD", Locale.TRADITIONAL_CHINESE, "\u65b0\u81fa\u5e63");
+        testDisplayName("TWD", Locale.TRADITIONAL_CHINESE, "\u65b0\u53f0\u5e63");
     }
 
     static void testDisplayName(String currencyCode, Locale locale, String expectedName) {

@@ -80,7 +80,7 @@ public class CtrDrbg extends AbstractDrbg {
     @Override
     protected void chooseAlgorithmAndStrength() {
         if (requestedAlgorithm != null) {
-            algorithm = requestedAlgorithm.toUpperCase();
+            algorithm = requestedAlgorithm.toUpperCase(Locale.ROOT);
             int supportedStrength = alg2strength(algorithm);
             if (requestedInstantiationSecurityStrength >= 0) {
                 int tryStrength = getStandardStrength(

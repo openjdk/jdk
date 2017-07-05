@@ -460,16 +460,15 @@ class Assembler : public AbstractAssembler {
     FCTIWZ_OPCODE  = (63u << OPCODE_SHIFT |   15u << 1),
     FRSP_OPCODE    = (63u << OPCODE_SHIFT |   12u << 1),
 
-    // WARNING: using fmadd results in a non-compliant vm. Some floating
-    // point tck tests will fail.
-    FMADD_OPCODE   = (59u << OPCODE_SHIFT |   29u << 1),
-    DMADD_OPCODE   = (63u << OPCODE_SHIFT |   29u << 1),
-    FMSUB_OPCODE   = (59u << OPCODE_SHIFT |   28u << 1),
-    DMSUB_OPCODE   = (63u << OPCODE_SHIFT |   28u << 1),
-    FNMADD_OPCODE  = (59u << OPCODE_SHIFT |   31u << 1),
-    DNMADD_OPCODE  = (63u << OPCODE_SHIFT |   31u << 1),
-    FNMSUB_OPCODE  = (59u << OPCODE_SHIFT |   30u << 1),
-    DNMSUB_OPCODE  = (63u << OPCODE_SHIFT |   30u << 1),
+    // Fused multiply-accumulate instructions.
+    FMADD_OPCODE   = (63u << OPCODE_SHIFT |   29u << 1),
+    FMADDS_OPCODE  = (59u << OPCODE_SHIFT |   29u << 1),
+    FMSUB_OPCODE   = (63u << OPCODE_SHIFT |   28u << 1),
+    FMSUBS_OPCODE  = (59u << OPCODE_SHIFT |   28u << 1),
+    FNMADD_OPCODE  = (63u << OPCODE_SHIFT |   31u << 1),
+    FNMADDS_OPCODE = (59u << OPCODE_SHIFT |   31u << 1),
+    FNMSUB_OPCODE  = (63u << OPCODE_SHIFT |   30u << 1),
+    FNMSUBS_OPCODE = (59u << OPCODE_SHIFT |   30u << 1),
 
     LFD_OPCODE     = (50u << OPCODE_SHIFT |   00u << 1),
     LFDU_OPCODE    = (51u << OPCODE_SHIFT |   00u << 1),
@@ -1938,6 +1937,26 @@ class Assembler : public AbstractAssembler {
   inline void fdiv_( FloatRegister d, FloatRegister a, FloatRegister b);
   inline void fdivs( FloatRegister d, FloatRegister a, FloatRegister b);
   inline void fdivs_(FloatRegister d, FloatRegister a, FloatRegister b);
+
+  // Fused multiply-accumulate instructions.
+  // WARNING: Use only when rounding between the 2 parts is not desired.
+  // Some floating point tck tests will fail if used incorrectly.
+  inline void fmadd(   FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fmadd_(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fmadds(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fmadds_( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fmsub(   FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fmsub_(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fmsubs(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fmsubs_( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fnmadd(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fnmadd_( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fnmadds( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fnmadds_(FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fnmsub(  FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fnmsub_( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fnmsubs( FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
+  inline void fnmsubs_(FloatRegister d, FloatRegister a, FloatRegister c, FloatRegister b);
 
   // PPC 1, section 4.6.6 Floating-Point Rounding and Conversion Instructions
   inline void frsp(  FloatRegister d, FloatRegister b);

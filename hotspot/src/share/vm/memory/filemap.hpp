@@ -155,7 +155,6 @@ public:
     // loading failures during runtime.
     int _classpath_entry_table_size;
     size_t _classpath_entry_size;
-    int    _num_patch_mod_prefixes;   // number of --patch-module entries
     SharedClassPathEntry* _classpath_entry_table;
 
     char* region_addr(int idx);
