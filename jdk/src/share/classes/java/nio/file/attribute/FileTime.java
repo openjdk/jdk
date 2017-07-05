@@ -216,12 +216,14 @@ public final class FileTime
      * "2009-02-13T23:31:30Z"}, and {@code FileTime.fromMillis(1234567890123L).toString()}
      * yields {@code "2009-02-13T23:31:30.123Z"}.
      *
-     * <p> A {@code FileTime} is primarly intended to represent the value of a
+     * <p> A {@code FileTime} is primarily intended to represent the value of a
      * file's time stamp. Where used to represent <i>extreme values</i>, where
      * the year is less than "{@code 0001}" or greater than "{@code 9999}" then
-     * the year may be expanded to more than four digits and may be
-     * negative-signed. If more than four digits then leading zeros are not
-     * present. The year before "{@code 0001}" is "{@code -0001}".
+     * this method deviates from ISO 8601 in the same manner as the
+     * <a href="http://www.w3.org/TR/xmlschema-2/#deviantformats">XML Schema
+     * language</a>. That is, the year may be expanded to more than four digits
+     * and may be negative-signed. If more than four digits then leading zeros
+     * are not present. The year before "{@code 0001}" is "{@code -0001}".
      *
      * @return  the string representation of this file time
      */

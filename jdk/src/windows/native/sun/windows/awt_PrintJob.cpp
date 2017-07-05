@@ -3699,7 +3699,9 @@ static void matchPaperSize(HDC printDC, HGLOBAL hDevMode, HGLOBAL hDevNames,
                            double* newWid, double *newHgt,
                            WORD* paperSize) {
 
-    const double epsilon = 0.50;
+    // Tolerated differences in comparing page dimensions between passed in
+    // "orig" media with that of Windows' device.
+    const double epsilon = 3.6; // (1/72) of an inch
     const double tolerance = (1.0 * 72.0);  // # inches * 72
 
     *newWid = origWid;

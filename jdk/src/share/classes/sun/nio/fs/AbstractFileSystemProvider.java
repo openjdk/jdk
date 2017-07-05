@@ -29,7 +29,6 @@ import java.nio.file.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Collections;
 
 /**
  * Base implementation class of FileSystemProvider
@@ -72,6 +71,8 @@ abstract class AbstractFileSystemProvider extends FileSystemProvider {
         throws IOException
     {
         String[] s = split(attribute);
+        if (s[0].length() == 0)
+            throw new IllegalArgumentException(attribute);
         DynamicFileAttributeView view = getFileAttributeView(file, s[0], options);
         if (view == null)
             throw new UnsupportedOperationException("View '" + s[0] + "' not available");
@@ -83,9 +84,11 @@ abstract class AbstractFileSystemProvider extends FileSystemProvider {
         throws IOException
     {
         String[] s = split(attributes);
+        if (s[0].length() == 0)
+            throw new IllegalArgumentException(attributes);
         DynamicFileAttributeView view = getFileAttributeView(file, s[0], options);
         if (view == null)
-            return Collections.emptyMap();
+            throw new UnsupportedOperationException("View '" + s[0] + "' not available");
         return view.readAttributes(s[1].split(","));
     }
 

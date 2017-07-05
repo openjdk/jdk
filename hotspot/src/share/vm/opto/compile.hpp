@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -596,7 +596,7 @@ class Compile : public Phase {
   }
 
   AliasType*        alias_type(int                idx)  { assert(idx < num_alias_types(), "oob"); return _alias_types[idx]; }
-  AliasType*        alias_type(const TypePtr* adr_type) { return find_alias_type(adr_type, false); }
+  AliasType*        alias_type(const TypePtr* adr_type, ciField* field = NULL) { return find_alias_type(adr_type, false, field); }
   bool         have_alias_type(const TypePtr* adr_type);
   AliasType*        alias_type(ciField*         field);
 
@@ -835,7 +835,7 @@ class Compile : public Phase {
   void grow_alias_types();
   AliasCacheEntry* probe_alias_cache(const TypePtr* adr_type);
   const TypePtr *flatten_alias_type(const TypePtr* adr_type) const;
-  AliasType* find_alias_type(const TypePtr* adr_type, bool no_create);
+  AliasType* find_alias_type(const TypePtr* adr_type, bool no_create, ciField* field);
 
   void verify_top(Node*) const PRODUCT_RETURN;
 

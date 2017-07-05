@@ -150,12 +150,12 @@ class Driver {
                 // See if there is any other action to take.
                 if ("--config-file=".equals(state)) {
                     String propFile = av.remove(0);
-                    InputStream propIn = new FileInputStream(propFile);
                     Properties fileProps = new Properties();
-                    fileProps.load(new BufferedInputStream(propIn));
+                    try (InputStream propIn = new FileInputStream(propFile)) {
+                        fileProps.load(propIn);
+                    }
                     if (engProps.get(verboseProp) != null)
                         fileProps.list(System.out);
-                    propIn.close();
                     for (Map.Entry<Object,Object> me : fileProps.entrySet()) {
                         engProps.put((String) me.getKey(), (String) me.getValue());
                     }
@@ -348,10 +348,10 @@ class Driver {
                 else
                     fileOut = new FileOutputStream(outfile);
                 fileOut = new BufferedOutputStream(fileOut);
-                JarOutputStream out = new JarOutputStream(fileOut);
-                junpack.unpack(in, out);
-                //in.close();  // p200 closes in but not out
-                out.close();
+                try (JarOutputStream out = new JarOutputStream(fileOut)) {
+                    junpack.unpack(in, out);
+                    // p200 closes in but not out
+                }
                 // At this point, we have a good jarfile (or newfile, if -r)
             }
 
@@ -411,8 +411,7 @@ class Driver {
         long filelen = new File(jarfile).length();
         if (filelen <= 0)  return "";
         long skiplen = Math.max(0, filelen - tail.length);
-        InputStream in = new FileInputStream(new File(jarfile));
-        try {
+        try (InputStream in = new FileInputStream(new File(jarfile))) {
             in.skip(skiplen);
             in.read(tail);
             for (int i = tail.length-4; i >= 0; i--) {
@@ -426,8 +425,6 @@ class Driver {
                 }
             }
             return "";
-        } finally {
-            in.close();
         }
     }
 

@@ -44,8 +44,8 @@ import java.util.concurrent.atomic.*;
  * creation time, depending on which constructor is used.
  *
  * <p>This class implements a concurrent variant of <a
- * href="http://www.cs.umd.edu/~pugh/">SkipLists</a> providing
- * expected average <i>log(n)</i> time cost for the
+ * href="http://en.wikipedia.org/wiki/Skip_list" target="_top">SkipLists</a>
+ * providing expected average <i>log(n)</i> time cost for the
  * <tt>containsKey</tt>, <tt>get</tt>, <tt>put</tt> and
  * <tt>remove</tt> operations and their variants.  Insertion, removal,
  * update, and access operations safely execute concurrently by

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,24 +173,45 @@ JNIEXPORT jbyteArray JNICALL Java_sun_tools_attach_WindowsVirtualMachine_generat
 JNIEXPORT jlong JNICALL Java_sun_tools_attach_WindowsVirtualMachine_openProcess
   (JNIEnv *env, jclass cls, jint pid)
 {
-    HANDLE hProcess;
+    HANDLE hProcess = NULL;
 
-    /*
-     * Attempt to open process. If it fails then we try to enable the
-     * SE_DEBUG_NAME privilege and retry.
-     */
-    hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
-    if (hProcess == NULL && GetLastError() == ERROR_ACCESS_DENIED) {
-        hProcess = doPrivilegedOpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
+    if (pid == (jint) GetCurrentProcessId()) {
+        /* process is attaching to itself; get a pseudo handle instead */
+        hProcess = GetCurrentProcess();
+        /* duplicate the pseudo handle so it can be used in more contexts */
+        if (DuplicateHandle(hProcess, hProcess, hProcess, &hProcess,
+                PROCESS_ALL_ACCESS, FALSE, 0) == 0) {
+            /*
+             * Could not duplicate the handle which isn't a good sign,
+             * but we'll try again with OpenProcess() below.
+             */
+            hProcess = NULL;
+        }
     }
 
     if (hProcess == NULL) {
-        if (GetLastError() == ERROR_INVALID_PARAMETER) {
-            JNU_ThrowIOException(env, "no such process");
-        } else {
-            JNU_ThrowIOExceptionWithLastError(env, "OpenProcess failed");
+        /*
+         * Attempt to open process. If it fails then we try to enable the
+         * SE_DEBUG_NAME privilege and retry.
+         */
+        hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
+        if (hProcess == NULL && GetLastError() == ERROR_ACCESS_DENIED) {
+            hProcess = doPrivilegedOpenProcess(PROCESS_ALL_ACCESS, FALSE,
+                           (DWORD)pid);
         }
-        return (jlong)0;
+
+        if (hProcess == NULL) {
+            if (GetLastError() == ERROR_INVALID_PARAMETER) {
+                JNU_ThrowIOException(env, "no such process");
+            } else {
+                char err_mesg[255];
+                /* include the last error in the default detail message */
+                sprintf(err_mesg, "OpenProcess(pid=%d) failed; LastError=0x%x",
+                    (int)pid, (int)GetLastError());
+                JNU_ThrowIOExceptionWithLastError(env, err_mesg);
+            }
+            return (jlong)0;
+        }
     }
 
     /*
