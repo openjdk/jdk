@@ -157,7 +157,7 @@ abstract public class XBaseMenuWindow extends XWindow {
             try {
                 return super.clone();
             } catch (CloneNotSupportedException ex) {
-                throw new InternalError();
+                throw new InternalError(ex);
             }
         }
 

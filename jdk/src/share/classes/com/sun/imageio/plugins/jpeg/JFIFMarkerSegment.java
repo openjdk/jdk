@@ -763,7 +763,7 @@ class JFIFMarkerSegment extends MarkerSegment {
                 }
             } catch (IllegalThumbException e) {
                 // Should never happen
-                throw new InternalError("Illegal thumb in setThumbnail!");
+                throw new InternalError("Illegal thumb in setThumbnail!", e);
             }
         }
 

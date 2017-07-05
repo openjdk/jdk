@@ -127,10 +127,8 @@ public final class SecurityConstants {
                 // AWT present
                 try {
                     return (PermissionFactory<?>)c.newInstance();
-                } catch (InstantiationException x) {
-                    throw new InternalError(x.getMessage());
-                } catch (IllegalAccessException x) {
-                    throw new InternalError(x.getMessage());
+                } catch (ReflectiveOperationException x) {
+                    throw new InternalError(x.getMessage(), x);
                 }
             } else {
                 // AWT not present

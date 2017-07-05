@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Unit test for java.net.URI
- * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363
+ * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363 7041800
  * @author Mark Reinhold
  */
 
@@ -1428,6 +1428,8 @@ public class Test {
         gt(s, new URI("http://jag:CafeBabe@java.sun.com:94/b/c/d?q#f"));
         lt(s, new URI("http://jag:cafebabe@java.sun.com:94/b/c/d?r#f"));
         lt(s, new URI("http://jag:cafebabe@java.sun.com:94/b/c/d?q#g"));
+        eq(new URI("http://host/a%00bcd"), new URI("http://host/a%00bcd"));
+        ne(new URI("http://host/a%00bcd"), new URI("http://host/aZ00bcd"));
 
         lt("p", "s:p");
         lt("s:p", "T:p");
