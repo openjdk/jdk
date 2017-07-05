@@ -796,6 +796,7 @@ class Method : public Metadata {
   void set_not_osr_compilable_quietly(int comp_level = CompLevel_all) {
     set_not_osr_compilable(comp_level, false);
   }
+  bool is_always_compilable() const;
 
  private:
   void print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason);

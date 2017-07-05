@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -485,7 +485,7 @@ int get_legal_text(FileBuff &fbuf, char **legal_text)
 
 // VS2005 has its own definition, identical to this one.
 #if !defined(_WIN32) || defined(_WIN64) || _MSC_VER < 1400
-void *operator new( size_t size, int, const char *, int ) {
+void *operator new( size_t size, int, const char *, int ) throw() {
   return ::operator new( size );
 }
 #endif

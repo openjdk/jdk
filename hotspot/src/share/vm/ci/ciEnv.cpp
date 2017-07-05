@@ -1150,6 +1150,10 @@ void ciEnv::record_out_of_memory_failure() {
   record_method_not_compilable("out of memory");
 }
 
+ciInstance* ciEnv::unloaded_ciinstance() {
+  GUARDED_VM_ENTRY(return _factory->get_unloaded_object_constant();)
+}
+
 void ciEnv::dump_replay_data(outputStream* out) {
   VM_ENTRY_MARK;
   MutexLocker ml(Compile_lock);
