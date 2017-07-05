@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Rules to build signal interposition library, used by vm.make
@@ -80,9 +80,9 @@ endif
 install_jsig: $(LIBJSIG)
 	@echo "Copying $(LIBJSIG) to $(DEST_JSIG)"
 	$(QUIETLY) test ! -f $(LIBJSIG_DEBUGINFO) || \
-	    cp -f $(LIBJSIG_DEBUGINFO) $(DEST_JSIG_DEBUGINFO)
+	    $(CP) -f $(LIBJSIG_DEBUGINFO) $(DEST_JSIG_DEBUGINFO)
 	$(QUIETLY) test ! -f $(LIBJSIG_DIZ) || \
-	    cp -f $(LIBJSIG_DIZ) $(DEST_JSIG_DIZ)
-	$(QUIETLY) cp -f $(LIBJSIG) $(DEST_JSIG) && echo "Done"
+	    $(CP) -f $(LIBJSIG_DIZ) $(DEST_JSIG_DIZ)
+	$(QUIETLY) $(CP) -f $(LIBJSIG) $(DEST_JSIG) && echo "Done"
 
 .PHONY: install_jsig
