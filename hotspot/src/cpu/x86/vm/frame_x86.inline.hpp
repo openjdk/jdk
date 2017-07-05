@@ -233,7 +233,8 @@ inline intptr_t* frame::interpreter_frame_tos_address() const {
   } else {
     // sp() may have been extended or shrunk by an adapter.  At least
     // check that we don't fall behind the legal region.
-    assert(last_sp < (intptr_t*) interpreter_frame_monitor_begin(), "bad tos");
+    // For top deoptimized frame last_sp == interpreter_frame_monitor_end.
+    assert(last_sp <= (intptr_t*) interpreter_frame_monitor_end(), "bad tos");
     return last_sp;
   }
 }

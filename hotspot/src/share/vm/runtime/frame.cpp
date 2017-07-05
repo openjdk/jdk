@@ -606,12 +606,12 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
   for (BasicObjectLock* current = interpreter_frame_monitor_end();
        current < interpreter_frame_monitor_begin();
        current = next_monitor_in_interpreter_frame(current)) {
-    st->print_cr(" [ - obj ");
+    st->print(" - obj    [");
     current->obj()->print_value_on(st);
-    st->cr();
-    st->print_cr(" - lock ");
+    st->print_cr("]");
+    st->print(" - lock   [");
     current->lock()->print_on(st);
-    st->cr();
+    st->print_cr("]");
   }
   // monitor
   st->print_cr(" - monitor[" INTPTR_FORMAT "]", interpreter_frame_monitor_begin());
