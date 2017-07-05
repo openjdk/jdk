@@ -65,6 +65,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.Clock;
 import java.time.DateTimeException;
@@ -89,6 +90,13 @@ import java.util.Objects;
  * This date operates using the {@linkplain MinguoChronology Minguo calendar}.
  * This calendar system is primarily used in the Republic of China, often known as Taiwan.
  * Dates are aligned such that {@code 0001-01-01 (Minguo)} is {@code 1912-01-01 (ISO)}.
+ *
+ * <p>
+ * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on instances of
+ * {@code MinguoDate} may have unpredictable results and should be avoided.
+ * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -432,6 +440,18 @@ public final class MinguoDate
     }
 
     //-------------------------------------------------------------------------
+    /**
+     * Compares this date to another date, including the chronology.
+     * <p>
+     * Compares this {@code MinguoDate} with another ensuring that the date is the same.
+     * <p>
+     * Only objects of type {@code MinguoDate} are compared, other types return false.
+     * To compare the dates of two {@code TemporalAccessor} instances, including dates
+     * in two different chronologies, use {@link ChronoField#EPOCH_DAY} as a comparator.
+     *
+     * @param obj  the object to check, null returns false
+     * @return true if this is equal to the other date
+     */
     @Override  // override for performance
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -444,6 +464,11 @@ public final class MinguoDate
         return false;
     }
 
+    /**
+     * A hash code for this date.
+     *
+     * @return a suitable hash code based only on the Chronology and the date
+     */
     @Override  // override for performance
     public int hashCode() {
         return getChronology().getId().hashCode() ^ isoDate.hashCode();
@@ -452,10 +477,10 @@ public final class MinguoDate
     //-----------------------------------------------------------------------
     /**
      * Defend against malicious streams.
-     * @return never
+     *
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws InvalidObjectException {
+    private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

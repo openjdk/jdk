@@ -70,11 +70,13 @@ import java.time.zone.ZoneRules;
 
 import static org.testng.Assert.assertEquals;
 
+import tck.java.time.AbstractTCKTest;
+
 /**
  * Test serialization of ZoneRules.
  */
 @Test
-public class TCKZoneRulesSerialization {
+public class TCKZoneRulesSerialization extends AbstractTCKTest{
 
     public void test_serialization_loaded() throws Exception {
         assertSerialization(europeLondon());
@@ -118,5 +120,9 @@ public class TCKZoneRulesSerialization {
         return ZoneId.of("America/New_York").getRules();
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(ZoneRules.class);
+    }
 
 }

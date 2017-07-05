@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,21 +379,24 @@ abstract class DoublePipeline<E_IN>
     public final double sum() {
         /*
          * In the arrays allocated for the collect operation, index 0
-         * holds the high-order bits of the running sum and index 1
-         * holds the low-order bits of the sum computed via
-         * compensated summation.
+         * holds the high-order bits of the running sum, index 1 holds
+         * the low-order bits of the sum computed via compensated
+         * summation, and index 2 holds the simple sum used to compute
+         * the proper result if the stream contains infinite values of
+         * the same sign.
          */
-        double[] summation = collect(() -> new double[2],
+        double[] summation = collect(() -> new double[3],
                                (ll, d) -> {
                                    Collectors.sumWithCompensation(ll, d);
+                                   ll[2] += d;
                                },
                                (ll, rr) -> {
                                    Collectors.sumWithCompensation(ll, rr[0]);
                                    Collectors.sumWithCompensation(ll, rr[1]);
+                                   ll[2] += rr[2];
                                });
 
-        // Better error bounds to add both terms as the final sum
-        return summation[0] + summation[1];
+        return Collectors.computeFinalSum(summation);
     }
 
     @Override
@@ -421,27 +424,29 @@ abstract class DoublePipeline<E_IN>
          * In the arrays allocated for the collect operation, index 0
          * holds the high-order bits of the running sum, index 1 holds
          * the low-order bits of the sum computed via compensated
-         * summation, and index 2 holds the number of values seen.
+         * summation, index 2 holds the number of values seen, index 3
+         * holds the simple sum.
          */
-        double[] avg = collect(() -> new double[3],
+        double[] avg = collect(() -> new double[4],
                                (ll, d) -> {
                                    ll[2]++;
                                    Collectors.sumWithCompensation(ll, d);
+                                   ll[3] += d;
                                },
                                (ll, rr) -> {
                                    Collectors.sumWithCompensation(ll, rr[0]);
                                    Collectors.sumWithCompensation(ll, rr[1]);
                                    ll[2] += rr[2];
+                                   ll[3] += rr[3];
                                });
         return avg[2] > 0
-            // Better error bounds to add both terms as the final sum to compute average
-            ? OptionalDouble.of((avg[0] + avg[1]) / avg[2])
+            ? OptionalDouble.of(Collectors.computeFinalSum(avg) / avg[2])
             : OptionalDouble.empty();
     }
 
     @Override
     public final long count() {
-        return mapToObj(e -> null).mapToInt(e -> 1).sum();
+        return mapToLong(e -> 1L).sum();
     }
 
     @Override

@@ -1167,7 +1167,7 @@ public class LinkedList<E>
      */
     @Override
     public Spliterator<E> spliterator() {
-        return new LLSpliterator<E>(this, -1, 0);
+        return new LLSpliterator<>(this, -1, 0);
     }
 
     /** A customized variant of Spliterators.IteratorSpliterator */

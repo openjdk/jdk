@@ -297,8 +297,8 @@ class StringTokenizer implements Enumeration<Object> {
     }
 
     private boolean isDelimiter(int codePoint) {
-        for (int i = 0; i < delimiterCodePoints.length; i++) {
-            if (delimiterCodePoints[i] == codePoint) {
+        for (int delimiterCodePoint : delimiterCodePoints) {
+            if (delimiterCodePoint == codePoint) {
                 return true;
             }
         }

@@ -121,7 +121,7 @@ public class TreeSet<E> extends AbstractSet<E>
      * {@code ClassCastException}.
      */
     public TreeSet() {
-        this(new TreeMap<E,Object>());
+        this(new TreeMap<>());
     }
 
     /**

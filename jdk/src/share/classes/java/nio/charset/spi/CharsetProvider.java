@@ -71,6 +71,14 @@ import java.util.Iterator;
 
 public abstract class CharsetProvider {
 
+    private static Void checkPermission() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+            sm.checkPermission(new RuntimePermission("charsetProvider"));
+        return null;
+    }
+    private CharsetProvider(Void ignore) { }
+
     /**
      * Initializes a new charset provider.
      *
@@ -79,9 +87,7 @@ public abstract class CharsetProvider {
      *          {@link RuntimePermission}<tt>("charsetProvider")</tt>
      */
     protected CharsetProvider() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("charsetProvider"));
+        this(checkPermission());
     }
 
     /**

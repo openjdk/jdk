@@ -2108,9 +2108,8 @@ public class Logger {
 
         // Recursively update the level on each of our kids.
         if (kids != null) {
-            for (int i = 0; i < kids.size(); i++) {
-                LogManager.LoggerWeakRef ref = kids.get(i);
-                Logger kid =  ref.get();
+            for (LogManager.LoggerWeakRef ref : kids) {
+                Logger kid = ref.get();
                 if (kid != null) {
                     kid.updateEffectiveLevel();
                 }

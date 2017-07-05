@@ -145,7 +145,9 @@ public class InactiveGroup
              * activation group's process hasn't gone away.
              */
             System.err.println("Ping unicast object for existence");
-            for (int i = 0; i < 10; i++) {
+            // set timeout 5 seconds
+            final long stopTime = System.currentTimeMillis() + 5000;
+            while (System.currentTimeMillis() < stopTime) {
                 unicastObj.ping();
                 Thread.sleep(500);
             }

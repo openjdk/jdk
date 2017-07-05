@@ -58,17 +58,18 @@ package tck.java.time;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamConstants;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.Formatter;
 
 /**
@@ -162,6 +163,42 @@ public abstract class AbstractTCKTest {
                 assertEquals(dis.read(), -1);
             }
         }
+    }
+
+    /**
+     * Verify the class cannot be deserialized from a handcoded stream.
+     * Fail if the deserialization does <em>not</em> throw an Exception.
+     * @param serClass the class to embed in the handcoded stream
+     * @throws Exception if an unexpected condition occurs
+     */
+    protected static void assertNotSerializable(Class<?> serClass) throws Exception {
+        Field field = serClass.getDeclaredField("serialVersionUID");
+        field.setAccessible(true);
+        long serVer = (Long) field.get(null);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (DataOutputStream out = new DataOutputStream(baos)) {
+            out.writeShort(ObjectStreamConstants.STREAM_MAGIC);
+            out.writeShort(ObjectStreamConstants.STREAM_VERSION);
+            out.writeByte(ObjectStreamConstants.TC_OBJECT);
+            out.writeByte(ObjectStreamConstants.TC_CLASSDESC);
+            out.writeUTF(serClass.getName());
+            out.writeLong(serVer);
+            out.writeByte(ObjectStreamConstants.SC_SERIALIZABLE);   // Flags ObjectStreamConstants
+            out.writeShort(0);  // number of fields
+            out.writeByte(ObjectStreamConstants.TC_ENDBLOCKDATA);
+            out.writeByte(ObjectStreamConstants.TC_NULL);  // no superclasses
+        }
+
+        byte[] bytes = baos.toByteArray();
+
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+            ObjectInputStream in = new ObjectInputStream(bis)) {
+            Object o = in.readObject();
+        } catch (Exception ioe) {
+            // Expected exception
+            return;
+        }
+        fail("Class should not be deserializable " + serClass.getName());
     }
 
 

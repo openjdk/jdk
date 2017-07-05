@@ -1374,8 +1374,8 @@ public class Vector<E>
         public Spliterator<E> trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
             return (lo >= mid) ? null :
-                new VectorSpliterator<E>(list, array, lo, index = mid,
-                                         expectedModCount);
+                new VectorSpliterator<>(list, array, lo, index = mid,
+                                        expectedModCount);
         }
 
         @SuppressWarnings("unchecked")
