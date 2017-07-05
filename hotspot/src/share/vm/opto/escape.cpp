@@ -1386,12 +1386,12 @@ int ConnectionGraph::find_init_values(JavaObjectNode* pta, PointsToNode* init_va
     // Non-escaped allocation returned from Java or runtime call have
     // unknown values in fields.
     for (EdgeIterator i(pta); i.has_next(); i.next()) {
-      PointsToNode* ptn = i.get();
-      if (ptn->is_Field() && ptn->as_Field()->is_oop()) {
-        if (add_edge(ptn, phantom_obj)) {
+      PointsToNode* field = i.get();
+      if (field->is_Field() && field->as_Field()->is_oop()) {
+        if (add_edge(field, phantom_obj)) {
           // New edge was added
           new_edges++;
-          add_field_uses_to_worklist(ptn->as_Field());
+          add_field_uses_to_worklist(field->as_Field());
         }
       }
     }
@@ -1413,30 +1413,30 @@ int ConnectionGraph::find_init_values(JavaObjectNode* pta, PointsToNode* init_va
   // captured by Initialize node.
   //
   for (EdgeIterator i(pta); i.has_next(); i.next()) {
-    PointsToNode* ptn = i.get(); // Field (AddP)
-    if (!ptn->is_Field() || !ptn->as_Field()->is_oop())
+    PointsToNode* field = i.get(); // Field (AddP)
+    if (!field->is_Field() || !field->as_Field()->is_oop())
       continue; // Not oop field
-    int offset = ptn->as_Field()->offset();
+    int offset = field->as_Field()->offset();
     if (offset == Type::OffsetBot) {
       if (!visited_bottom_offset) {
         // OffsetBot is used to reference array's element,
         // always add reference to NULL to all Field nodes since we don't
         // known which element is referenced.
-        if (add_edge(ptn, null_obj)) {
+        if (add_edge(field, null_obj)) {
           // New edge was added
           new_edges++;
-          add_field_uses_to_worklist(ptn->as_Field());
+          add_field_uses_to_worklist(field->as_Field());
           visited_bottom_offset = true;
         }
       }
     } else {
       // Check only oop fields.
-      const Type* adr_type = ptn->ideal_node()->as_AddP()->bottom_type();
+      const Type* adr_type = field->ideal_node()->as_AddP()->bottom_type();
       if (adr_type->isa_rawptr()) {
 #ifdef ASSERT
         // Raw pointers are used for initializing stores so skip it
         // since it should be recorded already
-        Node* base = get_addp_base(ptn->ideal_node());
+        Node* base = get_addp_base(field->ideal_node());
         assert(adr_type->isa_rawptr() && base->is_Proj() &&
                (base->in(0) == alloc),"unexpected pointer type");
 #endif
@@ -1446,10 +1446,54 @@ int ConnectionGraph::find_init_values(JavaObjectNode* pta, PointsToNode* init_va
         offsets_worklist.append(offset);
         Node* value = NULL;
         if (ini != NULL) {
-          BasicType ft = UseCompressedOops ? T_NARROWOOP : T_OBJECT;
-          Node* store = ini->find_captured_store(offset, type2aelembytes(ft), phase);
-          if (store != NULL && store->is_Store()) {
+          // StoreP::memory_type() == T_ADDRESS
+          BasicType ft = UseCompressedOops ? T_NARROWOOP : T_ADDRESS;
+          Node* store = ini->find_captured_store(offset, type2aelembytes(ft, true), phase);
+          // Make sure initializing store has the same type as this AddP.
+          // This AddP may reference non existing field because it is on a
+          // dead branch of bimorphic call which is not eliminated yet.
+          if (store != NULL && store->is_Store() &&
+              store->as_Store()->memory_type() == ft) {
             value = store->in(MemNode::ValueIn);
+#ifdef ASSERT
+            if (VerifyConnectionGraph) {
+              // Verify that AddP already points to all objects the value points to.
+              PointsToNode* val = ptnode_adr(value->_idx);
+              assert((val != NULL), "should be processed already");
+              PointsToNode* missed_obj = NULL;
+              if (val->is_JavaObject()) {
+                if (!field->points_to(val->as_JavaObject())) {
+                  missed_obj = val;
+                }
+              } else {
+                if (!val->is_LocalVar() || (val->edge_count() == 0)) {
+                  tty->print_cr("----------init store has invalid value -----");
+                  store->dump();
+                  val->dump();
+                  assert(val->is_LocalVar() && (val->edge_count() > 0), "should be processed already");
+                }
+                for (EdgeIterator j(val); j.has_next(); j.next()) {
+                  PointsToNode* obj = j.get();
+                  if (obj->is_JavaObject()) {
+                    if (!field->points_to(obj->as_JavaObject())) {
+                      missed_obj = obj;
+                      break;
+                    }
+                  }
+                }
+              }
+              if (missed_obj != NULL) {
+                tty->print_cr("----------field---------------------------------");
+                field->dump();
+                tty->print_cr("----------missed referernce to object-----------");
+                missed_obj->dump();
+                tty->print_cr("----------object referernced by init store -----");
+                store->dump();
+                val->dump();
+                assert(!field->points_to(missed_obj->as_JavaObject()), "missed JavaObject reference");
+              }
+            }
+#endif
           } else {
             // There could be initializing stores which follow allocation.
             // For example, a volatile field store is not collected
@@ -1462,10 +1506,10 @@ int ConnectionGraph::find_init_values(JavaObjectNode* pta, PointsToNode* init_va
         }
         if (value == NULL) {
           // A field's initializing value was not recorded. Add NULL.
-          if (add_edge(ptn, null_obj)) {
+          if (add_edge(field, null_obj)) {
             // New edge was added
             new_edges++;
-            add_field_uses_to_worklist(ptn->as_Field());
+            add_field_uses_to_worklist(field->as_Field());
           }
         }
       }
@@ -1607,7 +1651,26 @@ void ConnectionGraph::verify_connection_graph(
       }
       // Verify that all fields have initializing values.
       if (field->edge_count() == 0) {
+        tty->print_cr("----------field does not have references----------");
         field->dump();
+        for (BaseIterator i(field); i.has_next(); i.next()) {
+          PointsToNode* base = i.get();
+          tty->print_cr("----------field has next base---------------------");
+          base->dump();
+          if (base->is_JavaObject() && (base != phantom_obj) && (base != null_obj)) {
+            tty->print_cr("----------base has fields-------------------------");
+            for (EdgeIterator j(base); j.has_next(); j.next()) {
+              j.get()->dump();
+            }
+            tty->print_cr("----------base has references---------------------");
+            for (UseIterator j(base); j.has_next(); j.next()) {
+              j.get()->dump();
+            }
+          }
+        }
+        for (UseIterator i(field); i.has_next(); i.next()) {
+          i.get()->dump();
+        }
         assert(field->edge_count() > 0, "sanity");
       }
     }
@@ -1967,7 +2030,7 @@ bool PointsToNode::points_to(JavaObjectNode* ptn) const {
   if (is_JavaObject()) {
     return (this == ptn);
   }
-  assert(is_LocalVar(), "sanity");
+  assert(is_LocalVar() || is_Field(), "sanity");
   for (EdgeIterator i(this); i.has_next(); i.next()) {
     if (i.get() == ptn)
       return true;
@@ -3127,10 +3190,14 @@ void PointsToNode::dump(bool print_state) const {
     EscapeState fields_es = fields_escape_state();
     tty->print("%s(%s) ", esc_names[(int)es], esc_names[(int)fields_es]);
     if (nt == PointsToNode::JavaObject && !this->scalar_replaceable())
-      tty->print("NSR");
+      tty->print("NSR ");
   }
   if (is_Field()) {
     FieldNode* f = (FieldNode*)this;
+    if (f->is_oop())
+      tty->print("oop ");
+    if (f->offset() > 0)
+      tty->print("+%d ", f->offset());
     tty->print("(");
     for (BaseIterator i(f); i.has_next(); i.next()) {
       PointsToNode* b = i.get();
