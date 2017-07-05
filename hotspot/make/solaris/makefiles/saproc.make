@@ -93,7 +93,7 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	  exit 1; \
 	fi
 	@echo Making SA debugger back-end...
-	$(QUIETLY) $(CPP)                                               \
+	$(QUIETLY) $(CXX)                                               \
                    $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG)     \
 	           -I$(SASRCDIR)                                        \
 	           -I$(GENERATED)                                       \

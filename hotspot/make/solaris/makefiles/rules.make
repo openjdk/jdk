@@ -27,43 +27,30 @@
 # Tell make that .cpp is important
 .SUFFIXES: .cpp $(SUFFIXES)
 
-# For now.  Other makefiles use CPP as the c++ compiler, but that should really
-# name the preprocessor.
-ifeq    ($(CCC),)
-CCC             = $(CPP)
-endif
-
 DEMANGLER       = c++filt
 DEMANGLE        = $(DEMANGLER) < $@ > .$@ && mv -f .$@ $@
 
-# $(CC) is the c compiler (cc/gcc), $(CCC) is the c++ compiler (CC/g++).
-C_COMPILE       = $(CC) $(CPPFLAGS) $(CFLAGS)
-CC_COMPILE      = $(CCC) $(CPPFLAGS) $(CFLAGS)
+# $(CC) is the c compiler (cc/gcc), $(CXX) is the c++ compiler (CC/g++).
+CC_COMPILE       = $(CC) $(CXXFLAGS) $(CFLAGS)
+CXX_COMPILE      = $(CXX) $(CXXFLAGS) $(CFLAGS)
 
 AS.S            = $(AS) $(ASFLAGS)
 
-COMPILE.c       = $(C_COMPILE) -c
-GENASM.c        = $(C_COMPILE) -S
-LINK.c          = $(CC) $(LFLAGS) $(AOUT_FLAGS) $(PROF_AOUT_FLAGS)
-LINK_LIB.c      = $(CC) $(LFLAGS) $(SHARED_FLAG)
-PREPROCESS.c    = $(C_COMPILE) -E
+COMPILE.CC       = $(CC_COMPILE) -c
+GENASM.CC        = $(CC_COMPILE) -S
+LINK.CC          = $(CC) $(LFLAGS) $(AOUT_FLAGS) $(PROF_AOUT_FLAGS)
+LINK_LIB.CC      = $(CC) $(LFLAGS) $(SHARED_FLAG)
+PREPROCESS.CC    = $(CC_COMPILE) -E
 
-COMPILE.CC      = $(CC_COMPILE) -c
-GENASM.CC       = $(CC_COMPILE) -S
-LINK.CC         = $(CCC) $(LFLAGS) $(AOUT_FLAGS) $(PROF_AOUT_FLAGS)
-LINK_NOPROF.CC  = $(CCC) $(LFLAGS) $(AOUT_FLAGS)
-LINK_LIB.CC     = $(CCC) $(LFLAGS) $(SHARED_FLAG)
-PREPROCESS.CC   = $(CC_COMPILE) -E
+COMPILE.CXX      = $(CXX_COMPILE) -c
+GENASM.CXX       = $(CXX_COMPILE) -S
+LINK.CXX         = $(CXX) $(LFLAGS) $(AOUT_FLAGS) $(PROF_AOUT_FLAGS)
+LINK_NOPROF.CXX  = $(CXX) $(LFLAGS) $(AOUT_FLAGS)
+LINK_LIB.CXX     = $(CXX) $(LFLAGS) $(SHARED_FLAG)
+PREPROCESS.CXX   = $(CXX_COMPILE) -E
 
 # Effect of REMOVE_TARGET is to delete out-of-date files during "gnumake -k".
 REMOVE_TARGET   = rm -f $@
-
-# Synonyms.
-COMPILE.cpp     = $(COMPILE.CC)
-GENASM.cpp      = $(GENASM.CC)
-LINK.cpp        = $(LINK.CC)
-LINK_LIB.cpp    = $(LINK_LIB.CC)
-PREPROCESS.cpp  = $(PREPROCESS.CC)
 
 # Note use of ALT_BOOTDIR to explicitly specify location of java and
 # javac; this is the same environment variable used in the J2SE build
@@ -153,14 +140,14 @@ ifdef LP64
 %.o: %.cpp
 	@echo Compiling $<
 	$(QUIETLY) $(REMOVE_TARGET)
-	$(QUIETLY) $(COMPILE.CC) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE)
+	$(QUIETLY) $(COMPILE.CXX) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE)
 else
 %.o: %.cpp
 	@echo Compiling $<
 	$(QUIETLY) $(REMOVE_TARGET)
 	$(QUIETLY) $(if $(findstring $@, $(NONPIC_OBJ_FILES)), \
-	   $(subst $(VM_PICFLAG), ,$(COMPILE.CC)) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE), \
-	   $(COMPILE.CC) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE))
+	   $(subst $(VM_PICFLAG), ,$(COMPILE.CXX)) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE), \
+	   $(COMPILE.CXX) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE))
 endif
 
 %.o: %.s
@@ -170,13 +157,13 @@ endif
 
 %.s: %.cpp
 	@echo Generating assembly for $<
-	$(QUIETLY) $(GENASM.CC) -o $@ $<
+	$(QUIETLY) $(GENASM.CXX) -o $@ $<
 	$(QUIETLY) $(DEMANGLE) $(COMPILE_DONE)
 
 # Intermediate files (for debugging macros)
 %.i: %.cpp
 	@echo Preprocessing $< to $@
-	$(QUIETLY) $(PREPROCESS.CC) $< > $@ $(COMPILE_DONE)
+	$(QUIETLY) $(PREPROCESS.CXX) $< > $@ $(COMPILE_DONE)
 
 #  Override gnumake built-in rules which do sccs get operations badly.
 #  (They put the checked out code in the current directory, not in the
