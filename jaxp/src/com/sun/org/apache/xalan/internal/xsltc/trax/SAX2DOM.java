@@ -74,12 +74,12 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
             DocumentBuilderFactory.newInstance();
     private boolean _internal = true;
 
-    public SAX2DOM(boolean useServicesMachnism) throws ParserConfigurationException {
-        _document = createDocument(useServicesMachnism);
+    public SAX2DOM(boolean useServicesMechanism) throws ParserConfigurationException {
+        _document = createDocument(useServicesMechanism);
         _root = _document;
     }
 
-    public SAX2DOM(Node root, Node nextSibling, boolean useServicesMachnism) throws ParserConfigurationException {
+    public SAX2DOM(Node root, Node nextSibling, boolean useServicesMechanism) throws ParserConfigurationException {
         _root = root;
         if (root instanceof Document) {
           _document = (Document)root;
@@ -88,15 +88,15 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
           _document = root.getOwnerDocument();
         }
         else {
-          _document = createDocument(useServicesMachnism);
+          _document = createDocument(useServicesMechanism);
           _root = _document;
         }
 
         _nextSibling = nextSibling;
     }
 
-    public SAX2DOM(Node root, boolean useServicesMachnism) throws ParserConfigurationException {
-        this(root, null, useServicesMachnism);
+    public SAX2DOM(Node root, boolean useServicesMechanism) throws ParserConfigurationException {
+        this(root, null, useServicesMechanism);
     }
 
     public Node getDOM() {
@@ -308,18 +308,19 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
     public void startDTD(String name, String publicId, String systemId)
         throws SAXException {}
 
-    private Document createDocument(boolean useServicesMachnism) throws ParserConfigurationException {
+    private Document createDocument(boolean useServicesMechanism) throws ParserConfigurationException {
         if (_factory == null) {
-            if (useServicesMachnism)
+            if (useServicesMechanism) {
                 _factory = DocumentBuilderFactory.newInstance();
                 if (!(_factory instanceof com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl)) {
                     _internal = false;
                 }
-            else
+            } else {
                 _factory = DocumentBuilderFactory.newInstance(
                   "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
                   SAX2DOM.class.getClassLoader()
                   );
+            }
         }
         Document doc;
         if (_internal) {

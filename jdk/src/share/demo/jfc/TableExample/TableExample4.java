@@ -54,7 +54,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
 /**
  * Another JTable example, showing how column attributes can be refined
  * even when columns have been created automatically. Here we create some
- * specialised renderers and editors as well as changing widths and colors
+ * specialized renderers and editors as well as changing widths and colors
  * for some of the columns in the SwingSet demo table.
  *
  * @author Philip Milne

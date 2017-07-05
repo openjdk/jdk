@@ -772,7 +772,7 @@ OGLTR_UpdateCachedDestination(OGLSDOps *dstOps, GlyphInfo *ginfo,
             } else if (remainingWidth < ginfo->width) {
                 // in some cases, the x-advance may be slightly smaller
                 // than the actual width of the glyph; if so, adjust our
-                // estimate so that we can accomodate the entire glyph
+                // estimate so that we can accommodate the entire glyph
                 remainingWidth = ginfo->width;
             }
         } else {

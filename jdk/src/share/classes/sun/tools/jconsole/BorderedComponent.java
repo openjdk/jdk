@@ -266,7 +266,7 @@ public class BorderedComponent extends JPanel implements ActionListener {
      * default position.
      * <p>
      * If the border property value is not
-     * specified in the constuctor or by invoking the appropriate
+     * specified in the constructor or by invoking the appropriate
      * set method, the property value will be defined by the current
      * look and feel, using the following property name in the
      * Defaults Table:

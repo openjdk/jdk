@@ -234,7 +234,7 @@ public class CodeSource implements java.io.Serializable {
      * Returns true if this CodeSource object "implies" the specified CodeSource.
      * <p>
      * More specifically, this method makes the following checks.
-     * If any fail, it returns false. If they all succeed, it returns true.<p>
+     * If any fail, it returns false. If they all succeed, it returns true.
      * <ul>
      * <li> <i>codesource</i> must not be null.
      * <li> If this object's certificates are not null, then all
@@ -242,7 +242,7 @@ public class CodeSource implements java.io.Serializable {
      * certificates.
      * <li> If this object's location (getLocation()) is not null, then the
      * following checks are made against this object's location and
-     * <i>codesource</i>'s:<p>
+     * <i>codesource</i>'s:
      *   <ul>
      *     <li>  <i>codesource</i>'s location must not be null.
      *

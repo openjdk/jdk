@@ -38,7 +38,7 @@ public interface BeanContextServiceRevokedListener extends EventListener {
 
     /**
      * The service named has been revoked. getService requests for
-     * this service will no longer be satisifed.
+     * this service will no longer be satisfied.
      * @param bcsre the <code>BeanContextServiceRevokedEvent</code> received
      * by this listener.
      */

@@ -252,6 +252,13 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
                 updateWindow(true);
             }
         }
+
+        // See https://javafx-jira.kenai.com/browse/RT-32570
+        WComponentPeer owner = getNativeParent();
+        if (owner != null && owner.isLightweightFramePeer()) {
+            Rectangle b = getBounds();
+            handleExpose(0, 0, b.width, b.height);
+        }
     }
 
     // Synchronize the insets members (here & in helper) with actual window

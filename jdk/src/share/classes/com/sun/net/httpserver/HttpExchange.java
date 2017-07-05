@@ -170,7 +170,7 @@ public abstract class HttpExchange {
      * then no response body is being sent.
      * <p>
      * If the content-length response header has not already been set then
-     * this is set to the apropriate value depending on the response length parameter.
+     * this is set to the appropriate value depending on the response length parameter.
      * <p>
      * This method must be called prior to calling {@link #getResponseBody()}.
      * @param rCode the response code to send

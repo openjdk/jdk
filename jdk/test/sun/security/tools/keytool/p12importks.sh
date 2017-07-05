@@ -50,7 +50,7 @@ KT=$TESTJAVA${FS}bin${FS}keytool
 
 rm jks 2> /dev/null
 $KT -genkeypair -keystore jks -storetype jks -alias me -dname CN=Me \
-	-storepass pass1111 -keypass pass1111 || exit 11
+	-keyalg rsa -storepass pass1111 -keypass pass1111 || exit 11
 
 # Cannot only change storepass
 rm p12 2> /dev/null
@@ -85,7 +85,7 @@ $KT -certreq -storetype pkcs12 -keystore p12 -alias me \
 
 rm jks 2> /dev/null
 $KT -genkeypair -keystore jks -storetype jks -alias me -dname CN=Me \
-	-storepass pass1111 -keypass pass2222 || exit 21
+	-keyalg rsa -storepass pass1111 -keypass pass2222 || exit 21
 
 # Can use old keypass as new storepass so new storepass and keypass are same
 rm p12 2> /dev/null

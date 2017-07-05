@@ -50,7 +50,7 @@ public class SharedMemoryAttachingConnector extends GenericAttachingConnector {
 
         transport = new Transport() {
             public String name() {
-                return "dt_shmem";              // for compatability reasons
+                return "dt_shmem";              // for compatibility reasons
             }
         };
     }

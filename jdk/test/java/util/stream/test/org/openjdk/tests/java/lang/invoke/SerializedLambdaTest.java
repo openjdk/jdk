@@ -22,9 +22,18 @@
  */
 package org.openjdk.tests.java.lang.invoke;
 
-import org.testng.annotations.Test;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,6 +42,8 @@ import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+
+import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -276,5 +287,67 @@ public class SerializedLambdaTest {
         AtomicLong a = new AtomicLong();
         LongConsumer lc = (LongConsumer & Serializable) a::addAndGet;
         assertSerial(lc, plc -> { plc.accept(3); });
+    }
+
+    // Tests of direct use of metafactories
+
+    private static boolean foo(Object s) { return s != null && ((String) s).length() > 0; }
+    private static final MethodType predicateMT = MethodType.methodType(boolean.class, Object.class);
+    private static final MethodType stringPredicateMT = MethodType.methodType(boolean.class, String.class);
+    private static final Consumer<Predicate<String>> fooAsserter = x -> {
+        assertTrue(x.test("foo"));
+        assertFalse(x.test(""));
+        assertFalse(x.test(null));
+    };
+
+    // standard MF: nonserializable supertype
+    public void testDirectStdNonser() throws Throwable {
+        MethodHandle fooMH = MethodHandles.lookup().findStatic(SerializedLambdaTest.class, "foo", predicateMT);
+
+        // Standard metafactory, non-serializable target: not serializable
+        CallSite cs = LambdaMetafactory.metafactory(MethodHandles.lookup(),
+                                                    "test", MethodType.methodType(Predicate.class),
+                                                    predicateMT, fooMH, stringPredicateMT);
+        Predicate<String> p = (Predicate<String>) cs.getTarget().invokeExact();
+        assertNotSerial(p, fooAsserter);
+    }
+
+    // standard MF: serializable supertype
+    public void testDirectStdSer() throws Throwable {
+        MethodHandle fooMH = MethodHandles.lookup().findStatic(SerializedLambdaTest.class, "foo", predicateMT);
+
+        // Standard metafactory, serializable target: not serializable
+        CallSite cs = LambdaMetafactory.metafactory(MethodHandles.lookup(),
+                                                    "test", MethodType.methodType(SerPredicate.class),
+                                                    predicateMT, fooMH, stringPredicateMT);
+        assertNotSerial((SerPredicate<String>) cs.getTarget().invokeExact(), fooAsserter);
+    }
+
+    // alt MF: nonserializable supertype
+    public void testAltStdNonser() throws Throwable {
+        MethodHandle fooMH = MethodHandles.lookup().findStatic(SerializedLambdaTest.class, "foo", predicateMT);
+
+        // Alt metafactory, non-serializable target: not serializable
+        CallSite cs = LambdaMetafactory.altMetafactory(MethodHandles.lookup(),
+                                                       "test", MethodType.methodType(Predicate.class),
+                                                       predicateMT, fooMH, stringPredicateMT, 0);
+        assertNotSerial((Predicate<String>) cs.getTarget().invokeExact(), fooAsserter);
+    }
+
+    // alt MF: serializable supertype
+    public void testAltStdSer() throws Throwable {
+        MethodHandle fooMH = MethodHandles.lookup().findStatic(SerializedLambdaTest.class, "foo", predicateMT);
+
+        // Alt metafactory, serializable target, no FLAG_SERIALIZABLE: not serializable
+        CallSite cs = LambdaMetafactory.altMetafactory(MethodHandles.lookup(),
+                                                       "test", MethodType.methodType(SerPredicate.class),
+                                                       predicateMT, fooMH, stringPredicateMT, 0);
+        assertNotSerial((SerPredicate<String>) cs.getTarget().invokeExact(), fooAsserter);
+
+        // Alt metafactory, serializable marker, no FLAG_SERIALIZABLE: not serializable
+        cs = LambdaMetafactory.altMetafactory(MethodHandles.lookup(),
+                                              "test", MethodType.methodType(Predicate.class),
+                                              predicateMT, fooMH, stringPredicateMT, LambdaMetafactory.FLAG_MARKERS, 1, Serializable.class);
+        assertNotSerial((Predicate<String>) cs.getTarget().invokeExact(), fooAsserter);
     }
 }

@@ -348,7 +348,7 @@ AwtTextComponent::HandleEvent(MSG *msg, BOOL synthetic)
 }
 
 /*
- * If this Paste is occuring because of a synthetic Java event (e.g.,
+ * If this Paste is occurring because of a synthetic Java event (e.g.,
  * a synthesized <CTRL>-V KeyEvent), then verify that the TextComponent
  * has permission to access the Clipboard before pasting. If permission
  * is denied, we should throw a SecurityException, but currently do not

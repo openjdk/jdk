@@ -56,7 +56,7 @@ import sun.security.util.SecurityConstants;
  * are called by various methods in the Java libraries before those
  * methods perform certain potentially sensitive operations. The
  * invocation of such a <code>check</code> method typically looks like this:
- * <p><blockquote><pre>
+ * <blockquote><pre>
  *     SecurityManager security = System.getSecurityManager();
  *     if (security != null) {
  *         security.check<i>XXX</i>(argument, &nbsp;.&nbsp;.&nbsp;.&nbsp;);
@@ -323,7 +323,7 @@ class SecurityManager {
      * by {@link ClassLoader#getSystemClassLoader}) or one of its ancestors.
      * <p>
      * This method will return
-     * <code>null</code> in the following three cases:<p>
+     * <code>null</code> in the following three cases:
      * <ol>
      *   <li>All methods on the execution stack are from classes
      *   defined using the system class loader or one of its ancestors.
@@ -370,7 +370,7 @@ class SecurityManager {
      * by {@link ClassLoader#getSystemClassLoader}) or one of its ancestors.
      * <p>
      * This method will return
-     * <code>null</code> in the following three cases:<p>
+     * <code>null</code> in the following three cases:
      * <ol>
      *   <li>All methods on the execution stack are from classes
      *   defined using the system class loader or one of its ancestors.
@@ -429,7 +429,7 @@ class SecurityManager {
      * by {@link ClassLoader#getSystemClassLoader}) or one of its ancestors.
      * <p>
      * This method will return
-     * -1 in the following three cases:<p>
+     * -1 in the following three cases:
      * <ol>
      *   <li>All methods on the execution stack are from classes
      *   defined using the system class loader or one of its ancestors.
@@ -1281,7 +1281,6 @@ class SecurityManager {
      * This method calls <code>checkPermission</code> with the
      * <code>PropertyPermission(key, "read")</code> permission.
      * <p>
-     * <p>
      * If you override this method, then you should make a call to
      * <code>super.checkPropertyAccess</code>
      * at the point the overridden method would normally throw an
@@ -1714,7 +1713,7 @@ class SecurityManager {
             throw new NullPointerException("class can't be null");
         }
         if (which != Member.PUBLIC) {
-            Class stack[] = getClassContext();
+            Class<?> stack[] = getClassContext();
             /*
              * stack depth of 4 should be the caller of one of the
              * methods in java.lang.Class that invoke checkMember

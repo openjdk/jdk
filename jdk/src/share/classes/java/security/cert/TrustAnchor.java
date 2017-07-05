@@ -44,7 +44,6 @@ import sun.security.x509.X500Name;
  * individual parameters.
  * <p>
  * <b>Concurrent Access</b>
- * <p>
  * <p>All {@code TrustAnchor} objects must be immutable and
  * thread-safe. That is, multiple threads may concurrently invoke the
  * methods defined in this class on a single {@code TrustAnchor}

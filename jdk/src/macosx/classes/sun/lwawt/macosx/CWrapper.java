@@ -82,9 +82,6 @@ public final class CWrapper {
         public static native Rectangle2D frame(long view);
         public static native long window(long view);
 
-        public static native void enterFullScreenMode(long view);
-        public static native void exitFullScreenMode(long view);
-
         public static native void setHidden(long view, boolean hidden);
 
         public static native void setToolTip(long view, String msg);

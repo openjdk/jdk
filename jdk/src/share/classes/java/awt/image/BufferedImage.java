@@ -1336,7 +1336,7 @@ public class BufferedImage extends java.awt.Image
     /**
      * Returns the minimum tile index in the y direction.
      * This is always zero.
-     * @return the mininum tile index in the y direction.
+     * @return the minimum tile index in the y direction.
      */
     public int getMinTileY() {
         return 0;

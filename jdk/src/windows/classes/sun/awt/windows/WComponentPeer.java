@@ -1108,4 +1108,8 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     private native void setZOrder(long above);
+
+    public boolean isLightweightFramePeer() {
+        return false;
+    }
 }

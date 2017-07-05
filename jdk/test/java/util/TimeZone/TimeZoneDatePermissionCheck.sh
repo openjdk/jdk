@@ -40,6 +40,7 @@ rm -f ${TESTCLASSES}/timezonedatetest.store
 ${COMPILEJAVA}/bin/keytool ${TESTTOOLVMOPTS} -genkeypair -alias testcert \
   -keystore ${TESTCLASSES}/timezonedatetest.store \
   -storepass testpass -validity 360 \
+  -keyalg rsa \
   -dname "cn=Mark Wildebeest, ou=FreeSoft, o=Red Hat, c=NL" \
   -keypass testpass
 

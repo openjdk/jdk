@@ -25,10 +25,10 @@
 
 package jdk.nashorn.internal.ir.debug;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryPoolMXBean;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -51,9 +51,9 @@ import java.util.Map;
  * switch, it can not detect
  * this fact and will report incorrect sizes, as it will presume the default JVM
  * behavior.
- *
- * @author Attila Szegedi
  */
+
+@SuppressWarnings("StaticNonFinalUsedInInitialization")
 public class ObjectSizeCalculator {
 
     /**
@@ -368,6 +368,29 @@ public class ObjectSizeCalculator {
                 type.getName());
     }
 
+    // ALERT: java.lang.management is not available in compact 1.  We need
+    // to use reflection to soft link test memory statistics.
+
+    static Class<?>  managementFactory    = null;
+    static Class<?>  memoryPoolMXBean     = null;
+    static Class<?>  memoryUsage          = null;
+    static Method    getMemoryPoolMXBeans = null;
+    static Method    getUsage             = null;
+    static Method    getMax               = null;
+    static {
+        try {
+            managementFactory    = Class.forName("java.lang.management.ManagementFactory");
+            memoryPoolMXBean     = Class.forName("java.lang.management.MemoryPoolMXBean");
+            memoryUsage          = Class.forName("java.lang.management.MemoryUsage");
+
+            getMemoryPoolMXBeans = managementFactory.getMethod("getMemoryPoolMXBeans");
+            getUsage             = memoryPoolMXBean.getMethod("getUsage");
+            getMax               = memoryUsage.getMethod("getMax");
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
+            // Pass thru, asserts when attempting to use.
+        }
+    }
+
     /**
      * Return the current memory usage
      * @return current memory usage derived from system configuration
@@ -409,9 +432,33 @@ public class ObjectSizeCalculator {
                 strVmVersion.indexOf('.')));
         if (vmVersion >= 17) {
             long maxMemory = 0;
-            for (MemoryPoolMXBean mp : ManagementFactory.getMemoryPoolMXBeans()) {
-                maxMemory += mp.getUsage().getMax();
+
+            /*
+               See ALERT above.  The reflection code below duplicates the following
+               sequence, and avoids hard coding of java.lang.management.
+
+               for (MemoryPoolMXBean mp : ManagementFactory.getMemoryPoolMXBeans()) {
+                   maxMemory += mp.getUsage().getMax();
+               }
+            */
+
+            if (getMemoryPoolMXBeans == null) {
+                throw new AssertionError("java.lang.management not available in compact 1");
             }
+
+            try {
+                final List<?> memoryPoolMXBeans = (List<?>)getMemoryPoolMXBeans.invoke(managementFactory);
+                for (final Object mp : memoryPoolMXBeans) {
+                    final Object usage = getUsage.invoke(mp);
+                    final Object max = getMax.invoke(usage);
+                    maxMemory += ((Long)max).longValue();
+                }
+            } catch (IllegalAccessException |
+                     IllegalArgumentException |
+                     InvocationTargetException ex) {
+                throw new AssertionError("java.lang.management not available in compact 1");
+            }
+
             if (maxMemory < 30L * 1024 * 1024 * 1024) {
                 // HotSpot 17.0 and above use compressed OOPs below 30GB of RAM total
                 // for all memory pools (yes, including code cache).

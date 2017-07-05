@@ -156,7 +156,7 @@ public abstract class ReferralException extends NamingException {
      * <code>getReferralContext</code> to allow the processing of
      * other referrals to continue.
      * The following code fragment shows a typical usage pattern.
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      *  } catch (ReferralException e) {
      *      if (!shallIFollow(e.getReferralInfo())) {
      *          if (!e.skipReferral()) {
@@ -177,7 +177,7 @@ public abstract class ReferralException extends NamingException {
      * <code>getReferralContext</code> to allow the current
      * referral to be retried.
      * The following code fragment shows a typical usage pattern.
-     * <p><blockquote><pre>
+     * <blockquote><pre>
      *  } catch (ReferralException e) {
      *      while (true) {
      *          try {

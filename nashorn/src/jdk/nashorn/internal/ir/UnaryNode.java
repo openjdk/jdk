@@ -129,6 +129,26 @@ public final class UnaryNode extends Expression implements Assignment<Expression
     }
 
     @Override
+    public boolean isLocal() {
+        switch (tokenType()) {
+            case NEW:
+                return false;
+            case ADD:
+            case SUB:
+            case NOT:
+            case BIT_NOT:
+                return rhs.isLocal() && rhs.getType().isJSPrimitive();
+            case DECPOSTFIX:
+            case DECPREFIX:
+            case INCPOSTFIX:
+            case INCPREFIX:
+                return rhs instanceof IdentNode && rhs.isLocal() && rhs.getType().isJSPrimitive();
+            default:
+                return rhs.isLocal();
+        }
+    }
+
+    @Override
     public void toString(final StringBuilder sb) {
         toString(sb, new Runnable() {
             @Override

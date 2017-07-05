@@ -34,7 +34,6 @@ import java.io.IOException;
  *
  * @since 1.5
  */
-@FunctionalInterface
 public interface Flushable {
 
     /**

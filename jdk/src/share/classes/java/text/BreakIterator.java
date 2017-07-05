@@ -338,7 +338,7 @@ public abstract class BreakIterator implements Cloneable
      * Otherwise, the iterator's current position is set to the returned boundary.
      * The value returned is always less than the offset or the value
      * <code>BreakIterator.DONE</code>.
-     * @param offset the characater offset to begin scanning.
+     * @param offset the character offset to begin scanning.
      * @return The last boundary before the specified offset or
      * <code>BreakIterator.DONE</code> if the first text boundary is passed in
      * as the offset.

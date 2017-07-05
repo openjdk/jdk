@@ -1524,7 +1524,7 @@ HRESULT __stdcall  AwtDragSource::ADSIStreamProxy::Write(const void __RPC_FAR *p
 
     FILETIME now; ::CoFileTimeNow(&now); m_statstg.atime = now;
 
-    return STG_E_CANTSAVE; // dont support writing
+    return STG_E_CANTSAVE; // don't support writing
 
     CATCH_BAD_ALLOC_RET(E_OUTOFMEMORY);
 }

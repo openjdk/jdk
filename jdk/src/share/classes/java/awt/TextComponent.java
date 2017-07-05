@@ -1000,7 +1000,7 @@ public class TextComponent extends Component implements Accessible {
          * Return 0 if the text is empty, or the caret position
          * if no selection.
          *
-         * @return the index into teh text of the end of the selection &gt;= 0
+         * @return the index into the text of the end of the selection &gt;= 0
          */
         public int getSelectionEnd() {
             return TextComponent.this.getSelectionEnd();

@@ -60,7 +60,11 @@
  * actions, or predicates.  In documenting functional interfaces, or referring
  * to variables typed as functional interfaces, it is common to refer directly
  * to those abstract concepts, for example using "this function" instead of
- * "the function represented by this object".
+ * "the function represented by this object".  When an API method is said to
+ * accept or return a functional interface in this manner, such as "applies the
+ * provided function to...", this is understood to mean a <i>non-null</i>
+ * reference to an object implementing the appropriate functional interface,
+ * unless potential nullity is explicitly specified.
  *
  * <p>The functional interfaces in this package follow an extensible naming
  * convention, as follows:

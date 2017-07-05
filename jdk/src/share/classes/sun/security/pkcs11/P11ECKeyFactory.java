@@ -40,7 +40,7 @@ import sun.security.util.DerValue;
 import sun.security.util.ECUtil;
 
 /**
- * EC KeyFactory implemenation.
+ * EC KeyFactory implementation.
  *
  * @author  Andreas Sterbenz
  * @since   1.6

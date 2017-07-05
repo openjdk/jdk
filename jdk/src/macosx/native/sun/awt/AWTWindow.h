@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
     BOOL isEnabled;
     NSWindow *nsWindow;
     AWTWindow *ownerWindow;
+    jint preFullScreenLevel;
 }
 
 // An instance of either AWTWindow_Normal or AWTWindow_Panel
@@ -57,6 +58,7 @@
 @property (nonatomic) NSSize javaMaxSize;
 @property (nonatomic) jint styleBits;
 @property (nonatomic) BOOL isEnabled;
+@property (nonatomic) jint preFullScreenLevel;
 
 
 - (id) initWithPlatformWindow:(JNFWeakJObjectWrapper *)javaPlatformWindow

@@ -50,7 +50,6 @@ import java.util.*;
  * and the fourth blocks for only a given maximum time limit before giving
  * up.  These methods are summarized in the following table:
  *
- * <p>
  * <table BORDER CELLPADDING=3 CELLSPACING=1>
  * <caption>Summary of BlockingDeque methods</caption>
  *  <tr>
@@ -126,7 +125,6 @@ import java.util.*;
  * {@code BlockingQueue} interface are precisely equivalent to
  * {@code BlockingDeque} methods as indicated in the following table:
  *
- * <p>
  * <table BORDER CELLPADDING=3 CELLSPACING=1>
  * <caption>Comparison of BlockingQueue and BlockingDeque methods</caption>
  *  <tr>

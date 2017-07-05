@@ -2991,7 +2991,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
     /**
      * Causes this table to lay out its rows and columns.  Overridden so
-     * that columns can be resized to accomodate a change in the size of
+     * that columns can be resized to accommodate a change in the size of
      * a containing parent.
      * Resizes one or more of the columns in the table
      * so that the total width of all of this <code>JTable</code>'s
@@ -3014,7 +3014,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * The modes are:
      * <ul>
      * <li>  AUTO_RESIZE_OFF: Don't automatically adjust the column's
-     * widths at all. Use a horizontal scrollbar to accomodate the
+     * widths at all. Use a horizontal scrollbar to accommodate the
      * columns when their sum exceeds the width of the
      * <code>Viewport</code>.  If the <code>JTable</code> is not
      * enclosed in a <code>JScrollPane</code> this may
@@ -3104,7 +3104,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * <P>
      * The overall effect is that the total size moves that same percentage,
      * k, towards the total minimum or maximum and that percentage guarantees
-     * accomodation of the required space, DELTA.
+     * accommodation of the required space, DELTA.
      *
      * <H4>Details</H4>
      * <P>

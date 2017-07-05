@@ -155,7 +155,7 @@ interface DataInput {
      * to the length of {@code b}.
      * <p>
      * This method blocks until one of the
-     * following conditions occurs:<p>
+     * following conditions occurs:
      * <ul>
      * <li>{@code b.length}
      * bytes of input data are available, in which
@@ -197,7 +197,7 @@ interface DataInput {
      * <p>
      * This method
      * blocks until one of the following conditions
-     * occurs:<p>
+     * occurs:
      * <ul>
      * <li>{@code len} bytes
      * of input data are available, in which case
@@ -316,8 +316,8 @@ interface DataInput {
      * be the second byte. The value
      * returned
      * is:
-     * <p><pre><code>(short)((a &lt;&lt; 8) | (b &amp; 0xff))
-     * </code></pre>
+     * <pre>{@code (short)((a << 8) | (b & 0xff))
+     * }</pre>
      * This method
      * is suitable for reading the bytes written
      * by the {@code writeShort} method of
@@ -337,8 +337,8 @@ interface DataInput {
      * be the first byte read and
      * {@code b}
      * be the second byte. The value returned is:
-     * <p><pre><code>(((a &amp; 0xff) &lt;&lt; 8) | (b &amp; 0xff))
-     * </code></pre>
+     * <pre>{@code (((a & 0xff) << 8) | (b & 0xff))
+     * }</pre>
      * This method is suitable for reading the bytes
      * written by the {@code writeShort} method
      * of interface {@code DataOutput}  if
@@ -359,8 +359,8 @@ interface DataInput {
      * be the first byte read and {@code b}
      * be the second byte. The value
      * returned is:
-     * <p><pre><code>(char)((a &lt;&lt; 8) | (b &amp; 0xff))
-     * </code></pre>
+     * <pre>{@code (char)((a << 8) | (b & 0xff))
+     * }</pre>
      * This method
      * is suitable for reading bytes written by
      * the {@code writeChar} method of interface
@@ -377,10 +377,10 @@ interface DataInput {
      * Reads four input bytes and returns an
      * {@code int} value. Let {@code a-d}
      * be the first through fourth bytes read. The value returned is:
-     * <p><pre><code>
-     * (((a &amp; 0xff) &lt;&lt; 24) | ((b &amp; 0xff) &lt;&lt; 16) |
-     * &#32;((c &amp; 0xff) &lt;&lt; 8) | (d &amp; 0xff))
-     * </code></pre>
+     * <pre>{@code
+     * (((a & 0xff) << 24) | ((b & 0xff) << 16) |
+     *  ((c & 0xff) <<  8) | (d & 0xff))
+     * }</pre>
      * This method is suitable
      * for reading bytes written by the {@code writeInt}
      * method of interface {@code DataOutput}.
@@ -397,16 +397,16 @@ interface DataInput {
      * a {@code long} value. Let {@code a-h}
      * be the first through eighth bytes read.
      * The value returned is:
-     * <p><pre><code>
-     * (((long)(a &amp; 0xff) &lt;&lt; 56) |
-     *  ((long)(b &amp; 0xff) &lt;&lt; 48) |
-     *  ((long)(c &amp; 0xff) &lt;&lt; 40) |
-     *  ((long)(d &amp; 0xff) &lt;&lt; 32) |
-     *  ((long)(e &amp; 0xff) &lt;&lt; 24) |
-     *  ((long)(f &amp; 0xff) &lt;&lt; 16) |
-     *  ((long)(g &amp; 0xff) &lt;&lt;  8) |
-     *  ((long)(h &amp; 0xff)))
-     * </code></pre>
+     * <pre>{@code
+     * (((long)(a & 0xff) << 56) |
+     *  ((long)(b & 0xff) << 48) |
+     *  ((long)(c & 0xff) << 40) |
+     *  ((long)(d & 0xff) << 32) |
+     *  ((long)(e & 0xff) << 24) |
+     *  ((long)(f & 0xff) << 16) |
+     *  ((long)(g & 0xff) <<  8) |
+     *  ((long)(h & 0xff)))
+     * }</pre>
      * <p>
      * This method is suitable
      * for reading bytes written by the {@code writeLong}
@@ -540,9 +540,9 @@ interface DataInput {
      * not match the bit pattern {@code 10xxxxxx},
      * then a {@code UTFDataFormatException}
      * is thrown. Otherwise, the group is converted
-     * to the character:<p>
-     * <pre><code>(char)(((a&amp; 0x1F) &lt;&lt; 6) | (b &amp; 0x3F))
-     * </code></pre>
+     * to the character:
+     * <pre>{@code (char)(((a & 0x1F) << 6) | (b & 0x3F))
+     * }</pre>
      * If the first byte of a group
      * matches the bit pattern {@code 1110xxxx},
      * then the group consists of that byte {@code a}
@@ -554,10 +554,10 @@ interface DataInput {
      * does not match the bit pattern {@code 10xxxxxx},
      * then a {@code UTFDataFormatException}
      * is thrown. Otherwise, the group is converted
-     * to the character:<p>
-     * <pre><code>
-     * (char)(((a &amp; 0x0F) &lt;&lt; 12) | ((b &amp; 0x3F) &lt;&lt; 6) | (c &amp; 0x3F))
-     * </code></pre>
+     * to the character:
+     * <pre>{@code
+     * (char)(((a & 0x0F) << 12) | ((b & 0x3F) << 6) | (c & 0x3F))
+     * }</pre>
      * If the first byte of a group matches the
      * pattern {@code 1111xxxx} or the pattern
      * {@code 10xxxxxx}, then a {@code UTFDataFormatException}

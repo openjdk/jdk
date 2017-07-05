@@ -157,7 +157,7 @@ public abstract class GlobalCursorManager {
      *
      * (2) If 'useCache' is true, the native code is free to use a cached
      * value to determine the most specific, visible, enabled heavyweight
-     * because this update is occuring in response to a mouse move. If
+     * because this update is occurring in response to a mouse move. If
      * 'useCache' is false, the native code must perform a new search given
      * the current mouse coordinates.
      *

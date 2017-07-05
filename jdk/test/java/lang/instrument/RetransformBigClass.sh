@@ -58,8 +58,16 @@ fi
 JAVAC="${COMPILEJAVA}"/bin/javac
 JAVA="${TESTJAVA}"/bin/java
 
+# Does this VM support the 'detail' level of NMT?
+"${JAVA}" ${TESTVMOPTS} -XX:NativeMemoryTracking=detail -version
+if [ "$?" = 0 ]; then
+    NMT=-XX:NativeMemoryTracking=detail
+else
+    NMT=-XX:NativeMemoryTracking=summary
+fi
+
 "${JAVA}" ${TESTVMOPTS} \
-    -XX:TraceRedefineClasses=3 \
+    -XX:TraceRedefineClasses=3 ${NMT} \
     -javaagent:RetransformBigClassAgent.jar=BigClass.class \
     -classpath "${TESTCLASSES}" RetransformBigClassApp \
     > output.log 2>&1
