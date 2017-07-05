@@ -27,7 +27,6 @@
  * @summary Simple test run with -XX:+VerifyDuringStartup -XX:-UseTLAB to verify 8010463
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.management
  */
 
 import jdk.test.lib.JDKToolFinder;

@@ -530,6 +530,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_isInterrupted:
 #ifdef TRACE_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
+  case vmIntrinsics::_getClassId:
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:

@@ -28,7 +28,6 @@
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/referencePendingListLocker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -75,23 +74,6 @@ void ConcurrentMarkSweepThread::run_service() {
 
   if (BindCMSThreadToCPU && !os::bind_to_processor(CPUForCMSThread)) {
     log_warning(gc)("Couldn't bind CMS thread to processor " UINTX_FORMAT, CPUForCMSThread);
-  }
-
-  {
-    MutexLockerEx x(CGC_lock, true);
-    set_CMS_flag(CMS_cms_wants_token);
-    assert(is_init_completed() && Universe::is_fully_initialized(), "ConcurrentGCThread::run() should have waited for this.");
-
-    // Wait until the surrogate locker thread that will do
-    // pending list locking on our behalf has been created.
-    // We cannot start the SLT thread ourselves since we need
-    // to be a JavaThread to do so.
-    CMSLoopCountWarn loopY("CMS::run", "waiting for SLT installation", 2);
-    while (!ReferencePendingListLocker::is_initialized() && !should_terminate()) {
-      CGC_lock->wait(true, 200);
-      loopY.tick();
-    }
-    clear_CMS_flag(CMS_cms_wants_token);
   }
 
   while (!should_terminate()) {

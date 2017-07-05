@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1327,28 +1327,32 @@ public class JPEGImageReader extends ImageReader {
             System.out.println("callbackUpdates is " + callbackUpdates);
         }
 
-        // Finally, we are ready to read
-
+        /*
+         * All the Jpeg processing happens in native, we should clear
+         * abortFlag of imageIODataStruct in imageioJPEG.c. And we need to
+         * clear abortFlag because if in previous read() if we had called
+         * reader.abort() that will continue to be valid for present call also.
+         */
+        clearNativeReadAbortFlag(structPointer);
         processImageStarted(currentImage);
-
-        boolean aborted = false;
-
-        // Note that getData disables acceleration on buffer, but it is
-        // just a 1-line intermediate data transfer buffer that will not
-        // affect the acceleration of the resulting image.
-        aborted = readImage(structPointer,
-                            buffer.getData(),
-                            numRasterBands,
-                            srcBands,
-                            bandSizes,
-                            srcROI.x, srcROI.y,
-                            srcROI.width, srcROI.height,
-                            periodX, periodY,
-                            abbrevQTables,
-                            abbrevDCHuffmanTables,
-                            abbrevACHuffmanTables,
-                            minProgressivePass, maxProgressivePass,
-                            callbackUpdates);
+        /*
+         * Note that getData disables acceleration on buffer, but it is
+         * just a 1-line intermediate data transfer buffer that will not
+         * affect the acceleration of the resulting image.
+         */
+        boolean aborted = readImage(structPointer,
+                                    buffer.getData(),
+                                    numRasterBands,
+                                    srcBands,
+                                    bandSizes,
+                                    srcROI.x, srcROI.y,
+                                    srcROI.width, srcROI.height,
+                                    periodX, periodY,
+                                    abbrevQTables,
+                                    abbrevDCHuffmanTables,
+                                    abbrevACHuffmanTables,
+                                    minProgressivePass, maxProgressivePass,
+                                    callbackUpdates);
 
         if (aborted) {
             processReadAborted();
@@ -1512,6 +1516,12 @@ public class JPEGImageReader extends ImageReader {
                                      int minProgressivePass,
                                      int maxProgressivePass,
                                      boolean wantUpdates);
+
+    /*
+     * We should call clearNativeReadAbortFlag() before we start reading
+     * jpeg image as image processing happens at native side.
+     */
+    private native void clearNativeReadAbortFlag(long structPointer);
 
     public void abort() {
         setThreadLock();

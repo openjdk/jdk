@@ -27,6 +27,7 @@
  * @summary Test to make sure that eager reclaim of humongous objects work. We simply try to fill
  * up the heap with humongous objects that should be eagerly reclaimable to avoid Full GC.
  * @key gc
+ * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

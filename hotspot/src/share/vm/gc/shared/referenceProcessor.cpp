@@ -289,39 +289,16 @@ void ReferenceProcessor::process_phaseJNI(BoolObjectClosure* is_alive,
   complete_gc->do_void();
 }
 
-
-template <class T>
-bool enqueue_discovered_ref_helper(ReferenceProcessor* ref,
-                                   AbstractRefProcTaskExecutor* task_executor) {
-
-  // Remember old value of pending references list
-  T* pending_list_addr = (T*)java_lang_ref_Reference::pending_list_addr();
-  T old_pending_list_value = *pending_list_addr;
-
+void ReferenceProcessor::enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor) {
   // Enqueue references that are not made active again, and
   // clear the decks for the next collection (cycle).
-  ref->enqueue_discovered_reflists((HeapWord*)pending_list_addr, task_executor);
-  // Do the post-barrier on pending_list_addr missed in
-  // enqueue_discovered_reflist.
-  oopDesc::bs()->write_ref_field(pending_list_addr, oopDesc::load_decode_heap_oop(pending_list_addr));
+  enqueue_discovered_reflists(task_executor);
 
   // Stop treating discovered references specially.
-  ref->disable_discovery();
-
-  // Return true if new pending references were added
-  return old_pending_list_value != *pending_list_addr;
+  disable_discovery();
 }
 
-bool ReferenceProcessor::enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor) {
-  if (UseCompressedOops) {
-    return enqueue_discovered_ref_helper<narrowOop>(this, task_executor);
-  } else {
-    return enqueue_discovered_ref_helper<oop>(this, task_executor);
-  }
-}
-
-void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
-                                                    HeapWord* pending_list_addr) {
+void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list) {
   // Given a list of refs linked through the "discovered" field
   // (java.lang.ref.Reference.discovered), self-loop their "next" field
   // thus distinguishing them from active References, then
@@ -354,10 +331,9 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
       oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(obj), next_d);
     } else {
       // This is the last object.
-      // Swap refs_list into pending_list_addr and
-      // set obj's discovered to what we read from pending_list_addr.
-      oop old = oopDesc::atomic_exchange_oop(refs_list.head(), pending_list_addr);
-      // Need post-barrier on pending_list_addr. See enqueue_discovered_ref_helper() above.
+      // Swap refs_list into pending list and set obj's
+      // discovered to what we read from the pending list.
+      oop old = Universe::swap_reference_pending_list(refs_list.head());
       java_lang_ref_Reference::set_discovered_raw(obj, old); // old may be NULL
       oopDesc::bs()->write_ref_field(java_lang_ref_Reference::discovered_addr(obj), old);
     }
@@ -369,10 +345,8 @@ class RefProcEnqueueTask: public AbstractRefProcTaskExecutor::EnqueueTask {
 public:
   RefProcEnqueueTask(ReferenceProcessor& ref_processor,
                      DiscoveredList      discovered_refs[],
-                     HeapWord*           pending_list_addr,
                      int                 n_queues)
-    : EnqueueTask(ref_processor, discovered_refs,
-                  pending_list_addr, n_queues)
+    : EnqueueTask(ref_processor, discovered_refs, n_queues)
   { }
 
   virtual void work(unsigned int work_id) {
@@ -387,8 +361,7 @@ public:
     for (int j = 0;
          j < ReferenceProcessor::number_of_subclasses_of_ref();
          j++, index += _n_queues) {
-      _ref_processor.enqueue_discovered_reflist(
-        _refs_lists[index], _pending_list_addr);
+      _ref_processor.enqueue_discovered_reflist(_refs_lists[index]);
       _refs_lists[index].set_head(NULL);
       _refs_lists[index].set_length(0);
     }
@@ -396,17 +369,15 @@ public:
 };
 
 // Enqueue references that are not made active again
-void ReferenceProcessor::enqueue_discovered_reflists(HeapWord* pending_list_addr,
-  AbstractRefProcTaskExecutor* task_executor) {
+void ReferenceProcessor::enqueue_discovered_reflists(AbstractRefProcTaskExecutor* task_executor) {
   if (_processing_is_mt && task_executor != NULL) {
     // Parallel code
-    RefProcEnqueueTask tsk(*this, _discovered_refs,
-                           pending_list_addr, _max_num_q);
+    RefProcEnqueueTask tsk(*this, _discovered_refs, _max_num_q);
     task_executor->execute(tsk);
   } else {
     // Serial code: call the parent class's implementation
     for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
-      enqueue_discovered_reflist(_discovered_refs[i], pending_list_addr);
+      enqueue_discovered_reflist(_discovered_refs[i]);
       _discovered_refs[i].set_head(NULL);
       _discovered_refs[i].set_length(0);
     }

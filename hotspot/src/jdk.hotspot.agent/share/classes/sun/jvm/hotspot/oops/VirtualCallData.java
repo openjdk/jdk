@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,11 @@ public class VirtualCallData<K,M> extends ReceiverTypeData<K,M> {
   static int staticCellCount() {
     // At this point we could add more profile state, e.g., for arguments.
     // But for now it's the same size as the base record type.
-    return ReceiverTypeData.staticCellCount();
+    int cellCount = ReceiverTypeData.staticCellCount();
+    if (INCLUDE_JVMCI == 1) {
+      cellCount += MethodData.MethodProfileWidth * receiverTypeRowCellCount;
+    }
+    return cellCount;
   }
 
   public int cellCount() {

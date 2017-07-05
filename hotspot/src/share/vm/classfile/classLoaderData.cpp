@@ -966,7 +966,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
   // Klasses to delete.
   bool walk_all_metadata = clean_previous_versions &&
                            JvmtiExport::has_redefined_a_class() &&
-                           InstanceKlass::has_previous_versions();
+                           InstanceKlass::has_previous_versions_and_reset();
   MetadataOnStackMark md_on_stack(walk_all_metadata);
 
   // Save previous _unloading pointer for CMS which may add to unloading list before

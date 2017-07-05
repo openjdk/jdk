@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6316539
  * @summary Known-answer-test for TlsMasterSecret generator
@@ -29,6 +29,7 @@
  * @library ..
  * @modules java.base/sun.security.internal.interfaces
  *          java.base/sun.security.internal.spec
+ *          jdk.crypto.pkcs11
  * @run main/othervm TestMasterSecret
  * @run main/othervm TestMasterSecret sm TestMasterSecret.policy
  */
