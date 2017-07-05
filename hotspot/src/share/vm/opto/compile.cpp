@@ -971,7 +971,7 @@ Compile::Compile( ciEnv* ci_env,
     _java_calls(0),
     _inner_loops(0),
 #ifndef PRODUCT
-    _trace_opto_output(TraceOptoOutput),
+    _trace_opto_output(directive->TraceOptoOutputOption),
     _in_dump_cnt(0),
     _printer(NULL),
 #endif

@@ -158,7 +158,7 @@ void compiledVFrame::update_local(BasicType type, int index, jvalue value) {
     deferred =  new(ResourceObj::C_HEAP, mtCompiler) GrowableArray<jvmtiDeferredLocalVariableSet*> (1, true);
     thread()->set_deferred_locals(deferred);
   }
-  deferred->push(new jvmtiDeferredLocalVariableSet(method(), bci(), fr().id()));
+  deferred->push(new jvmtiDeferredLocalVariableSet(method(), bci(), fr().id(), vframe_id()));
   assert(deferred->top()->id() == fr().id(), "Huh? Must match");
   deferred->top()->set_local_at(index, type, value);
 }
@@ -243,6 +243,7 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
 compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, CompiledMethod* nm)
 : javaVFrame(fr, reg_map, thread) {
   _scope  = NULL;
+  _vframe_id = 0;
   // Compiled method (native stub or Java code)
   // native wrappers have no scope data, it is implied
   if (!nm->is_compiled() || !nm->as_compiled_method()->is_native_method()) {
@@ -250,9 +251,10 @@ compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, Java
   }
 }
 
-compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, ScopeDesc* scope)
+compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, ScopeDesc* scope, int vframe_id)
 : javaVFrame(fr, reg_map, thread) {
   _scope  = scope;
+  _vframe_id = vframe_id;
   guarantee(_scope != NULL, "scope must be present");
 }
 
@@ -316,14 +318,15 @@ vframe* compiledVFrame::sender() const {
   } else {
     return scope()->is_top()
       ? vframe::sender()
-      : new compiledVFrame(&f, register_map(), thread(), scope()->sender());
+      : new compiledVFrame(&f, register_map(), thread(), scope()->sender(), vframe_id() + 1);
   }
 }
 
-jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int bci, intptr_t* id) {
+jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int bci, intptr_t* id, int vframe_id) {
   _method = method;
   _bci = bci;
   _id = id;
+  _vframe_id = vframe_id;
   // Alway will need at least one, must be on C heap
   _locals = new(ResourceObj::C_HEAP, mtCompiler) GrowableArray<jvmtiDeferredLocalVariable*> (1, true);
 }
@@ -339,7 +342,11 @@ jvmtiDeferredLocalVariableSet::~jvmtiDeferredLocalVariableSet() {
 bool jvmtiDeferredLocalVariableSet::matches(vframe* vf) {
   if (!vf->is_compiled_frame()) return false;
   compiledVFrame* cvf = (compiledVFrame*)vf;
-  return cvf->fr().id() == id() && cvf->method() == method() && cvf->bci() == bci();
+  if (cvf->fr().id() == id() && cvf->vframe_id() == vframe_id()) {
+    assert(cvf->method() == method() && cvf->bci() == bci(), "must agree");
+    return true;
+  }
+  return false;
 }
 
 void jvmtiDeferredLocalVariableSet::set_local_at(int idx, BasicType type, jvalue val) {

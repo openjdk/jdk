@@ -82,7 +82,7 @@ public class Interrupt {
                 (q instanceof BlockingDeque<?>) ?
                 (BlockingDeque<Object>) q : null;
             q.clear();
-            List<Fun> fs = new ArrayList<Fun>();
+            List<Fun> fs = new ArrayList<>();
             fs.add(() -> q.take());
             fs.add(() -> q.poll(LONG_DELAY_MS, MILLISECONDS));
             if (deq != null) {

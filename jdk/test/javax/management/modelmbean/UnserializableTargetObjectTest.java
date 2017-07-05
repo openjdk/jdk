@@ -27,7 +27,7 @@
  * @summary Test that a RequiredModelMBean operation can have a targetObject
  * that is not serializable
  * @author Eamonn McManus
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean UnserializableTargetObjectTest
  * @run build UnserializableTargetObjectTest
  * @run main UnserializableTargetObjectTest

@@ -1738,9 +1738,8 @@ public class BytecodeParser implements GraphBuilderContext {
             } else {
                 // Intrinsic was not applied: remove intrinsic guard
                 // and restore the original receiver node in the arguments array
-                for (Node node : graph.getNewNodes(intrinsicGuard.mark)) {
-                    GraphUtil.killCFG(node);
-                }
+                intrinsicGuard.lastInstr.setNext(null);
+                GraphUtil.removeNewNodes(graph, intrinsicGuard.mark);
                 lastInstr = intrinsicGuard.lastInstr;
                 args[0] = intrinsicGuard.receiver;
             }

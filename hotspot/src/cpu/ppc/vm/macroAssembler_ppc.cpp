@@ -2569,7 +2569,7 @@ void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register 
 }
 
 // Spin and retry if lock is busy.
-// inputs: box_Reg (monitor address)
+// inputs: owner_addr_Reg (monitor address)
 //       : retry_count_Reg
 // output: retry_count_Reg decremented by 1
 // CTR is killed
@@ -2577,15 +2577,22 @@ void MacroAssembler::rtm_retry_lock_on_busy(Register retry_count_Reg, Register o
   Label SpinLoop, doneRetry;
   addic_(retry_count_Reg, retry_count_Reg, -1);
   blt(CCR0, doneRetry);
-  li(R0, RTMSpinLoopCount);
-  mtctr(R0);
+
+  if (RTMSpinLoopCount > 1) {
+    li(R0, RTMSpinLoopCount);
+    mtctr(R0);
+  }
 
   bind(SpinLoop);
   smt_yield(); // Can't use waitrsv(). No permission (SIGILL).
-  bdz(retryLabel);
-  ld(R0, 0, owner_addr_Reg);
-  cmpdi(CCR0, R0, 0);
-  bne(CCR0, SpinLoop);
+
+  if (RTMSpinLoopCount > 1) {
+    bdz(retryLabel);
+    ld(R0, 0, owner_addr_Reg);
+    cmpdi(CCR0, R0, 0);
+    bne(CCR0, SpinLoop);
+  }
+
   b(retryLabel);
 
   bind(doneRetry);

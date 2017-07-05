@@ -67,9 +67,15 @@ public class VectorTest extends JSR166TestCase {
      * tests for setSize()
      */
     public void testSetSize() {
-        Vector v = new Vector();
+        final Vector v = new Vector();
         for (int n : new int[] { 100, 5, 50 }) {
             v.setSize(n);
+            assertEquals(n, v.size());
+            assertNull(v.get(0));
+            assertNull(v.get(n - 1));
+            assertThrows(
+                    ArrayIndexOutOfBoundsException.class,
+                    new Runnable() { public void run() { v.setSize(-1); }});
             assertEquals(n, v.size());
             assertNull(v.get(0));
             assertNull(v.get(n - 1));

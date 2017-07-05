@@ -27,7 +27,7 @@
  * @summary Tests to receive notifications for opened and closed connections
 ions
  * @author sjiang
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean RMINotifTest
  * @run build RMINotifTest
  * @run main RMINotifTest

@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class VersionCheck extends TestHelper {
 
@@ -146,31 +148,44 @@ public class VersionCheck extends TestHelper {
     }
 
     /*
-     * this tests if the tool can take a version string and returns
-     * a 0 exit code, it is not possible to validate the contents
-     * of the -version output as they are inconsistent.
+     * Checks if the tools accept "-version" option (exit code is zero).
+     * The output of the tools run with "-version" is not verified.
      */
-    static boolean testToolVersion() {
-        TestHelper.testExitValue = 0;
+    static String testToolVersion() {
+        System.out.println("=== testToolVersion === ");
+        Set<String> failed = new HashSet<>();
         for (File f : new File(JAVA_BIN).listFiles(new ToolFilter(BLACKLIST_VERSION))) {
             String x = f.getAbsolutePath();
-            System.out.println("Testing (-version): " + x);
             TestResult tr = doExec(x, "-version");
-            tr.checkPositive();
+            System.out.println("Testing " + f.getName());
+            System.out.println("#> " + x + " -version");
+            tr.testOutput.forEach(System.out::println);
+            System.out.println("#> echo $?");
+            System.out.println(tr.exitValue);
+            if (!tr.isOK()) {
+                System.out.println("failed");
+                failed.add(f.getName());
+            }
         }
-        return TestHelper.testExitValue == 0;
+        if (failed.isEmpty()) {
+            System.out.println("testToolVersion passed");
+            return "";
+        } else {
+            System.out.println("testToolVersion failed");
+            return "testToolVersion: " + failed + "; ";
+        }
+
     }
 
-    static boolean compareJVersionStrings() {
-        int failcount = 0;
+    static String testJVersionStrings() {
+        System.out.println("=== testJVersionStrings === ");
+        Set<String> failed = new HashSet<>();
         for (File f : new File(JAVA_BIN).listFiles(new ToolFilter(BLACKLIST_JOPTION))) {
+            System.out.println("Testing " + f.getName());
             String x = f.getAbsolutePath();
-            System.out.println("Testing (-J-version): " + x);
-            String testStr;
-
-            testStr = getVersion(x, "-J-version");
+            String testStr = getVersion(x, "-J-version");
             if (refVersion.compareTo(testStr) != 0) {
-                failcount++;
+                failed.add(f.getName());
                 System.out.println("Error: " + x +
                                    " fails -J-version comparison");
                 System.out.println("Expected:");
@@ -181,7 +196,7 @@ public class VersionCheck extends TestHelper {
 
             testStr = getVersion(x, "-J-fullversion");
             if (refFullVersion.compareTo(testStr) != 0) {
-                failcount++;
+                failed.add(f.getName());
                 System.out.println("Error: " + x +
                                    " fails -J-fullversion comparison");
                 System.out.println("Expected:");
@@ -190,12 +205,17 @@ public class VersionCheck extends TestHelper {
                 System.out.print(testStr);
             }
         }
-        System.out.println("Version Test: " + failcount);
-        return failcount == 0;
+        if (failed.isEmpty()) {
+            System.out.println("testJVersionStrings passed");
+            return "";
+        } else {
+            System.out.println("testJVersionStrings failed");
+            return "testJVersionStrings: " + failed + "; ";
+        }
     }
 
-    static boolean compareInternalStrings() {
-        int failcount = 0;
+    static String testInternalStrings() {
+        System.out.println("=== testInternalStrings === ");
         String bStr = refVersion.substring(refVersion.indexOf("build") +
                                            "build".length() + 1,
                                            refVersion.lastIndexOf(")"));
@@ -206,20 +226,21 @@ public class VersionCheck extends TestHelper {
         envMap.put(TestHelper.JLDEBUG_KEY, "true");
         TestHelper.TestResult tr = doExec(envMap, javaCmd, "-version");
         List<String> alist = new ArrayList<>();
-        alist.addAll(tr.testOutput);
-        for (String x : tr.testOutput) {
-            alist.add(x.trim());
-        }
+        tr.testOutput.stream().map(String::trim).forEach(alist::add);
 
-        if (!alist.contains(expectedFullVersion)) {
+        if (alist.contains(expectedFullVersion)) {
+            System.out.println("testInternalStrings passed");
+            return "";
+        } else {
             System.out.println("Error: could not find " + expectedFullVersion);
-            failcount++;
+            tr.testOutput.forEach(System.out::println);
+            System.out.println("testInternalStrings failed");
+            return "testInternalStrings; ";
         }
-        System.out.println("Internal Strings Test: " + failcount);
-        return failcount == 0;
     }
 
-    static boolean testDebugVersion() {
+    static String testDebugVersion() {
+        System.out.println("=== testInternalStrings === ");
         String jdkType = System.getProperty("jdk.debug", "release");
         String versionLines = getAllVersionLines(javaCmd, "-version");
         if ("release".equals(jdkType)) {
@@ -227,18 +248,23 @@ public class VersionCheck extends TestHelper {
         } else {
             jdkType = jdkType + " ";
         }
+
         String tofind = "(" + jdkType + "build";
+
         int idx = versionLines.indexOf(tofind);
         if (idx < 0) {
+            System.out.println("versionLines " + versionLines);
             System.out.println("Did not find first instance of " + tofind);
-            return false;
+            return "testDebugVersion; ";
         }
         idx =  versionLines.indexOf(tofind, idx + 1);
         if (idx < 0) {
-            System.out.println("Did not find first instance of " + tofind);
-            return false;
+            System.out.println("versionLines " + versionLines);
+            System.out.println("Did not find second instance of " + tofind);
+            return "testDebugVersion; ";
         }
-        return true;
+        System.out.println("testDebugVersion passed");
+        return "";
     }
 
     // Initialize
@@ -249,13 +275,15 @@ public class VersionCheck extends TestHelper {
 
     public static void main(String[] args) {
         init();
-        if (compareJVersionStrings() &&
-                compareInternalStrings() &&
-                testToolVersion() &&
-                testDebugVersion()) {
+        String errorMessage = "";
+        errorMessage += testJVersionStrings();
+        errorMessage += testInternalStrings();
+        errorMessage += testToolVersion();
+        errorMessage += testDebugVersion();
+        if (errorMessage.isEmpty()) {
             System.out.println("All Version string comparisons: PASS");
         } else {
-            throw new AssertionError("Some tests failed");
+            throw new AssertionError("VersionCheck failed: " + errorMessage);
         }
     }
 

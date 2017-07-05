@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -608,6 +608,13 @@ public class OSXOffScreenSurfaceData extends OSXSurfaceData // implements Raster
         fImageInfoInt.put(kNeedToSyncFromJavaPixelsIndex, 1); // the pixels will change
     }
 
+    private void syncFromCustom() {
+
+    }
+
+    private void syncToCustom() {
+
+    }
 //    /**
 //     * Invoked when the raster's contents will be taken (via the Raster.getDataBuffer() method)
 //     */

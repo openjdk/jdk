@@ -48,9 +48,12 @@ public:
   // * Packages contains a duplicate package name
   // * A package already exists in another module for this class loader
   // * Module is an unnamed module
+  // * num_packages is negative
+  // * num_packages is non-zero when packages is null
   //  NullPointerExceptions are thrown if module is null.
   static void define_module(jobject module, jstring version,
-                            jstring location, jobjectArray packages, TRAPS);
+                            jstring location, const char* const* packages,
+                            jsize num_packages, TRAPS);
 
   // Provides the java.lang.reflect.Module for the unnamed module defined
   // to the boot loader.
@@ -72,7 +75,7 @@ public:
   // * Package is not syntactically correct
   // * Package is not defined for from_module's class loader
   // * Package is not in module from_module.
-  static void add_module_exports(jobject from_module, jstring package, jobject to_module, TRAPS);
+  static void add_module_exports(jobject from_module, const char* package, jobject to_module, TRAPS);
 
   // This does a qualified export of package in module from_module to module
   // to_module.  The format for the package name must use "/' not ".".
@@ -83,7 +86,7 @@ public:
   // * Package is not syntactically correct
   // * Package is not defined for from_module's class loader
   // * Package is not in module from_module.
-  static void add_module_exports_qualified(jobject from_module, jstring package, jobject to_module, TRAPS);
+  static void add_module_exports_qualified(jobject from_module, const char* package, jobject to_module, TRAPS);
 
   // add_reads_module adds module to_module to the list of modules that from_module
   // can read.  If from_module is the same as to_module then this is a no-op.
@@ -102,7 +105,7 @@ public:
   // NullPointerException is thrown if package is null.
   // IllegalArgumentException is thrown if loader is neither null nor a subtype of
   // java/lang/ClassLoader.
-  static jobject get_module_by_package_name(jobject loader, jstring package, TRAPS);
+  static jobject get_module_by_package_name(jobject loader, const char* package, TRAPS);
   static jobject get_named_module(Handle h_loader, const char* package, TRAPS);
 
   // If package is defined by loader, return the
@@ -116,16 +119,16 @@ public:
   // * Module is unnamed
   // * Package is not syntactically correct
   // * Package is already defined for module's class loader.
-  static void add_module_package(jobject module, jstring package, TRAPS);
+  static void add_module_package(jobject module, const char* package, TRAPS);
 
   // Marks the specified package as exported to all unnamed modules.
   // If either module or package is null then NullPointerException is thrown.
   // If module or package is bad, or module is unnamed, or package is not in
   // module then IllegalArgumentException is thrown.
-  static void add_module_exports_to_all_unnamed(jobject module, jstring package, TRAPS);
+  static void add_module_exports_to_all_unnamed(jobject module, const char* package, TRAPS);
 
   // Return TRUE if package_name is syntactically valid, false otherwise.
-  static bool verify_package_name(char *package_name);
+  static bool verify_package_name(const char *package_name);
 
   // Return TRUE iff package is defined by loader
   static bool is_package_defined(Symbol* package_name, Handle h_loader, TRAPS);

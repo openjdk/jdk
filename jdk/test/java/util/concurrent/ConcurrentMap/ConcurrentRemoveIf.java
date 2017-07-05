@@ -28,7 +28,7 @@
  * @summary Test removeIf on views of concurrent maps
  */
 
-import org.testng.Assert;
+import static org.testng.Assert.assertEquals;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -54,8 +54,8 @@ public class ConcurrentRemoveIf {
     static final int SIZE = 1000;
     static final int HALF_SIZE = SIZE / 2;
 
-    @DataProvider(name = "String,Supplier<ConcurrentMap>,Runnable")
-    public static Object[][] spliteratorDataProvider() {
+    @DataProvider()
+    public static Object[][] concurrentMapViewRemoveIfActions() {
         List<Object[]> rows = new ArrayList<>();
 
         // ConcurrentMap classes to test
@@ -95,24 +95,17 @@ public class ConcurrentRemoveIf {
                            dm.values().removeIf(v -> v == 0);
                        });
 
-        for (Map.Entry<String, Supplier<ConcurrentMap<Integer, Integer>>> mapSupplier : maps.entrySet()) {
-            Supplier<ConcurrentMap<Integer, Integer>> sm = mapSupplier.getValue();
-            for (Map.Entry<String, Consumer<ConcurrentMap<Integer, Integer>>> action : actions.entrySet()) {
-                rows.add(new Object[]{
-                        mapSupplier.getKey() + action.getKey(),
-                        sm,
-                        action.getValue()});
-            }
+        maps.forEach((mapDescription, sm) -> {
+            actions.forEach((actionDescription, action) -> {
+                rows.add(new Object[] {mapDescription + actionDescription, sm, action});
+            });
 
             if (sm.get() instanceof ConcurrentNavigableMap) {
-                for (Map.Entry<String, Consumer<ConcurrentNavigableMap<Integer, Integer>>> action : navActions.entrySet()) {
-                    rows.add(new Object[]{
-                            mapSupplier.getKey() + action.getKey(),
-                            sm,
-                            action.getValue()});
-                }
+                navActions.forEach((actionDescription, action) -> {
+                    rows.add(new Object[] {mapDescription + actionDescription, sm, action});
+                });
             }
-        }
+        });
 
         return rows.toArray(new Object[0][]);
     }
@@ -124,7 +117,7 @@ public class ConcurrentRemoveIf {
         executorService.shutdown();
     }
 
-    @Test(dataProvider = "String,Supplier<ConcurrentMap>,Runnable")
+    @Test(dataProvider = "concurrentMapViewRemoveIfActions")
     public void testMap(String desc, Supplier<ConcurrentMap<Integer, Integer>> ms, Consumer<ConcurrentMap<Integer, Integer>> action)
             throws InterruptedException {
         for (int i = 0; i < K; i++) {
@@ -140,7 +133,7 @@ public class ConcurrentRemoveIf {
         // To start working simultaneously
         CyclicBarrier threadStarted = new CyclicBarrier(2);
 
-        // This task put 1's into map
+        // This task puts 1's into map
         CompletableFuture<Void> putter = CompletableFuture.runAsync(
                 awaitOn(threadStarted, () -> fillMap(map, 1)),
                 executorService);
@@ -153,7 +146,8 @@ public class ConcurrentRemoveIf {
         // Wait for both tasks to complete
         CompletableFuture.allOf(putter, remover).join();
 
-        Assert.assertEquals(map.size(), SIZE, "Map size incorrect");
+        assertEquals(map.size(), SIZE, "Map size incorrect");
+        map.forEach((k, v) -> assertEquals(v, (Integer)1));
     }
 
     static void fillMap(ConcurrentMap<Integer, Integer> map, int value) {

@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
@@ -38,8 +39,20 @@ import java.nio.charset.Charset;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public abstract class CtwTest {
+    private static final String LOG_FILE = "ctw.log";
+    private static final String[] CTW_COMMAND = {
+        "-Xbootclasspath/a:.",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+WhiteBoxAPI",
+        "-Dsun.hotspot.tools.ctw.logfile=" + LOG_FILE,
+        "--add-exports", "java.base/jdk.internal.jimage=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
+        sun.hotspot.tools.ctw.CompileTheWorld.class.getName(),
+    };
     protected final String[] shouldContain;
     protected CtwTest(String[] shouldContain) {
         this.shouldContain = shouldContain;
@@ -54,7 +67,10 @@ public abstract class CtwTest {
                 prepare();
                 break;
             case "check":
-                check(args);
+                check();
+                break;
+            case "compile":
+                compile(args);
                 break;
             default:
                 throw new Error("unregonized action -- " + args[0]);
@@ -63,18 +79,25 @@ public abstract class CtwTest {
 
     protected void prepare() throws Exception { }
 
-    protected void check(String[] args) throws Exception  {
-        if (args.length < 2) {
-            throw new Error("logfile isn't specified");
-        }
-        String logfile = args[1];
-        try (BufferedReader r = Files.newBufferedReader(Paths.get(logfile),
+    protected void check() throws Exception  {
+        try (BufferedReader r = Files.newBufferedReader(Paths.get(LOG_FILE),
                 Charset.defaultCharset())) {
             OutputAnalyzer output = readOutput(r);
-           for (String test : shouldContain) {
+            for (String test : shouldContain) {
                 output.shouldContain(test);
             }
         }
+    }
+
+    protected void compile(String[] args) throws Exception {
+        // concat CTW_COMMAND and args w/o 0th element
+        String[] cmd = Arrays.copyOf(CTW_COMMAND, CTW_COMMAND.length + args.length - 1);
+        System.arraycopy(args, 1, cmd, CTW_COMMAND.length, args.length - 1);
+
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmd);
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        dump(output, "compile");
+        output.shouldHaveExitValue(0);
     }
 
     private static OutputAnalyzer readOutput(BufferedReader reader)

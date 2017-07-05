@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- *          jdk.jvmstat/sun.jvmstat.monitor
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @compile javax/sound/sampled/MyClass.jasm
  * @compile org/omg/CORBA/Context.jasm
  * @compile nonjdk/myPackage/MyClass.java

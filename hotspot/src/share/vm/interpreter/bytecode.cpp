@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ void Bytecode::assert_native_index(Bytecodes::Code bc, bool is_wide) {
 // Implementation of Bytecode_tableupswitch
 
 int Bytecode_tableswitch::dest_offset_at(int i) const {
-  return get_Java_u4_at(aligned_offset(1 + (3 + i)*jintSize));
+  return get_aligned_Java_u4_at(1 + (3 + i)*jintSize);
 }
 
 

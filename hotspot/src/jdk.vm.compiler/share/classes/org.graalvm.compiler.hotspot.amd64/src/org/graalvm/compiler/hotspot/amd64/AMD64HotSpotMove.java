@@ -265,14 +265,21 @@ public class AMD64HotSpotMove {
         }
     }
 
-    public static void decodeKlassPointer(AMD64MacroAssembler masm, Register register, Register scratch, AMD64Address address, CompressEncoding encoding) {
+    public static void decodeKlassPointer(CompilationResultBuilder crb, AMD64MacroAssembler masm, Register register, Register scratch, AMD64Address address, GraalHotSpotVMConfig config) {
+        CompressEncoding encoding = config.getKlassEncoding();
         masm.movl(register, address);
         if (encoding.shift != 0) {
             assert encoding.alignment == encoding.shift : "Decode algorithm is wrong";
             masm.shlq(register, encoding.alignment);
         }
-        if (encoding.base != 0) {
-            masm.movq(scratch, encoding.base);
+        if (GeneratePIC.getValue() || encoding.base != 0) {
+            if (GeneratePIC.getValue()) {
+                masm.movq(scratch, masm.getPlaceholder(-1));
+                crb.recordMark(config.MARKID_NARROW_KLASS_BASE_ADDRESS);
+            } else {
+                assert encoding.base != 0;
+                masm.movq(scratch, encoding.base);
+            }
             masm.addq(register, scratch);
         }
     }

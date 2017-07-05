@@ -51,7 +51,7 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.SplittableRandom;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class MapCheck {
 
@@ -612,7 +612,7 @@ public class MapCheck {
     }
 
     static void shuffle(Object[] keys) {
-        SplittableRandom rnd = new SplittableRandom();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
         int size = keys.length;
         for (int i=size; i>1; i--) {
             int r = rnd.nextInt(i);
