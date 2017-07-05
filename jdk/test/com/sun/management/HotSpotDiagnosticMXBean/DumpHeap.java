@@ -29,14 +29,14 @@
  */
 
 import java.lang.management.*;
+import java.util.List;
 import javax.management.MBeanServer;
 import com.sun.management.HotSpotDiagnosticMXBean;
 
 public class DumpHeap {
     public static void main(String[] argv) throws Exception {
-         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-         HotSpotDiagnosticMXBean dm = sun.management.ManagementFactory.getDiagnosticMXBean();
+         List<HotSpotDiagnosticMXBean> list = ManagementFactory.getPlatformMXBeans(HotSpotDiagnosticMXBean.class);
          System.out.println("Dumping to file: " + argv[0] + " ....");
-         dm.dumpHeap(argv[0], true);
+         list.get(0).dumpHeap(argv[0], true);
     }
 }

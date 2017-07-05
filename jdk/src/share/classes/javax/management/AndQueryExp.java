@@ -100,12 +100,13 @@ class AndQueryExp extends QueryEval implements QueryExp {
    /**
     * Returns a string representation of this AndQueryExp
     */
-   public String toString() {
-     return "(" + exp1 + ") and (" + exp2 + ")";
-   }
+    @Override
+    public String toString() {
+        return "(" + exp1 + ") and (" + exp2 + ")";
+    }
 
-   @Override
-   String toQueryString() {
+    @Override
+    String toQueryString() {
         // Parentheses are only added if needed to disambiguate.
         return parens(exp1) + " and " + parens(exp2);
    }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6420753 6242436
+ * @bug     6420753 6242436 6691185
  * @summary Compare NavigableMap implementations for identical behavior
  * @author  Martin Buchholz
  */
@@ -159,6 +159,7 @@ public class LockStep {
         Object[] a = new Object[1]; a[0] = Boolean.TRUE;
         equal(c.toArray(a), a);
         equal(a[0], null);
+        check(! c.iterator().hasNext());
     }
 
     static void testEmptySet(Set<?> c) {
@@ -262,6 +263,16 @@ public class LockStep {
         }
     }
 
+    static void equalIterators(final Iterator<?> it1,
+                               final Iterator<?> it2) {
+        while (it1.hasNext()) {
+            if (maybe(2))
+                check(it2.hasNext());
+            equal(it1.next(), it2.next());
+        }
+        check(! it2.hasNext());
+    }
+
     static void equalNavigableSetsLeaf(final NavigableSet s1,
                                        final NavigableSet s2) {
         equal2(s1,            s2);
@@ -273,6 +284,8 @@ public class LockStep {
             equal(s1.first(), s2.first());
             equal(s1.last(),  s2.last());
         }
+        equalIterators(s1.iterator(), s2.iterator());
+        equalIterators(s1.descendingIterator(), s2.descendingIterator());
         checkNavigableSet(s1);
         checkNavigableSet(s2);
     }
@@ -493,30 +506,23 @@ public class LockStep {
 
     static MapFrobber randomAdder(NavigableMap m) {
         final Integer k = unusedKey(m);
-        MapFrobber f;
-        switch (rnd.nextInt(4)) {
-        case 0: f = new MapFrobber() {void frob(NavigableMap m) {
-            equal(m.put(k, k+1), null);
-            equal(m.get(k), k+1);
-            if (maybe(4)) {
-                equal(m.put(k, k+1), k+1);
-                equal(m.get(k), k+1);}}};
-            break;
-        case 1: f = new MapFrobber() {void frob(NavigableMap m) {
-            m.descendingMap().put(k, k+1);
-            equal(m.get(k), k+1);}};
-            break;
-        case 2: f = new MapFrobber() {void frob(NavigableMap m) {
-            m.tailMap(k,true).headMap(k,true).put(k,k+1);}};
-            break;
-        case 3: f = new MapFrobber() {void frob(NavigableMap m) {
-            m.tailMap(k,true).headMap(k,true).descendingMap().put(k,k+1);}};
-            break;
-        default: throw new Error();
-        }
-        final MapFrobber ff = f;
+        final MapFrobber[] randomAdders = {
+            new MapFrobber() {void frob(NavigableMap m) {
+                equal(m.put(k, k+1), null);
+                equal(m.get(k), k+1);
+                if (maybe(4)) {
+                    equal(m.put(k, k+1), k+1);
+                    equal(m.get(k), k+1);}}},
+            new MapFrobber() {void frob(NavigableMap m) {
+                m.descendingMap().put(k, k+1);
+                equal(m.get(k), k+1);}},
+            new MapFrobber() {void frob(NavigableMap m) {
+                m.tailMap(k,true).headMap(k,true).put(k,k+1);}},
+            new MapFrobber() {void frob(NavigableMap m) {
+                m.tailMap(k,true).headMap(k,true).descendingMap().put(k,k+1);}}
+        };
         return new MapFrobber() {void frob(NavigableMap m) {
-            ff.frob(m);
+            randomAdders[rnd.nextInt(randomAdders.length)].frob(m);
             if (maybe(2)) equal(m.get(k), k+1);
             if (maybe(4)) {
                 equal(m.put(k, k+1), k+1);
@@ -525,26 +531,19 @@ public class LockStep {
 
     static SetFrobber randomAdder(NavigableSet s) {
         final Integer e = unusedElt(s);
-        SetFrobber f;
-        switch (rnd.nextInt(4)) {
-        case 0: f = new SetFrobber() {void frob(NavigableSet s) {
-            check(s.add(e));}};
-            break;
-        case 1: f = new SetFrobber() {void frob(NavigableSet s) {
-            s.descendingSet().add(e);}};
-            break;
-        case 2: f = new SetFrobber() {void frob(NavigableSet s) {
-            s.tailSet(e,true).headSet(e,true).add(e);}};
-            break;
-        case 3: f = new SetFrobber() {void frob(NavigableSet s) {
-            s.descendingSet().tailSet(e,true).headSet(e,true).add(e);}};
-            break;
-        default: throw new Error();
-        }
-        final SetFrobber ff = f;
+        final SetFrobber[] randomAdders = {
+            new SetFrobber() {void frob(NavigableSet s) {
+                check(s.add(e));}},
+            new SetFrobber() {void frob(NavigableSet s) {
+                s.descendingSet().add(e);}},
+            new SetFrobber() {void frob(NavigableSet s) {
+                s.tailSet(e,true).headSet(e,true).add(e);}},
+            new SetFrobber() {void frob(NavigableSet s) {
+                s.descendingSet().tailSet(e,true).headSet(e,true).add(e);}}
+        };
         return new SetFrobber() {void frob(NavigableSet s) {
             if (maybe(2)) check(! s.contains(e));
-            ff.frob(s);
+            randomAdders[rnd.nextInt(randomAdders.length)].frob(s);
             if (maybe(2)) check(! s.add(e));
             if (maybe(2)) check(s.contains(e));}};
     }
@@ -605,89 +604,112 @@ public class LockStep {
 
     static MapFrobber randomRemover(NavigableMap m) {
         final Integer k = usedKey(m);
-        switch (rnd.nextInt(7)) {
-        default: throw new Error();
-        case 0: return new MapFrobber() {void frob(NavigableMap m) {
-            Map.Entry e = m.firstEntry();
-            equal(m.pollFirstEntry(), e);
-            checkUnusedKey(m, e.getKey());}};
-        case 1: return new MapFrobber() {void frob(NavigableMap m) {
-            Map.Entry e = m.lastEntry();
-            equal(m.pollLastEntry(), e);
-            checkUnusedKey(m, e.getKey());}};
-        case 2: return new MapFrobber() {void frob(NavigableMap m) {
-            check(m.remove(k) != null);
-            checkUnusedKey(m, k);}};
-        case 3: return new MapFrobber() {void frob(NavigableMap m) {
-            m.subMap(k, true, k, true).clear();
-            checkUnusedKey(m, k);}};
-        case 4: return new MapFrobber() {void frob(NavigableMap m) {
-            m.descendingMap().subMap(k, true, k, true).clear();
-            checkUnusedKey(m, k);}};
-        case 5: return new MapFrobber() {void frob(NavigableMap m) {
-            final Iterator it = m.keySet().iterator();
-            while (it.hasNext())
-                if (it.next().equals(k)) {
-                    it.remove();
-                    if (maybe(2))
-                        THROWS(IllegalStateException.class,
-                               new Fun(){void f(){ it.remove(); }});
-                }
-            checkUnusedKey(m, k);}};
-        case 6: return new MapFrobber() {void frob(NavigableMap m) {
-            final Iterator<Map.Entry> it = m.entrySet().iterator();
-            while (it.hasNext())
-                if (it.next().getKey().equals(k)) {
-                    it.remove();
-                    if (maybe(2))
-                        THROWS(IllegalStateException.class, remover(it));
-                }
-            checkUnusedKey(m, k);}};
-        }
+        final MapFrobber[] randomRemovers = {
+            new MapFrobber() {void frob(NavigableMap m) {
+                Map.Entry e = m.firstEntry();
+                equal(m.pollFirstEntry(), e);
+                checkUnusedKey(m, e.getKey());}},
+            new MapFrobber() {void frob(NavigableMap m) {
+                Map.Entry e = m.lastEntry();
+                equal(m.pollLastEntry(), e);
+                checkUnusedKey(m, e.getKey());}},
+            new MapFrobber() {void frob(NavigableMap m) {
+                check(m.remove(k) != null);
+                checkUnusedKey(m, k);}},
+            new MapFrobber() {void frob(NavigableMap m) {
+                m.subMap(k, true, k, true).clear();
+                checkUnusedKey(m, k);}},
+            new MapFrobber() {void frob(NavigableMap m) {
+                m.descendingMap().subMap(k, true, k, true).clear();
+                checkUnusedKey(m, k);}},
+            new MapFrobber() {void frob(NavigableMap m) {
+                final Iterator it = m.keySet().iterator();
+                while (it.hasNext())
+                    if (it.next().equals(k)) {
+                        it.remove();
+                        if (maybe(2))
+                            THROWS(IllegalStateException.class,
+                                   new Fun(){void f(){ it.remove(); }});
+                    }
+                checkUnusedKey(m, k);}},
+            new MapFrobber() {void frob(NavigableMap m) {
+                final Iterator it = m.navigableKeySet().descendingIterator();
+                while (it.hasNext())
+                    if (it.next().equals(k)) {
+                        it.remove();
+                        if (maybe(2))
+                            THROWS(IllegalStateException.class,
+                                   new Fun(){void f(){ it.remove(); }});
+                    }
+                checkUnusedKey(m, k);}},
+            new MapFrobber() {void frob(NavigableMap m) {
+                final Iterator<Map.Entry> it = m.entrySet().iterator();
+                while (it.hasNext())
+                    if (it.next().getKey().equals(k)) {
+                        it.remove();
+                        if (maybe(2))
+                            THROWS(IllegalStateException.class, remover(it));
+                    }
+                checkUnusedKey(m, k);}},
+        };
+
+        return randomRemovers[rnd.nextInt(randomRemovers.length)];
     }
 
     static SetFrobber randomRemover(NavigableSet s) {
         final Integer e = usedElt(s);
-        switch (rnd.nextInt(7)) {
-        default: throw new Error();
-        case 0: return new SetFrobber() {void frob(NavigableSet s) {
-            Object e = s.first();
-            equal(s.pollFirst(), e);
-            checkUnusedElt(s, e);}};
-        case 1: return new SetFrobber() {void frob(NavigableSet s) {
-            Object e = s.last();
-            equal(s.pollLast(), e);
-            checkUnusedElt(s, e);}};
-        case 2: return new SetFrobber() {void frob(NavigableSet s) {
-            check(s.remove(e));
-            checkUnusedElt(s, e);}};
-        case 3: return new SetFrobber() {void frob(NavigableSet s) {
-            s.subSet(e, true, e, true).clear();
-            checkUnusedElt(s, e);}};
-        case 4: return new SetFrobber() {void frob(NavigableSet s) {
-            s.descendingSet().subSet(e, true, e, true).clear();
-            checkUnusedElt(s, e);}};
-        case 5: return new SetFrobber() {void frob(NavigableSet s) {
-            final Iterator it = s.iterator();
-            while (it.hasNext())
-                if (it.next().equals(e)) {
-                    it.remove();
-                    if (maybe(2))
-                        THROWS(IllegalStateException.class,
-                               new Fun(){void f(){ it.remove(); }});
-                }
-            checkUnusedElt(s, e);}};
-        case 6: return new SetFrobber() {void frob(NavigableSet s) {
-            final Iterator it = s.descendingSet().iterator();
-            while (it.hasNext())
-                if (it.next().equals(e)) {
-                    it.remove();
-                    if (maybe(2))
-                        THROWS(IllegalStateException.class,
-                               new Fun(){void f(){ it.remove(); }});
-                }
-            checkUnusedElt(s, e);}};
-        }
+
+        final SetFrobber[] randomRemovers = {
+            new SetFrobber() {void frob(NavigableSet s) {
+                Object e = s.first();
+                equal(s.pollFirst(), e);
+                checkUnusedElt(s, e);}},
+            new SetFrobber() {void frob(NavigableSet s) {
+                Object e = s.last();
+                equal(s.pollLast(), e);
+                checkUnusedElt(s, e);}},
+            new SetFrobber() {void frob(NavigableSet s) {
+                check(s.remove(e));
+                checkUnusedElt(s, e);}},
+            new SetFrobber() {void frob(NavigableSet s) {
+                s.subSet(e, true, e, true).clear();
+                checkUnusedElt(s, e);}},
+            new SetFrobber() {void frob(NavigableSet s) {
+                s.descendingSet().subSet(e, true, e, true).clear();
+                checkUnusedElt(s, e);}},
+            new SetFrobber() {void frob(NavigableSet s) {
+                final Iterator it = s.iterator();
+                while (it.hasNext())
+                    if (it.next().equals(e)) {
+                        it.remove();
+                        if (maybe(2))
+                            THROWS(IllegalStateException.class,
+                                   new Fun(){void f(){ it.remove(); }});
+                    }
+                checkUnusedElt(s, e);}},
+            new SetFrobber() {void frob(NavigableSet s) {
+                final Iterator it = s.descendingSet().iterator();
+                while (it.hasNext())
+                    if (it.next().equals(e)) {
+                        it.remove();
+                        if (maybe(2))
+                            THROWS(IllegalStateException.class,
+                                   new Fun(){void f(){ it.remove(); }});
+                    }
+                checkUnusedElt(s, e);}},
+            new SetFrobber() {void frob(NavigableSet s) {
+                final Iterator it = s.descendingIterator();
+                while (it.hasNext())
+                    if (it.next().equals(e)) {
+                        it.remove();
+                        if (maybe(2))
+                            THROWS(IllegalStateException.class,
+                                   new Fun(){void f(){ it.remove(); }});
+                    }
+                checkUnusedElt(s, e);}}
+        };
+
+        return randomRemovers[rnd.nextInt(randomRemovers.length)];
     }
 
     static void lockStep(NavigableMap m1,

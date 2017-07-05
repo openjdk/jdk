@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
             XToolkit.RESTORE_XERROR_HANDLER();
 
             if (XToolkit.saved_error != null &&
-                XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+                XToolkit.saved_error.get_error_code() != XConstants.Success) {
                 cleanup();
                 throw new XException("Cannot write XdndActionList property");
             }
@@ -124,7 +124,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
             XToolkit.RESTORE_XERROR_HANDLER();
 
             if (XToolkit.saved_error != null &&
-                XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+                XToolkit.saved_error.get_error_code() != XConstants.Success) {
                 cleanup();
                 throw new XException("Cannot write XdndActionList property");
             }
@@ -134,7 +134,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
         }
 
         if (!XDnDConstants.XDnDSelection.setOwner(contents, formatMap, formats,
-                                                  XlibWrapper.CurrentTime)) {
+                                                  XConstants.CurrentTime)) {
             cleanup();
             throw new InvalidDnDOperationException("Cannot acquire selection ownership");
         }
@@ -193,11 +193,11 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
 
         WindowPropertyGetter wpg1 =
             new WindowPropertyGetter(window, XDnDConstants.XA_XdndAware, 0, 1,
-                                     false, XlibWrapper.AnyPropertyType);
+                                     false, XConstants.AnyPropertyType);
 
         int status = wpg1.execute(XToolkit.IgnoreBadWindowHandler);
 
-        if (status == XlibWrapper.Success &&
+        if (status == XConstants.Success &&
             wpg1.getData() != 0 && wpg1.getActualType() == XAtom.XA_ATOM) {
 
             int targetVersion = (int)Native.getLong(wpg1.getData());
@@ -217,7 +217,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
                 try {
                     status = wpg2.execute(XToolkit.IgnoreBadWindowHandler);
 
-                    if (status == XlibWrapper.Success &&
+                    if (status == XConstants.Success &&
                         wpg2.getData() != 0 &&
                         wpg2.getActualType() == XAtom.XA_WINDOW) {
 
@@ -235,7 +235,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
                     try {
                         status = wpg3.execute(XToolkit.IgnoreBadWindowHandler);
 
-                        if (status != XlibWrapper.Success ||
+                        if (status != XConstants.Success ||
                             wpg3.getData() == 0 ||
                             wpg3.getActualType() != XAtom.XA_WINDOW ||
                             Native.getLong(wpg3.getData()) != proxy) {
@@ -246,12 +246,12 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
                                 new WindowPropertyGetter(proxy,
                                                          XDnDConstants.XA_XdndAware,
                                                          0, 1, false,
-                                                         XlibWrapper.AnyPropertyType);
+                                                         XConstants.AnyPropertyType);
 
                             try {
                                 status = wpg4.execute(XToolkit.IgnoreBadWindowHandler);
 
-                                if (status != XlibWrapper.Success ||
+                                if (status != XConstants.Success ||
                                     wpg4.getData() == 0 ||
                                     wpg4.getActualType() != XAtom.XA_ATOM) {
 
@@ -283,7 +283,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XlibWrapper.ClientMessage);
+            msg.set_type((int)XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndEnter.getAtom());
@@ -297,7 +297,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
             msg.set_data(4, formats.length > 2 ? formats[2] : 0);
             XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                    getTargetProxyWindow(),
-                                   false, XlibWrapper.NoEventMask,
+                                   false, XConstants.NoEventMask,
                                    msg.pData);
         } finally {
             msg.dispose();
@@ -311,7 +311,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XlibWrapper.ClientMessage);
+            msg.set_type((int)XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndPosition.getAtom());
@@ -322,7 +322,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
             msg.set_data(4, XDnDConstants.getXDnDActionForJavaAction(sourceAction));
             XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                    getTargetProxyWindow(),
-                                   false, XlibWrapper.NoEventMask,
+                                   false, XConstants.NoEventMask,
                                    msg.pData);
         } finally {
             msg.dispose();
@@ -335,7 +335,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XlibWrapper.ClientMessage);
+            msg.set_type((int)XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndLeave.getAtom());
@@ -346,7 +346,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
             msg.set_data(4, 0);
             XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                    getTargetProxyWindow(),
-                                   false, XlibWrapper.NoEventMask,
+                                   false, XConstants.NoEventMask,
                                    msg.pData);
         } finally {
             msg.dispose();
@@ -361,7 +361,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XlibWrapper.ClientMessage);
+            msg.set_type((int)XConstants.ClientMessage);
             msg.set_window(getTargetWindow());
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndDrop.getAtom());
@@ -372,7 +372,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
             msg.set_data(4, 0);
             XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                    getTargetProxyWindow(),
-                                   false, XlibWrapper.NoEventMask,
+                                   false, XConstants.NoEventMask,
                                    msg.pData);
         } finally {
             msg.dispose();
@@ -406,7 +406,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
             assert XToolkit.isAWTLockHeldByCurrentThread();
 
             XlibWrapper.XSendEvent(XToolkit.getDisplay(), sourceWindow,
-                                   false, XlibWrapper.NoEventMask,
+                                   false, XConstants.NoEventMask,
                                    xclient.pData);
 
             return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,9 +55,19 @@ import java.io.ObjectOutputStream;
  * platform dependent drag initiating gesture has occurred
  * on the <code>Component</code> that it is tracking.
  *
+ * The {@code action} field of any {@code DragGestureEvent} instance should take one of the following
+ * values:
+ * <ul>
+ * <li> {@code DnDConstants.ACTION_COPY}
+ * <li> {@code DnDConstants.ACTION_MOVE}
+ * <li> {@code DnDConstants.ACTION_LINK}
+ * </ul>
+ * Assigning the value different from listed above will cause an unspecified behavior.
+ *
  * @see java.awt.dnd.DragGestureRecognizer
  * @see java.awt.dnd.DragGestureListener
  * @see java.awt.dnd.DragSource
+ * @see java.awt.dnd.DnDConstants
  */
 
 public class DragGestureEvent extends EventObject {
@@ -65,19 +75,25 @@ public class DragGestureEvent extends EventObject {
     private static final long serialVersionUID = 9080172649166731306L;
 
     /**
-     * Constructs a <code>DragGestureEvent</code> given the
-     * <code>DragGestureRecognizer</code> firing this event,
-     * an <code>int</code> representing
-     * the user's preferred action, a <code>Point</code>
-     * indicating the origin of the drag, and a <code>List</code>
-     * of events that comprise the gesture.
+     * Constructs a <code>DragGestureEvent</code> object given by the
+     * <code>DragGestureRecognizer</code> instance firing this event,
+     * an {@code act} parameter representing
+     * the user's preferred action, an {@code ori} parameter
+     * indicating the origin of the drag, and a {@code List} of
+     * events that comprise the gesture({@code evs} parameter).
      * <P>
      * @param dgr The <code>DragGestureRecognizer</code> firing this event
-     * @param act The the user's preferred action
+     * @param act The user's preferred action.
+     *            For information on allowable values, see
+     *            the class description for {@link DragGestureEvent}
      * @param ori The origin of the drag
      * @param evs The <code>List</code> of events that comprise the gesture
      * <P>
-     * @throws IllegalArgumentException if input parameters are {@code null}
+     * @throws IllegalArgumentException if any parameter equals {@code null}
+     * @throws IllegalArgumentException if the act parameter does not comply with
+     *                                  the values given in the class
+     *                                  description for {@link DragGestureEvent}
+     * @see java.awt.dnd.DnDConstants
      */
 
     public DragGestureEvent(DragGestureRecognizer dgr, int act, Point ori,

@@ -54,9 +54,9 @@ public:
 
   // These functions indicate whether a particular access of the given
   // kinds requires a barrier.
-  virtual bool read_ref_needs_barrier(oop* field) = 0;
+  virtual bool read_ref_needs_barrier(void* field) = 0;
   virtual bool read_prim_needs_barrier(HeapWord* field, size_t bytes) = 0;
-  virtual bool write_ref_needs_barrier(oop* field, oop new_val) = 0;
+  virtual bool write_ref_needs_barrier(void* field, oop new_val) = 0;
   virtual bool write_prim_needs_barrier(HeapWord* field, size_t bytes, juint val1, juint val2) = 0;
 
   // The first four operations provide a direct implementation of the
@@ -64,7 +64,7 @@ public:
   // directly, as appropriate.
 
   // Invoke the barrier, if any, necessary when reading the given ref field.
-  virtual void read_ref_field(oop* field) = 0;
+  virtual void read_ref_field(void* field) = 0;
 
   // Invoke the barrier, if any, necessary when reading the given primitive
   // "field" of "bytes" bytes in "obj".
@@ -75,9 +75,9 @@ public:
   // (For efficiency reasons, this operation is specialized for certain
   // barrier types.  Semantically, it should be thought of as a call to the
   // virtual "_work" function below, which must implement the barrier.)
-  inline void write_ref_field(oop* field, oop new_val);
+  inline void write_ref_field(void* field, oop new_val);
 protected:
-  virtual void write_ref_field_work(oop* field, oop new_val) = 0;
+  virtual void write_ref_field_work(void* field, oop new_val) = 0;
 public:
 
   // Invoke the barrier, if any, necessary when writing the "bytes"-byte

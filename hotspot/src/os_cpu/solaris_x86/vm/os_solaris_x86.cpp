@@ -212,7 +212,8 @@ frame os::current_frame() {
                 CAST_FROM_FN_PTR(address, os::current_frame));
   if (os::is_first_C_frame(&myframe)) {
     // stack is not walkable
-    return frame(NULL, NULL, NULL);
+    frame ret; // This will be a null useless frame
+    return ret;
   } else {
     return os::get_sender_for_C_frame(&myframe);
   }

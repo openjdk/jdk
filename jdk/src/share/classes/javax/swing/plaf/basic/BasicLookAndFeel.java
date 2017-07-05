@@ -654,7 +654,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                 "javax.swing.plaf.basic.BasicIconFactory",
                 "getRadioButtonMenuItemIcon");
 
-        Object menuItemAcceleratorDelimiter = new String("+");
+        Object menuItemAcceleratorDelimiter = "+";
 
         // *** OptionPane value objects
 
@@ -1364,6 +1364,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                         "LEFT", "positiveUnitIncrement",
                      "KP_LEFT", "positiveUnitIncrement",
                  }),
+            "Slider.onlyLeftMouseButtonDrag", Boolean.TRUE,
 
             // *** Spinner
             "Spinner.font", monospacedPlain12,

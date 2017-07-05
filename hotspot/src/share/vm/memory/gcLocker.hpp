@@ -184,7 +184,9 @@ class No_Safepoint_Verifier : public No_GC_Verifier {
   Thread *_thread;
  public:
 #ifdef ASSERT
-  No_Safepoint_Verifier(bool activated = true, bool verifygc = true ) : No_GC_Verifier(verifygc) {
+  No_Safepoint_Verifier(bool activated = true, bool verifygc = true ) :
+    No_GC_Verifier(verifygc),
+    _activated(activated) {
     _thread = Thread::current();
     if (_activated) {
       _thread->_allow_allocation_count++;

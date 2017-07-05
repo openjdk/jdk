@@ -30,9 +30,11 @@ import java.awt.peer.*;
 import java.util.Vector;
 
 import sun.awt.SunGraphicsCallback;
+import java.util.logging.*;
 
 class WPanelPeer extends WCanvasPeer implements PanelPeer {
 
+    private static final Logger log = Logger.getLogger("sun.awt.windows.WPanelPeer");
     // ComponentPeer overrides
 
     public void paint(Graphics g) {
@@ -131,8 +133,16 @@ class WPanelPeer extends WCanvasPeer implements PanelPeer {
         for (int i = 0; i < cont.getComponentCount(); i++) {
             Component comp = cont.getComponent(i);
             if (!comp.isLightweight()) {
-                if (comp.getPeer() != null) {
-                    peers.add(comp.getPeer());
+                ComponentPeer peer = comp.getPeer();
+                if (peer != null && (peer instanceof WComponentPeer))
+                {
+                    peers.add(peer);
+                } else {
+                    if (log.isLoggable(Level.FINE)) {
+                        log.log(Level.FINE,
+                                "peer of a {0} is null or not a WComponentPeer: {1}.",
+                                new Object[]{comp, peer});
+                    }
                 }
             }
             if (comp.isLightweight() && comp instanceof Container) {

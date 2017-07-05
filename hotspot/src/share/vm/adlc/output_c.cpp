@@ -1546,6 +1546,18 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 
     // Build a mapping from operand index to input edges
     fprintf(fp,"  unsigned idx0 = oper_input_base();\n");
+
+    // The order in which inputs are added to a node is very
+    // strange.  Store nodes get a memory input before Expand is
+    // called and all other nodes get it afterwards so
+    // oper_input_base is wrong during expansion.  This code adjusts
+    // is so that expansion will work correctly.
+    bool missing_memory_edge = node->_matrule->needs_ideal_memory_edge(_globalNames) &&
+                               node->is_ideal_store() == Form::none;
+    if (missing_memory_edge) {
+      fprintf(fp,"  idx0--; // Adjust base because memory edge hasn't been inserted yet\n");
+    }
+
     for( i = 0; i < node->num_opnds(); i++ ) {
       fprintf(fp,"  unsigned idx%d = idx%d + num%d;\n",
               i+1,i,i);
@@ -1600,8 +1612,10 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         int node_mem_op = node->memory_operand(_globalNames);
         assert( node_mem_op != InstructForm::NO_MEMORY_OPERAND,
                 "expand rule member needs memory but top-level inst doesn't have any" );
-        // Copy memory edge
-        fprintf(fp,"  n%d->add_req(_in[1]);\t// Add memory edge\n", cnt);
+        if (!missing_memory_edge) {
+          // Copy memory edge
+          fprintf(fp,"  n%d->add_req(_in[1]);\t// Add memory edge\n", cnt);
+        }
       }
 
       // Iterate over the new instruction's operands
@@ -2362,6 +2376,8 @@ void ArchDesc::defineSize(FILE *fp, InstructForm &inst) {
   // Output instruction's emit prototype
   fprintf(fp,"uint  %sNode::size(PhaseRegAlloc *ra_) const {\n",
           inst._ident);
+
+  fprintf(fp, " assert(VerifyOops || MachNode::size(ra_) <= %s, \"bad fixed size\");\n", inst._size);
 
   //(2)
   // Print the size
@@ -3426,6 +3442,8 @@ static void path_to_constant(FILE *fp, FormDict &globals,
       fprintf(fp, "_leaf->get_int()");
     } else if ( (strcmp(optype,"ConP") == 0) ) {
       fprintf(fp, "_leaf->bottom_type()->is_ptr()");
+    } else if ( (strcmp(optype,"ConN") == 0) ) {
+      fprintf(fp, "_leaf->bottom_type()->is_narrowoop()");
     } else if ( (strcmp(optype,"ConF") == 0) ) {
       fprintf(fp, "_leaf->getf()");
     } else if ( (strcmp(optype,"ConD") == 0) ) {

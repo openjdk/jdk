@@ -1099,7 +1099,7 @@ public class CSS implements Serializable {
      */
     static String colorToHex(Color color) {
 
-      String colorstr = new String("#");
+      String colorstr = "#";
 
       // Red
       String str = Integer.toHexString(color.getRed());

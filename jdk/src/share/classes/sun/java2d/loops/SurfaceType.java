@@ -408,7 +408,7 @@ public final class SurfaceType {
             if (unusedUID > 255) {
                 throw new InternalError("surface type id overflow");
             }
-            i = new Integer(unusedUID++);
+            i = Integer.valueOf(unusedUID++);
             surfaceUIDMap.put(desc, i);
         }
         return i.intValue();

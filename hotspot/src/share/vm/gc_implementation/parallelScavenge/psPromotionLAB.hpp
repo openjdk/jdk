@@ -32,7 +32,7 @@ class ObjectStartArray;
 
 class PSPromotionLAB : public CHeapObj {
  protected:
-  static const size_t filler_header_size;
+  static size_t filler_header_size;
 
   enum LabState {
     needs_flush,

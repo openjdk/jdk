@@ -110,12 +110,12 @@ public class ObjectHistogramElement {
   public static void titleOn(PrintStream tty) {
     tty.println("Object Histogram:");
     tty.println();
-    tty.println("Size" + "\t" + "Count" + "\t" + "Class description");
-    tty.println("-------------------------------------------------------");
+    tty.println("num " + "\t" + "  #instances" + "\t" + "#bytes" + "\t" + "Class description");
+    tty.println("--------------------------------------------------------------------------");
   }
 
   public void printOn(PrintStream tty) {
-    tty.print(size + "\t" + count + "\t");
+    tty.print(count + "\t" + size + "\t");
     tty.print(getDescription());
     tty.println();
   }

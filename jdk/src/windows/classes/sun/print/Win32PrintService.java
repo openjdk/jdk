@@ -348,7 +348,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 
         idList = new ArrayList();
         for (int i=0; i < media.length; i++) {
-          idList.add(new Integer(media[i]));
+            idList.add(Integer.valueOf(media[i]));
         }
 
         mediaSizes = getMediaSizes(idList, media);
@@ -517,7 +517,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
           if ((wid <= 0) || (ht <= 0)) {
             //Remove corresponding ID from list
             if (nMedia == media.length) {
-              Integer remObj = new Integer(media[i]);
+                Integer remObj = Integer.valueOf(media[i]);
               idList.remove(idList.indexOf(remObj));
             }
             continue;
@@ -539,7 +539,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
               msList.add(ms);
             } catch(IllegalArgumentException e) {
               if (nMedia == media.length) {
-                Integer remObj = new Integer(media[i]);
+                  Integer remObj = Integer.valueOf(media[i]);
                 idList.remove(idList.indexOf(remObj));
               }
             }
@@ -984,7 +984,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
                      // cannot be null but to be safe, add a check
                      if ((idList != null) && (mediaSizes != null) &&
                          (idList.size() == mediaSizes.length)) {
-                         Integer defIdObj = new Integer(defPaper);
+                         Integer defIdObj = Integer.valueOf(defPaper);
                          int index = idList.indexOf(defIdObj);
                          if (index>=0 && index<mediaSizes.length) {
                              return mediaSizes[index].getMediaSizeName();

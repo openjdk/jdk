@@ -196,7 +196,7 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   printf("\n");
 
   GEN_VALUE(OFFSET_HeapBlockHeader_used, offset_of(HeapBlock::Header, _used));
-  GEN_OFFS(oopDesc, _klass);
+  GEN_OFFS(oopDesc, _metadata);
   printf("\n");
 
   GEN_VALUE(AccessFlags_NATIVE, JVM_ACC_NATIVE);

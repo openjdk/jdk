@@ -25,6 +25,20 @@
 # include "incls/_precompiled.incl"
 # include "incls/_forte.cpp.incl"
 
+// These name match the names reported by the forte quality kit
+enum {
+  ticks_no_Java_frame         =  0,
+  ticks_no_class_load         = -1,
+  ticks_GC_active             = -2,
+  ticks_unknown_not_Java      = -3,
+  ticks_not_walkable_not_Java = -4,
+  ticks_unknown_Java          = -5,
+  ticks_not_walkable_Java     = -6,
+  ticks_unknown_state         = -7,
+  ticks_thread_exit           = -8,
+  ticks_deopt                 = -9,
+  ticks_safepoint             = -10
+};
 
 //-------------------------------------------------------
 
@@ -41,297 +55,29 @@ class vframeStreamForte : public vframeStreamCommon {
 };
 
 
-static void forte_is_walkable_compiled_frame(frame* fr, RegisterMap* map,
+static void is_decipherable_compiled_frame(frame* fr, RegisterMap* map,
   bool* is_compiled_p, bool* is_walkable_p);
-static bool forte_is_walkable_interpreted_frame(frame* fr,
-  methodOop* method_p, int* bci_p);
+static bool is_decipherable_interpreted_frame(JavaThread* thread,
+                                                frame* fr,
+                                                methodOop* method_p,
+                                                int* bci_p);
 
 
-// A Forte specific version of frame:safe_for_sender().
-static bool forte_safe_for_sender(frame* fr, JavaThread *thread) {
-  bool ret_value = false;  // be pessimistic
-
-#ifdef COMPILER2
-#if defined(IA32) || defined(AMD64)
-  {
-    // This check is the same as the standard safe_for_sender()
-    // on IA32 or AMD64 except that NULL FP values are tolerated
-    // for C2.
-    address   sp = (address)fr->sp();
-    address   fp = (address)fr->fp();
-    ret_value = sp != NULL && sp <= thread->stack_base() &&
-      sp >= thread->stack_base() - thread->stack_size() &&
-      (fp == NULL || (fp <= thread->stack_base() &&
-      fp >= thread->stack_base() - thread->stack_size()));
-
-    // We used to use standard safe_for_sender() when we are supposed
-    // to be executing Java code. However, that prevents us from
-    // walking some intrinsic stacks so now we have to be more refined.
-    // If we passed the above check and we have a NULL frame pointer
-    // and we are supposed to be executing Java code, then we have a
-    // couple of more checks to make.
-    if (ret_value && fp == NULL && (thread->thread_state() == _thread_in_Java
-        || thread->thread_state() == _thread_in_Java_trans)) {
-
-      if (fr->is_interpreted_frame()) {
-        // interpreted frames don't really have a NULL frame pointer
-        return false;
-      } else if (CodeCache::find_blob(fr->pc()) == NULL) {
-        // the NULL frame pointer should be associated with generated code
-        return false;
-      }
-    }
-  }
-
-#else // !(IA32 || AMD64)
-  ret_value = fr->safe_for_sender(thread);
-#endif // IA32 || AMD64
-
-#else // !COMPILER2
-  ret_value = fr->safe_for_sender(thread);
-#endif // COMPILER2
-
-  if (!ret_value) {
-    return ret_value;  // not safe, nothing more to do
-  }
-
-  address sp1;
-
-#ifdef SPARC
-  // On Solaris SPARC, when a compiler frame has an interpreted callee
-  // the _interpreter_sp_adjustment field contains the adjustment to
-  // this frame's SP made by that interpreted callee.
-  // For AsyncGetCallTrace(), we need to verify that the resulting SP
-  // is valid for the specified thread's stack.
-  sp1 = (address)fr->sp();
-  address sp2 = (address)fr->unextended_sp();
-
-  // If the second SP is NULL, then the _interpreter_sp_adjustment
-  // field simply adjusts this frame's SP to NULL and the frame is
-  // not safe. This strange value can be set in the frame constructor
-  // when our peek into the interpreted callee's adjusted value for
-  // this frame's SP finds a NULL. This can happen when SIGPROF
-  // catches us while we are creating the interpreter frame.
-  //
-  if (sp2 == NULL ||
-
-      // If the two SPs are different, then _interpreter_sp_adjustment
-      // is non-zero and we need to validate the second SP. We invert
-      // the range check from frame::safe_for_sender() and bail out
-      // if the second SP is not safe.
-      (sp1 != sp2 && !(sp2 <= thread->stack_base()
-      && sp2 >= (thread->stack_base() - thread->stack_size())))) {
-    return false;
-  }
-#endif // SPARC
-
-  if (fr->is_entry_frame()) {
-    // This frame thinks it is an entry frame; we need to validate
-    // the JavaCallWrapper pointer.
-    // Note: frame::entry_frame_is_first() assumes that the
-    // JavaCallWrapper has a non-NULL _anchor field. We don't
-    // check that here (yet) since we've never seen a failure
-    // due to a NULL _anchor field.
-    // Update: Originally this check was done only for SPARC. However,
-    // this failure has now been seen on C2 C86. I have no reason to
-    // believe that this is not a general issue so I'm enabling the
-    // check for all compilers on all supported platforms.
-#ifdef COMPILER2
-#if defined(IA32) || defined(AMD64)
-    if (fr->fp() == NULL) {
-      // C2 X86 allows NULL frame pointers, but if we have one then
-      // we cannot call entry_frame_call_wrapper().
-      return false;
-    }
-#endif // IA32 || AMD64
-#endif // COMPILER2
-
-    sp1 = (address)fr->entry_frame_call_wrapper();
-    // We invert the range check from frame::safe_for_sender() and
-    // bail out if the JavaCallWrapper * is not safe.
-    if (!(sp1 <= thread->stack_base()
-        && sp1 >= (thread->stack_base() - thread->stack_size()))) {
-      return false;
-    }
-  }
-
-  return ret_value;
-}
 
 
-// Unknown compiled frames have caused assertion failures on Solaris
-// X86. This code also detects unknown compiled frames on Solaris
-// SPARC, but no assertion failures have been observed. However, I'm
-// paranoid so I'm enabling this code whenever we have a compiler.
-//
-// Returns true if the specified frame is an unknown compiled frame
-// and false otherwise.
-static bool is_unknown_compiled_frame(frame* fr, JavaThread *thread) {
-  bool ret_value = false;  // be optimistic
+vframeStreamForte::vframeStreamForte(JavaThread *jt,
+                                     frame fr,
+                                     bool stop_at_java_call_stub) : vframeStreamCommon(jt) {
 
-  // This failure mode only occurs when the thread is in state
-  // _thread_in_Java so we are okay for this check for any other
-  // thread state.
-  //
-  // Note: _thread_in_Java does not always mean that the thread
-  // is executing Java code. AsyncGetCallTrace() has caught
-  // threads executing in JRT_LEAF() routines when the state
-  // will also be _thread_in_Java.
-  if (thread->thread_state() != _thread_in_Java) {
-    return ret_value;
-  }
-
-  // This failure mode only occurs with compiled frames so we are
-  // okay for this check for both entry and interpreted frames.
-  if (fr->is_entry_frame() || fr->is_interpreted_frame()) {
-    return ret_value;
-  }
-
-  // This failure mode only occurs when the compiled frame's PC
-  // is in the code cache so we are okay for this check if the
-  // PC is not in the code cache.
-  CodeBlob* cb = CodeCache::find_blob(fr->pc());
-  if (cb == NULL) {
-    return ret_value;
-  }
-
-  // We have compiled code in the code cache so it is time for
-  // the final check: let's see if any frame type is set
-  ret_value = !(
-    // is_entry_frame() is checked above
-    // testers that are a subset of is_entry_frame():
-    //   is_first_frame()
-    fr->is_java_frame()
-    // testers that are a subset of is_java_frame():
-    //   is_interpreted_frame()
-    //   is_compiled_frame()
-    || fr->is_native_frame()
-    || fr->is_runtime_frame()
-    || fr->is_safepoint_blob_frame()
-    );
-
-  // If there is no frame type set, then we have an unknown compiled
-  // frame and sender() should not be called on it.
-
-  return ret_value;
-}
-
-#define DebugNonSafepoints_IS_CLEARED \
-  (!FLAG_IS_DEFAULT(DebugNonSafepoints) && !DebugNonSafepoints)
-
-// if -XX:-DebugNonSafepoints, then top-frame will be skipped
-vframeStreamForte::vframeStreamForte(JavaThread *jt, frame fr,
-  bool stop_at_java_call_stub) : vframeStreamCommon(jt) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
+  _frame = fr;
 
-  if (!DebugNonSafepoints_IS_CLEARED) {
-    // decode the top frame fully
-    // (usual case, if JVMTI is enabled)
-    _frame = fr;
-  } else {
-    // skip top frame, as it may not be at safepoint
-    // For AsyncGetCallTrace(), we extracted as much info from the top
-    // frame as we could in forte_is_walkable_frame(). We also verified
-    // forte_safe_for_sender() so this sender() call is safe.
-    _frame  = fr.sender(&_reg_map);
-  }
+  // We must always have a valid frame to start filling
 
-  if (jt->thread_state() == _thread_in_Java && !fr.is_first_frame()) {
-    bool sender_check = false;  // assume sender is not safe
+  bool filled_in = fill_from_frame();
 
-    if (forte_safe_for_sender(&_frame, jt)) {
-      // If the initial sender frame is safe, then continue on with other
-      // checks. The unsafe sender frame has been seen on Solaris X86
-      // with both Compiler1 and Compiler2. It has not been seen on
-      // Solaris SPARC, but seems like a good sanity check to have
-      // anyway.
+  assert(filled_in, "invariant");
 
-      // SIGPROF caught us in Java code and the current frame is not the
-      // first frame so we should sanity check the sender frame. It is
-      // possible for SIGPROF to catch us in the middle of making a call.
-      // When that happens the current frame is actually a combination of
-      // the real sender and some of the new call's info. We can't find
-      // the real sender with such a current frame and things can get
-      // confused.
-      //
-      // This sanity check has caught problems with the sender frame on
-      // Solaris SPARC. So far Solaris X86 has not had a failure here.
-      sender_check = _frame.is_entry_frame()
-        // testers that are a subset of is_entry_frame():
-        //   is_first_frame()
-        || _frame.is_java_frame()
-        // testers that are a subset of is_java_frame():
-        //   is_interpreted_frame()
-        //   is_compiled_frame()
-        || _frame.is_native_frame()
-        || _frame.is_runtime_frame()
-        || _frame.is_safepoint_blob_frame()
-        ;
-
-      // We need an additional sanity check on an initial interpreted
-      // sender frame. This interpreted frame needs to be both walkable
-      // and have a valid BCI. This is yet another variant of SIGPROF
-      // catching us in the middle of making a call.
-      if (sender_check && _frame.is_interpreted_frame()) {
-        methodOop method = NULL;
-        int bci = -1;
-
-        if (!forte_is_walkable_interpreted_frame(&_frame, &method, &bci)
-            || bci == -1) {
-          sender_check = false;
-        }
-      }
-
-      // We need an additional sanity check on an initial compiled
-      // sender frame. This compiled frame also needs to be walkable.
-      // This is yet another variant of SIGPROF catching us in the
-      // middle of making a call.
-      if (sender_check && !_frame.is_interpreted_frame()) {
-        bool is_compiled, is_walkable;
-
-        forte_is_walkable_compiled_frame(&_frame, &_reg_map,
-          &is_compiled, &is_walkable);
-        if (is_compiled && !is_walkable) {
-          sender_check = false;
-        }
-      }
-    }
-
-    if (!sender_check) {
-      // nothing else to try if we can't recognize the sender
-      _mode = at_end_mode;
-      return;
-    }
-  }
-
-  int loop_count = 0;
-  int loop_max = MaxJavaStackTraceDepth * 2;
-
-  while (!fill_from_frame()) {
-    _frame = _frame.sender(&_reg_map);
-
-#ifdef COMPILER2
-#if defined(IA32) || defined(AMD64)
-    // Stress testing on C2 X86 has shown a periodic problem with
-    // the sender() call below. The initial _frame that we have on
-    // entry to the loop has already passed forte_safe_for_sender()
-    // so we only check frames after it.
-    if (!forte_safe_for_sender(&_frame, _thread)) {
-      _mode = at_end_mode;
-      return;
-    }
-#endif // IA32 || AMD64
-#endif // COMPILER2
-
-    if (++loop_count >= loop_max) {
-      // We have looped more than twice the number of possible
-      // Java frames. This indicates that we are trying to walk
-      // a stack that is in the middle of being constructed and
-      // it is self referential.
-      _mode = at_end_mode;
-      return;
-    }
-  }
 }
 
 
@@ -358,95 +104,57 @@ void vframeStreamForte::forte_next() {
 
   do {
 
-#if defined(COMPILER1) && defined(SPARC)
-  bool prevIsInterpreted =  _frame.is_interpreted_frame();
-#endif // COMPILER1 && SPARC
+    loop_count++;
+
+    // By the time we get here we should never see unsafe but better
+    // safe then segv'd
+
+    if (loop_count > loop_max || !_frame.safe_for_sender(_thread)) {
+      _mode = at_end_mode;
+      return;
+    }
 
     _frame = _frame.sender(&_reg_map);
 
-    if (!forte_safe_for_sender(&_frame, _thread)) {
-      _mode = at_end_mode;
-      return;
-    }
-
-#if defined(COMPILER1) && defined(SPARC)
-    if (prevIsInterpreted) {
-      // previous callee was interpreted and may require a special check
-      if (_frame.is_compiled_frame() && _frame.cb()->is_compiled_by_c1()) {
-        // compiled sender called interpreted callee so need one more check
-        bool is_compiled, is_walkable;
-
-        // sanity check the compiled sender frame
-        forte_is_walkable_compiled_frame(&_frame, &_reg_map,
-          &is_compiled, &is_walkable);
-        assert(is_compiled, "sanity check");
-        if (!is_walkable) {
-          // compiled sender frame is not walkable so bail out
-          _mode = at_end_mode;
-          return;
-        }
-      }
-    }
-#endif // COMPILER1 && SPARC
-
-    if (++loop_count >= loop_max) {
-      // We have looped more than twice the number of possible
-      // Java frames. This indicates that we are trying to walk
-      // a stack that is in the middle of being constructed and
-      // it is self referential.
-      _mode = at_end_mode;
-      return;
-    }
   } while (!fill_from_frame());
 }
 
-// Determine if 'fr' is a walkable, compiled frame.
-// *is_compiled_p is set to true if the frame is compiled and if it
-// is, then *is_walkable_p is set to true if it is also walkable.
-static void forte_is_walkable_compiled_frame(frame* fr, RegisterMap* map,
-  bool* is_compiled_p, bool* is_walkable_p) {
+// Determine if 'fr' is a decipherable compiled frame. We are already
+// assured that fr is for a java nmethod.
 
-  *is_compiled_p = false;
-  *is_walkable_p = false;
+static bool is_decipherable_compiled_frame(frame* fr) {
 
-  CodeBlob* cb = CodeCache::find_blob(fr->pc());
-  if (cb != NULL &&
-      cb->is_nmethod() &&
-      ((nmethod*)cb)->is_java_method()) {
-    // frame is compiled and executing a Java method
-    *is_compiled_p = true;
+  assert(fr->cb() != NULL && fr->cb()->is_nmethod(), "invariant");
+  nmethod* nm = (nmethod*) fr->cb();
+  assert(nm->is_java_method(), "invariant");
 
-    // Increment PC because the PcDesc we want is associated with
-    // the *end* of the instruction, and pc_desc_near searches
-    // forward to the first matching PC after the probe PC.
-    PcDesc* pc_desc = NULL;
-    if (!DebugNonSafepoints_IS_CLEARED) {
-      // usual case:  look for any safepoint near the sampled PC
-      address probe_pc = fr->pc() + 1;
-      pc_desc = ((nmethod*) cb)->pc_desc_near(probe_pc);
-    } else {
-      // reduced functionality:  only recognize PCs immediately after calls
-      pc_desc = ((nmethod*) cb)->pc_desc_at(fr->pc());
+  // First try and find an exact PcDesc
+
+  PcDesc* pc_desc = nm->pc_desc_at(fr->pc());
+
+  // Did we find a useful PcDesc?
+  if (pc_desc != NULL &&
+      pc_desc->scope_decode_offset() == DebugInformationRecorder::serialized_null) {
+
+    address probe_pc = fr->pc() + 1;
+    pc_desc = nm->pc_desc_near(probe_pc);
+
+    // Now do we have a useful PcDesc?
+
+    if (pc_desc != NULL &&
+        pc_desc->scope_decode_offset() == DebugInformationRecorder::serialized_null) {
+      // No debug information available for this pc
+      // vframeStream would explode if we try and walk the frames.
+      return false;
     }
-    if (pc_desc != NULL && (pc_desc->scope_decode_offset()
-                            == DebugInformationRecorder::serialized_null)) {
-      pc_desc = NULL;
-    }
-    if (pc_desc != NULL) {
-      // it has a PcDesc so the frame is also walkable
-      *is_walkable_p = true;
-      if (!DebugNonSafepoints_IS_CLEARED) {
-        // Normalize the PC to the one associated exactly with
-        // this PcDesc, so that subsequent stack-walking queries
-        // need not be approximate:
-        fr->set_pc(pc_desc->real_pc((nmethod*) cb));
-      }
-    }
-    // Implied else: this compiled frame has no PcDesc, i.e., contains
-    // a frameless stub such as C1 method exit, so it is not walkable.
+
+    // This PcDesc is useful however we must adjust the frame's pc
+    // so that the vframeStream lookups will use this same pc
+
+    fr->set_pc(pc_desc->real_pc(nm));
   }
-  // Implied else: this isn't a compiled frame so it isn't a
-  // walkable, compiled frame.
+
+  return true;
 }
 
 // Determine if 'fr' is a walkable interpreted frame. Returns false
@@ -457,159 +165,189 @@ static void forte_is_walkable_compiled_frame(frame* fr, RegisterMap* map,
 // Note: this method returns true when a valid Java method is found
 // even if a valid BCI cannot be found.
 
-static bool forte_is_walkable_interpreted_frame(frame* fr,
-  methodOop* method_p, int* bci_p) {
+static bool is_decipherable_interpreted_frame(JavaThread* thread,
+                                                frame* fr,
+                                                methodOop* method_p,
+                                                int* bci_p) {
   assert(fr->is_interpreted_frame(), "just checking");
 
   // top frame is an interpreted frame
   // check if it is walkable (i.e. valid methodOop and valid bci)
-  if (fr->is_interpreted_frame_valid()) {
-    if (fr->fp() != NULL) {
-      // access address in order not to trigger asserts that
-      // are built in interpreter_frame_method function
-      methodOop method = *fr->interpreter_frame_method_addr();
-      if (Universe::heap()->is_valid_method(method)) {
-        intptr_t bcx = fr->interpreter_frame_bcx();
-        int      bci = method->validate_bci_from_bcx(bcx);
-        // note: bci is set to -1 if not a valid bci
-        *method_p = method;
-        *bci_p = bci;
-        return true;
-      }
-    }
+
+  // Because we may be racing a gc thread the method and/or bci
+  // of a valid interpreter frame may look bad causing us to
+  // fail the is_interpreted_frame_valid test. If the thread
+  // is in any of the following states we are assured that the
+  // frame is in fact valid and we must have hit the race.
+
+  JavaThreadState state = thread->thread_state();
+  bool known_valid = (state == _thread_in_native ||
+                      state == _thread_in_vm ||
+                      state == _thread_blocked );
+
+  if (known_valid || fr->is_interpreted_frame_valid(thread)) {
+
+    // The frame code should completely validate the frame so that
+    // references to methodOop and bci are completely safe to access
+    // If they aren't the frame code should be fixed not this
+    // code. However since gc isn't locked out the values could be
+    // stale. This is a race we can never completely win since we can't
+    // lock out gc so do one last check after retrieving their values
+    // from the frame for additional safety
+
+    methodOop method = fr->interpreter_frame_method();
+
+    // We've at least found a method.
+    // NOTE: there is something to be said for the approach that
+    // if we don't find a valid bci then the method is not likely
+    // a valid method. Then again we may have caught an interpreter
+    // frame in the middle of construction and the bci field is
+    // not yet valid.
+
+    *method_p = method;
+
+    // See if gc may have invalidated method since we validated frame
+
+    if (!Universe::heap()->is_valid_method(method)) return false;
+
+    intptr_t bcx = fr->interpreter_frame_bcx();
+
+    int      bci = method->validate_bci_from_bcx(bcx);
+
+    // note: bci is set to -1 if not a valid bci
+    *bci_p = bci;
+    return true;
   }
+
   return false;
 }
 
 
-// Determine if 'fr' can be used to find a walkable frame. Returns
-// false if a walkable frame cannot be found. *walkframe_p, *method_p,
-// and *bci_p are not set when false is returned. Returns true if a
-// walkable frame is returned via *walkframe_p. *method_p is non-NULL
-// if the returned frame was executing a Java method. *bci_p is != -1
-// if a valid BCI in the Java method could be found.
+// Determine if 'fr' can be used to find an initial Java frame.
+// Return false if it can not find a fully decipherable Java frame
+// (in other words a frame that isn't safe to use in a vframe stream).
+// Obviously if it can't even find a Java frame false will also be returned.
 //
-// *walkframe_p will be used by vframeStreamForte as the initial
-// frame for walking the stack. Currently the initial frame is
-// skipped by vframeStreamForte because we inherited the logic from
-// the vframeStream class. This needs to be revisited in the future.
-static bool forte_is_walkable_frame(JavaThread* thread, frame* fr,
-  frame* walkframe_p, methodOop* method_p, int* bci_p) {
+// If we find a Java frame decipherable or not then by definition we have
+// identified a method and that will be returned to the caller via method_p.
+// If we can determine a bci that is returned also. (Hmm is it possible
+// to return a method and bci and still return false? )
+//
+// The initial Java frame we find (if any) is return via initial_frame_p.
+//
 
-  if (!forte_safe_for_sender(fr, thread)
-      || is_unknown_compiled_frame(fr, thread)
-     ) {
-    // If the initial frame is not safe, then bail out. So far this
-    // has only been seen on Solaris X86 with Compiler2, but it seems
-    // like a great initial sanity check.
-    return false;
-  }
+static bool find_initial_Java_frame(JavaThread* thread,
+                                    frame* fr,
+                                    frame* initial_frame_p,
+                                    methodOop* method_p,
+                                    int* bci_p) {
 
-  if (fr->is_first_frame()) {
-    // If initial frame is frame from StubGenerator and there is no
-    // previous anchor, there are no java frames yet
-    return false;
-  }
+  // It is possible that for a frame containing an nmethod
+  // we can capture the method but no bci. If we get no
+  // bci the frame isn't walkable but the method is usable.
+  // Therefore we init the returned methodOop to NULL so the
+  // caller can make the distinction.
 
-  if (fr->is_interpreted_frame()) {
-    if (forte_is_walkable_interpreted_frame(fr, method_p, bci_p)) {
-      *walkframe_p = *fr;
-      return true;
-    }
-    return false;
-  }
+  *method_p = NULL;
 
-  // At this point we have something other than a first frame or an
-  // interpreted frame.
+  // On the initial call to this method the frame we get may not be
+  // recognizable to us. This should only happen if we are in a JRT_LEAF
+  // or something called by a JRT_LEAF method.
 
-  methodOop method = NULL;
+
+
   frame candidate = *fr;
 
-  // If we loop more than twice the number of possible Java
-  // frames, then this indicates that we are trying to walk
-  // a stack that is in the middle of being constructed and
-  // it is self referential. So far this problem has only
-  // been seen on Solaris X86 Compiler2, but it seems like
-  // a good robustness fix for all platforms.
+  // If the starting frame we were given has no codeBlob associated with
+  // it see if we can find such a frame because only frames with codeBlobs
+  // are possible Java frames.
 
-  int loop_count;
-  int loop_max = MaxJavaStackTraceDepth * 2;
+  if (fr->cb() == NULL) {
 
-  for (loop_count = 0; loop_count < loop_max; loop_count++) {
-    // determine if the candidate frame is executing a Java method
-    if (CodeCache::contains(candidate.pc())) {
-      // candidate is a compiled frame or stub routine
-      CodeBlob* cb = CodeCache::find_blob(candidate.pc());
-
-      if (cb->is_nmethod()) {
-        method = ((nmethod *)cb)->method();
-      }
-    } // end if CodeCache has our PC
-
+    // See if we can find a useful frame
+    int loop_count;
+    int loop_max = MaxJavaStackTraceDepth * 2;
     RegisterMap map(thread, false);
 
-    // we have a Java frame that seems reasonable
-    if (method != NULL && candidate.is_java_frame()
-        && candidate.sp() != NULL && candidate.pc() != NULL) {
-      // we need to sanity check the candidate further
-      bool is_compiled, is_walkable;
-
-      forte_is_walkable_compiled_frame(&candidate, &map, &is_compiled,
-        &is_walkable);
-      if (is_compiled) {
-        // At this point, we know we have a compiled Java frame with
-        // method information that we want to return. We don't check
-        // the is_walkable flag here because that flag pertains to
-        // vframeStreamForte work that is done after we are done here.
-        break;
-      }
+    for (loop_count = 0; loop_count < loop_max; loop_count++) {
+      if (!candidate.safe_for_sender(thread)) return false;
+      candidate = candidate.sender(&map);
+      if (candidate.cb() != NULL) break;
     }
-
-    // At this point, the candidate doesn't work so try the sender.
-
-    // For AsyncGetCallTrace() we cannot assume there is a sender
-    // for the initial frame. The initial forte_safe_for_sender() call
-    // and check for is_first_frame() is done on entry to this method.
-    candidate = candidate.sender(&map);
-    if (!forte_safe_for_sender(&candidate, thread)) {
-
-#ifdef COMPILER2
-#if defined(IA32) || defined(AMD64)
-      // C2 on X86 can use the ebp register as a general purpose register
-      // which can cause the candidate to fail theforte_safe_for_sender()
-      // above. We try one more time using a NULL frame pointer (fp).
-
-      candidate = frame(candidate.sp(), NULL, candidate.pc());
-      if (!forte_safe_for_sender(&candidate, thread)) {
-#endif // IA32 || AMD64
-#endif // COMPILER2
-
-        return false;
-
-#ifdef COMPILER2
-#if defined(IA32) || defined(AMD64)
-      } // end forte_safe_for_sender retry with NULL fp
-#endif // IA32 || AMD64
-#endif // COMPILER2
-
-    } // end first forte_safe_for_sender check
-
-    if (candidate.is_first_frame()
-        || is_unknown_compiled_frame(&candidate, thread)) {
-      return false;
-    }
-  } // end for loop_count
-
-  if (method == NULL) {
-    // If we didn't get any method info from the candidate, then
-    // we have nothing to return so bail out.
-    return false;
+    if (candidate.cb() == NULL) return false;
   }
 
-  *walkframe_p = candidate;
-  *method_p = method;
-  *bci_p = -1;
-  return true;
+  // We have a frame known to be in the codeCache
+  // We will hopefully be able to figure out something to do with it.
+  int loop_count;
+  int loop_max = MaxJavaStackTraceDepth * 2;
+  RegisterMap map(thread, false);
+
+  for (loop_count = 0; loop_count < loop_max; loop_count++) {
+
+    if (candidate.is_first_frame()) {
+      // If initial frame is frame from StubGenerator and there is no
+      // previous anchor, there are no java frames associated with a method
+      return false;
+    }
+
+    if (candidate.is_interpreted_frame()) {
+      if (is_decipherable_interpreted_frame(thread, &candidate, method_p, bci_p)) {
+        *initial_frame_p = candidate;
+        return true;
+      }
+
+      // Hopefully we got some data
+      return false;
+    }
+
+    if (candidate.cb()->is_nmethod()) {
+
+      nmethod* nm = (nmethod*) candidate.cb();
+      *method_p = nm->method();
+
+      // If the frame isn't fully decipherable then the default
+      // value for the bci is a signal that we don't have a bci.
+      // If we have a decipherable frame this bci value will
+      // not be used.
+
+      *bci_p = -1;
+
+      *initial_frame_p = candidate;
+
+      // Native wrapper code is trivial to decode by vframeStream
+
+      if (nm->is_native_method()) return true;
+
+      // If it isn't decipherable then we have found a pc that doesn't
+      // have a PCDesc that can get us a bci however we did find
+      // a method
+
+      if (!is_decipherable_compiled_frame(&candidate)) {
+        return false;
+      }
+
+      // is_decipherable_compiled_frame may modify candidate's pc
+      *initial_frame_p = candidate;
+
+      return true;
+    }
+
+    // Must be some stub frame that we don't care about
+
+    if (!candidate.safe_for_sender(thread)) return false;
+    candidate = candidate.sender(&map);
+
+    // If it isn't in the code cache something is wrong
+    // since once we find a frame in the code cache they
+    // all should be there.
+
+    if (candidate.cb() == NULL) return false;
+
+  }
+
+  return false;
+
 }
 
 
@@ -627,10 +365,12 @@ typedef struct {
 } ASGCT_CallTrace;
 
 static void forte_fill_call_trace_given_top(JavaThread* thd,
-  ASGCT_CallTrace* trace, int depth, frame top_frame) {
+                                            ASGCT_CallTrace* trace,
+                                            int depth,
+                                            frame top_frame) {
   NoHandleMark nhm;
 
-  frame walkframe;
+  frame initial_Java_frame;
   methodOop method;
   int bci;
   int count;
@@ -638,48 +378,51 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
   count = 0;
   assert(trace->frames != NULL, "trace->frames must be non-NULL");
 
-  if (!forte_is_walkable_frame(thd, &top_frame, &walkframe, &method, &bci)) {
-    // return if no walkable frame is found
-    return;
-  }
+  bool fully_decipherable = find_initial_Java_frame(thd, &top_frame, &initial_Java_frame, &method, &bci);
+
+  // The frame might not be walkable but still recovered a method
+  // (e.g. an nmethod with no scope info for the pc
+
+  if (method == NULL) return;
 
   CollectedHeap* ch = Universe::heap();
 
-  if (method != NULL) {
-    // The method is not stored GC safe so see if GC became active
-    // after we entered AsyncGetCallTrace() and before we try to
-    // use the methodOop.
-    // Yes, there is still a window after this check and before
-    // we use methodOop below, but we can't lock out GC so that
-    // has to be an acceptable risk.
-    if (!ch->is_valid_method(method)) {
-      trace->num_frames = -2;
-      return;
-    }
-
-    if (DebugNonSafepoints_IS_CLEARED) {
-      // Take whatever method the top-frame decoder managed to scrape up.
-      // We look further at the top frame only if non-safepoint
-      // debugging information is available.
-      count++;
-      trace->num_frames = count;
-      trace->frames[0].method_id = method->find_jmethod_id_or_null();
-      if (!method->is_native()) {
-        trace->frames[0].lineno = bci;
-      } else {
-        trace->frames[0].lineno = -3;
-      }
-    }
-  }
-
-  // check has_last_Java_frame() after looking at the top frame
-  // which may be an interpreted Java frame.
-  if (!thd->has_last_Java_frame() && method == NULL) {
-    trace->num_frames = 0;
+  // The method is not stored GC safe so see if GC became active
+  // after we entered AsyncGetCallTrace() and before we try to
+  // use the methodOop.
+  // Yes, there is still a window after this check and before
+  // we use methodOop below, but we can't lock out GC so that
+  // has to be an acceptable risk.
+  if (!ch->is_valid_method(method)) {
+    trace->num_frames = ticks_GC_active; // -2
     return;
   }
 
-  vframeStreamForte st(thd, walkframe, false);
+  // We got a Java frame however it isn't fully decipherable
+  // so it won't necessarily be safe to use it for the
+  // initial frame in the vframe stream.
+
+  if (!fully_decipherable) {
+    // Take whatever method the top-frame decoder managed to scrape up.
+    // We look further at the top frame only if non-safepoint
+    // debugging information is available.
+    count++;
+    trace->num_frames = count;
+    trace->frames[0].method_id = method->find_jmethod_id_or_null();
+    if (!method->is_native()) {
+      trace->frames[0].lineno = bci;
+    } else {
+      trace->frames[0].lineno = -3;
+    }
+
+    if (!initial_Java_frame.safe_for_sender(thd)) return;
+
+    RegisterMap map(thd, false);
+    initial_Java_frame = initial_Java_frame.sender(&map);
+  }
+
+  vframeStreamForte st(thd, initial_Java_frame, false);
+
   for (; !st.at_end() && count < depth; st.forte_next(), count++) {
     bci = st.bci();
     method = st.method();
@@ -693,7 +436,7 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
     if (!ch->is_valid_method(method)) {
       // we throw away everything we've gathered in this sample since
       // none of it is safe
-      trace->num_frames = -2;
+      trace->num_frames = ticks_GC_active; // -2
       return;
     }
 
@@ -765,6 +508,11 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 
 extern "C" {
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
+
+// This is if'd out because we no longer use thread suspension.
+// However if someone wanted to backport this to a 5.0 jvm then this
+// code would be important.
+#if 0
   if (SafepointSynchronize::is_synchronizing()) {
     // The safepoint mechanism is trying to synchronize all the threads.
     // Since this can involve thread suspension, it is not safe for us
@@ -774,9 +522,10 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     // are suspended while holding a resource and another thread blocks
     // on that resource in the SIGPROF handler, then we will have a
     // three-thread deadlock (VMThread, this thread, the other thread).
-    trace->num_frames = -10;
+    trace->num_frames = ticks_safepoint; // -10
     return;
   }
+#endif
 
   JavaThread* thread;
 
@@ -785,13 +534,13 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     thread->is_exiting()) {
 
     // bad env_id, thread has exited or thread is exiting
-    trace->num_frames = -8;
+    trace->num_frames = ticks_thread_exit; // -8
     return;
   }
 
   if (thread->in_deopt_handler()) {
     // thread is in the deoptimization handler so return no frames
-    trace->num_frames = -9;
+    trace->num_frames = ticks_deopt; // -9
     return;
   }
 
@@ -799,12 +548,12 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
          "AsyncGetCallTrace must be called by the current interrupted thread");
 
   if (!JvmtiExport::should_post_class_load()) {
-    trace->num_frames = -1;
+    trace->num_frames = ticks_no_class_load; // -1
     return;
   }
 
   if (Universe::heap()->is_gc_active()) {
-    trace->num_frames = -2;
+    trace->num_frames = ticks_GC_active; // -2
     return;
   }
 
@@ -827,14 +576,22 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 
       // param isInJava == false - indicate we aren't in Java code
       if (!thread->pd_get_top_frame_for_signal_handler(&fr, ucontext, false)) {
-        if (!thread->has_last_Java_frame()) {
-          trace->num_frames = 0;   // no Java frames
-        } else {
-          trace->num_frames = -3;  // unknown frame
-        }
+        trace->num_frames = ticks_unknown_not_Java;  // -3 unknown frame
       } else {
-        trace->num_frames = -4;    // non walkable frame by default
-        forte_fill_call_trace_given_top(thread, trace, depth, fr);
+        if (!thread->has_last_Java_frame()) {
+          trace->num_frames = 0; // No Java frames
+        } else {
+          trace->num_frames = ticks_not_walkable_not_Java;    // -4 non walkable frame by default
+          forte_fill_call_trace_given_top(thread, trace, depth, fr);
+
+          // This assert would seem to be valid but it is not.
+          // It would be valid if we weren't possibly racing a gc
+          // thread. A gc thread can make a valid interpreted frame
+          // look invalid. It's a small window but it does happen.
+          // The assert is left here commented out as a reminder.
+          // assert(trace->num_frames != ticks_not_walkable_not_Java, "should always be walkable");
+
+        }
       }
     }
     break;
@@ -845,16 +602,16 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 
       // param isInJava == true - indicate we are in Java code
       if (!thread->pd_get_top_frame_for_signal_handler(&fr, ucontext, true)) {
-        trace->num_frames = -5;  // unknown frame
+        trace->num_frames = ticks_unknown_Java;  // -5 unknown frame
       } else {
-        trace->num_frames = -6;  // non walkable frame by default
+        trace->num_frames = ticks_not_walkable_Java;  // -6, non walkable frame by default
         forte_fill_call_trace_given_top(thread, trace, depth, fr);
       }
     }
     break;
   default:
     // Unknown thread state
-    trace->num_frames = -7;
+    trace->num_frames = ticks_unknown_state; // -7
     break;
   }
 }

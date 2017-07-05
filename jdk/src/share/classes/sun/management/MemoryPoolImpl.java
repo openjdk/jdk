@@ -25,12 +25,13 @@
 
 package sun.management;
 
+import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
-
 import java.lang.management.MemoryUsage;
 import java.lang.management.MemoryType;
 import java.lang.management.MemoryManagerMXBean;
 import javax.management.openmbean.CompositeData;
+import javax.management.ObjectName;
 
 import static java.lang.management.MemoryNotificationInfo.*;
 
@@ -114,7 +115,7 @@ class MemoryPoolImpl implements MemoryPoolMXBean {
                 "Usage threshold is not supported");
         }
 
-        ManagementFactory.checkControlAccess();
+        Util.checkControlAccess();
 
         MemoryUsage usage = getUsage0();
         if (newThreshold < 0) {
@@ -159,7 +160,7 @@ class MemoryPoolImpl implements MemoryPoolMXBean {
     }
 
     public void resetPeakUsage() {
-        ManagementFactory.checkControlAccess();
+        Util.checkControlAccess();
 
         synchronized (this) {
             // synchronized since getPeakUsage may be called concurrently
@@ -211,7 +212,7 @@ class MemoryPoolImpl implements MemoryPoolMXBean {
                 "CollectionUsage threshold is not supported");
         }
 
-        ManagementFactory.checkControlAccess();
+        Util.checkControlAccess();
 
         MemoryUsage usage = getUsage0();
         if (newThreshold < 0) {
@@ -304,7 +305,7 @@ class MemoryPoolImpl implements MemoryPoolMXBean {
         }
         void triggerAction() {
             // Should not reach here
-            throw new InternalError();
+            throw new AssertionError("Should not reach here");
         }
         void clearAction() {
             // do nothing
@@ -332,10 +333,15 @@ class MemoryPoolImpl implements MemoryPoolMXBean {
         }
         void triggerAction() {
             // Should not reach here
-            throw new InternalError();
+            throw new AssertionError("Should not reach here");
         }
         void clearAction() {
             // do nothing
         }
     }
+
+    public ObjectName getObjectName() {
+        return Util.newObjectName(ManagementFactory.MEMORY_POOL_MXBEAN_DOMAIN_TYPE, getName());
+    }
+
 }

@@ -370,7 +370,7 @@ public final class XAtom {
                                      false, property_type);
         try {
             int status = getter.execute();
-            if (status != XlibWrapper.Success || getter.getData() == 0) {
+            if (status != XConstants.Success || getter.getData() == 0) {
                 return 0;
             }
             if (getter.getActualType() != property_type || getter.getActualFormat() != 32) {
@@ -401,7 +401,7 @@ public final class XAtom {
         try {
             Native.putCard32(XlibWrapper.larg1, value);
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), window,
-                atom, XA_CARDINAL, 32, XlibWrapper.PropModeReplace,
+                atom, XA_CARDINAL, 32, XConstants.PropModeReplace,
                 XlibWrapper.larg1, 1);
         } finally {
             XToolkit.awtUnlock();
@@ -432,7 +432,7 @@ public final class XAtom {
                                      false, this);
         try {
             int status = getter.execute();
-            if (status != XlibWrapper.Success || getter.getData() == 0) {
+            if (status != XConstants.Success || getter.getData() == 0) {
                 return false;
             }
             if (getter.getActualType() != atom
@@ -466,7 +466,7 @@ public final class XAtom {
                                      false, type);
         try {
             int status = getter.execute();
-            if (status != XlibWrapper.Success || getter.getData() == 0) {
+            if (status != XConstants.Success || getter.getData() == 0) {
                 return false;
             }
             if (getter.getActualType() != type
@@ -497,7 +497,7 @@ public final class XAtom {
         XToolkit.awtLock();
         try {
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), window,
-                atom, atom, 32, XlibWrapper.PropModeReplace,
+                atom, atom, 32, XConstants.PropModeReplace,
                 data_ptr, length);
         } finally {
             XToolkit.awtUnlock();
@@ -518,7 +518,7 @@ public final class XAtom {
         XToolkit.awtLock();
         try {
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), window,
-                atom, type, 32, XlibWrapper.PropModeReplace,
+                atom, type, 32, XConstants.PropModeReplace,
                 data_ptr, length);
         } finally {
             XToolkit.awtUnlock();
@@ -539,7 +539,7 @@ public final class XAtom {
         XToolkit.awtLock();
         try {
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), window,
-                atom, type, 8, XlibWrapper.PropModeReplace,
+                atom, type, 8, XConstants.PropModeReplace,
                 data_ptr, length);
         } finally {
             XToolkit.awtUnlock();
@@ -602,7 +602,7 @@ public final class XAtom {
                                      false, property_type);
         try {
             int status = getter.execute();
-            if (status != XlibWrapper.Success || getter.getData() == 0) {
+            if (status != XConstants.Success || getter.getData() == 0) {
                 return null;
             }
             if (getter.getActualType() != property_type || getter.getActualFormat() != 8) {
@@ -674,7 +674,7 @@ public final class XAtom {
                                      false, XA_ATOM);
         try {
             int status = getter.execute();
-            if (status != XlibWrapper.Success || getter.getData() == 0) {
+            if (status != XConstants.Success || getter.getData() == 0) {
                 return emptyList;
             }
             if (getter.getActualType() != XA_ATOM || getter.getActualFormat() != 32) {
@@ -797,7 +797,7 @@ public final class XAtom {
         try {
             Native.putWindow(XlibWrapper.larg1, window_value);
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), window,
-                                    atom, XA_WINDOW, 32, XlibWrapper.PropModeReplace,
+                                    atom, XA_WINDOW, 32, XConstants.PropModeReplace,
                                     XlibWrapper.larg1, 1);
         } finally {
             XToolkit.awtUnlock();
@@ -821,7 +821,7 @@ public final class XAtom {
                                      false, XA_WINDOW);
         try {
             int status = getter.execute();
-            if (status != XlibWrapper.Success || getter.getData() == 0) {
+            if (status != XConstants.Success || getter.getData() == 0) {
                 return 0;
             }
             if (getter.getActualType() != XA_WINDOW || getter.getActualFormat() != 32) {

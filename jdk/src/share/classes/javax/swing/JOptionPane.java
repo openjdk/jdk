@@ -1512,7 +1512,7 @@ public class JOptionPane extends JComponent implements Accessible
 
         iFrame.putClientProperty("JInternalFrame.frameType", "optionDialog");
         iFrame.putClientProperty("JInternalFrame.messageType",
-                                 new Integer(getMessageType()));
+                                 Integer.valueOf(getMessageType()));
 
         iFrame.addInternalFrameListener(new InternalFrameAdapter() {
             public void internalFrameClosing(InternalFrameEvent e) {

@@ -92,9 +92,14 @@ public final class HttpCookie implements Cloneable {
 
 
     //
-    // date format used by Netscape's cookie draft
+    // date formats used by Netscape's cookie draft
+    // as well as formats seen on various sites
     //
-    private final static String NETSCAPE_COOKIE_DATE_FORMAT = "EEE',' dd-MMM-yyyy HH:mm:ss 'GMT'";
+    private final static String[] COOKIE_DATE_FORMATS = {
+        "EEE',' dd-MMM-yyyy HH:mm:ss 'GMT'",
+        "EEE',' dd MMM yyyy HH:mm:ss 'GMT'",
+        "EEE MMM dd yyyy HH:mm:ss 'GMT'Z"
+    };
 
     //
     // constant strings represent set-cookie header token
@@ -148,6 +153,7 @@ public final class HttpCookie implements Cloneable {
         secure = false;
 
         whenCreated = System.currentTimeMillis();
+        portlist = null;
     }
 
 
@@ -505,14 +511,14 @@ public final class HttpCookie implements Cloneable {
 
 
     /**
-     * Indicates to the browser whether the cookie should only be sent
-     * using a secure protocol, such as HTTPS or SSL.
+     * Indicates whether the cookie should only be sent using a secure protocol,
+     * such as HTTPS or SSL.
      *
      * <p>The default value is <code>false</code>.
      *
-     * @param flag      if <code>true</code>, sends the cookie from the browser
-     *                  to the server using only when using a secure protocol;
-     *                  if <code>false</code>, sent on any protocol
+     * @param flag      If <code>true</code>, the cookie can only be sent over
+     *                  a secure protocol like https.
+     *                  If <code>false</code>, it can be sent over any protocol.
      *
      * @see #getSecure
      *
@@ -526,12 +532,12 @@ public final class HttpCookie implements Cloneable {
 
 
     /**
-     * Returns <code>true</code> if the browser is sending cookies
-     * only over a secure protocol, or <code>false</code> if the
-     * browser can send cookies using any protocol.
+     * Returns <code>true</code> if sending this cookie should be
+     * restricted to a secure protocol, or <code>false</code> if the
+     * it can be sent using any protocol.
      *
-     * @return          <code>true</code> if the browser can use
-     *                  any standard protocol; otherwise, <code>false</code>
+     * @return          <code>false</code> if the cookie can be sent over
+     *                  any standard protocol; otherwise, <code>true</code>
      *
      * @see #setSecure
      *
@@ -748,6 +754,7 @@ public final class HttpCookie implements Cloneable {
      *
      * @return  a string form of the cookie. The string has the defined format
      */
+    @Override
     public String toString() {
         if (getVersion() > 0) {
             return toRFC2965HeaderString();
@@ -768,6 +775,7 @@ public final class HttpCookie implements Cloneable {
      * @return          <tt>true</tt> if 2 http cookies equal to each other;
      *                  otherwise, <tt>false</tt>
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
@@ -798,6 +806,7 @@ public final class HttpCookie implements Cloneable {
      *
      * @return          this http cookie's hash code
      */
+    @Override
     public int hashCode() {
         int h1 = name.toLowerCase().hashCode();
         int h2 = (domain!=null) ? domain.toLowerCase().hashCode() : 0;
@@ -811,6 +820,7 @@ public final class HttpCookie implements Cloneable {
      *
      * @return          a clone of this http cookie
      */
+    @Override
     public Object clone() {
         try {
             return super.clone();
@@ -978,7 +988,7 @@ public final class HttpCookie implements Cloneable {
             });
         assignors.put("port", new CookieAttributeAssignor(){
                 public void assign(HttpCookie cookie, String attrName, String attrValue) {
-                    if (cookie.getPortlist() == null) cookie.setPortlist(attrValue);
+                    if (cookie.getPortlist() == null) cookie.setPortlist(attrValue == null ? "" : attrValue);
                 }
             });
         assignors.put("secure", new CookieAttributeAssignor(){
@@ -1050,24 +1060,31 @@ public final class HttpCookie implements Cloneable {
         return sb.toString();
     }
 
+    private static SimpleDateFormat[] cDateFormats = null;
+    static {
+            cDateFormats = new SimpleDateFormat[COOKIE_DATE_FORMATS.length];
+            for (int i = 0; i < COOKIE_DATE_FORMATS.length; i++) {
+                cDateFormats[i] = new SimpleDateFormat(COOKIE_DATE_FORMATS[i]);
+                cDateFormats[i].setTimeZone(TimeZone.getTimeZone("GMT"));
+            }
+    }
     /*
-     * @param dateString        a date string in format of
-     *                          "EEE',' dd-MMM-yyyy HH:mm:ss 'GMT'",
-     *                          which defined in Netscape cookie spec
+     * @param dateString        a date string in one of the formats
+     *                          defined in Netscape cookie spec
      *
      * @return                  delta seconds between this cookie's creation
      *                          time and the time specified by dateString
      */
     private long expiryDate2DeltaSeconds(String dateString) {
-        SimpleDateFormat df = new SimpleDateFormat(NETSCAPE_COOKIE_DATE_FORMAT);
-        df.setTimeZone(TimeZone.getTimeZone("GMT"));
+        for (SimpleDateFormat df : cDateFormats) {
+            try {
+                Date date = df.parse(dateString);
+                return (date.getTime() - whenCreated) / 1000;
+            } catch (Exception e) {
 
-        try {
-            Date date = df.parse(dateString);
-            return (date.getTime() - whenCreated) / 1000;
-        } catch (Exception e) {
-            return 0;
+            }
         }
+        return 0;
     }
 
 

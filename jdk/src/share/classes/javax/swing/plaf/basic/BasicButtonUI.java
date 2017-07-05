@@ -109,7 +109,7 @@ public class BasicButtonUI extends ButtonUI{
             LookAndFeel.installProperty(b, "rolloverEnabled", rollover);
         }
 
-        LookAndFeel.installProperty(b, "iconTextGap", new Integer(4));
+        LookAndFeel.installProperty(b, "iconTextGap", Integer.valueOf(4));
     }
 
     protected void installListeners(AbstractButton b) {
