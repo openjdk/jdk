@@ -31,11 +31,11 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xmixed
  *                   -XX:CompileCommand=compileonly,DeoptimizeFramesTest$TestCaseImpl::method
- *                   -XX:-DeoptimizeRandom DeoptimizeFramesTest true
+ *                   -XX:-DeoptimizeRandom -XX:-DeoptimizeALot DeoptimizeFramesTest true
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xmixed
  *                   -XX:CompileCommand=compileonly,DeoptimizeFramesTest$TestCaseImpl::method
- *                   -XX:-DeoptimizeRandom DeoptimizeFramesTest false
+ *                   -XX:-DeoptimizeRandom -XX:-DeoptimizeALot DeoptimizeFramesTest false
  * @summary testing of WB::deoptimizeFrames()
  */
 import java.lang.reflect.Executable;
