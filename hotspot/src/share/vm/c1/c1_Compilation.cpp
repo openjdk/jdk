@@ -601,6 +601,17 @@ void Compilation::bailout(const char* msg) {
   }
 }
 
+ciKlass* Compilation::cha_exact_type(ciType* type) {
+  if (type != NULL && type->is_loaded() && type->is_instance_klass()) {
+    ciInstanceKlass* ik = type->as_instance_klass();
+    assert(ik->exact_klass() == NULL, "no cha for final klass");
+    if (DeoptC1 && UseCHA && !(ik->has_subklass() || ik->is_interface())) {
+      dependency_recorder()->assert_leaf_type(ik);
+      return ik;
+    }
+  }
+  return NULL;
+}
 
 void Compilation::print_timers() {
   // tty->print_cr("    Native methods         : %6.3f s, Average : %2.3f", CompileBroker::_t_native_compilation.seconds(), CompileBroker::_t_native_compilation.seconds() / CompileBroker::_total_native_compile_count);

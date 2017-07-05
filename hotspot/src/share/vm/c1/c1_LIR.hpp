@@ -882,6 +882,7 @@ class    LIR_OpLock;
 class    LIR_OpTypeCheck;
 class    LIR_OpCompareAndSwap;
 class    LIR_OpProfileCall;
+class    LIR_OpProfileType;
 #ifdef ASSERT
 class    LIR_OpAssert;
 #endif
@@ -1005,6 +1006,7 @@ enum LIR_Code {
   , end_opCompareAndSwap
   , begin_opMDOProfile
     , lir_profile_call
+    , lir_profile_type
   , end_opMDOProfile
   , begin_opAssert
     , lir_assert
@@ -1145,6 +1147,7 @@ class LIR_Op: public CompilationResourceObj {
   virtual LIR_OpTypeCheck* as_OpTypeCheck() { return NULL; }
   virtual LIR_OpCompareAndSwap* as_OpCompareAndSwap() { return NULL; }
   virtual LIR_OpProfileCall* as_OpProfileCall() { return NULL; }
+  virtual LIR_OpProfileType* as_OpProfileType() { return NULL; }
 #ifdef ASSERT
   virtual LIR_OpAssert* as_OpAssert() { return NULL; }
 #endif
@@ -1925,8 +1928,8 @@ class LIR_OpProfileCall : public LIR_Op {
 
  public:
   // Destroys recv
-  LIR_OpProfileCall(LIR_Code code, ciMethod* profiled_method, int profiled_bci, ciMethod* profiled_callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* known_holder)
-    : LIR_Op(code, LIR_OprFact::illegalOpr, NULL)  // no result, no info
+  LIR_OpProfileCall(ciMethod* profiled_method, int profiled_bci, ciMethod* profiled_callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* known_holder)
+    : LIR_Op(lir_profile_call, LIR_OprFact::illegalOpr, NULL)  // no result, no info
     , _profiled_method(profiled_method)
     , _profiled_bci(profiled_bci)
     , _profiled_callee(profiled_callee)
@@ -1945,6 +1948,45 @@ class LIR_OpProfileCall : public LIR_Op {
 
   virtual void emit_code(LIR_Assembler* masm);
   virtual LIR_OpProfileCall* as_OpProfileCall() { return this; }
+  virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
+};
+
+// LIR_OpProfileType
+class LIR_OpProfileType : public LIR_Op {
+ friend class LIR_OpVisitState;
+
+ private:
+  LIR_Opr      _mdp;
+  LIR_Opr      _obj;
+  LIR_Opr      _tmp;
+  ciKlass*     _exact_klass;   // non NULL if we know the klass statically (no need to load it from _obj)
+  intptr_t     _current_klass; // what the profiling currently reports
+  bool         _not_null;      // true if we know statically that _obj cannot be null
+  bool         _no_conflict;   // true if we're profling parameters, _exact_klass is not NULL and we know
+                               // _exact_klass it the only possible type for this parameter in any context.
+
+ public:
+  // Destroys recv
+  LIR_OpProfileType(LIR_Opr mdp, LIR_Opr obj, ciKlass* exact_klass, intptr_t current_klass, LIR_Opr tmp, bool not_null, bool no_conflict)
+    : LIR_Op(lir_profile_type, LIR_OprFact::illegalOpr, NULL)  // no result, no info
+    , _mdp(mdp)
+    , _obj(obj)
+    , _exact_klass(exact_klass)
+    , _current_klass(current_klass)
+    , _tmp(tmp)
+    , _not_null(not_null)
+    , _no_conflict(no_conflict) { }
+
+  LIR_Opr      mdp()              const             { return _mdp;              }
+  LIR_Opr      obj()              const             { return _obj;              }
+  LIR_Opr      tmp()              const             { return _tmp;              }
+  ciKlass*     exact_klass()      const             { return _exact_klass;      }
+  intptr_t     current_klass()    const             { return _current_klass;    }
+  bool         not_null()         const             { return _not_null;         }
+  bool         no_conflict()      const             { return _no_conflict;      }
+
+  virtual void emit_code(LIR_Assembler* masm);
+  virtual LIR_OpProfileType* as_OpProfileType() { return this; }
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
 };
 
@@ -2247,7 +2289,10 @@ class LIR_List: public CompilationResourceObj {
                   ciMethod* profiled_method, int profiled_bci);
   // MethodData* profiling
   void profile_call(ciMethod* method, int bci, ciMethod* callee, LIR_Opr mdo, LIR_Opr recv, LIR_Opr t1, ciKlass* cha_klass) {
-    append(new LIR_OpProfileCall(lir_profile_call, method, bci, callee, mdo, recv, t1, cha_klass));
+    append(new LIR_OpProfileCall(method, bci, callee, mdo, recv, t1, cha_klass));
+  }
+  void profile_type(LIR_Address* mdp, LIR_Opr obj, ciKlass* exact_klass, intptr_t current_klass, LIR_Opr tmp, bool not_null, bool no_conflict) {
+    append(new LIR_OpProfileType(LIR_OprFact::address(mdp), obj, exact_klass, current_klass, tmp, not_null, no_conflict));
   }
 
   void xadd(LIR_Opr src, LIR_Opr add, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_xadd, src, add, res, tmp)); }

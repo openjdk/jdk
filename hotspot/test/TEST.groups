@@ -27,7 +27,7 @@
 # - compact1, compact2, compact3, full JRE, JDK
 #
 # In addition they support testing of the minimal VM on compact1 and compact2.
-# Essentially this defines groups based around the specified API's and VM 
+# Essentially this defines groups based around the specified API's and VM
 # services available in the runtime.
 #
 # The groups are defined hierarchically in two forms:
@@ -44,9 +44,9 @@
 # by listing the top-level test directories.
 #
 # To use a group simply list it on the jtreg command line eg:
-#   jtreg :jdk    
+#   jtreg :jdk
 # runs all tests. While
-#   jtreg :compact2  
+#   jtreg :compact2
 # runs those tests that only require compact1 and compact2 API's.
 #
 
@@ -69,6 +69,7 @@ needs_jdk = \
   runtime/7107135/Test7107135.sh \
   runtime/7158988/FieldMonitor.java \
   runtime/7194254/Test7194254.java \
+  runtime/8026365/InvokeSpecialAnonTest.java \
   runtime/jsig/Test8017498.sh \
   runtime/Metaspace/FragmentMetaspace.java \
   runtime/NMT/BaselineWithParameter.java \
@@ -124,7 +125,7 @@ needs_compact3 = \
   compiler/whitebox/IsMethodCompilableTest.java \
   gc/6581734/Test6581734.java \
   gc/7072527/TestFullGCCount.java \
-  gc/7168848/HumongousAlloc.java \
+  gc/g1/TestHumongousAllocInitialMark.java \
   gc/arguments/TestG1HeapRegionSize.java \
   gc/metaspace/TestMetaspaceMemoryPool.java \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
@@ -140,7 +141,7 @@ compact2 = \
  -:needs_jdk
 
 # Tests that require compact2 API's and a full VM
-#  
+#
 needs_full_vm_compact2 =
 
 # Compact 1 adds full VM tests

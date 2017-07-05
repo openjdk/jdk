@@ -28,9 +28,15 @@
 SAPROC   = saproc
 
 ifeq ($(OS_VENDOR), Darwin)
-  LIBSAPROC   = lib$(SAPROC).dylib
+  LIBSAPROC           = lib$(SAPROC).dylib
+
+  LIBSAPROC_DEBUGINFO = lib$(SAPROC).dylib.dSYM
+  LIBSAPROC_DIZ       = lib$(SAPROC).diz
 else
-  LIBSAPROC   = lib$(SAPROC).so
+  LIBSAPROC           = lib$(SAPROC).so
+
+  LIBSAPROC_DEBUGINFO = lib$(SAPROC).debuginfo
+  LIBSAPROC_DIZ       = lib$(SAPROC).diz
 endif
 
 AGENT_DIR = $(GAMMADIR)/agent
@@ -70,7 +76,9 @@ endif
 
 SAMAPFILE = $(SASRCDIR)/mapfile
 
-DEST_SAPROC = $(JDK_LIBDIR)/$(LIBSAPROC)
+DEST_SAPROC           = $(JDK_LIBDIR)/$(LIBSAPROC)
+DEST_SAPROC_DEBUGINFO = $(JDK_LIBDIR)/$(LIBSAPROC_DEBUGINFO)
+DEST_SAPROC_DIZ       = $(JDK_LIBDIR)/$(LIBSAPROC_DIZ)
 
 # DEBUG_BINARIES overrides everything, use full -g debug information
 ifeq ($(DEBUG_BINARIES), true)
@@ -117,11 +125,42 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           $(SA_DEBUG_CFLAGS)                                   \
 	           -o $@                                                \
 	           $(SALIBS)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(OS_VENDOR), Darwin)
+	$(DSYMUTIL) $@
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -r -y $(LIBSAPROC_DIZ) $(LIBSAPROC_DEBUGINFO)
+	$(RM) -r $(LIBSAPROC_DEBUGINFO)
+    endif
+  else
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBSAPROC_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBSAPROC_DEBUGINFO) $@
+    ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+    else
+      ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -g $@
+      # implied else here is no stripping at all
+      endif
+    endif
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(LIBSAPROC_DIZ) $(LIBSAPROC_DEBUGINFO)
+	$(RM) $(LIBSAPROC_DEBUGINFO)
+    endif
+  endif
+endif
 
 install_saproc: $(BUILDLIBSAPROC)
-	$(QUIETLY) if [ -e $(LIBSAPROC) ] ; then             \
-	  echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)";     \
-	  cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done";  \
-	fi
+	@echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)"
+ifeq ($(OS_VENDOR), Darwin)
+	$(QUIETLY) test -d $(LIBSAPROC_DEBUGINFO) && \
+	    cp -f -r $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO)
+else
+	$(QUIETLY) test -f $(LIBSAPROC_DEBUGINFO) && \
+	    cp -f $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO)
+endif
+	$(QUIETLY) test -f $(LIBSAPROC_DIZ) && \
+	    cp -f $(LIBSAPROC_DIZ) $(DEST_SAPROC_DIZ)
+	$(QUIETLY) cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done"
 
 .PHONY: install_saproc

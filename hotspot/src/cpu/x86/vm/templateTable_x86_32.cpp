@@ -2970,6 +2970,7 @@ void TemplateTable::invokevirtual_helper(Register index,
 
   // profile this call
   __ profile_final_call(rax);
+  __ profile_arguments_type(rax, method, rsi, true);
 
   __ jump_from_interpreted(method, rax);
 
@@ -2984,6 +2985,7 @@ void TemplateTable::invokevirtual_helper(Register index,
 
   // get target Method* & entry point
   __ lookup_virtual_method(rax, index, method);
+  __ profile_arguments_type(rdx, method, rsi, true);
   __ jump_from_interpreted(method, rdx);
 }
 
@@ -3013,6 +3015,7 @@ void TemplateTable::invokespecial(int byte_no) {
   __ null_check(rcx);
   // do the call
   __ profile_call(rax);
+  __ profile_arguments_type(rax, rbx, rsi, false);
   __ jump_from_interpreted(rbx, rax);
 }
 
@@ -3023,6 +3026,7 @@ void TemplateTable::invokestatic(int byte_no) {
   prepare_invoke(byte_no, rbx);  // get f1 Method*
   // do the call
   __ profile_call(rax);
+  __ profile_arguments_type(rax, rbx, rsi, false);
   __ jump_from_interpreted(rbx, rax);
 }
 
@@ -3082,6 +3086,8 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ testptr(rbx, rbx);
   __ jcc(Assembler::zero, no_such_method);
 
+  __ profile_arguments_type(rdx, rbx, rsi, true);
+
   // do the call
   // rcx: receiver
   // rbx,: Method*
@@ -3138,6 +3144,7 @@ void TemplateTable::invokehandle(int byte_no) {
 
   // FIXME: profile the LambdaForm also
   __ profile_final_call(rax);
+  __ profile_arguments_type(rdx, rbx_method, rsi, true);
 
   __ jump_from_interpreted(rbx_method, rdx);
 }
@@ -3171,6 +3178,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   // %%% should make a type profile for any invokedynamic that takes a ref argument
   // profile this call
   __ profile_call(rsi);
+  __ profile_arguments_type(rdx, rbx, rsi, false);
 
   __ verify_oop(rax_callsite);
 
