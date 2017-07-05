@@ -253,6 +253,16 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfile
 
     if (sProf.pf == NULL) {
         JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
+    } else {
+        /* Sanity check: try to save the profile in order
+         * to force basic validation.
+         */
+        cmsUInt32Number pfSize = 0;
+        if (!cmsSaveProfileToMem(sProf.pf, NULL, &pfSize) ||
+            pfSize < sizeof(cmsICCHeader))
+        {
+            JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
+        }
     }
 
     return sProf.j;

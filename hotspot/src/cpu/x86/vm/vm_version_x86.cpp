@@ -419,13 +419,16 @@ void VM_Version::get_processor_features() {
   if (UseAVX < 1)
     _cpuFeatures &= ~CPU_AVX;
 
+  if (!UseAES && !FLAG_IS_DEFAULT(UseAES))
+    _cpuFeatures &= ~CPU_AES;
+
   if (logical_processors_per_package() == 1) {
     // HT processor could be installed on a system which doesn't support HT.
     _cpuFeatures &= ~CPU_HT;
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -441,6 +444,7 @@ void VM_Version::get_processor_features() {
                (supports_popcnt() ? ", popcnt" : ""),
                (supports_avx()    ? ", avx" : ""),
                (supports_avx2()   ? ", avx2" : ""),
+               (supports_aes()    ? ", aes" : ""),
                (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
                (supports_lzcnt()   ? ", lzcnt": ""),
@@ -471,6 +475,29 @@ void VM_Version::get_processor_features() {
     UseAVX = MIN2((intx)1,UseAVX);
   if (!supports_avx ()) // Drop to 0 if no AVX  support
     UseAVX = 0;
+
+  // Use AES instructions if available.
+  if (supports_aes()) {
+    if (FLAG_IS_DEFAULT(UseAES)) {
+      UseAES = true;
+    }
+  } else if (UseAES) {
+    if (!FLAG_IS_DEFAULT(UseAES))
+      warning("AES instructions not available on this CPU");
+    FLAG_SET_DEFAULT(UseAES, false);
+  }
+
+  // The AES intrinsic stubs require AES instruction support (of course)
+  // but also require AVX mode for misaligned SSE access
+  if (UseAES && (UseAVX > 0)) {
+    if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+      UseAESIntrinsics = true;
+    }
+  } else if (UseAESIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseAESIntrinsics))
+      warning("AES intrinsics not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+  }
 
 #ifdef COMPILER2
   if (UseFPUForSpilling) {
@@ -713,6 +740,9 @@ void VM_Version::get_processor_features() {
     tty->print("UseSSE=%d",UseSSE);
     if (UseAVX > 0) {
       tty->print("  UseAVX=%d",UseAVX);
+    }
+    if (UseAES) {
+      tty->print("  UseAES=1");
     }
     tty->cr();
     tty->print("Allocation");

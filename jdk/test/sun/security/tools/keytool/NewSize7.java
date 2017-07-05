@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 6561126
  * @summary keytool should use larger default keysize for keypairs
+ * @compile -XDignore.symbol.file NewSize7.java
+ * @run main NewSize7
  */
 
 import java.io.File;
@@ -34,13 +36,13 @@ import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
-import sun.security.tools.KeyTool;
 
 public class NewSize7 {
     public static void main(String[] args) throws Exception {
         String FILE = "newsize7-ks";
         new File(FILE).delete();
-        KeyTool.main(("-debug -genkeypair -keystore " + FILE +
+        sun.security.tools.keytool.Main.main(("-debug -genkeypair -keystore " +
+                FILE +
                 " -alias a -dname cn=c -storepass changeit" +
                 " -keypass changeit -keyalg rsa").split(" "));
         KeyStore ks = KeyStore.getInstance("JKS");

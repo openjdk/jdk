@@ -128,8 +128,6 @@ FILES_java = \
 	sun/net/www/content/audio/x_wav.java \
 	sun/net/www/protocol/ftp/Handler.java \
 	sun/net/www/protocol/ftp/FtpURLConnection.java \
-	sun/net/www/protocol/gopher/GopherClient.java \
-	sun/net/www/protocol/gopher/Handler.java \
 	sun/net/www/protocol/mailto/Handler.java \
 	sun/net/www/protocol/mailto/MailToURLConnection.java \
 	sun/net/idn/Punycode.java \

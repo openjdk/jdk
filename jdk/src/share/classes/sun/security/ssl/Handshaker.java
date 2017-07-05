@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,12 @@ abstract class Handshaker {
      * contain only those cipher suites available for the active protocols.
      */
     private CipherSuiteList    activeCipherSuites;
+
+    // The server name indication and matchers
+    List<SNIServerName>         serverNames =
+                                    Collections.<SNIServerName>emptyList();
+    Collection<SNIMatcher>      sniMatchers =
+                                    Collections.<SNIMatcher>emptyList();
 
     private boolean             isClient;
     private boolean             needCertVerify;
@@ -287,14 +293,7 @@ abstract class Handshaker {
         }
     }
 
-    String getRawHostnameSE() {
-        if (conn != null) {
-            return conn.getRawHostname();
-        } else {
-            return engine.getPeerHost();
-        }
-    }
-
+    // ONLY used by ClientHandshaker to setup the peer host in SSLSession.
     String getHostSE() {
         if (conn != null) {
             return conn.getHost();
@@ -303,6 +302,7 @@ abstract class Handshaker {
         }
     }
 
+    // ONLY used by ServerHandshaker to setup the peer host in SSLSession.
     String getHostAddressSE() {
         if (conn != null) {
             return conn.getInetAddress().getHostAddress();
@@ -433,6 +433,22 @@ abstract class Handshaker {
      */
     void setIdentificationProtocol(String protocol) {
         this.identificationProtocol = protocol;
+    }
+
+    /**
+     * Sets the server name indication of the handshake.
+     */
+    void setSNIServerNames(List<SNIServerName> serverNames) {
+        // The serverNames parameter is unmodifiable.
+        this.serverNames = serverNames;
+    }
+
+    /**
+     * Sets the server name matchers of the handshaking.
+     */
+    void setSNIMatchers(Collection<SNIMatcher> sniMatchers) {
+        // The sniMatchers parameter is unmodifiable.
+        this.sniMatchers = sniMatchers;
     }
 
     /**
@@ -1063,7 +1079,6 @@ abstract class Handshaker {
             if (debug != null && Debug.isOn("handshake")) {
                 System.out.println("RSA master secret generation error:");
                 e.printStackTrace(System.out);
-                System.out.println("Generating new random premaster secret");
             }
 
             if (requestedVersion != null) {
@@ -1130,7 +1145,6 @@ abstract class Handshaker {
             System.out.println("RSA PreMasterSecret version error: expected"
                 + protocolVersion + " or " + requestedVersion + ", decrypted: "
                 + premasterVersion);
-            System.out.println("Generating new random premaster secret");
         }
         preMasterSecret =
             RSAClientKeyExchange.generateDummySecret(requestedVersion);

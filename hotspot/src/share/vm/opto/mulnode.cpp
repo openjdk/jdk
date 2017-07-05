@@ -479,24 +479,27 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new (phase->C) AndINode(load,phase->intcon(mask&0xFFFF));
 
   // Masking bits off of a Short?  Loading a Character does some masking
-  if (lop == Op_LoadS && (mask & 0xFFFF0000) == 0 ) {
-    Node *ldus = new (phase->C) LoadUSNode(load->in(MemNode::Control),
-                                              load->in(MemNode::Memory),
-                                              load->in(MemNode::Address),
-                                              load->adr_type());
-    ldus = phase->transform(ldus);
-    return new (phase->C) AndINode(ldus, phase->intcon(mask & 0xFFFF));
-  }
+  if (can_reshape &&
+      load->outcnt() == 1 && load->unique_out() == this) {
+    if (lop == Op_LoadS && (mask & 0xFFFF0000) == 0 ) {
+      Node *ldus = new (phase->C) LoadUSNode(load->in(MemNode::Control),
+                                             load->in(MemNode::Memory),
+                                             load->in(MemNode::Address),
+                                             load->adr_type());
+      ldus = phase->transform(ldus);
+      return new (phase->C) AndINode(ldus, phase->intcon(mask & 0xFFFF));
+    }
 
-  // Masking sign bits off of a Byte?  Do an unsigned byte load plus
-  // an and.
-  if (lop == Op_LoadB && (mask & 0xFFFFFF00) == 0) {
-    Node* ldub = new (phase->C) LoadUBNode(load->in(MemNode::Control),
-                                              load->in(MemNode::Memory),
-                                              load->in(MemNode::Address),
-                                              load->adr_type());
-    ldub = phase->transform(ldub);
-    return new (phase->C) AndINode(ldub, phase->intcon(mask));
+    // Masking sign bits off of a Byte?  Do an unsigned byte load plus
+    // an and.
+    if (lop == Op_LoadB && (mask & 0xFFFFFF00) == 0) {
+      Node* ldub = new (phase->C) LoadUBNode(load->in(MemNode::Control),
+                                             load->in(MemNode::Memory),
+                                             load->in(MemNode::Address),
+                                             load->adr_type());
+      ldub = phase->transform(ldub);
+      return new (phase->C) AndINode(ldub, phase->intcon(mask));
+    }
   }
 
   // Masking off sign bits?  Dont make them!
@@ -923,7 +926,9 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       set_req(2, phase->intcon(0));
       return this;
     }
-    else if( ld->Opcode() == Op_LoadUS )
+    else if( can_reshape &&
+             ld->Opcode() == Op_LoadUS &&
+             ld->outcnt() == 1 && ld->unique_out() == shl)
       // Replace zero-extension-load with sign-extension-load
       return new (phase->C) LoadSNode( ld->in(MemNode::Control),
                                 ld->in(MemNode::Memory),

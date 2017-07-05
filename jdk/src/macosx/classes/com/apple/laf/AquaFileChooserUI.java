@@ -379,6 +379,19 @@ public class AquaFileChooserUI extends FileChooserUI {
                         }
                     }
                     updateButtonState(getFileChooser());
+                } else if (prop.equals(JFileChooser.SELECTED_FILES_CHANGED_PROPERTY)) {
+                    JFileChooser fileChooser = getFileChooser();
+                    if (!fileChooser.isDirectorySelectionEnabled()) {
+                        final File[] files = (File[]) e.getNewValue();
+                        if (files != null) {
+                            for (int selectedRow : fFileList.getSelectedRows()) {
+                                File file = (File) fFileList.getValueAt(selectedRow, 0);
+                                if (fileChooser.isTraversable(file)) {
+                                    fFileList.removeSelectedIndex(selectedRow);
+                                }
+                            }
+                        }
+                    }
                 } else if (prop.equals(JFileChooser.DIRECTORY_CHANGED_PROPERTY)) {
                     fFileList.clearSelection();
                     final File currentDirectory = getFileChooser().getCurrentDirectory();
