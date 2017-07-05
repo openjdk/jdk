@@ -147,7 +147,7 @@ Rule	US	1918	1919	-	Mar	lastSun	2:00	1:00	D
 Rule	US	1918	1919	-	Oct	lastSun	2:00	0	S
 Rule	US	1942	only	-	Feb	9	2:00	1:00	W # War
 Rule	US	1945	only	-	Aug	14	23:00u	1:00	P # Peace
-Rule	US	1945	only	-	Sep	30	2:00	0	S
+Rule	US	1945	only	-	Sep	lastSun	2:00	0	S
 Rule	US	1967	2006	-	Oct	lastSun	2:00	0	S
 Rule	US	1967	1973	-	Apr	lastSun	2:00	1:00	D
 Rule	US	1974	only	-	Jan	6	2:00	1:00	D
@@ -2147,11 +2147,11 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 
 # Mexico
 
-# From Paul Eggert (2001-03-05):
+# From Paul Eggert (2014-12-07):
 # The Investigation and Analysis Service of the
 # Mexican Library of Congress (MLoC) has published a
 # history of Mexican local time (in Spanish)
-# http://www.cddhcu.gob.mx/bibliot/publica/inveyana/polisoc/horver/
+# http://www.diputados.gob.mx/bibliot/publica/inveyana/polisoc/horver/index.htm
 #
 # Here are the discrepancies between Shanks & Pottenger (S&P) and the MLoC.
 # (In all cases we go with the MLoC.)
@@ -2320,6 +2320,24 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 # efecto desde las dos horas del segundo domingo de marzo y concluirá a
 # las dos horas del primer domingo de noviembre.
 
+# From Steffen Thorsen (2014-12-08), translated by Gwillim Law:
+# The Mexican state of Quintana Roo will likely change to EST in 2015.
+#
+# http://www.unioncancun.mx/articulo/2014/12/04/medio-ambiente/congreso-aprueba-una-hora-mas-de-sol-en-qroo
+# "With this change, the time conflict that has existed between the municipios
+# of Quintana Roo and the municipio of Felipe Carrillo Puerto may come to an
+# end. The latter declared itself in rebellion 15 years ago when a time change
+# was initiated in Mexico, and since then it has refused to change its time
+# zone along with the rest of the country."
+#
+# From Steffen Thorsen (2015-01-14), translated by Gwillim Law:
+# http://sipse.com/novedades/confirman-aplicacion-de-nueva-zona-horaria-para-quintana-roo-132331.html
+# "...the new time zone will come into effect at two o'clock on the first Sunday
+# of February, when we will have to advance the clock one hour from its current
+# time..."
+#
+# Also, the new zone will not use DST.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Mexico	1939	only	-	Feb	5	0:00	1:00	D
 Rule	Mexico	1939	only	-	Jun	25	0:00	0	S
@@ -2340,7 +2358,8 @@ Rule	Mexico	2002	max	-	Oct	lastSun	2:00	0	S
 Zone America/Cancun	-5:47:04 -	LMT	1922 Jan  1  0:12:56
 			-6:00	-	CST	1981 Dec 23
 			-5:00	Mexico	E%sT	1998 Aug  2  2:00
-			-6:00	Mexico	C%sT
+			-6:00	Mexico	C%sT	2015 Feb  1  2:00
+			-5:00	-	EST
 # Campeche, Yucatán; represented by Mérida
 Zone America/Merida	-5:58:28 -	LMT	1922 Jan  1  0:01:32
 			-6:00	-	CST	1981 Dec 23

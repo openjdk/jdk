@@ -117,8 +117,9 @@ import java.util.Set;
  * {@code parse(CharSequence text, DateTimeFormatter formatter)}.
  * <p>For example:
  * <blockquote><pre>
+ *  LocalDate date = LocalDate.now();
  *  String text = date.format(formatter);
- *  LocalDate date = LocalDate.parse(text, formatter);
+ *  LocalDate parsedDate = LocalDate.parse(text, formatter);
  * </pre></blockquote>
  * <p>
  * In addition to the format, formatters can be created with desired Locale,
@@ -265,9 +266,10 @@ import java.util.Set;
  * <p>
  * For example:
  * <blockquote><pre>
+ *  LocalDate date = LocalDate.now();
  *  DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy MM dd");
  *  String text = date.format(formatter);
- *  LocalDate date = LocalDate.parse(text, formatter);
+ *  LocalDate parsedDate = LocalDate.parse(text, formatter);
  * </pre></blockquote>
  * <p>
  * All letters 'A' to 'Z' and 'a' to 'z' are reserved as pattern letters. The

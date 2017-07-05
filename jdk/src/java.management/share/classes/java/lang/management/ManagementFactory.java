@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,35 +24,40 @@
  */
 
 package java.lang.management;
+import java.io.FilePermission;
+import java.io.IOException;
 import javax.management.DynamicMBean;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerFactory;
 import javax.management.MBeanServerPermission;
 import javax.management.NotificationEmitter;
-import javax.management.ObjectInstance;
 import javax.management.ObjectName;
-import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MalformedObjectNameException;
-import javax.management.MBeanRegistrationException;
-import javax.management.NotCompliantMBeanException;
 import javax.management.StandardEmitterMBean;
 import javax.management.StandardMBean;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toMap;
+import java.util.stream.Stream;
 import javax.management.JMX;
-import sun.management.ManagementFactoryHelper;
-import sun.management.ExtendedPlatformComponent;
+import sun.management.Util;
+import sun.management.spi.PlatformMBeanProvider;
+import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
 
 /**
  * The {@code ManagementFactory} class is a factory class for getting
@@ -316,7 +321,7 @@ public class ManagementFactory {
      * the Java virtual machine.
      */
     public static ClassLoadingMXBean getClassLoadingMXBean() {
-        return ManagementFactoryHelper.getClassLoadingMXBean();
+        return getPlatformMXBean(ClassLoadingMXBean.class);
     }
 
     /**
@@ -326,7 +331,7 @@ public class ManagementFactory {
      * @return a {@link MemoryMXBean} object for the Java virtual machine.
      */
     public static MemoryMXBean getMemoryMXBean() {
-        return ManagementFactoryHelper.getMemoryMXBean();
+        return getPlatformMXBean(MemoryMXBean.class);
     }
 
     /**
@@ -336,7 +341,7 @@ public class ManagementFactory {
      * @return a {@link ThreadMXBean} object for the Java virtual machine.
      */
     public static ThreadMXBean getThreadMXBean() {
-        return ManagementFactoryHelper.getThreadMXBean();
+        return getPlatformMXBean(ThreadMXBean.class);
     }
 
     /**
@@ -347,7 +352,7 @@ public class ManagementFactory {
 
      */
     public static RuntimeMXBean getRuntimeMXBean() {
-        return ManagementFactoryHelper.getRuntimeMXBean();
+        return getPlatformMXBean(RuntimeMXBean.class);
     }
 
     /**
@@ -360,7 +365,7 @@ public class ManagementFactory {
      *   no compilation system.
      */
     public static CompilationMXBean getCompilationMXBean() {
-        return ManagementFactoryHelper.getCompilationMXBean();
+        return getPlatformMXBean(CompilationMXBean.class);
     }
 
     /**
@@ -371,7 +376,7 @@ public class ManagementFactory {
      * the Java virtual machine.
      */
     public static OperatingSystemMXBean getOperatingSystemMXBean() {
-        return ManagementFactoryHelper.getOperatingSystemMXBean();
+        return getPlatformMXBean(OperatingSystemMXBean.class);
     }
 
     /**
@@ -384,7 +389,7 @@ public class ManagementFactory {
      *
      */
     public static List<MemoryPoolMXBean> getMemoryPoolMXBeans() {
-        return ManagementFactoryHelper.getMemoryPoolMXBeans();
+        return getPlatformMXBeans(MemoryPoolMXBean.class);
     }
 
     /**
@@ -397,7 +402,7 @@ public class ManagementFactory {
      *
      */
     public static List<MemoryManagerMXBean> getMemoryManagerMXBeans() {
-        return ManagementFactoryHelper.getMemoryManagerMXBeans();
+        return getPlatformMXBeans(MemoryManagerMXBean.class);
     }
 
 
@@ -413,7 +418,7 @@ public class ManagementFactory {
      *
      */
     public static List<GarbageCollectorMXBean> getGarbageCollectorMXBeans() {
-        return ManagementFactoryHelper.getGarbageCollectorMXBeans();
+        return getPlatformMXBeans(GarbageCollectorMXBean.class);
     }
 
     private static MBeanServer platformMBeanServer;
@@ -467,35 +472,11 @@ public class ManagementFactory {
 
         if (platformMBeanServer == null) {
             platformMBeanServer = MBeanServerFactory.createMBeanServer();
-            for (PlatformComponent pc : PlatformComponent.values()) {
-                List<? extends PlatformManagedObject> list =
-                    pc.getMXBeans(pc.getMXBeanInterface());
-                for (PlatformManagedObject o : list) {
-                    // Each PlatformComponent represents one management
-                    // interface. Some MXBean may extend another one.
-                    // The MXBean instances for one platform component
-                    // (returned by pc.getMXBeans()) might be also
-                    // the MXBean instances for another platform component.
-                    // e.g. com.sun.management.GarbageCollectorMXBean
-                    //
-                    // So need to check if an MXBean instance is registered
-                    // before registering into the platform MBeanServer
-                    if (!platformMBeanServer.isRegistered(o.getObjectName())) {
-                        addMXBean(platformMBeanServer, o);
-                    }
-                }
-            }
-            HashMap<ObjectName, DynamicMBean> dynmbeans =
-                    ManagementFactoryHelper.getPlatformDynamicMBeans();
-            for (Map.Entry<ObjectName, DynamicMBean> e : dynmbeans.entrySet()) {
-                addDynamicMBean(platformMBeanServer, e.getValue(), e.getKey());
-            }
-            for (final PlatformManagedObject o :
-                                       ExtendedPlatformComponent.getMXBeans()) {
-                if (!platformMBeanServer.isRegistered(o.getObjectName())) {
-                    addMXBean(platformMBeanServer, o);
-                }
-            }
+            platformComponents()
+                    .stream()
+                    .filter(PlatformComponent::shouldRegister)
+                    .flatMap(pc -> pc.nameToMBeanMap().entrySet().stream())
+                    .forEach(entry -> addMXBean(platformMBeanServer, entry.getKey(), entry.getValue()));
         }
         return platformMBeanServer;
     }
@@ -600,11 +581,8 @@ public class ManagementFactory {
         // bootstrap class loader
         final Class<?> cls = mxbeanInterface;
         ClassLoader loader =
-            AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-                public ClassLoader run() {
-                    return cls.getClassLoader();
-                }
-            });
+            AccessController.doPrivileged(
+                    (PrivilegedAction<ClassLoader>) () -> cls.getClassLoader());
         if (!sun.misc.VM.isSystemDomainLoader(loader)) {
             throw new IllegalArgumentException(mxbeanName +
                 " is not a platform MXBean");
@@ -619,7 +597,6 @@ public class ManagementFactory {
                     " is not an instance of " + mxbeanInterface);
             }
 
-            final Class<?>[] interfaces;
             // check if the registered MBean is a notification emitter
             boolean emitter = connection.isInstanceOf(objName, NOTIF_EMITTER);
 
@@ -661,20 +638,11 @@ public class ManagementFactory {
      */
     public static <T extends PlatformManagedObject>
             T getPlatformMXBean(Class<T> mxbeanInterface) {
-        PlatformComponent pc = PlatformComponent.getPlatformComponent(mxbeanInterface);
-        if (pc == null) {
-            T mbean = ExtendedPlatformComponent.getMXBean(mxbeanInterface);
-            if (mbean != null) {
-                return mbean;
-            }
-            throw new IllegalArgumentException(mxbeanInterface.getName() +
-                " is not a platform management interface");
-        }
-        if (!pc.isSingleton())
-            throw new IllegalArgumentException(mxbeanInterface.getName() +
-                " can have zero or more than one instances");
+        PlatformComponent<?> pc = PlatformMBeanFinder.findSingleton(mxbeanInterface);
 
-        return pc.getSingletonMXBean(mxbeanInterface);
+        List<? extends T> mbeans = pc.getMBeans(mxbeanInterface);
+        assert mbeans.isEmpty() || mbeans.size() == 1;
+        return mbeans.isEmpty() ? null : mbeans.get(0);
     }
 
     /**
@@ -701,16 +669,19 @@ public class ManagementFactory {
      */
     public static <T extends PlatformManagedObject> List<T>
             getPlatformMXBeans(Class<T> mxbeanInterface) {
-        PlatformComponent pc = PlatformComponent.getPlatformComponent(mxbeanInterface);
+        // Validates at first the specified interface by finding at least one
+        // PlatformComponent whose MXBean implements this interface.
+        // An interface can be implemented by different MBeans, provided by
+        // different platform components.
+        PlatformComponent<?> pc = PlatformMBeanFinder.findFirst(mxbeanInterface);
         if (pc == null) {
-            T mbean = ExtendedPlatformComponent.getMXBean(mxbeanInterface);
-            if (mbean != null) {
-                return Collections.singletonList(mbean);
-            }
-            throw new IllegalArgumentException(mxbeanInterface.getName() +
-                " is not a platform management interface");
+            throw new IllegalArgumentException(mxbeanInterface.getName()
+                    + " is not a platform management interface");
         }
-        return Collections.unmodifiableList(pc.getMXBeans(mxbeanInterface));
+
+        return platformComponents().stream()
+                .flatMap(p -> p.getMBeans(mxbeanInterface).stream())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -753,22 +724,8 @@ public class ManagementFactory {
                                 Class<T> mxbeanInterface)
         throws java.io.IOException
     {
-        PlatformComponent pc = PlatformComponent.getPlatformComponent(mxbeanInterface);
-        if (pc == null) {
-            T mbean = ExtendedPlatformComponent.getMXBean(mxbeanInterface);
-            if (mbean != null) {
-                ObjectName on = mbean.getObjectName();
-                return ManagementFactory.newPlatformMXBeanProxy(connection,
-                                                                on.getCanonicalName(),
-                                                                mxbeanInterface);
-            }
-            throw new IllegalArgumentException(mxbeanInterface.getName() +
-                " is not a platform management interface");
-        }
-        if (!pc.isSingleton())
-            throw new IllegalArgumentException(mxbeanInterface.getName() +
-                " can have zero or more than one instances");
-        return pc.getSingletonMXBean(connection, mxbeanInterface);
+        PlatformComponent<?> pc = PlatformMBeanFinder.findSingleton(mxbeanInterface);
+        return newPlatformMXBeanProxy(connection, pc.getObjectNamePattern(), mxbeanInterface);
     }
 
     /**
@@ -804,19 +761,56 @@ public class ManagementFactory {
                                        Class<T> mxbeanInterface)
         throws java.io.IOException
     {
-        PlatformComponent pc = PlatformComponent.getPlatformComponent(mxbeanInterface);
+        // Validates at first the specified interface by finding at least one
+        // PlatformComponent whose MXBean implements this interface.
+        // An interface can be implemented by different MBeans, provided by
+        // different platform components.
+        PlatformComponent<?> pc = PlatformMBeanFinder.findFirst(mxbeanInterface);
         if (pc == null) {
-            T mbean = ExtendedPlatformComponent.getMXBean(mxbeanInterface);
-            if (mbean != null) {
-                ObjectName on = mbean.getObjectName();
-                T proxy = ManagementFactory.newPlatformMXBeanProxy(connection,
-                            on.getCanonicalName(), mxbeanInterface);
-                return Collections.singletonList(proxy);
-            }
-            throw new IllegalArgumentException(mxbeanInterface.getName() +
-                " is not a platform management interface");
+            throw new IllegalArgumentException(mxbeanInterface.getName()
+                    + " is not a platform management interface");
         }
-        return Collections.unmodifiableList(pc.getMXBeans(connection, mxbeanInterface));
+
+        // Collect all names, eliminate duplicates.
+        Stream<String> names = Stream.empty();
+        for (PlatformComponent<?> p : platformComponents()) {
+            names = Stream.concat(names, getProxyNames(p, connection, mxbeanInterface));
+        }
+        Set<String> objectNames = names.collect(Collectors.toSet());
+        if (objectNames.isEmpty()) return Collections.emptyList();
+
+        // Map names on proxies.
+        List<T> proxies = new ArrayList<>();
+        for (String name : objectNames) {
+            proxies.add(newPlatformMXBeanProxy(connection, name, mxbeanInterface));
+        }
+        return proxies;
+    }
+
+    // Returns a stream containing all ObjectNames of the MBeans represented by
+    // the specified PlatformComponent and implementing the specified interface.
+    // If the PlatformComponent is a singleton, the name returned by
+    // PlatformComponent.getObjectNamePattern() will be used, otherwise
+    // we will query the specified MBeanServerConnection (conn.queryNames)
+    // with the pattern returned by PlatformComponent.getObjectNamePattern()
+    // in order to find the names of matching MBeans.
+    // In case of singleton, we do not check whether the MBean is registered
+    // in the connection because the caller "getPlatformMXBeans" will do the check
+    // when creating a proxy.
+    private static Stream<String> getProxyNames(PlatformComponent<?> pc,
+                                                MBeanServerConnection conn,
+                                                Class<?> intf)
+            throws IOException
+    {
+        if (pc.mbeanInterfaceNames().contains(intf.getName())) {
+            if (pc.isSingleton()) {
+                return Stream.of(pc.getObjectNamePattern());
+            } else {
+                return conn.queryNames(Util.newObjectName(pc.getObjectNamePattern()), null)
+                        .stream().map(ObjectName::getCanonicalName);
+            }
+        }
+        return Stream.empty();
     }
 
     /**
@@ -835,63 +829,145 @@ public class ManagementFactory {
     public static Set<Class<? extends PlatformManagedObject>>
            getPlatformManagementInterfaces()
     {
-        Set<Class<? extends PlatformManagedObject>> result =
-            new HashSet<>();
-        for (PlatformComponent component: PlatformComponent.values()) {
-            result.add(component.getMXBeanInterface());
-        }
-        return Collections.unmodifiableSet(result);
+        return platformComponents()
+                .stream()
+                .flatMap(pc -> pc.mbeanInterfaces().stream())
+                .filter(clazz -> PlatformManagedObject.class.isAssignableFrom(clazz))
+                .map(clazz -> clazz.asSubclass(PlatformManagedObject.class))
+                .collect(Collectors.toSet());
     }
 
     private static final String NOTIF_EMITTER =
         "javax.management.NotificationEmitter";
 
-    /**
-     * Registers an MXBean.
-     */
-    private static void addMXBean(final MBeanServer mbs, final PlatformManagedObject pmo) {
-        // Make DynamicMBean out of MXBean by wrapping it with a StandardMBean
+    private static void addMXBean(final MBeanServer mbs, String name, final Object pmo)
+    {
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws InstanceAlreadyExistsException,
-                                         MBeanRegistrationException,
-                                         NotCompliantMBeanException {
-                    final DynamicMBean dmbean;
-                    if (pmo instanceof DynamicMBean) {
-                        dmbean = DynamicMBean.class.cast(pmo);
-                    } else if (pmo instanceof NotificationEmitter) {
-                        dmbean = new StandardEmitterMBean(pmo, null, true, (NotificationEmitter) pmo);
-                    } else {
-                        dmbean = new StandardMBean(pmo, null, true);
-                    }
-
-                    mbs.registerMBean(dmbean, pmo.getObjectName());
-                    return null;
+            ObjectName oname = ObjectName.getInstance(name);
+            // Make DynamicMBean out of MXBean by wrapping it with a StandardMBean
+            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+                final DynamicMBean dmbean;
+                if (pmo instanceof DynamicMBean) {
+                    dmbean = DynamicMBean.class.cast(pmo);
+                } else if (pmo instanceof NotificationEmitter) {
+                    dmbean = new StandardEmitterMBean(pmo, null, true, (NotificationEmitter) pmo);
+                } else {
+                    dmbean = new StandardMBean(pmo, null, true);
                 }
+
+                mbs.registerMBean(dmbean, oname);
+                return null;
             });
+        } catch (MalformedObjectNameException mone) {
+            throw new IllegalArgumentException(mone);
         } catch (PrivilegedActionException e) {
             throw new RuntimeException(e.getException());
         }
     }
 
-    /**
-     * Registers a DynamicMBean.
-     */
-    private static void addDynamicMBean(final MBeanServer mbs,
-                                        final DynamicMBean dmbean,
-                                        final ObjectName on) {
-        try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                @Override
-                public Void run() throws InstanceAlreadyExistsException,
-                                         MBeanRegistrationException,
-                                         NotCompliantMBeanException {
-                    mbs.registerMBean(dmbean, on);
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw new RuntimeException(e.getException());
+    private static Collection<PlatformComponent<?>> platformComponents()
+    {
+        return PlatformMBeanFinder.getMap().values();
+    }
+
+    private static class PlatformMBeanFinder
+    {
+        private static final Map<String, PlatformComponent<?>> componentMap;
+        static {
+            // get all providers
+            List<PlatformMBeanProvider> providers = AccessController.doPrivileged(
+                (PrivilegedAction<List<PlatformMBeanProvider>>) () -> {
+                     List<PlatformMBeanProvider> all = new ArrayList<>();
+                     ServiceLoader.loadInstalled(PlatformMBeanProvider.class)
+                                  .forEach(all::add);
+                     all.add(new DefaultPlatformMBeanProvider());
+                     return all;
+                }, null, new FilePermission("<<ALL FILES>>", "read"),
+                         new RuntimePermission("sun.management.spi.PlatformMBeanProvider"));
+
+            // load all platform components into a map
+            componentMap = providers.stream()
+                .flatMap(p -> toPlatformComponentStream(p))
+                // The first one wins if multiple PlatformComponents
+                // with same ObjectName pattern,
+                .collect(toMap(PlatformComponent::getObjectNamePattern,
+                               Function.identity(),
+                              (p1, p2) -> p1));
+        }
+
+        static Map<String, PlatformComponent<?>> getMap() {
+            return componentMap;
+        }
+
+        // Loads all platform components from a provider into a stream
+        // Ensures that two different components are not declared with the same
+        // object name pattern. Throws InternalError if the provider incorrectly
+        // declares two platform components with the same pattern.
+        private static Stream<PlatformComponent<?>>
+            toPlatformComponentStream(PlatformMBeanProvider provider)
+        {
+            return provider.getPlatformComponentList()
+                           .stream()
+                           .collect(toMap(PlatformComponent::getObjectNamePattern,
+                                          Function.identity(),
+                                          (p1, p2) -> {
+                                              throw new InternalError(
+                                                 p1.getObjectNamePattern() +
+                                                 " has been used as key for " + p1 +
+                                                 ", it cannot be reused for " + p2);
+                                          }))
+                           .values().stream();
+        }
+
+        // Finds the first PlatformComponent whose mbeanInterfaceNames() list
+        // contains the specified class name. An MBean interface can be implemented
+        // by different MBeans, provided by different platform components.
+        // For instance the MemoryManagerMXBean interface is implemented both by
+        // regular memory managers, and garbage collector MXBeans. This method is
+        // mainly used to verify that there is at least one PlatformComponent
+        // which provides an implementation of the desired interface.
+        static PlatformComponent<?> findFirst(Class<?> mbeanIntf)
+        {
+            String name = mbeanIntf.getName();
+            Optional<PlatformComponent<?>> op = getMap().values()
+                .stream()
+                .filter(pc -> pc.mbeanInterfaceNames().contains(name))
+                .findFirst();
+
+            if (op.isPresent()) {
+                return op.get();
+            } else {
+                return null;
+            }
+        }
+
+        // Finds a PlatformComponent whose mbeanInterface name list contains
+        // the specified class name, and make sure that one and only one exists.
+        static PlatformComponent<?> findSingleton(Class<?> mbeanIntf)
+        {
+            String name = mbeanIntf.getName();
+            Optional<PlatformComponent<?>> op = getMap().values()
+                .stream()
+                .filter(pc -> pc.mbeanInterfaceNames().contains(name))
+                .reduce((p1, p2) -> {
+                    if (p2 != null) {
+                        throw new IllegalArgumentException(mbeanIntf.getName() +
+                            " can have more than one instance");
+                    } else {
+                        return p1;
+                    }
+                });
+
+            PlatformComponent<?> singleton = op.isPresent() ? op.get() : null;
+            if (singleton == null) {
+                throw new IllegalArgumentException(mbeanIntf.getName() +
+                    " is not a platform management interface");
+            }
+            if (!singleton.isSingleton()) {
+                throw new IllegalArgumentException(mbeanIntf.getName() +
+                    " can have more than one instance");
+            }
+            return singleton;
         }
     }
 }

@@ -42,13 +42,10 @@ import java.security.PrivilegedExceptionAction;
 import sun.util.logging.LoggingSupport;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import com.sun.management.DiagnosticCommandMBean;
 import com.sun.management.HotSpotDiagnosticMXBean;
-
-import static java.lang.management.ManagementFactory.*;
 
 /**
  * ManagementFactoryHelper provides static factory methods to create

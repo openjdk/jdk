@@ -204,27 +204,37 @@ if [ ! -r c:/ ] ; then
     clean
 fi
 
+echo
+echo "+++++++++++++++++++++++++++++++++++"
+echo "Read an unreadable file - verify the read fails."
 
-if [ ! -r c:/ ] ; then
-    # Can't make a file unreadable under MKS.
-    echo
-    echo "+++++++++++++++++++++++++++++++++++"
-    echo "Read an unreadable file - verify the read fails."
-    # If the file exists, we try to read it.  The
-    # read will fail.
-    mkFiles $HOME/jdb.ini
-    id > $HOME/jdb.ini
-    chmod a-r $HOME/jdb.ini
-    if grep -q "uid=" $HOME/jdb.ini  ; then
-      echo "Unable to make file unreadable, so test will fail. chmod: $HOME/jdb.ini"
-      if grep -q "uid=0" $HOME/jdb.ini  ; then
-        echo "The test is running as root. Fix infrastructure!"
-      fi
-    fi  
+canMakeUnreadable=No
+id > $HOME/jdb.ini
+if chmod a-r $HOME/jdb.ini 
+then
+  grep -q 'uid=0(' $HOME/jdb.ini 2> /dev/null
+  case $? in
+    0)
+      echo "Error! Can't make file unreadable running as root"
+    ;;
+    1)
+      echo "Error! Can't make file unreadable for some other reason (windows?)"
+    ;;
+    *)
+      echo "OK. the file is unreadable"
+      canMakeUnreadable=Yes 
+    ;;
+   esac
+else    
+  echo "Error! Can't create or chmod file"
+fi  
+
+if [ "$canMakeUnreadable" = "Yes" ]
+then
     doit
     failIfNot 1 "open: $HOME/jdb.ini"
-    clean
 fi
+clean
 
 
 echo
@@ -246,8 +256,8 @@ echo "read $fred" > $here/jdb.ini
     doit
     failIfNot 1 "from $fred"
 
-    if [ ! -r c:/ ] ; then
-        # Can't make a file unreadable under MKS
+    if [ "$canMakeUnreadable" = "Yes" ]
+    then
         chmod a-r $fred
         doit
         failIfNot 1 "open: $fred"

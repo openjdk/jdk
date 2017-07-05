@@ -36,7 +36,7 @@ import java.util.function.Consumer;
 
 /**
  * @test
- * @bug 8068432
+ * @bug 8068432 8072030
  * @run testng ThenComposeExceptionTest
  * @summary Test that CompletableFuture.thenCompose works correctly if the
  * composing future completes exceptionally
@@ -92,7 +92,8 @@ public class ThenComposeExceptionTest {
         Assert.assertNotSame(f_thenCompose, fe, "Composed CompletableFuture returned directly");
 
         AtomicReference<Throwable> eOnWhenComplete = new AtomicReference<>();
-        f_thenCompose.whenComplete((r, e) -> eOnWhenComplete.set(e));
+        CompletableFuture<String> f_whenComplete = f_thenCompose.
+                whenComplete((r, e) -> eOnWhenComplete.set(e));
 
         afterAction.accept(fe);
 
@@ -103,10 +104,20 @@ public class ThenComposeExceptionTest {
         catch (Throwable t) {
             eOnJoined = t;
         }
-
-        Assert.assertTrue(eOnWhenComplete.get() instanceof CompletionException,
-                          "Incorrect exception reported on whenComplete");
         Assert.assertTrue(eOnJoined instanceof CompletionException,
-                          "Incorrect exception reported when joined");
+                          "Incorrect exception reported when joined on thenCompose: " + eOnJoined);
+
+        // Need to wait for f_whenComplete to complete to avoid
+        // race condition when updating eOnWhenComplete
+        eOnJoined = null;
+        try {
+            f_whenComplete.join();
+        } catch (Throwable t) {
+            eOnJoined = t;
+        }
+        Assert.assertTrue(eOnJoined instanceof CompletionException,
+                          "Incorrect exception reported when joined on whenComplete: " + eOnJoined);
+        Assert.assertTrue(eOnWhenComplete.get() instanceof CompletionException,
+                          "Incorrect exception passed to whenComplete: " + eOnWhenComplete.get());
     }
 }

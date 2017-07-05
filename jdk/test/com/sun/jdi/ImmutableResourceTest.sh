@@ -92,7 +92,7 @@ fi
 #
 echo "JDK under test is: $TESTJAVA"
 #
-CP="-classpath ${TESTCLASSES}${PATHSEP}${TESTJAVA}/lib/tools.jar"
+CP="-classpath ${TESTCLASSES}"
 # Compile the test class using the classpath we need:
 #
 env

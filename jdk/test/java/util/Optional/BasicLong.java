@@ -29,6 +29,7 @@
 
 import java.util.NoSuchElementException;
 import java.util.OptionalLong;
+import java.util.stream.LongStream;
 
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
@@ -107,6 +108,24 @@ public class BasicLong {
         assertEquals(1, present.orElseGet(()-> 3));
         assertEquals(1, present.<RuntimeException>orElseThrow(null));
         assertEquals(1, present.<RuntimeException>orElseThrow(ObscureException::new));
+    }
+
+    @Test(groups = "unit")
+    public void testStream() {
+        {
+            LongStream s = OptionalLong.empty().stream();
+
+            long[] es = s.toArray();
+            assertEquals(es.length, 0);
+        }
+
+        {
+            LongStream s = OptionalLong.of(42L).stream();
+
+            long[] es = s.toArray();
+            assertEquals(es.length, 1);
+            assertEquals(es[0], 42L);
+        }
     }
 
     private static class ObscureException extends RuntimeException {
