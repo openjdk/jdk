@@ -1,0 +1,211 @@
+#
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Utilities used in this Makefile
+BASENAME=basename
+CAT=cat
+CD=cd
+CMP=cmp
+CP=cp
+ECHO=echo
+MKDIR=mkdir
+PWD=pwd
+SH=sh
+ifeq ($(PLATFORM),windows)
+  ZIP=zip
+else
+  # store symbolic links as the link
+  ZIP=zip -y
+endif
+# Insure we have a path that looks like it came from pwd
+#   (This is mostly for Windows sake and drive letters)
+define UnixPath # path
+$(shell (cd "$1" && $(PWD)))
+endef
+
+# Current root directory
+CURRENT_DIRECTORY := $(shell $(PWD))
+
+# Build directory root
+BUILD_DIR_ROOT = $(CURRENT_DIRECTORY)/build
+
+# All configured Makefiles to run
+ALL_MAKEFILES = $(wildcard $(BUILD_DIR_ROOT)/*-*/Makefile)
+
+# All bundles to create
+ALL_IMAGE_DIRS = $(wildcard $(BUILD_DIR_ROOT)/*-*/images/*-image)
+
+# Build all the standard 'all', 'images', and 'clean' targets
+all images clean: checks
+	@if [ "$(ALL_MAKEFILES)" = "" ] ; then \
+	  $(ECHO) "ERROR: No configurations to build"; exit 1; \
+	fi
+	@for bdir in $(dir $(ALL_MAKEFILES)) ; do \
+	  $(ECHO) "$(CD) $${bdir} && $(MAKE) $(EXTRA_MAKE_ARGS) $@" ; \
+	  $(CD) $${bdir} && $(MAKE) $(EXTRA_MAKE_ARGS) $@ ; \
+	done
+
+# Bundle creation
+bundles:
+	@if [ "$(ALL_IMAGE_DIRS)" = "" ] ; then \
+	  $(ECHO) "ERROR: No images to bundle"; exit 1; \
+	fi
+	@for i in $(ALL_IMAGE_DIRS) ; do \
+          $(MKDIR) -p $${i}/../../bundles && \
+          $(RM) $${i}/../../bundles/`$(BASENAME) $${i}`.zip && \
+	  $(ECHO) "$(CD) $${i} && $(ZIP) -q -r ../../bundles/`$(BASENAME) $${i}`.zip ."  && \
+	  $(CD) $${i} && $(ZIP) -q -r ../../bundles/`$(BASENAME) $${i}`.zip . ; \
+	done
+
+# Clobber all the built files
+clobber::
+	$(RM) -r $(BUILD_DIR_ROOT)
+
+# Make various checks to insure the build will be successful
+#   Possibilities:
+#     * Check that if any closed repo is provided, they all must be.
+#     * Check that all open repos exist, at least until we are ready for some
+#       kind of partial build.
+checks:
+	@$(ECHO) "No checks yet"
+
+# Keep track of phony targets
+PHONY_LIST += all images clean clobber checks
+
+###########################################################################
+# To help in adoption of the new configure&&make build process, a bridge
+#   build will use the old settings to run configure and do the build.
+
+# Build with the configure bridge
+bridgeBuild: bridge2configure images
+
+# Bridge from old Makefile ALT settings to configure options
+bridge2configure: .bridge2configureOpts
+	$(CD) common/makefiles && sh ../autoconf/configure $(strip $(shell $(CAT) $<))
+
+# Create a file with configure options created from old Makefile mechanisms.
+.bridge2configureOpts: .bridge2configureOptsLatest
+	$(RM) $@
+	$(CP) $< $@
+
+# In case make was invoked from a specific path
+_MAKE_COMMAND_PATH:=$(firstword $(MAKE))
+ifneq ($(dir $(_MAKE_COMMAND_PATH)),./)
+  # This could be removed someday if JPRT was fixed and we could assume that
+  #    the path to make was always in PATH.
+  MAKE_BINDIR:=$(call UnixPath,$(dir $(_MAKE_COMMAND_PATH)))
+  NEWPATH:=$(MAKE_BINDIR):${PATH}
+  PATH:=$(NEWPATH)
+  export PATH
+  MAKE_COMMAND=$(MAKE_BINDIR)/$(notdir $(_MAKE_COMMAND_PATH))
+else
+  MAKE_COMMAND=$(_MAKE_COMMAND_PATH)
+endif
+
+# Use this file to only change when obvious things have changed
+.bridge2configureOptsLatest: FRC
+	$(RM) $@.tmp
+	@$(ECHO) " MAKE=$(MAKE_COMMAND) " >> $@.tmp
+	@$(ECHO) " --with-debug-level=$(if $(DEBUG_LEVEL),$(DEBUG_LEVEL),release) " >> $@.tmp
+ifdef ARCH_DATA_MODEL
+	@$(ECHO) " --with-target-bits=$(ARCH_DATA_MODEL) " >> $@.tmp
+endif
+ifdef ALT_PARALLEL_COMPILE_JOBS
+	@$(ECHO) " --with-num-cores=$(ALT_PARALLEL_COMPILE_JOBS) " >> $@.tmp
+endif
+ifdef ALT_BOOTDIR
+	@$(ECHO) " --with-boot-jdk=$(call UnixPath,$(ALT_BOOTDIR)) " >> $@.tmp
+endif
+ifdef ALT_CUPS_HEADERS_PATH
+	@$(ECHO) " --with-cups-include=$(call UnixPath,$(ALT_CUPS_HEADERS_PATH)) " >> $@.tmp
+endif
+ifdef ALT_FREETYPE_HEADERS_PATH
+	@$(ECHO) " --with-freetype=$(call UnixPath,$(ALT_FREETYPE_HEADERS_PATH)/..) " >> $@.tmp
+endif
+	@if [ -f $@ ] ; then \
+          if ! $(CMP) $@ $@.tmp > /dev/null ; then \
+            $(CP) $@.tmp $@ ; \
+          fi ; \
+        else \
+          $(CP) $@.tmp $@ ; \
+        fi
+	$(RM) $@.tmp
+
+# Clobber all the built files
+clobber:: bridge2clobber
+bridge2clobber::
+	$(RM) .bridge2*
+
+# Keep track of phony targets
+PHONY_LIST += bridge2configure bridgeBuild bridge2clobber
+
+###########################################################################
+# Javadocs
+#
+
+javadocs:
+	cd common/makefiles && $(MAKE) -f MakefileJavadoc.gmk
+
+# Keep track of phony targets
+PHONY_LIST += javadocs
+
+###########################################################################
+# JPRT targets
+
+ifndef JPRT_ARCHIVE_BUNDLE
+  JPRT_ARCHIVE_BUNDLE=/tmp/jprt_bundles/j2sdk-image.zip
+endif
+
+jprt_build_product: DEBUG_LEVEL=release
+jprt_build_product: BUILD_DIRNAME=*-release
+jprt_build_product: jprt_build_generic
+
+jprt_build_fastdebug: DEBUG_LEVEL=fastdebug
+jprt_build_fastdebug: BUILD_DIRNAME=*-fastdebug
+jprt_build_fastdebug: jprt_build_generic
+
+jprt_build_debug: DEBUG_LEVEL=slowdebug
+jprt_build_debug: BUILD_DIRNAME=*-debug
+jprt_build_debug: jprt_build_generic
+
+jprt_build_generic: EXTRA_MAKE_ARGS=LOG=nofile,info
+jprt_build_generic: $(JPRT_ARCHIVE_BUNDLE)
+
+$(JPRT_ARCHIVE_BUNDLE): bridgeBuild bundles
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $(BUILD_DIR_ROOT)/$(BUILD_DIRNAME)/bundles/j2sdk-image.zip $@
+
+# Keep track of phony targets
+PHONY_LIST += jprt_build_product jprt_build_fastdebug jprt_build_debug \
+              jprt_build_generic
+
+###########################################################################
+# Phony targets
+.PHONY: $(PHONY_LIST)
+
+# Force target
+FRC:
+

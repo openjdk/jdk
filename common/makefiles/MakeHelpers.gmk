@@ -57,9 +57,25 @@ endef
 define ParseLogLevel
     ifeq ($$(origin VERBOSE),undefined)
         # Setup logging according to LOG (but only if VERBOSE is not given)
+        
+       # If the "nofile" argument is given, act on it and strip it away
+        ifneq ($$(findstring nofile,$$(LOG)),)
+          # Reset the build log wrapper, regardless of other values
+          override BUILD_LOG_WRAPPER=
+          # COMMA is defined in spec.gmk, but that is not included yet
+          COMMA=,
+          # First try to remove ",nofile" if it exists
+          LOG_STRIPPED1=$$(subst $$(COMMA)nofile,,$$(LOG))
+          # Otherwise just remove "nofile"
+          LOG_STRIPPED2=$$(subst nofile,,$$(LOG_STRIPPED1))
+          # We might have ended up with a leading comma. Remove it
+          LOG_STRIPPED3=$$(strip $$(patsubst $$(COMMA)%,%,$$(LOG_STRIPPED2)))
+          override LOG:=$$(LOG_STRIPPED3)
+        endif
+
         ifeq ($$(LOG),)
             # Set LOG to "warn" as default if not set (and no VERBOSE given)
-            LOG=warn
+            override LOG=warn
         endif
         ifeq ($$(LOG),warn)
             VERBOSE=-s
@@ -180,6 +196,13 @@ endef
 define PrintEndMessage
     @$(ECHO) "Finished building OpenJDK for target '$@'"
     $(call CheckEnvironment)
+endef
+
+# Cleans the component given as $1
+define CleanComponent
+    @$(PRINTF) "Cleaning $1 build artifacts ..."
+    @($(CD) $(OUTPUT_ROOT) && $(RM) -r $1)
+    @$(PRINTF) " done\n"
 endef
 
 endif # _MAKEHELPERS_GMK
