@@ -197,8 +197,8 @@ import java.io.IOException;
  * in a jar file that is visible to the defining class loader of
  * the {@link com.sun.jdi.connect.Connector} type,
  * and that jar file contains a provider configuration file named
- * <tt>com.sun.jdi.connect.Connector</tt> in the resource directory
- * <tt>META-INF/services</tt>, and the provider configuration file
+ * {@code com.sun.jdi.connect.Connector} in the resource directory
+ * {@code META-INF/services}, and the provider configuration file
  * lists the full-qualified class name of the Connector
  * implementation. A Connector is a class that implements the
  * {@link com.sun.jdi.connect.Connector Connector} interface. More
@@ -209,7 +209,7 @@ import java.io.IOException;
  * LaunchingConnector}. The format of the provider configuration file
  * is one fully-qualified class name per line. Space and tab characters
  * surrounding each class, as well as blank lines are ignored. The
- * comment character is <tt>'#'</tt> (<tt>0x23</tt>), and on each
+ * comment character is {@code '#'} ({@code 0x23}), and on each
  * line all characters following the first comment character are
  * ignored. The file must be encoded in UTF-8.
  *
@@ -227,8 +227,8 @@ import java.io.IOException;
  * visible to the defining class loader for the
  * {@link com.sun.jdi.connect.spi.TransportService} type, and that jar
  * file contains a provider configuration file named
- * <tt>com.sun.jdi.connect.spi.TransportService</tt> in the resource
- * directory <tt>META-INF/services</tt>, and the provider
+ * {@code com.sun.jdi.connect.spi.TransportService} in the resource
+ * directory {@code META-INF/services}, and the provider
  * configuration file lists the full-qualified class name of the
  * TransportService implementation. A TransportService is a concrete
  * sub-class of {@link com.sun.jdi.connect.spi.TransportService
@@ -245,12 +245,12 @@ import java.io.IOException;
  * com.sun.jdi.connect.Transport Transport} that in turn
  * encapsulates the TransportService.
  * The AttachingConnector will be named based on the name of the
- * transport service concatenated with the string <tt>Attach</tt>.
+ * transport service concatenated with the string {@code Attach}.
  * For example, if the transport service {@link
  * com.sun.jdi.connect.spi.TransportService#name() name()} method
- * returns <tt>telepathic</tt> then the AttachingConnector will
- * be named <tt>telepathicAttach</tt>. Similiarly the ListeningConnector
- * will be named with the string <tt>Listen</tt> tagged onto the
+ * returns {@code telepathic} then the AttachingConnector will
+ * be named {@code telepathicAttach}. Similiarly the ListeningConnector
+ * will be named with the string {@code Listen} tagged onto the
  * name of the transport service. The {@link
  * com.sun.jdi.connect.Connector#description() description()} method
  * of both the AttachingConnector, and the ListeningConnector, will
@@ -259,10 +259,10 @@ import java.io.IOException;
  * the AttachingConnector and the ListeningConnector will have two
  * Connector {@link com.sun.jdi.connect.Connector$Argument Arguments}.
  * A {@link com.sun.jdi.connect.Connector$StringArgument StringArgument}
- * named <tt>address</tt> is the connector argument to specify the
+ * named {@code address} is the connector argument to specify the
  * address to attach too, or to listen on. A
  * {@link com.sun.jdi.connect.Connector$IntegerArgument IntegerArgument}
- * named <tt>timeout</tt> is the connector argument to specify the
+ * named {@code timeout} is the connector argument to specify the
  * timeout when attaching, or accepting. The timeout connector may be
  * ignored depending on if the transport service supports an attach
  * timeout or accept timeout.
@@ -372,13 +372,13 @@ public interface VirtualMachineManager {
       * A Connector can then use this method to create a virtual machine
       * mirror to represent the composite state of the target VM.
       *
-      * <p> The <tt>process</tt> argument specifies the
+      * <p> The {@code process} argument specifies the
       * {@link java.lang.Process} object for the taget VM. It may be
-      * specified as <tt>null</tt>. If the target VM is launched
+      * specified as {@code null}. If the target VM is launched
       * by a {@link com.sun.jdi.connect.LaunchingConnector
-      * LaunchingConnector} the <tt>process</tt> argument should be
+      * LaunchingConnector} the {@code process} argument should be
       * specified, otherwise calling {@link com.sun.jdi.VirtualMachine#process()}
-      * on the created virtual machine will return <tt>null</tt>.
+      * on the created virtual machine will return {@code null}.
       *
       * <p> This method exists so that Connectors may create
       * a virtual machine mirror when a connection is established
@@ -391,7 +391,7 @@ public interface VirtualMachineManager {
       *
       * @param  process
       *         If launched, the {@link java.lang.Process} object for
-      *         the target VM. <tt>null</tt> if not launched.
+      *         the target VM. {@code null} if not launched.
       *
       * @return new virtual machine representing the target VM.
       *
@@ -413,7 +413,7 @@ public interface VirtualMachineManager {
       *
       * <p> This convenience method works as if by invoking {@link
       * #createVirtualMachine(Connection, Process)} method and
-      * specifying <tt>null</tt> as the <tt>process</tt> argument.
+      * specifying {@code null} as the {@code process} argument.
       *
       * <p> This method exists so that Connectors may create
       * a virtual machine mirror when a connection is established

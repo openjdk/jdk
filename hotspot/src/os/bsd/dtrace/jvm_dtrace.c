@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ static void delete_attach_file(pid_t pid) {
 /* attach to given JVM */
 jvm_t* jvm_attach(pid_t pid) {
     jvm_t* jvm;
-    int door_fd, attach_fd, i;
+    int door_fd, attach_fd, i = 0;
 
     jvm = (jvm_t*) calloc(1, sizeof(jvm_t));
     if (jvm == NULL) {
@@ -292,14 +292,13 @@ const char* jvm_get_last_error() {
 /* detach the givenb JVM */
 int jvm_detach(jvm_t* jvm) {
     if (jvm) {
-        int res;
+        int res = 0;
         if (jvm->door_fd != -1) {
             if (file_close(jvm->door_fd) != 0) {
                 set_jvm_error(JVM_ERR_CANT_CLOSE_DOOR);
                 res = -1;
             } else {
                 clear_jvm_error();
-                res = 0;
             }
         }
         free(jvm);

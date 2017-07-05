@@ -26,6 +26,7 @@ package jdk.nashorn.internal.runtime.test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -38,7 +39,6 @@ import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.testng.annotations.Test;
 
 /**
- * @ignore Fails with jtreg, but passes with ant test run. Ignore for now.
  * @test
  * @bug 8039185 8039403
  * @summary  Test for persistent code cache and path handling
@@ -113,7 +113,8 @@ public class CodeStoreAndPathTest {
         assertEquals(actualCodeCachePath, expectedCodeCachePath);
         // Check that code cache dir exists and it's not empty
         final File file = new File(actualCodeCachePath.toUri());
-        assertFalse(!file.isDirectory(), "No code cache directory was created!");
+        assertTrue(file.exists(), "No code cache directory was created!");
+        assertTrue(file.isDirectory(), "Code cache location is not a directory!");
         assertFalse(file.list().length == 0, "Code cache directory is empty!");
     }
 
@@ -174,7 +175,7 @@ public class CodeStoreAndPathTest {
                 return codeCachePath.resolve(file);
             }
         }
-        throw new AssertionError("Code cache path not found");
+        throw new AssertionError("Code cache path not found: " + codeCachePath.toString());
     }
 
     private static void checkCompiledScripts(final DirectoryStream<Path> stream, final int numberOfScripts) throws IOException {

@@ -124,8 +124,8 @@ class Base64 {
      * Translates the specified Base64 string (as per Preferences.get(byte[]))
      * into a byte array.
      *
-     * @throw IllegalArgumentException if {@code s} is not a valid Base64
-     *        string.
+     * @throws IllegalArgumentException if {@code s} is not a valid Base64
+     *         string.
      */
     static byte[] base64ToByteArray(String s) {
         return base64ToByteArray(s, false);
@@ -135,9 +135,9 @@ class Base64 {
      * Translates the specified "alternate representation" Base64 string
      * into a byte array.
      *
-     * @throw IllegalArgumentException or ArrayOutOfBoundsException
-     *        if {@code s} is not a valid alternate representation
-     *        Base64 string.
+     * @throws IllegalArgumentException or ArrayOutOfBoundsException
+     *         if {@code s} is not a valid alternate representation
+     *         Base64 string.
      */
     static byte[] altBase64ToByteArray(String s) {
         return base64ToByteArray(s, true);
@@ -194,8 +194,8 @@ class Base64 {
      * Translates the specified character, which is assumed to be in the
      * "Base 64 Alphabet" into its equivalent 6-bit positive integer.
      *
-     * @throw IllegalArgumentException or ArrayOutOfBoundsException if
-     *        c is not in the Base64 Alphabet.
+     * @throws IllegalArgumentException or ArrayOutOfBoundsException if
+     *         c is not in the Base64 Alphabet.
      */
     private static int base64toInt(char c, byte[] alphaToInt) {
         int result = alphaToInt[c];

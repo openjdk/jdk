@@ -66,7 +66,7 @@ public class MonitoredHostProvider extends MonitoredHost {
      * {@inheritDoc}.
      * <p>
      * Note - the <em>file:</em> protocol silently ignores the
-     * <tt>interval</tt> parameter.
+     * {@code interval} parameter.
      */
     public MonitoredVm getMonitoredVm(VmIdentifier vmid, int interval)
                        throws MonitorException {

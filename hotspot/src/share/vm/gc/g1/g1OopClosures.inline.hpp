@@ -31,6 +31,7 @@
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RemSet.inline.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
