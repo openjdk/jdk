@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,8 +313,14 @@ public class Misc {
                 acl.add(0, entry);
                 view.setAcl(acl);
                 try {
-                    assertTrue(!isWritable(file));
-                    assertTrue(!isExecutable(file));
+                    if (isRoot()) {
+                        // root has all permissions
+                        assertTrue(isWritable(file));
+                        assertTrue(isExecutable(file));
+                    } else {
+                        assertTrue(!isWritable(file));
+                        assertTrue(!isExecutable(file));
+                    }
                 } finally {
                     // Restore ACL
                     acl.remove(0);
@@ -352,5 +358,13 @@ public class Misc {
     static void assertTrue(boolean okay) {
         if (!okay)
             throw new RuntimeException("Assertion Failed");
+    }
+
+    private static boolean isRoot() {
+        if (System.getProperty("os.name").startsWith("Windows"))
+            return false;
+
+        Path passwd = Paths.get("/etc/passwd");
+        return Files.isWritable(passwd);
     }
 }

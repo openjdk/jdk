@@ -68,20 +68,21 @@ public class LingerTest {
         }
     }
 
-    static class Another implements Runnable {
+    static class Other implements Runnable {
         int port;
         long delay;
         boolean connected = false;
 
-        public Another(int port, long delay) {
+        public Other(int port, long delay) {
             this.port = port;
             this.delay = delay;
         }
 
         public void run() {
-            System.out.println ("Another starts");
+            System.out.println ("Other starts: sleep " + delay);
             try {
                 Thread.sleep(delay);
+                System.out.println ("Other opening socket");
                 Socket s = new Socket("localhost", port);
                 synchronized (this) {
                     connected = true;
@@ -91,7 +92,7 @@ public class LingerTest {
             catch (Exception ioe) {
                 ioe.printStackTrace();
             }
-            System.out.println ("Another ends");
+            System.out.println ("Other ends");
         }
 
         public synchronized boolean connected() {
@@ -115,27 +116,29 @@ public class LingerTest {
             Thread thr = new Thread(new Sender(s1));
         thr.start();
 
-        // another thread that will connect after 5 seconds.
-            Another another = new Another(ss.getLocalPort(), 5000);
-        thr = new Thread(another);
+        // other thread that will connect after 5 seconds.
+            Other other = new Other(ss.getLocalPort(), 5000);
+        thr = new Thread(other);
         thr.start();
 
         // give sender time to queue the data
+            System.out.println ("Main sleep 1000");
             Thread.sleep(1000);
+            System.out.println ("Main continue");
 
         // close the socket asynchronously
             (new Thread(new Closer(s1))).start();
 
-        // give another time to run
-            Thread.sleep(10000);
+            System.out.println ("Main sleep 15000");
+        // give other time to run
+            Thread.sleep(15000);
+            System.out.println ("Main closing serversocket");
 
         ss.close();
-        // check that another is done
-            if (!another.connected()) {
-            throw new RuntimeException("Another thread is blocked");
+        // check that other is done
+            if (!other.connected()) {
+            throw new RuntimeException("Other thread is blocked");
         }
         System.out.println ("Main ends");
-
     }
-
 }

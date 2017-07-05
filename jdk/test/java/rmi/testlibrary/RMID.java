@@ -74,6 +74,10 @@ public class RMID extends JavaVM {
         // +
         // " -Djava.security.debug=all ";
 
+        // Set execTimeout to 60 sec (default is 30 sec)
+        // to avoid spurious timeouts on slow machines.
+        options += " -Dsun.rmi.activation.execTimeout=60000";
+
         return options;
     }
 

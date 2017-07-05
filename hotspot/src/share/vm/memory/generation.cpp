@@ -635,16 +635,16 @@ void OneContigSpaceCardGeneration::collect(bool   full,
     x(ref_processor(), gch->reserved_region());
 
   STWGCTimer* gc_timer = GenMarkSweep::gc_timer();
-  gc_timer->register_gc_start(os::elapsed_counter());
+  gc_timer->register_gc_start();
 
   SerialOldTracer* gc_tracer = GenMarkSweep::gc_tracer();
   gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
 
   GenMarkSweep::invoke_at_safepoint(_level, ref_processor(), clear_all_soft_refs);
 
-  gc_timer->register_gc_end(os::elapsed_counter());
+  gc_timer->register_gc_end();
 
-  gc_tracer->report_gc_end(os::elapsed_counter(), gc_timer->time_partitions());
+  gc_tracer->report_gc_end(gc_timer->gc_end(), gc_timer->time_partitions());
 
   SpecializationStats::print();
 }

@@ -33,7 +33,7 @@
 #include "utilities/growableArray.hpp"
 
 #if INCLUDE_TRACE
-# include "trace/traceTime.hpp"
+# include "utilities/ticks.hpp"
 #endif
 
 //
@@ -98,7 +98,7 @@ class ClassLoaderDataGraph : public AllStatic {
 
 #if INCLUDE_TRACE
  private:
-  static TracingTime _class_unload_time;
+  static Ticks _class_unload_time;
   static void class_unload_event(Klass* const k);
 #endif
 };

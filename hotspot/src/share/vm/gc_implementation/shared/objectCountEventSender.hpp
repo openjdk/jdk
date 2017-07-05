@@ -32,10 +32,11 @@
 #if INCLUDE_SERVICES
 
 class KlassInfoEntry;
+class Ticks;
 
 class ObjectCountEventSender : public AllStatic {
  public:
-  static void send(const KlassInfoEntry* entry, GCId gc_id, jlong timestamp);
+  static void send(const KlassInfoEntry* entry, GCId gc_id, const Ticks& timestamp);
   static bool should_send_event();
 };
 

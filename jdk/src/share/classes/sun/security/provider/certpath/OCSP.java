@@ -129,7 +129,8 @@ public final class OCSP {
                 ("Exception while encoding OCSPRequest", e);
         }
         OCSPResponse ocspResponse = check(Collections.singletonList(certId),
-            responderURI, issuerCert, null, Collections.<Extension>emptyList());
+            responderURI, issuerCert, null, null,
+            Collections.<Extension>emptyList());
         return (RevocationStatus)ocspResponse.getSingleResponse(certId);
     }
 
@@ -176,7 +177,7 @@ public final class OCSP {
                 ("Exception while encoding OCSPRequest", e);
         }
         OCSPResponse ocspResponse = check(Collections.singletonList(certId),
-            responderURI, responderCert, date, extensions);
+            responderURI, issuerCert, responderCert, date, extensions);
         return (RevocationStatus) ocspResponse.getSingleResponse(certId);
     }
 
@@ -185,6 +186,7 @@ public final class OCSP {
      *
      * @param certs the CertIds to be checked
      * @param responderURI the URI of the OCSP responder
+     * @param issuerCert the issuer's certificate
      * @param responderCert the OCSP responder's certificate
      * @param date the time the validity of the OCSP responder's certificate
      *    should be checked against. If null, the current time is used.
@@ -195,6 +197,7 @@ public final class OCSP {
      *    encoding the OCSP Request or validating the OCSP Response
      */
     static OCSPResponse check(List<CertId> certIds, URI responderURI,
+                              X509Certificate issuerCert,
                               X509Certificate responderCert, Date date,
                               List<Extension> extensions)
         throws IOException, CertPathValidatorException
@@ -284,7 +287,8 @@ public final class OCSP {
         }
 
         // verify the response
-        ocspResponse.verify(certIds, responderCert, date, request.getNonce());
+        ocspResponse.verify(certIds, issuerCert, responderCert, date,
+            request.getNonce());
 
         return ocspResponse;
     }
