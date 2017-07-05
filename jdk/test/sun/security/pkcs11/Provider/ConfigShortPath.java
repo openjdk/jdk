@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,44 +33,52 @@ import java.lang.reflect.*;
 
 public class ConfigShortPath {
 
-    private static final String[] configNames = {
-        "csp.cfg", "cspPlus.cfg", "cspSpace.cfg", "cspQuotedPath.cfg"
+    private static final String[] winConfigNames = {
+        "csp.cfg", "cspSpace.cfg", "cspQuotedPath.cfg"
+    };
+    private static final String[] solConfigNames = {
+        "cspPlus.cfg"
     };
 
     public static void main(String[] args) throws Exception {
-        Constructor cons = null;
-        try {
-            Class clazz = Class.forName("sun.security.pkcs11.SunPKCS11");
-            cons = clazz.getConstructor(String.class);
-        } catch (Exception ex) {
-            System.out.println("Skipping test - no PKCS11 provider available");
-            return;
+        Provider p = Security.getProvider("SunPKCS11");
+        if (p == null) {
+            // re-try w/ SunPKCS11-Solaris
+            p = Security.getProvider("SunPKCS11-Solaris");
+            if (p == null) {
+                System.out.println("Skipping test - no PKCS11 provider available");
+                return;
+            }
         }
+
+        String osInfo = System.getProperty("os.name", "");
+        String[] configNames = (osInfo.contains("Windows")?
+            winConfigNames : solConfigNames);
+
         String testSrc = System.getProperty("test.src", ".");
         for (int i = 0; i < configNames.length; i++) {
             String configFile = testSrc + File.separator + configNames[i];
 
             System.out.println("Testing against " + configFile);
             try {
-                Object obj = cons.newInstance(configFile);
-            } catch (InvocationTargetException ite) {
-                Throwable cause = ite.getCause();
-                System.out.println(cause);
-                if (cause instanceof ProviderException) {
-                    while ((cause = cause.getCause()) != null) {
-                        System.out.println(cause);
-                        String causeMsg = cause.getMessage();
-                        // Indicate failure if due to parsing config
-                        if (causeMsg.indexOf("Unexpected") != -1) {
-                            throw (ProviderException) cause;
-                        }
+                p.configure(configFile);
+            } catch (InvalidParameterException ipe) {
+                ipe.printStackTrace();
+                Throwable cause = ipe.getCause();
+                // Indicate failure if due to parsing config
+                if (cause.getClass().getName().equals
+                        ("sun.security.pkcs11.ConfigurationException")) {
+                    // Error occurred during parsing
+                    if (cause.getMessage().indexOf("Unexpected") != -1) {
+                        throw (ProviderException) cause;
                     }
-                    // Consider the test passes if the exception is
-                    // thrown after parsing, i.e. due to the absolute
-                    // path requirement or the non-existent path.
-                } else {
-                    // unexpected exception
-                    throw new RuntimeException("Unexpected Exception", cause);
+                }
+            } catch (ProviderException pe) {
+                pe.printStackTrace();
+                if (pe.getCause() instanceof IOException) {
+                    // Thrown when the directory does not exist which is ok
+                    System.out.println("Pass: config parsed ok");
+                    continue;
                 }
             }
         }

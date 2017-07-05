@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/commandLineFlagConstraintsGC.hpp"
+#include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/defaultStream.hpp"
 
@@ -41,97 +42,85 @@
 #include "opto/c2_globals.hpp"
 #endif // COMPILER2
 
-static Flag::Error MinPLABSizeBounds(const char* name, bool verbose, size_t* value) {
+static Flag::Error MinPLABSizeBounds(const char* name, size_t value, bool verbose) {
 #if INCLUDE_ALL_GCS
-  if ((UseConcMarkSweepGC || UseG1GC) && (*value < PLAB::min_size())) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "%s (" SIZE_FORMAT ") must be greater than "
-                  "ergonomic PLAB minimum size (" SIZE_FORMAT ")\n",
-                  name, *value, PLAB::min_size());
-    }
+  if ((UseConcMarkSweepGC || UseG1GC) && (value < PLAB::min_size())) {
+    CommandLineError::print(verbose,
+                            "%s (" SIZE_FORMAT ") must be "
+                            "greater than or equal to ergonomic PLAB minimum size (" SIZE_FORMAT ")\n",
+                            name, value, PLAB::min_size());
     return Flag::VIOLATES_CONSTRAINT;
   }
 #endif // INCLUDE_ALL_GCS
   return Flag::SUCCESS;
 }
 
-static Flag::Error MaxPLABSizeBounds(const char* name, bool verbose, size_t* value) {
+static Flag::Error MaxPLABSizeBounds(const char* name, size_t value, bool verbose) {
 #if INCLUDE_ALL_GCS
-  if ((UseConcMarkSweepGC || UseG1GC) && (*value > PLAB::max_size())) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "%s (" SIZE_FORMAT ") must be less than "
-                  "ergonomic PLAB maximum size (" SIZE_FORMAT ")\n",
-                  name, *value, PLAB::max_size());
-    }
+  if ((UseConcMarkSweepGC || UseG1GC) && (value > PLAB::max_size())) {
+    CommandLineError::print(verbose,
+                            "%s (" SIZE_FORMAT ") must be "
+                            "less than ergonomic PLAB maximum size (" SIZE_FORMAT ")\n",
+                            name, value, PLAB::min_size());
     return Flag::VIOLATES_CONSTRAINT;
   }
 #endif // INCLUDE_ALL_GCS
   return Flag::SUCCESS;
 }
 
-static Flag::Error MinMaxPLABSizeBounds(const char* name, bool verbose, size_t* value) {
-  if (MinPLABSizeBounds(name, verbose, value) == Flag::SUCCESS) {
-    return MaxPLABSizeBounds(name, verbose, value);
+static Flag::Error MinMaxPLABSizeBounds(const char* name, size_t value, bool verbose) {
+  if (MinPLABSizeBounds(name, value, verbose) == Flag::SUCCESS) {
+    return MaxPLABSizeBounds(name, value, verbose);
   }
   return Flag::VIOLATES_CONSTRAINT;
 }
 
-Flag::Error YoungPLABSizeConstraintFunc(bool verbose, size_t* value) {
-  return MinMaxPLABSizeBounds("YoungPLABSize", verbose, value);
+Flag::Error YoungPLABSizeConstraintFunc(size_t value, bool verbose) {
+  return MinMaxPLABSizeBounds("YoungPLABSize", value, verbose);
 }
 
-Flag::Error MinHeapFreeRatioConstraintFunc(bool verbose, uintx* value) {
-  if (*value > MaxHeapFreeRatio) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "MinHeapFreeRatio (" UINTX_FORMAT ") must be less than or "
-                  "equal to MaxHeapFreeRatio (" UINTX_FORMAT ")\n",
-                  *value, MaxHeapFreeRatio);
-    }
+Flag::Error MinHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
+  if (value > MaxHeapFreeRatio) {
+    CommandLineError::print(verbose,
+                            "MinHeapFreeRatio (" UINTX_FORMAT ") must be "
+                            "less than or equal to MaxHeapFreeRatio (" UINTX_FORMAT ")\n",
+                            value, MaxHeapFreeRatio);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
   }
 }
 
-Flag::Error MaxHeapFreeRatioConstraintFunc(bool verbose, uintx* value) {
-  if (*value < MinHeapFreeRatio) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "MaxHeapFreeRatio (" UINTX_FORMAT ") must be greater than or "
-                  "equal to MinHeapFreeRatio (" UINTX_FORMAT ")\n",
-                  *value, MinHeapFreeRatio);
-    }
+Flag::Error MaxHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
+  if (value < MinHeapFreeRatio) {
+    CommandLineError::print(verbose,
+                            "MaxHeapFreeRatio (" UINTX_FORMAT ") must be "
+                            "greater than or equal to MinHeapFreeRatio (" UINTX_FORMAT ")\n",
+                            value, MinHeapFreeRatio);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
   }
 }
 
-Flag::Error MinMetaspaceFreeRatioConstraintFunc(bool verbose, uintx* value) {
-  if (*value > MaxMetaspaceFreeRatio) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "MinMetaspaceFreeRatio (" UINTX_FORMAT ") must be less than or "
-                  "equal to MaxMetaspaceFreeRatio (" UINTX_FORMAT ")\n",
-                  *value, MaxMetaspaceFreeRatio);
-    }
+Flag::Error MinMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose) {
+  if (value > MaxMetaspaceFreeRatio) {
+    CommandLineError::print(verbose,
+                            "MinMetaspaceFreeRatio (" UINTX_FORMAT ") must be "
+                            "less than or equal to MaxMetaspaceFreeRatio (" UINTX_FORMAT ")\n",
+                            value, MaxMetaspaceFreeRatio);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
   }
 }
 
-Flag::Error MaxMetaspaceFreeRatioConstraintFunc(bool verbose, uintx* value) {
-  if (*value < MinMetaspaceFreeRatio) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "MaxMetaspaceFreeRatio (" UINTX_FORMAT ") must be greater than or "
-                  "equal to MinMetaspaceFreeRatio (" UINTX_FORMAT ")\n",
-                  *value, MinMetaspaceFreeRatio);
-    }
+Flag::Error MaxMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose) {
+  if (value < MinMetaspaceFreeRatio) {
+    CommandLineError::print(verbose,
+                            "MaxMetaspaceFreeRatio (" UINTX_FORMAT ") must be "
+                            "greater than or equal to MinMetaspaceFreeRatio (" UINTX_FORMAT ")\n",
+                            value, MinMetaspaceFreeRatio);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
@@ -147,32 +136,28 @@ Flag::Error MaxMetaspaceFreeRatioConstraintFunc(bool verbose, uintx* value) {
   } \
 }
 
-Flag::Error InitialTenuringThresholdConstraintFunc(bool verbose, uintx* value) {
-  UseConcMarkSweepGCWorkaroundIfNeeded(*value, MaxTenuringThreshold);
+Flag::Error InitialTenuringThresholdConstraintFunc(uintx value, bool verbose) {
+  UseConcMarkSweepGCWorkaroundIfNeeded(value, MaxTenuringThreshold);
 
-  if (*value > MaxTenuringThreshold) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "InitialTenuringThreshold (" UINTX_FORMAT ") must be less than or "
-                  "equal to MaxTenuringThreshold (" UINTX_FORMAT ")\n",
-                  *value, MaxTenuringThreshold);
-    }
+  if (value > MaxTenuringThreshold) {
+    CommandLineError::print(verbose,
+                            "InitialTenuringThreshold (" UINTX_FORMAT ") must be "
+                            "less than or equal to MaxTenuringThreshold (" UINTX_FORMAT ")\n",
+                            value, MaxTenuringThreshold);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
   }
 }
 
-Flag::Error MaxTenuringThresholdConstraintFunc(bool verbose, uintx* value) {
-  UseConcMarkSweepGCWorkaroundIfNeeded(InitialTenuringThreshold, *value);
+Flag::Error MaxTenuringThresholdConstraintFunc(uintx value, bool verbose) {
+  UseConcMarkSweepGCWorkaroundIfNeeded(InitialTenuringThreshold, value);
 
-  if (*value < InitialTenuringThreshold) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "MaxTenuringThreshold (" UINTX_FORMAT ") must be greater than or "
-                  "equal to InitialTenuringThreshold (" UINTX_FORMAT ")\n",
-                  *value, InitialTenuringThreshold);
-    }
+  if (value < InitialTenuringThreshold) {
+    CommandLineError::print(verbose,
+                            "MaxTenuringThreshold (" UINTX_FORMAT ") must be "
+                            "greater than or equal to InitialTenuringThreshold (" UINTX_FORMAT ")\n",
+                            value, InitialTenuringThreshold);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
@@ -180,28 +165,24 @@ Flag::Error MaxTenuringThresholdConstraintFunc(bool verbose, uintx* value) {
 }
 
 #if INCLUDE_ALL_GCS
-Flag::Error G1NewSizePercentConstraintFunc(bool verbose, uintx* value) {
-  if (*value > G1MaxNewSizePercent) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "G1NewSizePercent (" UINTX_FORMAT ") must be less than or "
-                  "equal to G1MaxNewSizePercent (" UINTX_FORMAT ")\n",
-                  *value, G1MaxNewSizePercent);
-    }
+Flag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose) {
+  if (value > G1MaxNewSizePercent) {
+    CommandLineError::print(verbose,
+                            "G1NewSizePercent (" UINTX_FORMAT ") must be "
+                            "less than or equal to G1MaxNewSizePercent (" UINTX_FORMAT ")\n",
+                            value, G1MaxNewSizePercent);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
   }
 }
 
-Flag::Error G1MaxNewSizePercentConstraintFunc(bool verbose, uintx* value) {
-  if (*value < G1NewSizePercent) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "G1MaxNewSizePercent (" UINTX_FORMAT ") must be greater than or "
-                  "equal to G1NewSizePercent (" UINTX_FORMAT ")\n",
-                  *value, G1NewSizePercent);
-    }
+Flag::Error G1MaxNewSizePercentConstraintFunc(uintx value, bool verbose) {
+  if (value < G1NewSizePercent) {
+    CommandLineError::print(verbose,
+                            "G1MaxNewSizePercent (" UINTX_FORMAT ") must be "
+                            "greater than or equal to G1NewSizePercent (" UINTX_FORMAT ")\n",
+                            value, G1NewSizePercent);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
@@ -210,65 +191,56 @@ Flag::Error G1MaxNewSizePercentConstraintFunc(bool verbose, uintx* value) {
 
 #endif // INCLUDE_ALL_GCS
 
-Flag::Error CMSOldPLABMinConstraintFunc(bool verbose, size_t* value) {
-  if (*value > CMSOldPLABMax) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "CMSOldPLABMin (" SIZE_FORMAT ") must be less than or "
-                  "equal to CMSOldPLABMax (" SIZE_FORMAT ")\n",
-                  *value, CMSOldPLABMax);
-    }
+Flag::Error CMSOldPLABMinConstraintFunc(size_t value, bool verbose) {
+  if (value > CMSOldPLABMax) {
+    CommandLineError::print(verbose,
+                            "CMSOldPLABMin (" SIZE_FORMAT ") must be "
+                            "less than or equal to CMSOldPLABMax (" SIZE_FORMAT ")\n",
+                            value, CMSOldPLABMax);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
   }
 }
 
-Flag::Error CMSPrecleanDenominatorConstraintFunc(bool verbose, uintx* value) {
-  if (*value <= CMSPrecleanNumerator) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "CMSPrecleanDenominator (" UINTX_FORMAT ") must be strickly greater than "
-                  "CMSPrecleanNumerator (" UINTX_FORMAT ")\n",
-                  *value, CMSPrecleanNumerator);
-    }
+Flag::Error CMSPrecleanDenominatorConstraintFunc(uintx value, bool verbose) {
+  if (value <= CMSPrecleanNumerator) {
+    CommandLineError::print(verbose,
+                            "CMSPrecleanDenominator (" UINTX_FORMAT ") must be "
+                            "strickly greater than CMSPrecleanNumerator (" UINTX_FORMAT ")\n",
+                            value, CMSPrecleanNumerator);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
   }
 }
 
-Flag::Error CMSPrecleanNumeratorConstraintFunc(bool verbose, uintx* value) {
-  if (*value > (CMSPrecleanDenominator - 1)) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "CMSPrecleanNumerator (" UINTX_FORMAT ") must be less than or "
-                  "equal to CMSPrecleanDenominator - 1 (" UINTX_FORMAT ")\n", *value,
-                  CMSPrecleanDenominator - 1);
-    }
+Flag::Error CMSPrecleanNumeratorConstraintFunc(uintx value, bool verbose) {
+  if (value > (CMSPrecleanDenominator - 1)) {
+    CommandLineError::print(verbose,
+                            "CMSPrecleanNumerator (" UINTX_FORMAT ") must be "
+                            "less than or equal to CMSPrecleanDenominator - 1 (" UINTX_FORMAT ")\n",
+                            value, CMSPrecleanDenominator - 1);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
   }
 }
 
-Flag::Error SurvivorAlignmentInBytesConstraintFunc(bool verbose, intx* value) {
-  if (*value != 0) {
-    if (!is_power_of_2(*value)) {
-      if (verbose == true) {
-        jio_fprintf(defaultStream::error_stream(),
-                  "SurvivorAlignmentInBytes (" INTX_FORMAT ") must be power of 2\n",
-                  *value);
-      }
+Flag::Error SurvivorAlignmentInBytesConstraintFunc(intx value, bool verbose) {
+  if (value != 0) {
+    if (!is_power_of_2(value)) {
+      CommandLineError::print(verbose,
+                              "SurvivorAlignmentInBytes (" INTX_FORMAT ") must be "
+                              "power of 2\n",
+                              value);
       return Flag::VIOLATES_CONSTRAINT;
     }
-    if (*value < ObjectAlignmentInBytes) {
-      if (verbose == true) {
-        jio_fprintf(defaultStream::error_stream(),
-                  "SurvivorAlignmentInBytes (" INTX_FORMAT ") must be greater than or "
-                  "equal to ObjectAlignmentInBytes (" INTX_FORMAT ")\n",
-                  *value, ObjectAlignmentInBytes);
-      }
+    if (value < ObjectAlignmentInBytes) {
+      CommandLineError::print(verbose,
+                              "SurvivorAlignmentInBytes (" INTX_FORMAT ") must be "
+                              "greater than or equal to ObjectAlignmentInBytes (" INTX_FORMAT ")\n",
+                              value, ObjectAlignmentInBytes);
       return Flag::VIOLATES_CONSTRAINT;
     }
   }

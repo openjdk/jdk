@@ -61,5 +61,3 @@ public class SSLConfigFilePermissionTest extends AbstractFilePermissionTest {
         test.runTest(args);
     }
 }
-
-

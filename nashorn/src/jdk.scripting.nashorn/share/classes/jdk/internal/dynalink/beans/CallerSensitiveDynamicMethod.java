@@ -107,7 +107,7 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
     private final AccessibleObject target;
     private final MethodType type;
 
-    public CallerSensitiveDynamicMethod(final AccessibleObject target) {
+    CallerSensitiveDynamicMethod(final AccessibleObject target) {
         super(getName(target));
         this.target = target;
         this.type = getMethodType(target);
@@ -115,8 +115,9 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
 
     private static String getName(final AccessibleObject target) {
         final Member m = (Member)target;
-        return getMethodNameWithSignature(getMethodType(target), getClassAndMethodName(m.getDeclaringClass(),
-                m.getName()));
+        final boolean constructor = m instanceof Constructor;
+        return getMethodNameWithSignature(getMethodType(target), constructor ? m.getName() :
+            getClassAndMethodName(m.getDeclaringClass(), m.getName()), !constructor);
     }
 
     @Override

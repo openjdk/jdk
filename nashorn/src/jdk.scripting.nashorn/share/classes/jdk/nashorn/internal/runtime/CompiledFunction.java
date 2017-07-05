@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -820,7 +821,7 @@ final class CompiledFunction {
         // isn't available, we'll use the old one bound into the call site.
         final OptimismInfo effectiveOptInfo = currentOptInfo != null ? currentOptInfo : oldOptInfo;
         FunctionNode fn = effectiveOptInfo.reparse();
-        final boolean serialized = effectiveOptInfo.isSerialized();
+        final boolean cached = fn.isCached();
         final Compiler compiler = effectiveOptInfo.getCompiler(fn, ct, re); //set to non rest-of
 
         if (!shouldRecompile) {
@@ -828,11 +829,11 @@ final class CompiledFunction {
             // recompiled a deoptimized version for an inner invocation.
             // We still need to do the rest of from the beginning
             logRecompile("Rest-of compilation [STANDALONE] ", fn, ct, effectiveOptInfo.invalidatedProgramPoints);
-            return restOfHandle(effectiveOptInfo, compiler.compile(fn, serialized ? CompilationPhases.COMPILE_SERIALIZED_RESTOF : CompilationPhases.COMPILE_ALL_RESTOF), currentOptInfo != null);
+            return restOfHandle(effectiveOptInfo, compiler.compile(fn, cached ? CompilationPhases.COMPILE_CACHED_RESTOF : CompilationPhases.COMPILE_ALL_RESTOF), currentOptInfo != null);
         }
 
         logRecompile("Deoptimizing recompilation (up to bytecode) ", fn, ct, effectiveOptInfo.invalidatedProgramPoints);
-        fn = compiler.compile(fn, serialized ? CompilationPhases.RECOMPILE_SERIALIZED_UPTO_BYTECODE : CompilationPhases.COMPILE_UPTO_BYTECODE);
+        fn = compiler.compile(fn, cached ? CompilationPhases.RECOMPILE_CACHED_UPTO_BYTECODE : CompilationPhases.COMPILE_UPTO_BYTECODE);
         log.fine("Reusable IR generated");
 
         // compile the rest of the function, and install it
@@ -955,10 +956,6 @@ final class CompiledFunction {
 
         FunctionNode reparse() {
             return data.reparse();
-        }
-
-        boolean isSerialized() {
-            return data.isSerialized();
         }
     }
 
