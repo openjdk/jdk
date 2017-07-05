@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -391,10 +392,12 @@ public final class NativeString extends ScriptObject {
     /**
      * return a List of own keys associated with the object.
      * @param all True if to include non-enumerable keys.
+     * @param nonEnumerable set of non-enumerable properties seen already.Used
+     * to filter out shadowed, but enumerable properties from proto children.
      * @return Array of keys.
      */
     @Override
-    public String[] getOwnKeys(final boolean all) {
+    protected String[] getOwnKeys(final boolean all, final Set<String> nonEnumerable) {
         final List<Object> keys = new ArrayList<>();
 
         // add string index keys
@@ -403,7 +406,7 @@ public final class NativeString extends ScriptObject {
         }
 
         // add super class properties
-        keys.addAll(Arrays.asList(super.getOwnKeys(all)));
+        keys.addAll(Arrays.asList(super.getOwnKeys(all, nonEnumerable)));
         return keys.toArray(new String[keys.size()]);
     }
 

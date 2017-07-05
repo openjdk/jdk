@@ -23,7 +23,7 @@
 
 /**
  * JDK-8047369: Add regression tests for passing test cases of JDK-8024971
- * 
+ *
  * @test
  * @run
  * @option -scripting
@@ -76,14 +76,14 @@ makeFuncAndCall("with({}) return (eval(\"arguments\"));");
 
 evalExpectValue(<<CODE
     var s = "(function() { return y })()";
-    (function() { 
+    (function() {
         with({ y:1 })
             eval(s)
     })();
-    (function() { 
-        with({ 
+    (function() {
+        with({
             get y() { return "get"; }
-        }) 
+        })
         return eval(s)
     })();
 CODE, "get");
@@ -93,19 +93,19 @@ CODE, "get");
 
 evalExpectValue(<<CODE
     function f(o) {
-        var eval=0; 
+        var eval=0;
         with({
             get eval() { return o.eval }
-        }) 
+        })
         return eval("1+2");
-    } 
+    }
     f(this);
 CODE, 3)
 
 evalExpectValue(<<CODE
     function f() {
         var a=1,e=2;
-        try { 
+        try {
             throw 3
         } catch(e) {
             return + function g(){return eval('a+e')}()
@@ -125,9 +125,9 @@ evalExpectError("function f() { switch(x) {} } f()", ReferenceError);
 // makeFuncAndCall("L1:try { return } finally { break L1 }");
 
 evalExpectValue(<<CODE
-    function f() { 
+    function f() {
         function g() { return 0 }
-        function g() { return 1 } 
+        function g() { return 1 }
         function g$1() { return 2 }
         return g$1()
     }
@@ -139,7 +139,7 @@ evalExpectValue(<<CODE
     function f() {
         function g() {return 0 }
         var h = function g() { return 1 };
-        function g$1() { return 2 }; 
+        function g$1() { return 2 };
         return h()
     }
 
@@ -171,7 +171,7 @@ CODE, "set \":\"(a) {}");
 // evalExpectValue("(1000000000000000128).toFixed().toString()", "1000000000000000128");
 
 try {
-    Function("-", { 
+    Function("-", {
         toString: function() {
             throw "err"
         }

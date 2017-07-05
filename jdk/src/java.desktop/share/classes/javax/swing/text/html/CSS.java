@@ -3555,10 +3555,13 @@ public class CSS implements Serializable {
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+        int newBaseFontSize = f.get("baseFontSize", 0);
+        setBaseFontSize(newBaseFontSize);
+
         // Reconstruct the hashtable.
         int numValues = s.readInt();
-        valueConvertor = new Hashtable<Object, Object>(Math.max(1, numValues));
+        valueConvertor = new Hashtable<>(Math.max(1, numValues));
         while (numValues-- > 0) {
             Object key = s.readObject();
             Object value = s.readObject();

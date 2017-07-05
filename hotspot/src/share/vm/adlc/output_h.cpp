@@ -1119,7 +1119,7 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "    _nop_count = %d\n",
     _pipeline->_nopcnt);
   fprintf(fp_hpp, "  };\n\n");
-  fprintf(fp_hpp, "  static void initialize_nops(MachNode *nop_list[%d], Compile* C);\n\n",
+  fprintf(fp_hpp, "  static void initialize_nops(MachNode *nop_list[%d]);\n\n",
     _pipeline->_nopcnt);
   fprintf(fp_hpp, "#ifndef PRODUCT\n");
   fprintf(fp_hpp, "  void dump(outputStream *st = tty) const;\n");
@@ -1240,7 +1240,7 @@ void ArchDesc::declareClasses(FILE *fp) {
                       constant_type, _globalNames);
 
     // Clone function
-    fprintf(fp,"  virtual MachOper      *clone(Compile* C) const;\n");
+    fprintf(fp,"  virtual MachOper      *clone() const;\n");
 
     // Support setting a spill offset into a constant operand.
     // We only support setting an 'int' offset, while in the
@@ -1718,7 +1718,7 @@ void ArchDesc::declareClasses(FILE *fp) {
 
     // If there is an explicit peephole rule, build it
     if ( instr->peepholes() != NULL ) {
-      fprintf(fp,"  virtual MachNode      *peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted, Compile *C);\n");
+      fprintf(fp,"  virtual MachNode      *peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted);\n");
     }
 
     // Output the declaration for number of relocation entries
@@ -1863,7 +1863,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     }
     if ( instr->num_post_match_opnds() != 0
          || instr->is_chain_of_constant(_globalNames) ) {
-      fprintf(fp,"  friend MachNode *State::MachNodeGenerator(int opcode, Compile* C);\n");
+      fprintf(fp,"  friend MachNode *State::MachNodeGenerator(int opcode);\n");
     }
     if ( instr->rematerialize(_globalNames, get_registers()) ) {
       fprintf(fp,"  // Rematerialize %s\n", instr->_ident);
@@ -2071,8 +2071,8 @@ void ArchDesc::defineStateClass(FILE *fp) {
   fprintf(fp,"  DEBUG_ONLY( ~State(void); )       // Destructor\n");
   fprintf(fp,"\n");
   fprintf(fp,"  // Methods created by ADLC and invoked by Reduce\n");
-  fprintf(fp,"  MachOper *MachOperGenerator( int opcode, Compile* C );\n");
-  fprintf(fp,"  MachNode *MachNodeGenerator( int opcode, Compile* C );\n");
+  fprintf(fp,"  MachOper *MachOperGenerator(int opcode);\n");
+  fprintf(fp,"  MachNode *MachNodeGenerator(int opcode);\n");
   fprintf(fp,"\n");
   fprintf(fp,"  // Assign a state to a node, definition of method produced by ADLC\n");
   fprintf(fp,"  bool DFA( int opcode, const Node *ideal );\n");

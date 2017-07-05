@@ -56,7 +56,7 @@ CardTableRS::CardTableRS(MemRegion whole_heap,
 #endif
   set_bs(_ct_bs);
   _last_cur_val_in_gen = NEW_C_HEAP_ARRAY3(jbyte, GenCollectedHeap::max_gens + 1,
-                         mtGC, 0, AllocFailStrategy::RETURN_NULL);
+                         mtGC, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
   if (_last_cur_val_in_gen == NULL) {
     vm_exit_during_initialization("Could not create last_cur_val_in_gen array.");
   }

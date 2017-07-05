@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -607,7 +607,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
     }
 
     /**
-     * Retrieves the the suggested column title for the designated
+     * Retrieves the suggested column title for the designated
      * column for use in printouts and displays.
      *
      * @param columnIndex the first column is 1, the second is 2, and so on;
@@ -1073,7 +1073,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
         public int colType;
 
         /**
-         * The field that holds the the type name used by this particular data source
+         * The field that holds the type name used by this particular data source
          * for the value stored in this column.
          *
          * @serial
@@ -1081,7 +1081,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
         public String colTypeName;
 
         /**
-         * The field that holds the updatablity boolean per column of a RowSet
+         * The field that holds the updatability boolean per column of a RowSet
          *
          * @serial
          */

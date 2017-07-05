@@ -36,6 +36,7 @@ import java.io.Serializable;
 import java.lang.invoke.SwitchPoint;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -88,6 +89,8 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     /** property listeners */
     private transient PropertyListeners listeners;
 
+    private transient BitSet freeSlots;
+
     private static final long serialVersionUID = -7041836752008732533L;
 
     /**
@@ -129,6 +132,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         this.fieldMaximum = propertyMap.fieldMaximum;
         // We inherit the parent property listeners instance. It will be cloned when a new listener is added.
         this.listeners    = propertyMap.listeners;
+        this.freeSlots    = propertyMap.freeSlots;
 
         if (Context.DEBUG) {
             count++;
@@ -350,6 +354,51 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         return addPropertyNoHistory(new AccessorProperty(property, bindTo));
     }
 
+    // Get a logical slot index for a property, with spill slot 0 starting at fieldMaximum.
+    private int logicalSlotIndex(final Property property) {
+        final int slot = property.getSlot();
+        if (slot < 0) {
+            return -1;
+        }
+        return property.isSpill() ? slot + fieldMaximum : slot;
+    }
+
+    // Update boundaries and flags after a property has been added
+    private void updateFlagsAndBoundaries(final Property newProperty) {
+        if(newProperty.isSpill()) {
+            spillLength = Math.max(spillLength, newProperty.getSlot() + 1);
+        } else {
+            fieldCount = Math.max(fieldCount, newProperty.getSlot() + 1);
+        }
+        if (isValidArrayIndex(getArrayIndex(newProperty.getKey()))) {
+            setContainsArrayKeys();
+        }
+    }
+
+    // Update the free slots bitmap for a property that has been deleted and/or added.
+    private void updateFreeSlots(final Property oldProperty, final Property newProperty) {
+        // Free slots bitset is possibly shared with parent map, so we must clone it before making modifications.
+        boolean freeSlotsCloned = false;
+        if (oldProperty != null) {
+            final int slotIndex = logicalSlotIndex(oldProperty);
+            if (slotIndex >= 0) {
+                final BitSet newFreeSlots = freeSlots == null ? new BitSet() : (BitSet)freeSlots.clone();
+                assert !newFreeSlots.get(slotIndex);
+                newFreeSlots.set(slotIndex);
+                freeSlots = newFreeSlots;
+                freeSlotsCloned = true;
+            }
+        }
+        if (freeSlots != null && newProperty != null) {
+            final int slotIndex = logicalSlotIndex(newProperty);
+            if (slotIndex > -1 && freeSlots.get(slotIndex)) {
+                final BitSet newFreeSlots = freeSlotsCloned ? freeSlots : ((BitSet)freeSlots.clone());
+                newFreeSlots.clear(slotIndex);
+                freeSlots = newFreeSlots.isEmpty() ? null : newFreeSlots;
+            }
+        }
+    }
+
     /**
      * Add a property to the map without adding it to the history. This should be used for properties that
      * can't be shared such as bound properties, or properties that are expected to be added only once.
@@ -363,15 +412,9 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         }
         final PropertyHashMap newProperties = properties.immutableAdd(property);
         final PropertyMap newMap = new PropertyMap(this, newProperties);
+        newMap.updateFlagsAndBoundaries(property);
+        newMap.updateFreeSlots(null, property);
 
-        if(!property.isSpill()) {
-            newMap.fieldCount = Math.max(newMap.fieldCount, property.getSlot() + 1);
-        }
-        if (isValidArrayIndex(getArrayIndex(property.getKey()))) {
-            newMap.setContainsArrayKeys();
-        }
-
-        newMap.spillLength += property.getSpillCount();
         return newMap;
     }
 
@@ -392,15 +435,8 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
             final PropertyHashMap newProperties = properties.immutableAdd(property);
             newMap = new PropertyMap(this, newProperties);
             addToHistory(property, newMap);
-
-            if (!property.isSpill()) {
-                newMap.fieldCount = Math.max(newMap.fieldCount, property.getSlot() + 1);
-            }
-            if (isValidArrayIndex(getArrayIndex(property.getKey()))) {
-                newMap.setContainsArrayKeys();
-            }
-
-            newMap.spillLength += property.getSpillCount();
+            newMap.updateFlagsAndBoundaries(property);
+            newMap.updateFreeSlots(null, property);
         }
 
         return newMap;
@@ -422,7 +458,20 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
 
         if (newMap == null && properties.containsKey(key)) {
             final PropertyHashMap newProperties = properties.immutableRemove(key);
-            newMap = new PropertyMap(this, newProperties);
+            final boolean isSpill = property.isSpill();
+            final int slot = property.getSlot();
+            // If deleted property was last field or spill slot we can make it reusable by reducing field/slot count.
+            // Otherwise mark it as free in free slots bitset.
+            if (isSpill && slot >= 0 && slot == spillLength - 1) {
+                newMap = new PropertyMap(newProperties, className, fieldCount, fieldMaximum, spillLength - 1, containsArrayKeys());
+                newMap.freeSlots = freeSlots;
+            } else if (!isSpill && slot >= 0 && slot == fieldCount - 1) {
+                newMap = new PropertyMap(newProperties, className, fieldCount - 1, fieldMaximum, spillLength, containsArrayKeys());
+                newMap.freeSlots = freeSlots;
+            } else {
+                newMap = new PropertyMap(this, newProperties);
+                newMap.updateFreeSlots(property, null);
+            }
             addToHistory(property, newMap);
         }
 
@@ -471,7 +520,10 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
          * spillLength remains same in case (1) and (2) because of slot reuse. Only for case (3), we need
          * to add spill count of the newly added UserAccessorProperty property.
          */
-        newMap.spillLength = spillLength;
+        if (!sameType) {
+            newMap.spillLength = Math.max(spillLength, newProperty.getSlot() + 1);
+            newMap.updateFreeSlots(oldProperty, newProperty);
+        }
         return newMap;
     }
 
@@ -486,7 +538,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * @return the newly created UserAccessorProperty
      */
     public UserAccessorProperty newUserAccessors(final String key, final int propertyFlags) {
-        return new UserAccessorProperty(key, propertyFlags, spillLength);
+        return new UserAccessorProperty(key, propertyFlags, getFreeSpillSlot());
     }
 
     /**
@@ -514,10 +566,11 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
 
         final PropertyMap newMap = new PropertyMap(this, newProperties);
         for (final Property property : otherProperties) {
+            // This method is only safe to use with non-slotted, native getter/setter properties
+            assert property.getSlot() == -1;
             if (isValidArrayIndex(getArrayIndex(property.getKey()))) {
                 newMap.setContainsArrayKeys();
             }
-            newMap.spillLength += property.getSpillCount();
         }
 
         return newMap;
@@ -790,29 +843,37 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     boolean isFrozen() {
         return !isExtensible() && allFrozen();
     }
+
     /**
-     * Get the number of fields allocated for this {@link PropertyMap}.
+     * Return a free field slot for this map, or {@code -1} if none is available.
      *
-     * @return Number of fields allocated.
+     * @return free field slot or -1
      */
-    int getFieldCount() {
-        return fieldCount;
-    }
-    /**
-     * Get maximum number of fields available for this {@link PropertyMap}.
-     *
-     * @return Number of fields available.
-     */
-    int getFieldMaximum() {
-        return fieldMaximum;
+    int getFreeFieldSlot() {
+        if (freeSlots != null) {
+            final int freeSlot = freeSlots.nextSetBit(0);
+            if (freeSlot > -1 && freeSlot < fieldMaximum) {
+                return freeSlot;
+            }
+        }
+        if (fieldCount < fieldMaximum) {
+            return fieldCount;
+        }
+        return -1;
     }
 
     /**
-     * Get length of spill area associated with this {@link PropertyMap}.
+     * Get a free spill slot for this map.
      *
-     * @return Length of spill area.
+     * @return free spill slot
      */
-    int getSpillLength() {
+    int getFreeSpillSlot() {
+        if (freeSlots != null) {
+            final int freeSlot = freeSlots.nextSetBit(fieldMaximum);
+            if (freeSlot > -1) {
+                return freeSlot - fieldMaximum;
+            }
+        }
         return spillLength;
     }
 

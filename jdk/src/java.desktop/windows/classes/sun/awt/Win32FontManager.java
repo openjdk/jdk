@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
-import sun.awt.Win32GraphicsEnvironment;
 import sun.awt.windows.WFontConfiguration;
 import sun.font.FontManager;
 import sun.font.SunFontManager;
@@ -46,9 +45,7 @@ import sun.font.TrueTypeFont;
 /**
  * The X11 implementation of {@link FontManager}.
  */
-public class Win32FontManager extends SunFontManager {
-
-    private static String[] defaultPlatformFont = null;
+public final class Win32FontManager extends SunFontManager {
 
     private static TrueTypeFont eudcFont;
 
@@ -213,12 +210,8 @@ public class Win32FontManager extends SunFontManager {
 
     protected synchronized native String getFontPath(boolean noType1Fonts);
 
-    public String[] getDefaultPlatformFont() {
-
-        if (defaultPlatformFont != null) {
-            return defaultPlatformFont;
-        }
-
+    @Override
+    protected String[] getDefaultPlatformFont() {
         String[] info = new String[2];
         info[0] = "Arial";
         info[1] = "c:\\windows\\fonts";
@@ -245,8 +238,7 @@ public class Win32FontManager extends SunFontManager {
             info[1] = dirs[0];
         }
         info[1] = info[1] + File.separator + "arial.ttf";
-        defaultPlatformFont = info;
-        return defaultPlatformFont;
+        return info;
     }
 
     /* register only TrueType/OpenType fonts

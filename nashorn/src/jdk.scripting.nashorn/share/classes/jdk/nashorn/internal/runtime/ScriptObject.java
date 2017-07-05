@@ -1324,7 +1324,19 @@ public abstract class ScriptObject implements PropertyAccess {
      * @param all True if to include non-enumerable keys.
      * @return Array of keys.
      */
-    public String[] getOwnKeys(final boolean all) {
+    public final String[] getOwnKeys(final boolean all) {
+        return getOwnKeys(all, null);
+    }
+
+    /**
+     * return an array of own property keys associated with the object.
+     *
+     * @param all True if to include non-enumerable keys.
+     * @param nonEnumerable set of non-enumerable properties seen already.Used
+       to filter out shadowed, but enumerable properties from proto children.
+     * @return Array of keys.
+     */
+    protected String[] getOwnKeys(final boolean all, final Set<String> nonEnumerable) {
         final List<Object> keys    = new ArrayList<>();
         final PropertyMap  selfMap = this.getMap();
 
@@ -1338,8 +1350,21 @@ public abstract class ScriptObject implements PropertyAccess {
         }
 
         for (final Property property : selfMap.getProperties()) {
-            if (all || property.isEnumerable()) {
-                keys.add(property.getKey());
+            final boolean enumerable = property.isEnumerable();
+            final String key = property.getKey();
+            if (all) {
+                keys.add(key);
+            } else if (enumerable) {
+                // either we don't have non-enumerable filter set or filter set
+                // does not contain the current property.
+                if (nonEnumerable == null || !nonEnumerable.contains(key)) {
+                    keys.add(key);
+                }
+            } else {
+                // store this non-enumerable property for later proto walk
+                if (nonEnumerable != null) {
+                    nonEnumerable.add(key);
+                }
             }
         }
 
@@ -2398,8 +2423,9 @@ public abstract class ScriptObject implements PropertyAccess {
         @Override
         protected void init() {
             final Set<String> keys = new LinkedHashSet<>();
+            final Set<String> nonEnumerable = new HashSet<>();
             for (ScriptObject self = object; self != null; self = self.getProto()) {
-                keys.addAll(Arrays.asList(self.getOwnKeys(false)));
+                keys.addAll(Arrays.asList(self.getOwnKeys(false, nonEnumerable)));
             }
             this.values = keys.toArray(new String[keys.size()]);
         }
@@ -2413,8 +2439,9 @@ public abstract class ScriptObject implements PropertyAccess {
         @Override
         protected void init() {
             final ArrayList<Object> valueList = new ArrayList<>();
+            final Set<String> nonEnumerable = new HashSet<>();
             for (ScriptObject self = object; self != null; self = self.getProto()) {
-                for (final String key : self.getOwnKeys(false)) {
+                for (final String key : self.getOwnKeys(false, nonEnumerable)) {
                     valueList.add(self.get(key));
                 }
             }
@@ -2430,20 +2457,19 @@ public abstract class ScriptObject implements PropertyAccess {
      */
     private Property addSpillProperty(final String key, final int propertyFlags, final Object value, final boolean hasInitialValue) {
         final PropertyMap propertyMap = getMap();
-        final int         fieldCount  = propertyMap.getFieldCount();
-        final int         fieldMax    = propertyMap.getFieldMaximum();
+        final int fieldSlot  = propertyMap.getFreeFieldSlot();
 
         Property property;
-        if (fieldCount < fieldMax) {
+        if (fieldSlot > -1) {
             property = hasInitialValue ?
-                new AccessorProperty(key, propertyFlags, fieldCount, this, value) :
-                new AccessorProperty(key, propertyFlags, getClass(), fieldCount);
+                new AccessorProperty(key, propertyFlags, fieldSlot, this, value) :
+                new AccessorProperty(key, propertyFlags, getClass(), fieldSlot);
             property = addOwnProperty(property);
         } else {
-            final int spillCount = propertyMap.getSpillLength();
+            final int spillSlot = propertyMap.getFreeSpillSlot();
             property = hasInitialValue ?
-                new SpillProperty(key, propertyFlags, spillCount, this, value) :
-                new SpillProperty(key, propertyFlags, spillCount);
+                new SpillProperty(key, propertyFlags, spillSlot, this, value) :
+                new SpillProperty(key, propertyFlags, spillSlot);
             property = addOwnProperty(property);
             ensureSpillSize(property.getSlot());
         }

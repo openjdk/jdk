@@ -211,35 +211,62 @@ public class TestDialog extends Dialog implements ActionListener,
     }
 
     public void clickOpenButton(ExtendedRobot robot) throws Exception {
+        clickOpenButton(robot, true, "");
+    }
+
+    public void clickOpenButton(ExtendedRobot robot,
+                                boolean       refState,
+                                String        message) throws Exception {
         openClicked.reset();
         clickButton(openButton, robot);
-
         openClicked.waitForFlagTriggered();
-        assertTrue(openClicked.flag(),
-            "clicking the dialog Open button did not trigger an action");
+
+        String msg = "Clicking the dialog Open button " + (refState ?
+            "did not trigger an action." :
+            "triggered an action when it should not.");
+        assertEQ(openClicked.flag(), refState, msg + " " + message);
     }
 
     public void clickCloseButton(ExtendedRobot robot) throws Exception {
+        clickCloseButton(robot, true, "");
+    }
+
+    public void clickCloseButton(ExtendedRobot robot,
+                                 boolean       refState,
+                                 String        message) throws Exception {
         closeClicked.reset();
         clickButton(closeButton, robot);
-
         closeClicked.waitForFlagTriggered();
-        assertTrue(closeClicked.flag(),
-            "clicking the dialog Close button did not trigger an action");
+
+        String msg = "Clicking the dialog Close button " + (refState ?
+            "did not trigger an action." :
+            "triggered an action when it should not.");
+        assertEQ(closeClicked.flag(), refState, msg + " " + message);
     }
 
     public void clickDummyButton(ExtendedRobot robot) throws Exception {
         clickDummyButton(robot, Flag.ATTEMPTS);
     }
 
-    public void clickDummyButton(ExtendedRobot robot, int attempts) throws Exception {
+    public void clickDummyButton(ExtendedRobot robot,
+                                 int           attempts) throws Exception {
+        clickDummyButton(robot, attempts, true, "");
+    }
+
+    public void clickDummyButton(ExtendedRobot robot,
+                                 int           attempts,
+                                 boolean       refState,
+                                 String        message) throws Exception {
         dummyClicked.reset();
         clickButton(dummyButton, robot);
-
         dummyClicked.waitForFlagTriggered(attempts);
-        assertTrue(dummyClicked.flag(),
-            "clicking the dialog Dummy button did not trigger an action");
+
+        String msg = "Clicking the dialog Dummy button " + (refState ?
+            "did not trigger an action." :
+            "triggered an action when it should not.");
+        assertEQ(dummyClicked.flag(), refState, msg + " " + message);
     }
+
 
     private void clickInside(ExtendedRobot robot) throws Exception {
 

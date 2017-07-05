@@ -1888,7 +1888,7 @@ public abstract class JComponent extends Container implements Serializable,
      *   description: The preferred vertical alignment of the component.
      */
     public void setAlignmentY(float alignmentY) {
-        this.alignmentY = alignmentY > 1.0f ? 1.0f : alignmentY < 0.0f ? 0.0f : alignmentY;
+        this.alignmentY = validateAlignment(alignmentY);
         isAlignmentYSet = true;
     }
 
@@ -1917,8 +1917,12 @@ public abstract class JComponent extends Container implements Serializable,
      *   description: The preferred horizontal alignment of the component.
      */
     public void setAlignmentX(float alignmentX) {
-        this.alignmentX = alignmentX > 1.0f ? 1.0f : alignmentX < 0.0f ? 0.0f : alignmentX;
+        this.alignmentX = validateAlignment(alignmentX);
         isAlignmentXSet = true;
+    }
+
+    private float validateAlignment(float alignment) {
+        return alignment > 1.0f ? 1.0f : alignment < 0.0f ? 0.0f : alignment;
     }
 
     /**
@@ -5514,7 +5518,24 @@ public abstract class JComponent extends Container implements Serializable,
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        isAlignmentXSet = f.get("isAlignmentXSet", false);
+        alignmentX = validateAlignment(f.get("alignmentX", 0f));
+        isAlignmentYSet = f.get("isAlignmentYSet", false);
+        alignmentY = validateAlignment(f.get("alignmentY", 0f));
+        listenerList = (EventListenerList) f.get("listenerList", null);
+        vetoableChangeSupport = (VetoableChangeSupport) f.get("vetoableChangeSupport", null);
+        autoscrolls = f.get("autoscrolls", false);
+        border = (Border) f.get("border", null);
+        flags = f.get("flags", 0);
+        inputVerifier = (InputVerifier) f.get("inputVerifier", null);
+        verifyInputWhenFocusTarget = f.get("verifyInputWhenFocusTarget", false);
+        popupMenu = (JPopupMenu) f.get("popupMenu", null);
+        focusInputMap = (InputMap) f.get("focusInputMap", null);
+        ancestorInputMap = (InputMap) f.get("ancestorInputMap", null);
+        windowInputMap = (ComponentInputMap) f.get("windowInputMap", null);
+        actionMap = (ActionMap) f.get("actionMap", null);
 
         /* If there's no ReadObjectCallback for this stream yet, that is, if
          * this is the first call to JComponent.readObject() for this

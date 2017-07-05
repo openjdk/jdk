@@ -55,8 +55,6 @@ inline void oopDesc::follow_contents(ParCompactionManager* cm) {
   klass()->oop_follow_contents(cm, this);
 }
 
-// Used by parallel old GC.
-
 inline oop oopDesc::forward_to_atomic(oop p) {
   assert(ParNewGeneration::is_legal_forward_ptr(p),
          "illegal forwarding pointer value.");

@@ -770,7 +770,8 @@ static char* mmap_create_shared(size_t size) {
   (void)::memset((void*) mapAddress, 0, size);
 
   // it does not go through os api, the operation has to record from here
-  MemTracker::record_virtual_memory_reserve((address)mapAddress, size, mtInternal, CURRENT_PC);
+  MemTracker::record_virtual_memory_reserve_and_commit((address)mapAddress,
+    size, CURRENT_PC, mtInternal);
 
   return mapAddress;
 }
@@ -941,7 +942,8 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   }
 
   // it does not go through os api, the operation has to record from here
-  MemTracker::record_virtual_memory_reserve((address)mapAddress, size, mtInternal, CURRENT_PC);
+  MemTracker::record_virtual_memory_reserve_and_commit((address)mapAddress,
+    size, CURRENT_PC, mtInternal);
 
   *addr = mapAddress;
   *sizep = size;

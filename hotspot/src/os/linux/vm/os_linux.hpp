@@ -108,6 +108,7 @@ class Linux {
   static char* reserve_memory_special_huge_tlbfs_only(size_t bytes, char* req_addr, bool exec);
   static char* reserve_memory_special_huge_tlbfs_mixed(size_t bytes, size_t alignment, char* req_addr, bool exec);
 
+  static bool release_memory_special_impl(char* base, size_t bytes);
   static bool release_memory_special_shm(char* base, size_t bytes);
   static bool release_memory_special_huge_tlbfs(char* base, size_t bytes);
 
