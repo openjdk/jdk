@@ -24,9 +24,7 @@
 #
 
 # Prepare the find cache.
-$(eval $(call FillCacheFind, $(JDK_TOPDIR)/src/share/classes \
-    $(JDK_TOPDIR)/src/windows/classes \
-    $(JDK_TOPDIR)/src/macosx/classes))
+$(eval $(call FillCacheFind, $(wildcard $(JDK_TOPDIR)/src/*/*/classes)))
 
 # All .properties files to be compiled are appended to this variable.
 ALL_COMPILED_PROPSOURCES :=
@@ -40,63 +38,65 @@ define add_properties_to_compile
   # $2 is the files belonging to this group
   # $3 is the super class for the generated java file.
 
-  # Strip away prefix and suffix,
-  # leaving for example: sun/util/resources/CurrencyNames_sv
-  $1_PROPPATHS := $$(patsubst $(JDK_TOPDIR)/src/windows/classes/%.properties, %, \
-      $$(patsubst $(JDK_TOPDIR)/src/macosx/classes/%.properties, %, \
-      $$(patsubst $(JDK_TOPDIR)/src/share/classes/%.properties, %, $2)))
+  # Convert <root>/jdk/src/<module>/share/classes/sun/util/resources/CurrencyNames_sv.properties
+  # to <build>/jdk/gensrc/<module/sun/util/resources/CurrencyNames_sv.java
+  $1_PROPJAVAS := $$(patsubst $(JDK_TOPDIR)/src/%.properties, \
+      $(JDK_OUTPUTDIR)/gensrc/%.java, \
+      $$(subst /share/classes,, \
+      $$(subst /$(OPENJDK_TARGET_OS_API_DIR)/classes,, \
+      $$(subst /$(OPENJDK_TARGET_OS)/classes,, $2))))
 
   # Accumulate all found properties files.
   ALL_COMPILED_PROPSOURCES += $2
 
   # Generate the list of to be created java files.
-  ALL_COMPILED_PROPJAVAS += $$(patsubst %, $(JDK_OUTPUTDIR)/gensrc/%.java, $$($1_PROPPATHS))
+  ALL_COMPILED_PROPJAVAS += $$($1_PROPJAVAS)
 
   # Now generate a sequence of 
   # "-compile ...CurrencyNames_sv.properties ...CurrencyNames_sv.java ListResourceBundle"
   # suitable to be fed into the CompileProperties command.
   COMPILE_PROPCMDLINE += $$(subst _SPACE_,$(SPACE),$$(join $$(addprefix -compile_SPACE_, $2), \
       $$(addsuffix _SPACE_$(strip $3), \
-      $$(addprefix _SPACE_$(JDK_OUTPUTDIR)/gensrc/, \
-      $$(addsuffix .java, $$($1_PROPPATHS))))))
+      $$(addprefix _SPACE_, $$($1_PROPJAVAS)))))
 endef
 
 ################################################################################
 # Some packages have properties that need to be converted to java source files.
 COMPILE_PROP_SRC_FILES := \
     $(filter %.properties, $(call CacheFind, \
-        $(JDK_TOPDIR)/src/share/classes/com/sun/accessibility/internal/resources \
-        $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif/resources \
-        $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows/resources \
-        $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/basic/resources \
-        $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/metal/resources \
-        $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/synth/resources \
-        $(JDK_TOPDIR)/src/share/classes/com/sun/tools/jdi/resources \
-        $(JDK_TOPDIR)/src/share/classes/sun/awt/resources \
-        $(JDK_TOPDIR)/src/share/classes/sun/launcher/resources \
-        $(JDK_TOPDIR)/src/share/classes/sun/management/resources \
-        $(JDK_TOPDIR)/src/share/classes/sun/print/resources \
-        $(JDK_TOPDIR)/src/share/classes/sun/tools/jar/resources \
-        $(JDK_TOPDIR)/src/share/classes/sun/util/logging/resources)) \
+        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/accessibility/internal/resources \
+        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/motif/resources \
+        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/windows/resources \
+        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/swing/internal/plaf/basic/resources \
+        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/swing/internal/plaf/metal/resources \
+        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/swing/internal/plaf/synth/resources \
+        $(JDK_TOPDIR)/src/jdk.jdi/share/classes/com/sun/tools/jdi/resources \
+        $(JDK_TOPDIR)/src/java.desktop/share/classes/sun/awt/resources \
+        $(JDK_TOPDIR)/src/java.base/share/classes/sun/launcher/resources \
+        $(JDK_TOPDIR)/src/java.management/share/classes/sun/management/resources \
+        $(JDK_TOPDIR)/src/java.desktop/share/classes/sun/print/resources \
+        $(JDK_TOPDIR)/src/jdk.dev/share/classes/sun/tools/jar/resources \
+        $(JDK_TOPDIR)/src/jdk.dev/share/classes/jdk/jigsaw/tools/jlink/resources \
+        $(JDK_TOPDIR)/src/java.logging/share/classes/sun/util/logging/resources)) \
     #
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   COMPILE_PROP_SRC_FILES += \
       $(filter %.properties, $(call CacheFind, \
-          $(JDK_TOPDIR)/src/macosx/classes/com/apple/laf/resources \
-          $(JDK_TOPDIR)/src/macosx/classes/sun/awt/resources)) \
+          $(JDK_TOPDIR)/src/java.desktop/macosx/classes/com/apple/laf/resources \
+          $(JDK_TOPDIR)/src/java.desktop/macosx/classes/sun/awt/resources)) \
       #
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   COMPILE_PROP_SRC_FILES += \
       $(filter %.properties, $(call CacheFind, \
-          $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows)) \
+          $(JDK_TOPDIR)/src/java.desktop/windows/classes/sun/awt/windows)) \
       #
 else # ! windows
   COMPILE_PROP_SRC_FILES += \
       $(filter %.properties, $(call CacheFind, \
-          $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk/resources)) \
+          $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/gtk/resources)) \
       #
 endif
 
@@ -106,12 +106,13 @@ $(eval $(call add_properties_to_compile,LIST_RESOURCE_BUNDLE, \
 # sun/util/resources
 $(eval $(call add_properties_to_compile,SUN_UTIL, \
     $(filter %.properties, \
-    $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/sun/util/resources)), \
+        $(call CacheFind, $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/resources) \
+        $(call CacheFind, $(JDK_TOPDIR)/src/jdk.localedata/share/classes/sun/util/resources)), \
     sun.util.resources.LocaleNamesBundle))
 
 ################################################################################
 # Now setup the rule for the generation of the resource bundles.
-$(JDK_OUTPUTDIR)/gensrc/_the.compiled_properties: $(ALL_COMPILED_PROPSOURCES) $(BUILD_TOOLS)
+$(JDK_OUTPUTDIR)/gensrc/_the.compiled_properties: $(ALL_COMPILED_PROPSOURCES) $(BUILD_TOOLS_JDK)
         # Generate all output directories in advance since the build tool does not do that...
 	$(MKDIR) -p $(sort $(dir $(ALL_COMPILED_PROPJAVAS)))
 	$(ECHO) Compiling $(words $(ALL_COMPILED_PROPSOURCES)) properties into resource bundles
@@ -129,19 +130,27 @@ define convert_tw_to_hk
   $(CAT) $< | $(SED) -e '/class/s/_zh_TW/_zh_HK/' > $@
 endef
 
-$(JDK_OUTPUTDIR)/gensrc/%_zh_HK.java: $(JDK_TOPDIR)/src/share/classes/%_zh_TW.java
+# Some are copies of existing sources
+$(JDK_OUTPUTDIR)/gensrc/java.desktop/%_zh_HK.java: \
+    $(JDK_TOPDIR)/src/java.desktop/share/classes/%_zh_TW.java
 	$(call convert_tw_to_hk)
 
+$(JDK_OUTPUTDIR)/gensrc/java.base/%_zh_HK.java: \
+    $(JDK_TOPDIR)/src/java.base/share/classes/%_zh_TW.java
+	$(call convert_tw_to_hk)
+
+# Others are copies of sources generated by this makefile
 $(JDK_OUTPUTDIR)/gensrc/%_zh_HK.java: $(JDK_OUTPUTDIR)/gensrc/%_zh_TW.java
 	$(call convert_tw_to_hk)
 
-ZH_HK_JAVA := sun/applet/resources/MsgAppletViewer_zh_HK.java \
-    sun/misc/resources/Messages_zh_HK.java \
-    sun/security/util/AuthResources_zh_HK.java \
-    sun/security/util/Resources_zh_HK.java
+# The existing sources
+ZH_HK_JAVA := java.desktop/sun/applet/resources/MsgAppletViewer_zh_HK.java \
+    java.base/sun/misc/resources/Messages_zh_HK.java \
+    java.base/sun/security/util/AuthResources_zh_HK.java \
+    java.base/sun/security/util/Resources_zh_HK.java
 
 ZH_HK_JAVA_FILES := $(addprefix $(JDK_OUTPUTDIR)/gensrc/, $(ZH_HK_JAVA)) \
-    $(filter-out $(JDK_OUTPUTDIR)/gensrc/sun/util/resources/zh/%, \
+    $(filter-out $(JDK_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/zh/%, \
     $(subst _zh_TW,_zh_HK,$(filter %_zh_TW.java, $(ALL_COMPILED_PROPJAVAS))))
 
 ################################################################################

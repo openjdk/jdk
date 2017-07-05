@@ -1,0 +1,102 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LibCommon.gmk
+
+################################################################################
+
+BUILD_LIBHPROF_SRC := $(JDK_TOPDIR)/src/demo/share/jvmti/hprof \
+    $(JDK_TOPDIR)/src/demo/$(OPENJDK_TARGET_OS_API_DIR)/jvmti/hprof
+BUILD_LIBHPROF_CFLAGS := $(addprefix -I, $(BUILD_LIBHPROF_SRC)) \
+    -I$(JDK_TOPDIR)/src/demo/share/jvmti/java_crw_demo
+
+BUILD_LIBHPROF_LDFLAGS :=
+
+LIBHPROF_OPTIMIZATION := HIGHEST
+ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
+  ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
+    LIBHPROF_OPTIMIZATION := LOW
+  endif
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBHPROF, \
+    LIBRARY := hprof, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    SRC := $(BUILD_LIBHPROF_SRC), \
+    LANG := C, \
+    OPTIMIZATION := $(LIBHPROF_OPTIMIZATION), \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
+        $(BUILD_LIBHPROF_CFLAGS), \
+    CFLAGS_debug := -DHPROF_LOGGING, \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libhprof/mapfile-vers, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_windows := wsock32.lib winmm.lib advapi32.lib, \
+    LDFLAGS_SUFFIX_linux := $(LIBDL), \
+    LDFLAGS_SUFFIX_macosx := $(LIBDL), \
+    LDFLAGS_SUFFIX_solaris := -lsocket -lnsl $(LIBDL) -lc, \
+    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=hprof.dll" \
+        -D "JDK_INTERNAL_NAME=hprof" \
+        -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libhprof_jvmti, \
+    DEBUG_SYMBOLS := true))
+
+HPROF_LIBRARIES += $(BUILD_LIBHPROF)
+
+################################################################################
+
+LIBJAVA_CRW_DEMO_SRC := $(JDK_TOPDIR)/src/demo/share/jvmti/java_crw_demo
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBJAVA_CRW_DEMO, \
+    LIBRARY := java_crw_demo, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    SRC := $(LIBJAVA_CRW_DEMO_SRC), \
+    LANG := C, \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
+        $(addprefix -I, $(LIBJAVA_CRW_DEMO_SRC)), \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjava_crw_demo/mapfile-vers, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_SUFFIX_solaris := -lc, \
+    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=java_crw_demo.dll" \
+        -D "JDK_INTERNAL_NAME=java_crw_demo" \
+        -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjava_crw_demo, \
+    DEBUG_SYMBOLS := true))
+
+CRW_LIBRARIES += $(BUILD_LIBJAVA_CRW_DEMO)
+
+################################################################################
+
+jdk.hprof.agent: $(HPROF_LIBRARIES) $(CRW_LIBRARIES)
+
+all: jdk.hprof.agent
+
+.PHONY: all jdk.hprof.agent

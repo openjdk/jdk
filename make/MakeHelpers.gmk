@@ -40,7 +40,7 @@ _MAKEHELPERS_GMK := 1
 
 # Find out which variables were passed explicitely on the make command line. These
 # will be passed on to sub-makes, overriding spec.gmk settings.
-MAKE_ARGS=$(foreach var,$(subst =command,,$(filter %=command,$(foreach var,$(.VARIABLES),$(var)=$(firstword $(origin $(var)))))),$(var)=$($(var)))
+MAKE_ARGS=$(foreach var,$(subst =command,,$(filter %=command,$(foreach var,$(.VARIABLES),$(var)=$(firstword $(origin $(var)))))),$(var)="$($(var))")
 
 list_alt_overrides_with_origins=$(filter ALT_%=environment ALT_%=command,$(foreach var,$(.VARIABLES),$(var)=$(firstword $(origin $(var)))))
 list_alt_overrides=$(subst =command,,$(subst =environment,,$(list_alt_overrides_with_origins)))
@@ -112,7 +112,8 @@ endef
 
 # Do not indent this function, this will add whitespace at the start which the caller won't handle
 define GetRealTarget
-$(strip $(if $(MAKECMDGOALS),$(MAKECMDGOALS),default))
+$(strip $(if $(findstring main-wrapper, $(MAKECMDGOALS)), $(MAIN_TARGETS), \
+    $(if $(MAKECMDGOALS),$(MAKECMDGOALS),default)))
 endef
 
 # Do not indent this function, this will add whitespace at the start which the caller won't handle
@@ -131,24 +132,23 @@ endef
 
 # Hook to be called when starting to execute a top-level target
 define TargetEnter
-	$(BUILD_LOG_WRAPPER) $(PRINTF) "## Starting $(patsubst %-only,%,$@)\n"
+	$(PRINTF) "## Starting $(patsubst %-only,%,$@)\n"
 	$(call RecordStartTime,$(patsubst %-only,%,$@))
 endef
 
 # Hook to be called when finish executing a top-level target
 define TargetExit
 	$(call RecordEndTime,$(patsubst %-only,%,$@))
-	$(BUILD_LOG_WRAPPER) $(PRINTF) "## Finished $(patsubst %-only,%,$@) (build time %s)\n\n" \
+	$(PRINTF) "## Finished $(patsubst %-only,%,$@) (build time %s)\n\n" \
 	    "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_$(patsubst %-only,%,$@) | $(CUT) -f 1 -d ' '`"
-	$(call CheckIfMakeAtEnd)
 endef
 
 # Hook to be called as the very first thing when running a normal build
 define AtMakeStart
 	$(if $(findstring --jobserver,$(MAKEFLAGS)),$(error make -j is not supported, use make JOBS=n))
 	$(call CheckEnvironment)
-	@$(PRINTF) $(LOG_INFO) "Running make as '$(MAKE) $(MFLAGS) $(MAKE_ARGS)'\n"
-	@$(PRINTF) "Building $(PRODUCT_NAME) for target '$(call GetRealTarget)' in configuration '$(CONF_NAME)'\n\n"
+	$(BUILD_LOG_WRAPPER) $(PRINTF) $(LOG_INFO) "Running make as '$(MAKE) $(MFLAGS) $(MAKE_ARGS)'\n"
+	$(BUILD_LOG_WRAPPER) $(PRINTF) "Building $(PRODUCT_NAME) for target '$(call GetRealTarget)' in configuration '$(CONF_NAME)'\n\n"
 	$(call StartGlobalTimer)
 endef
 
@@ -157,7 +157,7 @@ define AtMakeEnd
 	[ -f $(SJAVAC_SERVER_DIR)/server.port ] && echo Stopping sjavac server && $(TOUCH) $(SJAVAC_SERVER_DIR)/server.port.stop; true
 	$(call StopGlobalTimer)
 	$(call ReportBuildTimes)
-	@$(PRINTF) "Finished building $(PRODUCT_NAME) for target '$(call GetRealTarget)'\n"
+	@$(PRINTF) "\nFinished building $(PRODUCT_NAME) for target '$(call GetRealTarget)'\n"
 	$(call CheckEnvironment)
 endef
 
@@ -298,7 +298,7 @@ endef
 
 # Cleans the component given as $1
 define CleanComponent
-	@$(PRINTF) "Cleaning $1 build artifacts ..."
+	@$(PRINTF) "Cleaning $(strip $1) build artifacts ..."
 	@($(CD) $(OUTPUT_ROOT) && $(RM) -r $1)
 	@$(PRINTF) " done\n"
 endef

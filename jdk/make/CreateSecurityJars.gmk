@@ -28,10 +28,11 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-include Setup.gmk
 
 # The jars created in this file are required for the exploded jdk image to function and
 # cannot wait to be built in the images target.
+
+SECURITY_CLASSES_SUBDIR := modules
 
 ##########################################################################################
 # Create manifest for security jars
@@ -66,7 +67,7 @@ SUNPKCS11_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunpkcs11.jar
 SUNPKCS11_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/sunpkcs11.jar
 
 $(eval $(call SetupArchive,BUILD_SUNPKCS11_JAR, , \
-    SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+    SRCS := $(JDK_OUTPUTDIR)/$(SECURITY_CLASSES_SUBDIR)/jdk.crypto.pkcs11, \
     SUFFIXES := .class, \
     INCLUDES := sun/security/pkcs11, \
     JAR := $(SUNPKCS11_JAR_UNSIGNED), \
@@ -93,7 +94,7 @@ SUNEC_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunec.jar
 SUNEC_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/sunec.jar
 
 $(eval $(call SetupArchive,BUILD_SUNEC_JAR, , \
-    SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+    SRCS := $(JDK_OUTPUTDIR)/$(SECURITY_CLASSES_SUBDIR)/jdk.crypto.ec, \
     SUFFIXES := .class, \
     INCLUDES := sun/security/ec, \
     JAR := $(SUNEC_JAR_UNSIGNED), \
@@ -121,7 +122,7 @@ SUNJCE_PROVIDER_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/sunjce_provider.ja
 
 ifneq ($(BUILD_CRYPTO), no)
   $(eval $(call SetupArchive,BUILD_SUNJCE_PROVIDER_JAR, , \
-      SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+      SRCS := $(JDK_OUTPUTDIR)/$(SECURITY_CLASSES_SUBDIR)/java.base, \
       SUFFIXES := .class, \
       INCLUDES := com/sun/crypto/provider, \
       JAR := $(SUNJCE_PROVIDER_JAR_UNSIGNED), \
@@ -152,7 +153,7 @@ JCE_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/jce.jar
 
 ifneq ($(BUILD_CRYPTO), no)
   $(eval $(call SetupArchive,BUILD_JCE_JAR, , \
-      SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+      SRCS := $(JDK_OUTPUTDIR)/$(SECURITY_CLASSES_SUBDIR)/java.base, \
       SUFFIXES := .class, \
       INCLUDES := javax/crypto sun/security/internal, \
       JAR := $(JCE_JAR_UNSIGNED), \
@@ -178,145 +179,13 @@ TARGETS += $(JCE_JAR_DST)
 
 ##########################################################################################
 
-US_EXPORT_POLICY_JAR_DST := $(JDK_OUTPUTDIR)/lib/security/US_export_policy.jar
-
-ifneq ($(BUILD_CRYPTO), no)
-
-  US_EXPORT_POLICY_JAR_LIMITED_UNSIGNED := \
-      $(JDK_OUTPUTDIR)/jce/unsigned/policy/limited/US_export_policy.jar
-  US_EXPORT_POLICY_JAR_UNLIMITED_UNSIGNED := \
-      $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/US_export_policy.jar
-
-  #
-  # TODO fix so that SetupArchive does not write files into SRCS
-  # then we don't need this extra copying
-  #
-  # NOTE: We currently do not place restrictions on our limited export
-  # policy. This was not a typo. This means we are shipping the same file
-  # for both limimted and unlimited US_export_policy.jar.
-  #
-  US_EXPORT_POLICY_JAR_SRC_DIR := $(JDK_TOPDIR)/make/data/cryptopolicy/unlimited
-  US_EXPORT_POLICY_JAR_TMP := \
-      $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/US_export_policy_jar.tmp
-
-  $(US_EXPORT_POLICY_JAR_TMP)/%: $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
-	$(install-file)
-
-  US_EXPORT_POLICY_JAR_DEPS := $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
-
-  $(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR, $(US_EXPORT_POLICY_JAR_DEPS), \
-      SRCS := $(US_EXPORT_POLICY_JAR_TMP), \
-      SUFFIXES := .policy, \
-      JAR := $(US_EXPORT_POLICY_JAR_UNLIMITED_UNSIGNED), \
-      EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
-      SKIP_METAINF := true))
-
-  $(US_EXPORT_POLICY_JAR_LIMITED_UNSIGNED): $(US_EXPORT_POLICY_JAR_UNLIMITED_UNSIGNED)
-	$(ECHO) $(LOG_INFO) Copying unlimited $(patsubst $(OUTPUT_ROOT)/%,%,$@)
-	$(install-file)
-
-  TARGETS += $(US_EXPORT_POLICY_JAR_LIMITED_UNSIGNED) \
-      $(US_EXPORT_POLICY_JAR_UNLIMITED_UNSIGNED)
-endif
-
-ifndef OPENJDK
-  ifeq ($(UNLIMITED_CRYPTO), true)
-    $(error No prebuilt unlimited crypto jars available)
-  endif
-  $(US_EXPORT_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/US_export_policy.jar
-	$(ECHO) $(LOG_INFO) Copying prebuilt $(@F)
-	$(install-file)
-else
-  ifeq ($(UNLIMITED_CRYPTO), true)
-    $(US_EXPORT_POLICY_JAR_DST): $(US_EXPORT_POLICY_JAR_UNLIMITED_UNSIGNED)
-	$(install-file)
-  else
-    $(US_EXPORT_POLICY_JAR_DST): $(US_EXPORT_POLICY_JAR_LIMITED_UNSIGNED)
-	$(install-file)
-  endif
-endif
-
-TARGETS += $(US_EXPORT_POLICY_JAR_DST)
-
-##########################################################################################
-
-LOCAL_POLICY_JAR_DST := $(JDK_OUTPUTDIR)/lib/security/local_policy.jar
-
-ifneq ($(BUILD_CRYPTO), no)
-
-  LOCAL_POLICY_JAR_LIMITED_UNSIGNED := \
-      $(JDK_OUTPUTDIR)/jce/unsigned/policy/limited/local_policy.jar
-  LOCAL_POLICY_JAR_UNLIMITED_UNSIGNED := \
-      $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/local_policy.jar
-
-  #
-  # TODO fix so that SetupArchive does not write files into SRCS
-  # then we don't need this extra copying
-  #
-  LOCAL_POLICY_JAR_LIMITED_TMP := \
-      $(JDK_OUTPUTDIR)/jce/unsigned/policy/limited/local_policy_jar.tmp
-  LOCAL_POLICY_JAR_UNLIMITED_TMP := \
-      $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/local_policy_jar.tmp
-
-  $(LOCAL_POLICY_JAR_LIMITED_TMP)/%: $(JDK_TOPDIR)/make/data/cryptopolicy/limited/%
-	$(install-file)
-
-  $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/%: $(JDK_TOPDIR)/make/data/cryptopolicy/unlimited/%
-	$(install-file)
-
-  $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_LIMITED, \
-      $(LOCAL_POLICY_JAR_LIMITED_TMP)/exempt_local.policy \
-      $(LOCAL_POLICY_JAR_LIMITED_TMP)/default_local.policy, \
-      SRCS := $(LOCAL_POLICY_JAR_LIMITED_TMP), \
-      SUFFIXES := .policy, \
-      JAR := $(LOCAL_POLICY_JAR_LIMITED_UNSIGNED), \
-      EXTRA_MANIFEST_ATTR := Crypto-Strength: limited, \
-      SKIP_METAINF := true))
-
-  $(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_UNLIMITED, \
-      $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/default_local.policy, \
-      SRCS := $(LOCAL_POLICY_JAR_UNLIMITED_TMP), \
-      SUFFIXES := .policy, \
-      JAR := $(LOCAL_POLICY_JAR_UNLIMITED_UNSIGNED), \
-      EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
-      SKIP_METAINF := true))
-
-  TARGETS += $(LOCAL_POLICY_JAR_LIMITED_UNSIGNED) $(LOCAL_POLICY_JAR_UNLIMITED_UNSIGNED)
-
-  ifndef OPENJDK
-    $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/README.txt: \
-        $(JDK_TOPDIR)/make/closed/javax/crypto/doc/README.txt
-		$(install-file)
-
-    TARGETS += $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/README.txt
-  endif
-endif
-
-ifndef OPENJDK
-  $(LOCAL_POLICY_JAR_DST): $(JDK_TOPDIR)/make/closed/tools/crypto/jce/local_policy.jar
-	$(ECHO) $(LOG_INFO) Copying prebuilt $(@F)
-	$(install-file)
-else
-  ifeq ($(UNLIMITED_CRYPTO), true)
-    $(LOCAL_POLICY_JAR_DST): $(LOCAL_POLICY_JAR_UNLIMITED_UNSIGNED)
-	$(install-file)
-  else
-    $(LOCAL_POLICY_JAR_DST): $(LOCAL_POLICY_JAR_LIMITED_UNSIGNED)
-	$(install-file)
-  endif
-endif
-
-TARGETS += $(LOCAL_POLICY_JAR_DST)
-
-##########################################################################################
-
 ifeq ($(OPENJDK_TARGET_OS), windows)
 
   SUNMSCAPI_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/sunmscapi.jar
   SUNMSCAPI_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/sunmscapi.jar
 
   $(eval $(call SetupArchive,BUILD_SUNMSCAPI_JAR, , \
-      SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+      SRCS := $(JDK_OUTPUTDIR)/$(SECURITY_CLASSES_SUBDIR)/jdk.crypto.mscapi, \
       SUFFIXES := .class, \
       INCLUDES := sun/security/mscapi, \
       JAR := $(SUNMSCAPI_JAR_UNSIGNED), \
@@ -349,7 +218,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
     UCRYPTO_JAR_SRC := $(JDK_TOPDIR)/make/closed/tools/crypto/ucrypto/ucrypto.jar
 
     $(eval $(call SetupArchive,BUILD_UCRYPTO_JAR, , \
-        SRCS := $(JDK_OUTPUTDIR)/classes_security, \
+        SRCS := $(JDK_OUTPUTDIR)/$(SECURITY_CLASSES_SUBDIR)/jdk.crypto.ucrypto, \
         SUFFIXES := .class, \
         INCLUDES := com/oracle/security/ucrypto, \
         JAR := $(UCRYPTO_JAR_UNSIGNED), \

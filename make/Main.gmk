@@ -23,165 +23,201 @@
 # questions.
 #
 
-### This is the main part of the Makefile, for the normal case with SPEC specifying a single existing spec.gmk file.
+################################################################################
+# This is the main makefile containing most actual top level targets. It needs
+# to be called with a SPEC file defined.
+
+# Declare default target
+default:
 
 # Now load the spec
 include $(SPEC)
 
+include $(SRC_ROOT)/make/MakeHelpers.gmk
+
 # Load the vital tools for all the makefiles.
 include $(SRC_ROOT)/make/common/MakeBase.gmk
+
+# Load common profile names definitions
+include $(JDK_TOPDIR)/make/ProfileNames.gmk
+
+# Declare ALL_TARGETS as an immediate variable. This variable is a list of all
+# valid top level targets. It's used to declare them all as PHONY and to 
+# generate the -only targets.
+ALL_TARGETS :=
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , Main.gmk))
 
-### Clean up from previous run
+# All modules for the current target platform.
+# Manually add jdk.hotspot.agent for now.
+ALL_MODULES := $(call FindAllModules) jdk.hotspot.agent
 
-# Remove any build.log from a previous run, if they exist
-ifneq (,$(BUILD_LOG))
-  ifneq (,$(BUILD_LOG_PREVIOUS))
-    # Rotate old log
-    $(shell $(RM) $(BUILD_LOG_PREVIOUS) 2> /dev/null)
-    $(shell $(MV) $(BUILD_LOG) $(BUILD_LOG_PREVIOUS) 2> /dev/null)
-  else
-    $(shell $(RM) $(BUILD_LOG) 2> /dev/null)
-  endif
-  $(shell $(RM) $(OUTPUT_ROOT)/build-trace-time.log 2> /dev/null)
-endif
-# Remove any javac server logs and port files. This
-# prevents a new make run to reuse the previous servers.
-ifneq (,$(SJAVAC_SERVER_DIR))
-  $(shell $(MKDIR) -p $(SJAVAC_SERVER_DIR) && $(RM) -rf $(SJAVAC_SERVER_DIR)/*)
-endif
+################################################################################
+################################################################################
+#
+# Recipes for all targets. Only recipes, dependencies are declared later.
+#
+################################################################################
 
-# Reset the build timers.
-$(eval $(call ResetAllTimers))
+################################################################################
+# Interim/build tools targets, compiling tools used during the build
 
-# Setup number of jobs to use. -jN is unfortunately not available for us to parse from the command line,
-# hence this workaround.
-MAKE_ARGS:=$(MAKE_ARGS) -j$(JOBS)
+interim-langtools:
+	+($(CD) $(LANGTOOLS_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterim.gmk)
 
-### Main targets
+interim-corba:
+	+($(CD) $(CORBA_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileCorba.gmk)
 
-default: jdk
-	@$(call CheckIfMakeAtEnd)
+interim-rmic:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterimRmic.gmk)
 
-all: images docs
-	@$(call CheckIfMakeAtEnd)
+build-tools-jdk:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Tools.gmk java-tools)
 
-# Setup a rule for SPEC file that fails if executed. This check makes sure the configuration
-# is up to date after changes to configure
-$(SPEC): $(wildcard $(SRC_ROOT)/common/autoconf/*)
-	@$(ECHO) "ERROR: $(SPEC) is not up to date."
-	@$(ECHO) "Please rerun configure! Easiest way to do this is by running"
-	@$(ECHO) "'make reconfigure'."
-	@if test "x$(IGNORE_OLD_CONFIG)" != "xtrue"; then exit 1; fi
+ALL_TARGETS += interim-langtools interim-corba build-tools-jdk
 
-start-make: $(SPEC)
-	@$(call AtMakeStart)
+################################################################################
+# Special targets for certain modules
 
-langtools: langtools-only
-langtools-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(LANGTOOLS_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildLangtools.gmk)
-	@$(call TargetExit)
+import-hotspot:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Import.gmk)
 
-corba: langtools corba-only
-corba-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(CORBA_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildCorba.gmk)
-	@$(call TargetExit)
+unpack-sec:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UnpackSecurity.gmk)
 
-jaxp: langtools jaxp-only
-jaxp-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(JAXP_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJaxp.gmk)
-	@$(call TargetExit)
+policy-jars:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreatePolicyJars.gmk)
 
-jaxws: langtools jaxp jaxws-only
-jaxws-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(JAXWS_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJaxws.gmk)
-	@$(call TargetExit)
+ALL_TARGETS += import-hotspot unpack-sec policy-jars
+
+################################################################################
+# Gensrc targets, generating source before java compilation can be done
+JDK_GENSRC_MODULES := $(call FindModulesWithMakefileFor, gensrc, Gensrc)
+LANGTOOLS_GENSRC_MODULES := jdk.compiler.tools
+CORBA_GENSRC_MODULES := java.corba
+GENSRC_MODULES := $(JDK_GENSRC_MODULES) $(LANGTOOLS_GENSRC_MODULES) \
+    $(CORBA_GENSRC_MODULES)
+JDK_GENSRC_TARGETS := $(addsuffix -gensrc, $(JDK_GENSRC_MODULES))
+LANGTOOLS_GENSRC_TARGETS := $(addsuffix -gensrc, $(LANGTOOLS_GENSRC_MODULES))
+CORBA_GENSRC_TARGETS := $(addsuffix -gensrc, $(CORBA_GENSRC_MODULES))
+GENSRC_TARGETS := $(addsuffix -gensrc, $(GENSRC_MODULES))
+
+jdk.compiler.tools-gensrc:
+	+($(CD) $(LANGTOOLS_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f GensrcLangtools.gmk)
+
+java.corba-gensrc:
+	+($(CD) $(CORBA_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f GensrcCorba.gmk)
+
+# Declare recipes for all jdk <module>-gensrc targets
+$(foreach m, $(JDK_GENSRC_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
+    $m, gensrc, gensrc, Gensrc)))
+
+ALL_TARGETS += $(GENSRC_TARGETS)
+
+################################################################################
+# Generate data targets
+GENDATA_MODULES := $(call FindModulesWithMakefileFor, gendata, Gendata)
+GENDATA_TARGETS := $(addsuffix -gendata, $(GENDATA_MODULES))
+
+# Declare recipes for all <module>-gendata targets
+$(foreach m, $(GENDATA_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
+    $m, gendata, gendata, Gendata)))
+
+$(foreach m, $(GENDATA_MODULES), $(eval $(call DeclareGendataRecipe,$m)))
+
+ALL_TARGETS += $(GENDATA_TARGETS)
+
+################################################################################
+# Copy files targets
+COPY_MODULES := $(call FindModulesWithMakefileFor, copy, Copy)
+COPY_TARGETS := $(addsuffix -copy, $(COPY_MODULES))
+
+# Declare recipes for all <module>-copy targets
+$(foreach m, $(COPY_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
+    $m, copy, copy, Copy)))
+
+ALL_TARGETS += $(COPY_TARGETS)
+
+################################################################################
+# Targets for compiling all java modules. Nashorn is treated separately.
+JAVA_MODULES := $(call FindJavaModules)
+JAVA_TARGETS := $(addsuffix -java, $(JAVA_MODULES))
+
+define DeclareCompileJavaRecipe
+  $1-java:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f CompileJavaModules.gmk \
+	    $1 JAVA_MODULES=$1)
+endef
+
+$(foreach m, $(filter-out jdk.scripting.nashorn, $(JAVA_MODULES)), \
+    $(eval $(call DeclareCompileJavaRecipe,$m)))
+
+# Build nashorn. Needs to be compiled separately from the rest of the modules
+# due to nasgen.
+jdk.scripting.nashorn-java:
+	+($(CD) $(NASHORN_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildNashorn.gmk compile)
+
+ALL_TARGETS += $(JAVA_TARGETS)
+
+################################################################################
+# Targets for running rmic.
+RMIC_MODULES := $(call FindModulesWithMakefileFor, rmic, Rmic)
+RMIC_TARGETS := $(addsuffix -rmic, $(RMIC_MODULES))
+
+# Declare recipes for all <module>-rmic targets
+$(foreach m, $(RMIC_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
+    $m, rmic, rmic, Rmic)))
+
+ALL_TARGETS += $(RMIC_TARGETS)
+
+################################################################################
+# Targets for compiling native libraries
+ALL_LIB_MODULES := $(call FindModulesWithMakefileFor, lib, Lib)
+LIB_MODULES := $(filter $(ALL_MODULES), $(ALL_LIB_MODULES))
+LIB_TARGETS := $(addsuffix -libs, $(LIB_MODULES))
+
+# Declare recipes for all <module>-libs targets
+$(foreach m, $(LIB_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
+    $m, libs, lib, Lib)))
+
+ALL_TARGETS += $(LIB_TARGETS)
+
+################################################################################
+# Targets for compiling native executables
+ALL_LAUNCHER_MODULES := $(call FindModulesWithMakefileFor, launcher, Launcher)
+LAUNCHER_MODULES := $(filter $(ALL_MODULES), $(ALL_LAUNCHER_MODULES))
+LAUNCHER_TARGETS := $(addsuffix -launchers, $(LAUNCHER_MODULES))
+
+# Declare recipes for all <module>-launchers targets
+$(foreach m, $(LAUNCHER_MODULES), $(eval $(call DeclareRecipeForModuleMakefile, \
+    $m, launchers, launcher, Launcher)))
+
+ALL_TARGETS += $(LAUNCHER_TARGETS)
+
+################################################################################
+# Build hotspot target
 
 ifeq ($(BUILD_HOTSPOT),true)
-  hotspot: hotspot-only
-  hotspot-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(SRC_ROOT)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f HotspotWrapper.gmk)
-	@$(call TargetExit)
+  hotspot:
+	($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f HotspotWrapper.gmk)
 endif
 
-jdk: langtools hotspot corba jaxp jaxws jdk-only
-jdk-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk $(JDK_TARGET))
-	@$(call TargetExit)
+ALL_TARGETS += hotspot
 
-nashorn: jdk nashorn-only
-nashorn-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(NASHORN_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildNashorn.gmk)
-	@$(call TargetExit)
+################################################################################
+# Build demos and samples targets
 
-demos: jdk demos-only
-demos-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk demos)
-	@$(call TargetExit)
+demos:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileDemos.gmk)
 
-# Note: This double-colon rule is intentional, to support
-# custom make file integration.
-images:: source-tips demos nashorn images-only
-images-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk images)
-	@$(call TargetExit)
+samples:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CopySamples.gmk)
 
-overlay-images: source-tips demos overlay-images-only
-overlay-images-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk overlay-images)
-	@$(call TargetExit)
+ALL_TARGETS += demos samples
 
-profiles: profiles-oscheck source-tips jdk hotspot profiles-only
-profiles-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk profiles)
-	@$(call TargetExit)
-
-profiles-oscheck:
-        ifneq ($(OPENJDK_TARGET_OS), linux)
-	  @echo "Error: The Java SE 8 Compact Profiles are only implemented for Linux at this time" && exit 1
-        endif
-
-install: images install-only
-install-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk install)
-	@$(call TargetExit)
-
-docs: jdk docs-only
-docs-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(SRC_ROOT)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs)
-	@$(call TargetExit)
-
-sign-jars: jdk sign-jars-only
-sign-jars-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk sign-jars)
-	@$(call TargetExit)
-
-bootcycle-images: images bootcycle-images-only
-bootcycle-images-only: start-make
-	@$(ECHO) Boot cycle build step 2: Building a new JDK image using previously built image
-	@($(CD) $(SRC_ROOT) && $(BUILD_LOG_WRAPPER) $(MAKE) SPEC=$(dir $(SPEC))bootcycle-spec.gmk images)
-
-test: images test-only
-test-only: start-make
-	@$(call TargetEnter)
-	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 -k MAKEFLAGS= JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_IMAGE_DIR) ALT_OUTPUTDIR=$(OUTPUT_ROOT) CONCURRENCY=$(JOBS) $(TEST)) || true
-	@$(call TargetExit)
+################################################################################
+# Image targets
 
 # Stores the tips for each repository. This file is be used when constructing the jdk image and can be
 # used to track the exact sources used to build that image.
@@ -191,52 +227,313 @@ $(OUTPUT_ROOT)/source_tips: FRC
 	@$(RM) $@
 	@$(call GetSourceTips)
 
+security-jars:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateSecurityJars.gmk)
+
+nashorn-jar:
+	+($(CD) $(NASHORN_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildNashorn.gmk all)
+
+# Creates the jar files (rt.jar resources.jar etc)
+main-jars:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateJars.gmk)
+
+# Creates the images (j2sdk-image j2re-image etc)
+images:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Images.gmk)
+        ifeq ($(OPENJDK_TARGET_OS), macosx)
+	  +($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk)
+        endif
+
+# Create Compact Profile jars
+PROFILE_JARS_TARGETS := $(addsuffix -jars, $(ALL_PROFILES))
+$(PROFILE_JARS_TARGETS):
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) PROFILE=$(@:%-jars=%) -f CreateJars.gmk)
+
+# Create Compact Profile images
+PROFILE_IMAGES_TARGETS := $(addsuffix -images, $(ALL_PROFILES))
+$(PROFILE_IMAGES_TARGETS):
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) PROFILE=$(@:%-images=%) \
+	    JRE_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/j2re-$(word $(call profile_number,$(@:%-images=%)),$(PROFILE_NAMES))-image \
+	    -f Images.gmk profile-image)
+
+profiles-oscheck:
+        ifneq ($(OPENJDK_TARGET_OS), linux)
+	  @echo "Error: The Java SE 8 Compact Profiles are only implemented for Linux at this time" && exit 1
+        endif
+
+bootcycle-images:
+	@$(ECHO) Boot cycle build step 2: Building a new JDK image using previously built image
+	+$(MAKE) $(MAKE_ARGS) -f Main.gmk SPEC=$(dir $(SPEC))bootcycle-spec.gmk images
+
+ALL_TARGETS += source-tips security-jars nashorn-jar main-jars images \
+    $(PROFILE_JARS_TARGETS) $(PROFILE_IMAGES_TARGETS) profiles-oscheck \
+    bootcycle-images
+
+################################################################################
+# Docs targets
+
+docs-javadoc:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs)
+
+docs-jvmtidoc:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk jvmtidocs)
+
+ALL_TARGETS += docs-javadoc docs-jvmtidoc
+
+################################################################################
+# Test target
+
+test:
+	($(CD) $(SRC_ROOT)/test && $(MAKE) $(MAKE_ARGS) -j1 -k MAKEFLAGS= \
+	    JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_OUTPUT_DIR) \
+	    ALT_OUTPUTDIR=$(OUTPUT_ROOT) CONCURRENCY=$(JOBS) $(TEST)) || true
+
+test-make:
+	($(CD) $(SRC_ROOT)/test/make && $(MAKE) $(MAKE_ARGS) -f TestMake.gmk $(TEST_TARGET))
+
+ALL_TARGETS += test test-make
+
+################################################################################
+# Verification targets
+
+# generate modules.xml in the exploded image
+modules-xml:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f ModulesXml.gmk gen-modules-xml)
+
+verify-modules:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f ModulesXml.gmk checkdeps)
+
+ALL_TARGETS += modules-xml verify-modules
+
+################################################################################
+# Install targets
+
+install:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Install.gmk)
+
+ALL_TARGETS += install
+
+################################################################################
+#
+# Dependency declarations between targets. 
+#
+# These are declared in two groups. First all dependencies between targets that 
+# have recipes above as these dependencies may be disabled. Then the aggregator
+# targets that do not have recipes of their own, which will never have their
+# dependencies disabled.
+#
+################################################################################
+# Targets with recipes above
+
+# If running an *-only target, parallel execution and dependencies between 
+# recipe targets are disabled. This makes it possible to run a select set of 
+# recipe targets in order. It's the responsibility of the user to make sure
+# all prerequisites are fulfilled. 
+ifneq ($(findstring -only, $(MAKECMDGOALS)), )
+  .NOTPARALLEL:
+else
+  interim-langtools: $(LANGTOOLS_GENSRC_TARGETS)
+
+  build-tools-jdk: interim-langtools
+
+  $(CORBA_GENSRC_TARGETS): interim-langtools
+
+  $(JDK_GENSRC_TARGETS): interim-langtools build-tools-jdk
+
+  interim-corba: $(CORBA_GENSRC_TARGETS)
+
+  $(GENDATA_TARGETS): interim-langtools build-tools-jdk
+
+  interim-rmic: interim-langtools
+
+  $(RMIC_TARGETS): interim-langtools interim-corba interim-rmic
+
+  import-hotspot: hotspot
+
+  $(LIB_TARGETS): import-hotspot
+
+  $(LAUNCHER_TARGETS): java.base-libs
+
+  demos: $(JAVA_TARGETS)
+
+  # Declare dependency from <module>-java to <module>-gensrc
+  $(foreach m, $(GENSRC_MODULES), $(eval $m-java: $m-gensrc))
+
+  # Declare dependencies between java modules
+  $(foreach m, $(JAVA_MODULES), \
+      $(eval $m-java: $(addsuffix -java, $(filter $(JAVA_MODULES), \
+      $(call FindDepsForModule,$m)))))
+
+  # Declare dependencies between <module>-rmic to <module>-java
+  $(foreach m, $(RMIC_MODULES), $(eval $m-rmic: $m-java))
+
+  # Declare dependencies from <module>-lib to <module>-java
+  # Skip jdk.jdwp.agent as it contains no java code.
+  $(foreach m, $(filter-out jdk.jdwp.agent, $(LIB_MODULES)), $(eval $m-libs: $m-java))
+
+  # Declare dependencies from all other <module>-lib to java.base-lib
+  $(foreach t, $(filter-out java.base-libs, $(LIB_TARGETS)), \
+      $(eval $t: java.base-libs))
+  # Declare the special case dependency for jdk.deploy.osx where libosx 
+  # links against libosxapp.
+  jdk.deploy.osx-libs: java.desktop-libs
+
+  # This dependency needs to be explicitly declared. jdk.jdi-gensrc generates a 
+  # header file used by jdk.jdwp libs.
+  jdk.jdwp-libs: jdk.jdi-gensrc
+
+  # Explicitly add dependencies for special targets
+  java.base-java: unpack-sec
+
+  security-jars: java
+
+  nashorn-jar: jdk.scripting.nashorn-java
+
+  main-jars: java rmic security-jars nashorn-jar policy-jars import-hotspot
+
+  # On windows, the jars target needs to wait for jgss libs to be built.
+  # Should ideally split out the sec-bin zip file generation to avoid
+  # this dependency.
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    main-jars: java.security.jgss-libs
+  endif
+
+  images: jars demos samples exploded-image source-tips
+
+  bootcycle-images: images
+
+  # Need to depend on jars as otherwise there will a race between all the
+  # invocations of CreateJars.gmk.
+  $(PROFILE_JARS_TARGETS): jars profiles-oscheck
+
+  $(PROFILE_IMAGES_TARGETS): demos samples exploded-image source-tips
+
+  # Declare dependencies from <profile>-images to <profile>-jars
+  $(foreach p, $(ALL_PROFILES), $(eval $p-images: $p-jars))
+
+  docs-javadoc: $(GENSRC_TARGETS) rmic
+
+  docs-jvmtidoc: hotspot
+
+  test: exploded-image
+
+  modules-xml: build-tools-jdk java
+
+  verify-modules: exploded-image modules-xml
+
+endif
+
+################################################################################
+# Virtual targets without recipes
+
+gensrc: $(GENSRC_TARGETS)
+
+gendata: $(GENDATA_TARGETS)
+
+copy: $(COPY_TARGETS)
+
+java: $(JAVA_TARGETS)
+
+rmic: $(RMIC_TARGETS)
+
+libs: $(LIB_TARGETS)
+
+launchers: $(LAUNCHER_TARGETS)
+
+# Explicitly add dependencies for these special targets
+java.base: import-hotspot policy-jars
+
+# Declare dependencies from <module> to all the individual targets specific
+# to that module <module>-*.
+$(foreach m, $(GENSRC_MODULES), $(eval $m: $m-gensrc))
+$(foreach m, $(JAVA_MODULES), $(eval $m: $m-java))
+$(foreach m, $(GENDATA_MODULES), $(eval $m: $m-gendata))
+$(foreach m, $(RMIC_MODULES), $(eval $m: $m-rmic))
+$(foreach m, $(LIB_MODULES), $(eval $m: $m-libs))
+$(foreach m, $(LAUNCHER_MODULES), $(eval $m: $m-launchers))
+$(foreach m, $(COPY_MODULES), $(eval $m: $m-copy))
+
+ALL_MODULE_TARGETS := $(sort $(GENSRC_MODULES) $(JAVA_MODULES) \
+    $(GENDATA_MODULES) $(LIB_MODULES) $(LAUNCHER_MODULES) $(COPY_MODULES))
+
+exploded-image: $(ALL_MODULE_TARGETS) modules-xml
+
+jars: main-jars nashorn-jar security-jars policy-jars
+
+# Make each profile name a target that depends on it's images target.
+$(foreach p, $(ALL_PROFILES), $(eval $(p): $(p)-images $(p)-jars))
+
+profiles: $(ALL_PROFILES)
+
+docs: docs-javadoc docs-jvmtidoc
+
+ALL_TARGETS += gensrc gendata copy java rmic libs launchers \
+    $(ALL_MODULE_TARGETS) exploded-image jars \
+    $(ALL_PROFILES) profiles docs
+
+################################################################################
+
+all: images docs verify-modules
+default: exploded-image
+
+ALL_TARGETS += default all
+
+################################################################################
+################################################################################
+#
+# Clean targets
+#
+################################################################################
+
+# If running a clean target, disable parallel execution
+ifneq ($(findstring clean, $(MAKECMDGOALS)), )
+  .NOTPARALLEL:
+endif
+
+CLEAN_COMPONENTS += langtools corba hotspot jdk nashorn images \
+    bootcycle-build docs docstemp test
+CLEAN_TARGETS := $(addprefix clean-, $(CLEAN_COMPONENTS))
 
 # Remove everything, except the output from configure.
-clean: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jdk clean-nashorn clean-images clean-overlay-images clean-bootcycle-build clean-docs clean-test
-	@($(CD) $(OUTPUT_ROOT) && $(RM) -r tmp source_tips build.log* build-trace*.log*)
-	@$(ECHO) Cleaned all build artifacts.
+clean: $(CLEAN_TARGETS)
+	($(CD) $(OUTPUT_ROOT) && $(RM) -r tmp source_tips build.log* build-trace*.log*)
+	$(ECHO) Cleaned all build artifacts.
+
+$(CLEAN_TARGETS):
+	$(call CleanComponent,$(patsubst clean-%, %, $@))
+
+clean-docs: clean-docstemp
 
 # Remove everything, including configure configuration.
 # If the output directory was created by configure and now becomes empty, remove it as well.
-# FIXME: tmp should not be here, fix ResetTimers instead. And remove spec.sh!
 dist-clean: clean
-	@($(CD) $(OUTPUT_ROOT) && $(RM) -r *spec.gmk config.* configure-arguments Makefile compare.sh spec.sh tmp javacservers)
-	@$(if $(filter $(CONF_NAME),$(notdir $(OUTPUT_ROOT))), \
+	($(CD) $(OUTPUT_ROOT) && $(RM) -r *spec.gmk config.* configure-arguments \
+	    Makefile compare.sh spec.sh tmp javacservers)
+	$(if $(filter $(CONF_NAME),$(notdir $(OUTPUT_ROOT))), \
 	  if test "x`$(LS) $(OUTPUT_ROOT)`" != x; then \
 	    $(ECHO) "Warning: Not removing non-empty configuration directory for '$(CONF_NAME)'" ; \
 	  else \
-	    ($(CD) $(SRC_ROOT) && $(ECHO) "Removing configuration directory for '$(CONF_NAME)'" && $(RM) -r $(OUTPUT_ROOT)) \
+	    ($(CD) $(SRC_ROOT) && $(ECHO) "Removing configuration directory for '$(CONF_NAME)'" \
+	        && $(RM) -r $(OUTPUT_ROOT)) \
 	  fi \
 	)
-	@$(ECHO) Cleaned everything, you will have to re-run configure.
+	$(ECHO) Cleaned everything, you will have to re-run configure.
 
-clean-langtools:
-	$(call CleanComponent,langtools)
-clean-corba:
-	$(call CleanComponent,corba)
-clean-jaxp:
-	$(call CleanComponent,jaxp)
-clean-jaxws:
-	$(call CleanComponent,jaxws)
-clean-hotspot:
-	$(call CleanComponent,hotspot)
-clean-jdk:
-	$(call CleanComponent,jdk)
-clean-nashorn:
-	$(call CleanComponent,nashorn)
-clean-images:
-	$(call CleanComponent,images)
-clean-overlay-images:
-	$(call CleanComponent,overlay-images)
-clean-bootcycle-build:
-	$(call CleanComponent,bootcycle-build)
-clean-docs:
-	$(call CleanComponent,docs)
-	$(call CleanComponent,docstemp)
-clean-test:
-	$(call CleanComponent,testoutput)
-	
+ALL_TARGETS += clean dist-clean $(CLEAN_TARGETS)
+
+################################################################################
+
+# Setup a rule for SPEC file that fails if executed. This check makes sure the 
+# configuration is up to date after changes to configure. 
+ifeq ($(findstring reconfigure, $(MAKECMDGOALS)), )
+  $(SPEC): $(wildcard $(SRC_ROOT)/common/autoconf/*)
+	@$(ECHO) "ERROR: $(SPEC) is not up to date."
+	@$(ECHO) "Please rerun configure! Easiest way to do this is by running"
+	@$(ECHO) "'make reconfigure'."
+	@$(ECHO) "It may also be ignored by setting IGNORE_OLD_CONFIG=true"
+	@if test "x$(IGNORE_OLD_CONFIG)" != "xtrue"; then exit 1; fi
+endif
+
 reconfigure:
         ifneq ($(CONFIGURE_COMMAND_LINE), )
 	  @$(ECHO) "Re-running configure using arguments '$(CONFIGURE_COMMAND_LINE)'"
@@ -245,12 +542,18 @@ reconfigure:
         endif
 	@( cd $(OUTPUT_ROOT) && $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) )
 
-.PHONY: langtools corba jaxp jaxws hotspot jdk nashorn images overlay-images install test docs
-.PHONY: langtools-only corba-only jaxp-only jaxws-only hotspot-only jdk-only nashorn-only images-only overlay-images-only install-only test-only docs-only
-.PHONY: default all clean dist-clean bootcycle-images start-make
-.PHONY: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jdk clean-nashorn clean-images clean-docs clean-test clean-overlay-images clean-bootcycle-build
-.PHONY: profiles profiles-only profiles-oscheck
+ALL_TARGETS += reconfigure
 
-include $(root_dir)/make/Jprt.gmk
+################################################################################
+# Declare *-only targets for each normal target
+$(foreach t, $(ALL_TARGETS), $(eval $(t)-only: $(t)))
+
+ALL_TARGETS += $(addsuffix -only, $(ALL_TARGETS))
+
+################################################################################
+
+.PHONY: $(ALL_TARGETS)
+
+include $(SRC_ROOT)/make/Jprt.gmk
 
 FRC: # Force target
