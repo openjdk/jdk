@@ -39,6 +39,8 @@ import sun.swing.SwingUtilities2;
 import sun.swing.plaf.synth.SynthIcon;
 
 import com.sun.java.swing.plaf.gtk.GTKEngine.WidgetType;
+import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
+import static java.awt.RenderingHints.KEY_TEXT_LCD_CONTRAST;
 
 /**
  *
@@ -115,10 +117,12 @@ class GTKStyle extends SynthStyle implements GTKConstants {
     @Override
     public void installDefaults(SynthContext context) {
         super.installDefaults(context);
-        if (!context.getRegion().isSubregion()) {
-            context.getComponent().putClientProperty(
-                SwingUtilities2.AA_TEXT_PROPERTY_KEY,
-                GTKLookAndFeel.aaTextInfo);
+        Map<Object, Object> aaTextInfo = GTKLookAndFeel.aaTextInfo;
+        if (aaTextInfo != null && !context.getRegion().isSubregion()) {
+            context.getComponent().putClientProperty(KEY_TEXT_ANTIALIASING,
+                    aaTextInfo.get(KEY_TEXT_ANTIALIASING));
+            context.getComponent().putClientProperty(KEY_TEXT_LCD_CONTRAST,
+                    aaTextInfo.get(KEY_TEXT_LCD_CONTRAST));
         }
     }
 

@@ -32,8 +32,6 @@ endif
 
 
 include NativeCompilation.gmk
-# FIXME: This is a bad fix currently needed due to JDK-8064808 not being resolved.
-include $(JDK_TOPDIR)/make/Tools.gmk
 
 # Setup make rules for creating a set of native test files (libraries or
 # executables). This will locate native files matching a certain pattern,

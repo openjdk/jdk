@@ -24,6 +24,7 @@
 import java.awt.*;
 /*
  * @test
+ * @bug 8065739 8131339
  * @summary When Frame.setExtendedState(Frame.MAXIMIZED_BOTH)
  *          is called for a Frame after been called setMaximizedBounds() with
  *          certain value, Frame bounds must equal to this value.
@@ -55,12 +56,14 @@ public class SetMaximizedBounds {
 
         for (GraphicsDevice gd : ge.getScreenDevices()) {
             for (GraphicsConfiguration gc : gd.getConfigurations()) {
-                testMaximizedBounds(gc);
+                testMaximizedBounds(gc, false);
+                testMaximizedBounds(gc, true);
             }
         }
     }
 
-    static void testMaximizedBounds(GraphicsConfiguration gc) throws Exception {
+    static void testMaximizedBounds(GraphicsConfiguration gc, boolean undecorated)
+            throws Exception {
 
         Frame frame = null;
         try {
@@ -71,6 +74,7 @@ public class SetMaximizedBounds {
             robot.setAutoDelay(50);
 
             frame = new Frame();
+            frame.setUndecorated(undecorated);
             Rectangle maximizedBounds = new Rectangle(
                     maxArea.x + maxArea.width / 6,
                     maxArea.y + maxArea.height / 6,

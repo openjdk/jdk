@@ -39,7 +39,7 @@ public class TestBeanProperty {
         Class<?>[] types =
                 {B.class, BL.class, BLF.class, E.class, H.class, P.class,
                  VU.class, D.class, EVD.class, EVE.class, EV.class, EVL.class,
-                 EVX.class};
+                 EVX.class, R.class};
         for (Class<?> type : types) {
             PropertyDescriptor pd = BeanUtils.getPropertyDescriptor(type, "value");
             if (((B.class == type) || (BLF.class == type)) && pd.isBound()) {
@@ -65,6 +65,10 @@ public class TestBeanProperty {
             if ((R.class == type) == !Boolean.TRUE.equals(pd.getValue("required"))) {
                 BeanUtils.reportPropertyDescriptor(pd);
                 throw new Error("required");
+            }
+            if ((D.class == type) == !"getter".equals(pd.getShortDescription())) {
+                BeanUtils.reportPropertyDescriptor(pd);
+                throw new Error("shortDescription");
             }
             if ((VU.class == type) == !Boolean.TRUE.equals(pd.getValue("visualUpdate"))) {
                 BeanUtils.reportPropertyDescriptor(pd);
