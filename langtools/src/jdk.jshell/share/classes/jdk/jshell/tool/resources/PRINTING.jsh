@@ -17,5 +17,5 @@ void println(double d) { System.out.println(d); }
 void println(char s[]) { System.out.println(s); }
 void println(String s) { System.out.println(s); }
 void println(Object obj) { System.out.println(obj); }
-void printf(Locale l, String format, Object... args) { System.out.printf(l, format, args); }
+void printf(java.util.Locale l, String format, Object... args) { System.out.printf(l, format, args); }
 void printf(String format, Object... args) { System.out.printf(format, args); }

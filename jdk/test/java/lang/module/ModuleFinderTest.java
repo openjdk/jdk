@@ -471,41 +471,33 @@ public class ModuleFinderTest {
      * Test ModuleFinder.of with a file path to a directory containing a file
      * that will not be recognized as a module.
      */
-    public void testOfWithUnrecognizedEntryInDirectory() throws Exception {
+    public void testOfWithUnrecognizedEntryInDirectory1() throws Exception {
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
         Files.createTempFile(dir, "m", ".junk");
-
-        ModuleFinder finder = ModuleFinder.of(dir);
-        try {
-            finder.find("java.rhubarb");
-            assertTrue(false);
-        } catch (FindException e) {
-            // expected
-        }
-
-        finder = ModuleFinder.of(dir);
-        try {
-            finder.findAll();
-            assertTrue(false);
-        } catch (FindException e) {
-            // expected
-        }
-    }
-
-
-    /**
-     * Test ModuleFinder.of with a file path to a directory containing a file
-     * starting with ".", the file should be ignored.
-     */
-    public void testOfWithHiddenEntryInDirectory() throws Exception {
-        Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        Files.createTempFile(dir, ".marker", "");
 
         ModuleFinder finder = ModuleFinder.of(dir);
         assertFalse(finder.find("java.rhubarb").isPresent());
 
         finder = ModuleFinder.of(dir);
         assertTrue(finder.findAll().isEmpty());
+    }
+
+
+    /**
+     * Test ModuleFinder.of with a file path to a directory containing a file
+     * that will not be recognized as a module.
+     */
+    public void testOfWithUnrecognizedEntryInDirectory2() throws Exception {
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        createModularJar(dir.resolve("m1.jar"), "m1");
+        Files.createTempFile(dir, "m2", ".junk");
+
+        ModuleFinder finder = ModuleFinder.of(dir);
+        assertTrue(finder.find("m1").isPresent());
+        assertFalse(finder.find("m2").isPresent());
+
+        finder = ModuleFinder.of(dir);
+        assertTrue(finder.findAll().size() == 1);
     }
 
 
@@ -748,7 +740,7 @@ public class ModuleFinderTest {
             vs = mid.substring(i+1);
         }
         ModuleDescriptor.Builder builder
-            = ModuleDescriptor.module(mn).requires("java.base");
+            = ModuleDescriptor.newModule(mn).requires("java.base");
         if (vs != null)
             builder.version(vs);
         return builder.build();

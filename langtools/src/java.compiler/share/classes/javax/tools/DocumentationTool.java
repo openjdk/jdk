@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,20 @@ public interface DocumentationTool extends Tool, OptionChecker {
      */
     interface DocumentationTask extends Callable<Boolean> {
         /**
-         * Set the locale to be applied when formatting diagnostics and
+         * Adds root modules to be taken into account during module
+         * resolution.
+         * Invalid module names may cause either
+         * {@code IllegalArgumentException} to be thrown,
+         * or diagnostics to be reported when the task is started.
+         * @param moduleNames the names of the root modules
+         * @throws IllegalArgumentException may be thrown for some
+         *      invalid module names
+         * @throws IllegalStateException if the task has started
+         */
+        void addModules(Iterable<String> moduleNames);
+
+        /**
+         * Sets the locale to be applied when formatting diagnostics and
          * other localized data.
          *
          * @param locale the locale to apply; {@code null} means apply no

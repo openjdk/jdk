@@ -21,51 +21,53 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<package name="sampleapi.tiny" module="sat.sampleapi">
-
-    <class basename="TinyClass">
-        <modifier>public</modifier>
-        <modifier>none|abstract</modifier>
-        <member>
-            <field basename="id">
+<sampleapi>
+    <module name="UNNAMED">
+        <package name="sampleapi.tiny" module="sat.sampleapi">
+            <class basename="TinyClass">
                 <modifier>public</modifier>
-                <type>int</type>
-            </field>
-            <method basename="get">
-                <modifier>public</modifier>
-                <type>int</type>
-            </method>
-        </member>
-    </class>
+                <modifier>none|abstract</modifier>
+                <member>
+                    <field basename="id">
+                        <modifier>public</modifier>
+                        <type>int</type>
+                    </field>
+                    <method basename="get">
+                        <modifier>public</modifier>
+                        <type>int</type>
+                    </method>
+                </member>
+            </class>
 
-    <interface basename="TinyInterface">
-        <modifier>public</modifier>
-        <member>
-            <method basename="put">
+            <interface basename="TinyInterface">
                 <modifier>public</modifier>
-                <type>void</type>
-                <param>int</param>
-            </method>
-        </member>
-    </interface>
+                <member>
+                    <method basename="put">
+                        <modifier>public</modifier>
+                        <type>void</type>
+                        <param>int</param>
+                    </method>
+                </member>
+            </interface>
 
-    <enum basename="TinyEnum">
-        <modifier>public</modifier>
-        <member>
-            <constant basename="YES" count="1"/>
-            <constant basename="NO" count="1"/>
-            <constant basename="MAYBE" count="1"/>
-        </member>
-    </enum>
-
-    <annotation basename="TinyAnno">
-        <modifier>public</modifier>
-        <member>
-            <method basename="value">
+            <enum basename="TinyEnum">
                 <modifier>public</modifier>
-                <type>boolean</type>
-            </method>
-        </member>
-    </annotation>
-        
-</package>
+                <member>
+                    <constant basename="YES" count="1"/>
+                    <constant basename="NO" count="1"/>
+                    <constant basename="MAYBE" count="1"/>
+                </member>
+            </enum>
+
+            <annotation basename="TinyAnno">
+                <modifier>public</modifier>
+                <member>
+                    <method basename="value">
+                        <modifier>public</modifier>
+                        <type>boolean</type>
+                    </method>
+                </member>
+            </annotation>
+        </package>
+    </module>
+</sampleapi>
