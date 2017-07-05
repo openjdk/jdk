@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,12 +223,6 @@ public final class XalanConstants {
     public static final String XML_SECURITY_PROPERTY_MANAGER =
             ORACLE_JAXP_PROPERTY_PREFIX + "xmlSecurityPropertyManager";
 
-    /**
-     * Feature enableExtensionFunctions
-     */
-    public static final String ORACLE_ENABLE_EXTENSION_FUNCTION =
-            ORACLE_JAXP_PROPERTY_PREFIX + "enableExtensionFunctions";
-    public static final String SP_ORACLE_ENABLE_EXTENSION_FUNCTION = "javax.xml.enableExtensionFunctions";
 
     /**
      * Values for a feature

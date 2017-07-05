@@ -20,7 +20,6 @@
 
 package com.sun.org.apache.xpath.internal.jaxp;
 
-import com.sun.org.apache.xalan.internal.utils.FeatureManager;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import javax.xml.namespace.QName;
 import javax.xml.transform.TransformerException;
@@ -30,6 +29,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFunctionResolver;
 import javax.xml.xpath.XPathVariableResolver;
+import jdk.xml.internal.JdkXmlFeatures;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
@@ -48,7 +48,7 @@ public class XPathExpressionImpl extends XPathImplUtil implements XPathExpressio
      */
     protected XPathExpressionImpl() {
         this(null, null, null, null,
-             false, true, new FeatureManager());
+             false, true, new JdkXmlFeatures(false));
     };
 
     protected XPathExpressionImpl(com.sun.org.apache.xpath.internal.XPath xpath,
@@ -56,13 +56,13 @@ public class XPathExpressionImpl extends XPathImplUtil implements XPathExpressio
             XPathFunctionResolver functionResolver,
             XPathVariableResolver variableResolver) {
         this(xpath, prefixResolver, functionResolver, variableResolver,
-             false, true, new FeatureManager());
+             false, true, new JdkXmlFeatures(false));
     };
 
     protected XPathExpressionImpl(com.sun.org.apache.xpath.internal.XPath xpath,
             JAXPPrefixResolver prefixResolver,XPathFunctionResolver functionResolver,
             XPathVariableResolver variableResolver, boolean featureSecureProcessing,
-            boolean useServiceMechanism, FeatureManager featureManager) {
+            boolean useServiceMechanism, JdkXmlFeatures featureManager) {
         this.xpath = xpath;
         this.prefixResolver = prefixResolver;
         this.functionResolver = functionResolver;

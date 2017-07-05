@@ -51,10 +51,11 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.plugins.SystemModuleDescriptorPlugin.Builder.*;
-import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 /**
  * Jlink plugin to reconstitute module descriptors for installed modules.
@@ -107,7 +108,7 @@ public final class SystemModuleDescriptorPlugin implements Plugin {
 
 
     @Override
-    public void visit(ModulePool in, ModulePool out) {
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         if (!enabled) {
             throw new PluginException(NAME + " was set");
         }
@@ -116,30 +117,30 @@ public final class SystemModuleDescriptorPlugin implements Plugin {
 
         // generate the byte code to create ModuleDescriptors
         // skip parsing module-info.class and skip name check
-        in.modules().forEach(module -> {
-            Optional<ModuleEntry> optData = module.findEntry("module-info.class");
+        in.moduleView().modules().forEach(module -> {
+            Optional<ResourcePoolEntry> optData = module.findEntry("module-info.class");
             if (! optData.isPresent()) {
                 // automatic module not supported yet
                 throw new PluginException("module-info.class not found for " +
-                                          module.getName() + " module");
+                                          module.name() + " module");
             }
-            ModuleEntry data = optData.get();
-            assert module.getName().equals(data.getModule());
+            ResourcePoolEntry data = optData.get();
+            assert module.name().equals(data.moduleName());
             try {
-                ByteArrayInputStream bain = new ByteArrayInputStream(data.getBytes());
+                ByteArrayInputStream bain = new ByteArrayInputStream(data.contentBytes());
                 ModuleDescriptor md = ModuleDescriptor.read(bain);
                 validateNames(md);
 
-                ModuleDescriptorBuilder mbuilder = builder.module(md, module.getAllPackages());
+                ModuleDescriptorBuilder mbuilder = builder.module(md, module.packages());
                 int packages = md.exports().size() + md.conceals().size();
                 if (md.conceals().isEmpty() &&
-                        packages != module.getAllPackages().size()) {
+                        packages != module.packages().size()) {
                     // add ConcealedPackages attribute if not exist
                     bain.reset();
                     ModuleInfoRewriter minfoWriter =
                         new ModuleInfoRewriter(bain, mbuilder.conceals());
                     // replace with the overridden version
-                    data = data.create(minfoWriter.getBytes());
+                    data = data.copyWithContent(minfoWriter.getBytes());
                 }
                 out.add(data);
             } catch (IOException e) {
@@ -150,16 +151,18 @@ public final class SystemModuleDescriptorPlugin implements Plugin {
         // Generate the new class
         ClassWriter cwriter = builder.build();
         in.entries().forEach(data -> {
-            if (data.getPath().endsWith("module-info.class"))
+            if (data.path().endsWith("module-info.class"))
                 return;
-            if (builder.isOverriddenClass(data.getPath())) {
+            if (builder.isOverriddenClass(data.path())) {
                 byte[] bytes = cwriter.toByteArray();
-                ModuleEntry ndata = data.create(bytes);
+                ResourcePoolEntry ndata = data.copyWithContent(bytes);
                 out.add(ndata);
             } else {
                 out.add(data);
             }
         });
+
+        return out.build();
     }
 
     /*

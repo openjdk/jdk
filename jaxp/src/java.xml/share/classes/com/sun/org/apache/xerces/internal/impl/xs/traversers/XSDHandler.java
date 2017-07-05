@@ -102,9 +102,11 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.Vector;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -391,7 +393,7 @@ public class XSDHandler {
     private Locale fLocale;
 
     // the XMLEntityManager
-    private XMLEntityResolver fEntityManager;
+    private XMLEntityManager fEntityManager;
 
     // the XSAttributeChecker
     private XSAttributeChecker fAttributeChecker;
@@ -410,6 +412,13 @@ public class XSDHandler {
 
     // the security property manager
     private XMLSecurityPropertyManager fSecurityPropertyMgr = null;
+
+    /** indicate whether Catalog should be used for resolving external resources */
+    private boolean fUseCatalog = true;
+    private String fCatalogFile;
+    private String fDefer;
+    private String fPrefer;
+    private String fResolve;
 
     //************ Traversers **********
     XSDAttributeGroupTraverser fAttributeGroupTraverser;
@@ -710,6 +719,13 @@ public class XSDHandler {
         fAnnotationValidator.setProperty(ERROR_HANDLER, (fErrorHandler != null) ? fErrorHandler : new DefaultErrorHandler());
         /** Set locale. **/
         fAnnotationValidator.setProperty(LOCALE, fLocale);
+
+        // Passing on the Catalog settings
+        fAnnotationValidator.setFeature(XMLConstants.USE_CATALOG, fUseCatalog);
+        fAnnotationValidator.setProperty(JdkXmlUtils.CATALOG_FILES, fCatalogFile);
+        fAnnotationValidator.setProperty(JdkXmlUtils.CATALOG_DEFER, fDefer);
+        fAnnotationValidator.setProperty(JdkXmlUtils.CATALOG_PREFER, fPrefer);
+        fAnnotationValidator.setProperty(JdkXmlUtils.CATALOG_RESOLVE, fResolve);
     }
 
     /**
@@ -3514,7 +3530,7 @@ public class XSDHandler {
         fSecurityManager = (XMLSecurityManager) componentManager.getProperty(SECURITY_MANAGER, null);
 
         //set entity manager
-        fEntityManager = (XMLEntityResolver) componentManager.getProperty(ENTITY_MANAGER);
+        fEntityManager = (XMLEntityManager) componentManager.getProperty(ENTITY_MANAGER);
 
         //set entity resolver
         XMLEntityResolver er = (XMLEntityResolver)componentManager.getProperty(ENTITY_RESOLVER);
@@ -3593,6 +3609,20 @@ public class XSDHandler {
         fAccessExternalDTD = fSecurityPropertyMgr.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
         fAccessExternalSchema = fSecurityPropertyMgr.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA);
 
+        // Passing the Catalog settings to the parser
+        fUseCatalog = componentManager.getFeature(XMLConstants.USE_CATALOG);
+        fSchemaParser.setFeature(XMLConstants.USE_CATALOG, fUseCatalog);
+        fEntityManager.setFeature(XMLConstants.USE_CATALOG, fUseCatalog);
+
+        fCatalogFile = (String)componentManager.getProperty(JdkXmlUtils.CATALOG_FILES);
+        fDefer = (String)componentManager.getProperty(JdkXmlUtils.CATALOG_DEFER);
+        fPrefer = (String)componentManager.getProperty(JdkXmlUtils.CATALOG_PREFER);
+        fResolve = (String)componentManager.getProperty(JdkXmlUtils.CATALOG_RESOLVE);
+
+        for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+            fSchemaParser.setProperty(f.getPropertyName(), componentManager.getProperty(f.getPropertyName()));
+            fEntityManager.setProperty(f.getPropertyName(), componentManager.getProperty(f.getPropertyName()));
+        }
     } // reset(XMLComponentManager)
 
 

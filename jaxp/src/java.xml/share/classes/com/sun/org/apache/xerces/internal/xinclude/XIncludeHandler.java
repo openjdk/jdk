@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2003-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,6 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.sun.org.apache.xerces.internal.xinclude;
 
 import java.io.CharConversionException;
@@ -70,6 +71,14 @@ import com.sun.org.apache.xerces.internal.xpointer.XPointerProcessor;
 import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import java.util.Objects;
+import javax.xml.catalog.CatalogException;
+import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogManager;
+import javax.xml.catalog.CatalogResolver;
+import javax.xml.catalog.CatalogUriResolver;
+import javax.xml.transform.Source;
+import jdk.xml.internal.JdkXmlUtils;
+import org.xml.sax.InputSource;
 
 /**
  * <p>
@@ -247,7 +256,7 @@ public class XIncludeHandler
         { ERROR_REPORTER, ENTITY_RESOLVER, SECURITY_MANAGER, BUFFER_SIZE };
 
     /** Property defaults. */
-    private static final Object[] PROPERTY_DEFAULTS = { null, null, null, new Integer(XMLEntityManager.DEFAULT_BUFFER_SIZE) };
+    private static final Object[] PROPERTY_DEFAULTS = { null, null, null, XMLEntityManager.DEFAULT_BUFFER_SIZE};
 
     // instance variables
 
@@ -335,8 +344,8 @@ public class XIncludeHandler
     private int[] fState = new int[INITIAL_SIZE];
 
     // buffering the necessary DTD events
-    private ArrayList fNotations;
-    private ArrayList fUnparsedEntities;
+    private final ArrayList<Notation> fNotations;
+    private final ArrayList<UnparsedEntity> fUnparsedEntities;
 
     // flags which control whether base URI or language fixup is performed.
     private boolean fFixupBaseURIs = true;
@@ -358,6 +367,17 @@ public class XIncludeHandler
     // track whether the child config needs its features refreshed
     private boolean fNeedCopyFeatures = true;
 
+    /** indicate whether Catalog should be used for resolving external resources */
+    private boolean fUseCatalog = true;
+    CatalogFeatures fCatalogFeatures;
+    CatalogResolver fCatalogResolver;
+    CatalogUriResolver fCatalogUriResolver;
+
+    private String fCatalogFile;
+    private String fDefer;
+    private String fPrefer;
+    private String fResolve;
+
     // Constructors
 
     public XIncludeHandler() {
@@ -366,8 +386,8 @@ public class XIncludeHandler
         fSawFallback[fDepth] = false;
         fSawInclude[fDepth] = false;
         fState[fDepth] = STATE_NORMAL_PROCESSING;
-        fNotations = new ArrayList();
-        fUnparsedEntities = new ArrayList();
+        fNotations = new ArrayList<>();
+        fUnparsedEntities = new ArrayList<>();
 
         fBaseURIScope = new IntStack();
         fBaseURI = new Stack();
@@ -534,24 +554,31 @@ public class XIncludeHandler
         fSecurityPropertyMgr = (XMLSecurityPropertyManager)
                 componentManager.getProperty(Constants.XML_SECURITY_PROPERTY_MANAGER);
 
+        //Use Catalog
+        fUseCatalog = componentManager.getFeature(XMLConstants.USE_CATALOG);
+        fCatalogFile = (String)componentManager.getProperty(CatalogFeatures.Feature.FILES.getPropertyName());
+        fDefer = (String)componentManager.getProperty(CatalogFeatures.Feature.DEFER.getPropertyName());
+        fPrefer = (String)componentManager.getProperty(CatalogFeatures.Feature.PREFER.getPropertyName());
+        fResolve = (String)componentManager.getProperty(CatalogFeatures.Feature.RESOLVE.getPropertyName());
+
         // Get buffer size.
         try {
             Integer value =
                 (Integer)componentManager.getProperty(
                     BUFFER_SIZE);
 
-            if (value != null && value.intValue() > 0) {
-                fBufferSize = value.intValue();
+            if (value != null && value > 0) {
+                fBufferSize = value;
                 if (fChildConfig != null) {
                     fChildConfig.setProperty(BUFFER_SIZE, value);
                 }
             }
             else {
-                fBufferSize = ((Integer)getPropertyDefault(BUFFER_SIZE)).intValue();
+                fBufferSize = ((Integer)getPropertyDefault(BUFFER_SIZE));
             }
         }
         catch (XMLConfigurationException e) {
-                fBufferSize = ((Integer)getPropertyDefault(BUFFER_SIZE)).intValue();
+            fBufferSize = ((Integer)getPropertyDefault(BUFFER_SIZE));
         }
 
         // Reset XML 1.0 text reader.
@@ -1598,6 +1625,39 @@ public class XIncludeHandler
 
                 includedSource =
                     fEntityResolver.resolveEntity(resourceIdentifier);
+
+                if (includedSource == null) {
+                    if (fCatalogFeatures == null) {
+                        fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
+                    }
+                    fCatalogFile = fCatalogFeatures.get(CatalogFeatures.Feature.FILES);
+                    if (fUseCatalog && fCatalogFile != null) {
+                        /*
+                           Although URI entry is preferred for resolving XInclude, system entry
+                           is allowed as well.
+                        */
+                        Source source = null;
+                        try {
+                            if (fCatalogUriResolver == null) {
+                                fCatalogUriResolver = CatalogManager.catalogUriResolver(fCatalogFeatures);
+                            }
+                            source = fCatalogUriResolver.resolve(href, fCurrentBaseURI.getExpandedSystemId());
+                        } catch (CatalogException e) {}
+
+                        if (source != null && !source.isEmpty()) {
+                            includedSource = new XMLInputSource(null, source.getSystemId(),
+                                    fCurrentBaseURI.getExpandedSystemId(), true);
+                        } else {
+                            if (fCatalogResolver == null) {
+                                fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
+                            }
+                            InputSource is = fCatalogResolver.resolveEntity(href, href);
+                            if (is != null && !is.isEmpty()) {
+                                includedSource = new XMLInputSource(is, true);
+                            }
+                        }
+                    }
+                }
 
                 if (includedSource != null &&
                     !(includedSource instanceof HTTPInputSource) &&

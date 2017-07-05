@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -71,6 +71,8 @@ import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
 import com.sun.org.apache.xerces.internal.xs.ItemPSVI;
 import com.sun.org.apache.xerces.internal.xs.PSVIProvider;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
+import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.TypeInfo;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
@@ -701,6 +703,9 @@ final class ValidatorHandlerImpl extends ValidatorHandler implements
                                        XMLConstants.ACCESS_EXTERNAL_DTD, exc);
                            }
                         }
+
+                        // Passing on the CatalogFeatures settings from a configuration object to the reader
+                        JdkXmlUtils.catalogFeaturesConfig2Reader(fComponentManager, reader);
                     } catch( Exception e ) {
                         // this is impossible, but better safe than sorry
                         throw new FactoryConfigurationError(e);
@@ -1046,7 +1051,7 @@ final class ValidatorHandlerImpl extends ValidatorHandler implements
                      */
                     InputSource inputSource = new InputSource();
                     inputSource.setPublicId(pubId);
-                    inputSource.setSystemId((baseSystemId != null) ? resolveSystemId(systemId, baseSystemId) : systemId);
+                    inputSource.setSystemId((baseSystemId != null) ? resolveSystemId(sysId, baseSystemId) : sysId);
 
                     if (charStream != null) {
                         inputSource.setCharacterStream(charStream);

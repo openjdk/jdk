@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,5 +380,43 @@ public final class XMLConstants {
          * @since 1.7
          */
         public static final String ACCESS_EXTERNAL_STYLESHEET = "http://javax.xml.XMLConstants/property/accessExternalStylesheet";
+
+
+        /**
+         * Feature: useCatalog
+         *
+         * <p>
+         * Instructs XML processors to use XML Catalogs to resolve entity references.
+         * Catalogs may be set through JAXP factories, system properties, or
+         * jaxp.properties by using the {@code javax.xml.catalog.files} property
+         * defined in {@link javax.xml.catalog.CatalogFeatures}.
+         * The following code enables Catalog on SAX parser:
+         * <pre>{@code
+         *      SAXParserFactory spf = SAXParserFactory.newInstance();
+         *      spf.setFeature(XMLConstants.USE_CATALOG, true);
+         *      SAXParser parser = spf.newSAXParser();
+         *      parser.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), "catalog.xml");
+         * }</pre>
+         *
+         * <p>
+         * <b>Value:</b> a boolean. If the value is true, and a catalog is set,
+         * the XML parser will resolve external references using
+         * {@link javax.xml.catalog.CatalogResolver}. If the value is false,
+         * XML Catalog is ignored even if one is set. The default value is true.
+         *
+         * <p>
+         * <b>System Property:</b> The value of this property can be set or overridden by
+         * system property {@code javax.xml.useCatalog}
+         *
+         * <p>
+         * <b>jaxp.properties:</b> This configuration file is in standard
+         * {@link java.util.Properties} format and typically located in the {@code conf}
+         * directory of the Java installation. If the file exists and the system
+         * property is specified, its value will be used to override the default
+         * value of the property.
+         *
+         * @since 9
+         */
+        public static final String USE_CATALOG = "http://javax.xml.XMLConstants/feature/useCatalog";
 
 }

@@ -32,7 +32,8 @@ import java.util.Set;
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import tests.Helper;
 
 /*
@@ -69,7 +70,7 @@ public class DefaultProviderTest {
         }
 
         @Override
-        public void visit(ModulePool in, ModulePool out) {
+        public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
             if (!enabled) {
                 throw new PluginException(NAME + " was set");
             }
@@ -78,6 +79,8 @@ public class DefaultProviderTest {
             in.transformAndCopy(content -> {
                 return content;
             }, out);
+
+            return out.build();
         }
 
         @Override

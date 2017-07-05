@@ -273,10 +273,11 @@ public interface SSLSession {
      *          has not been verified
      * @see #getPeerPrincipal()
      * @deprecated The {@link #getPeerCertificates()} method that returns an
-     *               array of {@code java.security.cert.Certificate} should
-     *               be used instead.
+     *          array of {@code java.security.cert.Certificate} should
+     *          be used instead.  This method is subject to removal in
+     *          a future version of Java SE.
      */
-    @Deprecated
+    @Deprecated(since="9", forRemoval=true)
     public javax.security.cert.X509Certificate [] getPeerCertificateChain()
             throws SSLPeerUnverifiedException;
 

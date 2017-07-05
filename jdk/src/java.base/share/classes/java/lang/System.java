@@ -236,10 +236,12 @@ public final class System {
      * @since   1.6
      */
      public static Console console() {
-         Console c = cons;
-         if (c == null) {
+         Console c;
+         if ((c = cons) == null) {
              synchronized (System.class) {
-                 cons = c = SharedSecrets.getJavaIOAccess().console();
+                 if ((c = cons) == null) {
+                     cons = c = SharedSecrets.getJavaIOAccess().console();
+                 }
              }
          }
          return c;
