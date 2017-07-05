@@ -29,8 +29,8 @@
 #include "ModuleReferenceImpl.h"
 
 
-static jclass jlrM(JNIEnv *env) {
-    return findClass(env, "Ljava/lang/reflect/Module;");
+static jclass jlM(JNIEnv *env) {
+    return findClass(env, "Ljava/lang/Module;");
 }
 
 static jboolean
@@ -43,7 +43,7 @@ getName(PacketInputStream *in, PacketOutputStream *out)
     jobject module;
 
     if (method == NULL) {
-        method = getMethod(env, jlrM(env), "getName", "()Ljava/lang/String;");
+        method = getMethod(env, jlM(env), "getName", "()Ljava/lang/String;");
     }
     module = inStream_readModuleRef(getEnv(), in);
     if (inStream_error(in)) {
@@ -71,7 +71,7 @@ getClassLoader(PacketInputStream *in, PacketOutputStream *out)
     jobject module;
 
     if (method == NULL) {
-        method = getMethod(env, jlrM(env), "getClassLoader", "()Ljava/lang/ClassLoader;");
+        method = getMethod(env, jlM(env), "getClassLoader", "()Ljava/lang/ClassLoader;");
     }
     module = inStream_readModuleRef(env, in);
     if (inStream_error(in)) {

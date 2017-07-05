@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8035473 8154482 8154399 8159096
+ * @bug 8035473 8154482 8154399 8159096 8176131 8176331
  * @summary make sure the javadoc tool responds correctly to Xold,
  *          old doclets and taglets.
  * @library /tools/lib
@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.lang.model.element.Element;
 
 import com.sun.javadoc.Tag;
 import com.sun.source.doctree.DocTree;
@@ -87,7 +88,7 @@ public class EnsureNewOldDoclet extends TestRunner {
             CLASS_NAME + "\\$OldTaglet.*");
 
     final static String OLD_STDDOCLET = "com.sun.tools.doclets.standard.Standard";
-    final static String NEW_STDDOCLET = "jdk.javadoc.doclets.StandardDoclet";
+    final static String NEW_STDDOCLET = "jdk.javadoc.doclet.StandardDoclet";
 
 
     public EnsureNewOldDoclet() throws Exception {
@@ -186,7 +187,7 @@ public class EnsureNewOldDoclet extends TestRunner {
                 "-tagletpath",
                 testClasses,
                 testSrc.toString());
-        Task.Result tr = task.run(Task.Expect.FAIL, 1);
+        Task.Result tr = task.run(Task.Expect.FAIL, 1).writeAll();
         //Task.Result tr = task.run();
         List<String> out = tr.getOutputLines(Task.OutputKind.STDOUT);
         List<String> err = tr.getOutputLines(Task.OutputKind.STDERR);
@@ -340,7 +341,7 @@ public class EnsureNewOldDoclet extends TestRunner {
         }
     }
 
-    public static class NewTaglet implements jdk.javadoc.doclet.taglet.Taglet {
+    public static class NewTaglet implements jdk.javadoc.doclet.Taglet {
 
         @Override
         public Set<Location> getAllowedLocations() {
@@ -358,12 +359,7 @@ public class EnsureNewOldDoclet extends TestRunner {
         }
 
         @Override
-        public String toString(DocTree tag) {
-            return tag.toString();
-        }
-
-        @Override
-        public String toString(List<? extends DocTree> tags) {
+        public String toString(List<? extends DocTree> tags, Element element) {
             return tags.toString();
         }
 
