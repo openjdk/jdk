@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,5 +200,24 @@ public final class KeyUtil {
 
         // Don't bother to check against the y^q mod p if safe primes are used.
     }
+
+    /**
+     * Trim leading (most significant) zeroes from the result.
+     *
+     * @throws NullPointerException if {@code b} is null
+     */
+    public static byte[] trimZeroes(byte[] b) {
+        int i = 0;
+        while ((i < b.length - 1) && (b[i] == 0)) {
+            i++;
+        }
+        if (i == 0) {
+            return b;
+        }
+        byte[] t = new byte[b.length - i];
+        System.arraycopy(b, i, t, 0, t.length);
+        return t;
+    }
+
 }
 

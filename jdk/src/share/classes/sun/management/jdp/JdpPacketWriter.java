@@ -60,9 +60,12 @@ public final class JdpPacketWriter {
      */
     public void addEntry(String entry)
             throws IOException {
-        pkt.writeShort(entry.length());
-        byte[] b = entry.getBytes("UTF-8");
-        pkt.write(b);
+        /* DataOutputStream.writeUTF() do essentially
+         *  the same as:
+         *    pkt.writeShort(entry.getBytes("UTF-8").length);
+         *    pkt.write(entry.getBytes("UTF-8"));
+         */
+        pkt.writeUTF(entry);
     }
 
     /**

@@ -50,13 +50,13 @@ public class GeneralWin32 extends General {
     private static final int DEPTH = 2;
     private static String baseDir = null;
     private static String userDir = null;
+    private static String relative = null;
 
     /* Pathnames relative to working directory */
 
     private static void checkCaseLookup() throws IOException {
         /* Use long names here to avoid 8.3 format, which Samba servers often
            force to lowercase */
-        String relative = baseDir.substring(userDir.length() + 1);
         File d1 = new File(relative, "XyZzY0123");
         File d2 = new File(d1, "FOO_bar_BAZ");
         File f = new File(d2, "GLORPified");
@@ -79,9 +79,9 @@ public class GeneralWin32 extends General {
            case of filenames, rather than just using the input case */
         File y = new File(userDir, f.getPath());
         String ans = y.getPath();
-        check(ans, relative + "\\" + "XyZzY0123\\FOO_bar_BAZ\\GLORPified");
-        check(ans, relative + "\\" + "xyzzy0123\\foo_bar_baz\\glorpified");
-        check(ans, relative + "\\" + "XYZZY0123\\FOO_BAR_BAZ\\GLORPIFIED");
+        check(ans, relative + "XyZzY0123\\FOO_bar_BAZ\\GLORPified");
+        check(ans, relative + "xyzzy0123\\foo_bar_baz\\glorpified");
+        check(ans, relative + "XYZZY0123\\FOO_BAR_BAZ\\GLORPIFIED");
     }
 
     private static void checkWild(File f) throws Exception {
@@ -103,8 +103,7 @@ public class GeneralWin32 extends General {
     private static void checkRelativePaths() throws Exception {
         checkCaseLookup();
         checkWildCards();
-        String relative = baseDir.substring(userDir.length() + 1);
-        checkNames(3, true, baseDir.toString(), relative);
+        checkNames(3, true, baseDir, relative);
     }
 
 
@@ -136,7 +135,6 @@ public class GeneralWin32 extends General {
         String ans = exists ? df.getAbsolutePath() : d;
         if (!ans.endsWith("\\"))
             ans = ans + "\\";
-        String relative = baseDir.substring(userDir.length() + 1);
         checkNames(depth, false, ans + relative, d + relative);
     }
 
@@ -171,15 +169,16 @@ public class GeneralWin32 extends General {
             return;
         }
         if (args.length > 0) debug = true;
-        userDir = System.getProperty("user.dir");
-        baseDir = initTestData(6);
+        userDir = System.getProperty("user.dir") + '\\';
+        baseDir = initTestData(6) + '\\';
+        relative = baseDir.substring(userDir.length());
         checkRelativePaths();
         checkDrivePaths();
         checkUncPaths();
     }
 
     private static String initTestData(int maxDepth) throws IOException {
-        File parent = new File(System.getProperty("user.dir"));
+        File parent = new File(userDir);
         String baseDir = null;
         maxDepth = maxDepth < DEPTH + 2 ? DEPTH + 2 : maxDepth;
         for (int i = 0; i < maxDepth; i ++) {

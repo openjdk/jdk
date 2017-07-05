@@ -77,6 +77,10 @@ class StringCharBuffer                                  // package-private
         return str.charAt(checkIndex(index) + offset);
     }
 
+    char getUnchecked(int index) {
+        return str.charAt(index + offset);
+    }
+
     // ## Override bulk get methods for better performance
 
     public final CharBuffer put(char c) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -436,8 +436,8 @@ class CMSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   size_t generation_alignment() { return _generation_alignment; }
 
-  virtual void compute_young_generation_free_space(size_t cur_eden,
-                                                   size_t max_eden_size);
+  virtual void compute_eden_space_size(size_t cur_eden,
+                                       size_t max_eden_size);
   // Calculates new survivor space size;  returns a new tenuring threshold
   // value. Stores new survivor size in _survivor_size.
   virtual uint compute_survivor_space_size_and_threshold(

@@ -1417,8 +1417,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       MemoryService::track_memory_usage();
 
-      verify_after_gc();
-
       assert(!ref_processor_stw()->discovery_enabled(), "Postcondition");
       ref_processor_stw()->verify_no_references_recorded();
 
@@ -1520,6 +1518,8 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       _hrs.verify_optional();
       verify_region_sets_optional();
+
+      verify_after_gc();
 
       // Start a new incremental collection set for the next pause
       assert(g1_policy()->collection_set() == NULL, "must be");
@@ -3539,6 +3539,14 @@ void G1CollectedHeap::gc_prologue(bool full /* Ignored */) {
 }
 
 void G1CollectedHeap::gc_epilogue(bool full /* Ignored */) {
+
+  if (G1SummarizeRSetStats &&
+      (G1SummarizeRSetStatsPeriod > 0) &&
+      // we are at the end of the GC. Total collections has already been increased.
+      ((total_collections() - 1) % G1SummarizeRSetStatsPeriod == 0)) {
+    g1_rem_set()->print_periodic_summary_info();
+  }
+
   // FIXME: what is this about?
   // I'm ignoring the "fill_newgen()" call if "alloc_event_enabled"
   // is set.
@@ -4091,12 +4099,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     // TraceMemoryManagerStats is called) so that the G1 memory pools are updated
     // before any GC notifications are raised.
     g1mm()->update_sizes();
-  }
-
-  if (G1SummarizeRSetStats &&
-      (G1SummarizeRSetStatsPeriod > 0) &&
-      (total_collections() % G1SummarizeRSetStatsPeriod == 0)) {
-    g1_rem_set()->print_summary_info();
   }
 
   // It should now be safe to tell the concurrent mark thread to start

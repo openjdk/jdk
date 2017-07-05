@@ -1565,8 +1565,7 @@ int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
   // be sure to change this if you add/subtract anything to/from the overhead area
   const int overhead_size = -frame::interpreter_frame_initial_sp_offset;
 
-  const int extra_stack = Method::extra_stack_entries();
-  const int method_stack = (method->max_locals() + method->max_stack() + extra_stack) *
+  const int method_stack = (method->max_locals() + method->max_stack()) *
                            Interpreter::stackElementWords;
   return overhead_size + method_stack + stub_code;
 }

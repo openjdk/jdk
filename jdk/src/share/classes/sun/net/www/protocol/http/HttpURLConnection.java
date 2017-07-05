@@ -3158,6 +3158,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         private boolean marked = false;
         private int inCache = 0;
         private int markCount = 0;
+        private boolean closed;  // false
 
         public HttpInputStream (InputStream is) {
             super (is);
@@ -3233,8 +3234,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
         }
 
+        private void ensureOpen() throws IOException {
+            if (closed)
+                throw new IOException("stream is closed");
+        }
+
         @Override
         public int read() throws IOException {
+            ensureOpen();
             try {
                 byte[] b = new byte[1];
                 int ret = read(b);
@@ -3254,6 +3261,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
+            ensureOpen();
             try {
                 int newLen = super.read(b, off, len);
                 int nWrite;
@@ -3291,7 +3299,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         @Override
         public long skip (long n) throws IOException {
-
+            ensureOpen();
             long remaining = n;
             int nr;
             if (skipBuffer == null)
@@ -3317,6 +3325,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         @Override
         public void close () throws IOException {
+            if (closed)
+                return;
+
             try {
                 if (outputStream != null) {
                     if (read() != -1) {
@@ -3332,6 +3343,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
                 throw ioex;
             } finally {
+                closed = true;
                 HttpURLConnection.this.http = null;
                 checkResponseCredentials (true);
             }

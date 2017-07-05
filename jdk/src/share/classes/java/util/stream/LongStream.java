@@ -588,7 +588,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
     /**
      * Returns an {@link OptionalLong} describing the first element of this
      * stream (in the encounter order), or an empty {@code OptionalLong} if the
-     * stream is empty.  If the stream has no encounter order, than any element
+     * stream is empty.  If the stream has no encounter order, then any element
      * may be returned.
      *
      * <p>This is a <a href="package-summary.html#StreamOps">short-circuiting
