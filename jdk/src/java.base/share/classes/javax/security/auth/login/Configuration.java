@@ -182,6 +182,7 @@ import sun.security.jca.GetInstance;
  * Java Security Standard Algorithm Names Specification</a>
  * for a list of standard Configuration types.
  *
+ * @since 1.4
  * @see javax.security.auth.login.LoginContext
  * @see java.security.Security security properties
  */

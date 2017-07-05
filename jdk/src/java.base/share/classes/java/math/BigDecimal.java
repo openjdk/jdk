@@ -222,6 +222,7 @@ import java.util.Arrays;
  * @author  Mike Cowlishaw
  * @author  Joseph D. Darcy
  * @author  Sergey V. Kuksenko
+ * @since 1.1
  */
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /**

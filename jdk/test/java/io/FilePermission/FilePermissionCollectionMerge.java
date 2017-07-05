@@ -28,6 +28,8 @@
  * @summary FilePermissionCollection merges incorrectly
  * @modules java.base/sun.security.util
  * @library /test/lib
+ * @build jdk.test.lib.Asserts
+ * @run main FilePermissionCollectionMerge
  */
 
 import sun.security.util.FilePermCompat;

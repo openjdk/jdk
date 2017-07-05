@@ -25,9 +25,13 @@
  * @test
  * @bug 4274624
  * @library /test/lib
- * @build GetContentType GetContentTypeTest
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
  *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
+ *        GetContentType GetContentTypeTest
  * @run main/othervm GetContentTypeTest
  * @summary Test JarURLConnection.getContentType would
  *          would return default "content/unknown"

@@ -25,6 +25,13 @@
  * @test
  * @summary NOT A TEST. Captures the network interface configuration.
  * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main NetworkConfigurationProbe
  */
 

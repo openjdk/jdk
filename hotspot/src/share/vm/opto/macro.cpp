@@ -1047,7 +1047,9 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
         // opportunities for allocation elimination
         Node* src = ac->in(ArrayCopyNode::Src);
         ac->replace_edge(src, top());
-        if (src->outcnt() == 0) {
+        // src can be top at this point if src and dest of the
+        // arraycopy were the same
+        if (src->outcnt() == 0 && !src->is_top()) {
           _igvn.remove_dead_node(src);
         }
 

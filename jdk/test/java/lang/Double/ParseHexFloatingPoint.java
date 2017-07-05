@@ -24,6 +24,7 @@
 /*
  * @test
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main ParseHexFloatingPoint
  * @bug 4826774 8078672
  * @summary Numerical tests for hexadecimal inputs to parse{Double, Float} (use -Dseed=X to set PRNG seed)

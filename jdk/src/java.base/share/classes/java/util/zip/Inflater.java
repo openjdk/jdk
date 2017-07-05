@@ -68,6 +68,7 @@ package java.util.zip;
  *
  * @see         Deflater
  * @author      David Connelly
+ * @since 1.1
  *
  */
 public

@@ -33,6 +33,7 @@ import jdk.test.lib.RandomFactory;
  * @test
  * @bug 8080835
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main ReadAllBytes
  * @summary Basic test for InputStream.readAllBytes
  * @key randomness
