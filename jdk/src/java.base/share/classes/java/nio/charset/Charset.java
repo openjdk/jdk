@@ -276,7 +276,7 @@ public abstract class Charset
 
     /* -- Static methods -- */
 
-    private static volatile String bugLevel = null;
+    private static volatile String bugLevel;
 
     static boolean atBugLevel(String bl) {              // package-private
         String level = bugLevel;
@@ -324,8 +324,8 @@ public abstract class Charset
     // Cache of the most-recently-returned charsets,
     // along with the names that were used to find them
     //
-    private static volatile Object[] cache1 = null; // "Level 1" cache
-    private static volatile Object[] cache2 = null; // "Level 2" cache
+    private static volatile Object[] cache1; // "Level 1" cache
+    private static volatile Object[] cache2; // "Level 2" cache
 
     private static void cache(String charsetName, Charset cs) {
         cache2 = cache1;

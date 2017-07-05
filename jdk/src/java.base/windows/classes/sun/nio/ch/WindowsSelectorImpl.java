@@ -119,7 +119,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
 
     // Lock for interrupt triggering and clearing
     private final Object interruptLock = new Object();
-    private volatile boolean interruptTriggered = false;
+    private volatile boolean interruptTriggered;
 
     WindowsSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
