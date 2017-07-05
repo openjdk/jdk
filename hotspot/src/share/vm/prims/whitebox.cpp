@@ -27,6 +27,7 @@
 #include <new>
 
 #include "classfile/classLoaderData.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/methodMatcher.hpp"
@@ -1250,6 +1251,43 @@ WB_ENTRY(void, WB_FreeMetaspace(JNIEnv* env, jobject wb, jobject class_loader, j
   MetadataFactory::free_array(cld, (Array<u1>*)(uintptr_t)addr);
 WB_END
 
+WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jstring version, jstring location,
+                                jobjectArray packages))
+  Modules::define_module(module, version, location, packages, CHECK);
+WB_END
+
+WB_ENTRY(void, WB_AddModuleExports(JNIEnv* env, jobject o, jobject from_module, jstring package, jobject to_module))
+  Modules::add_module_exports_qualified(from_module, package, to_module, CHECK);
+WB_END
+
+WB_ENTRY(void, WB_AddModuleExportsToAllUnnamed(JNIEnv* env, jobject o, jclass module, jstring package))
+  Modules::add_module_exports_to_all_unnamed(module, package, CHECK);
+WB_END
+
+WB_ENTRY(void, WB_AddModuleExportsToAll(JNIEnv* env, jobject o, jclass module, jstring package))
+  Modules::add_module_exports(module, package, NULL, CHECK);
+WB_END
+
+WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jobject source_module))
+  Modules::add_reads_module(from_module, source_module, CHECK);
+WB_END
+
+WB_ENTRY(jboolean, WB_CanReadModule(JNIEnv* env, jobject o, jobject asking_module, jobject source_module))
+  return Modules::can_read_module(asking_module, source_module, THREAD);
+WB_END
+
+WB_ENTRY(jboolean, WB_IsExportedToModule(JNIEnv* env, jobject o, jobject from_module, jstring package, jobject to_module))
+  return Modules::is_exported_to_module(from_module, package, to_module, THREAD);
+WB_END
+
+WB_ENTRY(void, WB_AddModulePackage(JNIEnv* env, jobject o, jclass module, jstring package))
+  Modules::add_module_package(module, package, CHECK);
+WB_END
+
+WB_ENTRY(jobject, WB_GetModuleByPackageName(JNIEnv* env, jobject o, jobject loader, jstring package))
+  return Modules::get_module_by_package_name(loader, package, THREAD);
+WB_END
+
 WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
   if (inc < 0) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
@@ -1278,17 +1316,12 @@ WB_ENTRY(jlong, WB_MetaspaceCapacityUntilGC(JNIEnv* env, jobject wb))
 WB_END
 
 
-
 WB_ENTRY(void, WB_AssertMatchingSafepointCalls(JNIEnv* env, jobject o, jboolean mutexSafepointValue, jboolean attemptedNoSafepointValue))
   Monitor::SafepointCheckRequired sfpt_check_required = mutexSafepointValue ?
                                            Monitor::_safepoint_check_always :
                                            Monitor::_safepoint_check_never;
   MutexLockerEx ml(new Mutex(Mutex::leaf, "SFPT_Test_lock", true, sfpt_check_required),
                    attemptedNoSafepointValue == JNI_TRUE);
-WB_END
-
-WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
-  return (jboolean)MetaspaceShared::is_in_shared_space(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
@@ -1417,6 +1450,10 @@ WB_ENTRY(jboolean, WB_IsShared(JNIEnv* env, jobject wb, jobject obj))
   return MetaspaceShared::is_in_shared_space((void*)obj_oop);
 WB_END
 
+WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
+  return (jboolean)MetaspaceShared::is_in_shared_space(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+WB_END
+
 WB_ENTRY(jboolean, WB_AreSharedStringsIgnored(JNIEnv* env))
   return StringTable::shared_string_ignored();
 WB_END
@@ -1528,10 +1565,9 @@ static JNINativeMethod methods[] = {
   {CC"runMemoryUnitTests", CC"()V",                   (void*)&WB_RunMemoryUnitTests},
   {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
   {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
-  {CC"isSharedClass", CC"(Ljava/lang/Class;)Z",       (void*)&WB_IsSharedClass },
 #if INCLUDE_ALL_GCS
   {CC"g1InConcurrentMark", CC"()Z",                   (void*)&WB_G1InConcurrentMark},
-  {CC"g1IsHumongous0",      CC"(Ljava/lang/Object;)Z",(void*)&WB_G1IsHumongous     },
+  {CC"g1IsHumongous0",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
   {CC"g1BelongsToHumongousRegion0", CC"(J)Z",         (void*)&WB_G1BelongsToHumongousRegion},
   {CC"g1BelongsToFreeRegion0", CC"(J)Z",              (void*)&WB_G1BelongsToFreeRegion},
   {CC"g1NumMaxRegions",    CC"()J",                   (void*)&WB_G1NumMaxRegions  },
@@ -1649,6 +1685,24 @@ static JNINativeMethod methods[] = {
   {CC"getCodeBlob",        CC"(J)[Ljava/lang/Object;",(void*)&WB_GetCodeBlob        },
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
+  {CC"DefineModule",       CC"(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)V",
+                                                      (void*)&WB_DefineModule },
+  {CC"AddModuleExports",   CC"(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V",
+                                                      (void*)&WB_AddModuleExports },
+  {CC"AddReadsModule",     CC"(Ljava/lang/Object;Ljava/lang/Object;)V",
+                                                      (void*)&WB_AddReadsModule },
+  {CC"CanReadModule",      CC"(Ljava/lang/Object;Ljava/lang/Object;)Z",
+                                                      (void*)&WB_CanReadModule },
+  {CC"IsExportedToModule", CC"(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Z",
+                                                      (void*)&WB_IsExportedToModule },
+  {CC"AddModulePackage",   CC"(Ljava/lang/Object;Ljava/lang/String;)V",
+                                                      (void*)&WB_AddModulePackage },
+  {CC"GetModuleByPackageName", CC"(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;",
+                                                      (void*)&WB_GetModuleByPackageName },
+  {CC"AddModuleExportsToAllUnnamed", CC"(Ljava/lang/Object;Ljava/lang/String;)V",
+                                                      (void*)&WB_AddModuleExportsToAllUnnamed },
+  {CC"AddModuleExportsToAll", CC"(Ljava/lang/Object;Ljava/lang/String;)V",
+                                                      (void*)&WB_AddModuleExportsToAll },
   {CC"assertMatchingSafepointCalls", CC"(ZZ)V",       (void*)&WB_AssertMatchingSafepointCalls },
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
@@ -1675,6 +1729,7 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/String;",
                                                       (void*)&WB_GetMethodStringOption},
   {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
+  {CC"isSharedClass",      CC"(Ljava/lang/Class;)Z",  (void*)&WB_IsSharedClass },
   {CC"areSharedStringsIgnored",           CC"()Z",    (void*)&WB_AreSharedStringsIgnored },
   {CC"clearInlineCaches",  CC"()V",                   (void*)&WB_ClearInlineCaches },
 };

@@ -28,6 +28,7 @@
 # @test
 # @bug 4423074
 # @summary Need to rebase all the duplicated classes from Merlin
+# @modules java.base/sun.net.www
 
 HOSTNAME=`uname -n`
 OS=`uname -s`
@@ -50,8 +51,11 @@ case "$OS" in
     ;;
 esac
 
-${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . ${TESTSRC}${FS}OriginServer.java \
+EXTRAOPTS="-XaddExports:java.base/sun.net.www=ALL-UNNAMED"
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} \
+    -d . ${TESTSRC}${FS}OriginServer.java \
     ${TESTSRC}${FS}ProxyTunnelServer.java \
     ${TESTSRC}${FS}PostThruProxyWithAuth.java
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} PostThruProxyWithAuth ${HOSTNAME} ${TESTSRC}
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${EXTRAOPTS} \
+    PostThruProxyWithAuth ${HOSTNAME} ${TESTSRC}
 exit

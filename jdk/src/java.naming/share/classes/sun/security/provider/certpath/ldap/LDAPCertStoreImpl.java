@@ -48,7 +48,6 @@ import sun.security.util.HexDumpEncoder;
 import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
 import sun.security.util.Debug;
-import sun.security.x509.X500Name;
 
 /**
  * Core implementation of a LDAP Cert Store.

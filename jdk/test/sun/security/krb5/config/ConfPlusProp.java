@@ -25,6 +25,7 @@
  * @bug 6857795
  * @bug 6858589
  * @bug 6972005
+ * @modules java.security.jgss/sun.security.krb5
  * @compile -XDignore.symbol.file ConfPlusProp.java
  * @run main/othervm ConfPlusProp
  * @summary krb5.conf ignored if system properties on realm and kdc are provided

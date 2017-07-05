@@ -72,6 +72,9 @@ public final class ConstructorFinder extends AbstractFinder<Constructor<?>> {
         if (type.isInterface()) {
             throw new NoSuchMethodException("Interface does not contain constructors");
         }
+        if (!FinderUtils.isExported(type)) {
+            throw new NoSuchMethodException("Class is not accessible");
+        }
         if (Modifier.isAbstract(type.getModifiers())) {
             throw new NoSuchMethodException("Abstract class cannot be instantiated");
         }

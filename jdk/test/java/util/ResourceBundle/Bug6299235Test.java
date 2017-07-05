@@ -20,13 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
- *
- */
-import java.io.File;
+
+import java.awt.Toolkit;
 import java.util.Locale;
-import java.util.ResourceBundle;
-import sun.util.CoreResourceBundleControl;
 
 /*
  * After introducing CoreResourceBundleControl for Awt/Swing resources
@@ -39,24 +35,26 @@ import sun.util.CoreResourceBundleControl;
  */
 
 public class Bug6299235Test {
+    static final Locale ru_RU = new Locale("ru", "RU");
 
-    public static void main(String args[]) throws Exception {
-        /* Try to load "sun.awt.resources.awt_ru_RU.properties which
-         * is in awtres.jar.
-         */
-        ResourceBundle russionAwtRes = ResourceBundle.getBundle("sun.awt.resources.awt",
-                                                                new Locale("ru", "RU"),
-                                                                CoreResourceBundleControl.getRBControlInstance());
-
-        /* If this call throws MissingResourceException, the test fails. */
-        if (russionAwtRes != null) {
-            String result = russionAwtRes.getString("foo");
-            if (result.equals("bar")) {
-                System.out.println("Bug6299235Test passed");
-            } else {
-                System.err.println("Bug6299235Test failed");
-                throw new Exception("Resource found, but value of key foo is not correct\n");
+    public static void main(String args[]) {
+        Locale locale = Locale.getDefault();
+        try {
+            Locale.setDefault(ru_RU);
+            // Get the value for the test key "foo"
+            String value = Toolkit.getProperty("foo", "undefined");
+            if (!value.equals("bar")) {
+                throw new RuntimeException("key = foo, value = " + value);
             }
+            // Get the value for a valid key "AWT.enter"
+            value = Toolkit.getProperty("AWT.enter", "DO NOT ENTER");
+            if (value.equals("DO NOT ENTER")) {
+                throw new RuntimeException("AWT.enter undefined.");
+            }
+        } finally {
+            // Restore the default Locale
+            Locale.setDefault(locale);
         }
+        System.out.println("Bug6299235Test passed");
     }
 }

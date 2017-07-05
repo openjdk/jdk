@@ -72,7 +72,7 @@ public class VerifyStackTrace {
             "3: VerifyStackTrace$Handle.run(VerifyStackTrace.java:158)\n" +
             "4: VerifyStackTrace.invoke(VerifyStackTrace.java:188)\n" +
             "5: VerifyStackTrace$1.run(VerifyStackTrace.java:218)\n" +
-            "6: java.security.AccessController.doPrivileged(Native Method)\n" +
+            "6: java.security.AccessController.doPrivileged(java.base/Native Method)\n" +
             "7: VerifyStackTrace.test(VerifyStackTrace.java:227)\n" +
             "8: VerifyStackTrace.main(VerifyStackTrace.java:182)\n";
 
@@ -101,12 +101,12 @@ public class VerifyStackTrace {
             "2: VerifyStackTrace$Handle.execute(VerifyStackTrace.java:147)\n" +
             "3: VerifyStackTrace$Handle.run(VerifyStackTrace.java:160)\n" +
             "4: VerifyStackTrace.invoke(VerifyStackTrace.java:190)\n" +
-            "5: sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n" +
-            "6: sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n" +
-            "7: sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n" +
-            "8: java.lang.reflect.Method.invoke(Method.java:520)\n" +
+            "5: sun.reflect.NativeMethodAccessorImpl.invoke0(java.base/Native Method)\n" +
+            "6: sun.reflect.NativeMethodAccessorImpl.invoke(java.base/NativeMethodAccessorImpl.java:62)\n" +
+            "7: sun.reflect.DelegatingMethodAccessorImpl.invoke(java.base/DelegatingMethodAccessorImpl.java:43)\n" +
+            "8: java.lang.reflect.Method.invoke(java.base/Method.java:520)\n" +
             "9: VerifyStackTrace$1.run(VerifyStackTrace.java:220)\n" +
-            "10: java.security.AccessController.doPrivileged(Native Method)\n" +
+            "10: java.security.AccessController.doPrivileged(java.base/Native Method)\n" +
             "11: VerifyStackTrace.test(VerifyStackTrace.java:229)\n" +
             "12: VerifyStackTrace.main(VerifyStackTrace.java:185)\n";
 
@@ -134,16 +134,16 @@ public class VerifyStackTrace {
             "1: VerifyStackTrace.lambda$test$1(VerifyStackTrace.java:213)\n" +
             "2: VerifyStackTrace$$Lambda$1/662441761.run(Unknown Source)\n" +
             "3: VerifyStackTrace$Handle.execute(VerifyStackTrace.java:149)\n" +
-            "4: java.lang.invoke.LambdaForm$DMH/2008017533.invokeVirtual_LL_V(LambdaForm$DMH)\n" +
-            "5: java.lang.invoke.LambdaForm$MH/1395089624.invoke_MT(LambdaForm$MH)\n" +
+            "4: java.lang.invoke.LambdaForm$DMH/2008017533.invokeVirtual_LL_V(java.base/LambdaForm$DMH)\n" +
+            "5: java.lang.invoke.LambdaForm$MH/1395089624.invoke_MT(java.base/LambdaForm$MH)\n" +
             "6: VerifyStackTrace$Handle.run(VerifyStackTrace.java:162)\n" +
             "7: VerifyStackTrace.invoke(VerifyStackTrace.java:192)\n" +
-            "8: sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n" +
-            "9: sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n" +
-            "10: sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n" +
-            "11: java.lang.reflect.Method.invoke(Method.java:520)\n" +
+            "8: sun.reflect.NativeMethodAccessorImpl.invoke0(java.base/Native Method)\n" +
+            "9: sun.reflect.NativeMethodAccessorImpl.invoke(java.base/NativeMethodAccessorImpl.java:62)\n" +
+            "10: sun.reflect.DelegatingMethodAccessorImpl.invoke(java.base/DelegatingMethodAccessorImpl.java:43)\n" +
+            "11: java.lang.reflect.Method.invoke(java.base/Method.java:520)\n" +
             "12: VerifyStackTrace$1.run(VerifyStackTrace.java:222)\n" +
-            "13: java.security.AccessController.doPrivileged(Native Method)\n" +
+            "13: java.security.AccessController.doPrivileged(java.base/Native Method)\n" +
             "14: VerifyStackTrace.test(VerifyStackTrace.java:231)\n" +
             "15: VerifyStackTrace.main(VerifyStackTrace.java:188)\n";
 
@@ -202,6 +202,8 @@ public class VerifyStackTrace {
             // out before comparing. We also erase the hash-like names of
             // synthetic frames introduced by lambdas & method handles
             return produced.replaceAll(":[1-9][0-9]*\\)", ":00)")
+                    .replaceAll("-internal/", "/").replaceAll("-ea/", "/")
+                    .replaceAll("java.base@[0-9]+/", "java.base/")
                     .replaceAll("/[0-9]+\\.run", "/xxxxxxxx.run")
                     .replaceAll("/[0-9]+\\.invoke", "/xxxxxxxx.invoke")
                     .replaceAll("\\$[0-9]+", "\\$??");

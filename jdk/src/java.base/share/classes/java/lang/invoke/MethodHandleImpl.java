@@ -1191,14 +1191,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                             Class<T> tClass = T.class;
                             String tName = tClass.getName();
                             String tResource = tName.substring(tName.lastIndexOf('.')+1)+".class";
-                            java.net.URLConnection uconn = tClass.getResource(tResource).openConnection();
-                            int len = uconn.getContentLength();
-                            byte[] bytes = new byte[len];
-                            try (java.io.InputStream str = uconn.getInputStream()) {
-                                int nr = str.read(bytes);
-                                if (nr != len)  throw new java.io.IOException(tResource);
+                            try (java.io.InputStream in = tClass.getResourceAsStream(tResource)) {
+                                values[0] = in.readAllBytes();
                             }
-                            values[0] = bytes;
                         } catch (java.io.IOException ex) {
                             throw new InternalError(ex);
                         }

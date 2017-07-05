@@ -31,7 +31,9 @@ import java.awt.image.BufferedImage;
  *          it is double clicked using mouse button 1 (or single clicked
  *          with button 3 (on Mac OS X))
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
+ * @library /java/awt/patchlib
  * @library ../../../../lib/testlibrary ../
+ * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
  * @run main TrayIconMouseTest
  */

@@ -26,8 +26,8 @@ groups=TEST.groups [closed/TEST.groups]
 # Allow querying of sun.arch.data.model in @requires clauses
 requires.properties=sun.arch.data.model 
 
-# Tests using jtreg 4.1 b12 features
-requiredVersion=4.1 b12
+# Tests using jtreg 4.2 b01 features
+requiredVersion=4.2 b01
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

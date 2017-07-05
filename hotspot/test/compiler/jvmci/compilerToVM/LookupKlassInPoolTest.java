@@ -28,15 +28,21 @@
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @summary Testing compiler.jvmci.CompilerToVM.lookupKlassInPool method
  * @library /testlibrary /test/lib /
- * @compile ../common/CompilerToVMHelper.java
+ * @library ../common/patches
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.org.objectweb.asm.tree
+ *          jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.meta
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build sun.hotspot.WhiteBox
  *        compiler.jvmci.compilerToVM.LookupKlassInPoolTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- *                              jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions
- *                   -XX:+EnableJVMCI compiler.jvmci.compilerToVM.LookupKlassInPoolTest
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   compiler.jvmci.compilerToVM.LookupKlassInPoolTest
  */
 
 package compiler.jvmci.compilerToVM;

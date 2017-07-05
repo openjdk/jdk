@@ -24,8 +24,8 @@
 /* @test
  * @bug 8081678
  * @summary Tests for stream returning methods
- * @library ../../util/stream/bootlib/java.base
- * @build java.util.stream.OpTestCase
+ * @library ../../util/stream/bootlib
+ * @build java.base/java.util.stream.OpTestCase
  * @run testng/othervm PermissionCollectionStreamTest
  */
 

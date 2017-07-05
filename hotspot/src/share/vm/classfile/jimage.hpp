@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "jni.h"
+#include "prims/jni.h"
 
 // Opaque reference to a JImage file.
 class JImageFile;
@@ -35,6 +35,8 @@ typedef jlong JImageLocationRef;
 
 // JImage Error Codes
 
+// Resource was not found
+#define JIMAGE_NOT_FOUND (0)
 // The image file is not prefixed with 0xCAFEDADA
 #define JIMAGE_BAD_MAGIC (-1)
 // The image file does not have a compatible (translatable) version
@@ -55,7 +57,7 @@ typedef jlong JImageLocationRef;
  *
  *  Ex.
  *   jint error;
- *   JImageFile* jimage = (*JImageOpen)(JAVA_HOME "lib/modules/bootmodules.jimage", &error);
+ *   JImageFile* jimage = (*JImageOpen)(JAVA_HOME "lib/modules", &error);
  *   if (image == NULL) {
  *     tty->print_cr("JImage failed to open: %d", error);
  *     ...

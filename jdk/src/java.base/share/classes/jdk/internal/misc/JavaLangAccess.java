@@ -25,11 +25,17 @@
 
 package jdk.internal.misc;
 
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
+import java.lang.reflect.Layer;
+import java.lang.reflect.Module;
+import java.net.URL;
 import java.security.AccessControlContext;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import jdk.internal.module.ServicesCatalog;
 import sun.reflect.ConstantPool;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
@@ -122,6 +128,43 @@ public interface JavaLangAccess {
      * Invokes the finalize method of the given object.
      */
     void invokeFinalize(Object o) throws Throwable;
+
+    /**
+     * Returns the boot Layer
+     */
+    Layer getBootLayer();
+
+    /**
+     * Returns the ServicesCatalog for the given class loader.
+     */
+    ServicesCatalog getServicesCatalog(ClassLoader cl);
+
+    /**
+     * Returns the ServicesCatalog for the given class loader, creating it
+     * if doesn't already exist.
+     */
+    ServicesCatalog createOrGetServicesCatalog(ClassLoader cl);
+
+    /**
+     * Returns a class loaded by the bootstrap class loader.
+     */
+    Class<?> findBootstrapClassOrNull(ClassLoader cl, String name);
+
+    /**
+     * Returns a URL to a resource with the given name in a module that is
+     * defined to the given class loader.
+     */
+    URL findResource(ClassLoader cl, String moduleName, String name) throws IOException;
+
+    /**
+     * Returns the Packages for the given class loader.
+     */
+    Stream<Package> packages(ClassLoader cl);
+
+    /**
+     * Define a Package of the given name and module by the given class loader.
+     */
+    Package definePackage(ClassLoader cl, String name, Module module);
 
     /**
      * Invokes Long.fastUUID

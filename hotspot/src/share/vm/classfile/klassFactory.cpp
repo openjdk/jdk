@@ -103,10 +103,14 @@ instanceKlassHandle KlassFactory::create_from_stream(ClassFileStream* stream,
   assert(loader_data != NULL, "invariant");
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
 
+  bool changed_by_loadhook = false;
+
   ResourceMark rm;
   HandleMark hm;
 
   JvmtiCachedClassFileData* cached_class_file = NULL;
+
+  ClassFileStream* old_stream = stream;
 
   stream = prologue(stream,
                     name,
@@ -125,8 +129,8 @@ instanceKlassHandle KlassFactory::create_from_stream(ClassFileStream* stream,
                          ClassFileParser::BROADCAST, // publicity level
                          CHECK_NULL);
 
-  instanceKlassHandle result = parser.create_instance_klass(CHECK_NULL);
-  assert(result == parser.create_instance_klass(THREAD), "invariant");
+  instanceKlassHandle result = parser.create_instance_klass(old_stream != stream, CHECK_NULL);
+  assert(result == parser.create_instance_klass(old_stream != stream, THREAD), "invariant");
 
   if (result.is_null()) {
     return NULL;

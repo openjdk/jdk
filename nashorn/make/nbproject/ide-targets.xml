@@ -32,7 +32,7 @@
         </nbjpdastart>
         <java classname="jdk.nashorn.tools.Shell" classpath="${run.test.classpath}" dir="samples" fork="true">
 	    <jvmarg line="-Dnashorn.optimistic"/>
-            <jvmarg line="${boot.class.path}"/> 
+            <jvmarg line="${nashorn.override.path}"/> 
             <jvmarg line="${run.test.jvmargs}"/>
             <jvmarg value="-Xdebug"/>
             <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
