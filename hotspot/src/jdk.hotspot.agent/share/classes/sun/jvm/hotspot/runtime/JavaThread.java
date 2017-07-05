@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ public class JavaThread extends Thread {
   private static AddressField  osThreadField;
   private static AddressField  stackBaseField;
   private static CIntegerField stackSizeField;
+  private static CIntegerField terminatedField;
 
   private static JavaThreadPDAccess access;
 
@@ -65,6 +66,9 @@ public class JavaThread extends Thread {
   private static int           IN_JAVA_TRANS;
   private static int           BLOCKED;
   private static int           BLOCKED_TRANS;
+
+  private static int           NOT_TERMINATED;
+  private static int           EXITING;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -87,6 +91,7 @@ public class JavaThread extends Thread {
     osThreadField     = type.getAddressField("_osthread");
     stackBaseField    = type.getAddressField("_stack_base");
     stackSizeField    = type.getCIntegerField("_stack_size");
+    terminatedField   = type.getCIntegerField("_terminated");
 
     UNINITIALIZED     = db.lookupIntConstant("_thread_uninitialized").intValue();
     NEW               = db.lookupIntConstant("_thread_new").intValue();
@@ -99,6 +104,10 @@ public class JavaThread extends Thread {
     IN_JAVA_TRANS     = db.lookupIntConstant("_thread_in_Java_trans").intValue();
     BLOCKED           = db.lookupIntConstant("_thread_blocked").intValue();
     BLOCKED_TRANS     = db.lookupIntConstant("_thread_blocked_trans").intValue();
+
+    NOT_TERMINATED    = db.lookupIntConstant("JavaThread::_not_terminated").intValue();
+    EXITING           = db.lookupIntConstant("JavaThread::_thread_exiting").intValue();
+
   }
 
   public JavaThread(Address addr) {
@@ -127,6 +136,14 @@ public class JavaThread extends Thread {
       we can't traverse CompilerThreads, etc; didn't want to have, for
       example, "SolarisSPARCCompilerThread".) */
   public boolean isJavaThread() { return true; }
+
+  public boolean isExiting () {
+      return (getTerminated() == EXITING) || isTerminated();
+  }
+
+  public boolean isTerminated() {
+      return (getTerminated() != NOT_TERMINATED) && (getTerminated() != EXITING);
+  }
 
   public static AddressField getAnchorField() { return anchorField; }
 
@@ -327,6 +344,10 @@ public class JavaThread extends Thread {
 
   public long getStackSize() {
     return stackSizeField.getValue(addr);
+  }
+
+  public int getTerminated() {
+      return (int) terminatedField.getValue(addr);
   }
 
   /** Gets the Java-side thread object for this JavaThread */
