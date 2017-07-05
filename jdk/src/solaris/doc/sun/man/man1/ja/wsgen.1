@@ -19,30 +19,24 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH wsgen 1 "02 Jun 2010"
-.SH "名前"
-wsgen \- XML Web Services (JAX\-WS) 2.0 のための Java(TM) API
-.RS 3
-
+.TH wsgen 1 "14 Apr 2011"
+.SH "̾��"
+wsgen \- XML Web Services (JAX\-WS) 2.0 �Τ���� Java(TM) API
 .LP
-.LP
-\f3仕様バージョン:\fP 2.1
+\f3���ͥС������:\fP 2.1
 .br
-\f3実装バージョン:\fP 2.1.1
+\f3�����С������:\fP 2.1.1
 .LP
+\f2wsgen\fP �ġ���ϡ�JAX\-WS Web �����ӥ��ǻ��Ѥ���� JAX\-WS �ݡ����֥륢���ƥ��ե����Ȥ��������ޤ������Υġ���ϡ�Web �����ӥ��Υ���ɥݥ���ȼ������饹 (SEI) ���ɤ߼�ꡢWeb �����ӥ��������ȸƤӽФ���ɬ�פʤ��٤ƤΥ����ƥ��ե����Ȥ��������ޤ���
+.SH "����"
 .LP
-\f2wsgen\fP ツールは、JAX\-WS Web サービスで使用される JAX\-WS ポータブルアーティファクトを生成します。このツールは、Web サービスのエンドポイント実装クラス (SEI) を読み取り、Web サービスの配備と呼び出しに必要なすべてのアーティファクトを生成します。
-.LP
-.RE
-.SH "概要"
-.LP
-\f2wsgen\fP ツールは、JAX\-WS Web サービスで使用される JAX\-WS ポータブルアーティファクトを生成します。このツールは、Web サービスのエンドポイントクラスを読み取り、Web サービスの配備と呼び出しに必要なすべてのアーティファクトを生成します。JAXWS 2.1.1 RI には wsgen Ant タスクも用意されています。詳細は、
+\f2wsgen\fP �ġ���ϡ�JAX\-WS Web �����ӥ��ǻ��Ѥ���� JAX\-WS �ݡ����֥륢���ƥ��ե����Ȥ��������ޤ������Υġ���ϡ�Web �����ӥ��Υ���ɥݥ���ȥ��饹���ɤ߼�ꡢWeb �����ӥ��������ȸƤӽФ���ɬ�פʤ��٤ƤΥ����ƥ��ե����Ȥ��������ޤ���JAXWS 2.1.1 RI �ˤ� wsgen Ant ���������Ѱդ���Ƥ��ޤ����ܺ٤ϡ�
 .na
-\f2Wsgen Ant タスク\fP @
+\f2Wsgen Ant ������\fP @
 .fi
-https://jax\-ws.dev.java.net/nonav/2.1.1/docs/wsgenant.htmlを参照してください。
+https://jax\-ws.dev.java.net/nonav/2.1.1/docs/wsgenant.html�򻲾Ȥ��Ƥ���������
 .LP
-.SH "wsgen の起動"
+.SH "wsgen �ε�ư"
 .RS 3
 .TP 2
 o
@@ -69,7 +63,7 @@ o
 .RE
 
 .LP
-.SH "構文"
+.SH "��ʸ"
 .nf
 \f3
 .fl
@@ -80,7 +74,7 @@ wsgen [options] <SEI>\fP
 \fP
 .fi
 .LP
-次の表に、\f2wsgen\fP のオプションを示します。
+����ɽ�ˡ� \f2wsgen\fP �Υ��ץ����򼨤��ޤ���
 .br
 .LP
 .TS
@@ -111,7 +105,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-入力クラスファイルの検索場所を指定します
+���ϥ��饹�ե�����θ���������ꤷ�ޤ�
 .br
 .di
 .nr a| \n(dn
@@ -127,7 +121,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-\f2\-classpath <path>\fP と同じ
+\-classpath <path> \f2��Ʊ���Ǥ�\fP
 .br
 .di
 .nr b| \n(dn
@@ -143,7 +137,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-生成される出力ファイルを格納する場所を指定する
+�����������ϥե�������Ǽ���������ꤷ�ޤ�
 .br
 .di
 .nr c| \n(dn
@@ -159,7 +153,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-ベンダー拡張 (仕様で規定されていない機能) を許可します。拡張を使用すると、アプリケーションの移植性が失われたり、ほかの実装との相互運用が行えなくなる可性があります
+�٥������ĥ (���ͤǵ��ꤵ��Ƥ��ʤ���ǽ) ����Ĥ��ޤ�����ĥ����Ѥ���ȡ����ץꥱ�������ΰܿ���������줿�ꡢ�ۤ��μ����Ȥ���߱��Ѥ��Ԥ��ʤ��ʤ����������ޤ�
 .br
 .di
 .nr d| \n(dn
@@ -175,7 +169,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-ヘルプを表示します
+�إ�פ�ɽ�����ޤ�
 .br
 .di
 .nr e| \n(dn
@@ -191,7 +185,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-生成されたファイルを保持します
+�������줿�ե�������ݻ����ޤ�
 .br
 .di
 .nr f| \n(dn
@@ -207,7 +201,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-常に \-wsdl オプションと組み合わせて使用します。WSDL などの生成されたリソースファイルの格納場所を指定します
+��� \-wsdl ���ץ������Ȥ߹�碌�ƻ��Ѥ��ޤ���WSDL �ʤɤ��������줿�꥽�����ե�����γ�Ǽ������ꤷ�ޤ�
 .br
 .di
 .nr g| \n(dn
@@ -223,7 +217,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-生成されるソースファイルを格納する場所を指定する
+��������륽�����ե�������Ǽ���������ꤹ��
 .br
 .di
 .nr h| \n(dn
@@ -239,7 +233,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-コンパイラが実行している処理に関するメッセージを出力します
+����ѥ��餬�¹Ԥ��Ƥ�������˴ؤ����å���������Ϥ��ޤ�
 .br
 .di
 .nr i| \n(dn
@@ -255,7 +249,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-バージョン情報を出力します。このオプションを使用した場合、バージョン情報が出力されるだけです。通常の処理は実行されません。
+�С������������Ϥ��ޤ������Υ��ץ�������Ѥ�����硢�С��������󤬽��Ϥ��������Ǥ����̾�ν����ϼ¹Ԥ���ޤ���
 .br
 .di
 .nr j| \n(dn
@@ -271,7 +265,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-\f2wsgen\fP は、デフォルトでは WSDL ファイルを生成しません。このフラグは省略可能ですが、指定した場合は \f2wsgen\fP が WSDL ファイルを生成するようになります。このフラグは通常、エンドポイントの配備前に開発者が WSDL を参照できるようにするためだけに使用されます。\f2protocol\fP は省略可能であり、\f2wsdl:binding\fP で使用すべきプロトコルを指定するために使用されます。有効なプロトコルは次のとおりです。\f2soap1.1\fP と \f2Xsoap1.2\fP。デフォルトは \f2soap1.1\fP です。\f2Xsoap1.2\fP は標準ではないため、\f2\-extension\fP オプションと組み合わせないと使用できません。
+�ǥե���ȤǤ� \f2wsgen\fP �� WSDL �ե�������������ޤ��󡣤��Υե饰�Ͼ�ά��ǽ�Ǥ��������ꤷ������ \f2wsgen\fP �� WSDL �ե��������������褦�ˤʤ�ޤ������Υե饰���̾����ɥݥ���Ȥ��������˳�ȯ�Ԥ� WSDL �򻲾ȤǤ���褦�ˤ��뤿������˻��Ѥ���ޤ��� \f2protocol\fP �Ͼ�ά��ǽ�Ǥ��ꡢwsdl:binding �ǻ��Ѥ��٤��ץ��ȥ������ꤹ�뤿��� \f2���Ѥ���ޤ�\fP��ͭ���ʥץ��ȥ���ϼ��ΤȤ���Ǥ��� \f2soap1.1\fP �� \f2Xsoap1.2\fP���ǥե���Ȥ� \f2soap1.1\fP �Ǥ��� \f2Xsoap1.2\fP ��ɸ��ǤϤʤ����ᡢ \f2\-extension\fP ���ץ������Ȥ߹�碌�ʤ��Ȼ��ѤǤ��ޤ���
 .br
 .di
 .nr k| \n(dn
@@ -287,7 +281,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-常に \f2\-wsdl\fP オプションと組み合わせて使用します。WSDL 内で生成されるべき \f2wsdl:service\fP の名前を指定するために使用します。例 : \f2\-servicename "{http://mynamespace/}MyService"\fP
+��� \f2\-wsdl\fP ���ץ������Ȥ߹�碌�ƻ��Ѥ��ޤ���WSDL ������������٤� \f2wsdl:service\fP ��̾������ꤹ�뤿��˻��Ѥ��ޤ�����: \f2\-servicename "{http://mynamespace/}MyService"\fP
 .br
 .di
 .nr l| \n(dn
@@ -303,7 +297,7 @@ wsgen [options] <SEI>\fP
 .ll \n(34u*1u/3u
 .if \n(.l<\n(81 .ll \n(81u
 .in 0
-常に \f2\-wsdl\fP オプションと組み合わせて使用します。WSDL 内で生成されるべき \f2wsdl:port\fP の名前を指定するために使用します。例 : \f2\-portname "{http://mynamespace/}MyPort"\fP
+��� \f2\-wsdl\fP ���ץ������Ȥ߹�碌�ƻ��Ѥ��ޤ���WSDL ������������٤� \f2wsdl:port\fP ��̾������ꤹ�뤿��˻��Ѥ��ޤ�����: \f2\-portname "{http://mynamespace/}MyPort"\fP
 .br
 .br
 .di
@@ -315,7 +309,7 @@ wsgen [options] <SEI>\fP
 .nf
 .ll \n(34u
 .nr 80 0
-.nr 38 \w\f3オプション\fP
+.nr 38 \w\f3���ץ����\fP
 .if \n(80<\n(38 .nr 80 \n(38
 .nr 38 \w\f4\-classpath <path>\fP
 .if \n(80<\n(38 .nr 80 \n(38
@@ -346,7 +340,7 @@ wsgen [options] <SEI>\fP
 .80
 .rm 80
 .nr 81 0
-.nr 38 \w\f3説明\fP
+.nr 38 \w\f3����\fP
 .if \n(81<\n(38 .nr 81 \n(38
 .81
 .rm 81
@@ -386,7 +380,7 @@ wsgen [options] <SEI>\fP
 .nr 41 \n(80+(3*\n(38)
 .nr 81 +\n(41
 .nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 143 file Input is too wide - \n(TW units
+.if t .if \n(TW>\n(.li .tm Table at line 137 file Input is too wide - \n(TW units
 .fc  
 .nr #T 0-1
 .nr #a 0-1
@@ -403,7 +397,7 @@ wsgen [options] <SEI>\fP
 .ta \n(80u \n(81u 
 .nr 31 \n(.f
 .nr 35 1m
-\&\h'|\n(40u'\f3オプション\fP\h'|\n(41u'\f3説明\fP
+\&\h'|\n(40u'\f3���ץ����\fP\h'|\n(41u'\f3����\fP
 .ne \n(a|u+\n(.Vu
 .if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
 .ta \n(80u \n(81u 
@@ -633,7 +627,7 @@ wsgen [options] <SEI>\fP
 .if \n-(b.=0 .nr c. \n(.c-\n(d.-57
 
 .LP
-.SH "例"
+.SH "��"
 .nf
 \f3
 .fl
@@ -641,7 +635,7 @@ wsgen [options] <SEI>\fP
 .fl
 .fi
 .LP
-\f3stock\fP ディレクトリ内に @WebService 注釈が付けられた、StockService に必要なラッパークラスが生成されます。
+\f3stock\fP �ǥ��쥯�ȥ���� @WebService ���᤬�դ���줿��StockService ��ɬ�פʥ�åѡ����饹����������ޤ���
 .nf
 \f3
 .fl
@@ -649,7 +643,7 @@ wsgen [options] <SEI>\fP
 .fl
 .fi
 .LP
-SOAP 1.1 WSDL と、@WebService 注釈が付けられた Java クラス stock.StockService のスキーマが生成されます。
+SOAP 1.1 WSDL �ȡ�@WebService ���᤬�դ���줿 Java ���饹 stock.StockService �Υ������ޤ���������ޤ���
 .nf
 \f3
 .fl
@@ -657,6 +651,6 @@ SOAP 1.1 WSDL と、@WebService 注釈が付けられた Java クラス stock.St
 .fl
 .fi
 .LP
-SOAP 1.2 WSDL が生成されます。
+SOAP 1.2 WSDL ����������ޤ���
 .LP
-サービスを配備するときに JAXWS ランタイムによって自動的に WSDL が生成されるため、開発時に WSDL を生成する必要はありません。 
+�����ӥ�����������Ȥ��� JAXWS ��󥿥���ˤ�äƼ�ưŪ�� WSDL ����������뤿�ᡢ��ȯ���� WSDL ����������ɬ�פϤ���ޤ��� 

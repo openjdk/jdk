@@ -3189,10 +3189,9 @@ bool ConcurrentMarkSweepGeneration::is_too_full() const {
 }
 
 void CMSCollector::setup_cms_unloading_and_verification_state() {
-  const  bool should_verify =    VerifyBeforeGC || VerifyAfterGC || VerifyDuringGC
+  const  bool should_verify =   VerifyBeforeGC || VerifyAfterGC || VerifyDuringGC
                              || VerifyBeforeExit;
-  const  int  rso           =    SharedHeap::SO_Symbols | SharedHeap::SO_Strings
-                             |   SharedHeap::SO_CodeCache;
+  const  int  rso           =   SharedHeap::SO_Strings | SharedHeap::SO_CodeCache;
 
   if (should_unload_classes()) {   // Should unload classes this cycle
     remove_root_scanning_option(rso);  // Shrink the root set appropriately

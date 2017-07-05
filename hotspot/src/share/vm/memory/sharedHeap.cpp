@@ -46,7 +46,6 @@ enum SH_process_strong_roots_tasks {
   SH_PS_Management_oops_do,
   SH_PS_SystemDictionary_oops_do,
   SH_PS_jvmti_oops_do,
-  SH_PS_SymbolTable_oops_do,
   SH_PS_StringTable_oops_do,
   SH_PS_CodeCache_oops_do,
   // Leave this one last.
@@ -161,13 +160,9 @@ void SharedHeap::process_strong_roots(bool activate_scope,
   if (!_process_strong_tasks->is_task_claimed(SH_PS_SystemDictionary_oops_do)) {
     if (so & SO_AllClasses) {
       SystemDictionary::oops_do(roots);
-    } else
-      if (so & SO_SystemClasses) {
-        SystemDictionary::always_strong_oops_do(roots);
-      }
-  }
-
-  if (!_process_strong_tasks->is_task_claimed(SH_PS_SymbolTable_oops_do)) {
+    } else if (so & SO_SystemClasses) {
+      SystemDictionary::always_strong_oops_do(roots);
+    }
   }
 
   if (!_process_strong_tasks->is_task_claimed(SH_PS_StringTable_oops_do)) {
