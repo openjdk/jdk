@@ -49,19 +49,18 @@ class MethodHandles: AllStatic {
   // Adapters.
   static MethodHandlesAdapterBlob* _adapter_code;
 
+  // utility functions for reifying names and types
+  static oop field_name_or_null(Symbol* s);
+  static oop field_signature_type_or_null(Symbol* s);
+
  public:
   // working with member names
   static Handle resolve_MemberName(Handle mname, TRAPS); // compute vmtarget/vmindex from name/type
   static void expand_MemberName(Handle mname, int suppress, TRAPS);  // expand defc/name/type if missing
   static Handle new_MemberName(TRAPS);  // must be followed by init_MemberName
   static oop init_MemberName(Handle mname_h, Handle target_h); // compute vmtarget/vmindex from target
-  static oop init_method_MemberName(Handle mname_h, Method* m, bool do_dispatch,
-                                    KlassHandle receiver_limit_h);
-  static oop init_field_MemberName(Handle mname_h, KlassHandle field_holder_h,
-                                   AccessFlags mods, oop type, oop name,
-                                   intptr_t offset, bool is_setter = false);
-  static Handle init_method_MemberName(Handle mname_h, CallInfo& info, TRAPS);
-  static Handle init_field_MemberName(Handle mname_h, FieldAccessInfo& info, TRAPS);
+  static oop init_field_MemberName(Handle mname_h, fieldDescriptor& fd, bool is_setter = false);
+  static oop init_method_MemberName(Handle mname_h, CallInfo& info);
   static int method_ref_kind(Method* m, bool do_dispatch_if_possible = true);
   static int find_MemberNames(KlassHandle k, Symbol* name, Symbol* sig,
                               int mflags, KlassHandle caller,
