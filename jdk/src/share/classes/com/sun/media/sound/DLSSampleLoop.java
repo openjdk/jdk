@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,13 @@ package com.sun.media.sound;
  *
  * @author Karl Helgason
  */
-public class DLSSampleLoop {
+public final class DLSSampleLoop {
 
     public final static int LOOP_TYPE_FORWARD = 0;
     public final static int LOOP_TYPE_RELEASE = 1;
-    protected long type;
-    protected long start;
-    protected long length;
+    long type;
+    long start;
+    long length;
 
     public long getLength() {
         return length;

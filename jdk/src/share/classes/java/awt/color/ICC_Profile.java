@@ -37,6 +37,7 @@ package java.awt.color;
 
 import sun.java2d.cmm.PCMM;
 import sun.java2d.cmm.CMSManager;
+import sun.java2d.cmm.ProfileDataVerifier;
 import sun.java2d.cmm.ProfileDeferralMgr;
 import sun.java2d.cmm.ProfileDeferralInfo;
 import sun.java2d.cmm.ProfileActivator;
@@ -774,6 +775,8 @@ public class ICC_Profile implements Serializable {
         if (ProfileDeferralMgr.deferring) {
             ProfileDeferralMgr.activateProfiles();
         }
+
+        ProfileDataVerifier.verify(data);
 
         try {
             theID = CMSManager.getModule().loadProfile(data);

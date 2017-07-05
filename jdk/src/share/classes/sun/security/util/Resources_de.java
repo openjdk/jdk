@@ -127,6 +127,8 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"multiple.Codebase.expressions",
                 "mehrere Codebase-Ausdr\u00FCcke"},
         {"multiple.SignedBy.expressions","mehrere SignedBy-Ausdr\u00FCcke"},
+        {"duplicate.keystore.domain.name","Keystore-Domainname doppelt vorhanden: {0}"},
+        {"duplicate.keystore.name","Keystore-Name doppelt vorhanden: {0}"},
         {"SignedBy.has.empty.alias","Leerer Alias in SignedBy"},
         {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
                 "Principal kann nicht mit einer Platzhalterklasse ohne Platzhalternamen angegeben werden"},

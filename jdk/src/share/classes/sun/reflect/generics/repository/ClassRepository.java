@@ -40,6 +40,8 @@ import java.lang.reflect.Type;
  */
 public class ClassRepository extends GenericDeclRepository<ClassSignature> {
 
+    public static final ClassRepository NONE = ClassRepository.make("Ljava/lang/Object;", null);
+
     private Type superclass; // caches the generic superclass info
     private Type[] superInterfaces; // caches the generic superinterface info
 

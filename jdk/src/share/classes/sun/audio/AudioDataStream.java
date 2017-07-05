@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package sun.audio;
 
 import java.io.*;
-import javax.sound.sampled.*;
-import javax.sound.midi.*;
 
 /**
  * An input stream to play AudioData.
@@ -39,18 +37,18 @@ import javax.sound.midi.*;
  */
 public class AudioDataStream extends ByteArrayInputStream {
 
-    AudioData ad;
+    private final AudioData ad;
 
     /**
      * Constructor
      */
-    public AudioDataStream(AudioData data) {
+    public AudioDataStream(final AudioData data) {
 
         super(data.buffer);
         this.ad = data;
     }
 
-    AudioData getAudioData() {
+    final AudioData getAudioData() {
         return ad;
     }
 }

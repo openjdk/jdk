@@ -24,20 +24,14 @@
 /*
  * @test
  * @summary Unit test for java.net.CookieManager
- * @bug 6244040 7150552
+ * @bug 6244040 7150552 7051862
  * @run main/othervm -ea CookieManagerTest
  * @author Edward Wang
  */
 
 import com.sun.net.httpserver.*;
 import java.io.IOException;
-import java.net.CookieHandler;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URL;
+import java.net.*;
 
 public class CookieManagerTest {
 
@@ -51,13 +45,35 @@ public class CookieManagerTest {
         if (httpTrans.badRequest) {
             throw new RuntimeException("Test failed : bad cookie header");
         }
+        checkCookiePolicy();
     }
 
-    public static void startHttpServer() throws IOException {
+   public static void startHttpServer() throws IOException {
         httpTrans = new CookieTransactionHandler();
         server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/", httpTrans);
         server.start();
+    }
+
+    /*
+     * Checks if CookiePolicy.ACCEPT_ORIGINAL_SERVER#shouldAccept()
+     * returns false for null arguments
+     */
+    private static void checkCookiePolicy() throws Exception {
+        CookiePolicy cp = CookiePolicy.ACCEPT_ORIGINAL_SERVER;
+        boolean retVal;
+        retVal = cp.shouldAccept(null, null);
+        checkValue(retVal);
+        retVal = cp.shouldAccept(null, new HttpCookie("CookieName", "CookieVal"));
+        checkValue(retVal);
+        retVal = cp.shouldAccept((new URL("http", "localhost", 2345, "/")).toURI(),
+                                  null);
+        checkValue(retVal);
+    }
+
+    private static void checkValue(boolean val) {
+        if (val)
+            throw new RuntimeException("Return value is not false!");
     }
 
     public static void makeHttpCall() throws IOException {

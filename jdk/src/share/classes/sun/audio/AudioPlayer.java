@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,7 @@
 
 package sun.audio;
 
-import java.util.Vector;
-import java.util.Enumeration;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.FileOutputStream;
-
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -69,11 +63,10 @@ import java.security.PrivilegedAction;
  * @author Arthur van Hoff, Thomas Ball
  */
 
-public
-    class AudioPlayer extends Thread {
+public final class AudioPlayer extends Thread {
 
-        private AudioDevice devAudio;
-        private static boolean DEBUG = false /*true*/;
+        private final AudioDevice devAudio;
+        private final static boolean DEBUG = false /*true*/;
 
         /**
          * The default audio player. This audio player is initialized

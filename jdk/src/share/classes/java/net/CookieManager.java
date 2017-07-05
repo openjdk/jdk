@@ -41,7 +41,7 @@ import sun.util.logging.PlatformLogger;
  *
  * <p> The HTTP cookie management in java.net package looks like:
  * <blockquote>
- * <pre>
+ * <pre>{@code
  *                  use
  * CookieHandler <------- HttpURLConnection
  *       ^
@@ -58,7 +58,7 @@ import sun.util.logging.PlatformLogger;
  *                            | impl
  *                            |
  *                  Internal in-memory implementation
- * </pre>
+ * }</pre>
  * <ul>
  *   <li>
  *     CookieHandler is at the core of cookie management. User can call
@@ -284,7 +284,7 @@ public class CookieManager extends CookieHandler
                     } catch (IllegalArgumentException e) {
                         // Bogus header, make an empty list and log the error
                         cookies = java.util.Collections.emptyList();
-                        if (logger.isLoggable(PlatformLogger.SEVERE)) {
+                        if (logger.isLoggable(PlatformLogger.Level.SEVERE)) {
                             logger.severe("Invalid cookie for " + uri + ": " + headerValue);
                         }
                     }
@@ -309,7 +309,10 @@ public class CookieManager extends CookieHandler
                         // there is no dot at the beginning of effective request-host,
                         // the default Domain can only domain-match itself.)
                         if (cookie.getDomain() == null) {
-                            cookie.setDomain(uri.getHost());
+                            String host = uri.getHost();
+                            if (host != null && !host.contains("."))
+                                host += ".local";
+                            cookie.setDomain(host);
                         }
                         String ports = cookie.getPortlist();
                         if (ports != null) {

@@ -111,7 +111,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
      * for adding separators
      */
     public void addSeparator() {
-        if (log.isLoggable(PlatformLogger.FINER)) {
+        if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("addSeparator is not implemented");
         }
     }
@@ -121,7 +121,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
         if (menuWindow != null) {
             menuWindow.addItem(item);
         } else {
-            if (log.isLoggable(PlatformLogger.FINE)) {
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
                 log.fine("Attempt to use XMenuWindowPeer without window");
             }
         }
@@ -132,7 +132,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
         if (menuWindow != null) {
             menuWindow.delItem(index);
         } else {
-            if (log.isLoggable(PlatformLogger.FINE)) {
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
                 log.fine("Attempt to use XMenuWindowPeer without window");
             }
         }

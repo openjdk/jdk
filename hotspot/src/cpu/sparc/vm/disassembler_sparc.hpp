@@ -30,8 +30,7 @@
   }
 
   static const char* pd_cpu_opts() {
-    return (VM_Version::v9_instructions_work()?
-            (VM_Version::v8_instructions_work()? "" : "v9only") : "v8only");
+    return "v9only";
   }
 
 #endif // CPU_SPARC_VM_DISASSEMBLER_SPARC_HPP

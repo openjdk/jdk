@@ -87,7 +87,8 @@ public class ObjectKeyImpl implements ObjectKey
 
     public byte[] getBytes( org.omg.CORBA.ORB orb )
     {
-        EncapsOutputStream os = new EncapsOutputStream( (ORB)orb ) ;
+        EncapsOutputStream os =
+            sun.corba.OutputStreamFactory.newEncapsOutputStream((ORB)orb);
         write( os ) ;
         return os.toByteArray() ;
     }

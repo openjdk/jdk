@@ -284,8 +284,7 @@ private Element digestValueElement;
    public void setId(String Id) {
 
       if ( Id != null ) {
-         this._constructionElement.setAttributeNS(null, Constants._ATT_ID, Id);
-         IdResolver.registerElementById(this._constructionElement, Id);
+          setLocalIdAttribute(Constants._ATT_ID, Id);
       }
    }
 

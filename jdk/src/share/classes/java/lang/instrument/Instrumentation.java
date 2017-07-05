@@ -593,24 +593,28 @@ public interface Instrumentation {
      * and the normal automatic resolution.  For
      * <code>RegisterNatives</code>, the JVM will attempt this
      * association:
-     * <pre>
-     *   method(foo) -> nativeImplementation(foo)</pre>
+     * <pre>{@code
+     *   method(foo) -> nativeImplementation(foo)
+     * }</pre>
      * <p/>
      * When this fails, the resolution will be retried with
      * the specified prefix prepended to the method name,
      * yielding the correct resolution:
-     * <pre>
-     *   method(wrapped_foo) -> nativeImplementation(foo)</pre>
+     * <pre>{@code
+     *   method(wrapped_foo) -> nativeImplementation(foo)
+     * }</pre>
      * <p/>
      * For automatic resolution, the JVM will attempt:
-     * <pre>
-     *   method(wrapped_foo) -> nativeImplementation(wrapped_foo)</pre>
+     * <pre>{@code
+     *   method(wrapped_foo) -> nativeImplementation(wrapped_foo)
+     * }</pre>
      * <p/>
      * When this fails, the resolution will be retried with
      * the specified prefix deleted from the implementation name,
      * yielding the correct resolution:
-     * <pre>
-     *   method(wrapped_foo) -> nativeImplementation(foo)</pre>
+     * <pre>{@code
+     *   method(wrapped_foo) -> nativeImplementation(foo)
+     * }</pre>
      * <p/>
      * Note that since the prefix is only used when standard
      * resolution fails, native methods can be wrapped selectively.

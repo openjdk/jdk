@@ -1056,8 +1056,9 @@ GDIWinSD_InitDC(JNIEnv *env, GDIWinSDOps *wsdo, ThreadGraphicsInfo *info,
             int topInset = wsdo->insets.top;
             Region_StartIteration(env, &clipInfo);
             jint numrects = Region_CountIterationRects(&clipInfo);
-            DWORD nCount = sizeof(RGNDATAHEADER) + numrects * sizeof(RECT);
-            RGNDATA *lpRgnData = (RGNDATA *) safe_Malloc(nCount);
+            RGNDATA *lpRgnData = (RGNDATA *) SAFE_SIZE_STRUCT_ALLOC(safe_Malloc,
+                    sizeof(RGNDATAHEADER), numrects, sizeof(RECT));
+            const DWORD nCount = sizeof(RGNDATAHEADER) + numrects * sizeof(RECT);
             lpRgnData->rdh.dwSize = sizeof(RGNDATAHEADER);
             lpRgnData->rdh.iType = RDH_RECTANGLES;
             lpRgnData->rdh.nCount = numrects;

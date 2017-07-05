@@ -17,7 +17,8 @@ reading these instructions.<br><br>
 
 First, policytool will be invoked.<br><br>
 <ol start="0">
-<li>If testing on Windows, create a temporary directory. (Example: C:\foo\tmp)
+<li>Find (or create) a temporary directory that you have write access to.
+(Example: 'C:\foo\tmp' on Windows or '/tmp' on other systems)
 <li>Add new policy entry
 <li>Add permission:
     <pre>
@@ -63,9 +64,9 @@ First, policytool will be invoked.<br><br>
 <li>Confirm there are 2 entries in the permission list
 <li>Press cancel
 <li>Save as "/tmp/p"<br>
-If testing on Windows, save in the temporary directory created in Step 0.
-(Example: Save as "C:\foo\tmp\p.policy")
-<li>Confirm that the file /tmp/p (or C:\foo\tmp\p.policy) looks like
+(Or use the temporary directory mentioned in Step 0 if it's not '/tmp'.
+         For example, "C:\foo\tmp\p" on Windows)
+<li>Confirm that the file created in the previous step looks like
 <pre>
 /* AUTOMATICALLY GENERATED ON Tue Jul 19 16:27:30 CST 2005*/
 /* DO NOT EDIT */

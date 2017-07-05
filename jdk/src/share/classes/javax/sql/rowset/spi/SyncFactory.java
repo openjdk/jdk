@@ -627,8 +627,6 @@ public class SyncFactory {
      * required
      * @throws java.lang.SecurityException if a security manager exists and its
      *   {@code checkPermission} method denies calling {@code setLogger}
-     * @throws java.util.logging.LoggingPermission if a security manager exists and its
-     *   {@code checkPermission} method denies calling {@code setLevel}
      * @throws NullPointerException if the logger is null
      * @see SecurityManager#checkPermission
      * @see LoggingPermission

@@ -3751,7 +3751,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * the nodes identified by in <code>e</code>.
      */
     void removeDescendantSelectedPaths(TreeModelEvent e) {
-        TreePath            pPath = e.getTreePath();
+        TreePath            pPath = SwingUtilities2.getTreePath(e, getModel());
         Object[]            oldChildren = e.getChildren();
         TreeSelectionModel  sm = getSelectionModel();
 
@@ -3785,7 +3785,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
             // and update BasicTreeUIs treeStructureChanged method
             // to update descendants in response to a treeStructureChanged
             // event, all the children of the event won't collapse!
-            TreePath            parent = e.getTreePath();
+            TreePath            parent = SwingUtilities2.getTreePath(e, getModel());
 
             if(parent == null)
                 return;
@@ -3822,7 +3822,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
             if(e == null)
                 return;
 
-            TreePath            parent = e.getTreePath();
+            TreePath            parent = SwingUtilities2.getTreePath(e, getModel());
             Object[]            children = e.getChildren();
 
             if(children == null)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import javax.sound.midi.ShortMessage;
  *
  * @author Karl Helgason
  */
-public class SoftShortMessage extends ShortMessage {
+public final class SoftShortMessage extends ShortMessage {
 
     int channel = 0;
 
