@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,17 +259,7 @@ final class StringUTF16 {
 
     @HotSpotIntrinsicCandidate
     public static int compareToLatin1(byte[] value, byte[] other) {
-        int len1 = length(value);
-        int len2 = StringLatin1.length(other);
-        int lim = Math.min(len1, len2);
-        for (int k = 0; k < lim; k++) {
-            char c1 = getChar(value, k);
-            char c2 = StringLatin1.getChar(other, k);
-            if (c1 != c2) {
-                return c1 - c2;
-            }
-        }
-        return len1 - len2;
+        return -StringLatin1.compareToUTF16(other, value);
     }
 
     public static int compareToCI(byte[] value, byte[] other) {
@@ -295,25 +285,7 @@ final class StringUTF16 {
     }
 
     public static int compareToCI_Latin1(byte[] value, byte[] other) {
-        int len1 = length(value);
-        int len2 = StringLatin1.length(other);
-        int lim = Math.min(len1, len2);
-        for (int k = 0; k < lim; k++) {
-            char c1 = getChar(value, k);
-            char c2 = StringLatin1.getChar(other, k);
-            if (c1 != c2) {
-                c1 = Character.toUpperCase(c1);
-                c2 = Character.toUpperCase(c2);
-                if (c1 != c2) {
-                    c1 = Character.toLowerCase(c1);
-                    c2 = Character.toLowerCase(c2);
-                    if (c1 != c2) {
-                        return c1 - c2;
-                    }
-                }
-            }
-        }
-        return len1 - len2;
+        return -StringLatin1.compareToCI_UTF16(other, value);
     }
 
     public static int hashCode(byte[] value) {
@@ -566,24 +538,7 @@ final class StringUTF16 {
     public static boolean regionMatchesCI_Latin1(byte[] value, int toffset,
                                                  byte[] other, int ooffset,
                                                  int len) {
-        int last = toffset + len;
-        while (toffset < last) {
-            char c1 = getChar(value, toffset++);
-            char c2 = (char)(other[ooffset++] & 0xff);
-            if (c1 == c2) {
-                continue;
-            }
-            char u1 = Character.toUpperCase(c1);
-            char u2 = Character.toUpperCase(c2);
-            if (u1 == u2) {
-                continue;
-            }
-            if (Character.toLowerCase(u1) == Character.toLowerCase(u2)) {
-                continue;
-            }
-            return false;
-        }
-        return true;
+        return StringLatin1.regionMatchesCI_UTF16(other, ooffset, value, toffset, len);
     }
 
     public static String toLowerCase(String str, byte[] value, Locale locale) {

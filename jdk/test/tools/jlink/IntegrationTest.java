@@ -90,10 +90,8 @@ public class IntegrationTest {
         }
 
         @Override
-        public Set<Category> getType() {
-            Set<Category> set = new HashSet<>();
-            set.add(Category.PROCESSOR);
-            return Collections.unmodifiableSet(set);
+        public Category getType() {
+            return Category.PROCESSOR;
         }
 
         @Override
@@ -136,13 +134,6 @@ public class IntegrationTest {
             in.transformAndCopy((file) -> {
                 return file;
             }, out);
-        }
-
-        @Override
-        public Set<Category> getType() {
-            Set<Category> set = new HashSet<>();
-            set.add(Category.TRANSFORMER);
-            return Collections.unmodifiableSet(set);
         }
 
         @Override

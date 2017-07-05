@@ -32,6 +32,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.GETFIELD;
 import static jdk.internal.org.objectweb.asm.Opcodes.GETSTATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.GOTO;
 import static jdk.internal.org.objectweb.asm.Opcodes.H_INVOKESTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.H_INVOKEINTERFACE;
 import static jdk.internal.org.objectweb.asm.Opcodes.IFEQ;
 import static jdk.internal.org.objectweb.asm.Opcodes.IFGE;
 import static jdk.internal.org.objectweb.asm.Opcodes.IFGT;
@@ -170,12 +171,10 @@ public class MethodEmitter {
     }
 
     /** Bootstrap for normal indy:s */
-    @SuppressWarnings("deprecation")
-    private static final Handle LINKERBOOTSTRAP  = new Handle(H_INVOKESTATIC, Bootstrap.BOOTSTRAP.className(), Bootstrap.BOOTSTRAP.name(), Bootstrap.BOOTSTRAP.descriptor());
+    private static final Handle LINKERBOOTSTRAP  = new Handle(H_INVOKESTATIC, Bootstrap.BOOTSTRAP.className(), Bootstrap.BOOTSTRAP.name(), Bootstrap.BOOTSTRAP.descriptor(), false);
 
     /** Bootstrap for array populators */
-    @SuppressWarnings("deprecation")
-    private static final Handle POPULATE_ARRAY_BOOTSTRAP = new Handle(H_INVOKESTATIC, RewriteException.BOOTSTRAP.className(), RewriteException.BOOTSTRAP.name(), RewriteException.BOOTSTRAP.descriptor());
+    private static final Handle POPULATE_ARRAY_BOOTSTRAP = new Handle(H_INVOKESTATIC, RewriteException.BOOTSTRAP.className(), RewriteException.BOOTSTRAP.name(), RewriteException.BOOTSTRAP.descriptor(), false);
 
     /**
      * Constructor - internal use from ClassEmitter only
@@ -1007,10 +1006,10 @@ public class MethodEmitter {
      *
      * @return the method emitter
      */
-    @SuppressWarnings("deprecation")
     MethodEmitter loadHandle(final String className, final String methodName, final String descName, final EnumSet<Flag> flags) {
+        final int flag = Flag.getValue(flags);
         debug("load handle ");
-        pushType(Type.OBJECT.ldc(method, new Handle(Flag.getValue(flags), className, methodName, descName)));
+        pushType(Type.OBJECT.ldc(method, new Handle(flag, className, methodName, descName, flag == H_INVOKEINTERFACE)));
         return this;
     }
 

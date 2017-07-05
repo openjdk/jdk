@@ -48,16 +48,16 @@ public class ExcludePluginTest {
 
     public void test() throws Exception {
         check("**.jcov", "/num/toto.jcov", true);
-        check("**.jcov", "//toto.jcov", true);
+        check("**.jcov", "/toto.jcov/", true);
         check("**.jcov", "/toto.jcov/tutu/tata", false);
         check("/java.base/*.jcov", "/java.base/toto.jcov", true);
-        check("/java.base/toto.jcov", "t/java.base/iti.jcov", false);
+        check("/java.base/toto.jcov", "/tjava.base/iti.jcov", false);
         check("/java.base/*/toto.jcov", "/java.base/toto.jcov", false);
         check("/java.base/*/toto.jcov", "/java.base/tutu/toto.jcov", true);
         check("**/java.base/*/toto.jcov", "/tutu/java.base/tutu/toto.jcov", true);
         check("/META-INF/**", "/META-INF/services/  MyProvider ", true);
         check("/META-INF/**", "/META-INF/services/MyProvider", true);
-        check("**/META-INF", " /META-INF/services/MyProvider", false);
+        check("**/META-INF", "/ META-INF/services/MyProvider", false);
         check("**/META-INF/**", "/java.base//META-INF/services/MyProvider", true);
         check("/java.base/*/Toto$Titi.class", "/java.base/tutu/Toto$Titi.class", true);
         check("/**$**.class", "/java.base/tutu/Toto$Titi.class", true);

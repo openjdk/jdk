@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
  * questions.
  */
 
-#include <dlfcn.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <objc/objc-runtime.h>
 
 #include <Security/AuthSession.h>
 #include <CoreFoundation/CoreFoundation.h>
@@ -34,18 +34,6 @@
 #include <Foundation/Foundation.h>
 
 #include "java_props_macosx.h"
-
-// need dlopen/dlsym trick to avoid pulling in JavaRuntimeSupport before libjava.dylib is loaded
-static void *getJRSFramework() {
-    static void *jrsFwk = NULL;
-#ifndef STATIC_BUILD
-// JavaRuntimeSupport doesn't support static Java runtimes
-    if (jrsFwk == NULL) {
-       jrsFwk = dlopen("/System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/JavaRuntimeSupport", RTLD_LAZY | RTLD_LOCAL);
-    }
-#endif
-    return jrsFwk;
-}
 
 char *getPosixLocale(int cat) {
     char *lc = setlocale(cat, NULL);
@@ -61,18 +49,70 @@ char *getMacOSXLocale(int cat) {
     switch (cat) {
     case LC_MESSAGES:
         {
-            void *jrsFwk = getJRSFramework();
-            if (jrsFwk == NULL) return NULL;
+            // get preferred language code
+            CFArrayRef languages = CFLocaleCopyPreferredLanguages();
+            if (languages == NULL) {
+                return NULL;
+            }
+            if (CFArrayGetCount(languages) <= 0) {
+                CFRelease(languages);
+                return NULL;
+            }
 
-            char *(*JRSCopyPrimaryLanguage)() = dlsym(jrsFwk, "JRSCopyPrimaryLanguage");
-            char *primaryLanguage = JRSCopyPrimaryLanguage ? JRSCopyPrimaryLanguage() : NULL;
-            if (primaryLanguage == NULL) return NULL;
+            CFStringRef primaryLanguage = (CFStringRef)CFArrayGetValueAtIndex(languages, 0);
+            if (primaryLanguage == NULL) {
+                CFRelease(languages);
+                return NULL;
+            }
+            char languageString[LOCALEIDLENGTH];
+            if (CFStringGetCString(primaryLanguage, languageString,
+                                   LOCALEIDLENGTH, CFStringGetSystemEncoding()) == false) {
+                CFRelease(languages);
+                return NULL;
+            }
+            CFRelease(languages);
 
-            char *(*JRSCopyCanonicalLanguageForPrimaryLanguage)(char *) = dlsym(jrsFwk, "JRSCopyCanonicalLanguageForPrimaryLanguage");
-            char *canonicalLanguage = JRSCopyCanonicalLanguageForPrimaryLanguage ?  JRSCopyCanonicalLanguageForPrimaryLanguage(primaryLanguage) : NULL;
-            free (primaryLanguage);
+            // Language IDs use the language designators and (optional) region
+            // and script designators of BCP 47.  So possible formats are:
+            //
+            // "en"         (language designator only)
+            // "haw"        (3-letter lanuage designator)
+            // "en-GB"      (language with alpha-2 region designator)
+            // "es-419"     (language with 3-digit UN M.49 area code)
+            // "zh-Hans"    (language with ISO 15924 script designator)
+            //
+            // In the case of region designators (alpha-2 or UN M.49), we convert
+            // to our locale string format by changing '-' to '_'.  That is, if
+            // the '-' is followed by fewer than 4 chars.
+            char* scriptOrRegion = strchr(languageString, '-');
+            if (scriptOrRegion != NULL && strlen(scriptOrRegion) < 5) {
+                *scriptOrRegion = '_';
 
-            return canonicalLanguage;
+                assert((strlen(scriptOrRegion) == 3 &&
+                        // '-' followed by a 2 character region designator
+                          isalpha(scriptOrRegion[1]) &&
+                          isalpha(scriptOrRegion[2])) ||
+                       (strlen(scriptOrRegion) == 4 &&
+                        // '-' followed by a 3-digit UN M.49 area code
+                          isdigit(scriptOrRegion[1]) &&
+                          isdigit(scriptOrRegion[2]) &&
+                          isdigit(scriptOrRegion[3])));
+            }
+            const char* retVal = languageString;
+
+            // Special case for Portuguese in Brazil:
+            // The language code needs the "_BR" region code (to distinguish it
+            // from Portuguese in Portugal), but this is missing when using the
+            // "Portuguese (Brazil)" language.
+            // If language is "pt" and the current locale is pt_BR, return pt_BR.
+            char localeString[LOCALEIDLENGTH];
+            if (strcmp(retVal, "pt") == 0 &&
+                    CFStringGetCString(CFLocaleGetIdentifier(CFLocaleCopyCurrent()),
+                                       localeString, LOCALEIDLENGTH, CFStringGetSystemEncoding()) &&
+                    strcmp(localeString, "pt_BR") == 0) {
+                retVal = localeString;
+            }
+            return strdup(retVal);
         }
         break;
     default:
@@ -91,14 +131,6 @@ char *getMacOSXLocale(int cat) {
 
 char *setupMacOSXLocale(int cat) {
     char * ret = getMacOSXLocale(cat);
-
-    if (cat == LC_MESSAGES && ret != NULL) {
-        void *jrsFwk = getJRSFramework();
-        if (jrsFwk != NULL) {
-            void (*JRSSetDefaultLocalization)(char *) = dlsym(jrsFwk, "JRSSetDefaultLocalization");
-            if (JRSSetDefaultLocalization) JRSSetDefaultLocalization(ret);
-        }
-    }
 
     if (ret == NULL) {
         return getPosixLocale(cat);
@@ -126,22 +158,35 @@ int isInAquaSession() {
     return 0;
 }
 
+// 10.9 SDK does not include the NSOperatingSystemVersion struct.
+// For now, create our own
+typedef struct {
+        NSInteger majorVersion;
+        NSInteger minorVersion;
+        NSInteger patchVersion;
+} OSVerStruct;
+
 void setOSNameAndVersion(java_props_t *sprops) {
-    /* Don't rely on JRSCopyOSName because there's no guarantee the value will
-     * remain the same, or even if the JRS functions will continue to be part of
-     * Mac OS X.  So hardcode os_name, and fill in os_version if we can.
-     */
+    // Hardcode os_name, and fill in os_version
     sprops->os_name = strdup("Mac OS X");
 
-    void *jrsFwk = getJRSFramework();
-    if (jrsFwk != NULL) {
-        char *(*copyOSVersion)() = dlsym(jrsFwk, "JRSCopyOSVersion");
-        if (copyOSVersion != NULL) {
-            sprops->os_version = copyOSVersion();
-            return;
-        }
+    char* osVersionCStr = NULL;
+    // Mac OS 10.9 includes the [NSProcessInfo operatingSystemVersion] function,
+    // but it's not in the 10.9 SDK.  So, call it via objc_msgSend_stret.
+    if ([[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)]) {
+        OSVerStruct (*procInfoFn)(id rec, SEL sel) = (OSVerStruct(*)(id, SEL))objc_msgSend_stret;
+        OSVerStruct osVer = procInfoFn([NSProcessInfo processInfo],
+                                       @selector(operatingSystemVersion));
+        NSString *nsVerStr = [NSString stringWithFormat:@"%ld.%ld.%ld",
+                (long)osVer.majorVersion, (long)osVer.minorVersion, (long)osVer.patchVersion];
+        // Copy out the char*
+        osVersionCStr = strdup([nsVerStr UTF8String]);
     }
-    sprops->os_version = strdup("Unknown");
+
+    if (osVersionCStr == NULL) {
+        osVersionCStr = strdup("Unknown");
+    }
+    sprops->os_version = osVersionCStr;
 }
 
 

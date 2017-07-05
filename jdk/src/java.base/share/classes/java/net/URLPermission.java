@@ -265,8 +265,14 @@ public final class URLPermission extends Permission {
 
         URLPermission that = (URLPermission)p;
 
-        if (!this.methods.get(0).equals("*") &&
-                Collections.indexOfSubList(this.methods, that.methods) == -1) {
+        if (this.methods.isEmpty() && !that.methods.isEmpty()) {
+            return false;
+        }
+
+        if (!this.methods.isEmpty() &&
+            !this.methods.get(0).equals("*") &&
+            Collections.indexOfSubList(this.methods,
+                                       that.methods) == -1) {
             return false;
         }
 
@@ -455,15 +461,11 @@ public final class URLPermission extends Permission {
     }
 
     private String actions() {
-        StringBuilder b = new StringBuilder();
-        for (String s : methods) {
-            b.append(s);
+        String b = String.join(",", methods);
+        if (!requestHeaders.isEmpty()) {
+            b += ":" + String.join(",", requestHeaders);
         }
-        b.append(":");
-        for (String s : requestHeaders) {
-            b.append(s);
-        }
-        return b.toString();
+        return b;
     }
 
     /**

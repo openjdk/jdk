@@ -25,13 +25,11 @@
 package java.net.http;
 
 import java.nio.ByteBuffer;
-import java.util.stream.Stream;
 
 abstract class WSOutgoingMessage {
 
     interface Visitor {
         void visit(Text message);
-        void visit(StreamedText message);
         void visit(Binary message);
         void visit(Ping message);
         void visit(Pong message);
@@ -61,25 +59,6 @@ abstract class WSOutgoingMessage {
         public String toString() {
             return WSUtils.toStringSimple(this) + "[isLast=" + isLast
                     + ", characters=" + WSUtils.toString(characters) + "]";
-        }
-    }
-
-    static final class StreamedText extends WSOutgoingMessage {
-
-        public final Stream<? extends CharSequence> characters;
-
-        StreamedText(Stream<? extends CharSequence> characters) {
-            this.characters = characters;
-        }
-
-        @Override
-        void accept(Visitor visitor) {
-            visitor.visit(this);
-        }
-
-        @Override
-        public String toString() {
-            return WSUtils.toStringSimple(this) + "[characters=" + characters + "]";
         }
     }
 

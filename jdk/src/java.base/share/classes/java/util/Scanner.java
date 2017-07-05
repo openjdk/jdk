@@ -925,7 +925,6 @@ public final class Scanner implements Iterator<String>, Closeable {
             needInput = true;
             return null;
         }
-
         // Must look for next delims. Simply attempting to match the
         // pattern at this point may find a match but it might not be
         // the first longest match because of missing input, or it might
@@ -941,16 +940,13 @@ public final class Scanner implements Iterator<String>, Closeable {
             foundNextDelim = matcher.find();
         }
         if (foundNextDelim) {
-            // In two rare cases that more input might cause the match to be
-            // lost or change.
-            // (1) if requireEnd() is true, more input might cause the match
-            // to be lost, we must wait for more input.
-            // (2) while hitting the end is okay IF the match does not
-            // go away AND the beginning of the next delims does not change
-            // (we don't care if they potentially extend further). But it's
-            // possible that more input could cause the beginning of the
-            // delims change, so have to wait for more input as well.
-            if ((matcher.requireEnd() || matcher.hitEnd()) && !sourceClosed) {
+            // In the rare case that more input could cause the match
+            // to be lost and there is more input coming we must wait
+            // for more input. Note that hitting the end is okay as long
+            // as the match cannot go away. It is the beginning of the
+            // next delims we want to be sure about, we don't care if
+            // they potentially extend further.
+            if (matcher.requireEnd() && !sourceClosed) {
                 needInput = true;
                 return null;
             }
