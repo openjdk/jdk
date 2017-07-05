@@ -116,6 +116,7 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
   void initialize(klassOop k, int index);
 
   // Print
+  void print() { print_on(tty); }
   void print_on(outputStream* st) const         PRODUCT_RETURN;
   void print_on_for(outputStream* st, oop obj)  PRODUCT_RETURN;
 };

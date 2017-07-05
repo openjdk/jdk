@@ -191,6 +191,13 @@
  * (If a string constant were passed instead, by badly generated code, that cast would then fail,
  * resulting in a {@code BootstrapMethodError}.)
  * <p>
+ * Note that, as a consequence of the above rules, the bootstrap method may accept a primitive
+ * argument, if it can be represented by a constant pool entry.
+ * However, arguments of type {@code boolean}, {@code byte}, {@code short}, or {@code char}
+ * cannot be created for bootstrap methods, since such constants cannot be directly
+ * represented in the constant pool, and the invocation of the bootstrap method will
+ * not perform the necessary narrowing primitive conversions.
+ * <p>
  * Extra bootstrap method arguments are intended to allow language implementors
  * to safely and compactly encode metadata.
  * In principle, the name and extra arguments are redundant,

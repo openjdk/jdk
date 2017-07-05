@@ -70,14 +70,6 @@ address InterpreterGenerator::generate_abstract_entry() {
   return generate_entry((address) ShouldNotCallThisEntry());
 }
 
-address InterpreterGenerator::generate_method_handle_entry() {
-#ifdef CC_INTERP
-  return generate_entry((address) CppInterpreter::method_handle_entry);
-#else
-  return generate_entry((address) ShouldNotCallThisEntry());
-#endif // CC_INTERP
-}
-
 bool AbstractInterpreter::can_be_compiled(methodHandle m) {
   return true;
 }

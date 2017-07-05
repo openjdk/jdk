@@ -78,6 +78,8 @@ class Inflater {
     private int off, len;
     private boolean finished;
     private boolean needDict;
+    private long bytesRead;
+    private long bytesWritten;
 
     private static final byte[] defaultBuf = new byte[0];
 
@@ -253,7 +255,11 @@ class Inflater {
         }
         synchronized (zsRef) {
             ensureOpen();
-            return inflateBytes(zsRef.address(), b, off, len);
+            int thisLen = this.len;
+            int n = inflateBytes(zsRef.address(), b, off, len);
+            bytesWritten += n;
+            bytesRead += (thisLen - this.len);
+            return n;
         }
     }
 
@@ -307,7 +313,7 @@ class Inflater {
     public long getBytesRead() {
         synchronized (zsRef) {
             ensureOpen();
-            return getBytesRead(zsRef.address());
+            return bytesRead;
         }
     }
 
@@ -333,7 +339,7 @@ class Inflater {
     public long getBytesWritten() {
         synchronized (zsRef) {
             ensureOpen();
-            return getBytesWritten(zsRef.address());
+            return bytesWritten;
         }
     }
 
@@ -348,6 +354,7 @@ class Inflater {
             finished = false;
             needDict = false;
             off = len = 0;
+            bytesRead = bytesWritten = 0;
         }
     }
 
@@ -395,8 +402,6 @@ class Inflater {
     private native int inflateBytes(long addr, byte[] b, int off, int len)
             throws DataFormatException;
     private native static int getAdler(long addr);
-    private native static long getBytesRead(long addr);
-    private native static long getBytesWritten(long addr);
     private native static void reset(long addr);
     private native static void end(long addr);
 }

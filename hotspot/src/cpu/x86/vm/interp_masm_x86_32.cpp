@@ -253,8 +253,12 @@ void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register
   get_cache_and_index_at_bcp(cache, index, bcp_offset, index_size);
   movptr(bytecode, Address(cache, index, Address::times_ptr, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::indices_offset()));
   const int shift_count = (1 + byte_no) * BitsPerByte;
+  assert((byte_no == TemplateTable::f1_byte && shift_count == ConstantPoolCacheEntry::bytecode_1_shift) ||
+         (byte_no == TemplateTable::f2_byte && shift_count == ConstantPoolCacheEntry::bytecode_2_shift),
+         "correct shift count");
   shrptr(bytecode, shift_count);
-  andptr(bytecode, 0xFF);
+  assert(ConstantPoolCacheEntry::bytecode_1_mask == ConstantPoolCacheEntry::bytecode_2_mask, "common mask");
+  andptr(bytecode, ConstantPoolCacheEntry::bytecode_1_mask);
 }
 
 

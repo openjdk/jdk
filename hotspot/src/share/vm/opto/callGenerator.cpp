@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciCPCache.hpp"
+#include "ci/ciMemberName.hpp"
 #include "ci/ciMethodHandle.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
@@ -39,9 +40,6 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 
-CallGenerator::CallGenerator(ciMethod* method) {
-  _method = method;
-}
 
 // Utility function.
 const TypeFunc* CallGenerator::tf() const {
@@ -148,7 +146,8 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     }
     // Mark the call node as virtual, sort of:
     call->set_optimized_virtual(true);
-    if (method()->is_method_handle_invoke()) {
+    if (method()->is_method_handle_intrinsic() ||
+        method()->is_compiled_lambda_form()) {
       call->set_method_handle_invoke(true);
     }
   }
@@ -325,12 +324,13 @@ CallGenerator* CallGenerator::for_direct_call(ciMethod* m, bool separate_io_proj
 
 CallGenerator* CallGenerator::for_virtual_call(ciMethod* m, int vtable_index) {
   assert(!m->is_static(), "for_virtual_call mismatch");
-  assert(!m->is_method_handle_invoke(), "should be a direct call");
+  assert(!m->is_method_handle_intrinsic(), "should be a direct call");
   return new VirtualCallGenerator(m, vtable_index);
 }
 
 CallGenerator* CallGenerator::for_dynamic_call(ciMethod* m) {
-  assert(m->is_method_handle_invoke() || m->is_method_handle_adapter(), "for_dynamic_call mismatch");
+  assert(m->is_compiled_lambda_form(), "for_dynamic_call mismatch");
+  //@@ FIXME: this should be done via a direct call
   return new DynamicCallGenerator(m);
 }
 
@@ -654,269 +654,93 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
 }
 
 
-//------------------------PredictedDynamicCallGenerator-----------------------
-// Internal class which handles all out-of-line calls checking receiver type.
-class PredictedDynamicCallGenerator : public CallGenerator {
-  ciMethodHandle* _predicted_method_handle;
-  CallGenerator*  _if_missed;
-  CallGenerator*  _if_hit;
-  float           _hit_prob;
-
-public:
-  PredictedDynamicCallGenerator(ciMethodHandle* predicted_method_handle,
-                                CallGenerator* if_missed,
-                                CallGenerator* if_hit,
-                                float hit_prob)
-    : CallGenerator(if_missed->method()),
-      _predicted_method_handle(predicted_method_handle),
-      _if_missed(if_missed),
-      _if_hit(if_hit),
-      _hit_prob(hit_prob)
-  {}
-
-  virtual bool is_inline()   const { return _if_hit->is_inline(); }
-  virtual bool is_deferred() const { return _if_hit->is_deferred(); }
-
-  virtual JVMState* generate(JVMState* jvms);
-};
-
-
-CallGenerator* CallGenerator::for_predicted_dynamic_call(ciMethodHandle* predicted_method_handle,
-                                                         CallGenerator* if_missed,
-                                                         CallGenerator* if_hit,
-                                                         float hit_prob) {
-  return new PredictedDynamicCallGenerator(predicted_method_handle, if_missed, if_hit, hit_prob);
-}
-
-
-CallGenerator* CallGenerator::for_method_handle_call(Node* method_handle, JVMState* jvms,
-                                                     ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
-  assert(callee->is_method_handle_invoke() || callee->is_method_handle_adapter(), "for_method_handle_call mismatch");
-  CallGenerator* cg = CallGenerator::for_method_handle_inline(method_handle, jvms, caller, callee, profile);
+CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* caller, ciMethod* callee) {
+  assert(callee->is_method_handle_intrinsic() ||
+         callee->is_compiled_lambda_form(), "for_method_handle_call mismatch");
+  CallGenerator* cg = CallGenerator::for_method_handle_inline(jvms, caller, callee);
   if (cg != NULL)
     return cg;
   return CallGenerator::for_direct_call(callee);
 }
 
-CallGenerator* CallGenerator::for_method_handle_inline(Node* method_handle, JVMState* jvms,
-                                                       ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
-  if (method_handle->Opcode() == Op_ConP) {
-    const TypeOopPtr* oop_ptr = method_handle->bottom_type()->is_oopptr();
-    ciObject* const_oop = oop_ptr->const_oop();
-    ciMethodHandle* method_handle = const_oop->as_method_handle();
-
-    // Set the callee to have access to the class and signature in
-    // the MethodHandleCompiler.
-    method_handle->set_callee(callee);
-    method_handle->set_caller(caller);
-    method_handle->set_call_profile(profile);
-
-    // Get an adapter for the MethodHandle.
-    ciMethod* target_method = method_handle->get_method_handle_adapter();
-    if (target_method != NULL) {
-      CallGenerator* cg = Compile::current()->call_generator(target_method, -1, false, jvms, true, PROB_ALWAYS);
-      if (cg != NULL && cg->is_inline())
-        return cg;
-    }
-  } else if (method_handle->Opcode() == Op_Phi && method_handle->req() == 3 &&
-             method_handle->in(1)->Opcode() == Op_ConP && method_handle->in(2)->Opcode() == Op_ConP) {
-    float prob = PROB_FAIR;
-    Node* meth_region = method_handle->in(0);
-    if (meth_region->is_Region() &&
-        meth_region->in(1)->is_Proj() && meth_region->in(2)->is_Proj() &&
-        meth_region->in(1)->in(0) == meth_region->in(2)->in(0) &&
-        meth_region->in(1)->in(0)->is_If()) {
-      // If diamond, so grab the probability of the test to drive the inlining below
-      prob = meth_region->in(1)->in(0)->as_If()->_prob;
-      if (meth_region->in(1)->is_IfTrue()) {
-        prob = 1 - prob;
-      }
-    }
-
-    // selectAlternative idiom merging two constant MethodHandles.
-    // Generate a guard so that each can be inlined.  We might want to
-    // do more inputs at later point but this gets the most common
-    // case.
-    CallGenerator* cg1 = for_method_handle_call(method_handle->in(1), jvms, caller, callee, profile.rescale(1.0 - prob));
-    CallGenerator* cg2 = for_method_handle_call(method_handle->in(2), jvms, caller, callee, profile.rescale(prob));
-    if (cg1 != NULL && cg2 != NULL) {
-      const TypeOopPtr* oop_ptr = method_handle->in(1)->bottom_type()->is_oopptr();
-      ciObject* const_oop = oop_ptr->const_oop();
-      ciMethodHandle* mh = const_oop->as_method_handle();
-      return new PredictedDynamicCallGenerator(mh, cg2, cg1, prob);
-    }
-  }
-  return NULL;
-}
-
-CallGenerator* CallGenerator::for_invokedynamic_call(JVMState* jvms, ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
-  assert(callee->is_method_handle_invoke() || callee->is_method_handle_adapter(), "for_invokedynamic_call mismatch");
-  // Get the CallSite object.
-  ciBytecodeStream str(caller);
-  str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
-  ciCallSite* call_site = str.get_call_site();
-  CallGenerator* cg = CallGenerator::for_invokedynamic_inline(call_site, jvms, caller, callee, profile);
-  if (cg != NULL)
-    return cg;
-  return CallGenerator::for_dynamic_call(callee);
-}
-
-CallGenerator* CallGenerator::for_invokedynamic_inline(ciCallSite* call_site, JVMState* jvms,
-                                                       ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
-  ciMethodHandle* method_handle = call_site->get_target();
-
-  // Set the callee to have access to the class and signature in the
-  // MethodHandleCompiler.
-  method_handle->set_callee(callee);
-  method_handle->set_caller(caller);
-  method_handle->set_call_profile(profile);
-
-  // Get an adapter for the MethodHandle.
-  ciMethod* target_method = method_handle->get_invokedynamic_adapter();
-  if (target_method != NULL) {
-    Compile *C = Compile::current();
-    CallGenerator* cg = C->call_generator(target_method, -1, false, jvms, true, PROB_ALWAYS);
-    if (cg != NULL && cg->is_inline()) {
-      // Add a dependence for invalidation of the optimization.
-      if (!call_site->is_constant_call_site()) {
-        C->dependencies()->assert_call_site_target_value(call_site, method_handle);
-      }
-      return cg;
-    }
-  }
-  return NULL;
-}
-
-
-JVMState* PredictedDynamicCallGenerator::generate(JVMState* jvms) {
+CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod* caller, ciMethod* callee) {
   GraphKit kit(jvms);
-  Compile* C = kit.C;
   PhaseGVN& gvn = kit.gvn();
-
-  CompileLog* log = C->log();
-  if (log != NULL) {
-    log->elem("predicted_dynamic_call bci='%d'", jvms->bci());
-  }
-
-  const TypeOopPtr* predicted_mh_ptr = TypeOopPtr::make_from_constant(_predicted_method_handle, true);
-  Node* predicted_mh = kit.makecon(predicted_mh_ptr);
-
-  Node* bol = NULL;
-  int bc = jvms->method()->java_code_at_bci(jvms->bci());
-  if (bc != Bytecodes::_invokedynamic) {
-    // This is the selectAlternative idiom for guardWithTest or
-    // similar idioms.
-    Node* receiver = kit.argument(0);
-
-    // Check if the MethodHandle is the expected one
-    Node* cmp = gvn.transform(new (C, 3) CmpPNode(receiver, predicted_mh));
-    bol = gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::eq) );
-  } else {
-    // Get the constant pool cache from the caller class.
-    ciMethod* caller_method = jvms->method();
-    ciBytecodeStream str(caller_method);
-    str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
-    ciCPCache* cpcache = str.get_cpcache();
-
-    // Get the offset of the CallSite from the constant pool cache
-    // pointer.
-    int index = str.get_method_index();
-    size_t call_site_offset = cpcache->get_f1_offset(index);
-
-    // Load the CallSite object from the constant pool cache.
-    const TypeOopPtr* cpcache_type   = TypeOopPtr::make_from_constant(cpcache);  // returns TypeAryPtr of type T_OBJECT
-    const TypeOopPtr* call_site_type = TypeOopPtr::make_from_klass(C->env()->CallSite_klass());
-    Node* cpcache_adr   = kit.makecon(cpcache_type);
-    Node* call_site_adr = kit.basic_plus_adr(cpcache_adr, call_site_offset);
-    // The oops in the constant pool cache are not compressed; load then as raw pointers.
-    Node* call_site     = kit.make_load(kit.control(), call_site_adr, call_site_type, T_ADDRESS, Compile::AliasIdxRaw);
-
-    // Load the target MethodHandle from the CallSite object.
-    const TypeOopPtr* target_type = TypeOopPtr::make_from_klass(C->env()->MethodHandle_klass());
-    Node* target_adr = kit.basic_plus_adr(call_site, call_site, java_lang_invoke_CallSite::target_offset_in_bytes());
-    Node* target_mh  = kit.make_load(kit.control(), target_adr, target_type, T_OBJECT);
-
-    // Check if the MethodHandle is still the same.
-    Node* cmp = gvn.transform(new (C, 3) CmpPNode(target_mh, predicted_mh));
-    bol = gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::eq) );
-  }
-  IfNode* iff = kit.create_and_xform_if(kit.control(), bol, _hit_prob, COUNT_UNKNOWN);
-  kit.set_control( gvn.transform(new (C, 1) IfTrueNode (iff)));
-  Node* slow_ctl = gvn.transform(new (C, 1) IfFalseNode(iff));
-
-  SafePointNode* slow_map = NULL;
-  JVMState* slow_jvms;
-  { PreserveJVMState pjvms(&kit);
-    kit.set_control(slow_ctl);
-    if (!kit.stopped()) {
-      slow_jvms = _if_missed->generate(kit.sync_jvms());
-      if (kit.failing())
-        return NULL;  // might happen because of NodeCountInliningCutoff
-      assert(slow_jvms != NULL, "must be");
-      kit.add_exception_states_from(slow_jvms);
-      kit.set_map(slow_jvms->map());
-      if (!kit.stopped())
-        slow_map = kit.stop();
+  Compile* C = kit.C;
+  vmIntrinsics::ID iid = callee->intrinsic_id();
+  switch (iid) {
+  case vmIntrinsics::_invokeBasic:
+    {
+      // get MethodHandle receiver
+      Node* receiver = kit.argument(0);
+      if (receiver->Opcode() == Op_ConP) {
+        const TypeOopPtr* oop_ptr = receiver->bottom_type()->is_oopptr();
+        ciMethod* target = oop_ptr->const_oop()->as_method_handle()->get_vmtarget();
+        guarantee(!target->is_method_handle_intrinsic(), "should not happen");  // XXX remove
+        const int vtable_index = methodOopDesc::invalid_vtable_index;
+        CallGenerator* cg = C->call_generator(target, vtable_index, false, jvms, true, PROB_ALWAYS);
+        if (cg != NULL && cg->is_inline())
+          return cg;
+      } else {
+        if (PrintInlining)  CompileTask::print_inlining(callee, jvms->depth() - 1, jvms->bci(), "receiver not constant");
+      }
     }
-  }
+    break;
 
-  if (kit.stopped()) {
-    // Instance exactly does not matches the desired type.
-    kit.set_jvms(slow_jvms);
-    return kit.transfer_exceptions_into_jvms();
-  }
+  case vmIntrinsics::_linkToVirtual:
+  case vmIntrinsics::_linkToStatic:
+  case vmIntrinsics::_linkToSpecial:
+  case vmIntrinsics::_linkToInterface:
+    {
+      // pop MemberName argument
+      Node* member_name = kit.argument(callee->arg_size() - 1);
+      if (member_name->Opcode() == Op_ConP) {
+        const TypeOopPtr* oop_ptr = member_name->bottom_type()->is_oopptr();
+        ciMethod* target = oop_ptr->const_oop()->as_member_name()->get_vmtarget();
 
-  // Make the hot call:
-  JVMState* new_jvms = _if_hit->generate(kit.sync_jvms());
-  if (new_jvms == NULL) {
-    // Inline failed, so make a direct call.
-    assert(_if_hit->is_inline(), "must have been a failed inline");
-    CallGenerator* cg = CallGenerator::for_direct_call(_if_hit->method());
-    new_jvms = cg->generate(kit.sync_jvms());
-  }
-  kit.add_exception_states_from(new_jvms);
-  kit.set_jvms(new_jvms);
-
-  // Need to merge slow and fast?
-  if (slow_map == NULL) {
-    // The fast path is the only path remaining.
-    return kit.transfer_exceptions_into_jvms();
-  }
-
-  if (kit.stopped()) {
-    // Inlined method threw an exception, so it's just the slow path after all.
-    kit.set_jvms(slow_jvms);
-    return kit.transfer_exceptions_into_jvms();
-  }
-
-  // Finish the diamond.
-  kit.C->set_has_split_ifs(true); // Has chance for split-if optimization
-  RegionNode* region = new (C, 3) RegionNode(3);
-  region->init_req(1, kit.control());
-  region->init_req(2, slow_map->control());
-  kit.set_control(gvn.transform(region));
-  Node* iophi = PhiNode::make(region, kit.i_o(), Type::ABIO);
-  iophi->set_req(2, slow_map->i_o());
-  kit.set_i_o(gvn.transform(iophi));
-  kit.merge_memory(slow_map->merged_memory(), region, 2);
-  uint tos = kit.jvms()->stkoff() + kit.sp();
-  uint limit = slow_map->req();
-  for (uint i = TypeFunc::Parms; i < limit; i++) {
-    // Skip unused stack slots; fast forward to monoff();
-    if (i == tos) {
-      i = kit.jvms()->monoff();
-      if( i >= limit ) break;
+        // In lamda forms we erase signature types to avoid resolving issues
+        // involving class loaders.  When we optimize a method handle invoke
+        // to a direct call we must cast the receiver and arguments to its
+        // actual types.
+        ciSignature* signature = target->signature();
+        const int receiver_skip = target->is_static() ? 0 : 1;
+        // Cast receiver to its type.
+        if (!target->is_static()) {
+          Node* arg = kit.argument(0);
+          const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
+          const Type*       sig_type = TypeOopPtr::make_from_klass(signature->accessing_klass());
+          if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
+            Node* cast_obj = gvn.transform(new (C, 2) CheckCastPPNode(kit.control(), arg, sig_type));
+            kit.set_argument(0, cast_obj);
+          }
+        }
+        // Cast reference arguments to its type.
+        for (int i = 0; i < signature->count(); i++) {
+          ciType* t = signature->type_at(i);
+          if (t->is_klass()) {
+            Node* arg = kit.argument(receiver_skip + i);
+            const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
+            const Type*       sig_type = TypeOopPtr::make_from_klass(t->as_klass());
+            if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
+              Node* cast_obj = gvn.transform(new (C, 2) CheckCastPPNode(kit.control(), arg, sig_type));
+              kit.set_argument(receiver_skip + i, cast_obj);
+            }
+          }
+        }
+        const int vtable_index = methodOopDesc::invalid_vtable_index;
+        const bool call_is_virtual = target->is_abstract();  // FIXME workaround
+        CallGenerator* cg = C->call_generator(target, vtable_index, call_is_virtual, jvms, true, PROB_ALWAYS);
+        if (cg != NULL && cg->is_inline())
+          return cg;
+      }
     }
-    Node* m = kit.map()->in(i);
-    Node* n = slow_map->in(i);
-    if (m != n) {
-      const Type* t = gvn.type(m)->meet(gvn.type(n));
-      Node* phi = PhiNode::make(region, m, t);
-      phi->set_req(2, n);
-      kit.map()->set_req(i, gvn.transform(phi));
-    }
+    break;
+
+  default:
+    fatal(err_msg_res("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
+    break;
   }
-  return kit.transfer_exceptions_into_jvms();
+  return NULL;
 }
 
 
