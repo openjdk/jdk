@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@
 #include "oops/oop.inline.hpp"
 
 template <class T, class N>
-inline Symbol* CompactHashtable<T, N>::lookup_entry(CompactHashtable<Symbol*, char>* const t,
-                                             juint* addr, const char* name, int len) {
-  Symbol* sym = (Symbol*)((void*)(_base_address + *addr));
+inline Symbol* CompactHashtable<T, N>::decode_entry(CompactHashtable<Symbol*, char>* const t,
+                                                    u4 offset, const char* name, int len) {
+  Symbol* sym = (Symbol*)(_base_address + offset);
   if (sym->equals(name, len)) {
     assert(sym->refcount() == -1, "must be shared");
     return sym;
@@ -42,9 +42,9 @@ inline Symbol* CompactHashtable<T, N>::lookup_entry(CompactHashtable<Symbol*, ch
 }
 
 template <class T, class N>
-inline oop CompactHashtable<T, N>::lookup_entry(CompactHashtable<oop, char>* const t,
-                                                juint* addr, const char* name, int len) {
-  narrowOop obj = (narrowOop)(*addr);
+inline oop CompactHashtable<T, N>::decode_entry(CompactHashtable<oop, char>* const t,
+                                                u4 offset, const char* name, int len) {
+  narrowOop obj = (narrowOop)offset;
   oop string = oopDesc::decode_heap_oop(obj);
   if (java_lang_String::equals(string, (jchar*)name, len)) {
     return string;
@@ -56,17 +56,14 @@ inline oop CompactHashtable<T, N>::lookup_entry(CompactHashtable<oop, char>* con
 template <class T, class N>
 inline T CompactHashtable<T,N>::lookup(const N* name, unsigned int hash, int len) {
   if (_entry_count > 0) {
-    assert(!DumpSharedSpaces, "run-time only");
     int index = hash % _bucket_count;
-    juint bucket_info = _buckets[index];
-    juint bucket_offset = BUCKET_OFFSET(bucket_info);
-    int   bucket_type = BUCKET_TYPE(bucket_info);
-    juint* bucket = _buckets + bucket_offset;
-    juint* bucket_end = _buckets;
+    u4 bucket_info = _buckets[index];
+    u4 bucket_offset = BUCKET_OFFSET(bucket_info);
+    int bucket_type = BUCKET_TYPE(bucket_info);
+    u4* entry = _entries + bucket_offset;
 
-    if (bucket_type == COMPACT_BUCKET_TYPE) {
-      // the compact bucket has one entry with entry offset only
-      T res = lookup_entry(this, &bucket[0], name, len);
+    if (bucket_type == VALUE_ONLY_BUCKET_TYPE) {
+      T res = decode_entry(this, entry[0], name, len);
       if (res != NULL) {
         return res;
       }
@@ -74,29 +71,20 @@ inline T CompactHashtable<T,N>::lookup(const N* name, unsigned int hash, int len
       // This is a regular bucket, which has more than one
       // entries. Each entry is a pair of entry (hash, offset).
       // Seek until the end of the bucket.
-      bucket_end += BUCKET_OFFSET(_buckets[index + 1]);
-      while (bucket < bucket_end) {
-        unsigned int h = (unsigned int)(bucket[0]);
+      u4* entry_max = _entries + BUCKET_OFFSET(_buckets[index + 1]);
+      while (entry < entry_max) {
+        unsigned int h = (unsigned int)(entry[0]);
         if (h == hash) {
-          T res = lookup_entry(this, &bucket[1], name, len);
+          T res = decode_entry(this, entry[1], name, len);
           if (res != NULL) {
             return res;
           }
         }
-        bucket += 2;
+        entry += 2;
       }
     }
   }
   return NULL;
 }
-
-inline void CompactHashtableWriter::add(unsigned int hash, Symbol* symbol) {
-  add(hash, new Entry(hash, symbol));
-}
-
-inline void CompactHashtableWriter::add(unsigned int hash, oop string) {
-  add(hash, new Entry(hash, string));
-}
-
 
 #endif // SHARE_VM_CLASSFILE_COMPACTHASHTABLE_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,16 @@
 
 /**
  * @test
- * @bug 7191662
+ * @bug 7191662 8157469
  * @summary Ensure non-java.base providers can be found by ServiceLoader
  * @author Valerie Peng
  */
 
-import java.util.*;
-import java.security.*;
+import java.security.Provider;
+import java.security.Security;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 
 public class DefaultProviderList {
 
@@ -44,7 +47,8 @@ public class DefaultProviderList {
             String pName = p.getName();
             // only providers outside java.base are loaded by ServiceLoader
             if (pName.equals("SUN") || pName.equals("SunRsaSign") ||
-                pName.equals("SunJCE") || pName.equals("SunJSSE")) {
+                pName.equals("SunJCE") || pName.equals("SunJSSE") ||
+                pName.equals("Apple")) {
                 System.out.println("Skip test for provider " + pName);
                 continue;
             }

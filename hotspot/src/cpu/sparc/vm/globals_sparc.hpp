@@ -92,7 +92,14 @@ define_pd_global(bool, CompactStrings, true);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
-#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct, range, constraint) \
+#define ARCH_FLAGS(develop, \
+                   product, \
+                   diagnostic, \
+                   experimental, \
+                   notproduct, \
+                   range, \
+                   constraint, \
+                   writeable) \
                                                                             \
   product(intx, UseVIS, 99,                                                 \
           "Highest supported VIS instructions set on Sparc")                \

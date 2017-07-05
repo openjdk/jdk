@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,12 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
       tables. */
   public Symbol probe(byte[] name) {
     long hashValue = hashSymbol(name);
+
+    Symbol s = sharedTable.probe(name, hashValue);
+    if (s != null) {
+      return s;
+    }
+
     for (HashtableEntry e = (HashtableEntry) bucket(hashToIndex(hashValue)); e != null; e = (HashtableEntry) e.next()) {
       if (e.hash() == hashValue) {
          Symbol sym = Symbol.create(e.literalValue());
@@ -94,7 +100,7 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
       }
     }
 
-    return sharedTable.probe(name, hashValue);
+    return null;
   }
 
   public interface SymbolVisitor {

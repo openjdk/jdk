@@ -29,7 +29,7 @@ import java.awt.image.ImageObserver;
 import java.awt.image.MultiResolutionImage;
 import java.util.Arrays;
 import java.util.List;
-import sun.misc.SoftCache;
+import sun.awt.SoftCache;
 
 public class MultiResolutionToolkitImage extends ToolkitImage implements MultiResolutionImage {
 

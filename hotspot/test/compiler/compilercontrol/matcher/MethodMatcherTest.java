@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
  * @test
  * @bug 8135068
  * @summary Tests CompilerCommand's method matcher
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib /compiler/whitebox ../share /
  * @build compiler.compilercontrol.matcher.MethodMatcherTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

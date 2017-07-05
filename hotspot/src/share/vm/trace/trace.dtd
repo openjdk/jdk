@@ -64,23 +64,28 @@
                         has_stacktrace CDATA "false"
                         is_instant     CDATA "false"
                         is_constant    CDATA "false"
-                        is_requestable CDATA "false">
+                        is_requestable CDATA "false"
+                        experimental   CDATA "false">
 <!ATTLIST struct        id             CDATA #REQUIRED>
 <!ATTLIST value         type           CDATA #REQUIRED
                         field          CDATA #REQUIRED
                         label          CDATA #REQUIRED
                         description    CDATA #IMPLIED
                         relation       CDATA "NOT_AVAILABLE"
-                        transition     CDATA "NONE">
+                        transition     CDATA "NONE"
+                        experimental   CDATA "false">
 <!ATTLIST array         type           CDATA #REQUIRED
                         field          CDATA #REQUIRED
                         label          CDATA #REQUIRED
-                        description    CDATA #IMPLIED>
+                        description    CDATA #IMPLIED
+                        experimental   CDATA "false">
 <!ATTLIST structarray   type           CDATA #REQUIRED
                         field          CDATA #REQUIRED
                         label          CDATA #REQUIRED
-                        description    CDATA #IMPLIED>
+                        description    CDATA #IMPLIED
+                        experimental   CDATA "false">
 <!ATTLIST structvalue   type           CDATA #REQUIRED
                         field          CDATA #REQUIRED
                         label          CDATA #REQUIRED
-                        description    CDATA #IMPLIED>
+                        description    CDATA #IMPLIED
+                        experimental   CDATA "false">

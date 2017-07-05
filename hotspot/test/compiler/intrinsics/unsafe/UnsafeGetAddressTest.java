@@ -30,21 +30,21 @@
  *
  */
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.lang.reflect.*;
 
 public class UnsafeGetAddressTest {
     private static Unsafe unsafe;
 
     public static void main(String[] args) throws Exception {
-        Class c = UnsafeGetAddressTest.class.getClassLoader().loadClass("sun.misc.Unsafe");
+        Class c = UnsafeGetAddressTest.class.getClassLoader().loadClass("jdk.internal.misc.Unsafe");
         Field f = c.getDeclaredField("theUnsafe");
         f.setAccessible(true);
         unsafe = (Unsafe)f.get(c);
 
         long address = unsafe.allocateMemory(unsafe.addressSize());
         unsafe.putAddress(address, 0x0000000080000000L);
-        // from sun.misc.Unsafe.getAddress' documentation:
+        // from jdk.internal.misc.Unsafe.getAddress' documentation:
         // "If the native pointer is less than 64 bits wide, it is
         // extended as an unsigned number to a Java long."
         result = unsafe.getAddress(address);

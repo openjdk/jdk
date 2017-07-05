@@ -46,7 +46,7 @@ import jdk.test.lib.cli.predicate.AndPredicate;
 import rtm.*;
 import rtm.predicate.SupportedCPU;
 import rtm.predicate.SupportedVM;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * To verify that with +UseRTMDeopt method's RTM state will be

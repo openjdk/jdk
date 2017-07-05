@@ -469,7 +469,7 @@ public class AutomaticModulesTest {
     static Configuration resolve(Configuration parent,
                                  ModuleFinder finder,
                                  String... roots) {
-        return parent.resolveRequires(finder, ModuleFinder.empty(), Set.of(roots));
+        return parent.resolveRequires(finder, ModuleFinder.of(), Set.of(roots));
     }
 
     /**

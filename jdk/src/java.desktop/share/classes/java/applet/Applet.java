@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,13 @@ import javax.accessibility.*;
  * @author      Arthur van Hoff
  * @author      Chris Warth
  * @since       1.0
+ *
+ * @deprecated  The Applet API is deprecated. See the
+ * <a href="package-summary.html"> java.applet package documentation</a>
+ * for further information.
  */
+
+@Deprecated(since = "9")
 public class Applet extends Panel {
 
     /**

@@ -81,7 +81,7 @@ public final class NativeInt32Array extends ArrayBufferView {
         private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Int32ArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
 
         private Int32ArrayData(final IntBuffer nb, final int start, final int end) {
-            super(((IntBuffer)nb.position(start).limit(end)).slice(), end - start);
+            super((nb.position(start).limit(end)).slice(), end - start);
         }
 
         @Override

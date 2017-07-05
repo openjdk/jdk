@@ -32,7 +32,7 @@
 
 import java.lang.ref.*;
 import java.lang.reflect.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class Test7190310_unsafe {
 
@@ -48,7 +48,7 @@ public class Test7190310_unsafe {
   private TestObject obj;
 
   public static void main(String[] args) throws Exception {
-    Class c = Test7190310_unsafe.class.getClassLoader().loadClass("sun.misc.Unsafe");
+    Class c = Test7190310_unsafe.class.getClassLoader().loadClass("jdk.internal.misc.Unsafe");
     Field f = c.getDeclaredField("theUnsafe");
     f.setAccessible(true);
     Unsafe unsafe = (Unsafe)f.get(c);

@@ -57,7 +57,6 @@ class Abstract_VM_Version: AllStatic {
   static int          _vm_build_number;
   static unsigned int _parallel_worker_threads;
   static bool         _parallel_worker_threads_initialized;
-  static int          _reserve_for_allocation_prefetch;
 
   static unsigned int nof_parallel_worker_threads(unsigned int num,
                                                   unsigned int dem,
@@ -139,12 +138,6 @@ class Abstract_VM_Version: AllStatic {
     return _L1_data_cache_line_size;
   }
 
-  // Need a space at the end of TLAB for prefetch instructions
-  // which may fault when accessing memory outside of heap.
-  static int reserve_for_allocation_prefetch() {
-    return _reserve_for_allocation_prefetch;
-  }
-
   // ARCH specific policy for the BiasedLocking
   static bool use_biased_locking()  { return true; }
 
@@ -162,6 +155,9 @@ class Abstract_VM_Version: AllStatic {
   // Calculates and returns the number of parallel threads.  May
   // be VM version specific.
   static unsigned int calc_parallel_worker_threads();
+
+  // Does this CPU support spin wait instruction?
+  static bool supports_on_spin_wait() { return false; }
 };
 
 #ifdef TARGET_ARCH_x86

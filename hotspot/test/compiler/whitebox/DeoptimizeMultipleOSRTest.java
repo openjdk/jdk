@@ -30,6 +30,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @test DeoptimizeMultipleOSRTest
  * @bug 8061817
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build DeoptimizeMultipleOSRTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

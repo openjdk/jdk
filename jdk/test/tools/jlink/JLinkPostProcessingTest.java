@@ -75,9 +75,9 @@ public class JLinkPostProcessingTest {
         }
 
         @Override
-        public Set<PluginType> getType() {
-            Set<PluginType> set = new HashSet<>();
-            set.add(CATEGORY.PROCESSOR);
+        public Set<Category> getType() {
+            Set<Category> set = new HashSet<>();
+            set.add(Category.PROCESSOR);
             return Collections.unmodifiableSet(set);
         }
 

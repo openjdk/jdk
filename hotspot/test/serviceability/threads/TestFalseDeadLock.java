@@ -30,6 +30,7 @@ import java.util.Random;
  * @test
  * @bug 8016304
  * @summary Make sure no deadlock is reported for this program which has no deadlocks.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm TestFalseDeadLock
  */

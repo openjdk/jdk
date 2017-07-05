@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ MetadataOnStackMark::MetadataOnStackMark(bool redefinition_walk) {
 
   if (redefinition_walk) {
     Threads::metadata_do(Metadata::mark_on_stack);
-    CodeCache::alive_nmethods_do(nmethod::mark_on_stack);
+    CodeCache::metadata_do(Metadata::mark_on_stack);
     CompileBroker::mark_on_stack();
     JvmtiCurrentBreakpoints::metadata_do(Metadata::mark_on_stack);
     ThreadService::metadata_do(Metadata::mark_on_stack);

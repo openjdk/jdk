@@ -65,7 +65,6 @@ import sun.awt.image.MultiResolutionToolkitImage;
 import sun.awt.image.ToolkitImage;
 import sun.awt.image.URLImageSource;
 import sun.font.FontDesignMetrics;
-import sun.misc.SoftCache;
 import sun.net.util.URLUtil;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;

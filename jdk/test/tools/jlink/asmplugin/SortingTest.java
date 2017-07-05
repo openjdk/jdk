@@ -35,12 +35,13 @@
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import jdk.tools.jlink.internal.plugins.asm.AsmModulePool;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public class SortingTest extends AsmPluginTestBase {
 
@@ -66,7 +67,7 @@ public class SortingTest extends AsmPluginTestBase {
         List<String> sorted = new ArrayList<>(getResources());
         sorted.sort(null);
         ClassSorterPlugin sorterPlugin = new ClassSorterPlugin(sorted);
-        Pool resourcePool = sorterPlugin.visit(getPool());
+        ModulePool resourcePool = sorterPlugin.visit(getPool());
         sorterPlugin.test(getPool(), resourcePool);
     }
 
@@ -78,7 +79,7 @@ public class SortingTest extends AsmPluginTestBase {
         List<String> sorted = new ArrayList<>(getResources());
         sorted.sort((s1, s2) -> -getModuleName(s1).compareTo(getModuleName(s2)));
         ModuleSorterPlugin sorterPlugin = new ModuleSorterPlugin();
-        Pool resourcePool = sorterPlugin.visit(getPool());
+        ModulePool resourcePool = sorterPlugin.visit(getPool());
         sorterPlugin.test(getPool(), resourcePool);
     }
 
@@ -88,8 +89,8 @@ public class SortingTest extends AsmPluginTestBase {
         public void visit() {
             for (AsmModulePool modulePool : getPools().getModulePools()) {
                 modulePool.setSorter(resources -> {
-                    List<String> sort = resources.getContent().stream()
-                            .map(ModuleData::getPath)
+                    List<String> sort = resources.entries()
+                            .map(ModuleEntry::getPath)
                             .collect(Collectors.toList());
                     sort.sort(null);
                     return sort;
@@ -102,21 +103,21 @@ public class SortingTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool inResources, Pool outResources) throws Exception {
+        public void test(ModulePool inResources, ModulePool outResources) throws Exception {
             if (!isVisitCalled()) {
                 throw new AssertionError("Resources not visited");
             }
-            List<String> sortedResourcePaths = outResources.getContent().stream()
-                    .map(ModuleData::getPath)
+            List<String> sortedResourcePaths = outResources.entries()
+                    .map(ModuleEntry::getPath)
                     .collect(Collectors.toList());
 
             List<String> defaultResourceOrder = new ArrayList<>();
-            for (ModuleData r : inResources.getContent()) {
-                if (!inResources.getContent().contains(r)) {
+            inResources.entries().forEach(r -> {
+                if (!inResources.contains(r)) {
                     throw new AssertionError("Resource " + r.getPath() + " not in result pool");
                 }
                 defaultResourceOrder.add(r.getPath());
-            }
+            });
             // Check that default sorting is not equal to sorted one
             if (defaultResourceOrder.equals(sortedResourcePaths)) {
                 throw new AssertionError("Sorting not applied, default ordering");
@@ -147,27 +148,28 @@ public class SortingTest extends AsmPluginTestBase {
         public void visit() {
             getPools().getGlobalPool().setSorter(
                     (resources) -> expectedClassesOrder.stream()
-                            .map(resources::get)
-                            .map(ModuleData::getPath)
+                            .map(resources::findEntry)
+                            .map(Optional::get)
+                            .map(ModuleEntry::getPath)
                             .collect(Collectors.toList()));
         }
 
         @Override
-        public void test(Pool inResources, Pool outResources) throws Exception {
+        public void test(ModulePool inResources, ModulePool outResources) throws Exception {
             if (!isVisitCalled()) {
                 throw new AssertionError("Resources not visited");
             }
-            List<String> sortedResourcePaths = outResources.getContent().stream()
-                    .map(ModuleData::getPath)
+            List<String> sortedResourcePaths = outResources.entries()
+                    .map(ModuleEntry::getPath)
                     .collect(Collectors.toList());
 
             List<String> defaultResourceOrder = new ArrayList<>();
-            for (ModuleData r : getPool().getContent()) {
-                if (!getPool().getContent().contains(r)) {
+            getPool().entries().forEach(r -> {
+                if (!getPool().contains(r)) {
                     throw new AssertionError("Resource " + r.getPath() + " not in result pool");
                 }
                 defaultResourceOrder.add(r.getPath());
-            }
+            });
             // Check that default sorting is not equal to sorted one
             if (defaultResourceOrder.equals(sortedResourcePaths)) {
                 throw new AssertionError("Sorting not applied, default ordering");

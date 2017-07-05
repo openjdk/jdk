@@ -30,7 +30,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.Plugin.PluginType;
 
 public class Utils {
 
@@ -50,25 +49,26 @@ public class Utils {
         return arguments;
     };
 
-    public static boolean isPostProcessor(Plugin.CATEGORY category) {
-        return category.equals(Plugin.CATEGORY.VERIFIER)
-                || category.equals(Plugin.CATEGORY.PROCESSOR)
-                || category.equals(Plugin.CATEGORY.PACKAGER);
+    public static boolean isPostProcessor(Plugin.Category category) {
+        return category.equals(Plugin.Category.VERIFIER)
+                || category.equals(Plugin.Category.PROCESSOR)
+                || category.equals(Plugin.Category.PACKAGER);
     }
 
-    public static boolean isPreProcessor(Plugin.CATEGORY category) {
-        return category.equals(Plugin.CATEGORY.COMPRESSOR)
-                || category.equals(Plugin.CATEGORY.FILTER)
-                || category.equals(Plugin.CATEGORY.MODULEINFO_TRANSFORMER)
-                || category.equals(Plugin.CATEGORY.SORTER)
-                || category.equals(Plugin.CATEGORY.TRANSFORMER);
+    public static boolean isPreProcessor(Plugin.Category category) {
+        return category.equals(Plugin.Category.COMPRESSOR)
+                || category.equals(Plugin.Category.FILTER)
+                || category.equals(Plugin.Category.MODULEINFO_TRANSFORMER)
+                || category.equals(Plugin.Category.SORTER)
+                || category.equals(Plugin.Category.TRANSFORMER)
+                || category.equals(Plugin.Category.METAINFO_ADDER);
     }
 
     public static boolean isPostProcessor(Plugin prov) {
         if (prov.getType() != null) {
-            for (PluginType pt : prov.getType()) {
-                if (pt instanceof Plugin.CATEGORY) {
-                    return isPostProcessor((Plugin.CATEGORY) pt);
+            for (Plugin.Category pt : prov.getType()) {
+                if (pt instanceof Plugin.Category) {
+                    return isPostProcessor(pt);
                 }
             }
         }
@@ -77,20 +77,20 @@ public class Utils {
 
     public static boolean isPreProcessor(Plugin prov) {
         if (prov.getType() != null) {
-            for (PluginType pt : prov.getType()) {
-                if (pt instanceof Plugin.CATEGORY) {
-                    return isPreProcessor((Plugin.CATEGORY) pt);
+            for (Plugin.Category pt : prov.getType()) {
+                if (pt instanceof Plugin.Category) {
+                    return isPreProcessor(pt);
                 }
             }
         }
         return false;
     }
 
-    public static Plugin.CATEGORY getCategory(Plugin provider) {
+    public static Plugin.Category getCategory(Plugin provider) {
         if (provider.getType() != null) {
-            for (Plugin.PluginType t : provider.getType()) {
-                if (t instanceof Plugin.CATEGORY) {
-                    return (Plugin.CATEGORY) t;
+            for (Plugin.Category t : provider.getType()) {
+                if (t instanceof Plugin.Category) {
+                    return t;
                 }
             }
         }
@@ -140,15 +140,15 @@ public class Utils {
     }
 
     public static boolean isFunctional(Plugin prov) {
-        return prov.getState().contains(Plugin.STATE.FUNCTIONAL);
+        return prov.getState().contains(Plugin.State.FUNCTIONAL);
     }
 
     public static boolean isAutoEnabled(Plugin prov) {
-        return prov.getState().contains(Plugin.STATE.AUTO_ENABLED);
+        return prov.getState().contains(Plugin.State.AUTO_ENABLED);
     }
 
     public static boolean isDisabled(Plugin prov) {
-        return prov.getState().contains(Plugin.STATE.DISABLED);
+        return prov.getState().contains(Plugin.State.DISABLED);
     }
 
     // is this a builtin (jdk.jlink) plugin?

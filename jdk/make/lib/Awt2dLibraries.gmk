@@ -96,10 +96,7 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
       mlib_c_ImageAffine_BL.c \
       mlib_c_ImageAffine_BL_S16.c \
       mlib_c_ImageAffine_BL_U16.c \
-      mlib_c_ImageAffineIndex_BC.c \
-      mlib_c_ImageAffineIndex_BL.c \
       mlib_c_ImageAffine_NN.c \
-      mlib_c_ImageBlendTable.c \
       mlib_c_ImageConvClearEdge.c \
       mlib_c_ImageConvCopyEdge.c \
       mlib_c_ImageConv_f.c \
@@ -107,14 +104,6 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
       mlib_c_ImageCopy.c \
       mlib_c_ImageLookUp.c \
       mlib_c_ImageLookUp_f.c \
-      mlib_v_ImageChannelExtract.c \
-      mlib_v_ImageChannelExtract_f.c \
-      mlib_v_ImageChannelInsert_34.c \
-      mlib_v_ImageChannelInsert.c \
-      mlib_v_ImageConvIndex3_8_16nw.c \
-      mlib_v_ImageConvIndex3_8_8nw.c \
-      mlib_v_ImageCopy.c \
-      mlib_v_ImageCopy_blk.s \
       #
 
   LIBMLIB_IMAGE_V_CFLAGS += $(filter-out -DMLIB_NO_LIBSUNMATH, $(BUILD_LIBMLIB_CFLAGS))

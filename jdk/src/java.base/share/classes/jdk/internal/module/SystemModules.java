@@ -46,12 +46,12 @@ public final class SystemModules {
      * and read module-info.class from the run-time image instead of
      * the fastpath.
      */
-    public static final String[] MODULE_NAMES = new String[1];
+    public static final String[] MODULE_NAMES = new String[0];
 
     /**
      * Hash of system modules.
      */
-    public static String[] MODULES_TO_HASH = new String[1];
+    public static String[] MODULES_TO_HASH = new String[0];
 
     /**
      * Number of packages in the boot layer from the installed modules.
@@ -67,7 +67,7 @@ public final class SystemModules {
      * When running an exploded image it returns an empty array.
      */
     public static ModuleDescriptor[] modules() {
-        return new ModuleDescriptor[0];
+        throw new InternalError("should not reach here");
     }
 
 }

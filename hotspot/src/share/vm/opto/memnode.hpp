@@ -1186,6 +1186,13 @@ public:
   virtual uint ideal_reg() const { return 0; } // not matched in the AD file
 };
 
+class OnSpinWaitNode: public MemBarNode {
+public:
+  OnSpinWaitNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
 // Isolation of object setup after an AllocateNode and before next safepoint.
 // (See comment in memnode.cpp near InitializeNode::InitializeNode for semantics.)
 class InitializeNode: public MemBarNode {

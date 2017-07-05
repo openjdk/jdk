@@ -47,6 +47,7 @@ public class GenericTestCaseForUnsupportedSparcCPU extends
         CommandLineOptionTest.verifySameJVMStartup(null, new String[] {
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
                 }, shouldPassMessage, shouldPassMessage, ExitCode.OK,
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
 
         // Verify that when the tested option is enabled, then
@@ -58,6 +59,7 @@ public class GenericTestCaseForUnsupportedSparcCPU extends
                     shouldPassMessage,
                     shouldPassMessage,
                     ExitCode.OK,
+                    SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                     CommandLineOptionTest.prepareBooleanFlag(SHAOptionsBase.USE_SHA_OPTION, false),
                     CommandLineOptionTest.prepareBooleanFlag(optionName, true));
         }
@@ -68,13 +70,15 @@ public class GenericTestCaseForUnsupportedSparcCPU extends
         // Verify that option is disabled by default.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
                 String.format("Option '%s' should be disabled by default",
-                        optionName));
+                        optionName),
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS);
 
         // Verify that option is disabled even if it was explicitly enabled
         // using CLI options.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
                 String.format("Option '%s' should be off on unsupported "
                         + "SparcCPU even if set to true directly", optionName),
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
         // Verify that option is disabled when +UseSHA was passed to JVM.
@@ -83,6 +87,7 @@ public class GenericTestCaseForUnsupportedSparcCPU extends
                         + "SparcCPU even if %s flag set to JVM",
                         optionName, CommandLineOptionTest.prepareBooleanFlag(
                             SHAOptionsBase.USE_SHA_OPTION, true)),
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, true));
     }

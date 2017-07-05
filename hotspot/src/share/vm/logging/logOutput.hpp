@@ -26,10 +26,12 @@
 
 #include "logging/logDecorators.hpp"
 #include "logging/logLevel.hpp"
+#include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogDecorations;
+class LogMessageBuffer;
 class LogTagSet;
 
 // The base class/interface for log outputs.
@@ -83,7 +85,8 @@ class LogOutput : public CHeapObj<mtLogging> {
 
   virtual const char* name() const = 0;
   virtual bool initialize(const char* options, outputStream* errstream) = 0;
-  virtual int write(const LogDecorations &decorations, const char* msg) = 0;
+  virtual int write(const LogDecorations& decorations, const char* msg) = 0;
+  virtual int write(LogMessageBuffer::Iterator msg_iterator) = 0;
 };
 
 #endif // SHARE_VM_LOGGING_LOGOUTPUT_HPP

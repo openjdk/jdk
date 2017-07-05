@@ -27,10 +27,8 @@ import java.security.Security;
 /**
  * @test
  * @bug 8049429
- * @library ../../../../lib/testlibrary/
  * @modules java.management
  *          jdk.crypto.ec/sun.security.ec
- * @build jdk.testlibrary.Utils
  * @compile CipherTestUtils.java JSSEClient.java JSSEServer.java
  * @summary Test that all cipher suites work in all versions and all client
  * authentication types. The way this is setup the server is stateless and
@@ -86,7 +84,6 @@ public class TestJSSE {
 
         String serverProtocol = System.getProperty("SERVER_PROTOCOL");
         String clientProtocol = System.getProperty("CLIENT_PROTOCOL");
-        int port = jdk.testlibrary.Utils.getFreePort();
         String cipher = System.getProperty("CIPHER");
         if (serverProtocol == null
                 || clientProtocol == null
@@ -97,7 +94,7 @@ public class TestJSSE {
         out.println("ServerProtocol =" + serverProtocol);
         out.println("ClientProtocol =" + clientProtocol);
         out.println("Cipher         =" + cipher);
-        server(serverProtocol, cipher, port, args);
+        int port = server(serverProtocol, cipher, args);
         client(port, clientProtocol, cipher, args);
 
     }
@@ -112,28 +109,30 @@ public class TestJSSE {
         out.println(" Testing - Protocol : " + testProtocols);
         out.println(" Testing - Cipher : " + testCipher);
         try {
-            CipherTestUtils.main(new JSSEFactory(LOCAL_IP,
-                    testPort, testProtocols,
-                    testCipher, "client JSSE"),
-                    "client", expectedException);
+            CipherTestUtils.mainClient(new JSSEFactory(LOCAL_IP, testProtocols,
+                        testCipher, "Client JSSE"),
+                    testPort, expectedException);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void server(String testProtocol, String testCipher,
-            int testPort,
+    public static int server(String testProtocol, String testCipher,
             String... exception) throws Exception {
+
         String expectedException = exception.length >= 1
                 ? exception[0] : null;
         out.println(" This is Server");
         out.println(" Testing Protocol: " + testProtocol);
         out.println(" Testing Cipher: " + testCipher);
-        out.println(" Testing Port: " + testPort);
+
         try {
-            CipherTestUtils.main(new JSSEFactory(null, testPort,
-                    testProtocol, testCipher, "Server JSSE"),
-                    "Server", expectedException);
+            int port = CipherTestUtils.mainServer(new JSSEFactory(
+                        null, testProtocol, testCipher, "Server JSSE"),
+                    expectedException);
+
+            out.println(" Testing Port: " + port);
+            return port;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -142,15 +141,13 @@ public class TestJSSE {
     private static class JSSEFactory extends CipherTestUtils.PeerFactory {
 
         final String testedCipherSuite, testedProtocol, testHost;
-        final int testPort;
         final String name;
 
-        JSSEFactory(String testHost, int testPort, String testedProtocol,
+        JSSEFactory(String testHost, String testedProtocol,
                 String testedCipherSuite, String name) {
             this.testedCipherSuite = testedCipherSuite;
             this.testedProtocol = testedProtocol;
             this.testHost = testHost;
-            this.testPort = testPort;
             this.name = name;
         }
 
@@ -170,14 +167,14 @@ public class TestJSSE {
         }
 
         @Override
-        CipherTestUtils.Client newClient(CipherTestUtils cipherTest)
+        CipherTestUtils.Client newClient(CipherTestUtils cipherTest, int testPort)
                 throws Exception {
             return new JSSEClient(cipherTest, testHost, testPort,
                     testedProtocol, testedCipherSuite);
         }
 
         @Override
-        CipherTestUtils.Server newServer(CipherTestUtils cipherTest)
+        CipherTestUtils.Server newServer(CipherTestUtils cipherTest, int testPort)
                 throws Exception {
             return new JSSEServer(cipherTest, testPort,
                     testedProtocol, testedCipherSuite);

@@ -27,9 +27,8 @@ package sun.jvm.hotspot.tools;
 import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.runtime.Arguments;
 import sun.jvm.hotspot.runtime.VM;
-import jdk.internal.vm.agent.spi.ToolProvider;
 
-public class JInfo extends Tool implements ToolProvider {
+public class JInfo extends Tool {
     public JInfo() {
         super();
     }
@@ -46,6 +45,7 @@ public class JInfo extends Tool implements ToolProvider {
         return false;
     }
 
+    @Override
     public String getName() {
         return "jinfo";
     }
@@ -95,8 +95,7 @@ public class JInfo extends Tool implements ToolProvider {
         tool.run();
     }
 
-    @Override
-    public void run(String... args) {
+    public void runWithArgs(String... args) {
         int mode = -1;
         switch (args.length) {
         case 1:
@@ -142,7 +141,7 @@ public class JInfo extends Tool implements ToolProvider {
 
     public static void main(String[] args) {
         JInfo jinfo = new JInfo();
-        jinfo.run(args);
+        jinfo.runWithArgs(args);
     }
 
     private void printVMFlags() {

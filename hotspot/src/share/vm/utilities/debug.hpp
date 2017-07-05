@@ -46,11 +46,15 @@ class FormatBufferResource : public FormatBufferBase {
   FormatBufferResource(const char * format, ...) ATTRIBUTE_PRINTF(2, 3);
 };
 
+class FormatBufferDummy {};
+
 // Use stack for buffer
 template <size_t bufsz = FormatBufferBase::BufferSize>
 class FormatBuffer : public FormatBufferBase {
  public:
   inline FormatBuffer(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  // since va_list is unspecified type (can be char*), we use FormatBufferDummy to disambiguate these constructors
+  inline FormatBuffer(FormatBufferDummy dummy, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0);
   inline void append(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
   inline void print(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
   inline void printv(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
@@ -72,6 +76,11 @@ FormatBuffer<bufsz>::FormatBuffer(const char * format, ...) : FormatBufferBase(_
   va_start(argp, format);
   jio_vsnprintf(_buf, bufsz, format, argp);
   va_end(argp);
+}
+
+template <size_t bufsz>
+FormatBuffer<bufsz>::FormatBuffer(FormatBufferDummy dummy, const char * format, va_list ap) : FormatBufferBase(_buffer) {
+  jio_vsnprintf(_buf, bufsz, format, ap);
 }
 
 template <size_t bufsz>
@@ -119,11 +128,13 @@ typedef FormatBuffer<> err_msg;
 #define vmassert(p, ...)                                                       \
 do {                                                                           \
   if (!(p)) {                                                                  \
+    if (is_executing_unit_tests()) {                                           \
+      report_assert_msg(__VA_ARGS__);                                          \
+    }                                                                          \
     report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", __VA_ARGS__); \
     BREAKPOINT;                                                                \
   }                                                                            \
 } while (0)
-
 #endif
 
 // For backward compatibility.
@@ -210,10 +221,16 @@ void report_vm_error(const char* file, int line, const char* error_msg);
 // ATTRIBUTE_PRINTF works with gcc >= 4.8 and any other compiler.
 void report_vm_error(const char* file, int line, const char* error_msg,
                      const char* detail_fmt, ...) ATTRIBUTE_PRINTF(4, 5);
+#ifdef ASSERT
+void report_assert_msg(const char* msg, ...) ATTRIBUTE_PRINTF(1, 2);
+#endif // ASSERT
 #else
 // GCC < 4.8 warns because of empty format string.  Warning can not be switched off selectively.
 void report_vm_error(const char* file, int line, const char* error_msg,
                      const char* detail_fmt, ...);
+#ifdef ASSERT
+void report_assert_msg(const char* msg, ...);
+#endif // ASSERT
 #endif
 void report_vm_status_error(const char* file, int line, const char* error_msg,
                             int status, const char* detail);
@@ -224,6 +241,11 @@ void report_should_not_call(const char* file, int line);
 void report_should_not_reach_here(const char* file, int line);
 void report_unimplemented(const char* file, int line);
 void report_untested(const char* file, int line, const char* message);
+
+#ifdef ASSERT
+// unit test support
+bool is_executing_unit_tests();
+#endif // ASSERT
 
 void warning(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
 

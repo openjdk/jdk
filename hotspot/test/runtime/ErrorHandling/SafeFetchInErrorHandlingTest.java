@@ -35,6 +35,7 @@ import jdk.test.lib.ProcessTools;
  * @test
  * @bug 8074552
  * @summary SafeFetch32 and SafeFetchN do not work in error handling
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @author Thomas Stuefe (SAP)
  */

@@ -27,6 +27,7 @@
  * @summary Check that G1 does not report empty PLAB statistics in the first evacuation.
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @key gc
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

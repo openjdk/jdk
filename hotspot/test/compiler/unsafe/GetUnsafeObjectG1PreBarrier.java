@@ -31,7 +31,7 @@
 
 import java.lang.reflect.Field;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class GetUnsafeObjectG1PreBarrier {
     private static final Unsafe unsafe;

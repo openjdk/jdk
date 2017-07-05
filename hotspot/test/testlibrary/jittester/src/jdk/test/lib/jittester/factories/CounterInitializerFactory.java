@@ -30,7 +30,7 @@ import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.SymbolTable;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
-import jdk.test.lib.jittester.TypeUtil;
+import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.loops.CounterInitializer;
 import jdk.test.lib.jittester.types.TypeKlass;
@@ -48,7 +48,7 @@ class CounterInitializerFactory extends SafeFactory {
 
     @Override
     protected IRNode sproduce() throws ProductionFailedException {
-        List<Type> types = TypeUtil.getMoreCapatiousThan(TypeList.getBuiltIn(), new TypeInt());
+        List<Type> types = TypeUtil.getMoreCapaciousThan(TypeList.getBuiltIn(), new TypeInt());
         types.add(new TypeInt());
         final Type selectedType = PseudoRandom.randomElement(types);
         IRNode init = new LiteralInitializer(counterValue, selectedType);

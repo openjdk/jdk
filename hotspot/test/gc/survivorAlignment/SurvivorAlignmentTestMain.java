@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 import jdk.test.lib.Asserts;
 import com.sun.management.ThreadMXBean;
 import sun.hotspot.WhiteBox;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Main class for tests on {@code SurvivorAlignmentInBytes} option.

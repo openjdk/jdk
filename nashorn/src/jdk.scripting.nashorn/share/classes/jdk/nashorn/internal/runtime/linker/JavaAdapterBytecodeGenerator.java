@@ -173,12 +173,14 @@ final class JavaAdapterBytecodeGenerator {
     private static final Call RUN = interfaceCallNoLookup(Runnable.class, "run", void.class);
 
     // ASM handle to the bootstrap method
+    @SuppressWarnings("deprecation")
     private static final Handle BOOTSTRAP_HANDLE = new Handle(H_INVOKESTATIC,
             Type.getInternalName(JavaAdapterServices.class), "bootstrap",
             MethodType.methodType(CallSite.class, Lookup.class, String.class,
                     MethodType.class, int.class).toMethodDescriptorString());
 
     // ASM handle to the bootstrap method for array populator
+    @SuppressWarnings("deprecation")
     private static final Handle CREATE_ARRAY_BOOTSTRAP_HANDLE = new Handle(H_INVOKESTATIC,
             Type.getInternalName(JavaAdapterServices.class), "createArrayBootstrap",
             MethodType.methodType(CallSite.class, Lookup.class, String.class,
@@ -1048,6 +1050,7 @@ final class JavaAdapterBytecodeGenerator {
         endMethod(mv);
     }
 
+    @SuppressWarnings("deprecation")
     private void generateFinalizerOverride() {
         final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(ACC_PUBLIC, "finalize",
                 VOID_METHOD_DESCRIPTOR, null, null));

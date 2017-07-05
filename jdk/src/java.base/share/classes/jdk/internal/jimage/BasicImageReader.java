@@ -27,6 +27,8 @@ package jdk.internal.jimage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -98,8 +100,34 @@ public class BasicImageReader implements AutoCloseable {
         }
 
         // Open the file only if no memory map yet or is 32 bit jvm
-        channel = map != null && MAP_ALL ? null :
-                  FileChannel.open(imagePath, StandardOpenOption.READ);
+        if (map != null && MAP_ALL) {
+            channel = null;
+        } else {
+            channel = FileChannel.open(imagePath, StandardOpenOption.READ);
+            // No lambdas during bootstrap
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    if (BasicImageReader.class.getClassLoader() == null) {
+                        try {
+                            Class<?> fileChannelImpl =
+                                Class.forName("sun.nio.ch.FileChannelImpl");
+                            Method setUninterruptible =
+                                    fileChannelImpl.getMethod("setUninterruptible");
+                            setUninterruptible.invoke(channel);
+                        } catch (ClassNotFoundException |
+                                 NoSuchMethodException |
+                                 IllegalAccessException |
+                                 InvocationTargetException ex) {
+                            // fall thru - will only happen on JDK-8 systems where this code
+                            // is only used by tools using jrt-fs (non-critical.)
+                        }
+                    }
+
+                    return null;
+                }
+            });
+        }
 
         // If no memory map yet and 64 bit jvm then memory map entire file
         if (MAP_ALL && map == null) {

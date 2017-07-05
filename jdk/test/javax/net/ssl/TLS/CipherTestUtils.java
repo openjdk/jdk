@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it under
@@ -201,6 +201,8 @@ public class CipherTestUtils {
 
         @Override
         public abstract void run();
+
+        abstract int getPort();
 
         void handleRequest(InputStream in, OutputStream out)
                 throws IOException {
@@ -528,9 +530,9 @@ public class CipherTestUtils {
         return ks;
     }
 
-    public static void main(PeerFactory peerFactory, String mode,
-            String expectedException)
-            throws Exception {
+    public static int mainServer(PeerFactory peerFactory,
+            String expectedException) throws Exception {
+
         long time = System.currentTimeMillis();
         setTestedArguments(peerFactory.getTestedProtocol(),
                 peerFactory.getTestedCipher());
@@ -540,23 +542,39 @@ public class CipherTestUtils {
         secureRandom.nextInt();
 
         CipherTestUtils cipherTest = CipherTestUtils.getInstance();
-        if (mode.equalsIgnoreCase("Server")) {  // server mode
-            Thread serverThread = new Thread(peerFactory.newServer(cipherTest),
-                    "Server");
-            serverThread.start();
-        } else if (mode.equalsIgnoreCase("Client")) {
-            peerFactory.newClient(cipherTest).run();
-            cipherTest.checkResult(expectedException);
-            JSSEServer.closeServer = true;
-        } else {
-            throw new RuntimeException("unsupported mode");
-        }
+        Server server = peerFactory.newServer(cipherTest, PeerFactory.FREE_PORT);
+        Thread serverThread = new Thread(server, "Server");
+        serverThread.start();
+
         time = System.currentTimeMillis() - time;
         System.out.println("Elapsed time " + time);
 
+        return server.getPort();
+    }
+
+    public static void mainClient(PeerFactory peerFactory, int port,
+            String expectedException) throws Exception {
+
+        long time = System.currentTimeMillis();
+        setTestedArguments(peerFactory.getTestedProtocol(),
+                peerFactory.getTestedCipher());
+
+        System.out.print(
+                " Initializing test '" + peerFactory.getName() + "'...");
+        secureRandom.nextInt();
+
+        CipherTestUtils cipherTest = CipherTestUtils.getInstance();
+        peerFactory.newClient(cipherTest, port).run();
+        cipherTest.checkResult(expectedException);
+        JSSEServer.closeServer = true;
+
+        time = System.currentTimeMillis() - time;
+        System.out.println("Elapsed time " + time);
     }
 
     public static abstract class PeerFactory {
+
+        public static final int FREE_PORT = 0;
 
         abstract String getName();
 
@@ -564,9 +582,9 @@ public class CipherTestUtils {
 
         abstract String getTestedCipher();
 
-        abstract Client newClient(CipherTestUtils cipherTest) throws Exception;
+        abstract Client newClient(CipherTestUtils cipherTest, int testPort) throws Exception;
 
-        abstract Server newServer(CipherTestUtils cipherTest) throws Exception;
+        abstract Server newServer(CipherTestUtils cipherTest, int testPort) throws Exception;
 
         boolean isSupported(String cipherSuite) {
             return true;

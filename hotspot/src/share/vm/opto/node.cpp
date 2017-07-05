@@ -2297,7 +2297,8 @@ Node* Node::find_similar(int opc) {
     if (def && def->outcnt() >= 2) {
       for (DUIterator_Fast dmax, i = def->fast_outs(dmax); i < dmax; i++) {
         Node* use = def->fast_out(i);
-        if (use->Opcode() == opc &&
+        if (use != this &&
+            use->Opcode() == opc &&
             use->req() == req()) {
           uint j;
           for (j = 0; j < use->req(); j++) {

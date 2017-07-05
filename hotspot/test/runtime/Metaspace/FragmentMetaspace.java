@@ -24,6 +24,7 @@
 /**
  * @test
  * @library /runtime/testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  * @build GeneratedClassLoader
  * @run main/othervm/timeout=200 -Xmx300m FragmentMetaspace

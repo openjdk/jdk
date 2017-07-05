@@ -37,7 +37,7 @@
 // The assumption is that a significant part of the GC is spent on scanning
 // the remembered sets (and many other components), so this thread constantly
 // reevaluates the prediction for the remembered set scanning costs, and potentially
-// G1CollectorPolicy resizes the young gen. This may do a premature GC or even
+// G1Policy resizes the young gen. This may do a premature GC or even
 // increase the young gen size to keep pause time length goal.
 class G1YoungRemSetSamplingThread: public ConcurrentGCThread {
 private:

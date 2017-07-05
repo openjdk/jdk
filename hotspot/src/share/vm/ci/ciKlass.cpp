@@ -88,12 +88,7 @@ bool ciKlass::is_subclass_of(ciKlass* that) {
   assert(this->is_loaded(), "must be loaded: %s", this->name()->as_quoted_ascii());
   assert(that->is_loaded(), "must be loaded: %s", that->name()->as_quoted_ascii());
 
-  VM_ENTRY_MARK;
-  Klass* this_klass = get_Klass();
-  Klass* that_klass = that->get_Klass();
-  bool result = this_klass->is_subclass_of(that_klass);
-
-  return result;
+  GUARDED_VM_ENTRY(return get_Klass()->is_subclass_of(that->get_Klass());)
 }
 
 // ------------------------------------------------------------------

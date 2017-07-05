@@ -31,18 +31,17 @@ import sun.hotspot.WhiteBox;
 
 public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
     /** constructor test case */
-    CONSTRUCTOR_TEST(Helper.CONSTRUCTOR, Helper.CONSTRUCTOR_CALLABLE, false),
+    CONSTRUCTOR_TEST(SimpleTestCaseHelper.CONSTRUCTOR, SimpleTestCaseHelper.CONSTRUCTOR_CALLABLE, false),
     /** method test case */
-    METHOD_TEST(Helper.METHOD, Helper.METHOD_CALLABLE, false),
+    METHOD_TEST(SimpleTestCaseHelper.METHOD, SimpleTestCaseHelper.METHOD_CALLABLE, false),
     /** static method test case */
-    STATIC_TEST(Helper.STATIC, Helper.STATIC_CALLABLE, false),
+    STATIC_TEST(SimpleTestCaseHelper.STATIC, SimpleTestCaseHelper.STATIC_CALLABLE, false),
     /** OSR constructor test case */
-    OSR_CONSTRUCTOR_TEST(Helper.OSR_CONSTRUCTOR,
-            Helper.OSR_CONSTRUCTOR_CALLABLE, true),
+    OSR_CONSTRUCTOR_TEST(SimpleTestCaseHelper.OSR_CONSTRUCTOR, SimpleTestCaseHelper.OSR_CONSTRUCTOR_CALLABLE, true),
     /** OSR method test case */
-    OSR_METHOD_TEST(Helper.OSR_METHOD, Helper.OSR_METHOD_CALLABLE, true),
+    OSR_METHOD_TEST(SimpleTestCaseHelper.OSR_METHOD, SimpleTestCaseHelper.OSR_METHOD_CALLABLE, true),
     /** OSR static method test case */
-    OSR_STATIC_TEST(Helper.OSR_STATIC, Helper.OSR_STATIC_CALLABLE, true);
+    OSR_STATIC_TEST(SimpleTestCaseHelper.OSR_STATIC, SimpleTestCaseHelper.OSR_STATIC_CALLABLE, true);
 
     private final Executable executable;
     private final Callable<Integer> callable;
@@ -69,20 +68,21 @@ public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
     public boolean isOsr() {
         return isOsr;
     }
+}
 
-    private static class Helper {
+    class SimpleTestCaseHelper {
 
-        private static final Callable<Integer> CONSTRUCTOR_CALLABLE
+        public static final Callable<Integer> CONSTRUCTOR_CALLABLE
                 = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-                return new Helper(1337).hashCode();
+                return new SimpleTestCaseHelper(1337).hashCode();
             }
         };
 
-        private static final Callable<Integer> METHOD_CALLABLE
+        public static final Callable<Integer> METHOD_CALLABLE
                 = new Callable<Integer>() {
-            private final Helper helper = new Helper();
+            private final SimpleTestCaseHelper helper = new SimpleTestCaseHelper();
 
             @Override
             public Integer call() throws Exception {
@@ -90,7 +90,7 @@ public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
             }
         };
 
-        private static final Callable<Integer> STATIC_CALLABLE
+        public static final Callable<Integer> STATIC_CALLABLE
                 = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
@@ -98,17 +98,17 @@ public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
             }
         };
 
-        private static final Callable<Integer> OSR_CONSTRUCTOR_CALLABLE
+        public static final Callable<Integer> OSR_CONSTRUCTOR_CALLABLE
                 = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-                return new Helper(null, CompilerWhiteBoxTest.BACKEDGE_THRESHOLD).hashCode();
+                return new SimpleTestCaseHelper(null, CompilerWhiteBoxTest.BACKEDGE_THRESHOLD).hashCode();
             }
         };
 
-        private static final Callable<Integer> OSR_METHOD_CALLABLE
+        public static final Callable<Integer> OSR_METHOD_CALLABLE
                 = new Callable<Integer>() {
-            private final Helper helper = new Helper();
+            private final SimpleTestCaseHelper helper = new SimpleTestCaseHelper();
 
             @Override
             public Integer call() throws Exception {
@@ -116,7 +116,7 @@ public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
             }
         };
 
-        private static final Callable<Integer> OSR_STATIC_CALLABLE
+        public static final Callable<Integer> OSR_STATIC_CALLABLE
                 = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
@@ -124,22 +124,22 @@ public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
             }
         };
 
-        private static final Constructor CONSTRUCTOR;
-        private static final Constructor OSR_CONSTRUCTOR;
-        private static final Method METHOD;
-        private static final Method STATIC;
-        private static final Method OSR_METHOD;
-        private static final Method OSR_STATIC;
+        public static final Constructor CONSTRUCTOR;
+        public static final Constructor OSR_CONSTRUCTOR;
+        public static final Method METHOD;
+        public static final Method STATIC;
+        public static final Method OSR_METHOD;
+        public static final Method OSR_STATIC;
 
         static {
             try {
-                CONSTRUCTOR = Helper.class.getDeclaredConstructor(int.class);
+                CONSTRUCTOR = SimpleTestCaseHelper.class.getDeclaredConstructor(int.class);
             } catch (NoSuchMethodException | SecurityException e) {
                 throw new RuntimeException(
                         "exception on getting method Helper.<init>(int)", e);
             }
             try {
-                OSR_CONSTRUCTOR = Helper.class.getDeclaredConstructor(
+                OSR_CONSTRUCTOR = SimpleTestCaseHelper.class.getDeclaredConstructor(
                         Object.class, long.class);
             } catch (NoSuchMethodException | SecurityException e) {
                 throw new RuntimeException(
@@ -153,7 +153,7 @@ public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
 
         private static Method getMethod(String name, Class<?>... parameterTypes) {
             try {
-                return Helper.class.getDeclaredMethod(name, parameterTypes);
+                return SimpleTestCaseHelper.class.getDeclaredMethod(name, parameterTypes);
             } catch (NoSuchMethodException | SecurityException e) {
                 throw new RuntimeException(
                         "exception on getting method Helper." + name, e);
@@ -195,7 +195,7 @@ public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
          */
         private static int warmup(Method m) throws Exception {
             waitAndDeoptimize(m);
-            Helper helper = new Helper();
+            SimpleTestCaseHelper helper = new SimpleTestCaseHelper();
             int result = 0;
             for (long i = 0; i < CompilerWhiteBoxTest.THRESHOLD; ++i) {
                 result += (int)m.invoke(helper, 1);
@@ -254,12 +254,12 @@ public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
         private final int x;
 
         // for method and OSR method test case
-        public Helper() {
+        public SimpleTestCaseHelper() {
             x = 0;
         }
 
         // for OSR constructor test case
-        private Helper(Object o, long limit) throws Exception {
+        private SimpleTestCaseHelper(Object o, long limit) throws Exception {
             int result = 0;
             if (limit != 1) {
                 result = warmup(OSR_CONSTRUCTOR);
@@ -272,7 +272,7 @@ public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
         }
 
         // for constructor test case
-        private Helper(int x) {
+        private SimpleTestCaseHelper(int x) {
             this.x = x;
         }
 
@@ -281,4 +281,4 @@ public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
             return x;
         }
     }
-}
+

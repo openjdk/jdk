@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@ package com.sun.hotspot.igv.coordinator;
 
 import com.sun.hotspot.igv.coordinator.actions.RemoveCookie;
 import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.util.PropertiesSheet;
 import java.awt.Image;
 import java.util.List;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
+import org.openide.nodes.Sheet;
 import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
@@ -72,6 +74,16 @@ public class FolderNode extends AbstractNode {
         public void changed(Object source) {
             addNotify();
          }
+    }
+
+    @Override
+    protected Sheet createSheet() {
+        Sheet s = super.createSheet();
+        if (children.folder instanceof Properties.Entity) {
+            Properties.Entity p = (Properties.Entity) children.folder;
+            PropertiesSheet.initializeSheet(p.getProperties(), s);
+        }
+        return s;
     }
 
     @Override

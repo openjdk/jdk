@@ -37,14 +37,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-
-import jdk.tools.jlink.internal.PoolImpl;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.Module;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
-import jdk.tools.jlink.plugin.Pool.Visitor;
+import java.util.function.Function;
+import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.LinkModule;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public class ResourcePoolTest {
 
@@ -61,54 +61,53 @@ public class ResourcePoolTest {
     private static final String SUFFIX = "END";
 
     private void checkResourceVisitor() throws Exception {
-        Pool input = new PoolImpl();
+        ModulePool input = new ModulePoolImpl();
         for (int i = 0; i < 1000; ++i) {
             String module = "/module" + (i / 10);
             String resourcePath = module + "/java/package" + i;
             byte[] bytes = resourcePath.getBytes();
-            input.add(new ModuleData(module, resourcePath,
-                    ModuleDataType.CLASS_OR_RESOURCE,
+            input.add(ModuleEntry.create(module, resourcePath,
+                    ModuleEntry.Type.CLASS_OR_RESOURCE,
                     new ByteArrayInputStream(bytes), bytes.length));
         }
-        Pool output = new PoolImpl();
+        ModulePool output = new ModulePoolImpl();
         ResourceVisitor visitor = new ResourceVisitor();
-        input.visit(visitor, output);
+        input.transformAndCopy(visitor, output);
         if (visitor.getAmountBefore() == 0) {
             throw new AssertionError("Resources not found");
         }
-        if (visitor.getAmountBefore() != input.getContent().size()) {
+        if (visitor.getAmountBefore() != input.getEntryCount()) {
             throw new AssertionError("Number of visited resources. Expected: " +
-                    visitor.getAmountBefore() + ", got: " + input.getContent().size());
+                    visitor.getAmountBefore() + ", got: " + input.getEntryCount());
         }
-        if (visitor.getAmountAfter() != output.getContent().size()) {
+        if (visitor.getAmountAfter() != output.getEntryCount()) {
             throw new AssertionError("Number of added resources. Expected: " +
-                    visitor.getAmountAfter() + ", got: " + output.getContent().size());
+                    visitor.getAmountAfter() + ", got: " + output.getEntryCount());
         }
-        for (ModuleData outResource : output.getContent()) {
+        output.entries().forEach(outResource -> {
             String path = outResource.getPath().replaceAll(SUFFIX + "$", "");
-            ModuleData inResource = input.get(path);
-            if (inResource == null) {
+            if (!input.findEntry(path).isPresent()) {
                 throw new AssertionError("Unknown resource: " + path);
             }
-        }
+        });
     }
 
-    private static class ResourceVisitor implements Visitor {
+    private static class ResourceVisitor implements Function<ModuleEntry, ModuleEntry> {
 
         private int amountBefore;
         private int amountAfter;
 
         @Override
-        public ModuleData visit(ModuleData resource) {
+        public ModuleEntry apply(ModuleEntry resource) {
             int index = ++amountBefore % 3;
             switch (index) {
                 case 0:
                     ++amountAfter;
-                    return new ModuleData(resource.getModule(), resource.getPath() + SUFFIX,
+                    return ModuleEntry.create(resource.getModule(), resource.getPath() + SUFFIX,
                             resource.getType(), resource.stream(), resource.getLength());
                 case 1:
                     ++amountAfter;
-                    return new ModuleData(resource.getModule(), resource.getPath(),
+                    return ModuleEntry.create(resource.getModule(), resource.getPath(),
                             resource.getType(), resource.stream(), resource.getLength());
             }
             return null;
@@ -133,8 +132,8 @@ public class ResourcePoolTest {
         samples.add("javax/management/ObjectName");
         test(samples, (resources, module, path) -> {
             try {
-                resources.add(new ModuleData(module, path,
-                        ModuleDataType.CLASS_OR_RESOURCE,
+                resources.add(ModuleEntry.create(module, path,
+                        ModuleEntry.Type.CLASS_OR_RESOURCE,
                         new ByteArrayInputStream(new byte[0]), 0));
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
@@ -142,12 +141,12 @@ public class ResourcePoolTest {
         });
         test(samples, (resources, module, path) -> {
             try {
-                resources.add(PoolImpl.
-                        newCompressedResource(new ModuleData(module, path,
-                                ModuleDataType.CLASS_OR_RESOURCE,
+                resources.add(ModulePoolImpl.
+                        newCompressedResource(ModuleEntry.create(module, path,
+                                ModuleEntry.Type.CLASS_OR_RESOURCE,
                                 new ByteArrayInputStream(new byte[0]), 0),
                                 ByteBuffer.allocate(99), "bitcruncher", null,
-                                ((PoolImpl)resources).getStringTable(), ByteOrder.nativeOrder()));
+                                ((ModulePoolImpl)resources).getStringTable(), ByteOrder.nativeOrder()));
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -158,7 +157,7 @@ public class ResourcePoolTest {
         if (samples.isEmpty()) {
             throw new AssertionError("No sample to test");
         }
-        Pool resources = new PoolImpl();
+        ModulePool resources = new ModulePoolImpl();
         Set<String> modules = new HashSet<>();
         for (int i = 0; i < samples.size(); i++) {
             String module = samples.get(i);
@@ -173,70 +172,69 @@ public class ResourcePoolTest {
             i++;
             String clazz = samples.get(i);
             String path = "/" + module + "/" + clazz + ".class";
-            ModuleData res = resources.get(path);
-            checkModule(resources, res);
-            if (res == null) {
+            Optional<ModuleEntry> res = resources.findEntry(path);
+            if (!res.isPresent()) {
                 throw new AssertionError("Resource not found " + path);
             }
-            ModuleData res2 = resources.get(clazz);
-            if (res2 != null) {
+            checkModule(resources, res.get());
+            if (resources.findEntry(clazz).isPresent()) {
                 throw new AssertionError("Resource found " + clazz);
             }
         }
-        if (resources.getContent().size() != samples.size() / 2) {
+        if (resources.getEntryCount() != samples.size() / 2) {
             throw new AssertionError("Invalid number of resources");
         }
     }
 
-    private void checkModule(Pool resources, ModuleData res) {
-        Module m = resources.getModule(res.getModule());
-        if (m == null) {
+    private void checkModule(ModulePool resources, ModuleEntry res) {
+        Optional<LinkModule> optMod = resources.findModule(res.getModule());
+        if (!optMod.isPresent()) {
             throw new AssertionError("No module " + res.getModule());
         }
+        LinkModule m = optMod.get();
         if (!m.getName().equals(res.getModule())) {
             throw new AssertionError("Not right module name " + res.getModule());
         }
-        if (m.get(res.getPath()) == null) {
+        if (!m.findEntry(res.getPath()).isPresent()) {
             throw new AssertionError("resource " + res.getPath()
                     + " not in module " + m.getName());
         }
     }
 
     private void checkResourcesAfterCompression() throws Exception {
-        PoolImpl resources1 = new PoolImpl();
-        ModuleData res1 = new ModuleData("module1", "/module1/toto1",
-                ModuleDataType.CLASS_OR_RESOURCE,
+        ModulePoolImpl resources1 = new ModulePoolImpl();
+        ModuleEntry res1 = ModuleEntry.create("module1", "/module1/toto1",
+                ModuleEntry.Type.CLASS_OR_RESOURCE,
                 new ByteArrayInputStream(new byte[0]), 0);
-        ModuleData res2 = new ModuleData("module2", "/module2/toto1",
-                ModuleDataType.CLASS_OR_RESOURCE,
+        ModuleEntry res2 = ModuleEntry.create("module2", "/module2/toto1",
+                ModuleEntry.Type.CLASS_OR_RESOURCE,
                 new ByteArrayInputStream(new byte[0]), 0);
         resources1.add(res1);
         resources1.add(res2);
 
         checkResources(resources1, res1, res2);
-        Pool resources2 = new PoolImpl();
-        ModuleData res3 = new ModuleData("module2", "/module2/toto1",
-                ModuleDataType.CLASS_OR_RESOURCE,
+        ModulePool resources2 = new ModulePoolImpl();
+        ModuleEntry res3 = ModuleEntry.create("module2", "/module2/toto1",
+                ModuleEntry.Type.CLASS_OR_RESOURCE,
                 new ByteArrayInputStream(new byte[7]), 7);
         resources2.add(res3);
-        resources2.add(PoolImpl.newCompressedResource(res1,
+        resources2.add(ModulePoolImpl.newCompressedResource(res1,
                 ByteBuffer.allocate(7), "zip", null, resources1.getStringTable(),
                 ByteOrder.nativeOrder()));
         checkResources(resources2, res1, res2);
     }
 
-    private void checkResources(Pool resources, ModuleData... expected) {
-        Collection<Module> ms = resources.getModules();
+    private void checkResources(ModulePool resources, ModuleEntry... expected) {
         List<String> modules = new ArrayList();
-        for(Module m : ms) {
+        resources.modules().forEach(m -> {
             modules.add(m.getName());
-        }
-        for (ModuleData res : expected) {
+        });
+        for (ModuleEntry res : expected) {
             if (!resources.contains(res)) {
                 throw new AssertionError("Resource not found: " + res);
             }
 
-            if (resources.get(res.getPath()) == null) {
+            if (!resources.findEntry(res.getPath()).isPresent()) {
                 throw new AssertionError("Resource not found: " + res);
             }
 
@@ -244,7 +242,7 @@ public class ResourcePoolTest {
                 throw new AssertionError("Module not found: " + res.getModule());
             }
 
-            if (!resources.getContent().contains(res)) {
+            if (!resources.contains(res)) {
                 throw new AssertionError("Resources not found: " + res);
             }
 
@@ -260,17 +258,17 @@ public class ResourcePoolTest {
             throw new AssertionError("ReadOnly resources");
         }
 
-        ((PoolImpl) resources).setReadOnly();
+        ((ModulePoolImpl) resources).setReadOnly();
         try {
-            resources.add(new ModuleData("module2",  "/module2/toto1",
-                    ModuleDataType.CLASS_OR_RESOURCE, new ByteArrayInputStream(new byte[0]), 0));
-            throw new AssertionError("Pool is read-only, but an exception is not thrown");
+            resources.add(ModuleEntry.create("module2",  "/module2/toto1",
+                    ModuleEntry.Type.CLASS_OR_RESOURCE, new ByteArrayInputStream(new byte[0]), 0));
+            throw new AssertionError("ModulePool is read-only, but an exception is not thrown");
         } catch (Exception ex) {
             // Expected
         }
     }
 
     interface ResourceAdder {
-        void add(Pool resources, String module, String path);
+        void add(ModulePool resources, String module, String path);
     }
 }

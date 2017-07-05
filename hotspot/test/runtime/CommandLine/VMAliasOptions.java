@@ -28,6 +28,7 @@ import jdk.test.lib.cli.*;
  * @test
  * @bug 8061611
  * @summary Test that various alias options correctly set the target options. See aliased_jvm_flags in arguments.cpp.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 public class VMAliasOptions {
