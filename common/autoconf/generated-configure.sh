@@ -3665,7 +3665,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1351539315
+DATE_WHEN_GENERATED=1351854415
 
 ###############################################################################
 #
@@ -7603,7 +7603,11 @@ else
       # If we have a spec.gmk, we have run here before and we are OK. Otherwise, check for
       # other files
       files_present=`$LS $OUTPUT_ROOT`
-      if test "x$files_present" != x; then
+      # Configure has already touched config.log and confdefs.h in the current dir when this check
+      # is performed.
+      filtered_files=`$ECHO "$files_present" | $SED -e 's/config.log//g' -e 's/confdefs.h//g' -e 's/ //g' \
+                                             | $TR -d '\n'`
+      if test "x$filtered_files" != x; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: Current directory is $CURDIR." >&5
 $as_echo "$as_me: Current directory is $CURDIR." >&6;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: Since this is not the source root, configure will output the configuration here" >&5
@@ -7889,6 +7893,13 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -7898,6 +7909,13 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
@@ -8221,6 +8239,13 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -8230,6 +8255,13 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
@@ -8550,6 +8582,13 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -8559,6 +8598,13 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
@@ -8884,6 +8930,13 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -8893,6 +8946,13 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
@@ -9212,6 +9272,13 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -9221,6 +9288,13 @@ $as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
@@ -15963,6 +16037,13 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -15972,6 +16053,13 @@ $as_echo "$as_me: Warning: $VCVARSFILE is missing, this is probably Visual Studi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of VS_ENV_CMD, which resolves as \"$complete\", is not found." >&5
@@ -16537,6 +16625,13 @@ done
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -16546,6 +16641,13 @@ done
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_CC, which resolves as \"$complete\", is not found." >&5
@@ -16823,6 +16925,13 @@ done
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -16832,6 +16941,13 @@ done
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_CXX, which resolves as \"$complete\", is not found." >&5
@@ -17104,6 +17220,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -17113,6 +17236,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&5
@@ -17621,6 +17751,13 @@ done
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -17630,6 +17767,13 @@ done
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CC, which resolves as \"$complete\", is not found." >&5
@@ -18028,6 +18172,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -18037,6 +18188,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of PROPER_COMPILER_CC, which resolves as \"$complete\", is not found." >&5
@@ -19076,6 +19234,13 @@ done
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -19085,6 +19250,13 @@ done
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CXX, which resolves as \"$complete\", is not found." >&5
@@ -19483,6 +19655,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -19492,6 +19671,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of PROPER_COMPILER_CXX, which resolves as \"$complete\", is not found." >&5
@@ -20355,6 +20541,13 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -20364,6 +20557,13 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJC, which resolves as \"$complete\", is not found." >&5
@@ -20711,6 +20911,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -20720,6 +20927,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of AR, which resolves as \"$complete\", is not found." >&5
@@ -21033,6 +21247,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -21042,6 +21263,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of WINLD, which resolves as \"$complete\", is not found." >&5
@@ -21345,6 +21573,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -21354,6 +21589,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MT, which resolves as \"$complete\", is not found." >&5
@@ -21641,6 +21883,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -21650,6 +21899,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of RC, which resolves as \"$complete\", is not found." >&5
@@ -21990,6 +22246,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -21999,6 +22262,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of WINAR, which resolves as \"$complete\", is not found." >&5
@@ -22271,6 +22541,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -22280,6 +22557,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of DUMPBIN, which resolves as \"$complete\", is not found." >&5
@@ -22657,6 +22941,13 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -22666,6 +22957,13 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CPP, which resolves as \"$complete\", is not found." >&5
@@ -23032,6 +23330,13 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -23041,6 +23346,13 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of CXXCPP, which resolves as \"$complete\", is not found." >&5
@@ -23336,6 +23648,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -23345,6 +23664,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of AS, which resolves as \"$complete\", is not found." >&5
@@ -23628,6 +23954,13 @@ done
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -23637,6 +23970,13 @@ done
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of NM, which resolves as \"$complete\", is not found." >&5
@@ -23909,6 +24249,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -23918,6 +24265,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of STRIP, which resolves as \"$complete\", is not found." >&5
@@ -24190,6 +24544,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -24199,6 +24560,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MCS, which resolves as \"$complete\", is not found." >&5
@@ -24524,6 +24892,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -24533,6 +24908,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of NM, which resolves as \"$complete\", is not found." >&5
@@ -24857,6 +25239,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -24866,6 +25255,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of STRIP, which resolves as \"$complete\", is not found." >&5
@@ -25203,6 +25599,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -25212,6 +25615,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJCOPY, which resolves as \"$complete\", is not found." >&5
@@ -25548,6 +25958,13 @@ if test "x$OBJDUMP" != x; then
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -25557,6 +25974,13 @@ if test "x$OBJDUMP" != x; then
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of OBJDUMP, which resolves as \"$complete\", is not found." >&5
@@ -25832,6 +26256,13 @@ fi
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -25841,6 +26272,13 @@ fi
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       { $as_echo "$as_me:${as_lineno-$LINENO}: The path of LIPO, which resolves as \"$complete\", is not found." >&5
@@ -29026,12 +29464,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_freetype_FT_Init_FreeType" >&5
 $as_echo "$ac_cv_lib_freetype_FT_Init_FreeType" >&6; }
 if test "x$ac_cv_lib_freetype_FT_Init_FreeType" = x""yes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBFREETYPE 1
-_ACEOF
-
-  LIBS="-lfreetype $LIBS"
-
+  FREETYPE2_FOUND=true
 else
   as_fn_error $? "Could not find freetype2! $HELP_MSG " "$LINENO" 5
 fi

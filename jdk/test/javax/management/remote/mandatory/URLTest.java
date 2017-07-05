@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 /*
  * @test
  * @bug 5057532
- * @ignore Test will fail until 6338951 is resolved (java.net.URI now
- * accepts "http://-a").
  * @summary Tests that host names are parsed correctly in URLs
  * @author Eamonn McManus
  * @run clean URLTest

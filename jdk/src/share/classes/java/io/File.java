@@ -153,7 +153,7 @@ public class File
     /**
      * The FileSystem object representing the platform's local file system.
      */
-    private static final FileSystem fs = FileSystem.getFileSystem();
+    private static final FileSystem fs = DefaultFileSystem.getFileSystem();
 
     /**
      * This abstract pathname's normalized pathname string.  A normalized

@@ -30,6 +30,7 @@ FILES_c = \
     cmserr.c \
     cmsgamma.c \
     cmsgmt.c \
+    cmshalf.c \
     cmsintrp.c \
     cmsio0.c \
     cmsio1.c \

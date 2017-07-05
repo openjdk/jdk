@@ -108,14 +108,8 @@
 # include <semaphore.h>
 # include <fcntl.h>
 # include <string.h>
-#ifdef _ALLBSD_SOURCE
 # include <sys/param.h>
 # include <sys/sysctl.h>
-#else
-# include <syscall.h>
-# include <sys/sysinfo.h>
-# include <gnu/libc-version.h>
-#endif
 # include <sys/ipc.h>
 # include <sys/shm.h>
 #ifndef __APPLE__
@@ -150,25 +144,10 @@
 // global variables
 julong os::Bsd::_physical_memory = 0;
 
-#ifndef _ALLBSD_SOURCE
-address   os::Bsd::_initial_thread_stack_bottom = NULL;
-uintptr_t os::Bsd::_initial_thread_stack_size   = 0;
-#endif
 
 int (*os::Bsd::_clock_gettime)(clockid_t, struct timespec *) = NULL;
-#ifndef _ALLBSD_SOURCE
-int (*os::Bsd::_pthread_getcpuclockid)(pthread_t, clockid_t *) = NULL;
-Mutex* os::Bsd::_createThread_lock = NULL;
-#endif
 pthread_t os::Bsd::_main_thread;
 int os::Bsd::_page_size = -1;
-#ifndef _ALLBSD_SOURCE
-bool os::Bsd::_is_floating_stack = false;
-bool os::Bsd::_is_NPTL = false;
-bool os::Bsd::_supports_fast_thread_cpu_time = false;
-const char * os::Bsd::_glibc_version = NULL;
-const char * os::Bsd::_libpthread_version = NULL;
-#endif
 
 static jlong initial_time_count=0;
 
@@ -176,7 +155,7 @@ static int clock_tics_per_sec = 100;
 
 // For diagnostics to print a message once. see run_periodic_checks
 static sigset_t check_signal_done;
-static bool check_signals = true;;
+static bool check_signals = true;
 
 static pid_t _initial_pid = 0;
 
@@ -198,16 +177,8 @@ julong os::available_memory() {
 }
 
 julong os::Bsd::available_memory() {
-#ifdef _ALLBSD_SOURCE
   // XXXBSD: this is just a stopgap implementation
   return physical_memory() >> 2;
-#else
-  // values in struct sysinfo are "unsigned long"
-  struct sysinfo si;
-  sysinfo(&si);
-
-  return (julong)si.freeram * si.mem_unit;
-#endif
 }
 
 julong os::physical_memory() {
@@ -255,22 +226,6 @@ bool os::have_special_privileges() {
 }
 
 
-#ifndef _ALLBSD_SOURCE
-#ifndef SYS_gettid
-// i386: 224, ia64: 1105, amd64: 186, sparc 143
-#ifdef __ia64__
-#define SYS_gettid 1105
-#elif __i386__
-#define SYS_gettid 224
-#elif __amd64__
-#define SYS_gettid 186
-#elif __sparc__
-#define SYS_gettid 143
-#else
-#error define gettid for the arch
-#endif
-#endif
-#endif
 
 // Cpu architecture string
 #if   defined(ZERO)
@@ -302,36 +257,7 @@ static char cpu_arch[] = "sparc";
 #define COMPILER_VARIANT "client"
 #endif
 
-#ifndef _ALLBSD_SOURCE
-// pid_t gettid()
-//
-// Returns the kernel thread id of the currently running thread. Kernel
-// thread id is used to access /proc.
-//
-// (Note that getpid() on BsdThreads returns kernel thread id too; but
-// on NPTL, it returns the same pid for all threads, as required by POSIX.)
-//
-pid_t os::Bsd::gettid() {
-  int rslt = syscall(SYS_gettid);
-  if (rslt == -1) {
-     // old kernel, no NPTL support
-     return getpid();
-  } else {
-     return (pid_t)rslt;
-  }
-}
 
-// Most versions of bsd have a bug where the number of processors are
-// determined by looking at the /proc file system.  In a chroot environment,
-// the system call returns 1.  This causes the VM to act as if it is
-// a single processor and elide locking (see is_MP() call).
-static bool unsafe_chroot_detected = false;
-static const char *unstable_chroot_error = "/proc file system not found.\n"
-                     "Java may be unstable running multithreaded in a chroot "
-                     "environment on Bsd when /proc filesystem is not mounted.";
-#endif
-
-#ifdef _ALLBSD_SOURCE
 void os::Bsd::initialize_system_info() {
   int mib[2];
   size_t len;
@@ -370,24 +296,6 @@ void os::Bsd::initialize_system_info() {
   }
 #endif
 }
-#else
-void os::Bsd::initialize_system_info() {
-  set_processor_count(sysconf(_SC_NPROCESSORS_CONF));
-  if (processor_count() == 1) {
-    pid_t pid = os::Bsd::gettid();
-    char fname[32];
-    jio_snprintf(fname, sizeof(fname), "/proc/%d", pid);
-    FILE *fp = fopen(fname, "r");
-    if (fp == NULL) {
-      unsafe_chroot_detected = true;
-    } else {
-      fclose(fp);
-    }
-  }
-  _physical_memory = (julong)sysconf(_SC_PHYS_PAGES) * (julong)sysconf(_SC_PAGESIZE);
-  assert(processor_count() > 0, "bsd error");
-}
-#endif
 
 #ifdef __APPLE__
 static const char *get_home() {
@@ -744,171 +652,6 @@ void os::Bsd::hotspot_sigmask(Thread* thread) {
   }
 }
 
-#ifndef _ALLBSD_SOURCE
-//////////////////////////////////////////////////////////////////////////////
-// detecting pthread library
-
-void os::Bsd::libpthread_init() {
-  // Save glibc and pthread version strings. Note that _CS_GNU_LIBC_VERSION
-  // and _CS_GNU_LIBPTHREAD_VERSION are supported in glibc >= 2.3.2. Use a
-  // generic name for earlier versions.
-  // Define macros here so we can build HotSpot on old systems.
-# ifndef _CS_GNU_LIBC_VERSION
-# define _CS_GNU_LIBC_VERSION 2
-# endif
-# ifndef _CS_GNU_LIBPTHREAD_VERSION
-# define _CS_GNU_LIBPTHREAD_VERSION 3
-# endif
-
-  size_t n = confstr(_CS_GNU_LIBC_VERSION, NULL, 0);
-  if (n > 0) {
-     char *str = (char *)malloc(n);
-     confstr(_CS_GNU_LIBC_VERSION, str, n);
-     os::Bsd::set_glibc_version(str);
-  } else {
-     // _CS_GNU_LIBC_VERSION is not supported, try gnu_get_libc_version()
-     static char _gnu_libc_version[32];
-     jio_snprintf(_gnu_libc_version, sizeof(_gnu_libc_version),
-              "glibc %s %s", gnu_get_libc_version(), gnu_get_libc_release());
-     os::Bsd::set_glibc_version(_gnu_libc_version);
-  }
-
-  n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
-  if (n > 0) {
-     char *str = (char *)malloc(n);
-     confstr(_CS_GNU_LIBPTHREAD_VERSION, str, n);
-     // Vanilla RH-9 (glibc 2.3.2) has a bug that confstr() always tells
-     // us "NPTL-0.29" even we are running with BsdThreads. Check if this
-     // is the case. BsdThreads has a hard limit on max number of threads.
-     // So sysconf(_SC_THREAD_THREADS_MAX) will return a positive value.
-     // On the other hand, NPTL does not have such a limit, sysconf()
-     // will return -1 and errno is not changed. Check if it is really NPTL.
-     if (strcmp(os::Bsd::glibc_version(), "glibc 2.3.2") == 0 &&
-         strstr(str, "NPTL") &&
-         sysconf(_SC_THREAD_THREADS_MAX) > 0) {
-       free(str);
-       os::Bsd::set_libpthread_version("bsdthreads");
-     } else {
-       os::Bsd::set_libpthread_version(str);
-     }
-  } else {
-    // glibc before 2.3.2 only has BsdThreads.
-    os::Bsd::set_libpthread_version("bsdthreads");
-  }
-
-  if (strstr(libpthread_version(), "NPTL")) {
-     os::Bsd::set_is_NPTL();
-  } else {
-     os::Bsd::set_is_BsdThreads();
-  }
-
-  // BsdThreads have two flavors: floating-stack mode, which allows variable
-  // stack size; and fixed-stack mode. NPTL is always floating-stack.
-  if (os::Bsd::is_NPTL() || os::Bsd::supports_variable_stack_size()) {
-     os::Bsd::set_is_floating_stack();
-  }
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// thread stack
-
-// Force Bsd kernel to expand current thread stack. If "bottom" is close
-// to the stack guard, caller should block all signals.
-//
-// MAP_GROWSDOWN:
-//   A special mmap() flag that is used to implement thread stacks. It tells
-//   kernel that the memory region should extend downwards when needed. This
-//   allows early versions of BsdThreads to only mmap the first few pages
-//   when creating a new thread. Bsd kernel will automatically expand thread
-//   stack as needed (on page faults).
-//
-//   However, because the memory region of a MAP_GROWSDOWN stack can grow on
-//   demand, if a page fault happens outside an already mapped MAP_GROWSDOWN
-//   region, it's hard to tell if the fault is due to a legitimate stack
-//   access or because of reading/writing non-exist memory (e.g. buffer
-//   overrun). As a rule, if the fault happens below current stack pointer,
-//   Bsd kernel does not expand stack, instead a SIGSEGV is sent to the
-//   application (see Bsd kernel fault.c).
-//
-//   This Bsd feature can cause SIGSEGV when VM bangs thread stack for
-//   stack overflow detection.
-//
-//   Newer version of BsdThreads (since glibc-2.2, or, RH-7.x) and NPTL do
-//   not use this flag. However, the stack of initial thread is not created
-//   by pthread, it is still MAP_GROWSDOWN. Also it's possible (though
-//   unlikely) that user code can create a thread with MAP_GROWSDOWN stack
-//   and then attach the thread to JVM.
-//
-// To get around the problem and allow stack banging on Bsd, we need to
-// manually expand thread stack after receiving the SIGSEGV.
-//
-// There are two ways to expand thread stack to address "bottom", we used
-// both of them in JVM before 1.5:
-//   1. adjust stack pointer first so that it is below "bottom", and then
-//      touch "bottom"
-//   2. mmap() the page in question
-//
-// Now alternate signal stack is gone, it's harder to use 2. For instance,
-// if current sp is already near the lower end of page 101, and we need to
-// call mmap() to map page 100, it is possible that part of the mmap() frame
-// will be placed in page 100. When page 100 is mapped, it is zero-filled.
-// That will destroy the mmap() frame and cause VM to crash.
-//
-// The following code works by adjusting sp first, then accessing the "bottom"
-// page to force a page fault. Bsd kernel will then automatically expand the
-// stack mapping.
-//
-// _expand_stack_to() assumes its frame size is less than page size, which
-// should always be true if the function is not inlined.
-
-#if __GNUC__ < 3    // gcc 2.x does not support noinline attribute
-#define NOINLINE
-#else
-#define NOINLINE __attribute__ ((noinline))
-#endif
-
-static void _expand_stack_to(address bottom) NOINLINE;
-
-static void _expand_stack_to(address bottom) {
-  address sp;
-  size_t size;
-  volatile char *p;
-
-  // Adjust bottom to point to the largest address within the same page, it
-  // gives us a one-page buffer if alloca() allocates slightly more memory.
-  bottom = (address)align_size_down((uintptr_t)bottom, os::Bsd::page_size());
-  bottom += os::Bsd::page_size() - 1;
-
-  // sp might be slightly above current stack pointer; if that's the case, we
-  // will alloca() a little more space than necessary, which is OK. Don't use
-  // os::current_stack_pointer(), as its result can be slightly below current
-  // stack pointer, causing us to not alloca enough to reach "bottom".
-  sp = (address)&sp;
-
-  if (sp > bottom) {
-    size = sp - bottom;
-    p = (volatile char *)alloca(size);
-    assert(p != NULL && p <= (volatile char *)bottom, "alloca problem?");
-    p[0] = '\0';
-  }
-}
-
-bool os::Bsd::manually_expand_stack(JavaThread * t, address addr) {
-  assert(t!=NULL, "just checking");
-  assert(t->osthread()->expanding_stack(), "expand should be set");
-  assert(t->stack_base() != NULL, "stack_base was not initialized");
-
-  if (addr <  t->stack_base() && addr >= t->stack_yellow_zone_base()) {
-    sigset_t mask_all, old_sigset;
-    sigfillset(&mask_all);
-    pthread_sigmask(SIG_SETMASK, &mask_all, &old_sigset);
-    _expand_stack_to(addr);
-    pthread_sigmask(SIG_SETMASK, &old_sigset, NULL);
-    return true;
-  }
-  return false;
-}
-#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // create new thread
@@ -917,43 +660,7 @@ static address highest_vm_reserved_address();
 
 // check if it's safe to start a new thread
 static bool _thread_safety_check(Thread* thread) {
-#ifdef _ALLBSD_SOURCE
-    return true;
-#else
-  if (os::Bsd::is_BsdThreads() && !os::Bsd::is_floating_stack()) {
-    // Fixed stack BsdThreads (SuSE Bsd/x86, and some versions of Redhat)
-    //   Heap is mmap'ed at lower end of memory space. Thread stacks are
-    //   allocated (MAP_FIXED) from high address space. Every thread stack
-    //   occupies a fixed size slot (usually 2Mbytes, but user can change
-    //   it to other values if they rebuild BsdThreads).
-    //
-    // Problem with MAP_FIXED is that mmap() can still succeed even part of
-    // the memory region has already been mmap'ed. That means if we have too
-    // many threads and/or very large heap, eventually thread stack will
-    // collide with heap.
-    //
-    // Here we try to prevent heap/stack collision by comparing current
-    // stack bottom with the highest address that has been mmap'ed by JVM
-    // plus a safety margin for memory maps created by native code.
-    //
-    // This feature can be disabled by setting ThreadSafetyMargin to 0
-    //
-    if (ThreadSafetyMargin > 0) {
-      address stack_bottom = os::current_stack_base() - os::current_stack_size();
-
-      // not safe if our stack extends below the safety margin
-      return stack_bottom - ThreadSafetyMargin >= highest_vm_reserved_address();
-    } else {
-      return true;
-    }
-  } else {
-    // Floating stack BsdThreads or NPTL:
-    //   Unlike fixed stack BsdThreads, thread stacks are not MAP_FIXED. When
-    //   there's not enough space left, pthread_create() will fail. If we come
-    //   here, that means enough space has been reserved for stack.
-    return true;
-  }
-#endif
+  return true;
 }
 
 #ifdef __APPLE__
@@ -991,24 +698,12 @@ static void *java_start(Thread *thread) {
     return NULL;
   }
 
-#ifdef _ALLBSD_SOURCE
 #ifdef __APPLE__
   // thread_id is mach thread on macos
   osthread->set_thread_id(::mach_thread_self());
 #else
   // thread_id is pthread_id on BSD
   osthread->set_thread_id(::pthread_self());
-#endif
-#else
-  // thread_id is kernel thread id (similar to Solaris LWP id)
-  osthread->set_thread_id(os::Bsd::gettid());
-
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
 #endif
   // initialize signal mask for this thread
   os::Bsd::hotspot_sigmask(thread);
@@ -1099,23 +794,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
     // let pthread_create() pick the default value.
   }
 
-#ifndef _ALLBSD_SOURCE
-  // glibc guard page
-  pthread_attr_setguardsize(&attr, os::Bsd::default_guard_size(thr_type));
-#endif
-
   ThreadState state;
 
   {
-
-#ifndef _ALLBSD_SOURCE
-    // Serialize thread creation if we are running with fixed stack BsdThreads
-    bool lock = os::Bsd::is_BsdThreads() && !os::Bsd::is_floating_stack();
-    if (lock) {
-      os::Bsd::createThread_lock()->lock_without_safepoint_check();
-    }
-#endif
-
     pthread_t tid;
     int ret = pthread_create(&tid, &attr, (void* (*)(void*)) java_start, thread);
 
@@ -1128,9 +809,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
       // Need to clean up stuff we've allocated so far
       thread->set_osthread(NULL);
       delete osthread;
-#ifndef _ALLBSD_SOURCE
-      if (lock) os::Bsd::createThread_lock()->unlock();
-#endif
       return false;
     }
 
@@ -1146,11 +824,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
       }
     }
 
-#ifndef _ALLBSD_SOURCE
-    if (lock) {
-      os::Bsd::createThread_lock()->unlock();
-    }
-#endif
   }
 
   // Aborted due to thread limit being reached
@@ -1188,14 +861,10 @@ bool os::create_attached_thread(JavaThread* thread) {
   }
 
   // Store pthread info into the OSThread
-#ifdef _ALLBSD_SOURCE
 #ifdef __APPLE__
   osthread->set_thread_id(::mach_thread_self());
 #else
   osthread->set_thread_id(::pthread_self());
-#endif
-#else
-  osthread->set_thread_id(os::Bsd::gettid());
 #endif
   osthread->set_pthread_id(::pthread_self());
 
@@ -1206,35 +875,6 @@ bool os::create_attached_thread(JavaThread* thread) {
   osthread->set_state(RUNNABLE);
 
   thread->set_osthread(osthread);
-
-#ifndef _ALLBSD_SOURCE
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
-
-  if (os::Bsd::is_initial_thread()) {
-    // If current thread is initial thread, its stack is mapped on demand,
-    // see notes about MAP_GROWSDOWN. Here we try to force kernel to map
-    // the entire stack region to avoid SEGV in stack banging.
-    // It is also useful to get around the heap-stack-gap problem on SuSE
-    // kernel (see 4821821 for details). We first expand stack to the top
-    // of yellow zone, then enable stack yellow zone (order is significant,
-    // enabling yellow zone first will crash JVM on SuSE Bsd), so there
-    // is no gap between the last two virtual memory regions.
-
-    JavaThread *jt = (JavaThread *)thread;
-    address addr = jt->stack_yellow_zone_base();
-    assert(addr != NULL, "initialization problem?");
-    assert(jt->stack_available(addr) > 0, "stack guard should not be enabled");
-
-    osthread->set_expanding_stack();
-    os::Bsd::manually_expand_stack(jt, addr);
-    osthread->clear_expanding_stack();
-  }
-#endif
 
   // initialize signal mask for this thread
   // and save the caller's signal mask
@@ -1290,247 +930,6 @@ extern "C" Thread* get_thread() {
   return ThreadLocalStorage::thread();
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// initial thread
-
-#ifndef _ALLBSD_SOURCE
-// Check if current thread is the initial thread, similar to Solaris thr_main.
-bool os::Bsd::is_initial_thread(void) {
-  char dummy;
-  // If called before init complete, thread stack bottom will be null.
-  // Can be called if fatal error occurs before initialization.
-  if (initial_thread_stack_bottom() == NULL) return false;
-  assert(initial_thread_stack_bottom() != NULL &&
-         initial_thread_stack_size()   != 0,
-         "os::init did not locate initial thread's stack region");
-  if ((address)&dummy >= initial_thread_stack_bottom() &&
-      (address)&dummy < initial_thread_stack_bottom() + initial_thread_stack_size())
-       return true;
-  else return false;
-}
-
-// Find the virtual memory area that contains addr
-static bool find_vma(address addr, address* vma_low, address* vma_high) {
-  FILE *fp = fopen("/proc/self/maps", "r");
-  if (fp) {
-    address low, high;
-    while (!feof(fp)) {
-      if (fscanf(fp, "%p-%p", &low, &high) == 2) {
-        if (low <= addr && addr < high) {
-           if (vma_low)  *vma_low  = low;
-           if (vma_high) *vma_high = high;
-           fclose (fp);
-           return true;
-        }
-      }
-      for (;;) {
-        int ch = fgetc(fp);
-        if (ch == EOF || ch == (int)'\n') break;
-      }
-    }
-    fclose(fp);
-  }
-  return false;
-}
-
-// Locate initial thread stack. This special handling of initial thread stack
-// is needed because pthread_getattr_np() on most (all?) Bsd distros returns
-// bogus value for initial thread.
-void os::Bsd::capture_initial_stack(size_t max_size) {
-  // stack size is the easy part, get it from RLIMIT_STACK
-  size_t stack_size;
-  struct rlimit rlim;
-  getrlimit(RLIMIT_STACK, &rlim);
-  stack_size = rlim.rlim_cur;
-
-  // 6308388: a bug in ld.so will relocate its own .data section to the
-  //   lower end of primordial stack; reduce ulimit -s value a little bit
-  //   so we won't install guard page on ld.so's data section.
-  stack_size -= 2 * page_size();
-
-  // 4441425: avoid crash with "unlimited" stack size on SuSE 7.1 or Redhat
-  //   7.1, in both cases we will get 2G in return value.
-  // 4466587: glibc 2.2.x compiled w/o "--enable-kernel=2.4.0" (RH 7.0,
-  //   SuSE 7.2, Debian) can not handle alternate signal stack correctly
-  //   for initial thread if its stack size exceeds 6M. Cap it at 2M,
-  //   in case other parts in glibc still assumes 2M max stack size.
-  // FIXME: alt signal stack is gone, maybe we can relax this constraint?
-#ifndef IA64
-  if (stack_size > 2 * K * K) stack_size = 2 * K * K;
-#else
-  // Problem still exists RH7.2 (IA64 anyway) but 2MB is a little small
-  if (stack_size > 4 * K * K) stack_size = 4 * K * K;
-#endif
-
-  // Try to figure out where the stack base (top) is. This is harder.
-  //
-  // When an application is started, glibc saves the initial stack pointer in
-  // a global variable "__libc_stack_end", which is then used by system
-  // libraries. __libc_stack_end should be pretty close to stack top. The
-  // variable is available since the very early days. However, because it is
-  // a private interface, it could disappear in the future.
-  //
-  // Bsd kernel saves start_stack information in /proc/<pid>/stat. Similar
-  // to __libc_stack_end, it is very close to stack top, but isn't the real
-  // stack top. Note that /proc may not exist if VM is running as a chroot
-  // program, so reading /proc/<pid>/stat could fail. Also the contents of
-  // /proc/<pid>/stat could change in the future (though unlikely).
-  //
-  // We try __libc_stack_end first. If that doesn't work, look for
-  // /proc/<pid>/stat. If neither of them works, we use current stack pointer
-  // as a hint, which should work well in most cases.
-
-  uintptr_t stack_start;
-
-  // try __libc_stack_end first
-  uintptr_t *p = (uintptr_t *)dlsym(RTLD_DEFAULT, "__libc_stack_end");
-  if (p && *p) {
-    stack_start = *p;
-  } else {
-    // see if we can get the start_stack field from /proc/self/stat
-    FILE *fp;
-    int pid;
-    char state;
-    int ppid;
-    int pgrp;
-    int session;
-    int nr;
-    int tpgrp;
-    unsigned long flags;
-    unsigned long minflt;
-    unsigned long cminflt;
-    unsigned long majflt;
-    unsigned long cmajflt;
-    unsigned long utime;
-    unsigned long stime;
-    long cutime;
-    long cstime;
-    long prio;
-    long nice;
-    long junk;
-    long it_real;
-    uintptr_t start;
-    uintptr_t vsize;
-    intptr_t rss;
-    uintptr_t rsslim;
-    uintptr_t scodes;
-    uintptr_t ecode;
-    int i;
-
-    // Figure what the primordial thread stack base is. Code is inspired
-    // by email from Hans Boehm. /proc/self/stat begins with current pid,
-    // followed by command name surrounded by parentheses, state, etc.
-    char stat[2048];
-    int statlen;
-
-    fp = fopen("/proc/self/stat", "r");
-    if (fp) {
-      statlen = fread(stat, 1, 2047, fp);
-      stat[statlen] = '\0';
-      fclose(fp);
-
-      // Skip pid and the command string. Note that we could be dealing with
-      // weird command names, e.g. user could decide to rename java launcher
-      // to "java 1.4.2 :)", then the stat file would look like
-      //                1234 (java 1.4.2 :)) R ... ...
-      // We don't really need to know the command string, just find the last
-      // occurrence of ")" and then start parsing from there. See bug 4726580.
-      char * s = strrchr(stat, ')');
-
-      i = 0;
-      if (s) {
-        // Skip blank chars
-        do s++; while (isspace(*s));
-
-#define _UFM UINTX_FORMAT
-#define _DFM INTX_FORMAT
-
-        /*                                     1   1   1   1   1   1   1   1   1   1   2   2    2    2    2    2    2    2    2 */
-        /*              3  4  5  6  7  8   9   0   1   2   3   4   5   6   7   8   9   0   1    2    3    4    5    6    7    8 */
-        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld " _UFM _UFM _DFM _UFM _UFM _UFM _UFM,
-             &state,          /* 3  %c  */
-             &ppid,           /* 4  %d  */
-             &pgrp,           /* 5  %d  */
-             &session,        /* 6  %d  */
-             &nr,             /* 7  %d  */
-             &tpgrp,          /* 8  %d  */
-             &flags,          /* 9  %lu  */
-             &minflt,         /* 10 %lu  */
-             &cminflt,        /* 11 %lu  */
-             &majflt,         /* 12 %lu  */
-             &cmajflt,        /* 13 %lu  */
-             &utime,          /* 14 %lu  */
-             &stime,          /* 15 %lu  */
-             &cutime,         /* 16 %ld  */
-             &cstime,         /* 17 %ld  */
-             &prio,           /* 18 %ld  */
-             &nice,           /* 19 %ld  */
-             &junk,           /* 20 %ld  */
-             &it_real,        /* 21 %ld  */
-             &start,          /* 22 UINTX_FORMAT */
-             &vsize,          /* 23 UINTX_FORMAT */
-             &rss,            /* 24 INTX_FORMAT  */
-             &rsslim,         /* 25 UINTX_FORMAT */
-             &scodes,         /* 26 UINTX_FORMAT */
-             &ecode,          /* 27 UINTX_FORMAT */
-             &stack_start);   /* 28 UINTX_FORMAT */
-      }
-
-#undef _UFM
-#undef _DFM
-
-      if (i != 28 - 2) {
-         assert(false, "Bad conversion from /proc/self/stat");
-         // product mode - assume we are the initial thread, good luck in the
-         // embedded case.
-         warning("Can't detect initial thread stack location - bad conversion");
-         stack_start = (uintptr_t) &rlim;
-      }
-    } else {
-      // For some reason we can't open /proc/self/stat (for example, running on
-      // FreeBSD with a Bsd emulator, or inside chroot), this should work for
-      // most cases, so don't abort:
-      warning("Can't detect initial thread stack location - no /proc/self/stat");
-      stack_start = (uintptr_t) &rlim;
-    }
-  }
-
-  // Now we have a pointer (stack_start) very close to the stack top, the
-  // next thing to do is to figure out the exact location of stack top. We
-  // can find out the virtual memory area that contains stack_start by
-  // reading /proc/self/maps, it should be the last vma in /proc/self/maps,
-  // and its upper limit is the real stack top. (again, this would fail if
-  // running inside chroot, because /proc may not exist.)
-
-  uintptr_t stack_top;
-  address low, high;
-  if (find_vma((address)stack_start, &low, &high)) {
-    // success, "high" is the true stack top. (ignore "low", because initial
-    // thread stack grows on demand, its real bottom is high - RLIMIT_STACK.)
-    stack_top = (uintptr_t)high;
-  } else {
-    // failed, likely because /proc/self/maps does not exist
-    warning("Can't detect initial thread stack location - find_vma failed");
-    // best effort: stack_start is normally within a few pages below the real
-    // stack top, use it as stack top, and reduce stack size so we won't put
-    // guard page outside stack.
-    stack_top = stack_start;
-    stack_size -= 16 * page_size();
-  }
-
-  // stack_top could be partially down the page so align it
-  stack_top = align_size_up(stack_top, page_size());
-
-  if (max_size && stack_size > max_size) {
-     _initial_thread_stack_size = max_size;
-  } else {
-     _initial_thread_stack_size = stack_size;
-  }
-
-  _initial_thread_stack_size = align_size_down(_initial_thread_stack_size, page_size());
-  _initial_thread_stack_bottom = (address)stack_top - _initial_thread_stack_size;
-}
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
@@ -1576,7 +975,7 @@ jlong os::javaTimeMillis() {
 void os::Bsd::clock_init() {
         // XXXDARWIN: Investigate replacement monotonic clock
 }
-#elif defined(_ALLBSD_SOURCE)
+#else
 void os::Bsd::clock_init() {
   struct timespec res;
   struct timespec tp;
@@ -1586,86 +985,8 @@ void os::Bsd::clock_init() {
     _clock_gettime = ::clock_gettime;
   }
 }
-#else
-void os::Bsd::clock_init() {
-  // we do dlopen's in this particular order due to bug in bsd
-  // dynamical loader (see 6348968) leading to crash on exit
-  void* handle = dlopen("librt.so.1", RTLD_LAZY);
-  if (handle == NULL) {
-    handle = dlopen("librt.so", RTLD_LAZY);
-  }
-
-  if (handle) {
-    int (*clock_getres_func)(clockid_t, struct timespec*) =
-           (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_getres");
-    int (*clock_gettime_func)(clockid_t, struct timespec*) =
-           (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_gettime");
-    if (clock_getres_func && clock_gettime_func) {
-      // See if monotonic clock is supported by the kernel. Note that some
-      // early implementations simply return kernel jiffies (updated every
-      // 1/100 or 1/1000 second). It would be bad to use such a low res clock
-      // for nano time (though the monotonic property is still nice to have).
-      // It's fixed in newer kernels, however clock_getres() still returns
-      // 1/HZ. We check if clock_getres() works, but will ignore its reported
-      // resolution for now. Hopefully as people move to new kernels, this
-      // won't be a problem.
-      struct timespec res;
-      struct timespec tp;
-      if (clock_getres_func (CLOCK_MONOTONIC, &res) == 0 &&
-          clock_gettime_func(CLOCK_MONOTONIC, &tp)  == 0) {
-        // yes, monotonic clock is supported
-        _clock_gettime = clock_gettime_func;
-      } else {
-        // close librt if there is no monotonic clock
-        dlclose(handle);
-      }
-    }
-  }
-}
 #endif
 
-#ifndef _ALLBSD_SOURCE
-#ifndef SYS_clock_getres
-
-#if defined(IA32) || defined(AMD64)
-#define SYS_clock_getres IA32_ONLY(266)  AMD64_ONLY(229)
-#define sys_clock_getres(x,y)  ::syscall(SYS_clock_getres, x, y)
-#else
-#warning "SYS_clock_getres not defined for this platform, disabling fast_thread_cpu_time"
-#define sys_clock_getres(x,y)  -1
-#endif
-
-#else
-#define sys_clock_getres(x,y)  ::syscall(SYS_clock_getres, x, y)
-#endif
-
-void os::Bsd::fast_thread_clock_init() {
-  if (!UseBsdPosixThreadCPUClocks) {
-    return;
-  }
-  clockid_t clockid;
-  struct timespec tp;
-  int (*pthread_getcpuclockid_func)(pthread_t, clockid_t *) =
-      (int(*)(pthread_t, clockid_t *)) dlsym(RTLD_DEFAULT, "pthread_getcpuclockid");
-
-  // Switch to using fast clocks for thread cpu time if
-  // the sys_clock_getres() returns 0 error code.
-  // Note, that some kernels may support the current thread
-  // clock (CLOCK_THREAD_CPUTIME_ID) but not the clocks
-  // returned by the pthread_getcpuclockid().
-  // If the fast Posix clocks are supported then the sys_clock_getres()
-  // must return at least tp.tv_sec == 0 which means a resolution
-  // better than 1 sec. This is extra check for reliability.
-
-  if(pthread_getcpuclockid_func &&
-     pthread_getcpuclockid_func(_main_thread, &clockid) == 0 &&
-     sys_clock_getres(clockid, &tp) == 0 && tp.tv_sec == 0) {
-
-    _supports_fast_thread_cpu_time = true;
-    _pthread_getcpuclockid = pthread_getcpuclockid_func;
-  }
-}
-#endif
 
 jlong os::javaTimeNanos() {
   if (Bsd::supports_monotonic_clock()) {
@@ -1978,7 +1299,6 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   return false;
 }
 
-#ifdef _ALLBSD_SOURCE
 // ported from solaris version
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
@@ -1994,86 +1314,10 @@ bool os::dll_address_to_library_name(address addr, char* buf,
      return false;
   }
 }
-#else
-struct _address_to_library_name {
-  address addr;          // input : memory address
-  size_t  buflen;        //         size of fname
-  char*   fname;         // output: library name
-  address base;          //         library base addr
-};
 
-static int address_to_library_name_callback(struct dl_phdr_info *info,
-                                            size_t size, void *data) {
-  int i;
-  bool found = false;
-  address libbase = NULL;
-  struct _address_to_library_name * d = (struct _address_to_library_name *)data;
-
-  // iterate through all loadable segments
-  for (i = 0; i < info->dlpi_phnum; i++) {
-    address segbase = (address)(info->dlpi_addr + info->dlpi_phdr[i].p_vaddr);
-    if (info->dlpi_phdr[i].p_type == PT_LOAD) {
-      // base address of a library is the lowest address of its loaded
-      // segments.
-      if (libbase == NULL || libbase > segbase) {
-        libbase = segbase;
-      }
-      // see if 'addr' is within current segment
-      if (segbase <= d->addr &&
-          d->addr < segbase + info->dlpi_phdr[i].p_memsz) {
-        found = true;
-      }
-    }
-  }
-
-  // dlpi_name is NULL or empty if the ELF file is executable, return 0
-  // so dll_address_to_library_name() can fall through to use dladdr() which
-  // can figure out executable name from argv[0].
-  if (found && info->dlpi_name && info->dlpi_name[0]) {
-    d->base = libbase;
-    if (d->fname) {
-      jio_snprintf(d->fname, d->buflen, "%s", info->dlpi_name);
-    }
-    return 1;
-  }
-  return 0;
-}
-
-bool os::dll_address_to_library_name(address addr, char* buf,
-                                     int buflen, int* offset) {
-  Dl_info dlinfo;
-  struct _address_to_library_name data;
-
-  // There is a bug in old glibc dladdr() implementation that it could resolve
-  // to wrong library name if the .so file has a base address != NULL. Here
-  // we iterate through the program headers of all loaded libraries to find
-  // out which library 'addr' really belongs to. This workaround can be
-  // removed once the minimum requirement for glibc is moved to 2.3.x.
-  data.addr = addr;
-  data.fname = buf;
-  data.buflen = buflen;
-  data.base = NULL;
-  int rslt = dl_iterate_phdr(address_to_library_name_callback, (void *)&data);
-
-  if (rslt) {
-     // buf already contains library name
-     if (offset) *offset = addr - data.base;
-     return true;
-  } else if (dladdr((void*)addr, &dlinfo)){
-     if (buf) jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
-     if (offset) *offset = addr - (address)dlinfo.dli_fbase;
-     return true;
-  } else {
-     if (buf) buf[0] = '\0';
-     if (offset) *offset = -1;
-     return false;
-  }
-}
-#endif
-
-  // Loads .dll/.so and
-  // in case of error it checks if .dll/.so was built for the
-  // same architecture as Hotspot is running on
+// Loads .dll/.so and
+// in case of error it checks if .dll/.so was built for the
+// same architecture as Hotspot is running on
 
 #ifdef __APPLE__
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
@@ -2292,7 +1536,6 @@ static bool _print_ascii_file(const char* filename, outputStream* st) {
 
 void os::print_dll_info(outputStream *st) {
    st->print_cr("Dynamic libraries:");
-#ifdef _ALLBSD_SOURCE
 #ifdef RTLD_DI_LINKMAP
     Dl_info dli;
     void *handle;
@@ -2336,16 +1579,6 @@ void os::print_dll_info(outputStream *st) {
 #else
    st->print_cr("Error: Cannot print dynamic libraries.");
 #endif
-#else
-   char fname[32];
-   pid_t pid = os::Bsd::gettid();
-
-   jio_snprintf(fname, sizeof(fname), "/proc/%d/maps", pid);
-
-   if (!_print_ascii_file(fname, st)) {
-     st->print("Can not get library information for pid = %d\n", pid);
-   }
-#endif
 }
 
 void os::print_os_info_brief(outputStream* st) {
@@ -2374,22 +1607,10 @@ void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
   st->print(" %dk page", os::vm_page_size()>>10);
 
-#ifndef _ALLBSD_SOURCE
-  // values in struct sysinfo are "unsigned long"
-  struct sysinfo si;
-  sysinfo(&si);
-#endif
-
   st->print(", physical " UINT64_FORMAT "k",
             os::physical_memory() >> 10);
   st->print("(" UINT64_FORMAT "k free)",
             os::available_memory() >> 10);
-#ifndef _ALLBSD_SOURCE
-  st->print(", swap " UINT64_FORMAT "k",
-            ((jlong)si.totalswap * si.mem_unit) >> 10);
-  st->print("(" UINT64_FORMAT "k free)",
-            ((jlong)si.freeswap * si.mem_unit) >> 10);
-#endif
   st->cr();
 
   // meminfo
@@ -2786,42 +2007,13 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
 #endif
 }
 
-#ifndef _ALLBSD_SOURCE
-// Define MAP_HUGETLB here so we can build HotSpot on old systems.
-#ifndef MAP_HUGETLB
-#define MAP_HUGETLB 0x40000
-#endif
-
-// Define MADV_HUGEPAGE here so we can build HotSpot on old systems.
-#ifndef MADV_HUGEPAGE
-#define MADV_HUGEPAGE 14
-#endif
-#endif
 
 bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
                        bool exec) {
-#ifndef _ALLBSD_SOURCE
-  if (UseHugeTLBFS && alignment_hint > (size_t)vm_page_size()) {
-    int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
-    uintptr_t res =
-      (uintptr_t) ::mmap(addr, size, prot,
-                         MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_HUGETLB,
-                         -1, 0);
-    return res != (uintptr_t) MAP_FAILED;
-  }
-#endif
-
   return commit_memory(addr, size, exec);
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
-#ifndef _ALLBSD_SOURCE
-  if (UseHugeTLBFS && alignment_hint > (size_t)vm_page_size()) {
-    // We don't check the return value: madvise(MADV_HUGEPAGE) may not
-    // be supported or the memory may already be backed by huge pages.
-    ::madvise(addr, bytes, MADV_HUGEPAGE);
-  }
-#endif
 }
 
 void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
@@ -2860,111 +2052,6 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
   return end;
 }
 
-#ifndef _ALLBSD_SOURCE
-// Something to do with the numa-aware allocator needs these symbols
-extern "C" JNIEXPORT void numa_warn(int number, char *where, ...) { }
-extern "C" JNIEXPORT void numa_error(char *where) { }
-extern "C" JNIEXPORT int fork1() { return fork(); }
-
-
-// If we are running with libnuma version > 2, then we should
-// be trying to use symbols with versions 1.1
-// If we are running with earlier version, which did not have symbol versions,
-// we should use the base version.
-void* os::Bsd::libnuma_dlsym(void* handle, const char *name) {
-  void *f = dlvsym(handle, name, "libnuma_1.1");
-  if (f == NULL) {
-    f = dlsym(handle, name);
-  }
-  return f;
-}
-
-bool os::Bsd::libnuma_init() {
-  // sched_getcpu() should be in libc.
-  set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t,
-                                  dlsym(RTLD_DEFAULT, "sched_getcpu")));
-
-  if (sched_getcpu() != -1) { // Does it work?
-    void *handle = dlopen("libnuma.so.1", RTLD_LAZY);
-    if (handle != NULL) {
-      set_numa_node_to_cpus(CAST_TO_FN_PTR(numa_node_to_cpus_func_t,
-                                           libnuma_dlsym(handle, "numa_node_to_cpus")));
-      set_numa_max_node(CAST_TO_FN_PTR(numa_max_node_func_t,
-                                       libnuma_dlsym(handle, "numa_max_node")));
-      set_numa_available(CAST_TO_FN_PTR(numa_available_func_t,
-                                        libnuma_dlsym(handle, "numa_available")));
-      set_numa_tonode_memory(CAST_TO_FN_PTR(numa_tonode_memory_func_t,
-                                            libnuma_dlsym(handle, "numa_tonode_memory")));
-      set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
-                                            libnuma_dlsym(handle, "numa_interleave_memory")));
-
-
-      if (numa_available() != -1) {
-        set_numa_all_nodes((unsigned long*)libnuma_dlsym(handle, "numa_all_nodes"));
-        // Create a cpu -> node mapping
-        _cpu_to_node = new (ResourceObj::C_HEAP) GrowableArray<int>(0, true);
-        rebuild_cpu_to_node_map();
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-// rebuild_cpu_to_node_map() constructs a table mapping cpud id to node id.
-// The table is later used in get_node_by_cpu().
-void os::Bsd::rebuild_cpu_to_node_map() {
-  const size_t NCPUS = 32768; // Since the buffer size computation is very obscure
-                              // in libnuma (possible values are starting from 16,
-                              // and continuing up with every other power of 2, but less
-                              // than the maximum number of CPUs supported by kernel), and
-                              // is a subject to change (in libnuma version 2 the requirements
-                              // are more reasonable) we'll just hardcode the number they use
-                              // in the library.
-  const size_t BitsPerCLong = sizeof(long) * CHAR_BIT;
-
-  size_t cpu_num = os::active_processor_count();
-  size_t cpu_map_size = NCPUS / BitsPerCLong;
-  size_t cpu_map_valid_size =
-    MIN2((cpu_num + BitsPerCLong - 1) / BitsPerCLong, cpu_map_size);
-
-  cpu_to_node()->clear();
-  cpu_to_node()->at_grow(cpu_num - 1);
-  size_t node_num = numa_get_groups_num();
-
-  unsigned long *cpu_map = NEW_C_HEAP_ARRAY(unsigned long, cpu_map_size);
-  for (size_t i = 0; i < node_num; i++) {
-    if (numa_node_to_cpus(i, cpu_map, cpu_map_size * sizeof(unsigned long)) != -1) {
-      for (size_t j = 0; j < cpu_map_valid_size; j++) {
-        if (cpu_map[j] != 0) {
-          for (size_t k = 0; k < BitsPerCLong; k++) {
-            if (cpu_map[j] & (1UL << k)) {
-              cpu_to_node()->at_put(j * BitsPerCLong + k, i);
-            }
-          }
-        }
-      }
-    }
-  }
-  FREE_C_HEAP_ARRAY(unsigned long, cpu_map);
-}
-
-int os::Bsd::get_node_by_cpu(int cpu_id) {
-  if (cpu_to_node() != NULL && cpu_id >= 0 && cpu_id < cpu_to_node()->length()) {
-    return cpu_to_node()->at(cpu_id);
-  }
-  return -1;
-}
-
-GrowableArray<int>* os::Bsd::_cpu_to_node;
-os::Bsd::sched_getcpu_func_t os::Bsd::_sched_getcpu;
-os::Bsd::numa_node_to_cpus_func_t os::Bsd::_numa_node_to_cpus;
-os::Bsd::numa_max_node_func_t os::Bsd::_numa_max_node;
-os::Bsd::numa_available_func_t os::Bsd::_numa_available;
-os::Bsd::numa_tonode_memory_func_t os::Bsd::_numa_tonode_memory;
-os::Bsd::numa_interleave_memory_func_t os::Bsd::_numa_interleave_memory;
-unsigned long* os::Bsd::_numa_all_nodes;
-#endif
 
 bool os::pd_uncommit_memory(char* addr, size_t size) {
 #ifdef __OpenBSD__
@@ -3084,42 +2171,7 @@ bool os::unguard_memory(char* addr, size_t size) {
 }
 
 bool os::Bsd::hugetlbfs_sanity_check(bool warn, size_t page_size) {
-  bool result = false;
-#ifndef _ALLBSD_SOURCE
-  void *p = mmap (NULL, page_size, PROT_READ|PROT_WRITE,
-                  MAP_ANONYMOUS|MAP_PRIVATE|MAP_HUGETLB,
-                  -1, 0);
-
-  if (p != (void *) -1) {
-    // We don't know if this really is a huge page or not.
-    FILE *fp = fopen("/proc/self/maps", "r");
-    if (fp) {
-      while (!feof(fp)) {
-        char chars[257];
-        long x = 0;
-        if (fgets(chars, sizeof(chars), fp)) {
-          if (sscanf(chars, "%lx-%*x", &x) == 1
-              && x == (long)p) {
-            if (strstr (chars, "hugepage")) {
-              result = true;
-              break;
-            }
-          }
-        }
-      }
-      fclose(fp);
-    }
-    munmap (p, page_size);
-    if (result)
-      return true;
-  }
-
-  if (warn) {
-    warning("HugeTLBFS is not supported by the operating system.");
-  }
-#endif
-
-  return result;
+  return false;
 }
 
 /*
@@ -3164,92 +2216,8 @@ static void set_coredump_filter(void) {
 static size_t _large_page_size = 0;
 
 void os::large_page_init() {
-#ifndef _ALLBSD_SOURCE
-  if (!UseLargePages) {
-    UseHugeTLBFS = false;
-    UseSHM = false;
-    return;
-  }
-
-  if (FLAG_IS_DEFAULT(UseHugeTLBFS) && FLAG_IS_DEFAULT(UseSHM)) {
-    // If UseLargePages is specified on the command line try both methods,
-    // if it's default, then try only HugeTLBFS.
-    if (FLAG_IS_DEFAULT(UseLargePages)) {
-      UseHugeTLBFS = true;
-    } else {
-      UseHugeTLBFS = UseSHM = true;
-    }
-  }
-
-  if (LargePageSizeInBytes) {
-    _large_page_size = LargePageSizeInBytes;
-  } else {
-    // large_page_size on Bsd is used to round up heap size. x86 uses either
-    // 2M or 4M page, depending on whether PAE (Physical Address Extensions)
-    // mode is enabled. AMD64/EM64T uses 2M page in 64bit mode. IA64 can use
-    // page as large as 256M.
-    //
-    // Here we try to figure out page size by parsing /proc/meminfo and looking
-    // for a line with the following format:
-    //    Hugepagesize:     2048 kB
-    //
-    // If we can't determine the value (e.g. /proc is not mounted, or the text
-    // format has been changed), we'll use the largest page size supported by
-    // the processor.
-
-#ifndef ZERO
-    _large_page_size = IA32_ONLY(4 * M) AMD64_ONLY(2 * M) IA64_ONLY(256 * M) SPARC_ONLY(4 * M)
-                       ARM_ONLY(2 * M) PPC_ONLY(4 * M);
-#endif // ZERO
-
-    FILE *fp = fopen("/proc/meminfo", "r");
-    if (fp) {
-      while (!feof(fp)) {
-        int x = 0;
-        char buf[16];
-        if (fscanf(fp, "Hugepagesize: %d", &x) == 1) {
-          if (x && fgets(buf, sizeof(buf), fp) && strcmp(buf, " kB\n") == 0) {
-            _large_page_size = x * K;
-            break;
-          }
-        } else {
-          // skip to next line
-          for (;;) {
-            int ch = fgetc(fp);
-            if (ch == EOF || ch == (int)'\n') break;
-          }
-        }
-      }
-      fclose(fp);
-    }
-  }
-
-  // print a warning if any large page related flag is specified on command line
-  bool warn_on_failure = !FLAG_IS_DEFAULT(UseHugeTLBFS);
-
-  const size_t default_page_size = (size_t)Bsd::page_size();
-  if (_large_page_size > default_page_size) {
-    _page_sizes[0] = _large_page_size;
-    _page_sizes[1] = default_page_size;
-    _page_sizes[2] = 0;
-  }
-  UseHugeTLBFS = UseHugeTLBFS &&
-                 Bsd::hugetlbfs_sanity_check(warn_on_failure, _large_page_size);
-
-  if (UseHugeTLBFS)
-    UseSHM = false;
-
-  UseLargePages = UseHugeTLBFS || UseSHM;
-
-  set_coredump_filter();
-#endif
 }
 
-#ifndef _ALLBSD_SOURCE
-#ifndef SHM_HUGETLB
-#define SHM_HUGETLB 04000
-#endif
-#endif
 
 char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
   // "exec" is passed in but not used.  Creating the shared image for
@@ -3267,11 +2235,7 @@ char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
 
   // Create a large shared memory region to attach to based on size.
   // Currently, size is the total size of the heap
-#ifndef _ALLBSD_SOURCE
-  int shmid = shmget(key, bytes, SHM_HUGETLB|IPC_CREAT|SHM_R|SHM_W);
-#else
   int shmid = shmget(key, bytes, IPC_CREAT|SHM_R|SHM_W);
-#endif
   if (shmid == -1) {
      // Possible reasons for shmget failure:
      // 1. shmmax is too small for Java heap.
@@ -3558,7 +2522,7 @@ void os::loop_breaker(int attempts) {
 // this reason, the code should not be used as default (ThreadPriorityPolicy=0).
 // It is only used when ThreadPriorityPolicy=1 and requires root privilege.
 
-#if defined(_ALLBSD_SOURCE) && !defined(__APPLE__)
+#if !defined(__APPLE__)
 int os::java_to_os_priority[CriticalPriority + 1] = {
   19,              // 0 Entry should never be used
 
@@ -3578,7 +2542,7 @@ int os::java_to_os_priority[CriticalPriority + 1] = {
 
   31               // 11 CriticalPriority
 };
-#elif defined(__APPLE__)
+#else
 /* Using Mach high-level priority assignments */
 int os::java_to_os_priority[CriticalPriority + 1] = {
    0,              // 0 Entry should never be used (MINPRI_USER)
@@ -3598,26 +2562,6 @@ int os::java_to_os_priority[CriticalPriority + 1] = {
   36,              // 10 MaxPriority
 
   36               // 11 CriticalPriority
-};
-#else
-int os::java_to_os_priority[CriticalPriority + 1] = {
-  19,              // 0 Entry should never be used
-
-   4,              // 1 MinPriority
-   3,              // 2
-   2,              // 3
-
-   1,              // 4
-   0,              // 5 NormPriority
-  -1,              // 6
-
-  -2,              // 7
-  -3,              // 8
-  -4,              // 9 NearMaxPriority
-
-  -5,              // 10 MaxPriority
-
-  -5               // 11 CriticalPriority
 };
 #endif
 
@@ -4179,22 +3123,6 @@ void os::Bsd::install_signal_handlers() {
   }
 }
 
-#ifndef _ALLBSD_SOURCE
-// This is the fastest way to get thread cpu time on Bsd.
-// Returns cpu time (user+sys) for any thread, not only for current.
-// POSIX compliant clocks are implemented in the kernels 2.6.16+.
-// It might work on 2.6.10+ with a special kernel/glibc patch.
-// For reference, please, see IEEE Std 1003.1-2004:
-//   http://www.unix.org/single_unix_specification
-
-jlong os::Bsd::fast_thread_cpu_time(clockid_t clockid) {
-  struct timespec tp;
-  int rc = os::Bsd::clock_gettime(clockid, &tp);
-  assert(rc == 0, "clock_gettime is expected to return 0 code");
-
-  return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
-}
-#endif
 
 /////
 // glibc on Bsd platform uses non-documented flag
@@ -4458,10 +3386,6 @@ extern "C" {
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void)
 {
-#ifndef _ALLBSD_SOURCE
-  Bsd::fast_thread_clock_init();
-#endif
-
   // Allocate a single page and mark it as readable for safepoint polling
   address polling_page = (address) ::mmap(NULL, Bsd::page_size(), PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
   guarantee( polling_page != MAP_FAILED, "os::init_2: failed to allocate polling page" );
@@ -4518,48 +3442,6 @@ jint os::init_2(void)
   JavaThread::set_stack_size_at_create(round_to(threadStackSizeInBytes,
         vm_page_size()));
 
-#ifndef _ALLBSD_SOURCE
-  Bsd::capture_initial_stack(JavaThread::stack_size_at_create());
-
-  Bsd::libpthread_init();
-  if (PrintMiscellaneous && (Verbose || WizardMode)) {
-     tty->print_cr("[HotSpot is running with %s, %s(%s)]\n",
-          Bsd::glibc_version(), Bsd::libpthread_version(),
-          Bsd::is_floating_stack() ? "floating stack" : "fixed stack");
-  }
-
-  if (UseNUMA) {
-    if (!Bsd::libnuma_init()) {
-      UseNUMA = false;
-    } else {
-      if ((Bsd::numa_max_node() < 1)) {
-        // There's only one node(they start from 0), disable NUMA.
-        UseNUMA = false;
-      }
-    }
-    // With SHM large pages we cannot uncommit a page, so there's not way
-    // we can make the adaptive lgrp chunk resizing work. If the user specified
-    // both UseNUMA and UseLargePages (or UseSHM) on the command line - warn and
-    // disable adaptive resizing.
-    if (UseNUMA && UseLargePages && UseSHM) {
-      if (!FLAG_IS_DEFAULT(UseNUMA)) {
-        if (FLAG_IS_DEFAULT(UseLargePages) && FLAG_IS_DEFAULT(UseSHM)) {
-          UseLargePages = false;
-        } else {
-          warning("UseNUMA is not fully compatible with SHM large pages, disabling adaptive resizing");
-          UseAdaptiveSizePolicy = false;
-          UseAdaptiveNUMAChunkSizing = false;
-        }
-      } else {
-        UseNUMA = false;
-      }
-    }
-    if (!UseNUMA && ForceNUMA) {
-      UseNUMA = true;
-    }
-  }
-#endif
-
   if (MaxFDLimit) {
     // set the number of file descriptors to max. print out error
     // if getrlimit/setrlimit fails but continue regardless.
@@ -4585,11 +3467,6 @@ jint os::init_2(void)
       }
     }
   }
-
-#ifndef _ALLBSD_SOURCE
-  // Initialize lock used to serialize thread creation (see os::create_thread)
-  Bsd::set_createThread_lock(new Mutex(Mutex::leaf, "createThread_lock", false));
-#endif
 
   // at-exit methods are called in the reverse order of their registration.
   // atexit functions are called on return from main or as a result of a
@@ -4641,15 +3518,7 @@ void os::make_polling_page_readable(void) {
 };
 
 int os::active_processor_count() {
-#ifdef _ALLBSD_SOURCE
   return _processor_count;
-#else
-  // Bsd doesn't yet have a (official) notion of processor sets,
-  // so just return the number of online processors.
-  int online_cpus = ::sysconf(_SC_NPROCESSORS_ONLN);
-  assert(online_cpus > 0 && online_cpus <= processor_count(), "sanity check");
-  return online_cpus;
-#endif
 }
 
 void os::set_native_thread_name(const char *name) {
@@ -4703,25 +3572,7 @@ ExtendedPC os::get_thread_pc(Thread* thread) {
 
 int os::Bsd::safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex, const struct timespec *_abstime)
 {
-#ifdef _ALLBSD_SOURCE
   return pthread_cond_timedwait(_cond, _mutex, _abstime);
-#else
-   if (is_NPTL()) {
-      return pthread_cond_timedwait(_cond, _mutex, _abstime);
-   } else {
-#ifndef IA64
-      // 6292965: BsdThreads pthread_cond_timedwait() resets FPU control
-      // word back to default 64bit precision if condvar is signaled. Java
-      // wants 53bit precision.  Save and restore current value.
-      int fpu = get_fpu_control_word();
-#endif // IA64
-      int status = pthread_cond_timedwait(_cond, _mutex, _abstime);
-#ifndef IA64
-      set_fpu_control_word(fpu);
-#endif // IA64
-      return status;
-   }
-#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5041,20 +3892,6 @@ bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return munmap(addr, bytes) == 0;
 }
 
-#ifndef _ALLBSD_SOURCE
-static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time);
-
-static clockid_t thread_cpu_clockid(Thread* thread) {
-  pthread_t tid = thread->osthread()->pthread_id();
-  clockid_t clockid;
-
-  // Get thread clockid
-  int rc = os::Bsd::pthread_getcpuclockid(tid, &clockid);
-  assert(rc == 0, "pthread_getcpuclockid is expected to return 0 code");
-  return clockid;
-}
-#endif
-
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)
 // are used by JVM M&M and JVMTI to get user+sys or user CPU time
 // of a thread.
@@ -5065,36 +3902,15 @@ static clockid_t thread_cpu_clockid(Thread* thread) {
 jlong os::current_thread_cpu_time() {
 #ifdef __APPLE__
   return os::thread_cpu_time(Thread::current(), true /* user + sys */);
-#elif !defined(_ALLBSD_SOURCE)
-  if (os::Bsd::supports_fast_thread_cpu_time()) {
-    return os::Bsd::fast_thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
-  } else {
-    // return user + sys since the cost is the same
-    return slow_thread_cpu_time(Thread::current(), true /* user + sys */);
-  }
 #endif
 }
 
 jlong os::thread_cpu_time(Thread* thread) {
-#ifndef _ALLBSD_SOURCE
-  // consistent with what current_thread_cpu_time() returns
-  if (os::Bsd::supports_fast_thread_cpu_time()) {
-    return os::Bsd::fast_thread_cpu_time(thread_cpu_clockid(thread));
-  } else {
-    return slow_thread_cpu_time(thread, true /* user + sys */);
-  }
-#endif
 }
 
 jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
 #ifdef __APPLE__
   return os::thread_cpu_time(Thread::current(), user_sys_cpu_time);
-#elif !defined(_ALLBSD_SOURCE)
-  if (user_sys_cpu_time && os::Bsd::supports_fast_thread_cpu_time()) {
-    return os::Bsd::fast_thread_cpu_time(CLOCK_THREAD_CPUTIME_ID);
-  } else {
-    return slow_thread_cpu_time(Thread::current(), user_sys_cpu_time);
-  }
 #endif
 }
 
@@ -5118,106 +3934,9 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   } else {
     return ((jlong)tinfo.user_time.seconds * 1000000000) + ((jlong)tinfo.user_time.microseconds * (jlong)1000);
   }
-#elif !defined(_ALLBSD_SOURCE)
-  if (user_sys_cpu_time && os::Bsd::supports_fast_thread_cpu_time()) {
-    return os::Bsd::fast_thread_cpu_time(thread_cpu_clockid(thread));
-  } else {
-    return slow_thread_cpu_time(thread, user_sys_cpu_time);
-  }
 #endif
 }
 
-#ifndef _ALLBSD_SOURCE
-//
-//  -1 on error.
-//
-
-static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
-  static bool proc_pid_cpu_avail = true;
-  static bool proc_task_unchecked = true;
-  static const char *proc_stat_path = "/proc/%d/stat";
-  pid_t  tid = thread->osthread()->thread_id();
-  int i;
-  char *s;
-  char stat[2048];
-  int statlen;
-  char proc_name[64];
-  int count;
-  long sys_time, user_time;
-  char string[64];
-  char cdummy;
-  int idummy;
-  long ldummy;
-  FILE *fp;
-
-  // We first try accessing /proc/<pid>/cpu since this is faster to
-  // process.  If this file is not present (bsd kernels 2.5 and above)
-  // then we open /proc/<pid>/stat.
-  if ( proc_pid_cpu_avail ) {
-    sprintf(proc_name, "/proc/%d/cpu", tid);
-    fp =  fopen(proc_name, "r");
-    if ( fp != NULL ) {
-      count = fscanf( fp, "%s %lu %lu\n", string, &user_time, &sys_time);
-      fclose(fp);
-      if ( count != 3 ) return -1;
-
-      if (user_sys_cpu_time) {
-        return ((jlong)sys_time + (jlong)user_time) * (1000000000 / clock_tics_per_sec);
-      } else {
-        return (jlong)user_time * (1000000000 / clock_tics_per_sec);
-      }
-    }
-    else proc_pid_cpu_avail = false;
-  }
-
-  // The /proc/<tid>/stat aggregates per-process usage on
-  // new Bsd kernels 2.6+ where NPTL is supported.
-  // The /proc/self/task/<tid>/stat still has the per-thread usage.
-  // See bug 6328462.
-  // There can be no directory /proc/self/task on kernels 2.4 with NPTL
-  // and possibly in some other cases, so we check its availability.
-  if (proc_task_unchecked && os::Bsd::is_NPTL()) {
-    // This is executed only once
-    proc_task_unchecked = false;
-    fp = fopen("/proc/self/task", "r");
-    if (fp != NULL) {
-      proc_stat_path = "/proc/self/task/%d/stat";
-      fclose(fp);
-    }
-  }
-
-  sprintf(proc_name, proc_stat_path, tid);
-  fp = fopen(proc_name, "r");
-  if ( fp == NULL ) return -1;
-  statlen = fread(stat, 1, 2047, fp);
-  stat[statlen] = '\0';
-  fclose(fp);
-
-  // Skip pid and the command string. Note that we could be dealing with
-  // weird command names, e.g. user could decide to rename java launcher
-  // to "java 1.4.2 :)", then the stat file would look like
-  //                1234 (java 1.4.2 :)) R ... ...
-  // We don't really need to know the command string, just find the last
-  // occurrence of ")" and then start parsing from there. See bug 4726580.
-  s = strrchr(stat, ')');
-  i = 0;
-  if (s == NULL ) return -1;
-
-  // Skip blank chars
-  do s++; while (isspace(*s));
-
-  count = sscanf(s,"%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu",
-                 &cdummy, &idummy, &idummy, &idummy, &idummy, &idummy,
-                 &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
-                 &user_time, &sys_time);
-  if ( count != 13 ) return -1;
-  if (user_sys_cpu_time) {
-    return ((jlong)sys_time + (jlong)user_time) * (1000000000 / clock_tics_per_sec);
-  } else {
-    return (jlong)user_time * (1000000000 / clock_tics_per_sec);
-  }
-}
-#endif
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
@@ -5236,10 +3955,8 @@ void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
 bool os::is_thread_cpu_time_supported() {
 #ifdef __APPLE__
   return true;
-#elif defined(_ALLBSD_SOURCE)
-  return false;
 #else
-  return true;
+  return false;
 #endif
 }
 

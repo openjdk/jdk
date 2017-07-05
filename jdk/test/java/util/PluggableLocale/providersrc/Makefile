@@ -35,6 +35,7 @@ FOOFILES_JAVA = \
 
 BARFILES_JAVA = \
     CurrencyNameProviderImpl.java \
+    CurrencyNameProviderImpl2.java \
     TimeZoneNameProviderImpl.java \
     LocaleNameProviderImpl.java \
     CalendarDataProviderImpl.java \

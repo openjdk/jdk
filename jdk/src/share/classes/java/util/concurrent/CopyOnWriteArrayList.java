@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 
 package java.util.concurrent;
 import java.util.*;
-import java.util.concurrent.locks.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A thread-safe variant of {@link java.util.ArrayList} in which all mutative
@@ -152,7 +152,7 @@ public class CopyOnWriteArrayList<E>
     }
 
     /**
-     * Test for equality, coping with nulls.
+     * Tests for equality, coping with nulls.
      */
     private static boolean eq(Object o1, Object o2) {
         return (o1 == null ? o2 == null : o1.equals(o2));
@@ -333,8 +333,7 @@ public class CopyOnWriteArrayList<E>
      * The following code can be used to dump the list into a newly
      * allocated array of <tt>String</tt>:
      *
-     * <pre>
-     *     String[] y = x.toArray(new String[0]);</pre>
+     *  <pre> {@code String[] y = x.toArray(new String[0]);}</pre>
      *
      * Note that <tt>toArray(new Object[0])</tt> is identical in function to
      * <tt>toArray()</tt>.
@@ -548,9 +547,9 @@ public class CopyOnWriteArrayList<E>
      * @param fromIndex index of first element to be removed
      * @param toIndex index after last element to be removed
      * @throws IndexOutOfBoundsException if fromIndex or toIndex out of range
-     *         ({@code{fromIndex < 0 || toIndex > size() || toIndex < fromIndex})
+     *         ({@code fromIndex < 0 || toIndex > size() || toIndex < fromIndex})
      */
-    private void removeRange(int fromIndex, int toIndex) {
+    void removeRange(int fromIndex, int toIndex) {
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
@@ -576,7 +575,7 @@ public class CopyOnWriteArrayList<E>
     }
 
     /**
-     * Append the element if not present.
+     * Appends the element, if not present.
      *
      * @param e element to be added to this list, if absent
      * @return <tt>true</tt> if the element was added
@@ -641,6 +640,7 @@ public class CopyOnWriteArrayList<E>
      * @see #remove(Object)
      */
     public boolean removeAll(Collection<?> c) {
+        if (c == null) throw new NullPointerException();
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
@@ -683,6 +683,7 @@ public class CopyOnWriteArrayList<E>
      * @see #remove(Object)
      */
     public boolean retainAll(Collection<?> c) {
+        if (c == null) throw new NullPointerException();
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
@@ -837,15 +838,14 @@ public class CopyOnWriteArrayList<E>
     }
 
     /**
-     * Saves the state of the list to a stream (that is, serializes it).
+     * Saves this list to a stream (that is, serializes it).
      *
      * @serialData The length of the array backing the list is emitted
      *               (int), followed by all of its elements (each an Object)
      *               in the proper order.
-     * @param s the stream
      */
     private void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException{
+        throws java.io.IOException {
 
         s.defaultWriteObject();
 
@@ -859,9 +859,7 @@ public class CopyOnWriteArrayList<E>
     }
 
     /**
-     * Reconstitutes the list from a stream (that is, deserializes it).
-     *
-     * @param s the stream
+     * Reconstitutes this list from a stream (that is, deserializes it).
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
@@ -1266,17 +1264,14 @@ public class CopyOnWriteArrayList<E>
 
 
     private static class COWSubListIterator<E> implements ListIterator<E> {
-        private final ListIterator<E> i;
-        private final int index;
+        private final ListIterator<E> it;
         private final int offset;
         private final int size;
 
-        COWSubListIterator(List<E> l, int index, int offset,
-                           int size) {
-            this.index = index;
+        COWSubListIterator(List<E> l, int index, int offset, int size) {
             this.offset = offset;
             this.size = size;
-            i = l.listIterator(index+offset);
+            it = l.listIterator(index+offset);
         }
 
         public boolean hasNext() {
@@ -1285,7 +1280,7 @@ public class CopyOnWriteArrayList<E>
 
         public E next() {
             if (hasNext())
-                return i.next();
+                return it.next();
             else
                 throw new NoSuchElementException();
         }
@@ -1296,17 +1291,17 @@ public class CopyOnWriteArrayList<E>
 
         public E previous() {
             if (hasPrevious())
-                return i.previous();
+                return it.previous();
             else
                 throw new NoSuchElementException();
         }
 
         public int nextIndex() {
-            return i.nextIndex() - offset;
+            return it.nextIndex() - offset;
         }
 
         public int previousIndex() {
-            return i.previousIndex() - offset;
+            return it.previousIndex() - offset;
         }
 
         public void remove() {

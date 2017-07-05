@@ -57,9 +57,10 @@ AWT_ASSERT_APPKIT_THREAD;
 
     // NOTE: async=YES means that the layer is re-cached periodically
     self.asynchronous = FALSE;
-    self.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
     self.contentsGravity = kCAGravityTopLeft;
-    self.needsDisplayOnBoundsChange = YES;
+    //Layer backed view
+    //self.needsDisplayOnBoundsChange = YES;
+    //self.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
     textureID = 0; // texture will be created by rendering pipe
     target = 0;
 
@@ -107,6 +108,10 @@ AWT_ASSERT_APPKIT_THREAD;
 
     glBindTexture(target, 0);
     glDisable(target);
+}
+
+-(BOOL)canDrawInCGLContext:(CGLContextObj)glContext pixelFormat:(CGLPixelFormatObj)pixelFormat forLayerTime:(CFTimeInterval)timeInterval displayTime:(const CVTimeStamp *)timeStamp{
+    return textureID == 0 ? NO : YES;
 }
 
 -(void)drawInCGLContext:(CGLContextObj)glContext pixelFormat:(CGLPixelFormatObj)pixelFormat forLayerTime:(CFTimeInterval)timeInterval displayTime:(const CVTimeStamp *)timeStamp
