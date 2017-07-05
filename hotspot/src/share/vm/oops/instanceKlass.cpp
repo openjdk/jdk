@@ -567,8 +567,18 @@ void instanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle
   ol.notify_all(CHECK);
 }
 
+// The embedded _implementor field can only record one implementor.
+// When there are more than one implementors, the _implementor field
+// is set to the interface klassOop itself. Following are the possible
+// values for the _implementor field:
+//   NULL                  - no implementor
+//   implementor klassOop  - one implementor
+//   self                  - more than one implementor
+//
+// The _implementor field only exists for interfaces.
 void instanceKlass::add_implementor(klassOop k) {
   assert(Compile_lock->owned_by_self(), "");
+  assert(is_interface(), "not interface");
   // Filter out my subinterfaces.
   // (Note: Interfaces are never on the subklass list.)
   if (instanceKlass::cast(k)->is_interface()) return;
@@ -583,17 +593,13 @@ void instanceKlass::add_implementor(klassOop k) {
     // Any supers of the super have the same (or fewer) transitive_interfaces.
     return;
 
-  // Update number of implementors
-  int i = _nof_implementors++;
-
-  // Record this implementor, if there are not too many already
-  if (i < implementors_limit) {
-    assert(_implementors[i] == NULL, "should be exactly one implementor");
-    oop_store_without_check((oop*)&_implementors[i], k);
-  } else if (i == implementors_limit) {
-    // clear out the list on first overflow
-    for (int i2 = 0; i2 < implementors_limit; i2++)
-      oop_store_without_check((oop*)&_implementors[i2], NULL);
+  klassOop ik = implementor();
+  if (ik == NULL) {
+    set_implementor(k);
+  } else if (ik != this->as_klassOop()) {
+    // There is already an implementor. Use itself as an indicator of
+    // more than one implementors.
+    set_implementor(this->as_klassOop());
   }
 
   // The implementor also implements the transitive_interfaces
@@ -603,9 +609,9 @@ void instanceKlass::add_implementor(klassOop k) {
 }
 
 void instanceKlass::init_implementor() {
-  for (int i = 0; i < implementors_limit; i++)
-    oop_store_without_check((oop*)&_implementors[i], NULL);
-  _nof_implementors = 0;
+  if (is_interface()) {
+    set_implementor(NULL);
+  }
 }
 
 
@@ -1849,24 +1855,22 @@ int instanceKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
 void instanceKlass::follow_weak_klass_links(
   BoolObjectClosure* is_alive, OopClosure* keep_alive) {
   assert(is_alive->do_object_b(as_klassOop()), "this oop should be live");
-  if (ClassUnloading) {
-    for (int i = 0; i < implementors_limit; i++) {
-      klassOop impl = _implementors[i];
-      if (impl == NULL)  break;  // no more in the list
-      if (!is_alive->do_object_b(impl)) {
-        // remove this guy from the list by overwriting him with the tail
-        int lasti = --_nof_implementors;
-        assert(lasti >= i && lasti < implementors_limit, "just checking");
-        _implementors[i] = _implementors[lasti];
-        _implementors[lasti] = NULL;
-        --i; // rerun the loop at this index
+
+  if (is_interface()) {
+    if (ClassUnloading) {
+      klassOop impl = implementor();
+      if (impl != NULL) {
+        if (!is_alive->do_object_b(impl)) {
+          // remove this guy
+          *start_of_implementor() = NULL;
+        }
       }
-    }
-  } else {
-    for (int i = 0; i < implementors_limit; i++) {
-      keep_alive->do_oop(&adr_implementors()[i]);
+    } else {
+      assert(adr_implementor() != NULL, "just checking");
+      keep_alive->do_oop(adr_implementor());
     }
   }
+
   Klass::follow_weak_klass_links(is_alive, keep_alive);
 }
 

@@ -444,11 +444,11 @@ void CompactingPermGenGen::invalidate_remembered_set() {
 }
 
 
-void CompactingPermGenGen::verify(bool allow_dirty) {
-  the_space()->verify(allow_dirty);
+void CompactingPermGenGen::verify() {
+  the_space()->verify();
   if (!SharedSkipVerify && spec()->enable_shared_spaces()) {
-    ro_space()->verify(allow_dirty);
-    rw_space()->verify(allow_dirty);
+    ro_space()->verify();
+    rw_space()->verify();
   }
 }
 
