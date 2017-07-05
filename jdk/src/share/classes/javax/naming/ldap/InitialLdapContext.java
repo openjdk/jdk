@@ -38,7 +38,7 @@ import java.util.Hashtable;
   * <tt>javax.naming.InitialDirContext</tt> for details on synchronization,
   * and the policy for how an initial context is created.
   *
-  * <h4>Request Controls</h4>
+  * <h1>Request Controls</h1>
   * When you create an initial context (<tt>InitialLdapContext</tt>),
   * you can specify a list of request controls.
   * These controls will be used as the request controls for any

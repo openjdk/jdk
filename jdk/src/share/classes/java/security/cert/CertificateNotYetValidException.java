@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package java.security.cert;
 
 /**
  * Certificate is not yet valid exception. This is thrown whenever
- * the current <code>Date</code> or the specified <code>Date</code>
- * is before the <code>notBefore</code> date/time in the Certificate
+ * the current {@code Date} or the specified {@code Date}
+ * is before the {@code notBefore} date/time in the Certificate
  * validity period.
  *
  * @author Hemma Prafullchandra

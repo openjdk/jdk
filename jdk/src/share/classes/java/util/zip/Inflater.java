@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,7 +305,7 @@ class Inflater {
     }
 
     /**
-     * Returns the total number of compressed bytes input so far.</p>
+     * Returns the total number of compressed bytes input so far.
      *
      * @return the total (non-negative) number of compressed bytes input so far
      * @since 1.5
@@ -331,7 +331,7 @@ class Inflater {
     }
 
     /**
-     * Returns the total number of uncompressed bytes output so far.</p>
+     * Returns the total number of uncompressed bytes output so far.
      *
      * @return the total (non-negative) number of uncompressed bytes output so far
      * @since 1.5

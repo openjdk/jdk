@@ -453,8 +453,7 @@ public final class Double extends Number implements Comparable<Double> {
      * a {@code NumberFormatException} be thrown, the regular
      * expression below can be used to screen the input string:
      *
-     * <code>
-     * <pre>
+     * <pre>{@code
      *  final String Digits     = "(\\p{Digit}+)";
      *  final String HexDigits  = "(\\p{XDigit}+)";
      *  // an exponent is 'e' or 'E' followed by an optionally
@@ -474,7 +473,7 @@ public final class Double extends Number implements Comparable<Double> {
      *       // in addition to strings of floating-point literals, the
      *       // two sub-patterns below are simplifications of the grammar
      *       // productions from section 3.10.2 of
-     *       // <cite>The Java&trade; Language Specification</cite>.
+     *       // The Java Language Specification.
      *
      *       // Digits ._opt Digits_opt ExponentPart_opt FloatTypeSuffix_opt
      *       "((("+Digits+"(\\.)?("+Digits+"?)("+Exp+")?)|"+
@@ -499,8 +498,7 @@ public final class Double extends Number implements Comparable<Double> {
      *  else {
      *      // Perform suitable alternative action
      *  }
-     * </pre>
-     * </code>
+     * }</pre>
      *
      * @param      s   the string to be parsed.
      * @return     a {@code Double} object holding the value
@@ -756,9 +754,9 @@ public final class Double extends Number implements Comparable<Double> {
      * Returns a hash code for a {@code double} value; compatible with
      * {@code Double.hashCode()}.
      *
-     * @since 1.8
-     *
+     * @param value the value to hash
      * @return a hash code value for a {@code double} value.
+     * @since 1.8
      */
     public static int hashCode(double value) {
         long bits = doubleToLongBits(value);

@@ -131,7 +131,7 @@ public class RejectClientRenego implements
                 sslOS.flush();
             }
             throw new Exception("Not reject client initialized renegotiation");
-        } catch (SSLHandshakeException she) {
+        } catch (IOException ioe) {
             System.out.println("Got the expected exception");
         } finally {
             sslSocket.close();
@@ -181,7 +181,7 @@ public class RejectClientRenego implements
                 sslIS.read();
             }
             throw new Exception("Not reject client initialized renegotiation");
-        } catch (SSLHandshakeException she) {
+        } catch (IOException ioe) {
             System.out.println("Got the expected exception");
         } finally {
             sslSocket.close();
@@ -216,7 +216,8 @@ public class RejectClientRenego implements
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
         // reject client initialized SSL renegotiation.
-        System.setProperty("jdk.tls.rejectClientInitializedRenego", "true");
+        System.setProperty(
+            "jdk.tls.rejectClientInitiatedRenegotiation", "true");
 
         if (debug)
             System.setProperty("javax.net.debug", "all");

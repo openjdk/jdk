@@ -136,9 +136,12 @@ public class bug8014863 {
                         "qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp" +
                         "</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq <em>pp</em> qqqq</p>");
                 editorPane.setCaretPosition(1);
-
+                // An actual font size depends on OS and might be differnet on various OSs.
+                // It is necessary to calculate the width to meet the expected number of lines.
+                int width = SwingUtilities.computeStringWidth(editorPane.getFontMetrics(editorPane.getFont()),
+                        "qqqq pp qqqq pp qqqq pp qqqqqqqq");
                 frame.add(editorPane);
-                frame.setSize(200, 200);
+                frame.setSize(width, 200);
                 frame.setVisible(true);
             }
         });

@@ -119,7 +119,7 @@ public class ProtectionDomain {
     /**
      * Creates a new ProtectionDomain with the given CodeSource and
      * Permissions. If the permissions object is not null, then
-     *  <code>setReadOnly())</code> will be called on the passed in
+     *  {@code setReadOnly())} will be called on the passed in
      * Permissions object. The only permissions granted to this domain
      * are the ones specified; the current Policy will not be consulted.
      *
@@ -145,7 +145,7 @@ public class ProtectionDomain {
     /**
      * Creates a new ProtectionDomain qualified by the given CodeSource,
      * Permissions, ClassLoader and array of Principals. If the
-     * permissions object is not null, then <code>setReadOnly()</code>
+     * permissions object is not null, then {@code setReadOnly()}
      * will be called on the passed in Permissions object.
      * The permissions granted to this domain are dynamic; they include
      * both the static permissions passed to this constructor, and any
@@ -155,7 +155,7 @@ public class ProtectionDomain {
      * This constructor is typically used by
      * {@link SecureClassLoader ClassLoaders}
      * and {@link DomainCombiner DomainCombiners} which delegate to
-     * <code>Policy</code> to actively associate the permissions granted to
+     * {@code Policy} to actively associate the permissions granted to
      * this domain. This constructor affords the
      * Policy provider the opportunity to augment the supplied
      * PermissionCollection to reflect policy changes.

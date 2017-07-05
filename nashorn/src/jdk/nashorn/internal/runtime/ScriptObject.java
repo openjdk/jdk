@@ -170,13 +170,30 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         }
 
         this.arrayData = ArrayData.EMPTY_ARRAY;
+        this.setMap(map == null ? PropertyMap.newMap(getClass()) : map);
+    }
 
-        if (map == null) {
-            this.setMap(PropertyMap.newMap(getClass()));
-            return;
+    /**
+     * Constructor that directly sets the prototype to {@code proto} and property map to
+     * {@code map} without invalidating the map as calling {@link #setProto(ScriptObject)}
+     * would do. This should only be used for objects that are always constructed with the
+     * same combination of prototype and property map.
+     *
+     * @param proto the prototype object
+     * @param map intial {@link PropertyMap}
+     */
+    protected ScriptObject(final ScriptObject proto, final PropertyMap map) {
+        if (Context.DEBUG) {
+            ScriptObject.count++;
         }
 
-        this.setMap(map);
+        this.arrayData = ArrayData.EMPTY_ARRAY;
+        this.setMap(map == null ? PropertyMap.newMap(getClass()) : map);
+        this.proto = proto;
+
+        if (proto != null) {
+            proto.setIsPrototype();
+        }
     }
 
     /**
@@ -777,30 +794,18 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     public final Property modifyOwnProperty(final Property oldProperty, final int propertyFlags, final ScriptFunction getter, final ScriptFunction setter) {
         Property newProperty;
         if (oldProperty instanceof UserAccessorProperty) {
-            // re-use the slots of the old user accessor property.
             final UserAccessorProperty uc = (UserAccessorProperty) oldProperty;
-
-            int getterSlot = uc.getGetterSlot();
-            // clear the old getter and set the new getter
+            final int getterSlot = uc.getGetterSlot();
+            final int setterSlot = uc.getSetterSlot();
             setSpill(getterSlot, getter);
-            // if getter function is null, flag the slot to be negative (less by 1)
-            if (getter == null) {
-                getterSlot = -getterSlot - 1;
-            }
-
-            int setterSlot = uc.getSetterSlot();
-            // clear the old setter and set the new setter
             setSpill(setterSlot, setter);
-            // if setter function is null, flag the slot to be negative (less by 1)
-            if (setter == null) {
-                setterSlot = -setterSlot - 1;
+
+            // if just flipping getter and setter with new functions, no need to change property or map
+            if (uc.flags == propertyFlags) {
+                return oldProperty;
             }
 
             newProperty = new UserAccessorProperty(oldProperty.getKey(), propertyFlags, getterSlot, setterSlot);
-            // if just flipping getter and setter with new functions, no need to change property or map
-            if (oldProperty.equals(newProperty)) {
-                return oldProperty;
-            }
         } else {
             // erase old property value and create new user accessor property
             erasePropertyValue(oldProperty);
@@ -862,12 +867,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      */
     public final void setUserAccessors(final String key, final ScriptFunction getter, final ScriptFunction setter) {
         final Property oldProperty = getMap().findProperty(key);
-        if (oldProperty != null) {
-            final UserAccessorProperty newProperty = newUserAccessors(oldProperty.getKey(), oldProperty.getFlags(), getter, setter);
-            modifyOwnProperty(oldProperty, newProperty);
+        if (oldProperty instanceof UserAccessorProperty) {
+            modifyOwnProperty(oldProperty, oldProperty.getFlags(), getter, setter);
         } else {
-            final UserAccessorProperty newProperty = newUserAccessors(key, 0, getter, setter);
-            addOwnProperty(newProperty);
+            addOwnProperty(newUserAccessors(key, oldProperty != null ? oldProperty.getFlags() : 0, getter, setter));
         }
     }
 
@@ -1712,7 +1715,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
 
             final ScriptObject prototype = find.getOwner();
 
-            if (!property.hasGetterFunction()) {
+            if (!property.hasGetterFunction(prototype)) {
                 methodHandle = bindTo(methodHandle, prototype);
             }
             return new GuardedInvocation(methodHandle, getMap().getProtoGetSwitchPoint(proto, name), guard);
@@ -3144,49 +3147,30 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
      * Make a new UserAccessorProperty property. getter and setter functions are stored in
      * this ScriptObject and slot values are used in property object.
      */
-    private UserAccessorProperty newUserAccessors(final String key, final int propertyFlags, final ScriptFunction getter, final ScriptFunction setter) {
-        int oldSpillLength = getMap().getSpillLength();
+    protected final UserAccessorProperty newUserAccessors(final String key, final int propertyFlags, final ScriptFunction getter, final ScriptFunction setter) {
+        final UserAccessorProperty property = getMap().newUserAccessors(key, propertyFlags);
+        setSpill(property.getGetterSlot(), getter);
+        setSpill(property.getSetterSlot(), setter);
 
-        int getterSlot = oldSpillLength++;
-        setSpill(getterSlot, getter);
-        // if getter function is null, flag the slot to be negative (less by 1)
-        if (getter == null) {
-            getterSlot = -getterSlot - 1;
-        }
-
-        int setterSlot = oldSpillLength++;
-
-        setSpill(setterSlot, setter);
-        // if setter function is null, flag the slot to be negative (less by 1)
-        if (setter == null) {
-            setterSlot = -setterSlot - 1;
-        }
-
-        return new UserAccessorProperty(key, propertyFlags, getterSlot, setterSlot);
+        return property;
     }
 
-    private void setSpill(final int slot, final Object value) {
-        if (slot >= 0) {
-            final int index = slot;
-            if (spill == null) {
-                // create new spill.
-                spill = new Object[Math.max(index + 1, SPILL_RATE)];
-            } else if (index >= spill.length) {
-                // grow spill as needed
-                final Object[] newSpill = new Object[index + 1];
-                System.arraycopy(spill, 0, newSpill, 0, spill.length);
-                spill = newSpill;
-            }
-
-            spill[index] = value;
+    protected final void setSpill(final int slot, final Object value) {
+        if (spill == null) {
+            // create new spill.
+            spill = new Object[Math.max(slot + 1, SPILL_RATE)];
+        } else if (slot >= spill.length) {
+            // grow spill as needed
+            final Object[] newSpill = new Object[slot + 1];
+            System.arraycopy(spill, 0, newSpill, 0, spill.length);
+            spill = newSpill;
         }
+
+        spill[slot] = value;
     }
 
-    // user accessors are either stored in spill array slots
-    // get the accessor value using slot number. Note that slot is spill array index.
-    Object getSpill(final int slot) {
-        final int index = slot;
-        return (index < 0 || (index >= spill.length)) ? null : spill[index];
+    protected Object getSpill(final int slot) {
+        return spill != null && slot < spill.length ? spill[slot] : null;
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

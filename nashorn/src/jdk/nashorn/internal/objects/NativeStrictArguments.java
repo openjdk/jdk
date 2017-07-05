@@ -37,6 +37,7 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.lookup.Lookup;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 
 /**
  * ECMA 10.6 Arguments Object.
@@ -50,22 +51,24 @@ public final class NativeStrictArguments extends ScriptObject {
     private static final MethodHandle S$LENGTH = findOwnMH("S$length", void.class, Object.class, Object.class);
 
     // property map for strict mode arguments object
-    private static final PropertyMap nasgenmap$;
+    private static final PropertyMap map$;
 
     static {
         PropertyMap map = PropertyMap.newMap(NativeStrictArguments.class);
         map = Lookup.newProperty(map, "length", Property.NOT_ENUMERABLE, G$LENGTH, S$LENGTH);
         // In strict mode, the caller and callee properties should throw TypeError
-        map = ScriptFunctionImpl.newThrowerProperty(map, "caller");
-        map = ScriptFunctionImpl.newThrowerProperty(map, "callee");
-        nasgenmap$ = map;
+        // Need to add properties directly to map since slots are assigned speculatively by newUserAccessors.
+        final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
+        map = map.addProperty(map.newUserAccessors("caller", flags));
+        map = map.addProperty(map.newUserAccessors("callee", flags));
+        map$ = map;
     }
 
     private Object   length;
     private final Object[] namedArgs;
 
-    NativeStrictArguments(final Object[] values, final int numParams) {
-        super(nasgenmap$);
+    NativeStrictArguments(final ScriptObject proto, final Object[] values, final int numParams) {
+        super(proto, map$);
         setIsArguments();
 
         final ScriptFunction func = ScriptFunctionImpl.getTypeErrorThrower();
@@ -83,8 +86,6 @@ public final class NativeStrictArguments extends ScriptObject {
             Arrays.fill(namedArgs, UNDEFINED);
         }
         System.arraycopy(values, 0, namedArgs, 0, Math.min(namedArgs.length, values.length));
-
-        this.setProto(Global.objectPrototype());
     }
 
     @Override
@@ -142,6 +143,10 @@ public final class NativeStrictArguments extends ScriptObject {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.publicLookup(), NativeStrictArguments.class, name, MH.type(rtype, types));
+        try {
+            return MethodHandles.lookup().findStatic(NativeStrictArguments.class, name, MH.type(rtype, types));
+        } catch (final NoSuchMethodException | IllegalAccessException e) {
+            throw new MethodHandleFactory.LookupException(e);
+        }
     }
 }

@@ -180,17 +180,19 @@ public abstract class Property {
 
     /**
      * Check whether this property has a user defined getter function. See {@link UserAccessorProperty}
+     * @param obj object containing getter
      * @return true if getter function exists, false is default
      */
-    public boolean hasGetterFunction() {
+    public boolean hasGetterFunction(final ScriptObject obj) {
         return false;
     }
 
     /**
      * Check whether this property has a user defined setter function. See {@link UserAccessorProperty}
+     * @param obj object containing setter
      * @return true if getter function exists, false is default
      */
-    public boolean hasSetterFunction() {
+    public boolean hasSetterFunction(final ScriptObject obj) {
         return false;
     }
 
@@ -363,7 +365,7 @@ public abstract class Property {
      * @param value the new property value
      * @param strict is this a strict setter?
      */
-    protected abstract void setObjectValue(ScriptObject self, ScriptObject owner, Object value, boolean strict);
+    public abstract void setObjectValue(ScriptObject self, ScriptObject owner, Object value, boolean strict);
 
     /**
      * Set the Object value of this property from {@code owner}. This allows to bypass creation of the
@@ -373,7 +375,7 @@ public abstract class Property {
      * @param owner the owner object
      * @return  the property value
      */
-    protected abstract Object getObjectValue(ScriptObject self, ScriptObject owner);
+    public abstract Object getObjectValue(ScriptObject self, ScriptObject owner);
 
     /**
      * Abstract method for retrieving the setter for the property. We do not know

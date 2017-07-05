@@ -207,7 +207,7 @@ public class LocaleProviders {
             String jreResult = "\u5e73\u6210 16.11.03 (\u6c34) \u5348\u524d 11:53:47";
             Locale l = new Locale("ja", "JP", "JP");
             SimpleDateFormat sdf = new SimpleDateFormat("GGGG yyyy.MMM.dd '('E')' a hh:mm:ss", l);
-            sdf.setTimeZone(TimeZone.getTimeZone("PST"));
+            sdf.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
             String result = sdf.format(sampleDate);
             System.out.println(result);
             if (LocaleProviderAdapter.getAdapterPreference()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,9 @@ import java.util.*;
  *
  * @author Benjamin Renaud
  * @deprecated This class is no longer used. Its functionality has been
- * replaced by <code>java.security.KeyStore</code>, the
- * <code>java.security.cert</code> package, and
- * <code>java.security.Principal</code>.
+ * replaced by {@code java.security.KeyStore}, the
+ * {@code java.security.cert} package, and
+ * {@code java.security.Principal}.
  */
 @Deprecated
 public abstract class Identity implements Principal, Serializable {
@@ -164,8 +164,8 @@ public abstract class Identity implements Principal, Serializable {
      * Sets this identity's public key. The old key and all of this
      * identity's certificates are removed by this operation.
      *
-     * <p>First, if there is a security manager, its <code>checkSecurityAccess</code>
-     * method is called with <code>"setIdentityPublicKey"</code>
+     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
+     * method is called with {@code "setIdentityPublicKey"}
      * as its argument to see if it's ok to set the public key.
      *
      * @param key the public key for this identity.
@@ -174,7 +174,7 @@ public abstract class Identity implements Principal, Serializable {
      * identity's scope has the same public key, or if another exception occurs.
      *
      * @exception  SecurityException  if a security manager exists and its
-     * <code>checkSecurityAccess</code> method doesn't allow
+     * {@code checkSecurityAccess} method doesn't allow
      * setting the public key.
      *
      * @see #getPublicKey
@@ -191,14 +191,14 @@ public abstract class Identity implements Principal, Serializable {
     /**
      * Specifies a general information string for this identity.
      *
-     * <p>First, if there is a security manager, its <code>checkSecurityAccess</code>
-     * method is called with <code>"setIdentityInfo"</code>
+     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
+     * method is called with {@code "setIdentityInfo"}
      * as its argument to see if it's ok to specify the information string.
      *
      * @param info the information string.
      *
      * @exception  SecurityException  if a security manager exists and its
-     * <code>checkSecurityAccess</code> method doesn't allow
+     * {@code checkSecurityAccess} method doesn't allow
      * setting the information string.
      *
      * @see #getInfo
@@ -226,8 +226,8 @@ public abstract class Identity implements Principal, Serializable {
      * the identity does not have a public key, the identity's
      * public key is set to be that specified in the certificate.
      *
-     * <p>First, if there is a security manager, its <code>checkSecurityAccess</code>
-     * method is called with <code>"addIdentityCertificate"</code>
+     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
+     * method is called with {@code "addIdentityCertificate"}
      * as its argument to see if it's ok to add a certificate.
      *
      * @param certificate the certificate to be added.
@@ -237,7 +237,7 @@ public abstract class Identity implements Principal, Serializable {
      * this identity's public key, or if another exception occurs.
      *
      * @exception  SecurityException  if a security manager exists and its
-     * <code>checkSecurityAccess</code> method doesn't allow
+     * {@code checkSecurityAccess} method doesn't allow
      * adding a certificate.
      *
      * @see SecurityManager#checkSecurityAccess
@@ -277,8 +277,8 @@ public abstract class Identity implements Principal, Serializable {
     /**
      * Removes a certificate from this identity.
      *
-     * <p>First, if there is a security manager, its <code>checkSecurityAccess</code>
-     * method is called with <code>"removeIdentityCertificate"</code>
+     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
+     * method is called with {@code "removeIdentityCertificate"}
      * as its argument to see if it's ok to remove a certificate.
      *
      * @param certificate the certificate to be removed.
@@ -287,7 +287,7 @@ public abstract class Identity implements Principal, Serializable {
      * missing, or if another exception occurs.
      *
      * @exception  SecurityException  if a security manager exists and its
-     * <code>checkSecurityAccess</code> method doesn't allow
+     * {@code checkSecurityAccess} method doesn't allow
      * removing a certificate.
      *
      * @see SecurityManager#checkSecurityAccess
@@ -390,15 +390,15 @@ public abstract class Identity implements Principal, Serializable {
      * Returns a short string describing this identity, telling its
      * name and its scope (if any).
      *
-     * <p>First, if there is a security manager, its <code>checkSecurityAccess</code>
-     * method is called with <code>"printIdentity"</code>
+     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
+     * method is called with {@code "printIdentity"}
      * as its argument to see if it's ok to return the string.
      *
      * @return information about this identity, such as its name and the
      * name of its scope (if any).
      *
      * @exception  SecurityException  if a security manager exists and its
-     * <code>checkSecurityAccess</code> method doesn't allow
+     * {@code checkSecurityAccess} method doesn't allow
      * returning a string describing this identity.
      *
      * @see SecurityManager#checkSecurityAccess
@@ -415,20 +415,20 @@ public abstract class Identity implements Principal, Serializable {
     /**
      * Returns a string representation of this identity, with
      * optionally more details than that provided by the
-     * <code>toString</code> method without any arguments.
+     * {@code toString} method without any arguments.
      *
-     * <p>First, if there is a security manager, its <code>checkSecurityAccess</code>
-     * method is called with <code>"printIdentity"</code>
+     * <p>First, if there is a security manager, its {@code checkSecurityAccess}
+     * method is called with {@code "printIdentity"}
      * as its argument to see if it's ok to return the string.
      *
      * @param detailed whether or not to provide detailed information.
      *
-     * @return information about this identity. If <code>detailed</code>
+     * @return information about this identity. If {@code detailed}
      * is true, then this method returns more information than that
-     * provided by the <code>toString</code> method without any arguments.
+     * provided by the {@code toString} method without any arguments.
      *
      * @exception  SecurityException  if a security manager exists and its
-     * <code>checkSecurityAccess</code> method doesn't allow
+     * {@code checkSecurityAccess} method doesn't allow
      * returning a string describing this identity.
      *
      * @see #toString

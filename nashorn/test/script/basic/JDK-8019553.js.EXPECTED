@@ -1,0 +1,12 @@
+SyntaxError: test/script/basic/JDK-8019553.js#33<eval>:1:3 Expected l-value but found +
+++ +3
+   ^
+SyntaxError: test/script/basic/JDK-8019553.js#33<eval>:1:3 Expected l-value but found -
+++ -7
+   ^
+SyntaxError: test/script/basic/JDK-8019553.js#33<eval>:1:3 Expected l-value but found +
+-- +2
+   ^
+SyntaxError: test/script/basic/JDK-8019553.js#33<eval>:1:3 Expected l-value but found -
+-- -8
+   ^

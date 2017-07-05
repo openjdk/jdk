@@ -41,7 +41,7 @@ import java.io.IOException;
  * BasicFileAttributeView}, and in addition, the following attributes are
  * supported:
  * <blockquote>
- * <table border="1" cellpadding="8">
+ * <table border="1" cellpadding="8" summary="Supported attributes">
  *   <tr>
  *     <th> Name </th>
  *     <th> Type </th>

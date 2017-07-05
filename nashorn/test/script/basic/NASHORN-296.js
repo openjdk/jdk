@@ -33,7 +33,7 @@ function test(name) {
         load({ script: 'throw new Error()', name: name });
     } catch(e) {
         // normalize windows path separator to URL style
-        var actual = e.stack[0].fileName;
+        var actual = e.getStackTrace()[0].fileName;
         if (actual !== name) {
             fail("expected file name to be " + name +
                  ", actually got file name " + actual);
@@ -48,6 +48,6 @@ test("com/oracle/node/sample.js");
 try {
     throw new Error();
 } catch (e) {
-    test(e.stack[0].fileName.substring(6));
+    test(e.getStackTrace()[0].fileName.substring(6));
 }
 

@@ -72,7 +72,7 @@ import java.io.IOException;
  * <p> File-lock objects are safe for use by multiple concurrent threads.
  *
  *
- * <a name="pdep"><h4> Platform dependencies </h4></a>
+ * <a name="pdep"></a><h2> Platform dependencies </h2>
  *
  * <p> This file-locking API is intended to map directly to the native locking
  * facility of the underlying operating system.  Thus the locks held on a file
@@ -260,6 +260,11 @@ public abstract class FileLock implements AutoCloseable {
 
     /**
      * Tells whether or not this lock overlaps the given lock range.
+     *
+     * @param   position
+     *          The starting position of the lock range
+     * @param   size
+     *          The size of the lock range
      *
      * @return  <tt>true</tt> if, and only if, this lock and the given lock
      *          range overlap by at least one byte

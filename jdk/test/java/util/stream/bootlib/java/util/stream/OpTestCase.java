@@ -50,7 +50,7 @@ import org.testng.annotations.Test;
  * ways and asserts that they produce equivalent results.
  */
 @Test
-public abstract class OpTestCase extends Assert {
+public abstract class OpTestCase extends LoggingTestCase {
 
     private final Map<StreamShape, Set<? extends BaseStreamTestScenario>> testScenarios;
 
@@ -65,6 +65,25 @@ public abstract class OpTestCase extends Assert {
     @SuppressWarnings("rawtypes")
     public static int getStreamFlags(BaseStream s) {
         return ((AbstractPipeline) s).getStreamFlags();
+    }
+
+    /**
+     * An asserter for results produced when exercising of stream or terminal
+     * tests.
+     *
+     * @param <R> the type of result to assert on
+     */
+    public interface ResultAsserter<R> {
+        /**
+         * Assert a result produced when exercising of stream or terminal
+         * test.
+         *
+         * @param actual the actual result
+         * @param expected the expected result
+         * @param isOrdered true if the pipeline is ordered
+         * @param isParallel true if the pipeline is parallel
+         */
+        void assertResult(R actual, R expected, boolean isOrdered, boolean isParallel);
     }
 
     // Exercise stream operations
@@ -190,14 +209,19 @@ public abstract class OpTestCase extends Assert {
         Set<BaseStreamTestScenario> testSet = new HashSet<>();
 
         Collection<U> refResult;
-        boolean isOrdered;
 
         Consumer<TestData<T, S_IN>> before = LambdaTestHelpers.bEmpty;
 
         Consumer<TestData<T, S_IN>> after = LambdaTestHelpers.bEmpty;
 
-        BiConsumer<Iterable<U>, Iterable<U>> sequentialEqualityAsserter = LambdaTestHelpers::assertContentsEqual;
-        BiConsumer<Iterable<U>, Iterable<U>> parallelEqualityAsserter = LambdaTestHelpers::assertContentsEqual;
+        ResultAsserter<Iterable<U>> resultAsserter = (act, exp, ord, par) -> {
+            if (par & !ord) {
+                LambdaTestHelpers.assertContentsUnordered(act, exp);
+            }
+            else {
+                LambdaTestHelpers.assertContentsEqual(act, exp);
+            }
+        };
 
         private ExerciseDataStreamBuilder(TestData<T, S_IN> data, Function<S_IN, S_OUT> m) {
             this.data = data;
@@ -209,10 +233,6 @@ public abstract class OpTestCase extends Assert {
             // Have to initiate from the output shape of the last stream
             // This means the stream mapper is required first rather than last
             testSet.addAll(testScenarios.get(shape));
-        }
-
-        public BiConsumer<Iterable<U>, Iterable<U>> getEqualityAsserter(BaseStreamTestScenario t) {
-            return t.isParallel() ? parallelEqualityAsserter : sequentialEqualityAsserter;
         }
 
         //
@@ -299,29 +319,15 @@ public abstract class OpTestCase extends Assert {
             return this;
         }
 
-        public ExerciseDataStreamBuilder<T, U, S_IN, S_OUT> sequentialEqualityAsserter(BiConsumer<Iterable<U>, Iterable<U>> equalator) {
-            this.sequentialEqualityAsserter = equalator;
-            return this;
-        }
-
-        public ExerciseDataStreamBuilder<T, U, S_IN, S_OUT> parallelEqualityAsserter(BiConsumer<Iterable<U>, Iterable<U>> equalator) {
-            this.parallelEqualityAsserter = equalator;
+        public ExerciseDataStreamBuilder<T, U, S_IN, S_OUT> resultAsserter(ResultAsserter<Iterable<U>> resultAsserter) {
+            this.resultAsserter = resultAsserter;
             return this;
         }
 
         // Build method
 
-        private long count(StreamShape shape, BaseStream s) {
-            switch (shape) {
-                case REFERENCE:    return ((Stream) s).count();
-                case INT_VALUE:    return ((IntStream) s).count();
-                case LONG_VALUE:   return ((LongStream) s).count();
-                case DOUBLE_VALUE: return ((DoubleStream) s).count();
-                default: throw new IllegalStateException("Unknown shape: " + shape);
-            }
-        }
-
         public Collection<U> exercise() {
+            final boolean isOrdered;
             if (refResult == null) {
                 // Induce the reference result
                 before.accept(data);
@@ -330,9 +336,10 @@ public abstract class OpTestCase extends Assert {
                 Node<U> refNodeResult = ((AbstractPipeline<?, U, ?>) sOut).evaluateToArrayNode(size -> (U[]) new Object[size]);
                 refResult = LambdaTestHelpers.toBoxedList(refNodeResult.spliterator());
                 after.accept(data);
-                S_OUT anotherCopy = m.apply(data.stream());
-                long count = count(((AbstractPipeline) anotherCopy).getOutputShape(), anotherCopy);
-                assertEquals(count, refNodeResult.count());
+            }
+            else {
+                S_OUT sOut = m.apply(data.stream());
+                isOrdered = StreamOpFlag.ORDERED.isKnown(((AbstractPipeline) sOut).getStreamFlags());
             }
 
             List<Error> errors = new ArrayList<>();
@@ -343,16 +350,20 @@ public abstract class OpTestCase extends Assert {
                     List<U> result = new ArrayList<>();
                     test.run(data, LambdaTestHelpers.<U>toBoxingConsumer(result::add), m);
 
-                    Runnable asserter = () -> getEqualityAsserter(test).accept(result, refResult);
-                    if (test.isParallel() && !isOrdered)
-                        asserter = () -> LambdaTestHelpers.assertContentsUnordered(result, refResult);
-                    LambdaTestHelpers.launderAssertion(
-                            asserter,
-                            () -> String.format("%n%s: %s != %s", test, refResult, result));
+                    Runnable asserter = () -> resultAsserter.assertResult(result, refResult, isOrdered, test.isParallel());
+
+                    if (refResult.size() > 1000) {
+                        LambdaTestHelpers.launderAssertion(
+                                asserter,
+                                () -> String.format("%n%s: [actual size=%d] != [expected size=%d]", test, result.size(), refResult.size()));
+                    }
+                    else {
+                        LambdaTestHelpers.launderAssertion(
+                                asserter,
+                                () -> String.format("%n%s: [actual] %s != [expected] %s", test, result, refResult));
+                    }
 
                     after.accept(data);
-//                } catch (AssertionError ae) {
-//                    errors.add(ae);
                 } catch (Throwable t) {
                     errors.add(new Error(String.format("%s: %s", test, t), t));
                 }
@@ -406,8 +417,7 @@ public abstract class OpTestCase extends Assert {
 
         Set<TerminalTestScenario> testSet = EnumSet.allOf(TerminalTestScenario.class);
 
-        Function<S_OUT, BiConsumer<R, R>> sequentialEqualityAsserter = s -> LambdaTestHelpers::assertContentsEqual;
-        Function<S_OUT, BiConsumer<R, R>> parallelEqualityAsserter = s -> LambdaTestHelpers::assertContentsEqual;
+        ResultAsserter<R> resultAsserter = (act, exp, ord, par) -> LambdaTestHelpers.assertContentsEqual(act, exp);
 
         private ExerciseDataTerminalBuilder(TestData<T, S_IN> data, Function<S_IN, S_OUT> streamF, Function<S_OUT, R> terminalF) {
             this.data = data;
@@ -423,23 +433,12 @@ public abstract class OpTestCase extends Assert {
         }
 
         public ExerciseDataTerminalBuilder<T, U, R, S_IN, S_OUT> equalator(BiConsumer<R, R> equalityAsserter) {
-            this.sequentialEqualityAsserter = s -> equalityAsserter;
-            this.parallelEqualityAsserter = s -> equalityAsserter;
+            resultAsserter = (act, exp, ord, par) -> equalityAsserter.accept(act, exp);
             return this;
         }
 
-        public ExerciseDataTerminalBuilder<T, U, R, S_IN, S_OUT> sequentialEqualityAsserter(BiConsumer<R, R> equalityAsserter) {
-            this.sequentialEqualityAsserter = s -> equalityAsserter;
-            return this;
-        }
-
-        public ExerciseDataTerminalBuilder<T, U, R, S_IN, S_OUT> parallelEqualityAsserter(BiConsumer<R, R> equalityAsserter) {
-            this.parallelEqualityAsserter = s -> equalityAsserter;
-            return this;
-        }
-
-        public ExerciseDataTerminalBuilder<T, U, R, S_IN, S_OUT> parallelEqualityAsserter(Function<S_OUT, BiConsumer<R, R>> equalatorProvider) {
-            this.parallelEqualityAsserter = equalatorProvider;
+        public ExerciseDataTerminalBuilder<T, U, R, S_IN, S_OUT> resultAsserter(ResultAsserter<R> resultAsserter) {
+            this.resultAsserter = resultAsserter;
             return this;
         }
 
@@ -467,8 +466,9 @@ public abstract class OpTestCase extends Assert {
         // Build method
 
         public R exercise() {
-            S_OUT out = streamF.apply(data.stream());
+            S_OUT out = streamF.apply(data.stream()).sequential();
             AbstractPipeline ap = (AbstractPipeline) out;
+            boolean isOrdered = StreamOpFlag.ORDERED.isKnown(ap.getStreamFlags());
             StreamShape shape = ap.getOutputShape();
 
             Node<U> node = ap.evaluateToArrayNode(size -> (U[]) new Object[size]);
@@ -481,9 +481,8 @@ public abstract class OpTestCase extends Assert {
                 S_OUT source = (S_OUT) createPipeline(shape, node.spliterator(),
                                                       StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SIZED,
                                                       false);
-                BiConsumer<R, R> asserter = sequentialEqualityAsserter.apply(source);
                 R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> asserter.accept(refResult, result),
+                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, false),
                                                    () -> String.format("Single sequential: %s != %s", refResult, result));
             }
 
@@ -491,11 +490,10 @@ public abstract class OpTestCase extends Assert {
                 S_OUT source = (S_OUT) createPipeline(shape, node.spliterator(),
                                                       StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SIZED,
                                                       false);
-                // Force short-curcuit
+                // Force short-circuit
                 source = (S_OUT) chain(source, new ShortCircuitOp<U>(shape));
-                BiConsumer<R, R> asserter = sequentialEqualityAsserter.apply(source);
                 R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> asserter.accept(refResult, result),
+                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, false),
                                                    () -> String.format("Single sequential pull: %s != %s", refResult, result));
             }
 
@@ -503,44 +501,39 @@ public abstract class OpTestCase extends Assert {
                 S_OUT source = (S_OUT) createPipeline(shape, node.spliterator(),
                                                       StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SIZED,
                                                       true);
-                BiConsumer<R, R> asserter = parallelEqualityAsserter.apply(source);
                 R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> asserter.accept(refResult, result),
+                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, true),
                                                    () -> String.format("Single parallel: %s != %s", refResult, result));
             }
 
             if (testSet.contains(TerminalTestScenario.ALL_SEQUENTIAL)) {
                 // This may forEach or tryAdvance depending on the terminal op implementation
                 S_OUT source = streamF.apply(data.stream());
-                BiConsumer<R, R> asserter = sequentialEqualityAsserter.apply(source);
                 R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> asserter.accept(refResult, result),
+                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, false),
                                                    () -> String.format("All sequential: %s != %s", refResult, result));
             }
 
             if (testSet.contains(TerminalTestScenario.ALL_SEQUENTIAL_SHORT_CIRCUIT)) {
                 S_OUT source = streamF.apply(data.stream());
-                // Force short-curcuit
+                // Force short-circuit
                 source = (S_OUT) chain(source, new ShortCircuitOp<U>(shape));
-                BiConsumer<R, R> asserter = sequentialEqualityAsserter.apply(source);
                 R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> asserter.accept(refResult, result),
+                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, false),
                                                    () -> String.format("All sequential pull: %s != %s", refResult, result));
             }
 
             if (testSet.contains(TerminalTestScenario.ALL_PARALLEL)) {
                 S_OUT source = streamF.apply(data.parallelStream());
-                BiConsumer<R, R> asserter = parallelEqualityAsserter.apply(source);
                 R result = terminalF.apply(source);
-                LambdaTestHelpers.launderAssertion(() -> asserter.accept(refResult, result),
+                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, true),
                                                    () -> String.format("All parallel: %s != %s", refResult, result));
             }
 
             if (testSet.contains(TerminalTestScenario.ALL_PARALLEL_SEQUENTIAL)) {
                 S_OUT source = streamF.apply(data.parallelStream());
-                BiConsumer<R, R> asserter = parallelEqualityAsserter.apply(source);
                 R result = terminalF.apply(source.sequential());
-                LambdaTestHelpers.launderAssertion(() -> asserter.accept(refResult, result),
+                LambdaTestHelpers.launderAssertion(() -> resultAsserter.assertResult(result, refResult, isOrdered, false),
                                                    () -> String.format("All parallel then sequential: %s != %s", refResult, result));
             }
 

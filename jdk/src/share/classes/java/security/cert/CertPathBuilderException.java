@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@ import java.security.GeneralSecurityException;
 
 /**
  * An exception indicating one of a variety of problems encountered when
- * building a certification path with a <code>CertPathBuilder</code>.
+ * building a certification path with a {@code CertPathBuilder}.
  * <p>
- * A <code>CertPathBuilderException</code> provides support for wrapping
+ * A {@code CertPathBuilderException} provides support for wrapping
  * exceptions. The {@link #getCause getCause} method returns the throwable,
  * if any, that caused this exception to be thrown.
  * <p>
@@ -53,7 +53,7 @@ public class CertPathBuilderException extends GeneralSecurityException {
     private static final long serialVersionUID = 5316471420178794402L;
 
     /**
-     * Creates a <code>CertPathBuilderException</code> with <code>null</code>
+     * Creates a {@code CertPathBuilderException} with {@code null}
      * as its detail message.
      */
     public CertPathBuilderException() {
@@ -61,8 +61,8 @@ public class CertPathBuilderException extends GeneralSecurityException {
     }
 
     /**
-     * Creates a <code>CertPathBuilderException</code> with the given
-     * detail message. The detail message is a <code>String</code> that
+     * Creates a {@code CertPathBuilderException} with the given
+     * detail message. The detail message is a {@code String} that
      * describes this particular exception in more detail.
      *
      * @param msg the detail message
@@ -72,16 +72,16 @@ public class CertPathBuilderException extends GeneralSecurityException {
     }
 
     /**
-     * Creates a <code>CertPathBuilderException</code> that wraps the specified
+     * Creates a {@code CertPathBuilderException} that wraps the specified
      * throwable. This allows any exception to be converted into a
-     * <code>CertPathBuilderException</code>, while retaining information
+     * {@code CertPathBuilderException}, while retaining information
      * about the wrapped exception, which may be useful for debugging. The
-     * detail message is set to (<code>cause==null ? null : cause.toString()
-     * </code>) (which typically contains the class and detail message of
+     * detail message is set to ({@code cause==null ? null : cause.toString()})
+     * (which typically contains the class and detail message of
      * cause).
      *
      * @param cause the cause (which is saved for later retrieval by the
-     * {@link #getCause getCause()} method). (A <code>null</code> value is
+     * {@link #getCause getCause()} method). (A {@code null} value is
      * permitted, and indicates that the cause is nonexistent or unknown.)
      */
     public CertPathBuilderException(Throwable cause) {
@@ -89,12 +89,12 @@ public class CertPathBuilderException extends GeneralSecurityException {
     }
 
     /**
-     * Creates a <code>CertPathBuilderException</code> with the specified
+     * Creates a {@code CertPathBuilderException} with the specified
      * detail message and cause.
      *
      * @param msg the detail message
      * @param  cause the cause (which is saved for later retrieval by the
-     * {@link #getCause getCause()} method). (A <code>null</code> value is
+     * {@link #getCause getCause()} method). (A {@code null} value is
      * permitted, and indicates that the cause is nonexistent or unknown.)
      */
     public CertPathBuilderException(String msg, Throwable cause) {
