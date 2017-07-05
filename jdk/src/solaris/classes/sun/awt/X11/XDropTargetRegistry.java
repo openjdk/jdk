@@ -168,7 +168,7 @@ final class XDropTargetRegistry {
                 if (dest_x >= 0 && dest_y >= 0) {
                     XWindowAttributes wattr = new XWindowAttributes();
                     try {
-                        XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
+                        XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                         int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                                       window, wattr.pData);
                         XToolkit.RESTORE_XERROR_HANDLER();
@@ -222,7 +222,7 @@ final class XDropTargetRegistry {
             long event_mask = 0;
             XWindowAttributes wattr = new XWindowAttributes();
             try {
-                XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
+                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                               embedder, wattr.pData);
                 XToolkit.RESTORE_XERROR_HANDLER();
@@ -240,7 +240,7 @@ final class XDropTargetRegistry {
             }
 
             if ((event_mask & XConstants.PropertyChangeMask) == 0) {
-                XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
+                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 XlibWrapper.XSelectInput(XToolkit.getDisplay(), embedder,
                                          event_mask | XConstants.PropertyChangeMask);
                 XToolkit.RESTORE_XERROR_HANDLER();
@@ -394,7 +394,7 @@ final class XDropTargetRegistry {
 
             /* Restore the original event mask for the embedder. */
             if ((event_mask & XConstants.PropertyChangeMask) == 0) {
-                XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
+                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 XlibWrapper.XSelectInput(XToolkit.getDisplay(), embedder,
                                          event_mask);
                 XToolkit.RESTORE_XERROR_HANDLER();

@@ -157,6 +157,8 @@ public abstract class InputEvent extends ComponentEvent {
     /**
      * An array of extended modifiers for additional buttons.
      * @see getButtonDownMasks
+     * There are twenty buttons fit into 4byte space.
+     * one more bit is reserved for FIRST_HIGH_BIT.
      * @since 7.0
      */
     private static final int [] BUTTON_DOWN_MASK = new int [] { BUTTON1_DOWN_MASK,
@@ -169,7 +171,16 @@ public abstract class InputEvent extends ComponentEvent {
                                                                1<<18,
                                                                1<<19,
                                                                1<<20,
-                                                               1<<21 };
+                                                               1<<21,
+                                                               1<<22,
+                                                               1<<23,
+                                                               1<<24,
+                                                               1<<25,
+                                                               1<<26,
+                                                               1<<27,
+                                                               1<<28,
+                                                               1<<29,
+                                                               1<<30};
 
     /**
      * A method to access an array of extended modifiers for additional buttons.
@@ -240,7 +251,7 @@ public abstract class InputEvent extends ComponentEvent {
     // in fact, it is undesirable to add modifier bits
     // to the same field as this may break applications
     // see bug# 5066958
-    static final int FIRST_HIGH_BIT = 1 << 22;
+    static final int FIRST_HIGH_BIT = 1 << 31;
 
     static final int JDK_1_3_MODIFIERS = SHIFT_DOWN_MASK - 1;
     static final int HIGH_MODIFIERS = ~( FIRST_HIGH_BIT - 1 );

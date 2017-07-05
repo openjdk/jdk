@@ -34,7 +34,9 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 include FILES.gmk
 AUTO_FILES_JAVA_DIRS = javax/swing/plaf sun/swing com/sun/java/swing/plaf
-SUBDIRS = nimbus
+ifndef DISABLE_NIMBUS
+  SUBDIRS = nimbus
+endif
 
 # Nimbus is handled in its own directory
 AUTO_JAVA_PRUNE = nimbus

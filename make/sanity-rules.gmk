@@ -348,6 +348,8 @@ endif
 ifeq ($(SPONSORS_SRC_AVAILABLE), true)
 	@$(ECHO) "   BUILD_SPONSORS = $(BUILD_SPONSORS) " >> $(MESSAGE_FILE)
 endif
+	@$(ECHO) "   DEBUG_CLASSFILES = $(DEBUG_CLASSFILES) " >> $(MESSAGE_FILE)
+	@$(ECHO) "   DEBUG_BINARIES = $(DEBUG_BINARIES) " >> $(MESSAGE_FILE)
 	@$(ECHO) "" >> $(MESSAGE_FILE)
 
 .PHONY: sanity settings pre-sanity insane \

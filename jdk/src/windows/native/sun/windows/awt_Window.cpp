@@ -464,7 +464,7 @@ void AwtWindow::CreateHWnd(JNIEnv *env, LPCWSTR title,
         size_t length = env->GetStringLength(javaWarningString) + 1;
         warningString = new WCHAR[length];
         env->GetStringRegion(javaWarningString, 0,
-                static_cast<jsize>(length - 1), warningString);
+                static_cast<jsize>(length - 1), reinterpret_cast<jchar*>(warningString));
         warningString[length-1] = L'\0';
 
         env->DeleteLocalRef(javaWarningString);
@@ -2649,20 +2649,6 @@ void AwtWindow::UpdateWindow(JNIEnv* env, jintArray data, int width, int height,
     contentHeight = height;
     UpdateWindowImpl(width, height, hBitmap);
     ::LeaveCriticalSection(&contentBitmapCS);
-}
-
-void AwtWindow::FillBackground(HDC hMemoryDC, SIZE &size)
-{
-    if (isOpaque()) {
-        AwtCanvas::FillBackground(hMemoryDC, size);
-    }
-}
-
-void AwtWindow::FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha)
-{
-    if (isOpaque()) {
-        AwtCanvas::FillAlpha(bitmapBits, size, alpha);
-    }
 }
 
 /*

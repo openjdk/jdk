@@ -34,74 +34,68 @@ import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 
 class XWarningWindow extends XWindow {
-    private final static int showingDelay = 330;
-    private final static int hidingDelay = 2000;
+    private final static int SHOWING_DELAY = 330;
+    private final static int HIDING_DELAY = 2000;
 
     private final Window ownerWindow;
     private WeakReference<XWindowPeer> ownerPeer;
-
-    public final Window getOwnerWindow() {
-        return ownerWindow;
-    }
     private long parentWindow;
 
     private final static String OWNER = "OWNER";
-
-    private static XIconInfo[][] icons;
-
     private InfoWindow.Tooltip tooltip;
 
-    private static synchronized XIconInfo getSecurityIconInfo(int size, int num) {
-        if (icons == null) {
-            icons = new XIconInfo[4][3];
-            if (XlibWrapper.dataModel == 32) {
-                icons[0][0] = new XIconInfo(XAWTIcon32_security_icon_bw16_png.security_icon_bw16_png);
-                icons[0][1] = new XIconInfo(XAWTIcon32_security_icon_interim16_png.security_icon_interim16_png);
-                icons[0][2] = new XIconInfo(XAWTIcon32_security_icon_yellow16_png.security_icon_yellow16_png);
-                icons[1][0] = new XIconInfo(XAWTIcon32_security_icon_bw24_png.security_icon_bw24_png);
-                icons[1][1] = new XIconInfo(XAWTIcon32_security_icon_interim24_png.security_icon_interim24_png);
-                icons[1][2] = new XIconInfo(XAWTIcon32_security_icon_yellow24_png.security_icon_yellow24_png);
-                icons[2][0] = new XIconInfo(XAWTIcon32_security_icon_bw32_png.security_icon_bw32_png);
-                icons[2][1] = new XIconInfo(XAWTIcon32_security_icon_interim32_png.security_icon_interim32_png);
-                icons[2][2] = new XIconInfo(XAWTIcon32_security_icon_yellow32_png.security_icon_yellow32_png);
-                icons[3][0] = new XIconInfo(XAWTIcon32_security_icon_bw48_png.security_icon_bw48_png);
-                icons[3][1] = new XIconInfo(XAWTIcon32_security_icon_interim48_png.security_icon_interim48_png);
-                icons[3][2] = new XIconInfo(XAWTIcon32_security_icon_yellow48_png.security_icon_yellow48_png);
-            } else {
-                icons[0][0] = new XIconInfo(XAWTIcon64_security_icon_bw16_png.security_icon_bw16_png);
-                icons[0][1] = new XIconInfo(XAWTIcon64_security_icon_interim16_png.security_icon_interim16_png);
-                icons[0][2] = new XIconInfo(XAWTIcon64_security_icon_yellow16_png.security_icon_yellow16_png);
-                icons[1][0] = new XIconInfo(XAWTIcon64_security_icon_bw24_png.security_icon_bw24_png);
-                icons[1][1] = new XIconInfo(XAWTIcon64_security_icon_interim24_png.security_icon_interim24_png);
-                icons[1][2] = new XIconInfo(XAWTIcon64_security_icon_yellow24_png.security_icon_yellow24_png);
-                icons[2][0] = new XIconInfo(XAWTIcon64_security_icon_bw32_png.security_icon_bw32_png);
-                icons[2][1] = new XIconInfo(XAWTIcon64_security_icon_interim32_png.security_icon_interim32_png);
-                icons[2][2] = new XIconInfo(XAWTIcon64_security_icon_yellow32_png.security_icon_yellow32_png);
-                icons[3][0] = new XIconInfo(XAWTIcon64_security_icon_bw48_png.security_icon_bw48_png);
-                icons[3][1] = new XIconInfo(XAWTIcon64_security_icon_interim48_png.security_icon_interim48_png);
-                icons[3][2] = new XIconInfo(XAWTIcon64_security_icon_yellow48_png.security_icon_yellow48_png);
+    /**
+     * Animation stage.
+     */
+    private volatile int currentIcon = 0;
+
+    /* -1 - uninitialized.
+     * 0 - 16x16
+     * 1 - 24x24
+     * 2 - 32x32
+     * 3 - 48x48
+     */
+    private int currentSize = -1;
+    private static XIconInfo[][] icons;
+    private static XIconInfo getSecurityIconInfo(int size, int num) {
+        synchronized (XWarningWindow.class) {
+            if (icons == null) {
+                icons = new XIconInfo[4][3];
+                if (XlibWrapper.dataModel == 32) {
+                    icons[0][0] = new XIconInfo(XAWTIcon32_security_icon_bw16_png.security_icon_bw16_png);
+                    icons[0][1] = new XIconInfo(XAWTIcon32_security_icon_interim16_png.security_icon_interim16_png);
+                    icons[0][2] = new XIconInfo(XAWTIcon32_security_icon_yellow16_png.security_icon_yellow16_png);
+                    icons[1][0] = new XIconInfo(XAWTIcon32_security_icon_bw24_png.security_icon_bw24_png);
+                    icons[1][1] = new XIconInfo(XAWTIcon32_security_icon_interim24_png.security_icon_interim24_png);
+                    icons[1][2] = new XIconInfo(XAWTIcon32_security_icon_yellow24_png.security_icon_yellow24_png);
+                    icons[2][0] = new XIconInfo(XAWTIcon32_security_icon_bw32_png.security_icon_bw32_png);
+                    icons[2][1] = new XIconInfo(XAWTIcon32_security_icon_interim32_png.security_icon_interim32_png);
+                    icons[2][2] = new XIconInfo(XAWTIcon32_security_icon_yellow32_png.security_icon_yellow32_png);
+                    icons[3][0] = new XIconInfo(XAWTIcon32_security_icon_bw48_png.security_icon_bw48_png);
+                    icons[3][1] = new XIconInfo(XAWTIcon32_security_icon_interim48_png.security_icon_interim48_png);
+                    icons[3][2] = new XIconInfo(XAWTIcon32_security_icon_yellow48_png.security_icon_yellow48_png);
+                } else {
+                    icons[0][0] = new XIconInfo(XAWTIcon64_security_icon_bw16_png.security_icon_bw16_png);
+                    icons[0][1] = new XIconInfo(XAWTIcon64_security_icon_interim16_png.security_icon_interim16_png);
+                    icons[0][2] = new XIconInfo(XAWTIcon64_security_icon_yellow16_png.security_icon_yellow16_png);
+                    icons[1][0] = new XIconInfo(XAWTIcon64_security_icon_bw24_png.security_icon_bw24_png);
+                    icons[1][1] = new XIconInfo(XAWTIcon64_security_icon_interim24_png.security_icon_interim24_png);
+                    icons[1][2] = new XIconInfo(XAWTIcon64_security_icon_yellow24_png.security_icon_yellow24_png);
+                    icons[2][0] = new XIconInfo(XAWTIcon64_security_icon_bw32_png.security_icon_bw32_png);
+                    icons[2][1] = new XIconInfo(XAWTIcon64_security_icon_interim32_png.security_icon_interim32_png);
+                    icons[2][2] = new XIconInfo(XAWTIcon64_security_icon_yellow32_png.security_icon_yellow32_png);
+                    icons[3][0] = new XIconInfo(XAWTIcon64_security_icon_bw48_png.security_icon_bw48_png);
+                    icons[3][1] = new XIconInfo(XAWTIcon64_security_icon_interim48_png.security_icon_interim48_png);
+                    icons[3][2] = new XIconInfo(XAWTIcon64_security_icon_yellow48_png.security_icon_yellow48_png);
+                }
             }
         }
         final int sizeIndex = size % icons.length;
         return icons[sizeIndex][num % icons[sizeIndex].length];
     }
 
-    private volatile int currentIcon = 0;
-
-    /* -1 - uninitialized yet
-     * 0 - 16x16
-     * 1 - 24x24
-     * 2 - 32x32
-     * 3 - 48x48
-     */
-    private volatile int currentSize = -1;
-
-    /** Indicates whether the shape of the window must be updated
-     */
-    private volatile boolean sizeUpdated = true;
-
-    private synchronized boolean updateIconSize() {
-        int newSize = currentSize;
+    private void updateIconSize() {
+        int newSize = -1;
 
         if (ownerWindow != null) {
             Insets insets = ownerWindow.getInsets();
@@ -117,14 +111,32 @@ class XWarningWindow extends XWindow {
                 newSize = 3;
             }
         }
-        if (newSize != currentSize) {
-            currentSize = newSize;
-            sizeUpdated = true;
+        // Make sure we have a valid size
+        if (newSize == -1) {
+            newSize = 0;
         }
-        return sizeUpdated;
+
+        // Note: this is not the most wise solution to use awtLock here,
+        // this should have been sync'ed with the stateLock. However,
+        // the awtLock must be taken first (see XBaseWindow.getStateLock()),
+        // and we need the awtLock anyway to update the shape of the icon.
+        // So it's easier to use just one lock instead.
+        XToolkit.awtLock();
+        try {
+            if (newSize != currentSize) {
+                currentSize = newSize;
+                XIconInfo ico = getSecurityIconInfo(currentSize, 0);
+                XlibWrapper.SetBitmapShape(XToolkit.getDisplay(), getWindow(),
+                        ico.getWidth(), ico.getHeight(), ico.getIntData());
+                AWTAccessor.getWindowAccessor().setSecurityWarningSize(
+                        ownerWindow, ico.getWidth(), ico.getHeight());
+            }
+        } finally {
+            XToolkit.awtUnlock();
+        }
     }
 
-    private synchronized XIconInfo getSecurityIconInfo() {
+    private XIconInfo getSecurityIconInfo() {
         updateIconSize();
         return getSecurityIconInfo(currentSize, currentIcon);
     }
@@ -180,28 +192,6 @@ class XWarningWindow extends XWindow {
             requestNoTaskbar();
         } finally {
             XToolkit.awtUnlock();
-        }
-    }
-
-    private void updateWarningWindowBounds() {
-        XWindowPeer peer = ownerPeer.get();
-        if (peer != null) {
-            synchronized (this) {
-                if (updateIconSize()) {
-                    XIconInfo ico = getSecurityIconInfo();
-                    XToolkit.awtLock();
-                    try {
-                        XlibWrapper.SetBitmapShape(XToolkit.getDisplay(), getWindow(),
-                                ico.getWidth(), ico.getHeight(), ico.getIntData());
-                    } finally {
-                        XToolkit.awtUnlock();
-                    }
-                    sizeUpdated = false;
-                    AWTAccessor.getWindowAccessor().setSecurityWarningSize(
-                            ownerWindow, ico.getWidth(), ico.getHeight());
-                }
-            }
-            peer.repositionSecurityWarning();
         }
     }
 
@@ -376,24 +366,21 @@ class XWarningWindow extends XWindow {
 
     private final Runnable showingTask = new Runnable() {
         public void run() {
-            new Thread() {
-                public void run() {
-                    if (!isVisible()) {
-                        xSetVisible(true);
-                        updateWarningWindowBounds();
-                    }
-                    repaint();
-                    if (currentIcon > 0) {
-                        currentIcon--;
-                        XToolkit.schedule(showingTask, showingDelay);
-                    }
-                }}.start();
+            if (!isVisible()) {
+                xSetVisible(true);
+                updateIconSize();
+                XWindowPeer peer = ownerPeer.get();
+                if (peer != null) {
+                    peer.repositionSecurityWarning();
+                }
+            }
+            repaint();
+            if (currentIcon > 0) {
+                currentIcon--;
+                XToolkit.schedule(showingTask, SHOWING_DELAY);
+            }
         }
     };
-
-    public void setSecurityWarningVisible(boolean visible) {
-        setSecurityWarningVisible(visible, true);
-    }
 
     public void setSecurityWarningVisible(boolean visible, boolean doSchedule) {
         if (visible) {
@@ -416,7 +403,7 @@ class XWarningWindow extends XWindow {
                 return;
             }
             if (doSchedule) {
-                XToolkit.schedule(hidingTask, hidingDelay);
+                XToolkit.schedule(hidingTask, HIDING_DELAY);
             } else {
                 hidingTask.run();
             }

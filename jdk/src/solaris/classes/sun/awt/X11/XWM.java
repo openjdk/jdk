@@ -276,7 +276,7 @@ final class XWM
             winmgr_running = false;
             substruct.set_event_mask(XConstants.SubstructureRedirectMask);
 
-            XToolkit.WITH_XERROR_HANDLER(DetectWMHandler);
+            XToolkit.WITH_XERROR_HANDLER(detectWMHandler);
             XlibWrapper.XChangeWindowAttributes(XToolkit.getDisplay(),
                                                 XToolkit.getDefaultRootWindow(),
                                                 XConstants.CWEventMask,
@@ -321,7 +321,7 @@ final class XWM
             new WindowPropertyGetter(window, XA_ENLIGHTENMENT_COMMS, 0, 14, false,
                                      XAtom.XA_STRING);
         try {
-            int status = getter.execute(XToolkit.IgnoreBadWindowHandler);
+            int status = getter.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
             if (status != XConstants.Success || getter.getData() == 0) {
                 return 0;
             }
@@ -439,7 +439,7 @@ final class XWM
                 new WindowPropertyGetter(wmwin, XA_DT_SM_STATE_INFO, 0, 1,
                                          false, XA_DT_SM_STATE_INFO);
             try {
-                status = getter2.execute(XToolkit.IgnoreBadWindowHandler);
+                status = getter2.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
 
                 if (status != XConstants.Success || getter2.getData() == 0) {
@@ -571,21 +571,6 @@ final class XWM
     }
 
     /*
-     * Temporary error handler that ensures that we know if
-     * XChangeProperty succeeded or not.
-     */
-    static XToolkit.XErrorHandler VerifyChangePropertyHandler = new XToolkit.XErrorHandler() {
-            public int handleError(long display, XErrorEvent err) {
-                XToolkit.XERROR_SAVE(err);
-                if (err.get_request_code() == XProtocolConstants.X_ChangeProperty) {
-                    return 0;
-                } else {
-                    return XToolkit.SAVED_ERROR_HANDLER(display, err);
-                }
-            }
-        };
-
-    /*
      * Prepare IceWM check.
      *
      * The only way to detect IceWM, seems to be by setting
@@ -617,7 +602,7 @@ final class XWM
 
         XToolkit.awtLock();
         try {
-            XToolkit.WITH_XERROR_HANDLER(VerifyChangePropertyHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XlibWrapper.XChangePropertyS(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(),
                                          XA_ICEWM_WINOPTHINT.getAtom(),
                                          XA_ICEWM_WINOPTHINT.getAtom(),
@@ -682,20 +667,19 @@ final class XWM
      * Temporary error handler that checks if selecting for
      * SubstructureRedirect failed.
      */
-    static boolean winmgr_running = false;
-    static XToolkit.XErrorHandler DetectWMHandler = new XToolkit.XErrorHandler() {
-            public int handleError(long display, XErrorEvent err) {
-                XToolkit.XERROR_SAVE(err);
-                if (err.get_request_code() == XProtocolConstants.X_ChangeWindowAttributes
-                    && err.get_error_code() == XConstants.BadAccess)
-                {
-                    winmgr_running = true;
-                    return 0;
-                } else {
-                    return XToolkit.SAVED_ERROR_HANDLER(display, err);
-                }
+    private static boolean winmgr_running = false;
+    private static XErrorHandler detectWMHandler = new XErrorHandler.XBaseErrorHandler() {
+        @Override
+        public int handleError(long display, XErrorEvent err) {
+            if ((err.get_request_code() == XProtocolConstants.X_ChangeWindowAttributes) &&
+                (err.get_error_code() == XConstants.BadAccess))
+            {
+                winmgr_running = true;
+                return 0;
             }
-        };
+            return super.handleError(display, err);
+        }
+    };
 
     /*
      * Make an educated guess about running window manager.
