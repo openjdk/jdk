@@ -161,6 +161,7 @@
                 _JVM_GetStackTraceElement
                 _JVM_GetSystemPackage
                 _JVM_GetSystemPackages
+                _JVM_GetTemporaryDirectory
                 _JVM_GetThreadStateNames
                 _JVM_GetThreadStateValues
                 _JVM_GetVersionInfo

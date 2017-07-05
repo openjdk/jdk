@@ -386,6 +386,23 @@ JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
 JVM_END
 
 
+/*
+ * Return the temporary directory that the VM uses for the attach
+ * and perf data files.
+ *
+ * It is important that this directory is well-known and the
+ * same for all VM instances. It cannot be affected by configuration
+ * variables such as java.io.tmpdir.
+ */
+JVM_ENTRY(jstring, JVM_GetTemporaryDirectory(JNIEnv *env))
+  JVMWrapper("JVM_GetTemporaryDirectory");
+  HandleMark hm(THREAD);
+  const char* temp_dir = os::get_temp_directory();
+  Handle h = java_lang_String::create_from_platform_dependent_str(temp_dir, CHECK_NULL);
+  return (jstring) JNIHandles::make_local(env, h());
+JVM_END
+
+
 // java.lang.Runtime /////////////////////////////////////////////////////////////////////////
 
 extern volatile jint vm_created;
