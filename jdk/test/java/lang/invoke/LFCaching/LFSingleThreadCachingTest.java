@@ -23,6 +23,7 @@
 
 /*
  * @test LFSingleThreadCachingTest
+ * @ignore 8129523
  * @bug 8046703
  * @key randomness
  * @summary Test verifies that lambda forms are cached when run with single thread

@@ -28,6 +28,7 @@
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/ad.hpp"
@@ -89,9 +90,8 @@ void Compile::Output() {
 
   }
 
-
   // Break before main entry point
-  if( (_method && _method->break_at_execute())
+  if( (_method && C->directive()->BreakAtExecuteOption)
 #ifndef PRODUCT
     ||(OptoBreakpoint && is_method_compilation())
     ||(OptoBreakpointOSR && is_osr_compilation())

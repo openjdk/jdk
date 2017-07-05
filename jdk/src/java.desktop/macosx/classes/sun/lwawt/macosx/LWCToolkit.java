@@ -380,7 +380,7 @@ public final class LWCToolkit extends LWToolkit {
         desktopProperties.put("DnD.Autoscroll.interval", new Integer(50));
         desktopProperties.put("DnD.Autoscroll.cursorHysteresis", new Integer(5));
 
-        desktopProperties.put("DnD.isDragImageSupported", new Boolean(true));
+        desktopProperties.put("DnD.isDragImageSupported", Boolean.TRUE);
 
         // Register DnD cursors
         desktopProperties.put("DnD.Cursor.CopyDrop", new NamedCursor("DnD.Cursor.CopyDrop"));

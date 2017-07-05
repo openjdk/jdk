@@ -37,4 +37,5 @@ void VM_Version::initialize() {
     warning("Unaligned memory access is not available on this CPU");
     FLAG_SET_DEFAULT(UseUnalignedAccesses, false);
   }
+  FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
 }

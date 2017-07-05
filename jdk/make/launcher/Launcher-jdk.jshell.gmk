@@ -25,7 +25,8 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call SetupLauncher,jshell, \
-    -DEXPAND_CLASSPATH_WILDCARDS \
-    -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "jdk.internal.jshell.tool.JShellTool"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, jshell, \
+    MAIN_CLASS := jdk.internal.jshell.tool.JShellTool, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS \
+        -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
+))

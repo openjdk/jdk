@@ -29,7 +29,7 @@
 # and the aux tools need to be available.
 # erik.joelsson@oracle.com
 
-USAGE="$0 <Xcode.dmg> <XQuartz.dmg> [<auxtools.dmg>]"
+USAGE="$0 <Xcode.dmg> <XQuartz.dmg> <gnu make binary> [<auxtools.dmg>]"
 
 if [ "$1" = "" ] || [ "$2" = "" ]; then
     echo $USAGE
@@ -38,7 +38,8 @@ fi
 
 XCODE_DMG="$1"
 XQUARTZ_DMG="$2"
-AUXTOOLS_DMG="$3"
+GNU_MAKE="$3"
+AUXTOOLS_DMG="$4"
 
 SCRIPT_DIR="$(cd "$(dirname $0)" > /dev/null && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/../../build/devkit"
@@ -52,8 +53,13 @@ hdiutil attach $XCODE_DMG
 # Find the version of Xcode
 XCODE_VERSION="$(/Volumes/Xcode/Xcode.app/Contents/Developer/usr/bin/xcodebuild -version \
     | awk '/Xcode/ { print $2 }' )"
+SDK_VERSION="MacOSX10.9"
+if [ ! -e "/Volumes/Xcode/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/${SDK_VERSION}.sdk" ]; then
+    echo "Expected SDK version not found: ${SDK_VERSION}"
+    exit 1
+fi
 
-DEVKIT_ROOT="${BUILD_DIR}/Xcode${XCODE_VERSION}-devkit"
+DEVKIT_ROOT="${BUILD_DIR}/Xcode${XCODE_VERSION}-${SDK_VERSION}"
 DEVKIT_BUNDLE="${DEVKIT_ROOT}.tar.gz"
 
 echo "Xcode version: $XCODE_VERSION"
@@ -71,10 +77,9 @@ rm -rf $DEVKIT_ROOT/Xcode.app/Contents/Applications
 rm -rf $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/iPhone*
 rm -rf $DEVKIT_ROOT/Xcode.app/Contents/Developer/Documentation
 rm -rf $DEVKIT_ROOT/Xcode.app/Contents/Developer/usr/share/man
-if [ -e $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk ]; then
-    rm -rf $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
-    rm -rf $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/share/man
-fi
+( cd $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs \
+    && rm -rf `ls | grep -v ${SDK_VERSION}` )
+rm -rf $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/${SDK_VERSION}.sdk/usr/share/man
 
 hdiutil detach /Volumes/Xcode
 
@@ -91,18 +96,25 @@ pkgutil --expand /Volumes/XQuartz-*/XQuartz.pkg /tmp/XQuartz/
 rm -rf /tmp/x11
 mkdir /tmp/x11
 cd /tmp/x11
-cat /tmp/XQuartz-*/x11.pkg/Payload | gunzip -dc |cpio -i
+cat /tmp/XQuartz/x11.pkg/Payload | gunzip -dc | cpio -i
 
+mkdir -p $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/X11/include/
+mkdir -p $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/X11/lib/
 cp -RH opt/X11/include/freetype2 \
-    $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/include/
+    $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/X11/include/
 cp -RH opt/X11/include/ft2build.h \
-    $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/include/
+    $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/X11/include/
 cp -RH opt/X11/lib/libfreetype.* \
-    $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/
+    $DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/X11/lib/
 
 cd -
 
 hdiutil detach /Volumes/XQuartz-*
+
+################################################################################
+# Copy gnu make
+mkdir -p $DEVKIT_ROOT/bin
+cp $GNU_MAKE $DEVKIT_ROOT/bin
 
 ################################################################################
 # Optionally copy PackageMaker
@@ -129,10 +141,12 @@ echo-info() {
 echo "Generating devkit.info..."
 rm -f $DEVKIT_ROOT/devkit.info
 echo-info "# This file describes to configure how to interpret the contents of this devkit"
+echo-info "# The parameters used to create this devkit were:"
+echo-info "# $*"
 echo-info "DEVKIT_NAME=\"Xcode $XCODE_VERSION (devkit)\""
 echo-info "DEVKIT_TOOLCHAIN_PATH=\"\$DEVKIT_ROOT/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:\$DEVKIT_ROOT/Xcode.app/Contents/Developer/usr/bin\""
 echo-info "DEVKIT_SYSROOT=\"\$DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk\""
-echo-info "DEVKIT_EXTRA_PATH=\"\$DEVKIT_ROOT/PackageMaker.app/Contents/MacOS:\$DEVKIT_TOOLCHAIN_PATH\""
+echo-info "DEVKIT_EXTRA_PATH=\"\$DEVKIT_ROOT/bin:\$DEVKIT_ROOT/PackageMaker.app/Contents/MacOS:\$DEVKIT_TOOLCHAIN_PATH\""
 
 ################################################################################
 # Copy this script

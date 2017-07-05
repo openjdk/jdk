@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,15 @@
 include LauncherCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  $(eval $(call SetupLauncher,kinit, \
-      -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.krb5.internal.tools.Kinit"$(COMMA) }'))
+  $(eval $(call SetupBuildLauncher, kinit, \
+      MAIN_CLASS := sun.security.krb5.internal.tools.Kinit, \
+  ))
 
-  $(eval $(call SetupLauncher,klist, \
-      -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.krb5.internal.tools.Klist"$(COMMA) }'))
+  $(eval $(call SetupBuildLauncher, klist, \
+      MAIN_CLASS := sun.security.krb5.internal.tools.Klist, \
+  ))
 
-  $(eval $(call SetupLauncher,ktab, \
-      -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.krb5.internal.tools.Ktab"$(COMMA) }'))
+  $(eval $(call SetupBuildLauncher, ktab, \
+      MAIN_CLASS := sun.security.krb5.internal.tools.Ktab, \
+  ))
 endif
-
