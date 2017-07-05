@@ -82,18 +82,26 @@ public class Test {
         } catch (InvalidClassException e) {
         }
 
+        FileInputStream in = new FileInputStream("a.ser");
         try {
-            new ObjectInputStream(new FileInputStream("a.ser")).readObject();
+            ObjectInputStream oin = new ObjectInputStream(in);
+            oin.readObject();
             throw new Error(
                 "read of A should fail with InvalidClassException");
         } catch (InvalidClassException e) {
+        } finally {
+            in.close();
         }
 
+        in = new FileInputStream("b.ser");
         try {
-            new ObjectInputStream(new FileInputStream("b.ser")).readObject();
+            ObjectInputStream oin = new ObjectInputStream(in);
+            oin.readObject();
             throw new Error(
                 "read of B should fail with InvalidClassException");
         } catch (InvalidClassException e) {
+        } finally {
+            in.close();
         }
     }
 }

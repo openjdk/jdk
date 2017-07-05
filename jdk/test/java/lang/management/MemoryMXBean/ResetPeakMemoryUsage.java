@@ -28,7 +28,7 @@
  * @author  Mandy Chung
  *
  * @build ResetPeakMemoryUsage MemoryUtil
- * @run main ResetPeakMemoryUsage
+ * @run main/othervm ResetPeakMemoryUsage
  */
 
 import java.lang.management.*;

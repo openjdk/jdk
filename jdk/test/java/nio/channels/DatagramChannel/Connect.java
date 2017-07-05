@@ -42,15 +42,15 @@ public class Connect {
     }
 
     static void test() throws Exception {
-        invoke(new Actor(), new Reactor());
+        Reactor r = new Reactor();
+        Actor a = new Actor(r.port());
+        invoke(a, r);
     }
 
     static void invoke(Sprintable reader, Sprintable writer) throws Exception {
 
         Thread writerThread = new Thread(writer);
         writerThread.start();
-        while (!writer.ready())
-            Thread.sleep(50);
 
         Thread readerThread = new Thread(reader);
         readerThread.start();
@@ -64,34 +64,31 @@ public class Connect {
 
     public interface Sprintable extends Runnable {
         public void throwException() throws Exception;
-        public boolean ready();
     }
 
     public static class Actor implements Sprintable {
+        final int port;
         Exception e = null;
+
+        Actor(int port) {
+            this.port = port;
+        }
 
         public void throwException() throws Exception {
             if (e != null)
                 throw e;
         }
 
-        private volatile boolean ready = false;
-
-        public boolean ready() {
-            return ready;
-        }
-
         public void run() {
             try {
                 DatagramChannel dc = DatagramChannel.open();
-                ready = true;
 
                 // Send a message
                 ByteBuffer bb = ByteBuffer.allocateDirect(256);
                 bb.put("hello".getBytes());
                 bb.flip();
                 InetAddress address = InetAddress.getLocalHost();
-                InetSocketAddress isa = new InetSocketAddress(address, 8888);
+                InetSocketAddress isa = new InetSocketAddress(address, port);
                 dc.connect(isa);
                 dc.write(bb);
 
@@ -123,26 +120,26 @@ public class Connect {
     }
 
     public static class Reactor implements Sprintable {
+        final DatagramChannel dc;
         Exception e = null;
+
+        Reactor() throws IOException {
+            dc = DatagramChannel.open().bind(new InetSocketAddress(0));
+        }
+
+        int port() {
+            return dc.socket().getLocalPort();
+        }
 
         public void throwException() throws Exception {
             if (e != null)
                 throw e;
         }
 
-        private volatile boolean ready = false;
-
-        public boolean ready() {
-            return ready;
-        }
-
         public void run() {
             try {
                 // Listen for a message
-                DatagramChannel dc = DatagramChannel.open();
-                dc.socket().bind(new InetSocketAddress(8888));
                 ByteBuffer bb = ByteBuffer.allocateDirect(100);
-                ready = true;
                 SocketAddress sa = dc.receive(bb);
                 bb.flip();
                 CharBuffer cb = Charset.forName("US-ASCII").

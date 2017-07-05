@@ -125,23 +125,35 @@ public enum OpsAfterClose {
         f.deleteOnExit();
 
         FileInputStream fis = new FileInputStream(f);
-        if (testInputStream(fis)) {
-            failed = true;
-        }
-        if (testFileInputStream(fis)) {
-            failed = true;
+        try {
+            if (testInputStream(fis)) {
+                failed = true;
+            }
+            if (testFileInputStream(fis)) {
+                failed = true;
+            }
+        } finally {
+            fis.close();
         }
 
         BufferedInputStream bs =  new BufferedInputStream(
                                         new FileInputStream(f));
-        if (testInputStream(bs)) {
-            failed = true;
+        try {
+            if (testInputStream(bs)) {
+                failed = true;
+            }
+        } finally {
+            bs.close();
         }
 
         DataInputStream dis = new DataInputStream(
                                 new FileInputStream(f));
-        if (testInputStream(dis)) {
-            failed = true;
+        try {
+            if (testInputStream(dis)) {
+                failed = true;
+            }
+        } finally {
+            dis.close();
         }
 
         PushbackInputStream pbis = new PushbackInputStream(

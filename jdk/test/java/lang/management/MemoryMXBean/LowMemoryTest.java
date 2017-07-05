@@ -31,7 +31,7 @@
  * @author  Mandy Chung
  *
  * @build LowMemoryTest MemoryUtil
- * @run main/timeout=600 LowMemoryTest
+ * @run main/othervm/timeout=600 LowMemoryTest
  */
 
 import java.lang.management.*;

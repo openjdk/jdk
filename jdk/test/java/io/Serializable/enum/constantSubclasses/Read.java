@@ -38,13 +38,17 @@ enum Foo {
 
 public class Read {
     public static void main(String[] args) throws Exception {
-        ObjectInputStream oin =
-            new ObjectInputStream(new FileInputStream("foo.ser"));
-        for (Foo f : Foo.values()) {
-            Object obj = oin.readObject();
-            if (obj != f) {
-                throw new Error("expected " + f + ", got " + obj);
+        FileInputStream in = new FileInputStream("foo.ser");
+        try {
+            ObjectInputStream oin = new ObjectInputStream(in);
+            for (Foo f : Foo.values()) {
+                Object obj = oin.readObject();
+                if (obj != f) {
+                    throw new Error("expected " + f + ", got " + obj);
+                }
             }
+        } finally {
+            in.close();
         }
     }
 }

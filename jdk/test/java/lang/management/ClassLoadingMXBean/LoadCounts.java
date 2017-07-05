@@ -118,9 +118,21 @@ class Chain {
 }
 class Slave {}
 
-class LeftHand extends ClassLoader {}
-class RightHand extends ClassLoader {}
+class LeftHand extends ClassLoader {
+    public LeftHand() {
+        super(LeftHand.class.getClassLoader());
+    }
+}
+class RightHand extends ClassLoader {
+    public RightHand() {
+        super(RightHand.class.getClassLoader());
+    }
+}
 class Body {}
 
-class LoaderForTwoInstances extends ClassLoader {}
+class LoaderForTwoInstances extends ClassLoader {
+    public LoaderForTwoInstances() {
+        super(LoaderForTwoInstances.class.getClassLoader());
+    }
+}
 class TheSameClass {}

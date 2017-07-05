@@ -25,6 +25,14 @@
 
 #include "jni.h"
 
+/**
+ * The maximum buffer size for WSASend/WSARecv. Microsoft recommendation for
+ * blocking operations is to use buffers no larger than 64k. We need the
+ * maximum to be less than 128k to support asynchronous close on Windows
+ * Server 2003 and newer editions of Windows.
+ */
+#define MAX_BUFFER_SIZE             ((128*1024)-1)
+
 jint fdval(JNIEnv *env, jobject fdo);
 jlong handleval(JNIEnv *env, jobject fdo);
 jboolean isNT();
