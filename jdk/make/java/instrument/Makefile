@@ -38,6 +38,9 @@ MS_RUNTIME_STATIC=true
 
 FILES_m = mapfile-vers
 
+JAVAC_MAX_WARNINGS = true
+JAVAC_WARNINGS_FATAL = true
+
 include $(BUILDDIR)/common/Defs.gmk
 
 # Use the mapfile-vers (See the mapfile located with this Makefile)
