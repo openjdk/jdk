@@ -24,6 +24,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = java2d
 PACKAGE = sun.java2d.cmm.kcms
 LIBRARY = kcms
 PRODUCT = sun

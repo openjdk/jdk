@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = rmi
 PACKAGE = sun.rmi
 PRODUCT = sun
 LIBRARY = rmi
@@ -124,7 +125,7 @@ bin: $(BINDIR)/java-rmi.cgi
 
 $(BINDIR)/java-rmi.cgi: $(PLATFORM_SRC)/bin/java-rmi.cgi.sh
 	$(install-file)
-	$(CHMOD) a+x $@
+	$(call chmod-file, a+x)
 
 bin.clean:
 	$(RM) $(BINDIR)/java-rmi.cgi

@@ -24,6 +24,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = base
 PACKAGE = sun.net
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

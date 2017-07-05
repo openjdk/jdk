@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,14 @@ address StubRoutines::_arrayof_oop_disjoint_arraycopy  = CAST_FROM_FN_PTR(addres
 address StubRoutines::_checkcast_arraycopy               = NULL;
 address StubRoutines::_unsafe_arraycopy                  = NULL;
 address StubRoutines::_generic_arraycopy                 = NULL;
+
+double (* StubRoutines::_intrinsic_log   )(double) = NULL;
+double (* StubRoutines::_intrinsic_log10 )(double) = NULL;
+double (* StubRoutines::_intrinsic_exp   )(double) = NULL;
+double (* StubRoutines::_intrinsic_pow   )(double, double) = NULL;
+double (* StubRoutines::_intrinsic_sin   )(double) = NULL;
+double (* StubRoutines::_intrinsic_cos   )(double) = NULL;
+double (* StubRoutines::_intrinsic_tan   )(double) = NULL;
 
 // Initialization
 //
