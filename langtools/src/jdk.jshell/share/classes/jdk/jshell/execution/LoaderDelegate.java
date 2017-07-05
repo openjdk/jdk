@@ -34,6 +34,8 @@ import jdk.jshell.spi.ExecutionControl.NotImplementedException;
  * This interface specifies the loading specific subset of
  * {@link jdk.jshell.spi.ExecutionControl}.  For use in encapsulating the
  * {@link java.lang.ClassLoader} implementation.
+ *
+ * @since 9
  */
 public interface LoaderDelegate {
 

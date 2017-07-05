@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 /*
  * @test
- * @summary class p1.c1 defined in an unnamed module tries to access p2.c2 defined in m2.
- *          Access allowed, an unnamed module can read all modules and p2 in module m2
+ * @summary class p1.c1 defined in an unnamed module tries to access p2.c2 defined in m2x.
+ *          Access allowed, an unnamed module can read all modules and p2 in module m2x
  *          which is exported unqualifiedly.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -48,15 +48,15 @@ import java.util.Set;
 import myloaders.MyDiffClassLoader;
 
 //
-// ClassLoader1 --> defines m1 --> no packages
-// ClassLoader2 --> defines m2 --> packages p2
+// ClassLoader1 --> defines m1x --> no packages
+// ClassLoader2 --> defines m2x --> packages p2
 //
-// m1 can read m2
-// package p2 in m2 is exported unqualifiedly.
+// m1x can read m2x
+// package p2 in m2x is exported unqualifiedly.
 //
-// class p1.c1 defined in an unnamed module tries to access p2.c2 defined in m2
+// class p1.c1 defined in an unnamed module tries to access p2.c2 defined in m2x
 // Access allowed, an unnamed module can read all modules and p2 in module
-//              m2 which is exported unqualifiedly.
+//              m2x which is exported unqualifiedly.
 //
 public class UmodDiffCL_ExpUnqual {
 
@@ -65,53 +65,53 @@ public class UmodDiffCL_ExpUnqual {
     // publically defined classes within packages of those modules.
     public void createLayerOnBoot() throws Throwable {
 
-        // Define module:     m1
-        // Can read:          java.base, m2
+        // Define module:     m1x
+        // Can read:          java.base, m2x
         // Packages:          none
         // Packages exported: none
-        ModuleDescriptor descriptor_m1 =
-                ModuleDescriptor.module("m1")
+        ModuleDescriptor descriptor_m1x =
+                ModuleDescriptor.newModule("m1x")
                         .requires("java.base")
-                        .requires("m2")
+                        .requires("m2x")
                         .build();
 
-        // Define module:     m2
+        // Define module:     m2x
         // Can read:          java.base
         // Packages:          p2
         // Packages exported: none
-        ModuleDescriptor descriptor_m2 =
-                ModuleDescriptor.module("m2")
+        ModuleDescriptor descriptor_m2x =
+                ModuleDescriptor.newModule("m2x")
                         .requires("java.base")
                         .exports("p2")
                         .build();
 
         // Set up a ModuleFinder containing all modules for this layer.
-        ModuleFinder finder = ModuleLibrary.of(descriptor_m1, descriptor_m2);
+        ModuleFinder finder = ModuleLibrary.of(descriptor_m1x, descriptor_m2x);
 
-        // Resolves "m1"
+        // Resolves "m1x"
         Configuration cf = Layer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
+                .resolve(finder, ModuleFinder.of(), Set.of("m1x"));
 
         // map each module to differing class loaders for this test
         Map<String, ClassLoader> map = new HashMap<>();
-        map.put("m1", MyDiffClassLoader.loader1);
-        map.put("m2", MyDiffClassLoader.loader2);
+        map.put("m1x", MyDiffClassLoader.loader1);
+        map.put("m2x", MyDiffClassLoader.loader2);
 
-        // Create Layer that contains m1 & m2
+        // Create Layer that contains m1x & m2x
         Layer layer = Layer.boot().defineModules(cf, map::get);
 
-        assertTrue(layer.findLoader("m1") == MyDiffClassLoader.loader1);
-        assertTrue(layer.findLoader("m2") == MyDiffClassLoader.loader2);
+        assertTrue(layer.findLoader("m1x") == MyDiffClassLoader.loader1);
+        assertTrue(layer.findLoader("m2x") == MyDiffClassLoader.loader2);
         assertTrue(layer.findLoader("java.base") == null);
 
-        // NOTE: module m1 does not define a package named p1.
+        // NOTE: module m1x does not define a package named p1.
         //       p1 will be loaded in an unnamed module.
         Class p1_c1_class = MyDiffClassLoader.loader1.loadClass("p1.c1");
         try {
             p1_c1_class.newInstance();
         } catch (IllegalAccessError e) {
-            throw new RuntimeException("Test Failed, p1.c1 defined in unnamed module can access p2.c2 in module m2");
+            throw new RuntimeException("Test Failed, p1.c1 defined in unnamed module can access p2.c2 in module m2x");
         }
     }
 
