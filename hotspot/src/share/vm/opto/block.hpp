@@ -368,7 +368,6 @@ public:
 class PhaseCFG : public Phase {
   friend class VMStructs;
  private:
-
   // Root of whole program
   RootNode* _root;
 

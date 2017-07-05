@@ -27,9 +27,11 @@ import java.util.ArrayList;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,6 +46,7 @@ import org.testng.annotations.Test;
  * @library /lib/testlibrary
  * Test counting and JavaChild.spawning and counting of Processes.
  * @run testng/othervm InfoTest
+ * @key intermittent
  * @author Roger Riggs
  */
 public class TreeTest extends ProcessUtil {
@@ -195,7 +198,7 @@ public class TreeTest extends ProcessUtil {
                     allChildren.stream().map(p -> p.getPid())
                             .collect(Collectors.toList()));
 
-            // Verify that all spawned children show up in the allChildrenList
+            // Verify that all spawned children show up in the allChildren List
             processes.forEach((p, parent) -> {
                 Assert.assertEquals(p.isAlive(), true, "Child should be alive: " + p);
                 Assert.assertTrue(allChildren.contains(p), "Spawned child should be listed in allChildren: " + p);
@@ -241,6 +244,7 @@ public class TreeTest extends ProcessUtil {
             printf(" p1: %s%n", p1.getPid());
 
             int newChildren = 3;
+            CountDownLatch spawnCount = new CountDownLatch(newChildren);
             // Spawn children and have them wait
             p1.sendAction("spawn", newChildren, "stdin");
 
@@ -251,11 +255,26 @@ public class TreeTest extends ProcessUtil {
                     Long child = Long.valueOf(split[2]);
                     Long parent = Long.valueOf(split[0].split(":")[0]);
                     processes.put(ProcessHandle.of(child).get(), ProcessHandle.of(parent).get());
+                    spawnCount.countDown();
                 }
             });
 
-            // Wait for the new processes and save the list
-            List<ProcessHandle> allChildren = waitForAllChildren(p1Handle, newChildren);
+            // Wait for all the subprocesses to be listed as started
+            Assert.assertTrue(spawnCount.await(Utils.adjustTimeout(30L), TimeUnit.SECONDS),
+                    "Timeout waiting for processes to start");
+
+            // Debugging; list allChildren that are not expected in processes
+            List<ProcessHandle> allChildren = ProcessUtil.getAllChildren(p1Handle);
+            long count = allChildren.stream()
+                    .filter(ph -> !processes.containsKey(ph))
+                    .count();
+            if (count > 0) {
+                allChildren.stream()
+                    .filter(ph -> !processes.containsKey(ph))
+                    .forEach(ph1 -> ProcessUtil.printProcess(ph1, "Extra process: "));
+                ProcessUtil.logTaskList();
+                Assert.assertEquals(0, count, "Extra processes in allChildren");
+            }
 
             // Verify that all spawned children are alive, show up in the allChildren list
             // then destroy them
@@ -266,6 +285,7 @@ public class TreeTest extends ProcessUtil {
             });
             Assert.assertEquals(processes.size(), newChildren, "Wrong number of children");
 
+            // Wait for each of the processes to exit
             processes.forEach((p, parent) ->  {
                 for (long retries = Utils.adjustTimeout(100L); retries > 0 ; retries--) {
                     if (!p.isAlive()) {
@@ -285,8 +305,10 @@ public class TreeTest extends ProcessUtil {
             p1.destroyForcibly();
             p1.waitFor();
 
+            // Verify that none of the spawned children are still listed by allChildren
             List<ProcessHandle> remaining = getAllChildren(self);
-            remaining = remaining.stream().filter(processes::contains).collect(Collectors.toList());
+            Assert.assertFalse(remaining.remove(p1Handle), "Child p1 should have exited");
+            remaining = remaining.stream().filter(processes::containsKey).collect(Collectors.toList());
             Assert.assertEquals(remaining.size(), 0, "Subprocess(es) should have exited: " + remaining);
 
         } catch (IOException ioe) {
@@ -354,6 +376,8 @@ public class TreeTest extends ProcessUtil {
      */
     @Test
     public static void test5() {
+        ConcurrentHashMap<ProcessHandle, ProcessHandle> processes = new ConcurrentHashMap<>();
+
         int factor = 2;
         JavaChild p1 = null;
         Instant start = Instant.now();
@@ -374,11 +398,39 @@ public class TreeTest extends ProcessUtil {
             p1.sendAction("child", "child", "spawn", factor, "stdin");
 
             int newChildren = factor * (1 + factor * (1 + factor));
-            List<ProcessHandle> children = ProcessUtil.waitForAllChildren(p1Handle, newChildren);
+            CountDownLatch spawnCount = new CountDownLatch(newChildren);
+
+            // Gather the PIDs from the output of the spawning process
+            p1.forEachOutputLine((s) -> {
+                String[] split = s.trim().split(" ");
+                if (split.length == 3 && split[1].equals("spawn")) {
+                    Long child = Long.valueOf(split[2]);
+                    Long parent = Long.valueOf(split[0].split(":")[0]);
+                    processes.put(ProcessHandle.of(child).get(), ProcessHandle.of(parent).get());
+                    spawnCount.countDown();
+                }
+            });
+
+            // Wait for all the subprocesses to be listed as started
+            Assert.assertTrue(spawnCount.await(Utils.adjustTimeout(30L), TimeUnit.SECONDS),
+                    "Timeout waiting for processes to start");
+
+            // Debugging; list allChildren that are not expected in processes
+            List<ProcessHandle> allChildren = ProcessUtil.getAllChildren(p1Handle);
+            long count = allChildren.stream()
+                    .filter(ph -> !processes.containsKey(ph))
+                    .count();
+            if (count > 0) {
+                allChildren.stream()
+                    .filter(ph -> !processes.containsKey(ph))
+                    .forEach(ph1 -> ProcessUtil.printProcess(ph1, "Extra process: "));
+                ProcessUtil.logTaskList();
+                Assert.assertEquals(0, count, "Extra processes in allChildren");
+            }
 
             Assert.assertEquals(getChildren(p1Handle).size(),
                     factor, "expected direct children");
-            long count = getAllChildren(p1Handle).size();
+            count = getAllChildren(p1Handle).size();
             long totalChildren = factor * factor * factor + factor * factor + factor;
             Assert.assertTrue(count >= totalChildren,
                     "expected at least " + totalChildren + ", actual: " + count);
@@ -397,6 +449,12 @@ public class TreeTest extends ProcessUtil {
             if (p1 != null) {
                 p1.destroyForcibly();
             }
+            processes.forEach((p, parent) -> {
+                if (p.isAlive()) {
+                    ProcessUtil.printProcess(p, "Process Cleanup: ");
+                    p.destroyForcibly();
+                }
+            });
         }
     }
 

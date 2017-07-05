@@ -26,6 +26,7 @@
 #define SHARE_VM_C1_C1_COMPILER_HPP
 
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compilerDirectives.hpp"
 
 // There is one instance of the Compiler per CompilerThread.
 
@@ -50,7 +51,7 @@ class Compiler: public AbstractCompiler {
   virtual void initialize();
 
   // Compilation entry point for methods
-  virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci);
+  virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive);
 
   // Print compilation timers and statistics
   virtual void print_timers();

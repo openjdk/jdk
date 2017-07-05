@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6425068 7157659
+ * @bug 6425068 7157659 8132890
  * @summary Confirm that text prints where we expect to the length we expect.
  * @run main/manual=yesno PrintTextTest
  */
@@ -113,9 +113,59 @@ public class PrintTextTest extends Component implements Printable {
         book.append(ptt, portrait);
         book.append(ptt, landscape);
 
+        font = new Font("Dialog", Font.PLAIN, 18);
+        AffineTransform scaleTx = AffineTransform.getScaleInstance(1.25, 1.25);
+        name = "Page " + new Integer(page++);
+        ptt = new PrintTextTest(name, font, scaleTx, false);
+        p.add(name, ptt);
+        book.append(ptt, portrait);
+        book.append(ptt, landscape);
+
+        font = new Font("Dialog", Font.PLAIN, 18);
+        scaleTx = AffineTransform.getScaleInstance(-1.25, 1.25);
+        scaleTx.translate(-preferredSize/1.25, 0);
+        name = "Page " + new Integer(page++);
+        ptt = new PrintTextTest(name, font, scaleTx, false);
+        p.add(name, ptt);
+        book.append(ptt, portrait);
+        book.append(ptt, landscape);
+
+        font = new Font("Dialog", Font.PLAIN, 18);
+        scaleTx = AffineTransform.getScaleInstance(1.25, -1.25);
+        scaleTx.translate(0, -preferredSize/1.25);
+        name = "Page " + new Integer(page++);
+        ptt = new PrintTextTest(name, font, scaleTx, false);
+        p.add(name, ptt);
+        book.append(ptt, portrait);
+        book.append(ptt, landscape);
+
         font = font.deriveFont(rotTx);
         name = "Page " + new Integer(page++);
         ptt = new PrintTextTest(name, font, null, false);
+        p.add(ptt, BorderLayout.CENTER);
+        p.add(name, ptt);
+        book.append(ptt, portrait);
+        book.append(ptt, landscape);
+
+        font = new Font("Monospaced", Font.PLAIN, 12);
+        name = "Page " + new Integer(page++);
+        ptt = new PrintTextTest(name, font, null, false);
+        p.add(ptt, BorderLayout.CENTER);
+        p.add(name, ptt);
+        book.append(ptt, portrait);
+        book.append(ptt, landscape);
+
+        Font xfont = font.deriveFont(AffineTransform.getScaleInstance(1.5, 1));
+        name = "Page " + new Integer(page++);
+        ptt = new PrintTextTest(name, xfont, null, false);
+        p.add(ptt, BorderLayout.CENTER);
+        p.add(name, ptt);
+        book.append(ptt, portrait);
+        book.append(ptt, landscape);
+
+        Font yfont = font.deriveFont(AffineTransform.getScaleInstance(1, 1.5));
+        name = "Page " + new Integer(page++);
+        ptt = new PrintTextTest(name, yfont, null, false);
         p.add(ptt, BorderLayout.CENTER);
         p.add(name, ptt);
         book.append(ptt, portrait);

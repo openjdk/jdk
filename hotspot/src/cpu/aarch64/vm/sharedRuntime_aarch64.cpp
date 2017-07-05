@@ -1777,7 +1777,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register obj_reg  = r19;  // Will contain the oop
   const Register lock_reg = r13;  // Address of compiler lock object (BasicLock)
   const Register old_hdr  = r13;  // value of old header at unlock time
-  const Register tmp = c_rarg3;
+  const Register tmp = lr;
 
   Label slow_path_lock;
   Label lock_done;

@@ -27,7 +27,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include JavaCompilation.gmk
+include JarArchive.gmk
 include TextFileProcessing.gmk
 
 # This rule will be depended on due to the MANIFEST line
@@ -39,9 +39,10 @@ $(eval $(call SetupTextFileProcessing, BUILD_JAVA_MANIFEST, \
       @@COMPANY_NAME@@ => $(COMPANY_NAME) , \
 ))
 
-$(eval $(call SetupArchive,JRTFS_JAR, , \
+$(eval $(call SetupJarArchive, JRTFS_JAR, \
     SRCS := $(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes, \
     JAR := $(SUPPORT_OUTPUTDIR)/jrt-fs.jar, \
-    MANIFEST := $(SUPPORT_OUTPUTDIR)/java-main-manifest.mf))
+    MANIFEST := $(SUPPORT_OUTPUTDIR)/java-main-manifest.mf, \
+))
 
 all: $(JRTFS_JAR)
