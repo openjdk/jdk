@@ -26,7 +26,7 @@
  * @bug 4719923
  * @summary Test that MBeanInfo.equals works even for mutable subclasses
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean MBeanInfoEqualsTest
  * @run build MBeanInfoEqualsTest
  * @run main MBeanInfoEqualsTest

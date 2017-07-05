@@ -87,7 +87,7 @@ import java.util.function.UnaryOperator;
  * Such exceptions are marked as "optional" in the specification for this
  * interface.
  *
- * <h2><a name="immutable">Immutable List Static Factory Methods</a></h2>
+ * <h2><a id="immutable">Immutable List Static Factory Methods</a></h2>
  * <p>The {@link List#of(Object...) List.of()} static factory methods
  * provide a convenient way to create immutable lists. The {@code List}
  * instances created by these methods have the following characteristics:
@@ -114,7 +114,7 @@ import java.util.function.UnaryOperator;
  * </ul>
  *
  * <p>This interface is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @param <E> the type of elements in this list

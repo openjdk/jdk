@@ -53,14 +53,14 @@ import com.sun.javadoc.*;
  * <p>
  * Here are two sample taglets: <br>
  * <ul>
- *  <li><a href="{@docRoot}/../../../../technotes/guides/javadoc/taglet/ToDoTaglet.java">ToDoTaglet.java</a>
+ *  <li><a href="http://docs.oracle.com/javase/8/docs/technotes/guides/javadoc/taglet/ToDoTaglet.java">ToDoTaglet.java</a>
  *         - Standalone taglet</li>
- *  <li><a href="{@docRoot}/../../../../technotes/guides/javadoc/taglet/UnderlineTaglet.java">UnderlineTaglet.java</a>
+ *  <li><a href="http://docs.oracle.com/javase/8/docs/technotes/guides/javadoc/taglet/UnderlineTaglet.java">UnderlineTaglet.java</a>
  *         - Inline taglet</li>
  * </ul>
  * <p>
  * For more information on how to create your own Taglets, please see the
- * <a href="{@docRoot}/../../../../technotes/guides/javadoc/taglet/overview.html">Taglet Overview</a>.
+ * <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/javadoc/taglet/overview.html">Taglet Overview</a>.
  *
  * @since 1.4
  * @author Jamie Ho

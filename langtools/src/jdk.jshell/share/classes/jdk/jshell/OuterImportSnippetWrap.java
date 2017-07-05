@@ -32,7 +32,7 @@ import javax.tools.JavaFileObject;
  * The outer wrap for a set of snippets wrapped in a generated class
  * @author Robert Field
  */
-public class OuterImportSnippetWrap extends OuterWrap {
+class OuterImportSnippetWrap extends OuterWrap {
 
     private final Snippet snippet;
 

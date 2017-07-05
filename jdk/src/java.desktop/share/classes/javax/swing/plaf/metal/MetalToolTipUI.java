@@ -192,6 +192,7 @@ public class MetalToolTipUI extends BasicToolTipUI {
     // that subclasses that randomly invoke this method will see varying
     // results. If this becomes an issue, MetalToolTipUI should no longer be
     // shared.
+    @SuppressWarnings("deprecation")
     public String getAcceleratorString() {
         if (tip == null || isAcceleratorHidden()) {
             return "";

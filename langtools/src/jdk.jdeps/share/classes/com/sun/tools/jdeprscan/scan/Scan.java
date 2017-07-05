@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@ import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
@@ -63,6 +65,7 @@ public class Scan {
     final boolean verbose;
 
     final ClassFinder finder;
+    final Set<String> classesNotFound = new HashSet<>();
     boolean errorOccurred = false;
 
     public Scan(PrintStream out,
@@ -97,20 +100,69 @@ public class Scan {
         finder = f;
     }
 
-    Pattern typePattern = Pattern.compile("\\[*L(.*);");
-
-    // "flattens" an array type name to its component type
-    // and a reference type "Lpkg/pkg/pkg/name;" to its base name
-    // "pkg/pkg/pkg/name".
-    // TODO: deal with primitive types
-    String flatten(String typeName) {
-        Matcher matcher = typePattern.matcher(typeName);
+    /**
+     * Given a descriptor type, extracts and returns the class name from it, if any.
+     * These types are obtained from field descriptors (JVMS 4.3.2) and method
+     * descriptors (JVMS 4.3.3). They have one of the following forms:
+     *
+     *     I        // or any other primitive, or V for void
+     *     [I       // array of primitives, including multi-dimensional
+     *     Lname;   // the named class
+     *     [Lname;  // array whose component is the named class (also multi-d)
+     *
+     * This method extracts and returns the class name, or returns empty for primitives, void,
+     * or array of primitives.
+     *
+     * Returns nullable reference instead of Optional because downstream
+     * processing can throw checked exceptions.
+     *
+     * @param descType the type from a descriptor
+     * @return the extracted class name, or null
+     */
+    String nameFromDescType(String descType) {
+        Matcher matcher = descTypePattern.matcher(descType);
         if (matcher.matches()) {
             return matcher.group(1);
         } else {
-            return typeName;
+            return null;
         }
     }
+
+    Pattern descTypePattern = Pattern.compile("\\[*L(.*);");
+
+    /**
+     * Given a ref type name, extracts and returns the class name from it, if any.
+     * Ref type names are obtained from a Class_info structure (JVMS 4.4.1) and from
+     * Fieldref_info, Methodref_info, and InterfaceMethodref_info structures (JVMS 4.4.2).
+     * They represent named classes or array classes mentioned by name, and they
+     * represent class or interface types that have the referenced field or method
+     * as a member. They have one of the following forms:
+     *
+     *     [I       // array of primitives, including multi-dimensional
+     *     name     // the named class
+     *     [Lname;  // array whose component is the named class (also multi-d)
+     *
+     * Notably, a plain class name doesn't have the L prefix and ; suffix, and
+     * primitives and void do not occur.
+     *
+     * Returns nullable reference instead of Optional because downstream
+     * processing can throw checked exceptions.
+     *
+     * @param refType a reference type name
+     * @return the extracted class name, or null
+     */
+    String nameFromRefType(String refType) {
+        Matcher matcher = refTypePattern.matcher(refType);
+        if (matcher.matches()) {
+            return matcher.group(1);
+        } else if (refType.startsWith("[")) {
+            return null;
+        } else {
+            return refType;
+        }
+    }
+
+    Pattern refTypePattern = Pattern.compile("\\[+L(.*);");
 
     String typeKind(ClassFile cf) {
         AccessFlags flags = cf.access_flags;
@@ -180,7 +232,10 @@ public class Scan {
 
     void errorNoClass(String className) {
         errorOccurred = true;
-        err.println(Messages.get("scan.err.noclass", className));
+        if (classesNotFound.add(className)) {
+            // print message only first time the class can't be found
+            err.println(Messages.get("scan.err.noclass", className));
+        }
     }
 
     void errorNoFile(String fileName) {
@@ -381,10 +436,12 @@ public class Scan {
      */
     void checkClasses(ClassFile cf, CPEntries entries) throws ConstantPoolException {
         for (ConstantPool.CONSTANT_Class_info ci : entries.classes) {
-            String className = ci.getName();
-            DeprData dd = db.getTypeDeprecated(flatten(className));
-            if (dd != null) {
-                printType("scan.out.usesclass", cf, className, dd.isForRemoval());
+            String name = nameFromRefType(ci.getName());
+            if (name != null) {
+                DeprData dd = db.getTypeDeprecated(name);
+                if (dd != null) {
+                    printType("scan.out.usesclass", cf, name, dd.isForRemoval());
+                }
             }
         }
     }
@@ -393,8 +450,8 @@ public class Scan {
      * Checks methods referred to from the constant pool.
      *
      * @param cf the ClassFile of this class
-     * @param nti the NameAndType_info from a MethodRef or InterfaceMethodRef entry
      * @param clname the class name
+     * @param nti the NameAndType_info from a MethodRef or InterfaceMethodRef entry
      * @param msgKey message key for localization
      * @throws ConstantPoolException if a constant pool entry cannot be found
      */
@@ -404,10 +461,13 @@ public class Scan {
                         String msgKey) throws ConstantPoolException {
         String name = nti.getName();
         String type = nti.getType();
-        clname = resolveMember(cf, flatten(clname), name, type, true, true);
-        DeprData dd = db.getMethodDeprecated(clname, name, type);
-        if (dd != null) {
-            printMethod(msgKey, cf, clname, name, type, dd.isForRemoval());
+        clname = nameFromRefType(clname);
+        if (clname != null) {
+            clname = resolveMember(cf, clname, name, type, true, true);
+            DeprData dd = db.getMethodDeprecated(clname, name, type);
+            if (dd != null) {
+                printMethod(msgKey, cf, clname, name, type, dd.isForRemoval());
+            }
         }
     }
 
@@ -419,15 +479,17 @@ public class Scan {
      */
     void checkFieldRef(ClassFile cf,
                        ConstantPool.CONSTANT_Fieldref_info fri) throws ConstantPoolException {
-        String clname = fri.getClassName();
+        String clname = nameFromRefType(fri.getClassName());
         CONSTANT_NameAndType_info nti = fri.getNameAndTypeInfo();
         String name = nti.getName();
         String type = nti.getType();
 
-        clname = resolveMember(cf, flatten(clname), name, type, false, true);
-        DeprData dd = db.getFieldDeprecated(clname, name);
-        if (dd != null) {
-            printField("scan.out.usesfield", cf, clname, name, dd.isForRemoval());
+        if (clname != null) {
+            clname = resolveMember(cf, clname, name, type, false, true);
+            DeprData dd = db.getFieldDeprecated(clname, name);
+            if (dd != null) {
+                printField("scan.out.usesfield", cf, clname, name, dd.isForRemoval());
+            }
         }
     }
 
@@ -439,10 +501,12 @@ public class Scan {
      */
     void checkFields(ClassFile cf) throws ConstantPoolException {
         for (Field f : cf.fields) {
-            String type = cf.constant_pool.getUTF8Value(f.descriptor.index);
-            DeprData dd = db.getTypeDeprecated(flatten(type));
-            if (dd != null) {
-                printHasField(cf, f.getName(cf.constant_pool), type, dd.isForRemoval());
+            String type = nameFromDescType(cf.constant_pool.getUTF8Value(f.descriptor.index));
+            if (type != null) {
+                DeprData dd = db.getTypeDeprecated(type);
+                if (dd != null) {
+                    printHasField(cf, f.getName(cf.constant_pool), type, dd.isForRemoval());
+                }
             }
         }
     }
@@ -461,16 +525,21 @@ public class Scan {
             DeprData dd;
 
             for (String parm : sig.getParameters()) {
-                dd = db.getTypeDeprecated(flatten(parm));
-                if (dd != null) {
-                    printHasMethodParmType(cf, mname, parm, dd.isForRemoval());
+                parm = nameFromDescType(parm);
+                if (parm != null) {
+                    dd = db.getTypeDeprecated(parm);
+                    if (dd != null) {
+                        printHasMethodParmType(cf, mname, parm, dd.isForRemoval());
+                    }
                 }
             }
 
-            String ret = sig.getReturnType();
-            dd = db.getTypeDeprecated(flatten(ret));
-            if (dd != null) {
-                printHasMethodRetType(cf, mname, ret, dd.isForRemoval());
+            String ret = nameFromDescType(sig.getReturnType());
+            if (ret != null) {
+                dd = db.getTypeDeprecated(ret);
+                if (dd != null) {
+                    printHasMethodRetType(cf, mname, ret, dd.isForRemoval());
+                }
             }
 
             // check overrides

@@ -26,7 +26,10 @@
 package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Properties;
+import java.util.Collections;
 
 public class VM {
 
@@ -132,25 +135,33 @@ public class VM {
      * Returns the system property of the specified key saved at
      * system initialization time.  This method should only be used
      * for the system properties that are not changed during runtime.
-     * It accesses a private copy of the system properties so
-     * that user's locking of the system properties object will not
-     * cause the library to deadlock.
      *
      * Note that the saved system properties do not include
-     * the ones set by sun.misc.Version.init().
-     *
+     * the ones set by java.lang.VersionProps.init().
      */
     public static String getSavedProperty(String key) {
-        if (savedProps.isEmpty())
-            throw new IllegalStateException("Should be non-empty if initialized");
+        if (savedProps == null)
+            throw new IllegalStateException("Not yet initialized");
 
-        return savedProps.getProperty(key);
+        return savedProps.get(key);
     }
 
-    // TODO: the Property Management needs to be refactored and
-    // the appropriate prop keys need to be accessible to the
-    // calling classes to avoid duplication of keys.
-    private static final Properties savedProps = new Properties();
+    /**
+     * Gets an unmodifiable view of the system properties saved at system
+     * initialization time. This method should only be used
+     * for the system properties that are not changed during runtime.
+     *
+     * Note that the saved system properties do not include
+     * the ones set by java.lang.VersionProps.init().
+     */
+    public static Map<String, String> getSavedProperties() {
+        if (savedProps == null)
+            throw new IllegalStateException("Not yet initialized");
+
+        return savedProps;
+    }
+
+    private static Map<String, String> savedProps;
 
     // Save a private copy of the system properties and remove
     // the system properties that are not intended for public access.
@@ -160,7 +171,12 @@ public class VM {
         if (initLevel() != 0)
             throw new IllegalStateException("Wrong init level");
 
-        savedProps.putAll(props);
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        Map<String, String> sp =
+            Map.ofEntries(props.entrySet().toArray(new Map.Entry[0]));
+        // only main thread is running at this time, so savedProps and
+        // its content will be correctly published to threads started later
+        savedProps = sp;
 
         // Set the maximum amount of direct memory.  This value is controlled
         // by the vm option -XX:MaxDirectMemorySize=<size>.
