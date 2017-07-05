@@ -318,7 +318,7 @@ class markOopDesc: public oopDesc {
     intptr_t tmp = (intptr_t) monitor;
     return (markOop) (tmp | monitor_value);
   }
-  static markOop encode(JavaThread* thread, int age, int bias_epoch) {
+  static markOop encode(JavaThread* thread, uint age, int bias_epoch) {
     intptr_t tmp = (intptr_t) thread;
     assert(UseBiasedLocking && ((tmp & (epoch_mask_in_place | age_mask_in_place | biased_lock_mask_in_place)) == 0), "misaligned JavaThread pointer");
     assert(age <= max_age, "age too large");
@@ -333,10 +333,10 @@ class markOopDesc: public oopDesc {
   markOop set_marked()   { return markOop((value() & ~lock_mask_in_place) | marked_value); }
   markOop set_unmarked() { return markOop((value() & ~lock_mask_in_place) | unlocked_value); }
 
-  int     age()               const { return mask_bits(value() >> age_shift, age_mask); }
-  markOop set_age(int v) const {
+  uint    age()               const { return mask_bits(value() >> age_shift, age_mask); }
+  markOop set_age(uint v) const {
     assert((v & ~age_mask) == 0, "shouldn't overflow age field");
-    return markOop((value() & ~age_mask_in_place) | (((intptr_t)v & age_mask) << age_shift));
+    return markOop((value() & ~age_mask_in_place) | (((uintptr_t)v & age_mask) << age_shift));
   }
   markOop incr_age()          const { return age() == max_age ? markOop(this) : set_age(age() + 1); }
 
