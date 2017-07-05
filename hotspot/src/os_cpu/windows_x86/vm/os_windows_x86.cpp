@@ -220,6 +220,7 @@ void os::initialize_thread(Thread* thr) {
 typedef jint      xchg_func_t            (jint,     volatile jint*);
 typedef intptr_t  xchg_ptr_func_t        (intptr_t, volatile intptr_t*);
 typedef jint      cmpxchg_func_t         (jint,     volatile jint*,  jint);
+typedef jbyte     cmpxchg_byte_func_t    (jbyte,    volatile jbyte*, jbyte);
 typedef jlong     cmpxchg_long_func_t    (jlong,    volatile jlong*, jlong);
 typedef jint      add_func_t             (jint,     volatile jint*);
 typedef intptr_t  add_ptr_func_t         (intptr_t, volatile intptr_t*);
@@ -272,6 +273,23 @@ jint os::atomic_cmpxchg_bootstrap(jint exchange_value, volatile jint* dest, jint
     *dest = exchange_value;
   return old_value;
 }
+
+jbyte os::atomic_cmpxchg_byte_bootstrap(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value) {
+  // try to use the stub:
+  cmpxchg_byte_func_t* func = CAST_TO_FN_PTR(cmpxchg_byte_func_t*, StubRoutines::atomic_cmpxchg_byte_entry());
+
+  if (func != NULL) {
+    os::atomic_cmpxchg_byte_func = func;
+    return (*func)(exchange_value, dest, compare_value);
+  }
+  assert(Threads::number_of_threads() == 0, "for bootstrap only");
+
+  jbyte old_value = *dest;
+  if (old_value == compare_value)
+    *dest = exchange_value;
+  return old_value;
+}
+
 #endif // AMD64
 
 jlong os::atomic_cmpxchg_long_bootstrap(jlong exchange_value, volatile jlong* dest, jlong compare_value) {
@@ -321,6 +339,7 @@ intptr_t os::atomic_add_ptr_bootstrap(intptr_t add_value, volatile intptr_t* des
 xchg_func_t*         os::atomic_xchg_func         = os::atomic_xchg_bootstrap;
 xchg_ptr_func_t*     os::atomic_xchg_ptr_func     = os::atomic_xchg_ptr_bootstrap;
 cmpxchg_func_t*      os::atomic_cmpxchg_func      = os::atomic_cmpxchg_bootstrap;
+cmpxchg_byte_func_t* os::atomic_cmpxchg_byte_func = os::atomic_cmpxchg_byte_bootstrap;
 add_func_t*          os::atomic_add_func          = os::atomic_add_bootstrap;
 add_ptr_func_t*      os::atomic_add_ptr_func      = os::atomic_add_ptr_bootstrap;
 
@@ -635,7 +654,11 @@ void os::setup_fpu() {
 #ifndef PRODUCT
 void os::verify_stack_alignment() {
 #ifdef AMD64
-  assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
+  // The current_stack_pointer() calls generated get_previous_sp stub routine.
+  // Only enable the assert after the routine becomes available.
+  if (StubRoutines::code1() != NULL) {
+    assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
+  }
 #endif
 }
 #endif

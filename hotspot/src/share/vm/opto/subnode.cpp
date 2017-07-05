@@ -1147,12 +1147,10 @@ const Type *BoolTest::cc2logical( const Type *CC ) const {
 
 //------------------------------dump_spec-------------------------------------
 // Print special per-node info
-#ifndef PRODUCT
 void BoolTest::dump_on(outputStream *st) const {
   const char *msg[] = {"eq","gt","of","lt","ne","le","nof","ge"};
   st->print("%s", msg[_test]);
 }
-#endif
 
 //=============================================================================
 uint BoolNode::hash() const { return (Node::hash() << 3)|(_test._test+1); }

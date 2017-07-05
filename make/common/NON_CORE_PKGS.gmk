@@ -82,6 +82,8 @@ TREEAPI_PKGS = com.sun.source.doctree \
     com.sun.source.util \
     jdk
 
+NASHORNAPI_PKGS = jdk.nashorn.api.scripting
+
 SMARTCARDIO_PKGS = javax.smartcardio
 
 SCTPAPI_PKGS = com.sun.nio.sctp

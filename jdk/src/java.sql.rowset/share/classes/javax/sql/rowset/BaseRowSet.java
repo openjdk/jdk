@@ -462,7 +462,7 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
      * <code>false</code> that it is not. The default is <code>true</code>.
      * @serial
      */
-    private boolean escapeProcessing;
+    private boolean escapeProcessing = true;
 
     /**
      * A constant indicating the isolation level of the connection

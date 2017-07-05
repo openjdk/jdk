@@ -612,6 +612,10 @@ private:
                                           uint desired_min_length,
                                           uint desired_max_length);
 
+  // Calculate and return chunk size (in number of regions) for parallel
+  // concurrent mark cleanup.
+  uint calculate_parallel_work_chunk_size(uint n_workers, uint n_regions);
+
   // Check whether a given young length (young_length) fits into the
   // given target pause time and whether the prediction for the amount
   // of objects to be copied for the given length will fit into the
@@ -687,7 +691,7 @@ public:
 
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();
-  void record_concurrent_mark_cleanup_end(int no_of_gc_threads);
+  void record_concurrent_mark_cleanup_end(uint n_workers);
   void record_concurrent_mark_cleanup_completed();
 
   // Records the information about the heap size for reporting in

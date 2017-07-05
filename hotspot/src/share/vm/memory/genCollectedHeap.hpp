@@ -121,9 +121,7 @@ public:
 
   // Returns JNI_OK on success
   virtual jint initialize();
-  char* allocate(size_t alignment,
-                 size_t* _total_reserved, int* _n_covered_regions,
-                 ReservedSpace* heap_rs);
+  char* allocate(size_t alignment, size_t* _total_reserved, ReservedSpace* heap_rs);
 
   // Does operations required after initialization has been done.
   void post_initialize();

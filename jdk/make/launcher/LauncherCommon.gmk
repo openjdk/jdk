@@ -58,7 +58,7 @@ endif
 LAUNCHER_SRC := $(JDK_TOPDIR)/src/java.base/share/native/launcher
 LAUNCHER_CFLAGS := -I$(JDK_TOPDIR)/src/java.base/share/native/launcher \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libjli \
-    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjli \
+    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
     -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli \
     #
 GLOBAL_VERSION_INFO_RESOURCE := $(JDK_TOPDIR)/src/java.base/windows/native/common/version.rc
@@ -67,10 +67,10 @@ MACOSX_PLIST_DIR := $(JDK_TOPDIR)/src/java.base/macosx/native/launcher
 # Until the shuffle is permanent, we can't add this in configure
 CFLAGS_JDKEXE := $(filter-out %javavm/export, $(CFLAGS_JDKEXE))
 CFLAGS_JDKEXE += -I$(JDK_TOPDIR)/src/java.base/share/native/include \
-    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/include
+    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include
 CXXFLAGS_JDKEXE := $(filter-out %javavm/export, $(CXXFLAGS_JDKEXE))
 CXXFLAGS_JDKEXE += -I$(JDK_TOPDIR)/src/java.base/share/native/include \
-    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/include
+    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include
 JAVA_MANIFEST := $(JDK_TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 
 define SetupLauncher
@@ -78,7 +78,7 @@ define SetupLauncher
   # Parameter 1 is the name of the launcher (java, javac, jar...)
   # Parameter 2 is extra CFLAGS
   # Parameter 3 is extra LDFLAGS
-  # Parameter 4 is extra LDFLAGS_SUFFIX_posix
+  # Parameter 4 is extra LDFLAGS_SUFFIX_unix
   # Parameter 5 is extra LDFLAGS_SUFFIX_windows
   # Parameter 6 is optional Windows JLI library (full path)
   # Parameter 7 is optional Windows resource (RC) flags
@@ -183,7 +183,7 @@ define SetupLauncher
           $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)), \
       MAPFILE := $$($1_MAPFILE), \
       LDFLAGS_SUFFIX := $(LDFLAGS_JDKEXE_SUFFIX) $$($1_LDFLAGS_SUFFIX), \
-      LDFLAGS_SUFFIX_posix := $4, \
+      LDFLAGS_SUFFIX_unix := $4, \
       LDFLAGS_SUFFIX_windows := $$($1_WINDOWS_JLI_LIB) \
           $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib advapi32.lib $5, \
       LDFLAGS_SUFFIX_linux := -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)/jli -ljli $(LIBDL) -lc, \
@@ -227,4 +227,3 @@ ifdef OPENJDK
 else
   JAVA_RC_FLAGS += -i "$(JDK_TOPDIR)/src/closed/java.base/windows/native/launcher/icons"
 endif
-

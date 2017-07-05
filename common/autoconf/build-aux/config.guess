@@ -77,7 +77,7 @@ if test $? = 0; then
 fi
 
 # Test and fix little endian PowerPC64.
-# TODO: should be handled by autoconf-config.guess. 
+# TODO: should be handled by autoconf-config.guess.
 if [ "x$OUT" = x ]; then
   if [ `uname -m` = ppc64le ]; then
     if [ `uname -s` = Linux ]; then

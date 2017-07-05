@@ -273,6 +273,7 @@ import java.util.TreeSet;
  * @stable ICU 2.0
  * @see UnicodeSetIterator
  */
+@SuppressWarnings("deprecation")
 public class UnicodeSet implements UnicodeMatcher {
 
     private static final int LOW = 0x000000; // LOW <= all valid values. ZERO for codepoints

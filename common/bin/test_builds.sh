@@ -171,7 +171,7 @@ checkErrors
 ) 2>&1 | tee ${t3}.build.txt
 checkErrors
 
-# Compare old build to build-infra build 
+# Compare old build to build-infra build
 ( \
   sh ${t0}/common/bin/compareimage.sh \
     ${t3}/build/*/j2sdk-image \
@@ -181,4 +181,3 @@ checkErrors
 checkErrors
 
 exit 0
-

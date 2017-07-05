@@ -186,11 +186,11 @@ public class BaseRowSetTests extends BaseTest {
     }
 
     /*
-     * Validate that getEscapeProcessing() returns false by default
+     * Validate that getEscapeProcessing() returns true by default
      */
     @Test
     public void test08() throws Exception {
-        assertFalse(brs.getEscapeProcessing());
+        assertTrue(brs.getEscapeProcessing());
     }
 
     /*

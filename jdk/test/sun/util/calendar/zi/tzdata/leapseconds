@@ -33,8 +33,8 @@
 # The NTP Timescale and Leap Seconds
 # http://www.eecis.udel.edu/~mills/leap.html
 
-# The International Earth Rotation Service periodically uses leap seconds
-# to keep UTC to within 0.9 s of UT1
+# The International Earth Rotation and Reference Systems Service
+# periodically uses leap seconds to keep UTC to within 0.9 s of UT1
 # (which measures the true angular orientation of the earth in space); see
 # Terry J Quinn, The BIPM and the accurate measure of time,
 # Proc IEEE 79, 7 (July 1991), 894-905 <http://dx.doi.org/10.1109/5.84965>.

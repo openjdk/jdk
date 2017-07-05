@@ -372,6 +372,11 @@ public:
   ExceptionTableElement* exception_table_start() const;
 
   // method parameters table
+
+  // This returns -1 if no parameters are present, a non-negative
+  // value otherwise.  Note: sometimes, there are 0-length parameters
+  // attributes that must be reported up to the reflection API all the
+  // same.
   int method_parameters_length() const;
   MethodParametersElement* method_parameters_start() const;
 

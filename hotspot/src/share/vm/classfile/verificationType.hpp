@@ -289,7 +289,7 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
           if (is_reference() && from.is_reference()) {
             return is_reference_assignable_from(from, context,
                                                 from_field_is_protected,
-                                                CHECK_false);
+                                                THREAD);
           } else {
             return false;
           }

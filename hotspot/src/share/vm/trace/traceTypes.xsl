@@ -29,14 +29,13 @@
 <xsl:template match="/">
   <xsl:call-template name="file-header"/>
 
-#ifndef TRACEFILES_JFRTYPES_HPP
-#define TRACEFILES_JFRTYPES_HPP
+#ifndef TRACEFILES_TRACETYPES_HPP
+#define TRACEFILES_TRACETYPES_HPP
 
 #include "oops/symbol.hpp"
 #include "trace/traceDataTypes.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
-
 
 enum JVMContentType {
   _not_a_content_type = (JVM_CONTENT_TYPES_START - 1),
@@ -58,7 +57,7 @@ enum JVMEventRelations {
 };
 
 /**
- * Create typedefs for the JRA types:
+ * Create typedefs for the TRACE types:
  *   typedef s8 TYPE_LONG;
  *   typedef s4 TYPE_INTEGER;
  *   typedef const char * TYPE_STRING;
@@ -68,7 +67,7 @@ enum JVMEventRelations {
 typedef <xsl:value-of select="@type"/>  TYPE_<xsl:value-of select="@symbol"/>;
 </xsl:for-each>
 
-#endif // JFRFILES_JFRTYPES_HPP
+#endif // TRACEFILES_TRACETYPES_HPP
 </xsl:template>
 
 </xsl:stylesheet>
