@@ -33,6 +33,6 @@ import org.testng.annotations.Test;
 public class CallerSensitiveTest {
     @Test
     public void testCallerSensitive() {
-        BeansLinker.getLinkerForClass(ClassLoaderAware.class);
+        new BeansLinker().getLinkerForClass(ClassLoaderAware.class);
     }
 }

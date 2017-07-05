@@ -86,29 +86,43 @@ public class LocalsAndOperands {
                 System.out.println("frame: " + f);
                 Object[] locals = (Object[]) getLocals.invoke(f);
                 for (int i = 0; i < locals.length; i++) {
-                    System.out.format("local %d: %s type %s%n", i, locals[i], type(locals[i]));
+                    System.out.format("  local %d: %s type %s\n", i, locals[i], type(locals[i]));
+
+                    // check for non-null locals in LocalsAndOperands.test()
+                    if (f.getClassName().equals("LocalsAndOperands") &&
+                            f.getMethodName().equals("test")) {
+                        if (locals[i] == null) {
+                            throw new RuntimeException("kept-alive locals should not be null");
+                        }
+                    }
                 }
 
                 Object[] operands = (Object[]) getOperands.invoke(f);
                 for (int i = 0; i < operands.length; i++) {
-                    System.out.format("operand %d: %s type %s%n", i, operands[i], type(operands[i]));
+                    System.out.format("  operand %d: %s type %s%n", i, operands[i],
+                                      type(operands[i]));
                 }
 
                 Object[] monitors = (Object[]) getMonitors.invoke(f);
                 for (int i = 0; i < monitors.length; i++) {
-                    System.out.format("monitor %d: %s%n", i, monitors[i]);
+                    System.out.format("  monitor %d: %s%n", i, monitors[i]);
                 }
             }
         } else {
             for (StackFrame f : frames) {
-                if (liveStackFrameClass.isInstance(f))
+                if (liveStackFrameClass.isInstance(f)) {
                     throw new RuntimeException("should not be LiveStackFrame");
+                }
             }
         }
+        // Use local variables so they stay alive
+        System.out.println("Stayin' alive: "+x+" "+c+" "+hi+" "+l+" "+d);
     }
 
     String type(Object o) throws Exception {
-        if (primitiveValueClass.isInstance(o)) {
+        if (o == null) {
+            return "null";
+        } else if (primitiveValueClass.isInstance(o)) {
             char c = (char)primitiveType.invoke(o);
             return String.valueOf(c);
         } else {

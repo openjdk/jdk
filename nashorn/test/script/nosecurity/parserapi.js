@@ -30,8 +30,8 @@
  */
 
 function Parser() {
-   // create nashorn parser
-   this._parser = Parser.create();
+    // create nashorn parser
+    this._parser = Parser.create();
 }
 
 // Java types used
@@ -54,59 +54,60 @@ Parser.create = function() {
 
 // convert Nashorn parser Tree, Diagnostic as a script friendly object
 Parser.prototype.convert = function(tree) {
-    if (!tree || typeof tree != 'object') {
+    if (!tree || typeof tree != 'object' || tree instanceof java.lang.Long) {
         return tree;
     }
 
     var obj = Object.bindProperties({}, tree);
     var result = {};
     for (var i in obj) {
-       var val = obj[i];
-       if (val instanceof Parser.Tree) {
-          result[i] = this.convert(val);
-       } else if (val instanceof Parser.List) {
-          var arr = new Array(val.size());
-          for (var j in val) {
-              arr[j] = this.convert(val[j]);
-          }
-      
-          result[i] = arr;
-      } else {
-          switch (typeof val) {
-              case 'number':
-              case 'string':
-              case 'boolean':
-                  result[i] = String(val);
-              default:
-                  if (val instanceof Parser.Enum) {
-                      result[i] = String(val);
-                  }
-          }
-      }
-   }
-   return result;
+        var val = obj[i];
+        if (val instanceof Parser.Tree) {
+            result[i] = this.convert(val);
+        } else if (val instanceof Parser.List) {
+            var arr = new Array(val.size());
+            for (var j in val) {
+                arr[j] = this.convert(val[j]);
+            }
+
+            result[i] = arr;
+        } else {
+            switch (typeof val) {
+                case 'number':
+                case 'string':
+                case 'boolean':
+                    result[i] = String(val);
+                    break;
+                default:
+                    if (val instanceof java.lang.Long || val instanceof Parser.Enum) {
+                        result[i] = String(val);
+                    }
+            }
+        }
+    }
+    return result;
 }
 
 function processFiles(subdir) {
-   var File = Java.type("java.io.File");
-   var files = new File(__DIR__ + subdir).listFiles();
-   java.util.Arrays.sort(files);
-   for each (var file in files) {
-       if (file.name.endsWith(".js")) {
-           var script = readFully(file);
-           var parser = new Parser();
-           var tree = parser.parse(subdir + "/" + file.name, script,
-               function(diagnostic) {
-                   print(JSON.stringify(parser.convert(diagnostic), null, 2).replace(/\\r/g, ''));
-                   print(",");
-               });
+    var File = Java.type("java.io.File");
+    var files = new File(__DIR__ + subdir).listFiles();
+    java.util.Arrays.sort(files);
+    for each (var file in files) {
+        if (file.name.endsWith(".js")) {
+            var script = readFully(file);
+            var parser = new Parser();
+            var tree = parser.parse(subdir + "/" + file.name, script,
+                function(diagnostic) {
+                    print(JSON.stringify(parser.convert(diagnostic), null, 2).replace(/\\r/g, ''));
+                    print(",");
+                });
 
-           if (tree != null) {
-               print(JSON.stringify(tree, null, 2));
-               print(",");
-           }
-       }
-   }
+            if (tree != null) {
+                print(JSON.stringify(tree, null, 2));
+                print(",");
+            }
+        }
+    }
 }
 
 // parse files in parsertests directory
