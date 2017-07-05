@@ -2161,6 +2161,18 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ restore();
   }
 
+  // RedefineClasses() tracing support for obsolete method entry
+  if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+    // create inner frame
+    __ save_frame(0);
+    __ mov(G2_thread, L7_thread_cache);
+    __ set_oop_constant(JNIHandles::make_local(method()), O1);
+    __ call_VM_leaf(L7_thread_cache,
+         CAST_FROM_FN_PTR(address, SharedRuntime::rc_trace_method_entry),
+         G2_thread, O1);
+    __ restore();
+  }
+
   // We are in the jni frame unless saved_frame is true in which case
   // we are in one frame deeper (the "inner" frame). If we are in the
   // "inner" frames the args are in the Iregs and if the jni frame then

@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -76,7 +76,7 @@ CK_C_INITIALIZE_ARGS_PTR ckpGlobalInitArgs;
 CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
 {
     CK_C_INITIALIZE_ARGS_PTR ckpInitArgs;
-    jclass jInitArgsClass = (*env)->FindClass(env, CLASS_C_INITIALIZE_ARGS);
+    jclass jInitArgsClass;
     jfieldID fieldID;
     jlong jFlags;
     jobject jReserved;
@@ -91,10 +91,20 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
 
     /* convert the Java InitArgs object to a pointer to a CK_C_INITIALIZE_ARGS structure */
     ckpInitArgs = (CK_C_INITIALIZE_ARGS_PTR) malloc(sizeof(CK_C_INITIALIZE_ARGS));
+    if (ckpInitArgs == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL_PTR;
+    }
 
     /* Set the mutex functions that will call the Java mutex functions, but
      * only set it, if the field is not null.
      */
+    jInitArgsClass = (*env)->FindClass(env, CLASS_C_INITIALIZE_ARGS);
+    if (jInitArgsClass == NULL) {
+        free(ckpInitArgs);
+        return NULL;
+    }
+
 #ifdef NO_CALLBACKS
     ckpInitArgs->CreateMutex = NULL_PTR;
     ckpInitArgs->DestroyMutex = NULL_PTR;
@@ -102,22 +112,22 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
     ckpInitArgs->UnlockMutex = NULL_PTR;
 #else
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "CreateMutex", "Lsun/security/pkcs11/wrapper/CK_CREATEMUTEX;");
-    assert(fieldID != 0);
+    if (fieldID == NULL) { return NULL; }
     jMutexHandler = (*env)->GetObjectField(env, jInitArgs, fieldID);
     ckpInitArgs->CreateMutex = (jMutexHandler != NULL) ? &callJCreateMutex : NULL_PTR;
 
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "DestroyMutex", "Lsun/security/pkcs11/wrapper/CK_DESTROYMUTEX;");
-    assert(fieldID != 0);
+    if (fieldID == NULL) { return NULL; }
     jMutexHandler = (*env)->GetObjectField(env, jInitArgs, fieldID);
     ckpInitArgs->DestroyMutex = (jMutexHandler != NULL) ? &callJDestroyMutex : NULL_PTR;
 
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "LockMutex", "Lsun/security/pkcs11/wrapper/CK_LOCKMUTEX;");
-    assert(fieldID != 0);
+    if (fieldID == NULL) { return NULL; }
     jMutexHandler = (*env)->GetObjectField(env, jInitArgs, fieldID);
     ckpInitArgs->LockMutex = (jMutexHandler != NULL) ? &callJLockMutex : NULL_PTR;
 
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "UnlockMutex", "Lsun/security/pkcs11/wrapper/CK_UNLOCKMUTEX;");
-    assert(fieldID != 0);
+    if (fieldID == NULL) { return NULL; }
     jMutexHandler = (*env)->GetObjectField(env, jInitArgs, fieldID);
     ckpInitArgs->UnlockMutex = (jMutexHandler != NULL) ? &callJUnlockMutex : NULL_PTR;
 
@@ -129,19 +139,25 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
         /* set the global object jInitArgs so that the right Java mutex functions will be called */
         jInitArgsObject = (*env)->NewGlobalRef(env, jInitArgs);
         ckpGlobalInitArgs = (CK_C_INITIALIZE_ARGS_PTR) malloc(sizeof(CK_C_INITIALIZE_ARGS));
+        if (ckpGlobalInitArgs == NULL) {
+            free(ckpInitArgs);
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return NULL_PTR;
+        }
+
         memcpy(ckpGlobalInitArgs, ckpInitArgs, sizeof(CK_C_INITIALIZE_ARGS));
     }
 #endif /* NO_CALLBACKS */
 
     /* convert and set the flags field */
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "flags", "J");
-    assert(fieldID != 0);
+    if (fieldID == NULL) { return NULL; }
     jFlags = (*env)->GetLongField(env, jInitArgs, fieldID);
     ckpInitArgs->flags = jLongToCKULong(jFlags);
 
     /* pReserved should be NULL_PTR in this version */
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "pReserved", "Ljava/lang/Object;");
-    assert(fieldID != 0);
+    if (fieldID == NULL) { return NULL; }
     jReserved = (*env)->GetObjectField(env, jInitArgs, fieldID);
 
     /* we try to convert the reserved parameter also */
@@ -201,20 +217,21 @@ CK_RV callJCreateMutex(CK_VOID_PTR_PTR ppMutex)
         wasAttached = 1;
     }
 
-
     jCreateMutexClass = (*env)->FindClass(env, CLASS_CREATEMUTEX);
+    if (jCreateMutexClass == NULL) { return rv; }
     jInitArgsClass = (*env)->FindClass(env, CLASS_C_INITIALIZE_ARGS);
+    if (jInitArgsClass == NULL) { return rv; }
 
     /* get the CreateMutex object out of the jInitArgs object */
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "CreateMutex", "Lsun/security/pkcs11/wrapper/CK_CREATEMUTEX;");
-    assert(fieldID != 0);
+    if (fieldID == NULL) { return rv; }
     jCreateMutex = (*env)->GetObjectField(env, jInitArgsObject, fieldID);
     assert(jCreateMutex != 0);
 
     /* call the CK_CREATEMUTEX function of the CreateMutex object */
     /* and get the new Java mutex object */
     methodID = (*env)->GetMethodID(env, jCreateMutexClass, "CK_CREATEMUTEX", "()Ljava/lang/Object;");
-    assert(methodID != 0);
+    if (methodID == NULL) { return rv; }
     jMutex = (*env)->CallObjectMethod(env, jCreateMutex, methodID);
 
     /* set a global reference on the Java mutex */
@@ -227,10 +244,13 @@ CK_RV callJCreateMutex(CK_VOID_PTR_PTR ppMutex)
     pkcs11Exception = (*env)->ExceptionOccurred(env);
 
     if (pkcs11Exception != NULL) {
+        /* TBD: clear the pending exception with ExceptionClear? */
         /* The was an exception thrown, now we get the error-code from it */
         pkcs11ExceptionClass = (*env)->FindClass(env, CLASS_PKCS11EXCEPTION);
+        if (pkcs11ExceptionClass == NULL) { return rv; }
         methodID = (*env)->GetMethodID(env, pkcs11ExceptionClass, "getErrorCode", "()J");
-        assert(methodID != 0);
+        if (methodID == NULL) { return rv; }
+
         errorCode = (*env)->CallLongMethod(env, pkcs11Exception, methodID);
         rv = jLongToCKULong(errorCode);
     }
@@ -292,22 +312,23 @@ CK_RV callJDestroyMutex(CK_VOID_PTR pMutex)
         wasAttached = 1;
     }
 
-
     jDestroyMutexClass = (*env)->FindClass(env, CLASS_DESTROYMUTEX);
+    if (jDestroyMutexClass == NULL) { return rv; }
     jInitArgsClass = (*env)->FindClass(env, CLASS_C_INITIALIZE_ARGS);
+    if (jInitArgsClass == NULL) { return rv; }
 
     /* convert the CK mutex to a Java mutex */
     jMutex = ckVoidPtrToJObject(pMutex);
 
     /* get the DestroyMutex object out of the jInitArgs object */
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "DestroyMutex", "Lsun/security/pkcs11/wrapper/CK_DESTROYMUTEX;");
-    assert(fieldID != 0);
+    if (fieldID == NULL) { return rv; }
     jDestroyMutex = (*env)->GetObjectField(env, jInitArgsObject, fieldID);
     assert(jDestroyMutex != 0);
 
     /* call the CK_DESTROYMUTEX method of the DestroyMutex object */
     methodID = (*env)->GetMethodID(env, jDestroyMutexClass, "CK_DESTROYMUTEX", "(Ljava/lang/Object;)V");
-    assert(methodID != 0);
+    if (methodID == NULL) { return rv; }
     (*env)->CallVoidMethod(env, jDestroyMutex, methodID, jMutex);
 
     /* delete the global reference on the Java mutex */
@@ -318,10 +339,12 @@ CK_RV callJDestroyMutex(CK_VOID_PTR pMutex)
     pkcs11Exception = (*env)->ExceptionOccurred(env);
 
     if (pkcs11Exception != NULL) {
+        /* TBD: clear the pending exception with ExceptionClear? */
         /* The was an exception thrown, now we get the error-code from it */
         pkcs11ExceptionClass = (*env)->FindClass(env, CLASS_PKCS11EXCEPTION);
+        if (pkcs11ExceptionClass == NULL) { return rv; }
         methodID = (*env)->GetMethodID(env, pkcs11ExceptionClass, "getErrorCode", "()J");
-        assert(methodID != 0);
+        if (methodID == NULL) { return rv; }
         errorCode = (*env)->CallLongMethod(env, pkcs11Exception, methodID);
         rv = jLongToCKULong(errorCode);
     }
@@ -383,33 +406,35 @@ CK_RV callJLockMutex(CK_VOID_PTR pMutex)
         wasAttached = 1;
     }
 
-
     jLockMutexClass = (*env)->FindClass(env, CLASS_LOCKMUTEX);
+    if (jLockMutexClass == NULL) { return rv; }
     jInitArgsClass = (*env)->FindClass(env, CLASS_C_INITIALIZE_ARGS);
+    if (jInitArgsClass == NULL) { return rv; }
 
     /* convert the CK mutex to a Java mutex */
     jMutex = ckVoidPtrToJObject(pMutex);
 
     /* get the LockMutex object out of the jInitArgs object */
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "LockMutex", "Lsun/security/pkcs11/wrapper/CK_LOCKMUTEX;");
-    assert(fieldID != 0);
+    if (fieldID == NULL) { return rv; }
     jLockMutex = (*env)->GetObjectField(env, jInitArgsObject, fieldID);
     assert(jLockMutex != 0);
 
     /* call the CK_LOCKMUTEX method of the LockMutex object */
     methodID = (*env)->GetMethodID(env, jLockMutexClass, "CK_LOCKMUTEX", "(Ljava/lang/Object;)V");
-    assert(methodID != 0);
+    if (methodID == NULL) { return rv; }
     (*env)->CallVoidMethod(env, jLockMutex, methodID, jMutex);
-
 
     /* check, if callback threw an exception */
     pkcs11Exception = (*env)->ExceptionOccurred(env);
 
     if (pkcs11Exception != NULL) {
+        /* TBD: clear the pending exception with ExceptionClear? */
         /* The was an exception thrown, now we get the error-code from it */
         pkcs11ExceptionClass = (*env)->FindClass(env, CLASS_PKCS11EXCEPTION);
+        if (pkcs11ExceptionClass == NULL) { return rv; }
         methodID = (*env)->GetMethodID(env, pkcs11ExceptionClass, "getErrorCode", "()J");
-        assert(methodID != 0);
+        if (methodID == NULL) { return rv; }
         errorCode = (*env)->CallLongMethod(env, pkcs11Exception, methodID);
         rv = jLongToCKULong(errorCode);
     }
@@ -471,33 +496,35 @@ CK_RV callJUnlockMutex(CK_VOID_PTR pMutex)
         wasAttached = 1;
     }
 
-
     jUnlockMutexClass = (*env)->FindClass(env, CLASS_UNLOCKMUTEX);
+    if (jUnlockMutexClass == NULL) { return rv; }
     jInitArgsClass = (*env)->FindClass(env, CLASS_C_INITIALIZE_ARGS);
+    if (jInitArgsClass == NULL) { return rv; }
 
     /* convert the CK-type mutex to a Java mutex */
     jMutex = ckVoidPtrToJObject(pMutex);
 
     /* get the UnlockMutex object out of the jInitArgs object */
     fieldID = (*env)->GetFieldID(env, jInitArgsClass, "UnlockMutex", "Lsun/security/pkcs11/wrapper/CK_UNLOCKMUTEX;");
-    assert(fieldID != 0);
+    if (fieldID == NULL) { return rv; }
     jUnlockMutex = (*env)->GetObjectField(env, jInitArgsObject, fieldID);
     assert(jUnlockMutex != 0);
 
     /* call the CK_UNLOCKMUTEX method of the UnLockMutex object */
     methodID = (*env)->GetMethodID(env, jUnlockMutexClass, "CK_UNLOCKMUTEX", "(Ljava/lang/Object;)V");
-    assert(methodID != 0);
+    if (methodID == NULL) { return rv; }
     (*env)->CallVoidMethod(env, jUnlockMutex, methodID, jMutex);
-
 
     /* check, if callback threw an exception */
     pkcs11Exception = (*env)->ExceptionOccurred(env);
 
     if (pkcs11Exception != NULL) {
+        /* TBD: clear the pending exception with ExceptionClear? */
         /* The was an exception thrown, now we get the error-code from it */
         pkcs11ExceptionClass = (*env)->FindClass(env, CLASS_PKCS11EXCEPTION);
+        if (pkcs11ExceptionClass == NULL) { return rv; }
         methodID = (*env)->GetMethodID(env, pkcs11ExceptionClass, "getErrorCode", "()J");
-        assert(methodID != 0);
+        if (methodID == NULL) { return rv; }
         errorCode = (*env)->CallLongMethod(env, pkcs11Exception, methodID);
         rv = jLongToCKULong(errorCode);
     }

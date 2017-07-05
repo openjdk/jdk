@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #include "incls/_reg_split.cpp.incl"
 
 //------------------------------Split--------------------------------------
-// Walk the graph in RPO and for each lrg which spills, propogate reaching
-// definitions.  During propogation, split the live range around regions of
+// Walk the graph in RPO and for each lrg which spills, propagate reaching
+// definitions.  During propagation, split the live range around regions of
 // High Register Pressure (HRP).  If a Def is in a region of Low Register
 // Pressure (LRP), it will not get spilled until we encounter a region of
 // HRP between it and one of its uses.  We will spill at the transition
@@ -88,7 +88,7 @@ Node *PhaseChaitin::get_spillcopy_wide( Node *def, Node *use, uint uidx ) {
 }
 
 //------------------------------insert_proj------------------------------------
-// Insert the spill at chosen location.  Skip over any interveneing Proj's or
+// Insert the spill at chosen location.  Skip over any intervening Proj's or
 // Phis.  Skip over a CatchNode and projs, inserting in the fall-through block
 // instead.  Update high-pressure indices.  Create a new live range.
 void PhaseChaitin::insert_proj( Block *b, uint i, Node *spill, uint maxlrg ) {
@@ -125,7 +125,7 @@ void PhaseChaitin::insert_proj( Block *b, uint i, Node *spill, uint maxlrg ) {
 }
 
 //------------------------------split_DEF--------------------------------------
-// There are four catagories of Split; UP/DOWN x DEF/USE
+// There are four categories of Split; UP/DOWN x DEF/USE
 // Only three of these really occur as DOWN/USE will always color
 // Any Split with a DEF cannot CISC-Spill now.  Thus we need
 // two helper routines, one for Split DEFS (insert after instruction),
@@ -726,7 +726,7 @@ uint PhaseChaitin::Split( uint maxlrg ) {
       // ********** Handle Crossing HRP Boundry **********
       if( (insidx == b->_ihrp_index) || (insidx == b->_fhrp_index) ) {
         for( slidx = 0; slidx < spill_cnt; slidx++ ) {
-          // Check for need to split at HRP boundry - split if UP
+          // Check for need to split at HRP boundary - split if UP
           n1 = Reachblock[slidx];
           // bail out if no reaching DEF
           if( n1 == NULL ) continue;

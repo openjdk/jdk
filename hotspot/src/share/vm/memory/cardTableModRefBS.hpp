@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,15 @@ class CardTableModRefBS: public ModRefBarrierSet {
 
   enum CardValues {
     clean_card                  = -1,
+    // The mask contains zeros in places for all other values.
+    clean_card_mask             = clean_card - 31,
+
     dirty_card                  =  0,
     precleaned_card             =  1,
-    claimed_card                =  3,
-    last_card                   =  4,
-    CT_MR_BS_last_reserved      = 10
+    claimed_card                =  2,
+    deferred_card               =  4,
+    last_card                   =  8,
+    CT_MR_BS_last_reserved      = 16
   };
 
   // dirty and precleaned are equivalent wrt younger_refs_iter.
@@ -254,9 +258,11 @@ public:
   };
 
   static int clean_card_val()      { return clean_card; }
+  static int clean_card_mask_val() { return clean_card_mask; }
   static int dirty_card_val()      { return dirty_card; }
   static int claimed_card_val()    { return claimed_card; }
   static int precleaned_card_val() { return precleaned_card; }
+  static int deferred_card_val()   { return deferred_card; }
 
   // For RTTI simulation.
   bool is_a(BarrierSet::Name bsn) {
@@ -329,7 +335,8 @@ public:
   }
 
   bool is_card_claimed(size_t card_index) {
-    return _byte_map[card_index] == claimed_card_val();
+    jbyte val = _byte_map[card_index];
+    return (val & (clean_card_mask_val() | claimed_card_val())) == claimed_card_val();
   }
 
   bool claim_card(size_t card_index);
@@ -337,6 +344,13 @@ public:
   bool is_card_clean(size_t card_index) {
     return _byte_map[card_index] == clean_card_val();
   }
+
+  bool is_card_deferred(size_t card_index) {
+    jbyte val = _byte_map[card_index];
+    return (val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val();
+  }
+
+  bool mark_card_deferred(size_t card_index);
 
   // Card marking array base (adjusted for heap low boundary)
   // This would be the 0th element of _byte_map, if the heap started at 0x0.
@@ -432,6 +446,10 @@ public:
     assert(_whole_heap.contains(p),
            "out of bounds access to card marking array");
     return byte_for(p) - _byte_map;
+  }
+
+  const jbyte* byte_for_index(const size_t card_index) const {
+    return _byte_map + card_index;
   }
 
   void verify();

@@ -1910,7 +1910,9 @@ public final class KeyTool {
             ObjectIdentifier oid = attr.getAttributeId();
             if (oid.equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {
                 CertificateExtensions exts = (CertificateExtensions)attr.getAttributeValue();
-                printExtensions(rb.getString("Extension Request:"), exts, out);
+                if (exts != null) {
+                    printExtensions(rb.getString("Extension Request:"), exts, out);
+                }
             } else {
                 out.println(attr.getAttributeId());
                 out.println(attr.getAttributeValue());
@@ -2495,7 +2497,9 @@ public final class KeyTool {
                                                            X509CertImpl.INFO);
             CertificateExtensions exts = (CertificateExtensions)
                     certInfo.get(X509CertInfo.EXTENSIONS);
-            printExtensions(rb.getString("Extensions: "), exts, out);
+            if (exts != null) {
+                printExtensions(rb.getString("Extensions: "), exts, out);
+            }
         }
     }
 

@@ -112,13 +112,16 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
  private:
   outputStream* _out;
   bool _full_gc;
+  bool _need_prologue;
  public:
-  VM_GC_HeapInspection(outputStream* out, bool request_full_gc) :
+  VM_GC_HeapInspection(outputStream* out, bool request_full_gc,
+                       bool need_prologue) :
     VM_GC_Operation(0 /* total collections,      dummy, ignored */,
                     0 /* total full collections, dummy, ignored */,
                     request_full_gc) {
     _out = out;
     _full_gc = request_full_gc;
+    _need_prologue = need_prologue;
   }
 
   ~VM_GC_HeapInspection() {}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,6 +171,9 @@
                                                                             \
   develop(bool, G1RSBarrierUseQueue, true,                                  \
           "If true, use queueing RS barrier")                               \
+                                                                            \
+  develop(bool, G1DeferredRSUpdate, true,                                   \
+          "If true, use deferred RS updates")                               \
                                                                             \
   develop(bool, G1RSLogCheckCardTable, false,                               \
           "If true, verify that no dirty cards remain after RS log "        \

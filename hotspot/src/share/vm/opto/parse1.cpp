@@ -607,7 +607,7 @@ void Parse::do_all_blocks() {
       if (control()->is_Region() && !block->is_loop_head() && !has_irreducible && !block->is_handler()) {
         // In the absence of irreducible loops, the Region and Phis
         // associated with a merge that doesn't involve a backedge can
-        // be simplfied now since the RPO parsing order guarantees
+        // be simplified now since the RPO parsing order guarantees
         // that any path which was supposed to reach here has already
         // been parsed or must be dead.
         Node* c = control();

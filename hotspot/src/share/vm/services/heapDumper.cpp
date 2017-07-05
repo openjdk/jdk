@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,7 +346,6 @@ enum {
   STACK_TRACE_ID = 1,
   INITIAL_CLASS_COUNT = 200
 };
-
 
 // Supports I/O operations on a dump file
 
@@ -1303,7 +1302,9 @@ void HeapObjectDumper::do_object(oop o) {
 // The VM operation that performs the heap dump
 class VM_HeapDumper : public VM_GC_Operation {
  private:
-  DumpWriter* _writer;
+  static VM_HeapDumper* _global_dumper;
+  static DumpWriter*    _global_writer;
+  DumpWriter*           _local_writer;
   bool _gc_before_heap_dump;
   bool _is_segmented_dump;
   jlong _dump_start;
@@ -1311,8 +1312,20 @@ class VM_HeapDumper : public VM_GC_Operation {
   ThreadStackTrace** _stack_traces;
   int _num_threads;
 
-  // accessors
-  DumpWriter* writer() const                    { return _writer; }
+  // accessors and setters
+  static VM_HeapDumper* dumper()         {  assert(_global_dumper != NULL, "Error"); return _global_dumper; }
+  static DumpWriter* writer()            {  assert(_global_writer != NULL, "Error"); return _global_writer; }
+  void set_global_dumper() {
+    assert(_global_dumper == NULL, "Error");
+    _global_dumper = this;
+  }
+  void set_global_writer() {
+    assert(_global_writer == NULL, "Error");
+    _global_writer = _local_writer;
+  }
+  void clear_global_dumper() { _global_dumper = NULL; }
+  void clear_global_writer() { _global_writer = NULL; }
+
   bool is_segmented_dump() const                { return _is_segmented_dump; }
   void set_segmented_dump()                     { _is_segmented_dump = true; }
   jlong dump_start() const                      { return _dump_start; }
@@ -1357,7 +1370,7 @@ class VM_HeapDumper : public VM_GC_Operation {
     VM_GC_Operation(0 /* total collections,      dummy, ignored */,
                     0 /* total full collections, dummy, ignored */,
                     gc_before_heap_dump) {
-    _writer = writer;
+    _local_writer = writer;
     _gc_before_heap_dump = gc_before_heap_dump;
     _is_segmented_dump = false;
     _dump_start = (jlong)-1;
@@ -1380,6 +1393,9 @@ class VM_HeapDumper : public VM_GC_Operation {
   void check_segment_length();
   void doit();
 };
+
+VM_HeapDumper* VM_HeapDumper::_global_dumper = NULL;
+DumpWriter*    VM_HeapDumper::_global_writer = NULL;
 
 bool VM_HeapDumper::skip_operation() const {
   return false;
@@ -1479,31 +1495,28 @@ void HeapObjectDumper::mark_end_of_record() {
 void VM_HeapDumper::do_load_class(klassOop k) {
   static u4 class_serial_num = 0;
 
-  VM_HeapDumper* dumper = ((VM_HeapDumper*)VMThread::vm_operation());
-  DumpWriter* writer = dumper->writer();
-
   // len of HPROF_LOAD_CLASS record
   u4 remaining = 2*oopSize + 2*sizeof(u4);
 
   // write a HPROF_LOAD_CLASS for the class and each array class
   do {
-    DumperSupport::write_header(writer, HPROF_LOAD_CLASS, remaining);
+    DumperSupport::write_header(writer(), HPROF_LOAD_CLASS, remaining);
 
     // class serial number is just a number
-    writer->write_u4(++class_serial_num);
+    writer()->write_u4(++class_serial_num);
 
     // class ID
     Klass* klass = Klass::cast(k);
-    writer->write_classID(klass);
+    writer()->write_classID(klass);
 
     // add the klassOop and class serial number pair
-    dumper->add_class_serial_number(klass, class_serial_num);
+    dumper()->add_class_serial_number(klass, class_serial_num);
 
-    writer->write_u4(STACK_TRACE_ID);
+    writer()->write_u4(STACK_TRACE_ID);
 
     // class name ID
     symbolOop name = klass->name();
-    writer->write_objectID(name);
+    writer()->write_objectID(name);
 
     // write a LOAD_CLASS record for the array type (if it exists)
     k = klass->array_klass_or_null();
@@ -1512,17 +1525,13 @@ void VM_HeapDumper::do_load_class(klassOop k) {
 
 // writes a HPROF_GC_CLASS_DUMP record for the given class
 void VM_HeapDumper::do_class_dump(klassOop k) {
-  VM_HeapDumper* dumper = ((VM_HeapDumper*)VMThread::vm_operation());
-  DumpWriter* writer = dumper->writer();
-  DumperSupport::dump_class_and_array_classes(writer, k);
+  DumperSupport::dump_class_and_array_classes(writer(), k);
 }
 
 // writes a HPROF_GC_CLASS_DUMP records for a given basic type
 // array (and each multi-dimensional array too)
 void VM_HeapDumper::do_basic_type_array_class_dump(klassOop k) {
-  VM_HeapDumper* dumper = ((VM_HeapDumper*)VMThread::vm_operation());
-  DumpWriter* writer = dumper->writer();
-  DumperSupport::dump_basic_type_array_class(writer, k);
+  DumperSupport::dump_basic_type_array_class(writer(), k);
 }
 
 // Walk the stack of the given thread.
@@ -1658,6 +1667,11 @@ void VM_HeapDumper::doit() {
     ch->ensure_parsability(false);
   }
 
+  // At this point we should be the only dumper active, so
+  // the following should be safe.
+  set_global_dumper();
+  set_global_writer();
+
   // Write the file header - use 1.0.2 for large heaps, otherwise 1.0.1
   size_t used = ch->used();
   const char* header;
@@ -1667,6 +1681,7 @@ void VM_HeapDumper::doit() {
   } else {
     header = "JAVA PROFILE 1.0.1";
   }
+
   // header is few bytes long - no chance to overflow int
   writer()->write_raw((void*)header, (int)strlen(header));
   writer()->write_u1(0); // terminator
@@ -1723,6 +1738,10 @@ void VM_HeapDumper::doit() {
   // fixes up the length of the dump record. In the case of a segmented
   // heap then the HPROF_HEAP_DUMP_END record is also written.
   end_of_dump();
+
+  // Now we clear the global variables, so that a future dumper might run.
+  clear_global_dumper();
+  clear_global_writer();
 }
 
 void VM_HeapDumper::dump_stack_traces() {
@@ -1790,7 +1809,12 @@ int HeapDumper::dump(const char* path) {
 
   // generate the dump
   VM_HeapDumper dumper(&writer, _gc_before_heap_dump);
-  VMThread::execute(&dumper);
+  if (Thread::current()->is_VM_thread()) {
+    assert(SafepointSynchronize::is_at_safepoint(), "Expected to be called at a safepoint");
+    dumper.doit();
+  } else {
+    VMThread::execute(&dumper);
+  }
 
   // close dump file and record any error that the writer may have encountered
   writer.close();
@@ -1845,49 +1869,68 @@ void HeapDumper::set_error(char* error) {
   }
 }
 
-
-// Called by error reporting
+// Called by error reporting by a single Java thread outside of a JVM safepoint,
+// or by heap dumping by the VM thread during a (GC) safepoint. Thus, these various
+// callers are strictly serialized and guaranteed not to interfere below. For more
+// general use, however, this method will need modification to prevent
+// inteference when updating the static variables base_path and dump_file_seq below.
 void HeapDumper::dump_heap() {
-  static char path[JVM_MAXPATHLEN];
+  static char base_path[JVM_MAXPATHLEN] = {'\0'};
+  static uint dump_file_seq = 0;
+  char   my_path[JVM_MAXPATHLEN] = {'\0'};
 
   // The dump file defaults to java_pid<pid>.hprof in the current working
   // directory. HeapDumpPath=<file> can be used to specify an alternative
   // dump file name or a directory where dump file is created.
-  bool use_default_filename = true;
-  if (HeapDumpPath == NULL || HeapDumpPath[0] == '\0') {
-    path[0] = '\0'; // HeapDumpPath=<file> not specified
-  } else {
-    assert(strlen(HeapDumpPath) < sizeof(path), "HeapDumpPath too long");
-    strcpy(path, HeapDumpPath);
-    // check if the path is a directory (must exist)
-    DIR* dir = os::opendir(path);
-    if (dir == NULL) {
-      use_default_filename = false;
+  if (dump_file_seq == 0) { // first time in, we initialize base_path
+    bool use_default_filename = true;
+    if (HeapDumpPath == NULL || HeapDumpPath[0] == '\0') {
+      // HeapDumpPath=<file> not specified
     } else {
-      // HeapDumpPath specified a directory. We append a file separator
-      // (if needed).
-      os::closedir(dir);
-      size_t fs_len = strlen(os::file_separator());
-      if (strlen(path) >= fs_len) {
-        char* end = path;
-        end += (strlen(path) - fs_len);
-        if (strcmp(end, os::file_separator()) != 0) {
-          assert(strlen(path) + strlen(os::file_separator()) < sizeof(path),
-            "HeapDumpPath too long");
-          strcat(path, os::file_separator());
+      assert(strlen(HeapDumpPath) < sizeof(base_path), "HeapDumpPath too long");
+      strcpy(base_path, HeapDumpPath);
+      // check if the path is a directory (must exist)
+      DIR* dir = os::opendir(base_path);
+      if (dir == NULL) {
+        use_default_filename = false;
+      } else {
+        // HeapDumpPath specified a directory. We append a file separator
+        // (if needed).
+        os::closedir(dir);
+        size_t fs_len = strlen(os::file_separator());
+        if (strlen(base_path) >= fs_len) {
+          char* end = base_path;
+          end += (strlen(base_path) - fs_len);
+          if (strcmp(end, os::file_separator()) != 0) {
+            assert(strlen(base_path) + strlen(os::file_separator()) < sizeof(base_path),
+              "HeapDumpPath too long");
+            strcat(base_path, os::file_separator());
+          }
         }
       }
     }
+    // If HeapDumpPath wasn't a file name then we append the default name
+    if (use_default_filename) {
+      char fn[32];
+      sprintf(fn, "java_pid%d", os::current_process_id());
+      assert(strlen(base_path) + strlen(fn) < sizeof(base_path), "HeapDumpPath too long");
+      strcat(base_path, fn);
+    }
+    assert(strlen(base_path) < sizeof(my_path), "Buffer too small");
+    strcpy(my_path, base_path);
+  } else {
+    // Append a sequence number id for dumps following the first
+    char fn[33];
+    sprintf(fn, ".%d", dump_file_seq);
+    assert(strlen(base_path) + strlen(fn) < sizeof(my_path), "HeapDumpPath too long");
+    strcpy(my_path, base_path);
+    strcat(my_path, fn);
   }
-  // If HeapDumpPath wasn't a file name then we append the default name
-  if (use_default_filename) {
-    char fn[32];
-    sprintf(fn, "java_pid%d.hprof", os::current_process_id());
-    assert(strlen(path) + strlen(fn) < sizeof(path), "HeapDumpPath too long");
-    strcat(path, fn);
-  }
+  dump_file_seq++;   // increment seq number for next time we dump
+  assert(strlen(".hprof") + strlen(my_path) < sizeof(my_path), "HeapDumpPath too long");
+  strcat(my_path, ".hprof");
 
   HeapDumper dumper(false /* no GC before heap dump */,
                     true  /* send to tty */);
-  dumper.dump(path);
+  dumper.dump(my_path);
 }

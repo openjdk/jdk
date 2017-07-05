@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,18 +214,18 @@ public abstract class Permission implements Guard, java.io.Serializable {
     /**
      * Returns a string describing this Permission.  The convention is to
      * specify the class name, the permission name, and the actions in
-     * the following format: '("ClassName" "name" "actions")'.
+     * the following format: '("ClassName" "name" "actions")', or
+     * '("ClassName" "name")' if actions list is null or empty.
      *
      * @return information about this Permission.
      */
-
     public String toString() {
         String actions = getActions();
         if ((actions == null) || (actions.length() == 0)) { // OPTIONAL
-            return "(" + getClass().getName() + " " + name + ")";
+            return "(\"" + getClass().getName() + "\" \"" + name + "\")";
         } else {
-            return "(" + getClass().getName() + " " + name + " " +
-                actions + ")";
+            return "(\"" + getClass().getName() + "\" \"" + name +
+                 "\" \"" + actions + "\")";
         }
     }
 }

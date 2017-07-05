@@ -1,5 +1,5 @@
 #
-# Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,8 @@ CPPFLAGS = $(SYSDEFS) $(INCLUDES)
 CPPFLAGS += -DASSERT
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
-# Suppress warnings (for now)
-CFLAGS_WARN = -w
+# Compiler warnings are treated as errors
+CFLAGS_WARN = -Werror
 CFLAGS += $(CFLAGS_WARN)
 
 OBJECTNAMES = \
