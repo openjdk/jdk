@@ -26,7 +26,7 @@
  * @key gc
  * @bug 8006088
  * @summary Tests argument processing for initial and maximum heap size for the CMS collector
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestCMSHeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

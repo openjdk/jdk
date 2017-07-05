@@ -27,14 +27,14 @@
  * @summary Verify that objects promoted from survivor space to tenured space
  *          when their age exceeded tenuring threshold are not aligned to
  *          SurvivorAlignmentInBytes value.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestPromotionFromSurvivorToTenuredAfterMinorGC
  *        SurvivorAlignmentTestMain AlignmentHelper
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
- *                   -XX:OldSize=32M -XX:SurvivorRatio=1
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
@@ -42,7 +42,7 @@
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
- *                   -XX:OldSize=32M -XX:SurvivorRatio=1
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=32
@@ -50,15 +50,15 @@
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=200m -XX:MaxNewSize=200m
- *                   -XX:OldSize=32M -XX:InitialHeapSize=232m
- *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=232m -XX:SurvivorRatio=1
+ *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
  *                   TestPromotionFromSurvivorToTenuredAfterMinorGC 10m 9
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
- *                   -XX:OldSize=32M -XX:SurvivorRatio=1
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=64
@@ -66,15 +66,15 @@
  *                   TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=256m -XX:MaxNewSize=256m
- *                   -XX:OldSize=32M -XX:InitialHeapSize=288m
- *                   -XX:SurvivorRatio=1 -XX:-ExplicitGCInvokesConcurrent
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=288m -XX:SurvivorRatio=1
+ *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128
  *                    TestPromotionFromSurvivorToTenuredAfterMinorGC 10m 9
  *                    TENURED
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:NewSize=128m -XX:MaxNewSize=128m
- *                   -XX:OldSize=32M -XX:SurvivorRatio=1
+ *                   -XX:OldSize=32M -XX:MaxHeapSize=160m -XX:SurvivorRatio=1
  *                   -XX:-ExplicitGCInvokesConcurrent
  *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:SurvivorAlignmentInBytes=128

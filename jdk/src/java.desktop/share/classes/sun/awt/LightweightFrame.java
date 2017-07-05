@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ public abstract class LightweightFrame extends Frame {
     @Override public final void toFront() {}
     @Override public final void toBack() {}
 
+    @SuppressWarnings("deprecation")
     @Override public void addNotify() {
         synchronized (getTreeLock()) {
             if (getPeer() == null) {
@@ -114,6 +115,7 @@ public abstract class LightweightFrame extends Frame {
      * @param activate if <code>true</code>, activates the frame;
      *                 otherwise, deactivates the frame
      */
+    @SuppressWarnings("deprecation")
     public void emulateActivation(boolean activate) {
         ((FramePeer)getPeer()).emulateActivation(activate);
     }

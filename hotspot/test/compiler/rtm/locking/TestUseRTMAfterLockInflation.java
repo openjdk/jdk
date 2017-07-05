@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that rtm locking is used for stack locks before
  *          inflation and after it used for inflated locks.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMAfterLockInflation
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

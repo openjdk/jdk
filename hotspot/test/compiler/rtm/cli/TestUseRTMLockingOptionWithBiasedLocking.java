@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify processing of UseRTMLocking and UseBiasedLocking
  *          options combination on CPU and VM with rtm support.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMLockingOptionWithBiasedLocking
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -51,25 +51,44 @@ public class TestUseRTMLockingOptionWithBiasedLocking
     public void runTestCases() throws Throwable {
         String warningMessage
                 = RTMGenericCommandLineOptionTest.RTM_BIASED_LOCKING_WARNING;
+        String shouldPassMessage = "JVM startup should pass with both "
+                + "-XX:+UseRTMLocking and "
+                + "-XX:-UseBiasedLocking flags set without any warnings";
         // verify that we will not get a warning
         CommandLineOptionTest.verifySameJVMStartup(null,
-                new String[] { warningMessage }, ExitCode.OK,
+                new String[] { warningMessage }, shouldPassMessage,
+                shouldPassMessage, ExitCode.OK,
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking", "-XX:-UseBiasedLocking");
+
         // verify that we will get a warning
         CommandLineOptionTest.verifySameJVMStartup(
-                new String[] { warningMessage }, null, ExitCode.OK,
+                new String[] { warningMessage }, null,
+                "JVM startup should pass when both -XX:+UseRTMLocking and "
+                        + "-XX:+UseBiasedLocking flags set",
+                "Flags -XX:+UseRTMLocking"
+                        + " and -XX:+UseBiasedLocking conflicts. "
+                        + "Warning should be shown.", ExitCode.OK,
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking", "-XX:+UseBiasedLocking");
         // verify that UseBiasedLocking is false when we use rtm locking
         CommandLineOptionTest.verifyOptionValueForSameVM("UseBiasedLocking",
-                "false", CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                "false",
+                "Value of option 'UseBiasedLocking' should be false if"
+                        + "-XX:+UseRTMLocking flag set.",
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking");
         // verify that we can't turn on biased locking when
         // using rtm locking
-        CommandLineOptionTest.verifyOptionValueForSameVM("UseBiasedLocking",
-                "false", CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
-                "-XX:+UseRTMLocking", "-XX:+UseBiasedLocking");
+        CommandLineOptionTest
+                .verifyOptionValueForSameVM(
+                        "UseBiasedLocking",
+                        "false",
+                        "Value of option 'UseBiasedLocking' should be false if"
+                                + "both -XX:+UseRTMLocking and "
+                                + "-XX:+UseBiasedLocking flags set.",
+                        CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                        "-XX:+UseRTMLocking", "-XX:+UseBiasedLocking");
     }
 
     public static void main(String args[]) throws Throwable {

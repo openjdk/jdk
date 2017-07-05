@@ -499,6 +499,7 @@ public class DropTarget implements DropTargetListener, Serializable {
      *
      */
 
+    @SuppressWarnings("deprecation")
     public void addNotify(ComponentPeer peer) {
         if (peer == componentPeer) return;
 
@@ -690,6 +691,7 @@ public class DropTarget implements DropTargetListener, Serializable {
          * update the geometry of the autoscroll region
          */
 
+        @SuppressWarnings("deprecation")
         private void updateRegion() {
            Insets    i    = autoScroll.getAutoscrollInsets();
            Dimension size = component.getSize();

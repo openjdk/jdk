@@ -131,6 +131,9 @@ MemRegion G1PageBasedVirtualSpace::commit(uintptr_t start, size_t size_in_pages)
   _committed.set_range(start, start + size_in_pages);
 
   MemRegion result((HeapWord*)page_start(start), byte_size_for_pages(size_in_pages) / HeapWordSize);
+  if (AlwaysPreTouch) {
+    os::pretouch_memory((char*)result.start(), (char*)result.end());
+  }
   return result;
 }
 
