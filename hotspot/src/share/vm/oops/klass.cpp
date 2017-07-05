@@ -486,6 +486,12 @@ void Klass::oops_do(OopClosure* cl) {
 }
 
 void Klass::remove_unshareable_info() {
+  if (!DumpSharedSpaces) {
+    // Clean up after OOM during class loading
+    if (class_loader_data() != NULL) {
+      class_loader_data()->remove_class(this);
+    }
+  }
   set_subklass(NULL);
   set_next_sibling(NULL);
   // Clear the java mirror
