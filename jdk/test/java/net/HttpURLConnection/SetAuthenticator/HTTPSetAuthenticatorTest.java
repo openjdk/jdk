@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,12 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
+/*
  * @test
  * @bug 8169415
  * @library /lib/testlibrary/
- * @modules java.base/sun.net.www
+ * @modules java.logging
+ *          java.base/sun.net.www
  *          java.base/sun.net.www.protocol.http
  *          jdk.httpserver/sun.net.httpserver
  * @build jdk.testlibrary.SimpleSSLContext HTTPTest HTTPTestServer HTTPTestClient HTTPSetAuthenticatorTest

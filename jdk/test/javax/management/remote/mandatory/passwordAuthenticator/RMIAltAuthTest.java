@@ -26,7 +26,8 @@
  * @bug 5016508
  * @summary Supplies an alternative JAAS configuration for authenticating RMI clients
  * @author Luis-Miguel Alventosa
- * @modules java.management/com.sun.jmx.remote.security
+ * @modules java.management.rmi
+ *          java.management/com.sun.jmx.remote.security
  * @run clean RMIAltAuthTest
  * @run build RMIAltAuthTest SimpleStandard SimpleStandardMBean
  * @run main RMIAltAuthTest

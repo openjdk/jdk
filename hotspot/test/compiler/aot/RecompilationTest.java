@@ -33,6 +33,7 @@
  * @run main compiler.aot.AotCompiler -libname libRecompilationTest1.so
  *     -class compiler.whitebox.SimpleTestCaseHelper
  *     -extraopt -Dgraal.TieredAOT=true -extraopt -Dgraal.ProfileSimpleMethods=true
+ *     -extraopt -Dgraal.ProbabilisticProfiling=false
  *     -extraopt -XX:+UnlockDiagnosticVMOptions -extraopt -XX:+WhiteBoxAPI -extraopt -Xbootclasspath/a:.
  *     -extraopt -XX:-UseCompressedOops
  *     -extraopt -XX:CompileCommand=dontinline,compiler.whitebox.SimpleTestCaseHelper::*

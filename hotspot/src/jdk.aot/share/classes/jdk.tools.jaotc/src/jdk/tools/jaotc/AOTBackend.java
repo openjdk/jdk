@@ -77,8 +77,12 @@ public class AOTBackend {
         this.filters = filters;
         providers = backend.getProviders();
         codeCache = providers.getCodeCache();
-        graphBuilderSuite = initGraphBuilderSuite(backend);
+        graphBuilderSuite = initGraphBuilderSuite(backend, main.options.compileWithAssertions);
         highTierContext = new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL);
+    }
+
+    public PhaseSuite<HighTierContext> getGraphBuilderSuite() {
+        return graphBuilderSuite;
     }
 
     private Suites getSuites() {
@@ -146,14 +150,14 @@ public class AOTBackend {
         return backend.getRuntime().getVMConfig().cAssertions;
     }
 
-    private static PhaseSuite<HighTierContext> initGraphBuilderSuite(HotSpotBackend backend) {
+    private static PhaseSuite<HighTierContext> initGraphBuilderSuite(HotSpotBackend backend, boolean compileWithAssertions) {
         PhaseSuite<HighTierContext> graphBuilderSuite = backend.getSuites().getDefaultGraphBuilderSuite().copy();
         ListIterator<BasePhase<? super HighTierContext>> iterator = graphBuilderSuite.findPhase(GraphBuilderPhase.class);
         GraphBuilderConfiguration baseConfig = ((GraphBuilderPhase) iterator.previous()).getGraphBuilderConfig();
 
         // Use all default plugins.
         Plugins plugins = baseConfig.getPlugins();
-        GraphBuilderConfiguration aotConfig = GraphBuilderConfiguration.getDefault(plugins).withEagerResolving(true);
+        GraphBuilderConfiguration aotConfig = GraphBuilderConfiguration.getDefault(plugins).withEagerResolving(true).withOmitAssertions(!compileWithAssertions);
 
         iterator.next();
         iterator.remove();

@@ -97,7 +97,7 @@ import javax.management.remote.JMXServiceURL;
  * @bug 5072268
  * @summary Test that nothing assumes a post-1.2 MBeanServer
  * @author Eamonn McManus
- * @modules java.management
+ * @modules java.management.rmi
  * @run main/othervm -ea OldMBeanServerTest
  */
 

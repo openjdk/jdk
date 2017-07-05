@@ -68,7 +68,7 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
      * Integers 0 ... n - 1.
      */
     private ConcurrentLinkedDeque<Integer> populatedDeque(int n) {
-        ConcurrentLinkedDeque<Integer> q = new ConcurrentLinkedDeque<Integer>();
+        ConcurrentLinkedDeque<Integer> q = new ConcurrentLinkedDeque<>();
         assertTrue(q.isEmpty());
         for (int i = 0; i < n; ++i)
             assertTrue(q.offer(new Integer(i)));

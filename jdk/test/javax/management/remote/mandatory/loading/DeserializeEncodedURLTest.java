@@ -26,7 +26,7 @@
  * @bug 4924683
  * @summary Check RMI/JRMP stubs can be deserialized using user's loader
  * @author Eamonn McManus
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean DeserializeEncodedURLTest SingleClassLoader
  * @run build DeserializeEncodedURLTest SingleClassLoader
  * @run main DeserializeEncodedURLTest

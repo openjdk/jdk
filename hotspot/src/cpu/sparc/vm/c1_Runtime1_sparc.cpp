@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -856,13 +856,26 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register tmp2 = G3_scratch;
 
         Label refill, restart;
-        bool with_frame = false; // I don't know if we can do with-frame.
+        int satb_q_active_byte_offset =
+          in_bytes(JavaThread::satb_mark_queue_offset() +
+                   SATBMarkQueue::byte_offset_of_active());
         int satb_q_index_byte_offset =
           in_bytes(JavaThread::satb_mark_queue_offset() +
                    SATBMarkQueue::byte_offset_of_index());
         int satb_q_buf_byte_offset =
           in_bytes(JavaThread::satb_mark_queue_offset() +
                    SATBMarkQueue::byte_offset_of_buf());
+
+        // Is marking still active?
+        if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+          __ ld(G2_thread, satb_q_active_byte_offset, tmp);
+        } else {
+          assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+          __ ldsb(G2_thread, satb_q_active_byte_offset, tmp);
+        }
+        __ cmp_and_br_short(tmp, G0, Assembler::notEqual, Assembler::pt, restart);
+        __ retl();
+        __ delayed()->nop();
 
         __ bind(restart);
         // Load the index into the SATB buffer. SATBMarkQueue::_index is a

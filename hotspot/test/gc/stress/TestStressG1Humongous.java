@@ -28,14 +28,9 @@
  * @summary Stress G1 by humongous allocations in situation near OOM
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
- * @run main/othervm/timeout=200 -Xlog:gc=debug -Xmx1g -XX:+UseG1GC -XX:G1HeapRegionSize=4m
- *              -Dtimeout=120 -Dthreads=3 -Dhumongoussize=1.1 -Dregionsize=4 TestStressG1Humongous
- * @run main/othervm/timeout=200 -Xlog:gc=debug -Xmx1g -XX:+UseG1GC -XX:G1HeapRegionSize=16m
- *              -Dtimeout=120 -Dthreads=5 -Dhumongoussize=2.1 -Dregionsize=16 TestStressG1Humongous
- * @run main/othervm/timeout=200 -Xlog:gc=debug -Xmx1g -XX:+UseG1GC -XX:G1HeapRegionSize=32m
- *              -Dtimeout=120 -Dthreads=4 -Dhumongoussize=0.6 -Dregionsize=32 TestStressG1Humongous
- * @run main/othervm/timeout=700 -Xlog:gc=debug -Xmx1g -XX:+UseG1GC -XX:G1HeapRegionSize=1m
- *              -Dtimeout=600 -Dthreads=7 -Dhumongoussize=0.6 -Dregionsize=1 TestStressG1Humongous
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @run driver/timeout=1300 TestStressG1Humongous
  */
 
 import java.util.ArrayList;
@@ -44,8 +39,45 @@ import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TestStressG1Humongous {
+import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
+public class TestStressG1Humongous{
+
+    public static void main(String[] args) throws Exception {
+        // Limit heap size on 32-bit platforms
+        int heapSize = Platform.is32bit() ? 512 : 1024;
+        // Heap size, region size, threads, humongous size, timeout
+        run(heapSize, 4, 3, 1.1, 120);
+        run(heapSize, 16, 5, 2.1, 120);
+        run(heapSize, 32, 4, 0.6, 120);
+        run(heapSize, 1, 7, 0.6, 600);
+    }
+
+    private static void run(int heapSize, int regionSize, int threads, double humongousSize, int timeout)
+            throws Exception {
+        ArrayList<String> options = new ArrayList<>();
+        Collections.addAll(options, Utils.getTestJavaOpts());
+        Collections.addAll(options,
+                "-Xlog:gc=debug",
+                "-Xmx" + heapSize + "m",
+                "-XX:+UseG1GC",
+                "-XX:G1HeapRegionSize=" + regionSize + "m",
+                "-Dtimeout=" + timeout,
+                "-Dthreads=" + threads,
+                "-Dhumongoussize=" + humongousSize,
+                "-Dregionsize=" + regionSize,
+                TestStressG1HumongousImpl.class.getName()
+        );
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(options.toArray(new String[options.size()]));
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+    }
+}
+
+class TestStressG1HumongousImpl {
     // Timeout in seconds
     private static final int TIMEOUT = Integer.getInteger("timeout", 60);
     private static final int THREAD_COUNT = Integer.getInteger("threads", 2);
@@ -60,10 +92,10 @@ public class TestStressG1Humongous {
     public static final List<Object> GARBAGE = Collections.synchronizedList(new ArrayList<>());
 
     public static void main(String[] args) throws InterruptedException {
-        new TestStressG1Humongous().run();
+        new TestStressG1HumongousImpl().run();
     }
 
-    public TestStressG1Humongous() {
+    public TestStressG1HumongousImpl() {
         isRunning = true;
         threads = new Thread[THREAD_COUNT];
         alocatedObjectsCount = new AtomicInteger(0);

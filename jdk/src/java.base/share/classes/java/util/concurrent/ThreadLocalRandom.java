@@ -1059,17 +1059,17 @@ public class ThreadLocalRandom extends Random {
     static {
         try {
             SEED = U.objectFieldOffset
-                    (Thread.class.getDeclaredField("threadLocalRandomSeed"));
+                (Thread.class.getDeclaredField("threadLocalRandomSeed"));
             PROBE = U.objectFieldOffset
-                    (Thread.class.getDeclaredField("threadLocalRandomProbe"));
+                (Thread.class.getDeclaredField("threadLocalRandomProbe"));
             SECONDARY = U.objectFieldOffset
-                    (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
+                (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
             THREADLOCALS = U.objectFieldOffset
-                    (Thread.class.getDeclaredField("threadLocals"));
+                (Thread.class.getDeclaredField("threadLocals"));
             INHERITABLETHREADLOCALS = U.objectFieldOffset
-                    (Thread.class.getDeclaredField("inheritableThreadLocals"));
+                (Thread.class.getDeclaredField("inheritableThreadLocals"));
             INHERITEDACCESSCONTROLCONTEXT = U.objectFieldOffset
-                    (Thread.class.getDeclaredField("inheritedAccessControlContext"));
+                (Thread.class.getDeclaredField("inheritedAccessControlContext"));
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }

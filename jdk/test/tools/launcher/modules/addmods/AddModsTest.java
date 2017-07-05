@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class AddModsTest {
     }
 
     /**
-     * Basic test of --add-modules ALL-DEFAULT. Module java.annotations.common
+     * Basic test of --add-modules ALL-DEFAULT. Module java.xml.ws.annotation
      * should not resolved and so the types in that module should not be
      * visible.
      */

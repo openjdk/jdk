@@ -36,7 +36,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class EqualsRace {
     private static void realMain(String[] args) throws Throwable {
         final int iterations = 100000;
-        final List<Integer> list = new CopyOnWriteArrayList<Integer>();
+        final List<Integer> list = new CopyOnWriteArrayList<>();
         final Integer one = Integer.valueOf(1);
         final List<Integer> oneElementList = Arrays.asList(one);
         final Thread t = new CheckedThread() { public void realRun() {

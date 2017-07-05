@@ -26,7 +26,7 @@
  * @bug 8058865
  * @summary Checks that exceptions are correctly wired (compared to reference).
  * @author Olivier Lagneau
- * @modules java.management
+ * @modules java.management.rmi
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD ExceptionTest
  */
 
@@ -368,5 +368,3 @@ public class ExceptionTest {
     }
 
 }
-
-
