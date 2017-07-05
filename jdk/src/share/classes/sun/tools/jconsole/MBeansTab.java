@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import javax.management.*;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.tree.*;
+import sun.tools.jconsole.ProxyClient.SnapshotMBeanServerConnection;
 import sun.tools.jconsole.inspector.*;
 
 import com.sun.tools.jconsole.JConsoleContext;
@@ -152,6 +153,10 @@ public class MBeansTab extends Tab implements
 
     public MBeanServerConnection getMBeanServerConnection() {
         return vmPanel.getProxyClient().getMBeanServerConnection();
+    }
+
+    public SnapshotMBeanServerConnection getSnapshotMBeanServerConnection() {
+        return vmPanel.getProxyClient().getSnapshotMBeanServerConnection();
     }
 
     @Override

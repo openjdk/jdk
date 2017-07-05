@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1117,9 +1117,33 @@ static short getFlags(JNIEnv *env, jstring name) {
   if (ioctl(sock, SIOCGIFFLAGS, (char *)&if2) >= 0) {
     ret = if2.ifr_flags;
   } else {
+#if defined(__solaris__) && defined(AF_INET6)
+    /* Try with an IPv6 socket in case the interface has only IPv6 addresses assigned to it */
+    struct lifreq lifr;
+
+    close(sock);
+    sock = JVM_Socket(AF_INET6, SOCK_DGRAM, 0);
+
+    if (sock < 0) {
+      (*env)->ReleaseStringUTFChars(env, name, name_utf);
+      NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                                  "Socket creation failed");
+      return -1;
+    }
+
+    memset((caddr_t)&lifr, 0, sizeof(lifr));
+    strcpy((caddr_t)&(lifr.lifr_name), name_utf);
+
+    if (ioctl(sock, SIOCGLIFFLAGS, (char *)&lifr) >= 0) {
+      ret = lifr.lifr_flags;
+    } else {
+      NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                               "IOCTL failed");
+    }
+#else
     NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                                  "IOCTL failed");
-    ret = -1;
+#endif
   }
   close(sock);
   /* release the UTF string and interface list */
@@ -1484,8 +1508,23 @@ JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(JNIEnv *env, jclas
     if (ioctl(sock, SIOCGLIFMTU, (caddr_t)&lifr) >= 0) {
       ret = lifr.lifr_mtu;
     } else {
-      NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                   "IOCTL failed");
+      /* Try wIth an IPv6 socket in case the interface has only IPv6 addresses assigned to it */
+      close(sock);
+      sock = JVM_Socket(AF_INET6, SOCK_DGRAM, 0);
+
+      if (sock < 0) {
+        (*env)->ReleaseStringUTFChars(env, name, name_utf);
+        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                                     "Socket creation failed");
+        return -1;
+      }
+
+      if (ioctl(sock, SIOCGLIFMTU, (caddr_t)&lifr) >= 0) {
+        ret = lifr.lifr_mtu;
+      } else {
+        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                                     "IOCTL failed");
+      }
     }
 #endif
     close(sock);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,15 +49,6 @@
  * in libdl at the same time.
  */
 sys_mon_t _dl_lock;
-
-/*
- * glibc-2.0 libdl is not MT safe.  If you are building with any glibc,
- * chances are you might want to run the generated bits against glibc-2.0
- * libdl.so, so always use locking for any version of glibc.
- */
-#ifdef __GLIBC__
-    #define NEED_DL_LOCK
-#endif
 
 /*
  * Solaris green threads needs to lock around libdl.so.
