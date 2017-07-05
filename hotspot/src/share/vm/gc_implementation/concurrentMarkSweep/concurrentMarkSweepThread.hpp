@@ -130,6 +130,12 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   // A concurrent full gc request terminates the wait.
   void wait_on_cms_lock(long t_millis);
 
+  // Wait on CMS lock until the next synchronous GC
+  // or given timeout, whichever is earlier. A timeout value
+  // of 0 indicates that there is no upper bound on the wait time.
+  // A concurrent full gc request terminates the wait.
+  void wait_on_cms_lock_for_scavenge(long t_millis);
+
   // The CMS thread will yield during the work portion of its cycle
   // only when requested to.  Both synchronous and asychronous requests
   // are provided:
