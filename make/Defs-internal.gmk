@@ -52,7 +52,6 @@ ifdef OPENJDK
 endif
 
 # Define absolute paths to TOPDIRs
-ABS_CONTROL_TOPDIR:=$(call OptFullPath,"$(CONTROL_TOPDIR)")
 ABS_LANGTOOLS_TOPDIR:=$(call OptFullPath,"$(LANGTOOLS_TOPDIR)")
 ABS_CORBA_TOPDIR:=$(call OptFullPath,"$(CORBA_TOPDIR)")
 ABS_JAXP_TOPDIR:=$(call OptFullPath,"$(JAXP_TOPDIR)")
