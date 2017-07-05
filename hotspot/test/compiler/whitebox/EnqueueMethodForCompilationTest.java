@@ -27,48 +27,60 @@
  * @build EnqueueMethodForCompilationTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI EnqueueMethodForCompilationTest
+ * @summary testing of WB::enqueueMethodForCompilation()
  * @author igor.ignatyev@oracle.com
  */
 public class EnqueueMethodForCompilationTest extends CompilerWhiteBoxTest {
+
     public static void main(String[] args) throws Exception {
-        // to prevent inlining #method into #compile()
-        WHITE_BOX.testSetDontInlineMethod(METHOD, true);
-        new EnqueueMethodForCompilationTest().runTest();
+        for (TestCase test : TestCase.values()) {
+            new EnqueueMethodForCompilationTest(test).runTest();
+        }
     }
 
+    public EnqueueMethodForCompilationTest(TestCase testCase) {
+        super(testCase);
+        // to prevent inlining of #method
+        WHITE_BOX.testSetDontInlineMethod(method, true);
+    }
+
+    @Override
     protected void test() throws Exception {
-        checkNotCompiled(METHOD);
+        checkNotCompiled();
 
-        WHITE_BOX.enqueueMethodForCompilation(METHOD, 0);
-        if (WHITE_BOX.isMethodCompilable(METHOD, 0)) {
-          throw new RuntimeException(METHOD + " is compilable at level 0");
+        // method can not be compiled on level 'none'
+        WHITE_BOX.enqueueMethodForCompilation(method, COMP_LEVEL_NONE);
+        if (WHITE_BOX.isMethodCompilable(method, COMP_LEVEL_NONE)) {
+            throw new RuntimeException(method
+                    + " is compilable at level COMP_LEVEL_NONE");
         }
-        checkNotCompiled(METHOD);
+        checkNotCompiled();
 
-        WHITE_BOX.enqueueMethodForCompilation(METHOD, -1);
-        checkNotCompiled(METHOD);
+        // COMP_LEVEL_ANY is inapplicable as level for compilation
+        WHITE_BOX.enqueueMethodForCompilation(method, COMP_LEVEL_ANY);
+        checkNotCompiled();
 
-        WHITE_BOX.enqueueMethodForCompilation(METHOD, 5);
-        if (!WHITE_BOX.isMethodCompilable(METHOD, 5)) {
-          checkNotCompiled(METHOD);
-          compile();
-          checkCompiled(METHOD);
+        WHITE_BOX.enqueueMethodForCompilation(method, 5);
+        if (!WHITE_BOX.isMethodCompilable(method, 5)) {
+            checkNotCompiled();
+            compile();
+            checkCompiled();
         } else {
-          checkCompiled(METHOD);
+            checkCompiled();
         }
 
-        int compLevel = WHITE_BOX.getMethodCompilationLevel(METHOD);
-        WHITE_BOX.deoptimizeMethod(METHOD);
-        checkNotCompiled(METHOD);
+        int compLevel = WHITE_BOX.getMethodCompilationLevel(method);
+        WHITE_BOX.deoptimizeMethod(method);
+        checkNotCompiled();
 
-        WHITE_BOX.enqueueMethodForCompilation(METHOD, compLevel);
-        checkCompiled(METHOD);
-        WHITE_BOX.deoptimizeMethod(METHOD);
-        checkNotCompiled(METHOD);
+        WHITE_BOX.enqueueMethodForCompilation(method, compLevel);
+        checkCompiled();
+        WHITE_BOX.deoptimizeMethod(method);
+        checkNotCompiled();
 
         compile();
-        checkCompiled(METHOD);
-        WHITE_BOX.deoptimizeMethod(METHOD);
-        checkNotCompiled(METHOD);
+        checkCompiled();
+        WHITE_BOX.deoptimizeMethod(method);
+        checkNotCompiled();
     }
 }

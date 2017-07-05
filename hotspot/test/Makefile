@@ -162,7 +162,9 @@ clean:
 # jtreg tests
 
 # Expect JT_HOME to be set for jtreg tests. (home for jtreg)
-JT_HOME = $(SLASH_JAVA)/re/jtreg/4.0/promoted/latest/binaries/jtreg
+ifndef JT_HOME
+  JT_HOME = $(SLASH_JAVA)/re/jtreg/4.0/promoted/latest/binaries/jtreg
+endif
 ifdef JPRT_JTREG_HOME
   JT_HOME = $(JPRT_JTREG_HOME)
 endif
