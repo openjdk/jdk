@@ -22,8 +22,19 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_cmsPermGen.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsPermGen.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.inline.hpp"
+#include "gc_implementation/shared/cSpaceCounters.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/compactPermGen.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/generation.inline.hpp"
+#include "memory/permGen.hpp"
+#include "memory/universe.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
 
 CMSPermGen::CMSPermGen(ReservedSpace rs, size_t initial_byte_size,
              CardTableRS* ct,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_VIRTUALSPACE_HPP
+#define SHARE_VM_RUNTIME_VIRTUALSPACE_HPP
+
+#include "memory/allocation.hpp"
 
 // ReservedSpace is a data structure for reserving a contiguous address range.
 
@@ -223,3 +228,5 @@ class VirtualSpace VALUE_OBJ_CLASS_SPEC {
   // Debugging
   void print() PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_RUNTIME_VIRTUALSPACE_HPP

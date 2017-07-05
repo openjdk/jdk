@@ -22,8 +22,12 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jniFastGetField_x86_32.cpp.incl"
+#include "precompiled.hpp"
+#include "assembler_x86.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/jniFastGetField.hpp"
+#include "prims/jvm_misc.hpp"
+#include "runtime/safepoint.hpp"
 
 #define __ masm->
 

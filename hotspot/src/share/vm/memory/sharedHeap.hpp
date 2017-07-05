@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_SHAREDHEAP_HPP
+#define SHARE_VM_MEMORY_SHAREDHEAP_HPP
+
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/generation.hpp"
+#include "memory/permGen.hpp"
+
 // A "SharedHeap" is an implementation of a java heap for HotSpot.  This
 // is an abstract class: there may be many different kinds of heaps.  This
 // class defines the functions that a heap must implement, and contains
@@ -285,3 +292,5 @@ public:
                              size_t bytes_after,
                              size_t capacity);
 };
+
+#endif // SHARE_VM_MEMORY_SHAREDHEAP_HPP

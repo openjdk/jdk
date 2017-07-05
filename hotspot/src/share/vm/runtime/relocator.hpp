@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,21 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_RELOCATOR_HPP
+#define SHARE_VM_RUNTIME_RELOCATOR_HPP
+
+#include "interpreter/bytecodes.hpp"
+#include "oops/methodOop.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
 
 // This code has been converted from the 1.1E java virtual machine
 // Thanks to the JavaTopics group for using the code
@@ -117,3 +132,5 @@ class Relocator : public ResourceObj {
       _listener->relocated(bci, delta, new_code_length);
   }
 };
+
+#endif // SHARE_VM_RUNTIME_RELOCATOR_HPP

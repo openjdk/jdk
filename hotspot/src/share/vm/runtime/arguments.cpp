@@ -22,8 +22,42 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_arguments.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaAssertions.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/referenceProcessor.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
+#include "runtime/java.hpp"
+#include "services/management.hpp"
+#include "utilities/defaultStream.hpp"
+#include "utilities/taskqueue.hpp"
+#ifdef TARGET_ARCH_x86
+# include "vm_version_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vm_version_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vm_version_zero.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#endif
 
 #define DEFAULT_VENDOR_URL_BUG "http://java.sun.com/webapps/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
@@ -116,7 +150,6 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
 // Initialize system properties key and value.
 void Arguments::init_system_properties() {
 
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.version", "1.0", false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
                                                                  "Java Virtual Machine Specification",  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.version", VM_Version::vm_release(),  false));
@@ -151,9 +184,23 @@ void Arguments::init_system_properties() {
 
   // Update/Initialize System properties after JDK version number is known
 void Arguments::init_version_specific_system_properties() {
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.vendor",
-        JDK_Version::is_gte_jdk17x_version() ? "Oracle Corporation" : "Sun Microsystems Inc.", false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
+  enum { bufsz = 16 };
+  char buffer[bufsz];
+  const char* spec_vendor = "Sun Microsystems Inc.";
+  uint32_t spec_version = 0;
+
+  if (JDK_Version::is_gte_jdk17x_version()) {
+    spec_vendor = "Oracle Corporation";
+    spec_version = JDK_Version::current().major_version();
+  }
+  jio_snprintf(buffer, bufsz, "1." UINT32_FORMAT, spec_version);
+
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.specification.vendor",  spec_vendor, false));
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.specification.version", buffer, false));
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
 }
 
 /**
@@ -960,23 +1007,8 @@ static void no_shared_spaces() {
 void Arguments::check_compressed_oops_compat() {
 #ifdef _LP64
   assert(UseCompressedOops, "Precondition");
-#  if defined(COMPILER1) && !defined(TIERED)
-  // Until c1 supports compressed oops turn them off.
-  FLAG_SET_DEFAULT(UseCompressedOops, false);
-#  else
   // Is it on by default or set on ergonomically
   bool is_on_by_default = FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops);
-
-  // Tiered currently doesn't work with compressed oops
-  if (TieredCompilation) {
-    if (is_on_by_default) {
-      FLAG_SET_DEFAULT(UseCompressedOops, false);
-      return;
-    } else {
-      vm_exit_during_initialization(
-        "Tiered compilation is not supported with compressed oops yet", NULL);
-    }
-  }
 
   // If dumping an archive or forcing its use, disable compressed oops if possible
   if (DumpSharedSpaces || RequireSharedSpaces) {
@@ -991,9 +1023,7 @@ void Arguments::check_compressed_oops_compat() {
     // UseSharedSpaces is on by default. With compressed oops, we turn it off.
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
-
-#  endif // defined(COMPILER1) && !defined(TIERED)
-#endif // _LP64
+#endif
 }
 
 void Arguments::set_tiered_flags() {
@@ -1328,8 +1358,11 @@ bool verify_object_alignment() {
 }
 
 inline uintx max_heap_for_compressed_oops() {
-  // Heap should be above HeapBaseMinAddress to get zero based compressed oops.
-  LP64_ONLY(return OopEncodingHeapMax - MaxPermSize - os::vm_page_size() - HeapBaseMinAddress);
+  // Avoid sign flip.
+  if (OopEncodingHeapMax < MaxPermSize + os::vm_page_size()) {
+    return 0;
+  }
+  LP64_ONLY(return OopEncodingHeapMax - MaxPermSize - os::vm_page_size());
   NOT_LP64(ShouldNotReachHere(); return 0);
 }
 
@@ -1507,7 +1540,13 @@ void Arguments::set_heap_size() {
     }
     if (UseCompressedOops) {
       // Limit the heap size to the maximum possible when using compressed oops
-      reasonable_max = MIN2(reasonable_max, (julong)max_heap_for_compressed_oops());
+      julong max_coop_heap = (julong)max_heap_for_compressed_oops();
+      if (HeapBaseMinAddress + MaxHeapSize < max_coop_heap) {
+        // Heap should be above HeapBaseMinAddress to get zero based compressed oops
+        // but it should be not less than default MaxHeapSize.
+        max_coop_heap -= HeapBaseMinAddress;
+      }
+      reasonable_max = MIN2(reasonable_max, max_coop_heap);
     }
     reasonable_max = os::allocatable_physical_memory(reasonable_max);
 
@@ -3019,11 +3058,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Set flags based on ergonomics.
   set_ergonomics_flags();
 
-#ifdef _LP64
   if (UseCompressedOops) {
     check_compressed_oops_compat();
   }
-#endif
 
   // Check the GC selections again.
   if (!check_gc_consistency()) {

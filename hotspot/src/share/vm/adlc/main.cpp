@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,17 @@ static char *prefix_plus_base_plus_suffix(const char* prefix, const char* base, 
 static int get_legal_text(FileBuff &fbuf, char **legal_text); // Get pointer to legal text
 
 ArchDesc* globalAD = NULL;      // global reference to Architecture Description object
+
+const char* get_basename(const char* filename) {
+  const char *basename = filename;
+  const char *cp;
+  for (cp = basename; *cp; cp++) {
+    if (*cp == '/') {
+      basename = cp+1;
+    }
+  }
+  return basename;
+}
 
 //------------------------------main-------------------------------------------
 int main(int argc, char *argv[])
@@ -193,16 +204,69 @@ int main(int argc, char *argv[])
   AD.addSunCopyright(legal_text, legal_sz, AD._CPP_PIPELINE_file._fp);  // .cpp
   AD.addSunCopyright(legal_text, legal_sz, AD._VM_file._fp);            // .hpp
   AD.addSunCopyright(legal_text, legal_sz, AD._DFA_file._fp);           // .cpp
+  // Add include guards for all .hpp files
+  AD.addIncludeGuardStart(AD._HPP_file, "GENERATED_ADFILES_AD_HPP");        // .hpp
+  AD.addIncludeGuardStart(AD._VM_file, "GENERATED_ADFILES_ADGLOBALS_HPP");  // .hpp
+  // Add includes
+  AD.addInclude(AD._CPP_file, "precompiled.hpp");
+  AD.addInclude(AD._CPP_file, "adfiles", get_basename(AD._VM_file._name));
+  AD.addInclude(AD._CPP_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._CPP_file, "memory/allocation.inline.hpp");
+  AD.addInclude(AD._CPP_file, "asm/assembler.hpp");
+  AD.addInclude(AD._CPP_file, "code/vmreg.hpp");
+  AD.addInclude(AD._CPP_file, "gc_interface/collectedHeap.inline.hpp");
+  AD.addInclude(AD._CPP_file, "oops/compiledICHolderOop.hpp");
+  AD.addInclude(AD._CPP_file, "oops/markOop.hpp");
+  AD.addInclude(AD._CPP_file, "oops/methodOop.hpp");
+  AD.addInclude(AD._CPP_file, "oops/oop.inline.hpp");
+  AD.addInclude(AD._CPP_file, "oops/oop.inline2.hpp");
+  AD.addInclude(AD._CPP_file, "opto/cfgnode.hpp");
+  AD.addInclude(AD._CPP_file, "opto/locknode.hpp");
+  AD.addInclude(AD._CPP_file, "opto/opcodes.hpp");
+  AD.addInclude(AD._CPP_file, "opto/regalloc.hpp");
+  AD.addInclude(AD._CPP_file, "opto/regmask.hpp");
+  AD.addInclude(AD._CPP_file, "opto/runtime.hpp");
+  AD.addInclude(AD._CPP_file, "runtime/biasedLocking.hpp");
+  AD.addInclude(AD._CPP_file, "runtime/sharedRuntime.hpp");
+  AD.addInclude(AD._CPP_file, "runtime/stubRoutines.hpp");
+  AD.addInclude(AD._CPP_file, "utilities/growableArray.hpp");
+#ifdef TARGET_ARCH_x86
+  AD.addInclude(AD._CPP_file, "assembler_x86.inline.hpp");
+  AD.addInclude(AD._CPP_file, "nativeInst_x86.hpp");
+  AD.addInclude(AD._CPP_file, "vmreg_x86.inline.hpp");
+#endif
+#ifdef TARGET_ARCH_sparc
+  AD.addInclude(AD._CPP_file, "assembler_sparc.inline.hpp");
+  AD.addInclude(AD._CPP_file, "nativeInst_sparc.hpp");
+  AD.addInclude(AD._CPP_file, "vmreg_sparc.inline.hpp");
+#endif
+  AD.addInclude(AD._HPP_file, "memory/allocation.hpp");
+  AD.addInclude(AD._HPP_file, "opto/machnode.hpp");
+  AD.addInclude(AD._HPP_file, "opto/node.hpp");
+  AD.addInclude(AD._HPP_file, "opto/regalloc.hpp");
+  AD.addInclude(AD._HPP_file, "opto/subnode.hpp");
+  AD.addInclude(AD._CPP_CLONE_file, "precompiled.hpp");
+  AD.addInclude(AD._CPP_CLONE_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._CPP_EXPAND_file, "precompiled.hpp");
+  AD.addInclude(AD._CPP_EXPAND_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._CPP_FORMAT_file, "precompiled.hpp");
+  AD.addInclude(AD._CPP_FORMAT_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._CPP_GEN_file, "precompiled.hpp");
+  AD.addInclude(AD._CPP_GEN_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._CPP_GEN_file, "opto/cfgnode.hpp");
+  AD.addInclude(AD._CPP_GEN_file, "opto/locknode.hpp");
+  AD.addInclude(AD._CPP_MISC_file, "precompiled.hpp");
+  AD.addInclude(AD._CPP_MISC_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._CPP_PEEPHOLE_file, "precompiled.hpp");
+  AD.addInclude(AD._CPP_PEEPHOLE_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._CPP_PIPELINE_file, "precompiled.hpp");
+  AD.addInclude(AD._CPP_PIPELINE_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._DFA_file, "precompiled.hpp");
+  AD.addInclude(AD._DFA_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._DFA_file, "opto/matcher.hpp");
+  AD.addInclude(AD._DFA_file, "opto/opcodes.hpp");
   // Make sure each .cpp file starts with include lines:
   // files declaring and defining generators for Mach* Objects (hpp,cpp)
-  AD.machineDependentIncludes(AD._CPP_file);      // .cpp
-  AD.machineDependentIncludes(AD._CPP_CLONE_file);     // .cpp
-  AD.machineDependentIncludes(AD._CPP_EXPAND_file);    // .cpp
-  AD.machineDependentIncludes(AD._CPP_FORMAT_file);    // .cpp
-  AD.machineDependentIncludes(AD._CPP_GEN_file);       // .cpp
-  AD.machineDependentIncludes(AD._CPP_MISC_file);      // .cpp
-  AD.machineDependentIncludes(AD._CPP_PEEPHOLE_file);  // .cpp
-  AD.machineDependentIncludes(AD._CPP_PIPELINE_file);  // .cpp
   // Generate the result files:
   // enumerations, class definitions, object generators, and the DFA
   // file containing enumeration of machine operands & instructions (hpp)
@@ -244,8 +308,10 @@ int main(int argc, char *argv[])
   AD.addPreprocessorChecks(AD._CPP_PIPELINE_file._fp);  // .cpp
 
   // define the finite automata that selects lowest cost production
-  AD.machineDependentIncludes(AD._DFA_file);      // .cpp
   AD.buildDFA(AD._DFA_file._fp);
+  // Add include guards for all .hpp files
+  AD.addIncludeGuardEnd(AD._HPP_file, "GENERATED_ADFILES_AD_HPP");        // .hpp
+  AD.addIncludeGuardEnd(AD._VM_file, "GENERATED_ADFILES_ADGLOBALS_HPP");  // .hpp
 
   AD.close_files(0);               // Close all input/output files
 

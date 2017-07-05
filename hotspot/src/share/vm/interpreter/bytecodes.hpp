@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_BYTECODES_HPP
+#define SHARE_VM_INTERPRETER_BYTECODES_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/top.hpp"
+
 // Bytecodes specifies all bytecodes used in the VM and
 // provides utility functions to get bytecode attributes.
 
@@ -279,7 +285,16 @@ class Bytecodes: AllStatic {
     _shouldnotreachhere,      // For debugging
 
     // Platform specific JVM bytecodes
-    #include "incls/_bytecodes_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "bytecodes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytecodes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytecodes_zero.hpp"
+#endif
+
 
     number_of_codes
   };
@@ -394,3 +409,5 @@ class Bytecodes: AllStatic {
   // Initialization
   static void        initialize     ();
 };
+
+#endif // SHARE_VM_INTERPRETER_BYTECODES_HPP

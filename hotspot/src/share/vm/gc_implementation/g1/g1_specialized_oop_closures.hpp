@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1_SPECIALIZED_OOP_CLOSURES_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1_SPECIALIZED_OOP_CLOSURES_HPP
 
 // The following OopClosure types get specialized versions of
 // "oop_oop_iterate" that invoke the closures' do_oop methods
@@ -63,3 +66,5 @@ class FilterAndMarkInHeapRegionAndIntoCSClosure;
 #endif
 
 #define FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(f)
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1_SPECIALIZED_OOP_CLOSURES_HPP

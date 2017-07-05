@@ -22,8 +22,13 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_runtimeService.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
+#include "services/attachListener.hpp"
+#include "services/management.hpp"
+#include "services/runtimeService.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/exceptions.hpp"
 
 HS_DTRACE_PROBE_DECL(hs_private, safepoint__begin);
 HS_DTRACE_PROBE_DECL(hs_private, safepoint__end);

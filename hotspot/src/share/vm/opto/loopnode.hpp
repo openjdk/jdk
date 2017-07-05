@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_LOOPNODE_HPP
+#define SHARE_VM_OPTO_LOOPNODE_HPP
+
+#include "opto/cfgnode.hpp"
+#include "opto/multnode.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/subnode.hpp"
+#include "opto/type.hpp"
 
 class CmpNode;
 class CountedLoopEndNode;
@@ -1015,3 +1024,5 @@ public:
 
   IdealLoopTree* current() { return _curnt; }  // Return current value of iterator.
 };
+
+#endif // SHARE_VM_OPTO_LOOPNODE_HPP

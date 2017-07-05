@@ -22,9 +22,15 @@
  *
  */
 
-# include "incls/_precompiled.incl"
+#include "precompiled.hpp"
+#include "interpreter/interpreter.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/rframe.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframe_hp.hpp"
 
-#include "incls/_rframe.cpp.incl"
 
 static RFrame*const  noCaller    = (RFrame*) 0x1;               // no caller (i.e., initial frame)
 static RFrame*const  noCallerYet = (RFrame*) 0x0;               // caller not yet computed

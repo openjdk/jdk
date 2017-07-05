@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,26 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_C2_GLOBALS_HPP
+#define SHARE_VM_OPTO_C2_GLOBALS_HPP
+
+#include "runtime/globals.hpp"
+#ifdef TARGET_ARCH_x86
+# include "c2_globals_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c2_globals_sparc.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "c2_globals_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "c2_globals_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "c2_globals_windows.hpp"
+#endif
 
 //
 // Defines all globals flags used by the server compiler.
@@ -264,6 +284,9 @@
   develop(bool, SparcV9RegsHiBitsZero, true,                                \
           "Assume Sparc V9 I&L registers on V8+ systems are zero-extended") \
                                                                             \
+  product(bool, UseRDPCForConstantTableBase, false,                         \
+          "Use Sparc RDPC instruction for the constant table base.")        \
+                                                                            \
   develop(intx, PrintIdealGraphLevel, 0,                                    \
           "Print ideal graph to XML file / network interface. "             \
           "By default attempts to connect to the visualizer on a socket.")  \
@@ -438,3 +461,5 @@
           "Allow back branches to be fall throughs in the block layour")    \
 
 C2_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG)
+
+#endif // SHARE_VM_OPTO_C2_GLOBALS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CI_CIMETHODBLOCKS_HPP
+#define SHARE_VM_CI_CIMETHODBLOCKS_HPP
+
+#include "ci/ciMethod.hpp"
+#include "memory/resourceArea.hpp"
+#include "utilities/growableArray.hpp"
 
 
 class ciBlock;
@@ -121,3 +128,5 @@ public:
   void print_on(outputStream* st) const  PRODUCT_RETURN;
 #endif
 };
+
+#endif // SHARE_VM_CI_CIMETHODBLOCKS_HPP

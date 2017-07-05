@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_HEAPINSPECTION_HPP
+#define SHARE_VM_MEMORY_HEAPINSPECTION_HPP
+
+#include "memory/allocation.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 #ifndef SERVICES_KERNEL
 
@@ -130,3 +136,5 @@ class HeapInspection : public AllStatic {
   static void heap_inspection(outputStream* st, bool need_prologue) KERNEL_RETURN;
   static void find_instances_at_safepoint(klassOop k, GrowableArray<oop>* result) KERNEL_RETURN;
 };
+
+#endif // SHARE_VM_MEMORY_HEAPINSPECTION_HPP

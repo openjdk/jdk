@@ -22,8 +22,26 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_nmethod.cpp.incl"
+#include "precompiled.hpp"
+#include "code/codeCache.hpp"
+#include "code/compiledIC.hpp"
+#include "code/nmethod.hpp"
+#include "code/scopeDesc.hpp"
+#include "compiler/abstractCompiler.hpp"
+#include "compiler/compileLog.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "compiler/disassembler.hpp"
+#include "interpreter/bytecode.hpp"
+#include "oops/methodDataOop.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/sweeper.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
+#include "utilities/xmlstream.hpp"
+#ifdef SHARK
+#include "shark/sharkCompiler.hpp"
+#endif
 
 #ifdef DTRACE_ENABLED
 
@@ -601,8 +619,8 @@ nmethod::nmethod(
   OopMapSet* oop_maps )
   : CodeBlob("native nmethod", code_buffer, sizeof(nmethod),
              nmethod_size, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps),
-  _compiled_synchronized_native_basic_lock_owner_sp_offset(basic_lock_owner_sp_offset),
-  _compiled_synchronized_native_basic_lock_sp_offset(basic_lock_sp_offset)
+  _native_receiver_sp_offset(basic_lock_owner_sp_offset),
+  _native_basic_lock_sp_offset(basic_lock_sp_offset)
 {
   {
     debug_only(No_Safepoint_Verifier nsv;)
@@ -678,8 +696,8 @@ nmethod::nmethod(
   int frame_size)
   : CodeBlob("dtrace nmethod", code_buffer, sizeof(nmethod),
              nmethod_size, offsets->value(CodeOffsets::Frame_Complete), frame_size, NULL),
-  _compiled_synchronized_native_basic_lock_owner_sp_offset(in_ByteSize(-1)),
-  _compiled_synchronized_native_basic_lock_sp_offset(in_ByteSize(-1))
+  _native_receiver_sp_offset(in_ByteSize(-1)),
+  _native_basic_lock_sp_offset(in_ByteSize(-1))
 {
   {
     debug_only(No_Safepoint_Verifier nsv;)
@@ -772,8 +790,8 @@ nmethod::nmethod(
   )
   : CodeBlob("nmethod", code_buffer, sizeof(nmethod),
              nmethod_size, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps),
-  _compiled_synchronized_native_basic_lock_owner_sp_offset(in_ByteSize(-1)),
-  _compiled_synchronized_native_basic_lock_sp_offset(in_ByteSize(-1))
+  _native_receiver_sp_offset(in_ByteSize(-1)),
+  _native_basic_lock_sp_offset(in_ByteSize(-1))
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {

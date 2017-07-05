@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_COMPILER_METHODLIVENESS_HPP
+#define SHARE_VM_COMPILER_METHODLIVENESS_HPP
+
+#include "utilities/bitMap.hpp"
+#include "utilities/growableArray.hpp"
 
 class ciMethod;
 
@@ -269,3 +275,5 @@ class MethodLiveness : public ResourceObj {
 
   static void print_times() PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_COMPILER_METHODLIVENESS_HPP

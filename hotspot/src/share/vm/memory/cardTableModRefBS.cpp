@@ -22,12 +22,25 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/sharedHeap.hpp"
+#include "memory/space.hpp"
+#include "memory/space.inline.hpp"
+#include "memory/universe.hpp"
+#include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/virtualspace.hpp"
+#ifdef COMPILER1
+#include "c1/c1_LIR.hpp"
+#include "c1/c1_LIRGenerator.hpp"
+#endif
+
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
 // enumerate ref fields that have been modified (since the last
 // enumeration.)
-
-# include "incls/_precompiled.incl"
-# include "incls/_cardTableModRefBS.cpp.incl"
 
 size_t CardTableModRefBS::cards_required(size_t covered_words)
 {

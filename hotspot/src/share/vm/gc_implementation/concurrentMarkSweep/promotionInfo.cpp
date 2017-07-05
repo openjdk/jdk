@@ -22,8 +22,11 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_promotionInfo.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#include "gc_implementation/concurrentMarkSweep/promotionInfo.hpp"
+#include "oops/markOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 /////////////////////////////////////////////////////////////////////////
 //// PromotionInfo

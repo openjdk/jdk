@@ -35,6 +35,13 @@ class FileDispatcherImpl extends FileDispatcher
         init();
     }
 
+    FileDispatcherImpl(boolean append) {
+        /* append is ignored */
+    }
+
+    FileDispatcherImpl() {
+    }
+
     int read(FileDescriptor fd, long address, int len) throws IOException {
         return read0(fd, address, len);
     }

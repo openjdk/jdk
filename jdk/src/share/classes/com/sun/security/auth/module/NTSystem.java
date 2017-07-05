@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package com.sun.security.auth.module;
-
-import javax.security.auth.login.LoginException;
 
 /**
  * <p> This class implementation retrieves and makes available NT
@@ -124,7 +122,7 @@ public class NTSystem {
      * @return the group SIDs for the current NT user.
      */
     public String[] getGroupIDs() {
-        return groupIDs;
+        return groupIDs == null ? null : groupIDs.clone();
     }
 
     /**

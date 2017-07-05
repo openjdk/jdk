@@ -22,8 +22,44 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciEnv.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciConstant.hpp"
+#include "ci/ciEnv.hpp"
+#include "ci/ciField.hpp"
+#include "ci/ciInstance.hpp"
+#include "ci/ciInstanceKlass.hpp"
+#include "ci/ciInstanceKlassKlass.hpp"
+#include "ci/ciMethod.hpp"
+#include "ci/ciNullObject.hpp"
+#include "ci/ciObjArrayKlassKlass.hpp"
+#include "ci/ciTypeArrayKlassKlass.hpp"
+#include "ci/ciUtilities.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/scopeDesc.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compileLog.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/init.hpp"
+#include "runtime/reflection.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "utilities/dtrace.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 // ciEnv
 //

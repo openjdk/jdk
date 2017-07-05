@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -872,12 +872,13 @@ public final class Float extends Number implements Comparable<Float> {
      * @since 1.4
      */
     public static int compare(float f1, float f2) {
-       if (f1 < f2)
+        if (f1 < f2)
             return -1;           // Neither val is NaN, thisVal is smaller
         if (f1 > f2)
             return 1;            // Neither val is NaN, thisVal is larger
 
-        int thisBits = Float.floatToIntBits(f1);
+        // Cannot use floatToRawIntBits because of possibility of NaNs.
+        int thisBits    = Float.floatToIntBits(f1);
         int anotherBits = Float.floatToIntBits(f2);
 
         return (thisBits == anotherBits ?  0 : // Values are equal

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_ESCAPE_HPP
+#define SHARE_VM_OPTO_ESCAPE_HPP
+
+#include "opto/addnode.hpp"
+#include "opto/node.hpp"
+#include "utilities/growableArray.hpp"
 
 //
 // Adaptation for C2 of the escape analysis algorithm described in:
@@ -364,3 +371,5 @@ public:
   void dump();
 #endif
 };
+
+#endif // SHARE_VM_OPTO_ESCAPE_HPP

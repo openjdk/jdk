@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,16 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_constMethodKlass.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/constMethodKlass.hpp"
+#include "oops/constMethodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "runtime/handles.inline.hpp"
 
 
 klassOop constMethodKlass::create_klass(TRAPS) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_OBJARRAYOOP_HPP
+#define SHARE_VM_OOPS_OBJARRAYOOP_HPP
+
+#include "oops/arrayOop.hpp"
 
 // An objArrayOop is an array containing oops.
 // Evaluating "String arg[10]" will create an objArrayOop.
@@ -110,3 +115,5 @@ private:
   ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayOop_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayOop_OOP_ITERATE_DECL)
 };
+
+#endif // SHARE_VM_OOPS_OBJARRAYOOP_HPP

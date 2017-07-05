@@ -22,6 +22,26 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_BYTECODEINTERPRETER_HPP
+#define SHARE_VM_INTERPRETER_BYTECODEINTERPRETER_HPP
+
+#include "memory/allocation.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "runtime/basicLock.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/globalDefinitions.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
+
 #ifdef CC_INTERP
 
 // CVM definitions find hotspot equivalents...
@@ -558,8 +578,19 @@ void print();
 #endif // PRODUCT
 
     // Platform fields/methods
-# include "incls/_bytecodeInterpreter_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "bytecodeInterpreter_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytecodeInterpreter_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytecodeInterpreter_zero.hpp"
+#endif
+
 
 }; // BytecodeInterpreter
 
 #endif // CC_INTERP
+
+#endif // SHARE_VM_INTERPRETER_BYTECODEINTERPRETER_HPP

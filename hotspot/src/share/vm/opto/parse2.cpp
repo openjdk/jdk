@@ -22,8 +22,23 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_parse2.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciMethodData.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "compiler/compileLog.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/universe.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#include "opto/matcher.hpp"
+#include "opto/memnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/parse.hpp"
+#include "opto/runtime.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 extern int explicit_null_checks_inserted,
            explicit_null_checks_elided;

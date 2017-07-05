@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_CPPINTERPRETERGENERATOR_SPARC_HPP
+#define CPU_SPARC_VM_CPPINTERPRETERGENERATOR_SPARC_HPP
+
   static address frame_manager_return;
   static address frame_manager_sync_return;
 
@@ -32,3 +35,5 @@
   void generate_compute_interpreter_state(const Register state,
                                           const Register prev_state,
                                           bool native);
+
+#endif // CPU_SPARC_VM_CPPINTERPRETERGENERATOR_SPARC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_ADLC_ADLC_HPP
+#define SHARE_VM_ADLC_ADLC_HPP
 
 //
 // Standard include file for ADLC parser
@@ -77,18 +80,19 @@ typedef unsigned int uintptr_t;
 #define uint32 unsigned int
 #define uint   unsigned int
 
+// VM components
+#include "opto/opcodes.hpp"
+
 // Macros
 // Debugging note:  Put a breakpoint on "abort".
 #undef assert
 #define assert(cond, msg) { if (!(cond)) { fprintf(stderr, "assert fails %s %d: %s\n", __FILE__, __LINE__, msg); abort(); }}
+#undef max
 #define max(a, b)   (((a)>(b)) ? (a) : (b))
-
-// VM components
-#include "opcodes.hpp"
 
 // ADLC components
 #include "arena.hpp"
-#include "adlcVMDeps.hpp"
+#include "opto/adlcVMDeps.hpp"
 #include "filebuff.hpp"
 #include "dict2.hpp"
 #include "forms.hpp"
@@ -101,3 +105,5 @@ typedef unsigned int uintptr_t;
 // could have a backpointer to the AD but it's too complicated to pass
 // it everywhere it needs to be available.
 extern ArchDesc* globalAD;
+
+#endif // SHARE_VM_ADLC_ADLC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,15 @@
  *
  */
 
+#ifndef OS_CPU_LINUX_ZERO_VM_PREFETCH_LINUX_ZERO_INLINE_HPP
+#define OS_CPU_LINUX_ZERO_VM_PREFETCH_LINUX_ZERO_INLINE_HPP
+
+#include "runtime/prefetch.hpp"
+
 inline void Prefetch::read(void* loc, intx interval) {
 }
 
 inline void Prefetch::write(void* loc, intx interval) {
 }
+
+#endif // OS_CPU_LINUX_ZERO_VM_PREFETCH_LINUX_ZERO_INLINE_HPP

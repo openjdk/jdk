@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_CODE_NMETHOD_HPP
+#define SHARE_VM_CODE_NMETHOD_HPP
+
+#include "code/codeBlob.hpp"
+#include "code/pcDesc.hpp"
+
 // This class is used internally by nmethods, to cache
 // exception/pc/handler information.
 
@@ -204,7 +210,7 @@ class nmethod : public CodeBlob {
   ExceptionCache *_exception_cache;
   PcDescCache     _pc_desc_cache;
 
-  // These are only used for compiled synchronized native methods to
+  // These are used for compiled synchronized native methods to
   // locate the owner and stack slot for the BasicLock so that we can
   // properly revoke the bias of the owner if necessary. They are
   // needed because there is no debug information for compiled native
@@ -214,8 +220,10 @@ class nmethod : public CodeBlob {
   // sharing between platforms. Note that currently biased locking
   // will never cause Class instances to be biased but this code
   // handles the static synchronized case as well.
-  ByteSize _compiled_synchronized_native_basic_lock_owner_sp_offset;
-  ByteSize _compiled_synchronized_native_basic_lock_sp_offset;
+  // JVMTI's GetLocalInstance() also uses these offsets to find the receiver
+  // for non-static native wrapper frames.
+  ByteSize _native_receiver_sp_offset;
+  ByteSize _native_basic_lock_sp_offset;
 
   friend class nmethodLocker;
 
@@ -670,11 +678,11 @@ public:
   bool is_patchable_at(address instr_address);
 
   // UseBiasedLocking support
-  ByteSize compiled_synchronized_native_basic_lock_owner_sp_offset() {
-    return _compiled_synchronized_native_basic_lock_owner_sp_offset;
+  ByteSize native_receiver_sp_offset() {
+    return _native_receiver_sp_offset;
   }
-  ByteSize compiled_synchronized_native_basic_lock_sp_offset() {
-    return _compiled_synchronized_native_basic_lock_sp_offset;
+  ByteSize native_basic_lock_sp_offset() {
+    return _native_basic_lock_sp_offset;
   }
 
   // support for code generation
@@ -704,3 +712,5 @@ class nmethodLocker : public StackObj {
     lock_nmethod(_nm);
   }
 };
+
+#endif // SHARE_VM_CODE_NMETHOD_HPP

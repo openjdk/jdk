@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,21 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiEnvThreadState.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/jvmtiEnvThreadState.hpp"
+#include "prims/jvmtiEventController.inline.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vm_operations.hpp"
 
 
 ///////////////////////////////////////////////////////////////

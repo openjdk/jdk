@@ -21,9 +21,21 @@
  * questions.
  *
  */
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiClassFileReconstituter.cpp.incl"
 
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "prims/jvmtiClassFileReconstituter.hpp"
+#include "runtime/signature.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
 // FIXME: add Deprecated, LVT, LVTT attributes
 // FIXME: fix Synthetic attribute
 // FIXME: per Serguei, add error return handling for constantPoolOopDesc::copy_cpool_bytes()

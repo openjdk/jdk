@@ -55,10 +55,12 @@ endif
 # if $(AGENT_DIR) does not exist, we don't build SA
 # also, we don't build SA on Itanium, PPC, ARM or zero.
 
-checkAndBuildSA:
-	$(QUIETLY) if [ -d $(AGENT_DIR) -a "$(SRCARCH)" != "ia64" -a "$(SRCARCH)" != "arm" -a "$(SRCARCH)" != "ppc" -a "$(SRCARCH)" != "zero" ] ; then \
-	   $(MAKE) -f vm.make $(LIBSAPROC); \
-	fi
+ifneq ($(wildcard $(AGENT_DIR)),)
+ifneq ($(filter-out ia64 arm ppc zero,$(SRCARCH)),)
+  BUILDLIBSAPROC = $(LIBSAPROC)
+endif
+endif
+
 
 SA_LFLAGS = $(MAPFLAG:FILENAME=$(SAMAPFILE)) $(LDFLAGS_HASH_STYLE)
 
@@ -81,10 +83,10 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           -lthread_db
 	$(QUIETLY) [ -f $(LIBSAPROC_G) ] || { ln -s $@ $(LIBSAPROC_G); }
 
-install_saproc: checkAndBuildSA
+install_saproc: $(BUILDLIBSAPROC)
 	$(QUIETLY) if [ -e $(LIBSAPROC) ] ; then             \
 	  echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)";     \
 	  cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done";  \
 	fi
 
-.PHONY: checkAndBuildSA install_saproc
+.PHONY: install_saproc

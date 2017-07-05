@@ -23,6 +23,9 @@
  *
  */
 
+#ifndef CPU_ZERO_VM_INTERPRETER_ZERO_HPP
+#define CPU_ZERO_VM_INTERPRETER_ZERO_HPP
+
  public:
   static void invoke_method(methodOop method, address entry_point, TRAPS) {
     ((ZeroEntry *) entry_point)->invoke(method, THREAD);
@@ -47,3 +50,5 @@
     assert(i <= 0, "local direction already negated");
     return stackElementWords * i;
   }
+
+#endif // CPU_ZERO_VM_INTERPRETER_ZERO_HPP

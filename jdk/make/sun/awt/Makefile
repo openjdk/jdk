@@ -366,11 +366,12 @@ _FONTCONFIGS	= \
 	fontconfig.properties				\
 	fontconfig.RedHat.properties			\
 	fontconfig.RedHat.2.1.properties		\
-	fontconfig.RedHat.3.properties		\
+	fontconfig.RedHat.3.properties		        \
 	fontconfig.RedHat.4.properties			\
 	fontconfig.Sun.properties			\
 	fontconfig.Turbo.properties			\
-	fontconfig.SuSE.properties
+	fontconfig.SuSE.10.properties                   \
+	fontconfig.SuSE.11.properties
 endif
 
 FONTCONFIGS_SRC_PREFIX = $(PLATFORM).

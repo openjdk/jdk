@@ -22,8 +22,23 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_compiledIC.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
+#include "code/compiledIC.hpp"
+#include "code/icBuffer.hpp"
+#include "code/nmethod.hpp"
+#include "code/vtableStubs.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/oopFactory.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/icache.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "utilities/events.hpp"
 
 
 // Every time a compiled IC is changed or its type is being accessed,

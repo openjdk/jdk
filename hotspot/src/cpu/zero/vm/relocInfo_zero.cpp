@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,13 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_relocInfo_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.inline.hpp"
+#include "assembler_zero.inline.hpp"
+#include "code/relocInfo.hpp"
+#include "nativeInst_zero.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/safepoint.hpp"
 
 void Relocation::pd_set_data_value(address x, intptr_t o) {
   ShouldNotCallThis();

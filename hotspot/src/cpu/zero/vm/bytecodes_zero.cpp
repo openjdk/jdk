@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_bytecodes_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/bytecodes.hpp"
 
 void Bytecodes::pd_initialize() {
   // No zero specific initialization

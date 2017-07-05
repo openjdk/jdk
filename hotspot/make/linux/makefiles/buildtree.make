@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 # OS_FAMILY	- operating system
 # VARIANT	- core, compiler1, compiler2, or tiered
 # HOTSPOT_RELEASE_VERSION - <major>.<minor>-b<nn> (11.0-b07)
-# HOTSPOT_BUILD_VERSION   - internal, PRTjob ID, JPRTjob ID
+# HOTSPOT_BUILD_VERSION   - internal, internal-$(USER_RELEASE_SUFFIX) or empty
 # JRE_RELEASE_VERSION     - <major>.<minor>.<micro> (1.7.0)
 #
 # Builds the directory trees with makefiles plus some convenience files in
@@ -113,7 +113,7 @@ endif
 COMPILER	= $(shell sed -n 's/^compiler[ 	]*=[ 	]*//p' $(PLATFORM_FILE))
 
 SIMPLE_DIRS	= \
-	$(PLATFORM_DIR)/generated/incls \
+	$(PLATFORM_DIR)/generated/dependencies \
 	$(PLATFORM_DIR)/generated/adfiles \
 	$(PLATFORM_DIR)/generated/jvmtifiles
 
@@ -124,7 +124,7 @@ SUBMAKE_DIRS = $(addprefix $(PLATFORM_DIR)/,$(TARGETS))
 BUILDTREE_MAKE	= $(GAMMADIR)/make/$(OS_FAMILY)/makefiles/buildtree.make
 
 BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.make sa.make \
-        env.sh env.csh .dbxrc test_gamma
+        env.sh env.csh jdkpath.sh .dbxrc test_gamma
 
 BUILDTREE_VARS	= GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OS_FAMILY) \
 	ARCH=$(ARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH) VARIANT=$(VARIANT)
@@ -197,8 +197,24 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo "HOTSPOT_BUILD_USER = $(HOTSPOT_BUILD_USER)"; \
 	echo "HOTSPOT_VM_DISTRO = $(HOTSPOT_VM_DISTRO)"; \
 	echo; \
-	echo "Src_Dirs = \\"; \
+	echo "# Used for platform dispatching"; \
+	echo "TARGET_DEFINES  = -DTARGET_OS_FAMILY_\$$(Platform_os_family)"; \
+	echo "TARGET_DEFINES += -DTARGET_ARCH_\$$(Platform_arch)"; \
+	echo "TARGET_DEFINES += -DTARGET_ARCH_MODEL_\$$(Platform_arch_model)"; \
+	echo "TARGET_DEFINES += -DTARGET_OS_ARCH_\$$(Platform_os_arch)"; \
+	echo "TARGET_DEFINES += -DTARGET_OS_ARCH_MODEL_\$$(Platform_os_arch_model)"; \
+	echo "TARGET_DEFINES += -DTARGET_COMPILER_\$$(Platform_compiler)"; \
+	echo "CFLAGS += \$$(TARGET_DEFINES)"; \
+	echo; \
+	echo "Src_Dirs_V = \\"; \
 	sed 's/$$/ \\/;s|$(GAMMADIR)|$$(GAMMADIR)|' ../shared_dirs.lst; \
+	echo "\$$(GAMMADIR)/src/cpu/$(ARCH)/vm \\"; \
+	echo "\$$(GAMMADIR)/src/os/$(OS_FAMILY)/vm \\"; \
+	echo "\$$(GAMMADIR)/src/os_cpu/$(OS_FAMILY)_$(ARCH)/vm"; \
+	echo; \
+	echo "Src_Dirs_I = \\"; \
+	echo "\$$(GAMMADIR)/src/share/vm \\"; \
+	echo "\$$(GAMMADIR)/src/share/vm/prims \\"; \
 	echo "\$$(GAMMADIR)/src/cpu/$(ARCH)/vm \\"; \
 	echo "\$$(GAMMADIR)/src/os/$(OS_FAMILY)/vm \\"; \
 	echo "\$$(GAMMADIR)/src/os_cpu/$(OS_FAMILY)_$(ARCH)/vm"; \
@@ -301,6 +317,13 @@ env.csh: env.sh
 	{ echo "if (! \$$?JAVA_HOME) setenv JAVA_HOME \"$$JAVA_HOME\""; }; \
 	sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=/setenv \1 /p' $?; \
 	) > $@
+
+jdkpath.sh: $(BUILDTREE_MAKE)
+	@echo Creating $@ ...
+	$(QUIETLY) ( \
+	$(BUILDTREE_COMMENT); \
+	echo "JDK=${JAVA_HOME}"; \
+	) > $@	   
 
 .dbxrc:  $(BUILDTREE_MAKE)
 	@echo Creating $@ ...

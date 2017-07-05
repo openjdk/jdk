@@ -112,6 +112,8 @@ SUNWprivate_1.1 {
 		Java_sun_java2d_loops_DrawRect_DrawRect;
 		Java_sun_java2d_loops_FillRect_FillRect;
 		Java_sun_java2d_loops_FillSpans_FillSpans;
+		Java_sun_java2d_loops_FillParallelogram_FillParallelogram;
+		Java_sun_java2d_loops_DrawParallelogram_DrawParallelogram;
 		Java_sun_java2d_loops_GraphicsPrimitiveMgr_initIDs;
 		Java_sun_java2d_loops_GraphicsPrimitiveMgr_registerNativeLoops;
 		Java_sun_java2d_loops_MaskBlit_MaskBlit;
