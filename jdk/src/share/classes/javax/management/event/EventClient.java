@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,11 +264,12 @@ public class EventClient implements EventConsumer, NotificationManager {
                 new PerThreadGroupPool.Create<ScheduledThreadPoolExecutor>() {
             public ScheduledThreadPoolExecutor createThreadPool(ThreadGroup group) {
                 ThreadFactory daemonThreadFactory = new DaemonThreadFactory(
-                        "EventClient lease renewer %d");
+                        "JMX EventClient lease renewer %d");
                 ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(
                         20, daemonThreadFactory);
-                exec.setKeepAliveTime(3, TimeUnit.SECONDS);
+                exec.setKeepAliveTime(1, TimeUnit.SECONDS);
                 exec.allowCoreThreadTimeOut(true);
+                exec.setRemoveOnCancelPolicy(true);
                 return exec;
             }
         };

@@ -1,5 +1,5 @@
 /*
- * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,10 @@ public class GetPolicyQualifiers {
             throw new Exception("Validation of CertPath containing critical " +
                 "qualifiers should have failed when policyQualifiersRejected " +
                 "flag is true");
-        } catch (CertPathValidatorException cpve) {}
+        } catch (CertPathValidatorException cpve) {
+            if (cpve.getReason() != PKIXReason.INVALID_POLICY) {
+                throw new Exception("unexpected reason: " + cpve.getReason());
+            }
+        }
     }
 }

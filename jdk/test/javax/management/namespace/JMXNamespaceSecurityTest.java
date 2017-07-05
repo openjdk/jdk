@@ -26,6 +26,7 @@
  * @test JMXNamespaceSecurityTest.java
  * @summary General JMXNamespaceSecurityTest test.
  * @author Daniel Fuchs
+ * @bug 5072476 6299231
  * @run clean JMXNamespaceViewTest JMXNamespaceSecurityTest Wombat WombatMBean
  *            LazyDomainTest
  * @run build JMXNamespaceSecurityTest JMXNamespaceViewTest Wombat WombatMBean

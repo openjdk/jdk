@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     /**
      * The value is used for character storage.
      */
-    char value[];
+    char[] value;
 
     /**
      * The count is the number of characters used.
@@ -333,8 +333,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *             <code>dst.length</code>
      *             </ul>
      */
-    public void getChars(int srcBegin, int srcEnd, char dst[],
-                                      int dstBegin)
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin)
     {
         if (srcBegin < 0)
             throw new StringIndexOutOfBoundsException(srcBegin);
@@ -366,14 +365,14 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Appends the string representation of the <code>Object</code>
-     * argument.
+     * Appends the string representation of the {@code Object} argument.
      * <p>
-     * The argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then appended to this sequence.
+     * The overall effect is exactly as if the argument were converted
+     * to a string by the method {@link String#valueOf(Object)},
+     * and the characters of that string were then
+     * {@link #append(String) appended} to this character sequence.
      *
-     * @param   obj   an <code>Object</code>.
+     * @param   obj   an {@code Object}.
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(Object obj) {
@@ -383,17 +382,17 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     /**
      * Appends the specified string to this character sequence.
      * <p>
-     * The characters of the <code>String</code> argument are appended, in
+     * The characters of the {@code String} argument are appended, in
      * order, increasing the length of this sequence by the length of the
-     * argument. If <code>str</code> is <code>null</code>, then the four
-     * characters <code>"null"</code> are appended.
+     * argument. If {@code str} is {@code null}, then the four
+     * characters {@code "null"} are appended.
      * <p>
      * Let <i>n</i> be the length of this character sequence just prior to
-     * execution of the <code>append</code> method. Then the character at
+     * execution of the {@code append} method. Then the character at
      * index <i>k</i> in the new character sequence is equal to the character
      * at index <i>k</i> in the old character sequence, if <i>k</i> is less
      * than <i>n</i>; otherwise, it is equal to the character at index
-     * <i>k-n</i> in the argument <code>str</code>.
+     * <i>k-n</i> in the argument {@code str}.
      *
      * @param   str   a string.
      * @return  a reference to this object.
@@ -435,33 +434,33 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Appends a subsequence of the specified <code>CharSequence</code> to this
+     * Appends a subsequence of the specified {@code CharSequence} to this
      * sequence.
      * <p>
-     * Characters of the argument <code>s</code>, starting at
-     * index <code>start</code>, are appended, in order, to the contents of
-     * this sequence up to the (exclusive) index <code>end</code>. The length
-     * of this sequence is increased by the value of <code>end - start</code>.
+     * Characters of the argument {@code s}, starting at
+     * index {@code start}, are appended, in order, to the contents of
+     * this sequence up to the (exclusive) index {@code end}. The length
+     * of this sequence is increased by the value of {@code end - start}.
      * <p>
      * Let <i>n</i> be the length of this character sequence just prior to
-     * execution of the <code>append</code> method. Then the character at
+     * execution of the {@code append} method. Then the character at
      * index <i>k</i> in this character sequence becomes equal to the
      * character at index <i>k</i> in this sequence, if <i>k</i> is less than
      * <i>n</i>; otherwise, it is equal to the character at index
-     * <i>k+start-n</i> in the argument <code>s</code>.
+     * <i>k+start-n</i> in the argument {@code s}.
      * <p>
-     * If <code>s</code> is <code>null</code>, then this method appends
+     * If {@code s} is {@code null}, then this method appends
      * characters as if the s parameter was a sequence containing the four
-     * characters <code>"null"</code>.
+     * characters {@code "null"}.
      *
      * @param   s the sequence to append.
      * @param   start   the starting index of the subsequence to be appended.
      * @param   end     the end index of the subsequence to be appended.
      * @return  a reference to this object.
      * @throws     IndexOutOfBoundsException if
-     *                  <code>start</code> or <code>end</code> are negative, or
-     *             <code>start</code> is greater than <code>end</code> or
-     *             <code>end</code> is greater than <code>s.length()</code>
+     *             {@code start} is negative, or
+     *             {@code start} is greater than {@code end} or
+     *             {@code end} is greater than {@code s.length()}
      */
     public AbstractStringBuilder append(CharSequence s, int start, int end) {
         if (s == null)
@@ -483,22 +482,22 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Appends the string representation of the <code>char</code> array
+     * Appends the string representation of the {@code char} array
      * argument to this sequence.
      * <p>
      * The characters of the array argument are appended, in order, to
      * the contents of this sequence. The length of this sequence
      * increases by the length of the argument.
      * <p>
-     * The overall effect is exactly as if the argument were converted to
-     * a string by the method {@link String#valueOf(char[])} and the
-     * characters of that string were then {@link #append(String) appended}
-     * to this character sequence.
+     * The overall effect is exactly as if the argument were converted
+     * to a string by the method {@link String#valueOf(char[])},
+     * and the characters of that string were then
+     * {@link #append(String) appended} to this character sequence.
      *
      * @param   str   the characters to be appended.
      * @return  a reference to this object.
      */
-    public AbstractStringBuilder append(char str[]) {
+    public AbstractStringBuilder append(char[] str) {
         int newCount = count + str.length;
         if (newCount > value.length)
             expandCapacity(newCount);
@@ -509,22 +508,25 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
     /**
      * Appends the string representation of a subarray of the
-     * <code>char</code> array argument to this sequence.
+     * {@code char} array argument to this sequence.
      * <p>
-     * Characters of the <code>char</code> array <code>str</code>, starting at
-     * index <code>offset</code>, are appended, in order, to the contents
+     * Characters of the {@code char} array {@code str}, starting at
+     * index {@code offset}, are appended, in order, to the contents
      * of this sequence. The length of this sequence increases
-     * by the value of <code>len</code>.
+     * by the value of {@code len}.
      * <p>
-     * The overall effect is exactly as if the arguments were converted to
-     * a string by the method {@link String#valueOf(char[],int,int)} and the
-     * characters of that string were then {@link #append(String) appended}
-     * to this character sequence.
+     * The overall effect is exactly as if the arguments were converted
+     * to a string by the method {@link String#valueOf(char[],int,int)},
+     * and the characters of that string were then
+     * {@link #append(String) appended} to this character sequence.
      *
      * @param   str      the characters to be appended.
-     * @param   offset   the index of the first <code>char</code> to append.
-     * @param   len      the number of <code>char</code>s to append.
+     * @param   offset   the index of the first {@code char} to append.
+     * @param   len      the number of {@code char}s to append.
      * @return  a reference to this object.
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset < 0} or {@code len < 0}
+     *         or {@code offset+len > str.length}
      */
     public AbstractStringBuilder append(char str[], int offset, int len) {
         int newCount = count + len;
@@ -536,14 +538,15 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Appends the string representation of the <code>boolean</code>
+     * Appends the string representation of the {@code boolean}
      * argument to the sequence.
      * <p>
-     * The argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then appended to this sequence.
+     * The overall effect is exactly as if the argument were converted
+     * to a string by the method {@link String#valueOf(boolean)},
+     * and the characters of that string were then
+     * {@link #append(String) appended} to this character sequence.
      *
-     * @param   b   a <code>boolean</code>.
+     * @param   b   a {@code boolean}.
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(boolean b) {
@@ -569,18 +572,18 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Appends the string representation of the <code>char</code>
+     * Appends the string representation of the {@code char}
      * argument to this sequence.
      * <p>
      * The argument is appended to the contents of this sequence.
-     * The length of this sequence increases by <code>1</code>.
+     * The length of this sequence increases by {@code 1}.
      * <p>
-     * The overall effect is exactly as if the argument were converted to
-     * a string by the method {@link String#valueOf(char)} and the character
-     * in that string were then {@link #append(String) appended} to this
-     * character sequence.
+     * The overall effect is exactly as if the argument were converted
+     * to a string by the method {@link String#valueOf(char)},
+     * and the character in that string were then
+     * {@link #append(String) appended} to this character sequence.
      *
-     * @param   c   a <code>char</code>.
+     * @param   c   a {@code char}.
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(char c) {
@@ -592,14 +595,15 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Appends the string representation of the <code>int</code>
+     * Appends the string representation of the {@code int}
      * argument to this sequence.
      * <p>
-     * The argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then appended to this sequence.
+     * The overall effect is exactly as if the argument were converted
+     * to a string by the method {@link String#valueOf(int)},
+     * and the characters of that string were then
+     * {@link #append(String) appended} to this character sequence.
      *
-     * @param   i   an <code>int</code>.
+     * @param   i   an {@code int}.
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(int i) {
@@ -618,14 +622,15 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Appends the string representation of the <code>long</code>
+     * Appends the string representation of the {@code long}
      * argument to this sequence.
      * <p>
-     * The argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then appended to this sequence.
+     * The overall effect is exactly as if the argument were converted
+     * to a string by the method {@link String#valueOf(long)},
+     * and the characters of that string were then
+     * {@link #append(String) appended} to this character sequence.
      *
-     * @param   l   a <code>long</code>.
+     * @param   l   a {@code long}.
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(long l) {
@@ -644,14 +649,15 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Appends the string representation of the <code>float</code>
+     * Appends the string representation of the {@code float}
      * argument to this sequence.
      * <p>
-     * The argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then appended to this string sequence.
+     * The overall effect is exactly as if the argument were converted
+     * to a string by the method {@link String#valueOf(float)},
+     * and the characters of that string were then
+     * {@link #append(String) appended} to this character sequence.
      *
-     * @param   f   a <code>float</code>.
+     * @param   f   a {@code float}.
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(float f) {
@@ -660,14 +666,15 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Appends the string representation of the <code>double</code>
+     * Appends the string representation of the {@code double}
      * argument to this sequence.
      * <p>
-     * The argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then appended to this sequence.
+     * The overall effect is exactly as if the argument were converted
+     * to a string by the method {@link String#valueOf(double)},
+     * and the characters of that string were then
+     * {@link #append(String) appended} to this character sequence.
      *
-     * @param   d   a <code>double</code>.
+     * @param   d   a {@code double}.
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(double d) {
@@ -677,17 +684,17 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
     /**
      * Removes the characters in a substring of this sequence.
-     * The substring begins at the specified <code>start</code> and extends to
-     * the character at index <code>end - 1</code> or to the end of the
+     * The substring begins at the specified {@code start} and extends to
+     * the character at index {@code end - 1} or to the end of the
      * sequence if no such character exists. If
-     * <code>start</code> is equal to <code>end</code>, no changes are made.
+     * {@code start} is equal to {@code end}, no changes are made.
      *
      * @param      start  The beginning index, inclusive.
      * @param      end    The ending index, exclusive.
      * @return     This object.
-     * @throws     StringIndexOutOfBoundsException  if <code>start</code>
-     *             is negative, greater than <code>length()</code>, or
-     *             greater than <code>end</code>.
+     * @throws     StringIndexOutOfBoundsException  if {@code start}
+     *             is negative, greater than {@code length()}, or
+     *             greater than {@code end}.
      */
     public AbstractStringBuilder delete(int start, int end) {
         if (start < 0)
@@ -705,7 +712,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Appends the string representation of the <code>codePoint</code>
+     * Appends the string representation of the {@code codePoint}
      * argument to this sequence.
      *
      * <p> The argument is appended to the contents of this sequence.
@@ -713,15 +720,15 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * {@link Character#charCount(int) Character.charCount(codePoint)}.
      *
      * <p> The overall effect is exactly as if the argument were
-     * converted to a <code>char</code> array by the method {@link
-     * Character#toChars(int)} and the character in that array were
-     * then {@link #append(char[]) appended} to this character
+     * converted to a {@code char} array by the method
+     * {@link Character#toChars(int)} and the character in that array
+     * were then {@link #append(char[]) appended} to this character
      * sequence.
      *
      * @param   codePoint   a Unicode code point
      * @return  a reference to this object.
      * @exception IllegalArgumentException if the specified
-     * <code>codePoint</code> isn't a valid Unicode code point
+     * {@code codePoint} isn't a valid Unicode code point
      */
     public AbstractStringBuilder appendCodePoint(int codePoint) {
         if (!Character.isValidCodePoint(codePoint)) {
@@ -879,27 +886,27 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Inserts the string representation of a subarray of the <code>str</code>
+     * Inserts the string representation of a subarray of the {@code str}
      * array argument into this sequence. The subarray begins at the
-     * specified <code>offset</code> and extends <code>len</code> <code>char</code>s.
+     * specified {@code offset} and extends {@code len} {@code char}s.
      * The characters of the subarray are inserted into this sequence at
-     * the position indicated by <code>index</code>. The length of this
-     * sequence increases by <code>len</code> <code>char</code>s.
+     * the position indicated by {@code index}. The length of this
+     * sequence increases by {@code len} {@code char}s.
      *
      * @param      index    position at which to insert subarray.
-     * @param      str       A <code>char</code> array.
-     * @param      offset   the index of the first <code>char</code> in subarray to
+     * @param      str       A {@code char} array.
+     * @param      offset   the index of the first {@code char} in subarray to
      *             be inserted.
-     * @param      len      the number of <code>char</code>s in the subarray to
+     * @param      len      the number of {@code char}s in the subarray to
      *             be inserted.
      * @return     This object
-     * @throws     StringIndexOutOfBoundsException  if <code>index</code>
-     *             is negative or greater than <code>length()</code>, or
-     *             <code>offset</code> or <code>len</code> are negative, or
-     *             <code>(offset+len)</code> is greater than
-     *             <code>str.length</code>.
+     * @throws     StringIndexOutOfBoundsException  if {@code index}
+     *             is negative or greater than {@code length()}, or
+     *             {@code offset} or {@code len} are negative, or
+     *             {@code (offset+len)} is greater than
+     *             {@code str.length}.
      */
-    public AbstractStringBuilder insert(int index, char str[], int offset,
+    public AbstractStringBuilder insert(int index, char[] str, int offset,
                                         int len)
     {
         if ((index < 0) || (index > length()))
@@ -918,20 +925,21 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Inserts the string representation of the <code>Object</code>
+     * Inserts the string representation of the {@code Object}
      * argument into this character sequence.
      * <p>
-     * The second argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then inserted into this sequence at the indicated
-     * offset.
+     * The overall effect is exactly as if the second argument were
+     * converted to a string by the method {@link String#valueOf(Object)},
+     * and the characters of that string were then
+     * {@link #insert(int,String) inserted} into this character
+     * sequence at the indicated offset.
      * <p>
-     * The offset argument must be greater than or equal to
-     * <code>0</code>, and less than or equal to the length of this
-     * sequence.
+     * The {@code offset} argument must be greater than or equal to
+     * {@code 0}, and less than or equal to the {@linkplain #length() length}
+     * of this sequence.
      *
      * @param      offset   the offset.
-     * @param      obj      an <code>Object</code>.
+     * @param      obj      an {@code Object}.
      * @return     a reference to this object.
      * @throws     StringIndexOutOfBoundsException  if the offset is invalid.
      */
@@ -942,28 +950,28 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     /**
      * Inserts the string into this character sequence.
      * <p>
-     * The characters of the <code>String</code> argument are inserted, in
+     * The characters of the {@code String} argument are inserted, in
      * order, into this sequence at the indicated offset, moving up any
      * characters originally above that position and increasing the length
      * of this sequence by the length of the argument. If
-     * <code>str</code> is <code>null</code>, then the four characters
-     * <code>"null"</code> are inserted into this sequence.
+     * {@code str} is {@code null}, then the four characters
+     * {@code "null"} are inserted into this sequence.
      * <p>
      * The character at index <i>k</i> in the new character sequence is
      * equal to:
      * <ul>
      * <li>the character at index <i>k</i> in the old character sequence, if
-     * <i>k</i> is less than <code>offset</code>
-     * <li>the character at index <i>k</i><code>-offset</code> in the
-     * argument <code>str</code>, if <i>k</i> is not less than
-     * <code>offset</code> but is less than <code>offset+str.length()</code>
-     * <li>the character at index <i>k</i><code>-str.length()</code> in the
+     * <i>k</i> is less than {@code offset}
+     * <li>the character at index <i>k</i>{@code -offset} in the
+     * argument {@code str}, if <i>k</i> is not less than
+     * {@code offset} but is less than {@code offset+str.length()}
+     * <li>the character at index <i>k</i>{@code -str.length()} in the
      * old character sequence, if <i>k</i> is not less than
-     * <code>offset+str.length()</code>
+     * {@code offset+str.length()}
      * </ul><p>
-     * The offset argument must be greater than or equal to
-     * <code>0</code>, and less than or equal to the length of this
-     * sequence.
+     * The {@code offset} argument must be greater than or equal to
+     * {@code 0}, and less than or equal to the {@linkplain #length() length}
+     * of this sequence.
      *
      * @param      offset   the offset.
      * @param      str      a string.
@@ -986,27 +994,30 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Inserts the string representation of the <code>char</code> array
+     * Inserts the string representation of the {@code char} array
      * argument into this sequence.
      * <p>
      * The characters of the array argument are inserted into the
      * contents of this sequence at the position indicated by
-     * <code>offset</code>. The length of this sequence increases by
+     * {@code offset}. The length of this sequence increases by
      * the length of the argument.
      * <p>
-     * The overall effect is exactly as if the argument were converted to
-     * a string by the method {@link String#valueOf(char[])} and the
-     * characters of that string were then
-     * {@link #insert(int,String) inserted} into this
-     * character sequence at the position indicated by
-     * <code>offset</code>.
+     * The overall effect is exactly as if the second argument were
+     * converted to a string by the method {@link String#valueOf(char[])},
+     * and the characters of that string were then
+     * {@link #insert(int,String) inserted} into this character
+     * sequence at the indicated offset.
+     * <p>
+     * The {@code offset} argument must be greater than or equal to
+     * {@code 0}, and less than or equal to the {@linkplain #length() length}
+     * of this sequence.
      *
      * @param      offset   the offset.
      * @param      str      a character array.
      * @return     a reference to this object.
      * @throws     StringIndexOutOfBoundsException  if the offset is invalid.
      */
-    public AbstractStringBuilder insert(int offset, char str[]) {
+    public AbstractStringBuilder insert(int offset, char[] str) {
         if ((offset < 0) || (offset > length()))
             throw new StringIndexOutOfBoundsException(offset);
         int len = str.length;
@@ -1020,18 +1031,20 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Inserts the specified <code>CharSequence</code> into this sequence.
+     * Inserts the specified {@code CharSequence} into this sequence.
      * <p>
-     * The characters of the <code>CharSequence</code> argument are inserted,
+     * The characters of the {@code CharSequence} argument are inserted,
      * in order, into this sequence at the indicated offset, moving up
      * any characters originally above that position and increasing the length
      * of this sequence by the length of the argument s.
      * <p>
      * The result of this method is exactly the same as if it were an
-     * invocation of this object's insert(dstOffset, s, 0, s.length()) method.
+     * invocation of this object's
+     * {@link #insert(int,CharSequence,int,int) insert}(dstOffset, s, 0, s.length())
+     * method.
      *
-     * <p>If <code>s</code> is <code>null</code>, then the four characters
-     * <code>"null"</code> are inserted into this sequence.
+     * <p>If {@code s} is {@code null}, then the four characters
+     * {@code "null"} are inserted into this sequence.
      *
      * @param      dstOffset   the offset.
      * @param      s the sequence to be inserted
@@ -1047,51 +1060,51 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Inserts a subsequence of the specified <code>CharSequence</code> into
+     * Inserts a subsequence of the specified {@code CharSequence} into
      * this sequence.
      * <p>
-     * The subsequence of the argument <code>s</code> specified by
-     * <code>start</code> and <code>end</code> are inserted,
+     * The subsequence of the argument {@code s} specified by
+     * {@code start} and {@code end} are inserted,
      * in order, into this sequence at the specified destination offset, moving
      * up any characters originally above that position. The length of this
-     * sequence is increased by <code>end - start</code>.
+     * sequence is increased by {@code end - start}.
      * <p>
      * The character at index <i>k</i> in this sequence becomes equal to:
      * <ul>
      * <li>the character at index <i>k</i> in this sequence, if
-     * <i>k</i> is less than <code>dstOffset</code>
-     * <li>the character at index <i>k</i><code>+start-dstOffset</code> in
-     * the argument <code>s</code>, if <i>k</i> is greater than or equal to
-     * <code>dstOffset</code> but is less than <code>dstOffset+end-start</code>
-     * <li>the character at index <i>k</i><code>-(end-start)</code> in this
+     * <i>k</i> is less than {@code dstOffset}
+     * <li>the character at index <i>k</i>{@code +start-dstOffset} in
+     * the argument {@code s}, if <i>k</i> is greater than or equal to
+     * {@code dstOffset} but is less than {@code dstOffset+end-start}
+     * <li>the character at index <i>k</i>{@code -(end-start)} in this
      * sequence, if <i>k</i> is greater than or equal to
-     * <code>dstOffset+end-start</code>
+     * {@code dstOffset+end-start}
      * </ul><p>
-     * The dstOffset argument must be greater than or equal to
-     * <code>0</code>, and less than or equal to the length of this
-     * sequence.
+     * The {@code dstOffset} argument must be greater than or equal to
+     * {@code 0}, and less than or equal to the {@linkplain #length() length}
+     * of this sequence.
      * <p>The start argument must be nonnegative, and not greater than
-     * <code>end</code>.
+     * {@code end}.
      * <p>The end argument must be greater than or equal to
-     * <code>start</code>, and less than or equal to the length of s.
+     * {@code start}, and less than or equal to the length of s.
      *
-     * <p>If <code>s</code> is <code>null</code>, then this method inserts
+     * <p>If {@code s} is {@code null}, then this method inserts
      * characters as if the s parameter was a sequence containing the four
-     * characters <code>"null"</code>.
+     * characters {@code "null"}.
      *
      * @param      dstOffset   the offset in this sequence.
      * @param      s       the sequence to be inserted.
      * @param      start   the starting index of the subsequence to be inserted.
      * @param      end     the end index of the subsequence to be inserted.
      * @return     a reference to this object.
-     * @throws     IndexOutOfBoundsException  if <code>dstOffset</code>
-     *             is negative or greater than <code>this.length()</code>, or
-     *              <code>start</code> or <code>end</code> are negative, or
-     *              <code>start</code> is greater than <code>end</code> or
-     *              <code>end</code> is greater than <code>s.length()</code>
+     * @throws     IndexOutOfBoundsException  if {@code dstOffset}
+     *             is negative or greater than {@code this.length()}, or
+     *              {@code start} or {@code end} are negative, or
+     *              {@code start} is greater than {@code end} or
+     *              {@code end} is greater than {@code s.length()}
      */
      public AbstractStringBuilder insert(int dstOffset, CharSequence s,
-                                           int start, int end) {
+                                         int start, int end) {
         if (s == null)
             s = "null";
         if ((dstOffset < 0) || (dstOffset > this.length()))
@@ -1115,20 +1128,21 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Inserts the string representation of the <code>boolean</code>
+     * Inserts the string representation of the {@code boolean}
      * argument into this sequence.
      * <p>
-     * The second argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then inserted into this sequence at the indicated
-     * offset.
+     * The overall effect is exactly as if the second argument were
+     * converted to a string by the method {@link String#valueOf(boolean)},
+     * and the characters of that string were then
+     * {@link #insert(int,String) inserted} into this character
+     * sequence at the indicated offset.
      * <p>
-     * The offset argument must be greater than or equal to
-     * <code>0</code>, and less than or equal to the length of this
-     * sequence.
+     * The {@code offset} argument must be greater than or equal to
+     * {@code 0}, and less than or equal to the {@linkplain #length() length}
+     * of this sequence.
      *
      * @param      offset   the offset.
-     * @param      b        a <code>boolean</code>.
+     * @param      b        a {@code boolean}.
      * @return     a reference to this object.
      * @throws     StringIndexOutOfBoundsException  if the offset is invalid.
      */
@@ -1137,25 +1151,21 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Inserts the string representation of the <code>char</code>
+     * Inserts the string representation of the {@code char}
      * argument into this sequence.
      * <p>
-     * The second argument is inserted into the contents of this sequence
-     * at the position indicated by <code>offset</code>. The length
-     * of this sequence increases by one.
+     * The overall effect is exactly as if the second argument were
+     * converted to a string by the method {@link String#valueOf(char)},
+     * and the character in that string were then
+     * {@link #insert(int,String) inserted} into this character
+     * sequence at the indicated offset.
      * <p>
-     * The overall effect is exactly as if the argument were converted to
-     * a string by the method {@link String#valueOf(char)} and the character
-     * in that string were then {@link #insert(int, String) inserted} into
-     * this character sequence at the position indicated by
-     * <code>offset</code>.
-     * <p>
-     * The offset argument must be greater than or equal to
-     * <code>0</code>, and less than or equal to the length of this
-     * sequence.
+     * The {@code offset} argument must be greater than or equal to
+     * {@code 0}, and less than or equal to the {@linkplain #length() length}
+     * of this sequence.
      *
      * @param      offset   the offset.
-     * @param      c        a <code>char</code>.
+     * @param      c        a {@code char}.
      * @return     a reference to this object.
      * @throws     IndexOutOfBoundsException  if the offset is invalid.
      */
@@ -1170,20 +1180,21 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Inserts the string representation of the second <code>int</code>
+     * Inserts the string representation of the second {@code int}
      * argument into this sequence.
      * <p>
-     * The second argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then inserted into this sequence at the indicated
-     * offset.
+     * The overall effect is exactly as if the second argument were
+     * converted to a string by the method {@link String#valueOf(int)},
+     * and the characters of that string were then
+     * {@link #insert(int,String) inserted} into this character
+     * sequence at the indicated offset.
      * <p>
-     * The offset argument must be greater than or equal to
-     * <code>0</code>, and less than or equal to the length of this
-     * sequence.
+     * The {@code offset} argument must be greater than or equal to
+     * {@code 0}, and less than or equal to the {@linkplain #length() length}
+     * of this sequence.
      *
      * @param      offset   the offset.
-     * @param      i        an <code>int</code>.
+     * @param      i        an {@code int}.
      * @return     a reference to this object.
      * @throws     StringIndexOutOfBoundsException  if the offset is invalid.
      */
@@ -1192,20 +1203,21 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Inserts the string representation of the <code>long</code>
+     * Inserts the string representation of the {@code long}
      * argument into this sequence.
      * <p>
-     * The second argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then inserted into this sequence at the position
-     * indicated by <code>offset</code>.
+     * The overall effect is exactly as if the second argument were
+     * converted to a string by the method {@link String#valueOf(long)},
+     * and the characters of that string were then
+     * {@link #insert(int,String) inserted} into this character
+     * sequence at the indicated offset.
      * <p>
-     * The offset argument must be greater than or equal to
-     * <code>0</code>, and less than or equal to the length of this
-     * sequence.
+     * The {@code offset} argument must be greater than or equal to
+     * {@code 0}, and less than or equal to the {@linkplain #length() length}
+     * of this sequence.
      *
      * @param      offset   the offset.
-     * @param      l        a <code>long</code>.
+     * @param      l        a {@code long}.
      * @return     a reference to this object.
      * @throws     StringIndexOutOfBoundsException  if the offset is invalid.
      */
@@ -1214,20 +1226,21 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Inserts the string representation of the <code>float</code>
+     * Inserts the string representation of the {@code float}
      * argument into this sequence.
      * <p>
-     * The second argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then inserted into this sequence at the indicated
-     * offset.
+     * The overall effect is exactly as if the second argument were
+     * converted to a string by the method {@link String#valueOf(float)},
+     * and the characters of that string were then
+     * {@link #insert(int,String) inserted} into this character
+     * sequence at the indicated offset.
      * <p>
-     * The offset argument must be greater than or equal to
-     * <code>0</code>, and less than or equal to the length of this
-     * sequence.
+     * The {@code offset} argument must be greater than or equal to
+     * {@code 0}, and less than or equal to the {@linkplain #length() length}
+     * of this sequence.
      *
      * @param      offset   the offset.
-     * @param      f        a <code>float</code>.
+     * @param      f        a {@code float}.
      * @return     a reference to this object.
      * @throws     StringIndexOutOfBoundsException  if the offset is invalid.
      */
@@ -1236,20 +1249,21 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * Inserts the string representation of the <code>double</code>
+     * Inserts the string representation of the {@code double}
      * argument into this sequence.
      * <p>
-     * The second argument is converted to a string as if by the method
-     * <code>String.valueOf</code>, and the characters of that
-     * string are then inserted into this sequence at the indicated
-     * offset.
+     * The overall effect is exactly as if the second argument were
+     * converted to a string by the method {@link String#valueOf(double)},
+     * and the characters of that string were then
+     * {@link #insert(int,String) inserted} into this character
+     * sequence at the indicated offset.
      * <p>
-     * The offset argument must be greater than or equal to
-     * <code>0</code>, and less than or equal to the length of this
-     * sequence.
+     * The {@code offset} argument must be greater than or equal to
+     * {@code 0}, and less than or equal to the {@linkplain #length() length}
+     * of this sequence.
      *
      * @param      offset   the offset.
-     * @param      d        a <code>double</code>.
+     * @param      d        a {@code double}.
      * @return     a reference to this object.
      * @throws     StringIndexOutOfBoundsException  if the offset is invalid.
      */

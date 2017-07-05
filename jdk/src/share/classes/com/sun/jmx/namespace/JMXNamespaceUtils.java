@@ -29,7 +29,6 @@ import com.sun.jmx.defaults.JmxProperties;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
@@ -40,6 +39,8 @@ import javax.management.MBeanServerConnection;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.event.EventClient;
+import javax.management.event.EventClientDelegateMBean;
+import javax.management.namespace.JMXNamespace;
 import javax.management.namespace.JMXNamespaces;
 import javax.management.remote.JMXAddressable;
 import javax.management.remote.JMXConnector;
@@ -66,24 +67,8 @@ public final class JMXNamespaceUtils {
         return new WeakHashMap<K,V>();
     }
 
-    /** Creates a new instance of JMXNamespaces */
+    /** There are no instances of this class */
     private JMXNamespaceUtils() {
-    }
-
-    /**
-     * Returns an unmodifiable option map in which the given keys have been
-     * filtered out.
-     * @param keys keys to filter out from the map.
-     * @return An unmodifiable option map in which the given keys have been
-     * filtered out.
-     */
-    public static <K,V> Map<K,V> filterMap(Map<K,V> map, K... keys) {
-        final Map<K,V> filtered;
-        filtered=new HashMap<K,V>(map);
-        for (K key : keys) {
-            filtered.remove(key);
-        }
-        return unmodifiableMap(filtered);
     }
 
     // returns un unmodifiable view of a map.
