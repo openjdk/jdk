@@ -386,7 +386,7 @@ instanceKlassKlass::allocate_instance_klass(Symbol* name, int vtable_len, int it
     ik->set_local_interfaces(NULL);
     ik->set_transitive_interfaces(NULL);
     ik->init_implementor();
-    ik->set_fields(NULL);
+    ik->set_fields(NULL, 0);
     ik->set_constants(NULL);
     ik->set_class_loader(NULL);
     ik->set_protection_domain(NULL);

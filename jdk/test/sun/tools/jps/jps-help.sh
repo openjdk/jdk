@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ setup
 JPS="${TESTJAVA}/bin/jps"
 
 rm -f jps.out 2>/dev/null
-${JPS} -? > jps.out 2>&1
+${JPS} -J-XX:+UsePerfData -? > jps.out 2>&1
 
 diff -w jps.out ${TESTSRC}/usage.out
 if [ $? != 0 ]
@@ -44,7 +44,7 @@ then
 fi
 
 rm -f jps.out 2>/dev/null
-${JPS} -help > jps.out 2>&1
+${JPS} -J-XX:+UsePerfData -help > jps.out 2>&1
 
 diff -w jps.out ${TESTSRC}/usage.out
 if [ $? != 0 ]

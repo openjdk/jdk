@@ -74,6 +74,69 @@ SCRIPT_SUFFIX =
 CC_OBJECT_OUTPUT_FLAG = -o #trailing blank required!
 CC_PROGRAM_OUTPUT_FLAG = -o #trailing blank required!
 
+ifdef ENABLE_FULL_DEBUG_SYMBOLS
+# Only check for Full Debug Symbols support on Solaris if it is
+# specifically enabled. Hopefully, it can be enabled by default
+# once the .debuginfo size issues are worked out.
+
+# Default OBJCOPY comes from the SUNWbinutils package:
+DEF_OBJCOPY=/usr/sfw/bin/gobjcopy
+ifeq ($(PLATFORM)-$(LIBARCH), solaris-amd64)
+  # On Solaris AMD64/X64, gobjcopy is not happy and fails:
+  #
+  # usr/sfw/bin/gobjcopy --add-gnu-debuglink=<lib>.debuginfo <lib>.so
+  # BFD: stKPaiop: Not enough room for program headers, try linking with -N
+  # /usr/sfw/bin/gobjcopy: stKPaiop: Bad value
+  # BFD: stKPaiop: Not enough room for program headers, try linking with -N
+  # /usr/sfw/bin/gobjcopy: libsaproc.debuginfo: Bad value
+  # BFD: stKPaiop: Not enough room for program headers, try linking with -N
+  # /usr/sfw/bin/gobjcopy: stKPaiop: Bad value
+  _JUNK_ := $(shell \
+    echo >&2 "INFO: $(DEF_OBJCOPY) is not working on Solaris AMD64/X64")
+  OBJCOPY=
+else
+  OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
+  ifneq ($(ALT_OBJCOPY),)
+    _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
+    # disable .debuginfo support by setting ALT_OBJCOPY to a non-existent path
+    OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
+  endif
+endif
+
+ifdef LIBRARY_SUPPORTS_FULL_DEBUG_SYMBOLS
+# The setting of OBJCOPY above enables the JDK build to import
+# .debuginfo files from the HotSpot build. However, adding FDS
+# support to the JDK build will occur in phases so a different
+# make variable is used to indicate that a particular library
+# supports FDS.
+
+ifeq ($(OBJCOPY),)
+  _JUNK_ := $(shell \
+    echo >&2 "INFO: no objcopy cmd found so cannot create .debuginfo files.")
+else
+  _JUNK_ := $(shell \
+    echo >&2 "INFO: $(OBJCOPY) cmd found so will create .debuginfo files.")
+
+  # Library stripping policies for .debuginfo configs:
+  #   all_strip - strips everything from the library
+  #   min_strip - strips most stuff from the library; leaves minimum symbols
+  #   no_strip  - does not strip the library at all
+  #
+  # Oracle security policy requires "all_strip". A waiver was granted on
+  # 2011.09.01 that permits using "min_strip" in the Java JDK and Java JRE.
+  #
+  DEF_STRIP_POLICY="min_strip"
+  ifeq ($(ALT_STRIP_POLICY),)
+    STRIP_POLICY=$(DEF_STRIP_POLICY)
+  else
+    STRIP_POLICY=$(ALT_STRIP_POLICY)
+  endif
+  _JUNK_ := $(shell \
+    echo >&2 "INFO: STRIP_POLICY=$(STRIP_POLICY)")
+endif
+endif
+endif
+
 #
 # Java default optimization (-x04/-O2) etc.  Applies to the VM.
 #
@@ -684,5 +747,6 @@ JA_TARGET_ENCODINGS = eucJP UTF-8 PCK
 # Settings for the JDI - Serviceability Agent binding.
 HOTSPOT_SALIB_PATH   = $(HOTSPOT_IMPORT_PATH)/jre/lib/$(LIBARCH)
 SALIB_NAME = $(LIB_PREFIX)saproc.$(LIBRARY_SUFFIX)
+SA_DEBUGINFO_NAME = $(LIB_PREFIX)saproc.debuginfo
 INCLUDE_SA=true
 

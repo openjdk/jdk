@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,20 +54,20 @@ SERVERNAME="SecondJstatdServer"
 JSTATD_1_OUT="jstatd_$$_1.out"
 JSTATD_2_OUT="jstatd_$$_2.out"
 
-${JSTATD} -J-Djava.security.policy=${TESTSRC}/all.policy -p ${PORT_1} 2>&1 > ${JSTATD_1_OUT} &
+${JSTATD} -J-XX:+UsePerfData -J-Djava.security.policy=${TESTSRC}/all.policy -p ${PORT_1} 2>&1 > ${JSTATD_1_OUT} &
 JSTATD_1_PID=$!
 
 echo "first jstatd started as pid ${JSTATD_1_PID} on port ${PORT_1} with default server name"
 sleep 3
 
-${JSTATD} -J-Djava.security.policy=${TESTSRC}/all.policy -p ${PORT_2} -n ${SERVERNAME} 2>&1 > ${JSTATD_2_OUT} &
+${JSTATD} -J-XX:+UsePerfData -J-Djava.security.policy=${TESTSRC}/all.policy -p ${PORT_2} -n ${SERVERNAME} 2>&1 > ${JSTATD_2_OUT} &
 JSTATD_2_PID=$!
 
 echo "second jstatd started as pid ${JSTATD_2_PID} on port ${PORT_2} with name ${SERVERNAME}"
 sleep 3
 
-echo "running: ${JPS} ${HOSTNAME}:${PORT_1}"
-${JPS} ${HOSTNAME}:${PORT_1} 2>&1 | awk -f ${TESTSRC}/jpsOutput1.awk
+echo "running: ${JPS} -J-XX:+UsePerfData ${HOSTNAME}:${PORT_1}"
+${JPS} -J-XX:+UsePerfData ${HOSTNAME}:${PORT_1} 2>&1 | awk -f ${TESTSRC}/jpsOutput1.awk
 
 if [ $? -ne 0 ]
 then
@@ -76,8 +76,8 @@ then
     exit 1
 fi
 
-echo "running: ${JPS} ${HOSTNAME}:${PORT_2}/${SERVERNAME}"
-${JPS} ${HOSTNAME}:${PORT_2}/${SERVERNAME} 2>&1 | awk -f ${TESTSRC}/jpsOutput1.awk
+echo "running: ${JPS} -J-XX:+UsePerfData ${HOSTNAME}:${PORT_2}/${SERVERNAME}"
+${JPS} -J-XX:+UsePerfData ${HOSTNAME}:${PORT_2}/${SERVERNAME} 2>&1 | awk -f ${TESTSRC}/jpsOutput1.awk
 
 if [ $? -ne 0 ]
 then
@@ -86,8 +86,8 @@ then
     exit 1
 fi
 
-echo "running: ${JSTAT} -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_1} 250 5"
-${JSTAT} -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_1} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
+echo "running: ${JSTAT} -J-XX:+UsePerfData -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_1} 250 5"
+${JSTAT} -J-XX:+UsePerfData -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_1} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
 RC=$?
 
 if [ ${RC} -ne 0 ]
@@ -95,8 +95,8 @@ then
     echo "jstat output differs from expected output"
 fi
 
-echo "running: ${JSTAT} -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5"
-${JSTAT} -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
+echo "running: ${JSTAT} -J-XX:+UsePerfData -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5"
+${JSTAT} -J-XX:+UsePerfData -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
 RC=$?
 
 if [ ${RC} -ne 0 ]

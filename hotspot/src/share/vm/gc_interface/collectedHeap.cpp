@@ -39,6 +39,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 
 #ifdef ASSERT
@@ -157,8 +160,14 @@ HeapWord* CollectedHeap::allocate_from_tlab_slow(Thread* thread, size_t size) {
     // ..and clear it.
     Copy::zero_to_words(obj, new_tlab_size);
   } else {
-    // ...and clear just the allocated object.
-    Copy::zero_to_words(obj, size);
+    // ...and zap just allocated object.
+#ifdef ASSERT
+    // Skip mangling the space corresponding to the object header to
+    // ensure that the returned space is not considered parsable by
+    // any concurrent GC thread.
+    size_t hdr_size = oopDesc::header_size();
+    Copy::fill_to_words(obj + hdr_size, new_tlab_size - hdr_size, badHeapWordVal);
+#endif // ASSERT
   }
   thread->tlab().fill(obj, obj + size, new_tlab_size);
   return obj;

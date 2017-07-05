@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @summary Check for correct implementation of Math.ceil and Math.floor
  */
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 
 public class CeilAndFloorTests {
@@ -69,7 +68,7 @@ public class CeilAndFloorTests {
 
         for(int i = Double.MIN_EXPONENT; i <= Double.MAX_EXPONENT; i++) {
             double powerOfTwo   = Math.scalb(1.0, i);
-            double neighborDown = FpUtils.nextDown(powerOfTwo);
+            double neighborDown = Math.nextDown(powerOfTwo);
             double neighborUp   = Math.nextUp(powerOfTwo);
 
             if (i < 0) {
@@ -114,7 +113,7 @@ public class CeilAndFloorTests {
 
         for(int i = -(0x10000); i <= 0x10000; i++) {
             double d = (double) i;
-            double neighborDown = FpUtils.nextDown(d);
+            double neighborDown = Math.nextDown(d);
             double neighborUp   = Math.nextUp(d);
 
             failures += testCeilCase( d, d);
@@ -140,8 +139,8 @@ public class CeilAndFloorTests {
         double [][] testCases = {
             { Double.MIN_VALUE,                           1.0},
             {-Double.MIN_VALUE,                          -0.0},
-            { FpUtils.nextDown(DoubleConsts.MIN_NORMAL),  1.0},
-            {-FpUtils.nextDown(DoubleConsts.MIN_NORMAL), -0.0},
+            { Math.nextDown(DoubleConsts.MIN_NORMAL),     1.0},
+            {-Math.nextDown(DoubleConsts.MIN_NORMAL),    -0.0},
             { DoubleConsts.MIN_NORMAL,                    1.0},
             {-DoubleConsts.MIN_NORMAL,                   -0.0},
 
@@ -157,8 +156,8 @@ public class CeilAndFloorTests {
             { 2.5,                                        3.0},
             {-2.5,                                       -2.0},
 
-            { FpUtils.nextDown(1.0),                      1.0},
-            { FpUtils.nextDown(-1.0),                    -1.0},
+            { Math.nextDown(1.0),                         1.0},
+            { Math.nextDown(-1.0),                       -1.0},
 
             { Math.nextUp(1.0),                           2.0},
             { Math.nextUp(-1.0),                         -0.0},
@@ -166,17 +165,17 @@ public class CeilAndFloorTests {
             { 0x1.0p51,                                 0x1.0p51},
             {-0x1.0p51,                                -0x1.0p51},
 
-            { FpUtils.nextDown(0x1.0p51),               0x1.0p51},
+            { Math.nextDown(0x1.0p51),                  0x1.0p51},
             {-Math.nextUp(0x1.0p51),                   -0x1.0p51},
 
             { Math.nextUp(0x1.0p51),                    0x1.0p51+1},
-            {-FpUtils.nextDown(0x1.0p51),              -0x1.0p51+1},
+            {-Math.nextDown(0x1.0p51),                 -0x1.0p51+1},
 
-            { FpUtils.nextDown(0x1.0p52),               0x1.0p52},
+            { Math.nextDown(0x1.0p52),                  0x1.0p52},
             {-Math.nextUp(0x1.0p52),                   -0x1.0p52-1.0},
 
             { Math.nextUp(0x1.0p52),                    0x1.0p52+1.0},
-            {-FpUtils.nextDown(0x1.0p52),              -0x1.0p52+1.0},
+            {-Math.nextDown(0x1.0p52),                 -0x1.0p52+1.0},
         };
 
         for(double[] testCase : testCases) {

@@ -104,8 +104,8 @@ private:
   void print_indent();
   void print_method(ciMethod *method, int bci, InlineTree *tree);
   void print_inline_tree(InlineTree *tree);
-  void visit_node(Node *n, void *param);
-  void walk_nodes(Node *start, void *param);
+  void visit_node(Node *n, bool edges, VectorSet* temp_set);
+  void walk_nodes(Node *start, bool edges, VectorSet* temp_set);
   void begin_elem(const char *s);
   void end_elem();
   void begin_head(const char *s);

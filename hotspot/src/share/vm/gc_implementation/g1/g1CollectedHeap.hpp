@@ -1715,26 +1715,22 @@ public:
 class G1ParGCAllocBuffer: public ParGCAllocBuffer {
 private:
   bool        _retired;
-  bool        _during_marking;
+  bool        _should_mark_objects;
   GCLabBitMap _bitmap;
 
 public:
-  G1ParGCAllocBuffer(size_t gclab_word_size) :
-    ParGCAllocBuffer(gclab_word_size),
-    _during_marking(G1CollectedHeap::heap()->mark_in_progress()),
-    _bitmap(G1CollectedHeap::heap()->reserved_region().start(), gclab_word_size),
-    _retired(false)
-  { }
+  G1ParGCAllocBuffer(size_t gclab_word_size);
 
   inline bool mark(HeapWord* addr) {
     guarantee(use_local_bitmaps, "invariant");
-    assert(_during_marking, "invariant");
+    assert(_should_mark_objects, "invariant");
     return _bitmap.mark(addr);
   }
 
   inline void set_buf(HeapWord* buf) {
-    if (use_local_bitmaps && _during_marking)
+    if (use_local_bitmaps && _should_mark_objects) {
       _bitmap.set_buffer(buf);
+    }
     ParGCAllocBuffer::set_buf(buf);
     _retired = false;
   }
@@ -1742,7 +1738,7 @@ public:
   inline void retire(bool end_of_gc, bool retain) {
     if (_retired)
       return;
-    if (use_local_bitmaps && _during_marking) {
+    if (use_local_bitmaps && _should_mark_objects) {
       _bitmap.retire();
     }
     ParGCAllocBuffer::retire(end_of_gc, retain);

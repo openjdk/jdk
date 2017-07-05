@@ -346,7 +346,6 @@ void Compilation::install_code(int frame_size) {
     implicit_exception_table(),
     compiler(),
     _env->comp_level(),
-    true,
     has_unsafe_access()
   );
 }

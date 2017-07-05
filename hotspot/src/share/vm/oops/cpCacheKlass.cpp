@@ -63,8 +63,10 @@ constantPoolCacheOop constantPoolCacheKlass::allocate(int length,
   //   CollectedHeap::permanent_obj_allocate(klass, size, CHECK_NULL);
 
   oop obj = CollectedHeap::permanent_obj_allocate_no_klass_install(klass, size, CHECK_NULL);
-  NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value((HeapWord*) obj,
-                                                              size));
+#ifndef PRODUCT
+  const size_t hs = oopDesc::header_size();
+  Universe::heap()->check_for_bad_heap_word_value(((HeapWord*) obj)+hs, size-hs);
+#endif
   constantPoolCacheOop cache = (constantPoolCacheOop) obj;
   assert(!UseConcMarkSweepGC || obj->klass_or_null() == NULL,
          "klass should be NULL here when using CMS");

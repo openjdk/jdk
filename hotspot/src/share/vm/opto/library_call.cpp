@@ -4658,6 +4658,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     // "You break it, you buy it."
     InitializeNode* init = alloc->initialization();
     assert(init->is_complete(), "we just did this");
+    init->set_complete_with_arraycopy();
     assert(dest->is_CheckCastPP(), "sanity");
     assert(dest->in(0)->in(0) == init, "dest pinned");
     adr_type = TypeRawPtr::BOTTOM;  // all initializations are into raw memory

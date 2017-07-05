@@ -156,9 +156,16 @@ static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {
 #endif // _LP64
 }
 
+typedef void (*_zero_Fn)(HeapWord* to, size_t count);
+
 static void pd_fill_to_aligned_words(HeapWord* tohw, size_t count, juint value) {
   assert(MinObjAlignmentInBytes >= BytesPerLong, "need alternate implementation");
 
+  if (value == 0 && UseBlockZeroing &&
+      (count > (BlockZeroingLowLimit >> LogHeapWordSize))) {
+   // Call it only when block zeroing is used
+   ((_zero_Fn)StubRoutines::zero_aligned_words())(tohw, count);
+  } else {
    julong* to = (julong*)tohw;
    julong  v  = ((julong)value << 32) | value;
    // If count is odd, odd will be equal to 1 on 32-bit platform
@@ -176,6 +183,7 @@ static void pd_fill_to_aligned_words(HeapWord* tohw, size_t count, juint value) 
      *((juint*)to) = value;
 
    }
+  }
 }
 
 static void pd_fill_to_bytes(void* to, size_t count, jubyte value) {

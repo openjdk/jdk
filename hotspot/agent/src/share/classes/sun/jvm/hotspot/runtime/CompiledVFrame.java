@@ -93,6 +93,8 @@ public class CompiledVFrame extends JavaVFrame {
   }
 
   public StackValueCollection getLocals() {
+    if (getScope() == null)
+      return new StackValueCollection();
     List scvList = getScope().getLocals();
     if (scvList == null)
       return new StackValueCollection();
@@ -108,6 +110,8 @@ public class CompiledVFrame extends JavaVFrame {
   }
 
   public StackValueCollection getExpressions() {
+    if (getScope() == null)
+      return new StackValueCollection();
     List scvList = getScope().getExpressions();
     if (scvList == null)
       return new StackValueCollection();

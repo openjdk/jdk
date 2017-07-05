@@ -25,7 +25,6 @@
 package sun.jvm.hotspot.runtime.x86;
 
 import java.util.*;
-import sun.jvm.hotspot.asm.x86.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.compiler.*;
 import sun.jvm.hotspot.debugger.*;
@@ -62,10 +61,12 @@ public class X86Frame extends Frame {
   private static       int INTERPRETER_FRAME_MONITOR_BLOCK_BOTTOM_OFFSET;
 
   // Entry frames
-  private static final int ENTRY_FRAME_CALL_WRAPPER_OFFSET   =  2;
+  private static       int ENTRY_FRAME_CALL_WRAPPER_OFFSET;
 
   // Native frames
   private static final int NATIVE_FRAME_INITIAL_PARAM_OFFSET =  2;
+
+  private static VMReg rbp;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -76,18 +77,22 @@ public class X86Frame extends Frame {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    if (VM.getVM().isCore()) {
-      INTERPRETER_FRAME_CACHE_OFFSET = INTERPRETER_FRAME_METHOD_OFFSET - 1;
-    } else {
-      INTERPRETER_FRAME_MDX_OFFSET   = INTERPRETER_FRAME_METHOD_OFFSET - 1;
-      INTERPRETER_FRAME_CACHE_OFFSET = INTERPRETER_FRAME_MDX_OFFSET - 1;
-    }
+    INTERPRETER_FRAME_MDX_OFFSET                  = INTERPRETER_FRAME_METHOD_OFFSET - 1;
+    INTERPRETER_FRAME_CACHE_OFFSET                = INTERPRETER_FRAME_MDX_OFFSET - 1;
     INTERPRETER_FRAME_LOCALS_OFFSET               = INTERPRETER_FRAME_CACHE_OFFSET - 1;
     INTERPRETER_FRAME_BCX_OFFSET                  = INTERPRETER_FRAME_LOCALS_OFFSET - 1;
     INTERPRETER_FRAME_INITIAL_SP_OFFSET           = INTERPRETER_FRAME_BCX_OFFSET - 1;
     INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET    = INTERPRETER_FRAME_INITIAL_SP_OFFSET;
     INTERPRETER_FRAME_MONITOR_BLOCK_BOTTOM_OFFSET = INTERPRETER_FRAME_INITIAL_SP_OFFSET;
+
+    ENTRY_FRAME_CALL_WRAPPER_OFFSET = db.lookupIntConstant("frame::entry_frame_call_wrapper_offset");
+    if (VM.getVM().getAddressSize() == 4) {
+      rbp = new VMReg(5);
+    } else {
+      rbp = new VMReg(5 << 1);
+    }
   }
+
 
   // an additional field beyond sp and pc:
   Address raw_fp; // frame pointer
@@ -102,7 +107,7 @@ public class X86Frame extends Frame {
       CodeBlob cb = VM.getVM().getCodeCache().findBlob(pc);
       if (cb != null && cb.isJavaMethod()) {
         NMethod nm = (NMethod) cb;
-        if (pc.equals(nm.deoptBegin())) {
+        if (pc.equals(nm.deoptHandlerBegin())) {
           if (Assert.ASSERTS_ENABLED) {
             Assert.that(this.getUnextendedSP() != null, "null SP in Java frame");
           }
@@ -119,6 +124,7 @@ public class X86Frame extends Frame {
     this.raw_unextendedSP = raw_sp;
     this.raw_fp = raw_fp;
     this.pc = pc;
+    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -134,6 +140,7 @@ public class X86Frame extends Frame {
     this.raw_unextendedSP = raw_sp;
     this.raw_fp = raw_fp;
     this.pc = raw_sp.getAddressAt(-1 * VM.getVM().getAddressSize());
+    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -144,24 +151,18 @@ public class X86Frame extends Frame {
     }
   }
 
-  // This constructor should really take the unextended SP as an arg
-  // but then the constructor is ambiguous with constructor that takes
-  // a PC so take an int and convert it.
-  public X86Frame(Address raw_sp, Address raw_fp, long extension) {
+  public X86Frame(Address raw_sp, Address raw_unextendedSp, Address raw_fp, Address pc) {
     this.raw_sp = raw_sp;
-    if (raw_sp == null) {
-      this.raw_unextendedSP = null;
-    } else {
-      this.raw_unextendedSP = raw_sp.addOffsetTo(extension);
-    }
+    this.raw_unextendedSP = raw_unextendedSp;
     this.raw_fp = raw_fp;
-    this.pc = raw_sp.getAddressAt(-1 * VM.getVM().getAddressSize());
+    this.pc = pc;
+    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
 
     if (DEBUG) {
-      System.out.println("X86Frame(sp, fp): " + this);
+      System.out.println("X86Frame(sp, unextendedSP, fp, pc): " + this);
       dumpStack();
     }
 
@@ -171,7 +172,6 @@ public class X86Frame extends Frame {
     X86Frame frame = new X86Frame();
     frame.raw_sp = raw_sp;
     frame.raw_unextendedSP = raw_unextendedSP;
-    frame.raw_fp = raw_fp;
     frame.raw_fp = raw_fp;
     frame.pc = pc;
     frame.deoptimized = deoptimized;
@@ -269,19 +269,18 @@ public class X86Frame extends Frame {
 
     if (isEntryFrame())       return senderForEntryFrame(map);
     if (isInterpretedFrame()) return senderForInterpreterFrame(map);
+    if (isRicochetFrame())    return senderForRicochetFrame(map);
 
-    if (!VM.getVM().isCore()) {
-      if(cb == null) {
-        cb = VM.getVM().getCodeCache().findBlob(getPC());
-      } else {
-        if (Assert.ASSERTS_ENABLED) {
-          Assert.that(cb.equals(VM.getVM().getCodeCache().findBlob(getPC())), "Must be the same");
-        }
+    if(cb == null) {
+      cb = VM.getVM().getCodeCache().findBlob(getPC());
+    } else {
+      if (Assert.ASSERTS_ENABLED) {
+        Assert.that(cb.equals(VM.getVM().getCodeCache().findBlob(getPC())), "Must be the same");
       }
+    }
 
-      if (cb != null) {
-         return senderForCompiledFrame(map, cb);
-      }
+    if (cb != null) {
+      return senderForCompiledFrame(map, cb);
     }
 
     // Must be native-compiled frame, i.e. the marshaling code for native
@@ -289,7 +288,20 @@ public class X86Frame extends Frame {
     return new X86Frame(getSenderSP(), getLink(), getSenderPC());
   }
 
+  private Frame senderForRicochetFrame(X86RegisterMap map) {
+    if (DEBUG) {
+      System.out.println("senderForRicochetFrame");
+    }
+    X86RicochetFrame f = X86RicochetFrame.fromFrame(this);
+    if (map.getUpdateMap())
+      updateMapWithSavedLink(map, f.senderLinkAddress());
+    return new X86Frame(f.extendedSenderSP(), f.exactSenderSP(), f.senderLink(), f.senderPC());
+  }
+
   private Frame senderForEntryFrame(X86RegisterMap map) {
+    if (DEBUG) {
+      System.out.println("senderForEntryFrame");
+    }
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(map != null, "map must be set");
     }
@@ -313,7 +325,37 @@ public class X86Frame extends Frame {
     return fr;
   }
 
+  //------------------------------------------------------------------------------
+  // frame::adjust_unextended_sp
+  private void adjustUnextendedSP() {
+    // If we are returning to a compiled MethodHandle call site, the
+    // saved_fp will in fact be a saved value of the unextended SP.  The
+    // simplest way to tell whether we are returning to such a call site
+    // is as follows:
+
+    CodeBlob cb = cb();
+    NMethod senderNm = (cb == null) ? null : cb.asNMethodOrNull();
+    if (senderNm != null) {
+      // If the sender PC is a deoptimization point, get the original
+      // PC.  For MethodHandle call site the unextended_sp is stored in
+      // saved_fp.
+      if (senderNm.isDeoptMhEntry(getPC())) {
+        // DEBUG_ONLY(verifyDeoptMhOriginalPc(senderNm, getFP()));
+        raw_unextendedSP = getFP();
+      }
+      else if (senderNm.isDeoptEntry(getPC())) {
+        // DEBUG_ONLY(verifyDeoptOriginalPc(senderNm, raw_unextendedSp));
+      }
+      else if (senderNm.isMethodHandleReturn(getPC())) {
+        raw_unextendedSP = getFP();
+      }
+    }
+  }
+
   private Frame senderForInterpreterFrame(X86RegisterMap map) {
+    if (DEBUG) {
+      System.out.println("senderForInterpreterFrame");
+    }
     Address unextendedSP = addressOfStackSlot(INTERPRETER_FRAME_SENDER_SP_OFFSET).getAddressAt(0);
     Address sp = addressOfStackSlot(SENDER_SP_OFFSET);
     // We do not need to update the callee-save register mapping because above
@@ -323,10 +365,21 @@ public class X86Frame extends Frame {
     // However c2 no longer uses callee save register for java calls so there
     // are no callee register to find.
 
-    return new X86Frame(sp, getLink(), unextendedSP.minus(sp));
+    if (map.getUpdateMap())
+      updateMapWithSavedLink(map, addressOfStackSlot(LINK_OFFSET));
+
+    return new X86Frame(sp, unextendedSP, getLink(), getSenderPC());
+  }
+
+  private void updateMapWithSavedLink(RegisterMap map, Address savedFPAddr) {
+    map.setLocation(rbp, savedFPAddr);
   }
 
   private Frame senderForCompiledFrame(X86RegisterMap map, CodeBlob cb) {
+    if (DEBUG) {
+      System.out.println("senderForCompiledFrame");
+    }
+
     //
     // NOTE: some of this code is (unfortunately) duplicated in X86CurrentFrameGuess
     //
@@ -336,41 +389,35 @@ public class X86Frame extends Frame {
     }
 
     // frame owned by optimizing compiler
-    Address        sender_sp = null;
-
-    if (VM.getVM().isClientCompiler()) {
-      sender_sp        = addressOfStackSlot(SENDER_SP_OFFSET);
-    } else {
-      if (Assert.ASSERTS_ENABLED) {
-        Assert.that(cb.getFrameSize() >= 0, "Compiled by Compiler1: do not use");
-      }
-      sender_sp = getUnextendedSP().addOffsetTo(cb.getFrameSize());
+    if (Assert.ASSERTS_ENABLED) {
+        Assert.that(cb.getFrameSize() >= 0, "must have non-zero frame size");
     }
+    Address senderSP = getUnextendedSP().addOffsetTo(cb.getFrameSize());
 
     // On Intel the return_address is always the word on the stack
-    Address sender_pc = sender_sp.getAddressAt(-1 * VM.getVM().getAddressSize());
+    Address senderPC = senderSP.getAddressAt(-1 * VM.getVM().getAddressSize());
 
-    if (map.getUpdateMap() && cb.getOopMaps() != null) {
-      OopMapSet.updateRegisterMap(this, cb, map, true);
+    // This is the saved value of EBP which may or may not really be an FP.
+    // It is only an FP if the sender is an interpreter frame (or C1?).
+    Address savedFPAddr = senderSP.addOffsetTo(- SENDER_SP_OFFSET * VM.getVM().getAddressSize());
+
+    if (map.getUpdateMap()) {
+      // Tell GC to use argument oopmaps for some runtime stubs that need it.
+      // For C1, the runtime stub might not have oop maps, so set this flag
+      // outside of update_register_map.
+      map.setIncludeArgumentOops(cb.callerMustGCArguments());
+
+      if (cb.getOopMaps() != null) {
+        OopMapSet.updateRegisterMap(this, cb, map, true);
+      }
+
+      // Since the prolog does the save and restore of EBP there is no oopmap
+      // for it so we must fill in its location as if there was an oopmap entry
+      // since if our caller was compiled code there could be live jvm state in it.
+      updateMapWithSavedLink(map, savedFPAddr);
     }
 
-    if (VM.getVM().isClientCompiler()) {
-      // Move this here for C1 and collecting oops in arguments (According to Rene)
-      map.setIncludeArgumentOops(cb.callerMustGCArguments(map.getThread()));
-    }
-
-    Address saved_fp = null;
-    if (VM.getVM().isClientCompiler()) {
-      saved_fp = getFP().getAddressAt(0);
-    } else if (VM.getVM().isServerCompiler() &&
-               (VM.getVM().getInterpreter().contains(sender_pc) ||
-               VM.getVM().getStubRoutines().returnsToCallStub(sender_pc))) {
-      // C2 prologue saves EBP in the usual place.
-      // however only use it if the sender had link infomration in it.
-      saved_fp = sender_sp.getAddressAt(-2 * VM.getVM().getAddressSize());
-    }
-
-    return new X86Frame(sender_sp, saved_fp, sender_pc);
+    return new X86Frame(senderSP, savedFPAddr.getAddressAt(0), senderPC);
   }
 
   protected boolean hasSenderPD() {
@@ -402,14 +449,6 @@ public class X86Frame extends Frame {
   }
 
   public Address getSenderSP()     { return addressOfStackSlot(SENDER_SP_OFFSET); }
-
-  public Address compiledArgumentToLocationPD(VMReg reg, RegisterMap regMap, int argSize) {
-    if (VM.getVM().isCore() || VM.getVM().isClientCompiler()) {
-      throw new RuntimeException("Should not reach here");
-    }
-
-    return oopMapRegToLocation(reg, regMap);
-  }
 
   public Address addressOfInterpreterFrameLocals() {
     return addressOfStackSlot(INTERPRETER_FRAME_LOCALS_OFFSET);

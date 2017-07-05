@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,8 @@ typedef Node** DUIterator_Last;
 // whenever I have phase-specific information.
 
 class Node {
+  friend class VMStructs;
+
   // Lots of restrictions on cloning Nodes
   Node(const Node&);            // not defined; linker error to use these
   Node &operator=(const Node &rhs);
@@ -1286,6 +1288,7 @@ class SimpleDUIterator : public StackObj {
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
 class Node_Array : public ResourceObj {
+  friend class VMStructs;
 protected:
   Arena *_a;                    // Arena to allocate in
   uint   _max;
@@ -1316,6 +1319,7 @@ public:
 };
 
 class Node_List : public Node_Array {
+  friend class VMStructs;
   uint _cnt;
 public:
   Node_List() : Node_Array(Thread::current()->resource_area()), _cnt(0) {}
@@ -1339,6 +1343,7 @@ public:
 
 //------------------------------Unique_Node_List-------------------------------
 class Unique_Node_List : public Node_List {
+  friend class VMStructs;
   VectorSet _in_worklist;
   uint _clock_index;            // Index in list where to pop from next
 public:
@@ -1389,6 +1394,7 @@ inline void Compile::record_for_igvn(Node* n) {
 
 //------------------------------Node_Stack-------------------------------------
 class Node_Stack {
+  friend class VMStructs;
 protected:
   struct INode {
     Node *node; // Processed node
@@ -1461,6 +1467,7 @@ public:
 // Debugging or profiling annotations loosely and sparsely associated
 // with some nodes.  See Compile::node_notes_at for the accessor.
 class Node_Notes VALUE_OBJ_CLASS_SPEC {
+  friend class VMStructs;
   JVMState* _jvms;
 
 public:

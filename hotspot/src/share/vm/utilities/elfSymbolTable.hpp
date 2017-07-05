@@ -25,7 +25,7 @@
 #ifndef __ELF_SYMBOL_TABLE_HPP
 #define __ELF_SYMBOL_TABLE_HPP
 
-#ifndef _WINDOWS
+#if !defined(_WINDOWS) && !defined(__APPLE__)
 
 
 #include "memory/allocation.hpp"
@@ -68,6 +68,3 @@ class ElfSymbolTable: public CHeapObj {
 #endif // _WINDOWS
 
 #endif // __ELF_SYMBOL_TABLE_HPP
-
-
-

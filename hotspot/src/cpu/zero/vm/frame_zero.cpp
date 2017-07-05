@@ -425,3 +425,9 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
 }
 
 #endif
+
+intptr_t *frame::initial_deoptimization_info() {
+  // unused... but returns fp() to minimize changes introduced by 7087445
+  return fp();
+}
+
