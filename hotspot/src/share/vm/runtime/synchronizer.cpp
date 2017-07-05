@@ -77,11 +77,6 @@
 // Only bother with this argument setup if dtrace is available
 // TODO-FIXME: probes should not fire when caller is _blocked.  assert() accordingly.
 
-HS_DTRACE_PROBE_DECL5(hotspot, monitor__wait,
-  jlong, uintptr_t, char*, int, long);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__waited,
-  jlong, uintptr_t, char*, int);
-
 #define DTRACE_MONITOR_PROBE_COMMON(klassOop, thread)                      \
   char* bytes = NULL;                                                      \
   int len = 0;                                                             \
@@ -91,6 +86,12 @@ HS_DTRACE_PROBE_DECL4(hotspot, monitor__waited,
     bytes = (char*)klassname->bytes();                                     \
     len = klassname->utf8_length();                                        \
   }
+
+#ifndef USDT2
+HS_DTRACE_PROBE_DECL5(hotspot, monitor__wait,
+  jlong, uintptr_t, char*, int, long);
+HS_DTRACE_PROBE_DECL4(hotspot, monitor__waited,
+  jlong, uintptr_t, char*, int);
 
 #define DTRACE_MONITOR_WAIT_PROBE(monitor, klassOop, thread, millis)       \
   {                                                                        \
@@ -110,6 +111,29 @@ HS_DTRACE_PROBE_DECL4(hotspot, monitor__waited,
     }                                                                      \
   }
 
+#else /* USDT2 */
+
+#define DTRACE_MONITOR_WAIT_PROBE(monitor, klassOop, thread, millis)       \
+  {                                                                        \
+    if (DTraceMonitorProbes) {                                            \
+      DTRACE_MONITOR_PROBE_COMMON(klassOop, thread);                       \
+      HOTSPOT_MONITOR_WAIT(jtid,                                           \
+                           (uintptr_t)(monitor), bytes, len, (millis));  \
+    }                                                                      \
+  }
+
+#define HOTSPOT_MONITOR_PROBE_waited HOTSPOT_MONITOR_PROBE_WAITED
+
+#define DTRACE_MONITOR_PROBE(probe, monitor, klassOop, thread)             \
+  {                                                                        \
+    if (DTraceMonitorProbes) {                                            \
+      DTRACE_MONITOR_PROBE_COMMON(klassOop, thread);                       \
+      HOTSPOT_MONITOR_PROBE_##probe(jtid, /* probe = waited */             \
+                       (uintptr_t)(monitor), bytes, len);                  \
+    }                                                                      \
+  }
+
+#endif /* USDT2 */
 #else //  ndef DTRACE_ENABLED
 
 #define DTRACE_MONITOR_WAIT_PROBE(klassOop, thread, millis, mon)    {;}

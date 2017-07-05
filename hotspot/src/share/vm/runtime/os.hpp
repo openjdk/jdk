@@ -184,6 +184,9 @@ class os: AllStatic {
   //    Returns true if it worked, false if it didn't.
   static bool bind_to_processor(uint processor_id);
 
+  // Give a name to the current thread.
+  static void set_native_thread_name(const char *name);
+
   // Interface for stack banging (predetect possible stack overflow for
   // exception processing)  There are guard pages, and above that shadow
   // pages for stack overflow checking.

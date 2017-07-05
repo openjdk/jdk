@@ -410,8 +410,8 @@ void MethodHandles::RicochetFrame::verify_offsets() {
 
 void MethodHandles::RicochetFrame::verify() const {
   verify_offsets();
-  assert(magic_number_1() == MAGIC_NUMBER_1, "");
-  assert(magic_number_2() == MAGIC_NUMBER_2, "");
+  assert(magic_number_1() == MAGIC_NUMBER_1, err_msg(PTR_FORMAT " == " PTR_FORMAT, magic_number_1(), MAGIC_NUMBER_1));
+  assert(magic_number_2() == MAGIC_NUMBER_2, err_msg(PTR_FORMAT " == " PTR_FORMAT, magic_number_2(), MAGIC_NUMBER_2));
   if (!Universe::heap()->is_gc_active()) {
     if (saved_args_layout() != NULL) {
       assert(saved_args_layout()->is_method(), "must be valid oop");
