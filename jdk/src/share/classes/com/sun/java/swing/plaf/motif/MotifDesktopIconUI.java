@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,6 +200,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
         defaultIcon = newIcon;
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class IconLabel extends JPanel {
         JInternalFrame frame;
 
@@ -291,6 +292,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class IconButton extends JButton {
         Icon icon;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ Java_sun_awt_image_DataBufferNative_getElem(JNIEnv *env, jobject dbn,
     SurfaceDataOps *ops;
 
     ops = SurfaceData_GetOps(env, sd);
+    JNU_CHECK_EXCEPTION_RETURN(env, -1);
 
     if (!(pixelPtr = DBN_GetPixelPointer(env, x, y, &lockInfo,
                                          ops, SD_LOCK_READ)))
@@ -115,6 +116,7 @@ Java_sun_awt_image_DataBufferNative_setElem(JNIEnv *env, jobject dbn,
 
 
     ops = SurfaceData_GetOps(env, sd);
+    JNU_CHECK_EXCEPTION(env);
 
     if (!(pixelPtr = DBN_GetPixelPointer(env, x, y, &lockInfo,
                                          ops, SD_LOCK_WRITE)))

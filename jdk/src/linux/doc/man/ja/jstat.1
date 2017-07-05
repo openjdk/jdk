@@ -1,5446 +1,619 @@
-." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH jstat 1 "07 May 2011"
-
-.LP
-.SH "名前"
-jstat \- Java 仮想マシン統計データ監視ツール
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-パラメータ 
-.TP 2
-o
-説明 
-.TP 2
-o
-仮想マシン識別子 
-.TP 2
-o
-オプション 
-.RS 3
-.TP 2
-*
-一般的なオプション 
-.TP 2
-*
-出力オプション 
-.RE
-.TP 2
-o
-例 
-.TP 2
-o
-関連項目 
-.RE
-
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: jstat
+.\" Language: English
+.\" Date: 2011年5月10日
+.\" SectDesc: モニタリング・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "jstat" "1" "2011年5月10日" "JDK 8" "モニタリング・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+jstat \- Java仮想マシン(JVM)の統計を監視します。このコマンドは試験的なもので、サポートされていません。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f3jstat\fP [ \f2generalOption\fP | \f2outputOptions\fP \f2vmid\fP [\f2interval\fP[s|ms] [\f2count\fP]] ]
-.fl
+\fIjstat\fR [ \fIgeneralOption\fR | \fIoutputOptions vmid\fR [ \fIinterval\fR[s|ms] [ \fIcount \fR] ]
 .fi
-
-.LP
-.SH "パラメータ"
-.LP
-.RS 3
-.TP 3
-generalOption 
-単独で使用する一般的なコマンド行オプションです (\-help、\-options、または \-version)。 
-.TP 3
-outputOptions 
-単一の \f2statOption\fP と、\-t、\-h、および \-J オプションのいずれかを組み合わせた、1 つまたは複数の出力オプションです。 
-.TP 3
-vmid 
-ターゲットの Java 仮想マシン (JVM) を示す文字列である仮想マシン識別子です。一般的な構文は次のようになります。 
-.nf
-\f3
-.fl
-[\fP\f4protocol\fP\f3:][//]\fP\f4lvmid\fP[@\f2hostname\fP[:\f2port\fP]/\f2servername\fP]
-.fl
-.fi
-vmid 文字列の構文の大部分は、URI の構文に対応しています。\f2vmid\fP は、ローカル JVM を表す単純な整数から、通信プロトコル、ポート番号、および他の実装固有の値を示す複雑な構造まで、さまざまに異なります。詳細は、「仮想マシン識別子」を参照してください。 
-.TP 3
-interval[s|ms] 
-秒 (s) またはミリ秒 (ms) のうち指定した単位でのサンプリング間隔です。デフォルトの単位はミリ秒です。正の整数でなければなりません。これが指定された場合、\f3jstat\fP は interval ごとに出力を生成します。 
-.TP 3
-count 
-表示するサンプル数です。デフォルト値は無限です。つまり、\f3jstat\fP は、ターゲット JVM が終了するまで、または \f3jstat\fP コマンドが終了するまで、統計データを表示します。正の整数でなければなりません。 
+.if n \{\
 .RE
-
-.LP
-.SH " 説明"
-.LP
-.LP
-\f3jstat\fP ツールは、設置されている HotSpot Java 仮想マシン (JVM) のパフォーマンス統計データを表示します。ターゲット JVM は、仮想マシン識別子、つまり下記の \f2vmid\fP オプションによって識別されます。
-.LP
-.LP
-\f3注\fP: このユーティリティーはサポート対象外であり、将来の JDK のバージョンでは利用できなくなる可能性があります。現在、Windows 98 および Windows Me プラットフォームでは使用できません。
-.br
-
-.LP
-.SS 
-仮想マシン識別子
-.LP
-.LP
-\f2vmid\fP 文字列の構文の大部分は、URI の構文に対応しています。
-.LP
-.nf
-\f3
-.fl
-[\fP\f4protocol\fP\f3:][//]\fP\f4lvmid\fP[@\f2hostname\fP][:\f2port\fP][/\f2servername\fP]
-.fl
-.fi
-
-.LP
-.RS 3
-.TP 3
-protocol 
-通信プロトコルです。\f2protocol\fP が省略され、\f2hostname\fP が指定されていない場合、デフォルトのプロトコルが、プラットフォーム固有の最適化されたローカルプロトコルになります。\f2protocol\fP が省略され、\f2hostname\fP が指定されている場合は、デフォルトプロトコルは \f3rmi\fP になります。 
-.TP 3
-lvmid 
-ターゲット JVM のローカル仮想マシン識別子です。\f2lvmid\fP は、システム上の JVM を一意に識別するプラットフォーム固有の値です。\f2lvmid\fP は、仮想マシン識別子の唯一の必須要素です。\f2lvmid\fP は、絶対というわけではありませんが、一般的にはターゲット JVM プロセスに対するオペレーティングシステムのプロセス識別子です。jps(1) コマンドを使用して、\f2lvmid\fP を指定できます。また、Unix プラットフォームでは\f3ps\fP コマンドを使用して、Windows では Windows タスクマネージャーを使用して、\f2lvmid\fP を指定できます。 
-.TP 3
-hostname 
-ターゲットホストを示すホスト名または IP アドレスです。\f2hostname\fP が省略されている場合は、ターゲットホストはローカルホストになります。 
-.TP 3
-port 
-リモートサーバーと通信するためのデフォルトポートです。\f2hostname\fP が省略されているか、\f2protocol\fP で最適化されたローカルプロトコルが指定されている場合、\f2port\fP は無視されます。そうでなければ、\f2port\fP パラメータの扱いは、実装によって異なります。デフォルトの \f3rmi\fP プロトコルの場合、\f2port\fP は、リモートホスト上の rmiregistry のポート番号を示します。\f2port\fP が省略され、\f2protocol\fP で \f3rmi\fP が指定されている場合、デフォルトの rmiregistry ポート (1099) が使用されます。 
-.TP 3
-servername 
-このパラメータの扱いは、実装によって異なります。最適化されたローカルプロトコルの場合、このフィールドは無視されます。\f3rmi\fP プロトコルの場合は、このパラメータは、リモートホスト上の RMI リソースオブジェクトの名前を示します。 
+.\}
+.PP
+\fIgeneralOption\fR
+.RS 4
+単独で使用する一般的なコマンドライン・オプションです(\fI\-help\fRまたは\fI\-options\fR)。一般的なオプションを参照してください。
 .RE
-
-.LP
+.PP
+\fIoutputOptions\fR
+.RS 4
+単一の\fIstatOption\fRと\fI\-t\fR、\fI\-h\fRおよび\fI\-J\fRのいずれかのオプションで構成される1つ以上の出力オプション。出力オプションを参照してください。
+.RE
+.PP
+\fIvmid\fR
+.RS 4
+ターゲットJVMを示す文字列である仮想マシン識別子です。一般的な構文は次のとおりです。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[protocol:][//]lvmid[@hostname[:port]/servername]
+.fi
+.if n \{\
+.RE
+.\}
+\fIvmid\fR文字列の構文は、URIの構文に対応しています。\fIvmid\fR文字列は、ローカルJVMを表す単純な整数から、通信プロトコル、ポート番号、および他の実装固有の値を示す複雑な構造まで、様々に異なります。仮想マシン識別子を参照してください。
+.RE
+.PP
+\fIinterval\fR [s|ms]
+.RS 4
+秒(s)またはミリ秒(ms)のうち指定した単位でのサンプリング間隔です。デフォルトの単位はミリ秒です。正の整数にする必要があります。指定した場合、\fIjstat\fRコマンドは各間隔で出力を生成します。
+.RE
+.PP
+\fIcount\fR
+.RS 4
+表示するサンプル数です。デフォルト値は無限で、ターゲットJVMが終了するまで、または\fIjstat\fRコマンドが終了するまで、\fIjstat\fRコマンドは統計データを表示します。この値は、正の整数である必要があります。
+.RE
+.SH "説明"
+.PP
+\fIjstat\fRコマンドは、設置されているJava HotSpot VMのパフォーマンス統計データを表示します。ターゲットJVMは、仮想マシン識別子または\fIvmid\fRオプションによって識別されます。
+.SH "仮想マシン識別子"
+.PP
+\fIvmid\fR文字列の構文は、URIの構文に対応しています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[protocol:][//]lvmid[@hostname[:port]/servername]
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fIprotocol\fR
+.RS 4
+通信プロトコルです。\fIprotocol\fR値が省略され、ホスト名が指定されていない場合、デフォルトのプロトコルが、プラットフォーム固有の最適化されたローカル・プロトコルになります。\fIprotocol\fR値が省略され、ホスト名が指定されている場合は、デフォルト・プロトコルは\fIrmi\fRになります。
+.RE
+.PP
+\fIlvmid\fR
+.RS 4
+ターゲットJVMのローカル仮想マシン識別子です。\fIlvmid\fRは、システム上のJVMを一意に識別するプラットフォーム固有の値です。\fIlvmid\fRは、仮想マシン識別子の唯一の必須要素です。\fIlvmid\fRは、一般的にはターゲットJVMプロセスに対するオペレーティング・システムのプロセス識別子ですが、必ずしもそうであるとは限りません。\fIjps\fRコマンドを使用して、\fIlvmid\fRを特定できます。また、UNIXプラットフォームでは\fIps\fRコマンドを使用して、WindowsではWindowsタスク・マネージャを使用して、\fIlvmid\fRを特定できます。
+.RE
+.PP
+\fIhostname\fR
+.RS 4
+ターゲット・ホストを示すホスト名またはIPアドレスです。\fIhostname\fR値が省略されている場合は、ターゲット・ホストはローカル・ホストになります。
+.RE
+.PP
+\fIport\fR
+.RS 4
+リモート・サーバーと通信するためのデフォルト・ポートです。\fIhostname\fR値が省略されているか、最適化されたローカル・プロトコルが\fIprotocol\fR値に指定されている場合、\fIport\fR値は無視されます。それ以外の場合、\fIport\fRパラメータの扱いは、実装によって異なります。デフォルトの\fIrmi\fRプロトコルの場合、ポート値は、リモート・ホスト上のrmiregistryのポート番号を示します。\fIport\fR値が省略され、\fIprotocol\fR値で\fIrmi\fRが指定されている場合、デフォルトのrmiregistryポート(1099)が使用されます。
+.RE
+.PP
+\fIservername\fR
+.RS 4
+\fIservername\fRパラメータの扱いは、実装によって異なります。最適化されたローカル・プロトコルの場合、このフィールドは無視されます。\fIrmi\fRプロトコルの場合、これは、リモート・ホスト上のRMIリソース・オブジェクトの名前を表します。
+.RE
 .SH "オプション"
-.LP
-.LP
-\f3jstat\fP コマンドは、一般的なオプションと出力オプションの 2 つのタイプのオプションをサポートしています。一般的なオプションを使用した場合、\f3jstat\fP は簡単な使用率およびバージョン情報を表示します。出力オプションでは、統計データ出力の内容と形式を指定します。
-.br
-
-.LP
-.LP
-\f3注\fP: すべてのオプションとその機能は、将来のリリースで変更または廃止される可能性があります。
-.LP
-.SS 
-一般的なオプション
-.LP
-.LP
+.PP
+\fIjstat\fRコマンドは、一般的なオプションと出力オプションの2つのタイプのオプションをサポートしています。一般的なオプションを使用した場合、\fIjstat\fRコマンドは簡単な使用率およびバージョン情報を表示します。出力オプションによって、統計データ出力の内容と形式が決まります。
+.PP
+すべてのオプションとその機能は、将来のリリースで変更または廃止される可能性があります。
+.SS "一般的なオプション"
+.PP
 いずれかの一般的なオプションを指定した場合、他のオプションまたはパラメータは一切指定できません。
-.LP
-.RS 3
-.TP 3
-\-help 
-ヘルプメッセージを表示します。 
-.TP 3
-\-version 
-バージョン情報を表示します。 
-.TP 3
-\-options 
-統計データオプションを一覧表示します。下記の「出力オプション」の節を参照してください。 
+.PP
+\-help
+.RS 4
+ヘルプ・メッセージを表示します。
 .RE
-
-.LP
-.SS 
-出力オプション
-.LP
-.LP
-一般的なオプションを指定しない場合に、出力オプションを指定できます。出力オプションは、\f3jstat\fP の出力の内容および形式を指定し、単一の \f2statOption\fP と、他のいずれかの出力オプション (\-h、\-t、および \-J) とで構成されます。\f2statOption\fP は最初に記述する必要があります。
-.LP
-.LP
-出力は、各列が空白で区切られたテーブルの形式で構成されます。タイトルを含むヘッダー行によって、各列の意味がわかります。ヘッダーの表示頻度を設定するには、\f3\-h\fP オプションを使用します。列のヘッダー名は一般に、オプション間で一貫性が保たれています。一般に、2 つのオプションで同じ名前の列が使用されていれば、2 つの列のデータソースは同じになります。
-.LP
-.LP
-\f3\-t\fP オプションを使用すると、 \f2Timestamp というラベルの付いたタイムスタンプの列が、\fP 出力の最初の列として表示されます。 \f2Timestamp\fP 列には、ターゲット JVM の起動からの経過時間が、秒単位で表示されます。タイムスタンプの精度は、さまざまな要因によって異なり、大量の負荷のかかったシステムでのスレッドスケジュールの遅延により変動します。
-.LP
-.LP
-\f2interval\fP および \f2count\fP パラメータを使用して、\f3jstat\fP がその出力を表示する頻度と回数をそれぞれ指定します。
-.LP
-.LP
-\f3注\fP: 将来のリリースでこの形式は変更される可能性があるため、\f3jstat\fP の出力を解析するスクリプトは作成しないことをお勧めします。\f3jstat\fP 出力を解析するスクリプトを作成する場合は、このツールの将来のリリースで、そのスクリプトを変更しなければならないことに留意してください。
-.LP
-.RS 3
-.TP 3
-\-statOption 
-\f3jstat\fP が表示する統計データ情報を指定します。次の表に、利用可能なオプションの一覧を示します。ある特定のプラットフォームインストールのオプションを一覧表示するには、一般的なオプションの \f3\-options\fP を使用します。
-.br
-.br
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-クラスローダーの動作に関する統計データ
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-HotSpot Just\-in\-Time コンパイラの動作に関する統計データ
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ガベージコレクトされたヒープの動作に関する統計データ
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-世代ごとの容量と対応する領域に関する統計データ
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ガベージコレクション統計データの概要 (\f3\-gcutil\fP と同じ) と、直前および現在 (適用可能な場合) のガベージコレクションイベントの原因
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-New 世代の動作に関する統計データ
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di g+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-New 世代のサイズと対応する領域に関する統計データ
-.br
-.di
-.nr g| \n(dn
-.nr g- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di h+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 世代および Permanent 世代の動作に関する統計データ
-.br
-.di
-.nr h| \n(dn
-.nr h- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di i+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 世代のサイズに関する統計データ
-.br
-.di
-.nr i| \n(dn
-.nr i- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di j+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 世代のサイズに関する統計データ
-.br
-.di
-.nr j| \n(dn
-.nr j- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di k+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ガベージコレクション統計データの概要
-.br
-.di
-.nr k| \n(dn
-.nr k- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di l+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-HotSpot コンパイル方法の統計データ
-.br
-.di
-.nr l| \n(dn
-.nr l- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \w\f3オプション\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wclass
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wcompiler
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wgc
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wgccapacity
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wgccause
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wgcnew
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wgcnewcapacity
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wgcold
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wgcoldcapacity
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wgcpermcapacity
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wgcutil
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wprintcompilation
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3表示内容\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(g-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(h-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(i-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(j-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(k-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(l-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 248 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3オプション\fP\h'|\n(41u'\f3表示内容\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'class\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'compiler\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'gc\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'gccapacity\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'gccause\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'gcnew\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(g|u+\n(.Vu
-.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'gcnewcapacity\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.g+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(h|u+\n(.Vu
-.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'gcold\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.h+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(i|u+\n(.Vu
-.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'gcoldcapacity\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.i+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(j|u+\n(.Vu
-.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'gcpermcapacity\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.j+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(k|u+\n(.Vu
-.if (\n(k|+\n(#^-1v)>\n(#- .nr #- +(\n(k|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'gcutil\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.k+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(l|u+\n(.Vu
-.if (\n(l|+\n(#^-1v)>\n(#- .nr #- +(\n(l|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'printcompilation\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.l+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.rm g+
-.rm h+
-.rm i+
-.rm j+
-.rm k+
-.rm l+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-52
-.TP 3
-\-h n 
-\f2n\fP サンプル (出力行) ごとに列ヘッダーを表示。 ただし、\f2n\fP は正の整数値。デフォルト値は 0。 このとき、データの最初の行の上に列ヘッダーが表示される 
-.TP 3
-\-t n 
-タイムスタンプ列を出力の最初の列として表示。タイムスタンプは、ターゲット JVM の起動時からの経過時間 
-.TP 3
-\-JjavaOption 
-\f2javaOption\fP を \f3java\fP アプリケーション起動ツールへ渡す。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。オプションの完全なリストについては、「java(1)」のドキュメントを参照してください。 
+.PP
+\-options
+.RS 4
+Staticオプションのリストを表示します。出力オプションを参照してください。
 .RE
-
-.LP
-.SS 
-statOption と出力
-.LP
-.LP
-以降の表では、\f3jstat\fP が \f2statOption\fP ごとに出力する列について概要を示します。
-.br
-
-.LP
-.SS 
-\-class オプション
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ロードされたクラスの数
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ロードされた K バイト数
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-アンロードされたクラスの数
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-アンロードされた K バイト数
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-クラスのロードやアンロード処理に要した時間
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wクラスローダーの統計データ
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wLoaded
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wBytes
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wUnloaded
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wBytes
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wTime
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 298 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'クラスローダーの統計データ\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Loaded\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Bytes\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Unloaded\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Bytes\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Time\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-25
-
-.LP
-.SS 
-\-compiler オプション
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-実行されたコンパイルタスクの数
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-失敗したコンパイルタスクの数
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-無効にされたコンパイルタスクの数
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-コンパイルタスクの実行に要した時間
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-最後に失敗したコンパイルのコンパイルタイプ
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-最後に失敗したコンパイルのクラス名とメソッド
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wHotSpot Just\-In\-Time コンパイラの統計データ
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wCompiled
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFailed
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wInvalid
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wTime
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFailedType
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFailedMethod
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 334 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'HotSpot Just\-In\-Time コンパイラの統計データ\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Compiled\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Failed\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Invalid\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Time\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FailedType\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FailedMethod\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-29
-
-.LP
-.SS 
-\-gc オプション
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 0 の現在の容量 (KB)
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 1 の現在の容量 (KB)
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 0 の使用率 (KB)
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 1 の使用率 (KB)
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Eden 領域の現在の容量 (KB)
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Eden 領域の使用率 (KB)
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di g+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 領域の現在の容量 (KB)
-.br
-.di
-.nr g| \n(dn
-.nr g- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di h+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 領域の使用率 (KB)
-.br
-.di
-.nr h| \n(dn
-.nr h- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di i+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 領域の現在の容量 (KB)
-.br
-.di
-.nr i| \n(dn
-.nr i- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di j+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 領域の使用率 (KB)
-.br
-.di
-.nr j| \n(dn
-.nr j- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di k+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-若い世代の GC イベント数
-.br
-.di
-.nr k| \n(dn
-.nr k- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di l+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-若い世代のガベージコレクション時間
-.br
-.di
-.nr l| \n(dn
-.nr l- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di m+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-フルガベージコレクション時間
-.br
-.di
-.nr m| \n(dn
-.nr m- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di n+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ガベージコレクション総時間
-.br
-.di
-.nr n| \n(dn
-.nr n- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wガベージコレクトされたヒープの統計データ
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS0C
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS1C
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS0U
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS1U
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wEC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wEU
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOU
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPU
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wYGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wYGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \wフル GC イベント数
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(g-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(h-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(i-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(j-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(k-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(l-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(m-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(n-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 404 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'ガベージコレクトされたヒープの統計データ\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S0C\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S1C\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S0U\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S1U\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'EC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'EU\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(g|u+\n(.Vu
-.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.g+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(h|u+\n(.Vu
-.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OU\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.h+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(i|u+\n(.Vu
-.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.i+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(j|u+\n(.Vu
-.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PU\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.j+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(k|u+\n(.Vu
-.if (\n(k|+\n(#^-1v)>\n(#- .nr #- +(\n(k|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'YGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.k+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(l|u+\n(.Vu
-.if (\n(l|+\n(#^-1v)>\n(#- .nr #- +(\n(l|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'YGCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.l+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGC\h'|\n(41u'フル GC イベント数
-.ne \n(m|u+\n(.Vu
-.if (\n(m|+\n(#^-1v)>\n(#- .nr #- +(\n(m|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.m+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(n|u+\n(.Vu
-.if (\n(n|+\n(#^-1v)>\n(#- .nr #- +(\n(n|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'GCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.n+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.rm g+
-.rm h+
-.rm i+
-.rm j+
-.rm k+
-.rm l+
-.rm m+
-.rm n+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-63
-
-.LP
-.SS 
-\-gccapacity オプション
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-New 世代の最小容量 (KB)
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-New 世代の最大容量 (KB)
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-New 世代の現在の容量 (KB)
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 0 の現在の容量 (KB)
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 1 の現在の容量 (KB)
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Eden 領域の現在の容量 (KB)
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di g+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 世代の最小容量 (KB)
-.br
-.di
-.nr g| \n(dn
-.nr g- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di h+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 世代の最大容量 (KB)
-.br
-.di
-.nr h| \n(dn
-.nr h- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di i+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 世代の現在の容量 (KB)
-.br
-.di
-.nr i| \n(dn
-.nr i- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di j+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 領域の現在の容量 (KB)
-.br
-.di
-.nr j| \n(dn
-.nr j- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di k+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 世代の最小容量 (KB)
-.br
-.di
-.nr k| \n(dn
-.nr k- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di l+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 世代の最大容量 (KB)
-.br
-.di
-.nr l| \n(dn
-.nr l- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di m+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 世代の現在の容量 (KB)
-.br
-.di
-.nr m| \n(dn
-.nr m- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di n+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 領域の現在の容量 (KB)
-.br
-.di
-.nr n| \n(dn
-.nr n- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di o+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-若い世代の GC イベント数
-.br
-.di
-.nr o| \n(dn
-.nr o- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wメモリープール世代および領域容量
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wNGCMN
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wNGCMX
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wNGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS0C
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS1C
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wEC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOGCMN
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOGCMX
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPGCMN
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPGCMX
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wYGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGC
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \wフル GC イベント数
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(g-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(h-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(i-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(j-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(k-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(l-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(m-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(n-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(o-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 478 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'メモリープール世代および領域容量\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'NGCMN\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'NGCMX\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'NGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S0C\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S1C\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'EC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(g|u+\n(.Vu
-.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OGCMN\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.g+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(h|u+\n(.Vu
-.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OGCMX\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.h+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(i|u+\n(.Vu
-.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.i+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(j|u+\n(.Vu
-.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.j+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(k|u+\n(.Vu
-.if (\n(k|+\n(#^-1v)>\n(#- .nr #- +(\n(k|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PGCMN\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.k+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(l|u+\n(.Vu
-.if (\n(l|+\n(#^-1v)>\n(#- .nr #- +(\n(l|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PGCMX\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.l+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(m|u+\n(.Vu
-.if (\n(m|+\n(#^-1v)>\n(#- .nr #- +(\n(m|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.m+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(n|u+\n(.Vu
-.if (\n(n|+\n(#^-1v)>\n(#- .nr #- +(\n(n|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.n+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(o|u+\n(.Vu
-.if (\n(o|+\n(#^-1v)>\n(#- .nr #- +(\n(o|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'YGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.o+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGC\h'|\n(41u'フル GC イベント数
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.rm g+
-.rm h+
-.rm i+
-.rm j+
-.rm k+
-.rm l+
-.rm m+
-.rm n+
-.rm o+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-67
-
-.LP
-.SS 
-\-gccause オプション
-.LP
-.LP
-このオプションは、\f3\-gcutil\fP オプションと同じガベージコレクション統計データの概要を表示しますが、最後のガベージコレクションイベントと (適用可能な場合は) 現在のガベージコレクションイベントの原因が含まれます。\f3\-gcutil\fP で一覧表示される列の他に、このオプションでは次の列が追加されます。
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-最後のガベージコレクションの原因
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-現在のガベージコレクションの原因
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wGC イベントを含むガベージコレクション統計データ
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wLGCC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wGCC
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 501 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'GC イベントを含むガベージコレクション統計データ\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'LGCC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'GCC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-13
-
-.LP
-.SS 
-\-gcnew オプション
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 0 の現在の容量 (KB)
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 1 の現在の容量 (KB)
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 0 の使用率 (KB)
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 1 の使用率 (KB)
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-最大殿堂入りしきい値
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-適切な Survivor サイズ (KB)
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di g+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Eden 領域の現在の容量 (KB)
-.br
-.di
-.nr g| \n(dn
-.nr g- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di h+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Eden 領域の使用率 (KB)
-.br
-.di
-.nr h| \n(dn
-.nr h- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di i+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-若い世代の GC イベント数
-.br
-.di
-.nr i| \n(dn
-.nr i- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di j+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-若い世代のガベージコレクション時間
-.br
-.di
-.nr j| \n(dn
-.nr j- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wNew 世代の統計データ
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS0C
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS1C
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS0U
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS1U
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wTT
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wMTT
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wDSS
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wEC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wEU
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wYGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wYGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \w殿堂入りしきい値
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(g-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(h-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(i-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(j-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 555 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'New 世代の統計データ\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S0C\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S1C\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S0U\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S1U\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'TT\h'|\n(41u'殿堂入りしきい値
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'MTT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'DSS\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(g|u+\n(.Vu
-.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'EC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.g+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(h|u+\n(.Vu
-.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'EU\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.h+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(i|u+\n(.Vu
-.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'YGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.i+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(j|u+\n(.Vu
-.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'YGCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.j+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.rm g+
-.rm h+
-.rm i+
-.rm j+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-47
-
-.LP
-.SS 
-\-gcnewcapacity オプション
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-New 世代の最小容量 (KB)
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-New 世代の最大容量 (KB)
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-New 世代の現在の容量 (KB)
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 0 の最大容量 (KB)
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 0 の現在の容量 (KB)
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 1 の最大容量 (KB)
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di g+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 1 の現在の容量 (KB)
-.br
-.di
-.nr g| \n(dn
-.nr g- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di h+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Eden 領域の最大容量 (KB)
-.br
-.di
-.nr h| \n(dn
-.nr h- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di i+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Eden 領域の現在の容量 (KB)
-.br
-.di
-.nr i| \n(dn
-.nr i- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di j+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-若い世代の GC イベント数
-.br
-.di
-.nr j| \n(dn
-.nr j- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wNew 世代領域サイズの統計データ
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wNGCMN
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wNGCMX
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wNGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS0CMX
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS0C
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS1CMX
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS1C
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wECMX
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wEC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wYGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGC
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \wフル GC イベント数
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(g-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(h-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(i-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(j-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 609 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'New 世代領域サイズの統計データ\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'NGCMN\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'NGCMX\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'NGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S0CMX\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S0C\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S1CMX\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(g|u+\n(.Vu
-.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S1C\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.g+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(h|u+\n(.Vu
-.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'ECMX\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.h+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(i|u+\n(.Vu
-.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'EC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.i+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(j|u+\n(.Vu
-.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'YGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.j+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGC\h'|\n(41u'フル GC イベント数
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.rm g+
-.rm h+
-.rm i+
-.rm j+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-47
-
-.LP
-.SS 
-\-gcold オプション
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 領域の現在の容量 (KB)
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 領域の使用率 (KB)
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 領域の現在の容量 (KB)
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 領域の使用率 (KB)
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-若い世代の GC イベント数
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-フルガベージコレクション時間
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di g+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ガベージコレクション総時間
-.br
-.di
-.nr g| \n(dn
-.nr g- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wOld および Permanent 世代の統計データ
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPU
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOU
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wYGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \wフル GC イベント数
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(g-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 651 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Old および Permanent 世代の統計データ\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PU\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OU\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'YGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGC\h'|\n(41u'フル GC イベント数
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(g|u+\n(.Vu
-.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'GCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.g+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.rm g+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-35
-
-.LP
-.SS 
-\-gcoldcapacity オプション
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 世代の最小容量 (KB)
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 世代の最大容量 (KB)
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 世代の現在の容量 (KB)
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 領域の現在の容量 (KB)
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-若い世代の GC イベント数
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-フルガベージコレクション時間
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di g+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ガベージコレクション総時間
-.br
-.di
-.nr g| \n(dn
-.nr g- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wOld 世代の統計データ
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOGCMN
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOGCMX
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wOC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wYGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \wフル GC イベント数
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(g-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 693 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Old 世代の統計データ\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OGCMN\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OGCMX\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'OC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'YGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGC\h'|\n(41u'フル GC イベント数
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(g|u+\n(.Vu
-.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'GCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.g+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.rm g+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-35
-
-.LP
-.SS 
-\-gcpermcapacity オプション
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 世代の最小容量 (KB)
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 世代の最大容量 (KB)
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 世代の現在の容量 (KB)
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 領域の現在の容量 (KB)
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-若い世代の GC イベント数
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-フルガベージコレクション時間
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di g+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ガベージコレクション総時間
-.br
-.di
-.nr g| \n(dn
-.nr g- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wPermanent 世代の統計データ
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPGCMN
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPGCMX
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wPC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wYGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \wフル GC イベント数
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(g-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 735 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Permanent 世代の統計データ\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PGCMN\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PGCMX\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'PC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'YGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGC\h'|\n(41u'フル GC イベント数
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(g|u+\n(.Vu
-.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'GCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.g+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.rm g+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-35
-
-.LP
-.SS 
-\-gcutil オプション
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 0 の使用率 (現在の容量に対するパーセンテージ)
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Survivor 領域 1 の使用率 (現在の容量に対するパーセンテージ)
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Eden 領域の使用率 (現在の容量に対するパーセンテージ)
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di d+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Old 領域の使用率 (現在の容量に対するパーセンテージ)
-.br
-.di
-.nr d| \n(dn
-.nr d- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di e+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-Permanent 領域の使用率 (現在の容量に対するパーセンテージ)
-.br
-.di
-.nr e| \n(dn
-.nr e- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di f+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-若い世代の GC イベント数
-.br
-.di
-.nr f| \n(dn
-.nr f- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di g+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-若い世代のガベージコレクション時間
-.br
-.di
-.nr g| \n(dn
-.nr g- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di h+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-フルガベージコレクション時間
-.br
-.di
-.nr h| \n(dn
-.nr h- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di i+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-ガベージコレクション総時間
-.br
-.di
-.nr i| \n(dn
-.nr i- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wガベージコレクション統計データの概要
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS0
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wS1
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wE
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wO
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wYGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wYGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGC
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wFGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wGCT
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \wフル GC イベント数
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(d-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(e-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(f-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(g-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(h-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(i-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 785 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'ガベージコレクション統計データの概要\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S0\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'S1\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'E\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(d|u+\n(.Vu
-.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'O\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.d+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(e|u+\n(.Vu
-.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'P\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.e+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(f|u+\n(.Vu
-.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'YGC\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.f+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(g|u+\n(.Vu
-.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'YGCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.g+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGC\h'|\n(41u'フル GC イベント数
-.ne \n(h|u+\n(.Vu
-.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'FGCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.h+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(i|u+\n(.Vu
-.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'GCT\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.i+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.rm d+
-.rm e+
-.rm f+
-.rm g+
-.rm h+
-.rm i+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-43
-
-.LP
-.SS 
-\-printcompilation オプション
-.LP
-.LP
-.TS
-.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
-.de 35
-.ps \n(.s
-.vs \n(.vu
-.in \n(.iu
-.if \n(.u .fi
-.if \n(.j .ad
-.if \n(.j=0 .na
-..
-.nf
-.nr #~ 0
-.if n .nr #~ 0.6n
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.fc
-.nr 33 \n(.s
-.rm 80 81
-.nr 34 \n(.lu
-.eo
-.am 81
-.br
-.di a+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-実行されたコンパイルタスクの数
-.br
-.di
-.nr a| \n(dn
-.nr a- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di b+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-メソッドのバイトコードのバイト数
-.br
-.di
-.nr b| \n(dn
-.nr b- \n(dl
-..
-.ec \
-.eo
-.am 81
-.br
-.di c+
-.35
-.ft \n(.f
-.ll \n(34u*1u/3u
-.if \n(.l<\n(81 .ll \n(81u
-.in 0
-コンパイル方法を特定するクラス名とメソッド名。クラス名では、名前空間の区切り文字として、「.」の代わりに「/」が使用される。メソッド名は、指定されたクラス内のメソッドである。これらの 2 つのフィールドの形式は、HotSpot \- \f3XX:+PrintComplation\fP オプションと対応している
-.br
-.di
-.nr c| \n(dn
-.nr c- \n(dl
-..
-.ec \
-.35
-.nf
-.ll \n(34u
-.nr 80 0
-.nr 38 \wHotSpot コンパイル方法の統計データ
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w\f3列\fP
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wCompiled
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wサイズ
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \w型
-.if \n(80<\n(38 .nr 80 \n(38
-.nr 38 \wメソッド
-.if \n(80<\n(38 .nr 80 \n(38
-.80
-.rm 80
-.nr 81 0
-.nr 38 \w\f3説明\fP
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \wコンパイルタイプ
-.if \n(81<\n(38 .nr 81 \n(38
-.81
-.rm 81
-.nr 38 \n(a-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(b-
-.if \n(81<\n(38 .nr 81 \n(38
-.nr 38 \n(c-
-.if \n(81<\n(38 .nr 81 \n(38
-.35
-.nf
-.ll \n(34u
-.nr 38 1n
-.nr 79 0
-.nr 40 \n(79+(0*\n(38)
-.nr 80 +\n(40
-.nr 41 \n(80+(3*\n(38)
-.nr 81 +\n(41
-.nr TW \n(81
-.if t .if \n(TW>\n(.li .tm Table at line 811 file Input is too wide - \n(TW units
-.fc  
-.nr #T 0-1
-.nr #a 0-1
-.eo
-.de T#
-.ds #d .d
-.if \(ts\n(.z\(ts\(ts .ds #d nl
-.mk ##
-.nr ## -1v
-.ls 1
-.ls
-..
-.ec
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'HotSpot コンパイル方法の統計データ\h'|\n(41u'
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'\f3列\fP\h'|\n(41u'\f3説明\fP
-.ne \n(a|u+\n(.Vu
-.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'Compiled\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.a+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ne \n(b|u+\n(.Vu
-.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'サイズ\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.b+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'型\h'|\n(41u'コンパイルタイプ
-.ne \n(c|u+\n(.Vu
-.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
-.ta \n(80u \n(81u 
-.nr 31 \n(.f
-.nr 35 1m
-\&\h'|\n(40u'メソッド\h'|\n(41u'
-.mk ##
-.nr 31 \n(##
-.sp |\n(##u-1v
-.nr 37 \n(41u
-.in +\n(37u
-.c+
-.in -\n(37u
-.mk 32
-.if \n(32>\n(31 .nr 31 \n(32
-.sp |\n(31u
-.fc
-.nr T. 1
-.T# 1
-.35
-.rm a+
-.rm b+
-.rm c+
-.TE
-.if \n-(b.=0 .nr c. \n(.c-\n(d.-19
-
-.LP
+.SS "出力オプション"
+.PP
+一般的なオプションを指定しない場合に、出力オプションを指定できます。出力オプションは、\fIjstat\fRコマンドの出力の内容と形式を決定し、単一の\fIstatOption\fRといずれかの出力オプション(\fI\-h\fR、\fI\-t\fRおよび\fI\-J\fR)で構成されます。\fIstatOption\fRは最初に記述する必要があります。
+.PP
+出力は、各列が空白で区切られた表の形式になります。タイトルを含むヘッダー行によって、各列の意味がわかります。ヘッダーの表示頻度を設定するには、\fI\-h\fRオプションを使用します。列のヘッダー名は、様々なオプション間で一貫性が保たれています。一般に、2つのオプションで同じ名前の列が使用されていれば、2つの列のデータ・ソースは同じです。
+.PP
+\fI\-t\fRオプションを使用すると、Timestampというラベルの付いたタイムスタンプの列が、出力の最初の列として表示されます。Timestamp列には、ターゲットJVMの起動からの経過時間が、秒単位で表示されます。タイムスタンプの精度は、様々な要因によって異なり、大量の負荷のかかったシステムでのスレッド・スケジュールの遅延により変動します。
+.PP
+intervalおよびcountパラメータを使用して、\fIjstat\fRコマンドがその出力を表示する頻度と回数をそれぞれ指定します。
+.PP
+\fB注意:\fR
+将来のリリースでこの形式は変更される可能性があるため、\fIjstat\fRコマンドの出力を解析するスクリプトは作成しなでください。\fIjstat\fRコマンドの出力を解析するスクリプトを作成する場合は、このツールの将来のリリースで、そのスクリプトを変更する必要があることに留意してください。
+.PP
+\-\fIstatOption\fR
+.RS 4
+\fIjstat\fRコマンドが表示する統計データ情報を指定します。次に、利用可能なオプションの一覧を示します。特定のプラットフォーム・インストールのオプションを一覧表示するには、一般的なオプションの\fI\-options\fRを使用します。Statオプションおよび出力を参照してください。
+.sp
+\fIclass\fR: クラス・ローダーの動作に関する統計データを表示します。
+.sp
+\fIcompiler\fR: Java HotSpot VM Just\-in\-Timeコンパイラの動作に関する統計データを表示します。
+.sp
+\fIgc\fR: ガベージ・コレクトされたヒープの動作に関する統計データを表示します。
+.sp
+\fIgccapacity\fR: 世代ごとの容量と対応する領域に関する統計データを表示します。
+.sp
+\fIgccause\fR: ガベージ・コレクション統計データのサマリー(\fI\-gcutil\fRと同じ)と、直前および現在(適用可能な場合)のガベージ・コレクション・イベントの原因を表示します。
+.sp
+\fIgcnew\fR: New世代の動作に関する統計データを表示します。
+.sp
+\fIgcnewcapacity\fR: New世代のサイズと対応する領域に関する統計データを表示します。
+.sp
+\fIgcold\fR: Old世代の動作とメタスペースに関する統計データを表示します。
+.sp
+\fIgcoldcapacity\fR: Old世代のサイズに関する統計データを表示します。
+.sp
+\fIgcmetacapacity\fR: メタスペースのサイズに関する統計データを表示します。
+.sp
+\fIgcutil\fR: ガベージ・コレクションのサマリーに関する統計データを表示します。
+.sp
+\fIprintcompilation\fR: Java HotSpot VMコンパイル・メソッドの統計データを表示します。
+.RE
+.PP
+\-h \fIn\fR
+.RS 4
+\fIn\fRサンプル(出力行)ごとに列ヘッダーを表示します。ここで、\fIn\fRは正の整数値です。デフォルト値は0です。この場合、データの最初の行の上に列ヘッダーが表示されます。
+.RE
+.PP
+\-t
+.RS 4
+タイムスタンプ列を出力の最初の列として表示します。タイムスタンプは、ターゲットJVMの起動時からの経過時間です。
+.RE
+.PP
+\-J\fIjavaOption\fR
+.RS 4
+\fIjavaOption\fRをJavaアプリケーション起動ツールに渡します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。オプションの完全なリストについては、java(1)を参照してください。
+.RE
+.SS "Statオプションおよび出力"
+.PP
+次の情報は、\fIjstat\fRコマンドが各\fIstatOption\fRについて出力する列をまとめたものです。
+.PP
+\-class \fIoption\fR
+.RS 4
+クラス・ローダーの統計データ。
+.sp
+\fILoaded\fR: ロードされたクラスの数。
+.sp
+\fIBytes\fR: ロードされたKBの数。
+.sp
+\fIUnloaded\fR: アンロードされたクラスの数。
+.sp
+\fIBytes\fR: アンロードされたKBの数。
+.sp
+\fITime\fR: クラスのロードやアンロード処理に要した時間。
+.RE
+.PP
+\-compiler \fIoption\fR
+.RS 4
+Java HotSpot VM Just\-in\-Timeコンパイラの統計データ。
+.sp
+\fICompiled\fR: 実行されたコンパイル・タスクの数。
+.sp
+\fIFailed\fR: 失敗したコンパイル・タスクの数。
+.sp
+\fIInvalid\fR: 無効にされたコンパイル・タスクの数。
+.sp
+\fITime\fR: コンパイル・タスクの実行に要した時間。
+.sp
+\fIFailedType\fR: 最後に失敗したコンパイルのコンパイル・タイプ。
+.sp
+\fIFailedMethod\fR: 最後に失敗したコンパイルのクラス名とメソッド。
+.RE
+.PP
+\-gc \fIoption\fR
+.RS 4
+ガベージ・コレクトされたヒープの統計データ。
+.sp
+\fIS0C\fR: Survivor領域0の現在の容量(KB)。
+.sp
+\fIS1C\fR: Survivor領域1の現在の容量(KB)。
+.sp
+\fIS0U\fR: Survivor領域0の使用率(KB)。
+.sp
+\fIS1U\fR: Survivor領域1の使用率(KB)。
+.sp
+\fIEC\fR: Eden領域の現在の容量(KB)。
+.sp
+\fIEU\fR: Eden領域の使用率(KB)。
+.sp
+\fIOC\fR: Old領域の現在の容量(KB)。
+.sp
+\fIOU\fR: Old領域の使用率(KB)。
+.sp
+\fIMC\fR: メタスペースの容量(KB)。
+.sp
+\fIMU\fR: メタスペースの使用率(KB)。
+.sp
+\fIYGC\fR: 若い世代のガベージ・コレクション・イベントの数。
+.sp
+\fIYGCT\fR: 若い世代のガベージ・コレクション時間。
+.sp
+\fIFGC\fR: フルGCイベント数。
+.sp
+\fIFGCT\fR: フルガベージ・コレクション時間。
+.sp
+\fIGCT\fR: ガベージ・コレクション総時間。
+.RE
+.PP
+\-gccapacity \fIoption\fR
+.RS 4
+メモリー・プール世代および領域容量。
+.sp
+\fINGCMN\fR: New世代の最小容量(KB)。
+.sp
+\fINGCMX\fR: New世代の最大容量(KB)。
+.sp
+\fINGC\fR: New世代の現在の容量(KB)。
+.sp
+\fIS0C\fR: Survivor領域0の現在の容量(KB)。
+.sp
+\fIS1C\fR: Survivor領域1の現在の容量(KB)。
+.sp
+\fIEC\fR: Eden領域の現在の容量(KB)。
+.sp
+\fIOGCMN\fR: Old世代の最小容量(KB)。
+.sp
+\fIOGCMX\fR: Old世代の最大容量(KB)。
+.sp
+\fIOGC\fR: Old世代の現在の容量(KB)。
+.sp
+\fIOC\fR: Old領域の現在の容量(KB)。
+.sp
+\fIMCMN\fR: メタスペースの最小容量(KB)。
+.sp
+\fIMCMX\fR: メタスペースの最大容量(KB)。
+.sp
+\fIMC\fR: メタスペースの容量(KB)。
+.sp
+\fIYGC\fR: 若い世代のGCイベント数。
+.sp
+\fIFGC\fR: フルGCイベント数。
+.RE
+.PP
+\-gccause \fIoption\fR
+.RS 4
+このオプションは、\fI\-gcutil\fRオプションと同じガベージ・コレクション統計データのサマリーを表示しますが、最後のガベージ・コレクション・イベントと(適用可能な場合は)現在のガベージ・コレクション・イベントの原因が含まれます。\fI\-gcutil\fRで一覧表示される列のほか、このオプションでは次の列が追加されます。
+.sp
+ガベージ・コレクション・イベントを含むガベージ・コレクション統計データ。
+.sp
+\fILGCC\fR: 最後のガベージ・コレクションの原因。
+.sp
+\fIGCC\fR: 現在のガベージ・コレクションの原因。
+.RE
+.PP
+\-gcnew \fIoption\fR
+.RS 4
+New世代の統計データ。
+.sp
+\fIS0C\fR: Survivor領域0の現在の容量(KB)。
+.sp
+\fIS1C\fR: Survivor領域1の現在の容量(KB)。
+.sp
+\fIS0U\fR: Survivor領域0の使用率(KB)。
+.sp
+\fIS1U\fR: Survivor領域1の使用率(KB)。
+.sp
+\fITT\fR: 殿堂入りしきい値。
+.sp
+\fIMTT\fR: 最大殿堂入りしきい値。
+.sp
+\fIDSS\fR: 適切なSurvivorサイズ(KB)。
+.sp
+\fIEC\fR: Eden領域の現在の容量(KB)。
+.sp
+\fIEU\fR: Eden領域の使用率(KB)。
+.sp
+\fIYGC\fR: 若い世代のGCイベント数。
+.sp
+\fIYGCT\fR: 若い世代のガベージ・コレクション時間。
+.RE
+.PP
+\-gcnewcapacity \fIoption\fR
+.RS 4
+New世代領域サイズの統計データ。
+.sp
+NGCMN: New世代の最小容量(KB)。
+.sp
+\fINGCMX\fR: New世代の最大容量(KB)。
+.sp
+\fINGC\fR: New世代の現在の容量(KB)。
+.sp
+\fIS0CMX\fR: Survivor領域0の最大容量(KB)。
+.sp
+\fIS0C\fR: Survivor領域0の現在の容量(KB)。
+.sp
+\fIS1CMX\fR: Survivor領域1の最大容量(KB)。
+.sp
+\fIS1C\fR: Survivor領域1の現在の容量(KB)。
+.sp
+\fIECMX\fR: Eden領域の最大容量(KB)。
+.sp
+\fIEC\fR: Eden領域の現在の容量(KB)。
+.sp
+\fIYGC\fR: 若い世代のGCイベント数。
+.sp
+\fIFGC\fR: フルGCイベント数。
+.RE
+.PP
+\-gcold \fIoption\fR
+.RS 4
+OldおよびPermanent世代の統計データ。
+.sp
+\fIMC\fR: メタスペースの容量(KB)。
+.sp
+\fIMU\fR: メタスペースの使用率(KB)。
+.sp
+\fIOC\fR: Old領域の現在の容量(KB)。
+.sp
+\fIOU\fR: Old領域の使用率(KB)。
+.sp
+\fIYGC\fR: 若い世代のGCイベント数。
+.sp
+\fIFGC\fR: フルGCイベント数。
+.sp
+\fIFGCT\fR: フルガベージ・コレクション時間。
+.sp
+\fIGCT\fR: ガベージ・コレクション総時間。
+.RE
+.PP
+\-gcoldcapacity \fIoption\fR
+.RS 4
+Old世代の統計データ。
+.sp
+\fIOGCMN\fR: Old世代の最小容量(KB)。
+.sp
+\fIOGCMX\fR: Old世代の最大容量(KB)。
+.sp
+\fIOGC\fR: Old世代の現在の容量(KB)。
+.sp
+\fIOC\fR: Old領域の現在の容量(KB)。
+.sp
+\fIYGC\fR: 若い世代のGCイベント数。
+.sp
+\fIFGC\fR: フルGCイベント数。
+.sp
+\fIFGCT\fR: フルガベージ・コレクション時間。
+.sp
+\fIGCT\fR: ガベージ・コレクション総時間。
+.RE
+.PP
+\-gcmetacapacity \fIoption\fR
+.RS 4
+Permanent世代の統計データ。
+.sp
+\fIMCMN\fR: メタスペースの最小容量(KB)。
+.sp
+\fIMCMX\fR: メタスペースの最大容量(KB)。
+.sp
+\fIMC\fR: メタスペースの容量(KB)。
+.sp
+\fIYGC\fR: 若い世代のGCイベント数。
+.sp
+\fIFGC\fR: フルGCイベント数。
+.sp
+\fIFGCT\fR: フルガベージ・コレクション時間。
+.sp
+\fIGCT\fR: ガベージ・コレクション総時間。
+.RE
+.PP
+\-gcutil \fIoption\fR
+.RS 4
+ガベージ・コレクション統計データのサマリー
+.sp
+\fIS0\fR: Survivor領域0の使用率(現在の容量に対するパーセンテージ)。
+.sp
+\fIS1\fR: Survivor領域1の使用率(現在の容量に対するパーセンテージ)。
+.sp
+\fIE\fR: Eden領域の使用率(現在の容量に対するパーセンテージ)。
+.sp
+\fIO\fR: Old領域の使用率(現在の容量に対するパーセンテージ)。
+.sp
+\fIM\fR: メタスペースの使用率(領域の現在の容量に対するパーセンテージ)。
+.sp
+\fIYGC\fR: 若い世代のGCイベント数。
+.sp
+\fIYGCT\fR: 若い世代のガベージ・コレクション時間。
+.sp
+\fIFGC\fR: フルGCイベント数。
+.sp
+\fIFGCT\fR: フルガベージ・コレクション時間。
+.sp
+\fIGCT\fR: ガベージ・コレクション総時間。
+.RE
+.PP
+\-printcompilation \fIoption\fR
+.RS 4
+Java HotSpot VMコンパイル・メソッドの統計データ。
+.sp
+\fICompiled\fR: 最近コンパイルされたメソッドで実行されたコンパイル・タスクの数。
+.sp
+\fISize\fR: 最近コンパイルされたメソッドのバイト・コードのバイト数。
+.sp
+\fIType\fR: 最近コンパイルされたメソッドのコンパイル・タイプ。
+.sp
+\fIMethod\fR: 最近コンパイルされたメソッドを特定するクラス名とメソッド名。クラス名では、名前空間の区切り文字として、ドット(\&.)のかわりにスラッシュ(/)が使用されます。メソッド名は、指定されたクラス内のメソッドです。これらの2つのフィールドの形式は、HotSpot
+\fI\-XX:+PrintComplation\fRオプションと対応しています。
+.RE
 .SH "例"
-.LP
-.LP
-この項では、21891 の \f2lvmid\fP を持つローカル JVM を監視する例を示します。
-.LP
-.SS 
-gcutil オプションの使用
-.LP
-.LP
-この例は、\f2lvmid\fP 21891 に接続して、250 ミリ秒間隔で 7 つのサンプルを取得し、\f3\-gcutil\fP オプションでの指定に従って出力を表示します。
-.LP
+.PP
+この項では、21891の\fIlvmid\fRを持つローカルJVMをモニタリングする例を示します。
+.SS "gcutilオプション"
+.PP
+この例では、lvmid 21891に接続して、250ミリ秒間隔で7つのサンプルを取得し、\-\fIgcutil\fRオプションでの指定に従って出力を表示します。
+.PP
+この例の出力は、若い世代のコレクションが3番目と4番目のサンプル間で行われたことを示しています。コレクションには0\&.001秒かかっており、オブジェクトがEden領域(E)からOld領域(O)に昇格したため、Old領域の使用率は9\&.49%から9\&.51%に増加しています。Survivor領域は、コレクション前は12\&.44%が使用されていましたが、コレクション後の使用は7\&.74%のみです。
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f3jstat \-gcutil 21891 250 7\fP
-.br
-
-.fl
-  S0     S1     E      O      P     YGC    YGCT    FGC    FGCT     GCT
-.br
-
-.fl
- 12.44   0.00  27.20   9.49  96.70    78    0.176     5    0.495    0.672
-.br
-
-.fl
- 12.44   0.00  62.16   9.49  96.70    78    0.176     5    0.495    0.672
-.br
-
-.fl
- 12.44   0.00  83.97   9.49  96.70    78    0.176     5    0.495    0.672
-.br
-
-.fl
-  0.00   7.74   0.00   9.51  96.70    79    0.177     5    0.495    0.673
-.br
-
-.fl
-  0.00   7.74  23.37   9.51  96.70    79    0.177     5    0.495    0.673
-.br
-
-.fl
-  0.00   7.74  43.82   9.51  96.70    79    0.177     5    0.495    0.673
-.br
-
-.fl
-  0.00   7.74  58.11   9.51  96.71    79    0.177     5    0.495    0.673
-.br
-
-.fl
+jstat \-gcutil 21891 250 7
+  S0     S1     E      O      M       YGC    YGCT    FGC    FGCT     GCT
+0\&.00  99\&.74  13\&.49   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124
+0\&.00  99\&.74  13\&.49   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124
+0\&.00  99\&.74  13\&.49   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124
+0\&.00  99\&.74  13\&.49   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124
+0\&.00  99\&.74  13\&.80   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124
+0\&.00  99\&.74  13\&.80   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124
+0\&.00  99\&.74  13\&.80   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124
 .fi
-
-.LP
-.LP
-この例の出力は、若い世代のコレクションが 3 番目と 4 番目のサンプル間で行われたことを示しています。コレクションには 0.001 秒かかっており、オブジェクトが Eden 領域 (E) から Old 領域 (O) に昇格したため、Old 領域の使用率は 9.49% から 9.51% に増加しています。Survivor 領域は、コレクション前は 12.44% が使用されていましたが、コレクション後は 7.74% しか使用されていません。
-.LP
-.SS 
-列ヘッダー文字列の繰り返し
-.LP
-.LP
-この例は、\f2lvmid\fP 21891 に接続して、250 ミリ秒間隔でサンプルを取得し、\f3\-gcutil\fP オプションでの指定に従って出力を表示します。さらに、\f3\-h3\fP オプションを使用して、データが 3 行表示されるごとに列ヘッダーを出力します。
-.LP
-.nf
-\f3
-.fl
-\fP\f3jstat \-gcnew \-h3 21891 250\fP
-.br
-
-.fl
- S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
-.br
-
-.fl
-  64.0   64.0    0.0   31.7 31  31   32.0    512.0    178.6    249    0.203
-.br
-
-.fl
-  64.0   64.0    0.0   31.7 31  31   32.0    512.0    355.5    249    0.203
-.br
-
-.fl
-  64.0   64.0   35.4    0.0  2  31   32.0    512.0     21.9    250    0.204
-.br
-
-.fl
- S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
-.br
-
-.fl
-  64.0   64.0   35.4    0.0  2  31   32.0    512.0    245.9    250    0.204
-.br
-
-.fl
-  64.0   64.0   35.4    0.0  2  31   32.0    512.0    421.1    250    0.204
-.br
-
-.fl
-  64.0   64.0    0.0   19.0 31  31   32.0    512.0     84.4    251    0.204
-.br
-
-.fl
- S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
-.br
-
-.fl
-  64.0   64.0    0.0   19.0 31  31   32.0    512.0    306.7    251    0.204
-.br
-
-.fl
-.fi
-
-.LP
-.LP
-この例では、ヘッダー文字列の繰り返しが見られるほかにも、2 番目と 3 番目のサンプル間で Young GC が行われたことがわかります。この継続時間は 0.001 秒でした。このコレクションでは、Survivor 領域 0 の使用率 (S0U) が適切な Survivor サイズ (DSS) を超過することになるライブデータが検出されました。この結果、オブジェクトは、Old 世代 (この出力には非表示) へ昇格され、殿堂入りしきい値 (TT) が、31 から 2 へ降格されました。
-.LP
-.LP
-別のコレクションが、5 番目と 6 番目のサンプル間で行われています。このコレクションでは、Survivor がほとんど見られず、殿堂入りしきい値を 31 に戻しました。
-.LP
-.SS 
-サンプルごとのタイムスタンプの挿入
-.LP
-.LP
-この例は、\f2lvmid\fP 21891 へ接続し、250 ミリ秒間隔で 3 つのサンプルを取得しています。\f3\-t\fP オプションを使用して、最初の列にサンプルごとのタイムスタンプを表示しています。
-.LP
-.nf
-\f3
-.fl
-\fP\f3jstat \-gcoldcapacity \-t 21891 250 3\fP
-.br
-
-.fl
-Timestamp          OGCMN        OGCMX         OGC           OC       YGC   FGC    FGCT    GCT
-.br
-
-.fl
-          150.1       1408.0      60544.0      11696.0      11696.0   194    80    2.874   3.799
-.br
-
-.fl
-          150.4       1408.0      60544.0      13820.0      13820.0   194    81    2.938   3.863
-.br
-
-.fl
-          150.7       1408.0      60544.0      13820.0      13820.0   194    81    2.938   3.863
-.br
-
-.fl
-.fi
-
-.LP
-.LP
-\f2Timestamp\fP 列には、ターゲット JVM の起動時からの経過時間が、秒単位でレポートされています。さらに、\f3\-gcoldcapacity\fP 出力では、割り当て要求または昇格要求あるいはその両方を満たすためにヒープが拡張するごとに、Old 世代の容量 (OGC) と Old 領域の容量 (OC) とが増加していることがわかります。Old 世代の容量 (OGC) は、81 番目のフル GC (FGC) 後に、11696 KB から 13820 KB へ増加しています。Old 世代 (および領域) の最大容量は、60544 KB (OGCMX) なので、まだ拡張できる余裕が残されています。
-.LP
-.SS 
-リモート JVM のインストゥルメンテーションの監視
-.LP
-.LP
-この例は、\f3\-gcutil\fP オプションを使用して、\f2remote.domain\fP というシステム上の \f2lvmid\fP 40496 に接続し、サンプルを秒単位で無期限に取得しています。
-.LP
-.nf
-\f3
-.fl
-\fP\f3jstat \-gcutil 40496@remote.domain 1000\fP
-.br
-
-.fl
-... \f2output omitted\fP
-.br
-
-.fl
-.fi
-
-.LP
-.LP
-\f2lvmid\fP は、リモートホストの名前と結合されて、\f240496@remote.domain\fP の \f2vmid\fP を構成しています。結果として、この \f2vmid\fP は、\f3rmi\fP プロトコルを使用して、リモートホスト上のデフォルトの \f3jstatd\fP サーバーと通信します。\f3jstatd\fP サーバーは、\f3rmiregistry\fP を使用して、デフォルトの \f3rmiregistry\fP ポート (ポート 1099) にバインドされた \f2remote.domain\fP に配置されれます。
-.LP
-.SH "関連項目"
-.LP
-.RS 3
-.TP 2
-o
-「java(1) \- Java アプリケーション起動ツール」 
-.TP 2
-o
-「jps(1) \- Java 仮想マシンプロセスステータスツール」 
-.TP 2
-o
-「jstatd(1) \- 仮想マシン jstat デーモン」 
-.TP 2
-o
-「rmiregistry(1) \- Java リモートオブジェクトレジストリ」 
+.if n \{\
 .RE
-
-.LP
- 
+.\}
+.SS "列ヘッダー文字列の繰返し"
+.PP
+この例では、lvmid 21891に接続して、250ミリ秒間隔でサンプルを取得し、\fI\-gcutil\fRオプションでの指定に従って出力を表示します。さらに、\fI\-h3\fRオプションを使用して、データが3行表示されるごとに列ヘッダーを出力します。
+.PP
+この例では、ヘッダー文字列の繰返しが表示されているほか、2番目と3番目のサンプル間でYoung GCが行われたことがわかります。この継続時間は0\&.001秒でした。このコレクションでは、Survivor領域0の使用率(S0U)が適切なSurvivorサイズ(DSS)を超過することになるアクティブ・データが検出されました。この結果、オブジェクトは、Old世代(この出力には非表示)へ昇格され、殿堂入りしきい値(TT)が、31から2へ降格されました。
+.PP
+別のコレクションが、5番目と6番目のサンプル間で行われています。このコレクションでは、Survivorがほとんど見られず、殿堂入りしきい値を31に戻しました。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jstat \-gcnew \-h3 21891 250
+ S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
+  64\&.0   64\&.0    0\&.0   31\&.7 31  31   32\&.0    512\&.0    178\&.6    249    0\&.203
+  64\&.0   64\&.0    0\&.0   31\&.7 31  31   32\&.0    512\&.0    355\&.5    249    0\&.203
+  64\&.0   64\&.0   35\&.4    0\&.0  2  31   32\&.0    512\&.0     21\&.9    250    0\&.204
+ S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
+  64\&.0   64\&.0   35\&.4    0\&.0  2  31   32\&.0    512\&.0    245\&.9    250    0\&.204
+  64\&.0   64\&.0   35\&.4    0\&.0  2  31   32\&.0    512\&.0    421\&.1    250    0\&.204
+  64\&.0   64\&.0    0\&.0   19\&.0 31  31   32\&.0    512\&.0     84\&.4    251    0\&.204
+ S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
+  64\&.0   64\&.0    0\&.0   19\&.0 31  31   32\&.0    512\&.0    306\&.7    251    0\&.204
+.fi
+.if n \{\
+.RE
+.\}
+.SS "サンプルごとのタイムスタンプの挿入"
+.PP
+この例では、lvmid21891へ接続し、250ミリ秒間隔で3つのサンプルを取得しています。\fI\-t\fRオプションを使用して、最初の列にサンプルごとのタイムスタンプを表示しています。
+.PP
+Timestamp列には、ターゲットJVMの起動時からの経過時間が、秒単位でレポートされています。さらに、\fI\-gcoldcapacity\fR出力では、割当リクエストまたは昇格リクエストあるいはその両方を満たすためにヒープが拡張するたびに、Old世代の容量(OGC)とOld領域の容量(OC)とが増加していることがわかります。81番目のフル・ガベージ・コレクション(FGC)の後、Old世代の容量(OGC)は11,696 KBから13820 KBに増加しました。この世代(および領域)の最大容量は、60,544 KB (OGCMX)なので、まだ拡張できる余裕が残されています。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Timestamp      OGCMN    OGCMX     OGC       OC       YGC   FGC    FGCT    GCT
+          150\&.1   1408\&.0  60544\&.0  11696\&.0  11696\&.0   194    80    2\&.874   3\&.799
+          150\&.4   1408\&.0  60544\&.0  13820\&.0  13820\&.0   194    81    2\&.938   3\&.863
+          150\&.7   1408\&.0  60544\&.0  13820\&.0  13820\&.0   194    81    2\&.938   3\&.863
+.fi
+.if n \{\
+.RE
+.\}
+.SS "リモートJVMのインストゥルメンテーションの監視"
+.PP
+この例は、\fI\-gcutil\fRオプションを使用して、remote\&.domainというシステム上のlvmid 40496に接続し、サンプルを秒単位で無期限に取得しています。
+.PP
+lvmidは、リモート・ホストの名前と結合されて、\fI40496@remote\&.domain\fRの\fIvmid\fRを構成しています。結果として、このvmidは、\fIrmi\fRプロトコルを使用して、リモート・ホスト上のデフォルトの\fIjstatd\fRサーバーと通信します。\fIjstatd\fRサーバーは、rmiregistryを使用して、デフォルトのrmiregistryポート(ポート1099)にバインドされた\fIremote\&.domain\fRに配置されます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+jstat \-gcutil 40496@remote\&.domain 1000
+\fI\&.\&.\&. output omitted\fR
+.fi
+.if n \{\
+.RE
+.\}
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+java(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jps(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+jstatd(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+rmiregistry(1)
+.RE
+.br
+'pl 8.5i
+'bp

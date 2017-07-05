@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,8 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
     @Override
     protected void installComponents() {
         if (UIManager.getBoolean("InternalFrame.useTaskBar")) {
-            iconPane = new JToggleButton(frame.getTitle(), frame.getFrameIcon()) {
+            @SuppressWarnings("serial") // anonymous class
+            JToggleButton tmp = new JToggleButton(frame.getTitle(), frame.getFrameIcon()) {
                 @Override public String getToolTipText() {
                     return getText();
                 }
@@ -69,6 +70,7 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
                     return frame.getComponentPopupMenu();
                 }
             };
+            iconPane = tmp;
             ToolTipManager.sharedInstance().registerComponent(iconPane);
             iconPane.setFont(desktopIcon.getFont());
             iconPane.setBackground(desktopIcon.getBackground());

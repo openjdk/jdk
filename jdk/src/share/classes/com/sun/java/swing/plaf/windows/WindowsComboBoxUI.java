@@ -407,6 +407,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class XPComboBoxButton extends XPStyle.GlyphButton {
         public XPComboBoxButton() {
             super(null,
@@ -459,6 +460,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * @deprecated As of Java 2 platform v1.4.
      */
     @Deprecated
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class WindowsComboPopup extends BasicComboPopup {
 
         public WindowsComboPopup( JComboBox cBox ) {
@@ -510,6 +512,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * Subclassed to set opacity {@code false} on the renderer
      * and to show border for focused cells.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class WindowsComboBoxRenderer
           extends BasicComboBoxRenderer.UIResource {
         private static final Object BORDER_KEY

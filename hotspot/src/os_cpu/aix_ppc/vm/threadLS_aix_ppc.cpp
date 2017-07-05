@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 
 #include "precompiled.hpp"
 #include "runtime/threadLocalStorage.hpp"
-#include "thread_aix.inline.hpp"
+#include "runtime/thread.hpp"
 
 void ThreadLocalStorage::generate_code_for_get_thread() {
-    // nothing we can do here for user-level thread
+  // Nothing we can do here for user-level thread.
 }
 
 void ThreadLocalStorage::pd_init() {
-  // Nothing to do
+  // Nothing to do.
 }
 
 void ThreadLocalStorage::pd_set_thread(Thread* thread) {

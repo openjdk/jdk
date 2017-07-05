@@ -127,6 +127,7 @@ public class WindowsTreeUI extends BasicTreeUI {
      * version of Swing.  A future release of Swing will provide support for
      * long term persistence.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class ExpandedIcon implements Icon, Serializable {
 
         static public Icon createExpandedIcon() {
@@ -179,6 +180,7 @@ public class WindowsTreeUI extends BasicTreeUI {
      * version of Swing.  A future release of Swing will provide support for
      * long term persistence.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class CollapsedIcon extends ExpandedIcon {
         static public Icon createCollapsedIcon() {
             return new CollapsedIcon();
@@ -195,6 +197,7 @@ public class WindowsTreeUI extends BasicTreeUI {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class WindowsTreeCellRenderer extends DefaultTreeCellRenderer {
 
         /**

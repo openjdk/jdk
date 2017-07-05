@@ -27,10 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
-#include "runtime/prefetch.hpp"
 #include "utilities/top.hpp"
-
-// The following classes are C++ `closures` for iterating over objects, roots and spaces
 
 class CodeBlob;
 class nmethod;
@@ -39,22 +36,11 @@ class DataLayout;
 class KlassClosure;
 class ClassLoaderData;
 
-// Closure provides abortability.
+// The following classes are C++ `closures` for iterating over objects, roots and spaces
 
-class Closure : public StackObj {
- protected:
-  bool _abort;
-  void set_abort() { _abort = true; }
- public:
-  Closure() : _abort(false) {}
-  // A subtype can use this mechanism to indicate to some iterator mapping
-  // functions that the iteration should cease.
-  bool abort() { return _abort; }
-  void clear_abort() { _abort = false; }
-};
+class Closure : public StackObj { };
 
 // OopClosure is used for iterating through references to Java objects.
-
 class OopClosure : public Closure {
  public:
   virtual void do_oop(oop* o) = 0;
@@ -96,11 +82,6 @@ class ExtendedOopClosure : public OopClosure {
   void do_klass_nv(Klass* k)        { ShouldNotReachHere(); }
 
   virtual void do_class_loader_data(ClassLoaderData* cld) { ShouldNotReachHere(); }
-
-  // Controls how prefetching is done for invocations of this closure.
-  Prefetch::style prefetch_style() { // Note that this is non-virtual.
-    return Prefetch::do_none;
-  }
 
   // True iff this closure may be safely applied more than once to an oop
   // location without an intervening "major reset" (like the end of a GC).
@@ -175,19 +156,6 @@ class ObjectToOopClosure: public ObjectClosure {
 public:
   void do_object(oop obj);
   ObjectToOopClosure(ExtendedOopClosure* cl) : _cl(cl) {}
-};
-
-// A version of ObjectClosure with "memory" (see _previous_address below)
-class UpwardsObjectClosure: public BoolObjectClosure {
-  HeapWord* _previous_address;
- public:
-  UpwardsObjectClosure() : _previous_address(NULL) { }
-  void set_previous(HeapWord* addr) { _previous_address = addr; }
-  HeapWord* previous()              { return _previous_address; }
-  // A return value of "true" can be used by the caller to decide
-  // if this object's end should *NOT* be recorded in
-  // _previous_address above.
-  virtual bool do_object_bm(oop obj, MemRegion mr) = 0;
 };
 
 // A version of ObjectClosure that is expected to be robust

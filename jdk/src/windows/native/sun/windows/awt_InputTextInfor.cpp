@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,7 @@ AwtInputTextInfor::GetContextData(HIMC hIMC, const LPARAM flags) {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     if (m_cStrW > 0) {
         m_jtext = MakeJavaString(env, m_lpStrW, m_cStrW);
+        JNU_CHECK_EXCEPTION_RETURN(env, -1);
     }
 
     // Merge the string if necessary
@@ -250,6 +251,13 @@ int AwtInputTextInfor::GetClauseInfor(int*& lpBndClauseW, jstring*& lpReadingCla
                 delete [] lpFWStrW;
             } else {
                 readingClauseW[cls] = MakeJavaString(env, lpHWStrW, cHWStrW);
+            }
+            if (env->ExceptionCheck()) {
+                lpBndClauseW = NULL;
+                lpReadingClauseW = NULL;
+                delete [] bndClauseW;
+                delete [] readingClauseW;
+                return 0;
             }
         }
         else {

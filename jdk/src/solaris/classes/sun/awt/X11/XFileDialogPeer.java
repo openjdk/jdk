@@ -199,12 +199,13 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
         // After showing we should display 'user.dir' as current directory
         // if user didn't set directory programatically
         pathField = new TextField(savedDir != null ? savedDir : userDir);
-
-        pathChoice = new Choice() {
+        @SuppressWarnings("serial") // Anonymous class
+        Choice tmp = new Choice() {
                 public Dimension getPreferredSize() {
                     return new Dimension(PATH_CHOICE_WIDTH, pathField.getPreferredSize().height);
                 }
             };
+        pathChoice = tmp;
         pathPanel = new Panel();
         pathPanel.setLayout(new BorderLayout());
 
@@ -845,6 +846,7 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
     }
 }
 
+@SuppressWarnings("serial") // JDK-implementation class
 class Separator extends Canvas {
     public final static int HORIZONTAL = 0;
     public final static int VERTICAL = 1;

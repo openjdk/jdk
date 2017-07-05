@@ -53,7 +53,9 @@ JNIEXPORT void JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_init
 (JNIEnv *env, jclass authseq_clazz, jclass status_clazz)
 {
     ntlm_ctxHandleID = (*env)->GetFieldID(env, authseq_clazz, "ctxHandle", "J");
+    CHECK_NULL(ntlm_ctxHandleID);
     ntlm_crdHandleID = (*env)->GetFieldID(env, authseq_clazz, "crdHandle", "J");
+    CHECK_NULL(ntlm_crdHandleID);
     status_seqCompleteID = (*env)->GetFieldID(env, status_clazz, "sequenceComplete", "Z");
 }
 
@@ -100,6 +102,16 @@ JNIEXPORT jlong JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_get
         }
     }
     pCred = (CredHandle *)malloc(sizeof (CredHandle));
+    if (pCred == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
+        if (pUser != NULL)
+            JNU_ReleaseStringPlatformChars(env, user, pUser);
+        if (pPassword != NULL)
+            JNU_ReleaseStringPlatformChars(env, password, pPassword);
+        if (pDomain != NULL)
+            JNU_ReleaseStringPlatformChars(env, domain, pDomain);
+        return NULL;
+    }
 
     if ( ((pUser != NULL) || (pPassword != NULL)) || (pDomain != NULL)) {
         pAuthId = &AuthId;
@@ -177,7 +189,12 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
     pCtx = (CtxtHandle *) (*env)->GetLongField (env, this, ntlm_ctxHandleID);
     if (pCtx == 0) { /* first call */
         newContext = (CtxtHandle *)malloc(sizeof(CtxtHandle));
-        (*env)->SetLongField (env, this, ntlm_ctxHandleID, (jlong)newContext);
+        if (newContext != NULL) {
+            (*env)->SetLongField (env, this, ntlm_ctxHandleID, (jlong)newContext);
+        } else {
+            JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
+            return NULL;
+        }
     } else {
         newContext = pCtx;
     }
@@ -198,6 +215,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
     if (lastToken != 0)
     {
         pInput = (VOID *)(*env)->GetByteArrayElements(env, lastToken, &isCopy);
+        CHECK_NULL_RETURN(pInput, NULL);
         inputLen = (*env)->GetArrayLength(env, lastToken);
 
         InBuffDesc.ulVersion = 0;
@@ -240,8 +258,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
 
     if ( OutSecBuff.cbBuffer > 0 ) {
         jbyteArray ret = (*env)->NewByteArray(env, OutSecBuff.cbBuffer);
-        (*env)->SetByteArrayRegion(env, ret, 0, OutSecBuff.cbBuffer,
-                OutSecBuff.pvBuffer);
+        if (ret != NULL) {
+            (*env)->SetByteArrayRegion(env, ret, 0, OutSecBuff.cbBuffer,
+                    OutSecBuff.pvBuffer);
+        }
         if (lastToken != 0) // 2nd stage
             endSequence (pCred, pCtx, env, status);
         result = ret;

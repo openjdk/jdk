@@ -83,7 +83,7 @@ public class MapCreator {
             }
         }
 
-        return PropertyMap.newMap(properties, fieldCount, fieldMaximum, 0);
+        return PropertyMap.newMap(properties, structure.getName(), fieldCount, fieldMaximum, 0);
     }
 
     PropertyMap makeSpillMap(final boolean hasArguments) {
@@ -100,7 +100,7 @@ public class MapCreator {
             }
         }
 
-        return PropertyMap.newMap(properties, 0, 0, spillIndex);
+        return PropertyMap.newMap(properties, structure.getName(), 0, 0, spillIndex);
     }
 
     /**

@@ -102,7 +102,7 @@ public class StreamsSurviveDestroy {
         CountDownLatch latch = new CountDownLatch(2);
 
         System.err.println("test");
-        Process p = Runtime.getRuntime().exec("/bin/cat");
+        Process p = Runtime.getRuntime().exec(UnixCommands.cat());
         Copier cp1 = new Copier("out", p.getInputStream(), System.err,
                                 false, false, latch);
         Copier cp2 = new Copier("err", p.getErrorStream(), System.err,
@@ -122,7 +122,7 @@ public class StreamsSurviveDestroy {
         CountDownLatch latch = new CountDownLatch(2);
 
         System.err.println("testCloseBeforeDestroy");
-        Process p = Runtime.getRuntime().exec("/bin/cat");
+        Process p = Runtime.getRuntime().exec(UnixCommands.cat());
         Copier cp1 = new Copier("out", p.getInputStream(), System.err,
                                 true, false, latch);
         Copier cp2 = new Copier("err", p.getErrorStream(), System.err,
@@ -143,7 +143,7 @@ public class StreamsSurviveDestroy {
     static void testCloseAfterDestroy() throws Exception {
         CountDownLatch latch = new CountDownLatch(2);
         System.err.println("testCloseAfterDestroy");
-        Process p = Runtime.getRuntime().exec("/bin/cat");
+        Process p = Runtime.getRuntime().exec(UnixCommands.cat());
         Copier cp1 = new Copier("out", p.getInputStream(), System.err,
                                 true, false,latch);
         Copier cp2 = new Copier("err", p.getErrorStream(), System.err,
@@ -165,7 +165,7 @@ public class StreamsSurviveDestroy {
     static void testInterrupt() throws Exception {
         CountDownLatch latch = new CountDownLatch(2);
         System.err.println("testInterrupt");
-        Process p = Runtime.getRuntime().exec("/bin/cat");
+        Process p = Runtime.getRuntime().exec(UnixCommands.cat());
         Copier cp1 = new Copier("out", p.getInputStream(), System.err,
                                 false, true, latch);
         Copier cp2 = new Copier("err", p.getErrorStream(), System.err,
@@ -186,10 +186,13 @@ public class StreamsSurviveDestroy {
 
     public static void main(String[] args) throws Exception {
 
-        // Applies only to Solaris; Linux and Windows
-        // behave a little differently
-        if (!System.getProperty("os.name").equals("SunOS"))
+        // Applies only to Solaris;
+        // Linux and Windows behave a little differently
+        if (! UnixCommands.isSunOS) {
+            System.out.println("For SunOS only");
             return;
+        }
+        UnixCommands.ensureCommandsAvailable("cat");
 
         test();
         testCloseBeforeDestroy();

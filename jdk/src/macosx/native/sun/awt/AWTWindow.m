@@ -791,7 +791,7 @@ JNF_COCOA_ENTER(env);
                                                contentView:contentView];
         // the window is released is CPlatformWindow.nativeDispose()
 
-        if (window) CFRetain(window.nsWindow);
+        if (window) [window.nsWindow retain];
     }];
 
 JNF_COCOA_EXIT(env);

@@ -26,11 +26,11 @@
 package sun.security.internal.spec;
 
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
- * Parameters for SSL/TLS RSA Premaster secret generation.
- * This class is used by SSL/TLS client to initialize KeyGenerators of the
- * type "TlsRsaPremasterSecret".
+ * Parameters for SSL/TLS RSA premaster secret.
  *
  * <p>Instances of this class are immutable.
  *
@@ -43,90 +43,108 @@ import java.security.spec.AlgorithmParameterSpec;
 public class TlsRsaPremasterSecretParameterSpec
         implements AlgorithmParameterSpec {
 
-    private final int majorVersion;
-    private final int minorVersion;
-    private final byte[] encodedSecret;
+    /*
+     * The TLS spec says that the version in the RSA premaster secret must
+     * be the maximum version supported by the client (i.e. the version it
+     * requested in its client hello version). However, we (and other
+     * implementations) used to send the active negotiated version. The
+     * system property below allows to toggle the behavior.
+     */
+    private final static String PROP_NAME =
+                                "com.sun.net.ssl.rsaPreMasterSecretFix";
+
+    /*
+     * Default is "false" (old behavior) for compatibility reasons in
+     * SSLv3/TLSv1.  Later protocols (TLSv1.1+) do not use this property.
+     */
+    private final static boolean rsaPreMasterSecretFix =
+            AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+                public Boolean run() {
+                    String value = System.getProperty(PROP_NAME);
+                    if (value != null && value.equalsIgnoreCase("true")) {
+                        return Boolean.TRUE;
+                    }
+
+                    return Boolean.FALSE;
+                }
+            });
+
+    private final int clientVersion;
+    private final int serverVersion;
 
     /**
      * Constructs a new TlsRsaPremasterSecretParameterSpec.
-     * <P>
-     * The version numbers will be placed inside the premaster secret to
-     * detect version rollbacks attacks as described in the TLS specification.
-     * Note that they do not indicate the protocol version negotiated for
-     * the handshake.
      *
-     * @param majorVersion the major number of the protocol version
-     * @param minorVersion the minor number of the protocol version
+     * @param clientVersion the version of the TLS protocol by which the
+     *        client wishes to communicate during this session
+     * @param serverVersion the negotiated version of the TLS protocol which
+     *        contains the lower of that suggested by the client in the client
+     *        hello and the highest supported by the server.
      *
-     * @throws IllegalArgumentException if minorVersion or majorVersion are
-     *   negative or larger than 255
+     * @throws IllegalArgumentException if clientVersion or serverVersion are
+     *   negative or larger than (2^16 - 1)
      */
-    public TlsRsaPremasterSecretParameterSpec(int majorVersion,
-            int minorVersion) {
-        this.majorVersion =
-            TlsMasterSecretParameterSpec.checkVersion(majorVersion);
-        this.minorVersion =
-            TlsMasterSecretParameterSpec.checkVersion(minorVersion);
-        this.encodedSecret = null;
+    public TlsRsaPremasterSecretParameterSpec(
+            int clientVersion, int serverVersion) {
+
+        this.clientVersion = checkVersion(clientVersion);
+        this.serverVersion = checkVersion(serverVersion);
     }
 
     /**
-     * Constructs a new TlsRsaPremasterSecretParameterSpec.
-     * <P>
-     * The version numbers will be placed inside the premaster secret to
-     * detect version rollbacks attacks as described in the TLS specification.
-     * Note that they do not indicate the protocol version negotiated for
-     * the handshake.
-     * <P>
-     * Usually, the encoded secret key is a random number that acts as
-     * dummy pre_master_secret to avoid vulnerabilities described by
-     * section 7.4.7.1, RFC 5246.
+     * Returns the version of the TLS protocol by which the client wishes to
+     * communicate during this session.
      *
-     * @param majorVersion the major number of the protocol version
-     * @param minorVersion the minor number of the protocol version
-     * @param encodedSecret the encoded secret key
-     *
-     * @throws IllegalArgumentException if minorVersion or majorVersion are
-     *   negative or larger than 255, or encodedSecret is not exactly 48 bytes.
+     * @return the version of the TLS protocol in ClientHello message
      */
-    public TlsRsaPremasterSecretParameterSpec(int majorVersion,
-            int minorVersion, byte[] encodedSecret) {
-        this.majorVersion =
-            TlsMasterSecretParameterSpec.checkVersion(majorVersion);
-        this.minorVersion =
-            TlsMasterSecretParameterSpec.checkVersion(minorVersion);
-
-        if (encodedSecret == null || encodedSecret.length != 48) {
-            throw new IllegalArgumentException(
-                        "Encoded secret is not exactly 48 bytes");
-        }
-        this.encodedSecret = encodedSecret.clone();
+    public int getClientVersion() {
+        return clientVersion;
     }
 
     /**
-     * Returns the major version.
+     * Returns the negotiated version of the TLS protocol which contains the
+     * lower of that suggested by the client in the client hello and the
+     * highest supported by the server.
      *
-     * @return the major version.
+     * @return the negotiated version of the TLS protocol in ServerHello message
+     */
+    public int getServerVersion() {
+        return serverVersion;
+    }
+
+    /**
+     * Returns the major version used in RSA premaster secret.
+     *
+     * @return the major version used in RSA premaster secret.
      */
     public int getMajorVersion() {
-        return majorVersion;
+        if (rsaPreMasterSecretFix || clientVersion >= 0x0302) {
+                                                        // 0x0302: TLSv1.1
+            return (clientVersion >>> 8) & 0xFF;
+        }
+
+        return (serverVersion >>> 8) & 0xFF;
     }
 
     /**
-     * Returns the minor version.
+     * Returns the minor version used in RSA premaster secret.
      *
-     * @return the minor version.
+     * @return the minor version used in RSA premaster secret.
      */
     public int getMinorVersion() {
-        return minorVersion;
+        if (rsaPreMasterSecretFix || clientVersion >= 0x0302) {
+                                                        // 0x0302: TLSv1.1
+            return clientVersion & 0xFF;
+        }
+
+        return serverVersion & 0xFF;
     }
 
-    /**
-     * Returns the encoded secret.
-     *
-     * @return the encoded secret, may be null if no encoded secret.
-     */
-    public byte[] getEncodedSecret() {
-        return encodedSecret == null ? null : encodedSecret.clone();
+    private int checkVersion(int version) {
+        if ((version < 0) || (version > 0xFFFF)) {
+            throw new IllegalArgumentException(
+                        "Version must be between 0 and 65,535");
+        }
+        return version;
     }
 }

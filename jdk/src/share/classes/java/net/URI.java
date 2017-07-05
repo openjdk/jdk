@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1337,7 +1337,7 @@ public final class URI
      */
     public String getQuery() {
         if ((decodedQuery == null) && (query != null))
-            decodedQuery = decode(query);
+            decodedQuery = decode(query, false);
         return decodedQuery;
     }
 
@@ -1366,7 +1366,7 @@ public final class URI
      */
     public String getFragment() {
         if ((decodedFragment == null) && (fragment != null))
-            decodedFragment = decode(fragment);
+            decodedFragment = decode(fragment, false);
         return decodedFragment;
     }
 
@@ -2764,6 +2764,12 @@ public final class URI
     //            with a scope_id
     //
     private static String decode(String s) {
+        return decode(s, true);
+    }
+
+    // This method was introduced as a generalization of URI.decode method
+    // to provide a fix for JDK-8037396
+    private static String decode(String s, boolean ignorePercentInBrackets) {
         if (s == null)
             return s;
         int n = s.length();
@@ -2776,8 +2782,8 @@ public final class URI
         ByteBuffer bb = ByteBuffer.allocate(n);
         CharBuffer cb = CharBuffer.allocate(n);
         CharsetDecoder dec = ThreadLocalCoders.decoderFor("UTF-8")
-            .onMalformedInput(CodingErrorAction.REPLACE)
-            .onUnmappableCharacter(CodingErrorAction.REPLACE);
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
 
         // This is not horribly efficient, but it will do for now
         char c = s.charAt(0);
@@ -2790,7 +2796,7 @@ public final class URI
             } else if (betweenBrackets && c == ']') {
                 betweenBrackets = false;
             }
-            if (c != '%' || betweenBrackets) {
+            if (c != '%' || (betweenBrackets && ignorePercentInBrackets)) {
                 sb.append(c);
                 if (++i >= n)
                     break;

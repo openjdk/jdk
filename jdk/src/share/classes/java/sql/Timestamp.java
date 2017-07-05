@@ -269,7 +269,7 @@ public class Timestamp extends java.util.Date {
      * Formats a timestamp in JDBC timestamp escape format.
      *         <code>yyyy-mm-dd hh:mm:ss.fffffffff</code>,
      * where <code>ffffffffff</code> indicates nanoseconds.
-     * <P>
+     *
      * @return a <code>String</code> object in
      *           <code>yyyy-mm-dd hh:mm:ss.fffffffff</code> format
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import javax.swing.RowSorter;
  * @see javax.swing.RowSorter
  * @since 1.6
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class RowSorterEvent extends java.util.EventObject {
     private Type type;
     private int[] oldViewToModel;

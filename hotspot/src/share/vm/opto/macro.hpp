@@ -76,6 +76,8 @@ private:
   ProjNode *_memproj_catchall;
   ProjNode *_resproj;
 
+  // Additional data collected during macro expansion
+  bool _has_locks;
 
   void expand_allocate(AllocateNode *alloc);
   void expand_allocate_array(AllocateArrayNode *alloc);
@@ -118,7 +120,7 @@ private:
                             Node* length);
 
 public:
-  PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn) {
+  PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) {
     _igvn.set_delay_transform(true);
   }
   void eliminate_macro_nodes();

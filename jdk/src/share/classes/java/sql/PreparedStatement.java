@@ -892,7 +892,6 @@ public interface PreparedStatement extends Statement {
       * Sets the designated parameter to the given <code>java.sql.SQLXML</code> object.
       * The driver converts this to an
       * SQL <code>XML</code> value when it sends it to the database.
-      * <p>
       *
       * @param parameterIndex index of the first parameter is 1, the second is 2, ...
       * @param xmlObject a <code>SQLXML</code> object that maps an SQL <code>XML</code> value

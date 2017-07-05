@@ -108,7 +108,7 @@ public class SimpleBeanInfo implements BeanInfo {
      * It takes the name of a resource file associated with the
      * current object's class file and loads an image object
      * from that file.  Typically images will be GIFs.
-     * <p>
+     *
      * @param resourceName  A pathname relative to the directory
      *          holding the class file of the current class.  For example,
      *          "wombat.gif".

@@ -193,9 +193,46 @@ Declares a structure type that can be used in other events.
     <event id="MetaspaceSummary" path="vm/gc/heap/metaspace_summary" label="Metaspace Summary" is_instant="true">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
       <value type="GCWHEN" field="when" label="When" />
+      <value type="BYTES64" field="gcThreshold" label="GC Threshold" />
       <structvalue type="MetaspaceSizes" field="metaspace" label="Total"/>
       <structvalue type="MetaspaceSizes" field="dataSpace" label="Data"/>
       <structvalue type="MetaspaceSizes" field="classSpace" label="Class"/>
+    </event>
+
+    <event id="MetaspaceGCThreshold" path="vm/gc/metaspace/gc_threshold" label="Metaspace GC Threshold" is_instant="true">
+      <value type="BYTES64" field="oldValue" label="Old Value" />
+      <value type="BYTES64" field="newValue" label="New Value" />
+      <value type="GCTHRESHOLDUPDATER" field="updater" label="Updater" />
+    </event>
+
+    <event id="MetaspaceAllocationFailure" path="vm/gc/metaspace/allocation_failure" label="Metaspace Allocation Failure" is_instant="true" has_stacktrace="true">
+      <value type="CLASS" field="classLoader" label="Class Loader" />
+      <value type="BOOLEAN" field="anonymousClassLoader" label="Anonymous Class Loader" />
+      <value type="BYTES64" field="size" label="Size" />
+      <value type="METADATATYPE" field="metadataType" label="Metadata Type" />
+      <value type="METASPACEOBJTYPE" field="metaspaceObjectType" label="Metaspace Object Type" />
+    </event>
+
+    <event id="MetaspaceOOM" path="vm/gc/metaspace/out_of_memory" label="Metaspace Out of Memory" is_instant="true" has_stacktrace="true">
+      <value type="CLASS" field="classLoader" label="Class Loader" />
+      <value type="BOOLEAN" field="anonymousClassLoader" label="Anonymous Class Loader" />
+      <value type="BYTES64" field="size" label="Size" />
+      <value type="METADATATYPE" field="metadataType" label="Metadata Type" />
+      <value type="METASPACEOBJTYPE" field="metaspaceObjectType" label="Metaspace Object Type" />
+    </event>
+
+    <event id="MetaspaceChunkFreeListSummary" path="vm/gc/metaspace/chunk_free_list_summary" label="Metaspace Chunk Free List Summary" is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="GCWHEN" field="when" label="When" />
+      <value type="METADATATYPE" field="metadataType" label="Metadata Type" />
+      <value type="ULONG" field="specializedChunks" label="Specialized Chunks" />
+      <value type="BYTES64" field="specializedChunksTotalSize" label="Specialized Chunks Total Size" />
+      <value type="ULONG" field="smallChunks" label="Small Chunks" />
+      <value type="BYTES64" field="smallChunksTotalSize" label="Small Chunks Total Size" />
+      <value type="ULONG" field="mediumChunks" label="Medium Chunks" />
+      <value type="BYTES64" field="mediumChunksTotalSize" label="Medium Chunks Total Size" />
+      <value type="ULONG" field="humongousChunks" label="Humongous Chunks" />
+      <value type="BYTES64" field="humongousChunksTotalSize" label="Humongous Chunks Total Size" />
     </event>
 
     <event id="PSHeapSummary" path="vm/gc/heap/ps_summary" label="Parallel Scavenge Heap Summary" is_instant="true">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,13 +83,19 @@ void AwtDesktopProperties::GetSystemProperties() {
     HDC dc = CreateDC(TEXT("DISPLAY"), NULL, NULL, NULL);
 
     if (dc != NULL) {
-        SetFontProperty(dc, ANSI_FIXED_FONT, TEXT("win.ansiFixed.font"));
-        SetFontProperty(dc, ANSI_VAR_FONT, TEXT("win.ansiVar.font"));
-        SetFontProperty(dc, DEVICE_DEFAULT_FONT, TEXT("win.deviceDefault.font"));
-        SetFontProperty(dc, DEFAULT_GUI_FONT, TEXT("win.defaultGUI.font"));
-        SetFontProperty(dc, OEM_FIXED_FONT, TEXT("win.oemFixed.font"));
-        SetFontProperty(dc, SYSTEM_FONT, TEXT("win.system.font"));
-        SetFontProperty(dc, SYSTEM_FIXED_FONT, TEXT("win.systemFixed.font"));
+        try {
+            SetFontProperty(dc, ANSI_FIXED_FONT, TEXT("win.ansiFixed.font"));
+            SetFontProperty(dc, ANSI_VAR_FONT, TEXT("win.ansiVar.font"));
+            SetFontProperty(dc, DEVICE_DEFAULT_FONT, TEXT("win.deviceDefault.font"));
+            SetFontProperty(dc, DEFAULT_GUI_FONT, TEXT("win.defaultGUI.font"));
+            SetFontProperty(dc, OEM_FIXED_FONT, TEXT("win.oemFixed.font"));
+            SetFontProperty(dc, SYSTEM_FONT, TEXT("win.system.font"));
+            SetFontProperty(dc, SYSTEM_FIXED_FONT, TEXT("win.systemFixed.font"));
+        }
+        catch (std::bad_alloc&) {
+            DeleteDC(dc);
+            throw;
+        }
         DeleteDC(dc);
     }
 }
@@ -206,24 +212,35 @@ void AwtDesktopProperties::GetXPStyleProperties() {
     LPTSTR value;
 
     value = getXPStylePropFromReg(TEXT("ThemeActive"));
-    SetBooleanProperty(TEXT("win.xpstyle.themeActive"), (value != NULL && *value == _T('1')));
-    if (value != NULL) {
-        free(value);
+    try {
+        SetBooleanProperty(TEXT("win.xpstyle.themeActive"), (value != NULL && *value == _T('1')));
+        if (value != NULL) {
+            free(value);
+            value = NULL;
+        }
+        value = getXPStylePropFromReg(TEXT("DllName"));
+        if (value != NULL) {
+            SetStringProperty(TEXT("win.xpstyle.dllName"), value);
+            free(value);
+            value = NULL;
+        }
+        value = getXPStylePropFromReg(TEXT("SizeName"));
+        if (value != NULL) {
+            SetStringProperty(TEXT("win.xpstyle.sizeName"), value);
+            free(value);
+            value = NULL;
+        }
+        value = getXPStylePropFromReg(TEXT("ColorName"));
+        if (value != NULL) {
+            SetStringProperty(TEXT("win.xpstyle.colorName"), value);
+            free(value);
+        }
     }
-    value = getXPStylePropFromReg(TEXT("DllName"));
-    if (value != NULL) {
-        SetStringProperty(TEXT("win.xpstyle.dllName"), value);
-        free(value);
-    }
-    value = getXPStylePropFromReg(TEXT("SizeName"));
-    if (value != NULL) {
-        SetStringProperty(TEXT("win.xpstyle.sizeName"), value);
-        free(value);
-    }
-    value = getXPStylePropFromReg(TEXT("ColorName"));
-    if (value != NULL) {
-        SetStringProperty(TEXT("win.xpstyle.colorName"), value);
-        free(value);
+    catch (std::bad_alloc&) {
+        if (value != NULL) {
+            free(value);
+        }
+        throw;
     }
 }
 
@@ -564,27 +581,37 @@ void AwtDesktopProperties::GetOtherParameters() {
     // Shell Icon BPP - only honored on platforms before XP
     value = getWindowsPropFromReg(TEXT("Control Panel\\Desktop\\WindowMetrics"),
                                   TEXT("Shell Icon BPP"), &valueType);
-    if (value != NULL) {
-        if (valueType == REG_SZ) {
-            SetStringProperty(TEXT("win.icon.shellIconBPP"), value);
+
+    try {
+        if (value != NULL) {
+            if (valueType == REG_SZ) {
+                SetStringProperty(TEXT("win.icon.shellIconBPP"), value);
+            }
+            free(value);
+            value = NULL;
         }
-        free(value);
+
+
+        // The following registry settings control the file chooser places bar
+        // under the Windows L&F. These settings are not present by default, but
+        // can be enabled using the TweakUI tool from Microsoft. For more info,
+        // see http://msdn.microsoft.com/msdnmag/issues/1100/Registry/
+
+        // NoPlacesBar is a REG_DWORD, with values 0 or 1
+        value = getWindowsPropFromReg(TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\comdlg32"),
+                                      TEXT("NoPlacesBar"), &valueType);
+        if (value != NULL) {
+            if (valueType == REG_DWORD) {
+                SetBooleanProperty(TEXT("win.comdlg.noPlacesBar"), (BOOL)((int)*value != 0));
+            }
+            free(value);
+        }
     }
-
-
-    // The following registry settings control the file chooser places bar
-    // under the Windows L&F. These settings are not present by default, but
-    // can be enabled using the TweakUI tool from Microsoft. For more info,
-    // see http://msdn.microsoft.com/msdnmag/issues/1100/Registry/
-
-    // NoPlacesBar is a REG_DWORD, with values 0 or 1
-    value = getWindowsPropFromReg(TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\comdlg32"),
-                                  TEXT("NoPlacesBar"), &valueType);
-    if (value != NULL) {
-        if (valueType == REG_DWORD) {
-            SetBooleanProperty(TEXT("win.comdlg.noPlacesBar"), (BOOL)((int)*value != 0));
+    catch (std::bad_alloc&) {
+        if (value != NULL) {
+            free(value);
         }
-        free(value);
+        throw;
     }
 
     LPTSTR valueName = TEXT("PlaceN");
@@ -592,7 +619,15 @@ void AwtDesktopProperties::GetOtherParameters() {
     lstrcpy(valueNameBuf, valueName);
 
     LPTSTR propKey = TEXT("win.comdlg.placesBarPlaceN");
-    LPTSTR propKeyBuf = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, (lstrlen(propKey) + 1), sizeof(TCHAR));
+
+    LPTSTR propKeyBuf;
+    try {
+        propKeyBuf = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, (lstrlen(propKey) + 1), sizeof(TCHAR));
+    }
+    catch (std::bad_alloc&) {
+        free(valueNameBuf);
+        throw;
+    }
     lstrcpy(propKeyBuf, propKey);
 
     int i = 0;
@@ -601,20 +636,31 @@ void AwtDesktopProperties::GetOtherParameters() {
         propKeyBuf[25] = valueNameBuf[5];
 
         LPTSTR key = TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\comdlg32\\PlacesBar");
-        if ((value = getWindowsPropFromReg(key, valueNameBuf, &valueType)) != NULL) {
-            if (valueType == REG_DWORD) {
-                // Value is a CSIDL
-                SetIntegerProperty(propKeyBuf, (int)*value);
-            } else {
-                // Value is a path
-                SetStringProperty(propKeyBuf, value);
+        try {
+            value = NULL;
+            if ((value = getWindowsPropFromReg(key, valueNameBuf, &valueType)) != NULL) {
+                if (valueType == REG_DWORD) {
+                    // Value is a CSIDL
+                    SetIntegerProperty(propKeyBuf, (int)*value);
+                } else {
+                    // Value is a path
+                    SetStringProperty(propKeyBuf, value);
+                }
+                free(value);
             }
-            free(value);
+        }
+        catch (std::bad_alloc&) {
+            if (value != NULL) {
+                free(value);
+            }
+            free(propKeyBuf);
+            free(valueNameBuf);
+            throw;
         }
     } while (value != NULL);
 
-    free(valueNameBuf);
     free(propKeyBuf);
+    free(valueNameBuf);
 }
 
 void AwtDesktopProperties::GetSoundEvents() {
@@ -656,14 +702,26 @@ UINT AwtDesktopProperties::GetIntegerParameter(UINT spi) {
 
 void AwtDesktopProperties::SetStringProperty(LPCTSTR propName, LPTSTR value) {
     jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    if (key == NULL) {
+        throw std::bad_alloc();
+    }
+    jstring jValue = JNU_NewStringPlatform(GetEnv(), value);
+    if (jValue == NULL) {
+        GetEnv()->DeleteLocalRef(key);
+        throw std::bad_alloc();
+    }
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setStringPropertyID,
-                             key, JNU_NewStringPlatform(GetEnv(), value));
+                             key, jValue);
+    GetEnv()->DeleteLocalRef(jValue);
     GetEnv()->DeleteLocalRef(key);
 }
 
 void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
     jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    if (key == NULL) {
+        throw std::bad_alloc();
+    }
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setIntegerPropertyID,
                              key, (jint)value);
@@ -672,6 +730,9 @@ void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
 
 void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
     jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    if (key == NULL) {
+        throw std::bad_alloc();
+    }
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setBooleanPropertyID,
                              key, value ? JNI_TRUE : JNI_FALSE);
@@ -680,6 +741,9 @@ void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
 
 void AwtDesktopProperties::SetColorProperty(LPCTSTR propName, DWORD value) {
     jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    if (key == NULL) {
+        throw std::bad_alloc();
+    }
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setColorPropertyID,
                              key, GetRValue(value), GetGValue(value),
@@ -720,6 +784,11 @@ void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
                     else {
                         fontName = JNU_NewStringPlatform(GetEnv(), face);
                     }
+                    if (fontName == NULL) {
+                        delete[] face;
+                        throw std::bad_alloc();
+                    }
+
                     jint pointSize = metrics.tmHeight -
                                      metrics.tmInternalLeading;
                     jint style = java_awt_Font_PLAIN;
@@ -732,11 +801,16 @@ void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
                     }
 
                     jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+                    if (key == NULL) {
+                        GetEnv()->DeleteLocalRef(fontName);
+                        delete[] face;
+                        throw std::bad_alloc();
+                    }
                     GetEnv()->CallVoidMethod(self,
                               AwtDesktopProperties::setFontPropertyID,
                               key, fontName, style, pointSize);
-                    GetEnv()->DeleteLocalRef(fontName);
                     GetEnv()->DeleteLocalRef(key);
+                    GetEnv()->DeleteLocalRef(fontName);
                 }
             }
             delete[] face;
@@ -750,7 +824,9 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
     jint style;
 
     fontName = JNU_NewStringPlatform(GetEnv(), font.lfFaceName);
-
+    if (fontName == NULL) {
+        throw std::bad_alloc();
+    }
 #if 0
     HDC         hdc;
     int         pixelsPerInch = GetDeviceCaps(hdc, LOGPIXELSY);
@@ -773,22 +849,31 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
     }
 
     jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    if (key == NULL) {
+        GetEnv()->DeleteLocalRef(fontName);
+        throw std::bad_alloc();
+    }
     GetEnv()->CallVoidMethod(self, AwtDesktopProperties::setFontPropertyID,
                              key, fontName, style, pointSize);
-
-    GetEnv()->DeleteLocalRef(fontName);
     GetEnv()->DeleteLocalRef(key);
+    GetEnv()->DeleteLocalRef(fontName);
 }
 
 void AwtDesktopProperties::SetSoundProperty(LPCTSTR propName, LPCTSTR winEventName) {
     jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    if (key == NULL) {
+        throw std::bad_alloc();
+    }
     jstring event = JNU_NewStringPlatform(GetEnv(), winEventName);
+    if (event == NULL) {
+        GetEnv()->DeleteLocalRef(key);
+        throw std::bad_alloc();
+    }
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setSoundPropertyID,
                              key, event);
-
-    GetEnv()->DeleteLocalRef(key);
     GetEnv()->DeleteLocalRef(event);
+    GetEnv()->DeleteLocalRef(key);
 }
 
 void AwtDesktopProperties::PlayWindowsSound(LPCTSTR event) {
@@ -814,24 +899,37 @@ Java_sun_awt_windows_WDesktopProperties_initIDs(JNIEnv *env, jclass cls) {
 
     AwtDesktopProperties::pDataID = env->GetFieldID(cls, "pData", "J");
     DASSERT(AwtDesktopProperties::pDataID != 0);
+    CHECK_NULL(AwtDesktopProperties::pDataID);
 
-    AwtDesktopProperties::setBooleanPropertyID = env->GetMethodID(cls, "setBooleanProperty", "(Ljava/lang/String;Z)V");
+    AwtDesktopProperties::setBooleanPropertyID =
+        env->GetMethodID(cls, "setBooleanProperty", "(Ljava/lang/String;Z)V");
     DASSERT(AwtDesktopProperties::setBooleanPropertyID != 0);
+    CHECK_NULL(AwtDesktopProperties::setBooleanPropertyID);
 
-    AwtDesktopProperties::setIntegerPropertyID = env->GetMethodID(cls, "setIntegerProperty", "(Ljava/lang/String;I)V");
+    AwtDesktopProperties::setIntegerPropertyID =
+        env->GetMethodID(cls, "setIntegerProperty", "(Ljava/lang/String;I)V");
     DASSERT(AwtDesktopProperties::setIntegerPropertyID != 0);
+    CHECK_NULL(AwtDesktopProperties::setIntegerPropertyID);
 
-    AwtDesktopProperties::setStringPropertyID = env->GetMethodID(cls, "setStringProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
+    AwtDesktopProperties::setStringPropertyID =
+        env->GetMethodID(cls, "setStringProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
     DASSERT(AwtDesktopProperties::setStringPropertyID != 0);
+    CHECK_NULL(AwtDesktopProperties::setStringPropertyID);
 
-    AwtDesktopProperties::setColorPropertyID = env->GetMethodID(cls, "setColorProperty", "(Ljava/lang/String;III)V");
+    AwtDesktopProperties::setColorPropertyID =
+        env->GetMethodID(cls, "setColorProperty", "(Ljava/lang/String;III)V");
     DASSERT(AwtDesktopProperties::setColorPropertyID != 0);
+    CHECK_NULL(AwtDesktopProperties::setColorPropertyID);
 
-    AwtDesktopProperties::setFontPropertyID = env->GetMethodID(cls, "setFontProperty", "(Ljava/lang/String;Ljava/lang/String;II)V");
+    AwtDesktopProperties::setFontPropertyID =
+        env->GetMethodID(cls, "setFontProperty", "(Ljava/lang/String;Ljava/lang/String;II)V");
     DASSERT(AwtDesktopProperties::setFontPropertyID != 0);
+    CHECK_NULL(AwtDesktopProperties::setFontPropertyID);
 
-    AwtDesktopProperties::setSoundPropertyID = env->GetMethodID(cls, "setSoundProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
+    AwtDesktopProperties::setSoundPropertyID =
+        env->GetMethodID(cls, "setSoundProperty", "(Ljava/lang/String;Ljava/lang/String;)V");
     DASSERT(AwtDesktopProperties::setSoundPropertyID != 0);
+    CHECK_NULL(AwtDesktopProperties::setSoundPropertyID);
 
     CATCH_BAD_ALLOC;
 }

@@ -27,6 +27,7 @@
 
 #include <process.h>
 #include <time.h>
+#include <Windows.h>
 
 #define MUTEX_T         int
 #define MUTEX_INIT      0
@@ -40,4 +41,4 @@
 
 #define popen   _popen
 #define pclose  _pclose
-#define sleep   _sleep
+#define sleep(s)  Sleep((s)*1000)

@@ -1720,7 +1720,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     private native String getPrinterPort(String printerName);
 }
 
-
+@SuppressWarnings("serial") // JDK implementation class
 class Win32MediaSize extends MediaSizeName {
     private static ArrayList winStringTable = new ArrayList();
     private static ArrayList winEnumTable = new ArrayList();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,6 +283,7 @@ public class HTML {
 
     // There is no unique instance of UnknownTag, so we allow it to be
     // Serializable.
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class UnknownTag extends Tag implements Serializable {
 
         /**

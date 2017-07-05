@@ -94,7 +94,7 @@ public final class NativeTypeError extends ScriptObject {
      * @return new TypeError
      */
     @Constructor(name = "TypeError")
-    public static Object constructor(final boolean newObj, final Object self, final Object msg) {
+    public static NativeTypeError constructor(final boolean newObj, final Object self, final Object msg) {
         return new NativeTypeError(msg);
     }
 }

@@ -36,7 +36,7 @@ import java.security.*;
  *
  * This provider only exists to provide access to the Apple keychain-based KeyStore implementation
  */
-
+@SuppressWarnings("serial") // JDK implementation class
 public final class AppleProvider extends Provider {
 
     private static final String info = "Apple Provider";

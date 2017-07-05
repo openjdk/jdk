@@ -115,7 +115,7 @@ import java.util.Hashtable;
  *   }
  * }
  * </pre></blockquote><hr>
- * <p>
+ *
  * @author      Arthur van Hoff
  * @see         java.awt.Container#add(String, Component)
  * @see         java.awt.ComponentOrientation
@@ -414,8 +414,7 @@ public class BorderLayout implements LayoutManager2,
      *                       the component is added to the layout.
      * @see     java.awt.Container#add(java.awt.Component, java.lang.Object)
      * @exception   IllegalArgumentException  if the constraint object is not
-     *                 a string, or if it not one of the five specified
-         *              constants.
+     *              a string, or if it not one of the five specified constants.
      * @since   JDK1.1
      */
     public void addLayoutComponent(Component comp, Object constraints) {

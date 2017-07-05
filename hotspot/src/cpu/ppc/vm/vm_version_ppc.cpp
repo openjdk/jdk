@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,6 +402,9 @@ void VM_Version::determine_features() {
   CodeBuffer cb("detect_cpu_features", code_size, 0);
   MacroAssembler* a = new MacroAssembler(&cb);
 
+  // Must be set to true so we can generate the test code.
+  _features = VM_Version::all_features_m;
+
   // Emit code.
   void (*test)(address addr, uint64_t offset)=(void(*)(address addr, uint64_t offset))(void *)a->function_entry();
   uint32_t *code = (uint32_t *)a->pc();
@@ -409,14 +412,15 @@ void VM_Version::determine_features() {
   // Keep R3_ARG1 unmodified, it contains &field (see below).
   // Keep R4_ARG2 unmodified, it contains offset = 0 (see below).
   a->fsqrt(F3, F4);                            // code[0] -> fsqrt_m
-  a->isel(R7, R5, R6, 0);                      // code[1] -> isel_m
-  a->ldarx_unchecked(R7, R3_ARG1, R4_ARG2, 1); // code[2] -> lxarx_m
-  a->cmpb(R7, R5, R6);                         // code[3] -> bcmp
-  //a->mftgpr(R7, F3);                         // code[4] -> mftgpr
-  a->popcntb(R7, R5);                          // code[5] -> popcntb
-  a->popcntw(R7, R5);                          // code[6] -> popcntw
-  a->fcfids(F3, F4);                           // code[7] -> fcfids
-  a->vand(VR0, VR0, VR0);                      // code[8] -> vand
+  a->fsqrts(F3, F4);                           // code[1] -> fsqrts_m
+  a->isel(R7, R5, R6, 0);                      // code[2] -> isel_m
+  a->ldarx_unchecked(R7, R3_ARG1, R4_ARG2, 1); // code[3] -> lxarx_m
+  a->cmpb(R7, R5, R6);                         // code[4] -> bcmp
+  //a->mftgpr(R7, F3);                         // code[5] -> mftgpr
+  a->popcntb(R7, R5);                          // code[6] -> popcntb
+  a->popcntw(R7, R5);                          // code[7] -> popcntw
+  a->fcfids(F3, F4);                           // code[8] -> fcfids
+  a->vand(VR0, VR0, VR0);                      // code[9] -> vand
   a->blr();
 
   // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
@@ -426,6 +430,7 @@ void VM_Version::determine_features() {
 
   uint32_t *code_end = (uint32_t *)a->pc();
   a->flush();
+  _features = VM_Version::unknown_m;
 
   // Print the detection code.
   if (PrintAssembly) {
@@ -450,6 +455,7 @@ void VM_Version::determine_features() {
   // determine which instructions are legal.
   int feature_cntr = 0;
   if (code[feature_cntr++]) features |= fsqrt_m;
+  if (code[feature_cntr++]) features |= fsqrts_m;
   if (code[feature_cntr++]) features |= isel_m;
   if (code[feature_cntr++]) features |= lxarxeh_m;
   if (code[feature_cntr++]) features |= cmpb_m;

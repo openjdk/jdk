@@ -75,7 +75,7 @@ ifeq (,$(SKIP_ME))
   $(foreach p,$(filter-out $(me),$(platforms)),$(eval $(p) : $$(me)))
 endif
 
-OUTPUT_ROOT = $(abspath ../../../build/devkit)
+OUTPUT_ROOT = $(abspath ../../build/devkit)
 RESULT = $(OUTPUT_ROOT)/result
 
 submakevars = HOST=$@ BUILD=$(me) \

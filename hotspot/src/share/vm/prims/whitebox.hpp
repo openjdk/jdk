@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@
   do {                                                                 \
     JavaThread* THREAD = JavaThread::thread_from_jni_environment(env); \
     if (HAS_PENDING_EXCEPTION) {                                       \
-      CLEAR_PENDING_EXCEPTION;                                         \
       return(value);                                                   \
     }                                                                  \
   } while (0)
@@ -49,7 +48,6 @@
   do {                                                                 \
     JavaThread* THREAD = JavaThread::thread_from_jni_environment(env); \
     if (HAS_PENDING_EXCEPTION) {                                       \
-      CLEAR_PENDING_EXCEPTION;                                         \
       return;                                                          \
     }                                                                  \
   } while (0)
