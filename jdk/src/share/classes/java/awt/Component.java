@@ -10070,11 +10070,12 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
         Window window = getContainingWindow();
         if (window != null) {
-            if (!window.hasHeavyweightDescendants() || !window.hasLightweightDescendants()) {
+            if (!window.hasHeavyweightDescendants() || !window.hasLightweightDescendants() || window.isDisposing()) {
                 if (mixingLog.isLoggable(PlatformLogger.FINE)) {
                     mixingLog.fine("containing window = " + window +
                             "; has h/w descendants = " + window.hasHeavyweightDescendants() +
-                            "; has l/w descendants = " + window.hasLightweightDescendants());
+                            "; has l/w descendants = " + window.hasLightweightDescendants() +
+                            "; disposing = " + window.isDisposing());
                 }
                 return false;
             }

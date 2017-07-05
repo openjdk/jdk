@@ -73,8 +73,6 @@ public class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
         xtext = new XAWTTextField(text,this, target.getParent());
         xtext.getDocument().addDocumentListener(xtext);
         xtext.setCursor(target.getCursor());
-        target.enableInputMethods(true);
-        xtext.enableInputMethods(true);
         XToolkit.specialPeerMap.put(xtext,this);
 
         TextField txt = (TextField) target;

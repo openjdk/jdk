@@ -4690,14 +4690,12 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                      char *addr, size_t bytes, bool read_only,
                      bool allow_exec) {
   int prot;
-  int flags;
+  int flags = MAP_PRIVATE;
 
   if (read_only) {
     prot = PROT_READ;
-    flags = MAP_SHARED;
   } else {
     prot = PROT_READ | PROT_WRITE;
-    flags = MAP_PRIVATE;
   }
 
   if (allow_exec) {
