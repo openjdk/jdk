@@ -157,6 +157,22 @@ public class EncryptionKey
     }
 
     /**
+     * Obtains a key for a given etype with salt and optional s2kparams
+     * @param password NOT null
+     * @param salt NOT null
+     * @param etype
+     * @param s2kparams can be NULL
+     */
+    public static EncryptionKey acquireSecretKey(char[] password,
+            String salt, int etype, byte[] s2kparams)
+            throws KrbException {
+
+        return new EncryptionKey(
+                        stringToKey(password, salt, s2kparams, etype),
+                        etype, null);
+    }
+
+    /**
      * Generate a list of keys using the given principal and password.
      * Construct a key for each configured etype.
      * Caller is responsible for clearing password.
@@ -169,19 +185,8 @@ public class EncryptionKey
      * as the default in that case. If default_tkt_enctypes was set in
      * the libdefaults of krb5.conf, then use that sequence.
      */
-         // Used in Krb5LoginModule
     public static EncryptionKey[] acquireSecretKeys(char[] password,
-        String salt) throws KrbException {
-        return (acquireSecretKeys(password, salt, false, 0, null));
-    }
-
-    /**
-     * Generates a list of keys using the given principal, password,
-     * and the pre-authentication values.
-     */
-    public static EncryptionKey[] acquireSecretKeys(char[] password,
-        String salt, boolean pa_exists, int pa_etype, byte[] pa_s2kparams)
-        throws KrbException {
+            String salt) throws KrbException {
 
         int[] etypes = EType.getDefaults("default_tkt_enctypes");
         if (etypes == null) {
@@ -191,10 +196,8 @@ public class EncryptionKey
         EncryptionKey[] encKeys = new EncryptionKey[etypes.length];
         for (int i = 0; i < etypes.length; i++) {
             if (EType.isSupported(etypes[i])) {
-                byte[] s2kparams = (pa_exists && etypes[i] == pa_etype)
-                        ? pa_s2kparams : null;
                 encKeys[i] = new EncryptionKey(
-                        stringToKey(password, salt, s2kparams, etypes[i]),
+                        stringToKey(password, salt, null, etypes[i]),
                         etypes[i], null);
             } else {
                 if (DEBUG) {

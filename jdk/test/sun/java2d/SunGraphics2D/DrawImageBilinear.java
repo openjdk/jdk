@@ -56,6 +56,9 @@ public class DrawImageBilinear extends Canvas {
     private VolatileImage vimg;
     private static volatile BufferedImage capture;
     private static void doCapture(Component test) {
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ex) {}
         // Grab the screen region
         try {
             Robot robot = new Robot();

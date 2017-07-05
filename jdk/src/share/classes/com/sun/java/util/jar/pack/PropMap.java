@@ -25,13 +25,24 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.util.*;
-import java.util.jar.*;
-import java.util.jar.Pack200;
-import java.util.zip.*;
-import java.io.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.jar.Pack200;
 /**
  * Control block for publishing Pack200 options to the other classes.
  */

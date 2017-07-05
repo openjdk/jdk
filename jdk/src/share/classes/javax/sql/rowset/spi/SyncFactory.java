@@ -197,12 +197,6 @@ import javax.naming.*;
  */
 public class SyncFactory {
 
-    /*
-     * The variable that represents the singleton instance
-     * of the <code>SyncFactory</code> class.
-     */
-    private static SyncFactory syncFactory = null;
-
     /**
      * Creates a new <code>SyncFactory</code> object, which is the singleton
      * instance.
@@ -252,7 +246,7 @@ public class SyncFactory {
     /**
      * The <code>Logger</code> object to be used by the <code>SyncFactory</code>.
      */
-    private static Logger rsLogger;
+    private static volatile Logger rsLogger;
     /**
      *
      */
@@ -315,27 +309,12 @@ public class SyncFactory {
      * @return the <code>SyncFactory</code> instance
      */
     public static SyncFactory getSyncFactory() {
-
-        // This method uses the Singleton Design Pattern
-        // with Double-Checked Locking Pattern for
-        // 1. Creating single instance of the SyncFactory
-        // 2. Make the class thread safe, so that at one time
-        //    only one thread enters the synchronized block
-        //    to instantiate.
-
-        // if syncFactory object is already there
-        // don't go into synchronized block and return
-        // that object.
-        // else go into synchronized block
-
-        if (syncFactory == null) {
-            synchronized (SyncFactory.class) {
-                if (syncFactory == null) {
-                    syncFactory = new SyncFactory();
-                } //end if
-            } //end synchronized block
-        } //end if
-        return syncFactory;
+        /*
+         * Using Initialization on Demand Holder idiom as
+         * Effective Java 2nd Edition,ITEM 71, indicates it is more performant
+         * than the Double-Check Locking idiom.
+         */
+        return SyncFactoryHolder.factory;
     }
 
     /**
@@ -435,11 +414,7 @@ public class SyncFactory {
             }
         }
     }
-    /**
-     * The internal boolean switch that indicates whether a JNDI
-     * context has been established or not.
-     */
-    private static boolean jndiCtxEstablished = false;
+
     /**
      * The internal debug switch.
      */
@@ -621,6 +596,7 @@ public class SyncFactory {
      * @param logger A Logger object instance
      * @throws java.lang.SecurityException if a security manager exists and its
      *   {@code checkPermission} method denies calling {@code setLogger}
+     * @throws NullPointerException if the logger is null
      * @see SecurityManager#checkPermission
      */
     public static void setLogger(Logger logger) {
@@ -628,6 +604,10 @@ public class SyncFactory {
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_SYNCFACTORY_PERMISSION);
+        }
+
+        if(logger == null){
+            throw new NullPointerException("You must provide a Logger");
         }
         rsLogger = logger;
     }
@@ -654,6 +634,7 @@ public class SyncFactory {
      *   {@code checkPermission} method denies calling {@code setLogger}
      * @throws java.util.logging.LoggingPermission if a security manager exists and its
      *   {@code checkPermission} method denies calling {@code setLevel}
+     * @throws NullPointerException if the logger is null
      * @see SecurityManager#checkPermission
      * @see LoggingPermission
      */
@@ -663,8 +644,12 @@ public class SyncFactory {
         if (sec != null) {
             sec.checkPermission(SET_SYNCFACTORY_PERMISSION);
         }
+
+        if(logger == null){
+            throw new NullPointerException("You must provide a Logger");
+        }
+        logger.setLevel(level);
         rsLogger = logger;
-        rsLogger.setLevel(level);
     }
 
     /**
@@ -674,11 +659,14 @@ public class SyncFactory {
      * @throws SyncFactoryException if no logging object has been set.
      */
     public static Logger getLogger() throws SyncFactoryException {
+
+        Logger result = rsLogger;
         // only one logger per session
-        if (rsLogger == null) {
+        if (result == null) {
             throw new SyncFactoryException("(SyncFactory) : No logger has been set");
         }
-        return rsLogger;
+
+        return result;
     }
 
     /**
@@ -699,7 +687,7 @@ public class SyncFactory {
      *  {@code checkPermission} method denies calling {@code setJNDIContext}
      * @see SecurityManager#checkPermission
      */
-    public static void setJNDIContext(javax.naming.Context ctx)
+    public static synchronized void setJNDIContext(javax.naming.Context ctx)
             throws SyncFactoryException {
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
@@ -709,17 +697,16 @@ public class SyncFactory {
             throw new SyncFactoryException("Invalid JNDI context supplied");
         }
         ic = ctx;
-        jndiCtxEstablished = true;
     }
 
     /**
-     * Controls JNDI context intialization.
+     * Controls JNDI context initialization.
      *
      * @throws SyncFactoryException if an error occurs parsing the JNDI context
      */
-    private static void initJNDIContext() throws SyncFactoryException {
+    private static synchronized void initJNDIContext() throws SyncFactoryException {
 
-        if (jndiCtxEstablished && (ic != null) && (lazyJNDICtxRefresh == false)) {
+        if ((ic != null) && (lazyJNDICtxRefresh == false)) {
             try {
                 parseProperties(parseJNDIContext());
                 lazyJNDICtxRefresh = true; // touch JNDI namespace once.
@@ -792,6 +779,13 @@ public class SyncFactory {
             // Re-entrant call into method
             enumerateBindings(bindings, properties);
         }
+    }
+
+    /**
+     * Lazy initialization Holder class used by {@code getSyncFactory}
+     */
+    private static class SyncFactoryHolder {
+        static final SyncFactory factory = new SyncFactory();
     }
 }
 

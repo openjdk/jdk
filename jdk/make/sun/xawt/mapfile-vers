@@ -429,6 +429,7 @@ SUNWprivate_1.1 {
         Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetClassValue;
         Java_com_sun_java_swing_plaf_gtk_GTKStyle_nativeGetPangoFontName;
 
+        Java_sun_awt_X11_GtkFileDialogPeer_initIDs;
         Java_sun_awt_X11_GtkFileDialogPeer_run;
         Java_sun_awt_X11_GtkFileDialogPeer_quit;
 

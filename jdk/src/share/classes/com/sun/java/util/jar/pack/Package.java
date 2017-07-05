@@ -26,11 +26,32 @@
 package com.sun.java.util.jar.pack;
 
 import com.sun.java.util.jar.pack.Attribute.Layout;
+import com.sun.java.util.jar.pack.ConstantPool.ClassEntry;
+import com.sun.java.util.jar.pack.ConstantPool.DescriptorEntry;
+import com.sun.java.util.jar.pack.ConstantPool.Index;
+import com.sun.java.util.jar.pack.ConstantPool.LiteralEntry;
+import com.sun.java.util.jar.pack.ConstantPool.Utf8Entry;
+import com.sun.java.util.jar.pack.ConstantPool.Entry;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.SequenceInputStream;
 import java.lang.reflect.Modifier;
-import java.util.*;
-import java.util.jar.*;
-import java.io.*;
-import com.sun.java.util.jar.pack.ConstantPool.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.jar.JarFile;
 
 /**
  * Define the main data structure transmitted by pack/unpack.
