@@ -141,7 +141,7 @@ Relocator::Relocator(methodHandle m, RelocatorListener* listener) {
 }
 
 // size is the new size of the instruction at bci. Hence, if size is less than the current
-// instruction sice, we will shrink the code.
+// instruction size, we will shrink the code.
 methodHandle Relocator::insert_space_at(int bci, int size, u_char inst_buffer[], TRAPS) {
   _changes = new GrowableArray<ChangeItem*> (10);
   _changes->push(new ChangeWiden(bci, size, inst_buffer));
@@ -192,7 +192,7 @@ bool Relocator::handle_code_changes() {
     // Execute operation
     if (!ci->handle_code_change(this)) return false;
 
-    // Shuffel items up
+    // Shuffle items up
     for (int index = 1; index < _changes->length(); index++) {
       _changes->at_put(index-1, _changes->at(index));
     }
@@ -214,7 +214,7 @@ bool Relocator::is_opcode_lookupswitch(Bytecodes::Code bc) {
 }
 
 // We need a special instruction size method, since lookupswitches and tableswitches might not be
-// properly alligned during relocation
+// properly aligned during relocation
 int Relocator::rc_instr_len(int bci) {
   Bytecodes::Code bc= code_at(bci);
   switch (bc) {
@@ -611,7 +611,7 @@ bool Relocator::relocate_code(int bci, int ilen, int delta) {
 
   // In case we have shrunken a tableswitch/lookupswitch statement, we store the last
   // bytes that get overwritten. We have to copy the bytes after the change_jumps method
-  // has been called, since it is likly to update last offset in a tableswitch/lookupswitch
+  // has been called, since it is likely to update last offset in a tableswitch/lookupswitch
   if (delta < 0) {
     assert(delta>=-3, "we cannot overwrite more than 3 bytes");
     memcpy(_overwrite, addr_at(bci + ilen + delta), -delta);

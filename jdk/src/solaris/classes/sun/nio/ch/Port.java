@@ -40,10 +40,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 
 abstract class Port extends AsynchronousChannelGroupImpl {
-    static final short POLLIN       = 0x0001;
-    static final short POLLOUT      = 0x0004;
-    static final short POLLERR      = 0x0008;
-    static final short POLLHUP      = 0x0010;
 
     /**
      * Implemented by clients registered with this port.
@@ -77,10 +73,20 @@ abstract class Port extends AsynchronousChannelGroupImpl {
     }
 
     /**
+     * Callback method for implementations that need special handling when fd is
+     * removed (currently only needed in the AIX-Port - see AixPollPort.java).
+     */
+    protected void preUnregister(int fd) {
+        // Do nothing by default.
+    }
+
+    /**
      * Unregister channel identified by its file descriptor
      */
     final void unregister(int fd) {
         boolean checkForShutdown = false;
+
+        preUnregister(fd);
 
         fdToChannelLock.writeLock().lock();
         try {

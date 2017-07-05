@@ -26,6 +26,7 @@
  *
  * @test
  * @security
+ * @bug JDK-8032954: Nashorn: extend Java.extend
  */
 
 try {
@@ -39,3 +40,24 @@ try {
     }
 }
 
+try {
+    Java.extend(Java.type('java.lang.ClassLoader'));
+    fail("should have thrown SecurityException");
+} catch (e) {
+    if (e instanceof java.lang.SecurityException) {
+        print(e);
+    } else {
+        fail("expected SecurityException, got " + e);
+    }
+}
+
+try {
+    Java.extend(Java.type("javax.management.loading.MLet"));
+    fail("should have thrown SecurityException");
+} catch (e) {
+    if (e instanceof java.lang.SecurityException) {
+        print(e);
+    } else {
+        fail("expected SecurityException, got " + e);
+    }
+}

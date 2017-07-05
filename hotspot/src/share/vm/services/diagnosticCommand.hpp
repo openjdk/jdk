@@ -132,6 +132,29 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class VMDynamicLibrariesDCmd : public DCmd {
+public:
+  VMDynamicLibrariesDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.dynlibs";
+  }
+  static const char* description() {
+    return "Print loaded dynamic libraries.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments() {
+    return 0;
+  };
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 class VMUptimeDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<bool> _date;

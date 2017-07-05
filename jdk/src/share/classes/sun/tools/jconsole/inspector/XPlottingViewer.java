@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class XPlottingViewer extends PlotterPanel implements ActionListener {
         //plotterCache.clear();
         it = timerCache.keySet().iterator();
         while(it.hasNext()) {
-            String key = (String) it.next();
+            String key = it.next();
             if(key.startsWith(String.valueOf(tab.hashCode()))) {
                 Timer t = timerCache.get(key);
                 t.cancel();

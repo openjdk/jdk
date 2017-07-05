@@ -337,11 +337,9 @@ public final class Parameter implements AnnotatedElement {
 
     private synchronized Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         if(null == declaredAnnotations) {
-            declaredAnnotations =
-                new HashMap<Class<? extends Annotation>, Annotation>();
-            Annotation[] ann = getDeclaredAnnotations();
-            for(int i = 0; i < ann.length; i++)
-                declaredAnnotations.put(ann[i].annotationType(), ann[i]);
+            declaredAnnotations = new HashMap<>();
+            for (Annotation a : getDeclaredAnnotations())
+                declaredAnnotations.put(a.annotationType(), a);
         }
         return declaredAnnotations;
    }

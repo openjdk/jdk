@@ -71,6 +71,9 @@
   diagnostic(bool, G1TraceConcRefinement, false,                            \
           "Trace G1 concurrent refinement")                                 \
                                                                             \
+  experimental(bool, G1TraceStringSymbolTableScrubbing, false,              \
+          "Trace information string and symbol table scrubbing.")           \
+                                                                            \
   product(double, G1ConcMarkStepDurationMillis, 10.0,                       \
           "Target duration of individual concurrent marking steps "         \
           "in milliseconds.")                                               \

@@ -106,7 +106,7 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   JNIHandleBlock* _next;                        // Link to next block
 
   // The following instance variables are only used by the first block in a chain.
-  // Having two types of blocks complicates the code and the space overhead in negligble.
+  // Having two types of blocks complicates the code and the space overhead in negligible.
   JNIHandleBlock* _last;                        // Last block in use
   JNIHandleBlock* _pop_frame_link;              // Block to restore on PopLocalFrame call
   oop*            _free_list;                   // Handle free list

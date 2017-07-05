@@ -1018,7 +1018,7 @@ const Type *PhiNode::Value( PhaseTransform *phase ) const {
           !jtkp->klass_is_exact() && // Keep exact interface klass (6894807)
           ttkp->is_loaded() && !ttkp->klass()->is_interface() ) {
         assert(ft == ttkp->cast_to_ptr_type(jtkp->ptr()) ||
-               ft->isa_narrowoop() && ft->make_ptr() == ttkp->cast_to_ptr_type(jtkp->ptr()), "");
+               ft->isa_narrowklass() && ft->make_ptr() == ttkp->cast_to_ptr_type(jtkp->ptr()), "");
         jt = ft;
       }
     }

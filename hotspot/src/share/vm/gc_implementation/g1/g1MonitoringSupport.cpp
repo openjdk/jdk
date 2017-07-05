@@ -112,7 +112,7 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   // take_sample() only returns "used".  When sampling was used, there
   // were some anomolous values emitted which may have been the consequence
   // of not updating all values simultaneously (i.e., see the calculation done
-  // in eden_space_used(), is it possbile that the values used to
+  // in eden_space_used(), is it possible that the values used to
   // calculate either eden_used or survivor_used are being updated by
   // the collector when the sample is being done?).
   const bool sampled = false;
@@ -135,7 +135,7 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
 
   //   Young collection set
   //  name "generation.0".  This is logically the young generation.
-  //  The "0, 3" are paremeters for the n-th genertaion (=0) with 3 spaces.
+  //  The "0, 3" are parameters for the n-th generation (=0) with 3 spaces.
   // See  _old_collection_counters for additional counters
   _young_collection_counters = new G1YoungGenerationCounters(this, "young");
 
@@ -254,7 +254,7 @@ void G1MonitoringSupport::update_sizes() {
     eden_counters()->update_capacity(pad_capacity(eden_space_committed()));
     eden_counters()->update_used(eden_space_used());
     // only the to survivor space (s1) is active, so we don't need to
-    // update the counteres for the from survivor space (s0)
+    // update the counters for the from survivor space (s0)
     to_counters()->update_capacity(pad_capacity(survivor_space_committed()));
     to_counters()->update_used(survivor_space_used());
     old_space_counters()->update_capacity(pad_capacity(old_space_committed()));

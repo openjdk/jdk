@@ -54,7 +54,7 @@ void ConcurrentGCThread::safepoint_desynchronize() {
 void ConcurrentGCThread::create_and_start() {
   if (os::create_thread(this, os::cgc_thread)) {
     // XXX: need to set this to low priority
-    // unless "agressive mode" set; priority
+    // unless "aggressive mode" set; priority
     // should be just less than that of VMThread.
     os::set_priority(this, NearMaxPriority);
     if (!_should_terminate && !DisableStartThread) {

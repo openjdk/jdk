@@ -56,44 +56,56 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
     return JVM_IHashCode(env, x);
 }
 
-#define PUTPROP(props, key, val) \
-    if (1) { \
-        jstring jkey = (*env)->NewStringUTF(env, key); \
-        jstring jval = (*env)->NewStringUTF(env, val); \
-        jobject r = (*env)->CallObjectMethod(env, props, putID, jkey, jval); \
-        if ((*env)->ExceptionOccurred(env)) return NULL; \
-        (*env)->DeleteLocalRef(env, jkey); \
-        (*env)->DeleteLocalRef(env, jval); \
-        (*env)->DeleteLocalRef(env, r); \
+#define PUTPROP(props, key, val)                                     \
+    if (1) {                                                         \
+        jstring jkey, jval;                                          \
+        jobject r;                                                   \
+        jkey = (*env)->NewStringUTF(env, key);                       \
+        if (jkey == NULL) return NULL;                               \
+        jval = (*env)->NewStringUTF(env, val);                       \
+        if (jval == NULL) return NULL;                               \
+        r = (*env)->CallObjectMethod(env, props, putID, jkey, jval); \
+        if ((*env)->ExceptionOccurred(env)) return NULL;             \
+        (*env)->DeleteLocalRef(env, jkey);                           \
+        (*env)->DeleteLocalRef(env, jval);                           \
+        (*env)->DeleteLocalRef(env, r);                              \
     } else ((void) 0)
 
 /*  "key" is a char type string with only ASCII character in it.
     "val" is a nchar (typedefed in java_props.h) type string  */
 
-#define PUTPROP_ForPlatformNString(props, key, val) \
-    if (1) { \
-        jstring jkey = (*env)->NewStringUTF(env, key);  \
-        jstring jval = GetStringPlatform(env, val); \
-        jobject r = (*env)->CallObjectMethod(env, props, putID, jkey, jval); \
-        if ((*env)->ExceptionOccurred(env)) return NULL; \
-        (*env)->DeleteLocalRef(env, jkey); \
-        (*env)->DeleteLocalRef(env, jval); \
-        (*env)->DeleteLocalRef(env, r); \
+#define PUTPROP_ForPlatformNString(props, key, val)                  \
+    if (1) {                                                         \
+        jstring jkey, jval;                                          \
+        jobject r;                                                   \
+        jkey = (*env)->NewStringUTF(env, key);                       \
+        if (jkey == NULL) return NULL;                               \
+        jval = GetStringPlatform(env, val);                          \
+        if (jval == NULL) return NULL;                               \
+        r = (*env)->CallObjectMethod(env, props, putID, jkey, jval); \
+        if ((*env)->ExceptionOccurred(env)) return NULL;             \
+        (*env)->DeleteLocalRef(env, jkey);                           \
+        (*env)->DeleteLocalRef(env, jval);                           \
+        (*env)->DeleteLocalRef(env, r);                              \
     } else ((void) 0)
-#define REMOVEPROP(props, key) \
-    if (1) { \
-        jstring jkey = JNU_NewStringPlatform(env, key); \
-        jobject r = (*env)->CallObjectMethod(env, props, removeID, jkey); \
-        if ((*env)->ExceptionOccurred(env)) return NULL; \
-        (*env)->DeleteLocalRef(env, jkey); \
-        (*env)->DeleteLocalRef(env, r); \
+#define REMOVEPROP(props, key)                                    \
+    if (1) {                                                      \
+        jstring jkey;                                             \
+        jobject r;                                                \
+        jkey = JNU_NewStringPlatform(env, key);                   \
+        if (jkey == NULL) return NULL;                            \
+        r = (*env)->CallObjectMethod(env, props, removeID, jkey); \
+        if ((*env)->ExceptionOccurred(env)) return NULL;          \
+        (*env)->DeleteLocalRef(env, jkey);                        \
+        (*env)->DeleteLocalRef(env, r);                           \
     } else ((void) 0)
-#define GETPROP(props, key, jret) \
-    if (1) { \
-        jstring jkey = JNU_NewStringPlatform(env, key); \
+#define GETPROP(props, key, jret)                                     \
+    if (1) {                                                          \
+        jstring jkey = JNU_NewStringPlatform(env, key);               \
+        if (jkey == NULL) return NULL;                                \
         jret = (*env)->CallObjectMethod(env, props, getPropID, jkey); \
-        if ((*env)->ExceptionOccurred(env)) return NULL; \
-        (*env)->DeleteLocalRef(env, jkey); \
+        if ((*env)->ExceptionOccurred(env)) return NULL;              \
+        (*env)->DeleteLocalRef(env, jkey);                            \
     } else ((void) 0)
 
 #ifndef VENDOR /* Third party may overwrite this. */
@@ -169,23 +181,31 @@ JNIEXPORT jobject JNICALL
 Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
 {
     char buf[128];
-    java_props_t *sprops = GetJavaProperties(env);
-    jmethodID putID = (*env)->GetMethodID(env,
-                                          (*env)->GetObjectClass(env, props),
-                                          "put",
-            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-    jmethodID removeID = (*env)->GetMethodID(env,
-                                          (*env)->GetObjectClass(env, props),
-                                          "remove",
-            "(Ljava/lang/Object;)Ljava/lang/Object;");
-    jmethodID getPropID = (*env)->GetMethodID(env,
-                                          (*env)->GetObjectClass(env, props),
-                                          "getProperty",
-            "(Ljava/lang/String;)Ljava/lang/String;");
+    java_props_t *sprops;
+    jmethodID putID, removeID, getPropID;
     jobject ret = NULL;
     jstring jVMVal = NULL;
 
-    if (sprops == NULL || putID == NULL ) return NULL;
+    sprops = GetJavaProperties(env);
+    CHECK_NULL_RETURN(sprops, NULL);
+
+    putID = (*env)->GetMethodID(env,
+                                (*env)->GetObjectClass(env, props),
+                                "put",
+            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+    CHECK_NULL_RETURN(putID, NULL);
+
+    removeID = (*env)->GetMethodID(env,
+                                   (*env)->GetObjectClass(env, props),
+                                   "remove",
+            "(Ljava/lang/Object;)Ljava/lang/Object;");
+    CHECK_NULL_RETURN(removeID, NULL);
+
+    getPropID = (*env)->GetMethodID(env,
+                                    (*env)->GetObjectClass(env, props),
+                                    "getProperty",
+            "(Ljava/lang/String;)Ljava/lang/String;");
+    CHECK_NULL_RETURN(getPropID, NULL);
 
     PUTPROP(props, "java.specification.version",
             JDK_MAJOR_VERSION "." JDK_MINOR_VERSION);
@@ -382,6 +402,7 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     GETPROP(props, "sun.locale.formatasdefault", jVMVal);
     if (jVMVal) {
         const char * val = (*env)->GetStringUTFChars(env, jVMVal, 0);
+        CHECK_NULL_RETURN(val, NULL);
         fmtdefault = !strcmp(val, "true");
         (*env)->ReleaseStringUTFChars(env, jVMVal, val);
         (*env)->DeleteLocalRef(env, jVMVal);

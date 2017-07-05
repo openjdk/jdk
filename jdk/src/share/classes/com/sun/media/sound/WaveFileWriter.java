@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,17 +240,17 @@ public final class WaveFileWriter extends SunFileWriter {
 
             if (maxLength>0) {
                 if( bytesRead < maxLength ) {
-                    out.write( buffer, 0, (int)bytesRead );
+                    out.write( buffer, 0, bytesRead );
                     bytesWritten += bytesRead;
                     maxLength -= bytesRead;
                 } else {
-                    out.write( buffer, 0, (int)maxLength );
+                    out.write( buffer, 0, maxLength );
                     bytesWritten += maxLength;
                     maxLength = 0;
                     break;
                 }
             } else {
-                out.write( buffer, 0, (int)bytesRead );
+                out.write( buffer, 0, bytesRead );
                 bytesWritten += bytesRead;
             }
         }
@@ -272,7 +272,7 @@ public final class WaveFileWriter extends SunFileWriter {
         short channels         = (short) audioFormat.getChannels();
         short sampleSizeInBits = (short) audioFormat.getSampleSizeInBits();
         int sampleRate         = (int) audioFormat.getSampleRate();
-        int frameSizeInBytes   = (int) audioFormat.getFrameSize();
+        int frameSizeInBytes   = audioFormat.getFrameSize();
         int frameRate              = (int) audioFormat.getFrameRate();
         int avgBytesPerSec     = channels * sampleSizeInBits * sampleRate / 8;;
         short blockAlign       = (short) ((sampleSizeInBits / 8) * channels);

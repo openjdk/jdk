@@ -30,7 +30,8 @@
  * and finally the expected result.
  */
 
-import sun.misc.FpUtils;
+import sun.misc.FloatConsts;
+import sun.misc.DoubleConsts;
 
 public class Tests {
     private Tests(){}; // do not instantiate
@@ -57,6 +58,176 @@ public class Tests {
             return Math.nextUp(d);
         else
             return -Math.nextUp(-d);
+    }
+
+    /**
+     * Returns unbiased exponent of a {@code float}; for
+     * subnormal values, the number is treated as if it were
+     * normalized.  That is for all finite, non-zero, positive numbers
+     * <i>x</i>, <code>scalb(<i>x</i>, -ilogb(<i>x</i>))</code> is
+     * always in the range [1, 2).
+     * <p>
+     * Special cases:
+     * <ul>
+     * <li> If the argument is NaN, then the result is 2<sup>30</sup>.
+     * <li> If the argument is infinite, then the result is 2<sup>28</sup>.
+     * <li> If the argument is zero, then the result is -(2<sup>28</sup>).
+     * </ul>
+     *
+     * @param f floating-point number whose exponent is to be extracted
+     * @return unbiased exponent of the argument.
+     */
+    public static int ilogb(double d) {
+        int exponent = Math.getExponent(d);
+
+        switch (exponent) {
+        case DoubleConsts.MAX_EXPONENT+1:       // NaN or infinity
+            if( Double.isNaN(d) )
+                return (1<<30);         // 2^30
+            else // infinite value
+                return (1<<28);         // 2^28
+
+        case DoubleConsts.MIN_EXPONENT-1:       // zero or subnormal
+            if(d == 0.0) {
+                return -(1<<28);        // -(2^28)
+            }
+            else {
+                long transducer = Double.doubleToRawLongBits(d);
+
+                /*
+                 * To avoid causing slow arithmetic on subnormals,
+                 * the scaling to determine when d's significand
+                 * is normalized is done in integer arithmetic.
+                 * (there must be at least one "1" bit in the
+                 * significand since zero has been screened out.
+                 */
+
+                // isolate significand bits
+                transducer &= DoubleConsts.SIGNIF_BIT_MASK;
+                assert(transducer != 0L);
+
+                // This loop is simple and functional. We might be
+                // able to do something more clever that was faster;
+                // e.g. number of leading zero detection on
+                // (transducer << (# exponent and sign bits).
+                while (transducer <
+                       (1L << (DoubleConsts.SIGNIFICAND_WIDTH - 1))) {
+                    transducer *= 2;
+                    exponent--;
+                }
+                exponent++;
+                assert( exponent >=
+                        DoubleConsts.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH-1) &&
+                        exponent < DoubleConsts.MIN_EXPONENT);
+                return exponent;
+            }
+
+        default:
+            assert( exponent >= DoubleConsts.MIN_EXPONENT &&
+                    exponent <= DoubleConsts.MAX_EXPONENT);
+            return exponent;
+        }
+    }
+
+    /**
+     * Returns unbiased exponent of a {@code float}; for
+     * subnormal values, the number is treated as if it were
+     * normalized.  That is for all finite, non-zero, positive numbers
+     * <i>x</i>, <code>scalb(<i>x</i>, -ilogb(<i>x</i>))</code> is
+     * always in the range [1, 2).
+     * <p>
+     * Special cases:
+     * <ul>
+     * <li> If the argument is NaN, then the result is 2<sup>30</sup>.
+     * <li> If the argument is infinite, then the result is 2<sup>28</sup>.
+     * <li> If the argument is zero, then the result is -(2<sup>28</sup>).
+     * </ul>
+     *
+     * @param f floating-point number whose exponent is to be extracted
+     * @return unbiased exponent of the argument.
+     */
+     public static int ilogb(float f) {
+        int exponent = Math.getExponent(f);
+
+        switch (exponent) {
+        case FloatConsts.MAX_EXPONENT+1:        // NaN or infinity
+            if( Float.isNaN(f) )
+                return (1<<30);         // 2^30
+            else // infinite value
+                return (1<<28);         // 2^28
+
+        case FloatConsts.MIN_EXPONENT-1:        // zero or subnormal
+            if(f == 0.0f) {
+                return -(1<<28);        // -(2^28)
+            }
+            else {
+                int transducer = Float.floatToRawIntBits(f);
+
+                /*
+                 * To avoid causing slow arithmetic on subnormals,
+                 * the scaling to determine when f's significand
+                 * is normalized is done in integer arithmetic.
+                 * (there must be at least one "1" bit in the
+                 * significand since zero has been screened out.
+                 */
+
+                // isolate significand bits
+                transducer &= FloatConsts.SIGNIF_BIT_MASK;
+                assert(transducer != 0);
+
+                // This loop is simple and functional. We might be
+                // able to do something more clever that was faster;
+                // e.g. number of leading zero detection on
+                // (transducer << (# exponent and sign bits).
+                while (transducer <
+                       (1 << (FloatConsts.SIGNIFICAND_WIDTH - 1))) {
+                    transducer *= 2;
+                    exponent--;
+                }
+                exponent++;
+                assert( exponent >=
+                        FloatConsts.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH-1) &&
+                        exponent < FloatConsts.MIN_EXPONENT);
+                return exponent;
+            }
+
+        default:
+            assert( exponent >= FloatConsts.MIN_EXPONENT &&
+                    exponent <= FloatConsts.MAX_EXPONENT);
+            return exponent;
+        }
+    }
+
+    /**
+     * Returns {@code true} if the unordered relation holds
+     * between the two arguments.  When two floating-point values are
+     * unordered, one value is neither less than, equal to, nor
+     * greater than the other.  For the unordered relation to be true,
+     * at least one argument must be a {@code NaN}.
+     *
+     * @param arg1      the first argument
+     * @param arg2      the second argument
+     * @return {@code true} if at least one argument is a NaN,
+     * {@code false} otherwise.
+     */
+     public static boolean isUnordered(float arg1, float arg2) {
+        return Float.isNaN(arg1) || Float.isNaN(arg2);
+    }
+
+    /**
+     * Returns {@code true} if the unordered relation holds
+     * between the two arguments.  When two floating-point values are
+     * unordered, one value is neither less than, equal to, nor
+     * greater than the other.  For the unordered relation to be true,
+     * at least one argument must be a {@code NaN}.
+     *
+     * @param arg1      the first argument
+     * @param arg2      the second argument
+     * @return {@code true} if at least one argument is a NaN,
+     * {@code false} otherwise.
+     */
+    public static boolean isUnordered(double arg1, double arg2) {
+        return Double.isNaN(arg1) || Double.isNaN(arg2);
     }
 
     public static int test(String testName, float input,
@@ -237,7 +408,7 @@ public class Tests {
                 return 1;
             } else {
                 double difference = expected - result;
-                if (FpUtils.isUnordered(expected, result) ||
+                if (isUnordered(expected, result) ||
                     Double.isNaN(difference) ||
                     // fail if greater than or unordered
                     !(Math.abs( difference/Math.ulp(expected) ) <= Math.abs(ulps)) ) {
@@ -332,7 +503,7 @@ public class Tests {
                                     double result, double expected, double tolerance) {
         if (Double.compare(expected, result ) != 0) {
             double difference = expected - result;
-            if (FpUtils.isUnordered(expected, result) ||
+            if (isUnordered(expected, result) ||
                 Double.isNaN(difference) ||
                 // fail if greater than or unordered
                 !(Math.abs((difference)/expected) <= StrictMath.pow(10, -tolerance)) ) {

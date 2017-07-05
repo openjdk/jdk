@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ abstract class XRPaints {
             Rectangle2D anchor = paint.getAnchorRect();
 
             XRSurfaceData dstData = (XRSurfaceData) sg2d.surfaceData;
-            XRSurfaceData srcData = (XRSurfaceData) getAccSrcSurface(dstData, bi);
+            XRSurfaceData srcData = getAccSrcSurface(dstData, bi);
 
             AffineTransform at = new AffineTransform();
             at.translate(anchor.getX(), anchor.getY());
@@ -259,7 +259,7 @@ abstract class XRPaints {
 
     public int colorToIntArgbPixel(Color c) {
         int rgb = c.getRGB();
-        int a = (int) Math.round(xrCompMan.getExtraAlpha() * (rgb >>> 24));
+        int a = Math.round(xrCompMan.getExtraAlpha() * (rgb >>> 24));
         return ((a << 24) | (rgb & 0x00FFFFFF));
     }
 }

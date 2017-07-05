@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -894,12 +894,12 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 
   public String toString() {
     if (true) {
-        return source.toString(source.WITHOUT_CONTEXT);
+        return source.toString(TextSource.WITHOUT_CONTEXT);
     }
     StringBuffer buf = new StringBuffer();
     buf.append(super.toString());
     buf.append("[source:");
-    buf.append(source.toString(source.WITHOUT_CONTEXT));
+    buf.append(source.toString(TextSource.WITHOUT_CONTEXT));
     buf.append(", lb:");
     buf.append(lb);
     buf.append(", ab:");
@@ -1008,7 +1008,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     // when we justify, we need to adjust the charinfo since spaces
     // change their advances.  preserve the existing charinfo.
 
-    float[] newCharinfo = (float[])getCharinfo().clone();
+    float[] newCharinfo = getCharinfo().clone();
 
     // we only push spaces, so never need to rejustify
     flags[0] = false;

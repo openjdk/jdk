@@ -31,7 +31,7 @@
 
 // A MutableSpace is a subtype of ImmutableSpace that supports the
 // concept of allocation. This includes the concepts that a space may
-// be only partially full, and the querry methods that go with such
+// be only partially full, and the query methods that go with such
 // an assumption. MutableSpace is also responsible for minimizing the
 // page allocation time by having the memory pretouched (with
 // AlwaysPretouch) and for optimizing page placement on NUMA systems
@@ -111,7 +111,7 @@ class MutableSpace: public ImmutableSpace {
 
   virtual void mangle_region(MemRegion mr) PRODUCT_RETURN;
 
-  // Boolean querries.
+  // Boolean queries.
   bool is_empty() const              { return used_in_words() == 0; }
   bool not_empty() const             { return used_in_words() > 0; }
   bool contains(const void* p) const { return _bottom <= p && p < _end; }
@@ -124,6 +124,7 @@ class MutableSpace: public ImmutableSpace {
   virtual size_t used_in_words() const                    { return pointer_delta(top(), bottom()); }
   virtual size_t free_in_words() const                    { return pointer_delta(end(),    top()); }
   virtual size_t tlab_capacity(Thread* thr) const         { return capacity_in_bytes();            }
+  virtual size_t tlab_used(Thread* thr) const             { return used_in_bytes();                }
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const { return free_in_bytes();                }
 
   // Allocation (return NULL if full)

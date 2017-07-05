@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
     public DataBuffer createDataBuffer() {
         DataBuffer dataBuffer = null;
 
-        int size = (int)scanlineStride*height;
+        int size = scanlineStride*height;
         switch (dataType) {
         case DataBuffer.TYPE_BYTE:
             dataBuffer = new DataBufferByte(size+(dataBitOffset+7)/8);

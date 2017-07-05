@@ -665,6 +665,7 @@ CXXFLAGS_DEBUG_SYMBOLS
 CFLAGS_DEBUG_SYMBOLS
 ZIP_DEBUGINFO_FILES
 ENABLE_DEBUG_SYMBOLS
+USING_BROKEN_SUSE_LD
 COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
 LDFLAGS_CXX_JDK
@@ -715,6 +716,8 @@ ac_ct_OBJDUMP
 OBJDUMP
 ac_ct_OBJCOPY
 OBJCOPY
+ac_ct_STRIP
+ac_ct_NM
 MCS
 STRIP
 GNM
@@ -734,6 +737,7 @@ WINLD
 HOTSPOT_LD
 HOTSPOT_CXX
 ARFLAGS
+ac_ct_AR
 AR
 LDEXECXX
 LDCXX
@@ -747,8 +751,9 @@ CXXFLAGS
 CXX
 ac_ct_PROPER_COMPILER_CXX
 PROPER_COMPILER_CXX
-POTENTIAL_CXX
 TOOLS_DIR_CXX
+POTENTIAL_CXX
+COMPILER_TARGET_BITS_FLAG
 OBJEXT
 EXEEXT
 ac_ct_CC
@@ -758,8 +763,8 @@ CFLAGS
 CC
 ac_ct_PROPER_COMPILER_CC
 PROPER_COMPILER_CC
-POTENTIAL_CC
 TOOLS_DIR_CC
+POTENTIAL_CC
 BUILD_LD
 BUILD_CXX
 BUILD_CC
@@ -787,6 +792,12 @@ LANGTOOLS_TOPDIR
 BOOT_JDK_JVMARGS
 JAVAC_FLAGS
 BOOT_JDK_SOURCETARGET
+JARSIGNER
+NATIVE2ASCII
+JAR
+JAVAH
+JAVAC
+JAVA
 BOOT_JDK
 BOOT_TOOLSJAR
 BOOT_RTJAR
@@ -851,6 +862,7 @@ VARIANT
 DEBUG_LEVEL
 MACOSX_UNIVERSAL
 INCLUDE_SA
+JVM_VARIANT_CORE
 JVM_VARIANT_ZEROSHARK
 JVM_VARIANT_ZERO
 JVM_VARIANT_KERNEL
@@ -858,6 +870,7 @@ JVM_VARIANT_MINIMAL1
 JVM_VARIANT_CLIENT
 JVM_VARIANT_SERVER
 JVM_VARIANTS
+JVM_INTERPRETER
 JDK_VARIANT
 SET_OPENJDK
 BUILD_LOG_WRAPPER
@@ -910,7 +923,6 @@ SETFILE
 DF
 READLINK
 CYGPATH
-NAWK
 SED
 FGREP
 EGREP
@@ -930,6 +942,7 @@ SORT
 SH
 RM
 PRINTF
+NAWK
 MV
 MKTEMP
 MKDIR
@@ -1003,6 +1016,7 @@ with_tools_dir
 with_devkit
 enable_openjdk_only
 with_jdk_variant
+with_jvm_interpreter
 with_jvm_variants
 enable_debug
 with_debug_level
@@ -1068,7 +1082,73 @@ with_ccache_dir
       ac_precious_vars='build_alias
 host_alias
 target_alias
+BASENAME
+BASH
+CAT
+CHMOD
+CMP
+COMM
+CP
+CPIO
+CUT
+DATE
+DIFF
+DIRNAME
+ECHO
+EXPR
+FILE
+FIND
+HEAD
+LN
+LS
+MKDIR
+MKTEMP
+MV
+NAWK
+PRINTF
+RM
+SH
+SORT
+TAIL
+TAR
+TEE
+TOUCH
+TR
+UNAME
+UNIQ
+WC
+WHICH
+XARGS
+AWK
+GREP
+EGREP
+FGREP
+SED
+CYGPATH
+READLINK
+DF
+SETFILE
+UNZIP
+ZIP
+LDD
+OTOOL
+READELF
+HG
+STAT
+TIME
+DSYMUTIL
+XATTR
+CODESIGN
 PKG_CONFIG
+JAVA
+JAVAC
+JAVAH
+JAR
+NATIVE2ASCII
+JARSIGNER
+BUILD_CC
+BUILD_CXX
+BUILD_LD
 CC
 CFLAGS
 LDFLAGS
@@ -1079,15 +1159,26 @@ CXXFLAGS
 CCC
 OBJC
 OBJCFLAGS
+AR
 CPP
 CXXCPP
+AS
+NM
+GNM
+STRIP
+MCS
+OBJCOPY
+OBJDUMP
+LIPO
+JTREGEXE
 XMKMF
 FREETYPE_CFLAGS
 FREETYPE_LIBS
 ALSA_CFLAGS
 ALSA_LIBS
 LIBFFI_CFLAGS
-LIBFFI_LIBS'
+LIBFFI_LIBS
+CCACHE'
 
 
 # Initialize some variables set by options.
@@ -1731,8 +1822,8 @@ Optional Features:
   --disable-precompiled-headers
                           disable using precompiled headers when compiling C++
                           [enabled]
-  --disable-ccache        disable using ccache to speed up recompilations
-                          [enabled]
+  --enable-ccache         enable using ccache to speed up recompilations
+                          [disabled]
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1747,8 +1838,10 @@ Optional Packages:
   --with-devkit           use this directory as base for tools-dir and
                           sys-root (for cross-compiling)
   --with-jdk-variant      JDK variant to build (normal) [normal]
+  --with-jvm-interpreter  JVM interpreter to build (template, cpp) [template]
   --with-jvm-variants     JVM variants (separated by commas) to build (server,
-                          client, minimal1, kernel, zero, zeroshark) [server]
+                          client, minimal1, kernel, zero, zeroshark, core)
+                          [server]
   --with-debug-level      set the debug level (release, fastdebug, slowdebug)
                           [release]
   --with-conf-name        use this as the name of the configuration [generated
@@ -1841,7 +1934,74 @@ Optional Packages:
   --with-ccache-dir       where to store ccache files [~/.ccache]
 
 Some influential environment variables:
+  BASENAME    Override default value for BASENAME
+  BASH        Override default value for BASH
+  CAT         Override default value for CAT
+  CHMOD       Override default value for CHMOD
+  CMP         Override default value for CMP
+  COMM        Override default value for COMM
+  CP          Override default value for CP
+  CPIO        Override default value for CPIO
+  CUT         Override default value for CUT
+  DATE        Override default value for DATE
+  DIFF        Override default value for DIFF
+  DIRNAME     Override default value for DIRNAME
+  ECHO        Override default value for ECHO
+  EXPR        Override default value for EXPR
+  FILE        Override default value for FILE
+  FIND        Override default value for FIND
+  HEAD        Override default value for HEAD
+  LN          Override default value for LN
+  LS          Override default value for LS
+  MKDIR       Override default value for MKDIR
+  MKTEMP      Override default value for MKTEMP
+  MV          Override default value for MV
+  NAWK        Override default value for NAWK
+  PRINTF      Override default value for PRINTF
+  RM          Override default value for RM
+  SH          Override default value for SH
+  SORT        Override default value for SORT
+  TAIL        Override default value for TAIL
+  TAR         Override default value for TAR
+  TEE         Override default value for TEE
+  TOUCH       Override default value for TOUCH
+  TR          Override default value for TR
+  UNAME       Override default value for UNAME
+  UNIQ        Override default value for UNIQ
+  WC          Override default value for WC
+  WHICH       Override default value for WHICH
+  XARGS       Override default value for XARGS
+  AWK         Override default value for AWK
+  GREP        Override default value for GREP
+  EGREP       Override default value for EGREP
+  FGREP       Override default value for FGREP
+  SED         Override default value for SED
+  CYGPATH     Override default value for CYGPATH
+  READLINK    Override default value for READLINK
+  DF          Override default value for DF
+  SETFILE     Override default value for SETFILE
+  UNZIP       Override default value for UNZIP
+  ZIP         Override default value for ZIP
+  LDD         Override default value for LDD
+  OTOOL       Override default value for OTOOL
+  READELF     Override default value for READELF
+  HG          Override default value for HG
+  STAT        Override default value for STAT
+  TIME        Override default value for TIME
+  DSYMUTIL    Override default value for DSYMUTIL
+  XATTR       Override default value for XATTR
+  CODESIGN    Override default value for CODESIGN
   PKG_CONFIG  path to pkg-config utility
+  JAVA        Override default value for JAVA
+  JAVAC       Override default value for JAVAC
+  JAVAH       Override default value for JAVAH
+  JAR         Override default value for JAR
+  NATIVE2ASCII
+              Override default value for NATIVE2ASCII
+  JARSIGNER   Override default value for JARSIGNER
+  BUILD_CC    Override default value for BUILD_CC
+  BUILD_CXX   Override default value for BUILD_CXX
+  BUILD_LD    Override default value for BUILD_LD
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
@@ -1853,8 +2013,18 @@ Some influential environment variables:
   CXXFLAGS    C++ compiler flags
   OBJC        Objective C compiler command
   OBJCFLAGS   Objective C compiler flags
+  AR          Override default value for AR
   CPP         C preprocessor
   CXXCPP      C++ preprocessor
+  AS          Override default value for AS
+  NM          Override default value for NM
+  GNM         Override default value for GNM
+  STRIP       Override default value for STRIP
+  MCS         Override default value for MCS
+  OBJCOPY     Override default value for OBJCOPY
+  OBJDUMP     Override default value for OBJDUMP
+  LIPO        Override default value for LIPO
+  JTREGEXE    Override default value for JTREGEXE
   XMKMF       Path to xmkmf, Makefile generator for X Window System
   FREETYPE_CFLAGS
               C compiler flags for FREETYPE, overriding pkg-config
@@ -1865,6 +2035,7 @@ Some influential environment variables:
   LIBFFI_CFLAGS
               C compiler flags for LIBFFI, overriding pkg-config
   LIBFFI_LIBS linker flags for LIBFFI, overriding pkg-config
+  CCACHE      Override default value for CCACHE
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -3167,13 +3338,36 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 # Test that variable $1 denoting a program is not empty. If empty, exit with an error.
 # $1: variable to check
-# $2: executable name to print in warning (optional)
 
 
-# Does AC_PATH_PROG followed by BASIC_CHECK_NONEMPTY.
-# Arguments as AC_PATH_PROG:
+# Check that there are no unprocessed overridden variables left.
+# If so, they are an incorrect argument and we will exit with an error.
+
+
+# Setup a tool for the given variable. If correctly specified by the user,
+# use that value, otherwise search for the tool using the supplied code snippet.
 # $1: variable to set
-# $2: executable name to look for
+# $2: code snippet to call to look for the tool
+
+
+# Call BASIC_SETUP_TOOL with AC_PATH_PROGS to locate the tool
+# $1: variable to set
+# $2: executable name (or list of names) to look for
+
+
+# Call BASIC_SETUP_TOOL with AC_CHECK_TOOLS to locate the tool
+# $1: variable to set
+# $2: executable name (or list of names) to look for
+
+
+# Like BASIC_PATH_PROGS but fails if no tool was found.
+# $1: variable to set
+# $2: executable name (or list of names) to look for
+
+
+# Like BASIC_SETUP_TOOL but fails if no tool was found.
+# $1: variable to set
+# $2: autoconf macro to call to look for the special tool
 
 
 # Setup the most fundamental tools that relies on not much else to set up,
@@ -3310,7 +3504,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 # ... then the rest
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3334,6 +3528,34 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # questions.
 #
 
+########################################################################
+# This file handles detection of the Boot JDK. The Boot JDK detection
+# process has been developed as a response to solve a complex real-world
+# problem. Initially, it was simple, but it has grown as platform after
+# platform, idiosyncracy after idiosyncracy has been supported.
+#
+# The basic idea is this:
+# 1) You need an acceptable *) JDK to use as a Boot JDK
+# 2) There are several ways to locate a JDK, that are mostly platform
+#    dependent **)
+# 3) You can have multiple JDKs installed
+# 4) If possible, configure should try to dig out an acceptable JDK
+#    automatically, without having to resort to command-line options
+#
+# *)  acceptable means e.g. JDK7 for building JDK8, a complete JDK (with
+#     javac) and not a JRE, etc.
+#
+# **) On Windows we typically use a well-known path.
+#     On MacOSX we typically use the tool java_home.
+#     On Linux we typically find javac in the $PATH, and then follow a
+#     chain of symlinks that often ends up in a real JDK.
+#
+# This leads to the code where we check in different ways to locate a
+# JDK, and if one is found, check if it is acceptable. If not, we print
+# our reasons for rejecting it (useful when debugging non-working
+# configure situations) and continue checking the next one.
+########################################################################
+
 # Execute the check given as argument, and verify the result
 # If the Boot JDK was previously found, do nothing
 # $1 A command line (typically autoconf macro) to execute
@@ -3352,6 +3574,10 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 # Test: Is there a /usr/libexec/java_home? (Typically on MacOSX)
+# $1: Argument to the java_home binary (optional)
+
+
+# Test: On MacOS X, can we find a boot jdk using /usr/libexec/java_home?
 
 
 # Look for a jdk in the given path. If there are multiple, try to select the newest.
@@ -3485,8 +3711,6 @@ http://www.freetype.org/
 If you put the resulting build in \"C:\Program Files\GnuWin32\", it will be found automatically."
       fi
       ;;
-    * )
-      break ;;
   esac
 }
 
@@ -3512,8 +3736,6 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
-    * )
-      break ;;
   esac
 }
 
@@ -3535,8 +3757,6 @@ yum_help() {
       PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo yum install ccache" ;;
-    * )
-      break ;;
   esac
 }
 
@@ -3578,6 +3798,8 @@ pkgadd_help() {
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+
 
 
 
@@ -3865,7 +4087,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1389815815
+DATE_WHEN_GENERATED=1391160222
 
 ###############################################################################
 #
@@ -3888,7 +4110,6 @@ $as_echo "$as_me: Configuration created at $DATE_WHEN_CONFIGURED." >&6;}
 $as_echo "$as_me: configure script generated at timestamp $DATE_WHEN_GENERATED." >&6;}
 
 
-
   # Start with tools that do not need have cross compilation support
   # and can be expected to be found in the default PATH. These tools are
   # used by configure. Nor are these tools expected to be found in the
@@ -3897,7 +4118,14 @@ $as_echo "$as_me: configure script generated at timestamp $DATE_WHEN_GENERATED."
 
   # First are all the simple required tools.
 
-  for ac_prog in basename
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$BASENAME" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in basename
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -3942,21 +4170,155 @@ fi
   test -n "$BASENAME" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$BASENAME" = x; then
-    if test "xbasename" = x; then
-      PROG_NAME=basename
+    # Try to remove the string !BASENAME! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!BASENAME!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xBASENAME" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of BASENAME from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of BASENAME from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in basename
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BASENAME+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BASENAME in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BASENAME="$BASENAME" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BASENAME="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BASENAME=$ac_cv_path_BASENAME
+if test -n "$BASENAME"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BASENAME" >&5
+$as_echo "$BASENAME" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$BASENAME" && break
+done
+
     else
-      PROG_NAME=basename
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$BASENAME"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BASENAME=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool BASENAME=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BASENAME+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BASENAME in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BASENAME="$BASENAME" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BASENAME="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BASENAME=$ac_cv_path_BASENAME
+if test -n "$BASENAME"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BASENAME" >&5
+$as_echo "$BASENAME" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$BASENAME" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BASENAME=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool BASENAME=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASENAME" >&5
+$as_echo_n "checking for BASENAME... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool BASENAME=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in bash
+  if test "x$BASENAME" = x; then
+    as_fn_error $? "Could not find required tool for BASENAME" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$BASH" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in bash
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4001,21 +4363,155 @@ fi
   test -n "$BASH" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$BASH" = x; then
-    if test "xbash" = x; then
-      PROG_NAME=bash
+    # Try to remove the string !BASH! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!BASH!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xBASH" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of BASH from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of BASH from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in bash
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BASH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BASH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BASH="$BASH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BASH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BASH=$ac_cv_path_BASH
+if test -n "$BASH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BASH" >&5
+$as_echo "$BASH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$BASH" && break
+done
+
     else
-      PROG_NAME=bash
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$BASH"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BASH=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool BASH=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BASH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BASH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BASH="$BASH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BASH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BASH=$ac_cv_path_BASH
+if test -n "$BASH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BASH" >&5
+$as_echo "$BASH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$BASH" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BASH=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool BASH=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASH" >&5
+$as_echo_n "checking for BASH... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool BASH=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in cat
+  if test "x$BASH" = x; then
+    as_fn_error $? "Could not find required tool for BASH" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$CAT" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in cat
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4060,21 +4556,155 @@ fi
   test -n "$CAT" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$CAT" = x; then
-    if test "xcat" = x; then
-      PROG_NAME=cat
+    # Try to remove the string !CAT! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!CAT!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xCAT" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of CAT from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of CAT from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in cat
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CAT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CAT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CAT="$CAT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CAT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CAT=$ac_cv_path_CAT
+if test -n "$CAT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAT" >&5
+$as_echo "$CAT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CAT" && break
+done
+
     else
-      PROG_NAME=cat
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$CAT"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CAT=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool CAT=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CAT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CAT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CAT="$CAT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CAT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CAT=$ac_cv_path_CAT
+if test -n "$CAT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAT" >&5
+$as_echo "$CAT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$CAT" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CAT=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool CAT=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAT" >&5
+$as_echo_n "checking for CAT... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool CAT=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in chmod
+  if test "x$CAT" = x; then
+    as_fn_error $? "Could not find required tool for CAT" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$CHMOD" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in chmod
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4119,21 +4749,155 @@ fi
   test -n "$CHMOD" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$CHMOD" = x; then
-    if test "xchmod" = x; then
-      PROG_NAME=chmod
+    # Try to remove the string !CHMOD! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!CHMOD!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xCHMOD" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of CHMOD from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of CHMOD from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in chmod
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CHMOD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CHMOD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CHMOD="$CHMOD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CHMOD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CHMOD=$ac_cv_path_CHMOD
+if test -n "$CHMOD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHMOD" >&5
+$as_echo "$CHMOD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CHMOD" && break
+done
+
     else
-      PROG_NAME=chmod
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$CHMOD"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CHMOD=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool CHMOD=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CHMOD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CHMOD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CHMOD="$CHMOD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CHMOD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CHMOD=$ac_cv_path_CHMOD
+if test -n "$CHMOD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHMOD" >&5
+$as_echo "$CHMOD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$CHMOD" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CHMOD=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool CHMOD=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CHMOD" >&5
+$as_echo_n "checking for CHMOD... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool CHMOD=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in cmp
+  if test "x$CHMOD" = x; then
+    as_fn_error $? "Could not find required tool for CHMOD" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$CMP" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in cmp
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4178,21 +4942,155 @@ fi
   test -n "$CMP" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$CMP" = x; then
-    if test "xcmp" = x; then
-      PROG_NAME=cmp
+    # Try to remove the string !CMP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!CMP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xCMP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of CMP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of CMP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in cmp
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CMP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CMP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CMP="$CMP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CMP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CMP=$ac_cv_path_CMP
+if test -n "$CMP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CMP" >&5
+$as_echo "$CMP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CMP" && break
+done
+
     else
-      PROG_NAME=cmp
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$CMP"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CMP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool CMP=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CMP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CMP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CMP="$CMP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CMP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CMP=$ac_cv_path_CMP
+if test -n "$CMP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CMP" >&5
+$as_echo "$CMP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$CMP" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CMP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool CMP=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CMP" >&5
+$as_echo_n "checking for CMP... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool CMP=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in comm
+  if test "x$CMP" = x; then
+    as_fn_error $? "Could not find required tool for CMP" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$COMM" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in comm
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4237,21 +5135,155 @@ fi
   test -n "$COMM" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$COMM" = x; then
-    if test "xcomm" = x; then
-      PROG_NAME=comm
+    # Try to remove the string !COMM! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!COMM!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xCOMM" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of COMM from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of COMM from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in comm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_COMM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $COMM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_COMM="$COMM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_COMM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+COMM=$ac_cv_path_COMM
+if test -n "$COMM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMM" >&5
+$as_echo "$COMM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$COMM" && break
+done
+
     else
-      PROG_NAME=comm
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$COMM"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool COMM=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool COMM=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_COMM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $COMM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_COMM="$COMM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_COMM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+COMM=$ac_cv_path_COMM
+if test -n "$COMM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMM" >&5
+$as_echo "$COMM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$COMM" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool COMM=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool COMM=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for COMM" >&5
+$as_echo_n "checking for COMM... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool COMM=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in cp
+  if test "x$COMM" = x; then
+    as_fn_error $? "Could not find required tool for COMM" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$CP" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in cp
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4296,21 +5328,155 @@ fi
   test -n "$CP" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$CP" = x; then
-    if test "xcp" = x; then
-      PROG_NAME=cp
+    # Try to remove the string !CP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!CP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xCP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of CP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of CP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in cp
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CP="$CP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CP=$ac_cv_path_CP
+if test -n "$CP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CP" >&5
+$as_echo "$CP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CP" && break
+done
+
     else
-      PROG_NAME=cp
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$CP"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool CP=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CP="$CP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CP=$ac_cv_path_CP
+if test -n "$CP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CP" >&5
+$as_echo "$CP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$CP" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool CP=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CP" >&5
+$as_echo_n "checking for CP... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool CP=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in cpio
+  if test "x$CP" = x; then
+    as_fn_error $? "Could not find required tool for CP" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$CPIO" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in cpio
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4355,21 +5521,155 @@ fi
   test -n "$CPIO" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$CPIO" = x; then
-    if test "xcpio" = x; then
-      PROG_NAME=cpio
+    # Try to remove the string !CPIO! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!CPIO!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xCPIO" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of CPIO from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of CPIO from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in cpio
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CPIO+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CPIO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CPIO="$CPIO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CPIO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CPIO=$ac_cv_path_CPIO
+if test -n "$CPIO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CPIO" >&5
+$as_echo "$CPIO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CPIO" && break
+done
+
     else
-      PROG_NAME=cpio
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$CPIO"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CPIO=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool CPIO=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CPIO+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CPIO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CPIO="$CPIO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CPIO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CPIO=$ac_cv_path_CPIO
+if test -n "$CPIO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CPIO" >&5
+$as_echo "$CPIO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$CPIO" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CPIO=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool CPIO=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CPIO" >&5
+$as_echo_n "checking for CPIO... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool CPIO=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in cut
+  if test "x$CPIO" = x; then
+    as_fn_error $? "Could not find required tool for CPIO" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$CUT" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in cut
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4414,21 +5714,155 @@ fi
   test -n "$CUT" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$CUT" = x; then
-    if test "xcut" = x; then
-      PROG_NAME=cut
+    # Try to remove the string !CUT! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!CUT!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xCUT" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of CUT from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of CUT from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in cut
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CUT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CUT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CUT="$CUT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CUT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CUT=$ac_cv_path_CUT
+if test -n "$CUT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CUT" >&5
+$as_echo "$CUT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CUT" && break
+done
+
     else
-      PROG_NAME=cut
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$CUT"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CUT=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool CUT=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CUT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CUT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CUT="$CUT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CUT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CUT=$ac_cv_path_CUT
+if test -n "$CUT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CUT" >&5
+$as_echo "$CUT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$CUT" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CUT=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool CUT=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CUT" >&5
+$as_echo_n "checking for CUT... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool CUT=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in date
+  if test "x$CUT" = x; then
+    as_fn_error $? "Could not find required tool for CUT" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$DATE" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in date
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4473,21 +5907,155 @@ fi
   test -n "$DATE" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$DATE" = x; then
-    if test "xdate" = x; then
-      PROG_NAME=date
+    # Try to remove the string !DATE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!DATE!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xDATE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of DATE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of DATE from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in date
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DATE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DATE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DATE="$DATE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DATE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DATE=$ac_cv_path_DATE
+if test -n "$DATE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DATE" >&5
+$as_echo "$DATE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DATE" && break
+done
+
     else
-      PROG_NAME=date
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$DATE"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DATE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool DATE=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DATE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DATE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DATE="$DATE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DATE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DATE=$ac_cv_path_DATE
+if test -n "$DATE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DATE" >&5
+$as_echo "$DATE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$DATE" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DATE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool DATE=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DATE" >&5
+$as_echo_n "checking for DATE... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool DATE=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in gdiff diff
+  if test "x$DATE" = x; then
+    as_fn_error $? "Could not find required tool for DATE" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$DIFF" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in gdiff diff
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4532,21 +6100,155 @@ fi
   test -n "$DIFF" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$DIFF" = x; then
-    if test "xgdiff diff" = x; then
-      PROG_NAME=diff
+    # Try to remove the string !DIFF! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!DIFF!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xDIFF" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of DIFF from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of DIFF from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in gdiff diff
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DIFF+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DIFF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DIFF="$DIFF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DIFF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DIFF=$ac_cv_path_DIFF
+if test -n "$DIFF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DIFF" >&5
+$as_echo "$DIFF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DIFF" && break
+done
+
     else
-      PROG_NAME=gdiff diff
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$DIFF"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DIFF=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool DIFF=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DIFF+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DIFF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DIFF="$DIFF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DIFF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DIFF=$ac_cv_path_DIFF
+if test -n "$DIFF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DIFF" >&5
+$as_echo "$DIFF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$DIFF" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DIFF=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool DIFF=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIFF" >&5
+$as_echo_n "checking for DIFF... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool DIFF=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in dirname
+  if test "x$DIFF" = x; then
+    as_fn_error $? "Could not find required tool for DIFF" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$DIRNAME" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in dirname
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4591,21 +6293,155 @@ fi
   test -n "$DIRNAME" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$DIRNAME" = x; then
-    if test "xdirname" = x; then
-      PROG_NAME=dirname
+    # Try to remove the string !DIRNAME! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!DIRNAME!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xDIRNAME" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of DIRNAME from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of DIRNAME from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in dirname
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DIRNAME+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DIRNAME in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DIRNAME="$DIRNAME" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DIRNAME="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DIRNAME=$ac_cv_path_DIRNAME
+if test -n "$DIRNAME"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DIRNAME" >&5
+$as_echo "$DIRNAME" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DIRNAME" && break
+done
+
     else
-      PROG_NAME=dirname
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$DIRNAME"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DIRNAME=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool DIRNAME=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DIRNAME+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DIRNAME in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DIRNAME="$DIRNAME" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DIRNAME="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DIRNAME=$ac_cv_path_DIRNAME
+if test -n "$DIRNAME"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DIRNAME" >&5
+$as_echo "$DIRNAME" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$DIRNAME" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DIRNAME=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool DIRNAME=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIRNAME" >&5
+$as_echo_n "checking for DIRNAME... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool DIRNAME=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in echo
+  if test "x$DIRNAME" = x; then
+    as_fn_error $? "Could not find required tool for DIRNAME" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$ECHO" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in echo
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4650,21 +6486,155 @@ fi
   test -n "$ECHO" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$ECHO" = x; then
-    if test "xecho" = x; then
-      PROG_NAME=echo
+    # Try to remove the string !ECHO! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!ECHO!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xECHO" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of ECHO from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of ECHO from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in echo
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ECHO+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ECHO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ECHO="$ECHO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ECHO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ECHO=$ac_cv_path_ECHO
+if test -n "$ECHO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ECHO" >&5
+$as_echo "$ECHO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ECHO" && break
+done
+
     else
-      PROG_NAME=echo
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$ECHO"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ECHO=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool ECHO=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ECHO+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ECHO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ECHO="$ECHO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ECHO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ECHO=$ac_cv_path_ECHO
+if test -n "$ECHO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ECHO" >&5
+$as_echo "$ECHO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$ECHO" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ECHO=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool ECHO=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ECHO" >&5
+$as_echo_n "checking for ECHO... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool ECHO=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in expr
+  if test "x$ECHO" = x; then
+    as_fn_error $? "Could not find required tool for ECHO" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$EXPR" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in expr
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4709,21 +6679,155 @@ fi
   test -n "$EXPR" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$EXPR" = x; then
-    if test "xexpr" = x; then
-      PROG_NAME=expr
+    # Try to remove the string !EXPR! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!EXPR!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xEXPR" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of EXPR from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of EXPR from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in expr
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_EXPR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $EXPR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_EXPR="$EXPR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_EXPR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+EXPR=$ac_cv_path_EXPR
+if test -n "$EXPR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $EXPR" >&5
+$as_echo "$EXPR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$EXPR" && break
+done
+
     else
-      PROG_NAME=expr
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$EXPR"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool EXPR=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool EXPR=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_EXPR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $EXPR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_EXPR="$EXPR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_EXPR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+EXPR=$ac_cv_path_EXPR
+if test -n "$EXPR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $EXPR" >&5
+$as_echo "$EXPR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$EXPR" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool EXPR=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool EXPR=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EXPR" >&5
+$as_echo_n "checking for EXPR... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool EXPR=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in file
+  if test "x$EXPR" = x; then
+    as_fn_error $? "Could not find required tool for EXPR" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$FILE" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in file
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4768,21 +6872,155 @@ fi
   test -n "$FILE" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$FILE" = x; then
-    if test "xfile" = x; then
-      PROG_NAME=file
+    # Try to remove the string !FILE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!FILE!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xFILE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of FILE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of FILE from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in file
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FILE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FILE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FILE="$FILE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_FILE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FILE=$ac_cv_path_FILE
+if test -n "$FILE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FILE" >&5
+$as_echo "$FILE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$FILE" && break
+done
+
     else
-      PROG_NAME=file
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$FILE"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FILE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool FILE=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FILE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FILE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FILE="$FILE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_FILE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FILE=$ac_cv_path_FILE
+if test -n "$FILE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FILE" >&5
+$as_echo "$FILE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$FILE" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FILE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool FILE=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FILE" >&5
+$as_echo_n "checking for FILE... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool FILE=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in find
+  if test "x$FILE" = x; then
+    as_fn_error $? "Could not find required tool for FILE" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$FIND" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in find
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4827,21 +7065,155 @@ fi
   test -n "$FIND" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$FIND" = x; then
-    if test "xfind" = x; then
-      PROG_NAME=find
+    # Try to remove the string !FIND! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!FIND!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xFIND" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of FIND from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of FIND from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in find
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FIND+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FIND in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FIND="$FIND" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_FIND="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FIND=$ac_cv_path_FIND
+if test -n "$FIND"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FIND" >&5
+$as_echo "$FIND" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$FIND" && break
+done
+
     else
-      PROG_NAME=find
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$FIND"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FIND=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool FIND=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FIND+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FIND in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FIND="$FIND" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_FIND="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FIND=$ac_cv_path_FIND
+if test -n "$FIND"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FIND" >&5
+$as_echo "$FIND" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$FIND" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FIND=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool FIND=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FIND" >&5
+$as_echo_n "checking for FIND... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool FIND=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in head
+  if test "x$FIND" = x; then
+    as_fn_error $? "Could not find required tool for FIND" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$HEAD" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in head
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4886,21 +7258,155 @@ fi
   test -n "$HEAD" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$HEAD" = x; then
-    if test "xhead" = x; then
-      PROG_NAME=head
+    # Try to remove the string !HEAD! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!HEAD!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xHEAD" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of HEAD from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of HEAD from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in head
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_HEAD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $HEAD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_HEAD="$HEAD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_HEAD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+HEAD=$ac_cv_path_HEAD
+if test -n "$HEAD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HEAD" >&5
+$as_echo "$HEAD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$HEAD" && break
+done
+
     else
-      PROG_NAME=head
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$HEAD"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool HEAD=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool HEAD=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_HEAD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $HEAD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_HEAD="$HEAD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_HEAD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+HEAD=$ac_cv_path_HEAD
+if test -n "$HEAD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HEAD" >&5
+$as_echo "$HEAD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$HEAD" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool HEAD=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool HEAD=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HEAD" >&5
+$as_echo_n "checking for HEAD... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool HEAD=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in ln
+  if test "x$HEAD" = x; then
+    as_fn_error $? "Could not find required tool for HEAD" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$LN" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in ln
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4945,21 +7451,155 @@ fi
   test -n "$LN" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$LN" = x; then
-    if test "xln" = x; then
-      PROG_NAME=ln
+    # Try to remove the string !LN! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!LN!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xLN" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of LN from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of LN from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in ln
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LN+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LN in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LN="$LN" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LN="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LN=$ac_cv_path_LN
+if test -n "$LN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LN" >&5
+$as_echo "$LN" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$LN" && break
+done
+
     else
-      PROG_NAME=ln
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$LN"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LN=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool LN=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LN+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LN in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LN="$LN" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LN="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LN=$ac_cv_path_LN
+if test -n "$LN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LN" >&5
+$as_echo "$LN" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$LN" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LN=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool LN=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LN" >&5
+$as_echo_n "checking for LN... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool LN=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in ls
+  if test "x$LN" = x; then
+    as_fn_error $? "Could not find required tool for LN" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$LS" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in ls
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5004,21 +7644,155 @@ fi
   test -n "$LS" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$LS" = x; then
-    if test "xls" = x; then
-      PROG_NAME=ls
+    # Try to remove the string !LS! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!LS!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xLS" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of LS from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of LS from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in ls
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LS+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LS in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LS="$LS" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LS="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LS=$ac_cv_path_LS
+if test -n "$LS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LS" >&5
+$as_echo "$LS" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$LS" && break
+done
+
     else
-      PROG_NAME=ls
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$LS"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LS=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool LS=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LS+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LS in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LS="$LS" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LS="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LS=$ac_cv_path_LS
+if test -n "$LS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LS" >&5
+$as_echo "$LS" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$LS" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LS=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool LS=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LS" >&5
+$as_echo_n "checking for LS... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool LS=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in mkdir
+  if test "x$LS" = x; then
+    as_fn_error $? "Could not find required tool for LS" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$MKDIR" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in mkdir
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5063,21 +7837,155 @@ fi
   test -n "$MKDIR" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$MKDIR" = x; then
-    if test "xmkdir" = x; then
-      PROG_NAME=mkdir
+    # Try to remove the string !MKDIR! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!MKDIR!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xMKDIR" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of MKDIR from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of MKDIR from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in mkdir
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MKDIR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MKDIR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MKDIR="$MKDIR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MKDIR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MKDIR=$ac_cv_path_MKDIR
+if test -n "$MKDIR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKDIR" >&5
+$as_echo "$MKDIR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MKDIR" && break
+done
+
     else
-      PROG_NAME=mkdir
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$MKDIR"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MKDIR=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool MKDIR=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MKDIR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MKDIR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MKDIR="$MKDIR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MKDIR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MKDIR=$ac_cv_path_MKDIR
+if test -n "$MKDIR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKDIR" >&5
+$as_echo "$MKDIR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$MKDIR" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MKDIR=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool MKDIR=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKDIR" >&5
+$as_echo_n "checking for MKDIR... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool MKDIR=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in mktemp
+  if test "x$MKDIR" = x; then
+    as_fn_error $? "Could not find required tool for MKDIR" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$MKTEMP" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in mktemp
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5122,21 +8030,155 @@ fi
   test -n "$MKTEMP" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$MKTEMP" = x; then
-    if test "xmktemp" = x; then
-      PROG_NAME=mktemp
+    # Try to remove the string !MKTEMP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!MKTEMP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xMKTEMP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of MKTEMP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of MKTEMP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in mktemp
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MKTEMP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MKTEMP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MKTEMP="$MKTEMP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MKTEMP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MKTEMP=$ac_cv_path_MKTEMP
+if test -n "$MKTEMP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKTEMP" >&5
+$as_echo "$MKTEMP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MKTEMP" && break
+done
+
     else
-      PROG_NAME=mktemp
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$MKTEMP"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MKTEMP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool MKTEMP=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MKTEMP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MKTEMP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MKTEMP="$MKTEMP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MKTEMP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MKTEMP=$ac_cv_path_MKTEMP
+if test -n "$MKTEMP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKTEMP" >&5
+$as_echo "$MKTEMP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$MKTEMP" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MKTEMP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool MKTEMP=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKTEMP" >&5
+$as_echo_n "checking for MKTEMP... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool MKTEMP=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in mv
+  if test "x$MKTEMP" = x; then
+    as_fn_error $? "Could not find required tool for MKTEMP" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$MV" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in mv
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5181,21 +8223,348 @@ fi
   test -n "$MV" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$MV" = x; then
-    if test "xmv" = x; then
-      PROG_NAME=mv
+    # Try to remove the string !MV! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!MV!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xMV" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of MV from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of MV from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in mv
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MV+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MV in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MV="$MV" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MV="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MV=$ac_cv_path_MV
+if test -n "$MV"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MV" >&5
+$as_echo "$MV" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MV" && break
+done
+
     else
-      PROG_NAME=mv
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$MV"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MV=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool MV=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MV+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MV in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MV="$MV" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MV="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MV=$ac_cv_path_MV
+if test -n "$MV"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MV" >&5
+$as_echo "$MV" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$MV" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MV=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool MV=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MV" >&5
+$as_echo_n "checking for MV... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool MV=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in printf
+  if test "x$MV" = x; then
+    as_fn_error $? "Could not find required tool for MV" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$NAWK" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in nawk gawk awk
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NAWK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NAWK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NAWK="$NAWK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NAWK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NAWK=$ac_cv_path_NAWK
+if test -n "$NAWK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NAWK" >&5
+$as_echo "$NAWK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$NAWK" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !NAWK! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!NAWK!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xNAWK" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of NAWK from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of NAWK from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in nawk gawk awk
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NAWK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NAWK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NAWK="$NAWK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NAWK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NAWK=$ac_cv_path_NAWK
+if test -n "$NAWK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NAWK" >&5
+$as_echo "$NAWK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$NAWK" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$NAWK"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NAWK=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool NAWK=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NAWK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NAWK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NAWK="$NAWK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NAWK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NAWK=$ac_cv_path_NAWK
+if test -n "$NAWK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NAWK" >&5
+$as_echo "$NAWK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$NAWK" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NAWK=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool NAWK=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NAWK" >&5
+$as_echo_n "checking for NAWK... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool NAWK=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+  if test "x$NAWK" = x; then
+    as_fn_error $? "Could not find required tool for NAWK" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$PRINTF" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in printf
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5240,21 +8609,155 @@ fi
   test -n "$PRINTF" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$PRINTF" = x; then
-    if test "xprintf" = x; then
-      PROG_NAME=printf
+    # Try to remove the string !PRINTF! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!PRINTF!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xPRINTF" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of PRINTF from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of PRINTF from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in printf
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PRINTF+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PRINTF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PRINTF="$PRINTF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PRINTF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PRINTF=$ac_cv_path_PRINTF
+if test -n "$PRINTF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PRINTF" >&5
+$as_echo "$PRINTF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$PRINTF" && break
+done
+
     else
-      PROG_NAME=printf
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$PRINTF"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool PRINTF=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool PRINTF=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PRINTF+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PRINTF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PRINTF="$PRINTF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PRINTF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PRINTF=$ac_cv_path_PRINTF
+if test -n "$PRINTF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PRINTF" >&5
+$as_echo "$PRINTF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$PRINTF" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool PRINTF=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool PRINTF=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PRINTF" >&5
+$as_echo_n "checking for PRINTF... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool PRINTF=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in rm
+  if test "x$PRINTF" = x; then
+    as_fn_error $? "Could not find required tool for PRINTF" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$RM" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in rm
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5299,21 +8802,155 @@ fi
   test -n "$RM" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$RM" = x; then
-    if test "xrm" = x; then
-      PROG_NAME=rm
+    # Try to remove the string !RM! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!RM!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xRM" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of RM from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of RM from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in rm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_RM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $RM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_RM="$RM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_RM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+RM=$ac_cv_path_RM
+if test -n "$RM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RM" >&5
+$as_echo "$RM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$RM" && break
+done
+
     else
-      PROG_NAME=rm
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$RM"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool RM=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool RM=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_RM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $RM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_RM="$RM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_RM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+RM=$ac_cv_path_RM
+if test -n "$RM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RM" >&5
+$as_echo "$RM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$RM" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool RM=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool RM=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RM" >&5
+$as_echo_n "checking for RM... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool RM=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in sh
+  if test "x$RM" = x; then
+    as_fn_error $? "Could not find required tool for RM" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$SH" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in sh
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5358,21 +8995,155 @@ fi
   test -n "$SH" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$SH" = x; then
-    if test "xsh" = x; then
-      PROG_NAME=sh
+    # Try to remove the string !SH! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!SH!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xSH" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of SH from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of SH from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in sh
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SH="$SH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SH=$ac_cv_path_SH
+if test -n "$SH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SH" >&5
+$as_echo "$SH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$SH" && break
+done
+
     else
-      PROG_NAME=sh
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$SH"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SH=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool SH=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SH="$SH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SH=$ac_cv_path_SH
+if test -n "$SH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SH" >&5
+$as_echo "$SH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$SH" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SH=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool SH=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SH" >&5
+$as_echo_n "checking for SH... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool SH=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in sort
+  if test "x$SH" = x; then
+    as_fn_error $? "Could not find required tool for SH" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$SORT" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in sort
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5417,21 +9188,155 @@ fi
   test -n "$SORT" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$SORT" = x; then
-    if test "xsort" = x; then
-      PROG_NAME=sort
+    # Try to remove the string !SORT! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!SORT!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xSORT" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of SORT from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of SORT from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in sort
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SORT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SORT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SORT="$SORT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SORT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SORT=$ac_cv_path_SORT
+if test -n "$SORT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SORT" >&5
+$as_echo "$SORT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$SORT" && break
+done
+
     else
-      PROG_NAME=sort
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$SORT"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SORT=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool SORT=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SORT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SORT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SORT="$SORT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SORT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SORT=$ac_cv_path_SORT
+if test -n "$SORT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SORT" >&5
+$as_echo "$SORT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$SORT" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SORT=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool SORT=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SORT" >&5
+$as_echo_n "checking for SORT... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool SORT=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in tail
+  if test "x$SORT" = x; then
+    as_fn_error $? "Could not find required tool for SORT" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$TAIL" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in tail
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5476,21 +9381,155 @@ fi
   test -n "$TAIL" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$TAIL" = x; then
-    if test "xtail" = x; then
-      PROG_NAME=tail
+    # Try to remove the string !TAIL! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!TAIL!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xTAIL" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of TAIL from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of TAIL from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in tail
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TAIL+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TAIL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TAIL="$TAIL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TAIL="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TAIL=$ac_cv_path_TAIL
+if test -n "$TAIL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAIL" >&5
+$as_echo "$TAIL" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TAIL" && break
+done
+
     else
-      PROG_NAME=tail
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$TAIL"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TAIL=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool TAIL=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TAIL+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TAIL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TAIL="$TAIL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TAIL="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TAIL=$ac_cv_path_TAIL
+if test -n "$TAIL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAIL" >&5
+$as_echo "$TAIL" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$TAIL" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TAIL=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool TAIL=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAIL" >&5
+$as_echo_n "checking for TAIL... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool TAIL=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in tar
+  if test "x$TAIL" = x; then
+    as_fn_error $? "Could not find required tool for TAIL" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$TAR" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in tar
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5535,21 +9574,155 @@ fi
   test -n "$TAR" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$TAR" = x; then
-    if test "xtar" = x; then
-      PROG_NAME=tar
+    # Try to remove the string !TAR! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!TAR!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xTAR" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of TAR from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of TAR from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in tar
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TAR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TAR="$TAR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TAR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TAR=$ac_cv_path_TAR
+if test -n "$TAR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAR" >&5
+$as_echo "$TAR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TAR" && break
+done
+
     else
-      PROG_NAME=tar
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$TAR"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TAR=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool TAR=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TAR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TAR="$TAR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TAR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TAR=$ac_cv_path_TAR
+if test -n "$TAR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAR" >&5
+$as_echo "$TAR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$TAR" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TAR=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool TAR=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAR" >&5
+$as_echo_n "checking for TAR... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool TAR=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in tee
+  if test "x$TAR" = x; then
+    as_fn_error $? "Could not find required tool for TAR" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$TEE" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in tee
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5594,21 +9767,155 @@ fi
   test -n "$TEE" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$TEE" = x; then
-    if test "xtee" = x; then
-      PROG_NAME=tee
+    # Try to remove the string !TEE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!TEE!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xTEE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of TEE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of TEE from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in tee
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TEE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TEE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TEE="$TEE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TEE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TEE=$ac_cv_path_TEE
+if test -n "$TEE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEE" >&5
+$as_echo "$TEE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TEE" && break
+done
+
     else
-      PROG_NAME=tee
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$TEE"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TEE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool TEE=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TEE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TEE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TEE="$TEE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TEE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TEE=$ac_cv_path_TEE
+if test -n "$TEE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEE" >&5
+$as_echo "$TEE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$TEE" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TEE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool TEE=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TEE" >&5
+$as_echo_n "checking for TEE... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool TEE=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in touch
+  if test "x$TEE" = x; then
+    as_fn_error $? "Could not find required tool for TEE" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$TOUCH" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in touch
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5653,21 +9960,155 @@ fi
   test -n "$TOUCH" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$TOUCH" = x; then
-    if test "xtouch" = x; then
-      PROG_NAME=touch
+    # Try to remove the string !TOUCH! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!TOUCH!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xTOUCH" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of TOUCH from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of TOUCH from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in touch
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TOUCH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TOUCH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TOUCH="$TOUCH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TOUCH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TOUCH=$ac_cv_path_TOUCH
+if test -n "$TOUCH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOUCH" >&5
+$as_echo "$TOUCH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TOUCH" && break
+done
+
     else
-      PROG_NAME=touch
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$TOUCH"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TOUCH=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool TOUCH=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TOUCH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TOUCH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TOUCH="$TOUCH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TOUCH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TOUCH=$ac_cv_path_TOUCH
+if test -n "$TOUCH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOUCH" >&5
+$as_echo "$TOUCH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$TOUCH" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TOUCH=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool TOUCH=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TOUCH" >&5
+$as_echo_n "checking for TOUCH... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool TOUCH=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in tr
+  if test "x$TOUCH" = x; then
+    as_fn_error $? "Could not find required tool for TOUCH" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$TR" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in tr
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5712,21 +10153,155 @@ fi
   test -n "$TR" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$TR" = x; then
-    if test "xtr" = x; then
-      PROG_NAME=tr
+    # Try to remove the string !TR! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!TR!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xTR" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of TR from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of TR from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in tr
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TR="$TR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TR=$ac_cv_path_TR
+if test -n "$TR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TR" >&5
+$as_echo "$TR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TR" && break
+done
+
     else
-      PROG_NAME=tr
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$TR"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TR=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool TR=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TR="$TR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TR=$ac_cv_path_TR
+if test -n "$TR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TR" >&5
+$as_echo "$TR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$TR" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TR=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool TR=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TR" >&5
+$as_echo_n "checking for TR... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool TR=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in uname
+  if test "x$TR" = x; then
+    as_fn_error $? "Could not find required tool for TR" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$UNAME" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in uname
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5771,21 +10346,155 @@ fi
   test -n "$UNAME" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$UNAME" = x; then
-    if test "xuname" = x; then
-      PROG_NAME=uname
+    # Try to remove the string !UNAME! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!UNAME!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xUNAME" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of UNAME from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of UNAME from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in uname
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_UNAME+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $UNAME in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_UNAME="$UNAME" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_UNAME="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+UNAME=$ac_cv_path_UNAME
+if test -n "$UNAME"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $UNAME" >&5
+$as_echo "$UNAME" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$UNAME" && break
+done
+
     else
-      PROG_NAME=uname
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$UNAME"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNAME=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool UNAME=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_UNAME+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $UNAME in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_UNAME="$UNAME" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_UNAME="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+UNAME=$ac_cv_path_UNAME
+if test -n "$UNAME"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $UNAME" >&5
+$as_echo "$UNAME" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$UNAME" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNAME=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool UNAME=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNAME" >&5
+$as_echo_n "checking for UNAME... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool UNAME=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in uniq
+  if test "x$UNAME" = x; then
+    as_fn_error $? "Could not find required tool for UNAME" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$UNIQ" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in uniq
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5830,21 +10539,155 @@ fi
   test -n "$UNIQ" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$UNIQ" = x; then
-    if test "xuniq" = x; then
-      PROG_NAME=uniq
+    # Try to remove the string !UNIQ! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!UNIQ!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xUNIQ" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of UNIQ from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of UNIQ from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in uniq
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_UNIQ+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $UNIQ in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_UNIQ="$UNIQ" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_UNIQ="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+UNIQ=$ac_cv_path_UNIQ
+if test -n "$UNIQ"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $UNIQ" >&5
+$as_echo "$UNIQ" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$UNIQ" && break
+done
+
     else
-      PROG_NAME=uniq
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$UNIQ"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNIQ=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool UNIQ=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_UNIQ+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $UNIQ in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_UNIQ="$UNIQ" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_UNIQ="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+UNIQ=$ac_cv_path_UNIQ
+if test -n "$UNIQ"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $UNIQ" >&5
+$as_echo "$UNIQ" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$UNIQ" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNIQ=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool UNIQ=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNIQ" >&5
+$as_echo_n "checking for UNIQ... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool UNIQ=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in wc
+  if test "x$UNIQ" = x; then
+    as_fn_error $? "Could not find required tool for UNIQ" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$WC" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in wc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5889,21 +10732,155 @@ fi
   test -n "$WC" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$WC" = x; then
-    if test "xwc" = x; then
-      PROG_NAME=wc
+    # Try to remove the string !WC! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!WC!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xWC" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of WC from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of WC from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in wc
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_WC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $WC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_WC="$WC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_WC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+WC=$ac_cv_path_WC
+if test -n "$WC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $WC" >&5
+$as_echo "$WC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$WC" && break
+done
+
     else
-      PROG_NAME=wc
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$WC"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool WC=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool WC=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_WC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $WC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_WC="$WC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_WC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+WC=$ac_cv_path_WC
+if test -n "$WC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $WC" >&5
+$as_echo "$WC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$WC" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool WC=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool WC=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WC" >&5
+$as_echo_n "checking for WC... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool WC=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in which
+  if test "x$WC" = x; then
+    as_fn_error $? "Could not find required tool for WC" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$WHICH" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in which
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5948,21 +10925,155 @@ fi
   test -n "$WHICH" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$WHICH" = x; then
-    if test "xwhich" = x; then
-      PROG_NAME=which
+    # Try to remove the string !WHICH! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!WHICH!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xWHICH" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of WHICH from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of WHICH from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in which
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_WHICH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $WHICH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_WHICH="$WHICH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_WHICH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+WHICH=$ac_cv_path_WHICH
+if test -n "$WHICH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $WHICH" >&5
+$as_echo "$WHICH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$WHICH" && break
+done
+
     else
-      PROG_NAME=which
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$WHICH"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool WHICH=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool WHICH=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_WHICH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $WHICH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_WHICH="$WHICH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_WHICH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+WHICH=$ac_cv_path_WHICH
+if test -n "$WHICH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $WHICH" >&5
+$as_echo "$WHICH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$WHICH" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool WHICH=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool WHICH=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WHICH" >&5
+$as_echo_n "checking for WHICH... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool WHICH=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in xargs
+  if test "x$WHICH" = x; then
+    as_fn_error $? "Could not find required tool for WHICH" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$XARGS" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in xargs
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -6007,22 +11118,156 @@ fi
   test -n "$XARGS" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !XARGS! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!XARGS!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xXARGS" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of XARGS from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of XARGS from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in xargs
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_XARGS+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $XARGS in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_XARGS="$XARGS" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_XARGS="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+XARGS=$ac_cv_path_XARGS
+if test -n "$XARGS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XARGS" >&5
+$as_echo "$XARGS" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$XARGS" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$XARGS"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool XARGS=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool XARGS=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_XARGS+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $XARGS in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_XARGS="$XARGS" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_XARGS="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+XARGS=$ac_cv_path_XARGS
+if test -n "$XARGS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XARGS" >&5
+$as_echo "$XARGS" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$XARGS" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool XARGS=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool XARGS=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XARGS" >&5
+$as_echo_n "checking for XARGS... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool XARGS=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
 
   if test "x$XARGS" = x; then
-    if test "xxargs" = x; then
-      PROG_NAME=xargs
-    else
-      PROG_NAME=xargs
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
+    as_fn_error $? "Could not find required tool for XARGS" "$LINENO" 5
   fi
 
 
 
   # Then required tools that require some special treatment.
-  for ac_prog in gawk mawk nawk awk
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$AWK" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in gawk mawk nawk awk
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -6064,19 +11309,150 @@ fi
   test -n "$AWK" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$AWK" = x; then
-    if test "x" = x; then
-      PROG_NAME=awk
+    # Try to remove the string !AWK! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!AWK!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xAWK" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of AWK from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of AWK from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in gawk mawk nawk awk
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_AWK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$AWK"; then
+  ac_cv_prog_AWK="$AWK" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_AWK="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+AWK=$ac_cv_prog_AWK
+if test -n "$AWK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AWK" >&5
+$as_echo "$AWK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$AWK" && break
+done
+
     else
-      PROG_NAME=
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$AWK"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AWK=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool AWK=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_AWK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $AWK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_AWK="$AWK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_AWK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+AWK=$ac_cv_path_AWK
+if test -n "$AWK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AWK" >&5
+$as_echo "$AWK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$AWK" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AWK=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool AWK=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AWK" >&5
+$as_echo_n "checking for AWK... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool AWK=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
+
+  if test "x$AWK" = x; then
+    as_fn_error $? "Could not find required tool for AWK" "$LINENO" 5
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$GREP" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
 $as_echo_n "checking for grep that handles long lines and -e... " >&6; }
 if ${ac_cv_path_GREP+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6139,19 +11515,171 @@ $as_echo "$ac_cv_path_GREP" >&6; }
  GREP="$ac_cv_path_GREP"
 
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$GREP" = x; then
-    if test "x" = x; then
-      PROG_NAME=grep
-    else
-      PROG_NAME=
+    # Try to remove the string !GREP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!GREP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xGREP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of GREP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of GREP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
+$as_echo_n "checking for grep that handles long lines and -e... " >&6; }
+if ${ac_cv_path_GREP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -z "$GREP"; then
+  ac_path_GREP_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in grep ggrep; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_GREP="$as_dir/$ac_prog$ac_exec_ext"
+      as_fn_executable_p "$ac_path_GREP" || continue
+# Check for GNU ac_path_GREP and select it if it is found.
+  # Check for GNU $ac_path_GREP
+case `"$ac_path_GREP" --version 2>&1` in
+*GNU*)
+  ac_cv_path_GREP="$ac_path_GREP" ac_path_GREP_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo 'GREP' >> "conftest.nl"
+    "$ac_path_GREP" -e 'GREP$' -e '-(cannot match)-' < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_GREP_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_GREP="$ac_path_GREP"
+      ac_path_GREP_max=$ac_count
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_GREP_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_GREP"; then
+    as_fn_error $? "no acceptable grep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
+  fi
+else
+  ac_cv_path_GREP=$GREP
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_GREP" >&5
+$as_echo "$ac_cv_path_GREP" >&6; }
+ GREP="$ac_cv_path_GREP"
+
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$GREP"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GREP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool GREP=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GREP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GREP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GREP="$GREP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GREP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GREP=$ac_cv_path_GREP
+if test -n "$GREP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GREP" >&5
+$as_echo "$GREP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$GREP" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GREP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool GREP=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GREP" >&5
+$as_echo_n "checking for GREP... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool GREP=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for egrep" >&5
+
+  if test "x$GREP" = x; then
+    as_fn_error $? "Could not find required tool for GREP" "$LINENO" 5
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$EGREP" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for egrep" >&5
 $as_echo_n "checking for egrep... " >&6; }
 if ${ac_cv_path_EGREP+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6218,19 +11746,175 @@ $as_echo "$ac_cv_path_EGREP" >&6; }
  EGREP="$ac_cv_path_EGREP"
 
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$EGREP" = x; then
-    if test "x" = x; then
-      PROG_NAME=egrep
-    else
-      PROG_NAME=
+    # Try to remove the string !EGREP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!EGREP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xEGREP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of EGREP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of EGREP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for egrep" >&5
+$as_echo_n "checking for egrep... " >&6; }
+if ${ac_cv_path_EGREP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if echo a | $GREP -E '(a|b)' >/dev/null 2>&1
+   then ac_cv_path_EGREP="$GREP -E"
+   else
+     if test -z "$EGREP"; then
+  ac_path_EGREP_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in egrep; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_EGREP="$as_dir/$ac_prog$ac_exec_ext"
+      as_fn_executable_p "$ac_path_EGREP" || continue
+# Check for GNU ac_path_EGREP and select it if it is found.
+  # Check for GNU $ac_path_EGREP
+case `"$ac_path_EGREP" --version 2>&1` in
+*GNU*)
+  ac_cv_path_EGREP="$ac_path_EGREP" ac_path_EGREP_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo 'EGREP' >> "conftest.nl"
+    "$ac_path_EGREP" 'EGREP$' < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_EGREP_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_EGREP="$ac_path_EGREP"
+      ac_path_EGREP_max=$ac_count
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_EGREP_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_EGREP"; then
+    as_fn_error $? "no acceptable egrep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
+  fi
+else
+  ac_cv_path_EGREP=$EGREP
+fi
+
+   fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_EGREP" >&5
+$as_echo "$ac_cv_path_EGREP" >&6; }
+ EGREP="$ac_cv_path_EGREP"
+
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$EGREP"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool EGREP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool EGREP=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_EGREP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $EGREP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_EGREP="$EGREP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_EGREP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+EGREP=$ac_cv_path_EGREP
+if test -n "$EGREP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $EGREP" >&5
+$as_echo "$EGREP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$EGREP" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool EGREP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool EGREP=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EGREP" >&5
+$as_echo_n "checking for EGREP... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool EGREP=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fgrep" >&5
+
+  if test "x$EGREP" = x; then
+    as_fn_error $? "Could not find required tool for EGREP" "$LINENO" 5
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$FGREP" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fgrep" >&5
 $as_echo_n "checking for fgrep... " >&6; }
 if ${ac_cv_path_FGREP+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6297,19 +11981,175 @@ $as_echo "$ac_cv_path_FGREP" >&6; }
  FGREP="$ac_cv_path_FGREP"
 
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$FGREP" = x; then
-    if test "x" = x; then
-      PROG_NAME=fgrep
-    else
-      PROG_NAME=
+    # Try to remove the string !FGREP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!FGREP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xFGREP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of FGREP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of FGREP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fgrep" >&5
+$as_echo_n "checking for fgrep... " >&6; }
+if ${ac_cv_path_FGREP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if echo 'ab*c' | $GREP -F 'ab*c' >/dev/null 2>&1
+   then ac_cv_path_FGREP="$GREP -F"
+   else
+     if test -z "$FGREP"; then
+  ac_path_FGREP_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in fgrep; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_FGREP="$as_dir/$ac_prog$ac_exec_ext"
+      as_fn_executable_p "$ac_path_FGREP" || continue
+# Check for GNU ac_path_FGREP and select it if it is found.
+  # Check for GNU $ac_path_FGREP
+case `"$ac_path_FGREP" --version 2>&1` in
+*GNU*)
+  ac_cv_path_FGREP="$ac_path_FGREP" ac_path_FGREP_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo 'FGREP' >> "conftest.nl"
+    "$ac_path_FGREP" FGREP < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_FGREP_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_FGREP="$ac_path_FGREP"
+      ac_path_FGREP_max=$ac_count
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_FGREP_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_FGREP"; then
+    as_fn_error $? "no acceptable fgrep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
+  fi
+else
+  ac_cv_path_FGREP=$FGREP
+fi
+
+   fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_FGREP" >&5
+$as_echo "$ac_cv_path_FGREP" >&6; }
+ FGREP="$ac_cv_path_FGREP"
+
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$FGREP"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FGREP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool FGREP=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FGREP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FGREP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FGREP="$FGREP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_FGREP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FGREP=$ac_cv_path_FGREP
+if test -n "$FGREP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FGREP" >&5
+$as_echo "$FGREP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$FGREP" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FGREP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool FGREP=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FGREP" >&5
+$as_echo_n "checking for FGREP... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool FGREP=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for a sed that does not truncate output" >&5
+
+  if test "x$FGREP" = x; then
+    as_fn_error $? "Could not find required tool for FGREP" "$LINENO" 5
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$SED" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for a sed that does not truncate output" >&5
 $as_echo_n "checking for a sed that does not truncate output... " >&6; }
 if ${ac_cv_path_SED+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6378,31 +12218,113 @@ $as_echo "$ac_cv_path_SED" >&6; }
  SED="$ac_cv_path_SED"
   rm -f conftest.sed
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$SED" = x; then
-    if test "x" = x; then
-      PROG_NAME=sed
-    else
-      PROG_NAME=
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
-  fi
-
-
-  for ac_prog in nawk gawk awk
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_NAWK+:} false; then :
+    # Try to remove the string !SED! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!SED!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xSED" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of SED from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of SED from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for a sed that does not truncate output" >&5
+$as_echo_n "checking for a sed that does not truncate output... " >&6; }
+if ${ac_cv_path_SED+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  case $NAWK in
+            ac_script=s/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/
+     for ac_i in 1 2 3 4 5 6 7; do
+       ac_script="$ac_script$as_nl$ac_script"
+     done
+     echo "$ac_script" 2>/dev/null | sed 99q >conftest.sed
+     { ac_script=; unset ac_script;}
+     if test -z "$SED"; then
+  ac_path_SED_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in sed gsed; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_SED="$as_dir/$ac_prog$ac_exec_ext"
+      as_fn_executable_p "$ac_path_SED" || continue
+# Check for GNU ac_path_SED and select it if it is found.
+  # Check for GNU $ac_path_SED
+case `"$ac_path_SED" --version 2>&1` in
+*GNU*)
+  ac_cv_path_SED="$ac_path_SED" ac_path_SED_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo '' >> "conftest.nl"
+    "$ac_path_SED" -f conftest.sed < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_SED_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_SED="$ac_path_SED"
+      ac_path_SED_max=$ac_count
+    fi
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_SED_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_SED"; then
+    as_fn_error $? "no acceptable sed could be found in \$PATH" "$LINENO" 5
+  fi
+else
+  ac_cv_path_SED=$SED
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_SED" >&5
+$as_echo "$ac_cv_path_SED" >&6; }
+ SED="$ac_cv_path_SED"
+  rm -f conftest.sed
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$SED"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SED=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool SED=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SED+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SED in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_NAWK="$NAWK" # Let the user override the test with a path.
+  ac_cv_path_SED="$SED" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -6412,7 +12334,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_NAWK="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_SED="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -6423,30 +12345,41 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-NAWK=$ac_cv_path_NAWK
-if test -n "$NAWK"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NAWK" >&5
-$as_echo "$NAWK" >&6; }
+SED=$ac_cv_path_SED
+if test -n "$SED"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SED" >&5
+$as_echo "$SED" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-  test -n "$NAWK" && break
-done
-
-
-  if test "x$NAWK" = x; then
-    if test "x" = x; then
-      PROG_NAME=nawk
-    else
-      PROG_NAME=
+        if test "x$SED" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SED=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool SED=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SED" >&5
+$as_echo_n "checking for SED... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool SED=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
+
+
+  if test "x$SED" = x; then
+    as_fn_error $? "Could not find required tool for SED" "$LINENO" 5
+  fi
+
 
 
   # Always force rm.
@@ -6457,8 +12390,17 @@ $as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
   THEPWDCMD=pwd
 
   # These are not required on all platforms
-  # Extract the first word of "cygpath", so it can be a program name with args.
-set dummy cygpath; ac_word=$2
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$CYGPATH" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in cygpath
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_CYGPATH+:} false; then :
@@ -6497,8 +12439,154 @@ $as_echo "no" >&6; }
 fi
 
 
-  # Extract the first word of "readlink", so it can be a program name with args.
-set dummy readlink; ac_word=$2
+  test -n "$CYGPATH" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !CYGPATH! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!CYGPATH!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xCYGPATH" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of CYGPATH from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of CYGPATH from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in cygpath
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CYGPATH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CYGPATH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CYGPATH="$CYGPATH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CYGPATH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CYGPATH=$ac_cv_path_CYGPATH
+if test -n "$CYGPATH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGPATH" >&5
+$as_echo "$CYGPATH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CYGPATH" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$CYGPATH"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CYGPATH=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool CYGPATH=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CYGPATH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CYGPATH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CYGPATH="$CYGPATH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CYGPATH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CYGPATH=$ac_cv_path_CYGPATH
+if test -n "$CYGPATH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGPATH" >&5
+$as_echo "$CYGPATH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$CYGPATH" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CYGPATH=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool CYGPATH=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CYGPATH" >&5
+$as_echo_n "checking for CYGPATH... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool CYGPATH=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$READLINK" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in greadlink readlink
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_READLINK+:} false; then :
@@ -6537,8 +12625,154 @@ $as_echo "no" >&6; }
 fi
 
 
-  # Extract the first word of "df", so it can be a program name with args.
-set dummy df; ac_word=$2
+  test -n "$READLINK" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !READLINK! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!READLINK!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xREADLINK" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of READLINK from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of READLINK from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in greadlink readlink
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_READLINK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $READLINK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_READLINK="$READLINK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_READLINK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+READLINK=$ac_cv_path_READLINK
+if test -n "$READLINK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READLINK" >&5
+$as_echo "$READLINK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$READLINK" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$READLINK"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool READLINK=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool READLINK=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_READLINK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $READLINK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_READLINK="$READLINK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_READLINK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+READLINK=$ac_cv_path_READLINK
+if test -n "$READLINK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READLINK" >&5
+$as_echo "$READLINK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$READLINK" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool READLINK=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool READLINK=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READLINK" >&5
+$as_echo_n "checking for READLINK... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool READLINK=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$DF" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in df
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_DF+:} false; then :
@@ -6577,8 +12811,154 @@ $as_echo "no" >&6; }
 fi
 
 
-  # Extract the first word of "SetFile", so it can be a program name with args.
-set dummy SetFile; ac_word=$2
+  test -n "$DF" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !DF! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!DF!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xDF" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of DF from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of DF from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in df
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DF+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DF="$DF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DF=$ac_cv_path_DF
+if test -n "$DF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DF" >&5
+$as_echo "$DF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DF" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$DF"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DF=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool DF=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DF+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DF="$DF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DF=$ac_cv_path_DF
+if test -n "$DF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DF" >&5
+$as_echo "$DF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$DF" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DF=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool DF=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DF" >&5
+$as_echo_n "checking for DF... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool DF=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$SETFILE" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in SetFile
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_SETFILE+:} false; then :
@@ -6615,6 +12995,143 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
+
+  test -n "$SETFILE" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !SETFILE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!SETFILE!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xSETFILE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of SETFILE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of SETFILE from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in SetFile
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SETFILE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SETFILE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SETFILE="$SETFILE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SETFILE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SETFILE=$ac_cv_path_SETFILE
+if test -n "$SETFILE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SETFILE" >&5
+$as_echo "$SETFILE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$SETFILE" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$SETFILE"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SETFILE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool SETFILE=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SETFILE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SETFILE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SETFILE="$SETFILE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SETFILE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SETFILE=$ac_cv_path_SETFILE
+if test -n "$SETFILE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SETFILE" >&5
+$as_echo "$SETFILE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$SETFILE" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SETFILE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool SETFILE=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SETFILE" >&5
+$as_echo_n "checking for SETFILE... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool SETFILE=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
 
 
 
@@ -6784,6 +13301,11 @@ test -n "$target_alias" &&
       VAR_OS_API=winapi
       VAR_OS_ENV=windows.msys
       ;;
+    *aix*)
+      VAR_OS=aix
+      VAR_OS_API=posix
+      VAR_OS_ENV=aix
+      ;;
     *)
       as_fn_error $? "unsupported operating system $build_os" "$LINENO" 5
       ;;
@@ -6903,6 +13425,11 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_OS=windows
       VAR_OS_API=winapi
       VAR_OS_ENV=windows.msys
+      ;;
+    *aix*)
+      VAR_OS=aix
+      VAR_OS_API=posix
+      VAR_OS_ENV=aix
       ;;
     *)
       as_fn_error $? "unsupported operating system $host_os" "$LINENO" 5
@@ -7810,6 +14337,37 @@ fi
 $as_echo "$JDK_VARIANT" >&6; }
 
 
+###############################################################################
+#
+# Check which interpreter of the JVM we want to build.
+# Currently we have:
+#    template: Template interpreter (the default)
+#    cpp     : C++ interpreter
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking which interpreter of the JVM to build" >&5
+$as_echo_n "checking which interpreter of the JVM to build... " >&6; }
+
+# Check whether --with-jvm-interpreter was given.
+if test "${with_jvm_interpreter+set}" = set; then :
+  withval=$with_jvm_interpreter;
+fi
+
+
+if test "x$with_jvm_interpreter" = x; then
+     with_jvm_interpreter="template"
+fi
+
+JVM_INTERPRETER="$with_jvm_interpreter"
+
+if test "x$JVM_INTERPRETER" != xtemplate && test "x$JVM_INTERPRETER" != xcpp; then
+   as_fn_error $? "The available JVM interpreters are: template, cpp" "$LINENO" 5
+fi
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_jvm_interpreter" >&5
+$as_echo "$with_jvm_interpreter" >&6; }
+
+
 
   ###############################################################################
   #
@@ -7822,6 +14380,7 @@ $as_echo "$JDK_VARIANT" >&6; }
   #             ie normal interpreter and C1, only the serial GC, kernel jvmti etc
   #    zero: no machine code interpreter, no compiler
   #    zeroshark: zero interpreter and shark/llvm compiler backend
+#    core: interpreter only, no compiler (only works on some platforms)
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking which variants of the JVM to build" >&5
 $as_echo_n "checking which variants of the JVM to build... " >&6; }
 
@@ -7836,10 +14395,10 @@ fi
   fi
 
   JVM_VARIANTS=",$with_jvm_variants,"
-  TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//'  -e 's/minimal1,//' -e 's/kernel,//' -e 's/zero,//' -e 's/zeroshark,//'`
+  TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//'  -e 's/minimal1,//' -e 's/kernel,//' -e 's/zero,//' -e 's/zeroshark,//' -e 's/core,//'`
 
   if test "x$TEST_VARIANTS" != "x,"; then
-    as_fn_error $? "The available JVM variants are: server, client, minimal1, kernel, zero, zeroshark" "$LINENO" 5
+     as_fn_error $? "The available JVM variants are: server, client, minimal1, kernel, zero, zeroshark, core" "$LINENO" 5
   fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_jvm_variants" >&5
 $as_echo "$with_jvm_variants" >&6; }
@@ -7850,6 +14409,7 @@ $as_echo "$with_jvm_variants" >&6; }
   JVM_VARIANT_KERNEL=`$ECHO "$JVM_VARIANTS" | $SED -e '/,kernel,/!s/.*/false/g' -e '/,kernel,/s/.*/true/g'`
   JVM_VARIANT_ZERO=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zero,/!s/.*/false/g' -e '/,zero,/s/.*/true/g'`
   JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zeroshark,/!s/.*/false/g' -e '/,zeroshark,/s/.*/true/g'`
+  JVM_VARIANT_CORE=`$ECHO "$JVM_VARIANTS" | $SED -e '/,core,/!s/.*/false/g' -e '/,core,/s/.*/true/g'`
 
   if test "x$JVM_VARIANT_CLIENT" = xtrue; then
     if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
@@ -7868,8 +14428,8 @@ $as_echo "$with_jvm_variants" >&6; }
   fi
 
   # Replace the commas with AND for use in the build directory name.
-  ANDED_JVM_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/^,//' -e 's/,$//' -e 's/,/AND/'`
-  COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/minimal1,/1/' -e 's/kernel,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/'`
+  ANDED_JVM_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/^,//' -e 's/,$//' -e 's/,/AND/g'`
+  COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/minimal1,/1/' -e 's/kernel,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/' -e 's/core,/1/'`
   if test "x$COUNT_VARIANTS" != "x,1"; then
     BUILDING_MULTIPLE_JVM_VARIANTS=yes
   else
@@ -7884,11 +14444,15 @@ $as_echo "$with_jvm_variants" >&6; }
 
 
 
+
   INCLUDE_SA=true
   if test "x$JVM_VARIANT_ZERO" = xtrue ; then
     INCLUDE_SA=false
   fi
   if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+    INCLUDE_SA=false
+  fi
+  if test "x$VAR_CPU" = xppc64 ; then
     INCLUDE_SA=false
   fi
 
@@ -8004,6 +14568,10 @@ $as_echo "$DEBUG_LEVEL" >&6; }
 
   if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
     HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}shark "
+  fi
+
+  if test "x$JVM_VARIANT_CORE" = xtrue; then
+    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}core "
   fi
 
   HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_EXPORT"
@@ -10085,7 +16653,14 @@ $as_echo "yes" >&6; }
   # These tools might not be installed by default,
   # need hint on how to install them.
 
-  for ac_prog in unzip
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$UNZIP" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in unzip
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -10130,21 +16705,155 @@ fi
   test -n "$UNZIP" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$UNZIP" = x; then
-    if test "xunzip" = x; then
-      PROG_NAME=unzip
+    # Try to remove the string !UNZIP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!UNZIP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xUNZIP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of UNZIP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of UNZIP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in unzip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_UNZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $UNZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_UNZIP="$UNZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_UNZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+UNZIP=$ac_cv_path_UNZIP
+if test -n "$UNZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $UNZIP" >&5
+$as_echo "$UNZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$UNZIP" && break
+done
+
     else
-      PROG_NAME=unzip
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$UNZIP"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNZIP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool UNZIP=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_UNZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $UNZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_UNZIP="$UNZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_UNZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+UNZIP=$ac_cv_path_UNZIP
+if test -n "$UNZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $UNZIP" >&5
+$as_echo "$UNZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$UNZIP" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNZIP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool UNZIP=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNZIP" >&5
+$as_echo_n "checking for UNZIP... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool UNZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in zip
+  if test "x$UNZIP" = x; then
+    as_fn_error $? "Could not find required tool for UNZIP" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$ZIP" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in zip
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -10189,24 +16898,160 @@ fi
   test -n "$ZIP" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !ZIP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!ZIP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xZIP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of ZIP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of ZIP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in zip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ZIP="$ZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ZIP=$ac_cv_path_ZIP
+if test -n "$ZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP" >&5
+$as_echo "$ZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ZIP" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$ZIP"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ZIP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool ZIP=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ZIP="$ZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ZIP=$ac_cv_path_ZIP
+if test -n "$ZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP" >&5
+$as_echo "$ZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$ZIP" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ZIP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool ZIP=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZIP" >&5
+$as_echo_n "checking for ZIP... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool ZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
 
   if test "x$ZIP" = x; then
-    if test "xzip" = x; then
-      PROG_NAME=zip
-    else
-      PROG_NAME=zip
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
+    as_fn_error $? "Could not find required tool for ZIP" "$LINENO" 5
   fi
 
 
 
   # Non-required basic tools
 
-  # Extract the first word of "ldd", so it can be a program name with args.
-set dummy ldd; ac_word=$2
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$LDD" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in ldd
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_LDD+:} false; then :
@@ -10245,14 +17090,160 @@ $as_echo "no" >&6; }
 fi
 
 
+  test -n "$LDD" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !LDD! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!LDD!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xLDD" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of LDD from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of LDD from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in ldd
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LDD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LDD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LDD="$LDD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LDD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LDD=$ac_cv_path_LDD
+if test -n "$LDD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDD" >&5
+$as_echo "$LDD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$LDD" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$LDD"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LDD=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool LDD=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LDD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LDD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LDD="$LDD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LDD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LDD=$ac_cv_path_LDD
+if test -n "$LDD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDD" >&5
+$as_echo "$LDD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$LDD" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LDD=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool LDD=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LDD" >&5
+$as_echo_n "checking for LDD... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool LDD=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
   if test "x$LDD" = "x"; then
     # List shared lib dependencies is used for
     # debug output and checking for forbidden dependencies.
     # We can build without it.
     LDD="true"
   fi
-  # Extract the first word of "otool", so it can be a program name with args.
-set dummy otool; ac_word=$2
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$OTOOL" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in otool
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_OTOOL+:} false; then :
@@ -10291,10 +17282,154 @@ $as_echo "no" >&6; }
 fi
 
 
+  test -n "$OTOOL" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !OTOOL! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!OTOOL!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xOTOOL" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of OTOOL from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of OTOOL from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in otool
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_OTOOL+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $OTOOL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_OTOOL="$OTOOL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_OTOOL="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+OTOOL=$ac_cv_path_OTOOL
+if test -n "$OTOOL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OTOOL" >&5
+$as_echo "$OTOOL" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$OTOOL" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$OTOOL"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OTOOL=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool OTOOL=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_OTOOL+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $OTOOL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_OTOOL="$OTOOL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_OTOOL="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+OTOOL=$ac_cv_path_OTOOL
+if test -n "$OTOOL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OTOOL" >&5
+$as_echo "$OTOOL" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$OTOOL" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OTOOL=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool OTOOL=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OTOOL" >&5
+$as_echo_n "checking for OTOOL... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool OTOOL=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
   if test "x$OTOOL" = "x"; then
     OTOOL="true"
   fi
-  for ac_prog in readelf greadelf
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$READELF" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in greadelf readelf
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -10339,8 +17474,151 @@ fi
   test -n "$READELF" && break
 done
 
-  # Extract the first word of "hg", so it can be a program name with args.
-set dummy hg; ac_word=$2
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !READELF! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!READELF!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xREADELF" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of READELF from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of READELF from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in greadelf readelf
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_READELF+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $READELF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_READELF="$READELF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_READELF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+READELF=$ac_cv_path_READELF
+if test -n "$READELF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READELF" >&5
+$as_echo "$READELF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$READELF" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$READELF"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool READELF=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool READELF=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_READELF+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $READELF in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_READELF="$READELF" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_READELF="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+READELF=$ac_cv_path_READELF
+if test -n "$READELF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READELF" >&5
+$as_echo "$READELF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$READELF" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool READELF=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool READELF=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READELF" >&5
+$as_echo_n "checking for READELF... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool READELF=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$HG" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in hg
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_HG+:} false; then :
@@ -10379,8 +17657,154 @@ $as_echo "no" >&6; }
 fi
 
 
-  # Extract the first word of "stat", so it can be a program name with args.
-set dummy stat; ac_word=$2
+  test -n "$HG" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !HG! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!HG!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xHG" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of HG from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of HG from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in hg
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_HG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $HG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_HG="$HG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_HG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+HG=$ac_cv_path_HG
+if test -n "$HG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HG" >&5
+$as_echo "$HG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$HG" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$HG"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool HG=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool HG=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_HG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $HG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_HG="$HG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_HG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+HG=$ac_cv_path_HG
+if test -n "$HG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HG" >&5
+$as_echo "$HG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$HG" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool HG=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool HG=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HG" >&5
+$as_echo_n "checking for HG... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool HG=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$STAT" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in stat
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_STAT+:} false; then :
@@ -10419,8 +17843,154 @@ $as_echo "no" >&6; }
 fi
 
 
-  # Extract the first word of "time", so it can be a program name with args.
-set dummy time; ac_word=$2
+  test -n "$STAT" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !STAT! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!STAT!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xSTAT" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of STAT from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of STAT from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in stat
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_STAT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $STAT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_STAT="$STAT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_STAT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+STAT=$ac_cv_path_STAT
+if test -n "$STAT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $STAT" >&5
+$as_echo "$STAT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$STAT" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$STAT"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STAT=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool STAT=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_STAT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $STAT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_STAT="$STAT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_STAT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+STAT=$ac_cv_path_STAT
+if test -n "$STAT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $STAT" >&5
+$as_echo "$STAT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$STAT" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STAT=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool STAT=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STAT" >&5
+$as_echo_n "checking for STAT... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool STAT=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$TIME" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in time
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_TIME+:} false; then :
@@ -10459,6 +18029,143 @@ $as_echo "no" >&6; }
 fi
 
 
+  test -n "$TIME" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !TIME! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!TIME!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xTIME" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of TIME from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of TIME from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in time
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TIME+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TIME in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TIME="$TIME" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TIME="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TIME=$ac_cv_path_TIME
+if test -n "$TIME"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TIME" >&5
+$as_echo "$TIME" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TIME" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$TIME"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TIME=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool TIME=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TIME+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TIME in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TIME="$TIME" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TIME="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+TIME=$ac_cv_path_TIME
+if test -n "$TIME"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TIME" >&5
+$as_echo "$TIME" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$TIME" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TIME=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool TIME=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TIME" >&5
+$as_echo_n "checking for TIME... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool TIME=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
   # Check if it's GNU time
   IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
   if test "x$IS_GNU_TIME" != x; then
@@ -10470,7 +18177,14 @@ fi
 
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
 
-  for ac_prog in comm
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$COMM" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in comm
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -10515,16 +18229,143 @@ fi
   test -n "$COMM" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !COMM! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!COMM!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xCOMM" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of COMM from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of COMM from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in comm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_COMM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $COMM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_COMM="$COMM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_COMM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+COMM=$ac_cv_path_COMM
+if test -n "$COMM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMM" >&5
+$as_echo "$COMM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$COMM" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$COMM"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool COMM=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool COMM=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_COMM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $COMM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_COMM="$COMM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_COMM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+COMM=$ac_cv_path_COMM
+if test -n "$COMM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $COMM" >&5
+$as_echo "$COMM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$COMM" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool COMM=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool COMM=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for COMM" >&5
+$as_echo_n "checking for COMM... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool COMM=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
 
   if test "x$COMM" = x; then
-    if test "xcomm" = x; then
-      PROG_NAME=comm
-    else
-      PROG_NAME=comm
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
+    as_fn_error $? "Could not find required tool for COMM" "$LINENO" 5
   fi
 
 
@@ -10532,7 +18373,14 @@ $as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
 
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
 
-  for ac_prog in dsymutil
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$DSYMUTIL" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in dsymutil
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -10577,21 +18425,155 @@ fi
   test -n "$DSYMUTIL" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$DSYMUTIL" = x; then
-    if test "xdsymutil" = x; then
-      PROG_NAME=dsymutil
+    # Try to remove the string !DSYMUTIL! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!DSYMUTIL!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xDSYMUTIL" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of DSYMUTIL from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of DSYMUTIL from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in dsymutil
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DSYMUTIL+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DSYMUTIL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DSYMUTIL="$DSYMUTIL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DSYMUTIL="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DSYMUTIL=$ac_cv_path_DSYMUTIL
+if test -n "$DSYMUTIL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DSYMUTIL" >&5
+$as_echo "$DSYMUTIL" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DSYMUTIL" && break
+done
+
     else
-      PROG_NAME=dsymutil
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$DSYMUTIL"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DSYMUTIL=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool DSYMUTIL=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DSYMUTIL+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DSYMUTIL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DSYMUTIL="$DSYMUTIL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DSYMUTIL="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DSYMUTIL=$ac_cv_path_DSYMUTIL
+if test -n "$DSYMUTIL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DSYMUTIL" >&5
+$as_echo "$DSYMUTIL" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$DSYMUTIL" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DSYMUTIL=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool DSYMUTIL=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DSYMUTIL" >&5
+$as_echo_n "checking for DSYMUTIL... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool DSYMUTIL=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
 
-  for ac_prog in xattr
+  if test "x$DSYMUTIL" = x; then
+    as_fn_error $? "Could not find required tool for DSYMUTIL" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$XATTR" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in xattr
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -10636,21 +18618,157 @@ fi
   test -n "$XATTR" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
 
-  if test "x$XATTR" = x; then
-    if test "xxattr" = x; then
-      PROG_NAME=xattr
+    # Try to remove the string !XATTR! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!XATTR!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xXATTR" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of XATTR from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of XATTR from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in xattr
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_XATTR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $XATTR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_XATTR="$XATTR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_XATTR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+XATTR=$ac_cv_path_XATTR
+if test -n "$XATTR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XATTR" >&5
+$as_echo "$XATTR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$XATTR" && break
+done
+
     else
-      PROG_NAME=xattr
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$XATTR"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool XATTR=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool XATTR=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_XATTR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $XATTR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_XATTR="$XATTR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_XATTR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+XATTR=$ac_cv_path_XATTR
+if test -n "$XATTR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XATTR" >&5
+$as_echo "$XATTR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$XATTR" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool XATTR=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool XATTR=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XATTR" >&5
+$as_echo_n "checking for XATTR... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool XATTR=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
   fi
 
 
-    # Extract the first word of "codesign", so it can be a program name with args.
-set dummy codesign; ac_word=$2
+
+  if test "x$XATTR" = x; then
+    as_fn_error $? "Could not find required tool for XATTR" "$LINENO" 5
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$CODESIGN" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in codesign
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_CODESIGN+:} false; then :
@@ -10687,6 +18805,143 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
+
+  test -n "$CODESIGN" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !CODESIGN! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!CODESIGN!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xCODESIGN" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of CODESIGN from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of CODESIGN from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in codesign
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CODESIGN+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CODESIGN in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CODESIGN="$CODESIGN" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CODESIGN="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CODESIGN=$ac_cv_path_CODESIGN
+if test -n "$CODESIGN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CODESIGN" >&5
+$as_echo "$CODESIGN" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CODESIGN" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$CODESIGN"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CODESIGN=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool CODESIGN=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CODESIGN+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CODESIGN in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CODESIGN="$CODESIGN" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CODESIGN="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CODESIGN=$ac_cv_path_CODESIGN
+if test -n "$CODESIGN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CODESIGN" >&5
+$as_echo "$CODESIGN" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$CODESIGN" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CODESIGN=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool CODESIGN=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CODESIGN" >&5
+$as_echo_n "checking for CODESIGN... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool CODESIGN=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
 
 
     if test "x$CODESIGN" != "x"; then
@@ -11287,12 +19542,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -11619,12 +19874,942 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$BOOT_JDK"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of BOOT_JDK" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    BOOT_JDK="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$BOOT_JDK"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    BOOT_JDK="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a posix platform. Hooray! :)
+    path="$BOOT_JDK"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK" >&5
+$as_echo "$BOOT_JDK" >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking Boot JDK version" >&5
+$as_echo_n "checking Boot JDK version... " >&6; }
+              BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK_VERSION" >&5
+$as_echo "$BOOT_JDK_VERSION" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+  # Test: On MacOS X, can we find a boot jdk using /usr/libexec/java_home?
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # First check at user selected default
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  if test -x /usr/libexec/java_home; then
+    BOOT_JDK=`/usr/libexec/java_home `
+    BOOT_JDK_FOUND=maybe
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using /usr/libexec/java_home " >&5
+$as_echo "$as_me: Found potential Boot JDK using /usr/libexec/java_home " >&6;}
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$BOOT_JDK"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of BOOT_JDK" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    BOOT_JDK="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$BOOT_JDK"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    BOOT_JDK="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a posix platform. Hooray! :)
+    path="$BOOT_JDK"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK" >&5
+$as_echo "$BOOT_JDK" >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking Boot JDK version" >&5
+$as_echo_n "checking Boot JDK version... " >&6; }
+              BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK_VERSION" >&5
+$as_echo "$BOOT_JDK_VERSION" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+    # If that did not work out (e.g. too old), try explicit versions instead
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  if test -x /usr/libexec/java_home; then
+    BOOT_JDK=`/usr/libexec/java_home -v 1.9`
+    BOOT_JDK_FOUND=maybe
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using /usr/libexec/java_home -v 1.9" >&5
+$as_echo "$as_me: Found potential Boot JDK using /usr/libexec/java_home -v 1.9" >&6;}
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$BOOT_JDK"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of BOOT_JDK" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    BOOT_JDK="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$BOOT_JDK"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    BOOT_JDK="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a posix platform. Hooray! :)
+    path="$BOOT_JDK"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK" >&5
+$as_echo "$BOOT_JDK" >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking Boot JDK version" >&5
+$as_echo_n "checking Boot JDK version... " >&6; }
+              BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK_VERSION" >&5
+$as_echo "$BOOT_JDK_VERSION" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  if test -x /usr/libexec/java_home; then
+    BOOT_JDK=`/usr/libexec/java_home -v 1.8`
+    BOOT_JDK_FOUND=maybe
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using /usr/libexec/java_home -v 1.8" >&5
+$as_echo "$as_me: Found potential Boot JDK using /usr/libexec/java_home -v 1.8" >&6;}
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$BOOT_JDK"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of BOOT_JDK" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    BOOT_JDK="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$BOOT_JDK"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    BOOT_JDK="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a posix platform. Hooray! :)
+    path="$BOOT_JDK"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK" >&5
+$as_echo "$BOOT_JDK" >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking Boot JDK version" >&5
+$as_echo_n "checking Boot JDK version... " >&6; }
+              BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK_VERSION" >&5
+$as_echo "$BOOT_JDK_VERSION" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    # Now execute the test
+
+  if test -x /usr/libexec/java_home; then
+    BOOT_JDK=`/usr/libexec/java_home -v 1.7`
+    BOOT_JDK_FOUND=maybe
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using /usr/libexec/java_home -v 1.7" >&5
+$as_echo "$as_me: Found potential Boot JDK using /usr/libexec/java_home -v 1.7" >&6;}
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
+              BOOT_JDK_FOUND=no
+            else
+              # We're done! :-)
+              BOOT_JDK_FOUND=yes
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$BOOT_JDK"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of BOOT_JDK" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-stile (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    BOOT_JDK="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
+  fi
+
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$BOOT_JDK"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    BOOT_JDK="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+  else
+    # We're on a posix platform. Hooray! :)
+    path="$BOOT_JDK"
+    has_space=`$ECHO "$path" | $GREP " "`
+    if test "x$has_space" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
+      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+    fi
+
+    # Use eval to expand a potential ~
+    eval path="$path"
+    if test ! -f "$path" && test ! -d "$path"; then
+      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
+    fi
+
+    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+  fi
+
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
+$as_echo_n "checking for Boot JDK... " >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK" >&5
+$as_echo "$BOOT_JDK" >&6; }
+              { $as_echo "$as_me:${as_lineno-$LINENO}: checking Boot JDK version" >&5
+$as_echo_n "checking Boot JDK version... " >&6; }
+              BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK_VERSION" >&5
+$as_echo "$BOOT_JDK_VERSION" >&6; }
+            fi # end check jdk version
+          fi # end check rt.jar
+        fi # end check javac
+      fi # end check java
+    fi # end check boot jdk found
+  fi
+
+  fi
+
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BOOT_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BOOT_JDK/bin/java"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
+        BOOT_JDK_FOUND=no
+      else
+        # Do we have a bin/javac?
+        if test ! -x "$BOOT_JDK/bin/javac"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
+$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
+          BOOT_JDK_FOUND=no
+        else
+          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
+          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
+            BOOT_JDK_FOUND=no
+          else
+            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+            # Extra M4 quote needed to protect [] in grep expression.
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
+$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -11937,200 +21122,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
-              BOOT_JDK_FOUND=no
-            else
-              # We're done! :-)
-              BOOT_JDK_FOUND=yes
-
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$BOOT_JDK"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of BOOT_JDK" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-stile (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    BOOT_JDK="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
-  fi
-
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$BOOT_JDK"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    BOOT_JDK="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-  else
-    # We're on a posix platform. Hooray! :)
-    path="$BOOT_JDK"
-    has_space=`$ECHO "$path" | $GREP " "`
-    if test "x$has_space" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-      as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-    fi
-
-    # Use eval to expand a potential ~
-    eval path="$path"
-    if test ! -f "$path" && test ! -d "$path"; then
-      as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-    fi
-
-    BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
-  fi
-
-              { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
-$as_echo_n "checking for Boot JDK... " >&6; }
-              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK" >&5
-$as_echo "$BOOT_JDK" >&6; }
-              { $as_echo "$as_me:${as_lineno-$LINENO}: checking Boot JDK version" >&5
-$as_echo_n "checking Boot JDK version... " >&6; }
-              BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
-              { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK_VERSION" >&5
-$as_echo "$BOOT_JDK_VERSION" >&6; }
-            fi # end check jdk version
-          fi # end check rt.jar
-        fi # end check javac
-      fi # end check java
-    fi # end check boot jdk found
-  fi
-
-
-  # Test: Is there a /usr/libexec/java_home? (Typically on MacOSX)
-
-  if test "x$BOOT_JDK_FOUND" = xno; then
-    # Now execute the test
-
-  if test -x /usr/libexec/java_home; then
-    BOOT_JDK=`/usr/libexec/java_home`
-    BOOT_JDK_FOUND=maybe
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential Boot JDK using /usr/libexec/java_home" >&5
-$as_echo "$as_me: Found potential Boot JDK using /usr/libexec/java_home" >&6;}
-  fi
-
-
-    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
-    if test "x$BOOT_JDK_FOUND" = xmaybe; then
-      # Do we have a bin/java?
-      if test ! -x "$BOOT_JDK/bin/java"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
-$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
-        BOOT_JDK_FOUND=no
-      else
-        # Do we have a bin/javac?
-        if test ! -x "$BOOT_JDK/bin/javac"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
-$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
-          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
-$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
-          BOOT_JDK_FOUND=no
-        else
-          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
-          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&5
-$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring" >&6;}
-            BOOT_JDK_FOUND=no
-          else
-            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
-            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
-
-            # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
-              { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
-$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -12453,12 +21450,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -12668,12 +21665,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -12848,12 +21845,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -13056,12 +22053,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -13236,12 +22233,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -13444,12 +22441,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -13624,12 +22621,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -13832,12 +22829,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -14012,12 +23009,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -14207,12 +23204,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -14385,12 +23382,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -14581,12 +23578,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -14759,12 +23756,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -14954,12 +23951,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -15132,12 +24129,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -15328,12 +24325,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -15506,12 +24503,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -15683,12 +24680,12 @@ $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain an rt.ja
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`
-            if test "x$FOUND_VERSION_78" = x; then
+            FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
 $as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7 or 8)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 7 or 8)" >&6;}
+              { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 7, 8 or 9)" >&5
+$as_echo "$as_me: (Your Boot JDK must be version 7, 8 or 9)" >&6;}
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -15857,8 +24854,6 @@ $as_echo "$BOOT_JDK_VERSION" >&6; }
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      * )
-        break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -15891,102 +24886,766 @@ $as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&
 
   # Setup tools from the Boot JDK.
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for java in Boot JDK" >&5
+  # Use user overridden value if available, otherwise locate tool in the Boot JDK.
+
+  # Publish this variable in the help.
+
+
+  if test "x$JAVA" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for java in Boot JDK" >&5
 $as_echo_n "checking for java in Boot JDK... " >&6; }
-  JAVA=$BOOT_JDK/bin/java
-  if test ! -x $JAVA; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+      JAVA=$BOOT_JDK/bin/java
+      if test ! -x $JAVA; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
 $as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Could not find java in the Boot JDK" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+        as_fn_error $? "Could not find java in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javac in Boot JDK" >&5
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !JAVA! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!JAVA!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xJAVA" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of JAVA from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of JAVA from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for java in Boot JDK" >&5
+$as_echo_n "checking for java in Boot JDK... " >&6; }
+      JAVA=$BOOT_JDK/bin/java
+      if test ! -x $JAVA; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        as_fn_error $? "Could not find java in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$JAVA"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVA=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool JAVA=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_JAVA+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $JAVA in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_JAVA="$JAVA" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_JAVA="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+JAVA=$ac_cv_path_JAVA
+if test -n "$JAVA"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JAVA" >&5
+$as_echo "$JAVA" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$JAVA" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVA=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool JAVA=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVA" >&5
+$as_echo_n "checking for JAVA... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool JAVA=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+  # Use user overridden value if available, otherwise locate tool in the Boot JDK.
+
+  # Publish this variable in the help.
+
+
+  if test "x$JAVAC" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javac in Boot JDK" >&5
 $as_echo_n "checking for javac in Boot JDK... " >&6; }
-  JAVAC=$BOOT_JDK/bin/javac
-  if test ! -x $JAVAC; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+      JAVAC=$BOOT_JDK/bin/javac
+      if test ! -x $JAVAC; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
 $as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Could not find javac in the Boot JDK" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+        as_fn_error $? "Could not find javac in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javah in Boot JDK" >&5
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !JAVAC! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!JAVAC!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xJAVAC" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of JAVAC from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of JAVAC from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javac in Boot JDK" >&5
+$as_echo_n "checking for javac in Boot JDK... " >&6; }
+      JAVAC=$BOOT_JDK/bin/javac
+      if test ! -x $JAVAC; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        as_fn_error $? "Could not find javac in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$JAVAC"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVAC=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool JAVAC=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_JAVAC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $JAVAC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_JAVAC="$JAVAC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_JAVAC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+JAVAC=$ac_cv_path_JAVAC
+if test -n "$JAVAC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JAVAC" >&5
+$as_echo "$JAVAC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$JAVAC" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVAC=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool JAVAC=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAC" >&5
+$as_echo_n "checking for JAVAC... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool JAVAC=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+  # Use user overridden value if available, otherwise locate tool in the Boot JDK.
+
+  # Publish this variable in the help.
+
+
+  if test "x$JAVAH" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javah in Boot JDK" >&5
 $as_echo_n "checking for javah in Boot JDK... " >&6; }
-  JAVAH=$BOOT_JDK/bin/javah
-  if test ! -x $JAVAH; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+      JAVAH=$BOOT_JDK/bin/javah
+      if test ! -x $JAVAH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
 $as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Could not find javah in the Boot JDK" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+        as_fn_error $? "Could not find javah in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javap in Boot JDK" >&5
-$as_echo_n "checking for javap in Boot JDK... " >&6; }
-  JAVAP=$BOOT_JDK/bin/javap
-  if test ! -x $JAVAP; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !JAVAH! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!JAVAH!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xJAVAH" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of JAVAH from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of JAVAH from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javah in Boot JDK" >&5
+$as_echo_n "checking for javah in Boot JDK... " >&6; }
+      JAVAH=$BOOT_JDK/bin/javah
+      if test ! -x $JAVAH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
 $as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Could not find javap in the Boot JDK" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+        as_fn_error $? "Could not find javah in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jar in Boot JDK" >&5
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$JAVAH"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVAH=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool JAVAH=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_JAVAH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $JAVAH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_JAVAH="$JAVAH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_JAVAH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+JAVAH=$ac_cv_path_JAVAH
+if test -n "$JAVAH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JAVAH" >&5
+$as_echo "$JAVAH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$JAVAH" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVAH=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool JAVAH=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAH" >&5
+$as_echo_n "checking for JAVAH... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool JAVAH=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+  # Use user overridden value if available, otherwise locate tool in the Boot JDK.
+
+  # Publish this variable in the help.
+
+
+  if test "x$JAR" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jar in Boot JDK" >&5
 $as_echo_n "checking for jar in Boot JDK... " >&6; }
-  JAR=$BOOT_JDK/bin/jar
-  if test ! -x $JAR; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+      JAR=$BOOT_JDK/bin/jar
+      if test ! -x $JAR; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
 $as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Could not find jar in the Boot JDK" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+        as_fn_error $? "Could not find jar in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rmic in Boot JDK" >&5
-$as_echo_n "checking for rmic in Boot JDK... " >&6; }
-  RMIC=$BOOT_JDK/bin/rmic
-  if test ! -x $RMIC; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !JAR! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!JAR!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xJAR" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of JAR from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of JAR from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jar in Boot JDK" >&5
+$as_echo_n "checking for jar in Boot JDK... " >&6; }
+      JAR=$BOOT_JDK/bin/jar
+      if test ! -x $JAR; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
 $as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Could not find rmic in the Boot JDK" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+        as_fn_error $? "Could not find jar in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for native2ascii in Boot JDK" >&5
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$JAR"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAR=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool JAR=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_JAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $JAR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_JAR="$JAR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_JAR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+JAR=$ac_cv_path_JAR
+if test -n "$JAR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JAR" >&5
+$as_echo "$JAR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$JAR" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAR=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool JAR=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAR" >&5
+$as_echo_n "checking for JAR... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool JAR=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+  # Use user overridden value if available, otherwise locate tool in the Boot JDK.
+
+  # Publish this variable in the help.
+
+
+  if test "x$NATIVE2ASCII" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for native2ascii in Boot JDK" >&5
 $as_echo_n "checking for native2ascii in Boot JDK... " >&6; }
-  NATIVE2ASCII=$BOOT_JDK/bin/native2ascii
-  if test ! -x $NATIVE2ASCII; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+      NATIVE2ASCII=$BOOT_JDK/bin/native2ascii
+      if test ! -x $NATIVE2ASCII; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
 $as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
-    as_fn_error $? "Could not find native2ascii in the Boot JDK" "$LINENO" 5
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+        as_fn_error $? "Could not find native2ascii in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
+
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !NATIVE2ASCII! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!NATIVE2ASCII!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xNATIVE2ASCII" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of NATIVE2ASCII from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of NATIVE2ASCII from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for native2ascii in Boot JDK" >&5
+$as_echo_n "checking for native2ascii in Boot JDK... " >&6; }
+      NATIVE2ASCII=$BOOT_JDK/bin/native2ascii
+      if test ! -x $NATIVE2ASCII; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        as_fn_error $? "Could not find native2ascii in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$NATIVE2ASCII"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NATIVE2ASCII=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool NATIVE2ASCII=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NATIVE2ASCII+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NATIVE2ASCII in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NATIVE2ASCII="$NATIVE2ASCII" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NATIVE2ASCII="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NATIVE2ASCII=$ac_cv_path_NATIVE2ASCII
+if test -n "$NATIVE2ASCII"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NATIVE2ASCII" >&5
+$as_echo "$NATIVE2ASCII" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$NATIVE2ASCII" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NATIVE2ASCII=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool NATIVE2ASCII=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NATIVE2ASCII" >&5
+$as_echo_n "checking for NATIVE2ASCII... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool NATIVE2ASCII=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+  # Use user overridden value if available, otherwise locate tool in the Boot JDK.
+
+  # Publish this variable in the help.
+
+
+  if test "x$JARSIGNER" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jarsigner in Boot JDK" >&5
+$as_echo_n "checking for jarsigner in Boot JDK... " >&6; }
+      JARSIGNER=$BOOT_JDK/bin/jarsigner
+      if test ! -x $JARSIGNER; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        as_fn_error $? "Could not find jarsigner in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !JARSIGNER! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!JARSIGNER!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xJARSIGNER" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of JARSIGNER from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of JARSIGNER from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jarsigner in Boot JDK" >&5
+$as_echo_n "checking for jarsigner in Boot JDK... " >&6; }
+      JARSIGNER=$BOOT_JDK/bin/jarsigner
+      if test ! -x $JARSIGNER; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&5
+$as_echo "$as_me: Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk" >&6;}
+        as_fn_error $? "Could not find jarsigner in the Boot JDK" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$JARSIGNER"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JARSIGNER=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool JARSIGNER=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_JARSIGNER+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $JARSIGNER in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_JARSIGNER="$JARSIGNER" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_JARSIGNER="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+JARSIGNER=$ac_cv_path_JARSIGNER
+if test -n "$JARSIGNER"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JARSIGNER" >&5
+$as_echo "$JARSIGNER" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$JARSIGNER" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JARSIGNER=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool JARSIGNER=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JARSIGNER" >&5
+$as_echo_n "checking for JARSIGNER... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool JARSIGNER=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
 
 
   # Finally, set some other options...
@@ -16037,7 +25696,7 @@ fi
     JVM_ARG_OK=false
   fi
 
-    if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+    if test "x$OPENJDK_TARGET_OS" = "xmacosx" || test "x$OPENJDK_TARGET_CPU" = "xppc64" ; then
       # Why does macosx need more heap? Its the huge JDK batch.
 
   $ECHO "Check if jvm arg is ok: -Xmx1600M" >&5
@@ -16621,7 +26280,14 @@ $as_echo "$JTREGEXE" >&6; }
     else
       # try to find jtreg on path
 
-  for ac_prog in jtreg
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$JTREGEXE" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in jtreg
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -16666,16 +26332,143 @@ fi
   test -n "$JTREGEXE" && break
 done
 
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !JTREGEXE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!JTREGEXE!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xJTREGEXE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of JTREGEXE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of JTREGEXE from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in jtreg
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_JTREGEXE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $JTREGEXE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_JTREGEXE="$JTREGEXE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_JTREGEXE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+JTREGEXE=$ac_cv_path_JTREGEXE
+if test -n "$JTREGEXE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JTREGEXE" >&5
+$as_echo "$JTREGEXE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$JTREGEXE" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$JTREGEXE"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JTREGEXE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool JTREGEXE=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_JTREGEXE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $JTREGEXE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_JTREGEXE="$JTREGEXE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_JTREGEXE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+JTREGEXE=$ac_cv_path_JTREGEXE
+if test -n "$JTREGEXE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JTREGEXE" >&5
+$as_echo "$JTREGEXE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$JTREGEXE" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JTREGEXE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool JTREGEXE=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JTREGEXE" >&5
+$as_echo_n "checking for JTREGEXE... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool JTREGEXE=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
 
   if test "x$JTREGEXE" = x; then
-    if test "xjtreg" = x; then
-      PROG_NAME=jtregexe
-    else
-      PROG_NAME=jtreg
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $PROG_NAME!" >&5
-$as_echo "$as_me: Could not find $PROG_NAME!" >&6;}
-    as_fn_error $? "Cannot continue" "$LINENO" 5
+    as_fn_error $? "Could not find required tool for JTREGEXE" "$LINENO" 5
   fi
 
 
@@ -17964,6 +27757,13 @@ fi
     # otherwise we might pick up cross-compilers which don't use standard naming.
     # Otherwise, we'll set the BUILD_tools to the native tools, but that'll have
     # to wait until they are properly discovered.
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$BUILD_CC" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cl cc gcc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -18008,6 +27808,140 @@ fi
 
   test -n "$BUILD_CC" && break
 done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !BUILD_CC! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!BUILD_CC!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xBUILD_CC" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of BUILD_CC from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of BUILD_CC from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in cl cc gcc
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BUILD_CC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BUILD_CC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BUILD_CC="$BUILD_CC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BUILD_CC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BUILD_CC=$ac_cv_path_BUILD_CC
+if test -n "$BUILD_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_CC" >&5
+$as_echo "$BUILD_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$BUILD_CC" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$BUILD_CC"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_CC=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool BUILD_CC=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BUILD_CC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BUILD_CC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BUILD_CC="$BUILD_CC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BUILD_CC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BUILD_CC=$ac_cv_path_BUILD_CC
+if test -n "$BUILD_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_CC" >&5
+$as_echo "$BUILD_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$BUILD_CC" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_CC=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool BUILD_CC=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CC" >&5
+$as_echo_n "checking for BUILD_CC... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool BUILD_CC=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
 
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -18275,6 +28209,13 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
 $as_echo "$as_me: Rewriting BUILD_CC to \"$new_complete\"" >&6;}
   fi
 
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$BUILD_CXX" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cl CC g++
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -18319,6 +28260,140 @@ fi
 
   test -n "$BUILD_CXX" && break
 done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !BUILD_CXX! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!BUILD_CXX!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xBUILD_CXX" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of BUILD_CXX from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of BUILD_CXX from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in cl CC g++
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BUILD_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BUILD_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BUILD_CXX="$BUILD_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BUILD_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BUILD_CXX=$ac_cv_path_BUILD_CXX
+if test -n "$BUILD_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_CXX" >&5
+$as_echo "$BUILD_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$BUILD_CXX" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$BUILD_CXX"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_CXX=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool BUILD_CXX=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BUILD_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BUILD_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BUILD_CXX="$BUILD_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BUILD_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BUILD_CXX=$ac_cv_path_BUILD_CXX
+if test -n "$BUILD_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_CXX" >&5
+$as_echo "$BUILD_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$BUILD_CXX" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_CXX=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool BUILD_CXX=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CXX" >&5
+$as_echo_n "checking for BUILD_CXX... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool BUILD_CXX=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
 
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -18586,8 +28661,17 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
 $as_echo "$as_me: Rewriting BUILD_CXX to \"$new_complete\"" >&6;}
   fi
 
-    # Extract the first word of "ld", so it can be a program name with args.
-set dummy ld; ac_word=$2
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$BUILD_LD" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in ld
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_BUILD_LD+:} false; then :
@@ -18624,6 +28708,143 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
+
+  test -n "$BUILD_LD" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !BUILD_LD! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!BUILD_LD!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xBUILD_LD" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of BUILD_LD from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of BUILD_LD from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in ld
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BUILD_LD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BUILD_LD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BUILD_LD="$BUILD_LD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BUILD_LD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BUILD_LD=$ac_cv_path_BUILD_LD
+if test -n "$BUILD_LD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_LD" >&5
+$as_echo "$BUILD_LD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$BUILD_LD" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$BUILD_LD"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_LD=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool BUILD_LD=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BUILD_LD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BUILD_LD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BUILD_LD="$BUILD_LD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BUILD_LD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BUILD_LD=$ac_cv_path_BUILD_LD
+if test -n "$BUILD_LD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_LD" >&5
+$as_echo "$BUILD_LD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$BUILD_LD" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_LD=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool BUILD_LD=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_LD" >&5
+$as_echo_n "checking for BUILD_LD... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool BUILD_LD=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
 
 
 
@@ -19073,78 +29294,29 @@ $as_echo "$as_me: Downloading build dependency devkit from $with_builddeps_serve
   # On Solaris, cc is preferred to gcc.
   # Elsewhere, gcc is preferred to cc.
 
-  if test "x$CC" != x; then
-    COMPILER_CHECK_LIST="$CC"
-  elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     COMPILER_CHECK_LIST="cl"
   elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
     COMPILER_CHECK_LIST="cc gcc"
+  elif test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    # Do not probe for cc on AIX.
+    COMPILER_CHECK_LIST="xlc_r"
   else
     COMPILER_CHECK_LIST="gcc cc"
   fi
 
 
   COMPILER_NAME=C
+  SEARCH_LIST="$COMPILER_CHECK_LIST"
 
-  CC=
-  # If TOOLS_DIR is set, check for all compiler names in there first
-  # before checking the rest of the PATH.
-  if test -n "$TOOLS_DIR"; then
-    PATH_save="$PATH"
-    PATH="$TOOLS_DIR"
-    for ac_prog in $COMPILER_CHECK_LIST
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_TOOLS_DIR_CC+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $TOOLS_DIR_CC in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_TOOLS_DIR_CC="$TOOLS_DIR_CC" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_TOOLS_DIR_CC="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
+  if test "x$CC" != x; then
+    # User has supplied compiler name already, always let that override.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied compiler CC=$CC" >&5
+$as_echo "$as_me: Will use user supplied compiler CC=$CC" >&6;}
+    if test "x`basename $CC`" = "x$CC"; then
+      # A command without a complete path is provided, search $PATH.
 
-  ;;
-esac
-fi
-TOOLS_DIR_CC=$ac_cv_path_TOOLS_DIR_CC
-if test -n "$TOOLS_DIR_CC"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CC" >&5
-$as_echo "$TOOLS_DIR_CC" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$TOOLS_DIR_CC" && break
-done
-
-    CC=$TOOLS_DIR_CC
-    PATH="$PATH_save"
-  fi
-
-  # AC_PATH_PROGS can't be run multiple times with the same variable,
-  # so create a new name for this run.
-  if test "x$CC" = x; then
-    for ac_prog in $COMPILER_CHECK_LIST
+      for ac_prog in $CC
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -19189,10 +29361,126 @@ fi
   test -n "$POTENTIAL_CC" && break
 done
 
-    CC=$POTENTIAL_CC
+      if test "x$POTENTIAL_CC" != x; then
+        CC=$POTENTIAL_CC
+      else
+        as_fn_error $? "User supplied compiler CC=$CC could not be found" "$LINENO" 5
+      fi
+    else
+      # Otherwise it might already be a complete path
+      if test ! -x "$CC"; then
+        as_fn_error $? "User supplied compiler CC=$CC does not exist" "$LINENO" 5
+      fi
+    fi
+  else
+    # No user supplied value. Locate compiler ourselves
+    CC=
+    # If TOOLS_DIR is set, check for all compiler names in there first
+    # before checking the rest of the PATH.
+    if test -n "$TOOLS_DIR"; then
+      PATH_save="$PATH"
+      PATH="$TOOLS_DIR"
+      for ac_prog in $SEARCH_LIST
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TOOLS_DIR_CC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TOOLS_DIR_CC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TOOLS_DIR_CC="$TOOLS_DIR_CC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TOOLS_DIR_CC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
   fi
+done
+  done
+IFS=$as_save_IFS
 
-  if test "x$CC" = x; then
+  ;;
+esac
+fi
+TOOLS_DIR_CC=$ac_cv_path_TOOLS_DIR_CC
+if test -n "$TOOLS_DIR_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CC" >&5
+$as_echo "$TOOLS_DIR_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TOOLS_DIR_CC" && break
+done
+
+      CC=$TOOLS_DIR_CC
+      PATH="$PATH_save"
+    fi
+
+    # AC_PATH_PROGS can't be run multiple times with the same variable,
+    # so create a new name for this run.
+    if test "x$CC" = x; then
+      for ac_prog in $SEARCH_LIST
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_POTENTIAL_CC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $POTENTIAL_CC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_POTENTIAL_CC="$POTENTIAL_CC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_POTENTIAL_CC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+POTENTIAL_CC=$ac_cv_path_POTENTIAL_CC
+if test -n "$POTENTIAL_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $POTENTIAL_CC" >&5
+$as_echo "$POTENTIAL_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$POTENTIAL_CC" && break
+done
+
+      CC=$POTENTIAL_CC
+    fi
+
+    if test "x$CC" = x; then
 
   # Print a helpful message on how to acquire the necessary build dependency.
   # devkit is the help tag: freetype, cups, pulse, alsa etc
@@ -19216,8 +29504,6 @@ done
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      * )
-        break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -19225,8 +29511,11 @@ done
     fi
   fi
 
-    as_fn_error $? "Could not find a $COMPILER_NAME compiler. $HELP_MSG" "$LINENO" 5
+      as_fn_error $? "Could not find a $COMPILER_NAME compiler. $HELP_MSG" "$LINENO" 5
+    fi
   fi
+
+  # Now we have a compiler binary in CC. Make sure it's okay.
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
@@ -19493,9 +29782,12 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
 $as_echo "$as_me: Rewriting CC to \"$new_complete\"" >&6;}
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking resolved symbolic links for CC" >&5
-$as_echo_n "checking resolved symbolic links for CC... " >&6; }
   TEST_COMPILER="$CC"
+  # Don't remove symbolic links on AIX because 'xlc_r' and 'xlC_r' may all be links
+  # to 'xlc' but it is crucial that we invoke the compiler with the right name!
+  if test "x$OPENJDK_BUILD_OS" != xaix; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking resolved symbolic links for CC" >&5
+$as_echo_n "checking resolved symbolic links for CC... " >&6; }
 
   if test "x$OPENJDK_BUILD_OS" != xwindows; then
     # Follow a chain of symbolic links. Use readlink
@@ -19544,8 +29836,9 @@ $as_echo_n "checking resolved symbolic links for CC... " >&6; }
     fi
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEST_COMPILER" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEST_COMPILER" >&5
 $as_echo "$TEST_COMPILER" >&6; }
+  fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if CC is disguised ccache" >&5
 $as_echo_n "checking if CC is disguised ccache... " >&6; }
 
@@ -20009,6 +30302,15 @@ $as_echo "$as_me: The result from running with -V was: \"$COMPILER_VERSION_TEST\
       COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.*[ ,\t]$COMPILER_NAME[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p"`
       COMPILER_VENDOR="Sun Studio"
     fi
+  elif test  "x$OPENJDK_TARGET_OS" = xaix; then
+      COMPILER_VERSION_TEST=`$COMPILER -qversion  2>&1 | $TAIL -n 1`
+      $ECHO $COMPILER_VERSION_TEST | $GREP "^Version: " > /dev/null
+      if test $? -ne 0; then
+        as_fn_error $? "Failed to detect the compiler version of $COMPILER ...." "$LINENO" 5
+      else
+        COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n 's/Version: \(0-90-9\.0-90-9*\).*/\1/p'`
+        COMPILER_VENDOR='IBM'
+      fi
   elif test  "x$OPENJDK_TARGET_OS" = xwindows; then
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
@@ -20650,80 +30952,39 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
+  # Option used to tell the compiler whether to create 32- or 64-bit executables
+  # Notice that CC contains the full compiler path at this point.
+  case $CC in
+    *xlc_r) COMPILER_TARGET_BITS_FLAG="-q";;
+    *)      COMPILER_TARGET_BITS_FLAG="-m";;
+  esac
+
+
   ### Locate C++ compiler (CXX)
 
-  if test "x$CXX" != x; then
-    COMPILER_CHECK_LIST="$CXX"
-  elif test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     COMPILER_CHECK_LIST="cl"
   elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
     COMPILER_CHECK_LIST="CC g++"
+  elif test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    # Do not probe for CC on AIX .
+    COMPILER_CHECK_LIST="xlC_r"
   else
     COMPILER_CHECK_LIST="g++ CC"
   fi
 
 
   COMPILER_NAME=C++
+  SEARCH_LIST="$COMPILER_CHECK_LIST"
 
-  CXX=
-  # If TOOLS_DIR is set, check for all compiler names in there first
-  # before checking the rest of the PATH.
-  if test -n "$TOOLS_DIR"; then
-    PATH_save="$PATH"
-    PATH="$TOOLS_DIR"
-    for ac_prog in $COMPILER_CHECK_LIST
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_TOOLS_DIR_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $TOOLS_DIR_CXX in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_TOOLS_DIR_CXX="$TOOLS_DIR_CXX" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_TOOLS_DIR_CXX="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
+  if test "x$CXX" != x; then
+    # User has supplied compiler name already, always let that override.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied compiler CXX=$CXX" >&5
+$as_echo "$as_me: Will use user supplied compiler CXX=$CXX" >&6;}
+    if test "x`basename $CXX`" = "x$CXX"; then
+      # A command without a complete path is provided, search $PATH.
 
-  ;;
-esac
-fi
-TOOLS_DIR_CXX=$ac_cv_path_TOOLS_DIR_CXX
-if test -n "$TOOLS_DIR_CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CXX" >&5
-$as_echo "$TOOLS_DIR_CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$TOOLS_DIR_CXX" && break
-done
-
-    CXX=$TOOLS_DIR_CXX
-    PATH="$PATH_save"
-  fi
-
-  # AC_PATH_PROGS can't be run multiple times with the same variable,
-  # so create a new name for this run.
-  if test "x$CXX" = x; then
-    for ac_prog in $COMPILER_CHECK_LIST
+      for ac_prog in $CXX
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -20768,10 +31029,126 @@ fi
   test -n "$POTENTIAL_CXX" && break
 done
 
-    CXX=$POTENTIAL_CXX
+      if test "x$POTENTIAL_CXX" != x; then
+        CXX=$POTENTIAL_CXX
+      else
+        as_fn_error $? "User supplied compiler CXX=$CXX could not be found" "$LINENO" 5
+      fi
+    else
+      # Otherwise it might already be a complete path
+      if test ! -x "$CXX"; then
+        as_fn_error $? "User supplied compiler CXX=$CXX does not exist" "$LINENO" 5
+      fi
+    fi
+  else
+    # No user supplied value. Locate compiler ourselves
+    CXX=
+    # If TOOLS_DIR is set, check for all compiler names in there first
+    # before checking the rest of the PATH.
+    if test -n "$TOOLS_DIR"; then
+      PATH_save="$PATH"
+      PATH="$TOOLS_DIR"
+      for ac_prog in $SEARCH_LIST
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TOOLS_DIR_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TOOLS_DIR_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TOOLS_DIR_CXX="$TOOLS_DIR_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TOOLS_DIR_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
   fi
+done
+  done
+IFS=$as_save_IFS
 
-  if test "x$CXX" = x; then
+  ;;
+esac
+fi
+TOOLS_DIR_CXX=$ac_cv_path_TOOLS_DIR_CXX
+if test -n "$TOOLS_DIR_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TOOLS_DIR_CXX" >&5
+$as_echo "$TOOLS_DIR_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$TOOLS_DIR_CXX" && break
+done
+
+      CXX=$TOOLS_DIR_CXX
+      PATH="$PATH_save"
+    fi
+
+    # AC_PATH_PROGS can't be run multiple times with the same variable,
+    # so create a new name for this run.
+    if test "x$CXX" = x; then
+      for ac_prog in $SEARCH_LIST
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_POTENTIAL_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $POTENTIAL_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_POTENTIAL_CXX="$POTENTIAL_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_POTENTIAL_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+POTENTIAL_CXX=$ac_cv_path_POTENTIAL_CXX
+if test -n "$POTENTIAL_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $POTENTIAL_CXX" >&5
+$as_echo "$POTENTIAL_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$POTENTIAL_CXX" && break
+done
+
+      CXX=$POTENTIAL_CXX
+    fi
+
+    if test "x$CXX" = x; then
 
   # Print a helpful message on how to acquire the necessary build dependency.
   # devkit is the help tag: freetype, cups, pulse, alsa etc
@@ -20795,8 +31172,6 @@ done
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      * )
-        break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -20804,8 +31179,11 @@ done
     fi
   fi
 
-    as_fn_error $? "Could not find a $COMPILER_NAME compiler. $HELP_MSG" "$LINENO" 5
+      as_fn_error $? "Could not find a $COMPILER_NAME compiler. $HELP_MSG" "$LINENO" 5
+    fi
   fi
+
+  # Now we have a compiler binary in CXX. Make sure it's okay.
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
 
@@ -21072,9 +31450,12 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
 $as_echo "$as_me: Rewriting CXX to \"$new_complete\"" >&6;}
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking resolved symbolic links for CXX" >&5
-$as_echo_n "checking resolved symbolic links for CXX... " >&6; }
   TEST_COMPILER="$CXX"
+  # Don't remove symbolic links on AIX because 'xlc_r' and 'xlC_r' may all be links
+  # to 'xlc' but it is crucial that we invoke the compiler with the right name!
+  if test "x$OPENJDK_BUILD_OS" != xaix; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking resolved symbolic links for CXX" >&5
+$as_echo_n "checking resolved symbolic links for CXX... " >&6; }
 
   if test "x$OPENJDK_BUILD_OS" != xwindows; then
     # Follow a chain of symbolic links. Use readlink
@@ -21123,8 +31504,9 @@ $as_echo_n "checking resolved symbolic links for CXX... " >&6; }
     fi
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEST_COMPILER" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEST_COMPILER" >&5
 $as_echo "$TEST_COMPILER" >&6; }
+  fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if CXX is disguised ccache" >&5
 $as_echo_n "checking if CXX is disguised ccache... " >&6; }
 
@@ -21588,6 +31970,15 @@ $as_echo "$as_me: The result from running with -V was: \"$COMPILER_VERSION_TEST\
       COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n "s/^.*[ ,\t]$COMPILER_NAME[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p"`
       COMPILER_VENDOR="Sun Studio"
     fi
+  elif test  "x$OPENJDK_TARGET_OS" = xaix; then
+      COMPILER_VERSION_TEST=`$COMPILER -qversion  2>&1 | $TAIL -n 1`
+      $ECHO $COMPILER_VERSION_TEST | $GREP "^Version: " > /dev/null
+      if test $? -ne 0; then
+        as_fn_error $? "Failed to detect the compiler version of $COMPILER ...." "$LINENO" 5
+      else
+        COMPILER_VERSION=`$ECHO $COMPILER_VERSION_TEST | $SED -n 's/Version: \(0-90-9\.0-90-9*\).*/\1/p'`
+        COMPILER_VENDOR='IBM'
+      fi
   elif test  "x$OPENJDK_TARGET_OS" = xwindows; then
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
@@ -22432,9 +32823,18 @@ $as_echo "$as_me: Rewriting OBJC to \"$new_complete\"" >&6;}
 
 
   if test "x$OPENJDK_TARGET_OS" != xwindows; then
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$AR" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}ar", so it can be a program name with args.
-set dummy ${ac_tool_prefix}ar; ac_word=$2
+  for ac_prog in ar
+  do
+    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
+set dummy $ac_tool_prefix$ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_prog_AR+:} false; then :
@@ -22450,7 +32850,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_AR="${ac_tool_prefix}ar"
+    ac_cv_prog_AR="$ac_tool_prefix$ac_prog"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -22470,11 +32870,15 @@ $as_echo "no" >&6; }
 fi
 
 
+    test -n "$AR" && break
+  done
 fi
-if test -z "$ac_cv_prog_AR"; then
+if test -z "$AR"; then
   ac_ct_AR=$AR
-  # Extract the first word of "ar", so it can be a program name with args.
-set dummy ar; ac_word=$2
+  for ac_prog in ar
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_prog_ac_ct_AR+:} false; then :
@@ -22490,7 +32894,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_AR="ar"
+    ac_cv_prog_ac_ct_AR="$ac_prog"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -22509,6 +32913,10 @@ else
 $as_echo "no" >&6; }
 fi
 
+
+  test -n "$ac_ct_AR" && break
+done
+
   if test "x$ac_ct_AR" = x; then
     AR=""
   else
@@ -22520,9 +32928,196 @@ ac_tool_warned=yes ;;
 esac
     AR=$ac_ct_AR
   fi
-else
-  AR="$ac_cv_prog_AR"
 fi
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !AR! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!AR!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xAR" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of AR from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of AR from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      if test -n "$ac_tool_prefix"; then
+  for ac_prog in ar
+  do
+    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
+set dummy $ac_tool_prefix$ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_AR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$AR"; then
+  ac_cv_prog_AR="$AR" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_AR="$ac_tool_prefix$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+AR=$ac_cv_prog_AR
+if test -n "$AR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AR" >&5
+$as_echo "$AR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    test -n "$AR" && break
+  done
+fi
+if test -z "$AR"; then
+  ac_ct_AR=$AR
+  for ac_prog in ar
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_AR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_AR"; then
+  ac_cv_prog_ac_ct_AR="$ac_ct_AR" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_AR="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_AR=$ac_cv_prog_ac_ct_AR
+if test -n "$ac_ct_AR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_AR" >&5
+$as_echo "$ac_ct_AR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ac_ct_AR" && break
+done
+
+  if test "x$ac_ct_AR" = x; then
+    AR=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    AR=$ac_ct_AR
+  fi
+fi
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$AR"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AR=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool AR=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_AR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $AR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_AR="$AR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_AR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+AR=$ac_cv_path_AR
+if test -n "$AR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AR" >&5
+$as_echo "$AR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$AR" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AR=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool AR=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AR" >&5
+$as_echo_n "checking for AR... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool AR=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
 
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -22793,6 +33388,8 @@ $as_echo "$as_me: Rewriting AR to \"$new_complete\"" >&6;}
   fi
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     ARFLAGS="-r"
+  elif test "x$OPENJDK_TARGET_OS" = xaix; then
+    ARFLAGS="-X64"
   else
     ARFLAGS=""
   fi
@@ -25310,8 +35907,17 @@ $as_echo "$as_me: Rewriting CXXCPP to \"$new_complete\"" >&6;}
 
   # Find the right assembler.
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    # Extract the first word of "as", so it can be a program name with args.
-set dummy as; ac_word=$2
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$AS" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in as
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_AS+:} false; then :
@@ -25348,6 +35954,143 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
+
+  test -n "$AS" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !AS! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!AS!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xAS" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of AS from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of AS from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in as
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_AS+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $AS in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_AS="$AS" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_AS="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+AS=$ac_cv_path_AS
+if test -n "$AS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AS" >&5
+$as_echo "$AS" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$AS" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$AS"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AS=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool AS=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_AS+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $AS in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_AS="$AS" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_AS="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+AS=$ac_cv_path_AS
+if test -n "$AS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AS" >&5
+$as_echo "$AS" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$AS" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AS=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool AS=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AS" >&5
+$as_echo_n "checking for AS... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool AS=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
 
 
 
@@ -25622,8 +36365,17 @@ $as_echo "$as_me: Rewriting AS to \"$new_complete\"" >&6;}
 
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    # Extract the first word of "nm", so it can be a program name with args.
-set dummy nm; ac_word=$2
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$NM" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in nm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_NM+:} false; then :
@@ -25660,6 +36412,143 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
+
+  test -n "$NM" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !NM! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!NM!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xNM" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of NM from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of NM from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in nm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NM="$NM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NM=$ac_cv_path_NM
+if test -n "$NM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NM" >&5
+$as_echo "$NM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$NM" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$NM"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NM=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool NM=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NM="$NM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NM=$ac_cv_path_NM
+if test -n "$NM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NM" >&5
+$as_echo "$NM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$NM" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NM=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool NM=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
+$as_echo_n "checking for NM... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool NM=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
 
 
 
@@ -25928,8 +36817,17 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
 $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
   fi
 
-    # Extract the first word of "gnm", so it can be a program name with args.
-set dummy gnm; ac_word=$2
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$GNM" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in gnm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_GNM+:} false; then :
@@ -25966,6 +36864,143 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
+
+  test -n "$GNM" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !GNM! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!GNM!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xGNM" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of GNM from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of GNM from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in gnm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GNM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GNM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GNM="$GNM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GNM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GNM=$ac_cv_path_GNM
+if test -n "$GNM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GNM" >&5
+$as_echo "$GNM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$GNM" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$GNM"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GNM=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool GNM=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GNM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GNM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GNM="$GNM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GNM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GNM=$ac_cv_path_GNM
+if test -n "$GNM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GNM" >&5
+$as_echo "$GNM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$GNM" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GNM=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool GNM=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GNM" >&5
+$as_echo_n "checking for GNM... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool GNM=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
 
 
 
@@ -26234,8 +37269,17 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
 $as_echo "$as_me: Rewriting GNM to \"$new_complete\"" >&6;}
   fi
 
-    # Extract the first word of "strip", so it can be a program name with args.
-set dummy strip; ac_word=$2
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$STRIP" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in strip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_STRIP+:} false; then :
@@ -26272,6 +37316,143 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
+
+  test -n "$STRIP" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !STRIP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!STRIP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xSTRIP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of STRIP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of STRIP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in strip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_STRIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $STRIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_STRIP="$STRIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_STRIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+STRIP=$ac_cv_path_STRIP
+if test -n "$STRIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $STRIP" >&5
+$as_echo "$STRIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$STRIP" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$STRIP"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STRIP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool STRIP=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_STRIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $STRIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_STRIP="$STRIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_STRIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+STRIP=$ac_cv_path_STRIP
+if test -n "$STRIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $STRIP" >&5
+$as_echo "$STRIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$STRIP" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STRIP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool STRIP=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
+$as_echo_n "checking for STRIP... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool STRIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
 
 
 
@@ -26540,8 +37721,17 @@ $as_echo "$as_me: This might be caused by spaces in the path, which is not allow
 $as_echo "$as_me: Rewriting STRIP to \"$new_complete\"" >&6;}
   fi
 
-    # Extract the first word of "mcs", so it can be a program name with args.
-set dummy mcs; ac_word=$2
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$MCS" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in mcs
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_MCS+:} false; then :
@@ -26578,6 +37768,143 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
+
+  test -n "$MCS" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !MCS! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!MCS!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xMCS" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of MCS from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of MCS from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in mcs
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MCS+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MCS in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MCS="$MCS" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MCS="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MCS=$ac_cv_path_MCS
+if test -n "$MCS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MCS" >&5
+$as_echo "$MCS" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MCS" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$MCS"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MCS=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool MCS=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MCS+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MCS in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MCS="$MCS" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MCS="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MCS=$ac_cv_path_MCS
+if test -n "$MCS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MCS" >&5
+$as_echo "$MCS" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$MCS" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MCS=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool MCS=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MCS" >&5
+$as_echo_n "checking for MCS... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool MCS=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
 
 
 
@@ -26847,9 +38174,18 @@ $as_echo "$as_me: Rewriting MCS to \"$new_complete\"" >&6;}
   fi
 
   elif test "x$OPENJDK_TARGET_OS" != xwindows; then
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$NM" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}nm", so it can be a program name with args.
-set dummy ${ac_tool_prefix}nm; ac_word=$2
+  for ac_prog in nm
+  do
+    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
+set dummy $ac_tool_prefix$ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_prog_NM+:} false; then :
@@ -26865,7 +38201,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_NM="${ac_tool_prefix}nm"
+    ac_cv_prog_NM="$ac_tool_prefix$ac_prog"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -26885,11 +38221,15 @@ $as_echo "no" >&6; }
 fi
 
 
+    test -n "$NM" && break
+  done
 fi
-if test -z "$ac_cv_prog_NM"; then
+if test -z "$NM"; then
   ac_ct_NM=$NM
-  # Extract the first word of "nm", so it can be a program name with args.
-set dummy nm; ac_word=$2
+  for ac_prog in nm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_prog_ac_ct_NM+:} false; then :
@@ -26905,7 +38245,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_NM="nm"
+    ac_cv_prog_ac_ct_NM="$ac_prog"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -26924,6 +38264,10 @@ else
 $as_echo "no" >&6; }
 fi
 
+
+  test -n "$ac_ct_NM" && break
+done
+
   if test "x$ac_ct_NM" = x; then
     NM=""
   else
@@ -26935,9 +38279,196 @@ ac_tool_warned=yes ;;
 esac
     NM=$ac_ct_NM
   fi
-else
-  NM="$ac_cv_prog_NM"
 fi
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !NM! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!NM!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xNM" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of NM from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of NM from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      if test -n "$ac_tool_prefix"; then
+  for ac_prog in nm
+  do
+    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
+set dummy $ac_tool_prefix$ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_NM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$NM"; then
+  ac_cv_prog_NM="$NM" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_NM="$ac_tool_prefix$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+NM=$ac_cv_prog_NM
+if test -n "$NM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NM" >&5
+$as_echo "$NM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    test -n "$NM" && break
+  done
+fi
+if test -z "$NM"; then
+  ac_ct_NM=$NM
+  for ac_prog in nm
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_NM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_NM"; then
+  ac_cv_prog_ac_ct_NM="$ac_ct_NM" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_NM="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_NM=$ac_cv_prog_ac_ct_NM
+if test -n "$ac_ct_NM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_NM" >&5
+$as_echo "$ac_ct_NM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ac_ct_NM" && break
+done
+
+  if test "x$ac_ct_NM" = x; then
+    NM=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    NM=$ac_ct_NM
+  fi
+fi
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$NM"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NM=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool NM=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NM="$NM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NM=$ac_cv_path_NM
+if test -n "$NM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NM" >&5
+$as_echo "$NM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$NM" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NM=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool NM=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
+$as_echo_n "checking for NM... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool NM=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
 
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -27207,9 +38738,18 @@ $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
 
     GNM="$NM"
 
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$STRIP" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}strip", so it can be a program name with args.
-set dummy ${ac_tool_prefix}strip; ac_word=$2
+  for ac_prog in strip
+  do
+    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
+set dummy $ac_tool_prefix$ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_prog_STRIP+:} false; then :
@@ -27225,7 +38765,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_STRIP="${ac_tool_prefix}strip"
+    ac_cv_prog_STRIP="$ac_tool_prefix$ac_prog"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -27245,11 +38785,15 @@ $as_echo "no" >&6; }
 fi
 
 
+    test -n "$STRIP" && break
+  done
 fi
-if test -z "$ac_cv_prog_STRIP"; then
+if test -z "$STRIP"; then
   ac_ct_STRIP=$STRIP
-  # Extract the first word of "strip", so it can be a program name with args.
-set dummy strip; ac_word=$2
+  for ac_prog in strip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_prog_ac_ct_STRIP+:} false; then :
@@ -27265,7 +38809,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_STRIP="strip"
+    ac_cv_prog_ac_ct_STRIP="$ac_prog"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -27284,6 +38828,10 @@ else
 $as_echo "no" >&6; }
 fi
 
+
+  test -n "$ac_ct_STRIP" && break
+done
+
   if test "x$ac_ct_STRIP" = x; then
     STRIP=""
   else
@@ -27295,9 +38843,196 @@ ac_tool_warned=yes ;;
 esac
     STRIP=$ac_ct_STRIP
   fi
-else
-  STRIP="$ac_cv_prog_STRIP"
 fi
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !STRIP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!STRIP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xSTRIP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of STRIP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of STRIP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      if test -n "$ac_tool_prefix"; then
+  for ac_prog in strip
+  do
+    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
+set dummy $ac_tool_prefix$ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_STRIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$STRIP"; then
+  ac_cv_prog_STRIP="$STRIP" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_STRIP="$ac_tool_prefix$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+STRIP=$ac_cv_prog_STRIP
+if test -n "$STRIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $STRIP" >&5
+$as_echo "$STRIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    test -n "$STRIP" && break
+  done
+fi
+if test -z "$STRIP"; then
+  ac_ct_STRIP=$STRIP
+  for ac_prog in strip
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_STRIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_STRIP"; then
+  ac_cv_prog_ac_ct_STRIP="$ac_ct_STRIP" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_STRIP="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_STRIP=$ac_cv_prog_ac_ct_STRIP
+if test -n "$ac_ct_STRIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_STRIP" >&5
+$as_echo "$ac_ct_STRIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ac_ct_STRIP" && break
+done
+
+  if test "x$ac_ct_STRIP" = x; then
+    STRIP=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    STRIP=$ac_ct_STRIP
+  fi
+fi
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$STRIP"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STRIP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool STRIP=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_STRIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $STRIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_STRIP="$STRIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_STRIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+STRIP=$ac_cv_path_STRIP
+if test -n "$STRIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $STRIP" >&5
+$as_echo "$STRIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$STRIP" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STRIP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool STRIP=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
+$as_echo_n "checking for STRIP... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool STRIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
 
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -27570,6 +39305,13 @@ $as_echo "$as_me: Rewriting STRIP to \"$new_complete\"" >&6;}
   # objcopy is used for moving debug symbols to separate files when
   # full debug symbols are enabled.
   if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$OBJCOPY" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
   for ac_prog in gobjcopy objcopy
   do
@@ -27669,6 +39411,195 @@ esac
     OBJCOPY=$ac_ct_OBJCOPY
   fi
 fi
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !OBJCOPY! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!OBJCOPY!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xOBJCOPY" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of OBJCOPY from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of OBJCOPY from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      if test -n "$ac_tool_prefix"; then
+  for ac_prog in gobjcopy objcopy
+  do
+    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
+set dummy $ac_tool_prefix$ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_OBJCOPY+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$OBJCOPY"; then
+  ac_cv_prog_OBJCOPY="$OBJCOPY" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_OBJCOPY="$ac_tool_prefix$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+OBJCOPY=$ac_cv_prog_OBJCOPY
+if test -n "$OBJCOPY"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OBJCOPY" >&5
+$as_echo "$OBJCOPY" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    test -n "$OBJCOPY" && break
+  done
+fi
+if test -z "$OBJCOPY"; then
+  ac_ct_OBJCOPY=$OBJCOPY
+  for ac_prog in gobjcopy objcopy
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_OBJCOPY+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_OBJCOPY"; then
+  ac_cv_prog_ac_ct_OBJCOPY="$ac_ct_OBJCOPY" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_OBJCOPY="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_OBJCOPY=$ac_cv_prog_ac_ct_OBJCOPY
+if test -n "$ac_ct_OBJCOPY"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_OBJCOPY" >&5
+$as_echo "$ac_ct_OBJCOPY" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ac_ct_OBJCOPY" && break
+done
+
+  if test "x$ac_ct_OBJCOPY" = x; then
+    OBJCOPY=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    OBJCOPY=$ac_ct_OBJCOPY
+  fi
+fi
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$OBJCOPY"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OBJCOPY=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool OBJCOPY=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_OBJCOPY+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $OBJCOPY in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_OBJCOPY="$OBJCOPY" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_OBJCOPY="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+OBJCOPY=$ac_cv_path_OBJCOPY
+if test -n "$OBJCOPY"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OBJCOPY" >&5
+$as_echo "$OBJCOPY" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$OBJCOPY" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OBJCOPY=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool OBJCOPY=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJCOPY" >&5
+$as_echo_n "checking for OBJCOPY... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool OBJCOPY=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
 
     # Only call fixup if objcopy was found.
     if test -n "$OBJCOPY"; then
@@ -27941,7 +39872,14 @@ $as_echo "$as_me: Rewriting OBJCOPY to \"$new_complete\"" >&6;}
     fi
   fi
 
-  if test -n "$ac_tool_prefix"; then
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$OBJDUMP" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    if test -n "$ac_tool_prefix"; then
   for ac_prog in gobjdump objdump
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
@@ -28040,6 +39978,195 @@ esac
     OBJDUMP=$ac_ct_OBJDUMP
   fi
 fi
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !OBJDUMP! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!OBJDUMP!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xOBJDUMP" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of OBJDUMP from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of OBJDUMP from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      if test -n "$ac_tool_prefix"; then
+  for ac_prog in gobjdump objdump
+  do
+    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
+set dummy $ac_tool_prefix$ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_OBJDUMP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$OBJDUMP"; then
+  ac_cv_prog_OBJDUMP="$OBJDUMP" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_OBJDUMP="$ac_tool_prefix$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+OBJDUMP=$ac_cv_prog_OBJDUMP
+if test -n "$OBJDUMP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OBJDUMP" >&5
+$as_echo "$OBJDUMP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    test -n "$OBJDUMP" && break
+  done
+fi
+if test -z "$OBJDUMP"; then
+  ac_ct_OBJDUMP=$OBJDUMP
+  for ac_prog in gobjdump objdump
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_OBJDUMP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_OBJDUMP"; then
+  ac_cv_prog_ac_ct_OBJDUMP="$ac_ct_OBJDUMP" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_OBJDUMP="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_OBJDUMP=$ac_cv_prog_ac_ct_OBJDUMP
+if test -n "$ac_ct_OBJDUMP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_OBJDUMP" >&5
+$as_echo "$ac_ct_OBJDUMP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ac_ct_OBJDUMP" && break
+done
+
+  if test "x$ac_ct_OBJDUMP" = x; then
+    OBJDUMP=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    OBJDUMP=$ac_ct_OBJDUMP
+  fi
+fi
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$OBJDUMP"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OBJDUMP=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool OBJDUMP=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_OBJDUMP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $OBJDUMP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_OBJDUMP="$OBJDUMP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_OBJDUMP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+OBJDUMP=$ac_cv_path_OBJDUMP
+if test -n "$OBJDUMP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OBJDUMP" >&5
+$as_echo "$OBJDUMP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$OBJDUMP" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OBJDUMP=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool OBJDUMP=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJDUMP" >&5
+$as_echo_n "checking for OBJDUMP... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool OBJDUMP=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
 
   if test "x$OBJDUMP" != x; then
     # Only used for compare.sh; we can live without it. BASIC_FIXUP_EXECUTABLE bails if argument is missing.
@@ -28312,8 +40439,17 @@ $as_echo "$as_me: Rewriting OBJDUMP to \"$new_complete\"" >&6;}
   fi
 
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    # Extract the first word of "lipo", so it can be a program name with args.
-set dummy lipo; ac_word=$2
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$LIPO" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in lipo
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_LIPO+:} false; then :
@@ -28350,6 +40486,143 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
+
+  test -n "$LIPO" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !LIPO! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!LIPO!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xLIPO" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of LIPO from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of LIPO from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in lipo
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LIPO+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LIPO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LIPO="$LIPO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LIPO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LIPO=$ac_cv_path_LIPO
+if test -n "$LIPO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIPO" >&5
+$as_echo "$LIPO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$LIPO" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$LIPO"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LIPO=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool LIPO=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LIPO+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LIPO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LIPO="$LIPO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LIPO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LIPO=$ac_cv_path_LIPO
+if test -n "$LIPO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIPO" >&5
+$as_echo "$LIPO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$LIPO" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LIPO=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool LIPO=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIPO" >&5
+$as_echo_n "checking for LIPO... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool LIPO=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
 
 
 
@@ -28768,16 +41041,17 @@ done
   # is made at runtime.)
   #
 
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    # Always specify -m flags on Solaris
+  if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xaix; then
+    # Always specify -m flag on Solaris
+    # And -q on AIX because otherwise the compiler produces 32-bit objects by default
 
   # When we add flags to the "official" CFLAGS etc, we need to
   # keep track of these additions in ADDED_CFLAGS etc. These
   # will later be checked to make sure only controlled additions
   # have been made to CFLAGS etc.
-  ADDED_CFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
-  ADDED_CXXFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
-  ADDED_LDFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
 
   CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
   CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
@@ -28795,9 +41069,9 @@ done
   # keep track of these additions in ADDED_CFLAGS etc. These
   # will later be checked to make sure only controlled additions
   # have been made to CFLAGS etc.
-  ADDED_CFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
-  ADDED_CXXFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
-  ADDED_LDFLAGS=" -m${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
 
   CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
   CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
@@ -28871,20 +41145,85 @@ _ACEOF
 
 
 
-  if test "x$SIZEOF_INT_P" != "x$ac_cv_sizeof_int_p"; then
-    # Workaround autoconf bug, see http://lists.gnu.org/archive/html/autoconf/2010-07/msg00004.html
-    SIZEOF_INT_P="$ac_cv_sizeof_int_p"
-  fi
-
-  if test "x$SIZEOF_INT_P" = x; then
+  # AC_CHECK_SIZEOF defines 'ac_cv_sizeof_int_p' to hold the number of bytes used by an 'int*'
+  if test "x$ac_cv_sizeof_int_p" = x; then
     # The test failed, lets stick to the assumed value.
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The number of bits in the target could not be determined, using $OPENJDK_TARGET_CPU_BITS." >&5
 $as_echo "$as_me: WARNING: The number of bits in the target could not be determined, using $OPENJDK_TARGET_CPU_BITS." >&2;}
   else
-    TESTED_TARGET_CPU_BITS=`expr 8 \* $SIZEOF_INT_P`
+    TESTED_TARGET_CPU_BITS=`expr 8 \* $ac_cv_sizeof_int_p`
 
     if test "x$TESTED_TARGET_CPU_BITS" != "x$OPENJDK_TARGET_CPU_BITS"; then
-      as_fn_error $? "The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" "$LINENO" 5
+      # This situation may happen on 64-bit platforms where the compiler by default only generates 32-bit objects
+      # Let's try to implicitely set the compilers target architecture and retry the test
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)." >&5
+$as_echo "$as_me: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: I'll retry after setting the platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&5
+$as_echo "$as_me: I'll retry after setting the platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&6;}
+
+  # When we add flags to the "official" CFLAGS etc, we need to
+  # keep track of these additions in ADDED_CFLAGS etc. These
+  # will later be checked to make sure only controlled additions
+  # have been made to CFLAGS etc.
+  ADDED_CFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_CXXFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+  ADDED_LDFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
+
+  CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
+  CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
+  LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
+
+  CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
+  LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
+
+
+      # We have to unset 'ac_cv_sizeof_int_p' first, otherwise AC_CHECK_SIZEOF will use the previously cached value!
+      unset ac_cv_sizeof_int_p
+      # And we have to undef the definition of SIZEOF_INT_P in confdefs.h by the previous invocation of AC_CHECK_SIZEOF
+      cat >>confdefs.h <<_ACEOF
+#undef SIZEOF_INT_P
+_ACEOF
+
+      # The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of int *" >&5
+$as_echo_n "checking size of int *... " >&6; }
+if ${ac_cv_sizeof_int_p+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_cxx_compute_int "$LINENO" "(long int) (sizeof (int *))" "ac_cv_sizeof_int_p"        "$ac_includes_default"; then :
+
+else
+  if test "$ac_cv_type_int_p" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (int *)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_int_p=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_int_p" >&5
+$as_echo "$ac_cv_sizeof_int_p" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_INT_P $ac_cv_sizeof_int_p
+_ACEOF
+
+
+
+      TESTED_TARGET_CPU_BITS=`expr 8 \* $ac_cv_sizeof_int_p`
+
+      if test "x$TESTED_TARGET_CPU_BITS" != "x$OPENJDK_TARGET_CPU_BITS"; then
+        as_fn_error $? "The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" "$LINENO" 5
+      fi
     fi
   fi
 
@@ -29197,6 +41536,29 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       POST_STRIP_CMD="$STRIP -x"
       POST_MCS_CMD="$MCS -d -a \"JDK $FULL_VERSION\""
     fi
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+        COMPILER_NAME=xlc
+        PICFLAG="-qpic=large"
+        LIBRARY_PREFIX=lib
+        SHARED_LIBRARY='lib$1.so'
+        STATIC_LIBRARY='lib$1.a'
+        SHARED_LIBRARY_FLAGS="-qmkshrobj"
+        SHARED_LIBRARY_SUFFIX='.so'
+        STATIC_LIBRARY_SUFFIX='.a'
+        OBJ_SUFFIX='.o'
+        EXE_SUFFIX=''
+        SET_SHARED_LIBRARY_NAME=''
+        SET_SHARED_LIBRARY_MAPFILE=''
+        C_FLAG_REORDER=''
+        CXX_FLAG_REORDER=''
+        SET_SHARED_LIBRARY_ORIGIN=''
+        SET_EXECUTABLE_ORIGIN=""
+        CFLAGS_JDK=""
+        CXXFLAGS_JDK=""
+        CFLAGS_JDKLIB_EXTRA=''
+        POST_STRIP_CMD="$STRIP -X32_64"
+        POST_MCS_CMD=""
+    fi
     if test "x$OPENJDK_TARGET_OS" = xwindows; then
       # If it is not gcc, then assume it is the MS Visual Studio compiler
       COMPILER_NAME=cl
@@ -29382,6 +41744,24 @@ rm -f core conftest.err conftest.$ac_objext \
 
           CFLAGS_DEBUG_SYMBOLS="-g -xs"
           CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
+          ;;
+        xlc )
+          C_FLAG_DEPS="-qmakedep=gcc -MF"
+          CXX_FLAG_DEPS="-qmakedep=gcc -MF"
+          C_O_FLAG_HIGHEST="-O3"
+          C_O_FLAG_HI="-O3 -qstrict"
+          C_O_FLAG_NORM="-O2"
+          C_O_FLAG_NONE=""
+          CXX_O_FLAG_HIGHEST="-O3"
+          CXX_O_FLAG_HI="-O3 -qstrict"
+          CXX_O_FLAG_NORM="-O2"
+          CXX_O_FLAG_NONE=""
+          CFLAGS_DEBUG_SYMBOLS="-g"
+          CXXFLAGS_DEBUG_SYMBOLS="-g"
+          LDFLAGS_JDK="${LDFLAGS_JDK} -q64 -brtl -bnolibpath -liconv -bexpall"
+          CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
+          CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -q64 -qfullpath -qsaveopt"
+          ;;
       esac
       ;;
     CL )
@@ -29505,6 +41885,13 @@ fi
       LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
       LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
       ;;
+    xlc )
+      CFLAGS_JDK="$CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
+      CXXFLAGS_JDK="$CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
+
+      LDFLAGS_JDK="$LDFLAGS_JDK"
+      LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK"
+      ;;
     cl )
       CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
       -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB -DWIN32_LEAN_AND_MEAN \
@@ -29573,6 +41960,9 @@ fi
   fi
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DSOLARIS"
+  fi
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DAIX -DPPC64"
   fi
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMACOSX -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
@@ -29706,10 +42096,10 @@ fi
   # ZERO_ARCHFLAG tells the compiler which mode to build for
   case "${OPENJDK_TARGET_CPU}" in
     s390)
-      ZERO_ARCHFLAG="-m31"
+      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}31"
       ;;
     *)
-      ZERO_ARCHFLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   esac
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$ZERO_ARCHFLAG\"" >&5
@@ -29778,15 +42168,15 @@ $as_echo "$supports" >&6; }
 
 
 
-  # Check that the compiler supports -mX flags
+  # Check that the compiler supports -mX (or -qX on AIX) flags
   # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"-m${OPENJDK_TARGET_CPU_BITS}\"" >&5
-$as_echo_n "checking if compiler supports \"-m${OPENJDK_TARGET_CPU_BITS}\"... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"" >&5
+$as_echo_n "checking if compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"... " >&6; }
   supports=yes
 
   saved_cflags="$CFLAGS"
-  CFLAGS="$CFLAGS -m${OPENJDK_TARGET_CPU_BITS}"
+  CFLAGS="$CFLAGS ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -29812,7 +42202,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   CFLAGS="$saved_cflags"
 
   saved_cxxflags="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAG -m${OPENJDK_TARGET_CPU_BITS}"
+  CXXFLAGS="$CXXFLAG ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -29845,6 +42235,27 @@ $as_echo "$supports" >&6; }
     COMPILER_SUPPORTS_TARGET_BITS_FLAG=false
   fi
 
+
+
+
+  # Check for broken SuSE 'ld' for which 'Only anonymous version tag is allowed in executable.'
+  USING_BROKEN_SUSE_LD=no
+  if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$GCC" = xyes; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for broken SuSE 'ld' which only understands anonymous version tags in executables" >&5
+$as_echo_n "checking for broken SuSE 'ld' which only understands anonymous version tags in executables... " >&6; }
+    echo "SUNWprivate_1.1 { local: *; };" > version-script.map
+    echo "int main() { }" > main.c
+    if $CXX -Xlinker -version-script=version-script.map main.c 2>&5 >&5; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      USING_BROKEN_SUSE_LD=no
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      USING_BROKEN_SUSE_LD=yes
+    fi
+    rm -rf version-script.map main.c
+  fi
 
 
 
@@ -30003,6 +42414,16 @@ $as_echo_n "checking what is not needed on Solaris?... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse" >&5
 $as_echo "alsa pulse" >&6; }
   fi
+
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on AIX?" >&5
+$as_echo_n "checking what is not needed on AIX?... " >&6; }
+    ALSA_NOT_NEEDED=yes
+    PULSE_NOT_NEEDED=yes
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse" >&5
+$as_echo "alsa pulse" >&6; }
+  fi
+
 
   if test "x$OPENJDK_TARGET_OS" = xwindows; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on Windows?" >&5
@@ -30814,8 +43235,6 @@ fi
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      * )
-        break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -30906,8 +43325,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      * )
-        break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -31168,8 +43585,6 @@ $as_echo "$CUPS_FOUND" >&6; }
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      * )
-        break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -33930,8 +46345,6 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      * )
-        break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -34267,8 +46680,6 @@ $as_echo "$as_me: Using FREETYPE_CFLAGS=$FREETYPE_CFLAGS and FREETYPE_LIBS=$FREE
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      * )
-        break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -34620,8 +47031,6 @@ done
         pkgutil_help $MISSING_DEPENDENCY ;;
       pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      * )
-        break ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -35424,6 +47833,9 @@ $as_echo_n "checking for number of cores... " >&6; }
     # Looks like a MacOSX system
     NUM_CORES=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Cores' | awk  '{print $5}'`
     FOUND_CORES=yes
+  elif test "x$OPENJDK_BUILD_OS" = xaix ; then
+    NUM_CORES=`/usr/sbin/prtconf | grep "^Number Of Processors" | awk '{ print $4 }'`
+    FOUND_CORES=yes
   elif test -n "$NUMBER_OF_PROCESSORS"; then
     # On windows, look in the env
     NUM_CORES=$NUMBER_OF_PROCESSORS
@@ -35468,8 +47880,8 @@ $as_echo_n "checking for memory size... " >&6; }
     MEMORY_SIZE=`expr $MEMORY_SIZE / 1024`
     FOUND_MEM=yes
   elif test -x /usr/sbin/prtconf; then
-    # Looks like a Solaris system
-    MEMORY_SIZE=`/usr/sbin/prtconf | grep "Memory size" | awk '{ print $3 }'`
+    # Looks like a Solaris or AIX system
+    MEMORY_SIZE=`/usr/sbin/prtconf | grep "^Memory [Ss]ize" | awk '{ print $3 }'`
     FOUND_MEM=yes
   elif test -x /usr/sbin/system_profiler; then
     # Looks like a MacOSX system
@@ -35802,18 +48214,33 @@ $as_echo "yes" >&6; }
 
   # Check whether --enable-ccache was given.
 if test "${enable_ccache+set}" = set; then :
-  enableval=$enable_ccache; ENABLE_CCACHE=${enable_ccache}
-else
-  ENABLE_CCACHE=yes
+  enableval=$enable_ccache;
 fi
 
-  if test "x$ENABLE_CCACHE" = xyes; then
+
+  CCACHE=
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking is ccache enabled" >&5
+$as_echo_n "checking is ccache enabled... " >&6; }
+  ENABLE_CCACHE=$enable_ccache
+  if test "x$enable_ccache" = xyes; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
     OLD_PATH="$PATH"
     if test "x$TOOLS_DIR" != x; then
       PATH=$TOOLS_DIR:$PATH
     fi
-    # Extract the first word of "ccache", so it can be a program name with args.
-set dummy ccache; ac_word=$2
+
+
+
+  # Publish this variable in the help.
+
+
+  if test "x$CCACHE" = x; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in ccache
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_CCACHE+:} false; then :
@@ -35852,13 +48279,161 @@ $as_echo "no" >&6; }
 fi
 
 
-    PATH="$OLD_PATH"
+  test -n "$CCACHE" && break
+done
+
   else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ccache" >&5
-$as_echo_n "checking for ccache... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: explicitly disabled" >&5
-$as_echo "explicitly disabled" >&6; }
-    CCACHE=
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !CCACHE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!CCACHE!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xCCACHE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of CCACHE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of CCACHE from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in ccache
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CCACHE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CCACHE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CCACHE="$CCACHE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CCACHE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CCACHE=$ac_cv_path_CCACHE
+if test -n "$CCACHE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CCACHE" >&5
+$as_echo "$CCACHE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CCACHE" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if the provided tool contains a complete path.
+      tool_specified="$CCACHE"
+      tool_basename="${tool_specified##*/}"
+      if test "x$tool_basename" = "x$tool_specified"; then
+        # A command without a complete path is provided, search $PATH.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CCACHE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool CCACHE=$tool_basename" >&6;}
+        # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CCACHE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CCACHE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CCACHE="$CCACHE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CCACHE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CCACHE=$ac_cv_path_CCACHE
+if test -n "$CCACHE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CCACHE" >&5
+$as_echo "$CCACHE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+        if test "x$CCACHE" = x; then
+          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+        fi
+      else
+        # Otherwise we believe it is a complete path. Use it as it is.
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CCACHE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool CCACHE=$tool_specified" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CCACHE" >&5
+$as_echo_n "checking for CCACHE... " >&6; }
+        if test ! -x "$tool_specified"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+          as_fn_error $? "User supplied tool CCACHE=$tool_specified does not exist or is not executable" "$LINENO" 5
+        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+      fi
+    fi
+  fi
+
+
+
+  if test "x$CCACHE" = x; then
+    as_fn_error $? "Could not find required tool for CCACHE" "$LINENO" 5
+  fi
+
+
+    CCACHE_STATUS="enabled"
+    PATH="$OLD_PATH"
+  elif test "x$enable_ccache" = xno; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, explicitly disabled" >&5
+$as_echo "no, explicitly disabled" >&6; }
+  elif test "x$enable_ccache" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
+$as_echo "unknown" >&6; }
+    as_fn_error $? "--enable-ccache does not accept any parameters" "$LINENO" 5
   fi
 
 
@@ -35873,12 +48448,15 @@ fi
     # When using a non home ccache directory, assume the use is to share ccache files
     # with other users. Thus change the umask.
     SET_CCACHE_DIR="CCACHE_DIR=$with_ccache_dir CCACHE_UMASK=002"
+    if test "x$CCACHE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-ccache-dir has no meaning when ccache is not enabled" >&5
+$as_echo "$as_me: WARNING: --with-ccache-dir has no meaning when ccache is not enabled" >&2;}
+    fi
   fi
-  CCACHE_FOUND=""
+
   if test "x$CCACHE" != x; then
 
   if test "x$CCACHE" != x; then
-    CCACHE_FOUND="true"
     # Only use ccache if it is 3.1.4 or later, which supports
     # precompiled headers.
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ccache supports precompiled headers" >&5
@@ -35888,6 +48466,7 @@ $as_echo_n "checking if ccache supports precompiled headers... " >&6; }
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabling ccache" >&5
 $as_echo "no, disabling ccache" >&6; }
       CCACHE=
+      CCACHE_STATUS="disabled"
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -35920,6 +48499,7 @@ $as_echo "yes" >&6; }
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabling ccaching of precompiled headers" >&5
 $as_echo "no, disabling ccaching of precompiled headers" >&6; }
         CCACHE=
+        CCACHE_STATUS="disabled"
       fi
     fi
   fi
@@ -35951,6 +48531,16 @@ $as_echo "no, disabling ccaching of precompiled headers" >&6; }
     if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
       as_fn_error $? "Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin." "$LINENO" 5
     fi
+  fi
+
+
+  # Did user specify any unknown variables?
+
+  if test "x$CONFIGURE_OVERRIDDEN_VARIABLES" != x; then
+    # Replace the separating ! with spaces before presenting for end user.
+    unknown_variables=${CONFIGURE_OVERRIDDEN_VARIABLES//!/ }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: The following variables might be unknown to configure: $unknown_variables" >&5
+$as_echo "$as_me: WARNING: The following variables might be unknown to configure: $unknown_variables" >&2;}
   fi
 
 
@@ -35994,14 +48584,6 @@ $as_echo "$OUTPUT_DIR_IS_LOCAL" >&6; }
     IS_RECONFIGURE=yes
   else
     IS_RECONFIGURE=no
-  fi
-
-  if test -e $SRC_ROOT/build/.hide-configure-performance-hints; then
-    HIDE_PERFORMANCE_HINTS=yes
-  else
-    HIDE_PERFORMANCE_HINTS=no
-    # Hide it the next time around...
-    $TOUCH $SRC_ROOT/build/.hide-configure-performance-hints > /dev/null 2>&1
   fi
 
 
@@ -37305,22 +49887,6 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
 
   # Finally output some useful information to the user
 
-  if test "x$CCACHE_FOUND" != x; then
-    if  test "x$HAS_GOOD_CCACHE" = x; then
-      CCACHE_STATUS="installed, but disabled (version older than 3.1.4)"
-      CCACHE_HELP_MSG="You have ccache installed, but it is a version prior to 3.1.4. Try upgrading."
-    else
-      CCACHE_STATUS="installed and in use"
-    fi
-  else
-    if test "x$GCC" = xyes; then
-      CCACHE_STATUS="not installed (consider installing)"
-      CCACHE_HELP_MSG="You do not have ccache installed. Try installing it."
-    else
-      CCACHE_STATUS="not available for your system"
-    fi
-  fi
-
   printf "\n"
   printf "====================================================\n"
   printf "A new configuration has been successfully created in\n"
@@ -37351,47 +49917,10 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
   printf "Build performance summary:\n"
   printf "* Cores to use:   $JOBS\n"
   printf "* Memory limit:   $MEMORY_SIZE MB\n"
-  printf "* ccache status:  $CCACHE_STATUS\n"
+  if test "x$CCACHE_STATUS" != "x"; then
+    printf "* ccache status:  $CCACHE_STATUS\n"
+  fi
   printf "\n"
-
-  if test "x$CCACHE_HELP_MSG" != x && test "x$HIDE_PERFORMANCE_HINTS" = "xno"; then
-    printf "Build performance tip: ccache gives a tremendous speedup for C++ recompilations.\n"
-    printf "$CCACHE_HELP_MSG\n"
-
-  # Print a helpful message on how to acquire the necessary build dependency.
-  # ccache is the help tag: freetype, cups, pulse, alsa etc
-  MISSING_DEPENDENCY=ccache
-
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    cygwin_help $MISSING_DEPENDENCY
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    msys_help $MISSING_DEPENDENCY
-  else
-    PKGHANDLER_COMMAND=
-
-    case $PKGHANDLER in
-      apt-get)
-        apt_help     $MISSING_DEPENDENCY ;;
-      yum)
-        yum_help     $MISSING_DEPENDENCY ;;
-      port)
-        port_help    $MISSING_DEPENDENCY ;;
-      pkgutil)
-        pkgutil_help $MISSING_DEPENDENCY ;;
-      pkgadd)
-        pkgadd_help  $MISSING_DEPENDENCY ;;
-      * )
-        break ;;
-    esac
-
-    if test "x$PKGHANDLER_COMMAND" != x; then
-      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
-    fi
-  fi
-
-    printf "$HELP_MSG\n"
-    printf "\n"
-  fi
 
   if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xyes"; then
     printf "NOTE: You have requested to build more than one version of the JVM, which\n"
