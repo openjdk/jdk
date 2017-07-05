@@ -272,6 +272,16 @@ public class ClassWriter extends ClassVisitor {
     static final int INDY = 18;
 
     /**
+     * The type of CONSTANT_Module constant pool items.
+     */
+    static final int MODULE = 19;
+
+    /**
+     * The type of CONSTANT_Package constant pool items.
+     */
+    static final int PACKAGE = 20;
+
+    /**
      * The base value for all CONSTANT_MethodHandle constant pool items.
      * Internally, ASM store the 9 variations of CONSTANT_MethodHandle into 9
      * different items.
@@ -1158,6 +1168,50 @@ public class ClassWriter extends ClassVisitor {
      */
     public int newClass(final String value) {
         return newClassItem(value).index;
+    }
+
+    /**
+     * Adds a module name to the constant pool.
+     *
+     * Does nothing if the constant pool already contains a similar item.
+     * <i>This method is intended for {@link Attribute} sub classes, and is
+     * normally not needed by class generators or adapters.</i>
+     *
+     * @param  value
+     *         the module name
+     * @return the index of a new or already existing module reference item.
+     */
+    public int newModule(String value) {
+        key2.set(MODULE, value, null, null);
+        Item result = get(key2);
+        if (result == null) {
+            pool.put12(MODULE, newUTF8(value));
+            result = new Item(index++, key2);
+            put(result);
+        }
+        return result.index;
+    }
+
+    /**
+     * Adds a package name to the constant pool.
+     *
+     * Does nothing if the constant pool already contains a similar item.
+     * <i>This method is intended for {@link Attribute} sub classes, and is
+     * normally not needed by class generators or adapters.</i>
+     *
+     * @param  value
+     *         the internal name of the package.
+     * @return the index of a new or already existing package reference item.
+     */
+    public int newPackage(String value) {
+        key2.set(PACKAGE, value, null, null);
+        Item result = get(key2);
+        if (result == null) {
+            pool.put12(PACKAGE, newUTF8(value));
+            result = new Item(index++, key2);
+            put(result);
+        }
+        return result.index;
     }
 
     /**

@@ -79,6 +79,21 @@ ifneq ($(MAN_DIR), )
   DEPS += $(call CacheFind, $(MAN_DIR))
 endif
 
+LEGAL_NOTICES := \
+    $(SUPPORT_OUTPUTDIR)/modules_legal/java.base \
+    $(call FindModuleLegalDirs, $(MODULE)) \
+    #
+
+LEGAL_NOTICES_PATH := $(call PathList, $(LEGAL_NOTICES))
+DEPS += $(call CacheFind, $(LEGAL_NOTICES))
+
+JMOD_FLAGS += --legal-notices $(LEGAL_NOTICES_PATH)
+
+ifeq ($(filter-out jdk.incubator.%, $(MODULE)), )
+  JMOD_FLAGS += --do-not-resolve-by-default
+  JMOD_FLAGS += --warn-if-resolved=incubating
+endif
+
 # Add dependencies on other jmod files. Only java.base needs access to other
 # jmods.
 ifeq ($(MODULE), java.base)
@@ -112,7 +127,6 @@ ifeq ($(INTERIM_JMOD), true)
   DEPS := $(filter-out $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/classlist, $(DEPS))
 endif
 
-# TODO: What about headers?
 # Create jmods in a temp dir and then move them into place to keep the
 # module path in $(IMAGES_OUTPUTDIR)/jmods valid at all times.
 $(JMODS_DIR)/$(MODULE).jmod: $(DEPS)

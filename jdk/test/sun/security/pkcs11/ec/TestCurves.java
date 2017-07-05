@@ -27,8 +27,8 @@
  * @summary Basic consistency test for all curves using ECDSA and ECDH
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11/sun.security.pkcs11.wrapper
- * @compile --add-modules jdk.crypto.pkcs11 TestCurves.java
+ * @modules jdk.crypto.token/sun.security.pkcs11.wrapper
+ * @compile --add-modules jdk.crypto.token TestCurves.java
  * @run main/othervm TestCurves
  * @run main/othervm TestCurves sm
  * @key randomness

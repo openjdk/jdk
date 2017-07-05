@@ -312,7 +312,6 @@ class BitMapView : public BitMap {
 
 // A BitMap with storage in a ResourceArea.
 class ResourceBitMap : public BitMap {
-  friend class TestBitMap;
 
  public:
   ResourceBitMap() : BitMap(NULL, 0) {}
@@ -351,7 +350,6 @@ class ArenaBitMap : public BitMap {
 
 // A BitMap with storage in the CHeap.
 class CHeapBitMap : public BitMap {
-  friend class TestBitMap;
 
  private:
   // Don't allow copy or assignment, to prevent the

@@ -541,10 +541,10 @@ public class TIFFIFD extends TIFFDirectory {
     }
 
     // Stream position initially at beginning, left at end
-    // if ignoreUnknownFields is true, do not load fields for which
+    // if readUnknownTags is false, do not load fields for which
     // a tag cannot be found in an allowed TagSet.
     public void initialize(ImageInputStream stream, boolean isPrimaryIFD,
-        boolean ignoreUnknownFields) throws IOException {
+        boolean ignoreMetadata, boolean readUnknownTags) throws IOException {
 
         removeTIFFFields();
 
@@ -553,10 +553,16 @@ public class TIFFIFD extends TIFFDirectory {
 
         List<TIFFTagSet> tagSetList = getTagSetList();
 
+        // Configure essential tag variables if this is the primary IFD and
+        // either all metadata are being ignored, or metadata are not being
+        // ignored but both unknown tags are being ignored and the tag set
+        // list does not contain the baseline tags.
         boolean ensureEssentialTags = false;
         TIFFTagSet baselineTagSet = null;
-        if (isPrimaryIFD && ignoreUnknownFields
-            && !tagSetList.contains(BaselineTIFFTagSet.getInstance())) {
+        if (isPrimaryIFD &&
+            (ignoreMetadata ||
+             (!readUnknownTags &&
+              !tagSetList.contains(BaselineTIFFTagSet.getInstance())))) {
             ensureEssentialTags = true;
             initializeEssentialTags();
             baselineTagSet = BaselineTIFFTagSet.getInstance();
@@ -590,9 +596,12 @@ public class TIFFIFD extends TIFFDirectory {
                 tag = baselineTagSet.getTag(tagNumber);
             }
 
-            // Ignore unknown fields, fields with unknown type, and fields
+            // Ignore non-essential fields, unknown fields unless forcibly
+            // being read, fields with unknown type, and fields
             // with count out of int range.
-            if((tag == null && ignoreUnknownFields)
+            if((ignoreMetadata &&
+                (!ensureEssentialTags || !essentialTags.contains(tagNumber)))
+                || (tag == null && !readUnknownTags)
                 || (tag != null && !tag.isDataTypeOK(type))
                 || longCount > Integer.MAX_VALUE) {
                 // Skip the value/offset so as to leave the stream
@@ -701,7 +710,8 @@ public class TIFFIFD extends TIFFDirectory {
                     tagSets.add(tag.getTagSet());
                     TIFFIFD subIFD = new TIFFIFD(tagSets);
 
-                    subIFD.initialize(stream, false, ignoreUnknownFields);
+                    subIFD.initialize(stream, false, ignoreMetadata,
+                                      readUnknownTags);
                     TIFFField f = new TIFFField(tag, type, e.offset, subIFD);
                     addTIFFField(f);
                 } else {

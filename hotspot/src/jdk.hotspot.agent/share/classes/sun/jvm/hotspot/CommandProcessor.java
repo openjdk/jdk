@@ -1957,7 +1957,7 @@ public class CommandProcessor {
         if (doit == null) {
             out.println("Unrecognized command.  Try help...");
         } else if (!debugger.isAttached() && !doit.okIfDisconnected) {
-            out.println("Command not valid until the attached to a VM");
+            out.println("Command not valid until attached to a VM");
         } else {
             try {
                 doit.doit(args);

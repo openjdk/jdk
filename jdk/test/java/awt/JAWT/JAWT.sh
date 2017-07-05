@@ -122,7 +122,7 @@ esac
 
 # Skip unsupported platforms
 case `uname -m` in
-    arm* | ppc* )
+    arm* | ppc* | s390* )
       echo "Test passed. Not supported on current architecture."
       exit 0
       ;;

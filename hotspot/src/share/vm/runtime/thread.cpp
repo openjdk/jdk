@@ -29,7 +29,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
@@ -3841,8 +3840,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       WatcherThread::start();
     }
   }
-
-  CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::CreateVM);
 
   create_vm_timer.end();
 #ifdef ASSERT

@@ -27,7 +27,7 @@
  * @summary Verify that we can use ECGenParameterSpec
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestECGenSpec
  * @run main/othervm TestECGenSpec sm
  */

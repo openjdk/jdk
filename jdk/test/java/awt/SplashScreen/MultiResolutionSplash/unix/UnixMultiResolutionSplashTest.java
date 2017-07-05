@@ -44,9 +44,11 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 
 /**
- * @test @bug 8145174 8151787
+ * @test
+ * @bug 8145174 8151787 8168657
  * @summary HiDPI splash screen support on Linux
  * @modules java.desktop/sun.java2d
+ * @requires (os.family == "linux")
  * @run main UnixMultiResolutionSplashTest
  */
 public class UnixMultiResolutionSplashTest {

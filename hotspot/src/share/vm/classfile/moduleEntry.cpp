@@ -54,6 +54,17 @@ void ModuleEntry::set_location(Symbol* location) {
   }
 }
 
+bool ModuleEntry::is_non_jdk_module() {
+  ResourceMark rm;
+  if (location() != NULL) {
+    const char* loc = location()->as_C_string();
+    if (strncmp(loc, "jrt:/java.", 10) != 0 && strncmp(loc, "jrt:/jdk.", 9) != 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void ModuleEntry::set_version(Symbol* version) {
   if (_version != NULL) {
     // _version symbol's refcounts are managed by ModuleEntry,
@@ -290,7 +301,15 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
   entry->set_version(version);
   entry->set_location(location);
 
-  TRACE_INIT_MODULE_ID(entry);
+  if (ClassLoader::is_in_patch_mod_entries(name)) {
+    entry->set_is_patched();
+    if (log_is_enabled(Trace, modules, patch)) {
+      ResourceMark rm;
+      log_trace(modules, patch)("Marked module %s as patched from --patch-module", name->as_C_string());
+    }
+  }
+
+  TRACE_INIT_ID(entry);
 
   return entry;
 }
@@ -354,12 +373,12 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
   assert(module_table != NULL, "boot loader's ModuleEntryTable not defined");
 
   if (module_handle.is_null()) {
-    fatal("Unable to finalize module definition for java.base");
+    fatal("Unable to finalize module definition for " JAVA_BASE_NAME);
   }
 
   // Set java.lang.reflect.Module, version and location for java.base
   ModuleEntry* jb_module = javabase_moduleEntry();
-  assert(jb_module != NULL, "java.base ModuleEntry not defined");
+  assert(jb_module != NULL, JAVA_BASE_NAME " ModuleEntry not defined");
   jb_module->set_version(version);
   jb_module->set_location(location);
   // Once java.base's ModuleEntry _module field is set with the known
@@ -376,7 +395,8 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
 // Their module field is set once java.base's java.lang.reflect.Module is known to the VM.
 void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
   if (module_handle.is_null()) {
-    fatal("Unable to patch the module field of classes loaded prior to java.base's definition, invalid java.lang.reflect.Module");
+    fatal("Unable to patch the module field of classes loaded prior to "
+          JAVA_BASE_NAME "'s definition, invalid java.lang.reflect.Module");
   }
 
   // Do the fixups for the basic primitive types

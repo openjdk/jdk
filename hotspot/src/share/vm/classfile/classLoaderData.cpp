@@ -97,7 +97,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
   _next(NULL), _dependencies(dependencies), _shared_class_loader_id(-1),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
                             Monitor::_safepoint_check_never)) {
-    // empty
+  TRACE_INIT_ID(this);
 }
 
 void ClassLoaderData::init_dependencies(TRAPS) {
@@ -167,9 +167,10 @@ void ClassLoaderData::classes_do(KlassClosure* klass_closure) {
 }
 
 void ClassLoaderData::classes_do(void f(Klass * const)) {
-  assert_locked_or_safepoint(_metaspace_lock);
-  for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
+  // Lock-free access requires load_ptr_acquire
+  for (Klass* k = load_ptr_acquire(&_klasses); k != NULL; k = k->next_link()) {
     f(k);
+    assert(k != k->next_link(), "no loops!");
   }
 }
 
@@ -812,6 +813,16 @@ void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
   }
 }
 
+void ClassLoaderDataGraph::cld_unloading_do(CLDClosure* cl) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  // Only walk the head until any clds not purged from prior unloading
+  // (CMS doesn't purge right away).
+  for (ClassLoaderData* cld = _unloading; cld != _saved_unloading; cld = cld->next()) {
+    assert(cld->is_unloading(), "invariant");
+    cl->do_cld(cld);
+  }
+}
+
 void ClassLoaderDataGraph::roots_cld_do(CLDClosure* strong, CLDClosure* weak) {
   for (ClassLoaderData* cld = _head;  cld != NULL; cld = cld->_next) {
     CLDClosure* closure = cld->keep_alive() ? strong : weak;
@@ -1042,7 +1053,7 @@ void ClassLoaderDataGraph::purge() {
   }
 }
 
-void ClassLoaderDataGraph::post_class_unload_events(void) {
+void ClassLoaderDataGraph::post_class_unload_events() {
 #if INCLUDE_TRACE
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
   if (Tracing::enabled()) {
@@ -1191,9 +1202,7 @@ void ClassLoaderDataGraph::class_unload_event(Klass* const k) {
   EventClassUnload event(UNTIMED);
   event.set_endtime(_class_unload_time);
   event.set_unloadedClass(k);
-  oop defining_class_loader = k->class_loader();
-  event.set_definingClassLoader(defining_class_loader != NULL ?
-                                defining_class_loader->klass() : (Klass*)NULL);
+  event.set_definingClassLoader(k->class_loader_data());
   event.commit();
 }
 

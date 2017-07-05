@@ -1090,7 +1090,7 @@ class opt_virtual_call_Relocation : public CallRelocation {
   void clear_inline_cache();
 
   // find the matching static_stub
-  address static_stub();
+  address static_stub(bool is_aot);
 };
 
 
@@ -1124,24 +1124,26 @@ class static_call_Relocation : public CallRelocation {
   void clear_inline_cache();
 
   // find the matching static_stub
-  address static_stub();
+  address static_stub(bool is_aot);
 };
 
 class static_stub_Relocation : public Relocation {
   relocInfo::relocType type() { return relocInfo::static_stub_type; }
 
  public:
-  static RelocationHolder spec(address static_call) {
+  static RelocationHolder spec(address static_call, bool is_aot = false) {
     RelocationHolder rh = newHolder();
-    new(rh) static_stub_Relocation(static_call);
+    new(rh) static_stub_Relocation(static_call, is_aot);
     return rh;
   }
 
  private:
   address _static_call;  // location of corresponding static_call
+  bool _is_aot;          // trampoline to aot code
 
-  static_stub_Relocation(address static_call) {
+  static_stub_Relocation(address static_call, bool is_aot) {
     _static_call = static_call;
+    _is_aot = is_aot;
   }
 
   friend class RelocIterator;
@@ -1151,6 +1153,7 @@ class static_stub_Relocation : public Relocation {
   void clear_inline_cache();
 
   address static_call() { return _static_call; }
+  bool is_aot() { return _is_aot; }
 
   // data is packed as a scaled offset in "1_int" format:  [c] or [Cc]
   void pack_data_to(CodeSection* dest);

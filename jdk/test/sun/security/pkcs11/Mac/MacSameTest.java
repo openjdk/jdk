@@ -27,7 +27,7 @@
  * @summary Check if doFinal and update operation result in same Mac
  * @author Yu-Ching Valerie Peng, Bill Situ, Alexander Fomin
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm MacSameTest
  * @run main/othervm MacSameTest sm
  * @key randomness

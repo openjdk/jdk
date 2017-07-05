@@ -41,7 +41,7 @@ import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 import jdk.test.lib.apps.LingeredApp;
-import jdk.testlibrary.Platform;
+import jdk.test.lib.Platform;
 
 public class HeapDumpTest {
 
@@ -109,8 +109,7 @@ public class HeapDumpTest {
         dump.delete();
     }
 
-    public static void main(String[] args)
-        throws IOException {
+    public static void main(String[] args) throws Exception {
 
         if (!Platform.shouldSAAttach()) {
             // Silently skip the test if we don't have enough permissions to attach

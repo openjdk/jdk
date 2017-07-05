@@ -45,7 +45,11 @@ import sun.java2d.SunGraphicsEnvironment;
 import sun.security.action.GetPropertyAction;
 
 import com.sun.java.swing.SwingUtilities3;
+import java.awt.geom.AffineTransform;
+import sun.java2d.SunGraphics2D;
+import sun.java2d.pipe.Region;
 import sun.swing.SwingAccessor;
+import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.RepaintListener;
 
 /**
@@ -1517,9 +1521,12 @@ public class RepaintManager
             // standard Image buffer.
             boolean paintCompleted = false;
             Image offscreen;
+            int sw = w + 1;
+            int sh = h + 1;
+
             if (repaintManager.useVolatileDoubleBuffer() &&
                 (offscreen = getValidImage(repaintManager.
-                getVolatileOffscreenBuffer(bufferComponent, w, h))) != null) {
+                getVolatileOffscreenBuffer(bufferComponent, sw, sh))) != null) {
                 VolatileImage vImage = (java.awt.image.VolatileImage)offscreen;
                 GraphicsConfiguration gc = bufferComponent.
                                             getGraphicsConfiguration();
@@ -1529,7 +1536,7 @@ public class RepaintManager
                                    VolatileImage.IMAGE_INCOMPATIBLE) {
                         repaintManager.resetVolatileDoubleBuffer(gc);
                         offscreen = repaintManager.getVolatileOffscreenBuffer(
-                            bufferComponent,w, h);
+                            bufferComponent, sw, sh);
                         vImage = (java.awt.image.VolatileImage)offscreen;
                     }
                     paintDoubleBuffered(paintingComponent, vImage, g, x, y,
@@ -1589,8 +1596,18 @@ public class RepaintManager
          * Paints a portion of a component to an offscreen buffer.
          */
         protected void paintDoubleBuffered(JComponent c, Image image,
-                            Graphics g, int clipX, int clipY,
-                            int clipW, int clipH) {
+                Graphics g, int clipX, int clipY,
+                int clipW, int clipH) {
+            if (image instanceof VolatileImage && isPixelsCopying(c, g)) {
+                paintDoubleBufferedFPScales(c, image, g, clipX, clipY, clipW, clipH);
+            } else {
+                paintDoubleBufferedImpl(c, image, g, clipX, clipY, clipW, clipH);
+            }
+        }
+
+        private void paintDoubleBufferedImpl(JComponent c, Image image,
+                                             Graphics g, int clipX, int clipY,
+                                             int clipW, int clipH) {
             Graphics osg = image.getGraphics();
             int bw = Math.min(clipW, image.getWidth(null));
             int bh = Math.min(clipH, image.getHeight(null));
@@ -1622,6 +1639,76 @@ public class RepaintManager
                             g.drawImage(image, x, y, c);
                         }
                         osg.translate(x, y);
+                    }
+                }
+            } finally {
+                osg.dispose();
+            }
+        }
+
+        private void paintDoubleBufferedFPScales(JComponent c, Image image,
+                                                 Graphics g, int clipX, int clipY,
+                                                 int clipW, int clipH) {
+            Graphics osg = image.getGraphics();
+            Graphics2D g2d = (Graphics2D) g;
+            Graphics2D osg2d = (Graphics2D) osg;
+
+            AffineTransform identity = new AffineTransform();
+            int bw = Math.min(clipW, image.getWidth(null));
+            int bh = Math.min(clipH, image.getHeight(null));
+            int x, y, maxx, maxy;
+
+            AffineTransform tx = g2d.getTransform();
+            double scaleX = tx.getScaleX();
+            double scaleY = tx.getScaleY();
+            double trX = tx.getTranslateX();
+            double trY = tx.getTranslateY();
+
+            boolean translucent = volatileBufferType != Transparency.OPAQUE;
+            Composite oldComposite = g2d.getComposite();
+
+            try {
+                for (x = clipX, maxx = clipX + clipW; x < maxx; x += bw) {
+                    for (y = clipY, maxy = clipY + clipH; y < maxy; y += bh) {
+
+                        // draw x, y, bw, bh
+                        int pixelx1 = Region.clipRound(x * scaleX + trX);
+                        int pixely1 = Region.clipRound(y * scaleY + trY);
+                        int pixelx2 = Region.clipRound((x + bw) * scaleX + trX);
+                        int pixely2 = Region.clipRound((y + bh) * scaleY + trY);
+                        int pixelw = pixelx2 - pixelx1;
+                        int pixelh = pixely2 - pixely1;
+
+                        osg2d.setTransform(identity);
+                        if (translucent) {
+                            final Color oldBg = g2d.getBackground();
+                            g2d.setBackground(c.getBackground());
+                            g2d.clearRect(pixelx1, pixely1, pixelw, pixelh);
+                            g2d.setBackground(oldBg);
+                        }
+
+                        osg2d.setClip(0, 0, pixelw, pixelh);
+                        osg2d.translate(trX - pixelx1, trY - pixely1);
+                        osg2d.scale(scaleX, scaleY);
+                        c.paintToOffscreen(osg, x, y, bw, bh, maxx, maxy);
+
+                        g2d.setTransform(identity);
+                        g2d.setClip(pixelx1, pixely1, pixelw, pixelh);
+                        AffineTransform stx = new AffineTransform();
+                        stx.translate(pixelx1, pixely1);
+                        stx.scale(scaleX, scaleY);
+                        g2d.setTransform(stx);
+
+                        if (translucent) {
+                            g2d.setComposite(AlphaComposite.Src);
+                        }
+
+                        g2d.drawImage(image, 0, 0, c);
+
+                        if (translucent) {
+                            g2d.setComposite(oldComposite);
+                        }
+                        g2d.setTransform(tx);
                     }
                 }
             } finally {
@@ -1671,8 +1758,32 @@ public class RepaintManager
          */
         protected void dispose() {
         }
-    }
 
+        private boolean isPixelsCopying(JComponent c, Graphics g) {
+
+            AffineTransform tx = getTransform(g);
+            GraphicsConfiguration gc = c.getGraphicsConfiguration();
+
+            if (tx == null || gc == null
+                    || !SwingUtilities2.isFloatingPointScale(tx)) {
+                return false;
+            }
+
+            AffineTransform gcTx = gc.getDefaultTransform();
+
+            return gcTx.getScaleX() == tx.getScaleX()
+                    && gcTx.getScaleY() == tx.getScaleY();
+        }
+
+        private static AffineTransform getTransform(Graphics g) {
+            if (g instanceof SunGraphics2D) {
+                return ((SunGraphics2D) g).transform;
+            } else if (g instanceof Graphics2D) {
+                return ((Graphics2D) g).getTransform();
+            }
+            return null;
+        }
+    }
 
     private class DoubleBufferInfo {
         public Image image;

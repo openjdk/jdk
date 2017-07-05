@@ -317,7 +317,7 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
                 this(null, je);
             }
             boolean isClassFile() {
-                if (!name.endsWith(".class")) {
+                if (!name.endsWith(".class") || name.endsWith("module-info.class")) {
                     return false;
                 }
                 for (String prefix = name;;) {

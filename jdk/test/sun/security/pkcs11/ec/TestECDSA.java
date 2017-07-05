@@ -29,7 +29,7 @@
  * @library ..
  * @library ../../../../java/security/testlibrary
  * @key randomness
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestECDSA
  * @run main/othervm TestECDSA sm policy
  */

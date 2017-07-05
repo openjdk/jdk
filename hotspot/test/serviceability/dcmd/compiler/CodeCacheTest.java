@@ -116,7 +116,8 @@ public class CodeCacheTest {
         // Validate code cache segments
         String line;
         Matcher m;
-        for (int s = 0; s < segmentsCount; ++s) {
+        int matchedCount = 0;
+        while (true) {
           // Validate first line
           line = lines.next();
           m = line1.matcher(line);
@@ -128,7 +129,7 @@ public class CodeCacheTest {
                   }
               }
           } else {
-              Assert.fail("Regexp 1 failed to match line: " + line);
+              break;
           }
 
           // Validate second line
@@ -149,10 +150,14 @@ public class CodeCacheTest {
           } else {
               Assert.fail("Regexp 2 failed to match line: " + line);
           }
+          ++matchedCount;
+        }
+        // Because of CodeCacheExtensions, we could match more than expected
+        if (matchedCount < segmentsCount) {
+            Assert.fail("Fewer segments matched (" + matchedCount + ") than expected (" + segmentsCount + ")");
         }
 
         // Validate third line
-        line = lines.next();
         m = line3.matcher(line);
         if (m.matches()) {
             int blobs = Integer.parseInt(m.group(1));

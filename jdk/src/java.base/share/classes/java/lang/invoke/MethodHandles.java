@@ -172,6 +172,7 @@ public class MethodHandles {
      * @throws IllegalAccessException if the access check specified above fails
      * @throws SecurityException if denied by the security manager
      * @since 9
+     * @see Lookup#dropLookupMode
      */
     public static Lookup privateLookupIn(Class<?> targetClass, Lookup lookup) throws IllegalAccessException {
         SecurityManager sm = System.getSecurityManager();
@@ -691,10 +692,15 @@ public class MethodHandles {
          *  A lookup object on a new lookup class
          *  {@linkplain java.lang.invoke.MethodHandles.Lookup#in created from a previous lookup object}
          *  may have some mode bits set to zero.
+         *  Mode bits can also be
+         *  {@linkplain java.lang.invoke.MethodHandles.Lookup#dropLookupMode directly cleared}.
+         *  Once cleared, mode bits cannot be restored from the downgraded lookup object.
          *  The purpose of this is to restrict access via the new lookup object,
          *  so that it can access only names which can be reached by the original
          *  lookup object, and also by the new lookup class.
          *  @return the lookup modes, which limit the kinds of access performed by this lookup object
+         *  @see #in
+         *  @see #dropLookupMode
          */
         public int lookupModes() {
             return allowedModes & ALL_MODES;
@@ -748,7 +754,8 @@ public class MethodHandles {
          * which may change due to this operation.
          *
          * @param requestedLookupClass the desired lookup class for the new lookup object
-         * @return a lookup object which reports the desired lookup class
+         * @return a lookup object which reports the desired lookup class, or the same object
+         * if there is no change
          * @throws NullPointerException if the argument is null
          */
         public Lookup in(Class<?> requestedLookupClass) {
@@ -786,6 +793,40 @@ public class MethodHandles {
 
             checkUnprivilegedlookupClass(requestedLookupClass, newModes);
             return new Lookup(requestedLookupClass, newModes);
+        }
+
+
+        /**
+         * Creates a lookup on the same lookup class which this lookup object
+         * finds members, but with a lookup mode that has lost the given lookup mode.
+         * The lookup mode to drop is one of {@link #PUBLIC PUBLIC}, {@link #MODULE
+         * MODULE}, {@link #PACKAGE PACKAGE}, {@link #PROTECTED PROTECTED} or {@link #PRIVATE PRIVATE}.
+         * {@link #PROTECTED PROTECTED} is always dropped and so the resulting lookup
+         * mode will never have this access capability. When dropping {@code PACKAGE}
+         * then the resulting lookup will not have {@code PACKAGE} or {@code PRIVATE}
+         * access. When dropping {@code MODULE} then the resulting lookup will not
+         * have {@code MODULE}, {@code PACKAGE}, or {@code PRIVATE} access. If {@code
+         * PUBLIC} is dropped then the resulting lookup has no access.
+         * @param modeToDrop the lookup mode to drop
+         * @return a lookup object which lacks the indicated mode, or the same object if there is no change
+         * @throws IllegalArgumentException if {@code modeToDrop} is not one of {@code PUBLIC},
+         * {@code MODULE}, {@code PACKAGE}, {@code PROTECTED} or {@code PRIVATE}
+         * @since 9
+         * @see MethodHandles#privateLookupIn
+         */
+        public Lookup dropLookupMode(int modeToDrop) {
+            int oldModes = lookupModes();
+            int newModes = oldModes & ~(modeToDrop | PROTECTED);
+            switch (modeToDrop) {
+                case PUBLIC: newModes &= ~(ALL_MODES); break;
+                case MODULE: newModes &= ~(PACKAGE | PRIVATE); break;
+                case PACKAGE: newModes &= ~(PRIVATE); break;
+                case PROTECTED:
+                case PRIVATE: break;
+                default: throw new IllegalArgumentException(modeToDrop + " is not a valid mode to drop");
+            }
+            if (newModes == oldModes) return this;  // return self if no change
+            return new Lookup(lookupClass(), newModes);
         }
 
         // Make sure outer class is initialized first.

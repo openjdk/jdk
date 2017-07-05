@@ -43,8 +43,8 @@ $(eval $(call SetupZipArchive,BUILD_SEC_BIN_ZIP, \
         modules/java.base/com/sun/crypto/provider \
         modules/jdk.crypto.ec/sun/security/ec \
         modules/jdk.crypto.mscapi/sun/security/mscapi \
-        modules/jdk.crypto.pkcs11/sun/security/pkcs11 \
-        modules/jdk.crypto.pkcs11/sun/security/pkcs11/wrapper \
+        modules/jdk.crypto.token/sun/security/pkcs11 \
+        modules/jdk.crypto.token/sun/security/pkcs11/wrapper \
         modules/jdk.crypto.ucrypto/com/oracle/security/ucrypto \
         modules/java.base/javax/net \
         modules/java.base/javax/security/cert \

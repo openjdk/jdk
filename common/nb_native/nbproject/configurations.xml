@@ -2166,7 +2166,7 @@
               </df>
             </df>
           </df>
-          <df name="jdk.crypto.pkcs11">
+          <df name="jdk.crypto.token">
             <df name="share">
               <df name="native">
                 <df name="libj2pkcs11">
@@ -2318,7 +2318,7 @@
               </df>
             </df>
           </df>
-          <df name="jdk.pack200">
+          <df name="jdk.pack">
             <df name="share">
               <df name="native">
                 <df name="common-unpack">
@@ -29422,35 +29422,35 @@
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/j2secmod.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/j2secmod.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_convert.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_convert.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_crypt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_crypt.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_digest.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_digest.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_dual.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_dual.c"
             ex="false"
             tool="0"
             flavor2="2">
@@ -29460,63 +29460,63 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_general.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_general.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_keymgmt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_keymgmt.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_mutex.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_mutex.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_objmgmt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_objmgmt.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_sessmgmt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_sessmgmt.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_sign.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_sign.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_util.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_util.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/unix/native/libj2pkcs11/j2secmod_md.c"
+      <item path="../../jdk/src/jdk.crypto.token/unix/native/libj2pkcs11/j2secmod_md.c"
             ex="false"
             tool="0"
             flavor2="3">
         <cTool flags="5">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/unix/native/libj2pkcs11/p11_md.c"
+      <item path="../../jdk/src/jdk.crypto.token/unix/native/libj2pkcs11/p11_md.c"
             ex="false"
             tool="0"
             flavor2="3">
@@ -30022,12 +30022,12 @@
         <cTool flags="2">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/bands.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/bands.cpp"
             ex="false"
             tool="1"
             flavor2="4">
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/bytes.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/bytes.cpp"
             ex="false"
             tool="1"
             flavor2="4">
@@ -30037,7 +30037,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/coding.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/coding.cpp"
             ex="false"
             tool="1"
             flavor2="4">
@@ -30047,7 +30047,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/unpack.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/unpack.cpp"
             ex="false"
             tool="1"
             flavor2="4">
@@ -30057,7 +30057,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/utils.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/utils.cpp"
             ex="false"
             tool="1"
             flavor2="4">
@@ -30067,7 +30067,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/zip.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/zip.cpp"
             ex="false"
             tool="1"
             flavor2="4">
@@ -30077,12 +30077,12 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/libunpack/jni.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/libunpack/jni.cpp"
             ex="false"
             tool="1"
             flavor2="4">
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/unpack200/main.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/unpack200/main.cpp"
             ex="false"
             tool="1"
             flavor2="4">
@@ -31752,7 +31752,7 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.crypto.pkcs11">
+      <folder path="0/jdk/src/jdk.crypto.token">
         <cTool>
           <incDir>
             <pElem>../../jdk/src/java.base/share/native/include</pElem>
@@ -31760,10 +31760,10 @@
             <pElem>../../jdk/src/java.base/unix/native/include</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11</pElem>
-            <pElem>../../jdk/src/jdk.crypto.pkcs11/unix/native/libj2pkcs11</pElem>
+            <pElem>../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11</pElem>
+            <pElem>../../jdk/src/jdk.crypto.token/unix/native/libj2pkcs11</pElem>
             <pElem>../../jdk/src/java.base/macosx/native/libjava</pElem>
-            <pElem>../../build/support/headers/jdk.crypto.pkcs11</pElem>
+            <pElem>../../build/support/headers/jdk.crypto.token</pElem>
             <pElem>../../make</pElem>
           </incDir>
           <preprocessorList>
@@ -31772,7 +31772,7 @@
           </preprocessorList>
         </cTool>
       </folder>
-      <folder path="0/jdk/src/jdk.crypto.pkcs11/unix">
+      <folder path="0/jdk/src/jdk.crypto.token/unix">
         <cTool>
           <preprocessorList>
             <Elem>THIS_FILE="j2secmod_md.c"</Elem>
@@ -31899,7 +31899,7 @@
           </preprocessorList>
         </cTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200">
+      <folder path="0/jdk/src/jdk.pack">
         <ccTool>
           <preprocessorList>
             <Elem>DEBUG</Elem>
@@ -31908,7 +31908,7 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200/share/native/common-unpack">
+      <folder path="0/jdk/src/jdk.pack/share/native/common-unpack">
         <ccTool>
           <incDir>
             <pElem>../../jdk/src/java.base/share/native/include</pElem>
@@ -31917,7 +31917,7 @@
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../build/support/headers/java.base</pElem>
-            <pElem>../../jdk/src/jdk.pack200/share/native/common-unpack</pElem>
+            <pElem>../../jdk/src/jdk.pack/share/native/common-unpack</pElem>
             <pElem>../../jdk/src/java.base/macosx/native/libjava</pElem>
             <pElem>../../make</pElem>
           </incDir>
@@ -31927,7 +31927,7 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200/share/native/libunpack">
+      <folder path="0/jdk/src/jdk.pack/share/native/libunpack">
         <ccTool>
           <incDir>
             <pElem>../../jdk/src/java.base/share/native/include</pElem>
@@ -31936,7 +31936,7 @@
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../build/support/headers/java.base</pElem>
-            <pElem>../../jdk/src/jdk.pack200/share/native/common-unpack</pElem>
+            <pElem>../../jdk/src/jdk.pack/share/native/common-unpack</pElem>
             <pElem>../../jdk/src/java.base/macosx/native/libjava</pElem>
             <pElem>../../make</pElem>
           </incDir>
@@ -31947,10 +31947,10 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200/share/native/unpack200">
+      <folder path="0/jdk/src/jdk.pack/share/native/unpack200">
         <ccTool>
           <incDir>
-            <pElem>../../jdk/src/jdk.pack200/share/native/common-unpack</pElem>
+            <pElem>../../jdk/src/jdk.pack/share/native/common-unpack</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/include</pElem>
@@ -44741,14 +44741,14 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/j2secmod.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/j2secmod.c"
             ex="false"
             tool="0"
             flavor2="0">
         <cTool flags="4">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_convert.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_convert.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -44758,7 +44758,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_crypt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_crypt.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -44768,7 +44768,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_digest.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_digest.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -44778,7 +44778,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_dual.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_dual.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -44788,7 +44788,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_general.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_general.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -44798,7 +44798,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_keymgmt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_keymgmt.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -44808,7 +44808,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_mutex.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_mutex.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -44818,7 +44818,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_objmgmt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_objmgmt.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -44828,7 +44828,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_sessmgmt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_sessmgmt.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -44838,7 +44838,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_sign.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_sign.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -44848,7 +44848,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_util.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_util.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -44858,14 +44858,14 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/unix/native/libj2pkcs11/j2secmod_md.c"
+      <item path="../../jdk/src/jdk.crypto.token/unix/native/libj2pkcs11/j2secmod_md.c"
             ex="false"
             tool="0"
             flavor2="0">
         <cTool flags="4">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/unix/native/libj2pkcs11/p11_md.c"
+      <item path="../../jdk/src/jdk.crypto.token/unix/native/libj2pkcs11/p11_md.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -45364,14 +45364,14 @@
         <cTool flags="4">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/bands.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/bands.cpp"
             ex="false"
             tool="1"
             flavor2="0">
         <ccTool flags="2">
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/bytes.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/bytes.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -45381,7 +45381,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/coding.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/coding.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -45391,7 +45391,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/unpack.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/unpack.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -45401,7 +45401,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/utils.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/utils.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -45411,7 +45411,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/zip.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/zip.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -45421,14 +45421,14 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/libunpack/jni.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/libunpack/jni.cpp"
             ex="false"
             tool="1"
             flavor2="0">
         <ccTool flags="2">
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/unpack200/main.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/unpack200/main.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -47795,7 +47795,7 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.crypto.pkcs11">
+      <folder path="0/jdk/src/jdk.crypto.token">
         <cTool>
           <incDir>
             <pElem>../../jdk/src/java.base/share/native/include</pElem>
@@ -47803,10 +47803,10 @@
             <pElem>../../jdk/src/java.base/unix/native/include</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11</pElem>
-            <pElem>../../jdk/src/jdk.crypto.pkcs11/unix/native/libj2pkcs11</pElem>
+            <pElem>../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11</pElem>
+            <pElem>../../jdk/src/jdk.crypto.token/unix/native/libj2pkcs11</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
-            <pElem>../../build/support/headers/jdk.crypto.pkcs11</pElem>
+            <pElem>../../build/support/headers/jdk.crypto.token</pElem>
             <pElem>../../make</pElem>
           </incDir>
           <preprocessorList>
@@ -47815,7 +47815,7 @@
           </preprocessorList>
         </cTool>
       </folder>
-      <folder path="0/jdk/src/jdk.crypto.pkcs11/unix">
+      <folder path="0/jdk/src/jdk.crypto.token/unix">
         <cTool>
           <preprocessorList>
             <Elem>THIS_FILE="j2secmod_md.c"</Elem>
@@ -47942,7 +47942,7 @@
           </preprocessorList>
         </cTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200">
+      <folder path="0/jdk/src/jdk.pack">
         <ccTool>
           <preprocessorList>
             <Elem>DEBUG</Elem>
@@ -47951,7 +47951,7 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200/share/native/common-unpack">
+      <folder path="0/jdk/src/jdk.pack/share/native/common-unpack">
         <ccTool>
           <incDir>
             <pElem>../../jdk/src/java.base/share/native/include</pElem>
@@ -47960,7 +47960,7 @@
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../build/support/headers/java.base</pElem>
-            <pElem>../../jdk/src/jdk.pack200/share/native/common-unpack</pElem>
+            <pElem>../../jdk/src/jdk.pack/share/native/common-unpack</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../make</pElem>
           </incDir>
@@ -47970,7 +47970,7 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200/share/native/libunpack">
+      <folder path="0/jdk/src/jdk.pack/share/native/libunpack">
         <ccTool>
           <incDir>
             <pElem>../../jdk/src/java.base/share/native/include</pElem>
@@ -47979,7 +47979,7 @@
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../build/support/headers/java.base</pElem>
-            <pElem>../../jdk/src/jdk.pack200/share/native/common-unpack</pElem>
+            <pElem>../../jdk/src/jdk.pack/share/native/common-unpack</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../make</pElem>
           </incDir>
@@ -47990,10 +47990,10 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200/share/native/unpack200">
+      <folder path="0/jdk/src/jdk.pack/share/native/unpack200">
         <ccTool>
           <incDir>
-            <pElem>../../jdk/src/jdk.pack200/share/native/common-unpack</pElem>
+            <pElem>../../jdk/src/jdk.pack/share/native/common-unpack</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
@@ -62728,14 +62728,14 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/j2secmod.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/j2secmod.c"
             ex="false"
             tool="0"
             flavor2="0">
         <cTool flags="2">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_convert.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_convert.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -62745,7 +62745,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_crypt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_crypt.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -62755,7 +62755,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_digest.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_digest.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -62765,7 +62765,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_dual.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_dual.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -62775,7 +62775,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_general.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_general.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -62785,7 +62785,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_keymgmt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_keymgmt.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -62795,7 +62795,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_mutex.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_mutex.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -62805,7 +62805,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_objmgmt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_objmgmt.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -62815,7 +62815,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_sessmgmt.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_sessmgmt.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -62825,7 +62825,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_sign.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_sign.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -62835,7 +62835,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11/p11_util.c"
+      <item path="../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_util.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -62845,14 +62845,14 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/unix/native/libj2pkcs11/j2secmod_md.c"
+      <item path="../../jdk/src/jdk.crypto.token/unix/native/libj2pkcs11/j2secmod_md.c"
             ex="false"
             tool="0"
             flavor2="0">
         <cTool flags="2">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.crypto.pkcs11/unix/native/libj2pkcs11/p11_md.c"
+      <item path="../../jdk/src/jdk.crypto.token/unix/native/libj2pkcs11/p11_md.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -63395,14 +63395,14 @@
         <cTool flags="2">
         </cTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/bands.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/bands.cpp"
             ex="false"
             tool="1"
             flavor2="0">
         <ccTool flags="0">
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/bytes.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/bytes.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -63412,7 +63412,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/coding.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/coding.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -63422,7 +63422,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/unpack.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/unpack.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -63432,7 +63432,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/utils.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/utils.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -63442,7 +63442,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/common-unpack/zip.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/common-unpack/zip.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -63452,14 +63452,14 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/libunpack/jni.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/libunpack/jni.cpp"
             ex="false"
             tool="1"
             flavor2="0">
         <ccTool flags="0">
         </ccTool>
       </item>
-      <item path="../../jdk/src/jdk.pack200/share/native/unpack200/main.cpp"
+      <item path="../../jdk/src/jdk.pack/share/native/unpack200/main.cpp"
             ex="false"
             tool="1"
             flavor2="0">
@@ -66281,7 +66281,7 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.crypto.pkcs11">
+      <folder path="0/jdk/src/jdk.crypto.token">
         <cTool>
           <incDir>
             <pElem>../../jdk/src/java.base/share/native/include</pElem>
@@ -66289,10 +66289,10 @@
             <pElem>../../jdk/src/java.base/unix/native/include</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/src/jdk.crypto.pkcs11/share/native/libj2pkcs11</pElem>
-            <pElem>../../jdk/src/jdk.crypto.pkcs11/unix/native/libj2pkcs11</pElem>
+            <pElem>../../jdk/src/jdk.crypto.token/share/native/libj2pkcs11</pElem>
+            <pElem>../../jdk/src/jdk.crypto.token/unix/native/libj2pkcs11</pElem>
             <pElem>../../jdk/src/java.base/solaris/native/libjava</pElem>
-            <pElem>../../build/support/headers/jdk.crypto.pkcs11</pElem>
+            <pElem>../../build/support/headers/jdk.crypto.token</pElem>
             <pElem>../../make</pElem>
           </incDir>
           <preprocessorList>
@@ -66301,7 +66301,7 @@
           </preprocessorList>
         </cTool>
       </folder>
-      <folder path="0/jdk/src/jdk.crypto.pkcs11/unix">
+      <folder path="0/jdk/src/jdk.crypto.token/unix">
         <cTool>
           <preprocessorList>
             <Elem>THIS_FILE="j2secmod_md.c"</Elem>
@@ -66462,7 +66462,7 @@
           </preprocessorList>
         </cTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200">
+      <folder path="0/jdk/src/jdk.pack">
         <ccTool>
           <preprocessorList>
             <Elem>DEBUG</Elem>
@@ -66471,11 +66471,11 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200/share/native/common-unpack">
+      <folder path="0/jdk/src/jdk.pack/share/native/common-unpack">
         <ccTool>
           <incDir>
             <pElem>../../build/support/headers/java.base</pElem>
-            <pElem>../../jdk/src/jdk.pack200/share/native/common-unpack</pElem>
+            <pElem>../../jdk/src/jdk.pack/share/native/common-unpack</pElem>
             <pElem>../../jdk/src/java.base/solaris/native/libjava</pElem>
             <pElem>../../make</pElem>
           </incDir>
@@ -66485,11 +66485,11 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200/share/native/libunpack">
+      <folder path="0/jdk/src/jdk.pack/share/native/libunpack">
         <ccTool>
           <incDir>
             <pElem>../../build/support/headers/java.base</pElem>
-            <pElem>../../jdk/src/jdk.pack200/share/native/common-unpack</pElem>
+            <pElem>../../jdk/src/jdk.pack/share/native/common-unpack</pElem>
             <pElem>../../jdk/src/java.base/solaris/native/libjava</pElem>
             <pElem>../../make</pElem>
           </incDir>
@@ -66500,10 +66500,10 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/jdk/src/jdk.pack200/share/native/unpack200">
+      <folder path="0/jdk/src/jdk.pack/share/native/unpack200">
         <ccTool>
           <incDir>
-            <pElem>../../jdk/src/jdk.pack200/share/native/common-unpack</pElem>
+            <pElem>../../jdk/src/jdk.pack/share/native/common-unpack</pElem>
             <pElem>../../make</pElem>
           </incDir>
           <preprocessorList>

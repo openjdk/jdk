@@ -611,6 +611,10 @@ public class Cipher {
         return getInstance(transformation, p);
     }
 
+    private String getProviderName() {
+        return (provider == null)  ? "(no provider)" : provider.getName();
+    }
+
     /**
      * Returns a {@code Cipher} object that implements the specified
      * transformation.
@@ -1278,7 +1282,7 @@ public class Cipher {
         if (!skipDebug && pdebug != null) {
             pdebug.println("Cipher." + transformation + " " +
                 getOpmodeString(opmode) + " algorithm from: " +
-                this.provider.getName());
+                getProviderName());
         }
     }
 
@@ -1421,7 +1425,7 @@ public class Cipher {
         if (!skipDebug && pdebug != null) {
             pdebug.println("Cipher." + transformation + " " +
                 getOpmodeString(opmode) + " algorithm from: " +
-                this.provider.getName());
+                getProviderName());
         }
     }
 
@@ -1564,7 +1568,7 @@ public class Cipher {
         if (!skipDebug && pdebug != null) {
             pdebug.println("Cipher." + transformation + " " +
                 getOpmodeString(opmode) + " algorithm from: " +
-                this.provider.getName());
+                getProviderName());
         }
     }
 
@@ -1754,7 +1758,7 @@ public class Cipher {
         if (!skipDebug && pdebug != null) {
             pdebug.println("Cipher." + transformation + " " +
                 getOpmodeString(opmode) + " algorithm from: " +
-                this.provider.getName());
+                getProviderName());
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @library ../../testlibrary
  * @modules java.rmi/sun.rmi.registry
  *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport:open
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary CheckLeaseLeak_Stub LeaseLeakClient LeaseLeak
@@ -90,7 +91,7 @@ public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
 
         try {
             Registry registry =
-                TestLibrary.createRegistryOnUnusedPort();
+                TestLibrary.createRegistryOnEphemeralPort();
             int registryPort = TestLibrary.getRegistryPort(registry);
 
             leakServer = new CheckLeaseLeak();

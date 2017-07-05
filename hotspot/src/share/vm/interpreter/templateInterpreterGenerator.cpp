@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -55,226 +54,213 @@ static const BasicType types[Interpreter::number_of_result_handlers] = {
 };
 
 void TemplateInterpreterGenerator::generate_all() {
-  // Loop, in case we need several variants of the interpreter entries
-  do {
-    if (!CodeCacheExtensions::skip_code_generation()) {
-      // bypass code generation when useless
-      { CodeletMark cm(_masm, "slow signature handler");
-        AbstractInterpreter::_slow_signature_handler = generate_slow_signature_handler();
-      }
+  { CodeletMark cm(_masm, "slow signature handler");
+    AbstractInterpreter::_slow_signature_handler = generate_slow_signature_handler();
+  }
 
-      { CodeletMark cm(_masm, "error exits");
-        _unimplemented_bytecode    = generate_error_exit("unimplemented bytecode");
-        _illegal_bytecode_sequence = generate_error_exit("illegal bytecode sequence - method not verified");
-      }
+  { CodeletMark cm(_masm, "error exits");
+    _unimplemented_bytecode    = generate_error_exit("unimplemented bytecode");
+    _illegal_bytecode_sequence = generate_error_exit("illegal bytecode sequence - method not verified");
+  }
 
 #ifndef PRODUCT
-      if (TraceBytecodes) {
-        CodeletMark cm(_masm, "bytecode tracing support");
-        Interpreter::_trace_code =
-          EntryPoint(
-                     generate_trace_code(btos),
-                     generate_trace_code(ztos),
-                     generate_trace_code(ctos),
-                     generate_trace_code(stos),
-                     generate_trace_code(atos),
-                     generate_trace_code(itos),
-                     generate_trace_code(ltos),
-                     generate_trace_code(ftos),
-                     generate_trace_code(dtos),
-                     generate_trace_code(vtos)
-                     );
-      }
+  if (TraceBytecodes) {
+    CodeletMark cm(_masm, "bytecode tracing support");
+    Interpreter::_trace_code =
+      EntryPoint(
+                 generate_trace_code(btos),
+                 generate_trace_code(ztos),
+                 generate_trace_code(ctos),
+                 generate_trace_code(stos),
+                 generate_trace_code(atos),
+                 generate_trace_code(itos),
+                 generate_trace_code(ltos),
+                 generate_trace_code(ftos),
+                 generate_trace_code(dtos),
+                 generate_trace_code(vtos)
+                 );
+  }
 #endif // !PRODUCT
 
-      { CodeletMark cm(_masm, "return entry points");
-        const int index_size = sizeof(u2);
-        for (int i = 0; i < Interpreter::number_of_return_entries; i++) {
-          Interpreter::_return_entry[i] =
-            EntryPoint(
-                       generate_return_entry_for(itos, i, index_size),
-                       generate_return_entry_for(itos, i, index_size),
-                       generate_return_entry_for(itos, i, index_size),
-                       generate_return_entry_for(itos, i, index_size),
-                       generate_return_entry_for(atos, i, index_size),
-                       generate_return_entry_for(itos, i, index_size),
-                       generate_return_entry_for(ltos, i, index_size),
-                       generate_return_entry_for(ftos, i, index_size),
-                       generate_return_entry_for(dtos, i, index_size),
-                       generate_return_entry_for(vtos, i, index_size)
-                       );
-        }
+  { CodeletMark cm(_masm, "return entry points");
+    const int index_size = sizeof(u2);
+    for (int i = 0; i < Interpreter::number_of_return_entries; i++) {
+      Interpreter::_return_entry[i] =
+        EntryPoint(
+                   generate_return_entry_for(itos, i, index_size),
+                   generate_return_entry_for(itos, i, index_size),
+                   generate_return_entry_for(itos, i, index_size),
+                   generate_return_entry_for(itos, i, index_size),
+                   generate_return_entry_for(atos, i, index_size),
+                   generate_return_entry_for(itos, i, index_size),
+                   generate_return_entry_for(ltos, i, index_size),
+                   generate_return_entry_for(ftos, i, index_size),
+                   generate_return_entry_for(dtos, i, index_size),
+                   generate_return_entry_for(vtos, i, index_size)
+                   );
+    }
+  }
+
+  { CodeletMark cm(_masm, "invoke return entry points");
+    // These states are in order specified in TosState, except btos/ztos/ctos/stos are
+    // really the same as itos since there is no top of stack optimization for these types
+    const TosState states[] = {itos, itos, itos, itos, itos, ltos, ftos, dtos, atos, vtos, ilgl};
+    const int invoke_length = Bytecodes::length_for(Bytecodes::_invokestatic);
+    const int invokeinterface_length = Bytecodes::length_for(Bytecodes::_invokeinterface);
+    const int invokedynamic_length = Bytecodes::length_for(Bytecodes::_invokedynamic);
+
+    for (int i = 0; i < Interpreter::number_of_return_addrs; i++) {
+      TosState state = states[i];
+      assert(state != ilgl, "states array is wrong above");
+      Interpreter::_invoke_return_entry[i] = generate_return_entry_for(state, invoke_length, sizeof(u2));
+      Interpreter::_invokeinterface_return_entry[i] = generate_return_entry_for(state, invokeinterface_length, sizeof(u2));
+      Interpreter::_invokedynamic_return_entry[i] = generate_return_entry_for(state, invokedynamic_length, sizeof(u4));
+    }
+  }
+
+  { CodeletMark cm(_masm, "earlyret entry points");
+    Interpreter::_earlyret_entry =
+      EntryPoint(
+                 generate_earlyret_entry_for(btos),
+                 generate_earlyret_entry_for(ztos),
+                 generate_earlyret_entry_for(ctos),
+                 generate_earlyret_entry_for(stos),
+                 generate_earlyret_entry_for(atos),
+                 generate_earlyret_entry_for(itos),
+                 generate_earlyret_entry_for(ltos),
+                 generate_earlyret_entry_for(ftos),
+                 generate_earlyret_entry_for(dtos),
+                 generate_earlyret_entry_for(vtos)
+                 );
+  }
+
+  { CodeletMark cm(_masm, "deoptimization entry points");
+    for (int i = 0; i < Interpreter::number_of_deopt_entries; i++) {
+      Interpreter::_deopt_entry[i] =
+        EntryPoint(
+                   generate_deopt_entry_for(itos, i),
+                   generate_deopt_entry_for(itos, i),
+                   generate_deopt_entry_for(itos, i),
+                   generate_deopt_entry_for(itos, i),
+                   generate_deopt_entry_for(atos, i),
+                   generate_deopt_entry_for(itos, i),
+                   generate_deopt_entry_for(ltos, i),
+                   generate_deopt_entry_for(ftos, i),
+                   generate_deopt_entry_for(dtos, i),
+                   generate_deopt_entry_for(vtos, i)
+                   );
+    }
+  }
+
+  { CodeletMark cm(_masm, "result handlers for native calls");
+    // The various result converter stublets.
+    int is_generated[Interpreter::number_of_result_handlers];
+    memset(is_generated, 0, sizeof(is_generated));
+
+    for (int i = 0; i < Interpreter::number_of_result_handlers; i++) {
+      BasicType type = types[i];
+      if (!is_generated[Interpreter::BasicType_as_index(type)]++) {
+        Interpreter::_native_abi_to_tosca[Interpreter::BasicType_as_index(type)] = generate_result_handler_for(type);
       }
+    }
+  }
 
-      { CodeletMark cm(_masm, "invoke return entry points");
-        // These states are in order specified in TosState, except btos/ztos/ctos/stos are
-        // really the same as itos since there is no top of stack optimization for these types
-        const TosState states[] = {itos, itos, itos, itos, itos, ltos, ftos, dtos, atos, vtos, ilgl};
-        const int invoke_length = Bytecodes::length_for(Bytecodes::_invokestatic);
-        const int invokeinterface_length = Bytecodes::length_for(Bytecodes::_invokeinterface);
-        const int invokedynamic_length = Bytecodes::length_for(Bytecodes::_invokedynamic);
+  { CodeletMark cm(_masm, "continuation entry points");
+    Interpreter::_continuation_entry =
+      EntryPoint(
+                 generate_continuation_for(btos),
+                 generate_continuation_for(ztos),
+                 generate_continuation_for(ctos),
+                 generate_continuation_for(stos),
+                 generate_continuation_for(atos),
+                 generate_continuation_for(itos),
+                 generate_continuation_for(ltos),
+                 generate_continuation_for(ftos),
+                 generate_continuation_for(dtos),
+                 generate_continuation_for(vtos)
+                 );
+  }
 
-        for (int i = 0; i < Interpreter::number_of_return_addrs; i++) {
-          TosState state = states[i];
-          assert(state != ilgl, "states array is wrong above");
-          Interpreter::_invoke_return_entry[i] = generate_return_entry_for(state, invoke_length, sizeof(u2));
-          Interpreter::_invokeinterface_return_entry[i] = generate_return_entry_for(state, invokeinterface_length, sizeof(u2));
-          Interpreter::_invokedynamic_return_entry[i] = generate_return_entry_for(state, invokedynamic_length, sizeof(u4));
-        }
-      }
+  { CodeletMark cm(_masm, "safepoint entry points");
+    Interpreter::_safept_entry =
+      EntryPoint(
+                 generate_safept_entry_for(btos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
+                 generate_safept_entry_for(ztos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
+                 generate_safept_entry_for(ctos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
+                 generate_safept_entry_for(stos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
+                 generate_safept_entry_for(atos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
+                 generate_safept_entry_for(itos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
+                 generate_safept_entry_for(ltos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
+                 generate_safept_entry_for(ftos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
+                 generate_safept_entry_for(dtos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
+                 generate_safept_entry_for(vtos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint))
+                 );
+  }
 
-      { CodeletMark cm(_masm, "earlyret entry points");
-        Interpreter::_earlyret_entry =
-          EntryPoint(
-                     generate_earlyret_entry_for(btos),
-                     generate_earlyret_entry_for(ztos),
-                     generate_earlyret_entry_for(ctos),
-                     generate_earlyret_entry_for(stos),
-                     generate_earlyret_entry_for(atos),
-                     generate_earlyret_entry_for(itos),
-                     generate_earlyret_entry_for(ltos),
-                     generate_earlyret_entry_for(ftos),
-                     generate_earlyret_entry_for(dtos),
-                     generate_earlyret_entry_for(vtos)
-                     );
-      }
+  { CodeletMark cm(_masm, "exception handling");
+    // (Note: this is not safepoint safe because thread may return to compiled code)
+    generate_throw_exception();
+  }
 
-      { CodeletMark cm(_masm, "deoptimization entry points");
-        for (int i = 0; i < Interpreter::number_of_deopt_entries; i++) {
-          Interpreter::_deopt_entry[i] =
-            EntryPoint(
-                       generate_deopt_entry_for(itos, i),
-                       generate_deopt_entry_for(itos, i),
-                       generate_deopt_entry_for(itos, i),
-                       generate_deopt_entry_for(itos, i),
-                       generate_deopt_entry_for(atos, i),
-                       generate_deopt_entry_for(itos, i),
-                       generate_deopt_entry_for(ltos, i),
-                       generate_deopt_entry_for(ftos, i),
-                       generate_deopt_entry_for(dtos, i),
-                       generate_deopt_entry_for(vtos, i)
-                       );
-        }
-      }
-
-      { CodeletMark cm(_masm, "result handlers for native calls");
-        // The various result converter stublets.
-        int is_generated[Interpreter::number_of_result_handlers];
-        memset(is_generated, 0, sizeof(is_generated));
-
-        for (int i = 0; i < Interpreter::number_of_result_handlers; i++) {
-          BasicType type = types[i];
-          if (!is_generated[Interpreter::BasicType_as_index(type)]++) {
-            Interpreter::_native_abi_to_tosca[Interpreter::BasicType_as_index(type)] = generate_result_handler_for(type);
-          }
-        }
-      }
-
-      { CodeletMark cm(_masm, "continuation entry points");
-        Interpreter::_continuation_entry =
-          EntryPoint(
-                     generate_continuation_for(btos),
-                     generate_continuation_for(ztos),
-                     generate_continuation_for(ctos),
-                     generate_continuation_for(stos),
-                     generate_continuation_for(atos),
-                     generate_continuation_for(itos),
-                     generate_continuation_for(ltos),
-                     generate_continuation_for(ftos),
-                     generate_continuation_for(dtos),
-                     generate_continuation_for(vtos)
-                     );
-      }
-
-      { CodeletMark cm(_masm, "safepoint entry points");
-        Interpreter::_safept_entry =
-          EntryPoint(
-                     generate_safept_entry_for(btos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                     generate_safept_entry_for(ztos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                     generate_safept_entry_for(ctos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                     generate_safept_entry_for(stos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                     generate_safept_entry_for(atos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                     generate_safept_entry_for(itos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                     generate_safept_entry_for(ltos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                     generate_safept_entry_for(ftos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                     generate_safept_entry_for(dtos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                     generate_safept_entry_for(vtos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint))
-                     );
-      }
-
-      { CodeletMark cm(_masm, "exception handling");
-        // (Note: this is not safepoint safe because thread may return to compiled code)
-        generate_throw_exception();
-      }
-
-      { CodeletMark cm(_masm, "throw exception entrypoints");
-        Interpreter::_throw_ArrayIndexOutOfBoundsException_entry = generate_ArrayIndexOutOfBounds_handler("java/lang/ArrayIndexOutOfBoundsException");
-        Interpreter::_throw_ArrayStoreException_entry            = generate_klass_exception_handler("java/lang/ArrayStoreException"                 );
-        Interpreter::_throw_ArithmeticException_entry            = generate_exception_handler("java/lang/ArithmeticException"           , "/ by zero");
-        Interpreter::_throw_ClassCastException_entry             = generate_ClassCastException_handler();
-        Interpreter::_throw_NullPointerException_entry           = generate_exception_handler("java/lang/NullPointerException"          , NULL       );
-        Interpreter::_throw_StackOverflowError_entry             = generate_StackOverflowError_handler();
-      }
+  { CodeletMark cm(_masm, "throw exception entrypoints");
+    Interpreter::_throw_ArrayIndexOutOfBoundsException_entry = generate_ArrayIndexOutOfBounds_handler("java/lang/ArrayIndexOutOfBoundsException");
+    Interpreter::_throw_ArrayStoreException_entry            = generate_klass_exception_handler("java/lang/ArrayStoreException"                 );
+    Interpreter::_throw_ArithmeticException_entry            = generate_exception_handler("java/lang/ArithmeticException"           , "/ by zero");
+    Interpreter::_throw_ClassCastException_entry             = generate_ClassCastException_handler();
+    Interpreter::_throw_NullPointerException_entry           = generate_exception_handler("java/lang/NullPointerException"          , NULL       );
+    Interpreter::_throw_StackOverflowError_entry             = generate_StackOverflowError_handler();
+  }
 
 
 
 #define method_entry(kind)                                              \
-      { CodeletMark cm(_masm, "method entry point (kind = " #kind ")"); \
-        Interpreter::_entry_table[Interpreter::kind] = generate_method_entry(Interpreter::kind); \
-        Interpreter::update_cds_entry_table(Interpreter::kind); \
-      }
+  { CodeletMark cm(_masm, "method entry point (kind = " #kind ")"); \
+    Interpreter::_entry_table[Interpreter::kind] = generate_method_entry(Interpreter::kind); \
+    Interpreter::update_cds_entry_table(Interpreter::kind); \
+  }
 
-      // all non-native method kinds
-      method_entry(zerolocals)
-      method_entry(zerolocals_synchronized)
-      method_entry(empty)
-      method_entry(accessor)
-      method_entry(abstract)
-      method_entry(java_lang_math_sin  )
-      method_entry(java_lang_math_cos  )
-      method_entry(java_lang_math_tan  )
-      method_entry(java_lang_math_abs  )
-      method_entry(java_lang_math_sqrt )
-      method_entry(java_lang_math_log  )
-      method_entry(java_lang_math_log10)
-      method_entry(java_lang_math_exp  )
-      method_entry(java_lang_math_pow  )
-      if (UseFMA) {
-        method_entry(java_lang_math_fmaF)
-        method_entry(java_lang_math_fmaD)
-      }
-      method_entry(java_lang_ref_reference_get)
+  // all non-native method kinds
+  method_entry(zerolocals)
+  method_entry(zerolocals_synchronized)
+  method_entry(empty)
+  method_entry(accessor)
+  method_entry(abstract)
+  method_entry(java_lang_math_sin  )
+  method_entry(java_lang_math_cos  )
+  method_entry(java_lang_math_tan  )
+  method_entry(java_lang_math_abs  )
+  method_entry(java_lang_math_sqrt )
+  method_entry(java_lang_math_log  )
+  method_entry(java_lang_math_log10)
+  method_entry(java_lang_math_exp  )
+  method_entry(java_lang_math_pow  )
+  method_entry(java_lang_math_fmaF )
+  method_entry(java_lang_math_fmaD )
+  method_entry(java_lang_ref_reference_get)
 
-      AbstractInterpreter::initialize_method_handle_entries();
+  AbstractInterpreter::initialize_method_handle_entries();
 
-      // all native method kinds (must be one contiguous block)
-      Interpreter::_native_entry_begin = Interpreter::code()->code_end();
-      method_entry(native)
-      method_entry(native_synchronized)
-      Interpreter::_native_entry_end = Interpreter::code()->code_end();
+  // all native method kinds (must be one contiguous block)
+  Interpreter::_native_entry_begin = Interpreter::code()->code_end();
+  method_entry(native)
+  method_entry(native_synchronized)
+  Interpreter::_native_entry_end = Interpreter::code()->code_end();
 
-      if (UseCRC32Intrinsics) {
-        method_entry(java_util_zip_CRC32_update)
-        method_entry(java_util_zip_CRC32_updateBytes)
-        method_entry(java_util_zip_CRC32_updateByteBuffer)
-      }
+  method_entry(java_util_zip_CRC32_update)
+  method_entry(java_util_zip_CRC32_updateBytes)
+  method_entry(java_util_zip_CRC32_updateByteBuffer)
+  method_entry(java_util_zip_CRC32C_updateBytes)
+  method_entry(java_util_zip_CRC32C_updateDirectByteBuffer)
 
-      if (UseCRC32CIntrinsics) {
-        method_entry(java_util_zip_CRC32C_updateBytes)
-        method_entry(java_util_zip_CRC32C_updateDirectByteBuffer)
-      }
-
-      method_entry(java_lang_Float_intBitsToFloat);
-      method_entry(java_lang_Float_floatToRawIntBits);
-      method_entry(java_lang_Double_longBitsToDouble);
-      method_entry(java_lang_Double_doubleToRawLongBits);
+  method_entry(java_lang_Float_intBitsToFloat);
+  method_entry(java_lang_Float_floatToRawIntBits);
+  method_entry(java_lang_Double_longBitsToDouble);
+  method_entry(java_lang_Double_doubleToRawLongBits);
 
 #undef method_entry
 
-      // Bytecodes
-      set_entry_points_for_all_bytes();
-    }
-  } while (CodeCacheExtensions::needs_other_interpreter_variant());
+  // Bytecodes
+  set_entry_points_for_all_bytes();
 
   // installation of code in other places in the runtime
   // (ExcutableCodeManager calls not needed to copy the entries)
@@ -321,9 +307,6 @@ void TemplateInterpreterGenerator::set_unimplemented(int i) {
 
 
 void TemplateInterpreterGenerator::set_entry_points(Bytecodes::Code code) {
-  if (CodeCacheExtensions::skip_template_interpreter_entries(code)) {
-    return;
-  }
   CodeletMark cm(_masm, Bytecodes::name(code), code);
   // initialize entry points
   assert(_unimplemented_bytecode    != NULL, "should have been generated before");
@@ -354,7 +337,6 @@ void TemplateInterpreterGenerator::set_entry_points(Bytecodes::Code code) {
   EntryPoint entry(bep, zep, cep, sep, aep, iep, lep, fep, dep, vep);
   Interpreter::_normal_table.set_entry(code, entry);
   Interpreter::_wentry_point[code] = wep;
-  CodeCacheExtensions::completed_template_interpreter_entries(_masm, code);
 }
 
 
@@ -451,7 +433,7 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_pow     : // fall thru
   case Interpreter::java_lang_math_exp     : // fall thru
   case Interpreter::java_lang_math_fmaD    : // fall thru
-  case Interpreter::java_lang_math_fmaF     : entry_point = generate_math_entry(kind);      break;
+  case Interpreter::java_lang_math_fmaF    : entry_point = generate_math_entry(kind);      break;
   case Interpreter::java_lang_ref_reference_get
                                            : entry_point = generate_Reference_get_entry(); break;
   case Interpreter::java_util_zip_CRC32_update

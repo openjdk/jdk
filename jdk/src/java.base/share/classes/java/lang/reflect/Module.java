@@ -559,7 +559,7 @@ public final class Module implements AnnotatedElement {
      * Returns {@code true} if this module exports or opens a package to
      * the given module via its module declaration.
      */
-    private boolean isStaticallyExportedOrOpen(String pn, Module other, boolean open) {
+    boolean isStaticallyExportedOrOpen(String pn, Module other, boolean open) {
         // package is open to everyone or <other>
         Map<String, Set<Module>> openPackages = this.openPackages;
         if (openPackages != null) {
@@ -643,6 +643,12 @@ public final class Module implements AnnotatedElement {
      * <em>open</em>) to the given module. It also has no effect if
      * invoked on an {@link ModuleDescriptor#isOpen open} module. </p>
      *
+     * @apiNote As specified in section 5.4.3 of the <cite>The Java&trade;
+     * Virtual Machine Specification </cite>, if an attempt to resolve a
+     * symbolic reference fails because of a linkage error, then subsequent
+     * attempts to resolve the reference always fail with the same error that
+     * was thrown as a result of the initial resolution attempt.
+     *
      * @param  pn
      *         The package name
      * @param  other
@@ -656,6 +662,7 @@ public final class Module implements AnnotatedElement {
      * @throws IllegalStateException
      *         If this is a named module and the caller is not this module
      *
+     * @jvms 5.4.3 Resolution
      * @see #isExported(String,Module)
      */
     @CallerSensitive
@@ -676,8 +683,8 @@ public final class Module implements AnnotatedElement {
     }
 
     /**
-     * If the caller's module is this module then update this module to
-     * <em>open</em> the given package to the given module.
+     * If this module has <em>opened</em> a package to at least the caller
+     * module then update this module to open the package to the given module.
      * Opening a package with this method allows all types in the package,
      * and all their members, not just public types and their public members,
      * to be reflected on by the given module when using APIs that support
@@ -699,7 +706,8 @@ public final class Module implements AnnotatedElement {
      *         If {@code pn} is {@code null}, or this is a named module and the
      *         package {@code pn} is not a package in this module
      * @throws IllegalStateException
-     *         If this is a named module and the caller is not this module
+     *         If this is a named module and this module has not opened the
+     *         package to at least the caller
      *
      * @see #isOpen(String,Module)
      * @see AccessibleObject#setAccessible(boolean)
@@ -713,9 +721,8 @@ public final class Module implements AnnotatedElement {
 
         if (isNamed() && !descriptor.isOpen()) {
             Module caller = Reflection.getCallerClass().getModule();
-            if (caller != this) {
-                throw new IllegalStateException(caller + " != " + this);
-            }
+            if (caller != this && !isOpen(pn, caller))
+                throw new IllegalStateException(pn + " is not open to " + caller);
             implAddExportsOrOpens(pn, other, /*open*/true, /*syncVM*/true);
         }
 
@@ -1567,6 +1574,10 @@ public final class Module implements AnnotatedElement {
                 @Override
                 public Stream<Layer> layers(ClassLoader loader) {
                     return Layer.layers(loader);
+                }
+                @Override
+                public boolean isStaticallyExported(Module module, String pn, Module other) {
+                    return module.isStaticallyExportedOrOpen(pn, other, false);
                 }
             });
     }
