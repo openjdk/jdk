@@ -84,5 +84,3 @@ HRESULT DwmAPI::DwmGetWindowAttribute(HWND hwnd, DWORD dwAttribute,
     }
     throw FunctionUnavailableException();
 }
-
-

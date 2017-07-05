@@ -252,4 +252,12 @@ void G1NewTracer::report_evacuation_failed(EvacuationFailedInfo& ef_info) {
   send_evacuation_failed_event(ef_info);
   ef_info.reset();
 }
+
+void G1NewTracer::report_evacuation_statistics(const G1EvacSummary& young_summary, const G1EvacSummary& old_summary) const {
+  assert_set_gc_id();
+
+  send_young_evacuation_statistics(young_summary);
+  send_old_evacuation_statistics(old_summary);
+}
+
 #endif

@@ -39,14 +39,14 @@
  * "runtime/commandLineFlagConstraintsRuntime.hpp" for the functions themselves.
  */
 
-typedef Flag::Error (*CommandLineFlagConstraintFunc_bool)(bool verbose, bool* value);
-typedef Flag::Error (*CommandLineFlagConstraintFunc_int)(bool verbose, int* value);
-typedef Flag::Error (*CommandLineFlagConstraintFunc_intx)(bool verbose, intx* value);
-typedef Flag::Error (*CommandLineFlagConstraintFunc_uint)(bool verbose, uint* value);
-typedef Flag::Error (*CommandLineFlagConstraintFunc_uintx)(bool verbose, uintx* value);
-typedef Flag::Error (*CommandLineFlagConstraintFunc_uint64_t)(bool verbose, uint64_t* value);
-typedef Flag::Error (*CommandLineFlagConstraintFunc_size_t)(bool verbose, size_t* value);
-typedef Flag::Error (*CommandLineFlagConstraintFunc_double)(bool verbose, double* value);
+typedef Flag::Error (*CommandLineFlagConstraintFunc_bool)(bool value, bool verbose);
+typedef Flag::Error (*CommandLineFlagConstraintFunc_int)(int value, bool verbose);
+typedef Flag::Error (*CommandLineFlagConstraintFunc_intx)(intx value, bool verbose);
+typedef Flag::Error (*CommandLineFlagConstraintFunc_uint)(uint value, bool verbose);
+typedef Flag::Error (*CommandLineFlagConstraintFunc_uintx)(uintx value, bool verbose);
+typedef Flag::Error (*CommandLineFlagConstraintFunc_uint64_t)(uint64_t value, bool verbose);
+typedef Flag::Error (*CommandLineFlagConstraintFunc_size_t)(size_t value, bool verbose);
+typedef Flag::Error (*CommandLineFlagConstraintFunc_double)(double value, bool verbose);
 
 class CommandLineFlagConstraint : public CHeapObj<mtInternal> {
 public:
@@ -70,14 +70,14 @@ public:
   ~CommandLineFlagConstraint() {};
   const char* name() const { return _name; }
   ConstraintType type() const { return _validate_type; }
-  virtual Flag::Error apply_bool(bool* value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
-  virtual Flag::Error apply_int(int* value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
-  virtual Flag::Error apply_intx(intx* value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
-  virtual Flag::Error apply_uint(uint* value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
-  virtual Flag::Error apply_uintx(uintx* value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
-  virtual Flag::Error apply_uint64_t(uint64_t* value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
-  virtual Flag::Error apply_size_t(size_t* value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
-  virtual Flag::Error apply_double(double* value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
+  virtual Flag::Error apply_bool(bool value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
+  virtual Flag::Error apply_int(int value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
+  virtual Flag::Error apply_intx(intx value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
+  virtual Flag::Error apply_uint(uint value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
+  virtual Flag::Error apply_uintx(uintx value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
+  virtual Flag::Error apply_uint64_t(uint64_t value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
+  virtual Flag::Error apply_size_t(size_t value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
+  virtual Flag::Error apply_double(double value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
 };
 
 class CommandLineFlagConstraintList : public AllStatic {

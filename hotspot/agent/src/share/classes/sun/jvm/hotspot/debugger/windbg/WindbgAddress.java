@@ -292,6 +292,7 @@ class WindbgAddress implements Address {
     return new WindbgAddress(debugger, value);
   }
 
+  public long asLongValue() { return addr; }
 
   //--------------------------------------------------------------------------------
   // Internals only below this point

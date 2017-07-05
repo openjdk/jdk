@@ -86,7 +86,7 @@ GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
 {
   assert(policy != NULL, "Sanity check");
   if (UseConcMarkSweepGC) {
-    _workers = new FlexibleWorkGang("GC Thread", ParallelGCThreads,
+    _workers = new WorkGang("GC Thread", ParallelGCThreads,
                             /* are_GC_task_threads */true,
                             /* are_ConcurrentGC_threads */false);
     _workers->initialize_workers();

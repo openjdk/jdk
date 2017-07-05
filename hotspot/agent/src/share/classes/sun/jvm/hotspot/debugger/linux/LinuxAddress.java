@@ -288,6 +288,7 @@ public class LinuxAddress implements Address {
     return new LinuxAddress(debugger, value);
   }
 
+  public long asLongValue() { return addr; }
 
   //--------------------------------------------------------------------------------
   // Internals only below this point

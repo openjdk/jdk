@@ -25,17 +25,16 @@
 #include "precompiled.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/commandLineFlagConstraintsCompiler.hpp"
+#include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/defaultStream.hpp"
 
-Flag::Error AliasLevelConstraintFunc(bool verbose, intx* value) {
-  if ((*value <= 1) && (Arguments::mode() == Arguments::_comp)) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                "AliasLevel (" INTX_FORMAT ") is not compatible "
-                "with -Xcomp \n",
-                *value);
-    }
+Flag::Error AliasLevelConstraintFunc(intx value, bool verbose) {
+  if ((value <= 1) && (Arguments::mode() == Arguments::_comp)) {
+    CommandLineError::print(verbose,
+                            "AliasLevel (" INTX_FORMAT ") is not "
+                            "compatible with -Xcomp \n",
+                            value);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;
@@ -57,7 +56,7 @@ Flag::Error AliasLevelConstraintFunc(bool verbose, intx* value) {
  *    'TieredStopAtLevel = CompLevel_full_optimization' (the default value). As a result,
  *    the minimum number of compiler threads is 2.
  */
-Flag::Error CICompilerCountConstraintFunc(bool verbose, intx* value) {
+Flag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
   int min_number_of_compiler_threads = 0;
 #if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK)
   // case 1
@@ -75,12 +74,11 @@ Flag::Error CICompilerCountConstraintFunc(bool verbose, intx* value) {
   // min_number_of_compiler_threads to exceed CI_COMPILER_COUNT.
   min_number_of_compiler_threads = MIN2(min_number_of_compiler_threads, CI_COMPILER_COUNT);
 
-  if (*value < (intx)min_number_of_compiler_threads) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "CICompilerCount=" INTX_FORMAT " must be at least %d \n",
-                  *value, min_number_of_compiler_threads);
-    }
+  if (value < (intx)min_number_of_compiler_threads) {
+    CommandLineError::print(verbose,
+                            "CICompilerCount (" INTX_FORMAT ") must be "
+                            "at least %d \n",
+                            value, min_number_of_compiler_threads);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;

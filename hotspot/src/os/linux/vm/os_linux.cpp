@@ -5785,9 +5785,11 @@ void Parker::unpark() {
         status = pthread_mutex_unlock(_mutex);
         assert(status == 0, "invariant");
       } else {
+        // must capture correct index before unlocking
+        int index = _cur_index;
         status = pthread_mutex_unlock(_mutex);
         assert(status == 0, "invariant");
-        status = pthread_cond_signal(&_cond[_cur_index]);
+        status = pthread_cond_signal(&_cond[index]);
         assert(status == 0, "invariant");
       }
     } else {
