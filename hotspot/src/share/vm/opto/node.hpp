@@ -1320,7 +1320,8 @@ public:
   Node *pop() {
     if( _clock_index >= size() ) _clock_index = 0;
     Node *b = at(_clock_index);
-    map( _clock_index++, Node_List::pop());
+    map( _clock_index, Node_List::pop());
+    if (size() != 0) _clock_index++; // Always start from 0
     _in_worklist >>= b->_idx;
     return b;
   }

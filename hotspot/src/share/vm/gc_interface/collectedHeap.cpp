@@ -138,13 +138,6 @@ oop CollectedHeap::new_store_barrier(oop new_obj) {
   return new_obj;
 }
 
-bool CollectedHeap::can_elide_permanent_oop_store_barriers() const {
-  // %%% This needs refactoring.  (It was gating logic from the server compiler.)
-  guarantee(kind() < CollectedHeap::G1CollectedHeap, "");
-  return !UseConcMarkSweepGC;
-}
-
-
 HeapWord* CollectedHeap::allocate_new_tlab(size_t size) {
   guarantee(false, "thread-local allocation buffers not supported");
   return NULL;

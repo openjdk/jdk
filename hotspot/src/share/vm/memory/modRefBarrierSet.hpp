@@ -31,6 +31,13 @@ class Generation;
 
 class ModRefBarrierSet: public BarrierSet {
 public:
+
+  ModRefBarrierSet() { _kind = BarrierSet::ModRef; }
+
+  bool is_a(BarrierSet::Name bsn) {
+    return bsn == BarrierSet::ModRef;
+  }
+
   // Barriers only on ref writes.
   bool has_read_ref_barrier() { return false; }
   bool has_read_prim_barrier() { return false; }
@@ -85,8 +92,10 @@ public:
                                         bool clear = false,
                                         bool before_save_marks = false) = 0;
 
-  // Causes all refs in "mr" to be assumed to be modified.
-  virtual void invalidate(MemRegion mr) = 0;
+  // Causes all refs in "mr" to be assumed to be modified.  If "whole_heap"
+  // is true, the caller asserts that the entire heap is being invalidated,
+  // which may admit an optimized implementation for some barriers.
+  virtual void invalidate(MemRegion mr, bool whole_heap = false) = 0;
 
   // The caller guarantees that "mr" contains no references.  (Perhaps it's
   // objects have been moved elsewhere.)

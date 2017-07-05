@@ -186,8 +186,10 @@ void VM_Version::get_processor_features() {
   if (!VM_Version::supports_sse2()) {
     vm_exit_during_initialization("Unknown x64 processor: SSE2 not supported");
   }
-  if (UseSSE < 4)
-    _cpuFeatures &= ~CPU_SSE4;
+  if (UseSSE < 4) {
+    _cpuFeatures &= ~CPU_SSE4_1;
+    _cpuFeatures &= ~CPU_SSE4_2;
+  }
   if (UseSSE < 3) {
     _cpuFeatures &= ~CPU_SSE3;
     _cpuFeatures &= ~CPU_SSSE3;
@@ -204,7 +206,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -215,7 +217,8 @@ void VM_Version::get_processor_features() {
                (supports_sse2() ? ", sse2" : ""),
                (supports_sse3() ? ", sse3" : ""),
                (supports_ssse3()? ", ssse3": ""),
-               (supports_sse4() ? ", sse4" : ""),
+               (supports_sse4_1() ? ", sse4.1" : ""),
+               (supports_sse4_2() ? ", sse4.2" : ""),
                (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow()   ? ", 3dnow"  : ""),
                (supports_3dnow2()  ? ", 3dnowext" : ""),
@@ -228,7 +231,7 @@ void VM_Version::get_processor_features() {
   // older Pentiums which do not support it.
   if( UseSSE > 4 ) UseSSE=4;
   if( UseSSE < 0 ) UseSSE=0;
-  if( !supports_sse4() ) // Drop to 3 if no SSE4 support
+  if( !supports_sse4_1() ) // Drop to 3 if no SSE4 support
     UseSSE = MIN2((intx)3,UseSSE);
   if( !supports_sse3() ) // Drop to 2 if no SSE3 support
     UseSSE = MIN2((intx)2,UseSSE);
@@ -314,6 +317,14 @@ void VM_Version::get_processor_features() {
         MaxLoopPad = 11;
       }
 #endif // COMPILER2
+      if( FLAG_IS_DEFAULT(UseXMMForArrayCopy) ) {
+        UseXMMForArrayCopy = true; // use SSE2 movq on new Intel cpus
+      }
+      if( supports_sse4_2() && supports_ht() ) { // Newest Intel cpus
+        if( FLAG_IS_DEFAULT(UseUnalignedLoadStores) && UseXMMForArrayCopy ) {
+          UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
+        }
+      }
     }
   }
 
@@ -355,7 +366,7 @@ void VM_Version::get_processor_features() {
 
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
-    tty->print_cr("Logical CPUs per package: %u",
+    tty->print_cr("Logical CPUs per core: %u",
                   logical_processors_per_package());
     tty->print_cr("UseSSE=%d",UseSSE);
     tty->print("Allocation: ");

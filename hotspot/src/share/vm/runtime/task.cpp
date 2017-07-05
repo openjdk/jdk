@@ -67,7 +67,6 @@ void PeriodicTask::real_time_tick(size_t delay_time) {
 
 PeriodicTask::PeriodicTask(size_t interval_time) :
   _counter(0), _interval(interval_time) {
-  assert(is_init_completed(), "Periodic tasks should not start during VM initialization");
   // Sanity check the interval time
   assert(_interval >= PeriodicTask::min_interval &&
          _interval <= PeriodicTask::max_interval &&

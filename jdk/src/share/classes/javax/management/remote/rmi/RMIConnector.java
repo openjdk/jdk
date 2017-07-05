@@ -71,9 +71,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -421,12 +420,12 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             public ThreadPoolExecutor createThreadPool(ThreadGroup group) {
                 ThreadFactory daemonThreadFactory = new DaemonThreadFactory(
                         "JMX RMIConnector listener dispatch %d");
-                ThreadPoolExecutor exec = new ThreadPoolExecutor(
+                ThreadPoolExecutor executor = new ThreadPoolExecutor(
                         1, 10, 1, TimeUnit.SECONDS,
-                        new LinkedBlockingDeque<Runnable>(),
+                        new LinkedBlockingQueue<Runnable>(),
                         daemonThreadFactory);
-                exec.allowCoreThreadTimeOut(true);
-                return exec;
+                executor.allowCoreThreadTimeOut(true);
+                return executor;
             }
         };
         return listenerDispatchThreadPool.getThreadPoolExecutor(create);
@@ -1503,7 +1502,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             super(period);
         }
 
-        public void gotIOException (IOException ioe) throws IOException {
+        public void gotIOException(IOException ioe) throws IOException {
             if (ioe instanceof NoSuchObjectException) {
                 // need to restart
                 super.gotIOException(ioe);

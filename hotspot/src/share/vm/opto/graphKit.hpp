@@ -24,6 +24,7 @@
 
 class FastLockNode;
 class FastUnlockNode;
+class IdealKit;
 class Parse;
 class RootNode;
 
@@ -581,6 +582,27 @@ class GraphKit : public Phase {
             && Universe::heap()->can_elide_tlab_store_barriers());
   }
 
+  // G1 pre/post barriers
+  void g1_write_barrier_pre(Node* obj,
+                            Node* adr,
+                            uint alias_idx,
+                            Node* val,
+                            const Type* val_type,
+                            BasicType bt);
+
+  void g1_write_barrier_post(Node* store,
+                             Node* obj,
+                             Node* adr,
+                             uint alias_idx,
+                             Node* val,
+                             BasicType bt,
+                             bool use_precise);
+  // Helper function for g1
+  private:
+  void g1_mark_card(IdealKit* ideal, Node* card_adr, Node* store,  Node* index, Node* index_adr,
+                    Node* buffer, const TypeFunc* tf);
+
+  public:
   // Helper function to round double arguments before a call
   void round_double_arguments(ciMethod* dest_method);
   void round_double_result(ciMethod* dest_method);

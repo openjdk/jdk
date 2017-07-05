@@ -181,7 +181,7 @@ public abstract class Monitor
     /**
      * Executor Service.
      */
-    private static final ExecutorService executor;
+    private static final ThreadPoolExecutor executor;
     static {
         final String maximumPoolSizeSysProp = "jmx.x.monitor.maximum.pool.size";
         final String maximumPoolSizeStr = AccessController.doPrivileged(
@@ -218,7 +218,7 @@ public abstract class Monitor
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new DaemonThreadFactory("Executor"));
-        ((ThreadPoolExecutor)executor).allowCoreThreadTimeOut(true);
+        executor.allowCoreThreadTimeOut(true);
     }
 
     /**

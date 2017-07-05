@@ -48,6 +48,16 @@ template <class T> inline void OopsInGenClosure::do_barrier(T* p) {
   }
 }
 
+inline void OopsInGenClosure::par_do_barrier(oop* p) {
+  assert(generation()->is_in_reserved(p), "expected ref in generation");
+  oop obj = *p;
+  assert(obj != NULL, "expected non-null object");
+  // If p points to a younger generation, mark the card.
+  if ((HeapWord*)obj < gen_boundary()) {
+    rs()->write_ref_field_gc_par(p, obj);
+  }
+}
+
 // NOTE! Any changes made here should also be made
 // in FastScanClosure::do_oop_work()
 template <class T> inline void ScanClosure::do_oop_work(T* p) {
