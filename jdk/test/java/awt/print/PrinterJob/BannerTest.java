@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 6575247
+ * @bug 6575247 8170579
  * @summary  Verifies if Banner page is printed
  * @requires (os.family == "linux" | os.family == "solaris")
  * @run main/manual BannerTest
@@ -39,6 +39,9 @@ import static java.awt.print.Printable.NO_SUCH_PAGE;
 import static java.awt.print.Printable.PAGE_EXISTS;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import javax.print.PrintService;
+import javax.print.attribute.standard.JobSheets;
+import javax.print.attribute.standard.SheetCollate;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
@@ -50,8 +53,18 @@ public class BannerTest implements Printable {
     private static Thread mainThread;
     private static boolean testPassed;
     private static boolean testGeneratedInterrupt;
+    private static volatile PrinterJob job;
 
     public static void main(String[] args)  throws Exception {
+        job = PrinterJob.getPrinterJob();
+        PrintService prtSrv = job.getPrintService();
+        if (job.getPrintService() == null) {
+            System.out.println("No printers. Test cannot continue");
+            return;
+        }
+        if (!prtSrv.isAttributeCategorySupported(JobSheets.class)) {
+            return;
+        }
         SwingUtilities.invokeAndWait(() -> {
             doTest(BannerTest::printTest);
         });
@@ -69,11 +82,6 @@ public class BannerTest implements Printable {
     }
 
     private static void printTest() {
-        PrinterJob job = PrinterJob.getPrinterJob();
-        if (job.getPrintService() == null) {
-            System.out.println("No printers. Test cannot continue");
-            return;
-        }
         job.setPrintable(new BannerTest());
         if(job.printDialog()) {
             try {

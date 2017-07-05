@@ -121,7 +121,7 @@ JNIEXPORT int JNICALL NET_Timeout2(int fd, int fd1, long timeout, int *fdret);
 
 JNIEXPORT int JNICALL NET_BindV6(struct ipv6bind *b, jboolean exclBind);
 
-JNIEXPORT int JNICALL NET_WinBind(int s, struct sockaddr *him, int len,
+JNIEXPORT int JNICALL NET_WinBind(int s, SOCKETADDRESS *sa, int len,
                                   jboolean exclBind);
 
 /* XP versions of the native routines */

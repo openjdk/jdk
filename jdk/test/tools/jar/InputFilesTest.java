@@ -102,6 +102,7 @@ public class InputFilesTest {
                 "META-INF/MANIFEST.MF" + nl +
                 "testfile1" + nl +
                 "testfile2" + nl +
+                "META-INF/versions/9/" + nl +
                 "META-INF/versions/9/testfile3" + nl +
                 "META-INF/versions/9/testfile4" + nl;
         rm("test.jar test1 test2 test3 test4");
