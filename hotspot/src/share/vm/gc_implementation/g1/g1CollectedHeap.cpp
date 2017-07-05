@@ -102,7 +102,7 @@ public:
                               ConcurrentG1Refine* cg1r) :
     _sts(sts), _g1rs(g1rs), _cg1r(cg1r), _concurrent(true)
   {}
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     bool oops_into_cset = _g1rs->refine_card(card_ptr, worker_i, false);
     // This path is executed by the concurrent refine or mutator threads,
     // concurrently, and so we do not care if card_ptr contains references
@@ -131,7 +131,7 @@ public:
   {
     for (int i = 0; i < 256; i++) _histo[i] = 0;
   }
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     if (_g1h->is_in_reserved(_ctbs->addr_for(card_ptr))) {
       _calls++;
       unsigned char* ujb = (unsigned char*)card_ptr;
@@ -160,7 +160,7 @@ public:
   RedirtyLoggedCardTableEntryClosure() :
     _calls(0), _g1h(G1CollectedHeap::heap()), _ctbs(_g1h->g1_barrier_set()) {}
 
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     if (_g1h->is_in_reserved(_ctbs->addr_for(card_ptr))) {
       _calls++;
       *card_ptr = 0;
@@ -1288,7 +1288,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   print_heap_before_gc();
   trace_heap_before_gc(gc_tracer);
 
-  size_t metadata_prev_used = MetaspaceAux::allocated_used_bytes();
+  size_t metadata_prev_used = MetaspaceAux::used_bytes();
 
   verify_region_sets_optional();
 
@@ -2314,7 +2314,7 @@ void G1CollectedHeap::check_gc_time_stamps() {
 void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
                                                  DirtyCardQueue* into_cset_dcq,
                                                  bool concurrent,
-                                                 int worker_i) {
+                                                 uint worker_i) {
   // Clean cards in the hot card cache
   G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
   hot_card_cache->drain(worker_i, g1_rem_set(), into_cset_dcq);
@@ -2843,7 +2843,7 @@ void G1CollectedHeap::clear_cset_start_regions() {
 
 // Given the id of a worker, obtain or calculate a suitable
 // starting region for iterating over the current collection set.
-HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
+HeapRegion* G1CollectedHeap::start_cset_region_for_worker(uint worker_i) {
   assert(get_gc_time_stamp() > 0, "should have been updated by now");
 
   HeapRegion* result = NULL;
@@ -5103,7 +5103,7 @@ g1_process_strong_roots(bool is_scavenging,
                         OopClosure* scan_non_heap_roots,
                         OopsInHeapRegionClosure* scan_rs,
                         G1KlassScanClosure* scan_klasses,
-                        int worker_i) {
+                        uint worker_i) {
 
   // First scan the strong roots
   double ext_roots_start = os::elapsedTime();
@@ -5207,10 +5207,10 @@ public:
 
   ~G1StringSymbolTableUnlinkTask() {
     guarantee(!_process_strings || !_do_in_parallel || StringTable::parallel_claimed_index() >= _initial_string_table_size,
-              err_msg("claim value "INT32_FORMAT" after unlink less than initial string table size "INT32_FORMAT,
+              err_msg("claim value %d after unlink less than initial string table size %d",
                       StringTable::parallel_claimed_index(), _initial_string_table_size));
     guarantee(!_process_symbols || !_do_in_parallel || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
-              err_msg("claim value "INT32_FORMAT" after unlink less than initial symbol table size "INT32_FORMAT,
+              err_msg("claim value %d after unlink less than initial symbol table size %d",
                       SymbolTable::parallel_claimed_index(), _initial_symbol_table_size));
   }
 
@@ -5275,7 +5275,7 @@ void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive
 
 class RedirtyLoggedCardTableEntryFastClosure : public CardTableEntryClosure {
 public:
-  bool do_card_ptr(jbyte* card_ptr, int worker_i) {
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     *card_ptr = CardTableModRefBS::dirty_card_val();
     return true;
   }

@@ -41,19 +41,6 @@ class Solaris {
   #define TRS_LWPID       2
   #define TRS_INVALID     3
 
-  // _T2_libthread is true if we believe we are running with the newer
-  // SunSoft lib/lwp/libthread: default Solaris 9, available Solaris 8
-  // which is a lightweight libthread that also supports all T1
-  static bool _T2_libthread;
-  // These refer to new libthread interface functions
-  // They get intialized if we dynamically detect new libthread
-  static int_fnP_thread_t_iP_uP_stack_tP_gregset_t _thr_getstate;
-  static int_fnP_thread_t_i_gregset_t _thr_setstate;
-  static int_fnP_thread_t_i _thr_setmutator;
-  static int_fnP_thread_t _thr_suspend_mutator;
-  static int_fnP_thread_t _thr_continue_mutator;
-  // libthread_init sets the above, if the new functionality is detected
-
   // initialized to libthread or lwp synchronization primitives depending on UseLWPSychronization
   static int_fnP_mutex_tP _mutex_lock;
   static int_fnP_mutex_tP _mutex_trylock;
@@ -213,29 +200,6 @@ class Solaris {
                                  // signal(), sigset() is loaded
   static struct sigaction *get_chained_signal_action(int sig);
   static bool chained_handler(int sig, siginfo_t *siginfo, void *context);
-
-  // The following allow us to link against both the old and new libthread (2.8)
-  // and exploit the new libthread functionality if available.
-
-  static bool T2_libthread()                                { return _T2_libthread; }
-  static void set_T2_libthread(bool T2_libthread) { _T2_libthread = T2_libthread; }
-
-  static int thr_getstate(thread_t tid, int *flag, unsigned *lwp, stack_t *ss, gregset_t rs)
-    { return _thr_getstate(tid, flag, lwp, ss, rs); }
-  static void set_thr_getstate(int_fnP_thread_t_iP_uP_stack_tP_gregset_t func)
-    { _thr_getstate = func; }
-
-  static int thr_setstate(thread_t tid, int flag, gregset_t rs)   { return _thr_setstate(tid, flag, rs); }
-  static void set_thr_setstate(int_fnP_thread_t_i_gregset_t func) { _thr_setstate = func; }
-
-  static int thr_setmutator(thread_t tid, int enabled)    { return _thr_setmutator(tid, enabled); }
-  static void set_thr_setmutator(int_fnP_thread_t_i func) { _thr_setmutator = func; }
-
-  static int  thr_suspend_mutator(thread_t tid)              { return _thr_suspend_mutator(tid); }
-  static void set_thr_suspend_mutator(int_fnP_thread_t func) { _thr_suspend_mutator = func; }
-
-  static int  thr_continue_mutator(thread_t tid)              { return _thr_continue_mutator(tid); }
-  static void set_thr_continue_mutator(int_fnP_thread_t func) { _thr_continue_mutator = func; }
 
   // Allows us to switch between lwp and thread -based synchronization
   static int mutex_lock(mutex_t *mx)    { return _mutex_lock(mx); }
