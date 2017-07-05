@@ -371,11 +371,7 @@ public class CoreDOMImplementationImpl
             // to restrict the number of validation handlers being
             // requested
             if(freeValidatorIndex < 0) {
-                return (RevalidationHandler) (ObjectFactory
-                            .newInstance(
-                                "com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaValidator",
-                                ObjectFactory.findClassLoader(),
-                                true));
+                return new com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaValidator();
             }
             // return first available validator
             RevalidationHandler val = validators[freeValidatorIndex];
@@ -384,11 +380,7 @@ public class CoreDOMImplementationImpl
         }
         else if(schemaType == XMLGrammarDescription.XML_DTD) {
             if(freeDTDValidatorIndex < 0) {
-                return (RevalidationHandler) (ObjectFactory
-                            .newInstance(
-                                "com.sun.org.apache.xerces.internal.impl.dtd.XMLDTDValidator",
-                                ObjectFactory.findClassLoader(),
-                                true));
+                return new com.sun.org.apache.xerces.internal.impl.dtd.XMLDTDValidator();
             }
             // return first available validator
             RevalidationHandler val = dtdValidators[freeDTDValidatorIndex];

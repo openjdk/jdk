@@ -38,7 +38,7 @@ import jdk.testlibrary.Utils;
 
 public class TmtoolTestScenario {
 
-    private final ArrayList<String> toolOutput = new ArrayList();
+    private final ArrayList<String> toolOutput = new ArrayList<String>();
     private LingeredApp theApp = null;
     private final String toolName;
     private final String[] toolArgs;
@@ -72,7 +72,7 @@ public class TmtoolTestScenario {
      */
     public Map<String, String>  parseFlagsFinal() {
         List<String> astr = theApp.getAppOutput();
-        Map<String, String> vmMap = new HashMap();
+        Map<String, String> vmMap = new HashMap<String, String>();
 
         for (String line : astr) {
             String[] lv = line.trim().split("\\s+");
@@ -94,7 +94,10 @@ public class TmtoolTestScenario {
         System.out.println("Starting LingeredApp");
         try {
             try {
-                theApp = LingeredApp.startApp(vmArgs);
+                List<String> vmArgsExtended = new ArrayList<String>();
+                vmArgsExtended.add("-XX:+UsePerfData");
+                vmArgsExtended.addAll(vmArgs);
+                theApp = LingeredApp.startApp(vmArgsExtended);
 
                 System.out.println("Starting " + toolName + " against " + theApp.getPid());
                 JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(toolName);
@@ -120,7 +123,7 @@ public class TmtoolTestScenario {
 
                 return toolProcess.exitValue();
             } finally {
-                theApp.stopApp();
+                LingeredApp.stopApp(theApp);
             }
         } catch (IOException | InterruptedException ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);

@@ -54,7 +54,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.ProcessingInstruction;
-import org.w3c.dom.Text;
 import org.w3c.dom.ls.LSException;
 import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
@@ -1030,15 +1029,12 @@ public class DOMSerializerImpl implements LSSerializer, DOMConfiguration {
     private String _getXmlVersion(Node node) {
         Document doc = (node.getNodeType() == Node.DOCUMENT_NODE)
                 ? (Document) node : node.getOwnerDocument();
-        if (doc != null && DocumentMethods.fgDocumentMethodsAvailable) {
+        if (doc != null) {
             try {
-                return (String) DocumentMethods.fgDocumentGetXmlVersionMethod.invoke(doc, (Object[]) null);
+                return doc.getXmlVersion();
             } // The VM ran out of memory or there was some other serious problem. Re-throw.
-            catch (VirtualMachineError vme) {
+             catch (VirtualMachineError | ThreadDeath vme) {
                 throw vme;
-            } // ThreadDeath should always be re-thrown
-            catch (ThreadDeath td) {
-                throw td;
             } // Ignore all other exceptions and errors
             catch (Throwable t) {
             }
@@ -1049,15 +1045,12 @@ public class DOMSerializerImpl implements LSSerializer, DOMConfiguration {
     private String _getInputEncoding(Node node) {
         Document doc = (node.getNodeType() == Node.DOCUMENT_NODE)
                 ? (Document) node : node.getOwnerDocument();
-        if (doc != null && DocumentMethods.fgDocumentMethodsAvailable) {
+        if (doc != null) {
             try {
-                return (String) DocumentMethods.fgDocumentGetInputEncodingMethod.invoke(doc, (Object[]) null);
+                return doc.getInputEncoding();
             } // The VM ran out of memory or there was some other serious problem. Re-throw.
-            catch (VirtualMachineError vme) {
+            catch (VirtualMachineError | ThreadDeath vme) {
                 throw vme;
-            } // ThreadDeath should always be re-thrown
-            catch (ThreadDeath td) {
-                throw td;
             } // Ignore all other exceptions and errors
             catch (Throwable t) {
             }
@@ -1068,58 +1061,17 @@ public class DOMSerializerImpl implements LSSerializer, DOMConfiguration {
     private String _getXmlEncoding(Node node) {
         Document doc = (node.getNodeType() == Node.DOCUMENT_NODE)
                 ? (Document) node : node.getOwnerDocument();
-        if (doc != null && DocumentMethods.fgDocumentMethodsAvailable) {
+        if (doc != null) {
             try {
-                return (String) DocumentMethods.fgDocumentGetXmlEncodingMethod.invoke(doc, (Object[]) null);
+                return doc.getXmlEncoding();
             } // The VM ran out of memory or there was some other serious problem. Re-throw.
-            catch (VirtualMachineError vme) {
+            catch (VirtualMachineError | ThreadDeath vme) {
                 throw vme;
-            } // ThreadDeath should always be re-thrown
-            catch (ThreadDeath td) {
-                throw td;
             } // Ignore all other exceptions and errors
             catch (Throwable t) {
             }
         }
         return null;
-    }
-
-    /**
-     * Holder of DOM Level 3 methods from org.w3c.dom.Document.
-     */
-    static class DocumentMethods {
-
-        // Method: org.w3c.dom.Document.getXmlVersion()
-        private static java.lang.reflect.Method fgDocumentGetXmlVersionMethod = null;
-
-        // Method: org.w3c.dom.Document.getInputEncoding()
-        private static java.lang.reflect.Method fgDocumentGetInputEncodingMethod = null;
-
-        // Method: org.w3c.dom.Document.getXmlEncoding()
-        private static java.lang.reflect.Method fgDocumentGetXmlEncodingMethod = null;
-
-        // Flag indicating whether or not Document methods are available.
-        private static boolean fgDocumentMethodsAvailable = false;
-
-        private DocumentMethods() {
-        }
-
-        // Attempt to get methods for org.w3c.dom.Document on class initialization.
-        static {
-            try {
-                fgDocumentGetXmlVersionMethod = Document.class.getMethod("getXmlVersion", new Class[]{});
-                fgDocumentGetInputEncodingMethod = Document.class.getMethod("getInputEncoding", new Class[]{});
-                fgDocumentGetXmlEncodingMethod = Document.class.getMethod("getXmlEncoding", new Class[]{});
-                fgDocumentMethodsAvailable = true;
-            } // ClassNotFoundException, NoSuchMethodException or SecurityException
-            // Whatever the case, we cannot retrieve the methods.
-            catch (Exception exc) {
-                fgDocumentGetXmlVersionMethod = null;
-                fgDocumentGetInputEncodingMethod = null;
-                fgDocumentGetXmlEncodingMethod = null;
-                fgDocumentMethodsAvailable = false;
-            }
-        }
     }
 
 } //DOMSerializerImpl

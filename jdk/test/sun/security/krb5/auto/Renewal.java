@@ -27,13 +27,6 @@
  * @summary Add kinit options and krb5.conf flags that allow users to
  *          obtain renewable tickets and specify ticket lifetimes
  * @library ../../../../java/security/testlibrary/
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @compile -XDignore.symbol.file Renewal.java
  * @run main/othervm Renewal
  */

@@ -26,13 +26,6 @@
  * @bug 8009977
  * @summary A test library to launch multiple Java processes
  * @library ../../../../java/security/testlibrary/
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @compile -XDignore.symbol.file BasicProc.java
  * @run main/othervm BasicProc
  */

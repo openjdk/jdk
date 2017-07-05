@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011,2013 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011,2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8004584
  * @summary Tests 8004584
  * @author anthony.petrov@oracle.com, petr.pchelko@oracle.com
+ * @modules java.desktop/sun.awt
  */
 
 import java.awt.*;

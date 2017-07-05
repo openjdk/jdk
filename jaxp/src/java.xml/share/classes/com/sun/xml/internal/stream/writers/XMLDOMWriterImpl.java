@@ -64,7 +64,6 @@ public class XMLDOMWriterImpl implements XMLStreamWriter  {
     private Node currentNode = null;
     private Node node = null;
     private NamespaceSupport namespaceContext = null;
-    private Method  mXmlVersion = null;
     private boolean [] needContextPop = null;
     private StringBuffer stringBuffer = null;
     private int resizeValue = 20;
@@ -83,24 +82,10 @@ public class XMLDOMWriterImpl implements XMLStreamWriter  {
             ownerDoc = node.getOwnerDocument();
             currentNode = node;
         }
-        getDLThreeMethods();
         stringBuffer = new StringBuffer();
         needContextPop = new boolean[resizeValue];
         namespaceContext = new NamespaceSupport();
     }
-
-    private void getDLThreeMethods(){
-        try{
-            mXmlVersion =  ownerDoc.getClass().getMethod("setXmlVersion",new Class[] {String.class});
-        }catch(NoSuchMethodException mex){
-            //log these errors at fine level.
-            mXmlVersion = null;
-        }catch(SecurityException se){
-            //log these errors at fine level.
-            mXmlVersion = null;
-        }
-    }
-
 
     /**
      * This method has no effect when called.
@@ -557,15 +542,7 @@ public class XMLDOMWriterImpl implements XMLStreamWriter  {
      * @throws javax.xml.stream.XMLStreamException {@inheritDoc}
      */
     public void writeStartDocument() throws XMLStreamException {
-        try{
-            if(mXmlVersion != null){
-                mXmlVersion.invoke(ownerDoc, new Object[] {"1.0"});
-            }
-        }catch(IllegalAccessException iae){
-            throw new XMLStreamException(iae);
-        }catch(InvocationTargetException ite){
-            throw new XMLStreamException(ite);
-        }
+        ownerDoc.setXmlVersion("1.0");
     }
 
     /**
@@ -575,15 +552,7 @@ public class XMLDOMWriterImpl implements XMLStreamWriter  {
      * @throws javax.xml.stream.XMLStreamException {@inheritDoc}
      */
     public void writeStartDocument(String version) throws XMLStreamException {
-        try{
-            if(mXmlVersion != null){
-                mXmlVersion.invoke(ownerDoc, new Object[] {version});
-            }
-        }catch(IllegalAccessException iae){
-            throw new XMLStreamException(iae);
-        }catch(InvocationTargetException ite){
-            throw new XMLStreamException(ite);
-        }
+        ownerDoc.setXmlVersion(version);
     }
 
     /**
@@ -594,15 +563,7 @@ public class XMLDOMWriterImpl implements XMLStreamWriter  {
      * @throws javax.xml.stream.XMLStreamException {@inheritDoc}
      */
     public void writeStartDocument(String encoding, String version) throws XMLStreamException {
-        try{
-            if(mXmlVersion != null){
-                mXmlVersion.invoke(ownerDoc, new Object[] {version});
-            }
-        }catch(IllegalAccessException iae){
-            throw new XMLStreamException(iae);
-        }catch(InvocationTargetException ite){
-            throw new XMLStreamException(ite);
-        }
+        ownerDoc.setXmlVersion(version);
         //TODO: What to do with encoding.-Venu
     }
 

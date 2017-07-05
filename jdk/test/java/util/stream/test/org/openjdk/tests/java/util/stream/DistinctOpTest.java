@@ -171,7 +171,7 @@ public class DistinctOpTest extends OpTestCase {
         assertSorted(result);
     }
 
-    @Test
+    @Test(groups = { "serialization-hostile" })
     public void testStable() {
         // Create N instances of Integer all with the same value
         List<Integer> input = IntStream.rangeClosed(0, 1000)

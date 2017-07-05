@@ -128,9 +128,9 @@ public final class ScriptingFunctions {
      * Nashorn extension: exec a string in a separate process.
      *
      * @param self   self reference
-     * @param args   string to execute, input and additional arguments, to be appended to {@code string}. Additional arguments can be passed as
-     *               either one JavaScript array, whose elements will be converted to strings; or as a sequence of
-     *               varargs, each of which will be converted to a string.
+     * @param args   string to execute, input and additional arguments, to be appended to {@code string}. Additional
+     *               arguments can be passed as either one JavaScript array, whose elements will be converted to
+     *               strings; or as a sequence of varargs, each of which will be converted to a string.
      *
      * @return output string from the request
      *
@@ -163,7 +163,10 @@ public final class ScriptingFunctions {
             // If a working directory is present, use it.
             final Object pwd = envProperties.get(PWD_NAME);
             if (pwd != UNDEFINED) {
-                processBuilder.directory(new File(JSType.toString(pwd)));
+                final File pwdFile = new File(JSType.toString(pwd));
+                if (pwdFile.exists()) {
+                    processBuilder.directory(pwdFile);
+                }
             }
 
             // Set up ENV variables.
@@ -215,13 +218,13 @@ public final class ScriptingFunctions {
         errThread.start();
 
         // If input is present, pass on to process.
-        try (OutputStreamWriter outputStream = new OutputStreamWriter(process.getOutputStream())) {
-            if (input != UNDEFINED) {
+        if (!JSType.nullOrUndefined(input)) {
+            try (OutputStreamWriter outputStream = new OutputStreamWriter(process.getOutputStream())) {
                 final String in = JSType.toString(input);
                 outputStream.write(in, 0, in.length());
+            } catch (final IOException ex) {
+                // Process was not expecting input.  May be normal state of affairs.
             }
-        } catch (final IOException ex) {
-            // Process was not expecting input.  May be normal state of affairs.
         }
 
         // Wait for the process to complete.

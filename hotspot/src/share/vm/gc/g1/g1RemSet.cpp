@@ -627,7 +627,7 @@ void G1RemSet::print_summary_info(G1RemSetSummary * summary, const char * header
 void G1RemSet::prepare_for_verify() {
   if (G1HRRSFlushLogBuffersOnVerify &&
       (VerifyBeforeGC || VerifyAfterGC)
-      &&  (!_g1->full_collection() || G1VerifyRSetsDuringFullGC)) {
+      &&  (!_g1->collector_state()->full_collection() || G1VerifyRSetsDuringFullGC)) {
     cleanupHRRS();
     _g1->set_refine_cte_cl_concurrency(false);
     if (SafepointSynchronize::is_at_safepoint()) {
