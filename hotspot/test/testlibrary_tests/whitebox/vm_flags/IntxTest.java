@@ -24,6 +24,7 @@
 /*
  * @test IntxTest
  * @bug 8028756
+ * @ignore 8148758
  * @library /testlibrary /test/lib
  * @modules java.management/sun.management
  * @build IntxTest

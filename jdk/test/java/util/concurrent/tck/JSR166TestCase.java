@@ -36,6 +36,7 @@
 /*
  * @test
  * @summary JSR-166 tck tests
+ * @modules java.management
  * @build *
  * @run junit/othervm/timeout=1000 -Djsr166.testImplementationDetails=true JSR166TestCase
  */

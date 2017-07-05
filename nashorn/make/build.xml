@@ -48,10 +48,16 @@
     <condition property="git.executable" value="/usr/local/bin/git" else="git">
       <available file="/usr/local/bin/git"/>
     </condition>
-    <!-- check if testng.jar is available, and download it if it isn't -->
-    <available property="testng.already.present" file="${file.reference.testng.jar}"/>
+    <!-- check if TestNG and dependencies are available, and download them if they aren't -->
     <antcall target="get-testng"/>
-    <available property="testng.available" file="${file.reference.testng.jar}"/>
+    <condition property="testng.available" value="true">
+      <and>
+        <available file="${file.reference.testng.jar}"/>
+        <available file="${file.reference.jcommander.jar}"/>
+        <available file="${file.reference.bsh.jar}"/>
+        <available file="${file.reference.snakeyaml.jar}"/>
+      </and>
+    </condition>
 
     <!-- check if asmtools-6.0.jar is available, and download it if it isn't -->
     <!--
@@ -60,7 +66,7 @@
     <available property="asmtools.available" file="${file.reference.asmtools.jar}"/>
     -->
 
-    <!-- check if Jemmy ang testng.jar are avaiable -->
+    <!-- check if Jemmy ang TestNG are avaiable -->
     <condition property="jemmy.jfx.testng.available" value="true">
       <and>
         <available file="${file.reference.jemmyfx.jar}"/>
@@ -314,7 +320,7 @@
   <target name="compile-test" depends="compile, run-nasgen" if="testng.available">
     <!-- testng task -->
     <taskdef name="testng" classname="org.testng.TestNGAntTask"
-        classpath="${file.reference.testng.jar}"/>
+        classpath="${testng.ant.classpath}"/>
 
     <javac srcdir="${test.src.dir}"
            destdir="${build.test.classes.dir}"
@@ -389,6 +395,15 @@ grant codeBase "file:/${basedir}/${nashorn.api.tests.jar}" {
 grant codeBase "file:/${basedir}/${file.reference.testng.jar}" {
     permission java.security.AllPermission;
 };
+grant codeBase "file:/${basedir}/${file.reference.jcommander.jar}" {
+    permission java.security.AllPermission;
+};
+grant codeBase "file:/${basedir}/${file.reference.bsh.jar}" {
+    permission java.security.AllPermission;
+};
+grant codeBase "file:/${basedir}/${file.reference.snakeyaml.jar}" {
+    permission java.security.AllPermission;
+};
 //// in case of absolute path:
 grant codeBase "file:/${nashorn.internal.tests.jar}" {
     permission java.security.AllPermission;
@@ -397,6 +412,16 @@ grant codeBase "file:/${nashorn.internal.tests.jar}" {
 grant codeBase "file:/${file.reference.testng.jar}" {
     permission java.security.AllPermission;
 };
+grant codeBase "file:/${file.reference.jcommander.jar}" {
+    permission java.security.AllPermission;
+};
+grant codeBase "file:/${file.reference.bsh.jar}" {
+    permission java.security.AllPermission;
+};
+grant codeBase "file:/${file.reference.snakeyaml.jar}" {
+    permission java.security.AllPermission;
+};
+
 
 grant codeBase "file:/${basedir}/test/script/trusted/*" {
     permission java.security.AllPermission;
@@ -466,7 +491,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   </target>
 
   <target name="check-testng" unless="testng.available">
-    <echo message="WARNING: TestNG not available, will not run tests. Please copy testng.jar under ${test.lib} directory."/>
+    <echo message="WARNING: TestNG not available, will not run tests. Please copy TestNG and dependency JARs to the ${test.lib} directory."/>
   </target>
 
   <!-- only to be invoked as dependency of "test" target -->
@@ -569,7 +594,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   </target>
 
   <target name="check-jemmy.jfx.testng" unless="jemmy.jfx.testng.available">
-    <echo message="WARNING: Jemmy or JavaFX or TestNG not available, will not run tests. Please copy testng.jar, JemmyCore.jar, JemmyFX.jar, JemmyAWTInput.jar under test${file.separator}lib directory. And make sure you have jfxrt.jar in ${java.home}${file.separator}lib${file.separator}ext dir."/>
+    <echo message="WARNING: Jemmy or JavaFX or TestNG not available, will not run tests. Please copy TestNG and dependency JARs, JemmyCore.jar, JemmyFX.jar, JemmyAWTInput.jar to the test${file.separator}lib directory. And make sure you have jfxrt.jar in ${java.home}${file.separator}lib${file.separator}ext dir."/>
   </target>
 
   <target name="testjfx" depends="jar, check-jemmy.jfx.testng, compile-test" if="jemmy.jfx.testng.available">
@@ -804,15 +829,13 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   <target name="perf" depends="externals, update-externals, sunspider, octane"/>
 
   <!-- download and install testng.jar -->
-  <target name="get-testng" unless="testng.already.present">
-    <get src="http://testng.org/testng-6.8.zip" dest="${test.lib}" skipexisting="true" ignoreerrors="true"/>
-    <unzip src="${test.lib}${file.separator}testng-6.8.zip" dest="${test.lib}">
-      <patternset>
-        <include name="testng-6.8/testng-6.8.jar"/>
-      </patternset>
-    </unzip>
-    <move file="${test.lib}${file.separator}testng-6.8${file.separator}testng-6.8.jar" tofile="${test.lib}${file.separator}testng.jar"/>
-    <delete dir="${test.lib}${file.separator}testng-6.8"/>
+  <target name="get-testng">
+    <get dest="${test.lib}" skipexisting="true">
+      <url url="http://central.maven.org/maven2/org/testng/testng/6.8/testng-6.8.jar"/>
+      <url url="http://central.maven.org/maven2/com/beust/jcommander/1.27/jcommander-1.27.jar"/>
+      <url url="http://central.maven.org/maven2/org/beanshell/bsh/2.0b4/bsh-2.0b4.jar"/>
+      <url url="http://central.maven.org/maven2/org/yaml/snakeyaml/1.6/snakeyaml-1.6.jar"/>
+    </get>
   </target>
 
   <!-- download and install asmtools.jar -->

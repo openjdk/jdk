@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8138651
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build IntrinsicDisabledTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
