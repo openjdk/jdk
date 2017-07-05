@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
   @bug 4260874
   @summary Tests that DataFlavor.getReaderForText do not throw NPE when transferObject is null
   @author tdv@sparc.spb.su: area=
+  @modules java.datatransfer
   @run main GetReaderForTextNPETest
 */
 

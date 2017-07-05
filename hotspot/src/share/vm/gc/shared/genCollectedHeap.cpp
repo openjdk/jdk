@@ -127,11 +127,11 @@ jint GenCollectedHeap::initialize() {
   set_barrier_set(rem_set()->bs());
 
   ReservedSpace young_rs = heap_rs.first_part(gen_policy()->young_gen_spec()->max_size(), false, false);
-  _young_gen = gen_policy()->young_gen_spec()->init(young_rs, 0, rem_set());
+  _young_gen = gen_policy()->young_gen_spec()->init(young_rs, rem_set());
   heap_rs = heap_rs.last_part(gen_policy()->young_gen_spec()->max_size());
 
   ReservedSpace old_rs = heap_rs.first_part(gen_policy()->old_gen_spec()->max_size(), false, false);
-  _old_gen = gen_policy()->old_gen_spec()->init(old_rs, 1, rem_set());
+  _old_gen = gen_policy()->old_gen_spec()->init(old_rs, rem_set());
   clear_incremental_collection_failed();
 
 #if INCLUDE_ALL_GCS
@@ -202,12 +202,8 @@ size_t GenCollectedHeap::used() const {
   return _young_gen->used() + _old_gen->used();
 }
 
-// Save the "used_region" for generations level and lower.
-void GenCollectedHeap::save_used_regions(int level) {
-  assert(level == 0 || level == 1, "Illegal level parameter");
-  if (level == 1) {
-    _old_gen->save_used_region();
-  }
+void GenCollectedHeap::save_used_regions() {
+  _old_gen->save_used_region();
   _young_gen->save_used_region();
 }
 
@@ -337,8 +333,16 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   record_gen_tops_before_GC();
 
   if (PrintGC && Verbose) {
-    gclog_or_tty->print("level=%d invoke=%d size=" SIZE_FORMAT,
-                        gen->level(),
+    // I didn't want to change the logging when removing the level concept,
+    // but I guess this logging could say young/old or something instead of 0/1.
+    uint level;
+    if (heap()->is_young_gen(gen)) {
+      level = 0;
+    } else {
+      level = 1;
+    }
+    gclog_or_tty->print("level=%u invoke=%d size=" SIZE_FORMAT,
+                        level,
                         gen->stat_record()->invocations,
                         size * HeapWordSize);
   }
@@ -399,7 +403,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
 
   gen->stat_record()->accumulated_time.stop();
 
-  update_gc_stats(gen->level(), full);
+  update_gc_stats(gen, full);
 
   if (run_verification && VerifyAfterGC) {
     HandleMark hm;  // Discard invalid handles created during verification
@@ -412,11 +416,11 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   }
 }
 
-void GenCollectedHeap::do_collection(bool   full,
-                                     bool   clear_all_soft_refs,
-                                     size_t size,
-                                     bool   is_tlab,
-                                     int    max_level) {
+void GenCollectedHeap::do_collection(bool           full,
+                                     bool           clear_all_soft_refs,
+                                     size_t         size,
+                                     bool           is_tlab,
+                                     GenerationType max_generation) {
   ResourceMark rm;
   DEBUG_ONLY(Thread* my_thread = Thread::current();)
 
@@ -444,7 +448,7 @@ void GenCollectedHeap::do_collection(bool   full,
   {
     FlagSetting fl(_is_gc_active, true);
 
-    bool complete = full && (max_level == 1 /* old */);
+    bool complete = full && (max_generation == OldGen);
     const char* gc_cause_prefix = complete ? "Full GC" : "GC";
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     // The PrintGCDetails logging starts before we have incremented the GC id. We will do that later
@@ -458,9 +462,8 @@ void GenCollectedHeap::do_collection(bool   full,
     bool run_verification = total_collections() >= VerifyGCStartAt;
 
     bool prepared_for_verification = false;
-    int max_level_collected = 0;
-    bool old_collects_young = (max_level == 1) &&
-                              full &&
+    bool collected_old = false;
+    bool old_collects_young = complete &&
                               _old_gen->full_collects_younger_generations();
     if (!old_collects_young &&
         _young_gen->should_collect(full, size, is_tlab)) {
@@ -487,7 +490,7 @@ void GenCollectedHeap::do_collection(bool   full,
 
     bool must_restore_marks_for_biased_locking = false;
 
-    if (max_level == 1 && _old_gen->should_collect(full, size, is_tlab)) {
+    if (max_generation == OldGen && _old_gen->should_collect(full, size, is_tlab)) {
       if (!complete) {
         // The full_collections increment was missed above.
         increment_total_full_collections();
@@ -510,13 +513,13 @@ void GenCollectedHeap::do_collection(bool   full,
                          true);
 
       must_restore_marks_for_biased_locking = true;
-      max_level_collected = 1;
+      collected_old = true;
     }
 
     // Update "complete" boolean wrt what actually transpired --
     // for instance, a promotion failure could have led to
     // a whole heap collection.
-    complete = complete || (max_level_collected == 1 /* old */);
+    complete = complete || collected_old;
 
     if (complete) { // We did a "major" collection
       // FIXME: See comment at pre_full_gc_dump call
@@ -533,7 +536,7 @@ void GenCollectedHeap::do_collection(bool   full,
     }
 
     // Adjust generation sizes.
-    if (max_level_collected == 1 /* old */) {
+    if (collected_old) {
       _old_gen->compute_new_size();
     }
     _young_gen->compute_new_size();
@@ -661,11 +664,10 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
     DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
     DEBUG_ONLY(CodeCache::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
   }
-
 }
 
 void GenCollectedHeap::gen_process_roots(StrongRootsScope* scope,
-                                         int level,
+                                         GenerationType type,
                                          bool younger_gens_as_roots,
                                          ScanningOption so,
                                          bool only_strong_roots,
@@ -675,7 +677,7 @@ void GenCollectedHeap::gen_process_roots(StrongRootsScope* scope,
   const bool is_adjust_phase = !only_strong_roots && !younger_gens_as_roots;
 
   bool is_moving_collection = false;
-  if (level == 0 || is_adjust_phase) {
+  if (type == YoungGen || is_adjust_phase) {
     // young collections are always moving
     is_moving_collection = true;
   }
@@ -691,7 +693,7 @@ void GenCollectedHeap::gen_process_roots(StrongRootsScope* scope,
 
   if (younger_gens_as_roots) {
     if (!_process_strong_tasks->is_task_claimed(GCH_PS_younger_gens)) {
-      if (level == 1) {
+      if (type == OldGen) {
         not_older_gens->set_generation(_young_gen);
         _young_gen->oop_iterate(not_older_gens);
       }
@@ -699,8 +701,8 @@ void GenCollectedHeap::gen_process_roots(StrongRootsScope* scope,
     }
   }
   // When collection is parallel, all threads get to cooperate to do
-  // older-gen scanning.
-  if (level == 0) {
+  // old generation scanning.
+  if (type == YoungGen) {
     older_gens->set_generation(_old_gen);
     rem_set()->younger_refs_iterate(_old_gen, older_gens, scope->n_threads());
     older_gens->reset_generation();
@@ -724,10 +726,10 @@ void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
 
 #define GCH_SINCE_SAVE_MARKS_ITERATE_DEFN(OopClosureType, nv_suffix)    \
 void GenCollectedHeap::                                                 \
-oop_since_save_marks_iterate(int level,                                 \
+oop_since_save_marks_iterate(GenerationType gen,                        \
                              OopClosureType* cur,                       \
                              OopClosureType* older) {                   \
-  if (level == 0) {                                                     \
+  if (gen == YoungGen) {                              \
     _young_gen->oop_since_save_marks_iterate##nv_suffix(cur);           \
     _old_gen->oop_since_save_marks_iterate##nv_suffix(older);           \
   } else {                                                              \
@@ -739,8 +741,8 @@ ALL_SINCE_SAVE_MARKS_CLOSURES(GCH_SINCE_SAVE_MARKS_ITERATE_DEFN)
 
 #undef GCH_SINCE_SAVE_MARKS_ITERATE_DEFN
 
-bool GenCollectedHeap::no_allocs_since_save_marks(int level) {
-  if (level == 0 && !_young_gen->no_allocs_since_save_marks()) {
+bool GenCollectedHeap::no_allocs_since_save_marks(bool include_young) {
+  if (include_young && !_young_gen->no_allocs_since_save_marks()) {
     return false;
   }
   return _old_gen->no_allocs_since_save_marks();
@@ -770,47 +772,47 @@ void GenCollectedHeap::collect(GCCause::Cause cause) {
 #endif // INCLUDE_ALL_GCS
   } else if (cause == GCCause::_wb_young_gc) {
     // minor collection for WhiteBox API
-    collect(cause, 0 /* young */);
+    collect(cause, YoungGen);
   } else {
 #ifdef ASSERT
   if (cause == GCCause::_scavenge_alot) {
     // minor collection only
-    collect(cause, 0 /* young */);
+    collect(cause, YoungGen);
   } else {
     // Stop-the-world full collection
-    collect(cause, 1 /* old */);
+    collect(cause, OldGen);
   }
 #else
     // Stop-the-world full collection
-    collect(cause, 1 /* old */);
+    collect(cause, OldGen);
 #endif
   }
 }
 
-void GenCollectedHeap::collect(GCCause::Cause cause, int max_level) {
+void GenCollectedHeap::collect(GCCause::Cause cause, GenerationType max_generation) {
   // The caller doesn't have the Heap_lock
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
   MutexLocker ml(Heap_lock);
-  collect_locked(cause, max_level);
+  collect_locked(cause, max_generation);
 }
 
 void GenCollectedHeap::collect_locked(GCCause::Cause cause) {
   // The caller has the Heap_lock
   assert(Heap_lock->owned_by_self(), "this thread should own the Heap_lock");
-  collect_locked(cause, 1 /* old */);
+  collect_locked(cause, OldGen);
 }
 
 // this is the private collection interface
 // The Heap_lock is expected to be held on entry.
 
-void GenCollectedHeap::collect_locked(GCCause::Cause cause, int max_level) {
+void GenCollectedHeap::collect_locked(GCCause::Cause cause, GenerationType max_generation) {
   // Read the GC count while holding the Heap_lock
   unsigned int gc_count_before      = total_collections();
   unsigned int full_gc_count_before = total_full_collections();
   {
     MutexUnlocker mu(Heap_lock);  // give up heap lock, execute gets it back
     VM_GenCollectFull op(gc_count_before, full_gc_count_before,
-                         cause, max_level);
+                         cause, max_generation);
     VMThread::execute(&op);
   }
 }
@@ -853,39 +855,39 @@ void GenCollectedHeap::collect_mostly_concurrent(GCCause::Cause cause) {
 #endif // INCLUDE_ALL_GCS
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs) {
-   do_full_collection(clear_all_soft_refs, 1 /* old */);
+   do_full_collection(clear_all_soft_refs, OldGen);
 }
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
-                                          int max_level) {
-  int local_max_level;
+                                          GenerationType last_generation) {
+  GenerationType local_last_generation;
   if (!incremental_collection_will_fail(false /* don't consult_young */) &&
       gc_cause() == GCCause::_gc_locker) {
-    local_max_level = 0;
+    local_last_generation = YoungGen;
   } else {
-    local_max_level = max_level;
+    local_last_generation = last_generation;
   }
 
-  do_collection(true                 /* full */,
-                clear_all_soft_refs  /* clear_all_soft_refs */,
-                0                    /* size */,
-                false                /* is_tlab */,
-                local_max_level      /* max_level */);
+  do_collection(true,                   // full
+                clear_all_soft_refs,    // clear_all_soft_refs
+                0,                      // size
+                false,                  // is_tlab
+                local_last_generation); // last_generation
   // Hack XXX FIX ME !!!
   // A scavenge may not have been attempted, or may have
   // been attempted and failed, because the old gen was too full
-  if (local_max_level == 0 && gc_cause() == GCCause::_gc_locker &&
+  if (local_last_generation == YoungGen && gc_cause() == GCCause::_gc_locker &&
       incremental_collection_will_fail(false /* don't consult_young */)) {
     if (PrintGCDetails) {
       gclog_or_tty->print_cr("GC locker: Trying a full collection "
                              "because scavenge failed");
     }
     // This time allow the old gen to be collected as well
-    do_collection(true                 /* full */,
-                  clear_all_soft_refs  /* clear_all_soft_refs */,
-                  0                    /* size */,
-                  false                /* is_tlab */,
-                  1  /* old */         /* max_level */);
+    do_collection(true,                // full
+                  clear_all_soft_refs, // clear_all_soft_refs
+                  0,                   // size
+                  false,               // is_tlab
+                  OldGen);             // last_generation
   }
 }
 
@@ -1108,12 +1110,8 @@ void GenCollectedHeap::prepare_for_compaction() {
   _young_gen->prepare_for_compaction(&cp);
 }
 
-GCStats* GenCollectedHeap::gc_stats(int level) const {
-  if (level == 0) {
-    return _young_gen->gc_stats();
-  } else {
-    return _old_gen->gc_stats();
-  }
+GCStats* GenCollectedHeap::gc_stats(Generation* gen) const {
+  return gen->gc_stats();
 }
 
 void GenCollectedHeap::verify(bool silent, VerifyOption option /* ignored */) {
@@ -1283,7 +1281,7 @@ void GenCollectedHeap::ensure_parsability(bool retire_tlabs) {
 oop GenCollectedHeap::handle_failed_promotion(Generation* old_gen,
                                               oop obj,
                                               size_t obj_size) {
-  guarantee(old_gen->level() == 1, "We only get here with an old generation");
+  guarantee(old_gen == _old_gen, "We only get here with an old generation");
   assert(obj_size == (size_t)obj->size(), "bad obj_size passed in");
   HeapWord* result = NULL;
 

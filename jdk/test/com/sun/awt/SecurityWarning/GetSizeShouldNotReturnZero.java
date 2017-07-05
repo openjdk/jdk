@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
   @summary The size returned by SecurityWarning.getSize() should not be zero
   @author anthony.petrov@sun.com: area=awt.toplevel
   @library ../../../../java/awt/regtesthelpers
+  @modules java.desktop/com.sun.awt
+           java.desktop/sun.awt
   @build Util CustomSecurityManager CopyClassFile
   @run main CopyClassFile CustomSecurityManager bootcp/
   @run main/othervm/secure=CustomSecurityManager -Xbootclasspath/a:bootcp GetSizeShouldNotReturnZero

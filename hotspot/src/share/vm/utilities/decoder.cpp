@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ Mutex* Decoder::shared_decoder_lock() {
   return _shared_decoder_lock;
 }
 
-bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const char* modulepath) {
+bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const char* modulepath, bool demangle) {
   assert(_shared_decoder_lock != NULL, "Just check");
   bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
   MutexLockerEx locker(error_handling_thread ? NULL : _shared_decoder_lock, true);
@@ -110,7 +110,7 @@ bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const cha
     get_error_handler_instance(): get_shared_instance();
   assert(decoder != NULL, "null decoder");
 
-  return decoder->decode(addr, buf, buflen, offset, modulepath);
+  return decoder->decode(addr, buf, buflen, offset, modulepath, demangle);
 }
 
 bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const void* base) {

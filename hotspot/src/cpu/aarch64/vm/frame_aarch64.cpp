@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -524,16 +524,6 @@ frame frame::sender(RegisterMap* map) const {
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
   return frame(sender_sp(), link(), sender_pc());
-}
-
-bool frame::interpreter_frame_equals_unpacked_fp(intptr_t* fp) {
-  assert(is_interpreted_frame(), "must be interpreter frame");
-  Method* method = interpreter_frame_method();
-  // When unpacking an optimized frame the frame pointer is
-  // adjusted with:
-  int diff = (method->max_locals() - method->size_of_parameters()) *
-             Interpreter::stackElementWords;
-  return _fp == (fp - diff);
 }
 
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {

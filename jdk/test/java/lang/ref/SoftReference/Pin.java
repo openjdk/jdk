@@ -76,6 +76,7 @@ public class Pin {
                 Thread.sleep(100);              // yield, for what it's worth
             }
         } catch (OutOfMemoryError e) {
+            chain = null; // Free memory for further work.
             System.err.println("Got OutOfMemoryError, as expected.");
         }
 

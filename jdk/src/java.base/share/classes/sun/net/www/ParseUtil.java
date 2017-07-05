@@ -451,7 +451,7 @@ public class ParseUtil {
                 if (!match(c, lowMask, highMask) && !isEscaped(s, i)) {
                     if (sb == null) {
                         sb = new StringBuffer();
-                        sb.append(s.substring(0, i));
+                        sb.append(s, 0, i);
                     }
                     appendEscape(sb, (byte)c);
                 } else {
@@ -463,7 +463,7 @@ public class ParseUtil {
                            || Character.isISOControl(c))) {
                 if (sb == null) {
                     sb = new StringBuffer();
-                    sb.append(s.substring(0, i));
+                    sb.append(s, 0, i);
                 }
                 appendEncoded(sb, c);
             } else {

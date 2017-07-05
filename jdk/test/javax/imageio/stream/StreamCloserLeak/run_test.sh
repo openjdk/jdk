@@ -1,6 +1,6 @@
 #!/bin/ksh -p
 #
-# Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #               the same VM and verifies that ImageIO shutdown hook
 #               StreamCloser does not cause a leak of classloaders.
 #
+#   @modules java.desktop/sun.awt
 #   @build      test.Main
 #   @build      testapp.Main
 #   @run shell  run_test.sh

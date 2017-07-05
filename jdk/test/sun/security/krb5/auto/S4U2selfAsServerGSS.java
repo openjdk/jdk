@@ -25,14 +25,6 @@
  * @test
  * @bug 6355584
  * @summary Introduce constrained Kerberos delegation
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.jgss
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @compile -XDignore.symbol.file S4U2selfAsServerGSS.java
  * @run main/othervm -Djavax.security.auth.useSubjectCredsOnly=false S4U2selfAsServerGSS krb5
  * @run main/othervm -Djavax.security.auth.useSubjectCredsOnly=false S4U2selfAsServerGSS spnego
