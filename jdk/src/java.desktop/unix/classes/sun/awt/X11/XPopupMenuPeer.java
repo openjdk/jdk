@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,25 +216,25 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
      */
     protected Rectangle getWindowBounds(Point origin, Dimension windowSize) {
         Rectangle globalBounds = new Rectangle(origin.x, origin.y, 0, 0);
-        Dimension screenSize = graphicsConfig.getBounds().getSize();
+        Rectangle screenBounds = getCurrentGraphicsConfiguration().getBounds();
         Rectangle res;
-        res = fitWindowRight(globalBounds, windowSize, screenSize);
+        res = fitWindowRight(globalBounds, windowSize, screenBounds);
         if (res != null) {
             return res;
         }
-        res = fitWindowLeft(globalBounds, windowSize, screenSize);
+        res = fitWindowLeft(globalBounds, windowSize, screenBounds);
         if (res != null) {
             return res;
         }
-        res = fitWindowBelow(globalBounds, windowSize, screenSize);
+        res = fitWindowBelow(globalBounds, windowSize, screenBounds);
         if (res != null) {
             return res;
         }
-        res = fitWindowAbove(globalBounds, windowSize, screenSize);
+        res = fitWindowAbove(globalBounds, windowSize, screenBounds);
         if (res != null) {
             return res;
         }
-        return fitWindowToScreen(windowSize, screenSize);
+        return fitWindowToScreen(windowSize, screenBounds);
    }
 
     /************************************************

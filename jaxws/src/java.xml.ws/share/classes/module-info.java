@@ -27,8 +27,10 @@
  * Defines the Java API for XML-Based Web Services (JAX-WS), and
  * the Web Services Metadata API.
  *
+ * @moduleGraph
  * @since 9
  */
+@Deprecated(since="9", forRemoval=true)
 module java.xml.ws {
     requires transitive java.activation;
     requires transitive java.xml;

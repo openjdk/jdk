@@ -30,8 +30,9 @@
 /*
  * @test JdpSpecificAddressTest
  * @summary Assert that we can read JDP packets from a multicast socket connection, on specific IP and port.
+ *
  * @library /lib/testlibrary
- * @modules jdk.management.agent/sun.management.jdp
+ *
  * @build jdk.testlibrary.* ClientConnection JdpTestUtil JdpTestCase JdpOnTestCase DynamicLauncher
  * @run main/othervm JdpSpecificAddressTest
  */

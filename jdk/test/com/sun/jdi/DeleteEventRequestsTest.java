@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4331872
- *  @summary erm.deleteEventRequests(erm.breakpointRequests()) throws exception
+ * @test
+ * @bug 4331872
+ * @summary erm.deleteEventRequests(erm.breakpointRequests()) throws exception
+ * @author Robert Field
  *
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g DeleteEventRequestsTest.java
- *  @run driver DeleteEventRequestsTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g DeleteEventRequestsTest.java
+ * @run driver DeleteEventRequestsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

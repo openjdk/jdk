@@ -135,9 +135,8 @@ $(JMODS_DIR)/$(MODULE).jmod: $(DEPS)
 	$(RM) $@ $(JMODS_TEMPDIR)/$(notdir $@)
 	$(JMOD) create \
             --module-version $(VERSION_SHORT) \
-            --os-name $(REQUIRED_OS_NAME) \
-            --os-arch $(OPENJDK_TARGET_CPU_LEGACY) \
-            --os-version $(REQUIRED_OS_VERSION) \
+            --os-name '$(REQUIRED_OS_NAME)' \
+            --os-arch '$(REQUIRED_OS_ARCH)' \
             --module-path $(JMODS_DIR) \
 	    --exclude '**{_the.*,_*.marker,*.diz,*.debuginfo,*.dSYM/**,*.dSYM,*.pdb,*.map}' \
 	    $(JMOD_FLAGS) $(JMODS_TEMPDIR)/$(notdir $@)

@@ -324,6 +324,11 @@ class Field extends AccessibleObject implements Member {
             + getName());
     }
 
+    @Override
+    String toShortString() {
+        return "field " + getDeclaringClass().getTypeName() + "." + getName();
+    }
+
     /**
      * Returns a string describing this {@code Field}, including
      * its generic type.  The format is the access modifiers for the

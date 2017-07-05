@@ -279,7 +279,7 @@ public final class StackWalker {
      * If a security manager is present and the given {@code option} is
      * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
      * it calls its {@link SecurityManager#checkPermission checkPermission}
-     * method for {@code StackFramePermission("retainClassReference")}.
+     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
      *
      * @param option {@link Option stack walking option}
      *
@@ -303,7 +303,7 @@ public final class StackWalker {
      * If a security manager is present and the given {@code options} contains
      * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
      * it calls its {@link SecurityManager#checkPermission checkPermission}
-     * method for {@code StackFramePermission("retainClassReference")}.
+     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
      *
      * @param options {@link Option stack walking option}
      *
@@ -333,7 +333,7 @@ public final class StackWalker {
      * If a security manager is present and the given {@code options} contains
      * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
      * it calls its {@link SecurityManager#checkPermission checkPermission}
-     * method for {@code StackFramePermission("retainClassReference")}.
+     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
      *
      * <p>
      * The {@code estimateDepth} specifies the estimate number of stack frames
@@ -376,7 +376,7 @@ public final class StackWalker {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (options.contains(Option.RETAIN_CLASS_REFERENCE)) {
-                sm.checkPermission(new StackFramePermission("retainClassReference"));
+                sm.checkPermission(new RuntimePermission("getStackWalkerWithClassReference"));
             }
         }
     }

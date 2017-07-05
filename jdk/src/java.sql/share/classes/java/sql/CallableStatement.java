@@ -60,6 +60,7 @@ import java.io.InputStream;
  *
  * @see Connection#prepareCall
  * @see ResultSet
+ * @since 1.1
  */
 
 public interface CallableStatement extends PreparedStatement {

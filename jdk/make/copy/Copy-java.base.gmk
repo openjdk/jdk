@@ -235,8 +235,10 @@ endif
 
 # JDK license and assembly exception files to be packaged in JMOD
 
-JDK_LICENSE ?= $(TOPDIR)/LICENSE
-JDK_NOTICE  ?= $(TOPDIR)/ASSEMBLY_EXCEPTION
+# The license files may not be present if the source has been obtained using a
+# different license.
+JDK_LICENSE ?= $(wildcard $(TOPDIR)/LICENSE)
+JDK_NOTICE  ?= $(wildcard $(TOPDIR)/ASSEMBLY_EXCEPTION)
 
 $(eval $(call SetupCopyFiles, COPY_JDK_NOTICES, \
     FILES := $(JDK_LICENSE) $(JDK_NOTICE), \
@@ -245,4 +247,3 @@ $(eval $(call SetupCopyFiles, COPY_JDK_NOTICES, \
 ))
 
 TARGETS += $(COPY_JDK_NOTICES)
-
