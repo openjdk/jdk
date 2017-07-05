@@ -29,6 +29,7 @@
 #include "oops/method.hpp"
 #include "prims/jvm.h"
 #include "runtime/os.hpp"
+#include "runtime/timerTrace.hpp"
 
 GrowableArray<AOTCodeHeap*>* AOTLoader::_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<AOTCodeHeap*> (2, true);
 GrowableArray<AOTLib*>* AOTLoader::_libraries = new(ResourceObj::C_HEAP, mtCode) GrowableArray<AOTLib*> (2, true);
@@ -112,6 +113,8 @@ static const char* modules[] = {
 };
 
 void AOTLoader::initialize() {
+  TraceTime timer("AOT initialization", TRACETIME_LOG(Info, aot, startuptime));
+
   if (FLAG_IS_DEFAULT(UseAOT) && AOTLibrary != NULL) {
     // Don't need to set UseAOT on command line when AOTLibrary is specified
     FLAG_SET_DEFAULT(UseAOT, true);
