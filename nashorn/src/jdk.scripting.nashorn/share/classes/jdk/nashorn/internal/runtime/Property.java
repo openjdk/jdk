@@ -102,6 +102,13 @@ public abstract class Property implements Serializable {
     /** Property field number or spill slot. */
     private final int slot;
 
+    /**
+     * Current type of this object, in object only mode, this is an Object.class. In dual-fields mode
+     * null means undefined, and primitive types are allowed. The reason a special type is used for
+     * undefined, is that are no bits left to represent it in primitive types
+     */
+    private Class<?> type;
+
     /** SwitchPoint that is invalidated when property is changed, optional */
     protected transient SwitchPoint builtinSwitchPoint;
 
@@ -536,7 +543,7 @@ public abstract class Property implements Serializable {
      * <p>
      * see {@link ObjectClassGenerator#createSetter(Class, Class, MethodHandle, MethodHandle)}
      * if you are interested in the internal details of this. Note that if you
-     * are running in default mode, with {@code -Dnashorn.fields.dual=true}, disabled, the setters
+     * are running with {@code -Dnashorn.fields.objects=true}, the setters
      * will currently never change, as all properties are represented as Object field,
      * the Object fields are Initialized to {@code ScriptRuntime.UNDEFINED} and primitives are
      * boxed/unboxed upon every access, which is not necessarily optimal
@@ -569,7 +576,7 @@ public abstract class Property implements Serializable {
 
     @Override
     public int hashCode() {
-        final Class<?> type = getCurrentType();
+        final Class<?> type = getLocalType();
         return Objects.hashCode(this.key) ^ flags ^ getSlot() ^ (type == null ? 0 : type.hashCode());
     }
 
@@ -586,7 +593,7 @@ public abstract class Property implements Serializable {
         final Property otherProperty = (Property)other;
 
         return equalsWithoutType(otherProperty) &&
-               getCurrentType() == otherProperty.getCurrentType();
+                getLocalType() == otherProperty.getLocalType();
     }
 
     boolean equalsWithoutType(final Property otherProperty) {
@@ -615,7 +622,7 @@ public abstract class Property implements Serializable {
      */
     public final String toStringShort() {
         final StringBuilder sb   = new StringBuilder();
-        final Class<?>      type = getCurrentType();
+        final Class<?>      type = getLocalType();
         sb.append(getKey()).append(" (").append(type(type)).append(')');
         return sb.toString();
     }
@@ -632,7 +639,7 @@ public abstract class Property implements Serializable {
     @Override
     public String toString() {
         final StringBuilder sb   = new StringBuilder();
-        final Class<?>      type = getCurrentType();
+        final Class<?>      type = getLocalType();
 
         sb.append(indent(getKey(), 20)).
             append(" id=").
@@ -656,20 +663,40 @@ public abstract class Property implements Serializable {
     }
 
     /**
-     * Get the current type of this field. If you are not running with dual fields enabled,
+     * Get the current type of this property. If you are running with object fields enabled,
      * this will always be Object.class. See the value representation explanation in
      * {@link Property#getSetter(Class, PropertyMap)} and {@link ObjectClassGenerator}
      * for more information.
      *
+     * <p>Note that for user accessor properties, this returns the type of the last observed
+     * value passed to or returned by a user accessor. Use {@link #getLocalType()} to always get
+     * the type of the actual value stored in the property slot.</p>
+     *
      * @return current type of property, null means undefined
      */
-    public abstract Class<?> getCurrentType();
+    public final Class<?> getType() {
+        return type;
+    }
 
     /**
-     * Reset the current type of this property
-     * @param currentType new current type
+     * Set the type of this property.
+     * @param type new type
      */
-    public abstract void setCurrentType(final Class<?> currentType);
+    public final void setType(final Class<?> type) {
+        assert type != boolean.class : "no boolean storage support yet - fix this";
+        this.type = type == null ? null : type.isPrimitive() ? type : Object.class;
+    }
+
+    /**
+     * Get the type of the value in the local property slot. This returns the same as
+     * {@link #getType()} for normal properties, but always returns {@code Object.class}
+     * for {@link UserAccessorProperty}s as their local type is a pair of accessor references.
+     *
+     * @return the local property type
+     */
+    protected Class<?> getLocalType() {
+        return getType();
+    }
 
     /**
      * Check whether this Property can ever change its type. The default is false, and if

@@ -479,7 +479,7 @@ void ParScanThreadStateSet::flush()
     _next_gen.par_oop_since_save_marks_iterate_done(i);
   }
 
-  if (UseConcMarkSweepGC && ParallelGCThreads > 0) {
+  if (UseConcMarkSweepGC) {
     // We need to call this even when ResizeOldPLAB is disabled
     // so as to avoid breaking some asserts. While we may be able
     // to avoid this by reorganizing the code a bit, I am loathe

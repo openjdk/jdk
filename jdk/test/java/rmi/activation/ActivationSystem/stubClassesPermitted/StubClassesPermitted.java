@@ -29,7 +29,7 @@
  * @library ../../../testlibrary
  * @build TestLibrary RMID ActivationLibrary
  *     CanCreateStubs StubClassesPermitted_Stub
- * @run main/othervm/policy=security.policy/secure=java.lang.SecurityManager/timeout=240 StubClassesPermitted
+ * @run main/othervm/java.security.policy=security.policy/secure=java.lang.SecurityManager/timeout=240 StubClassesPermitted
  */
 
 import java.io.*;

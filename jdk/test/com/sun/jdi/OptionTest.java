@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,11 @@
  */
 
 import java.net.ServerSocket;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class OptionTest extends Object {
-    private Process subprocess;
+    private static final Pattern TRANSPORT_ERROR_PTRN = Pattern.compile("^ERROR: transport error .+$", Pattern.MULTILINE);
     private int subprocessStatus;
     private static final String CR = System.getProperty("line.separator");
     private static final int BUFFERSIZE = 4096;
@@ -153,7 +155,7 @@ public class OptionTest extends Object {
             OptionTest myTest = new OptionTest();
             String results [] = myTest.run(VMConnection.insertDebuggeeVMOptions(cmds));
             if (!(results[RETSTAT].equals("0")) ||
-                (results[STDERR].startsWith("ERROR:"))) {
+                (TRANSPORT_ERROR_PTRN.matcher(results[STDERR]).find())) {
                 throw new Exception("Test failed: jdwp doesn't like " + cmds[1]);
             }
         }
@@ -179,7 +181,7 @@ public class OptionTest extends Object {
             OptionTest myTest = new OptionTest();
             String results[] = myTest.run(VMConnection.insertDebuggeeVMOptions(cmds));
 
-            if (!results[RETSTAT].equals("0") && results[STDERR].startsWith("ERROR:")) {
+            if (!results[RETSTAT].equals("0") && TRANSPORT_ERROR_PTRN.matcher(results[STDERR]).find()) {
                 // We got expected error, test passed
             }
             else {
