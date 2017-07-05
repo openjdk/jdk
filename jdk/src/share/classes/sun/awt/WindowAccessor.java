@@ -29,8 +29,7 @@ import java.awt.Window;
 
 import java.lang.reflect.Field;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import sun.util.logging.PlatformLogger;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -41,7 +40,7 @@ public class WindowAccessor {
     private static Field fieldIsAutoRequestFocus;
     private static Field fieldIsTrayIconWindow;
 
-    private static final Logger log = Logger.getLogger("sun.awt.WindowAccessor");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.WindowAccessor");
 
     private WindowAccessor() {
     }
@@ -57,9 +56,9 @@ public class WindowAccessor {
                         fieldIsTrayIconWindow.setAccessible(true);
 
                     } catch (NoSuchFieldException e) {
-                        log.log(Level.FINE, "Unable to initialize WindowAccessor: ", e);
+                        log.fine("Unable to initialize WindowAccessor: ", e);
                     } catch (ClassNotFoundException e) {
-                        log.log(Level.FINE, "Unable to initialize WindowAccessor: ", e);
+                        log.fine("Unable to initialize WindowAccessor: ", e);
                     }
                     return null;
                 }
@@ -71,7 +70,7 @@ public class WindowAccessor {
             return fieldIsAutoRequestFocus.getBoolean(w);
 
         } catch (IllegalAccessException e) {
-            log.log(Level.FINE, "Unable to access the Window object", e);
+            log.fine("Unable to access the Window object", e);
         }
         return true;
     }
@@ -81,7 +80,7 @@ public class WindowAccessor {
             return fieldIsTrayIconWindow.getBoolean(w);
 
         } catch (IllegalAccessException e) {
-            log.log(Level.FINE, "Unable to access the Window object", e);
+            log.fine("Unable to access the Window object", e);
         }
         return false;
     }
@@ -91,7 +90,7 @@ public class WindowAccessor {
             fieldIsTrayIconWindow.set(w, isTrayIconWindow);
 
         } catch (IllegalAccessException e) {
-            log.log(Level.FINE, "Unable to access the Window object", e);
+            log.fine("Unable to access the Window object", e);
         }
     }
 }

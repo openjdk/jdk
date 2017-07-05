@@ -167,7 +167,7 @@ public class Robot {
     private void checkRobotAllowed() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.CREATE_ROBOT_PERMISSION);
+            security.checkPermission(SecurityConstants.AWT.CREATE_ROBOT_PERMISSION);
         }
     }
 
@@ -466,7 +466,7 @@ public class Robot {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(
-                SecurityConstants.READ_DISPLAY_PIXELS_PERMISSION);
+                SecurityConstants.AWT.READ_DISPLAY_PIXELS_PERMISSION);
         }
     }
 

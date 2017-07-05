@@ -34,6 +34,12 @@
 #define __LEFONTINSTANCE_H
 
 #include "LETypes.h"
+/**
+ * \file
+ * \brief C++ API: Layout Engine Font Instance object
+ */
+
+U_NAMESPACE_BEGIN
 
 /**
  * Instances of this class are used by <code>LEFontInstance::mapCharsToGlyphs</code> and
@@ -44,7 +50,7 @@
  *
  * @stable ICU 3.2
  */
-class LECharMapper
+class LECharMapper /* not : public UObject because this is an interface/mixin class */
 {
 public:
     /**
@@ -97,7 +103,7 @@ class LEGlyphStorage;
  *
  * @draft ICU 3.0
  */
-class LEFontInstance
+class U_LAYOUT_API LEFontInstance : public UObject
 {
 public:
 
@@ -160,8 +166,7 @@ public:
      *
      * @stable ICU 3.2
      */
-    virtual const LEFontInstance *getSubFont(const LEUnicode chars[], le_int32 *offset,
-        le_int32 limit, le_int32 script, LEErrorCode &success) const;
+    virtual const LEFontInstance *getSubFont(const LEUnicode chars[], le_int32 *offset, le_int32 limit, le_int32 script, LEErrorCode &success) const;
 
     //
     // Font file access
@@ -238,8 +243,7 @@ public:
      *
      * @draft ICU 3.0
      */
-    virtual void mapCharsToGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count,
-        le_bool reverse, const LECharMapper *mapper, LEGlyphStorage &glyphStorage) const;
+    virtual void mapCharsToGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool reverse, const LECharMapper *mapper, LEGlyphStorage &glyphStorage) const;
 
     /**
      * This method maps a single character to a glyph index, using the
@@ -502,6 +506,21 @@ public:
      * @stable ICU 3.2
      */
     virtual le_int32 getLineHeight() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for the actual class.
+     *
+     * @stable ICU 3.2
+     */
+    virtual UClassID getDynamicClassID() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for this class.
+     *
+     * @stable ICU 3.2
+     */
+    static UClassID getStaticClassID();
+
 };
 
 inline le_bool LEFontInstance::canDisplay(LEUnicode32 ch) const
@@ -562,4 +581,7 @@ inline le_int32 LEFontInstance::getLineHeight() const
     return getAscent() + getDescent() + getLeading();
 }
 
+U_NAMESPACE_END
 #endif
+
+

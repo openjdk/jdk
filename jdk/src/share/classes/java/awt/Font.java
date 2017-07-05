@@ -30,7 +30,6 @@ import java.awt.font.GlyphVector;
 import java.awt.font.LineMetrics;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextLayout;
-import java.awt.font.TransformAttribute;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -42,21 +41,21 @@ import java.security.PrivilegedExceptionAction;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
 import sun.font.StandardGlyphVector;
-import sun.java2d.FontSupport;
 
 import sun.font.AttributeMap;
 import sun.font.AttributeValues;
-import sun.font.EAttribute;
 import sun.font.CompositeFont;
 import sun.font.CreatedFontTracker;
 import sun.font.Font2D;
 import sun.font.Font2DHandle;
+import sun.font.FontAccess;
 import sun.font.FontManager;
+import sun.font.FontManagerFactory;
+import sun.font.FontUtilities;
 import sun.font.GlyphLayout;
 import sun.font.FontLineMetrics;
 import sun.font.CoreMetrics;
@@ -223,10 +222,29 @@ import static sun.font.EAttribute.*;
  */
 public class Font implements java.io.Serializable
 {
+    private static class FontAccessImpl extends FontAccess {
+        public Font2D getFont2D(Font font) {
+            return font.getFont2D();
+        }
+
+        public void setFont2D(Font font, Font2DHandle handle) {
+            font.font2DHandle = handle;
+        }
+
+        public void setCreatedFont(Font font) {
+            font.createdFont = true;
+        }
+
+        public boolean isCreatedFont(Font font) {
+            return font.createdFont;
+        }
+    }
+
     static {
         /* ensure that the necessary native libraries are loaded */
         Toolkit.loadLibraries();
         initIDs();
+        FontAccess.setFontAccess(new FontAccessImpl());
     }
 
     /**
@@ -464,16 +482,17 @@ public class Font implements java.io.Serializable
     }
 
     private Font2D getFont2D() {
-        if (FontManager.usingPerAppContextComposites &&
+        FontManager fm = FontManagerFactory.getInstance();
+        if (fm.usingPerAppContextComposites() &&
             font2DHandle != null &&
             font2DHandle.font2D instanceof CompositeFont &&
             ((CompositeFont)(font2DHandle.font2D)).isStdComposite()) {
-            return FontManager.findFont2D(name, style,
+            return fm.findFont2D(name, style,
                                           FontManager.LOGICAL_FALLBACK);
         } else if (font2DHandle == null) {
             font2DHandle =
-                FontManager.findFont2D(name, style,
-                                       FontManager.LOGICAL_FALLBACK).handle;
+                fm.findFont2D(name, style,
+                              FontManager.LOGICAL_FALLBACK).handle;
         }
         /* Do not cache the de-referenced font2D. It must be explicitly
          * de-referenced to pick up a valid font in the event that the
@@ -570,8 +589,8 @@ public class Font implements java.io.Serializable
         if (created) {
             if (handle.font2D instanceof CompositeFont &&
                 handle.font2D.getStyle() != style) {
-                this.font2DHandle =
-                    FontManager.getNewComposite(null, style, handle);
+                FontManager fm = FontManagerFactory.getInstance();
+                this.font2DHandle = fm.getNewComposite(null, style, handle);
             } else {
                 this.font2DHandle = handle;
             }
@@ -586,9 +605,9 @@ public class Font implements java.io.Serializable
         /* Font2D instances created by this method track their font file
          * so that when the Font2D is GC'd it can also remove the file.
          */
-        this.font2DHandle =
-            FontManager.createFont2D(fontFile, fontFormat,
-                                     isCopy, tracker).handle;
+        FontManager fm = FontManagerFactory.getInstance();
+        this.font2DHandle = fm.createFont2D(fontFile, fontFormat, isCopy,
+                                            tracker).handle;
         this.name = this.font2DHandle.font2D.getFontName(Locale.getDefault());
         this.style = Font.PLAIN;
         this.size = 1;
@@ -640,8 +659,9 @@ public class Font implements java.io.Serializable
             }
             if (handle.font2D instanceof CompositeFont) {
                 if (newStyle != -1 || newName != null) {
+                    FontManager fm = FontManagerFactory.getInstance();
                     this.font2DHandle =
-                        FontManager.getNewComposite(newName, newStyle, handle);
+                        fm.getNewComposite(newName, newStyle, handle);
                 }
             } else if (newName != null) {
                 this.createdFont = false;
@@ -852,7 +872,6 @@ public class Font implements java.io.Serializable
             throw new IllegalArgumentException ("font format not recognized");
         }
         boolean copiedFontData = false;
-
         try {
             final File tFile = AccessController.doPrivileged(
                 new PrivilegedExceptionAction<File>() {
@@ -2320,7 +2339,7 @@ public class Font implements java.io.Serializable
             (values.getKerning() == 0 && values.getLigatures() == 0 &&
               values.getBaselineTransform() == null);
         if (simple) {
-            simple = !FontManager.isComplexText(chars, beginIndex, limit);
+            simple = ! FontUtilities.isComplexText(chars, beginIndex, limit);
         }
 
         if (simple) {

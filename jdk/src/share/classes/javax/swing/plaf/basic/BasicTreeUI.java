@@ -2265,7 +2265,7 @@ public class BasicTreeUI extends TreeUI
      */
     protected boolean isToggleSelectionEvent(MouseEvent event) {
         return (SwingUtilities.isLeftMouseButton(event) &&
-                event.isControlDown());
+                BasicGraphicsUtils.isMenuShortcutKeyDown(event));
     }
 
     /**
@@ -3255,7 +3255,7 @@ public class BasicTreeUI extends TreeUI
             // handle first letter navigation
             if(tree != null && tree.getRowCount()>0 && tree.hasFocus() &&
                tree.isEnabled()) {
-                if (e.isAltDown() || e.isControlDown() || e.isMetaDown() ||
+                if (e.isAltDown() || BasicGraphicsUtils.isMenuShortcutKeyDown(e) ||
                     isNavigationKey(e)) {
                     return;
                 }
@@ -3511,7 +3511,7 @@ public class BasicTreeUI extends TreeUI
 
                 dragPressDidSelection = false;
 
-                if (e.isControlDown()) {
+                if (BasicGraphicsUtils.isMenuShortcutKeyDown(e)) {
                     // do nothing for control - will be handled on release
                     // or when drag starts
                     return;
@@ -3565,7 +3565,7 @@ public class BasicTreeUI extends TreeUI
         public void dragStarting(MouseEvent me) {
             dragStarted = true;
 
-            if (me.isControlDown()) {
+            if (BasicGraphicsUtils.isMenuShortcutKeyDown(me)) {
                 tree.addSelectionPath(pressedPath);
                 setAnchorSelectionPath(pressedPath);
                 setLeadSelectionPath(pressedPath, true);

@@ -36,6 +36,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class PhysicalStrike extends FontStrike {
 
     static final long INTMASK = 0xffffffffL;
+    static boolean longAddresses;
+    static {
+        switch (StrikeCache.nativeAddressSize) {
+        case 8: longAddresses = true; break;
+        case 4: longAddresses = false; break;
+        default: throw new RuntimeException("Unexpected address size");
+        }
+    }
 
     private PhysicalFont physicalFont;
     protected CharToGlyphMapper mapper;

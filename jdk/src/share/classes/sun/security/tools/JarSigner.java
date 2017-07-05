@@ -291,13 +291,21 @@ public class JarSigner {
         for (n=0; n < args.length; n++) {
 
             String flags = args[n];
+            String modifier = null;
+            if (flags.charAt(0) == '-') {
+                int pos = flags.indexOf(':');
+                if (pos > 0) {
+                    modifier = flags.substring(pos+1);
+                    flags = flags.substring(0, pos);
+                }
+            }
 
             if (collator.compare(flags, "-keystore") == 0) {
                 if (++n == args.length) usageNoArg();
                 keystore = args[n];
             } else if (collator.compare(flags, "-storepass") ==0) {
                 if (++n == args.length) usageNoArg();
-                storepass = args[n].toCharArray();
+                storepass = getPass(modifier, args[n]);
             } else if (collator.compare(flags, "-storetype") ==0) {
                 if (++n == args.length) usageNoArg();
                 storetype = args[n];
@@ -329,7 +337,7 @@ public class JarSigner {
                 debug = true;
             } else if (collator.compare(flags, "-keypass") ==0) {
                 if (++n == args.length) usageNoArg();
-                keypass = args[n].toCharArray();
+                keypass = getPass(modifier, args[n]);
             } else if (collator.compare(flags, "-sigfile") ==0) {
                 if (++n == args.length) usageNoArg();
                 sigfile = args[n];
@@ -355,13 +363,7 @@ public class JarSigner {
             } else if (collator.compare(flags, "-verify") ==0) {
                 verify = true;
             } else if (collator.compare(flags, "-verbose") ==0) {
-                verbose = "all";
-            } else if (collator.compare(flags, "-verbose:all") ==0) {
-                verbose = "all";
-            } else if (collator.compare(flags, "-verbose:summary") ==0) {
-                verbose = "summary";
-            } else if (collator.compare(flags, "-verbose:grouped") ==0) {
-                verbose = "grouped";
+                verbose = (modifier != null) ? modifier : "all";
             } else if (collator.compare(flags, "-sigalg") ==0) {
                 if (++n == args.length) usageNoArg();
                 sigalg = args[n];
@@ -465,18 +467,25 @@ public class JarSigner {
         }
     }
 
-    void usageNoArg() {
+    static char[] getPass(String modifier, String arg) {
+        char[] output = KeyTool.getPassWithModifier(modifier, arg);
+        if (output != null) return output;
+        usage();
+        return null;    // Useless, usage() already exit
+    }
+
+    static void usageNoArg() {
         System.out.println(rb.getString("Option lacks argument"));
         usage();
     }
 
-    void usage() {
+    static void usage() {
         System.out.println();
         System.out.println(rb.getString("Please type jarsigner -help for usage"));
         System.exit(1);
     }
 
-    void fullusage() {
+    static void fullusage() {
         System.out.println(rb.getString
                 ("Usage: jarsigner [options] jar-file alias"));
         System.out.println(rb.getString

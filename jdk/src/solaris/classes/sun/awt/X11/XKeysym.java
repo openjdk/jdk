@@ -29,8 +29,7 @@ package sun.awt.X11;
 import java.util.Hashtable;
 import sun.misc.Unsafe;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 
 public class XKeysym {
 
@@ -70,7 +69,7 @@ public class XKeysym {
     static Hashtable<Integer, Long> javaKeycode2KeysymHash = new Hashtable<Integer, Long>();
     static long keysym_lowercase = unsafe.allocateMemory(Native.getLongSize());
     static long keysym_uppercase = unsafe.allocateMemory(Native.getLongSize());
-    private static Logger keyEventLog = Logger.getLogger("sun.awt.X11.kye.XKeysym");
+    private static PlatformLogger keyEventLog = PlatformLogger.getLogger("sun.awt.X11.kye.XKeysym");
     public static char convertKeysym( long ks, int state ) {
 
         /* First check for Latin-1 characters (1:1 mapping) */

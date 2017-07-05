@@ -27,7 +27,8 @@ import java.util.*;
 import java.io.*;
 import java.nio.charset.*;
 import java.text.MessageFormat;
-import java.util.logging.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class WrapperGenerator {
     /* XLibParser converts Xlib.h to a Java Object that encapsulates the
@@ -835,7 +836,7 @@ public class WrapperGenerator {
 
                 pw.println("package "+package_name+";\n");
                 pw.println("import sun.misc.*;\n");
-                pw.println("import java.util.logging.*;");
+                pw.println("import sun.util.logging.PlatformLogger;");
                 String baseClass = stp.getBaseClass();
                 if (baseClass == null) {
                     baseClass = defaultBaseClass;

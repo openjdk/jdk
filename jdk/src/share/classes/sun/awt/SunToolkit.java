@@ -40,8 +40,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 import sun.misc.SoftCache;
 import sun.font.FontDesignMetrics;
 import sun.awt.im.InputContext;
@@ -61,7 +60,7 @@ public abstract class SunToolkit extends Toolkit
     implements WindowClosingSupport, WindowClosingListener,
     ComponentFactory, InputMethodSupport, KeyboardFocusManagerPeerProvider {
 
-    private static final Logger log = Logger.getLogger("sun.awt.SunToolkit");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.SunToolkit");
 
     /* Load debug settings for native code */
     static {
@@ -986,9 +985,9 @@ public abstract class SunToolkit extends Toolkit
             //with scale factors x1, x3/4, x2/3, xN, x1/N.
             Image im = i.next();
             if (im == null) {
-                if (log.isLoggable(Level.FINER)) {
-                    log.log(Level.FINER, "SunToolkit.getScaledIconImage: " +
-                            "Skipping the image passed into Java because it's null.");
+                if (log.isLoggable(PlatformLogger.FINER)) {
+                    log.finer("SunToolkit.getScaledIconImage: " +
+                              "Skipping the image passed into Java because it's null.");
                 }
                 continue;
             }
@@ -1002,9 +1001,9 @@ public abstract class SunToolkit extends Toolkit
                 iw = im.getWidth(null);
                 ih = im.getHeight(null);
             } catch (Exception e){
-                if (log.isLoggable(Level.FINER)) {
-                    log.log(Level.FINER, "SunToolkit.getScaledIconImage: " +
-                            "Perhaps the image passed into Java is broken. Skipping this icon.");
+                if (log.isLoggable(PlatformLogger.FINER)) {
+                    log.finer("SunToolkit.getScaledIconImage: " +
+                              "Perhaps the image passed into Java is broken. Skipping this icon.");
                 }
                 continue;
             }
@@ -1077,8 +1076,8 @@ public abstract class SunToolkit extends Toolkit
         try {
             int x = (width - bestWidth) / 2;
             int y = (height - bestHeight) / 2;
-            if (log.isLoggable(Level.FINER)) {
-                log.log(Level.FINER, "WWindowPeer.getScaledIconData() result : " +
+            if (log.isLoggable(PlatformLogger.FINER)) {
+                log.finer("WWindowPeer.getScaledIconData() result : " +
                         "w : " + width + " h : " + height +
                         " iW : " + bestImage.getWidth(null) + " iH : " + bestImage.getHeight(null) +
                         " sim : " + bestSimilarity + " sf : " + bestScaleFactor +
@@ -1095,9 +1094,9 @@ public abstract class SunToolkit extends Toolkit
     public static DataBufferInt getScaledIconData(java.util.List<Image> imageList, int width, int height) {
         BufferedImage bimage = getScaledIconImage(imageList, width, height);
         if (bimage == null) {
-             if (log.isLoggable(Level.FINER)) {
-                 log.log(Level.FINER, "SunToolkit.getScaledIconData: " +
-                         "Perhaps the image passed into Java is broken. Skipping this icon.");
+             if (log.isLoggable(PlatformLogger.FINER)) {
+                 log.finer("SunToolkit.getScaledIconData: " +
+                           "Perhaps the image passed into Java is broken. Skipping this icon.");
              }
             return null;
         }
@@ -1913,7 +1912,7 @@ public abstract class SunToolkit extends Toolkit
         }
     }
 
-    protected static void dumpPeers(final Logger aLog) {
+    protected static void dumpPeers(final PlatformLogger aLog) {
         AWTAutoShutdown.getInstance().dumpPeers(aLog);
     }
 

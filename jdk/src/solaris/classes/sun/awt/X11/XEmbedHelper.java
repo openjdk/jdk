@@ -27,7 +27,8 @@ package sun.awt.X11;
 
 import sun.misc.Unsafe;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
+
 import java.awt.AWTKeyStroke;
 import java.awt.event.InputEvent;
 
@@ -36,7 +37,7 @@ import java.awt.event.InputEvent;
  * Contains constant definitions and helper routines.
  */
 public class XEmbedHelper {
-    private static final Logger xembedLog = Logger.getLogger("sun.awt.X11.xembed");
+    private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed");
     final static Unsafe unsafe = Unsafe.getUnsafe();
 
     final static int XEMBED_VERSION = 0,
@@ -81,11 +82,11 @@ public class XEmbedHelper {
     XEmbedHelper() {
         if (XEmbed == null) {
             XEmbed = XAtom.get("_XEMBED");
-            if (xembedLog.isLoggable(Level.FINER)) xembedLog.finer("Created atom " + XEmbed.toString());
+            if (xembedLog.isLoggable(PlatformLogger.FINER)) xembedLog.finer("Created atom " + XEmbed.toString());
         }
         if (XEmbedInfo == null) {
             XEmbedInfo = XAtom.get("_XEMBED_INFO");
-            if (xembedLog.isLoggable(Level.FINER)) xembedLog.finer("Created atom " + XEmbedInfo.toString());
+            if (xembedLog.isLoggable(PlatformLogger.FINER)) xembedLog.finer("Created atom " + XEmbedInfo.toString());
         }
     }
 
@@ -105,7 +106,7 @@ public class XEmbedHelper {
         msg.set_data(4, data2);
         XToolkit.awtLock();
         try {
-            if (xembedLog.isLoggable(Level.FINE)) xembedLog.fine("Sending " + XEmbedMessageToString(msg));
+            if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Sending " + XEmbedMessageToString(msg));
             XlibWrapper.XSendEvent(XToolkit.getDisplay(), window, false, XConstants.NoEventMask, msg.pData);
         }
         finally {

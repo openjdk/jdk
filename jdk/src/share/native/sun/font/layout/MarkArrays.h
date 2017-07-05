@@ -32,9 +32,16 @@
 #ifndef __MARKARRAYS_H
 #define __MARKARRAYS_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LEFontInstance.h"
 #include "OpenTypeTables.h"
+
+U_NAMESPACE_BEGIN
 
 struct MarkRecord
 {
@@ -51,4 +58,7 @@ struct MarkArray
         LEPoint &anchor) const;
 };
 
+U_NAMESPACE_END
 #endif
+
+

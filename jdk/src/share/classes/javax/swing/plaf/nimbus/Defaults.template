@@ -26,7 +26,7 @@ package ${PACKAGE};
 
 import javax.swing.Painter;
 import java.awt.Graphics;
-import sun.font.FontManager;
+import sun.font.FontUtilities;
 import sun.swing.plaf.synth.DefaultSynthStyle;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -131,7 +131,7 @@ final class ${LAF_NAME}Defaults {
         //regions and their states that this class will use for later lookup.
         //Additional regions can be registered later by 3rd party components.
         //These are simply the default registrations.
-        defaultFont = FontManager.getFontConfigFUIR("sans", Font.PLAIN, 12);
+        defaultFont = FontUtilities.getFontConfigFUIR("sans", Font.PLAIN, 12);
         defaultStyle = new DefaultSynthStyle();
         defaultStyle.setFont(defaultFont);
 

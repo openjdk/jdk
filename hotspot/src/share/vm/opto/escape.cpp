@@ -524,12 +524,15 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
   // inlining) which was not eliminated during parsing since the exactness
   // of the allocation type was not propagated to the subclass type check.
   //
+  // Or the type 't' could be not related to 'base_t' at all.
+  // It could happened when CHA type is different from MDO type on a dead path
+  // (for example, from instanceof check) which is not collapsed during parsing.
+  //
   // Do nothing for such AddP node and don't process its users since
   // this code branch will go away.
   //
   if (!t->is_known_instance() &&
-      !t->klass()->equals(base_t->klass()) &&
-      t->klass()->is_subtype_of(base_t->klass())) {
+      !base_t->klass()->is_subtype_of(t->klass())) {
      return false; // bail out
   }
 

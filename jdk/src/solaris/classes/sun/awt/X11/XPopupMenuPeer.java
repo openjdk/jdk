@@ -33,7 +33,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 
 import java.util.Vector;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 import sun.awt.SunToolkit;
 
@@ -44,7 +44,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
      * Data members
      *
      ************************************************/
-    private static Logger log = Logger.getLogger("sun.awt.X11.XBaseMenuWindow");
+    private static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XBaseMenuWindow");
 
     /*
      * Primary members
@@ -146,7 +146,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
      * for adding separators
      */
     public void addSeparator() {
-        if (log.isLoggable(Level.FINER)) log.finer("addSeparator is not implemented");
+        if (log.isLoggable(PlatformLogger.FINER)) log.finer("addSeparator is not implemented");
     }
 
     /*
@@ -382,7 +382,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
      */
     public void handleKeyPress(XEvent xev) {
         XKeyEvent xkey = xev.get_xkey();
-        if (log.isLoggable(Level.FINE)) {
+        if (log.isLoggable(PlatformLogger.FINE)) {
             log.fine(xkey.toString());
         }
         if (isEventDisabled(xev)) {

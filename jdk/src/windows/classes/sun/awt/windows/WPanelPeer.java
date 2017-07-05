@@ -30,11 +30,9 @@ import java.awt.peer.*;
 import java.util.Vector;
 
 import sun.awt.SunGraphicsCallback;
-import java.util.logging.*;
 
 class WPanelPeer extends WCanvasPeer implements PanelPeer {
 
-    private static final Logger log = Logger.getLogger("sun.awt.windows.WPanelPeer");
     // ComponentPeer overrides
 
     public void paint(Graphics g) {

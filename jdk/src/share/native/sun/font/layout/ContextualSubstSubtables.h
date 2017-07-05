@@ -32,12 +32,19 @@
 #ifndef __CONTEXTUALSUBSTITUTIONSUBTABLES_H
 #define __CONTEXTUALSUBSTITUTIONSUBTABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LEFontInstance.h"
 #include "OpenTypeTables.h"
 #include "GlyphSubstitutionTables.h"
 #include "GlyphIterator.h"
 #include "LookupProcessor.h"
+
+U_NAMESPACE_BEGIN
 
 struct SubstitutionLookupRecord
 {
@@ -218,4 +225,5 @@ struct ChainingContextualSubstitutionFormat3Subtable
     le_uint32  process(const LookupProcessor *lookupProcessor, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
 };
 
+U_NAMESPACE_END
 #endif
