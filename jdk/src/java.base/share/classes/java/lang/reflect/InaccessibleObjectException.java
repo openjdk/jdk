@@ -36,13 +36,13 @@ public class InaccessibleObjectException extends RuntimeException {
     private static final long serialVersionUID = 4158786093378140901L;
 
     /**
-     * Constructs a {@code InaccessibleObjectException} with no detail message.
+     * Constructs an {@code InaccessibleObjectException} with no detail message.
      */
     public InaccessibleObjectException() {
     }
 
     /**
-     * Constructs a {@code InaccessibleObjectException} with the given detail
+     * Constructs an {@code InaccessibleObjectException} with the given detail
      * message.
      *
      * @param msg

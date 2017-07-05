@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.oracle.security.ucrypto;
 
 import java.io.IOException;
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.util.*;
 import java.security.*;
 
@@ -74,48 +75,52 @@ public final class UcryptoProvider extends Provider {
             if (provProp != null) {
                 boolean[] result = loadLibraries();
                 if (result.length == 2) {
-                    if (result[0]) { // successfully loaded libmd
-                        provProp.put("MessageDigest.MD5",
-                            sd("MessageDigest", "MD5",
-                               "com.oracle.security.ucrypto.NativeDigest$MD5"));
-                        provProp.put("MessageDigest.SHA",
-                            sd("MessageDigest", "SHA",
-                               "com.oracle.security.ucrypto.NativeDigest$SHA1",
-                               "SHA-1", "SHA1"));
-                        provProp.put("MessageDigest.SHA-256",
-                            sd("MessageDigest", "SHA-256",
-                               "com.oracle.security.ucrypto.NativeDigest$SHA256",
-                               "2.16.840.1.101.3.4.2.1", "OID.2.16.840.1.101.3.4.2.1"));
-
-                        provProp.put("MessageDigest.SHA-384",
-                            sd("MessageDigest", "SHA-384",
-                               "com.oracle.security.ucrypto.NativeDigest$SHA384",
-                               "2.16.840.1.101.3.4.2.2", "OID.2.16.840.1.101.3.4.2.2"));
-
-                        provProp.put("MessageDigest.SHA-512",
-                            sd("MessageDigest", "SHA-512",
-                               "com.oracle.security.ucrypto.NativeDigest$SHA512",
-                               "2.16.840.1.101.3.4.2.3", "OID.2.16.840.1.101.3.4.2.3"));
-                    };
-                    if (result[1]) { // successfully loaded libsoftcrypto
+                    // true when libsoftcrypto or libucrypto(S12) has been successfully loaded
+                    if (result[1]) {
                         String supportedMechs = getMechList();
                         debug("Prov: supported mechs = " + supportedMechs);
-                        for (UcryptoMech m : UcryptoMech.values()) {
-                            if (supportedMechs.indexOf(m.name() + ",") != -1) {
+                        StringTokenizer st = new StringTokenizer(supportedMechs, ":,;");
+                        // format: numOfSupportedMechs:[mechName,mechValue;]+
+                        // skip the first one which is numberOfSupportedMechs
+                        st.nextToken();
+                        while (st.hasMoreTokens()) {
+                            String mechName = st.nextToken();
+                            int nativeMechVal = Integer.parseInt(st.nextToken());
+                            try {
+                                UcryptoMech m = Enum.valueOf(UcryptoMech.class, mechName);
+                                m.setValue(nativeMechVal);
                                 ServiceDesc[] services = m.getServiceDescriptions();
-                                // skip unsupported UcryptoMech
-                                if (services == null || services.length == 0) continue;
+                                // defined in UcryptoMech as unsupported
+                                if (services == null || services.length == 0) {
+                                    debug("Skip Unsupported Algorithm: " + mechName);
+                                    continue;
+                                }
                                 for (int p = 0; p < services.length; p++) {
                                     ServiceDesc entry = services[p];
                                     provProp.put(entry.getType() + "." + entry.getAlgorithm(),
                                                  entry);
                                 }
+                            } catch (IllegalArgumentException iae) {
+                                // not defined in UcryptoMech
+                                debug("Skip Unrecognized Algorithm: " + mechName);
                             }
                         }
                         // NOTE: GCM support is only available since jdk 7
                         provProp.put("AlgorithmParameters.GCM",
-                                     sd("AlgorithmParameters", "GCM", "com.oracle.security.ucrypto.GCMParameters"));
+                                     sd("AlgorithmParameters", "GCM",
+                                        "com.oracle.security.ucrypto.GCMParameters"));
                     }
+                    // true when libmd is needed and has been successfully loaded
+                    if (result[0]) {
+                        for (LibMDMech m : LibMDMech.values()) {
+                            ServiceDesc[] services = m.getServiceDescriptions();
+                            for (ServiceDesc entry : services) {
+                                String sKey = entry.getType() + "." + entry.getAlgorithm();
+                                //  only register if none has been registered
+                                provProp.putIfAbsent(sKey, entry);
+                            }
+                        }
+                    };
                 } else {
                     debug("Prov: unexpected ucrypto library loading error, got " + result.length);
                 }
@@ -138,6 +143,7 @@ public final class UcryptoProvider extends Provider {
                   sd.getAliases(), null);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public Object newInstance(Object ctrParamObj)
             throws NoSuchAlgorithmException {
@@ -152,53 +158,19 @@ public final class UcryptoProvider extends Provider {
                     int keySize = -1;
                     if (algo.charAt(3) == '_') {
                         keySize = Integer.parseInt(algo.substring(4, 7))/8;
-                        algo = algo.substring(0, 3) + algo.substring(7);
                     }
-                    if (algo.equals("AES/ECB/NoPadding")) {
-                        return new NativeCipher.AesEcbNoPadding(keySize);
-                    } else if (algo.equals("AES/ECB/PKCS5Padding")) {
-                        return new NativeCipherWithJavaPadding.AesEcbPKCS5();
-                    } else if (algo.equals("AES/CBC/NoPadding")) {
-                        return new NativeCipher.AesCbcNoPadding(keySize);
-                    } else if (algo.equals("AES/CBC/PKCS5Padding")) {
-                        return new NativeCipherWithJavaPadding.AesCbcPKCS5();
-                    } else if (algo.equals("AES/CTR/NoPadding")) {
-                        return new NativeCipher.AesCtrNoPadding();
-                    } else if (algo.equals("AES/GCM/NoPadding")) {
-                        return new NativeGCMCipher.AesGcmNoPadding(keySize);
-                    } else if (algo.equals("AES/CFB128/NoPadding")) {
-                        return new NativeCipher.AesCfb128NoPadding();
-                    } else if (algo.equals("AES/CFB128/PKCS5Padding")) {
-                        return new NativeCipherWithJavaPadding.AesCfb128PKCS5();
-                    } else if (algo.equals("RSA/ECB/NoPadding")) {
-                        return new NativeRSACipher.NoPadding();
-                    } else if (algo.equals("RSA/ECB/PKCS1Padding")) {
-                        return new NativeRSACipher.PKCS1Padding();
+                    String implClass = getClassName();
+                    Class<?> clz = Class.forName(implClass);
+                    if (keySize != -1) {
+                        Constructor<?> ctr = clz.getConstructor(int.class);
+                        return ctr.newInstance(keySize);
+                    } else {
+                        return clz.newInstance();
                     }
-                } else if (type.equals("Signature")) {
-                    if (algo.equals("SHA1withRSA")) {
-                        return new NativeRSASignature.SHA1();
-                    } else if (algo.equals("SHA256withRSA")) {
-                        return new NativeRSASignature.SHA256();
-                    } else if (algo.equals("SHA384withRSA")) {
-                        return new NativeRSASignature.SHA384();
-                    } else if (algo.equals("SHA512withRSA")) {
-                        return new NativeRSASignature.SHA512();
-                    } else if (algo.equals("MD5withRSA")) {
-                        return new NativeRSASignature.MD5();
-                    }
-                } else if (type.equals("MessageDigest")) {
-                    if (algo.equals("SHA")) {
-                        return new NativeDigest.SHA1();
-                    } else if (algo.equals("SHA-256")) {
-                        return new NativeDigest.SHA256();
-                    } else if (algo.equals("SHA-384")) {
-                        return new NativeDigest.SHA384();
-                    } else if (algo.equals("SHA-512")) {
-                        return new NativeDigest.SHA512();
-                    } else if (algo.equals("MD5")) {
-                        return new NativeDigest.MD5();
-                    }
+                } else if (type.equals("Signature") || type.equals("MessageDigest")) {
+                    String implClass = getClassName();
+                    Class<?> clz = Class.forName(implClass);
+                    return clz.newInstance();
                 } else if (type.equals("AlgorithmParameters")) {
                     if (algo.equals("GCM")) {
                         return new GCMParameters();

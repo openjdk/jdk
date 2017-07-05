@@ -784,7 +784,7 @@ public abstract class FtpClient implements java.io.Closeable {
      *
      * @param path the pathname of the directory to list or {@code null}
      *        for the current working directoty.
-     * @return a {@code Iterator} of files or {@code null} if the
+     * @return an {@code Iterator} of files or {@code null} if the
      *         command failed.
      * @throws IOException if an error occurred during the transmission
      * @see #setDirParser(FtpDirParser)
