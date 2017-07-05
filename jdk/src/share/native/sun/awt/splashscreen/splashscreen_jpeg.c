@@ -25,7 +25,6 @@
 
 #include "splashscreen_impl.h"
 
-#include "jinclude.h"
 #include "jpeglib.h"
 #include "jerror.h"
 
@@ -107,11 +106,11 @@ set_stream_src(j_decompress_ptr cinfo, SplashStream * stream)
     if (cinfo->src == NULL) {   /* first time for this JPEG object? */
         cinfo->src = (struct jpeg_source_mgr *)
             (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo,
-            JPOOL_PERMANENT, SIZEOF(stream_source_mgr));
+            JPOOL_PERMANENT, sizeof(stream_source_mgr));
         src = (stream_src_ptr) cinfo->src;
         src->buffer = (JOCTET *)
             (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo,
-            JPOOL_PERMANENT, INPUT_BUF_SIZE * SIZEOF(JOCTET));
+            JPOOL_PERMANENT, INPUT_BUF_SIZE * sizeof(JOCTET));
     }
 
     src = (stream_src_ptr) cinfo->src;

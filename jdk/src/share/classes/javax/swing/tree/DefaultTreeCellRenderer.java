@@ -234,6 +234,9 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
     /**
       * Returns the default icon, for the current laf, that is used to
       * represent non-leaf nodes that are expanded.
+      *
+      * @return the default icon, for the current laf, that is used to
+      *         represent non-leaf nodes that are expanded.
       */
     public Icon getDefaultOpenIcon() {
         return DefaultLookup.getIcon(this, ui, "Tree.openIcon");
@@ -242,6 +245,9 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
     /**
       * Returns the default icon, for the current laf, that is used to
       * represent non-leaf nodes that are not expanded.
+      *
+      * @return the default icon, for the current laf, that is used to
+      *         represent non-leaf nodes that are not expanded.
       */
     public Icon getDefaultClosedIcon() {
         return DefaultLookup.getIcon(this, ui, "Tree.closedIcon");
@@ -250,6 +256,9 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
     /**
       * Returns the default icon, for the current laf, that is used to
       * represent leaf nodes.
+      *
+      * @return the default icon, for the current laf, that is used to
+      *         represent leaf nodes.
       */
     public Icon getDefaultLeafIcon() {
         return DefaultLookup.getIcon(this, ui, "Tree.leafIcon");
@@ -257,6 +266,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Sets the icon used to represent non-leaf nodes that are expanded.
+      *
+      * @param newIcon the icon to be used for expanded non-leaf nodes
       */
     public void setOpenIcon(Icon newIcon) {
         openIcon = newIcon;
@@ -264,6 +275,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Returns the icon used to represent non-leaf nodes that are expanded.
+      *
+      * @return the icon used to represent non-leaf nodes that are expanded
       */
     public Icon getOpenIcon() {
         return openIcon;
@@ -271,6 +284,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Sets the icon used to represent non-leaf nodes that are not expanded.
+      *
+      * @param newIcon the icon to be used for not expanded non-leaf nodes
       */
     public void setClosedIcon(Icon newIcon) {
         closedIcon = newIcon;
@@ -279,6 +294,9 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
     /**
       * Returns the icon used to represent non-leaf nodes that are not
       * expanded.
+      *
+      * @return the icon used to represent non-leaf nodes that are not
+      *         expanded
       */
     public Icon getClosedIcon() {
         return closedIcon;
@@ -286,6 +304,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Sets the icon used to represent leaf nodes.
+      *
+      * @param newIcon icon to be used for leaf nodes
       */
     public void setLeafIcon(Icon newIcon) {
         leafIcon = newIcon;
@@ -293,6 +313,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Returns the icon used to represent leaf nodes.
+      *
+      * @return the icon used to represent leaf nodes
       */
     public Icon getLeafIcon() {
         return leafIcon;
@@ -300,6 +322,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Sets the color the text is drawn with when the node is selected.
+      *
+      * @param newColor color to be used for text when the node is selected
       */
     public void setTextSelectionColor(Color newColor) {
         textSelectionColor = newColor;
@@ -307,6 +331,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Returns the color the text is drawn with when the node is selected.
+      *
+      * @return the color the text is drawn with when the node is selected
       */
     public Color getTextSelectionColor() {
         return textSelectionColor;
@@ -314,6 +340,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Sets the color the text is drawn with when the node isn't selected.
+      *
+      * @param newColor color to be used for text when the node isn't selected
       */
     public void setTextNonSelectionColor(Color newColor) {
         textNonSelectionColor = newColor;
@@ -321,6 +349,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Returns the color the text is drawn with when the node isn't selected.
+      *
+      * @return the color the text is drawn with when the node isn't selected.
       */
     public Color getTextNonSelectionColor() {
         return textNonSelectionColor;
@@ -328,6 +358,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Sets the color to use for the background if node is selected.
+      *
+      * @param newColor to be used for the background if the node is selected
       */
     public void setBackgroundSelectionColor(Color newColor) {
         backgroundSelectionColor = newColor;
@@ -336,6 +368,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Returns the color to use for the background if node is selected.
+      *
+      * @return the color to use for the background if node is selected
       */
     public Color getBackgroundSelectionColor() {
         return backgroundSelectionColor;
@@ -343,6 +377,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Sets the background color to be used for non selected nodes.
+      *
+      * @param newColor color to be used for the background for non selected nodes
       */
     public void setBackgroundNonSelectionColor(Color newColor) {
         backgroundNonSelectionColor = newColor;
@@ -350,6 +386,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Returns the background color to be used for non selected nodes.
+      *
+      * @return the background color to be used for non selected nodes.
       */
     public Color getBackgroundNonSelectionColor() {
         return backgroundNonSelectionColor;
@@ -357,6 +395,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Sets the color to use for the border.
+      *
+      * @param newColor color to be used for the border
       */
     public void setBorderSelectionColor(Color newColor) {
         borderSelectionColor = newColor;
@@ -364,6 +404,8 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     /**
       * Returns the color the border is drawn.
+      *
+      * @return the color the border is drawn
       */
     public Color getBorderSelectionColor() {
         return borderSelectionColor;

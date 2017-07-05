@@ -949,7 +949,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
             Object v = (info == null) ? null : info.get(item2.name);
             v = (v != null) ? v : storedProperties.getProperty(item2.name);
             if (v != null) {
-                Class c = (item2.valueClass);
+                Class<?> c = (item2.valueClass);
                 if (c.isInstance(v))
                     item2.value = v;
                 else if (v instanceof String) {

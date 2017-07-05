@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 #include "color.h"
 
-#ifndef HEADLESS
+#if !defined(HEADLESS) && !defined(MACOSX)
 typedef struct {
     ImgConvertData cvdata;      /* The data needed by ImgConvertFcn's */
     struct Hsun_awt_image_ImageRepresentation *hJavaObject;     /* backptr */
@@ -68,7 +68,7 @@ extern void *image_InitMask(IRData *ird, int x1, int y1, int x2, int y2);
 #define MaskScan(cvdata)                                        \
         ((((IRData *)cvdata)->maskim->bytes_per_line) >> 2)
 
-#endif /* !HEADLESS */
+#endif /* !HEADLESS && !MACOSX */
 
 #define MaskOffset(x)           ((x) >> 5)
 

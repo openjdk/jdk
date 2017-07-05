@@ -483,6 +483,11 @@ final class UNIXProcess extends Process {
     }
 
     @Override
+    public long getPid() {
+        return pid;
+    }
+
+    @Override
     public synchronized boolean isAlive() {
         return !hasExited;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ inline bool ParallelScavengeHeap::is_in_young(oop p) {
   const void* loc = (void*) p;
   bool result = ((HeapWord*)p) >= young_gen()->reserved().start();
   assert(result == young_gen()->is_in_reserved(p),
-        err_msg("incorrect test - result=%d, p=" PTR_FORMAT, result, (void*)p));
+        err_msg("incorrect test - result=%d, p=" PTR_FORMAT, result, p2i((void*)p)));
   return result;
 }
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_INLINE_HPP

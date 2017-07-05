@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -925,16 +925,16 @@ void VM_Version::get_processor_features() {
   if (PrintMiscellaneous && Verbose) {
     tty->print_cr("Logical CPUs per core: %u",
                   logical_processors_per_package());
-    tty->print("UseSSE=%d",UseSSE);
+    tty->print("UseSSE=%d", (int) UseSSE);
     if (UseAVX > 0) {
-      tty->print("  UseAVX=%d",UseAVX);
+      tty->print("  UseAVX=%d", (int) UseAVX);
     }
     if (UseAES) {
       tty->print("  UseAES=1");
     }
 #ifdef COMPILER2
     if (MaxVectorSize > 0) {
-      tty->print("  MaxVectorSize=%d", MaxVectorSize);
+      tty->print("  MaxVectorSize=%d", (int) MaxVectorSize);
     }
 #endif
     tty->cr();
@@ -957,23 +957,23 @@ void VM_Version::get_processor_features() {
         }
       }
       if (AllocatePrefetchLines > 1) {
-        tty->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
+        tty->print_cr(" at distance %d, %d lines of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchLines, (int) AllocatePrefetchStepSize);
       } else {
-        tty->print_cr(" at distance %d, one line of %d bytes", AllocatePrefetchDistance, AllocatePrefetchStepSize);
+        tty->print_cr(" at distance %d, one line of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchStepSize);
       }
     }
 
     if (PrefetchCopyIntervalInBytes > 0) {
-      tty->print_cr("PrefetchCopyIntervalInBytes %d", PrefetchCopyIntervalInBytes);
+      tty->print_cr("PrefetchCopyIntervalInBytes %d", (int) PrefetchCopyIntervalInBytes);
     }
     if (PrefetchScanIntervalInBytes > 0) {
-      tty->print_cr("PrefetchScanIntervalInBytes %d", PrefetchScanIntervalInBytes);
+      tty->print_cr("PrefetchScanIntervalInBytes %d", (int) PrefetchScanIntervalInBytes);
     }
     if (PrefetchFieldsAhead > 0) {
-      tty->print_cr("PrefetchFieldsAhead %d", PrefetchFieldsAhead);
+      tty->print_cr("PrefetchFieldsAhead %d", (int) PrefetchFieldsAhead);
     }
     if (ContendedPaddingWidth > 0) {
-      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
+      tty->print_cr("ContendedPaddingWidth %d", (int) ContendedPaddingWidth);
     }
   }
 #endif // !PRODUCT

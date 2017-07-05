@@ -26,6 +26,7 @@
 package sun.awt.X11;
 
 import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.DataFlavor;
 
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.InvalidDnDOperationException;
@@ -84,7 +85,7 @@ abstract class XDragSourceProtocol {
      * @throws XException if some X call failed.
      */
     public final void initializeDrag(int actions, Transferable contents,
-                                     Map formatMap, long[] formats)
+                                     Map<Long, DataFlavor> formatMap, long[] formats)
       throws InvalidDnDOperationException,
              IllegalArgumentException, XException {
         XToolkit.awtLock();
@@ -110,7 +111,8 @@ abstract class XDragSourceProtocol {
     /* The caller must hold AWT_LOCK. */
     protected abstract void initializeDragImpl(int actions,
                                                Transferable contents,
-                                               Map formatMap, long[] formats)
+                                               Map<Long, DataFlavor> formatMap,
+                                               long[] formats)
       throws InvalidDnDOperationException, IllegalArgumentException, XException;
 
     /**

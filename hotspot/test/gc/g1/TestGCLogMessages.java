@@ -22,7 +22,7 @@
  */
 
 /*
- * @test TestPrintGCDetails
+ * @test TestGCLogMessages
  * @bug 8035406 8027295 8035398 8019342
  * @summary Ensure that the PrintGCDetails output for a minor GC with G1
  * includes the expected necessary messages.
@@ -90,12 +90,6 @@ public class TestGCLogMessages {
     output.shouldContain("[String Dedup Fixup");
     output.shouldContain("[Young Free CSet");
     output.shouldContain("[Non-Young Free CSet");
-
-    // also check evacuation failure messages once
-    output.shouldNotContain("[Evacuation Failure");
-    output.shouldNotContain("[Recalculate Used");
-    output.shouldNotContain("[Remove Self Forwards");
-    output.shouldNotContain("[Restore RemSet");
     output.shouldHaveExitValue(0);
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,7 +399,7 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
     if (WizardMode) {
       tty->print_cr("Error in fill_from_frame: pc_desc for "
                     INTPTR_FORMAT " not found or invalid at %d",
-                    _frame.pc(), decode_offset);
+                    p2i(_frame.pc()), decode_offset);
       nm()->print();
       nm()->method()->print_codes();
       nm()->print_code();

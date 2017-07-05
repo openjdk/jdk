@@ -514,7 +514,7 @@ const Type *DivINode::Value( PhaseTransform *phase ) const {
   int widen = MAX2(i1->_widen, i2->_widen);
 
   if( i2->is_con() && i2->get_con() != 0 ) {
-    int32 d = i2->get_con(); // Divisor
+    int32_t d = i2->get_con(); // Divisor
     jint lo, hi;
     if( d >= 0 ) {
       lo = i1->_lo/d;
@@ -536,7 +536,7 @@ const Type *DivINode::Value( PhaseTransform *phase ) const {
 
   // If the dividend is a constant
   if( i1->is_con() ) {
-    int32 d = i1->get_con();
+    int32_t d = i1->get_con();
     if( d < 0 ) {
       if( d == min_jint ) {
         //  (-min_jint) == min_jint == (min_jint / -1)

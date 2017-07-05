@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,16 +122,24 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
             }
         }
         // compress complete blocks
-        while (len >= blockSize) {
-            implCompress(b, ofs);
-            len -= blockSize;
-            ofs += blockSize;
+        if (len >= blockSize) {
+            int limit = ofs + len;
+            ofs = implCompressMultiBlock(b, ofs, limit - blockSize);
+            len = limit - ofs;
         }
         // copy remainder to buffer
         if (len > 0) {
             System.arraycopy(b, ofs, buffer, 0, len);
             bufOfs = len;
         }
+    }
+
+    // compress complete blocks
+    private int implCompressMultiBlock(byte[] b, int ofs, int limit) {
+        for (; ofs <= limit; ofs += blockSize) {
+            implCompress(b, ofs);
+        }
+        return ofs;
     }
 
     // reset this object. See JCA doc.

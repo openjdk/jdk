@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_OPTO_TYPE_HPP
 #define SHARE_VM_OPTO_TYPE_HPP
 
-#include "libadt/port.hpp"
 #include "opto/adlcVMDeps.hpp"
 #include "runtime/handles.hpp"
 

@@ -82,7 +82,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
 
     public SunGraphicsEnvironment() {
         java.security.AccessController.doPrivileged(
-                                    new java.security.PrivilegedAction() {
+                                    new java.security.PrivilegedAction<Object>() {
             public Object run() {
                     String version = System.getProperty("os.version", "0.0");
                     try {

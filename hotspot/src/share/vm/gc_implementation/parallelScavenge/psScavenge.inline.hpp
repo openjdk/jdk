@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ inline void PSScavenge::copy_and_push_safe_barrier(PSPromotionManager* pm,
   if (TraceScavenge &&  o->is_forwarded()) {
     gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
        "forwarding",
-       new_obj->klass()->internal_name(), (void *)o, (void *)new_obj, new_obj->size());
+       new_obj->klass()->internal_name(), p2i((void *)o), p2i((void *)new_obj), new_obj->size());
   }
 #endif
 
@@ -180,7 +180,7 @@ class PSScavengeKlassClosure: public KlassClosure {
     if (TraceScavenge) {
       ResourceMark rm;
       gclog_or_tty->print_cr("PSScavengeKlassClosure::do_klass " PTR_FORMAT ", %s, dirty: %s",
-                             klass,
+                             p2i(klass),
                              klass->external_name(),
                              klass->has_modified_oops() ? "true" : "false");
     }

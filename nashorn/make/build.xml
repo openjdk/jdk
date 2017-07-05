@@ -360,6 +360,10 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
       <include name="**/framework/*Test.class"/>
     </fileset>
 
+    <fileset id="test.nosecurity.classes" dir="${build.test.classes.dir}">
+      <include name="**/framework/ScriptTest.class"/>
+    </fileset>
+
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
@@ -372,6 +376,21 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
         <mapper from="test-sys-prop.*" to="*" type="glob"/>
       </propertyset>
       <sysproperty key="test.js.excludes.file" value="${exclude.list}"/>
+      <classpath>
+          <pathelement path="${run.test.classpath}"/>
+      </classpath>
+    </testng>
+    <testng outputdir="${build.nosecurity.test.results.dir}" classfilesetref="test.nosecurity.classes"
+       verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
+      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
+      <propertyset>
+        <propertyref prefix="nashorn."/>
+      </propertyset>
+      <propertyset>
+        <propertyref prefix="test-sys-prop-no-security."/>
+        <mapper from="test-sys-prop-no-security.*" to="*" type="glob"/>
+      </propertyset>
       <classpath>
           <pathelement path="${run.test.classpath}"/>
       </classpath>

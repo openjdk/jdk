@@ -28,7 +28,7 @@ import jdk.testlibrary.OutputAnalyzer;
  * @test
  * @bug 4990825
  * @library /lib/testlibrary
- * @build jdk.testlibrary.JDKToolLauncher jdk.testlibrary.OutputAnalyzer
+ * @build jdk.testlibrary.*
  * @run main TestJstatdUsage
  */
 public class TestJstatdUsage {

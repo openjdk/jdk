@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,6 +212,8 @@ static jlong stretch(jint x, int bits) {
   return h ^ l;
 }
 
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_IGNORED // Someone needs to deal with this.
 void test_compressed_stream(int trace) {
   CompressedWriteStream bytes(stretch_limit * 100);
   jint n;
@@ -275,6 +277,7 @@ void test_compressed_stream(int trace) {
   guarantee(length == length2, "bad length");
   guarantee(fails == 0, "test failures");
 }
+PRAGMA_DIAG_POP
 
 #if defined(_MSC_VER) &&_MSC_VER >=1400 && !defined(_WIN64)
 #pragma warning(default: 4748)

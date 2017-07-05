@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ void EntryPoint::print() {
   tty->print("[");
   for (int i = 0; i < number_of_states; i++) {
     if (i > 0) tty->print(", ");
-    tty->print(INTPTR_FORMAT, _entry[i]);
+    tty->print(INTPTR_FORMAT, p2i(_entry[i]));
   }
   tty->print("]");
 }

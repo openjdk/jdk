@@ -157,6 +157,37 @@ public class OptionTest extends Object {
                 throw new Exception("Test failed: jdwp doesn't like " + cmds[1]);
             }
         }
+
+        System.out.println("Testing invalid address string");
+
+        // Test invalid addresses
+        String badAddresses[] = {
+            ":",
+            "localhost:",
+            "localhost:abc",
+            "localhost:65536",
+            "localhost:65F"
+        };
+
+        for (String badAddress : badAddresses) {
+
+            String badOptions = "transport=dt_socket" +
+                              ",address=" + badAddress +
+                              ",server=y" +
+                              ",suspend=n";
+            String cmds[] = {javaExe, "-agentlib:jdwp=" + badOptions, targetClass};
+            OptionTest myTest = new OptionTest();
+            String results[] = myTest.run(VMConnection.insertDebuggeeVMOptions(cmds));
+
+            if (!results[RETSTAT].equals("0") && results[STDERR].startsWith("ERROR:")) {
+                // We got expected error, test passed
+            }
+            else {
+                throw new Exception("Test failed: jdwp accept invalid address '" + badAddress + "'");
+            }
+        }
+
         System.out.println("Test passed: status = 0");
     }
 }
+

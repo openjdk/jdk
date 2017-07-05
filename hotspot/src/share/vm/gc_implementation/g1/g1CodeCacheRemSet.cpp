@@ -28,6 +28,8 @@
 #include "gc_implementation/g1/g1CodeCacheRemSet.hpp"
 #include "memory/iterator.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 G1CodeRootChunk::G1CodeRootChunk() : _top(NULL), _next(NULL), _prev(NULL) {
   _top = bottom();
 }

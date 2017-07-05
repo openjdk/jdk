@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class RenderableImageProducer implements ImageProducer, Runnable {
     RenderContext rc;
 
     /** A Vector of image consumers. */
-    Vector ics = new Vector();
+    Vector<ImageConsumer> ics = new Vector<>();
 
     /**
      * Constructs a new RenderableImageProducer from a RenderableImage
@@ -177,12 +177,12 @@ public class RenderableImageProducer implements ImageProducer, Runnable {
         int width = raster.getWidth();
         int height = raster.getHeight();
 
-        Enumeration icList;
+        Enumeration<ImageConsumer> icList;
         ImageConsumer ic;
         // Set up the ImageConsumers
         icList = ics.elements();
         while (icList.hasMoreElements()) {
-            ic = (ImageConsumer)icList.nextElement();
+            ic = icList.nextElement();
             ic.setDimensions(width,height);
             ic.setHints(ImageConsumer.TOPDOWNLEFTRIGHT |
                         ImageConsumer.COMPLETESCANLINES |
@@ -204,7 +204,7 @@ public class RenderableImageProducer implements ImageProducer, Runnable {
             // Now send the scanline to the Consumers
             icList = ics.elements();
             while (icList.hasMoreElements()) {
-                ic = (ImageConsumer)icList.nextElement();
+                ic = icList.nextElement();
                 ic.setPixels(0, j, width, 1, colorModel, pix, 0, width);
             }
         }
@@ -212,7 +212,7 @@ public class RenderableImageProducer implements ImageProducer, Runnable {
         // Now tell the consumers we're done.
         icList = ics.elements();
         while (icList.hasMoreElements()) {
-            ic = (ImageConsumer)icList.nextElement();
+            ic = icList.nextElement();
             ic.imageComplete(ImageConsumer.STATICIMAGEDONE);
         }
     }

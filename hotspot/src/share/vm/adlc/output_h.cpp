@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,7 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
     const char *type = oper->ideal_type(globals);
     if (!strcmp(type, "ConI")) {
       if (i > 0) fprintf(fp,", ");
-      fprintf(fp,"  int32          _c%d;\n", i);
+      fprintf(fp,"  int32_t        _c%d;\n", i);
     }
     else if (!strcmp(type, "ConP")) {
       if (i > 0) fprintf(fp,", ");
@@ -307,7 +307,7 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
     assert(num_consts == 1, "Bad component list detected.\n");
     switch( constant_type ) {
     case Form::idealI : {
-      fprintf(fp,is_ideal_bool ? "BoolTest::mask c%d" : "int32 c%d", i);
+      fprintf(fp,is_ideal_bool ? "BoolTest::mask c%d" : "int32_t c%d", i);
       break;
     }
     case Form::idealN :      { fprintf(fp,"const TypeNarrowOop *c%d", i); break; }
@@ -326,7 +326,7 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
     while((comp = lst.iter()) != NULL) {
       if (!strcmp(comp->base_type(globals), "ConI")) {
         if (i > 0) fprintf(fp,", ");
-        fprintf(fp,"int32 c%d", i);
+        fprintf(fp,"int32_t c%d", i);
         i++;
       }
       else if (!strcmp(comp->base_type(globals), "ConP")) {
@@ -386,14 +386,14 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
 static void defineCCodeDump(OperandForm* oper, FILE *fp, int i) {
   assert(oper != NULL, "what");
   CondInterface* cond = oper->_interface->is_CondInterface();
-  fprintf(fp, "       if( _c%d == BoolTest::eq ) st->print(\"%s\");\n",i,cond->_equal_format);
-  fprintf(fp, "  else if( _c%d == BoolTest::ne ) st->print(\"%s\");\n",i,cond->_not_equal_format);
-  fprintf(fp, "  else if( _c%d == BoolTest::le ) st->print(\"%s\");\n",i,cond->_less_equal_format);
-  fprintf(fp, "  else if( _c%d == BoolTest::ge ) st->print(\"%s\");\n",i,cond->_greater_equal_format);
-  fprintf(fp, "  else if( _c%d == BoolTest::lt ) st->print(\"%s\");\n",i,cond->_less_format);
-  fprintf(fp, "  else if( _c%d == BoolTest::gt ) st->print(\"%s\");\n",i,cond->_greater_format);
-  fprintf(fp, "  else if( _c%d == BoolTest::overflow ) st->print(\"%s\");\n",i,cond->_overflow_format);
-  fprintf(fp, "  else if( _c%d == BoolTest::no_overflow ) st->print(\"%s\");\n",i,cond->_no_overflow_format);
+  fprintf(fp, "       if( _c%d == BoolTest::eq ) st->print_raw(\"%s\");\n",i,cond->_equal_format);
+  fprintf(fp, "  else if( _c%d == BoolTest::ne ) st->print_raw(\"%s\");\n",i,cond->_not_equal_format);
+  fprintf(fp, "  else if( _c%d == BoolTest::le ) st->print_raw(\"%s\");\n",i,cond->_less_equal_format);
+  fprintf(fp, "  else if( _c%d == BoolTest::ge ) st->print_raw(\"%s\");\n",i,cond->_greater_equal_format);
+  fprintf(fp, "  else if( _c%d == BoolTest::lt ) st->print_raw(\"%s\");\n",i,cond->_less_format);
+  fprintf(fp, "  else if( _c%d == BoolTest::gt ) st->print_raw(\"%s\");\n",i,cond->_greater_format);
+  fprintf(fp, "  else if( _c%d == BoolTest::overflow ) st->print_raw(\"%s\");\n",i,cond->_overflow_format);
+  fprintf(fp, "  else if( _c%d == BoolTest::no_overflow ) st->print_raw(\"%s\");\n",i,cond->_no_overflow_format);
 }
 
 // Output code that dumps constant values, increment "i" if type is constant
@@ -416,8 +416,8 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, Operand
     ++i;
   }
   else if (!strcmp(ideal_type, "ConL")) {
-    fprintf(fp,"    st->print(\"#\" INT64_FORMAT, _c%d);\n", i);
-    fprintf(fp,"    st->print(\"/\" PTR64_FORMAT, _c%d);\n", i);
+    fprintf(fp,"    st->print(\"#\" INT64_FORMAT, (int64_t)_c%d);\n", i);
+    fprintf(fp,"    st->print(\"/\" PTR64_FORMAT, (uint64_t)_c%d);\n", i);
     ++i;
   }
   else if (!strcmp(ideal_type, "ConF")) {
@@ -429,7 +429,7 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, Operand
   else if (!strcmp(ideal_type, "ConD")) {
     fprintf(fp,"    st->print(\"#%%f\", _c%d);\n", i);
     fprintf(fp,"    jlong _c%dl = JavaValue(_c%d).get_jlong();\n", i, i);
-    fprintf(fp,"    st->print(\"/\" PTR64_FORMAT, _c%dl);\n", i);
+    fprintf(fp,"    st->print(\"/\" PTR64_FORMAT, (uint64_t)_c%dl);\n", i);
     ++i;
   }
   else if (!strcmp(ideal_type, "Bool")) {
@@ -471,7 +471,7 @@ void gen_oper_format(FILE *fp, FormDict &globals, OperandForm &oper, bool for_c_
         if ( string != NameList::_signal ) {
           // Normal string
           // Pass through to st->print
-          fprintf(fp,"  st->print(\"%s\");\n", string);
+          fprintf(fp,"  st->print_raw(\"%s\");\n", string);
         } else {
           // Replacement variable
           const char *rep_var = oper._format->_rep_vars.iter();
@@ -542,7 +542,7 @@ void gen_oper_format(FILE *fp, FormDict &globals, OperandForm &oper, bool for_c_
         if ( string != NameList::_signal ) {
           // Normal string
           // Pass through to st->print
-          fprintf(fp,"  st->print(\"%s\");\n", string);
+          fprintf(fp,"  st->print_raw(\"%s\");\n", string);
         } else {
           // Replacement variable
           const char *rep_var = oper._format->_rep_vars.iter();
@@ -669,7 +669,7 @@ void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &inst, bool for_c
       } else if( string == NameList::_signal2 ) // Raw program text
         fputs(inst._format->_strings.iter(), fp);
       else
-        fprintf(fp,"st->print(\"%s\");\n", string);
+        fprintf(fp,"st->print_raw(\"%s\");\n", string);
     } // Done with all format strings
   } // Done generating the user-defined portion of the format
 
@@ -696,13 +696,13 @@ void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &inst, bool for_c
     default:
       assert(0,"ShouldNotReachHere");
     }
-    fprintf(fp,  "  st->print_cr(\"\");\n" );
+    fprintf(fp,  "  st->cr();\n" );
     fprintf(fp,  "  if (_jvms) _jvms->format(ra, this, st); else st->print_cr(\"        No JVM State Info\");\n" );
     fprintf(fp,  "  st->print(\"        # \");\n" );
     fprintf(fp,  "  if( _jvms && _oop_map ) _oop_map->print_on(st);\n");
   }
   else if(inst.is_ideal_safepoint()) {
-    fprintf(fp,  "  st->print(\"\");\n" );
+    fprintf(fp,  "  st->print_raw(\"\");\n" );
     fprintf(fp,  "  if (_jvms) _jvms->format(ra, this, st); else st->print_cr(\"        No JVM State Info\");\n" );
     fprintf(fp,  "  st->print(\"        # \");\n" );
     fprintf(fp,  "  if( _jvms && _oop_map ) _oop_map->print_on(st);\n");

@@ -27,7 +27,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 
-#include "classfile/symbolTable.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/classLoaderData.hpp"
 
 #include "prims/whitebox.hpp"
@@ -52,6 +52,8 @@
 
 #include "compiler/compileBroker.hpp"
 #include "runtime/compilationPolicy.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #define SIZE_T_MAX_VALUE ((size_t) -1)
 
@@ -493,8 +495,8 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
 
 #ifdef TIERED
     mcs->set_rate(0.0F);
-    mh->set_prev_event_count(0, THREAD);
-    mh->set_prev_time(0, THREAD);
+    mh->set_prev_event_count(0);
+    mh->set_prev_time(0);
 #endif
   }
 WB_END
