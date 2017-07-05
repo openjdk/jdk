@@ -53,6 +53,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.CausedFocusEvent;
+import sun.awt.DebugSettings;
 import sun.awt.SunToolkit;
 import sun.awt.util.IdentityArrayList;
 import sun.java2d.pipe.Region;
@@ -2159,11 +2160,13 @@ public class Window extends Container implements Accessible {
      * @param e  the keyboard event
      */
     void preProcessKeyEvent(KeyEvent e) {
-        // Dump the list of child windows to System.out.
-        if (e.isActionKey() && e.getKeyCode() == KeyEvent.VK_F1 &&
-            e.isControlDown() && e.isShiftDown() &&
-            e.getID() == KeyEvent.KEY_PRESSED) {
-            list(System.out, 0);
+        // Dump the list of child windows to System.out if debug is enabled.
+        if (DebugSettings.getInstance().getBoolean("on", false)) {
+            if (e.isActionKey() && e.getKeyCode() == KeyEvent.VK_F1 &&
+                    e.isControlDown() && e.isShiftDown() &&
+                    e.getID() == KeyEvent.KEY_PRESSED) {
+                list(System.out, 0);
+            }
         }
     }
 

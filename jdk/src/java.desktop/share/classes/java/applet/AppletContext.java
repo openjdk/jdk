@@ -55,8 +55,8 @@ public interface AppletContext {
     AudioClip getAudioClip(URL url);
 
     /**
-     * Returns an <code>Image</code> object that can then be painted on
-     * the screen. The <code>url</code> argument that is
+     * Returns an {@code Image} object that can then be painted on
+     * the screen. The {@code url} argument that is
      * passed as an argument must specify an absolute URL.
      * <p>
      * This method always returns immediately, whether or not the image
@@ -73,10 +73,10 @@ public interface AppletContext {
     /**
      * Finds and returns the applet in the document represented by this
      * applet context with the given name. The name can be set in the
-     * HTML tag by setting the <code>name</code> attribute.
+     * HTML tag by setting the {@code name} attribute.
      *
      * @param   name   an applet name.
-     * @return  the applet with the given name, or <code>null</code> if
+     * @return  the applet with the given name, or {@code null} if
      *          not found.
      */
     Applet getApplet(String name);
@@ -92,7 +92,7 @@ public interface AppletContext {
 
     /**
      * Requests that the browser or applet viewer show the Web page
-     * indicated by the <code>url</code> argument. The browser or
+     * indicated by the {@code url} argument. The browser or
      * applet viewer determines which window or frame to display the
      * Web page. This method may be ignored by applet contexts that
      * are not browsers.
@@ -103,22 +103,22 @@ public interface AppletContext {
 
     /**
      * Requests that the browser or applet viewer show the Web page
-     * indicated by the <code>url</code> argument. The
-     * <code>target</code> argument indicates in which HTML frame the
+     * indicated by the {@code url} argument. The
+     * {@code target} argument indicates in which HTML frame the
      * document is to be displayed.
      * The target argument is interpreted as follows:
      *
      * <center><table border="3" summary="Target arguments and their descriptions">
      * <tr><th>Target Argument</th><th>Description</th></tr>
-     * <tr><td><code>"_self"</code>  <td>Show in the window and frame that
+     * <tr><td>{@code "_self"}  <td>Show in the window and frame that
      *                                   contain the applet.</tr>
-     * <tr><td><code>"_parent"</code><td>Show in the applet's parent frame. If
+     * <tr><td>{@code "_parent"}<td>Show in the applet's parent frame. If
      *                                   the applet's frame has no parent frame,
      *                                   acts the same as "_self".</tr>
-     * <tr><td><code>"_top"</code>   <td>Show in the top-level frame of the applet's
+     * <tr><td>{@code "_top"}   <td>Show in the top-level frame of the applet's
      *                                   window. If the applet's frame is the
      *                                   top-level frame, acts the same as "_self".</tr>
-     * <tr><td><code>"_blank"</code> <td>Show in a new, unnamed
+     * <tr><td>{@code "_blank"} <td>Show in a new, unnamed
      *                                   top-level window.</tr>
      * <tr><td><i>name</i><td>Show in the frame or window named <i>name</i>. If
      *                        a target named <i>name</i> does not already exist, a
@@ -126,10 +126,10 @@ public interface AppletContext {
      *                        and the document is shown there.</tr>
      * </table> </center>
      * <p>
-     * An applet viewer or browser is free to ignore <code>showDocument</code>.
+     * An applet viewer or browser is free to ignore {@code showDocument}.
      *
      * @param   url   an absolute URL giving the location of the document.
-     * @param   target   a <code>String</code> indicating where to display
+     * @param   target   a {@code String} indicating where to display
      *                   the page.
      */
     public void showDocument(URL url, String target);
@@ -155,7 +155,7 @@ public interface AppletContext {
      *
      * @param key key with which the specified value is to be associated.
      * @param stream stream to be associated with the specified key. If this
-     *               parameter is <code>null</code>, the specified key is removed
+     *               parameter is {@code null}, the specified key is removed
      *               in this applet context.
      * @throws IOException if the stream size exceeds a certain
      *         size limit. Size limit is decided by the implementor of this
@@ -166,7 +166,7 @@ public interface AppletContext {
 
     /**
      * Returns the stream to which specified key is associated within this
-     * applet context. Returns <tt>null</tt> if the applet context contains
+     * applet context. Returns {@code null} if the applet context contains
      * no stream for this key.
      * <p>
      * For security reasons, mapping of streams and keys exists for each

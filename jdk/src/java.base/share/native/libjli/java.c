@@ -1963,6 +1963,7 @@ DumpState()
 {
     if (!JLI_IsTraceLauncher()) return ;
     printf("Launcher state:\n");
+    printf("\tFirst application arg index: %d\n", JLI_GetAppArgIndex());
     printf("\tdebug:%s\n", (JLI_IsTraceLauncher() == JNI_TRUE) ? "on" : "off");
     printf("\tjavargs:%s\n", (_is_java_args == JNI_TRUE) ? "on" : "off");
     printf("\tprogram name:%s\n", GetProgramName());

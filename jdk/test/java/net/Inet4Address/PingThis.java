@@ -26,7 +26,7 @@
  */
 
 /* @test
- * @bug 7163874
+ * @bug 7163874 8133015
  * @summary InetAddress.isReachable is returning false
  *          for InetAdress 0.0.0.0 and ::0
  * @run main PingThis

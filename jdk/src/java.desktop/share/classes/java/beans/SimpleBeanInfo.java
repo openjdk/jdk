@@ -27,8 +27,7 @@ package java.beans;
 
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.awt.image.ImageProducer;
-import java.net.URL;
+import java.io.InputStream;
 
 /**
  * This is a support class to make it easier for people to provide
@@ -122,14 +121,8 @@ public class SimpleBeanInfo implements BeanInfo {
      * @return  an image object.  May be null if the load failed.
      */
     public Image loadImage(final String resourceName) {
-        try {
-            final URL url = getClass().getResource(resourceName);
-            if (url != null) {
-                final ImageProducer ip = (ImageProducer) url.getContent();
-                if (ip != null) {
-                    return Toolkit.getDefaultToolkit().createImage(ip);
-                }
-            }
+        try (InputStream in = getClass().getResourceAsStream(resourceName)) {
+            return Toolkit.getDefaultToolkit().createImage(in.readAllBytes());
         } catch (final Exception ignored) {
         }
         return null;
