@@ -41,7 +41,7 @@
 
 
 BitMap::BitMap(bm_word_t* map, idx_t size_in_bits) :
-  _map(map), _size(size_in_bits)
+  _map(map), _size(size_in_bits), _map_allocator(false)
 {
   assert(sizeof(bm_word_t) == BytesPerWord, "Implementation assumption.");
   assert(size_in_bits >= 0, "just checking");
@@ -49,7 +49,7 @@ BitMap::BitMap(bm_word_t* map, idx_t size_in_bits) :
 
 
 BitMap::BitMap(idx_t size_in_bits, bool in_resource_area) :
-  _map(NULL), _size(0)
+  _map(NULL), _size(0), _map_allocator(false)
 {
   assert(sizeof(bm_word_t) == BytesPerWord, "Implementation assumption.");
   resize(size_in_bits, in_resource_area);
@@ -65,8 +65,10 @@ void BitMap::resize(idx_t size_in_bits, bool in_resource_area) {
   if (in_resource_area) {
     _map = NEW_RESOURCE_ARRAY(bm_word_t, new_size_in_words);
   } else {
-    if (old_map != NULL) FREE_C_HEAP_ARRAY(bm_word_t, _map, mtInternal);
-    _map = NEW_C_HEAP_ARRAY(bm_word_t, new_size_in_words, mtInternal);
+    if (old_map != NULL) {
+      _map_allocator.free();
+    }
+    _map = _map_allocator.allocate(new_size_in_words);
   }
   Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) _map,
                        MIN2(old_size_in_words, new_size_in_words));

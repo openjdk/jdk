@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ enum SH_process_strong_roots_tasks {
   SH_PS_SystemDictionary_oops_do,
   SH_PS_ClassLoaderDataGraph_oops_do,
   SH_PS_jvmti_oops_do,
-  SH_PS_StringTable_oops_do,
   SH_PS_CodeCache_oops_do,
   // Leave this one last.
   SH_PS_NumElements
@@ -127,6 +126,8 @@ SharedHeap::StrongRootsScope::StrongRootsScope(SharedHeap* outer, bool activate)
 {
   if (_active) {
     outer->change_strong_roots_parity();
+    // Zero the claimed high water mark in the StringTable
+    StringTable::clear_parallel_claimed_index();
   }
 }
 
@@ -154,14 +155,16 @@ void SharedHeap::process_strong_roots(bool activate_scope,
   // Global (strong) JNI handles
   if (!_process_strong_tasks->is_task_claimed(SH_PS_JNIHandles_oops_do))
     JNIHandles::oops_do(roots);
+
   // All threads execute this; the individual threads are task groups.
   CLDToOopClosure roots_from_clds(roots);
   CLDToOopClosure* roots_from_clds_p = (is_scavenging ? NULL : &roots_from_clds);
-  if (ParallelGCThreads > 0) {
-    Threads::possibly_parallel_oops_do(roots, roots_from_clds_p ,code_roots);
+  if (CollectedHeap::use_parallel_gc_threads()) {
+    Threads::possibly_parallel_oops_do(roots, roots_from_clds_p, code_roots);
   } else {
     Threads::oops_do(roots, roots_from_clds_p, code_roots);
   }
+
   if (!_process_strong_tasks-> is_task_claimed(SH_PS_ObjectSynchronizer_oops_do))
     ObjectSynchronizer::oops_do(roots);
   if (!_process_strong_tasks->is_task_claimed(SH_PS_FlatProfiler_oops_do))
@@ -189,8 +192,12 @@ void SharedHeap::process_strong_roots(bool activate_scope,
     }
   }
 
-  if (!_process_strong_tasks->is_task_claimed(SH_PS_StringTable_oops_do)) {
-    if (so & SO_Strings) {
+  // All threads execute the following. A specific chunk of buckets
+  // from the StringTable are the individual tasks.
+  if (so & SO_Strings) {
+    if (CollectedHeap::use_parallel_gc_threads()) {
+      StringTable::possibly_parallel_oops_do(roots);
+    } else {
       StringTable::oops_do(roots);
     }
   }

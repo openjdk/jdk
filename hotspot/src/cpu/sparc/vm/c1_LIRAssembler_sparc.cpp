@@ -597,13 +597,6 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
 
   __ sra(Rdividend, 31, Rscratch);
   __ wry(Rscratch);
-  if (!VM_Version::v9_instructions_work()) {
-    // v9 doesn't require these nops
-    __ nop();
-    __ nop();
-    __ nop();
-    __ nop();
-  }
 
   add_debug_info_for_div0_here(op->info());
 
@@ -652,10 +645,6 @@ void LIR_Assembler::emit_opBranch(LIR_OpBranch* op) {
       case lir_cond_lessEqual:     acond = (is_unordered ? Assembler::f_unorderedOrLessOrEqual   : Assembler::f_lessOrEqual);    break;
       case lir_cond_greaterEqual:  acond = (is_unordered ? Assembler::f_unorderedOrGreaterOrEqual: Assembler::f_greaterOrEqual); break;
       default :                         ShouldNotReachHere();
-    };
-
-    if (!VM_Version::v9_instructions_work()) {
-      __ nop();
     }
     __ fb( acond, false, Assembler::pn, *(op->label()));
   } else {
@@ -725,9 +714,6 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       Label L;
       // result must be 0 if value is NaN; test by comparing value to itself
       __ fcmp(FloatRegisterImpl::S, Assembler::fcc0, rsrc, rsrc);
-      if (!VM_Version::v9_instructions_work()) {
-        __ nop();
-      }
       __ fb(Assembler::f_unordered, true, Assembler::pn, L);
       __ delayed()->st(G0, addr); // annuled if contents of rsrc is not NaN
       __ ftoi(FloatRegisterImpl::S, rsrc, rsrc);
@@ -1909,7 +1895,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add:  __ add  (lreg, rreg, res); break;
         case lir_sub:  __ sub  (lreg, rreg, res); break;
-        case lir_mul:  __ mult (lreg, rreg, res); break;
+        case lir_mul:  __ mulx (lreg, rreg, res); break;
         default: ShouldNotReachHere();
       }
     }
@@ -1924,7 +1910,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add:  __ add  (lreg, simm13, res); break;
         case lir_sub:  __ sub  (lreg, simm13, res); break;
-        case lir_mul:  __ mult (lreg, simm13, res); break;
+        case lir_mul:  __ mulx (lreg, simm13, res); break;
         default: ShouldNotReachHere();
       }
     } else {
@@ -1936,7 +1922,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       switch (code) {
         case lir_add:  __ add  (lreg, (int)con, res); break;
         case lir_sub:  __ sub  (lreg, (int)con, res); break;
-        case lir_mul:  __ mult (lreg, (int)con, res); break;
+        case lir_mul:  __ mulx (lreg, (int)con, res); break;
         default: ShouldNotReachHere();
       }
     }
@@ -3234,48 +3220,26 @@ void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, 
     Register base = mem_addr->base()->as_register();
     if (src->is_register() && dest->is_address()) {
       // G4 is high half, G5 is low half
-      if (VM_Version::v9_instructions_work()) {
-        // clear the top bits of G5, and scale up G4
-        __ srl (src->as_register_lo(),  0, G5);
-        __ sllx(src->as_register_hi(), 32, G4);
-        // combine the two halves into the 64 bits of G4
-        __ or3(G4, G5, G4);
-        null_check_offset = __ offset();
-        if (idx == noreg) {
-          __ stx(G4, base, disp);
-        } else {
-          __ stx(G4, base, idx);
-        }
+      // clear the top bits of G5, and scale up G4
+      __ srl (src->as_register_lo(),  0, G5);
+      __ sllx(src->as_register_hi(), 32, G4);
+      // combine the two halves into the 64 bits of G4
+      __ or3(G4, G5, G4);
+      null_check_offset = __ offset();
+      if (idx == noreg) {
+        __ stx(G4, base, disp);
       } else {
-        __ mov (src->as_register_hi(), G4);
-        __ mov (src->as_register_lo(), G5);
-        null_check_offset = __ offset();
-        if (idx == noreg) {
-          __ std(G4, base, disp);
-        } else {
-          __ std(G4, base, idx);
-        }
+        __ stx(G4, base, idx);
       }
     } else if (src->is_address() && dest->is_register()) {
       null_check_offset = __ offset();
-      if (VM_Version::v9_instructions_work()) {
-        if (idx == noreg) {
-          __ ldx(base, disp, G5);
-        } else {
-          __ ldx(base, idx, G5);
-        }
-        __ srax(G5, 32, dest->as_register_hi()); // fetch the high half into hi
-        __ mov (G5, dest->as_register_lo());     // copy low half into lo
+      if (idx == noreg) {
+        __ ldx(base, disp, G5);
       } else {
-        if (idx == noreg) {
-          __ ldd(base, disp, G4);
-        } else {
-          __ ldd(base, idx, G4);
-        }
-        // G4 is high half, G5 is low half
-        __ mov (G4, dest->as_register_hi());
-        __ mov (G5, dest->as_register_lo());
+        __ ldx(base, idx, G5);
       }
+      __ srax(G5, 32, dest->as_register_hi()); // fetch the high half into hi
+      __ mov (G5, dest->as_register_lo());     // copy low half into lo
     } else {
       Unimplemented();
     }
