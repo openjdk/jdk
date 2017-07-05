@@ -59,8 +59,14 @@ public class ClassDump extends Tool {
             SystemDictionary dict = VM.getVM().getSystemDictionary();
             dict.classesDo(new SystemDictionary.ClassVisitor() {
                     public void visit(Klass k) {
-                        if (k instanceof InstanceKlass)
-                            dumpKlass((InstanceKlass) k);
+                        if (k instanceof InstanceKlass) {
+                            try {
+                                dumpKlass((InstanceKlass) k);
+                            } catch (Exception e) {
+                                System.out.println(k.getName().asString());
+                                e.printStackTrace();
+                            }
+                        }
                     }
                 });
         }

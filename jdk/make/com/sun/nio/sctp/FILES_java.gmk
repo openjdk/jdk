@@ -1,0 +1,67 @@
+#
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+FILES_java = \
+        com/sun/nio/sctp/AbstractNotificationHandler.java \
+	com/sun/nio/sctp/Association.java \
+	com/sun/nio/sctp/AssociationChangeNotification.java \
+	com/sun/nio/sctp/HandlerResult.java \
+	com/sun/nio/sctp/IllegalReceiveException.java \
+	com/sun/nio/sctp/IllegalUnbindException.java \
+	com/sun/nio/sctp/InvalidStreamException.java \
+	com/sun/nio/sctp/MessageInfo.java \
+	com/sun/nio/sctp/Notification.java \
+	com/sun/nio/sctp/NotificationHandler.java \
+	com/sun/nio/sctp/PeerAddressChangeNotification.java \
+	com/sun/nio/sctp/SctpChannel.java \
+	com/sun/nio/sctp/SctpMultiChannel.java \
+	com/sun/nio/sctp/SctpServerChannel.java \
+	com/sun/nio/sctp/SctpSocketOption.java \
+	com/sun/nio/sctp/SctpStandardSocketOption.java \
+	com/sun/nio/sctp/SendFailedNotification.java \
+	com/sun/nio/sctp/ShutdownNotification.java \
+	\
+	sun/nio/ch/SctpMessageInfoImpl.java \
+	sun/nio/ch/SctpStdSocketOption.java
+
+ifneq ($(PLATFORM), windows)
+FILES_java += \
+	sun/nio/ch/SctpAssocChange.java \
+	sun/nio/ch/SctpAssociationImpl.java \
+	sun/nio/ch/SctpChannelImpl.java \
+	sun/nio/ch/SctpMultiChannelImpl.java \
+	sun/nio/ch/SctpNet.java \
+	sun/nio/ch/SctpNotification.java \
+	sun/nio/ch/SctpPeerAddrChange.java \
+	sun/nio/ch/SctpResultContainer.java \
+	sun/nio/ch/SctpSendFailed.java \
+	sun/nio/ch/SctpServerChannelImpl.java \
+	sun/nio/ch/SctpShutdown.java \
+	sun/nio/ch/SctpSocketDispatcher.java
+else
+FILES_java += \
+	sun/nio/ch/SctpChannelImpl.java \
+	sun/nio/ch/SctpMultiChannelImpl.java \
+	sun/nio/ch/SctpServerChannelImpl.java
+endif
