@@ -2619,10 +2619,6 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         physicalFonts.remove(oldFont.fullName);
         fullNameToFont.remove(oldFont.fullName.toLowerCase(Locale.ENGLISH));
         FontFamily.remove(oldFont);
-        if (oldFont instanceof FileFont) {
-            ((FileFont)oldFont).deregisterFontAndClearStrikeCache();
-        }
-
         if (localeFullNamesToFont != null) {
             Map.Entry[] mapEntries =
                 (Map.Entry[])localeFullNamesToFont.entrySet().

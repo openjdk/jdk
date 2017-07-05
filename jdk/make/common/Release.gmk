@@ -234,7 +234,7 @@ images:: sanity-images post-sanity-images  \
 	 $(INITIAL_IMAGE_JRE) $(INITIAL_IMAGE_JDK) \
 	 trim-image-jre trim-image-jdk \
          identify-image-jre identify-image-jdk \
-	 process-image-jre process-image-jdk sec-files sec-files-win jgss-files 
+	 process-image-jre process-image-jdk sec-files sec-files-win jgss-files
 
 # Don't use these
 image-jre:: initial-image-jre trim-image-jre identify-image-jre process-image-jre
@@ -496,7 +496,7 @@ $(JDK_IMAGE_DIR)/demo/DEMOS_LICENSE: $(SHARE_JDK_DOC_SRC)/DEMOS_LICENSE
 $(JDK_IMAGE_DIR)/sample/SAMPLES_LICENSE: $(SHARE_JDK_DOC_SRC)/SAMPLES_LICENSE
 	$(process-doc-file)
 
-# JRE files 
+# JRE files
 $(JRE_IMAGE_DIR)/%: $(SHARE_JRE_DOC_SRC)/%
 	$(process-doc-file)
 ifeq ($(PLATFORM), windows)
@@ -1095,8 +1095,12 @@ initial-image-jdk:: initial-image-jdk-setup \
 	@#
 	@# demo, include
 	@#
+ifndef NO_DEMOS
 	$(CP) -r -f $(DEMODIR) $(JDK_IMAGE_DIR)
+endif
+ifndef NO_SAMPLES
 	$(CP) -r -f $(SAMPLEDIR) $(JDK_IMAGE_DIR)
+endif
 	$(CP) -r $(INCLUDEDIR) $(JDK_IMAGE_DIR)
 	@#
 	@# Swing BeanInfo generation
@@ -1359,4 +1363,3 @@ images images-clobber::
 
 # Force rule
 FRC:
-
