@@ -32,12 +32,19 @@
 #ifndef __SINGLEPOSITIONINGSUBTABLES_H
 #define __SINGLEPOSITIONINGSUBTABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LEFontInstance.h"
 #include "OpenTypeTables.h"
 #include "GlyphPositioningTables.h"
 #include "ValueRecords.h"
 #include "GlyphIterator.h"
+
+U_NAMESPACE_BEGIN
 
 struct SinglePositioningSubtable : GlyphPositioningSubtable
 {
@@ -61,4 +68,7 @@ struct SinglePositioningFormat2Subtable : SinglePositioningSubtable
     le_uint32  process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
 };
 
+U_NAMESPACE_END
 #endif
+
+

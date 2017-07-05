@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.krb5.internal;
 import sun.security.util.*;
 import sun.security.krb5.Asn1Exception;
 import java.io.IOException;
+import sun.security.krb5.internal.util.KerberosString;
 
 /**
  * Implements the ASN.1 ETYPE-INFO-ENTRY type.
@@ -54,11 +55,9 @@ public class ETypeInfo2 {
     private ETypeInfo2() {
     }
 
-    public ETypeInfo2(int etype, byte[] salt, byte[] s2kparams) {
+    public ETypeInfo2(int etype, String salt, byte[] s2kparams) {
         this.etype = etype;
-        if (salt != null) {
-            this.saltStr = new String(salt);
-        }
+        this.saltStr = salt;
         if (s2kparams != null) {
             this.s2kparams = s2kparams.clone();
         }
@@ -102,7 +101,8 @@ public class ETypeInfo2 {
         if (encoding.getData().available() > 0) {
             if ((encoding.getData().peekByte() & 0x1F) == 0x01) {
                 der = encoding.getData().getDerValue();
-                this.saltStr = der.getData().getGeneralString();
+                this.saltStr = new KerberosString(
+                        der.getData().getDerValue()).toString();
             }
         }
 
@@ -136,7 +136,7 @@ public class ETypeInfo2 {
 
         if (saltStr != null) {
             temp = new DerOutputStream();
-            temp.putGeneralString(saltStr);
+            temp.putDerValue(new KerberosString(saltStr).toDerValue());
             bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true,
                                         TAG_VALUE1), temp);
         }
@@ -157,8 +157,8 @@ public class ETypeInfo2 {
         return etype;
     }
 
-    public byte[] getSalt() {
-        return ((saltStr == null) ? null : saltStr.getBytes());
+    public String getSalt() {
+        return saltStr;
     }
 
     public byte[] getParams() {

@@ -23,9 +23,7 @@
  *
  */
 
-
 /*
- *
  * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
  *
  */
@@ -41,6 +39,8 @@
 #include "GlyphSubstitutionTables.h"
 #include "GlyphDefinitionTables.h"
 #include "GlyphPositioningTables.h"
+
+U_NAMESPACE_BEGIN
 
 /**
  * OpenTypeLayoutEngine implements complex text layout for OpenType fonts - that is
@@ -87,7 +87,7 @@ public:
      * @internal
      */
     OpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
-                         le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable);
+                            le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable);
 
     /**
      * This constructor is used when the font requires a "canned" GSUB table which can't be known
@@ -95,11 +95,12 @@ public:
      *
      * @param fontInstance - the font
      * @param scriptCode - the script
-     * @param languageCode - the language
+     * @param langaugeCode - the language
      *
      * @internal
      */
-    OpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, le_int32 typoFlags);
+    OpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
+                         le_int32 typoFlags);
 
     /**
      * The destructor, virtual for correct polymorphic invocation.
@@ -131,6 +132,20 @@ public:
      * @internal
      */
     static LETag getLangSysTag(le_int32 languageCode);
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for the actual class.
+     *
+     * @stable ICU 2.8
+     */
+    virtual UClassID getDynamicClassID() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for this class.
+     *
+     * @stable ICU 2.8
+     */
+    static UClassID getStaticClassID();
 
 private:
 
@@ -254,9 +269,8 @@ protected:
      *
      * @internal
      */
-    virtual le_int32 characterProcessing(const LEUnicode /*chars*/[], le_int32 offset,
-        le_int32 count, le_int32 max, le_bool /*rightToLeft*/,
-        LEUnicode *&/*outChars*/, LEGlyphStorage &glyphStorage, LEErrorCode &success);
+    virtual le_int32 characterProcessing(const LEUnicode /*chars*/[], le_int32 offset, le_int32 count, le_int32 max, le_bool /*rightToLeft*/,
+            LEUnicode *&/*outChars*/, LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
     /**
      * This method does character to glyph mapping, and applies the GSUB table. The
@@ -287,9 +301,8 @@ protected:
      *
      * @internal
      */
-    virtual le_int32 glyphProcessing(const LEUnicode chars[], le_int32 offset,
-        le_int32 count, le_int32 max, le_bool rightToLeft,
-        LEGlyphStorage &glyphStorage, LEErrorCode &success);
+    virtual le_int32 glyphProcessing(const LEUnicode chars[], le_int32 offset, le_int32 count, le_int32 max, le_bool rightToLeft,
+            LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
     /**
      * This method does any processing necessary to convert "fake"
@@ -316,8 +329,7 @@ protected:
      *
      * @internal
      */
-    virtual le_int32 glyphPostProcessing(LEGlyphStorage &tempGlyphStorage,
-        LEGlyphStorage &glyphStorage, LEErrorCode &success);
+    virtual le_int32 glyphPostProcessing(LEGlyphStorage &tempGlyphStorage, LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
     /**
      * This method applies the characterProcessing, glyphProcessing and glyphPostProcessing
@@ -341,8 +353,7 @@ protected:
      *
      * @internal
      */
-    virtual le_int32 computeGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count,
-        le_int32 max, le_bool rightToLeft, LEGlyphStorage &glyphStorage, LEErrorCode &success);
+    virtual le_int32 computeGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count, le_int32 max, le_bool rightToLeft, LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
     /**
      * This method uses the GPOS table, if there is one, to adjust the glyph positions.
@@ -359,8 +370,7 @@ protected:
      *
      * @internal
      */
-    virtual void adjustGlyphPositions(const LEUnicode chars[], le_int32 offset, le_int32 count,
-        le_bool reverse, LEGlyphStorage &glyphStorage, LEErrorCode &success);
+    virtual void adjustGlyphPositions(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool reverse, LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
     /**
      * This method frees the feature tag array so that the
@@ -372,4 +382,6 @@ protected:
     virtual void reset();
 };
 
+U_NAMESPACE_END
 #endif
+

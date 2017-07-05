@@ -2171,7 +2171,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // subtype which we can't check or src is the same array as dst
     // but not necessarily exactly of type default_type.
     Label known_ok, halt;
-    jobject2reg(op->expected_type()->encoding(), tmp);
+    jobject2reg(op->expected_type()->constant_encoding(), tmp);
     __ ld_ptr(dst, oopDesc::klass_offset_in_bytes(), tmp2);
     if (basic_type != T_OBJECT) {
       __ cmp(tmp, tmp2);
@@ -2429,7 +2429,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       assert(data->is_BitData(), "need BitData for checkcast");
       Register mdo      = k_RInfo;
       Register data_val = Rtmp1;
-      jobject2reg(md->encoding(), mdo);
+      jobject2reg(md->constant_encoding(), mdo);
 
       int mdo_offset_bias = 0;
       if (!Assembler::is_simm13(md->byte_offset_of_slot(data, DataLayout::header_offset()) + data->size_in_bytes())) {
@@ -2452,7 +2452,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     // patching may screw with our temporaries on sparc,
     // so let's do it before loading the class
     if (k->is_loaded()) {
-      jobject2reg(k->encoding(), k_RInfo);
+      jobject2reg(k->constant_encoding(), k_RInfo);
     } else {
       jobject2reg_with_patching(k_RInfo, op->info_for_patch());
     }
@@ -2513,7 +2513,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     // patching may screw with our temporaries on sparc,
     // so let's do it before loading the class
     if (k->is_loaded()) {
-      jobject2reg(k->encoding(), k_RInfo);
+      jobject2reg(k->constant_encoding(), k_RInfo);
     } else {
       jobject2reg_with_patching(k_RInfo, op->info_for_patch());
     }
@@ -2717,7 +2717,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   assert(op->tmp1()->is_single_cpu(), "tmp1 must be allocated");
   Register mdo  = op->mdo()->as_register();
   Register tmp1 = op->tmp1()->as_register();
-  jobject2reg(md->encoding(), mdo);
+  jobject2reg(md->constant_encoding(), mdo);
   int mdo_offset_bias = 0;
   if (!Assembler::is_simm13(md->byte_offset_of_slot(data, CounterData::count_offset()) +
                             data->size_in_bytes())) {
@@ -2774,7 +2774,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         if (receiver == NULL) {
           Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)) -
                             mdo_offset_bias);
-          jobject2reg(known_klass->encoding(), tmp1);
+          jobject2reg(known_klass->constant_encoding(), tmp1);
           __ st_ptr(tmp1, recv_addr);
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) -
                             mdo_offset_bias);

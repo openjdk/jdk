@@ -2206,6 +2206,20 @@ public:
   void movl2ptr(Register dst, Address src) { LP64_ONLY(movslq(dst, src)) NOT_LP64(movl(dst, src)); }
   void movl2ptr(Register dst, Register src) { LP64_ONLY(movslq(dst, src)) NOT_LP64(if (dst != src) movl(dst, src)); }
 
+  // IndexOf strings.
+  void string_indexof(Register str1, Register str2,
+                      Register cnt1, Register cnt2, Register result,
+                      XMMRegister vec, Register tmp);
+
+  // Compare strings.
+  void string_compare(Register str1, Register str2,
+                      Register cnt1, Register cnt2, Register result,
+                      XMMRegister vec1, XMMRegister vec2);
+
+  // Compare char[] arrays.
+  void char_arrays_equals(bool is_array_equ, Register ary1, Register ary2,
+                          Register limit, Register result, Register chr,
+                          XMMRegister vec1, XMMRegister vec2);
 
 #undef VIRTUAL
 

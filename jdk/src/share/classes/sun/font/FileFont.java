@@ -158,7 +158,8 @@ public abstract class FileFont extends PhysicalFont {
      * rare maybe it is not worth doing this last part.
      */
     synchronized void deregisterFontAndClearStrikeCache() {
-        FontManager.deRegisterBadFont(this);
+        SunFontManager fm = SunFontManager.getInstance();
+        fm.deRegisterBadFont(this);
 
         for (Reference strikeRef : strikeCache.values()) {
             if (strikeRef != null) {
@@ -172,14 +173,14 @@ public abstract class FileFont extends PhysicalFont {
             }
         }
         scaler.dispose();
-        scaler = FontManager.getNullScaler();
+        scaler = FontScaler.getNullScaler();
     }
 
     StrikeMetrics getFontMetrics(long pScalerContext) {
         try {
             return getScaler().getFontMetrics(pScalerContext);
         } catch (FontScalerException fe) {
-            scaler = FontManager.getNullScaler();
+            scaler = FontScaler.getNullScaler();
             return getFontMetrics(pScalerContext);
         }
     }
@@ -188,7 +189,7 @@ public abstract class FileFont extends PhysicalFont {
         try {
             return getScaler().getGlyphAdvance(pScalerContext, glyphCode);
         } catch (FontScalerException fe) {
-            scaler = FontManager.getNullScaler();
+            scaler = FontScaler.getNullScaler();
             return getGlyphAdvance(pScalerContext, glyphCode);
         }
     }
@@ -197,7 +198,7 @@ public abstract class FileFont extends PhysicalFont {
         try {
             getScaler().getGlyphMetrics(pScalerContext, glyphCode, metrics);
         } catch (FontScalerException fe) {
-            scaler = FontManager.getNullScaler();
+            scaler = FontScaler.getNullScaler();
             getGlyphMetrics(pScalerContext, glyphCode, metrics);
         }
     }
@@ -206,7 +207,7 @@ public abstract class FileFont extends PhysicalFont {
         try {
             return getScaler().getGlyphImage(pScalerContext, glyphCode);
         } catch (FontScalerException fe) {
-            scaler = FontManager.getNullScaler();
+            scaler = FontScaler.getNullScaler();
             return getGlyphImage(pScalerContext, glyphCode);
         }
     }
@@ -215,7 +216,7 @@ public abstract class FileFont extends PhysicalFont {
         try {
             return getScaler().getGlyphOutlineBounds(pScalerContext, glyphCode);
         } catch (FontScalerException fe) {
-            scaler = FontManager.getNullScaler();
+            scaler = FontScaler.getNullScaler();
             return getGlyphOutlineBounds(pScalerContext, glyphCode);
         }
     }
@@ -224,7 +225,7 @@ public abstract class FileFont extends PhysicalFont {
         try {
             return getScaler().getGlyphOutline(pScalerContext, glyphCode, x, y);
         } catch (FontScalerException fe) {
-            scaler = FontManager.getNullScaler();
+            scaler = FontScaler.getNullScaler();
             return getGlyphOutline(pScalerContext, glyphCode, x, y);
         }
     }
@@ -233,7 +234,7 @@ public abstract class FileFont extends PhysicalFont {
         try {
             return getScaler().getGlyphVectorOutline(pScalerContext, glyphs, numGlyphs, x, y);
         } catch (FontScalerException fe) {
-            scaler = FontManager.getNullScaler();
+            scaler = FontScaler.getNullScaler();
             return getGlyphVectorOutline(pScalerContext, glyphs, numGlyphs, x, y);
         }
     }
@@ -275,7 +276,8 @@ public abstract class FileFont extends PhysicalFont {
                                    */
                                   fontFile.delete();
                                   /* remove from delete on exit hook list : */
-                                  FontManager.tmpFontFiles.remove(fontFile);
+                                  // FIXME: still need to be refactored
+                                  SunFontManager.getInstance().tmpFontFiles.remove(fontFile);
                               } catch (Exception e) {
                               }
                           }

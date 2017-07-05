@@ -25,6 +25,7 @@
 
 /*
  *
+ *
  * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
  *
  */
@@ -32,9 +33,18 @@
 #ifndef __LOOKUPPROCESSOR_H
 #define __LOOKUPPROCESSOR_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LEFontInstance.h"
 #include "OpenTypeTables.h"
+//#include "Lookups.h"
+//#include "Features.h"
+
+U_NAMESPACE_BEGIN
 
 class  LEFontInstance;
 class  LEGlyphStorage;
@@ -46,13 +56,10 @@ struct GlyphDefinitionTableHeader;
 struct LookupSubtable;
 struct LookupTable;
 
-class LookupProcessor
-{
+class LookupProcessor : public UMemory {
 public:
-    le_int32 process(LEGlyphStorage &glyphStorage,
-        GlyphPositionAdjustments *glyphPositionAdjustments,
-        le_bool rightToLeft, const GlyphDefinitionTableHeader *glyphDefinitionTableHeader,
-        const LEFontInstance *fontInstance) const;
+    le_int32 process(LEGlyphStorage &glyphStorage, GlyphPositionAdjustments *glyphPositionAdjustments,
+                 le_bool rightToLeft, const GlyphDefinitionTableHeader *glyphDefinitionTableHeader, const LEFontInstance *fontInstance) const;
 
     le_uint32 applyLookupTable(const LookupTable *lookupTable, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
 
@@ -64,19 +71,18 @@ public:
     virtual ~LookupProcessor();
 
 protected:
-    LookupProcessor(const char *baseAddress,
+     LookupProcessor(const char *baseAddress,
         Offset scriptListOffset, Offset featureListOffset, Offset lookupListOffset,
-        LETag scriptTag, LETag languageTag, const FeatureMap *featureMap,
-        le_int32 featureMapCount, le_bool orderFeatures);
+        LETag scriptTag, LETag languageTag, const FeatureMap *featureMap, le_int32 featureMapCount, le_bool orderFeatures);
 
-    LookupProcessor();
+   LookupProcessor();
 
     le_int32 selectLookups(const FeatureTable *featureTable, FeatureMask featureMask, le_int32 order);
 
     const LookupListTable   *lookupListTable;
     const FeatureListTable  *featureListTable;
 
-    FeatureMask             *lookupSelectArray;
+    FeatureMask            *lookupSelectArray;
 
     le_uint16               *lookupOrderArray;
     le_uint32               lookupOrderCount;
@@ -87,4 +93,5 @@ private:
     LookupProcessor &operator=(const LookupProcessor &other); // forbid copying of this class
 };
 
+U_NAMESPACE_END
 #endif

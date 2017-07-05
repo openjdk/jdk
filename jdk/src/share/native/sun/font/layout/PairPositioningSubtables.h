@@ -32,12 +32,19 @@
 #ifndef __PAIRPOSITIONINGSUBTABLES_H
 #define __PAIRPOSITIONINGSUBTABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LEFontInstance.h"
 #include "OpenTypeTables.h"
 #include "GlyphPositioningTables.h"
 #include "ValueRecords.h"
 #include "GlyphIterator.h"
+
+U_NAMESPACE_BEGIN
 
 // NOTE: ValueRecord has a variable size
 struct PairValueRecord
@@ -96,4 +103,7 @@ struct PairPositioningFormat2Subtable : PairPositioningSubtable
     le_uint32  process(GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
 };
 
+U_NAMESPACE_END
 #endif
+
+

@@ -86,7 +86,7 @@ ValueType* ValueType::join(ValueType* y) const {
 
 jobject ObjectType::encoding() const {
   assert(is_constant(), "must be");
-  return constant_value()->encoding();
+  return constant_value()->constant_encoding();
 }
 
 bool ObjectType::is_loaded() const {

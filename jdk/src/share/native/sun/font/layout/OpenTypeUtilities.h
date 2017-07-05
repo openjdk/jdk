@@ -32,10 +32,17 @@
 #ifndef __OPENTYPEUTILITIES_H
 #define __OPENTYPEUTILITIES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
 
-class OpenTypeUtilities {
+U_NAMESPACE_BEGIN
+
+class OpenTypeUtilities /* not : public UObject because all methods are static */ {
 public:
     static le_int8 highBit(le_int32 value);
     static Offset getTagOffset(LETag tag, const TagAndOffsetRecord *records, le_int32 recordCount);
@@ -48,4 +55,5 @@ private:
     OpenTypeUtilities() {} // private - forbid instantiation
 };
 
+U_NAMESPACE_END
 #endif

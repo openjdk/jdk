@@ -26,7 +26,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2004 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
  *
  */
 
@@ -35,11 +35,12 @@
 
 #include "LETypes.h"
 
-#if !defined(U_IS_BIG_ENDIAN)
-    #ifdef _LITTLE_ENDIAN
-        #define U_IS_BIG_ENDIAN 0
-    #endif
-#endif
+/**
+ * \file
+ * \brief C++ API: Endian independent access to data for LayoutEngine
+ */
+
+U_NAMESPACE_BEGIN
 
 /**
  * A convenience macro which invokes the swapWord member function
@@ -47,7 +48,6 @@
  *
  * @stable ICU 2.8
  */
-
 #if defined(U_IS_BIG_ENDIAN)
     #if U_IS_BIG_ENDIAN
         #define SWAPW(value) (value)
@@ -64,7 +64,6 @@
  *
  * @stable ICU 2.8
  */
-
 #if defined(U_IS_BIG_ENDIAN)
     #if U_IS_BIG_ENDIAN
         #define SWAPL(value) (value)
@@ -86,8 +85,7 @@
  *
  * @stable ICU 2.8
  */
-class LESwaps
-{
+class U_LAYOUT_API LESwaps /* not : public UObject because all methods are static */ {
 public:
 
 #if !defined(U_IS_BIG_ENDIAN)
@@ -144,4 +142,5 @@ private:
     LESwaps() {} // private - forbid instantiation
 };
 
+U_NAMESPACE_END
 #endif

@@ -31,11 +31,6 @@
 
 package sun.security.krb5;
 
-import sun.security.krb5.Config;
-import sun.security.krb5.PrincipalName;
-import sun.security.krb5.KrbException;
-import sun.security.krb5.Asn1Exception;
-import sun.security.krb5.RealmException;
 import sun.security.krb5.internal.Krb5;
 import sun.security.util.*;
 import java.io.IOException;
@@ -43,6 +38,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.Stack;
 import java.util.EmptyStackException;
+import sun.security.krb5.internal.util.KerberosString;
 
 /**
  * Implements the ASN.1 Realm type.
@@ -109,7 +105,7 @@ public class Realm implements Cloneable {
         if (encoding == null) {
             throw new IllegalArgumentException("encoding can not be null");
         }
-        realm = encoding.getGeneralString();
+        realm = new KerberosString(encoding).toString();
         if (realm == null || realm.length() == 0)
             throw new RealmException(Krb5.REALM_NULL);
         if (!isValidRealmString(realm))
@@ -206,7 +202,7 @@ public class Realm implements Cloneable {
      */
     public byte[] asn1Encode() throws Asn1Exception, IOException {
         DerOutputStream out = new DerOutputStream();
-        out.putGeneralString(this.realm);
+        out.putDerValue(new KerberosString(this.realm).toDerValue());
         return out.toByteArray();
     }
 

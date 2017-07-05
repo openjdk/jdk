@@ -121,9 +121,11 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 
   SharedHeap* sh = SharedHeap::heap();
 
-  sh->process_strong_roots(true,  // Collecting permanent generation.
+  sh->process_strong_roots(true,  // activeate StrongRootsScope
+                           true,  // Collecting permanent generation.
                            SharedHeap::SO_SystemClasses,
                            &GenMarkSweep::follow_root_closure,
+                           &GenMarkSweep::follow_code_root_closure,
                            &GenMarkSweep::follow_root_closure);
 
   // Process reference objects found during marking
@@ -286,9 +288,11 @@ void G1MarkSweep::mark_sweep_phase3() {
 
   SharedHeap* sh = SharedHeap::heap();
 
-  sh->process_strong_roots(true,  // Collecting permanent generation.
+  sh->process_strong_roots(true,  // activate StrongRootsScope
+                           true,  // Collecting permanent generation.
                            SharedHeap::SO_AllClasses,
                            &GenMarkSweep::adjust_root_pointer_closure,
+                           NULL,  // do not touch code cache here
                            &GenMarkSweep::adjust_pointer_closure);
 
   g1h->ref_processor()->weak_oops_do(&GenMarkSweep::adjust_root_pointer_closure);

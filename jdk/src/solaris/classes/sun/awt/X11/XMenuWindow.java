@@ -32,7 +32,7 @@ import java.awt.image.BufferedImage;
 import java.awt.geom.Point2D;
 
 import java.util.Vector;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 public class XMenuWindow extends XBaseMenuWindow {
 
@@ -42,7 +42,7 @@ public class XMenuWindow extends XBaseMenuWindow {
      *
      ************************************************/
 
-    private static Logger log = Logger.getLogger("sun.awt.X11.XMenuWindow");
+    private static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XMenuWindow");
 
     /*
      * Primary members
@@ -399,7 +399,7 @@ public class XMenuWindow extends XBaseMenuWindow {
         if (!isCreated()) {
             return;
         }
-        if (log.isLoggable(Level.FINER)) {
+        if (log.isLoggable(PlatformLogger.FINER)) {
             log.finer("showing menu window + " + getWindow() + " at " + bounds);
         }
         XToolkit.awtLock();

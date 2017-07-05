@@ -25,6 +25,7 @@
 
 /*
  *
+ *
  * (C) Copyright IBM Corp. 2004-2005 - All Rights Reserved
  *
  */
@@ -37,9 +38,12 @@
 #endif
 
 #include "LETypes.h"
+//#include "LEFontInstance.h"
+//#include "LEGlyphStorage.h"
 
 #include <stdio.h>
 
+U_NAMESPACE_BEGIN
 struct PairInfo;
 class  LEFontInstance;
 class  LEGlyphStorage;
@@ -66,5 +70,7 @@ class U_LAYOUT_API KernTable
    */
   void process(LEGlyphStorage& storage);
 };
+
+U_NAMESPACE_END
 
 #endif

@@ -24,7 +24,6 @@
  */
 
 /*
- *
  *******************************************************************************
  *
  *   Copyright (C) 1999-2005, International Business Machines
@@ -41,6 +40,10 @@
 #include "LEScripts.h"
 #include "LEFontInstance.h"
 #include "LEGlyphStorage.h"
+
+U_NAMESPACE_BEGIN
+
+UOBJECT_DEFINE_RTTI_IMPLEMENTATION(LEFontInstance)
 
 const LEFontInstance *LEFontInstance::getSubFont(const LEUnicode chars[], le_int32 *offset, le_int32 limit,
                                                        le_int32 script, LEErrorCode &success) const
@@ -59,7 +62,7 @@ const LEFontInstance *LEFontInstance::getSubFont(const LEUnicode chars[], le_int
 }
 
 void LEFontInstance::mapCharsToGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count,
-    le_bool reverse, const LECharMapper *mapper, LEGlyphStorage &glyphStorage) const
+                                      le_bool reverse, const LECharMapper *mapper, LEGlyphStorage &glyphStorage) const
 {
     le_int32 i, out = 0, dir = 1;
 
@@ -100,3 +103,5 @@ LEGlyphID LEFontInstance::mapCharToGlyph(LEUnicode32 ch, const LECharMapper *map
 
     return mapCharToGlyph(mappedChar);
 }
+U_NAMESPACE_END
+

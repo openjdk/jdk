@@ -71,41 +71,14 @@ JNIEXPORT jlong JNICALL Java_sun_font_NullFontScaler_getGlyphImage
 
 void initLCDGammaTables();
 
-/*
- * Class:     sun_font_FontManager
- * Method:    getPlatformFontVar
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL
-Java_sun_font_FontManager_getPlatformFontVar(JNIEnv *env, jclass cl) {
-    char *c = getenv("JAVA2D_USEPLATFORMFONT");
-    if (c) {
-        return JNI_TRUE;
-    } else {
-        return JNI_FALSE;
-    }
-}
-
 /* placeholder for extern variable */
 FontManagerNativeIDs sunFontIDs;
 
 JNIEXPORT void JNICALL
-Java_sun_font_FontManager_initIDs
+Java_sun_font_SunFontManager_initIDs
     (JNIEnv *env, jclass cls) {
 
-     jclass tmpClass = (*env)->FindClass(env, "java/awt/Font");
-
-     sunFontIDs.getFont2DMID =
-         (*env)->GetMethodID(env, tmpClass, "getFont2D",
-                             "()Lsun/font/Font2D;");
-     sunFontIDs.font2DHandle =
-       (*env)->GetFieldID(env, tmpClass,
-                          "font2DHandle", "Lsun/font/Font2DHandle;");
-
-     sunFontIDs.createdFont =
-       (*env)->GetFieldID(env, tmpClass, "createdFont", "Z");
-
-     tmpClass = (*env)->FindClass(env, "sun/font/TrueTypeFont");
+     jclass tmpClass = (*env)->FindClass(env, "sun/font/TrueTypeFont");
      sunFontIDs.ttReadBlockMID =
          (*env)->GetMethodID(env, tmpClass, "readBlock",
                              "(Ljava/nio/ByteBuffer;II)I");
@@ -205,40 +178,6 @@ Java_sun_font_FontManager_initIDs
 
 JNIEXPORT FontManagerNativeIDs getSunFontIDs() {
     return sunFontIDs;
-}
-
-JNIEXPORT jobject JNICALL
-Java_sun_font_FontManager_getFont2D(
-  JNIEnv *env,
-  jclass clsFM,
-  jobject javaFont) {
-
-    return (*env)->CallObjectMethod(env, javaFont, sunFontIDs.getFont2DMID);
-}
-
-JNIEXPORT void JNICALL
-Java_sun_font_FontManager_setFont2D(
-  JNIEnv *env,
-  jclass clsFM,
-  jobject javaFont,
-  jobject fontHandle) {
-    (*env)->SetObjectField(env, javaFont, sunFontIDs.font2DHandle, fontHandle);
-}
-
-JNIEXPORT void JNICALL
-Java_sun_font_FontManager_setCreatedFont(
-  JNIEnv *env,
-  jclass clsFM,
-  jobject javaFont) {
-    (*env)->SetBooleanField(env, javaFont, sunFontIDs.createdFont, JNI_TRUE);
-}
-
-JNIEXPORT jboolean JNICALL
-Java_sun_font_FontManager_isCreatedFont(
-  JNIEnv *env,
-  jclass clsFM,
-  jobject javaFont) {
-    return (*env)->GetBooleanField(env, javaFont, sunFontIDs.createdFont);
 }
 
 /*

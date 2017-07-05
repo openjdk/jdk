@@ -24,7 +24,6 @@
  */
 
 /*
- *
  * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
  *
  */
@@ -38,6 +37,8 @@
 #include "LookupProcessor.h"
 #include "CoverageTables.h"
 #include "LESwaps.h"
+
+U_NAMESPACE_BEGIN
 
 /*
     NOTE: This could be optimized somewhat by keeping track
@@ -350,7 +351,7 @@ le_uint32 ChainingContextualSubstitutionSubtable::process(const LookupProcessor 
 
 // NOTE: This could be a #define, but that seems to confuse
 // the Visual Studio .NET 2003 compiler on the calls to the
-// GlyphIterator constructor.  It somehow can't decide if
+// GlyphIterator constructor. It somehow can't decide if
 // emptyFeatureList matches an le_uint32 or an le_uint16...
 static const FeatureMask emptyFeatureList = 0x00000000UL;
 
@@ -542,3 +543,5 @@ le_uint32 ChainingContextualSubstitutionFormat3Subtable::process(const LookupPro
 
     return 0;
 }
+
+U_NAMESPACE_END

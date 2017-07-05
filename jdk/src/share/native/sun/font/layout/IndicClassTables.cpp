@@ -35,6 +35,8 @@
 #include "OpenTypeUtilities.h"
 #include "IndicReordering.h"
 
+U_NAMESPACE_BEGIN
+
 // Split matra table indices
 #define _x1  (1 << CF_INDEX_SHIFT)
 #define _x2  (2 << CF_INDEX_SHIFT)
@@ -279,7 +281,7 @@ static const IndicClassTable kndaClassTable = {0x0C80, 0x0CEF, 4, KNDA_SCRIPT_FL
 
 static const IndicClassTable mlymClassTable = {0x0D00, 0x0D6F, 3, MLYM_SCRIPT_FLAGS, mlymCharClasses, mlymSplitTable};
 
-static const IndicClassTable sinhClassTable = {0x0D80, 0x0DF4, 3, SINH_SCRIPT_FLAGS, sinhCharClasses, sinhSplitTable};
+static const IndicClassTable sinhClassTable = {0x0D80, 0x0DF4, 4, SINH_SCRIPT_FLAGS, sinhCharClasses, sinhSplitTable};
 
 //
 // IndicClassTable addresses
@@ -385,3 +387,5 @@ le_int32 IndicReordering::getWorstCaseExpansion(le_int32 scriptCode)
 
     return classTable->getWorstCaseExpansion();
 }
+
+U_NAMESPACE_END

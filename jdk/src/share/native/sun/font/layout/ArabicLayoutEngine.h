@@ -43,6 +43,8 @@
 #include "GlyphDefinitionTables.h"
 #include "GlyphPositioningTables.h"
 
+U_NAMESPACE_BEGIN
+
 /**
  * This class implements OpenType layout for Arabic fonts. It overrides
  * the characerProcessing method to assign the correct OpenType feature
@@ -71,8 +73,8 @@ public:
      *
      * @internal
      */
-    ArabicOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode,
-        le_int32 languageCode, le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable);
+    ArabicOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
+                            le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable);
 
     /**
      * This constructor is used when the font requires a "canned" GSUB table which can't be known
@@ -87,8 +89,8 @@ public:
      *
      * @internal
      */
-    ArabicOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode,
-        le_int32 languageCode, le_int32 typoFlags);
+    ArabicOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
+                               le_int32 typoFlags);
 
     /**
      * The destructor, virtual for correct polymorphic invocation.
@@ -96,6 +98,20 @@ public:
      * @internal
      */
     virtual ~ArabicOpenTypeLayoutEngine();
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for the actual class.
+     *
+     * @stable ICU 2.8
+     */
+    virtual UClassID getDynamicClassID() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for this class.
+     *
+     * @stable ICU 2.8
+     */
+    static UClassID getStaticClassID();
 
 protected:
 
@@ -108,8 +124,7 @@ protected:
      * @param offset - the index of the first character to process
      * @param count - the number of characters to process
      * @param max - the number of characters in the input context
-     * @param rightToLeft - <code>TRUE</code> if the characters are in a
-     *     right to left directional run
+     * @param rightToLeft - <code>TRUE</code> if the characters are in a right to left directional run
      *
      * Output parameters:
      * @param outChars - the output character arrayt
@@ -121,9 +136,8 @@ protected:
      *
      * @internal
      */
-    virtual le_int32 characterProcessing(const LEUnicode chars[], le_int32 offset,
-        le_int32 count, le_int32 max, le_bool rightToLeft,
-        LEUnicode *&outChars, LEGlyphStorage &glyphStorage, LEErrorCode &success);
+    virtual le_int32 characterProcessing(const LEUnicode chars[], le_int32 offset, le_int32 count, le_int32 max, le_bool rightToLeft,
+            LEUnicode *&outChars, LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
     /**
      * This method applies the GPOS table if it is present, otherwise it ensures that all vowel
@@ -142,11 +156,9 @@ protected:
      *
      * @internal
      */
-    virtual void adjustGlyphPositions(const LEUnicode chars[], le_int32 offset,
-        le_int32 count, le_bool reverse, LEGlyphStorage &glyphStorage, LEErrorCode &success);
+    virtual void adjustGlyphPositions(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool reverse, LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
-    // static void adjustMarkGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count,
-    // le_bool rightToLeft, LEGlyphStorage &glyphStorage, LEErrorCode &success);
+    // static void adjustMarkGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool rightToLeft, LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
 };
 
@@ -178,8 +190,8 @@ public:
      *
      * @internal
      */
-    UnicodeArabicOpenTypeLayoutEngine(const LEFontInstance *fontInstance,
-        le_int32 scriptCode, le_int32 languageCode, le_int32 typoFlags);
+    UnicodeArabicOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
+                le_int32 typoFlags);
 
     /**
      * The destructor, virtual for correct polymorphic invocation.
@@ -208,8 +220,7 @@ protected:
      *
      * @internal
      */
-    virtual le_int32 glyphPostProcessing(LEGlyphStorage &tempGlyphStorage,
-        LEGlyphStorage &glyphStorage, LEErrorCode &success);
+    virtual le_int32 glyphPostProcessing(LEGlyphStorage &tempGlyphStorage, LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
     /**
      * This method copies the input characters into the output glyph index array,
@@ -227,8 +238,7 @@ protected:
      *
      * @internal
      */
-    virtual void mapCharsToGlyphs(const LEUnicode chars[], le_int32 offset,
-        le_int32 count, le_bool reverse, le_bool mirror,
+    virtual void mapCharsToGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool reverse, le_bool mirror,
         LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
     /**
@@ -245,8 +255,9 @@ protected:
      *
      * @internal
      */
-    virtual void adjustGlyphPositions(const LEUnicode chars[], le_int32 offset,
-        le_int32 count, le_bool reverse, LEGlyphStorage &glyphStorage, LEErrorCode &success);
+    virtual void adjustGlyphPositions(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool reverse, LEGlyphStorage &glyphStorage, LEErrorCode &success);
 };
 
+U_NAMESPACE_END
 #endif
+
