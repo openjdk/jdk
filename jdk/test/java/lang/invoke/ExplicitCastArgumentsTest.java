@@ -32,21 +32,36 @@ import sun.invoke.util.Wrapper;
  */
 public class ExplicitCastArgumentsTest {
     private static final boolean VERBOSE = Boolean.getBoolean("verbose");
+    private static final Class<?> THIS_CLASS = ExplicitCastArgumentsTest.class;
 
     public static void main(String[] args) throws Throwable {
+        testVarargsCollector();
+        testRef2Prim();
+        System.out.println("TEST PASSED");
+    }
+
+    public static String[] f(String... args) { return args; }
+
+    public static void testVarargsCollector() throws Throwable {
+        MethodType mt = MethodType.methodType(String[].class, String[].class);
+        MethodHandle mh = MethodHandles.publicLookup().findStatic(THIS_CLASS, "f", mt);
+        mh = MethodHandles.explicitCastArguments(mh, MethodType.methodType(Object.class, Object.class));
+        mh.invokeWithArguments((Object)(new String[] {"str1", "str2"}));
+    }
+
+    public static void testRef2Prim() throws Throwable {
         for (Wrapper from : Wrapper.values()) {
             for (Wrapper to : Wrapper.values()) {
                 if (from == Wrapper.VOID || to == Wrapper.VOID) continue;
-                testRef2Prim (from, to);
+                testRef2Prim(from, to);
             }
         }
-        System.out.println("TEST PASSED");
     }
 
     public static void testRef2Prim(Wrapper from, Wrapper to) throws Throwable {
         // MHs.eCA javadoc:
         //    If T0 is a reference and T1 a primitive, and if the reference is null at runtime, a zero value is introduced.
-        test(from.wrapperType(), to.primitiveType(),        null, false);
+        test(from.wrapperType(), to.primitiveType(), null, false);
     }
 
     public static void test(Class<?> from, Class<?> to, Object param, boolean failureExpected) throws Throwable {

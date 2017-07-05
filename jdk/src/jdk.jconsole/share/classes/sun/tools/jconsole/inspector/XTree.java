@@ -507,13 +507,13 @@ public class XTree extends JTree {
         // key order defined by the "orderedKeyPropertyList"
         for (String key : orderedKeyPropertyList) {
             if (map.containsKey(key)) {
-                sb.append(key + "=" + map.get(key) + ",");
+                sb.append(key).append('=').append(map.get(key)).append(',');
                 map.remove(key);
             }
         }
         // Add the remaining key/value pairs to the buffer
         for (Map.Entry<String, String> entry : map.entrySet()) {
-            sb.append(entry.getKey() + "=" + entry.getValue() + ",");
+            sb.append(entry.getKey()).append('=').append(entry.getValue()).append(',');
         }
         String orderedKeyPropertyListString = sb.toString();
         orderedKeyPropertyListString = orderedKeyPropertyListString.substring(
@@ -622,7 +622,7 @@ public class XTree extends JTree {
                     //
                     StringBuilder sb = new StringBuilder();
                     for (MBeanParameterInfo mbpi : mboi.getSignature()) {
-                        sb.append(mbpi.getType() + ",");
+                        sb.append(mbpi.getType()).append(',');
                     }
                     String signature = sb.toString();
                     if (signature.length() > 0) {

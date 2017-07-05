@@ -26,7 +26,7 @@
  * @key gc
  * @summary Tests that all SoftReferences has been cleared at time of OOM.
  * @library /testlibrary
- * @build TestSoftReference
+ * @build TestSoftReferencesBehaviorOnOOME
  * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 512 2k
  * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 128k 256k
  * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 2k 32k 10

@@ -31,9 +31,8 @@
 class ArgumentsExt: AllStatic {
 public:
   static inline void select_gc_ergonomically();
-  static inline bool check_gc_consistency_user();
+  static inline void set_gc_specific_flags();
   static inline bool check_gc_consistency_ergo();
-  static inline bool check_vm_args_consistency();
   // The argument processing extension. Returns true if there is
   // no additional parsing needed in Arguments::parse() for the option.
   // Otherwise returns false.
@@ -44,16 +43,12 @@ void ArgumentsExt::select_gc_ergonomically() {
   Arguments::select_gc_ergonomically();
 }
 
-bool ArgumentsExt::check_gc_consistency_user() {
-  return Arguments::check_gc_consistency_user();
+void ArgumentsExt::set_gc_specific_flags() {
+  Arguments::set_gc_specific_flags();
 }
 
 bool ArgumentsExt::check_gc_consistency_ergo() {
   return Arguments::check_gc_consistency_ergo();
-}
-
-bool ArgumentsExt::check_vm_args_consistency() {
-  return Arguments::check_vm_args_consistency();
 }
 
 #endif // SHARE_VM_RUNTIME_ARGUMENTS_EXT_HPP

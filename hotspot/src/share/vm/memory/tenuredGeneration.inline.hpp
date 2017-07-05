@@ -26,48 +26,48 @@
 #define SHARE_VM_MEMORY_GENERATION_INLINE_HPP
 
 #include "memory/genCollectedHeap.hpp"
-#include "memory/generation.hpp"
 #include "memory/space.hpp"
+#include "memory/tenuredGeneration.hpp"
 
-bool OneContigSpaceCardGeneration::is_in(const void* p) const {
+bool TenuredGeneration::is_in(const void* p) const {
   return the_space()->is_in(p);
 }
 
 
-WaterMark OneContigSpaceCardGeneration::top_mark() {
+WaterMark TenuredGeneration::top_mark() {
   return the_space()->top_mark();
 }
 
 CompactibleSpace*
-OneContigSpaceCardGeneration::first_compaction_space() const {
+TenuredGeneration::first_compaction_space() const {
   return the_space();
 }
 
-HeapWord* OneContigSpaceCardGeneration::allocate(size_t word_size,
+HeapWord* TenuredGeneration::allocate(size_t word_size,
                                                  bool is_tlab) {
-  assert(!is_tlab, "OneContigSpaceCardGeneration does not support TLAB allocation");
+  assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
   return the_space()->allocate(word_size);
 }
 
-HeapWord* OneContigSpaceCardGeneration::par_allocate(size_t word_size,
+HeapWord* TenuredGeneration::par_allocate(size_t word_size,
                                                      bool is_tlab) {
-  assert(!is_tlab, "OneContigSpaceCardGeneration does not support TLAB allocation");
+  assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
   return the_space()->par_allocate(word_size);
 }
 
-WaterMark OneContigSpaceCardGeneration::bottom_mark() {
+WaterMark TenuredGeneration::bottom_mark() {
   return the_space()->bottom_mark();
 }
 
-size_t OneContigSpaceCardGeneration::block_size(const HeapWord* addr) const {
+size_t TenuredGeneration::block_size(const HeapWord* addr) const {
   if (addr < the_space()->top()) return oop(addr)->size();
   else {
     assert(addr == the_space()->top(), "non-block head arg to block_size");
-    return the_space()->_end - the_space()->top();
+    return the_space()->end() - the_space()->top();
   }
 }
 
-bool OneContigSpaceCardGeneration::block_is_obj(const HeapWord* addr) const {
+bool TenuredGeneration::block_is_obj(const HeapWord* addr) const {
   return addr < the_space()->top();
 }
 

@@ -1425,6 +1425,18 @@ void G1CollectorPolicy::print_yg_surv_rate_info() const {
 #endif // PRODUCT
 }
 
+bool G1CollectorPolicy::is_young_list_full() {
+  uint young_list_length = _g1->young_list()->length();
+  uint young_list_target_length = _young_list_target_length;
+  return young_list_length >= young_list_target_length;
+}
+
+bool G1CollectorPolicy::can_expand_young_list() {
+  uint young_list_length = _g1->young_list()->length();
+  uint young_list_max_length = _young_list_max_length;
+  return young_list_length < young_list_max_length;
+}
+
 uint G1CollectorPolicy::max_regions(int purpose) {
   switch (purpose) {
     case GCAllocForSurvived:

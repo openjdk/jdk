@@ -106,13 +106,13 @@ SurvRateGroup::stop_adding_regions() {
     _stats_arrays_length = _region_num;
 
     if (old_surv_rate != NULL) {
-      FREE_C_HEAP_ARRAY(double, old_surv_rate, mtGC);
+      FREE_C_HEAP_ARRAY(double, old_surv_rate);
     }
     if (old_accum_surv_rate_pred != NULL) {
-      FREE_C_HEAP_ARRAY(double, old_accum_surv_rate_pred, mtGC);
+      FREE_C_HEAP_ARRAY(double, old_accum_surv_rate_pred);
     }
     if (old_surv_rate_pred != NULL) {
-      FREE_C_HEAP_ARRAY(TruncatedSeq*, old_surv_rate_pred, mtGC);
+      FREE_C_HEAP_ARRAY(TruncatedSeq*, old_surv_rate_pred);
     }
   }
 
