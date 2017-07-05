@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/compiledIC.hpp"
+#include "code/compiledMethod.inline.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/codeCache.hpp"
 #include "prims/methodHandles.hpp"
@@ -57,15 +58,6 @@ bool CompiledMethod::is_method_handle_return(address return_pc) {
   if (pd == NULL)
     return false;
   return pd->is_method_handle_invoke();
-}
-
-// When using JVMCI the address might be off by the size of a call instruction.
-bool CompiledMethod::is_deopt_entry(address pc) {
-  return pc == deopt_handler_begin()
-#if INCLUDE_JVMCI
-    || (is_compiled_by_jvmci() && pc == (deopt_handler_begin() + NativeCall::instruction_size))
-#endif
-    ;
 }
 
 // Returns a string version of the method state.
@@ -313,22 +305,6 @@ void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *
     fr.oops_compiled_arguments_do(signature, has_receiver, has_appendix, reg_map, f);
   }
 #endif // !SHARK
-}
-
-// -----------------------------------------------------------------------------
-// CompiledMethod::get_deopt_original_pc
-//
-// Return the original PC for the given PC if:
-// (a) the given PC belongs to a nmethod and
-// (b) it is a deopt PC
-address CompiledMethod::get_deopt_original_pc(const frame* fr) {
-  if (fr->cb() == NULL)  return NULL;
-
-  CompiledMethod* cm = fr->cb()->as_compiled_method_or_null();
-  if (cm != NULL && cm->is_deopt_pc(fr->pc()))
-    return cm->get_original_pc(fr);
-
-  return NULL;
 }
 
 Method* CompiledMethod::attached_method(address call_instr) {
