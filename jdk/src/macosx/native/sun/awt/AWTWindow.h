@@ -56,6 +56,7 @@
                   contentView:(NSView *)contentView;
 
 - (void) adjustGrowBoxWindow;
+- (BOOL) isTopmostWindowUnderMouse;
 @end
 
 #endif _AWTWINDOW_H

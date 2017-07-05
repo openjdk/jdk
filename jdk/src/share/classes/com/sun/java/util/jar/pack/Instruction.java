@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,7 +451,7 @@ class Instruction  {
 
     public static byte getCPRefOpTag(int bc) {
         if (bc < BC_INDEX[0].length && BC_INDEX[0][bc] > 0)  return BC_TAG[0][bc];
-        if (bc >= _xldc_op && bc < _xldc_limit)  return CONSTANT_Literal;
+        if (bc >= _xldc_op && bc < _xldc_limit)  return CONSTANT_LoadableValue;
         return CONSTANT_None;
     }
 
@@ -500,7 +500,7 @@ class Instruction  {
         def("bkf", _getstatic, _putfield);              // pack kf (base=Field)
         def("bkm", _invokevirtual, _invokestatic);      // pack kn (base=Method)
         def("bkixx", _invokeinterface);         // pack ki (base=IMethod), omit xx
-        def("", _xxxunusedxxx);
+        def("bkyxx", _invokedynamic);           // pack ky (base=Any), omit xx
         def("bkc", _new);                               // pack kc
         def("bx", _newarray);
         def("bkc", _anewarray);                 // pack kc
@@ -515,7 +515,6 @@ class Instruction  {
             //System.out.println(i+": l="+BC_LENGTH[0][i]+" i="+BC_INDEX[0][i]);
             //assert(BC_LENGTH[0][i] != -1);
             if (BC_LENGTH[0][i] == -1) {
-                assert(i == _xxxunusedxxx);
                 continue;  // unknown opcode
             }
 
@@ -543,7 +542,7 @@ class Instruction  {
   "if_icmpne if_icmplt if_icmpge if_icmpgt if_icmple if_acmpeq if_acmpne "+
   "goto jsr ret tableswitch lookupswitch ireturn lreturn freturn dreturn "+
   "areturn return getstatic putstatic getfield putfield invokevirtual "+
-  "invokespecial invokestatic invokeinterface xxxunusedxxx new newarray "+
+  "invokespecial invokestatic invokeinterface invokedynamic new newarray "+
   "anewarray arraylength athrow checkcast instanceof monitorenter "+
   "monitorexit wide multianewarray ifnull ifnonnull goto_w jsr_w ";
         for (int bc = 0; names.length() > 0; bc++) {
@@ -588,6 +587,8 @@ class Instruction  {
             case _dldc2_w:  iname = "*dldc2_w"; break;
             case _cldc:  iname = "*cldc"; break;
             case _cldc_w:  iname = "*cldc_w"; break;
+            case _qldc:  iname = "*qldc"; break;
+            case _qldc_w:  iname = "*qldc_w"; break;
             case _byte_escape:  iname = "*byte_escape"; break;
             case _ref_escape:  iname = "*ref_escape"; break;
             case _end_marker:  iname = "*end"; break;
@@ -618,15 +619,16 @@ class Instruction  {
             if (index > 0 && index+1 < length) {
                 switch (fmt.charAt(index+1)) {
                     case 'c': tag = CONSTANT_Class; break;
-                    case 'k': tag = CONSTANT_Literal; break;
+                    case 'k': tag = CONSTANT_LoadableValue; break;
                     case 'f': tag = CONSTANT_Fieldref; break;
                     case 'm': tag = CONSTANT_Methodref; break;
                     case 'i': tag = CONSTANT_InterfaceMethodref; break;
+                    case 'y': tag = CONSTANT_InvokeDynamic; break;
                 }
                 assert(tag != CONSTANT_None);
             } else if (index > 0 && length == 2) {
                 assert(from_bc == _ldc);
-                tag = CONSTANT_Literal;  // _ldc opcode only
+                tag = CONSTANT_LoadableValue;  // _ldc opcode only
             }
             for (int bc = from_bc; bc <= to_bc; bc++) {
                 BC_FORMAT[w][bc] = fmt;
@@ -649,7 +651,7 @@ class Instruction  {
         Instruction i = at(code, 0);
         while (i != null) {
             int opcode = i.getBC();
-            if (opcode == _xxxunusedxxx || opcode < _nop || opcode > _jsr_w) {
+            if (opcode < _nop || opcode > _jsr_w) {
                 String message = "illegal opcode: " + opcode + " " + i;
                 throw new FormatException(message);
             }

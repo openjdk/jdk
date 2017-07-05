@@ -35,8 +35,13 @@ import java.lang.reflect.Method;
 class JVM {
 
     static {
-      java.security.AccessController.doPrivileged(
-              new sun.security.action.LoadLibraryAction("jsdt"));
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("jsdt");
+                    return null;
+                }
+            });
     }
 
     static long activate(String moduleName, DTraceProvider[] providers) {

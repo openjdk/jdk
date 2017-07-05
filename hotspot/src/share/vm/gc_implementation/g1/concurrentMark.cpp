@@ -1183,34 +1183,30 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   g1p->record_concurrent_mark_remark_end();
 }
 
-// Used to calculate the # live objects per region
-// for verification purposes
-class CalcLiveObjectsClosure: public HeapRegionClosure {
-
-  CMBitMapRO* _bm;
+// Base class of the closures that finalize and verify the
+// liveness counting data.
+class CMCountDataClosureBase: public HeapRegionClosure {
+protected:
   ConcurrentMark* _cm;
   BitMap* _region_bm;
   BitMap* _card_bm;
 
-  size_t _region_marked_bytes;
+  void set_card_bitmap_range(BitMap::idx_t start_idx, BitMap::idx_t last_idx) {
+    assert(start_idx <= last_idx, "sanity");
 
-  intptr_t _bottom_card_num;
-
-  void mark_card_num_range(intptr_t start_card_num, intptr_t last_card_num) {
-    assert(start_card_num <= last_card_num, "sanity");
-    BitMap::idx_t start_idx = start_card_num - _bottom_card_num;
-    BitMap::idx_t last_idx = last_card_num - _bottom_card_num;
-
-    for (BitMap::idx_t i = start_idx; i <= last_idx; i += 1) {
-      _card_bm->par_at_put(i, 1);
+    // Set the inclusive bit range [start_idx, last_idx].
+    // For small ranges (up to 8 cards) use a simple loop; otherwise
+    // use par_at_put_range.
+    if ((last_idx - start_idx) < 8) {
+      for (BitMap::idx_t i = start_idx; i <= last_idx; i += 1) {
+        _card_bm->par_set_bit(i);
+      }
+    } else {
+      assert(last_idx < _card_bm->size(), "sanity");
+      // Note BitMap::par_at_put_range() is exclusive.
+      _card_bm->par_at_put_range(start_idx, last_idx+1, true);
     }
   }
-
-public:
-  CalcLiveObjectsClosure(CMBitMapRO *bm, ConcurrentMark *cm,
-                         BitMap* region_bm, BitMap* card_bm) :
-    _bm(bm), _cm(cm), _region_bm(region_bm), _card_bm(card_bm),
-    _region_marked_bytes(0), _bottom_card_num(cm->heap_bottom_card_num()) { }
 
   // It takes a region that's not empty (i.e., it has at least one
   // live object in it and sets its corresponding bit on the region
@@ -1233,6 +1229,24 @@ public:
       _region_bm->par_at_put_range(index, end_index, true);
     }
   }
+
+public:
+  CMCountDataClosureBase(ConcurrentMark *cm,
+                         BitMap* region_bm, BitMap* card_bm):
+    _cm(cm), _region_bm(region_bm), _card_bm(card_bm) { }
+};
+
+// Closure that calculates the # live objects per region. Used
+// for verification purposes during the cleanup pause.
+class CalcLiveObjectsClosure: public CMCountDataClosureBase {
+  CMBitMapRO* _bm;
+  size_t _region_marked_bytes;
+
+public:
+  CalcLiveObjectsClosure(CMBitMapRO *bm, ConcurrentMark *cm,
+                         BitMap* region_bm, BitMap* card_bm) :
+    CMCountDataClosureBase(cm, region_bm, card_bm),
+    _bm(bm), _region_marked_bytes(0) { }
 
   bool doHeapRegion(HeapRegion* hr) {
 
@@ -1260,65 +1274,31 @@ public:
 
     size_t marked_bytes = 0;
 
-    // Below, the term "card num" means the result of shifting an address
-    // by the card shift -- address 0 corresponds to card number 0.  One
-    // must subtract the card num of the bottom of the heap to obtain a
-    // card table index.
-
-    // The first card num of the sequence of live cards currently being
-    // constructed.  -1 ==> no sequence.
-    intptr_t start_card_num = -1;
-
-    // The last card num of the sequence of live cards currently being
-    // constructed.  -1 ==> no sequence.
-    intptr_t last_card_num = -1;
-
     while (start < nextTop) {
       oop obj = oop(start);
       int obj_sz = obj->size();
-
-      // The card num of the start of the current object.
-      intptr_t obj_card_num =
-        intptr_t(uintptr_t(start) >> CardTableModRefBS::card_shift);
       HeapWord* obj_last = start + obj_sz - 1;
-      intptr_t obj_last_card_num =
-        intptr_t(uintptr_t(obj_last) >> CardTableModRefBS::card_shift);
 
-      if (obj_card_num != last_card_num) {
-        if (start_card_num == -1) {
-          assert(last_card_num == -1, "Both or neither.");
-          start_card_num = obj_card_num;
-        } else {
-          assert(last_card_num != -1, "Both or neither.");
-          assert(obj_card_num >= last_card_num, "Inv");
-          if ((obj_card_num - last_card_num) > 1) {
-            // Mark the last run, and start a new one.
-            mark_card_num_range(start_card_num, last_card_num);
-            start_card_num = obj_card_num;
-          }
-        }
-      }
-      // In any case, we set the last card num.
-      last_card_num = obj_last_card_num;
+      BitMap::idx_t start_idx = _cm->card_bitmap_index_for(start);
+      BitMap::idx_t last_idx = _cm->card_bitmap_index_for(obj_last);
 
+      // Set the bits in the card BM for this object (inclusive).
+      set_card_bitmap_range(start_idx, last_idx);
+
+      // Add the size of this object to the number of marked bytes.
       marked_bytes += (size_t)obj_sz * HeapWordSize;
 
       // Find the next marked object after this one.
-      start = _bm->getNextMarkedWordAddress(start + 1, nextTop);
-    }
-
-    // Handle the last range, if any.
-    if (start_card_num != -1) {
-      mark_card_num_range(start_card_num, last_card_num);
+      start = _bm->getNextMarkedWordAddress(obj_last + 1, nextTop);
     }
 
     // Mark the allocated-since-marking portion...
     HeapWord* top = hr->top();
     if (nextTop < top) {
-      start_card_num = intptr_t(uintptr_t(nextTop) >> CardTableModRefBS::card_shift);
-      last_card_num = intptr_t(uintptr_t(top) >> CardTableModRefBS::card_shift);
+      BitMap::idx_t start_idx = _cm->card_bitmap_index_for(nextTop);
+      BitMap::idx_t last_idx = _cm->card_bitmap_index_for(top - 1);
 
-      mark_card_num_range(start_card_num, last_card_num);
+      set_card_bitmap_range(start_idx, last_idx);
 
       // This definitely means the region has live objects.
       set_bit_for_region(hr);
@@ -1394,17 +1374,6 @@ public:
     MutexLockerEx x((_verbose ? ParGCRareEvent_lock : NULL),
                     Mutex::_no_safepoint_check_flag);
 
-    // Verify that _top_at_conc_count == ntams
-    if (hr->top_at_conc_mark_count() != hr->next_top_at_mark_start()) {
-      if (_verbose) {
-        gclog_or_tty->print_cr("Region %u: top at conc count incorrect: "
-                               "expected " PTR_FORMAT ", actual: " PTR_FORMAT,
-                               hr->hrs_index(), hr->next_top_at_mark_start(),
-                               hr->top_at_conc_mark_count());
-      }
-      failures += 1;
-    }
-
     // Verify the marked bytes for this region.
     size_t exp_marked_bytes = _calc_cl.region_marked_bytes();
     size_t act_marked_bytes = hr->next_marked_bytes();
@@ -1470,7 +1439,7 @@ public:
     _failures += failures;
 
     // We could stop iteration over the heap when we
-    // find the first voilating region by returning true.
+    // find the first violating region by returning true.
     return false;
   }
 };
@@ -1543,62 +1512,19 @@ public:
   int failures() const { return _failures; }
 };
 
-// Final update of count data (during cleanup).
-// Adds [top_at_count, NTAMS) to the marked bytes for each
-// region. Sets the bits in the card bitmap corresponding
-// to the interval [top_at_count, top], and sets the
-// liveness bit for each region containing live data
-// in the region bitmap.
+// Closure that finalizes the liveness counting data.
+// Used during the cleanup pause.
+// Sets the bits corresponding to the interval [NTAMS, top]
+// (which contains the implicitly live objects) in the
+// card liveness bitmap. Also sets the bit for each region,
+// containing live data, in the region liveness bitmap.
 
-class FinalCountDataUpdateClosure: public HeapRegionClosure {
-  ConcurrentMark* _cm;
-  BitMap* _region_bm;
-  BitMap* _card_bm;
-
-  void set_card_bitmap_range(BitMap::idx_t start_idx, BitMap::idx_t last_idx) {
-    assert(start_idx <= last_idx, "sanity");
-
-    // Set the inclusive bit range [start_idx, last_idx].
-    // For small ranges (up to 8 cards) use a simple loop; otherwise
-    // use par_at_put_range.
-    if ((last_idx - start_idx) <= 8) {
-      for (BitMap::idx_t i = start_idx; i <= last_idx; i += 1) {
-        _card_bm->par_set_bit(i);
-      }
-    } else {
-      assert(last_idx < _card_bm->size(), "sanity");
-      // Note BitMap::par_at_put_range() is exclusive.
-      _card_bm->par_at_put_range(start_idx, last_idx+1, true);
-    }
-  }
-
-  // It takes a region that's not empty (i.e., it has at least one
-  // live object in it and sets its corresponding bit on the region
-  // bitmap to 1. If the region is "starts humongous" it will also set
-  // to 1 the bits on the region bitmap that correspond to its
-  // associated "continues humongous" regions.
-  void set_bit_for_region(HeapRegion* hr) {
-    assert(!hr->continuesHumongous(), "should have filtered those out");
-
-    BitMap::idx_t index = (BitMap::idx_t) hr->hrs_index();
-    if (!hr->startsHumongous()) {
-      // Normal (non-humongous) case: just set the bit.
-      _region_bm->par_set_bit(index);
-    } else {
-      // Starts humongous case: calculate how many regions are part of
-      // this humongous region and then set the bit range.
-      G1CollectedHeap* g1h = G1CollectedHeap::heap();
-      HeapRegion *last_hr = g1h->heap_region_containing_raw(hr->end() - 1);
-      BitMap::idx_t end_index = (BitMap::idx_t) last_hr->hrs_index() + 1;
-      _region_bm->par_at_put_range(index, end_index, true);
-    }
-  }
-
+class FinalCountDataUpdateClosure: public CMCountDataClosureBase {
  public:
   FinalCountDataUpdateClosure(ConcurrentMark* cm,
                               BitMap* region_bm,
                               BitMap* card_bm) :
-    _cm(cm), _region_bm(region_bm), _card_bm(card_bm) { }
+    CMCountDataClosureBase(cm, region_bm, card_bm) { }
 
   bool doHeapRegion(HeapRegion* hr) {
 
@@ -1613,26 +1539,10 @@ class FinalCountDataUpdateClosure: public HeapRegionClosure {
       return false;
     }
 
-    HeapWord* start = hr->top_at_conc_mark_count();
     HeapWord* ntams = hr->next_top_at_mark_start();
     HeapWord* top   = hr->top();
 
-    assert(hr->bottom() <= start && start <= hr->end() &&
-           hr->bottom() <= ntams && ntams <= hr->end(), "Preconditions.");
-
-    if (start < ntams) {
-      // Region was changed between remark and cleanup pauses
-      // We need to add (ntams - start) to the marked bytes
-      // for this region, and set bits for the range
-      // [ card_idx(start), card_idx(ntams) ) in the card bitmap.
-      size_t live_bytes = (ntams - start) * HeapWordSize;
-      hr->add_to_marked_bytes(live_bytes);
-
-      // Record the new top at conc count
-      hr->set_top_at_conc_mark_count(ntams);
-
-      // The setting of the bits in the card bitmap takes place below
-    }
+    assert(hr->bottom() <= ntams && ntams <= hr->end(), "Preconditions.");
 
     // Mark the allocated-since-marking portion...
     if (ntams < top) {
@@ -1640,8 +1550,8 @@ class FinalCountDataUpdateClosure: public HeapRegionClosure {
       set_bit_for_region(hr);
     }
 
-    // Now set the bits for [start, top]
-    BitMap::idx_t start_idx = _cm->card_bitmap_index_for(start);
+    // Now set the bits for [ntams, top]
+    BitMap::idx_t start_idx = _cm->card_bitmap_index_for(ntams);
     BitMap::idx_t last_idx = _cm->card_bitmap_index_for(top);
     set_card_bitmap_range(start_idx, last_idx);
 
@@ -3071,9 +2981,6 @@ class AggregateCountDataHRClosure: public HeapRegionClosure {
 
     // Update the marked bytes for this region.
     hr->add_to_marked_bytes(marked_bytes);
-
-    // Now set the top at count to NTAMS.
-    hr->set_top_at_conc_mark_count(limit);
 
     // Next heap region
     return false;

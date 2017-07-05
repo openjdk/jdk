@@ -37,7 +37,6 @@ import javax.management.RuntimeOperationsException;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import sun.security.action.LoadLibraryAction;
 
 import sun.util.logging.LoggingSupport;
 
@@ -422,7 +421,13 @@ public class ManagementFactoryHelper {
     }
 
     static {
-        AccessController.doPrivileged(new LoadLibraryAction("management"));
+        AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("management");
+                    return null;
+                }
+            });
         jvm = new VMManagementImpl();
     }
 

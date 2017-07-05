@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ package com.sun.java.util.jar.pack;
 import com.sun.java.util.jar.pack.ConstantPool.Entry;
 import com.sun.java.util.jar.pack.ConstantPool.Index;
 import com.sun.java.util.jar.pack.ConstantPool.NumberEntry;
+import com.sun.java.util.jar.pack.ConstantPool.MethodHandleEntry;
+import com.sun.java.util.jar.pack.ConstantPool.BootstrapMethodEntry;
 import com.sun.java.util.jar.pack.Package.Class;
 import com.sun.java.util.jar.pack.Package.InnerClass;
 import java.io.BufferedOutputStream;
@@ -49,6 +51,7 @@ class ClassWriter {
     Class cls;
     DataOutputStream out;
     Index cpIndex;
+    Index bsmIndex;
 
     ClassWriter(Class cls, OutputStream out) throws IOException {
         this.pkg = cls.getPackage();
@@ -57,6 +60,10 @@ class ClassWriter {
         this.out = new DataOutputStream(new BufferedOutputStream(out));
         this.cpIndex = ConstantPool.makeIndex(cls.toString(), cls.getCPMap());
         this.cpIndex.flattenSigs = true;
+        if (cls.hasBootstrapMethods()) {
+            this.bsmIndex = ConstantPool.makeIndex(cpIndex.debugName+".BootstrapMethods",
+                                                   cls.getBootstrapMethodMap());
+        }
         if (verbose > 1)
             Utils.log.fine("local CP="+(verbose > 2 ? cpIndex.dumpString() : cpIndex.toString()));
     }
@@ -71,6 +78,11 @@ class ClassWriter {
 
     /** Write a 2-byte int representing a CP entry, using the local cpIndex. */
     private void writeRef(Entry e) throws IOException {
+        writeRef(e, cpIndex);
+    }
+
+    /** Write a 2-byte int representing a CP entry, using the given cpIndex. */
+    private void writeRef(Entry e, Index cpIndex) throws IOException {
         int i = (e == null) ? 0 : cpIndex.indexOf(e);
         writeShort(i);
     }
@@ -117,8 +129,7 @@ class ClassWriter {
             out.write(tag);
             switch (tag) {
                 case CONSTANT_Signature:
-                    assert(false);  // should not reach here
-                    break;
+                    throw new AssertionError("CP should have Signatures remapped to Utf8");
                 case CONSTANT_Utf8:
                     out.writeUTF(e.stringValue());
                     break;
@@ -138,7 +149,13 @@ class ClassWriter {
                     break;
                 case CONSTANT_Class:
                 case CONSTANT_String:
+                case CONSTANT_MethodType:
                     writeRef(e.getRef(0));
+                    break;
+                case CONSTANT_MethodHandle:
+                    MethodHandleEntry mhe = (MethodHandleEntry) e;
+                    out.writeByte(mhe.refKind);
+                    writeRef(mhe.getRef(0));
                     break;
                 case CONSTANT_Fieldref:
                 case CONSTANT_Methodref:
@@ -147,6 +164,12 @@ class ClassWriter {
                     writeRef(e.getRef(0));
                     writeRef(e.getRef(1));
                     break;
+                case CONSTANT_InvokeDynamic:
+                    writeRef(e.getRef(0), bsmIndex);
+                    writeRef(e.getRef(1));
+                    break;
+                case CONSTANT_BootstrapMethod:
+                    throw new AssertionError("CP should have BootstrapMethods moved to side-table");
                 default:
                     throw new IOException("Bad constant pool tag "+tag);
             }
@@ -198,6 +221,7 @@ class ClassWriter {
             a.finishRefs(cpIndex);
             writeRef(a.getNameRef());
             if (a.layout() == Package.attrCodeEmpty ||
+                a.layout() == Package.attrBootstrapMethodsEmpty ||
                 a.layout() == Package.attrInnerClassesEmpty) {
                 // These are hardwired.
                 DataOutputStream savedOut = out;
@@ -207,9 +231,14 @@ class ClassWriter {
                 if ("Code".equals(a.name())) {
                     Class.Method m = (Class.Method) h;
                     writeCode(m.code);
-                } else {
+                } else if ("BootstrapMethods".equals(a.name())) {
+                    assert(h == cls);
+                    writeBootstrapMethods(cls);
+                } else if ("InnerClasses".equals(a.name())) {
                     assert(h == cls);
                     writeInnerClasses(cls);
+                } else {
+                    throw new AssertionError();
                 }
                 out = savedOut;
                 if (verbose > 2)
@@ -240,6 +269,18 @@ class ClassWriter {
              writeRef(code.handler_class[i]);
         }
         writeAttributes(ATTR_CONTEXT_CODE, code);
+    }
+
+    void writeBootstrapMethods(Class cls) throws IOException {
+        List<BootstrapMethodEntry> bsms = cls.getBootstrapMethods();
+        writeShort(bsms.size());
+        for (BootstrapMethodEntry e : bsms) {
+            writeRef(e.bsmRef);
+            writeShort(e.argRefs.length);
+            for (Entry argRef : e.argRefs) {
+                writeRef(argRef);
+            }
+        }
     }
 
     void writeInnerClasses(Class cls) throws IOException {
