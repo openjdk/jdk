@@ -445,12 +445,12 @@ class Universe: AllStatic {
 
   // Debugging
   static bool verify_in_progress() { return _verify_in_progress; }
-  static void verify(bool silent, VerifyOption option);
-  static void verify(bool silent) {
-    verify(silent, VerifyOption_Default /* option */);
+  static void verify(VerifyOption option, const char* prefix, bool silent = VerifySilently);
+  static void verify(const char* prefix, bool silent = VerifySilently) {
+    verify(VerifyOption_Default, prefix, silent);
   }
-  static void verify() {
-    verify(false /* silent */);
+  static void verify(bool silent = VerifySilently) {
+    verify("", silent);
   }
 
   static int  verify_count()       { return _verify_count; }

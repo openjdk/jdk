@@ -43,10 +43,9 @@ inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader, TRAP
   assert(loader() != NULL,"Must be a class loader");
   // Gets the class loader data out of the java/lang/ClassLoader object, if non-null
   // it's already in the loader_data, so no need to add
-  ClassLoaderData** loader_data_addr = java_lang_ClassLoader::loader_data_addr(loader());
-  ClassLoaderData* loader_data_id = *loader_data_addr;
-  if (loader_data_id) {
-     return loader_data_id;
+  ClassLoaderData* loader_data= java_lang_ClassLoader::loader_data(loader());
+  if (loader_data) {
+     return loader_data;
   }
-  return ClassLoaderDataGraph::add(loader_data_addr, loader, THREAD);
+  return ClassLoaderDataGraph::add(loader, false, THREAD);
 }

@@ -47,28 +47,6 @@ class ReservedSpace VALUE_OBJ_CLASS_SPEC {
                   const size_t noaccess_prefix,
                   bool executable);
 
-  // Release parts of an already-reserved memory region [addr, addr + len) to
-  // get a new region that has "compound alignment."  Return the start of the
-  // resulting region, or NULL on failure.
-  //
-  // The region is logically divided into a prefix and a suffix.  The prefix
-  // starts at the result address, which is aligned to prefix_align.  The suffix
-  // starts at result address + prefix_size, which is aligned to suffix_align.
-  // The total size of the result region is size prefix_size + suffix_size.
-  char* align_reserved_region(char* addr, const size_t len,
-                              const size_t prefix_size,
-                              const size_t prefix_align,
-                              const size_t suffix_size,
-                              const size_t suffix_align);
-
-  // Reserve memory, call align_reserved_region() to alignment it and return the
-  // result.
-  char* reserve_and_align(const size_t reserve_size,
-                          const size_t prefix_size,
-                          const size_t prefix_align,
-                          const size_t suffix_size,
-                          const size_t suffix_align);
-
  protected:
   // Create protection page at the beginning of the space.
   void protect_noaccess_prefix(const size_t size);
@@ -78,9 +56,6 @@ class ReservedSpace VALUE_OBJ_CLASS_SPEC {
   ReservedSpace(size_t size);
   ReservedSpace(size_t size, size_t alignment, bool large,
                 char* requested_address = NULL,
-                const size_t noaccess_prefix = 0);
-  ReservedSpace(const size_t suffix_size, const size_t suffix_align,
-                char* requested_address,
                 const size_t noaccess_prefix = 0);
   ReservedSpace(size_t size, size_t alignment, bool large, bool executable);
 
@@ -128,8 +103,6 @@ public:
   // Constructor
   ReservedHeapSpace(size_t size, size_t forced_base_alignment,
                     bool large, char* requested_address);
-  ReservedHeapSpace(const size_t prefix_size, const size_t prefix_align,
-                    char* requested_address);
 };
 
 // Class encapsulating behavior specific memory space for Code

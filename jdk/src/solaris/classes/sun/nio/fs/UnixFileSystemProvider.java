@@ -394,9 +394,9 @@ public abstract class UnixFileSystemProvider
         if (filter == null)
             throw new NullPointerException();
 
-        // can't return SecureDirectoryStream on kernels that don't support
-        // openat, etc.
-        if (!supportsAtSysCalls() || !supportsNoFollowLinks()) {
+        // can't return SecureDirectoryStream on kernels that don't support openat
+        // or O_NOFOLLOW
+        if (!openatSupported() || O_NOFOLLOW == 0) {
             try {
                 long ptr = opendir(dir);
                 return new UnixDirectoryStream(dir, ptr, filter);

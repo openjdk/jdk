@@ -25,14 +25,15 @@
 
 package jdk.nashorn.internal.ir;
 
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for an empty statement.
- *
  */
-public class EmptyNode extends Node {
+@Immutable
+public final class EmptyNode extends Node {
 
     /**
      * Constructor
@@ -57,7 +58,7 @@ public class EmptyNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterEmptyNode(this) != null) {
+        if (visitor.enterEmptyNode(this)) {
             return visitor.leaveEmptyNode(this);
         }
         return this;

@@ -111,6 +111,9 @@ public class WhiteBox {
   // Intered strings
   public native boolean isInStringTable(String str);
 
+  // Memory
+  public native long reserveMemory(long size);
+
   // force Full GC
   public native void fullGC();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package javax.xml.parsers;
 
 import javax.xml.validation.Schema;
-
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -42,8 +41,6 @@ import org.xml.sax.SAXNotSupportedException;
  *
  */
 public abstract class SAXParserFactory {
-    /** The default property name according to the JAXP spec */
-    private static final String DEFAULT_PROPERTY_NAME = "javax.xml.parsers.SAXParserFactory";
 
     /**
      * <p>Should Parsers be validating?</p>
@@ -87,14 +84,12 @@ public abstract class SAXParserFactory {
      * of any property in jaxp.properties after it has been read for the first time.
      * </li>
      * <li>
-     * Use the Services API (as detailed in the JAR specification), if
-     * available, to determine the classname. The Services API will look
-     * for a classname in the file
-     * <code>META-INF/services/javax.xml.parsers.SAXParserFactory</code>
-     * in jars available to the runtime.
+     * Use the service-provider loading facilities, defined by the
+     * {@link java.util.ServiceLoader} class, to attempt to locate and load an
+     * implementation of the service.
      * </li>
      * <li>
-     * Platform default <code>SAXParserFactory</code> instance.
+     * Otherwise the system-default implementation is returned.
      * </li>
      * </ul>
      *
@@ -109,7 +104,7 @@ public abstract class SAXParserFactory {
      * this method to print a lot of debug messages
      * to <code>System.err</code> about what it is doing and where it is looking at.</p>
      *
-     * <p> If you have problems loading {@link DocumentBuilder}s, try:</p>
+     * <p> If you have problems loading {@link SAXParser}s, try:</p>
      * <pre>
      * java -Djaxp.debug=1 YourProgram ....
      * </pre>
@@ -117,21 +112,17 @@ public abstract class SAXParserFactory {
      *
      * @return A new instance of a SAXParserFactory.
      *
-     * @throws FactoryConfigurationError if the implementation is
-     *   not available or cannot be instantiated.
+     * @throws FactoryConfigurationError in case of {@linkplain
+     * java.util.ServiceConfigurationError service configuration error} or if
+     * the implementation is not available or cannot be instantiated.
      */
 
     public static SAXParserFactory newInstance() {
-        try {
-            return (SAXParserFactory) FactoryFinder.find(
+        return FactoryFinder.find(
                 /* The default property name according to the JAXP spec */
-                "javax.xml.parsers.SAXParserFactory",
+                SAXParserFactory.class,
                 /* The fallback implementation class name */
                 "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl");
-        } catch (FactoryFinder.ConfigurationError e) {
-            throw new FactoryConfigurationError(e.getException(),
-                                                e.getMessage());
-        }
     }
 
     /**
@@ -169,13 +160,9 @@ public abstract class SAXParserFactory {
      * @since 1.6
      */
     public static SAXParserFactory newInstance(String factoryClassName, ClassLoader classLoader){
-        try {
             //do not fallback if given classloader can't find the class, throw exception
-            return (SAXParserFactory) FactoryFinder.newInstance(factoryClassName, classLoader, false);
-        } catch (FactoryFinder.ConfigurationError e) {
-            throw new FactoryConfigurationError(e.getException(),
-                                                e.getMessage());
-        }
+            return FactoryFinder.newInstance(SAXParserFactory.class,
+                    factoryClassName, classLoader, false);
     }
 
     /**
@@ -266,22 +253,22 @@ public abstract class SAXParserFactory {
      * A list of the core features and properties can be found at
      * <a href="http://www.saxproject.org/">http://www.saxproject.org/</a></p>
      *
-         * <p>All implementations are required to support the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} feature.
-         * When the feature is</p>
-         * <ul>
-         *   <li>
-         *     <code>true</code>: the implementation will limit XML processing to conform to implementation limits.
-         *     Examples include enity expansion limits and XML Schema constructs that would consume large amounts of resources.
-         *     If XML processing is limited for security reasons, it will be reported via a call to the registered
-         *     {@link org.xml.sax.ErrorHandler#fatalError(SAXParseException exception)}.
-         *     See {@link SAXParser} <code>parse</code> methods for handler specification.
-         *   </li>
-         *   <li>
-         *     When the feature is <code>false</code>, the implementation will processing XML according to the XML specifications without
-         *     regard to possible implementation limits.
-         *   </li>
-         * </ul>
-         *
+     * <p>All implementations are required to support the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} feature.
+     * When the feature is</p>
+     * <ul>
+     *   <li>
+     *     <code>true</code>: the implementation will limit XML processing to conform to implementation limits.
+     *     Examples include entity expansion limits and XML Schema constructs that would consume large amounts of resources.
+     *     If XML processing is limited for security reasons, it will be reported via a call to the registered
+     *     {@link org.xml.sax.ErrorHandler#fatalError(SAXParseException exception)}.
+     *     See {@link SAXParser} <code>parse</code> methods for handler specification.
+     *   </li>
+     *   <li>
+     *     When the feature is <code>false</code>, the implementation will processing XML according to the XML specifications without
+     *     regard to possible implementation limits.
+     *   </li>
+     * </ul>
+     *
      * @param name The name of the feature to be set.
      * @param value The value of the feature to be set.
      *
@@ -320,17 +307,6 @@ public abstract class SAXParserFactory {
                 SAXNotSupportedException;
 
 
-
-    /* <p>Get current state of canonicalization.</p>
-     *
-     * @return current state canonicalization control
-     */
-    /*
-    public boolean getCanonicalization() {
-        return canonicalState;
-    }
-    */
-
     /**
      * Gets the {@link Schema} object specified through
      * the {@link #setSchema(Schema schema)} method.
@@ -356,17 +332,6 @@ public abstract class SAXParserFactory {
             + "\""
             );
     }
-
-    /** <p>Set canonicalization control to <code>true</code> or
-     * </code>false</code>.</p>
-     *
-     * @param state of canonicalization
-     */
-    /*
-    public void setCanonicalization(boolean state) {
-        canonicalState = state;
-    }
-    */
 
     /**
      * <p>Set the {@link Schema} to be used by parsers created
@@ -400,7 +365,7 @@ public abstract class SAXParserFactory {
      * Such configuration will cause a {@link SAXException}
      * exception when those properties are set on a {@link SAXParser}.</p>
      *
-     * <h4>Note for implmentors</h4>
+     * <h4>Note for implementors</h4>
      * <p>
      * A parser must be able to work with any {@link Schema}
      * implementation. However, parsers and schemas are allowed

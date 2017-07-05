@@ -25,22 +25,18 @@
 
 package jdk.nashorn.internal.ir;
 
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
-
-import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of an indexed access (brackets operator.)
- *
  */
-public class IndexNode extends BaseNode implements TypeOverride<IndexNode> {
-    /** Property ident. */
-    private Node index;
-
-    private boolean hasCallSiteType;
+@Immutable
+public final class IndexNode extends BaseNode {
+    /** Property index. */
+    private final Node index;
 
     /**
      * Constructors
@@ -52,50 +48,27 @@ public class IndexNode extends BaseNode implements TypeOverride<IndexNode> {
      * @param index   index for access
      */
     public IndexNode(final Source source, final long token, final int finish, final Node base, final Node index) {
-        super(source, token, finish, base);
-
+        super(source, token, finish, base, false, false);
         this.index = index;
     }
 
-    /**
-     * Copy constructor
-     *
-     * @param indexNode source node
-     */
-    public IndexNode(final IndexNode indexNode) {
-        this(indexNode, new CopyState());
-    }
-
-    private IndexNode(final IndexNode indexNode, final CopyState cs) {
-        super(indexNode, cs);
-
-        index = cs.existingOrCopy(indexNode.index);
-    }
-
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new IndexNode(this, cs);
-    }
-
-    @Override
-    public boolean equals(final Object other) {
-        if (!super.equals(other)) {
-            return false;
-        }
-        return index.equals(((IndexNode)other).getIndex());
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode() ^ getIndex().hashCode();
+    private IndexNode(final IndexNode indexNode, final Node base, final Node index, final boolean isFunction, final boolean hasCallSiteType) {
+        super(indexNode, base, isFunction, hasCallSiteType);
+        this.index = index;
     }
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterIndexNode(this) != null) {
-            base = base.accept(visitor);
-            index = index.accept(visitor);
-            return visitor.leaveIndexNode(this);
+        if (visitor.enterIndexNode(this)) {
+            final Node      newBase  = base.accept(visitor);
+            final Node      newIndex = index.accept(visitor);
+            final IndexNode newNode;
+            if (newBase != base || newIndex != index) {
+                newNode = new IndexNode(this, newBase, newIndex, isFunction(), hasCallSiteType());
+            } else {
+                newNode = this;
+            }
+            return visitor.leaveIndexNode(newNode);
         }
 
         return this;
@@ -105,7 +78,7 @@ public class IndexNode extends BaseNode implements TypeOverride<IndexNode> {
     public void toString(final StringBuilder sb) {
         final boolean needsParen = tokenType().needsParens(base.tokenType(), true);
 
-        if (hasCallSiteType) {
+        if (hasCallSiteType()) {
             sb.append('{');
             final String desc = getType().getDescriptor();
             sb.append(desc.charAt(desc.length() - 1) == ';' ? "O" : getType().getDescriptor());
@@ -135,27 +108,19 @@ public class IndexNode extends BaseNode implements TypeOverride<IndexNode> {
         return index;
     }
 
-    /**
-     * Reset the index expression for this IndexNode
-     * @param index a new index expression
-     */
-    public void setIndex(final Node index) {
-        this.index = index;
+    @Override
+    public BaseNode setIsFunction() {
+        if (isFunction()) {
+            return this;
+        }
+        return new IndexNode(this, base, index, true, hasCallSiteType());
     }
 
     @Override
     public IndexNode setType(final Type type) {
-        if (DEBUG_FIELDS && !Type.areEquivalent(getSymbol().getSymbolType(), type)) {
-            ObjectClassGenerator.LOG.info(getClass().getName() + " " + this + " => " + type + " instead of " + getType());
-        }
-        hasCallSiteType = true;
-        getSymbol().setTypeOverride(type);
-        return this;
-    }
-
-    @Override
-    public boolean canHaveCallSiteType() {
-        return true; //carried by the symbol and always the same nodetype==symboltype
+        logTypeChange(type);
+        getSymbol().setTypeOverride(type); //always a temp so this is fine.
+        return new IndexNode(this, base, index, isFunction(), true);
     }
 
 }

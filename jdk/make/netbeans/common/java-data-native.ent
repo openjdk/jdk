@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
- Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -34,8 +34,9 @@
 <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/3">
     <compilation-unit>
         <package-root>${root}/src/share/classes</package-root>
-        <package-root>${root}/src/windows/classes</package-root>
+        <package-root>${root}/src/macosx/classes</package-root>
         <package-root>${root}/src/solaris/classes</package-root>
+        <package-root>${root}/src/windows/classes</package-root>
         <classpath mode="boot">${bootstrap.jdk}/jre/lib/rt.jar</classpath>
         <built-to>${root}/build/${platform}-${arch}/classes</built-to>
         <javadoc-built-to>${root}/build/${platform}-${arch}/docs/api</javadoc-built-to>
@@ -44,6 +45,7 @@
     <compilation-unit>
         <package-root>${root}/test</package-root>
         <unit-tests/>
+        <classpath mode="compile">${jtreg.home}/lib/testng.jar</classpath>
         <source-level>1.8</source-level>
     </compilation-unit>
 </java-data>

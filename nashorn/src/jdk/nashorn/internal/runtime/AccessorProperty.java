@@ -54,9 +54,23 @@ import jdk.nashorn.internal.lookup.MethodHandleFactory;
  * @see SpillProperty
  */
 public class AccessorProperty extends Property {
+    private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private static final MethodHandle REPLACE_MAP = findOwnMH("replaceMap", Object.class, Object.class, PropertyMap.class, String.class, Class.class, Class.class);
 
     private static final int NOOF_TYPES = getNumberOfAccessorTypes();
+
+    /**
+     * Properties in different maps for the same structure class will share their field getters and setters. This could
+     * be further extended to other method handles that are looked up in the AccessorProperty constructor, but right now
+     * these are the most frequently retrieved ones, and lookup of method handle natives only registers in the profiler
+     * for them.
+     */
+    private static ClassValue<GettersSetters> GETTERS_SETTERS = new ClassValue<GettersSetters>() {
+        @Override
+        protected GettersSetters computeValue(Class<?> structure) {
+            return new GettersSetters(structure);
+        }
+    };
 
     /** Property getter cache */
     private MethodHandle[] getters = new MethodHandle[NOOF_TYPES];
@@ -152,6 +166,22 @@ public class AccessorProperty extends Property {
         setCurrentType(getterType);
     }
 
+    private static class GettersSetters {
+        final MethodHandle[] getters;
+        final MethodHandle[] setters;
+
+        public GettersSetters(Class<?> structure) {
+            final int fieldCount = ObjectClassGenerator.getFieldCount(structure);
+            getters = new MethodHandle[fieldCount];
+            setters = new MethodHandle[fieldCount];
+            for(int i = 0; i < fieldCount; ++i) {
+                final String fieldName = ObjectClassGenerator.getFieldName(i, Type.OBJECT);
+                getters[i] = MH.getter(lookup, structure, fieldName, Type.OBJECT.getTypeClass());
+                setters[i] = MH.setter(lookup, structure, fieldName, Type.OBJECT.getTypeClass());
+            }
+        }
+    }
+
     /**
      * Constructor for dual field AccessorPropertys.
      *
@@ -171,22 +201,19 @@ public class AccessorProperty extends Property {
         primitiveGetter = null;
         primitiveSetter = null;
 
-        final MethodHandles.Lookup lookup = MethodHandles.lookup();
-
         if (isParameter() && hasArguments()) {
-            final MethodHandle arguments   = MH.getter(MethodHandles.lookup(), structure, "arguments", Object.class);
+            final MethodHandle arguments   = MH.getter(lookup, structure, "arguments", Object.class);
             final MethodHandle argumentsSO = MH.asType(arguments, arguments.type().changeReturnType(ScriptObject.class));
 
             objectGetter = MH.insertArguments(MH.filterArguments(ScriptObject.GET_ARGUMENT.methodHandle(), 0, argumentsSO), 1, slot);
             objectSetter = MH.insertArguments(MH.filterArguments(ScriptObject.SET_ARGUMENT.methodHandle(), 0, argumentsSO), 1, slot);
         } else {
-            final String fieldNameObject    = ObjectClassGenerator.getFieldName(slot, Type.OBJECT);
-            final String fieldNamePrimitive = ObjectClassGenerator.getFieldName(slot, ObjectClassGenerator.PRIMITIVE_TYPE);
-
-            objectGetter = MH.getter(lookup, structure, fieldNameObject, Type.OBJECT.getTypeClass());
-            objectSetter = MH.setter(lookup, structure, fieldNameObject, Type.OBJECT.getTypeClass());
+            final GettersSetters gs = GETTERS_SETTERS.get(structure);
+            objectGetter = gs.getters[slot];
+            objectSetter = gs.setters[slot];
 
             if (!OBJECT_FIELDS_ONLY) {
+                final String fieldNamePrimitive = ObjectClassGenerator.getFieldName(slot, ObjectClassGenerator.PRIMITIVE_TYPE);
                 primitiveGetter = MH.getter(lookup, structure, fieldNamePrimitive, PRIMITIVE_TYPE.getTypeClass());
                 primitiveSetter = MH.setter(lookup, structure, fieldNamePrimitive, PRIMITIVE_TYPE.getTypeClass());
             }
@@ -365,7 +392,7 @@ public class AccessorProperty extends Property {
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.lookup(), AccessorProperty.class, name, MH.type(rtype, types));
+        return MH.findStatic(lookup, AccessorProperty.class, name, MH.type(rtype, types));
     }
 
 }

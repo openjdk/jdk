@@ -567,7 +567,7 @@ bool CardTableExtension::resize_commit_uncommit(int changed_region,
         MemRegion(new_start_aligned, new_end_for_commit);
       if (!os::commit_memory((char*)new_committed.start(),
                              new_committed.byte_size())) {
-        vm_exit_out_of_memory(new_committed.byte_size(),
+        vm_exit_out_of_memory(new_committed.byte_size(), OOM_MMAP_ERROR,
                               "card table expansion");
       }
     }

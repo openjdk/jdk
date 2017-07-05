@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS;
+import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.constructorNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
 import static jdk.nashorn.internal.codegen.types.Type.OBJECT;
@@ -86,7 +87,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
      * @param method the method emitter to use
      */
     protected void loadScope(final MethodEmitter method) {
-        method.loadScope();
+        method.loadCompilerConstant(SCOPE);
     }
 
     /**
@@ -105,7 +106,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator {
             loadScope(method);
 
             if (hasArguments()) {
-                method.loadArguments();
+                method.loadCompilerConstant(ARGUMENTS);
                 method.invoke(constructorNoLookup(getClassName(), PropertyMap.class, ScriptObject.class, ARGUMENTS.type()));
             } else {
                 method.invoke(constructorNoLookup(getClassName(), PropertyMap.class, ScriptObject.class));

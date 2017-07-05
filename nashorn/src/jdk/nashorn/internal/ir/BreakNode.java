@@ -25,37 +25,34 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.codegen.Label;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for {@code break} statements.
  */
-public class BreakNode extends LabeledNode {
+@Immutable
+public final class BreakNode extends Node {
 
-     /**
+    private final IdentNode label;
+
+    /**
      * Constructor
      *
-     * @param source     source code
-     * @param token      token
-     * @param finish     finish
-     * @param labelNode  break label
-     * @param targetNode node to break to
-     * @param tryChain   surrounding try chain
+     * @param source source code
+     * @param token  token
+     * @param finish finish
+     * @param label  label for break or null if none
      */
-    public BreakNode(final Source source, final long token, final int finish, final LabelNode labelNode, final Node targetNode, final TryNode tryChain) {
-        super(source, token, finish, labelNode, targetNode, tryChain);
-        setHasGoto();
-    }
-
-    private BreakNode(final BreakNode breakNode, final CopyState cs) {
-        super(breakNode, cs);
+    public BreakNode(final Source source, final long token, final int finish, final IdentNode label) {
+        super(source, token, finish);
+        this.label = label;
     }
 
     @Override
-    protected Node copy(final CopyState cs) {
-        return new BreakNode(this, cs);
+    public boolean hasGoto() {
+        return true;
     }
 
     /**
@@ -64,7 +61,7 @@ public class BreakNode extends LabeledNode {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterBreakNode(this) != null) {
+        if (visitor.enterBreakNode(this)) {
             return visitor.leaveBreakNode(this);
         }
 
@@ -72,26 +69,20 @@ public class BreakNode extends LabeledNode {
     }
 
     /**
-     * Return the target label of this break node.
-     * @return the target label.
+     * Get the label for this break node
+     * @return label, or null if none
      */
-    public Label getTargetLabel() {
-        if (targetNode instanceof BreakableNode) {
-            return ((BreakableNode)targetNode).getBreakLabel();
-        } else if (targetNode instanceof Block) {
-            return ((Block)targetNode).getBreakLabel();
-        }
-
-        throw new AssertionError("Invalid break target " + targetNode.getClass());
+    public IdentNode getLabel() {
+        return label;
     }
 
     @Override
     public void toString(final StringBuilder sb) {
         sb.append("break");
 
-        if (labelNode != null) {
+        if (label != null) {
             sb.append(' ');
-            labelNode.getLabel().toString(sb);
+            label.toString(sb);
         }
     }
 }
