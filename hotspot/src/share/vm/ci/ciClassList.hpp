@@ -106,6 +106,7 @@ friend class ciSymbol;                 \
 friend class ciArray;                  \
 friend class ciObjArray;               \
 friend class ciMetadata;               \
+friend class ciReplay;                 \
 friend class ciTypeArray;              \
 friend class ciType;                   \
 friend class ciReturnAddress;          \

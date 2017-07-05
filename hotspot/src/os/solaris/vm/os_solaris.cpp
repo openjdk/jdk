@@ -1894,18 +1894,19 @@ static bool file_exists(const char* filename) {
   return os::stat(filename, &statbuf) == 0;
 }
 
-void os::dll_build_name(char* buffer, size_t buflen,
+bool os::dll_build_name(char* buffer, size_t buflen,
                         const char* pname, const char* fname) {
+  bool retval = false;
   const size_t pnamelen = pname ? strlen(pname) : 0;
 
-  // Quietly truncate on buffer overflow.  Should be an error.
+  // Return error on buffer overflow.
   if (pnamelen + strlen(fname) + 10 > (size_t) buflen) {
-    *buffer = '\0';
-    return;
+    return retval;
   }
 
   if (pnamelen == 0) {
     snprintf(buffer, buflen, "lib%s.so", fname);
+    retval = true;
   } else if (strchr(pname, *os::path_separator()) != NULL) {
     int n;
     char** pelements = split_path(pname, &n);
@@ -1916,6 +1917,7 @@ void os::dll_build_name(char* buffer, size_t buflen,
       }
       snprintf(buffer, buflen, "%s/lib%s.so", pelements[i], fname);
       if (file_exists(buffer)) {
+        retval = true;
         break;
       }
     }
@@ -1930,7 +1932,9 @@ void os::dll_build_name(char* buffer, size_t buflen,
     }
   } else {
     snprintf(buffer, buflen, "%s/lib%s.so", pname, fname);
+    retval = true;
   }
+  return retval;
 }
 
 const char* os::get_current_directory(char *buf, int buflen) {

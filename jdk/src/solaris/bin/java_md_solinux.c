@@ -478,9 +478,11 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         JLI_TraceLauncher("mustsetenv: %s\n", mustsetenv ? "TRUE" : "FALSE");
 
         if (mustsetenv == JNI_FALSE) {
+            JLI_MemFree(newargv);
             return;
         }
 #else
+        JLI_MemFree(newargv);
         return;
 #endif /* SETENV_REQUIRED */
       } else {  /* do the same speculatively or exit */

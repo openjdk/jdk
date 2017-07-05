@@ -559,6 +559,16 @@ public class TestHelper {
             return false;
         }
 
+        boolean notContains(String str) {
+             for (String x : testOutput) {
+                if (x.contains(str)) {
+                    appendError("string <" + str + "> found");
+                    return false;
+                }
+            }
+            return true;
+        }
+
         boolean matches(String stringToMatch) {
           for (String x : testOutput) {
                 if (x.matches(stringToMatch)) {

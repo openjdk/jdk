@@ -50,7 +50,7 @@ void decode_pointer_record(MemPointerRecord* rec) {
       tty->print_cr(" (tag)");
     }
   } else {
-    if (rec->is_arena_size_record()) {
+    if (rec->is_arena_memory_record()) {
       tty->print_cr(" (arena size)");
     } else if (rec->is_allocation_record()) {
       tty->print_cr(" (malloc)");
@@ -123,20 +123,31 @@ bool VMMemPointerIterator::insert_record_after(MemPointerRecord* rec) {
 // in different types.
 bool VMMemPointerIterator::add_reserved_region(MemPointerRecord* rec) {
   assert(rec->is_allocation_record(), "Sanity check");
-  VMMemRegion* cur = (VMMemRegion*)current();
+  VMMemRegion* reserved_region = (VMMemRegion*)current();
 
   // we don't have anything yet
-  if (cur == NULL) {
+  if (reserved_region == NULL) {
     return insert_record(rec);
   }
 
-  assert(cur->is_reserved_region(), "Sanity check");
+  assert(reserved_region->is_reserved_region(), "Sanity check");
   // duplicated records
-  if (cur->is_same_region(rec)) {
+  if (reserved_region->is_same_region(rec)) {
     return true;
   }
-  assert(cur->base() > rec->addr(), "Just check: locate()");
-  assert(!cur->overlaps_region(rec), "overlapping reserved regions");
+  // Overlapping stack regions indicate that a JNI thread failed to
+  // detach from the VM before exiting. This leaks the JavaThread object.
+  if (CheckJNICalls)  {
+      guarantee(FLAGS_TO_MEMORY_TYPE(reserved_region->flags()) != mtThreadStack ||
+         !reserved_region->overlaps_region(rec),
+         "Attached JNI thread exited without being detached");
+  }
+  // otherwise, we should not have overlapping reserved regions
+  assert(FLAGS_TO_MEMORY_TYPE(reserved_region->flags()) == mtThreadStack ||
+    reserved_region->base() > rec->addr(), "Just check: locate()");
+  assert(FLAGS_TO_MEMORY_TYPE(reserved_region->flags()) == mtThreadStack ||
+    !reserved_region->overlaps_region(rec), "overlapping reserved regions");
+
   return insert_record(rec);
 }
 
@@ -390,21 +401,31 @@ MemSnapshot::~MemSnapshot() {
   }
 }
 
-void MemSnapshot::copy_pointer(MemPointerRecord* dest, const MemPointerRecord* src) {
+
+void MemSnapshot::copy_seq_pointer(MemPointerRecord* dest, const MemPointerRecord* src) {
   assert(dest != NULL && src != NULL, "Just check");
   assert(dest->addr() == src->addr(), "Just check");
+  assert(dest->seq() > 0 && src->seq() > 0, "not sequenced");
 
-  MEMFLAGS flags = dest->flags();
+  if (MemTracker::track_callsite()) {
+    *(SeqMemPointerRecordEx*)dest = *(SeqMemPointerRecordEx*)src;
+  } else {
+    *(SeqMemPointerRecord*)dest = *(SeqMemPointerRecord*)src;
+  }
+}
+
+void MemSnapshot::assign_pointer(MemPointerRecord*dest, const MemPointerRecord* src) {
+  assert(src != NULL && dest != NULL, "Just check");
+  assert(dest->seq() == 0 && src->seq() >0, "cast away sequence");
 
   if (MemTracker::track_callsite()) {
     *(MemPointerRecordEx*)dest = *(MemPointerRecordEx*)src;
   } else {
-    *dest = *src;
+    *(MemPointerRecord*)dest = *(MemPointerRecord*)src;
   }
 }
 
-
-// merge a per-thread memory recorder to the staging area
+// merge a recorder to the staging area
 bool MemSnapshot::merge(MemRecorder* rec) {
   assert(rec != NULL && !rec->out_of_memory(), "Just check");
 
@@ -412,69 +433,43 @@ bool MemSnapshot::merge(MemRecorder* rec) {
 
   MutexLockerEx lock(_lock, true);
   MemPointerIterator malloc_staging_itr(_staging_area.malloc_data());
-  MemPointerRecord *p1, *p2;
-  p1 = (MemPointerRecord*) itr.current();
-  while (p1 != NULL) {
-    if (p1->is_vm_pointer()) {
+  MemPointerRecord* incoming_rec = (MemPointerRecord*) itr.current();
+  MemPointerRecord* matched_rec;
+
+  while (incoming_rec != NULL) {
+    if (incoming_rec->is_vm_pointer()) {
       // we don't do anything with virtual memory records during merge
-      if (!_staging_area.vm_data()->append(p1)) {
+      if (!_staging_area.vm_data()->append(incoming_rec)) {
         return false;
       }
     } else {
       // locate matched record and/or also position the iterator to proper
       // location for this incoming record.
-      p2 = (MemPointerRecord*)malloc_staging_itr.locate(p1->addr());
-      // we have not seen this memory block, so just add to staging area
-      if (p2 == NULL) {
-        if (!malloc_staging_itr.insert(p1)) {
+      matched_rec = (MemPointerRecord*)malloc_staging_itr.locate(incoming_rec->addr());
+      // we have not seen this memory block in this generation,
+      // so just add to staging area
+      if (matched_rec == NULL) {
+        if (!malloc_staging_itr.insert(incoming_rec)) {
           return false;
         }
-      } else if (p1->addr() == p2->addr()) {
-        MemPointerRecord* staging_next = (MemPointerRecord*)malloc_staging_itr.peek_next();
-        // a memory block can have many tagging records, find right one to replace or
-        // right position to insert
-        while (staging_next != NULL && staging_next->addr() == p1->addr()) {
-          if ((staging_next->flags() & MemPointerRecord::tag_masks) <=
-            (p1->flags() & MemPointerRecord::tag_masks)) {
-            p2 = (MemPointerRecord*)malloc_staging_itr.next();
-            staging_next = (MemPointerRecord*)malloc_staging_itr.peek_next();
-          } else {
-            break;
-          }
+      } else if (incoming_rec->addr() == matched_rec->addr()) {
+        // whoever has higher sequence number wins
+        if (incoming_rec->seq() > matched_rec->seq()) {
+          copy_seq_pointer(matched_rec, incoming_rec);
         }
-        int df = (p1->flags() & MemPointerRecord::tag_masks) -
-          (p2->flags() & MemPointerRecord::tag_masks);
-        if (df == 0) {
-          assert(p1->seq() > 0, "not sequenced");
-          assert(p2->seq() > 0, "not sequenced");
-          if (p1->seq() > p2->seq()) {
-            copy_pointer(p2, p1);
-          }
-        } else if (df < 0) {
-          if (!malloc_staging_itr.insert(p1)) {
-            return false;
-          }
-        } else {
-          if (!malloc_staging_itr.insert_after(p1)) {
-            return false;
-          }
-        }
-      } else if (p1->addr() < p2->addr()) {
-        if (!malloc_staging_itr.insert(p1)) {
+      } else if (incoming_rec->addr() < matched_rec->addr()) {
+        if (!malloc_staging_itr.insert(incoming_rec)) {
           return false;
         }
       } else {
-        if (!malloc_staging_itr.insert_after(p1)) {
-          return false;
-        }
+        ShouldNotReachHere();
       }
     }
-    p1 = (MemPointerRecord*)itr.next();
+    incoming_rec = (MemPointerRecord*)itr.next();
   }
   NOT_PRODUCT(void check_staging_data();)
   return true;
 }
-
 
 
 // promote data to next generation
@@ -507,20 +502,25 @@ bool MemSnapshot::promote_malloc_records(MemPointerArrayIterator* itr) {
     // found matched memory block
     if (matched_rec != NULL && new_rec->addr() == matched_rec->addr()) {
       // snapshot already contains 'live' records
-      assert(matched_rec->is_allocation_record() || matched_rec->is_arena_size_record(),
+      assert(matched_rec->is_allocation_record() || matched_rec->is_arena_memory_record(),
              "Sanity check");
       // update block states
-      if (new_rec->is_allocation_record() || new_rec->is_arena_size_record()) {
-        copy_pointer(matched_rec, new_rec);
+      if (new_rec->is_allocation_record()) {
+        assign_pointer(matched_rec, new_rec);
+      } else if (new_rec->is_arena_memory_record()) {
+        if (new_rec->size() == 0) {
+          // remove size record once size drops to 0
+          malloc_snapshot_itr.remove();
+        } else {
+          assign_pointer(matched_rec, new_rec);
+        }
       } else {
         // a deallocation record
         assert(new_rec->is_deallocation_record(), "Sanity check");
         // an arena record can be followed by a size record, we need to remove both
         if (matched_rec->is_arena_record()) {
           MemPointerRecord* next = (MemPointerRecord*)malloc_snapshot_itr.peek_next();
-          if (next->is_arena_size_record()) {
-            // it has to match the arena record
-            assert(next->is_size_record_of_arena(matched_rec), "Sanity check");
+          if (next->is_arena_memory_record() && next->is_memory_record_of_arena(matched_rec)) {
             malloc_snapshot_itr.remove();
           }
         }
@@ -528,17 +528,13 @@ bool MemSnapshot::promote_malloc_records(MemPointerArrayIterator* itr) {
         malloc_snapshot_itr.remove();
       }
     } else {
-      // it is a new record, insert into snapshot
-      if (new_rec->is_arena_size_record()) {
-        MemPointerRecord* prev = (MemPointerRecord*)malloc_snapshot_itr.peek_prev();
-        if (prev == NULL || !prev->is_arena_record() || !new_rec->is_size_record_of_arena(prev)) {
-          // no matched arena record, ignore the size record
-          new_rec = NULL;
-        }
+      // don't insert size 0 record
+      if (new_rec->is_arena_memory_record() && new_rec->size() == 0) {
+        new_rec = NULL;
       }
-      // only 'live' record can go into snapshot
+
       if (new_rec != NULL) {
-        if  (new_rec->is_allocation_record() || new_rec->is_arena_size_record()) {
+        if  (new_rec->is_allocation_record() || new_rec->is_arena_memory_record()) {
           if (matched_rec != NULL && new_rec->addr() > matched_rec->addr()) {
             if (!malloc_snapshot_itr.insert_after(new_rec)) {
               return false;
