@@ -156,7 +156,7 @@ class ParsedSynthStyle extends DefaultSynthStyle {
     }
 
     public String toString() {
-        StringBuffer text = new StringBuffer(super.toString());
+        StringBuilder text = new StringBuilder(super.toString());
         if (_painters != null) {
             text.append(",painters=[");
             for (int i = 0; i < +_painters.length; i++) {
@@ -208,7 +208,7 @@ class ParsedSynthStyle extends DefaultSynthStyle {
         }
 
         public String toString() {
-            StringBuffer text = new StringBuffer(super.toString());
+            StringBuilder text = new StringBuilder(super.toString());
             text.append(",painters=[");
             if (_painterInfo != null) {
                 for (int i = 0; i < +_painterInfo.length; i++) {

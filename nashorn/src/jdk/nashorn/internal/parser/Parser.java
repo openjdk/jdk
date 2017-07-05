@@ -680,7 +680,7 @@ loop:
      */
     private FunctionNode program(final String scriptName, final boolean allowPropertyFunction) {
         // Make a pseudo-token for the script holding its start and length.
-        final long functionToken = Token.toDesc(FUNCTION, getProgramStartPosition(token), source.getLength());
+        final long functionToken = Token.toDesc(FUNCTION, Token.descPosition(Token.withDelimiter(token)), source.getLength());
         final int  functionLine  = line;
         // Set up the script to append elements.
 
@@ -710,20 +710,6 @@ loop:
         return script;
     }
 
-    /**
-     * Returns the start position of the program based on its first token. Normally returns the position of the token
-     * itself, except in case of string tokens which report their position past their opening delimiter and thus need
-     * to have one subtracted from their position.
-     * @param firstToken the first token of the program
-     * @return the start position of the program
-     */
-    private static int getProgramStartPosition(final long firstToken) {
-        final int start = Token.descPosition(firstToken);
-        switch(Token.descType(firstToken)) {
-            case STRING: case ESCSTRING: case EXECSTRING: return start - 1;
-            default: return start;
-        }
-    }
     /**
      * Directive value or null if statement is not a directive.
      *

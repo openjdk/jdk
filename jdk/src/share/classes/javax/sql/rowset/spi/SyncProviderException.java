@@ -61,6 +61,7 @@ import javax.sql.rowset.*;
  * @see javax.sql.rowset.spi.SyncFactory
  * @see javax.sql.rowset.spi.SyncResolver
  * @see javax.sql.rowset.spi.SyncFactoryException
+ * @since 1.5
  */
 public class SyncProviderException extends java.sql.SQLException {
 

@@ -38,7 +38,6 @@
 // - - NativeMovConstReg
 // - - NativeMovConstRegPatching
 // - - NativeMovRegMem
-// - - NativeMovRegMemPatching
 // - - NativeJump
 // - - NativeGeneralJump
 // - - NativeIllegalInstruction
@@ -702,96 +701,6 @@ class NativeMovRegMem: public NativeInstruction {
  private:
   friend inline NativeMovRegMem* nativeMovRegMem_at (address address) {
     NativeMovRegMem* test = (NativeMovRegMem*)address;
-    #ifdef ASSERT
-      test->verify();
-    #endif
-    return test;
-  }
-};
-
-
-// An interface for accessing/manipulating native memory ops
-//      ld* [reg + offset], reg
-//      st* reg, [reg + offset]
-//      sethi %hi(imm), reg; nop; add reg, %lo(imm), reg; ld* [reg1 + reg], reg2
-//      sethi %hi(imm), reg; nop; add reg, %lo(imm), reg; st* reg2, [reg1 + reg]
-// Ops covered: {lds,ldu,st}{w,b,h}, {ld,st}{d,x}
-//
-// Note that it is identical to NativeMovRegMem with the exception of a nop between the
-// sethi and the add.  The nop is required to be in the delay slot of the call instruction
-// which overwrites the sethi during patching.
-class NativeMovRegMemPatching;
-inline NativeMovRegMemPatching* nativeMovRegMemPatching_at (address address);
-class NativeMovRegMemPatching: public NativeInstruction {
- public:
-  enum Sparc_specific_constants {
-    op3_mask_ld = 1 << Assembler::lduw_op3 |
-                  1 << Assembler::ldub_op3 |
-                  1 << Assembler::lduh_op3 |
-                  1 << Assembler::ldd_op3 |
-                  1 << Assembler::ldsw_op3 |
-                  1 << Assembler::ldsb_op3 |
-                  1 << Assembler::ldsh_op3 |
-                  1 << Assembler::ldx_op3,
-    op3_mask_st = 1 << Assembler::stw_op3 |
-                  1 << Assembler::stb_op3 |
-                  1 << Assembler::sth_op3 |
-                  1 << Assembler::std_op3 |
-                  1 << Assembler::stx_op3,
-    op3_ldst_int_limit = Assembler::ldf_op3,
-    op3_mask_ldf = 1 << (Assembler::ldf_op3  - op3_ldst_int_limit) |
-                   1 << (Assembler::lddf_op3 - op3_ldst_int_limit),
-    op3_mask_stf = 1 << (Assembler::stf_op3  - op3_ldst_int_limit) |
-                   1 << (Assembler::stdf_op3 - op3_ldst_int_limit),
-
-    offset_width    = 13,
-    sethi_offset    = 0,
-#ifdef _LP64
-    nop_offset      = 7 * BytesPerInstWord,
-#else
-    nop_offset      = 4,
-#endif
-    add_offset      = nop_offset + BytesPerInstWord,
-    ldst_offset     = add_offset + BytesPerInstWord
-  };
-  bool is_immediate() const {
-    // check if instruction is ld* [reg + offset], reg or st* reg, [reg + offset]
-    int i0 = long_at(0);
-    return (is_op(i0, Assembler::ldst_op));
-  }
-
-  address instruction_address() const           { return addr_at(0); }
-  address next_instruction_address() const      {
-    return addr_at(is_immediate()? 4 : 16);
-  }
-  int   offset() const                          {
-     return is_immediate()? inv_simm(long_at(0), offset_width) :
-                            nativeMovConstRegPatching_at(addr_at(0))->data();
-  }
-  void  set_offset(int x) {
-    if (is_immediate()) {
-      guarantee(fits_in_simm(x, offset_width), "data block offset overflow");
-      set_long_at(0, set_simm(long_at(0), x, offset_width));
-    }
-    else
-      nativeMovConstRegPatching_at(addr_at(0))->set_data(x);
-  }
-
-  void  add_offset_in_bytes(intptr_t radd_offset)     {
-      set_offset (offset() + radd_offset);
-  }
-
-  void  copy_instruction_to(address new_instruction_address);
-
-  void verify();
-  void print ();
-
-  // unit test stuff
-  static void test();
-
- private:
-  friend inline NativeMovRegMemPatching* nativeMovRegMemPatching_at (address address) {
-    NativeMovRegMemPatching* test = (NativeMovRegMemPatching*)address;
     #ifdef ASSERT
       test->verify();
     #endif

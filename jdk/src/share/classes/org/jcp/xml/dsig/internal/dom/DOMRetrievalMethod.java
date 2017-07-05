@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * ===========================================================================
@@ -177,7 +177,7 @@ public final class DOMRetrievalMethod extends DOMStructure
         return type;
     }
 
-    public List getTransforms() {
+    public List<Transform> getTransforms() {
         return transforms;
     }
 
@@ -245,7 +245,7 @@ public final class DOMRetrievalMethod extends DOMStructure
         // guard against RetrievalMethod loops
         if ((data instanceof NodeSetData) && Utils.secureValidation(context)) {
             NodeSetData nsd = (NodeSetData)data;
-            Iterator i = nsd.iterator();
+            Iterator<?> i = nsd.iterator();
             if (i.hasNext()) {
                 Node root = (Node)i.next();
                 if ("RetrievalMethod".equals(root.getLocalName())) {

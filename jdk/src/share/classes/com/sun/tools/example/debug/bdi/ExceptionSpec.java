@@ -102,8 +102,8 @@ public class ExceptionSpec extends EventRequestSpec {
 
     @Override
     public String toString() {
-        StringBuffer buffer = new StringBuffer("exception catch ");
-        buffer.append(refSpec.toString());
-        return buffer.toString();
+        StringBuilder sb = new StringBuilder("exception catch ");
+        sb.append(refSpec.toString());
+        return sb.toString();
     }
 }

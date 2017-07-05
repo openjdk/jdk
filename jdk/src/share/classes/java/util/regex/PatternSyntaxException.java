@@ -105,7 +105,7 @@ public class PatternSyntaxException
      * @return  The full detail message
      */
     public String getMessage() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(desc);
         if (index >= 0) {
             sb.append(" near index ");

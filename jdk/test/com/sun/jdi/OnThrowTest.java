@@ -30,7 +30,7 @@
  *  @run compile -g OnThrowTest.java
  *  @run compile -g OnThrowTarget.java
  *  @run compile -g VMConnection.java
- *  @run main/othervm OnThrowTest
+ *  @run driver OnThrowTest
  */
 
 import java.io.File;

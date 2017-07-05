@@ -32,7 +32,7 @@
  *  @run compile -g HelloWorld.java
  *  @run build LaunchCommandLine
  *
- *  @run main LaunchCommandLine
+ *  @run driver LaunchCommandLine
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

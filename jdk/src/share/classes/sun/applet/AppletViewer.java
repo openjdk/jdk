@@ -1000,15 +1000,15 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
      * Scan identifier
      */
     public static String scanIdentifier(Reader in) throws IOException {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         while (true) {
             if (((c >= 'a') && (c <= 'z')) ||
                 ((c >= 'A') && (c <= 'Z')) ||
                 ((c >= '0') && (c <= '9')) || (c == '_')) {
-                buf.append((char)c);
+                sb.append((char) c);
                 c = in.read();
             } else {
-                return buf.toString();
+                return sb.toString();
             }
         }
     }
@@ -1031,19 +1031,19 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
                     quote = c;
                     c = in.read();
                 }
-                StringBuffer buf = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 while ((c > 0) &&
                        (((quote < 0) && (c != ' ') && (c != '\t') &&
                          (c != '\n') && (c != '\r') && (c != '>'))
                         || ((quote >= 0) && (c != quote)))) {
-                    buf.append((char)c);
+                    sb.append((char) c);
                     c = in.read();
                 }
                 if (c == quote) {
                     c = in.read();
                 }
                 skipSpace(in);
-                val = buf.toString();
+                val = sb.toString();
             }
             //statusMsgStream.println("PUT " + att + " = '" + val + "'");
             if (! val.equals("")) {

@@ -27,7 +27,7 @@
  * @library /lib/testlibrary
  *
  * @build jdk.testlibrary.* VMConnection BadHandshakeTest Exit0
- * @run main BadHandshakeTest
+ * @run driver BadHandshakeTest
  *
  */
 import java.net.Socket;

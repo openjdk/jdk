@@ -243,11 +243,11 @@ public class AttributedString {
             throw new IllegalArgumentException("Invalid substring range");
 
         // Copy the given string
-        StringBuffer textBuffer = new StringBuffer();
+        StringBuilder textBuilder = new StringBuilder();
         text.setIndex(beginIndex);
         for (char c = text.current(); text.getIndex() < endIndex; c = text.next())
-            textBuffer.append(c);
-        this.text = textBuffer.toString();
+            textBuilder.append(c);
+        this.text = textBuilder.toString();
 
         if (beginIndex == endIndex)
             return;

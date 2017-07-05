@@ -103,25 +103,25 @@ public class CK_MECHANISM_INFO {
      * @return the string representation of CK_MECHANISM_INFO
      */
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(Constants.INDENT);
-        buffer.append("ulMinKeySize: ");
-        buffer.append(String.valueOf(ulMinKeySize));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("ulMinKeySize: ");
+        sb.append(String.valueOf(ulMinKeySize));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("ulMaxKeySize: ");
-        buffer.append(String.valueOf(ulMaxKeySize));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("ulMaxKeySize: ");
+        sb.append(String.valueOf(ulMaxKeySize));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("flags: ");
-        buffer.append(String.valueOf(flags));
-        buffer.append(" = ");
-        buffer.append(Functions.mechanismInfoFlagsToString(flags));
+        sb.append(Constants.INDENT);
+        sb.append("flags: ");
+        sb.append(String.valueOf(flags));
+        sb.append(" = ");
+        sb.append(Functions.mechanismInfoFlagsToString(flags));
         //buffer.append(Constants.NEWLINE);
 
-        return buffer.toString() ;
+        return sb.toString() ;
     }
 }

@@ -123,6 +123,7 @@ class Assembler : public AbstractAssembler  {
     fpop2_op3    = 0x35,
     impdep1_op3  = 0x36,
     aes3_op3     = 0x36,
+    sha_op3      = 0x36,
     alignaddr_op3  = 0x36,
     faligndata_op3 = 0x36,
     flog3_op3    = 0x36,
@@ -223,7 +224,11 @@ class Assembler : public AbstractAssembler  {
     mwtos_opf          = 0x119,
 
     aes_kexpand0_opf   = 0x130,
-    aes_kexpand2_opf   = 0x131
+    aes_kexpand2_opf   = 0x131,
+
+    sha1_opf           = 0x141,
+    sha256_opf         = 0x142,
+    sha512_opf         = 0x143
   };
 
   enum op5s {
@@ -594,6 +599,11 @@ class Assembler : public AbstractAssembler  {
 
   // AES crypto instructions supported only on certain processors
   static void aes_only() { assert( VM_Version::has_aes(), "This instruction only works on SPARC with AES instructions support"); }
+
+  // SHA crypto instructions supported only on certain processors
+  static void sha1_only()   { assert( VM_Version::has_sha1(),   "This instruction only works on SPARC with SHA1"); }
+  static void sha256_only() { assert( VM_Version::has_sha256(), "This instruction only works on SPARC with SHA256"); }
+  static void sha512_only() { assert( VM_Version::has_sha512(), "This instruction only works on SPARC with SHA512"); }
 
   // instruction only in VIS1
   static void vis1_only() { assert( VM_Version::has_vis1(), "This instruction only works on SPARC with VIS1"); }
@@ -1179,7 +1189,6 @@ public:
                                                u_field(3, 29, 25) | immed(true) | simm(simm13a, 13)); }
   inline void wrfprs( Register d) { v9_only(); emit_int32( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(6, 29, 25)); }
 
-
   //  VIS1 instructions
 
   void alignaddr( Register s1, Register s2, Register d ) { vis1_only(); emit_int32( op(arith_op) | rd(d) | op3(alignaddr_op3) | rs1(s1) | opf(alignaddr_opf) | rs2(s2)); }
@@ -1202,6 +1211,12 @@ public:
 
   void movwtos( Register s, FloatRegister d ) { vis3_only();  emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(mftoi_op3) | opf(mwtos_opf) | rs2(s)); }
   void movxtod( Register s, FloatRegister d ) { vis3_only();  emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(mftoi_op3) | opf(mxtod_opf) | rs2(s)); }
+
+  // Crypto SHA instructions
+
+  void sha1()   { sha1_only();    emit_int32( op(arith_op) | op3(sha_op3) | opf(sha1_opf)); }
+  void sha256() { sha256_only();  emit_int32( op(arith_op) | op3(sha_op3) | opf(sha256_opf)); }
+  void sha512() { sha512_only();  emit_int32( op(arith_op) | op3(sha_op3) | opf(sha512_opf)); }
 
   // Creation
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {

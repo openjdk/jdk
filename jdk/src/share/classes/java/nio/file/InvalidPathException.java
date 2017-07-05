@@ -117,7 +117,7 @@ public class InvalidPathException
      * @return  a string describing the error
      */
     public String getMessage() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(getReason());
         if (index > -1) {
             sb.append(" at index ");

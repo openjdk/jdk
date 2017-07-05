@@ -61,6 +61,28 @@ public class Token {
     }
 
     /**
+     * Normally returns the token itself, except in case of string tokens
+     * which report their position past their opening delimiter and thus
+     * need to have position and length adjusted.
+     *
+     * @param token Token descriptor.
+     * @return same or adjusted token.
+     */
+    public static long withDelimiter(final long token) {
+        final TokenType tokenType = Token.descType(token);
+        switch(tokenType) {
+            case STRING: case ESCSTRING: case EXECSTRING: {
+                final int start = Token.descPosition(token) - 1;
+                final int len = Token.descLength(token) + 2;
+                return toDesc(tokenType, start, len);
+            }
+            default: {
+                return token;
+            }
+        }
+    }
+
+    /**
      * Extract token length from a token descriptor.
      * @param token Token descriptor.
      * @return Length of the token.

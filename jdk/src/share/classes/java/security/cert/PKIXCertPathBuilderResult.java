@@ -107,7 +107,7 @@ public class PKIXCertPathBuilderResult extends PKIXCertPathValidatorResult
      *         {@code PKIXCertPathBuilderResult}
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("PKIXCertPathBuilderResult: [\n");
         sb.append("  Certification Path: " + certPath + "\n");
         sb.append("  Trust Anchor: " + getTrustAnchor().toString() + "\n");

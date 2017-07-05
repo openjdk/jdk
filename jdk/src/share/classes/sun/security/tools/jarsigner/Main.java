@@ -728,7 +728,7 @@ public class Main {
                             output.put(label, new ArrayList<String>());
                         }
 
-                        StringBuffer fb = new StringBuffer();
+                        StringBuilder fb = new StringBuilder();
                         String s = Long.toString(je.getSize());
                         for (int i = 6 - s.length(); i > 0; --i) {
                             fb.append(' ');
@@ -1572,25 +1572,25 @@ public class Main {
         if (cacheForSignerInfo.containsKey(signer)) {
             return cacheForSignerInfo.get(signer);
         }
-        StringBuffer s = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         List<? extends Certificate> certs = signer.getSignerCertPath().getCertificates();
         // display the signature timestamp, if present
         Date timestamp;
         Timestamp ts = signer.getTimestamp();
         if (ts != null) {
-            s.append(printTimestamp(tab, ts));
-            s.append('\n');
+            sb.append(printTimestamp(tab, ts));
+            sb.append('\n');
             timestamp = ts.getTimestamp();
         } else {
             timestamp = null;
             noTimestamp = true;
         }
-        // display the certificate(s). The first one is end-entity cert and
+        // display the certificate(sb). The first one is end-entity cert and
         // its KeyUsage should be checked.
         boolean first = true;
         for (Certificate c : certs) {
-            s.append(printCert(tab, c, true, timestamp, first));
-            s.append('\n');
+            sb.append(printCert(tab, c, true, timestamp, first));
+            sb.append('\n');
             first = false;
         }
         try {
@@ -1605,11 +1605,11 @@ public class Main {
                 // No more warning, we alreay have hasExpiredCert or notYetValidCert
             } else {
                 chainNotValidated = true;
-                s.append(tab + rb.getString(".CertPath.not.validated.") +
+                sb.append(tab + rb.getString(".CertPath.not.validated.") +
                         e.getLocalizedMessage() + "]\n");   // TODO
             }
         }
-        String result = s.toString();
+        String result = sb.toString();
         cacheForSignerInfo.put(signer, result);
         return result;
     }

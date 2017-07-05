@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMURIDereferencer.java 1231033 2012-01-13 12:12:12Z coheigea $
@@ -111,7 +111,8 @@ public class DOMURIDereferencer implements URIDereferencer {
         try {
             ResourceResolver apacheResolver =
                 ResourceResolver.getInstance(uriAttr, baseURI, secVal);
-            XMLSignatureInput in = apacheResolver.resolve(uriAttr, baseURI);
+            XMLSignatureInput in = apacheResolver.resolve(uriAttr,
+                                                          baseURI, secVal);
             if (in.isOctetStream()) {
                 return new ApacheOctetStreamData(in);
             } else {

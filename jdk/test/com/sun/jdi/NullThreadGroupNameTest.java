@@ -27,7 +27,7 @@
  *  @summary Ensure that JDWP doesn't crash with a null thread group name
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run main NullThreadGroupNameTest
+ *  @run driver NullThreadGroupNameTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;
