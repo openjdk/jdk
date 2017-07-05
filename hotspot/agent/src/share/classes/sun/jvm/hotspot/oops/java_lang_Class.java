@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.utilities.*;
@@ -40,7 +41,7 @@ import sun.jvm.hotspot.jdi.JVMTIThreadState;
 public class java_lang_Class {
 
   // java.lang.Class fields
-  static OopField klassField;
+  static int klassOffset;
   static IntField oopSizeField;
 
   static {
@@ -55,19 +56,18 @@ public class java_lang_Class {
     // klass and oop_size are HotSpot magic fields and hence we can't
     // find them from InstanceKlass for java.lang.Class.
     Type jlc = db.lookupType("java_lang_Class");
-    int klassOffset = (int) jlc.getCIntegerField("_klass_offset").getValue();
-    if (VM.getVM().isCompressedOopsEnabled()) {
-      klassField = new NarrowOopField(new NamedFieldIdentifier("klass"), klassOffset, true);
-    } else {
-      klassField = new OopField(new NamedFieldIdentifier("klass"), klassOffset, true);
-    }
+    klassOffset = (int) jlc.getCIntegerField("_klass_offset").getValue();
     int oopSizeOffset = (int) jlc.getCIntegerField("_oop_size_offset").getValue();
     oopSizeField = new IntField(new NamedFieldIdentifier("oop_size"), oopSizeOffset, true);
   }
 
-  /** get klassOop field at offset hc_klass_offset from a java.lang.Class object */
+  /** get Klass* field at offset hc_klass_offset from a java.lang.Class object */
   public static Klass asKlass(Oop aClass) {
-    return (Klass) java_lang_Class.klassField.getValue(aClass);
+    if (VM.getVM().isCompressedHeadersEnabled()) {
+      throw new InternalError("unimplemented");
+    } else {
+      return (Klass)Metadata.instantiateWrapperFor(aClass.getHandle().getAddressAt(klassOffset));
+    }
   }
 
   /** get oop_size field at offset oop_size_offset from a java.lang.Class object */

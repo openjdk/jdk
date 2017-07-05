@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_CI_BCESCAPEANALYZER_HPP
 
 #ifdef COMPILER2
+#include "ci/ciObject.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
 #include "code/dependencies.hpp"
@@ -62,7 +63,7 @@ class BCEscapeAnalyzer : public ResourceObj {
   bool              _allocated_escapes;
   bool              _unknown_modified;
 
-  GrowableArray<ciObject *> _dependencies;
+  GrowableArray<ciMetadata *> _dependencies;
 
   ciMethodBlocks   *_methodBlocks;
 
@@ -114,7 +115,7 @@ class BCEscapeAnalyzer : public ResourceObj {
   ciMethodData*     methodData() const           { return _methodData; }
   BCEscapeAnalyzer* parent() const               { return _parent; }
   int               level() const                { return _level; }
-  GrowableArray<ciObject *>* dependencies()               { return &_dependencies; }
+  GrowableArray<ciMetadata *>* dependencies()    { return &_dependencies; }
   bool              has_dependencies() const     { return !_dependencies.is_empty(); }
 
   // retrieval of interprocedural escape information

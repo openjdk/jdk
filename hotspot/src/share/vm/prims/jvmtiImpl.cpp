@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,7 @@ void GrowableCache::gc_epilogue() {
 JvmtiBreakpoint::JvmtiBreakpoint() {
   _method = NULL;
   _bci    = 0;
+  _class_loader = NULL;
 #ifdef CHECK_UNHANDLED_OOPS
   // This one is always allocated with new, but check it just in case.
   Thread *thread = Thread::current();
@@ -244,24 +245,18 @@ JvmtiBreakpoint::JvmtiBreakpoint() {
 #endif // CHECK_UNHANDLED_OOPS
 }
 
-JvmtiBreakpoint::JvmtiBreakpoint(methodOop m_method, jlocation location) {
+JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location) {
   _method        = m_method;
+  _class_loader  = _method->method_holder()->class_loader_data()->class_loader();
   assert(_method != NULL, "_method != NULL");
   _bci           = (int) location;
-#ifdef CHECK_UNHANDLED_OOPS
-  // Could be allocated with new and wouldn't be on the unhandled oop list.
-  Thread *thread = Thread::current();
-  if (thread->is_in_stack((address)&_method)) {
-    thread->allow_unhandled_oop(&_method);
-  }
-#endif // CHECK_UNHANDLED_OOPS
-
   assert(_bci >= 0, "_bci >= 0");
 }
 
 void JvmtiBreakpoint::copy(JvmtiBreakpoint& bp) {
   _method   = bp._method;
   _bci      = bp._bci;
+  _class_loader = bp._class_loader;
 }
 
 bool JvmtiBreakpoint::lessThan(JvmtiBreakpoint& bp) {
@@ -275,6 +270,7 @@ bool JvmtiBreakpoint::equals(JvmtiBreakpoint& bp) {
 }
 
 bool JvmtiBreakpoint::is_valid() {
+  // class loader can be NULL
   return _method != NULL &&
          _bci >= 0;
 }
@@ -284,7 +280,7 @@ address JvmtiBreakpoint::getBcp() {
 }
 
 void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
-  ((methodOopDesc*)_method->*meth_act)(_bci);
+  ((Method*)_method->*meth_act)(_bci);
 
   // add/remove breakpoint to/from versions of the method that
   // are EMCP. Directly or transitively obsolete methods are
@@ -302,7 +298,7 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
     // has destroyed the handles.
     {
       // search previous versions if they exist
-      PreviousVersionWalker pvw((instanceKlass *)ikh()->klass_part());
+      PreviousVersionWalker pvw((InstanceKlass *)ikh());
       for (PreviousVersionInfo * pv_info = pvw.next_previous_version();
            pv_info != NULL; pv_info = pvw.next_previous_version()) {
         GrowableArray<methodHandle>* methods =
@@ -324,14 +320,17 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
 
         for (int i = methods->length() - 1; i >= 0; i--) {
           methodHandle method = methods->at(i);
-          if (method->name() == m_name && method->signature() == m_signature) {
+          // obsolete methods that are running are not deleted from
+          // previous version array, but they are skipped here.
+          if (!method->is_obsolete() &&
+              method->name() == m_name &&
+              method->signature() == m_signature) {
             RC_TRACE(0x00000800, ("%sing breakpoint in %s(%s)",
-              meth_act == &methodOopDesc::set_breakpoint ? "sett" : "clear",
+              meth_act == &Method::set_breakpoint ? "sett" : "clear",
               method->name()->as_C_string(),
               method->signature()->as_C_string()));
-            assert(!method->is_obsolete(), "only EMCP methods here");
 
-            ((methodOopDesc*)method()->*meth_act)(_bci);
+            ((Method*)method()->*meth_act)(_bci);
             break;
           }
         }
@@ -341,11 +340,11 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
 }
 
 void JvmtiBreakpoint::set() {
-  each_method_version_do(&methodOopDesc::set_breakpoint);
+  each_method_version_do(&Method::set_breakpoint);
 }
 
 void JvmtiBreakpoint::clear() {
-  each_method_version_do(&methodOopDesc::clear_breakpoint);
+  each_method_version_do(&Method::clear_breakpoint);
 }
 
 void JvmtiBreakpoint::print() {
@@ -476,7 +475,7 @@ int JvmtiBreakpoints::clear(JvmtiBreakpoint& bp) {
   return JVMTI_ERROR_NONE;
 }
 
-void JvmtiBreakpoints::clearall_in_class_at_safepoint(klassOop klass) {
+void JvmtiBreakpoints::clearall_in_class_at_safepoint(Klass* klass) {
   bool changed = true;
   // We are going to run thru the list of bkpts
   // and delete some.  This deletion probably alters
@@ -647,9 +646,9 @@ bool VM_GetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* 
     }
   }
   // Compare secondary supers
-  objArrayOop sec_supers = klass->secondary_supers();
+  Array<Klass*>* sec_supers = klass->secondary_supers();
   for (idx = 0; idx < sec_supers->length(); idx++) {
-    if (Klass::cast((klassOop) sec_supers->obj_at(idx))->name() == ty_sym) {
+    if (Klass::cast((Klass*) sec_supers->at(idx))->name() == ty_sym) {
       return true;
     }
   }
@@ -662,7 +661,7 @@ bool VM_GetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* 
 // Returns: 'true' - everything is Ok, 'false' - error code
 
 bool VM_GetOrSetLocal::check_slot_type(javaVFrame* jvf) {
-  methodOop method_oop = jvf->method();
+  Method* method_oop = jvf->method();
   if (!method_oop->has_localvariable_table()) {
     // Just to check index boundaries
     jint extra_slot = (_type == T_LONG || _type == T_DOUBLE) ? 1 : 0;

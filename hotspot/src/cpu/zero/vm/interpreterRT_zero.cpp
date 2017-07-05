@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
@@ -142,7 +142,7 @@ void InterpreterRuntime::SignatureHandler::finalize() {
 
 IRT_ENTRY(address,
           InterpreterRuntime::slow_signature_handler(JavaThread* thread,
-                                                     methodOop   method,
+                                                     Method*     method,
                                                      intptr_t*   unused1,
                                                      intptr_t*   unused2))
   ZeroStack *stack = thread->zero_stack();

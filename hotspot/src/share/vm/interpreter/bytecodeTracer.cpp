@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/methodDataOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/methodData.hpp"
+#include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/timer.hpp"
 
@@ -46,7 +46,7 @@ class BytecodePrinter: public BytecodeClosure {
   // between critical sections.  Use only pointer-comparison
   // operations on the pointer, except within a critical section.
   // (Also, ensure that occasional false positives are benign.)
-  methodOop _current_method;
+  Method* _current_method;
   bool      _is_wide;
   Bytecodes::Code _code;
   address   _next_pc;                // current decoding position
@@ -58,16 +58,19 @@ class BytecodePrinter: public BytecodeClosure {
 
   int       get_index_u1()           { return *(address)_next_pc++; }
   int       get_index_u2()           { int i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
-  int       get_index_u1_cpcache()   { return get_index_u1() + constantPoolOopDesc::CPCACHE_INDEX_TAG; }
-  int       get_index_u2_cpcache()   { int i=Bytes::get_native_u2(_next_pc); _next_pc+=2; return i + constantPoolOopDesc::CPCACHE_INDEX_TAG; }
+  int       get_index_u1_cpcache()   { return get_index_u1() + ConstantPool::CPCACHE_INDEX_TAG; }
+  int       get_index_u2_cpcache()   { int i=Bytes::get_native_u2(_next_pc); _next_pc+=2; return i + ConstantPool::CPCACHE_INDEX_TAG; }
   int       get_index_u4()           { int i=Bytes::get_native_u4(_next_pc); _next_pc+=4; return i; }
   int       get_index_special()      { return (is_wide()) ? get_index_u2() : get_index_u1(); }
-  methodOop method()                 { return _current_method; }
+  Method* method()                 { return _current_method; }
   bool      is_wide()                { return _is_wide; }
   Bytecodes::Code raw_code()         { return Bytecodes::Code(_code); }
 
 
   bool      check_index(int i, int& cp_index, outputStream* st = tty);
+  bool      check_cp_cache_index(int i, int& cp_index, outputStream* st = tty);
+  bool      check_obj_index(int i, int& cp_index, outputStream* st = tty);
+  bool      check_invokedynamic_index(int i, int& cp_index, outputStream* st = tty);
   void      print_constant(int i, outputStream* st = tty);
   void      print_field_or_method(int i, outputStream* st = tty);
   void      print_field_or_method(int orig_i, int i, outputStream* st = tty);
@@ -122,7 +125,7 @@ class BytecodePrinter: public BytecodeClosure {
     _code = Bytecodes::_illegal;
   }
 
-  // Used for methodOop::print_codes().  The input bcp comes from
+  // Used for Method*::print_codes().  The input bcp comes from
   // BytecodeStream, which will skip wide bytecodes.
   void trace(methodHandle method, address bcp, outputStream* st) {
     _current_method = method();
@@ -152,7 +155,7 @@ class BytecodePrinter: public BytecodeClosure {
 
 // %%% This set_closure thing seems overly general, given that
 // nobody uses it.  Also, if BytecodePrinter weren't hidden
-// then methodOop could use instances of it directly and it
+// then Method* could use instances of it directly and it
 // would be easier to remove races on _current_method and bcp.
 // Since this is not product functionality, we can defer cleanup.
 
@@ -170,7 +173,7 @@ void BytecodeTracer::trace(methodHandle method, address bcp, uintptr_t tos, uint
     // The ttyLocker also prevents races between two threads
     // trying to use the single instance of BytecodePrinter.
     // Using the ttyLocker prevents the system from coming to
-    // a safepoint within this code, which is sensitive to methodOop
+    // a safepoint within this code, which is sensitive to Method*
     // movement.
     //
     // There used to be a leaf mutex here, but the ttyLocker will
@@ -217,56 +220,59 @@ void print_oop(oop value, outputStream* st) {
 }
 
 bool BytecodePrinter::check_index(int i, int& cp_index, outputStream* st) {
-  constantPoolOop constants = method()->constants();
-  int ilimit = constants->length(), climit = 0;
+  ConstantPool* constants = method()->constants();
+  int ilimit = constants->length();
   Bytecodes::Code code = raw_code();
 
-  constantPoolCacheOop cache = NULL;
+  ConstantPoolCache* cache = NULL;
   if (Bytecodes::uses_cp_cache(code)) {
-    cache = constants->cache();
-    if (cache != NULL) {
-      //climit = cache->length();  // %%% private!
-      size_t size = cache->size() * HeapWordSize;
-      size -= sizeof(constantPoolCacheOopDesc);
-      size /= sizeof(ConstantPoolCacheEntry);
-      climit = (int) size;
+    bool okay = true;
+    switch (code) {
+    case Bytecodes::_fast_aldc:
+    case Bytecodes::_fast_aldc_w:
+      okay = check_obj_index(i, cp_index, st);
+      break;
+    case Bytecodes::_invokedynamic:
+      okay = check_invokedynamic_index(i, cp_index, st);
+      break;
+    default:
+      okay = check_cp_cache_index(i, cp_index, st);
+      break;
     }
+    if (!okay) return false;
   }
 
-  if (cache != NULL && constantPoolCacheOopDesc::is_secondary_index(i)) {
-    i = constantPoolCacheOopDesc::decode_secondary_index(i);
-    st->print(" secondary cache[%d] of", i);
-    if (i >= 0 && i < climit) {
-      if (!cache->entry_at(i)->is_secondary_entry()) {
-        st->print_cr(" not secondary entry?", i);
-        return false;
-      }
-      i = cache->entry_at(i)->main_entry_index() + constantPoolOopDesc::CPCACHE_INDEX_TAG;
-      goto check_cache_index;
-    } else {
-      st->print_cr(" not in cache[*]?", i);
-      return false;
-    }
-  }
 
-  if (cache != NULL) {
-    goto check_cache_index;
-  }
-
- check_cp_index:
-  if (i >= 0 && i < ilimit) {
-    if (WizardMode)  st->print(" cp[%d]", i);
-    cp_index = i;
+  // check cp index
+  if (cp_index >= 0 && cp_index < ilimit) {
+    if (WizardMode)  st->print(" cp[%d]", cp_index);
     return true;
   }
 
-  st->print_cr(" CP[%d] not in CP", i);
+  st->print_cr(" CP[%d] not in CP", cp_index);
   return false;
+}
 
- check_cache_index:
+bool BytecodePrinter::check_cp_cache_index(int i, int& cp_index, outputStream* st) {
+  ConstantPool* constants = method()->constants();
+  int ilimit = constants->length(), climit = 0;
+  Bytecodes::Code code = raw_code();
+
+  ConstantPoolCache* cache = constants->cache();
+  // If rewriter hasn't run, the index is the cp_index
+  if (cache == NULL) {
+    cp_index = i;
+    return true;
+  }
+  //climit = cache->length();  // %%% private!
+  size_t size = cache->size() * HeapWordSize;
+  size -= sizeof(ConstantPoolCache);
+  size /= sizeof(ConstantPoolCacheEntry);
+  climit = (int) size;
+
 #ifdef ASSERT
   {
-    const int CPCACHE_INDEX_TAG = constantPoolOopDesc::CPCACHE_INDEX_TAG;
+    const int CPCACHE_INDEX_TAG = ConstantPool::CPCACHE_INDEX_TAG;
     if (i >= CPCACHE_INDEX_TAG && i < climit + CPCACHE_INDEX_TAG) {
       i -= CPCACHE_INDEX_TAG;
     } else {
@@ -276,22 +282,42 @@ bool BytecodePrinter::check_index(int i, int& cp_index, outputStream* st) {
   }
 #endif //ASSERT
   if (i >= 0 && i < climit) {
-    if (cache->entry_at(i)->is_secondary_entry()) {
-      st->print_cr(" secondary entry?");
+    cp_index = cache->entry_at(i)->constant_pool_index();
+  } else {
+    st->print_cr(" not in CP[*]?", i);
       return false;
     }
-    i = cache->entry_at(i)->constant_pool_index();
-    goto check_cp_index;
+  return true;
   }
-  st->print_cr(" not in CP[*]?", i);
+
+
+bool BytecodePrinter::check_obj_index(int i, int& cp_index, outputStream* st) {
+  ConstantPool* constants = method()->constants();
+  i -= ConstantPool::CPCACHE_INDEX_TAG;
+
+  if (i >= 0 && i < constants->resolved_references()->length()) {
+     cp_index = constants->object_to_cp_index(i);
+     return true;
+  } else {
+    st->print_cr(" not in OBJ[*]?", i);
   return false;
+}
+}
+
+
+bool BytecodePrinter::check_invokedynamic_index(int i, int& cp_index, outputStream* st) {
+  ConstantPool* constants = method()->constants();
+  assert(ConstantPool::is_invokedynamic_index(i), "not secondary index?");
+  i = ConstantPool::decode_invokedynamic_index(i) + ConstantPool::CPCACHE_INDEX_TAG;
+
+  return check_cp_cache_index(i, cp_index, st);
 }
 
 void BytecodePrinter::print_constant(int i, outputStream* st) {
   int orig_i = i;
   if (!check_index(orig_i, i, st))  return;
 
-  constantPoolOop constants = method()->constants();
+  ConstantPool* constants = method()->constants();
   constantTag tag = constants->tag_at(i);
 
   if (tag.is_int()) {
@@ -303,13 +329,10 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
   } else if (tag.is_double()) {
     st->print_cr(" %f", constants->double_at(i));
   } else if (tag.is_string()) {
-    oop string = constants->pseudo_string_at(i);
-    print_oop(string, st);
-  } else if (tag.is_unresolved_string()) {
     const char* string = constants->string_at_noresolve(i);
     st->print_cr(" %s", string);
   } else if (tag.is_klass()) {
-    st->print_cr(" %s", constants->resolved_klass_at(i)->klass_part()->external_name());
+    st->print_cr(" %s", constants->resolved_klass_at(i)->external_name());
   } else if (tag.is_unresolved_klass()) {
     st->print_cr(" <unresolved klass at %d>", i);
   } else if (tag.is_object()) {
@@ -336,7 +359,7 @@ void BytecodePrinter::print_field_or_method(int i, outputStream* st) {
 }
 
 void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st) {
-  constantPoolOop constants = method()->constants();
+  ConstantPool* constants = method()->constants();
   constantTag tag = constants->tag_at(i);
 
   bool has_klass = true;
@@ -438,7 +461,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       break;
     case Bytecodes::_anewarray: {
         int klass_index = get_index_u2();
-        constantPoolOop constants = method()->constants();
+        ConstantPool* constants = method()->constants();
         Symbol* name = constants->klass_name_at(klass_index);
         st->print_cr(" %s ", name->as_C_string());
       }
@@ -446,7 +469,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_multianewarray: {
         int klass_index = get_index_u2();
         int nof_dims = get_index_u1();
-        constantPoolOop constants = method()->constants();
+        ConstantPool* constants = method()->constants();
         Symbol* name = constants->klass_name_at(klass_index);
         st->print_cr(" %s %d", name->as_C_string(), nof_dims);
       }
@@ -552,7 +575,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_checkcast:
     case Bytecodes::_instanceof:
       { int i = get_index_u2();
-        constantPoolOop constants = method()->constants();
+        ConstantPool* constants = method()->constants();
         Symbol* name = constants->klass_name_at(i);
         st->print_cr(" %d <%s>", i, name->as_C_string());
       }
@@ -570,7 +593,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
 
 
 void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
-  methodDataOop mdo = method()->method_data();
+  MethodData* mdo = method()->method_data();
   if (mdo != NULL) {
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != NULL) {

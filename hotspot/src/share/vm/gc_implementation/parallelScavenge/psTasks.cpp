@@ -78,7 +78,13 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
       break;
 
     case system_dictionary:
+      {
       SystemDictionary::oops_do(&roots_closure);
+
+        // Move this to another root_type?
+        PSScavengeKlassClosure klass_closure(pm);
+        ClassLoaderDataGraph::oops_do(&roots_closure, &klass_closure, false);
+      }
       break;
 
     case management:

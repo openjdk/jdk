@@ -28,8 +28,8 @@
 #include "classfile/stackMapFrame.hpp"
 #include "classfile/verifier.hpp"
 #include "memory/allocation.hpp"
-#include "oops/constantPoolOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/constantPool.hpp"
+#include "oops/method.hpp"
 #include "utilities/globalDefinitions.hpp"
 #ifdef TARGET_ARCH_x86
 # include "bytes_x86.hpp"
@@ -99,23 +99,23 @@ class StackMapTable : public StackObj {
 
 class StackMapStream : StackObj {
  private:
-  typeArrayHandle _data;
+  Array<u1>* _data;
   int _index;
  public:
-  StackMapStream(typeArrayHandle ah)
+  StackMapStream(Array<u1>* ah)
     : _data(ah), _index(0) {
   }
   u1 get_u1(TRAPS) {
     if (_data == NULL || _index >= _data->length()) {
       stackmap_format_error("access beyond the end of attribute", CHECK_0);
     }
-    return _data->byte_at(_index++);
+    return _data->at(_index++);
   }
   u2 get_u2(TRAPS) {
     if (_data == NULL || _index >= _data->length() - 1) {
       stackmap_format_error("access beyond the end of attribute", CHECK_0);
     }
-    u2 res = Bytes::get_Java_u2((u1*)_data->byte_at_addr(_index));
+    u2 res = Bytes::get_Java_u2(_data->adr_at(_index));
     _index += 2;
     return res;
   }

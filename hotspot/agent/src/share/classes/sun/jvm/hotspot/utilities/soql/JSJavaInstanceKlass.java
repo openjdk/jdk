@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,6 +259,34 @@ public class JSJavaInstanceKlass extends JSJavaKlass {
    }
 
    private Object getFieldValue(Field fld, String name, Oop oop) {
+       FieldType fd = fld.getFieldType();
+       if (fd.isObject() || fd.isArray()) {
+         return factory.newJSJavaObject(((OopField)fld).getValue(oop));
+       } else if (fd.isByte()) {
+          return new Byte(((ByteField)fld).getValue(oop));
+       } else if (fd.isChar()) {
+          return new String(new char[] { ((CharField)fld).getValue(oop) });
+       } else if (fd.isDouble()) {
+          return new Double(((DoubleField)fld).getValue(oop));
+       } else if (fd.isFloat()) {
+          return new Float(((FloatField)fld).getValue(oop));
+       } else if (fd.isInt()) {
+          return new Integer(((IntField)fld).getValue(oop));
+       } else if (fd.isLong()) {
+          return new Long(((LongField)fld).getValue(oop));
+       } else if (fd.isShort()) {
+          return new Short(((ShortField)fld).getValue(oop));
+       } else if (fd.isBoolean()) {
+          return Boolean.valueOf(((BooleanField)fld).getValue(oop));
+       } else {
+          if (Assert.ASSERTS_ENABLED) {
+             Assert.that(false, "invalid field type for " + name);
+          }
+          return null;
+       }
+   }
+
+   private Object getFieldValue(Field fld, String name, InstanceKlass oop) {
        FieldType fd = fld.getFieldType();
        if (fd.isObject() || fd.isArray()) {
          return factory.newJSJavaObject(((OopField)fld).getValue(oop));

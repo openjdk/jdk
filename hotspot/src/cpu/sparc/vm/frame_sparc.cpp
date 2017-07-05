@@ -26,7 +26,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/markOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -612,7 +612,7 @@ bool frame::interpreter_frame_equals_unpacked_fp(intptr_t* fp) {
 void frame::pd_gc_epilog() {
   if (is_interpreted_frame()) {
     // set constant pool cache entry for interpreter
-    methodOop m = interpreter_frame_method();
+    Method* m = interpreter_frame_method();
 
     *interpreter_frame_cpoolcache_addr() = m->constants()->cache();
   }
@@ -645,7 +645,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // first the method
 
-  methodOop m = *interpreter_frame_method_addr();
+  Method* m = *interpreter_frame_method_addr();
 
   // validate the method we'd find in this potential sender
   if (!Universe::heap()->is_valid_method(m)) return false;
@@ -663,13 +663,9 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
     return false;
   }
 
-  // validate constantPoolCacheOop
-
-  constantPoolCacheOop cp = *interpreter_frame_cache_addr();
-
-  if (cp == NULL ||
-      !Space::is_aligned(cp) ||
-      !Universe::heap()->is_permanent((void*)cp)) return false;
+  // validate ConstantPoolCache*
+  ConstantPoolCache* cp = *interpreter_frame_cache_addr();
+  if (cp == NULL || !cp->is_metadata()) return false;
 
   // validate locals
 
@@ -729,7 +725,7 @@ intptr_t* frame::entry_frame_argument_at(int offset) const {
 
 BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result) {
   assert(is_interpreted_frame(), "interpreted frame expected");
-  methodOop method = interpreter_frame_method();
+  Method* method = interpreter_frame_method();
   BasicType type = method->result_type();
 
   if (method->is_native()) {

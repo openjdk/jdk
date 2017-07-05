@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@
 //          VM_GenCollectFull
 //          VM_GenCollectFullConcurrent
 //          VM_ParallelGCFailedAllocation
-//          VM_ParallelGCFailedPermanentAllocation
 //          VM_ParallelGCSystemGC
 //  VM_GC_Operation
 //   - implements methods common to all classes in the hierarchy:
@@ -53,9 +52,7 @@
 //     is specified; and also the attach "inspectheap" operation
 //
 //  VM_GenCollectForAllocation
-//  VM_GenCollectForPermanentAllocation
 //  VM_ParallelGCFailedAllocation
-//  VM_ParallelGCFailedPermanentAllocation
 //   - this operation is invoked when allocation is failed;
 //     operation performs garbage collection and tries to
 //     allocate afterwards;
@@ -191,24 +188,27 @@ class VM_GenCollectFull: public VM_GC_Operation {
   virtual void doit();
 };
 
-class VM_GenCollectForPermanentAllocation: public VM_GC_Operation {
+class VM_CollectForMetadataAllocation: public VM_GC_Operation {
  private:
-  HeapWord*   _res;
+  MetaWord*                _result;
   size_t      _size;                       // size of object to be allocated
+  Metaspace::MetadataType  _mdtype;
+  ClassLoaderData*         _loader_data;
  public:
-  VM_GenCollectForPermanentAllocation(size_t size,
+  VM_CollectForMetadataAllocation(ClassLoaderData* loader_data,
+                                  size_t size, Metaspace::MetadataType mdtype,
                                       unsigned int gc_count_before,
                                       unsigned int full_gc_count_before,
                                       GCCause::Cause gc_cause)
     : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true),
-      _size(size) {
-    _res = NULL;
-    _gc_cause = gc_cause;
+      _loader_data(loader_data), _size(size), _mdtype(mdtype), _result(NULL) {
   }
-  ~VM_GenCollectForPermanentAllocation()  {}
-  virtual VMOp_Type type() const { return VMOp_GenCollectForPermanentAllocation; }
+  ~VM_CollectForMetadataAllocation()  {
+    MetaspaceGC::set_expand_after_GC(false);
+  }
+  virtual VMOp_Type type() const { return VMOp_CollectForMetadataAllocation; }
   virtual void doit();
-  HeapWord* result() const       { return _res; }
+  MetaWord* result() const       { return _result; }
 };
 
 class SvcGCMarker : public StackObj {

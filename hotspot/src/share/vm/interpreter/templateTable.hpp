@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ class TemplateTable: AllStatic {
  public:
   enum Operation { add, sub, mul, div, rem, _and, _or, _xor, shl, shr, ushr };
   enum Condition { equal, not_equal, less, less_equal, greater, greater_equal };
-  enum CacheByte { f1_byte = 1, f2_byte = 2, f12_oop = 0x12 };  // byte_no codes
+  enum CacheByte { f1_byte = 1, f2_byte = 2 };  // byte_no codes
 
  private:
   static bool            _is_initialized;        // true if TemplateTable has been initialized
@@ -272,7 +272,6 @@ class TemplateTable: AllStatic {
   static void _return(TosState state);
 
   static void resolve_cache_and_index(int byte_no,       // one of 1,2,11
-                                      Register result ,  // either noreg or output for f1/f2
                                       Register cache,    // output for CP cache
                                       Register index,    // output for CP index
                                       size_t index_size); // one of 1,2,4

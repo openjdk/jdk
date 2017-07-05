@@ -925,17 +925,6 @@ Compile::Compile( ciEnv* ci_env,
   }
 }
 
-#ifndef PRODUCT
-void print_opto_verbose_signature( const TypeFunc *j_sig, const char *stub_name ) {
-  if(PrintOpto && Verbose) {
-    tty->print("%s   ", stub_name); j_sig->print_flattened(); tty->cr();
-  }
-}
-#endif
-
-void Compile::print_codes() {
-}
-
 //------------------------------Init-------------------------------------------
 // Prepare for a single compilation
 void Compile::Init(int aliaslevel) {
@@ -963,7 +952,7 @@ void Compile::Init(int aliaslevel) {
   set_recent_alloc(NULL, NULL);
 
   // Create Debug Information Recorder to record scopes, oopmaps, etc.
-  env()->set_oop_recorder(new OopRecorder(comp_arena()));
+  env()->set_oop_recorder(new OopRecorder(env()->arena()));
   env()->set_debug_info(new DebugInformationRecorder(env()->oop_recorder()));
   env()->set_dependencies(new Dependencies(env()));
 
@@ -1182,7 +1171,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     // space to include all of the array body.  Only the header, klass
     // and array length can be accessed un-aliased.
     if( offset != Type::OffsetBot ) {
-      if( ta->const_oop() ) { // methodDataOop or methodOop
+      if( ta->const_oop() ) { // MethodData* or Method*
         offset = Type::OffsetBot;   // Flatten constant access into array body
         tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),ta->ary(),ta->klass(),false,offset);
       } else if( offset == arrayOopDesc::length_offset_in_bytes() ) {
@@ -3026,12 +3015,13 @@ bool Compile::Constant::operator==(const Constant& other) {
   if (can_be_reused() != other.can_be_reused())  return false;
   // For floating point values we compare the bit pattern.
   switch (type()) {
-  case T_FLOAT:   return (_value.i == other._value.i);
+  case T_FLOAT:   return (_v._value.i == other._v._value.i);
   case T_LONG:
-  case T_DOUBLE:  return (_value.j == other._value.j);
+  case T_DOUBLE:  return (_v._value.j == other._v._value.j);
   case T_OBJECT:
-  case T_ADDRESS: return (_value.l == other._value.l);
-  case T_VOID:    return (_value.l == other._value.l);  // jump-table entries
+  case T_METADATA: return (_v._metadata == other._v._metadata);
+  case T_ADDRESS: return (_v._value.l == other._v._value.l);
+  case T_VOID:    return (_v._value.l == other._v._value.l);  // jump-table entries
   default: ShouldNotReachHere();
   }
   return false;
@@ -3042,6 +3032,7 @@ static int type_to_size_in_bytes(BasicType t) {
   case T_LONG:    return sizeof(jlong  );
   case T_FLOAT:   return sizeof(jfloat );
   case T_DOUBLE:  return sizeof(jdouble);
+  case T_METADATA: return sizeof(Metadata*);
     // We use T_VOID as marker for jump-table entries (labels) which
     // need an internal word relocation.
   case T_VOID:
@@ -3135,6 +3126,12 @@ void Compile::ConstantTable::emit(CodeBuffer& cb) {
       }
       break;
     }
+    case T_METADATA: {
+      Metadata* obj = con.get_metadata();
+      int metadata_index = _masm.oop_recorder()->find_index(obj);
+      constant_addr = _masm.address_constant((address) obj, metadata_Relocation::spec(metadata_index));
+      break;
+    }
     default: ShouldNotReachHere();
     }
     assert(constant_addr, "consts section too small");
@@ -3168,6 +3165,12 @@ Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, BasicType typ
   return con;
 }
 
+Compile::Constant Compile::ConstantTable::add(Metadata* metadata) {
+  Constant con(metadata);
+  add(con);
+  return con;
+}
+
 Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, MachOper* oper) {
   jvalue value;
   BasicType type = oper->type()->basic_type();
@@ -3177,7 +3180,8 @@ Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, MachOper* ope
   case T_DOUBLE:  value.d = oper->constantD(); break;
   case T_OBJECT:
   case T_ADDRESS: value.l = (jobject) oper->constant(); break;
-  default: ShouldNotReachHere();
+  case T_METADATA: return add((Metadata*)oper->constant()); break;
+  default: guarantee(false, err_msg_res("unhandled type: %s", type2name(type)));
   }
   return add(n, type, value);
 }

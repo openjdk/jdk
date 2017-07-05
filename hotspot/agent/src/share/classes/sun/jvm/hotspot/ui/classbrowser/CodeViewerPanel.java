@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class CodeViewerPanel extends JPanel {
 
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BorderLayout());
-        topPanel.add(new JLabel("Enter PC or methodOop/klassOop Address: "), BorderLayout.WEST);
+        topPanel.add(new JLabel("Enter PC or Method*/Klass* Address: "), BorderLayout.WEST);
         address = new HistoryComboBox();
         topPanel.add(address, BorderLayout.CENTER);
 

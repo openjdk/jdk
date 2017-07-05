@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ ifeq ("${Platform_compiler}", "sparcWorks")
 ifeq ($(COMPILER_REV_NUMERIC), 510)
 # CC 5.10 has bug XXXXX with -xO4
 OPT_CFLAGS/jvmtiClassFileReconstituter.o = $(OPT_CFLAGS/O2)
+# Avoid apparent crash because of corrupted methodHandle in a tail call
+OPT_CFLAGS/simpleThresholdPolicy.o = $(OPT_CFLAGS/DEFAULT) $(OPT_CCFLAGS/NO_TAIL_CALL_OPT)
 endif # COMPILER_REV_NUMERIC == 510
 
 ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
@@ -70,7 +72,6 @@ ifndef USE_GCC
 # and mustn't be otherwise.
 MAPFILE_DTRACE = $(GAMMADIR)/make/solaris/makefiles/mapfile-vers-$(TYPE)
 
-REORDERFILE = $(GAMMADIR)/make/solaris/makefiles/reorder_$(TYPE)_$(BUILDARCH)
 endif
 
 # If we can create .debuginfo files, then the VM is stripped in vm.make
@@ -79,5 +80,4 @@ endif
 
 G_SUFFIX =
 SYSDEFS += -DPRODUCT
-SYSDEFS += $(REORDER_FLAG)
 VERSION = optimized

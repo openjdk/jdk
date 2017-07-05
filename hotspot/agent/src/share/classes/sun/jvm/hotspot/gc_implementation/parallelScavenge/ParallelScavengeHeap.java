@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ public class ParallelScavengeHeap extends CollectedHeap {
       Type type = db.lookupType("ParallelScavengeHeap");
       youngGenField = type.getAddressField("_young_gen");
       oldGenField    = type.getAddressField("_old_gen");
-      permGenField    = type.getAddressField("_perm_gen");
    }
 
    public ParallelScavengeHeap(Address addr) {
@@ -55,7 +54,6 @@ public class ParallelScavengeHeap extends CollectedHeap {
    // Fields
    private static AddressField youngGenField;
    private static AddressField oldGenField;
-   private static AddressField permGenField;
 
    // Accessors
    public PSYoungGen youngGen() {
@@ -64,10 +62,6 @@ public class ParallelScavengeHeap extends CollectedHeap {
 
    public PSOldGen oldGen() {
       return (PSOldGen) VMObjectFactory.newObject(PSOldGen.class, oldGenField.getValue());
-   }
-
-   public PSPermGen permGen() {
-      return (PSPermGen) VMObjectFactory.newObject(PSPermGen.class, permGenField.getValue());
    }
 
    public long capacity() {
@@ -87,10 +81,6 @@ public class ParallelScavengeHeap extends CollectedHeap {
          return true;
       }
 
-      if (permGen().isIn(a)) {
-         return true;
-      }
-
       return false;
    }
 
@@ -102,7 +92,6 @@ public class ParallelScavengeHeap extends CollectedHeap {
       tty.print("ParallelScavengeHeap [ ");
       youngGen().printOn(tty);
       oldGen().printOn(tty);
-      permGen().printOn(tty);
       tty.print(" ] ");
    }
 }

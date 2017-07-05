@@ -33,7 +33,7 @@
 // return a random number, which is one of the possible hash code used for
 // objects.  We don't want to call the synchronizer hash code to install
 // this value because it may safepoint.
-intptr_t object_hash(klassOop k) {
+intptr_t object_hash(Klass* k) {
   intptr_t hc = k->java_mirror()->mark()->hash();
   return hc != markOopDesc::no_hash ? hc : os::random();
 }
