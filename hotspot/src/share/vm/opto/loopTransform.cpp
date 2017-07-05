@@ -509,14 +509,13 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
   //         backedges) and then map to the new peeled iteration.  This leaves
   //         the pre-loop with only 1 user (the new peeled iteration), but the
   //         peeled-loop backedge has 2 users.
-  Node* new_exit_value = old_new[head->in(LoopNode::LoopBackControl)->_idx];
-  new_exit_value = move_loop_predicates(entry, new_exit_value, !counted_loop);
+  Node* new_entry = old_new[head->in(LoopNode::LoopBackControl)->_idx];
   _igvn.hash_delete(head);
-  head->set_req(LoopNode::EntryControl, new_exit_value);
+  head->set_req(LoopNode::EntryControl, new_entry);
   for (DUIterator_Fast jmax, j = head->fast_outs(jmax); j < jmax; j++) {
     Node* old = head->fast_out(j);
     if (old->in(0) == loop->_head && old->req() == 3 && old->is_Phi()) {
-      new_exit_value = old_new[old->in(LoopNode::LoopBackControl)->_idx];
+      Node* new_exit_value = old_new[old->in(LoopNode::LoopBackControl)->_idx];
       if (!new_exit_value )     // Backedge value is ALSO loop invariant?
         // Then loop body backedge value remains the same.
         new_exit_value = old->in(LoopNode::LoopBackControl);
@@ -2100,7 +2099,7 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   if (!_head->is_CountedLoop())
     return false;     // Dead loop
   CountedLoopNode *cl = _head->as_CountedLoop();
-  if (!cl->loopexit())
+  if (!cl->is_valid_counted_loop())
     return false; // Malformed loop
   if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue))))
     return false;             // Infinite loop
@@ -2256,7 +2255,7 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
   }
   CountedLoopNode *cl = _head->as_CountedLoop();
 
-  if (!cl->loopexit()) return true; // Ignore various kinds of broken loops
+  if (!cl->is_valid_counted_loop()) return true; // Ignore various kinds of broken loops
 
   // Do nothing special to pre- and post- loops
   if (cl->is_pre_loop() || cl->is_post_loop()) return true;
@@ -2637,7 +2636,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 
   // Must have constant stride
   CountedLoopNode* head = lpt->_head->as_CountedLoop();
-  if (!head->stride_is_con() || !head->is_normal_loop()) {
+  if (!head->is_valid_counted_loop() || !head->is_normal_loop()) {
     return false;
   }
 

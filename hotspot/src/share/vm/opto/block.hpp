@@ -329,10 +329,10 @@ class Block : public CFGElement {
 
 #ifndef PRODUCT
   // Debugging print of basic block
-  void dump_bidx(const Block* orig) const;
-  void dump_pred(const Block_Array *bbs, Block* orig) const;
-  void dump_head( const Block_Array *bbs ) const;
-  void dump( ) const;
+  void dump_bidx(const Block* orig, outputStream* st = tty) const;
+  void dump_pred(const Block_Array *bbs, Block* orig, outputStream* st = tty) const;
+  void dump_head( const Block_Array *bbs, outputStream* st = tty ) const;
+  void dump() const;
   void dump( const Block_Array *bbs ) const;
 #endif
 };
