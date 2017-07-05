@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import jdk.Version;
 
 /**
  * Adds aliasing to ZipFileSystem to support multi-release jar files.  An alias map
@@ -68,14 +69,14 @@ class JarFileSystem extends ZipFileSystem {
             if (o instanceof String) {
                 String s = (String)o;
                 if (s.equals("runtime")) {
-                    version = sun.misc.Version.jdkMajorVersion();  // fixme waiting for jdk.util.Version
+                    version = jdk.Version.current().major();
                 } else {
                     version = Integer.parseInt(s);
                 }
             } else if (o instanceof Integer) {
                 version = (Integer)o;
-            } else if (false /*o instanceof Version*/) {  // fixme waiting for jdk.util.Version
-//                version = ((Version)o).major();
+            } else if (o instanceof Version) {
+                version = ((Version)o).major();
             } else {
                 throw new IllegalArgumentException("env parameter must be String, Integer, "
                         + "or Version");

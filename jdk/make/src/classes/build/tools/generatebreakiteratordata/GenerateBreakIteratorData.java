@@ -46,11 +46,6 @@ public class GenerateBreakIteratorData {
     private static String unicodeData = "UnicodeData.txt";
 
     /**
-     * Rules file
-     */
-    private static String rules = "sun.text.resources.BreakIteratorRules";
-
-    /**
      * Locale data
      */
     private static String language = "";
@@ -78,14 +73,14 @@ public class GenerateBreakIteratorData {
         String[] classNames;
         ResourceBundle rules, info;
 
-        info =  ResourceBundle.getBundle("sun.text.resources.BreakIteratorInfo",
-                                         new Locale(language, country, valiant),
-                                         BreakIteratorRBControl.INSTANCE);
+        String pkgName = "sun.text.resources" + (language.length() > 0 ? ".ext" : "");
+
+        info =  ResourceBundle.getBundle(pkgName + ".BreakIteratorInfo",
+                                         new Locale(language, country, valiant));
         classNames = info.getStringArray("BreakIteratorClasses");
 
-        rules = ResourceBundle.getBundle("sun.text.resources.BreakIteratorRules",
-                                         new Locale(language, country, valiant),
-                                         BreakIteratorRBControl.INSTANCE);
+        rules = ResourceBundle.getBundle(pkgName + ".BreakIteratorRules",
+                                         new Locale(language, country, valiant));
 
         if (info.containsKey("CharacterData")) {
             generateDataFile(info.getString("CharacterData"),

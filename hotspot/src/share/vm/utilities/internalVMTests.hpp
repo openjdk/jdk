@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 
 class InternalVMTests : public AllStatic {
+  static void run_test(const char* name, void (*test)());
  public:
   static void run();
 };

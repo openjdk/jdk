@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ class ArrayKlass: public Klass {
   int      _dimension;         // This is n'th-dimensional array.
   Klass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
   Klass* volatile _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
-  int      _vtable_len;        // size of vtable for this klass
 
  protected:
   // Constructors
@@ -99,7 +98,6 @@ class ArrayKlass: public Klass {
   bool compute_is_subtype_of(Klass* k);
 
   // Sizing
-  static int header_size()                 { return sizeof(ArrayKlass)/HeapWordSize; }
   static int static_size(int header_size);
 
 #if INCLUDE_SERVICES
@@ -110,15 +108,6 @@ class ArrayKlass: public Klass {
   }
 #endif
 
-  // Java vtable
-  klassVtable* vtable() const;             // return new klassVtable
-  int  vtable_length() const               { return _vtable_len; }
-  static int base_vtable_length()          { return Universe::base_vtable_size(); }
-  void set_vtable_length(int len)          { assert(len == base_vtable_length(), "bad length"); _vtable_len = len; }
- protected:
-  inline intptr_t* start_of_vtable() const;
-
- public:
   // Iterators
   void array_klasses_do(void f(Klass* k));
   void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);

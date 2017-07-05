@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -244,10 +244,9 @@ SUNWprivate_1.1 {
 		Java_java_util_TimeZone_getSystemTimeZoneID;
 		Java_java_util_TimeZone_getSystemGMTOffsetID;
 		Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8;
-		Java_sun_misc_NativeSignalHandler_handle0;
-		Java_sun_misc_Signal_findSignal;
-		Java_sun_misc_Signal_handle0;
-		Java_sun_misc_Signal_raise0;
+		Java_jdk_internal_misc_Signal_findSignal0;
+		Java_jdk_internal_misc_Signal_handle0;
+		Java_jdk_internal_misc_Signal_raise0;
               Java_sun_reflect_ConstantPool_getClassAt0;
               Java_sun_reflect_ConstantPool_getClassAtIfLoaded0;
               Java_sun_reflect_ConstantPool_getClassRefIndexAt0;

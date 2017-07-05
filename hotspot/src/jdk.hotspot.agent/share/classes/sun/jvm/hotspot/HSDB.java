@@ -141,15 +141,19 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
         return;
     }
 
-    agent = new HotSpotAgent();
-    workerThread = new WorkerThread();
-    attachMenuItems = new java.util.ArrayList();
-    detachMenuItems = new java.util.ArrayList();
+    // Create frame first, to catch any GUI creation issues
+    // before we initialize agent
 
     frame = new JFrame("HSDB - HotSpot Debugger");
     frame.setSize(800, 600);
     frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
     frame.addWindowListener(new CloseUI());
+
+    agent = new HotSpotAgent();
+    workerThread = new WorkerThread();
+    attachMenuItems = new java.util.ArrayList();
+    detachMenuItems = new java.util.ArrayList();
+
 
     JMenuBar menuBar = new JMenuBar();
 

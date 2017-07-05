@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,13 +57,13 @@
 #define log_develop_info(...)  (!log_is_enabled(Info, __VA_ARGS__))   ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Info>
 #define log_develop_debug(...) (!log_is_enabled(Debug, __VA_ARGS__)) ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Debug>
 #define log_develop_trace(...) (!log_is_enabled(Trace, __VA_ARGS__))  ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Trace>
-#define develop_log_is_enabled(level, ...)  log_is_enabled(level, __VA_ARGS__)
+#define log_develop_is_enabled(level, ...)  log_is_enabled(level, __VA_ARGS__)
 #else
 #define DUMMY_ARGUMENT_CONSUMER(...)
 #define log_develop_info(...)  DUMMY_ARGUMENT_CONSUMER
 #define log_develop_debug(...) DUMMY_ARGUMENT_CONSUMER
 #define log_develop_trace(...) DUMMY_ARGUMENT_CONSUMER
-#define develop_log_is_enabled(...)  false
+#define log_develop_is_enabled(...)  false
 #endif
 
 // Convenience macro to test if the logging is enabled on the specified level for given tags.
@@ -120,15 +120,17 @@ class Log VALUE_OBJ_CLASS_SPEC {
   ATTRIBUTE_PRINTF(1, 0)
   static void vwrite(const char* fmt, va_list args) {
     char buf[LogBufferSize];
+    va_list saved_args;         // For re-format on buf overflow.
+    va_copy(saved_args, args);
     size_t prefix_len = LogPrefix<T0, T1, T2, T3, T4>::prefix(buf, sizeof(buf));
     // Check that string fits in buffer; resize buffer if necessary
     int ret = os::log_vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
     assert(ret >= 0, "Log message buffer issue");
-    if ((size_t)ret > sizeof(buf)) {
+    if ((size_t)ret >= sizeof(buf)) {
       size_t newbuf_len = prefix_len + ret + 1;
       char* newbuf = NEW_C_HEAP_ARRAY(char, newbuf_len, mtLogging);
       prefix_len = LogPrefix<T0, T1, T2, T3, T4>::prefix(newbuf, newbuf_len);
-      ret = os::log_vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, args);
+      ret = os::log_vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
       assert(ret >= 0, "Log message buffer issue");
       puts<Level>(newbuf);
       FREE_C_HEAP_ARRAY(char, newbuf);

@@ -48,6 +48,7 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.GET_CLASS_NAME;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.GET_CLASS_NAME_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.INIT;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.LIST_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.NATIVESYMBOL_TYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJECT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_FIELD_NAME;
@@ -63,6 +64,8 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_S
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETDOCUMENTATIONKEY_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_TYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SETTER_PREFIX;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SYMBOL_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SYMBOL_PREFIX;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.TYPE_OBJECT;
 
 import java.io.BufferedInputStream;
@@ -277,7 +280,7 @@ public class ClassGenerator {
     static void newFunction(final MethodGenerator mi, final String objName, final String className, final MemberInfo memInfo, final List<MemberInfo> specs) {
         final boolean arityFound = (memInfo.getArity() != MemberInfo.DEFAULT_ARITY);
 
-        mi.loadLiteral(memInfo.getName());
+        loadFunctionName(mi, memInfo.getName());
         mi.visitLdcInsn(new Handle(H_INVOKESTATIC, className, memInfo.getJavaName(), memInfo.getJavaDesc()));
 
         assert specs != null;
@@ -305,8 +308,8 @@ public class ClassGenerator {
         // dup of Collection instance
         mi.dup();
 
-        // property = AccessorProperty.create(key, flags, getter, setter);
-        mi.loadLiteral(propertyName);
+        // Load property name, converting to Symbol if it begins with "@@"
+        loadPropertyKey(mi, propertyName);
         // setup flags
         mi.push(memInfo.getAttributes());
         // setup getter method handle
@@ -319,6 +322,7 @@ public class ClassGenerator {
             javaName = SETTER_PREFIX + memInfo.getJavaName();
             mi.visitLdcInsn(new Handle(H_INVOKEVIRTUAL, className, javaName, setterDesc(memInfo)));
         }
+        // property = AccessorProperty.create(key, flags, getter, setter);
         mi.invokeStatic(ACCESSORPROPERTY_TYPE, ACCESSORPROPERTY_CREATE, ACCESSORPROPERTY_CREATE_DESC);
         // boolean Collection.add(property)
         mi.invokeInterface(COLLECTION_TYPE, COLLECTION_ADD, COLLECTION_ADD_DESC);
@@ -333,8 +337,8 @@ public class ClassGenerator {
         // dup of Collection instance
         mi.dup();
 
-        // property = AccessorProperty.create(key, flags, getter, setter);
-        mi.loadLiteral(propertyName);
+        // Load property name, converting to Symbol if it begins with "@@"
+        loadPropertyKey(mi, propertyName);
         // setup flags
         mi.push(getter.getAttributes());
         // setup getter method handle
@@ -347,6 +351,7 @@ public class ClassGenerator {
             mi.visitLdcInsn(new Handle(H_INVOKESTATIC, className,
                     setter.getJavaName(), setter.getJavaDesc()));
         }
+        // property = AccessorProperty.create(key, flags, getter, setter);
         mi.invokeStatic(ACCESSORPROPERTY_TYPE, ACCESSORPROPERTY_CREATE, ACCESSORPROPERTY_CREATE_DESC);
         // boolean Collection.add(property)
         mi.invokeInterface(COLLECTION_TYPE, COLLECTION_ADD, COLLECTION_ADD_DESC);
@@ -363,6 +368,22 @@ public class ClassGenerator {
 
     static ScriptClassInfo getScriptClassInfo(final byte[] classBuf) {
         return getScriptClassInfo(new ClassReader(classBuf));
+    }
+
+    private static void loadFunctionName(final MethodGenerator mi, final String propertyName) {
+        if (propertyName.startsWith(SYMBOL_PREFIX)) {
+            mi.loadLiteral("Symbol[" + propertyName.substring(2) + "]");
+        } else {
+            mi.loadLiteral(propertyName);
+        }
+    }
+
+    private static void loadPropertyKey(final MethodGenerator mi, final String propertyName) {
+        if (propertyName.startsWith(SYMBOL_PREFIX)) {
+            mi.getStatic(NATIVESYMBOL_TYPE, propertyName.substring(2), SYMBOL_DESC);
+        } else {
+            mi.loadLiteral(propertyName);
+        }
     }
 
     private static ScriptClassInfo getScriptClassInfo(final ClassReader reader) {

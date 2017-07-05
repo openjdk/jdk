@@ -54,7 +54,7 @@ final class SetMethodCreator {
     /**
      * Creates a new property setter method creator.
      * @param sobj the object for which we're creating the property setter
-     * @param find a result of a {@link ScriptObject#findProperty(String, boolean)} on the object for the property we
+     * @param find a result of a {@link ScriptObject#findProperty(Object, boolean)} on the object for the property we
      * want to create a setter for. Can be null if the property does not yet exist on the object.
      * @param desc the descriptor of the call site that triggered the property setter lookup
      * @param request the link request
@@ -66,7 +66,6 @@ final class SetMethodCreator {
         this.desc    = desc;
         this.type    = desc.getMethodType().parameterType(1);
         this.request = request;
-
     }
 
     private String getName() {
@@ -172,7 +171,7 @@ final class SetMethodCreator {
         assert property     != null;
 
         final MethodHandle boundHandle;
-        if (!(property instanceof UserAccessorProperty) && find.isInherited()) {
+        if (!property.isAccessorProperty() && find.isInherited()) {
             boundHandle = ScriptObject.addProtoFilter(methodHandle, find.getProtoChainLength());
         } else {
             boundHandle = methodHandle;
