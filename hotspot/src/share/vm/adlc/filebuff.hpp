@@ -68,6 +68,7 @@ class FileBuff {
   // and increments bufeol and filepos to point at the end of that line.
   char *get_line(void);
   int linenum() const { return _linenum; }
+  void set_linenum(int line) { _linenum = line; }
 
   // This converts a pointer into the buffer to a file offset.  It only works
   // when the pointer is valid (i.e. just obtained from getline()).

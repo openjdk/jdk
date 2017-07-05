@@ -428,7 +428,7 @@ public:
   }
 
   // Mapping from address to card marking array index.
-  int index_for(void* p) {
+  size_t index_for(void* p) {
     assert(_whole_heap.contains(p),
            "out of bounds access to card marking array");
     return byte_for(p) - _byte_map;
