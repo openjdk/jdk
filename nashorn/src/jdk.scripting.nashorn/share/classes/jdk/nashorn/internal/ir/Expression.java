@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.ir;
 
-import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 
@@ -39,14 +38,7 @@ public abstract class Expression extends Node {
 
     static final String OPT_IDENTIFIER = "%";
 
-    private static final Function<Symbol, Type> UNKNOWN_LOCALS = new Function<Symbol, Type>() {
-        @Override
-        public Type apply(final Symbol t) {
-            return null;
-        }
-    };
-
-    Expression(final long token, final int start, final int finish) {
+    protected Expression(final long token, final int start, final int finish) {
         super(token, start, finish);
     }
 
@@ -63,18 +55,7 @@ public abstract class Expression extends Node {
      *
      * @return the type of the expression.
      */
-    public final Type getType() {
-        return getType(UNKNOWN_LOCALS);
-    }
-
-    /**
-     * Returns the type of the expression under the specified symbol-to-type mapping. By default delegates to
-     * {@link #getType()} but expressions whose type depends on their subexpressions' types and expressions whose type
-     * depends on symbol type ({@link IdentNode}) will have a special implementation.
-     * @param localVariableTypes a mapping from symbols to their types, used for type calculation.
-     * @return the type of the expression under the specified symbol-to-type mapping.
-     */
-    public abstract Type getType(final Function<Symbol, Type> localVariableTypes);
+    public abstract Type getType();
 
     /**
      * Returns {@code true} if this expression depends exclusively on state that is constant

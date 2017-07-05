@@ -42,7 +42,7 @@ import sun.reflect.generics.tree.FieldTypeSignature;
  * of a specific implementation by using this interface. For example,
  * repositories of generic type information are initialized with a
  * factory conforming to this interface, and use it to generate the
- * tpe information they are required to provide. As a result, such
+ * type information they are required to provide. As a result, such
  * repository code can be shared across different reflective systems.
  */
 public interface GenericsFactory {
@@ -60,7 +60,7 @@ public interface GenericsFactory {
     TypeVariable<?> makeTypeVariable(String name,
                                      FieldTypeSignature[] bounds);
     /**
-     * Return an instance of the <tt>ParameterizedType</tt> interface
+     * Returns an instance of the <tt>ParameterizedType</tt> interface
      * that corresponds to a generic type instantiation of the
      * generic declaration <tt>declaration</tt> with actual type arguments
      * <tt>typeArgs</tt>.
@@ -123,7 +123,7 @@ public interface GenericsFactory {
     /**
      * Returns a (possibly generic) array type.
      * If the component type is a parameterized type, it must
-     * only have unbounded wildcard arguemnts, otherwise
+     * only have unbounded wildcard arguments, otherwise
      * a MalformedParameterizedTypeException is thrown.
      * @param componentType - the component type of the array
      * @return a (possibly generic) array type.

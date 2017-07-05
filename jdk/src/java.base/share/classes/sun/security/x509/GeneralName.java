@@ -221,7 +221,7 @@ public class GeneralName {
     /**
      * Encode the name to the specified DerOutputStream.
      *
-     * @param out the DerOutputStream to encode the the GeneralName to.
+     * @param out the DerOutputStream to encode the GeneralName to.
      * @exception IOException on encoding errors.
      */
     public void encode(DerOutputStream out) throws IOException {

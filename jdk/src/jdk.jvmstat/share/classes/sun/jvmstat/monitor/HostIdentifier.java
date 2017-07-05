@@ -227,7 +227,7 @@ public class HostIdentifier {
      *
      * The necessary components of the VmIdentifier are extracted and
      * reassembled into a HostIdentifier. If a "file:" scheme (protocol)
-     * is specified, the the returned HostIdentifier will always be
+     * is specified, the returned HostIdentifier will always be
      * equivalent to HostIdentifier("file://localhost").
      *
      * @param vmid the VmIdentifier use to construct the HostIdentifier.

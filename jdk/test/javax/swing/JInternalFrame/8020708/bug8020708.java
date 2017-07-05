@@ -32,7 +32,6 @@ import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -79,7 +78,6 @@ public class bug8020708 {
     }
 
     static void testInternalFrameMnemonic() throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -103,25 +101,26 @@ public class bug8020708 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point clickPoint = Util.getCenterPoint(internalFrame);
         robot.mouseMove(clickPoint.x, clickPoint.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_SPACE);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Util.hitKeys(robot, KeyEvent.VK_C);
-        toolkit.realSync();
+        robot.waitForIdle();
+        robot.delay(500);
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 if (internalFrame.isVisible()) {
-                    throw new RuntimeException("Close mnemonic does not work");
+                    throw new RuntimeException("Close mnemonic does not work in "+UIManager.getLookAndFeel());
                 }
                 frame.dispose();
             }

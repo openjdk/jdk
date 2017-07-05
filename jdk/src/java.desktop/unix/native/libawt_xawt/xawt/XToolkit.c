@@ -77,7 +77,7 @@ struct MenuComponentIDs menuComponentIDs;
 #ifndef HEADLESS
 
 extern Display* awt_init_Display(JNIEnv *env, jobject this);
-extern void freeNativeStringArray(char **array, long length);
+extern void freeNativeStringArray(char **array, jsize length);
 extern char** stringArrayToNative(JNIEnv *env, jobjectArray array, jsize * ret_length);
 
 struct XFontPeerIDs xFontPeerIDs;

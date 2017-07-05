@@ -28,8 +28,6 @@
    @author Pavel Porvatov
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.plaf.synth.SynthLookAndFeel;
@@ -82,7 +80,7 @@ public class bug7158712 {
             }
         });
 
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         Point comboBoxLocation = Util.invokeOnEDT(new Callable<Point>() {
             @Override

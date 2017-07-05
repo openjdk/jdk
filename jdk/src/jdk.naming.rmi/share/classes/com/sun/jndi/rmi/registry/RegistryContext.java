@@ -353,7 +353,6 @@ public class RegistryContext implements Context, Referenceable {
     /**
      * Wrap a RemoteException inside a NamingException.
      */
-    @SuppressWarnings("deprecation")
     public static NamingException wrapRemoteException(RemoteException re) {
 
         NamingException ne;
@@ -365,8 +364,7 @@ public class RegistryContext implements Context, Referenceable {
             ne = new NoPermissionException();
 
         } else if (re instanceof StubNotFoundException ||
-                   re instanceof UnknownHostException ||
-                   re instanceof SocketSecurityException) {
+                   re instanceof UnknownHostException) {
             ne = new ConfigurationException();
 
         } else if (re instanceof ExportException ||
@@ -414,11 +412,10 @@ public class RegistryContext implements Context, Referenceable {
      * Attempts to install a security manager if none is currently in
      * place.
      */
-    @SuppressWarnings("deprecation")
     private static void installSecurityMgr() {
 
         try {
-            System.setSecurityManager(new RMISecurityManager());
+            System.setSecurityManager(new SecurityManager());
         } catch (Exception e) {
         }
     }

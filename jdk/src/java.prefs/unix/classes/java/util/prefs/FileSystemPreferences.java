@@ -981,7 +981,7 @@ class FileSystemPreferences extends AbstractPreferences {
     private static int MAX_ATTEMPTS = 5;
 
     /**
-     * Release the the appropriate file lock (user or system).
+     * Release the appropriate file lock (user or system).
      * @throws SecurityException if file access denied.
      */
     private void unlockFile() {

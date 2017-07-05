@@ -576,7 +576,7 @@ needIO:
 
         /*
          * We ignore the return value here, we return the
-         * number of bytes actually consumed from the the file.
+         * number of bytes actually consumed from the file.
          * We'll flush the output buffer before we start shutting down.
          */
         doWrite(fileChannelBB);

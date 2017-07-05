@@ -793,7 +793,7 @@ public final class DateTimeFormatterBuilder {
      * They are converted to a date-time with a zone-offset of UTC and formatted
      * using the standard ISO-8601 format.
      * With this method, formatting nano-of-second outputs zero, three, six
-     * or nine digits digits as necessary.
+     * or nine digits as necessary.
      * The localized decimal style is not used.
      * <p>
      * The instant is obtained using {@link ChronoField#INSTANT_SECONDS INSTANT_SECONDS}

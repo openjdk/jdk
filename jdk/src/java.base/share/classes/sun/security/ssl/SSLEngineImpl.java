@@ -77,7 +77,7 @@ import javax.net.ssl.SSLEngineResult.*;
  *      All data is routed through
  *      EngineInputRecord/EngineOutputRecord.  However, all handshake
  *      data (ct_alert/ct_change_cipher_spec/ct_handshake) are passed
- *      through to the the underlying InputRecord/OutputRecord, and
+ *      through to the underlying InputRecord/OutputRecord, and
  *      the data uses the internal buffers.
  *
  *      Application data is handled slightly different, we copy the data
@@ -158,7 +158,7 @@ final public class SSLEngineImpl extends SSLEngine {
      *                v                                     |
      *               ERROR>------>----->CLOSED<--------<----+
      *
-     * ALSO, note that the the purpose of handshaking (renegotiation is
+     * ALSO, note that the purpose of handshaking (renegotiation is
      * included) is to assign a different, and perhaps new, session to
      * the connection.  The SSLv3 spec is a bit confusing on that new
      * protocol feature.

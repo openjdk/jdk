@@ -111,6 +111,44 @@ void YoungGCTracer::send_young_gc_event() const {
   }
 }
 
+bool YoungGCTracer::should_send_promotion_in_new_plab_event() const {
+  return EventPromoteObjectInNewPLAB::is_enabled();
+}
+
+bool YoungGCTracer::should_send_promotion_outside_plab_event() const {
+  return EventPromoteObjectOutsidePLAB::is_enabled();
+}
+
+void YoungGCTracer::send_promotion_in_new_plab_event(Klass* klass, size_t obj_size,
+                                                     uint age, bool tenured,
+                                                     size_t plab_size) const {
+
+  EventPromoteObjectInNewPLAB event;
+  if (event.should_commit()) {
+    event.set_gcId(_shared_gc_info.gc_id().id());
+    event.set_class(klass);
+    event.set_objectSize(obj_size);
+    event.set_tenured(tenured);
+    event.set_tenuringAge(age);
+    event.set_plabSize(plab_size);
+    event.commit();
+  }
+}
+
+void YoungGCTracer::send_promotion_outside_plab_event(Klass* klass, size_t obj_size,
+                                                      uint age, bool tenured) const {
+
+  EventPromoteObjectOutsidePLAB event;
+  if (event.should_commit()) {
+    event.set_gcId(_shared_gc_info.gc_id().id());
+    event.set_class(klass);
+    event.set_objectSize(obj_size);
+    event.set_tenured(tenured);
+    event.set_tenuringAge(age);
+    event.commit();
+  }
+}
+
 void OldGCTracer::send_old_gc_event() const {
   EventGCOldGarbageCollection e(UNTIMED);
   if (e.should_commit()) {

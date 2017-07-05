@@ -336,13 +336,12 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
      * Main program to start a registry. <br>
      * The port number can be specified on the command line.
      */
-    @SuppressWarnings("deprecation")
     public static void main(String args[])
     {
         // Create and install the security manager if one is not installed
         // already.
         if (System.getSecurityManager() == null) {
-            System.setSecurityManager(new RMISecurityManager());
+            System.setSecurityManager(new SecurityManager());
         }
 
         try {

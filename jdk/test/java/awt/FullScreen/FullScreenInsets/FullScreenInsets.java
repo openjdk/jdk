@@ -30,11 +30,8 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
-
-import sun.awt.SunToolkit;
 
 /**
  * @test
@@ -45,6 +42,7 @@ import sun.awt.SunToolkit;
 public final class FullScreenInsets {
 
     private static boolean passed = true;
+    private static Robot robot = null;
 
     public static void main(final String[] args) {
         final GraphicsEnvironment ge = GraphicsEnvironment
@@ -147,7 +145,15 @@ public final class FullScreenInsets {
     }
 
     private static void sleep() {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+        if(robot == null) {
+            try {
+                robot = new Robot();
+            }catch(AWTException ae) {
+                ae.printStackTrace();
+                throw new RuntimeException("Cannot create Robot.");
+            }
+        }
+        robot.waitForIdle();
         try {
             Thread.sleep(2000);
         } catch (InterruptedException ignored) {

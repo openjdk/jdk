@@ -1641,7 +1641,7 @@ final class P11KeyStore extends KeyStoreSpi {
 
         // If the key is a token object on this token, update it instead
         // of creating a duplicate key object.
-        // Otherwise, treat a P11Key like any other key, if is is extractable.
+        // Otherwise, treat a P11Key like any other key, if it is extractable.
         if (key instanceof P11Key) {
             P11Key p11Key = (P11Key)key;
             if (p11Key.tokenObject && (p11Key.token == this.token)) {

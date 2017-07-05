@@ -287,7 +287,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     }
 
     /**
-     * Deselects the the highlighted text.
+     * Deselects the highlighted text.
      */
     public void deselect() {
         int selStart=xtext.getSelectionStart();
