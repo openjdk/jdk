@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 import javax.sound.sampled.AudioSystem;
@@ -51,14 +52,16 @@ public final class ShortHeader {
 
     public static void main(final String[] args) throws Exception {
         final File file = Files.createTempFile("audio", "test").toFile();
-        file.deleteOnExit();
-        try (final OutputStream fos = new FileOutputStream(file)) {
-            fos.write(W);
-        }
-
-        testAS(file);
-        for (final AudioFileReader afr : load(AudioFileReader.class)) {
-            testAFR(afr, file);
+        try {
+            try (final OutputStream fos = new FileOutputStream(file)) {
+                fos.write(W);
+            }
+            testAS(file);
+            for (final AudioFileReader afr : load(AudioFileReader.class)) {
+                testAFR(afr, file);
+            }
+        } finally {
+            Files.delete(Paths.get(file.getAbsolutePath()));
         }
     }
 
