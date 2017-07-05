@@ -111,57 +111,58 @@ public class ValidateISO4217 {
 
     static void test1() throws Exception {
 
-        FileReader fr = new FileReader(new File(System.getProperty("test.src", "."), datafile));
-        BufferedReader in = new BufferedReader(fr);
-        String line;
-        SimpleDateFormat format = null;
+        try (FileReader fr = new FileReader(new File(System.getProperty("test.src", "."), datafile));
+             BufferedReader in = new BufferedReader(fr))
+        {
+            String line;
+            SimpleDateFormat format = null;
 
-        while ((line = in.readLine()) != null) {
-            if (line.length() == 0 || line.charAt(0) == '#') {
-                continue;
-            }
+            while ((line = in.readLine()) != null) {
+                if (line.length() == 0 || line.charAt(0) == '#') {
+                    continue;
+                }
 
-            StringTokenizer tokens = new StringTokenizer(line, "\t");
-            String country = tokens.nextToken();
-            if (country.length() != 2) {
-                continue;
-            }
+                StringTokenizer tokens = new StringTokenizer(line, "\t");
+                String country = tokens.nextToken();
+                if (country.length() != 2) {
+                    continue;
+                }
 
-            String currency;
-            String numeric;
-            String minorUnit;
-            int tokensCount = tokens.countTokens();
-            if (tokensCount < 3) {
-                currency = "";
-                numeric = "0";
-                minorUnit = "0";
-            } else {
-                currency = tokens.nextToken();
-                numeric = tokens.nextToken();
-                minorUnit = tokens.nextToken();
-                testCurrencies.add(Currency.getInstance(currency));
+                String currency;
+                String numeric;
+                String minorUnit;
+                int tokensCount = tokens.countTokens();
+                if (tokensCount < 3) {
+                    currency = "";
+                    numeric = "0";
+                    minorUnit = "0";
+                } else {
+                    currency = tokens.nextToken();
+                    numeric = tokens.nextToken();
+                    minorUnit = tokens.nextToken();
+                    testCurrencies.add(Currency.getInstance(currency));
 
-                // check for the cutover
-                if (tokensCount > 3) {
-                    if (format == null) {
-                        format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US);
-                        format.setTimeZone(TimeZone.getTimeZone("GMT"));
-                        format.setLenient(false);
-                    }
-                    if (format.parse(tokens.nextToken()).getTime() <
-                        System.currentTimeMillis()) {
-                        currency = tokens.nextToken();
-                        numeric = tokens.nextToken();
-                        minorUnit = tokens.nextToken();
-                        testCurrencies.add(Currency.getInstance(currency));
+                    // check for the cutover
+                    if (tokensCount > 3) {
+                        if (format == null) {
+                            format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US);
+                            format.setTimeZone(TimeZone.getTimeZone("GMT"));
+                            format.setLenient(false);
+                        }
+                        if (format.parse(tokens.nextToken()).getTime() <
+                            System.currentTimeMillis()) {
+                            currency = tokens.nextToken();
+                            numeric = tokens.nextToken();
+                            minorUnit = tokens.nextToken();
+                            testCurrencies.add(Currency.getInstance(currency));
+                        }
                     }
                 }
+                int index = toIndex(country);
+                testCountryCurrency(country, currency, Integer.parseInt(numeric),
+                    Integer.parseInt(minorUnit), index);
             }
-            int index = toIndex(country);
-            testCountryCurrency(country, currency, Integer.parseInt(numeric),
-                Integer.parseInt(minorUnit), index);
         }
-        in.close();
 
         for (int i = 0; i < additionalCodes.length; i++) {
             int index = toIndex(additionalCodes[i][0]);

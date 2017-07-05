@@ -47,12 +47,12 @@ public class AtomicAppend {
             for (int i = 0; i < nThreads; i++)
                 es.execute(new Runnable() { public void run() {
                     try {
-                        FileOutputStream s = new FileOutputStream(file, true);
-                        for (int j = 0; j < 1000; j++) {
-                            s.write((int) 'x');
-                            s.flush();
+                        try (FileOutputStream s = new FileOutputStream(file, true)) {
+                            for (int j = 0; j < 1000; j++) {
+                                s.write((int) 'x');
+                                s.flush();
+                            }
                         }
-                        s.close();
                     } catch (Throwable t) { unexpected(t); }}});
             es.shutdown();
             es.awaitTermination(10L, TimeUnit.MINUTES);

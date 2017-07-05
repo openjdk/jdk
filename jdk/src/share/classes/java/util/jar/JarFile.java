@@ -376,9 +376,9 @@ class JarFile extends ZipFile {
      */
     private byte[] getBytes(ZipEntry ze) throws IOException {
         byte[] b = new byte[(int)ze.getSize()];
-        DataInputStream is = new DataInputStream(super.getInputStream(ze));
-        is.readFully(b, 0, b.length);
-        is.close();
+        try (DataInputStream is = new DataInputStream(super.getInputStream(ze))) {
+            is.readFully(b, 0, b.length);
+        }
         return b;
     }
 
@@ -480,10 +480,10 @@ class JarFile extends ZipFile {
             JarEntry manEntry = getManEntry();
             if (manEntry != null) {
                 byte[] b = new byte[(int)manEntry.getSize()];
-                DataInputStream dis = new DataInputStream(
-                                                          super.getInputStream(manEntry));
-                dis.readFully(b, 0, b.length);
-                dis.close();
+                try (DataInputStream dis = new DataInputStream(
+                         super.getInputStream(manEntry))) {
+                    dis.readFully(b, 0, b.length);
+                }
 
                 int last = b.length - src.length;
                 int i = 0;

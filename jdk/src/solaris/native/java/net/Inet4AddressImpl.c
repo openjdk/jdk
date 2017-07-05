@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,22 +77,24 @@ Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
          */
 #endif /* __linux__ */
         struct hostent res, res2, *hp;
-        char buf[HENT_BUF_SIZE];
-        char buf2[HENT_BUF_SIZE];
+        // these buffers must be pointer-aligned so they are declared
+        // with pointer type
+        char *buf[HENT_BUF_SIZE/(sizeof (char *))];
+        char *buf2[HENT_BUF_SIZE/(sizeof (char *))];
         int h_error=0;
 
 #ifdef __GLIBC__
-        gethostbyname_r(hostname, &res, buf, sizeof(buf), &hp, &h_error);
+        gethostbyname_r(hostname, &res, (char*)buf, sizeof(buf), &hp, &h_error);
 #else
-        hp = gethostbyname_r(hostname, &res, buf, sizeof(buf), &h_error);
+        hp = gethostbyname_r(hostname, &res, (char*)buf, sizeof(buf), &h_error);
 #endif
         if (hp) {
 #ifdef __GLIBC__
             gethostbyaddr_r(hp->h_addr, hp->h_length, AF_INET,
-                            &res2, buf2, sizeof(buf2), &hp, &h_error);
+                            &res2, (char*)buf2, sizeof(buf2), &hp, &h_error);
 #else
             hp = gethostbyaddr_r(hp->h_addr, hp->h_length, AF_INET,
-                                 &res2, buf2, sizeof(buf2), &h_error);
+                                 &res2, (char*)buf2, sizeof(buf2), &h_error);
 #endif
             if (hp) {
                 /*
@@ -136,7 +138,9 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     const char *hostname;
     jobjectArray ret = 0;
     struct hostent res, *hp = 0;
-    char buf[HENT_BUF_SIZE];
+    // this buffer must be pointer-aligned so is declared
+    // with pointer type
+    char *buf[HENT_BUF_SIZE/(sizeof (char *))];
 
     /* temporary buffer, on the off chance we need to expand */
     char *tmp = NULL;
@@ -176,9 +180,9 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
     /* Try once, with our static buffer. */
 #ifdef __GLIBC__
-    gethostbyname_r(hostname, &res, buf, sizeof(buf), &hp, &h_error);
+    gethostbyname_r(hostname, &res, (char*)buf, sizeof(buf), &hp, &h_error);
 #else
-    hp = gethostbyname_r(hostname, &res, buf, sizeof(buf), &h_error);
+    hp = gethostbyname_r(hostname, &res, (char*)buf, sizeof(buf), &h_error);
 #endif
 
     /* With the re-entrant system calls, it's possible that the buffer
@@ -251,7 +255,9 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     jstring ret = NULL;
     jint addr;
     struct hostent hent, *hp = 0;
-    char buf[HENT_BUF_SIZE];
+    // this buffer must be pointer-aligned so is declared
+    // with pointer type
+    char *buf[HENT_BUF_SIZE/(sizeof (char *))];
     int h_error = 0;
     char *tmp = NULL;
 
@@ -273,10 +279,10 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     addr = htonl(addr);
 #ifdef __GLIBC__
     gethostbyaddr_r((char *)&addr, sizeof(addr), AF_INET, &hent,
-                    buf, sizeof(buf), &hp, &h_error);
+                    (char*)buf, sizeof(buf), &hp, &h_error);
 #else
     hp = gethostbyaddr_r((char *)&addr, sizeof(addr), AF_INET, &hent,
-                         buf, sizeof(buf), &h_error);
+                         (char*)buf, sizeof(buf), &h_error);
 #endif
     /* With the re-entrant system calls, it's possible that the buffer
      * we pass to it is not large enough to hold an exceptionally

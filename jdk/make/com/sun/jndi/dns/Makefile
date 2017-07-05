@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../../../..
-MODULE  = jndi-dns
 PACKAGE = com.sun.jndi.dns
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

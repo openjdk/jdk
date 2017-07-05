@@ -3644,6 +3644,7 @@ bool Threads::destroy_vm() {
   if (ShowMessageBoxOnError && is_error_reported()) {
     os::infinite_sleep();
   }
+  os::wait_for_keypress_at_exit();
 
   if (JDK_Version::is_jdk12x_version()) {
     // We are the last thread running, so check if finalizers should be run.
