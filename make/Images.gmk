@@ -39,14 +39,14 @@ $(eval $(call IncludeCustomExtension, , Images-pre.gmk))
 
 MAIN_MODULES += java.se java.smartcardio jdk.httpserver jdk.sctp \
                jdk.security.auth jdk.security.jgss jdk.pack200 jdk.xml.dom \
-               jdk.accessibility
+               jdk.accessibility jdk.internal.le jdk.scripting.nashorn.shell
 
 # providers
 PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk.localedata \
                jdk.naming.dns jdk.naming.rmi jdk.scripting.nashorn jdk.zipfs
 
 # tools
-TOOLS_MODULES += jdk.attach jdk.compiler jdk.dev jdk.internal.le jdk.scripting.nashorn.shell \
+TOOLS_MODULES += jdk.attach jdk.compiler jdk.dev \
                jdk.javadoc jdk.jcmd jdk.jconsole jdk.hotspot.agent jdk.jartool \
                jdk.jdeps jdk.jdi jdk.jdwp.agent jdk.policytool jdk.rmic jdk.xml.bind jdk.xml.ws
 

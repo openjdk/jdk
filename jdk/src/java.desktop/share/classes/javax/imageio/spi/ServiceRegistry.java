@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,18 +47,33 @@ import java.util.ServiceLoader;
  * <p> Service providers are stored in one or more <i>categories</i>,
  * each of which is defined by a class of interface (described by a
  * <code>Class</code> object) that all of its members must implement.
- * The set of categories may be changed dynamically.
+ *
+ * <p>The set of categories supported is limited
+ * to the following standard Image I/O service types:
+ *
+ * <ul>
+ * <li>{@link ImageInputStreamSpi}
+ * <li>{@link ImageOutputStreamSpi}
+ * <li>{@link ImageReaderSpi}
+ * <li>{@link ImageTranscoderSpi}
+ * <li>{@link ImageWriterSpi}
+ * </ul>
+ *
+ * <p>An attempt to load a provider that is not a subtype of one of the
+ * above types will result in {@code IllegalArgumentException}. For
+ * a general mechanism to load service providers, see
+ * {@link java.util.ServiceLoader ServiceLoader}.
  *
  * <p> Only a single instance of a given leaf class (that is, the
  * actual class returned by <code>getClass()</code>, as opposed to any
  * inherited classes or interfaces) may be registered.  That is,
  * suppose that the
- * <code>com.mycompany.mypkg.GreenServiceProvider</code> class
- * implements the <code>com.mycompany.mypkg.MyService</code>
- * interface.  If a <code>GreenServiceProvider</code> instance is
+ * <code>com.mycompany.mypkg.GreenImageReaderProvider</code> class
+ * is a subclass of <code>javax.imageio.spi.ImageReaderSpi</code>.
+ * If a <code>GreenImageReaderProvider</code> instance is
  * registered, it will be stored in the category defined by the
- * <code>MyService</code> class.  If a new instance of
- * <code>GreenServiceProvider</code> is registered, it will replace
+ * <code>ImageReaderSpi</code> class.  If a new instance of
+ * <code>GreenImageReaderProvider</code> is registered, it will replace
  * the previous instance.  In practice, service provider objects are
  * usually singletons so this behavior is appropriate.
  *
@@ -68,15 +83,15 @@ import java.util.ServiceLoader;
  * for each service provider interface that has one or more
  * implementation classes present in the JAR file.  For example, if
  * the JAR file contained a class named
- * <code>com.mycompany.mypkg.MyServiceImpl</code> which implements the
- * <code>javax.someapi.SomeService</code> interface, the JAR file
+ * <code>com.mycompany.mypkg.GreenImageReaderProvider</code> which implements the
+ * <code>javax.imageio.spi.ImageReaderSpi</code> interface, the JAR file
  * would contain a file named: <pre>
- * META-INF/services/javax.someapi.SomeService </pre>
+ * META-INF/services/javax.imageio.spi.ImageReaderSpi</pre>
  *
  * containing the line:
  *
  * <pre>
- * com.mycompany.mypkg.MyService
+ * com.mycompany.mypkg.GreenImageReaderProvider
  * </pre>
  *
  * <p> The service provider classes should be to be lightweight and
@@ -94,7 +109,7 @@ import java.util.ServiceLoader;
  * JAR File Specification</a>.
  *
  * @see RegisterableService
- *
+ * @see java.util.ServiceLoader
  */
 public class ServiceRegistry {
 
@@ -104,13 +119,15 @@ public class ServiceRegistry {
     /**
      * Constructs a <code>ServiceRegistry</code> instance with a
      * set of categories taken from the <code>categories</code>
-     * argument.
+     * argument. The categories must all be members of the set
+     * of service types listed in the class specification.
      *
      * @param categories an <code>Iterator</code> containing
      * <code>Class</code> objects to be used to define categories.
      *
      * @exception IllegalArgumentException if
-     * <code>categories</code> is <code>null</code>.
+     * <code>categories</code> is <code>null</code>, or if
+     * one of the categories is not an allowed service type.
      */
     public ServiceRegistry(Iterator<Class<?>> categories) {
         if (categories == null) {
@@ -118,6 +135,7 @@ public class ServiceRegistry {
         }
         while (categories.hasNext()) {
             Class<?> category = categories.next();
+            checkClassAllowed(category);
             SubRegistry reg = new SubRegistry(this, category);
             categoryMap.put(category, reg);
         }
@@ -126,6 +144,10 @@ public class ServiceRegistry {
     /**
      * Searches for implementations of a particular service class
      * using the given class loader.
+     *
+     * <p>The service class must be one of the service types listed
+     * in the class specification. If it is not, {@code IllegalArgumentException}
+     * will be thrown.
      *
      * <p> This method transforms the name of the given service class
      * into a provider-configuration filename as described in the
@@ -157,7 +179,8 @@ public class ServiceRegistry {
      * cannot be found and instantiated.
      *
      * @exception IllegalArgumentException if
-     * <code>providerClass</code> is <code>null</code>.
+     * <code>providerClass</code> is <code>null</code>, or if it is
+     * not one of the allowed service types.
      */
     public static <T> Iterator<T> lookupProviders(Class<T> providerClass,
                                                   ClassLoader loader)
@@ -165,6 +188,7 @@ public class ServiceRegistry {
         if (providerClass == null) {
             throw new IllegalArgumentException("providerClass == null!");
         }
+        checkClassAllowed(providerClass);
         return ServiceLoader.load(providerClass, loader).iterator();
     }
 
@@ -178,6 +202,10 @@ public class ServiceRegistry {
      *   return Service.providers(service, cl);
      * </pre>
      *
+     * <p>The service class must be one of the service types listed
+     * in the class specification. If it is not, {@code IllegalArgumentException}
+     * will be thrown.
+     *
      * @param providerClass a <code>Class</code>object indicating the
      * class or interface of the service providers being detected.
      *
@@ -190,12 +218,14 @@ public class ServiceRegistry {
      * cannot be found and instantiated.
      *
      * @exception IllegalArgumentException if
-     * <code>providerClass</code> is <code>null</code>.
+     * <code>providerClass</code> is <code>null</code>, or if it is
+     * not one of the allowed service types.
      */
     public static <T> Iterator<T> lookupProviders(Class<T> providerClass) {
         if (providerClass == null) {
             throw new IllegalArgumentException("providerClass == null!");
         }
+        checkClassAllowed(providerClass);
         return ServiceLoader.load(providerClass).iterator();
     }
 
@@ -680,6 +710,28 @@ public class ServiceRegistry {
     public void finalize() throws Throwable {
         deregisterAll();
         super.finalize();
+    }
+
+    /**
+     * Checks whether the provided class is one of the allowed
+     * ImageIO service provider classes. If it is, returns normally.
+     * If it is not, throws IllegalArgumentException.
+     *
+     * @param clazz
+     * @throws IllegalArgumentException if clazz is null or is not one of the allowed set
+     */
+    private static void checkClassAllowed(Class<?> clazz) {
+        if (clazz == null) {
+            throw new IllegalArgumentException("class must not be null");
+        }
+
+        if (   clazz != ImageInputStreamSpi.class
+            && clazz != ImageOutputStreamSpi.class
+            && clazz != ImageReaderSpi.class
+            && clazz != ImageTranscoderSpi.class
+            && clazz != ImageWriterSpi.class) {
+            throw new IllegalArgumentException(clazz.getName() + " is not an ImageIO SPI class");
+        }
     }
 }
 
