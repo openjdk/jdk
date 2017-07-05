@@ -167,7 +167,7 @@ needs_compact3 = \
   gc/survivorAlignment \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   runtime/NMT/JcmdSummaryDiff.java \
-  runtime/RedefineTests/RedefineAnnotations.java
+  runtime/RedefineTests/RedefineAnnotations.java \
   serviceability/sa/jmap-hashcode/Test8028623.java \
   serviceability/threads/TestFalseDeadLock.java \
   compiler/codecache/jmx \
@@ -282,7 +282,7 @@ hotspot_fast_compiler_1 = \
   -compiler/c2/Test6905845.java \
   -compiler/c2/cr6340864 \
   -compiler/c2/cr6589834 \
-  -compiler/c2/cr8004867
+  -compiler/c2/cr8004867 \
   -compiler/c2/stemmer \
   -compiler/c2/Test6792161.java \
   -compiler/c2/Test6603011.java \

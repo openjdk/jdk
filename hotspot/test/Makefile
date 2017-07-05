@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,9 @@ BUNDLE_UP_AND_EXIT = \
 ( \
   jtregExitCode=$$? && \
   _summary="$(SUMMARY_TXT)"; \
+  if [ $${jtregExitCode} = 1 ] ; then \
+    jtregExitCode=0; \
+  fi; \
   $(RM) -f $(STATS_TXT) $(RUNLIST) $(PASSLIST) $(FAILLIST) $(EXITCODE); \
   $(ECHO) "$${jtregExitCode}" > $(EXITCODE); \
   if [ -r "$${_summary}" ] ; then \

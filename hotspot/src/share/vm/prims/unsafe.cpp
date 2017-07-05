@@ -861,6 +861,13 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
   }
 
   const Klass* host_klass = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(host_class));
+
+  // Make sure it's the real host class, not another anonymous class.
+  while (host_klass != NULL && host_klass->is_instance_klass() &&
+         InstanceKlass::cast(host_klass)->is_anonymous()) {
+    host_klass = InstanceKlass::cast(host_klass)->host_klass();
+  }
+
   // Primitive types have NULL Klass* fields in their java.lang.Class instances.
   if (host_klass == NULL) {
     THROW_0(vmSymbols::java_lang_IllegalArgumentException());
