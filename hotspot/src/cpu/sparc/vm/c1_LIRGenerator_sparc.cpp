@@ -956,7 +956,8 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
     size->load_item();
     store_stack_parameter (size->result(),
                            in_ByteSize(STACK_BIAS +
-                                       (i + frame::memory_parameter_word_sp_offset) * wordSize));
+                                       frame::memory_parameter_word_sp_offset * wordSize +
+                                       i * sizeof(jint)));
   }
 
   // This instruction can be deoptimized in the slow path : use

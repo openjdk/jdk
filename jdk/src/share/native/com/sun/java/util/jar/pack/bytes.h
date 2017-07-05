@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ struct fillbytes {
 
 struct ptrlist : fillbytes {
   typedef const void* cvptr;
-  int    length()     { return size() / sizeof(cvptr); }
+  int    length()     { return (int)(size() / sizeof(cvptr)); }
   cvptr* base()       { return (cvptr*) fillbytes::base(); }
   cvptr& get(int i)   { return *(cvptr*)loc(i * sizeof(cvptr)); }
   cvptr* limit()      { return (cvptr*) fillbytes::limit(); }
@@ -133,7 +133,7 @@ struct ptrlist : fillbytes {
   ::qsort((ptrls).base(), (ptrls).length(), sizeof(void*), fn)
 
 struct intlist : fillbytes {
-  int    length()     { return size() / sizeof(int); }
+  int    length()     { return (int)(size() / sizeof(int)); }
   int*   base()       { return (int*) fillbytes::base(); }
   int&   get(int i)   { return *(int*)loc(i * sizeof(int)); }
   int*   limit()      { return (int*) fillbytes::limit(); }

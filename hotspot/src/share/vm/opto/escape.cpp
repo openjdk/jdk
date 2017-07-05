@@ -492,22 +492,41 @@ static Node* find_second_addp(Node* addp, Node* n) {
 // Adjust the type and inputs of an AddP which computes the
 // address of a field of an instance
 //
-void ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
+bool ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
   const TypeOopPtr *base_t = igvn->type(base)->isa_oopptr();
   assert(base_t != NULL && base_t->is_known_instance(), "expecting instance oopptr");
   const TypeOopPtr *t = igvn->type(addp)->isa_oopptr();
   if (t == NULL) {
     // We are computing a raw address for a store captured by an Initialize
-    // compute an appropriate address type.
+    // compute an appropriate address type (cases #3 and #5).
     assert(igvn->type(addp) == TypeRawPtr::NOTNULL, "must be raw pointer");
     assert(addp->in(AddPNode::Address)->is_Proj(), "base of raw address must be result projection from allocation");
-    int offs = (int)igvn->find_intptr_t_con(addp->in(AddPNode::Offset), Type::OffsetBot);
+    intptr_t offs = (int)igvn->find_intptr_t_con(addp->in(AddPNode::Offset), Type::OffsetBot);
     assert(offs != Type::OffsetBot, "offset must be a constant");
     t = base_t->add_offset(offs)->is_oopptr();
   }
   int inst_id =  base_t->instance_id();
   assert(!t->is_known_instance() || t->instance_id() == inst_id,
                              "old type must be non-instance or match new type");
+
+  // The type 't' could be subclass of 'base_t'.
+  // As result t->offset() could be large then base_t's size and it will
+  // cause the failure in add_offset() with narrow oops since TypeOopPtr()
+  // constructor verifies correctness of the offset.
+  //
+  // It could happend on subclass's branch (from the type profiling
+  // inlining) which was not eliminated during parsing since the exactness
+  // of the allocation type was not propagated to the subclass type check.
+  //
+  // Do nothing for such AddP node and don't process its users since
+  // this code branch will go away.
+  //
+  if (!t->is_known_instance() &&
+      !t->klass()->equals(base_t->klass()) &&
+      t->klass()->is_subtype_of(base_t->klass())) {
+     return false; // bail out
+  }
+
   const TypeOopPtr *tinst = base_t->add_offset(t->offset())->is_oopptr();
   // Do NOT remove the next call: ensure an new alias index is allocated
   // for the instance type
@@ -542,6 +561,7 @@ void ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
   }
   // Put on IGVN worklist since at least addp's type was changed above.
   record_for_optimizer(addp);
+  return true;
 }
 
 //
@@ -969,7 +989,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       if (elem == _phantom_object)
         continue; // Assume the value was set outside this method.
       Node *base = get_map(elem);  // CheckCastPP node
-      split_AddP(n, base, igvn);
+      if (!split_AddP(n, base, igvn)) continue; // wrong type
       tinst = igvn->type(base)->isa_oopptr();
     } else if (n->is_Phi() ||
                n->is_CheckCastPP() ||
@@ -1012,6 +1032,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
           tn->set_type(tn_type);
           igvn->hash_insert(tn);
           record_for_optimizer(n);
+        } else {
+          continue; // wrong type
         }
       }
     } else {
@@ -1788,6 +1810,7 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
         } else if (call_analyzer->is_return_local()) {
           // determine whether any arguments are returned
           set_escape_state(call_idx, PointsToNode::NoEscape);
+          bool ret_arg = false;
           for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
             const Type* at = d->field_at(i);
 
@@ -1795,6 +1818,7 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
               Node *arg = call->in(i)->uncast();
 
               if (call_analyzer->is_arg_returned(i - TypeFunc::Parms)) {
+                ret_arg = true;
                 PointsToNode *arg_esp = ptnode_adr(arg->_idx);
                 if (arg_esp->node_type() == PointsToNode::UnknownType)
                   done = false;
@@ -1805,6 +1829,11 @@ void ConnectionGraph::process_call_result(ProjNode *resproj, PhaseTransform *pha
                 arg_esp->_hidden_alias = true;
               }
             }
+          }
+          if (done && !ret_arg) {
+            // Returns unknown object.
+            set_escape_state(call_idx, PointsToNode::GlobalEscape);
+            add_pointsto_edge(resproj_idx, _phantom_object);
           }
           copy_dependencies = true;
         } else {
@@ -2212,7 +2241,9 @@ void ConnectionGraph::build_connection_graph(Node *n, PhaseTransform *phase) {
         if (in->is_top() || in == n)
           continue;  // ignore top or inputs which go back this node
         int ti = in->_idx;
-        if (ptnode_adr(in->_idx)->node_type() == PointsToNode::JavaObject) {
+        PointsToNode::NodeType nt = ptnode_adr(ti)->node_type();
+        assert(nt != PointsToNode::UnknownType, "all nodes should be known");
+        if (nt == PointsToNode::JavaObject) {
           add_pointsto_edge(n_idx, ti);
         } else {
           add_deferred_edge(n_idx, ti);

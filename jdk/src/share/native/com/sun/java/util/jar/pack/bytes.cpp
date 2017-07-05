@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,15 +71,17 @@ void bytes::realloc(size_t len_) {
 
 void bytes::free() {
   if (ptr == dummy)  return;  // escaping from an error
-  if (ptr != null) mtrace('f', ptr, 0);
-  if (ptr != null) ::free(ptr);
+  if (ptr != null) {
+    mtrace('f', ptr, 0);
+    ::free(ptr);
+  }
   len = 0;
   ptr = 0;
 }
 
 int bytes::indexOf(byte c) {
   byte* p = (byte*) memchr(ptr, c, len);
-  return (p == 0) ? -1 : p - ptr;
+  return (p == 0) ? -1 : (int)(p - ptr);
 }
 
 byte* bytes::writeTo(byte* bp) {
@@ -174,8 +176,10 @@ void ptrlist::freeAll() {
   int len = length();
   for (int i = 0; i < len; i++) {
     void* p = (void*) get(i);
-    if (p != null)  mtrace('f', p, 0);
-    if (p != null)  ::free(p);
+    if (p != null)  {
+      mtrace('f', p, 0);
+      ::free(p);
+    }
   }
   free();
 }

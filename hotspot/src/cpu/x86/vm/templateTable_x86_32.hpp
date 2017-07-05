@@ -26,7 +26,7 @@
                              Bytecodes::Code code);
   static void invokevirtual_helper(Register index, Register recv,
                                    Register flags);
-  static void volatile_barrier( );
+  static void volatile_barrier(Assembler::Membar_mask_bits order_constraint );
 
   // Helpers
   static void index_check(Register array, Register index);

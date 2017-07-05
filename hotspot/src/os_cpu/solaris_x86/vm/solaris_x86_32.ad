@@ -62,13 +62,13 @@ encode %{
   enc_class solaris_breakpoint  %{
     MacroAssembler* masm = new MacroAssembler(&cbuf);
     // Really need to fix this
-    masm->pushl(rax);
-    masm->pushl(rcx);
-    masm->pushl(rdx);
+    masm->push(rax);
+    masm->push(rcx);
+    masm->push(rdx);
     masm->call(RuntimeAddress(CAST_FROM_FN_PTR(address, os::breakpoint)));
-    masm->popl(rdx);
-    masm->popl(rcx);
-    masm->popl(rax);
+    masm->pop(rdx);
+    masm->pop(rcx);
+    masm->pop(rax);
   %}
 
   enc_class call_epilog %{

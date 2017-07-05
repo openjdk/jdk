@@ -451,7 +451,7 @@ vpath %.$(OBJECT_SUFFIX) $(OBJDIR)
 # namely jni.h, jvm.h, and jni_utils.h, plus their platform-specific
 # relatives.
 #
-VPATH.h =   $(PLATFORM_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/include$(CLASSPATH_SEPARATOR)$(PLATFORM_SRC)/javavm/include
+VPATH.h =   $(PLATFORM_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/export
 vpath %.h   $(VPATH.h)
 
 #

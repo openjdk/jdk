@@ -25,34 +25,36 @@
 
 package sun.nio.cs;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.BufferOverflowException;
-import java.nio.BufferUnderflowException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.MalformedInputException;
-import java.nio.charset.UnmappableCharacterException;
 
-
-/*
- * # Bits   Bit pattern
- * 1    7   0xxxxxxx
- * 2   11   110xxxxx 10xxxxxx
- * 3   16   1110xxxx 10xxxxxx 10xxxxxx
- * 4   21   11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
- * 5   26   111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
- * 6   31   1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+/* Legal UTF-8 Byte Sequences
  *
- * UCS-2 uses 1-3, UTF-16 uses 1-4, UCS-4 uses 1-6
+ * #    Code Points      Bits   Bit/Byte pattern
+ * 1                     7      0xxxxxxx
+ *      U+0000..U+007F          00..7F
+ *
+ * 2                     11     110xxxxx    10xxxxxx
+ *      U+0080..U+07FF          C2..DF      80..BF
+ *
+ * 3                     16     1110xxxx    10xxxxxx    10xxxxxx
+ *      U+0800..U+0FFF          E0          A0..BF      80..BF
+ *      U+1000..U+FFFF          E1..EF      80..BF      80..BF
+ *
+ * 4                     21     11110xxx    10xxxxxx    10xxxxxx    10xxxxxx
+ *     U+10000..U+3FFFF         F0          90..BF      80..BF      80..BF
+ *     U+40000..U+FFFFF         F1..F3      80..BF      80..BF      80..BF
+ *    U+100000..U10FFFF         F4          80..8F      80..BF      80..BF
+ *
  */
 
 class UTF_8 extends Unicode
 {
-
     public UTF_8() {
         super("UTF-8", StandardCharsets.aliases_UTF_8);
     }
@@ -69,304 +71,250 @@ class UTF_8 extends Unicode
         return new Encoder(this);
     }
 
+    static final void updatePositions(Buffer src, int sp,
+                                      Buffer dst, int dp) {
+        src.position(sp - src.arrayOffset());
+        dst.position(dp - dst.arrayOffset());
+    }
 
     private static class Decoder extends CharsetDecoder {
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
         }
 
-        private boolean isContinuation(int b) {
-            return ((b & 0xc0) == 0x80);
+        private static boolean isNotContinuation(int b) {
+            return (b & 0xc0) != 0x80;
         }
 
-        private final Surrogate.Generator sgg = new Surrogate.Generator();
+        //  [C2..DF] [80..BF]
+        private static boolean isMalformed2(int b1, int b2) {
+            return (b1 & 0x1e) == 0x0 || (b2 & 0xc0) != 0x80;
+        }
+
+        //  [E0]     [A0..BF] [80..BF]
+        //  [E1..EF] [80..BF] [80..BF]
+        private static boolean isMalformed3(int b1, int b2, int b3) {
+            return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
+                   (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80;
+        }
+
+        //  [F0]     [90..BF] [80..BF] [80..BF]
+        //  [F1..F3] [80..BF] [80..BF] [80..BF]
+        //  [F4]     [80..8F] [80..BF] [80..BF]
+        //  only check 80-be range here, the [0xf0,0x80...] and [0xf4,0x90-...]
+        //  will be checked by Surrogate.neededFor(uc)
+        private static boolean isMalformed4(int b2, int b3, int b4) {
+            return (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 ||
+                   (b4 & 0xc0) != 0x80;
+        }
+
+        private static CoderResult lookupN(ByteBuffer src, int n)
+        {
+            for (int i = 1; i < n; i++) {
+               if (isNotContinuation(src.get()))
+                   return CoderResult.malformedForLength(i);
+            }
+            return CoderResult.malformedForLength(n);
+        }
+
+        private static CoderResult malformedN(ByteBuffer src, int nb) {
+            switch (nb) {
+            case 1:
+                int b1 = src.get();
+                if ((b1 >> 2) == -2) {
+                    // 5 bytes 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+                    if (src.remaining() < 4)
+                        return CoderResult.UNDERFLOW;
+                    return lookupN(src, 5);
+                }
+                if ((b1 >> 1) == -2) {
+                    // 6 bytes 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+                    if (src.remaining() < 5)
+                        return CoderResult.UNDERFLOW;
+                    return lookupN(src, 6);
+                }
+                return CoderResult.malformedForLength(1);
+            case 2:                    // always 1
+                return CoderResult.malformedForLength(1);
+            case 3:
+                b1 = src.get();
+                int b2 = src.get();    // no need to lookup b3
+                return CoderResult.malformedForLength(
+                    ((b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
+                     isNotContinuation(b2))?1:2);
+            case 4:  // we don't care the speed here
+                b1 = src.get() & 0xff;
+                b2 = src.get() & 0xff;
+                if (b1 > 0xf4 ||
+                    (b1 == 0xf0 && (b2 < 0x90 || b2 > 0xbf)) ||
+                    (b1 == 0xf4 && (b2 & 0xf0) != 0x80) ||
+                    isNotContinuation(b2))
+                    return CoderResult.malformedForLength(1);
+                if (isNotContinuation(src.get()))
+                    return CoderResult.malformedForLength(2);
+                return CoderResult.malformedForLength(3);
+            default:
+                assert false;
+                return null;
+            }
+        }
+
+        private static CoderResult malformed(ByteBuffer src, int sp,
+                                             CharBuffer dst, int dp,
+                                             int nb)
+        {
+            src.position(sp - src.arrayOffset());
+            CoderResult cr = malformedN(src, nb);
+            updatePositions(src, sp, dst, dp);
+            return cr;
+        }
+
+        private static CoderResult malformed(ByteBuffer src,
+                                             int mark, int nb)
+        {
+            src.position(mark);
+            CoderResult cr = malformedN(src, nb);
+            src.position(mark);
+            return cr;
+        }
+
+        private static CoderResult xflow(Buffer src, int sp, int sl,
+                                         Buffer dst, int dp, int nb) {
+            updatePositions(src, sp, dst, dp);
+            return (nb == 0 || sl - sp < nb)
+                   ?CoderResult.UNDERFLOW:CoderResult.OVERFLOW;
+        }
+
+        private static CoderResult xflow(Buffer src, int mark, int nb) {
+            CoderResult cr = (nb == 0 || src.remaining() < (nb - 1))
+                             ?CoderResult.UNDERFLOW:CoderResult.OVERFLOW;
+            src.position(mark);
+            return cr;
+        }
 
         private CoderResult decodeArrayLoop(ByteBuffer src,
                                             CharBuffer dst)
         {
+            // This method is optimized for ASCII input.
             byte[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
+
             char[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
+            int dlASCII = dp + Math.min(sl - sp, dl - dp);
 
-            try {
-                while (sp < sl) {
-                    int b1 = sa[sp];
-                    int b2, b3;
-                    switch ((b1 >> 4) & 0x0f) {
+            // ASCII only loop
+            while (dp < dlASCII && sa[sp] >= 0)
+                da[dp++] = (char)sa[sp++];
 
-                    case 0: case 1: case 2: case 3:
-                    case 4: case 5: case 6: case 7:
-                        // 1 byte, 7 bits: 0xxxxxxx
-                        if (dl - dp < 1)
-                            return CoderResult.OVERFLOW;
-                        da[dp++] = (char)(b1 & 0x7f);
-                        sp++;
-                        continue;
-
-                    case 12: case 13:
-                        // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
-                        if (sl - sp < 2)
-                            return CoderResult.UNDERFLOW;
-                        if (dl - dp < 1)
-                            return CoderResult.OVERFLOW;
-                        if (!isContinuation(b2 = sa[sp + 1]))
-                            return CoderResult.malformedForLength(1);
-                        da[dp++] = ((char)(((b1 & 0x1f) << 6) |
-                                           ((b2 & 0x3f) << 0)));
-                        sp += 2;
-                        continue;
-
-                    case 14:
-                        // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
-                        if (sl - sp < 3)
-                            return CoderResult.UNDERFLOW;
-                        if (dl - dp < 1)
-                            return CoderResult.OVERFLOW;
-                        if (!isContinuation(b2 = sa[sp + 1]))
-                            return CoderResult.malformedForLength(1);
-                        if (!isContinuation(b3 = sa[sp + 2]))
-                            return CoderResult.malformedForLength(2);
-                        da[dp++] = ((char)(((b1 & 0x0f) << 12) |
-                                           ((b2 & 0x3f) << 06) |
-                                           ((b3 & 0x3f) << 0)));
-                        sp += 3;
-                        continue;
-
-                    case 15:
-                        // 4, 5, or 6 bytes
-
-                        int b4, b5, b6, uc, n;
-                        switch (b1 & 0x0f) {
-
-                        case 0: case 1: case 2: case 3:
-                        case 4: case 5: case 6: case 7:
-                            // 4 bytes, 21 bits
-                            if (sl - sp < 4)
-                                return CoderResult.UNDERFLOW;
-                            if (!isContinuation(b2 = sa[sp + 1]))
-                                return CoderResult.malformedForLength(1);
-                            if (!isContinuation(b3 = sa[sp + 2]))
-                                return CoderResult.malformedForLength(2);
-                            if (!isContinuation(b4 = sa[sp + 3]))
-                                return CoderResult.malformedForLength(3);
-                            uc = (((b1 & 0x07) << 18) |
-                                  ((b2 & 0x3f) << 12) |
-                                  ((b3 & 0x3f) << 06) |
-                                  ((b4 & 0x3f) << 00));
-                            n = 4;
-                            break;
-
-                        case 8: case 9: case 10: case 11:
-                            // 5 bytes, 26 bits
-                            if (sl - sp < 5)
-                                return CoderResult.UNDERFLOW;
-                            if (!isContinuation(b2 = sa[sp + 1]))
-                                return CoderResult.malformedForLength(1);
-                            if (!isContinuation(b3 = sa[sp + 2]))
-                                return CoderResult.malformedForLength(2);
-                            if (!isContinuation(b4 = sa[sp + 3]))
-                                return CoderResult.malformedForLength(3);
-                            if (!isContinuation(b5 = sa[sp + 4]))
-                                return CoderResult.malformedForLength(4);
-                            uc = (((b1 & 0x03) << 24) |
-                                  ((b2 & 0x3f) << 18) |
-                                  ((b3 & 0x3f) << 12) |
-                                  ((b4 & 0x3f) << 06) |
-                                  ((b5 & 0x3f) << 00));
-                            n = 5;
-                            break;
-
-                        case 12: case 13:
-                            // 6 bytes, 31 bits
-                            if (sl - sp < 6)
-                                return CoderResult.UNDERFLOW;
-                            if (!isContinuation(b2 = sa[sp + 1]))
-                                return CoderResult.malformedForLength(1);
-                            if (!isContinuation(b3 = sa[sp + 2]))
-                                return CoderResult.malformedForLength(2);
-                            if (!isContinuation(b4 = sa[sp + 3]))
-                                return CoderResult.malformedForLength(3);
-                            if (!isContinuation(b5 = sa[sp + 4]))
-                                return CoderResult.malformedForLength(4);
-                            if (!isContinuation(b6 = sa[sp + 5]))
-                                return CoderResult.malformedForLength(5);
-                            uc = (((b1 & 0x01) << 30) |
-                                  ((b2 & 0x3f) << 24) |
-                                  ((b3 & 0x3f) << 18) |
-                                  ((b4 & 0x3f) << 12) |
-                                  ((b5 & 0x3f) << 06) |
-                                  ((b6 & 0x3f)));
-                            n = 6;
-                            break;
-
-                        default:
-                            return CoderResult.malformedForLength(1);
-
-                        }
-
-                        int gn = sgg.generate(uc, n, da, dp, dl);
-                        if (gn < 0)
-                            return sgg.error();
-                        dp += gn;
-                        sp += n;
-                        continue;
-
-                    default:
-                        return CoderResult.malformedForLength(1);
-
+            while (sp < sl) {
+                int b1 = sa[sp];
+                if (b1  >= 0) {
+                    // 1 byte, 7 bits: 0xxxxxxx
+                    if (dp >= dl)
+                        return xflow(src, sp, sl, dst, dp, 1);
+                    da[dp++] = (char)b1;
+                    sp++;
+                } else if ((b1 >> 5) == -2) {
+                    // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
+                    if (sl - sp < 2 || dp >= dl)
+                        return xflow(src, sp, sl, dst, dp, 2);
+                    int b2 = sa[sp + 1];
+                    if (isMalformed2(b1, b2))
+                        return malformed(src, sp, dst, dp, 2);
+                    da[dp++] = (char) (((b1 << 6) ^ b2) ^ 0x0f80);
+                    sp += 2;
+                } else if ((b1 >> 4) == -2) {
+                    // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
+                    if (sl - sp < 3 || dp >= dl)
+                        return xflow(src, sp, sl, dst, dp, 3);
+                    int b2 = sa[sp + 1];
+                    int b3 = sa[sp + 2];
+                    if (isMalformed3(b1, b2, b3))
+                        return malformed(src, sp, dst, dp, 3);
+                    da[dp++] = (char) (((b1 << 12) ^ (b2 << 6) ^ b3) ^ 0x1f80);
+                    sp += 3;
+                } else if ((b1 >> 3) == -2) {
+                    // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+                    if (sl - sp < 4 || dl - dp < 2)
+                        return xflow(src, sp, sl, dst, dp, 4);
+                    int b2 = sa[sp + 1];
+                    int b3 = sa[sp + 2];
+                    int b4 = sa[sp + 3];
+                    int uc = ((b1 & 0x07) << 18) |
+                             ((b2 & 0x3f) << 12) |
+                             ((b3 & 0x3f) << 06) |
+                             (b4 & 0x3f);
+                    if (isMalformed4(b2, b3, b4) ||
+                        !Surrogate.neededFor(uc)) {
+                        return malformed(src, sp, dst, dp, 4);
                     }
-
-                }
-
-                return CoderResult.UNDERFLOW;
-            } finally {
-                src.position(sp - src.arrayOffset());
-                dst.position(dp - dst.arrayOffset());
+                    da[dp++] = Surrogate.high(uc);
+                    da[dp++] = Surrogate.low(uc);
+                    sp += 4;
+                } else
+                    return malformed(src, sp, dst, dp, 1);
             }
+            return xflow(src, sp, sl, dst, dp, 0);
         }
 
         private CoderResult decodeBufferLoop(ByteBuffer src,
                                              CharBuffer dst)
         {
             int mark = src.position();
-            try {
-                while (src.hasRemaining()) {
-                    int b1 = src.get();
-                    int b2, b3;
-                    switch ((b1 >> 4) & 0x0f) {
-
-                    case 0: case 1: case 2: case 3:
-                    case 4: case 5: case 6: case 7:
-                        // 1 byte, 7 bits: 0xxxxxxx
-                        if (dst.remaining() < 1)
-                            return CoderResult.OVERFLOW;
-                        dst.put((char)b1);
-                        mark++;
-                        continue;
-
-                    case 12: case 13:
-                        // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
-                        if (src.remaining() < 1)
-                            return CoderResult.UNDERFLOW;
-                        if (dst.remaining() < 1)
-                            return CoderResult.OVERFLOW;
-                        if (!isContinuation(b2 = src.get()))
-                            return CoderResult.malformedForLength(1);
-                        dst.put((char)(((b1 & 0x1f) << 6) |
-                                       ((b2 & 0x3f) << 0)));
-                        mark += 2;
-                        continue;
-
-                    case 14:
-                        // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
-                        if (src.remaining() < 2)
-                            return CoderResult.UNDERFLOW;
-                        if (dst.remaining() < 1)
-                            return CoderResult.OVERFLOW;
-                        if (!isContinuation(b2 = src.get()))
-                            return CoderResult.malformedForLength(1);
-                        if (!isContinuation(b3 = src.get()))
-                            return CoderResult.malformedForLength(2);
-                        dst.put((char)(((b1 & 0x0f) << 12) |
-                                       ((b2 & 0x3f) << 06) |
-                                       ((b3 & 0x3f) << 0)));
-                        mark += 3;
-                        continue;
-
-                    case 15:
-                        // 4, 5, or 6 bytes
-
-                        int b4, b5, b6, uc, n;
-                        switch (b1 & 0x0f) {
-
-                        case 0: case 1: case 2: case 3:
-                        case 4: case 5: case 6: case 7:
-                            // 4 bytes, 21 bits
-                            if (src.remaining() < 3)
-                                return CoderResult.UNDERFLOW;
-                            if (!isContinuation(b2 = src.get()))
-                                return CoderResult.malformedForLength(1);
-                            if (!isContinuation(b3 = src.get()))
-                                return CoderResult.malformedForLength(2);
-                            if (!isContinuation(b4 = src.get()))
-                                return CoderResult.malformedForLength(3);
-                            uc = (((b1 & 0x07) << 18) |
-                                  ((b2 & 0x3f) << 12) |
-                                  ((b3 & 0x3f) << 06) |
-                                  ((b4 & 0x3f) << 00));
-                            n = 4;
-                            break;
-
-                        case 8: case 9: case 10: case 11:
-                            // 5 bytes, 26 bits
-                            if (src.remaining() < 4)
-                                return CoderResult.UNDERFLOW;
-                            if (!isContinuation(b2 = src.get()))
-                                return CoderResult.malformedForLength(1);
-                            if (!isContinuation(b3 = src.get()))
-                                return CoderResult.malformedForLength(2);
-                            if (!isContinuation(b4 = src.get()))
-                                return CoderResult.malformedForLength(3);
-                            if (!isContinuation(b5 = src.get()))
-                                return CoderResult.malformedForLength(4);
-                            uc = (((b1 & 0x03) << 24) |
-                                  ((b2 & 0x3f) << 18) |
-                                  ((b3 & 0x3f) << 12) |
-                                  ((b4 & 0x3f) << 06) |
-                                  ((b5 & 0x3f) << 00));
-                            n = 5;
-                            break;
-
-                        case 12: case 13:
-                            // 6 bytes, 31 bits
-                            if (src.remaining() < 5)
-                                return CoderResult.UNDERFLOW;
-                            if (!isContinuation(b2 = src.get()))
-                                return CoderResult.malformedForLength(1);
-                            if (!isContinuation(b3 = src.get()))
-                                return CoderResult.malformedForLength(2);
-                            if (!isContinuation(b4 = src.get()))
-                                return CoderResult.malformedForLength(3);
-                            if (!isContinuation(b5 = src.get()))
-                                return CoderResult.malformedForLength(4);
-                            if (!isContinuation(b6 = src.get()))
-                                return CoderResult.malformedForLength(5);
-                            uc = (((b1 & 0x01) << 30) |
-                                  ((b2 & 0x3f) << 24) |
-                                  ((b3 & 0x3f) << 18) |
-                                  ((b4 & 0x3f) << 12) |
-                                  ((b5 & 0x3f) << 06) |
-                                  ((b6 & 0x3f)));
-                            n = 6;
-                            break;
-
-                        default:
-                            return CoderResult.malformedForLength(1);
-
-                        }
-
-                        if (sgg.generate(uc, n, dst) < 0)
-                            return sgg.error();
-                        mark += n;
-                        continue;
-
-                    default:
-                        return CoderResult.malformedForLength(1);
-
+            int limit = src.limit();
+            while (mark < limit) {
+                int b1 = src.get();
+                if (b1 >= 0) {
+                    // 1 byte, 7 bits: 0xxxxxxx
+                    if (dst.remaining() < 1)
+                        return xflow(src, mark, 1);  //overflow
+                    dst.put((char)b1);
+                    mark++;
+                } else if ((b1 >> 5) == -2) {
+                    // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
+                    if (limit - mark < 2|| dst.remaining() < 1)
+                        return xflow(src, mark, 2);
+                    int b2 = src.get();
+                    if (isMalformed2(b1, b2))
+                        return malformed(src, mark, 2);
+                    dst.put((char) (((b1 << 6) ^ b2) ^ 0x0f80));
+                    mark += 2;
+                } else if ((b1 >> 4) == -2) {
+                    // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
+                    if (limit - mark < 3 || dst.remaining() < 1)
+                        return xflow(src, mark, 3);
+                    int b2 = src.get();
+                    int b3 = src.get();
+                    if (isMalformed3(b1, b2, b3))
+                        return malformed(src, mark, 3);
+                    dst.put((char) (((b1 << 12) ^ (b2 << 6) ^ b3) ^ 0x1f80));
+                    mark += 3;
+                } else if ((b1 >> 3) == -2) {
+                    // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+                    if (limit - mark < 4 || dst.remaining() < 2)
+                        return xflow(src, mark, 4);
+                    int b2 = src.get();
+                    int b3 = src.get();
+                    int b4 = src.get();
+                    int uc = ((b1 & 0x07) << 18) |
+                             ((b2 & 0x3f) << 12) |
+                             ((b3 & 0x3f) << 06) |
+                             (b4 & 0x3f);
+                    if (isMalformed4(b2, b3, b4) ||
+                        !Surrogate.neededFor(uc)) { // shortest form check
+                        return malformed(src, mark, 4);
                     }
-
+                    dst.put(Surrogate.high(uc));
+                    dst.put(Surrogate.low(uc));
+                    mark += 4;
+                } else {
+                    return malformed(src, mark, 1);
                 }
-                return CoderResult.UNDERFLOW;
-            } finally {
-                src.position(mark);
             }
+            return xflow(src, mark, 0);
         }
 
         protected CoderResult decodeLoop(ByteBuffer src,
@@ -377,9 +325,7 @@ class UTF_8 extends Unicode
             else
                 return decodeBufferLoop(src, dst);
         }
-
     }
-
 
     private static class Encoder extends CharsetEncoder {
 
@@ -391,141 +337,126 @@ class UTF_8 extends Unicode
             return !Surrogate.is(c);
         }
 
-        private final Surrogate.Parser sgp = new Surrogate.Parser();
+        public boolean isLegalReplacement(byte[] repl) {
+            return ((repl.length == 1 && repl[0] >= 0) ||
+                    super.isLegalReplacement(repl));
+        }
 
+        private static CoderResult overflow(CharBuffer src, int sp,
+                                            ByteBuffer dst, int dp) {
+            updatePositions(src, sp, dst, dp);
+            return CoderResult.OVERFLOW;
+        }
+
+        private static CoderResult overflow(CharBuffer src, int mark) {
+            src.position(mark);
+            return CoderResult.OVERFLOW;
+        }
+
+        private Surrogate.Parser sgp;
         private CoderResult encodeArrayLoop(CharBuffer src,
                                             ByteBuffer dst)
         {
             char[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
+
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
+            int dlASCII = dp + Math.min(sl - sp, dl - dp);
 
-            try {
-                while (sp < sl) {
-                    char c = sa[sp];
-
-                    if (c < 0x80) {
-                        // Have at most seven bits
-                        if (dp >= dl)
-                            return CoderResult.OVERFLOW;
-                        da[dp++] = (byte)c;
-                        sp++;
-                        continue;
-                    }
-
-                    if (!Surrogate.is(c)) {
-                        // 2 bytes, 11 bits
-                        if (c < 0x800) {
-                            if (dl - dp < 2)
-                                return CoderResult.OVERFLOW;
-                            da[dp++] = (byte)(0xc0 | ((c >> 06)));
-                            da[dp++] = (byte)(0x80 | ((c >> 00) & 0x3f));
-                            sp++;
-                            continue;
-                        }
-                        if (c <= '\uFFFF') {
-                            // 3 bytes, 16 bits
-                            if (dl - dp < 3)
-                                return CoderResult.OVERFLOW;
-                            da[dp++] = (byte)(0xe0 | ((c >> 12)));
-                            da[dp++] = (byte)(0x80 | ((c >> 06) & 0x3f));
-                            da[dp++] = (byte)(0x80 | ((c >> 00) & 0x3f));
-                            sp++;
-                            continue;
-                        }
-                    }
-
+            //ASCII only loop
+            while (dp < dlASCII && sa[sp] < '\u0080')
+                da[dp++] = (byte) sa[sp++];
+            while (sp < sl) {
+                int c = sa[sp];
+                if (c < 0x80) {
+                    // Have at most seven bits
+                    if (dp >= dl)
+                        return overflow(src, sp, dst, dp);
+                    da[dp++] = (byte)c;
+                } else if (c < 0x800) {
+                    // 2 bytes, 11 bits
+                    if (dl - dp < 2)
+                        return overflow(src, sp, dst, dp);
+                    da[dp++] = (byte)(0xc0 | ((c >> 06)));
+                    da[dp++] = (byte)(0x80 | (c & 0x3f));
+                } else if (Surrogate.is(c)) {
                     // Have a surrogate pair
-                    int uc = sgp.parse(c, sa, sp, sl);
-                    if (uc < 0)
+                    if (sgp == null)
+                        sgp = new Surrogate.Parser();
+                    int uc = sgp.parse((char)c, sa, sp, sl);
+                    if (uc < 0) {
+                        updatePositions(src, sp, dst, dp);
                         return sgp.error();
-                    if (uc < 0x200000) {
-                        if (dl - dp < 4)
-                            return CoderResult.OVERFLOW;
-                        da[dp++] = (byte)(0xf0 | ((uc >> 18)));
-                        da[dp++] = (byte)(0x80 | ((uc >> 12) & 0x3f));
-                        da[dp++] = (byte)(0x80 | ((uc >> 06) & 0x3f));
-                        da[dp++] = (byte)(0x80 | ((uc >> 00) & 0x3f));
-                        sp += sgp.increment();
-                        continue;
                     }
-                    assert false;
-
+                    if (dl - dp < 4)
+                        return overflow(src, sp, dst, dp);
+                    da[dp++] = (byte)(0xf0 | ((uc >> 18)));
+                    da[dp++] = (byte)(0x80 | ((uc >> 12) & 0x3f));
+                    da[dp++] = (byte)(0x80 | ((uc >> 06) & 0x3f));
+                    da[dp++] = (byte)(0x80 | (uc & 0x3f));
+                    sp++;  // 2 chars
+                } else {
+                    // 3 bytes, 16 bits
+                    if (dl - dp < 3)
+                        return overflow(src, sp, dst, dp);
+                    da[dp++] = (byte)(0xe0 | ((c >> 12)));
+                    da[dp++] = (byte)(0x80 | ((c >> 06) & 0x3f));
+                    da[dp++] = (byte)(0x80 | (c & 0x3f));
                 }
-                return CoderResult.UNDERFLOW;
-            } finally {
-                src.position(sp - src.arrayOffset());
-                dst.position(dp - dst.arrayOffset());
+                sp++;
             }
+            updatePositions(src, sp, dst, dp);
+            return CoderResult.UNDERFLOW;
         }
 
         private CoderResult encodeBufferLoop(CharBuffer src,
                                              ByteBuffer dst)
         {
             int mark = src.position();
-            try {
-                while (src.hasRemaining()) {
-                    char c = src.get();
-
-                    if (c < 0x80) {
-                        // Have at most seven bits
-                        if (!dst.hasRemaining())
-                            return CoderResult.OVERFLOW;
-                        dst.put((byte)c);
-                        mark++;
-                        continue;
-                    }
-
-                    if (!Surrogate.is(c)) {
-                        if (c < 0x800) {
-                            // 2 bytes, 11 bits
-                            if (dst.remaining() < 2)
-                                return CoderResult.OVERFLOW;
-                            dst.put((byte)(0xc0 | ((c >> 06))));
-                            dst.put((byte)(0x80 | ((c >> 00) & 0x3f)));
-                            mark++;
-                            continue;
-                        }
-                        if (c <= '\uFFFF') {
-                            // 3 bytes, 16 bits
-                            if (dst.remaining() < 3)
-                                return CoderResult.OVERFLOW;
-                            dst.put((byte)(0xe0 | ((c >> 12))));
-                            dst.put((byte)(0x80 | ((c >> 06) & 0x3f)));
-                            dst.put((byte)(0x80 | ((c >> 00) & 0x3f)));
-                            mark++;
-                            continue;
-                        }
-                    }
-
+            while (src.hasRemaining()) {
+                int c = src.get();
+                if (c < 0x80) {
+                    // Have at most seven bits
+                    if (!dst.hasRemaining())
+                        return overflow(src, mark);
+                    dst.put((byte)c);
+                } else if (c < 0x800) {
+                    // 2 bytes, 11 bits
+                    if (dst.remaining() < 2)
+                        return overflow(src, mark);
+                    dst.put((byte)(0xc0 | ((c >> 06))));
+                    dst.put((byte)(0x80 | (c & 0x3f)));
+                } else if (Surrogate.is(c)) {
                     // Have a surrogate pair
-                    int uc = sgp.parse(c, src);
-                    if (uc < 0)
+                    if (sgp == null)
+                        sgp = new Surrogate.Parser();
+                    int uc = sgp.parse((char)c, src);
+                    if (uc < 0) {
+                        src.position(mark);
                         return sgp.error();
-                    if (uc < 0x200000) {
-                        if (dst.remaining() < 4)
-                            return CoderResult.OVERFLOW;
-                        dst.put((byte)(0xf0 | ((uc >> 18))));
-                        dst.put((byte)(0x80 | ((uc >> 12) & 0x3f)));
-                        dst.put((byte)(0x80 | ((uc >> 06) & 0x3f)));
-                        dst.put((byte)(0x80 | ((uc >> 00) & 0x3f)));
-                        mark += sgp.increment();
-                        continue;
                     }
-                    assert false;
-
+                    if (dst.remaining() < 4)
+                        return overflow(src, mark);
+                    dst.put((byte)(0xf0 | ((uc >> 18))));
+                    dst.put((byte)(0x80 | ((uc >> 12) & 0x3f)));
+                    dst.put((byte)(0x80 | ((uc >> 06) & 0x3f)));
+                    dst.put((byte)(0x80 | (uc & 0x3f)));
+                    mark++;  //2 chars
+                } else {
+                    // 3 bytes, 16 bits
+                    if (dst.remaining() < 3)
+                        return overflow(src, mark);
+                    dst.put((byte)(0xe0 | ((c >> 12))));
+                    dst.put((byte)(0x80 | ((c >> 06) & 0x3f)));
+                    dst.put((byte)(0x80 | (c & 0x3f)));
                 }
-                return CoderResult.UNDERFLOW;
-            } finally {
-                src.position(mark);
+                mark++;
             }
+            src.position(mark);
+            return CoderResult.UNDERFLOW;
         }
 
         protected final CoderResult encodeLoop(CharBuffer src,
@@ -536,7 +467,5 @@ class UTF_8 extends Unicode
             else
                 return encodeBufferLoop(src, dst);
         }
-
     }
-
 }

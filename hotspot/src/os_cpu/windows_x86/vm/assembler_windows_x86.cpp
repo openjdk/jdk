@@ -23,13 +23,14 @@
  */
 
 #include "incls/_precompiled.incl"
-#include "incls/_assembler_windows_x86_32.cpp.incl"
+#include "incls/_assembler_windows_x86.cpp.incl"
 
 
 void MacroAssembler::int3() {
   emit_byte(0xCC);
 }
 
+#ifndef _LP64
 //  The current scheme to accelerate access to the thread
 //  pointer is to store the current thread in the os_exception_wrapper
 //  and reference the current thread from stubs and compiled code
@@ -58,3 +59,40 @@ void MacroAssembler::get_thread(Register thread) {
          "Thread Pointer Offset has not been initialized");
   movl(thread, Address(thread, ThreadLocalStorage::get_thread_ptr_offset()));
 }
+#else
+// call (Thread*)TlsGetValue(thread_index());
+void MacroAssembler::get_thread(Register thread) {
+   if (thread != rax) {
+     push(rax);
+   }
+   push(rdi);
+   push(rsi);
+   push(rdx);
+   push(rcx);
+   push(r8);
+   push(r9);
+   push(r10);
+   // XXX
+   mov(r10, rsp);
+   andq(rsp, -16);
+   push(r10);
+   push(r11);
+
+   movl(c_rarg0, ThreadLocalStorage::thread_index());
+   call(RuntimeAddress((address)TlsGetValue));
+
+   pop(r11);
+   pop(rsp);
+   pop(r10);
+   pop(r9);
+   pop(r8);
+   pop(rcx);
+   pop(rdx);
+   pop(rsi);
+   pop(rdi);
+   if (thread != rax) {
+       mov(thread, rax);
+       pop(rax);
+   }
+}
+#endif

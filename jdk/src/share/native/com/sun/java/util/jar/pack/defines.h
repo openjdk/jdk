@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,15 @@
 #ifdef PRODUCT
 #define IF_PRODUCT(xxx) xxx
 #define NOT_PRODUCT(xxx)
-#define assert(p) (0)
-#define printcr false &&
+#define assert(p)
+#define PRINTCR(args)
 #else
 #define IF_PRODUCT(xxx)
 #define NOT_PRODUCT(xxx) xxx
-#define assert(p) ((p) || (assert_failed(#p), 1))
-#define printcr u->verbose && u->printcr_if_verbose
+#define assert(p) ((p) || assert_failed(#p))
+#define PRINTCR(args)  u->verbose && u->printcr_if_verbose args
 extern "C" void breakpoint();
-extern void assert_failed(const char*);
+extern int assert_failed(const char*);
 #define BREAK (breakpoint())
 #endif
 
@@ -79,7 +79,7 @@ extern void assert_failed(const char*);
 
 #define lengthof(array) (sizeof(array)/sizeof(array[0]))
 
-#define NEW(T, n)    (T*) must_malloc(sizeof(T)*(n))
+#define NEW(T, n)    (T*) must_malloc((int)(sizeof(T)*(n)))
 #define U_NEW(T, n)  (T*) u->alloc(sizeof(T)*(n))
 #define T_NEW(T, n)  (T*) u->temp_alloc(sizeof(T)*(n))
 
@@ -121,12 +121,12 @@ enum { false, true };
 
 #define null (0)
 
-#ifndef __sparc
-#define intptr_t jlong
-#endif
+/* Must cast to void *, then size_t, then int. */
+#define ptrlowbits(x)  ((int)(size_t)(void*)(x))
 
-#define ptrlowbits(x)  ((int) (intptr_t)(x))
-
+/* Back and forth from jlong to pointer */
+#define ptr2jlong(x)  ((jlong)(size_t)(void*)(x))
+#define jlong2ptr(x)  ((void*)(size_t)(x))
 
 // Keys used by Java:
 #define UNPACK_DEFLATE_HINT             "unpack.deflate.hint"

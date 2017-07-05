@@ -25,13 +25,19 @@
 
 
 # @test
-# @bug 6265810
+# @bug 6265810 6705893
+# @build CheckEngine
 # @run shell jrunscript-argsTest.sh
 # @summary Test passing of script arguments from command line
 
 . ${TESTSRC-.}/common.sh
 
 setup
+${JAVA} -cp ${TESTCLASSES} CheckEngine
+if [ $? -eq 2 ]; then
+    echo "No js engine found and engine not required; test vacuously passes."
+    exit 0
+fi
 
 # we check whether "excess" args are passed as script arguments
 

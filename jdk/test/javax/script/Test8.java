@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6249843
+ * @bug 6249843 6705893
  * @summary Test invoking script function or method from Java
  */
 
@@ -34,7 +34,11 @@ public class Test8 {
         public static void main(String[] args) throws Exception {
             System.out.println("\nTest8\n");
             ScriptEngineManager m = new ScriptEngineManager();
-            ScriptEngine e  = m.getEngineByName("js");
+            ScriptEngine e  = Helper.getJsEngine(m);
+            if (e == null) {
+                System.out.println("Warning: No js engine found; test vacuously passes.");
+                return;
+            }
             e.eval(new FileReader(
                 new File(System.getProperty("test.src", "."), "Test8.js")));
             Invocable inv = (Invocable)e;
