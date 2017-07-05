@@ -417,11 +417,11 @@ void handleMessage
 /*
  * Class:     sun_nio_ch_SctpChannelImpl
  * Method:    receive0
- * Signature: (ILsun/nio/ch/SctpResultContainer;JI)I
+ * Signature: (ILsun/nio/ch/SctpResultContainer;JIZ)I
  */
 JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpChannelImpl_receive0
   (JNIEnv *env, jclass klass, jint fd, jobject resultContainerObj,
-   jlong address, jint length) {
+   jlong address, jint length, jboolean peek) {
     SOCKADDR sa;
     int sa_len = sizeof(sa);
     ssize_t rv = 0;
@@ -429,6 +429,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpChannelImpl_receive0
     struct iovec iov[1];
     struct msghdr msg[1];
     char cbuf[CMSG_SPACE(sizeof (struct sctp_sndrcvinfo))];
+    int flags = peek == JNI_TRUE ? MSG_PEEK : 0;
 
     /* Set up the msghdr structure for receiving */
     memset(msg, 0, sizeof (*msg));
@@ -443,7 +444,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpChannelImpl_receive0
     msg->msg_flags = 0;
 
     do {
-        if ((rv = recvmsg(fd, msg, 0)) < 0) {
+        if ((rv = recvmsg(fd, msg, flags)) < 0) {
             if (errno == EWOULDBLOCK) {
                 return IOS_UNAVAILABLE;
             } else if (errno == EINTR) {
@@ -473,7 +474,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpChannelImpl_receive0
                 memcpy(buf, addr, rv);
                 iov->iov_base = buf + rv;
                 iov->iov_len = NOTIFICATION_BUFFER_SIZE - rv;
-                if ((rv = recvmsg(fd, msg, 0)) < 0) {
+                if ((rv = recvmsg(fd, msg, flags)) < 0) {
                     handleSocketError(env, errno);
                     return 0;
                 }

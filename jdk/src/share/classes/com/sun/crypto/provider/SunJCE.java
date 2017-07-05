@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,10 +92,6 @@ public final class SunJCE extends Provider {
     static final boolean debug = false;
 
     static final SecureRandom RANDOM = new SecureRandom();
-
-    // After the SunJCE passed self-integrity checking,
-    // verifiedSelfIntegrity will be set to true.
-    private static boolean verifiedSelfIntegrity = false;
 
     public SunJCE() {
         /* We are the "SunJCE" provider */
@@ -440,22 +436,5 @@ public final class SunJCE extends Provider {
                 return null;
             }
         });
-    }
-
-    // set to true once self verification is complete
-    private static volatile boolean integrityVerified;
-
-    static void ensureIntegrity(Class c) {
-        if (verifySelfIntegrity(c) == false) {
-            throw new SecurityException("The SunJCE provider may have " +
-                                        "been tampered.");
-        }
-    }
-
-    static final boolean verifySelfIntegrity(Class c) {
-        if (verifiedSelfIntegrity) {
-            return true;
-        }
-        return (integrityVerified = JarVerifier.verify(c));
     }
 }
