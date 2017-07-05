@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,6 +376,16 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   }
 
 }
+
+
+void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  __ call(SharedRuntime::deopt_blob()->unpack_with_reexecution());
+  __ delayed()->nop();
+  ce->add_call_info_here(_info);
+  debug_only(__ should_not_reach_here());
+}
+
 
 void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   //---------------slow case: call to native-----------------

@@ -1444,8 +1444,10 @@ void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
 // to implement the UseStrictFP mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = true;
 
-// Do floats take an entire double register or just half?
-const bool Matcher::float_in_double = true;
+// Are floats conerted to double when stored to stack during deoptimization?
+// On x32 it is stored with convertion only when FPU is used for floats.
+bool Matcher::float_in_double() { return (UseSSE == 0); }
+
 // Do ints take an entire long register or just half?
 const bool Matcher::int_in_long = false;
 
