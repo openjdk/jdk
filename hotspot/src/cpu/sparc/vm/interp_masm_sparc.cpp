@@ -1696,6 +1696,9 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
 void InterpreterMacroAssembler::record_klass_in_profile_helper(
                                         Register receiver, Register scratch,
                                         int start_row, Label& done) {
+  if (TypeProfileWidth == 0)
+    return;
+
   int last_row = VirtualCallData::row_limit() - 1;
   assert(start_row <= last_row, "must be work left to do");
   // Test this row for both the receiver and for null.

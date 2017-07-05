@@ -439,6 +439,11 @@ static Node* get_addp_base(Node *addp) {
   Node *base = addp->in(AddPNode::Base)->uncast();
   if (base->is_top()) { // The AddP case #3 and #6.
     base = addp->in(AddPNode::Address)->uncast();
+    while (base->is_AddP()) {
+      // Case #6 (unsafe access) may have several chained AddP nodes.
+      assert(base->in(AddPNode::Base)->is_top(), "expected unsafe access address only");
+      base = base->in(AddPNode::Address)->uncast();
+    }
     assert(base->Opcode() == Op_ConP || base->Opcode() == Op_ThreadLocal ||
            base->Opcode() == Op_CastX2P || base->is_DecodeN() ||
            (base->is_Mem() && base->bottom_type() == TypeRawPtr::NOTNULL) ||
