@@ -82,7 +82,8 @@ TREEAPI_PKGS = com.sun.source.doctree \
     com.sun.source.util \
     jdk
 
-NASHORNAPI_PKGS = jdk.nashorn.api.scripting
+NASHORNAPI_PKGS = jdk.nashorn.api.scripting \
+    jdk.nashorn.api.tree
 
 SMARTCARDIO_PKGS = javax.smartcardio
 

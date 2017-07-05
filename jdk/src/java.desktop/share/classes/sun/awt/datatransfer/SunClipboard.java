@@ -414,7 +414,7 @@ public abstract class SunClipboard extends Clipboard
      * @param formats data formats that have just been retrieved from
      *        this clipboard
      */
-    public final void checkChange(final long[] formats) {
+    protected final void checkChange(final long[] formats) {
         if (Arrays.equals(formats, currentFormats)) {
             // we've been able to successfully get available on the clipboard
             // DataFlavors this and previous time and they are coincident;

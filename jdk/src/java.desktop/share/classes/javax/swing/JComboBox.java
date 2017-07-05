@@ -577,6 +577,8 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
                 if (!found) {
                     return;
                 }
+
+                getEditor().setItem(anObject);
             }
 
             // Must toggle the state of this flag since this method
@@ -1319,16 +1321,12 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * do not call or override.
      */
     public void actionPerformed(ActionEvent e) {
-        ComboBoxEditor editor = getEditor();
-        if ((editor != null) && (e != null) && (editor == e.getSource()
-                || editor.getEditorComponent() == e.getSource())) {
-            setPopupVisible(false);
-            getModel().setSelectedItem(editor.getItem());
-            String oldCommand = getActionCommand();
-            setActionCommand("comboBoxEdited");
-            fireActionEvent();
-            setActionCommand(oldCommand);
-        }
+        setPopupVisible(false);
+        getModel().setSelectedItem(getEditor().getItem());
+        String oldCommand = getActionCommand();
+        setActionCommand("comboBoxEdited");
+        fireActionEvent();
+        setActionCommand(oldCommand);
     }
 
     /**

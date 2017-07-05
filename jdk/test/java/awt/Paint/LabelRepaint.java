@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Label;
-import java.awt.peer.LabelPeer;
 
 /**
  * @test
@@ -66,28 +65,20 @@ public final class LabelRepaint extends Label {
 
     void test() {
         setAlignment(getAlignment());
-        ((LabelPeer) getPeer()).setAlignment(getAlignment());
 
         setText("");
         setText(null);
         setText(getText());
-        ((LabelPeer) getPeer()).setText("");
-        ((LabelPeer) getPeer()).setText(null);
-        ((LabelPeer) getPeer()).setText(getText());
 
         setFont(null);
         setFont(getFont());
-        getPeer().setFont(getFont());
 
         setBackground(null);
         setBackground(getBackground());
-        getPeer().setBackground(getBackground());
 
         setForeground(null);
         setForeground(getForeground());
-        getPeer().setForeground(getForeground());
 
         setEnabled(isEnabled());
-        getPeer().setEnabled(isEnabled());
     }
 }

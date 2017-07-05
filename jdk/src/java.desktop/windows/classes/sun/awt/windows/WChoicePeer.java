@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.awt.event.ItemEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowAdapter;
+
+import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 
 final class WChoicePeer extends WComponentPeer implements ChoicePeer {
@@ -94,7 +96,6 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
     native void create(WComponentPeer parent);
 
     @Override
-    @SuppressWarnings("deprecation")
     void initialize() {
         Choice opt = (Choice)target;
         int itemCount = opt.getItemCount();
@@ -111,7 +112,8 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
 
         Window parentWindow = SunToolkit.getContainingWindow((Component)target);
         if (parentWindow != null) {
-            WWindowPeer wpeer = (WWindowPeer)parentWindow.getPeer();
+            final WWindowPeer wpeer = AWTAccessor.getComponentAccessor()
+                                                 .getPeer(parentWindow);
             if (wpeer != null) {
                 windowListener = new WindowAdapter() {
                         @Override
@@ -130,13 +132,13 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     protected void disposeImpl() {
         // TODO: we should somehow reset the listener when the choice
         // is moved to another toplevel without destroying its peer.
         Window parentWindow = SunToolkit.getContainingWindow((Component)target);
         if (parentWindow != null) {
-            WWindowPeer wpeer = (WWindowPeer)parentWindow.getPeer();
+            final WWindowPeer wpeer = AWTAccessor.getComponentAccessor()
+                                                .getPeer(parentWindow);
             if (wpeer != null) {
                 wpeer.removeWindowListener(windowListener);
             }

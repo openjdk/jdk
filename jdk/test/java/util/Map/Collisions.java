@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,138 +198,125 @@ public class Collisions {
     }
 
     private static <T> void testInsertion(Map<T, T> map, String keys_desc, T[] keys) {
-        check("map empty", (map.size() == 0) && map.isEmpty());
+        check(map.size() == 0 && map.isEmpty(), "map empty");
 
         for (int i = 0; i < keys.length; i++) {
-            check(String.format("insertion: map expected size m%d != i%d", map.size(), i),
-                    map.size() == i);
-            check(String.format("insertion: put(%s[%d])", keys_desc, i), null == map.put(keys[i], keys[i]));
-            check(String.format("insertion: containsKey(%s[%d])", keys_desc, i), map.containsKey(keys[i]));
-            check(String.format("insertion: containsValue(%s[%d])", keys_desc, i), map.containsValue(keys[i]));
+            check(map.size() == i, "insertion: map expected size m%d != i%d", map.size(), i);
+            check(null == map.put(keys[i], keys[i]), "insertion: put(%s[%d])", keys_desc, i);
+            check(map.containsKey(keys[i]), "insertion: containsKey(%s[%d])", keys_desc, i);
+            check(map.containsValue(keys[i]), "insertion: containsValue(%s[%d])", keys_desc, i);
         }
 
-        check(String.format("map expected size m%d != k%d", map.size(), keys.length),
-                map.size() == keys.length);
+        check(map.size() == keys.length, "map expected size m%d != k%d", map.size(), keys.length);
     }
 
     private static void testIntegerIteration(Map<HashableInteger, HashableInteger> map, HashableInteger[] keys) {
-        check(String.format("map expected size m%d != k%d", map.size(), keys.length),
-                map.size() == keys.length);
+        check(map.size() == keys.length, "map expected size m%d != k%d", map.size(), keys.length);
 
         BitSet all = new BitSet(keys.length);
         for (Map.Entry<HashableInteger, HashableInteger> each : map.entrySet()) {
-            check("Iteration: key already seen", !all.get(each.getKey().value));
+            check(!all.get(each.getKey().value), "Iteration: key already seen");
             all.set(each.getKey().value);
         }
 
         all.flip(0, keys.length);
-        check("Iteration: some keys not visited", all.isEmpty());
+        check(all.isEmpty(), "Iteration: some keys not visited");
 
         for (HashableInteger each : map.keySet()) {
-            check("Iteration: key already seen", !all.get(each.value));
+            check(!all.get(each.value), "Iteration: key already seen");
             all.set(each.value);
         }
 
         all.flip(0, keys.length);
-        check("Iteration: some keys not visited", all.isEmpty());
+        check(all.isEmpty(), "Iteration: some keys not visited");
 
         int count = 0;
         for (HashableInteger each : map.values()) {
             count++;
         }
 
-        check(String.format("Iteration: value count matches size m%d != c%d", map.size(), count),
-                map.size() == count);
+        check(map.size() == count, "Iteration: value count matches size m%d != c%d", map.size(), count);
     }
 
     private static void testStringIteration(Map<String, String> map, String[] keys) {
-        check(String.format("map expected size m%d != k%d", map.size(), keys.length),
-                map.size() == keys.length);
+        check(map.size() == keys.length, "map expected size m%d != k%d", map.size(), keys.length);
 
         BitSet all = new BitSet(keys.length);
         for (Map.Entry<String, String> each : map.entrySet()) {
             String key = each.getKey();
             boolean longKey = key.length() > 5;
             int index = key.hashCode() + (longKey ? keys.length / 2 : 0);
-            check("key already seen", !all.get(index));
+            check(!all.get(index), "key already seen");
             all.set(index);
         }
 
         all.flip(0, keys.length);
-        check("some keys not visited", all.isEmpty());
+        check(all.isEmpty(), "some keys not visited");
 
         for (String each : map.keySet()) {
             boolean longKey = each.length() > 5;
             int index = each.hashCode() + (longKey ? keys.length / 2 : 0);
-            check("key already seen", !all.get(index));
+            check(!all.get(index), "key already seen");
             all.set(index);
         }
 
         all.flip(0, keys.length);
-        check("some keys not visited", all.isEmpty());
+        check(all.isEmpty(), "some keys not visited");
 
         int count = 0;
         for (String each : map.values()) {
             count++;
         }
 
-        check(String.format("value count matches size m%d != k%d", map.size(), keys.length),
-                map.size() == keys.length);
+        check(map.size() == keys.length, "value count matches size m%d != k%d", map.size(), keys.length);
     }
 
     private static <T> void testContainsKey(Map<T, T> map, String keys_desc, T[] keys) {
         for (int i = 0; i < keys.length; i++) {
             T each = keys[i];
-            check("containsKey: " + keys_desc + "[" + i + "]" + each, map.containsKey(each));
+            check(map.containsKey(each), "containsKey: %s[%d]%s", keys_desc, i, each);
         }
     }
 
     private static <T> void testRemove(Map<T, T> map, String keys_desc, T[] keys) {
-        check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
-                map.size() == keys.length);
+        check(map.size() == keys.length, "remove: map expected size m%d != k%d", map.size(), keys.length);
 
         for (int i = 0; i < keys.length; i++) {
             T each = keys[i];
-            check("remove: " + keys_desc + "[" + i + "]" + each, null != map.remove(each));
+            check(null != map.remove(each), "remove: %s[%d]%s", keys_desc, i, each);
         }
 
-        check(String.format("remove: map empty. size=%d", map.size()),
-                (map.size() == 0) && map.isEmpty());
+        check(map.size() == 0 && map.isEmpty(), "remove: map empty. size=%d", map.size());
     }
 
     private static <T> void testKeysIteratorRemove(Map<T, T> map, String keys_desc, T[] keys) {
-        check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
-                map.size() == keys.length);
+        check(map.size() == keys.length, "remove: map expected size m%d != k%d", map.size(), keys.length);
 
         Iterator<T> each = map.keySet().iterator();
         while (each.hasNext()) {
             T t = each.next();
             each.remove();
-            check("not removed: " + each, !map.containsKey(t) );
+            check(!map.containsKey(t), "not removed: %s", each);
         }
 
-        check(String.format("remove: map empty. size=%d", map.size()),
-                (map.size() == 0) && map.isEmpty());
+        check(map.size() == 0 && map.isEmpty(), "remove: map empty. size=%d", map.size());
     }
 
     private static <T> void testValuesIteratorRemove(Map<T, T> map, String keys_desc, T[] keys) {
-        check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
-                map.size() == keys.length);
+        check(map.size() == keys.length, "remove: map expected size m%d != k%d", map.size(), keys.length);
 
         Iterator<T> each = map.values().iterator();
         while (each.hasNext()) {
             T t = each.next();
             each.remove();
-            check("not removed: " + each, !map.containsValue(t) );
+            check(!map.containsValue(t), "not removed: %s", each);
         }
 
-        check(String.format("remove: map empty. size=%d", map.size()),
-                (map.size() == 0) && map.isEmpty());
+        check(map.size() == 0 && map.isEmpty(), "remove: map empty. size=%d", map.size());
     }
 
     private static <T> void testEntriesIteratorRemove(Map<T, T> map, String keys_desc, T[] keys) {
-        check(String.format("remove: map expected size m%d != k%d", map.size(), keys.length),
-                map.size() == keys.length);
+        check(map.size() == keys.length, "remove: map expected size m%d != k%d", map.size(), keys.length);
 
         Iterator<Map.Entry<T,T>> each = map.entrySet().iterator();
         while (each.hasNext()) {
@@ -337,13 +324,12 @@ public class Collisions {
             T key = t.getKey();
             T value = t.getValue();
             each.remove();
-            check("not removed: " + each, (map instanceof IdentityHashMap) || !map.entrySet().contains(t) );
-            check("not removed: " + each, !map.containsKey(key) );
-            check("not removed: " + each, !map.containsValue(value));
+            check((map instanceof IdentityHashMap) || !map.entrySet().contains(t), "not removed: %s", each);
+            check(!map.containsKey(key),                                           "not removed: %s", each);
+            check(!map.containsValue(value),                                       "not removed: %s", each);
         }
 
-        check(String.format("remove: map empty. size=%d", map.size()),
-                (map.size() == 0) && map.isEmpty());
+        check(map.size() == 0 && map.isEmpty(), "remove: map empty. size=%d", map.size());
     }
 
     //--------------------- Infrastructure ---------------------------
@@ -391,11 +377,51 @@ public class Collisions {
         }
     }
 
-    static void check(String desc, boolean cond) {
+    static void check(boolean cond, String desc) {
         if (cond) {
             pass();
         } else {
             fail(desc);
+        }
+    }
+
+    static void check(boolean cond, String fmt, int i) {
+        if (cond) {
+            pass();
+        } else {
+            fail(String.format(fmt, i));
+        }
+    }
+
+    static void check(boolean cond, String fmt, Object o) {
+        if (cond) {
+            pass();
+        } else {
+            fail(String.format(fmt, o));
+        }
+    }
+
+    static void check(boolean cond, String fmt, int i1, int i2) {
+        if (cond) {
+            pass();
+        } else {
+            fail(String.format(fmt, i1, i2));
+        }
+    }
+
+    static void check(boolean cond, String fmt, String s, int i) {
+        if (cond) {
+            pass();
+        } else {
+            fail(String.format(fmt, s, i));
+        }
+    }
+
+    static void check(boolean cond, String fmt, String s, int i, Object o) {
+        if (cond) {
+            pass();
+        } else {
+            fail(String.format(fmt, s, i, o));
         }
     }
 

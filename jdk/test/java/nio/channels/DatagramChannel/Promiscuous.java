@@ -97,7 +97,7 @@ public class Promiscuous {
                 // no datagram received
                 if (sa == null) {
                     if (datagramExepcted) {
-                        throw new RuntimeException("Expected message not recieved");
+                        throw new RuntimeException("Expected message not received");
                     }
                     System.out.println("No message received (correct)");
                     return;
@@ -109,10 +109,15 @@ public class Promiscuous {
                 buf.flip();
                 byte[] bytes = new byte[buf.remaining()];
                 buf.get(bytes);
-                int receivedId = Integer.parseInt(new String(bytes));
-
-                System.out.format("Received message from %s (id=0x%x)\n",
-                    sender, receivedId);
+                String s = new String(bytes, "UTF-8");
+                int receivedId = -1;
+                try {
+                    receivedId = Integer.parseInt(s);
+                    System.out.format("Received message from %s (id=0x%x)\n",
+                            sender, receivedId);
+                } catch (NumberFormatException x) {
+                    System.out.format("Received message from %s (msg=%s)\n", sender, s);
+                }
 
                 if (!datagramExepcted) {
                     if (receivedId == id)

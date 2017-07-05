@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -758,6 +758,8 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * to subclasses.
      *
      * @param positions the UndoPosRef instances to reset
+     * @param offset where the string was inserted
+     * @param length length of inserted string
      */
     @SuppressWarnings("rawtypes") // UndoPosRef type cannot be exposed
     protected void updateUndoPositions(Vector positions, int offset,

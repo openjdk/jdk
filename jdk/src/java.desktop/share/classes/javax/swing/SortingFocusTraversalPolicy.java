@@ -570,7 +570,10 @@ public class SortingFocusTraversalPolicy
             } else if (comp instanceof Container && comp != aContainer) {
                 Container cont = (Container)comp;
                 if (cont.isFocusTraversalPolicyProvider()) {
-                    return cont.getFocusTraversalPolicy().getLastComponent(cont);
+                    Component retComp = cont.getFocusTraversalPolicy().getLastComponent(cont);
+                    if (retComp != null) {
+                        return retComp;
+                    }
                 }
             }
         }

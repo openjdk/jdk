@@ -46,6 +46,7 @@ import java.awt.geom.Rectangle2D;
 
 import java.awt.image.BufferedImage;
 
+import java.awt.peer.FontPeer;
 import java.awt.print.Pageable;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
@@ -93,6 +94,7 @@ import sun.awt.FontConfiguration;
 import sun.awt.FontDescriptor;
 import sun.awt.PlatformFont;
 import sun.awt.SunToolkit;
+import sun.font.FontAccess;
 import sun.font.FontManagerFactory;
 import sun.font.FontUtilities;
 
@@ -1214,13 +1216,13 @@ public class PSPrinterJob extends RasterPrinterJob {
      * of distinct PS fonts needed to draw this text. This saves us
      * doing this processing one extra time.
      */
-    @SuppressWarnings("deprecation")
     protected int platformFontCount(Font font, String str) {
         if (mFontProps == null) {
             return 0;
         }
-        CharsetString[] acs =
-            ((PlatformFont)(font.getPeer())).makeMultiCharsetString(str,false);
+        PlatformFont peer = (PlatformFont) FontAccess.getFontAccess()
+                                                     .getFontPeer(font);
+        CharsetString[] acs = peer.makeMultiCharsetString(str, false);
         if (acs == null) {
             /* AWT can't convert all chars so use 2D path */
             return 0;
@@ -1229,7 +1231,6 @@ public class PSPrinterJob extends RasterPrinterJob {
         return (psFonts == null) ? 0 : psFonts.length;
     }
 
-    @SuppressWarnings("deprecation")
      protected boolean textOut(Graphics g, String str, float x, float y,
                                Font mLastFont, FontRenderContext frc,
                                float width) {
@@ -1254,9 +1255,9 @@ public class PSPrinterJob extends RasterPrinterJob {
             if (str.length() == 0) {
                 return true;
             }
-            CharsetString[] acs =
-                ((PlatformFont)
-                 (mLastFont.getPeer())).makeMultiCharsetString(str, false);
+            PlatformFont peer = (PlatformFont) FontAccess.getFontAccess()
+                                                         .getFontPeer(mLastFont);
+            CharsetString[] acs = peer.makeMultiCharsetString(str, false);
             if (acs == null) {
                 /* AWT can't convert all chars so use 2D path */
                 return false;

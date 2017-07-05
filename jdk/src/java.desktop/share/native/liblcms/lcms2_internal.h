@@ -223,11 +223,17 @@ cmsINLINE cmsUInt16Number _cmsQuickSaturateWord(cmsFloat64Number d)
 // Microsoft felt that it was necessary to keep it set at -1 for an unlocked critical
 // section, even when they changed the underlying algorithm to be more scalable.
 // The final parts of the critical section object are unimportant, and can be set
-// to zero for their defaults. This yields an initialization macro:
+// to zero for their defaults. This yields to an initialization macro:
 
 typedef CRITICAL_SECTION _cmsMutex;
 
-#define CMS_MUTEX_INITIALIZER {(void*) -1,-1,0,0,0,0}
+#define CMS_MUTEX_INITIALIZER {(PRTL_CRITICAL_SECTION_DEBUG) -1,-1,0,0,0,0}
+
+#ifdef _MSC_VER
+#    if (_MSC_VER >= 1800)
+#          pragma warning(disable : 26135)
+#    endif
+#endif
 
 cmsINLINE int _cmsLockPrimitive(_cmsMutex *m)
 {
@@ -313,38 +319,38 @@ typedef int _cmsMutex;
 
 cmsINLINE int _cmsLockPrimitive(_cmsMutex *m)
 {
-        return 0;
     cmsUNUSED_PARAMETER(m);
+        return 0;
 }
 
 cmsINLINE int _cmsUnlockPrimitive(_cmsMutex *m)
 {
-        return 0;
     cmsUNUSED_PARAMETER(m);
+        return 0;
 }
 
 cmsINLINE int _cmsInitMutexPrimitive(_cmsMutex *m)
 {
-        return 0;
     cmsUNUSED_PARAMETER(m);
+        return 0;
 }
 
 cmsINLINE int _cmsDestroyMutexPrimitive(_cmsMutex *m)
 {
-        return 0;
     cmsUNUSED_PARAMETER(m);
+        return 0;
 }
 
 cmsINLINE int _cmsEnterCriticalSectionPrimitive(_cmsMutex *m)
 {
-        return 0;
     cmsUNUSED_PARAMETER(m);
+        return 0;
 }
 
 cmsINLINE int _cmsLeaveCriticalSectionPrimitive(_cmsMutex *m)
 {
-        return 0;
     cmsUNUSED_PARAMETER(m);
+        return 0;
 }
 #endif
 
@@ -852,6 +858,8 @@ cmsStage*        _cmsStageNormalizeFromLabFloat(cmsContext ContextID);
 cmsStage*        _cmsStageNormalizeFromXyzFloat(cmsContext ContextID);
 cmsStage*        _cmsStageNormalizeToLabFloat(cmsContext ContextID);
 cmsStage*        _cmsStageNormalizeToXyzFloat(cmsContext ContextID);
+cmsStage*        _cmsStageClipNegatives(cmsContext ContextID, int nChannels);
+
 
 // For curve set only
 cmsToneCurve**     _cmsStageGetPtrToCurveSet(const cmsStage* mpe);

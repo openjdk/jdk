@@ -1522,17 +1522,20 @@ public final class Subject implements java.io.Serializable {
             }
         }
 
+        @Override
         public int size() {
             return set.size();
         }
 
+        @Override
         public Iterator<T> iterator() {
             return set.iterator();
         }
 
+        @Override
         public boolean add(T o) {
 
-            if (!o.getClass().isAssignableFrom(c)) {
+            if (!c.isAssignableFrom(o.getClass())) {
                 MessageFormat form = new MessageFormat(ResourcesMgr.getString
                         ("attempting.to.add.an.object.which.is.not.an.instance.of.class"));
                 Object[] source = {c.toString()};
