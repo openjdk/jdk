@@ -67,11 +67,15 @@ public class TestHelper {
     static final String JAVAHOME = System.getProperty("java.home");
     static final String JAVA_BIN;
     static final String JAVA_JRE_BIN;
+    static final String JAVA_LIB;
+    static final String JAVA_JRE_LIB;
     static final boolean isSDK = JAVAHOME.endsWith("jre");
     static final String javaCmd;
     static final String javawCmd;
     static final String javacCmd;
     static final String jarCmd;
+    static final boolean haveServerVM;
+    static final boolean haveClientVM;
 
     static final JavaCompiler compiler;
 
@@ -88,6 +92,9 @@ public class TestHelper {
             System.getProperty("os.name", "unknown").startsWith("SunOS");
     static final boolean isLinux =
             System.getProperty("os.name", "unknown").startsWith("Linux");
+    static final String LIBJVM = isWindows
+                        ? "jvm.dll"
+                        : "libjvm" + (isMacOSX ? ".dylib" : ".so");
 
     static final boolean isSparc = System.getProperty("os.arch").startsWith("sparc");
 
@@ -124,12 +131,19 @@ public class TestHelper {
             throw new RuntimeException("arch model is not 32 or 64 bit ?");
         }
         compiler = ToolProvider.getSystemJavaCompiler();
+
         File binDir = (isSDK)
                 ? new File((new File(JAVAHOME)).getParentFile(), "bin")
                 : new File(JAVAHOME, "bin");
         JAVA_BIN = binDir.getAbsolutePath();
-        JAVA_JRE_BIN = new File((new File(JAVAHOME)).getParentFile(),
-                        (isSDK) ? "jre/bin" : "bin").getAbsolutePath();
+        JAVA_JRE_BIN = new File(JAVAHOME, "bin").getAbsolutePath();
+
+        File libDir = (isSDK)
+                ? new File((new File(JAVAHOME)).getParentFile(), "lib")
+                : new File(JAVAHOME, "lib");
+        JAVA_LIB = libDir.getAbsolutePath();
+        JAVA_JRE_LIB = new File(JAVAHOME, "lib").getAbsolutePath();
+
         File javaCmdFile = (isWindows)
                 ? new File(binDir, "java.exe")
                 : new File(binDir, "java");
@@ -167,6 +181,21 @@ public class TestHelper {
         if (!javacCmdFile.canExecute()) {
             throw new RuntimeException("java <" + javacCmd +
                     "> must exist and should be executable");
+        }
+
+        haveClientVM = haveVmVariant("client");
+        haveServerVM = haveVmVariant("server");
+    }
+    private static boolean haveVmVariant(String type) {
+        if (isWindows) {
+            File vmDir = new File(JAVA_JRE_BIN, type);
+            File jvmFile = new File(vmDir, LIBJVM);
+            return jvmFile.exists();
+        } else {
+            File vmDir = new File(JAVA_JRE_LIB, type);
+            File vmArchDir = new File(vmDir, getJreArch());
+            File jvmFile = new File(vmArchDir, LIBJVM);
+            return jvmFile.exists();
         }
     }
     void run(String[] args) throws Exception {

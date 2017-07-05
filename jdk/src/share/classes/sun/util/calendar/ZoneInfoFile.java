@@ -406,6 +406,9 @@ public final class ZoneInfoFile {
     // LocalDateTime.of(2037, 1, 1, 0, 0, 0).toEpochSecond(ZoneOffset.UTC));
     private static final long LDT2037 = 2114380800L;
 
+    //Current time. Used to determine future GMToffset transitions
+    private static final long CURRT = System.currentTimeMillis()/1000;
+
     /* Get a ZoneInfo instance.
      *
      * @param standardTransitions  the standard transitions, not null
@@ -427,8 +430,10 @@ public final class ZoneInfoFile {
         boolean willGMTOffsetChange = false;
 
         // rawOffset, pick the last one
-        if (standardTransitions.length > 0)
+        if (standardTransitions.length > 0) {
             rawOffset = standardOffsets[standardOffsets.length - 1] * 1000;
+            willGMTOffsetChange = standardTransitions[standardTransitions.length - 1] > CURRT;
+        }
         else
             rawOffset = standardOffsets[0] * 1000;
 

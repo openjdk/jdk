@@ -325,7 +325,6 @@ public abstract class FileSystem
      *   <td>Matches file names containing a dot</td>
      * </tr>
      * <tr>
-     * <tr>
      *   <td>{@code *.{java,class}}</td>
      *   <td>Matches file names ending with {@code .java} or {@code .class}</td>
      * </tr>

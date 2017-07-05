@@ -158,12 +158,12 @@ public final class CGraphicsDevice extends GraphicsDevice
         boolean fsSupported = isFullScreenSupported();
 
         if (fsSupported && old != null) {
-            // restore original display mode and enter windowed mode.
+            // enter windowed mode and restore original display mode
+            exitFullScreenExclusive(old);
             if (originalMode != null) {
                 setDisplayMode(originalMode);
                 originalMode = null;
             }
-            exitFullScreenExclusive(old);
         }
 
         super.setFullScreenWindow(w);
@@ -227,14 +227,10 @@ public final class CGraphicsDevice extends GraphicsDevice
             throw new IllegalArgumentException("Invalid display mode");
         }
         if (!Objects.equals(dm, getDisplayMode())) {
-            final Window w = getFullScreenWindow();
-            if (w != null) {
-                exitFullScreenExclusive(w);
-            }
             nativeSetDisplayMode(displayID, dm.getWidth(), dm.getHeight(),
-                                 dm.getBitDepth(), dm.getRefreshRate());
-            if (isFullScreenSupported() && w != null) {
-                enterFullScreenExclusive(w);
+                    dm.getBitDepth(), dm.getRefreshRate());
+            if (isFullScreenSupported() && getFullScreenWindow() != null) {
+                getFullScreenWindow().setSize(dm.getWidth(), dm.getHeight());
             }
         }
     }

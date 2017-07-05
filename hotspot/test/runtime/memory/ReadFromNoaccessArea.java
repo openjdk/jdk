@@ -22,6 +22,7 @@
  */
 
 /*
+ * @ignore 8028398
  * @test
  * @summary Test that touching noaccess area in class ReservedHeapSpace results in SIGSEGV/ACCESS_VIOLATION
  * @library /testlibrary /testlibrary/whitebox

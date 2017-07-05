@@ -31,7 +31,6 @@
 #include "oops/symbol.hpp"
 #include "runtime/java.hpp"
 #include "runtime/reflectionUtils.hpp"
-#include "trace/traceTime.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/hashtable.inline.hpp"
 
@@ -78,6 +77,7 @@ class LoaderConstraintTable;
 template <MEMFLAGS F> class HashtableBucket;
 class ResolutionErrorTable;
 class SymbolPropertyTable;
+class Ticks;
 
 // Certain classes are preloaded, such as java.lang.Object and java.lang.String.
 // They are all "well-known", in the sense that no class loader is allowed
@@ -165,6 +165,7 @@ class SymbolPropertyTable;
                                                                                                                          \
   do_klass(StringBuffer_klass,                          java_lang_StringBuffer,                    Pre                 ) \
   do_klass(StringBuilder_klass,                         java_lang_StringBuilder,                   Pre                 ) \
+  do_klass(misc_Unsafe_klass,                           sun_misc_Unsafe,                           Pre                 ) \
                                                                                                                          \
   /* It's NULL in non-1.4 JDKs. */                                                                                       \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement,               Opt                 ) \
@@ -637,7 +638,7 @@ private:
   static void add_to_hierarchy(instanceKlassHandle k, TRAPS);
 
   // event based tracing
-  static void post_class_load_event(TracingTime start_time, instanceKlassHandle k,
+  static void post_class_load_event(const Ticks& start_time, instanceKlassHandle k,
                                     Handle initiating_loader);
   // We pass in the hashtable index so we can calculate it outside of
   // the SystemDictionary_lock.

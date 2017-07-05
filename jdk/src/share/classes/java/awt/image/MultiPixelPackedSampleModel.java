@@ -348,7 +348,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      *                  data
      * @return the specified band containing the sample of the specified
      * pixel.
-     * @exception ArrayIndexOutOfBoundException if the specified
+     * @exception ArrayIndexOutOfBoundsException if the specified
      *          coordinates are not in bounds.
      * @see #setSample(int, int, int, int, DataBuffer)
      */
