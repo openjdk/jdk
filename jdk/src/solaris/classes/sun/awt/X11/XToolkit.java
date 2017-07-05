@@ -36,6 +36,7 @@ import java.awt.dnd.DragGestureRecognizer;
 import java.awt.dnd.MouseDragGestureRecognizer;
 import java.awt.dnd.InvalidDnDOperationException;
 import java.awt.dnd.peer.DragSourceContextPeer;
+import java.awt.font.TextAttribute;
 import java.awt.im.InputMethodHighlight;
 import java.awt.im.spi.InputMethodDescriptor;
 import java.awt.image.ColorModel;
@@ -51,7 +52,7 @@ import sun.awt.datatransfer.DataTransferer;
 import sun.font.FontConfigManager;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.misc.*;
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 import sun.print.PrintJob2D;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
@@ -99,9 +100,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private FontConfigManager fcManager = new FontConfigManager();
 
     static int arrowCursor;
-    static TreeMap winMap = new TreeMap();
-    static HashMap specialPeerMap = new HashMap();
-    static HashMap winToDispatcher = new HashMap();
+    static TreeMap<Long, XBaseWindow> winMap = new TreeMap<>();
+    static HashMap<Object, Object> specialPeerMap = new HashMap<>();
+    static HashMap<Long, Collection<XEventDispatcher>> winToDispatcher = new HashMap<>();
     private static long _display;
     static UIDefaults uidefaults;
     static X11GraphicsEnvironment localEnv;
@@ -358,16 +359,16 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
     static XBaseWindow windowToXWindow(long window) {
         synchronized(winMap) {
-            return (XBaseWindow) winMap.get(Long.valueOf(window));
+            return winMap.get(Long.valueOf(window));
         }
     }
 
     static void addEventDispatcher(long window, XEventDispatcher dispatcher) {
         synchronized(winToDispatcher) {
             Long key = Long.valueOf(window);
-            Collection dispatchers = (Collection)winToDispatcher.get(key);
+            Collection<XEventDispatcher> dispatchers = winToDispatcher.get(key);
             if (dispatchers == null) {
-                dispatchers = new Vector();
+                dispatchers = new Vector<>();
                 winToDispatcher.put(key, dispatchers);
             }
             dispatchers.add(dispatcher);
@@ -376,7 +377,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     static void removeEventDispatcher(long window, XEventDispatcher dispatcher) {
         synchronized(winToDispatcher) {
             Long key = Long.valueOf(window);
-            Collection dispatchers = (Collection)winToDispatcher.get(key);
+            Collection<XEventDispatcher> dispatchers = winToDispatcher.get(key);
             if (dispatchers != null) {
                 dispatchers.remove(dispatcher);
             }
@@ -493,18 +494,18 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
         XBaseWindow.dispatchToWindow(ev);
 
-        Collection dispatchers = null;
+        Collection<XEventDispatcher> dispatchers = null;
         synchronized(winToDispatcher) {
             Long key = Long.valueOf(xany.get_window());
-            dispatchers = (Collection)winToDispatcher.get(key);
+            dispatchers = winToDispatcher.get(key);
             if (dispatchers != null) { // Clone it to avoid synchronization during dispatching
-                dispatchers = new Vector(dispatchers);
+                dispatchers = new Vector<>(dispatchers);
             }
         }
         if (dispatchers != null) {
-            Iterator iter = dispatchers.iterator();
+            Iterator<XEventDispatcher> iter = dispatchers.iterator();
             while (iter.hasNext()) {
-                XEventDispatcher disp = (XEventDispatcher)iter.next();
+                XEventDispatcher disp = iter.next();
                 disp.dispatchEvent(ev);
             }
         }
@@ -764,7 +765,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
         Insets insets = new Insets(0, 0, 0, 0);
 
-        java.util.List search = new LinkedList();
+        java.util.List<Object> search = new LinkedList<>();
         search.add(root);
         search.add(0);
         while (!search.isEmpty())
@@ -929,6 +930,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return XDragSourceContextPeer.createDragSourceContextPeer(dge);
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends DragGestureRecognizer> T
     createDragGestureRecognizer(Class<T> recognizerClass,
                     DragSource ds,
@@ -1147,7 +1149,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return 2;  // Black and white.
     }
 
-    public Map mapInputMethodHighlight(InputMethodHighlight highlight)     {
+    public Map<TextAttribute, ?> mapInputMethodHighlight( InputMethodHighlight highlight) {
         return XInputMethod.mapInputMethodHighlight(highlight);
     }
     @Override
@@ -1338,31 +1340,25 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     static void dumpPeers() {
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Mapped windows:");
-            Iterator iter = winMap.entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry)iter.next();
-                log.fine(entry.getKey() + "->" + entry.getValue());
-                if (entry.getValue() instanceof XComponentPeer) {
-                    Component target = (Component)((XComponentPeer)entry.getValue()).getTarget();
+            winMap.forEach((k, v) -> {
+                log.fine(k + "->" + v);
+                if (v instanceof XComponentPeer) {
+                    Component target = (Component)((XComponentPeer)v).getTarget();
                     log.fine("\ttarget: " + target);
                 }
-            }
+            });
 
             SunToolkit.dumpPeers(log);
 
             log.fine("Mapped special peers:");
-            iter = specialPeerMap.entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry)iter.next();
-                log.fine(entry.getKey() + "->" + entry.getValue());
-            }
+            specialPeerMap.forEach((k, v) -> {
+                log.fine(k + "->" + v);
+            });
 
             log.fine("Mapped dispatchers:");
-            iter = winToDispatcher.entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry)iter.next();
-                log.fine(entry.getKey() + "->" + entry.getValue());
-            }
+            winToDispatcher.forEach((k, v) -> {
+                log.fine(k + "->" + v);
+            });
         }
     }
 
@@ -1586,16 +1582,16 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * <code>loadXSettings</code>.  It is called from the System EDT
      * if triggered by an XSETTINGS change.
      */
-    void parseXSettings(int screen_XXX_ignored,Map updatedSettings) {
+    void parseXSettings(int screen_XXX_ignored,Map<String, Object> updatedSettings) {
 
         if (updatedSettings == null || updatedSettings.isEmpty()) {
             return;
         }
 
-        Iterator i = updatedSettings.entrySet().iterator();
+        Iterator<Map.Entry<String, Object>> i = updatedSettings.entrySet().iterator();
         while (i.hasNext()) {
-            Map.Entry e = (Map.Entry)i.next();
-            String name = (String)e.getKey();
+            Map.Entry<String, Object> e = i.next();
+            String name = e.getKey();
 
             name = "gnome." + name;
             setDesktopProperty(name, e.getValue());
@@ -1692,7 +1688,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             long window = 0;
             try{
                 // get any application window
-                window = ((Long)(winMap.firstKey())).longValue();
+                window = winMap.firstKey().longValue();
             }catch(NoSuchElementException nex) {
                 // get root window
                 window = getDefaultRootWindow();
@@ -1798,7 +1794,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
 
-    private static SortedMap timeoutTasks;
+    private static SortedMap<Long, java.util.List<Runnable>> timeoutTasks;
 
     /**
      * Removed the task from the list of waiting-to-be called tasks.
@@ -1819,10 +1815,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 }
                 return;
             }
-            Collection values = timeoutTasks.values();
-            Iterator iter = values.iterator();
+            Collection<java.util.List<Runnable>> values = timeoutTasks.values();
+            Iterator<java.util.List<Runnable>> iter = values.iterator();
             while (iter.hasNext()) {
-                java.util.List list = (java.util.List)iter.next();
+                java.util.List<Runnable> list = iter.next();
                 boolean removed = false;
                 if (list.contains(task)) {
                     list.remove(task);
@@ -1869,13 +1865,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             }
 
             if (timeoutTasks == null) {
-                timeoutTasks = new TreeMap();
+                timeoutTasks = new TreeMap<>();
             }
 
             Long time = Long.valueOf(System.currentTimeMillis() + interval);
-            java.util.List tasks = (java.util.List)timeoutTasks.get(time);
+            java.util.List<Runnable> tasks = timeoutTasks.get(time);
             if (tasks == null) {
-                tasks = new ArrayList(1);
+                tasks = new ArrayList<>(1);
                 timeoutTasks.put(time, tasks);
             }
             tasks.add(task);
@@ -1897,7 +1893,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             if (timeoutTasks == null || timeoutTasks.isEmpty()) {
                 return -1L;
             }
-            return (Long)timeoutTasks.firstKey();
+            return timeoutTasks.firstKey();
         } finally {
             awtUnlock();
         }
@@ -1918,13 +1914,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
 
         Long currentTime = Long.valueOf(System.currentTimeMillis());
-        Long time = (Long)timeoutTasks.firstKey();
+        Long time = timeoutTasks.firstKey();
 
         while (time.compareTo(currentTime) <= 0) {
-            java.util.List tasks = (java.util.List)timeoutTasks.remove(time);
+            java.util.List<Runnable> tasks = timeoutTasks.remove(time);
 
-            for (Iterator iter = tasks.iterator(); iter.hasNext();) {
-                Runnable task = (Runnable)iter.next();
+            for (Iterator<Runnable> iter = tasks.iterator(); iter.hasNext();) {
+                Runnable task = iter.next();
 
                 if (timeoutTaskLog.isLoggable(PlatformLogger.Level.FINER)) {
                     timeoutTaskLog.finer("XToolkit.callTimeoutTasks(): current time={0}" +
@@ -1943,7 +1939,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             if (timeoutTasks.isEmpty()) {
                 break;
             }
-            time = (Long)timeoutTasks.firstKey();
+            time = timeoutTasks.firstKey();
         }
     }
 

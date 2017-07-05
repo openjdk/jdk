@@ -483,8 +483,8 @@ FormatData/es_DO/TimePatterns/2=hh:mm:ss a
 FormatData/es_DO/TimePatterns/3=hh:mm a
 FormatData/es_DO/DatePatterns/0=EEEE d' de 'MMMM' de 'yyyy
 FormatData/es_DO/DatePatterns/1=d' de 'MMMM' de 'yyyy
-FormatData/es_DO/DatePatterns/2=MM/dd/yyyy
-FormatData/es_DO/DatePatterns/3=MM/dd/yy
+# FormatData/es_DO/DatePatterns/2=MM/dd/yyyy # Changed: see bug 8037343
+# FormatData/es_DO/DatePatterns/3=MM/dd/yy # Changed: see bug 8037343
 FormatData/es_DO/DateTimePatterns/0={1} {0}
 FormatData/es_DO/NumberElements/0=.
 FormatData/es_DO/NumberElements/1=,
@@ -7692,3 +7692,7 @@ FormatData/es_EC/TimePatterns/0=HH:mm:ss zzzz
 FormatData/es_EC/TimePatterns/1=H:mm:ss z
 FormatData/es_EC/TimePatterns/2=H:mm:ss
 FormatData/es_EC/TimePatterns/3=H:mm
+
+# bug 8037343
+FormatData/es_DO/DatePatterns/2=dd/MM/yyyy
+FormatData/es_DO/DatePatterns/3=dd/MM/yy

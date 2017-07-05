@@ -1072,6 +1072,7 @@ final class XWM
      * Returns all protocols supporting given protocol interface
      */
     <T> Collection<T> getProtocols(Class<T> protocolInterface) {
+        @SuppressWarnings("unchecked")
         Collection<T> res = (Collection<T>) protocolsMap.get(protocolInterface);
         if (res != null) {
             return res;
@@ -1322,9 +1323,9 @@ final class XWM
         }
     }
 
-    HashMap storedInsets = new HashMap();
+    HashMap<Class<?>, Insets> storedInsets = new HashMap<>();
     Insets guessInsets(XDecoratedPeer window) {
-        Insets res = (Insets)storedInsets.get(window.getClass());
+        Insets res = storedInsets.get(window.getClass());
         if (res == null) {
             switch (WMID) {
               case ENLIGHTEN_WM:

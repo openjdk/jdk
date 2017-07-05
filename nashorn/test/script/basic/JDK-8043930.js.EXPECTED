@@ -1,0 +1,1 @@
+TypeError: new cannot be used with non-public java type jdk.nashorn.test.models.NonPublicClass.

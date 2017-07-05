@@ -31,6 +31,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.ref.WeakReference;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Property;
@@ -43,6 +44,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  */
 public final class NashornGuards {
     private static final MethodHandle IS_SCRIPTOBJECT   = findOwnMH("isScriptObject", boolean.class, Object.class);
+    private static final MethodHandle IS_NOT_JSOBJECT   = findOwnMH("isNotJSObject", boolean.class, Object.class);
     private static final MethodHandle IS_SCRIPTFUNCTION = findOwnMH("isScriptFunction", boolean.class, Object.class);
     private static final MethodHandle IS_MAP            = findOwnMH("isMap", boolean.class, Object.class, PropertyMap.class);
     private static final MethodHandle SAME_OBJECT       = findOwnMH("sameObject", boolean.class, Object.class, WeakReference.class);
@@ -58,6 +60,14 @@ public final class NashornGuards {
      */
     public static MethodHandle getScriptObjectGuard() {
         return IS_SCRIPTOBJECT;
+    }
+
+    /**
+     * Get the guard that checks if an item is not a {@code JSObject}
+     * @return method handle for guard
+     */
+    public static MethodHandle getNotJSObjectGuard() {
+        return IS_NOT_JSOBJECT;
     }
 
     /**
@@ -154,6 +164,11 @@ public final class NashornGuards {
     @SuppressWarnings("unused")
     private static boolean isScriptObject(final Object self) {
         return self instanceof ScriptObject;
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean isNotJSObject(final Object self) {
+        return !(self instanceof JSObject);
     }
 
     @SuppressWarnings("unused")

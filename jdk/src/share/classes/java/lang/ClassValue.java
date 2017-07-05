@@ -25,7 +25,6 @@
 
 package java.lang;
 
-import java.lang.ClassValue.ClassValueMap;
 import java.util.WeakHashMap;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -375,10 +374,10 @@ public abstract class ClassValue<T> {
         synchronized (CRITICAL_SECTION) {  // private object to avoid deadlocks
             // happens about once per type
             if ((map = type.classValueMap) == null)
-                type.classValueMap = map = new ClassValueMap(type);
+                type.classValueMap = map = new ClassValueMap();
         }
-            return map;
-        }
+        return map;
+    }
 
     static <T> Entry<T> makeEntry(Version<T> explicitVersion, T value) {
         // Note that explicitVersion might be different from this.version.
@@ -398,12 +397,11 @@ public abstract class ClassValue<T> {
 
     // The following class could also be top level and non-public:
 
-    /** A backing map for all ClassValues, relative a single given type.
+    /** A backing map for all ClassValues.
      *  Gives a fully serialized "true state" for each pair (ClassValue cv, Class type).
      *  Also manages an unserialized fast-path cache.
      */
     static class ClassValueMap extends WeakHashMap<ClassValue.Identity, Entry<?>> {
-        private final Class<?> type;
         private Entry<?>[] cacheArray;
         private int cacheLoad, cacheLoadLimit;
 
@@ -413,11 +411,10 @@ public abstract class ClassValue<T> {
          */
         private static final int INITIAL_ENTRIES = 32;
 
-        /** Build a backing map for ClassValues, relative the given type.
+        /** Build a backing map for ClassValues.
          *  Also, create an empty cache array and install it on the class.
          */
-        ClassValueMap(Class<?> type) {
-            this.type = type;
+        ClassValueMap() {
             sizeCache(INITIAL_ENTRIES);
         }
 

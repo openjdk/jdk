@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,13 @@
 #include "awt.h"
 #include "colordata.h"
 
-#ifndef HEADLESS
+#if !defined(HEADLESS) && !defined(MACOSX)
 typedef struct {
     unsigned int Depth;
     XPixmapFormatValues wsImageFormat;
     ImgColorData clrdata;
     ImgConvertFcn *convert[NUM_IMGCV];
 } awtImageData;
-#endif /* !HEADLESS */
+#endif /* !HEADLESS && !MACOSX */
 
 #endif           /* _COLOR_H_ */

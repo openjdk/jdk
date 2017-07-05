@@ -259,7 +259,9 @@ public class SystemTray {
         Vector<TrayIcon> icons = null;
         synchronized (this) {
             oldArray = systemTray.getTrayIcons();
-            icons = (Vector<TrayIcon>)AppContext.getAppContext().get(TrayIcon.class);
+            @SuppressWarnings("unchecked")
+            Vector<TrayIcon> tmp = (Vector<TrayIcon>)AppContext.getAppContext().get(TrayIcon.class);
+            icons = tmp;
             if (icons == null) {
                 icons = new Vector<TrayIcon>(3);
                 AppContext.getAppContext().put(TrayIcon.class, icons);
@@ -304,6 +306,7 @@ public class SystemTray {
         TrayIcon[] oldArray = null, newArray = null;
         synchronized (this) {
             oldArray = systemTray.getTrayIcons();
+            @SuppressWarnings("unchecked")
             Vector<TrayIcon> icons = (Vector<TrayIcon>)AppContext.getAppContext().get(TrayIcon.class);
             // TrayIcon with no peer is not contained in the array.
             if (icons == null || !icons.remove(trayIcon)) {
@@ -335,6 +338,7 @@ public class SystemTray {
      * @see TrayIcon
      */
     public TrayIcon[] getTrayIcons() {
+        @SuppressWarnings("unchecked")
         Vector<TrayIcon> icons = (Vector<TrayIcon>)AppContext.getAppContext().get(TrayIcon.class);
         if (icons != null) {
             return icons.toArray(new TrayIcon[icons.size()]);

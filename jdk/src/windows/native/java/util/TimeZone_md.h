@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #ifndef _TIMEZONE_MD_H
 #define _TIMEZONE_MD_H
 
-char *findJavaTZ_md(const char *java_home_dir, const char *region);
+char *findJavaTZ_md(const char *java_home_dir);
 char *getGMTOffsetID();
 
 #endif

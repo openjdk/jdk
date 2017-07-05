@@ -33,17 +33,28 @@ import com.oracle.java.testlibrary.*;
 
 public class ConfigFileWarning {
     public static void main(String[] args) throws Exception {
-        if (Platform.isDebugBuild()) {
-            System.out.println("Skip on debug builds since we'll always read the file there");
-            return;
-        }
+        PrintWriter pw;
+        ProcessBuilder pb;
+        OutputAnalyzer output;
 
-        PrintWriter pw = new PrintWriter(".hotspotrc");
-        pw.println("aa");
+        pw = new PrintWriter("hs_flags.txt");
+        pw.println("aaa");
         pw.close();
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("warning: .hotspotrc file is present but has been ignored.  Run with -XX:Flags=.hotspotrc to load the file.");
+        pb = ProcessTools.createJavaProcessBuilder("-XX:Flags=hs_flags.txt","-version");
+        output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Unrecognized VM option 'aaa'");
+        output.shouldHaveExitValue(1);
+
+        // Skip on debug builds since we'll always read the file there
+        if (!Platform.isDebugBuild()) {
+            pw = new PrintWriter(".hotspotrc");
+            pw.println("aa");
+            pw.close();
+
+            pb = ProcessTools.createJavaProcessBuilder("-version");
+            output = new OutputAnalyzer(pb.start());
+            output.shouldContain("warning: .hotspotrc file is present but has been ignored.  Run with -XX:Flags=.hotspotrc to load the file.");
+        }
     }
 }

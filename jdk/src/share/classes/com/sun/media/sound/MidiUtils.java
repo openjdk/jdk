@@ -295,7 +295,7 @@ public final class MidiUtils {
 
 
         public synchronized void refresh(Sequence seq) {
-            ArrayList list = new ArrayList();
+            ArrayList<MidiEvent> list = new ArrayList<>();
             Track[] tracks = seq.getTracks();
             if (tracks.length > 0) {
                 // tempo events only occur in track 0
@@ -313,7 +313,7 @@ public final class MidiUtils {
             int size = list.size() + 1;
             firstTempoIsFake = true;
             if ((size > 1)
-                && (((MidiEvent) list.get(0)).getTick() == 0)) {
+                && (list.get(0).getTick() == 0)) {
                 // do not need to add an initial tempo event at the beginning
                 size--;
                 firstTempoIsFake = false;
@@ -328,7 +328,7 @@ public final class MidiUtils {
                 e++;
             }
             for (int i = 0; i < list.size(); i++, e++) {
-                MidiEvent evt = (MidiEvent) list.get(i);
+                MidiEvent evt = list.get(i);
                 ticks[e] = evt.getTick();
                 tempos[e] = getTempoMPQ(evt.getMessage());
             }

@@ -231,7 +231,7 @@ abstract public class XBaseMenuWindow extends XWindow {
      */
     void instantPreInit(XCreateWindowParams params) {
         super.instantPreInit(params);
-        items = new ArrayList();
+        items = new ArrayList<>();
     }
 
     /************************************************
@@ -367,10 +367,10 @@ abstract public class XBaseMenuWindow extends XWindow {
      * Clears items vector and loads specified vector
      * @param items vector to be loaded
      */
-    public void reloadItems(Vector items) {
+    public void reloadItems(Vector<? extends MenuItem> items) {
         synchronized(getMenuTreeLock()) {
             this.items.clear();
-            MenuItem[] itemArray = (MenuItem[])items.toArray(new MenuItem[] {});
+            MenuItem[] itemArray = items.toArray(new MenuItem[] {});
             int itemCnt = itemArray.length;
             for(int i = 0; i < itemCnt; i++) {
                 addItem(itemArray[i]);

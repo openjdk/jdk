@@ -79,8 +79,9 @@ public interface TreeModel
      * is a valid index for <code>parent</code> (that is <code>index &gt;= 0 &amp;&amp;
      * index &lt; getChildCount(parent</code>)).
      *
-     * @param   parent  a node in the tree, obtained from this data source
-     * @return  the child of <code>parent</code> at index <code>index</code>
+     * @param parent    a node in the tree, obtained from this data source
+     * @param index     index of child to be returned
+     * @return          the child of {@code parent} at index {@code index}
      */
     public Object getChild(Object parent, int index);
 

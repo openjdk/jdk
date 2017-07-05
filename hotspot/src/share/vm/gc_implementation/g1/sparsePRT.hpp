@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,12 +122,6 @@ class RSHashTable : public CHeapObj<mtGC> {
   // Requires that the caller hold a lock preventing parallel modifying
   // operations, and that the the table be less than completely full.  If
   // an entry for "region_ind" is already in the table, finds it and
-  // returns its address; otherwise returns "NULL."
-  SparsePRTEntry* entry_for_region_ind(RegionIdx_t region_ind) const;
-
-  // Requires that the caller hold a lock preventing parallel modifying
-  // operations, and that the the table be less than completely full.  If
-  // an entry for "region_ind" is already in the table, finds it and
   // returns its address; otherwise allocates, initializes, inserts and
   // returns a new entry for "region_ind".
   SparsePRTEntry* entry_for_region_ind_create(RegionIdx_t region_ind);
@@ -158,7 +152,7 @@ public:
 
   void add_entry(SparsePRTEntry* e);
 
-  SparsePRTEntry* get_entry(RegionIdx_t region_id);
+  SparsePRTEntry* get_entry(RegionIdx_t region_id) const;
 
   void clear();
 

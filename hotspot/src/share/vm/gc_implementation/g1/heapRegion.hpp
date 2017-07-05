@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ class nmethod;
                 (_hr_)->startsHumongous() ? "HS" : \
                 (_hr_)->continuesHumongous() ? "HC" : \
                 !(_hr_)->is_empty() ? "O" : "F", \
-                (_hr_)->bottom(), (_hr_)->top(), (_hr_)->end()
+                p2i((_hr_)->bottom()), p2i((_hr_)->top()), p2i((_hr_)->end())
 
 // sentinel value for hrs_index
 #define G1_NULL_HRS_INDEX ((uint) -1)
@@ -550,7 +550,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
            (containing_set != NULL && _containing_set == NULL),
            err_msg("containing_set: "PTR_FORMAT" "
                    "_containing_set: "PTR_FORMAT,
-                   containing_set, _containing_set));
+                   p2i(containing_set), p2i(_containing_set)));
 
     _containing_set = containing_set;
   }

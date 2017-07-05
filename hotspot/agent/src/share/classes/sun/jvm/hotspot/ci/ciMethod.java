@@ -90,17 +90,23 @@ public class ciMethod extends ciMetadata {
   }
 
   public void dumpReplayData(PrintStream out) {
-      Method method = (Method)getMetadata();
-      NMethod nm = method.getNativeMethod();
-      Klass holder = method.getMethodHolder();
-      out.println("ciMethod " +
-                  holder.getName().asString() + " " +
-                  OopUtilities.escapeString(method.getName().asString()) + " " +
-                  method.getSignature().asString() + " " +
-                  method.getInvocationCount() + " " +
-                  method.getBackedgeCount() + " " +
-                  interpreterInvocationCount() + " " +
-                  interpreterThrowoutCount() + " " +
-                  instructionsSize());
+    Method method = (Method)getMetadata();
+    NMethod nm = method.getNativeMethod();
+    out.println("ciMethod " +
+                nameAsAscii() + " " +
+                method.getInvocationCount() + " " +
+                method.getBackedgeCount() + " " +
+                interpreterInvocationCount() + " " +
+                interpreterThrowoutCount() + " " +
+                instructionsSize());
+  }
+
+  public void printValueOn(PrintStream tty) {
+    tty.print("ciMethod " + method().getName().asString() + method().getSignature().asString() + "@" + getAddress());
+  }
+
+  public String nameAsAscii() {
+    Method method = (Method)getMetadata();
+    return method.nameAsAscii();
   }
 }

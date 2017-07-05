@@ -1430,8 +1430,11 @@ public final class SunGraphics2D
         }
     }
 
-    RenderingHints makeHints(Map hints) {
-        RenderingHints model = new RenderingHints(hints);
+    RenderingHints makeHints(Map<?,?> hints) {
+        RenderingHints model = new RenderingHints(null);
+        if (hints != null) {
+            model.putAll(hints);
+        }
         model.put(SunHints.KEY_RENDERING,
                   SunHints.Value.get(SunHints.INTKEY_RENDERING,
                                      renderHint));

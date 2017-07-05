@@ -29,6 +29,8 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.script.Bindings;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -275,5 +277,32 @@ public class ScriptObjectMirrorTest {
         obj = (ScriptObjectMirror)e.eval(
             "({ toString: function() { return 'foo' } })");
         assertEquals("foo", obj.to(String.class));
+    }
+
+    // @bug 8044000: Access to undefined property yields "null" instead of "undefined"
+    @Test
+    public void mapScriptObjectMirrorCallsiteTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine engine = m.getEngineByName("nashorn");
+        final String TEST_SCRIPT = "typeof obj.foo";
+
+        final Bindings global = engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE);
+        engine.eval("var obj = java.util.Collections.emptyMap()");
+        // this will drive callsite "obj.foo" of TEST_SCRIPT
+        // to use "obj instanceof Map" as it's guard
+        engine.eval(TEST_SCRIPT, global);
+        // redefine 'obj' to be a script object
+        engine.eval("obj = {}");
+
+        final Bindings newGlobal = engine.createBindings();
+        // transfer 'obj' from default global to new global
+        // new global will get a ScriptObjectMirror wrapping 'obj'
+        newGlobal.put("obj", global.get("obj"));
+
+        // Every ScriptObjectMirror is a Map! If callsite "obj.foo"
+        // does not see the new 'obj' is a ScriptObjectMirror, it'll
+        // continue to use Map's get("obj.foo") instead of ScriptObjectMirror's
+        // getMember("obj.foo") - thereby getting null instead of undefined
+        assertEquals("undefined", engine.eval(TEST_SCRIPT, newGlobal));
     }
 }

@@ -39,6 +39,8 @@
 
 #if defined(__linux__) || defined(__solaris__)
 #include <sys/sendfile.h>
+#elif defined(_AIX)
+#include <sys/socket.h>
 #elif defined(_ALLBSD_SOURCE)
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -207,9 +209,7 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 
     numBytes = count;
 
-#ifdef __APPLE__
     result = sendfile(srcFD, dstFD, position, &numBytes, NULL, 0);
-#endif
 
     if (numBytes > 0)
         return numBytes;
@@ -228,7 +228,48 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
     }
 
     return result;
+
+#elif defined(_AIX)
+    jlong max = (jlong)java_lang_Integer_MAX_VALUE;
+    struct sf_parms sf_iobuf;
+    jlong result;
+
+    if (position > max)
+        return IOS_UNSUPPORTED_CASE;
+
+    if (count > max)
+        count = max;
+
+    memset(&sf_iobuf, 0, sizeof(sf_iobuf));
+    sf_iobuf.file_descriptor = srcFD;
+    sf_iobuf.file_offset = (off_t)position;
+    sf_iobuf.file_bytes = count;
+
+    result = send_file(&dstFD, &sf_iobuf, SF_SYNC_CACHE);
+
+    /* AIX send_file() will return 0 when this operation complete successfully,
+     * return 1 when partial bytes transfered and return -1 when an error has
+     * Occured.
+     */
+    if (result == -1) {
+        if (errno == EWOULDBLOCK)
+            return IOS_UNAVAILABLE;
+        if ((errno == EINVAL) && ((ssize_t)count >= 0))
+            return IOS_UNSUPPORTED_CASE;
+        if (errno == EINTR)
+            return IOS_INTERRUPTED;
+        if (errno == ENOTSOCK)
+            return IOS_UNSUPPORTED;
+        JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
+        return IOS_THROWN;
+    }
+
+    if (sf_iobuf.bytes_sent > 0)
+        return (jlong)sf_iobuf.bytes_sent;
+
+    return IOS_UNSUPPORTED_CASE;
 #else
     return IOS_UNSUPPORTED_CASE;
 #endif
 }
+

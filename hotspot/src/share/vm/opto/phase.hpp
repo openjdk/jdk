@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_OPTO_PHASE_HPP
 #define SHARE_VM_OPTO_PHASE_HPP
 
-#include "libadt/port.hpp"
 #include "runtime/timer.hpp"
 
 class Compile;
