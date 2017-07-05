@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -40,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * use interrupt() to halt
  */
-public class Server extends Thread {
+public class Server extends Thread implements Closeable {
 
     ServerSocket ss;
     private final List<Connection> sockets;
@@ -251,7 +252,11 @@ public class Server extends Thread {
         return "http://127.0.0.1:" + port() + "/foo/";
     }
 
+    private volatile boolean closed;
+
+    @Override
     public void close() {
+        closed = true;
         try {
             ss.close();
         } catch (IOException e) {
@@ -264,13 +269,15 @@ public class Server extends Thread {
 
     @Override
     public void run() {
-        while (true) {
+        while (!closed) {
             try {
                 Socket s = ss.accept();
                 Connection c = new Connection(s);
                 c.start();
                 additions.add(c);
             } catch (IOException e) {
+                if (closed)
+                    return;
                 e.printStackTrace();
             }
         }

@@ -8286,6 +8286,19 @@ FormatData/de/standalone.MonthAbbreviations/2=M\u00e4r
 # bug #8129361
 CurrencyNames//hrk=Kuna
 
+# bug #7037368
+CurrencyNames/de/sar=Saudi-Rial
+CurrencyNames/de/xpf=CFP-Franc
+CurrencyNames/it/azn=manat azero
+CurrencyNames/it/ron=leu rumeno
+CurrencyNames/it/trl=lira turca (1922-2005)
+CurrencyNames/it/try=lira turca
+CurrencyNames/sv/bgl=bulgarisk h\u00e5rd lev (1962–1999)
+CurrencyNames/sv/xaf=centralafrikansk franc
+CurrencyNames/sv/xfu=internationella j\u00e4rnv\u00e4gsunionens franc
+CurrencyNames/sv/xof=v\u00e4stafrikansk franc
+CurrencyNames/zh_CN/sdg=\u82cf\u4e39\u9551
+
 # bug #8164784
 CurrencyNames//mwk=Malawian Malawi Kwacha
 CurrencyNames//pen=Peruvian Sol

@@ -85,8 +85,8 @@ RPM_LIST := \
     libgcc \
     elfutils elfutils-libs elfutils-devel \
     elfutils-libelf elfutils-libelf-devel \
-    zlib zlib-devel
-
+    zlib zlib-devel \
+    libffi libffi-devel
 
 ifeq ($(ARCH),x86_64)
   RPM_DIR ?= $(RPM_DIR_x86_64)
@@ -207,6 +207,18 @@ $(libs) : $(rpms)
 	done)
 	@mkdir -p $(SYSROOT)/usr/lib
 	@touch $@
+
+##########################################################################################
+# Create links for ffi header files so that they become visible by default when using the
+# devkit.
+
+$(SYSROOT)/usr/include/ffi.h: $(rpms)
+	cd $(@D) && rm $(@F) && ln -s ../lib/libffi-*/include/$(@F) .
+
+$(SYSROOT)/usr/include/ffitarget.h: $(rpms)
+	cd $(@D) && rm $(@F) && ln -s ../lib/libffi-*/include/$(@F) .
+
+SYSROOT_LINKS += $(SYSROOT)/usr/include/ffi.h $(SYSROOT)/usr/include/ffitarget.h
 
 ##########################################################################################
 
@@ -496,7 +508,7 @@ rpms : $(rpms)
 libs : $(libs)
 sysroot : rpms libs
 gcc : sysroot $(gcc) $(gccpatch)
-all : binutils gcc bfdlib $(PREFIX)/devkit.info $(missing-links)
+all : binutils gcc bfdlib $(PREFIX)/devkit.info $(missing-links) $(SYSROOT_LINKS)
 
 # this is only built for host. so separate.
 ccache : $(ccache)

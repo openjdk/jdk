@@ -17,9 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XMLErrorResources_zh_CN.java /st_wptg_1.9.0.0.0jdk/2 2016/04/13 05:10:27 gmolloy Exp $
- */
 package com.sun.org.apache.xml.internal.res;
 
 

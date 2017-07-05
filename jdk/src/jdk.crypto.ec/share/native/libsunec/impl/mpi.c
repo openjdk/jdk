@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
  *   Netscape Communications Corporation
  *   Douglas Stebila <douglas@stebila.ca> of Sun Laboratories.
  *
- * Last Modified Date from the Original Code: June 2014
+ * Last Modified Date from the Original Code: Nov 2016
  *********************************************************************** */
 
 /*  Arbitrary precision integer arithmetic library */
@@ -659,6 +659,7 @@ mp_err mp_expt_d(const mp_int *a, mp_digit d, mp_int *c)
       goto CLEANUP;
   }
 
+  s.flag = (mp_sign)0;
   s_mp_exch(&s, c);
 
 CLEANUP:
@@ -1609,6 +1610,7 @@ mp_err mp_exptmod_d(const mp_int *a, mp_digit d, const mp_int *m, mp_int *c)
       goto CLEANUP;
   }
 
+  s.flag = (mp_sign)0;
   s_mp_exch(&s, c);
 
 CLEANUP:
@@ -4183,6 +4185,7 @@ mp_err   s_mp_sqr(mp_int *a)
 {
   mp_err   res;
   mp_int   tmp;
+  tmp.flag = (mp_sign)0;
 
   if((res = mp_init_size(&tmp, 2 * USED(a), FLAG(a))) != MP_OKAY)
     return res;
@@ -4219,6 +4222,8 @@ mp_err   s_mp_div(mp_int *rem,  /* i: dividend, o: remainder */
   mp_digit d;
   mp_digit div_msd;
   int      ix;
+
+  t.dp = (mp_digit *)NULL;
 
   if(mp_cmp_z(div) == 0)
     return MP_RANGE;

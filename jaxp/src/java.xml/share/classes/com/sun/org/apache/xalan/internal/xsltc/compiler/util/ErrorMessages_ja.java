@@ -1,24 +1,21 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: ErrorMessages_ja.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 00:37:07 gmolloy Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler.util;
@@ -173,6 +170,13 @@ public class ErrorMessages_ja extends ListResourceBundle {
         "URI ''{0}''\u304C\u7121\u52B9\u3067\u3059\u3002"},
 
         /*
+         * Note to translators:  This message is displayed when the URI
+         * mentioned in the substitution text is not well-formed syntactically.
+         */
+        {ErrorMsg.CATALOG_EXCEPTION,
+        "JAXP08090001: CatalogResolver\u306F\u30AB\u30BF\u30ED\u30B0\"{0}\"\u3067\u6709\u52B9\u3067\u3059\u304C\u3001CatalogException\u304C\u8FD4\u3055\u308C\u307E\u3059\u3002"},
+
+        /*
          * Note to translators:  The file or URI named in the substitution text
          * exists but could not be opened.
          */
@@ -267,6 +271,13 @@ public class ErrorMessages_ja extends ListResourceBundle {
          */
         {ErrorMsg.CIRCULAR_INCLUDE_ERR,
         "\u30A4\u30F3\u30DD\u30FC\u30C8\u307E\u305F\u306F\u30A4\u30F3\u30AF\u30EB\u30FC\u30C9\u304C\u5FAA\u74B0\u3057\u3066\u3044\u307E\u3059\u3002\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8''{0}''\u306F\u3059\u3067\u306B\u30ED\u30FC\u30C9\u3055\u308C\u3066\u3044\u307E\u3059\u3002"},
+
+        /*
+         * Note to translators:  "xsl:import" and "xsl:include" are keywords that
+         * should not be translated.
+         */
+        {ErrorMsg.IMPORT_PRECEDE_OTHERS_ERR,
+        "xsl:import\u8981\u7D20\u306E\u5B50\u306F\u3001xsl:stylesheet\u8981\u7D20\u306E\u4ED6\u306E\u3059\u3079\u3066\u306E\u8981\u7D20\u306E\u5B50(\u3059\u3079\u3066\u306Exsl:include\u8981\u7D20\u306E\u5B50\u3092\u542B\u3080)\u3088\u308A\u524D\u306B\u7F6E\u304F\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
 
         /*
          * Note to translators:  A result-tree fragment is a portion of a
