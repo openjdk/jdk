@@ -736,7 +736,7 @@ class DirectAudioDevice extends AbstractMixer {
             if (off < 0) {
                 throw new ArrayIndexOutOfBoundsException(off);
             }
-            if (off + len > b.length) {
+            if ((long)off + (long)len > (long)b.length) {
                 throw new ArrayIndexOutOfBoundsException(b.length);
             }
 
@@ -964,7 +964,7 @@ class DirectAudioDevice extends AbstractMixer {
             if (off < 0) {
                 throw new ArrayIndexOutOfBoundsException(off);
             }
-            if (off + len > b.length) {
+            if ((long)off + (long)len > (long)b.length) {
                 throw new ArrayIndexOutOfBoundsException(b.length);
             }
             if (!isActive() && doIO) {
