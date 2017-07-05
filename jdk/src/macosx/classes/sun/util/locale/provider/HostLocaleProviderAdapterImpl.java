@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -520,14 +520,22 @@ public class HostLocaleProviderAdapterImpl {
     }
 
     private static boolean isSupportedCalendarLocale(Locale locale) {
-        Locale base = locale.stripExtensions();
+        Locale base = locale;
+
+        if (base.hasExtensions() || base.getVariant() != "") {
+            base = new Locale.Builder()
+                            .setLocale(locale)
+                            .clearExtensions()
+                            .build();
+        }
+
         if (!supportedLocaleSet.contains(base)) {
             return false;
         }
 
         String requestedCalType = locale.getUnicodeLocaleType("ca");
         String nativeCalType =
-            getCalendarID(locale.toLanguageTag()).replaceFirst("gregorian", "gregory");
+            getCalendarID(base.toLanguageTag()).replaceFirst("gregorian", "gregory");
 
         if (requestedCalType == null) {
             return Calendar.getAvailableCalendarTypes().contains(nativeCalType);

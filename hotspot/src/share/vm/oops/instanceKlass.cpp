@@ -54,6 +54,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
+#include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
@@ -418,25 +419,6 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_annotations(NULL);
 }
 
-volatile oop InstanceKlass::init_lock() const {
-  volatile oop lock = _init_lock;  // read once
-  assert((oop)lock != NULL || !is_not_initialized(), // initialized or in_error state
-         "only fully initialized state can have a null lock");
-  return lock;
-}
-
-// Set the initialization lock to null so the object can be GC'ed.  Any racing
-// threads to get this lock will see a null lock and will not lock.
-// That's okay because they all check for initialized state after getting
-// the lock and return.
-void InstanceKlass::fence_and_clear_init_lock() {
-  // make sure previous stores are all done, notably the init_state.
-  OrderAccess::storestore();
-  klass_oop_store(&_init_lock, NULL);
-  assert(!is_not_initialized(), "class must be initialized now");
-}
-
-
 bool InstanceKlass::should_be_initialized() const {
   return !is_initialized();
 }
@@ -473,7 +455,7 @@ void InstanceKlass::eager_initialize(Thread *thread) {
 void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   EXCEPTION_MARK;
   volatile oop init_lock = this_oop->init_lock();
-  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
+  ObjectLocker ol(init_lock, THREAD);
 
   // abort if someone beat us to the initialization
   if (!this_oop->is_not_initialized()) return;  // note: not equivalent to is_initialized()
@@ -492,7 +474,6 @@ void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   } else {
     // linking successfull, mark class as initialized
     this_oop->set_init_state (fully_initialized);
-    this_oop->fence_and_clear_init_lock();
     // trace
     if (TraceClassInitialization) {
       ResourceMark rm(THREAD);
@@ -619,7 +600,7 @@ bool InstanceKlass::link_class_impl(
   // verification & rewriting
   {
     volatile oop init_lock = this_oop->init_lock();
-    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
+    ObjectLocker ol(init_lock, THREAD);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -742,7 +723,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   // Step 1
   {
     volatile oop init_lock = this_oop->init_lock();
-    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
+    ObjectLocker ol(init_lock, THREAD);
 
     Thread *self = THREAD; // it's passed the current thread
 
@@ -890,9 +871,8 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 
 void InstanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle this_oop, ClassState state, TRAPS) {
   volatile oop init_lock = this_oop->init_lock();
-  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
+  ObjectLocker ol(init_lock, THREAD);
   this_oop->set_init_state(state);
-  this_oop->fence_and_clear_init_lock();
   ol.notify_all(CHECK);
 }
 
@@ -2312,7 +2292,29 @@ static void clear_all_breakpoints(Method* m) {
   m->clear_all_breakpoints();
 }
 
+
+void InstanceKlass::notify_unload_class(InstanceKlass* ik) {
+  // notify the debugger
+  if (JvmtiExport::should_post_class_unload()) {
+    JvmtiExport::post_class_unload(ik);
+  }
+
+  // notify ClassLoadingService of class unload
+  ClassLoadingService::notify_class_unloaded(ik);
+}
+
+void InstanceKlass::release_C_heap_structures(InstanceKlass* ik) {
+  // Clean up C heap
+  ik->release_C_heap_structures();
+  ik->constants()->release_C_heap_structures();
+}
+
 void InstanceKlass::release_C_heap_structures() {
+
+  // Can't release the constant pool here because the constant pool can be
+  // deallocated separately from the InstanceKlass for default methods and
+  // redefine classes.
+
   // Deallocate oop map cache
   if (_oop_map_cache != NULL) {
     delete _oop_map_cache;
@@ -2837,7 +2839,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"protection domain: "); ((InstanceKlass*)this)->protection_domain()->print_value_on(st); st->cr();
   st->print(BULLET"host class:        "); host_klass()->print_value_on_maybe_null(st); st->cr();
   st->print(BULLET"signers:           "); signers()->print_value_on(st);               st->cr();
-  st->print(BULLET"init_lock:         "); ((oop)_init_lock)->print_value_on(st);             st->cr();
+  st->print(BULLET"init_lock:         "); ((oop)_init_lock)->print_value_on(st);       st->cr();
   if (source_file_name() != NULL) {
     st->print(BULLET"source file:       ");
     source_file_name()->print_value_on(st);

@@ -46,10 +46,12 @@ public class CompileTask extends VMObject {
     Type type      = db.lookupType("CompileTask");
     methodField = type.getAddressField("_method");
     osrBciField = new CIntField(type.getCIntegerField("_osr_bci"), 0);
+    compLevelField = new CIntField(type.getCIntegerField("_comp_level"), 0);
   }
 
   private static AddressField methodField;
   private static CIntField osrBciField;
+  private static CIntField compLevelField;
 
   public CompileTask(Address addr) {
     super(addr);
@@ -62,5 +64,9 @@ public class CompileTask extends VMObject {
 
   public int osrBci() {
     return (int)osrBciField.getValue(getAddress());
+  }
+
+  public int compLevel() {
+      return (int)compLevelField.getValue(getAddress());
   }
 }

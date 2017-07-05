@@ -281,9 +281,6 @@ public:
     return (_iter_state == Unclaimed) && (_iter_claimed == 0);
   }
 
-  // Initialize the given iterator to iterate over this rem set.
-  void init_iterator(HeapRegionRemSetIterator* iter) const;
-
   // The actual # of bytes this hr_remset takes up.
   size_t mem_size() {
     return _other_regions.mem_size()
@@ -345,9 +342,9 @@ public:
 #endif
 };
 
-class HeapRegionRemSetIterator : public CHeapObj<mtGC> {
+class HeapRegionRemSetIterator : public StackObj {
 
-  // The region over which we're iterating.
+  // The region RSet over which we're iterating.
   const HeapRegionRemSet* _hrrs;
 
   // Local caching of HRRS fields.
@@ -362,8 +359,10 @@ class HeapRegionRemSetIterator : public CHeapObj<mtGC> {
   size_t _n_yielded_coarse;
   size_t _n_yielded_sparse;
 
-  // If true we're iterating over the coarse table; if false the fine
-  // table.
+  // Indicates what granularity of table that we're currently iterating over.
+  // We start iterating over the sparse table, progress to the fine grain
+  // table, and then finish with the coarse table.
+  // See HeapRegionRemSetIterator::has_next().
   enum IterState {
     Sparse,
     Fine,
@@ -403,9 +402,7 @@ class HeapRegionRemSetIterator : public CHeapObj<mtGC> {
 public:
   // We require an iterator to be initialized before use, so the
   // constructor does little.
-  HeapRegionRemSetIterator();
-
-  void initialize(const HeapRegionRemSet* hrrs);
+  HeapRegionRemSetIterator(const HeapRegionRemSet* hrrs);
 
   // If there remains one or more cards to be yielded, returns true and
   // sets "card_index" to one of those cards (which is then considered

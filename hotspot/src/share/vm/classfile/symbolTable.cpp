@@ -735,7 +735,7 @@ oop StringTable::intern(oop string, TRAPS)
   ResourceMark rm(THREAD);
   int length;
   Handle h_string (THREAD, string);
-  jchar* chars = java_lang_String::as_unicode_string(string, length);
+  jchar* chars = java_lang_String::as_unicode_string(string, length, CHECK_NULL);
   oop result = intern(h_string, chars, length, CHECK_NULL);
   return result;
 }

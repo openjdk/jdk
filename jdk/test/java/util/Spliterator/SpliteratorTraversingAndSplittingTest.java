@@ -184,6 +184,8 @@ public class SpliteratorTraversingAndSplittingTest {
 
                 @Override
                 public boolean tryAdvance(Consumer<? super Integer> action) {
+                    if (action == null)
+                        throw new NullPointerException();
                     if (it.hasNext()) {
                         action.accept(it.next());
                         return true;
@@ -193,7 +195,7 @@ public class SpliteratorTraversingAndSplittingTest {
                     }
                 }
             }
-            db.add("new Spliterators.AbstractAdvancingSpliterator()",
+            db.add("new Spliterators.AbstractSpliterator()",
                    () -> new SpliteratorFromIterator(exp.iterator(), exp.size()));
 
             // Collections
@@ -370,7 +372,28 @@ public class SpliteratorTraversingAndSplittingTest {
                 db.addCollection(c -> Collections.singletonList(exp.get(0)));
             }
 
-            // @@@ Collections.synchronized/unmodifiable/checked wrappers
+            // Collections.synchronized/unmodifiable/checked wrappers
+            db.addCollection(Collections::unmodifiableCollection);
+            db.addCollection(c -> Collections.unmodifiableSet(new HashSet<>(c)));
+            db.addCollection(c -> Collections.unmodifiableSortedSet(new TreeSet<>(c)));
+            db.addList(c -> Collections.unmodifiableList(new ArrayList<>(c)));
+            db.addMap(Collections::unmodifiableMap);
+            db.addMap(m -> Collections.unmodifiableSortedMap(new TreeMap<>(m)));
+
+            db.addCollection(Collections::synchronizedCollection);
+            db.addCollection(c -> Collections.synchronizedSet(new HashSet<>(c)));
+            db.addCollection(c -> Collections.synchronizedSortedSet(new TreeSet<>(c)));
+            db.addList(c -> Collections.synchronizedList(new ArrayList<>(c)));
+            db.addMap(Collections::synchronizedMap);
+            db.addMap(m -> Collections.synchronizedSortedMap(new TreeMap<>(m)));
+
+            db.addCollection(c -> Collections.checkedCollection(c, Integer.class));
+            db.addCollection(c -> Collections.checkedQueue(new ArrayDeque<>(c), Integer.class));
+            db.addCollection(c -> Collections.checkedSet(new HashSet<>(c), Integer.class));
+            db.addCollection(c -> Collections.checkedSortedSet(new TreeSet<>(c), Integer.class));
+            db.addList(c -> Collections.checkedList(new ArrayList<>(c), Integer.class));
+            db.addMap(c -> Collections.checkedMap(c, Integer.class, Integer.class));
+            db.addMap(m -> Collections.checkedSortedMap(new TreeMap<>(m), Integer.class, Integer.class));
 
             // Maps
 
@@ -398,6 +421,13 @@ public class SpliteratorTraversingAndSplittingTest {
         for (int i = 0; i < upTo; i++)
             exp.add(i);
         return Collections.unmodifiableList(exp);
+    }
+
+    @Test(dataProvider = "Spliterator<Integer>")
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void testNullPointerException(String description, Collection exp, Supplier<Spliterator> s) {
+        executeAndCatch(NullPointerException.class, () -> s.get().forEachRemaining(null));
+        executeAndCatch(NullPointerException.class, () -> s.get().tryAdvance(null));
     }
 
     @Test(dataProvider = "Spliterator<Integer>")
@@ -507,6 +537,8 @@ public class SpliteratorTraversingAndSplittingTest {
 
                 @Override
                 public boolean tryAdvance(IntConsumer action) {
+                    if (action == null)
+                        throw new NullPointerException();
                     if (index < a.length) {
                         action.accept(a[index++]);
                         return true;
@@ -550,6 +582,12 @@ public class SpliteratorTraversingAndSplittingTest {
         }
 
         return b -> new BoxingAdapter(b);
+    }
+
+    @Test(dataProvider = "Spliterator.OfInt")
+    public void testIntNullPointerException(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
+        executeAndCatch(NullPointerException.class, () -> s.get().forEachRemaining((IntConsumer) null));
+        executeAndCatch(NullPointerException.class, () -> s.get().tryAdvance((IntConsumer) null));
     }
 
     @Test(dataProvider = "Spliterator.OfInt")
@@ -652,6 +690,8 @@ public class SpliteratorTraversingAndSplittingTest {
 
                 @Override
                 public boolean tryAdvance(LongConsumer action) {
+                    if (action == null)
+                        throw new NullPointerException();
                     if (index < a.length) {
                         action.accept(a[index++]);
                         return true;
@@ -702,6 +742,12 @@ public class SpliteratorTraversingAndSplittingTest {
         }
 
         return b -> new BoxingAdapter(b);
+    }
+
+    @Test(dataProvider = "Spliterator.OfLong")
+    public void testLongNullPointerException(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
+        executeAndCatch(NullPointerException.class, () -> s.get().forEachRemaining((LongConsumer) null));
+        executeAndCatch(NullPointerException.class, () -> s.get().tryAdvance((LongConsumer) null));
     }
 
     @Test(dataProvider = "Spliterator.OfLong")
@@ -804,6 +850,8 @@ public class SpliteratorTraversingAndSplittingTest {
 
                 @Override
                 public boolean tryAdvance(DoubleConsumer action) {
+                    if (action == null)
+                        throw new NullPointerException();
                     if (index < a.length) {
                         action.accept(a[index++]);
                         return true;
@@ -854,6 +902,12 @@ public class SpliteratorTraversingAndSplittingTest {
         }
 
         return b -> new BoxingAdapter(b);
+    }
+
+    @Test(dataProvider = "Spliterator.OfDouble")
+    public void testDoubleNullPointerException(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
+        executeAndCatch(NullPointerException.class, () -> s.get().forEachRemaining((DoubleConsumer) null));
+        executeAndCatch(NullPointerException.class, () -> s.get().tryAdvance((DoubleConsumer) null));
     }
 
     @Test(dataProvider = "Spliterator.OfDouble")
@@ -1057,8 +1111,8 @@ public class SpliteratorTraversingAndSplittingTest {
     }
 
     private static <T, S extends Spliterator<T>> void visit(int depth, int curLevel,
-                              List<T> dest, S spliterator, UnaryOperator<Consumer<T>> boxingAdapter,
-                              int rootCharacteristics, boolean useTryAdvance) {
+                                                            List<T> dest, S spliterator, UnaryOperator<Consumer<T>> boxingAdapter,
+                                                            int rootCharacteristics, boolean useTryAdvance) {
         if (curLevel < depth) {
             long beforeSize = spliterator.getExactSizeIfKnown();
             Spliterator<T> split = spliterator.trySplit();
@@ -1187,13 +1241,13 @@ public class SpliteratorTraversingAndSplittingTest {
                 assertTrue(leftSplit.estimateSize() < parentEstimateSize,
                            String.format("Left split size estimate %d >= parent split size estimate %d", leftSplit.estimateSize(), parentEstimateSize));
                 assertTrue(parentAndRightSplit.estimateSize() < parentEstimateSize,
-                            String.format("Right split size estimate %d >= parent split size estimate %d", leftSplit.estimateSize(), parentEstimateSize));
+                           String.format("Right split size estimate %d >= parent split size estimate %d", leftSplit.estimateSize(), parentEstimateSize));
             }
             else {
                 assertTrue(leftSplit.estimateSize() <= parentEstimateSize,
-                    String.format("Left split size estimate %d > parent split size estimate %d", leftSplit.estimateSize(), parentEstimateSize));
+                           String.format("Left split size estimate %d > parent split size estimate %d", leftSplit.estimateSize(), parentEstimateSize));
                 assertTrue(parentAndRightSplit.estimateSize() <= parentEstimateSize,
-                    String.format("Right split size estimate %d > parent split size estimate %d", leftSplit.estimateSize(), parentEstimateSize));
+                           String.format("Right split size estimate %d > parent split size estimate %d", leftSplit.estimateSize(), parentEstimateSize));
             }
 
             long leftSize = leftSplit.getExactSizeIfKnown();
@@ -1254,4 +1308,22 @@ public class SpliteratorTraversingAndSplittingTest {
         });
         return result;
     }
+
+    private void executeAndCatch(Class<? extends Exception> expected, Runnable r) {
+        Exception caught = null;
+        try {
+            r.run();
+        }
+        catch (Exception e) {
+            caught = e;
+        }
+
+        assertNotNull(caught,
+                      String.format("No Exception was thrown, expected an Exception of %s to be thrown",
+                                    expected.getName()));
+        assertTrue(expected.isInstance(caught),
+                   String.format("Exception thrown %s not an instance of %s",
+                                 caught.getClass().getName(), expected.getName()));
+    }
+
 }

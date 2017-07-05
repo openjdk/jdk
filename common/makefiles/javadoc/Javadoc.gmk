@@ -390,6 +390,17 @@ $(COREAPI_OPTIONS_FILE): $(COREAPI_OVERVIEW)
 	  $(call OptionPair,-tag,specdefault:X)				; \
 	  $(call OptionPair,-tag,Note:X)				; \
 	  $(call OptionPair,-tag,ToDo:X)				; \
+          $(call OptionPair,-tag,apiNote:a:API Note:)                   ; \
+          $(call OptionPair,-tag,implSpec:a:Implementation Requirements:) ; \
+          $(call OptionPair,-tag,implNote:a:Implementation Note:)       ; \
+          $(call OptionPair,-tag,param)                                 ; \
+          $(call OptionPair,-tag,return)                                ; \
+          $(call OptionPair,-tag,throws)                                ; \
+          $(call OptionPair,-tag,since)                                 ; \
+          $(call OptionPair,-tag,version)                               ; \
+          $(call OptionPair,-tag,serialData)                            ; \
+          $(call OptionPair,-tag,factory)                               ; \
+          $(call OptionPair,-tag,see)                                   ; \
           $(call OptionPair,-tag,$(TAG_JLS)) 				; \
 	  $(call OptionOnly,-splitIndex)				; \
 	  $(call OptionPair,-overview,$(COREAPI_OVERVIEW))		; \

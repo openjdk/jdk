@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @author    anton.tarasov@sun.com: area=awt.focus
  * @library   ../../regtesthelpers
  * @build     Util
- * @run       main OverrideRedirectWindowActivationTest
+ * @run       main SimpleWindowActivationTest
  */
 import java.awt.*;
 import java.awt.event.*;
@@ -37,7 +37,7 @@ import javax.swing.SwingUtilities;
 import sun.awt.SunToolkit;
 import test.java.awt.regtesthelpers.Util;
 
-public class OverrideRedirectWindowActivationTest {
+public class SimpleWindowActivationTest {
 
     private static Frame frame;
     private static Window window;
@@ -115,7 +115,7 @@ public class OverrideRedirectWindowActivationTest {
         wbutton = new Button("wbutton");
         label = new Label("label");
 
-        window.setBounds(800, 200, 200, 100);
+        window.setBounds(800, 200, 300, 100);
         window.setLayout(new FlowLayout());
         window.add(wbutton);
         window.add(label);
@@ -126,7 +126,7 @@ public class OverrideRedirectWindowActivationTest {
     private static void createAndShowFrame() {
         fbutton = new Button("fbutton");
 
-        frame.setBounds(800, 0, 200, 100);
+        frame.setBounds(800, 0, 300, 100);
         frame.setLayout(new FlowLayout());
         frame.add(fbutton);
         frame.setVisible(true);

@@ -86,6 +86,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "[-tsa <url>]                location of the Timestamping Authority"},
         {".tsacert.alias.public.key.certificate.for.Timestamping.Authority",
                 "[-tsacert <alias>]          public key certificate for Timestamping Authority"},
+        {".tsapolicyid.tsapolicyid.for.Timestamping.Authority",
+                "[-tsapolicyid <oid>]        TSAPolicyID for Timestamping Authority"},
         {".altsigner.class.class.name.of.an.alternative.signing.mechanism",
                 "[-altsigner <class>]        class name of an alternative signing mechanism"},
         {".altsignerpath.pathlist.location.of.an.alternative.signing.mechanism",

@@ -1257,43 +1257,6 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 }
 
 //=============================================================================
-
-// emit call stub, compiled java to interpreter
-void emit_java_to_interp(CodeBuffer &cbuf ) {
-  // Stub is fixed up when the corresponding call is converted from calling
-  // compiled code to calling interpreted code.
-  // mov rbx,0
-  // jmp -1
-
-  address mark = cbuf.insts_mark();  // get mark within main instrs section
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a stub.
-  MacroAssembler _masm(&cbuf);
-
-  address base =
-  __ start_a_stub(Compile::MAX_stubs_size);
-  if (base == NULL)  return;  // CodeBuffer::expand failed
-  // static stub relocation stores the instruction address of the call
-  __ relocate(static_stub_Relocation::spec(mark), RELOC_IMM32);
-  // static stub relocation also tags the Method* in the code-stream.
-  __ mov_metadata(rbx, (Metadata*)NULL);  // method is zapped till fixup time
-  // This is recognized as unresolved by relocs/nativeInst/ic code
-  __ jump(RuntimeAddress(__ pc()));
-
-  __ end_a_stub();
-  // Update current stubs pointer and restore insts_end.
-}
-// size of call stub, compiled java to interpretor
-uint size_java_to_interp() {
-  return 10;  // movl; jmp
-}
-// relocation entries for call stub, compiled java to interpretor
-uint reloc_java_to_interp() {
-  return 4;  // 3 in emit_java_to_interp + 1 in Java_Static_Call
-}
-
-//=============================================================================
 #ifndef PRODUCT
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   st->print_cr(  "CMP    EAX,[ECX+4]\t# Inline cache check");
@@ -1909,8 +1872,8 @@ encode %{
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      static_call_Relocation::spec(), RELOC_IMM32 );
     }
-    if (_method) {  // Emit stub for static call
-      emit_java_to_interp(cbuf);
+    if (_method) {  // Emit stub for static call.
+      CompiledStaticCall::emit_to_interp_stub(cbuf);
     }
   %}
 
