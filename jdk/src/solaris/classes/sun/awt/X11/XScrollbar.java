@@ -458,16 +458,16 @@ abstract class XScrollbar {
              String type;
              switch (id) {
                 case MouseEvent.MOUSE_PRESSED:
-                    type = new String("press");
+                    type = "press";
                     break;
                 case MouseEvent.MOUSE_RELEASED:
-                    type = new String("release");
+                    type = "release";
                     break;
                 case MouseEvent.MOUSE_DRAGGED:
-                    type = new String("drag");
+                    type = "drag";
                     break;
                 default:
-                    type = new String("other");
+                    type = "other";
              }
              log.finer("Mouse " + type + " event in scroll bar " + this +
                                                    "x = " + x + ", y = " + y +

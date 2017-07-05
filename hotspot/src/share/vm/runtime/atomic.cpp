@@ -44,3 +44,15 @@ jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte compare_
   }
   return cur_as_bytes[offset];
 }
+
+unsigned Atomic::xchg(unsigned int exchange_value, volatile unsigned int* dest) {
+  assert(sizeof(unsigned int) == sizeof(jint), "more work to do");
+  return (unsigned int)Atomic::xchg((jint)exchange_value, (volatile jint*)dest);
+}
+
+unsigned Atomic::cmpxchg(unsigned int exchange_value,
+                         volatile unsigned int* dest, unsigned int compare_value) {
+  assert(sizeof(unsigned int) == sizeof(jint), "more work to do");
+  return (unsigned int)Atomic::cmpxchg((jint)exchange_value, (volatile jint*)dest,
+                                       (jint)compare_value);
+}

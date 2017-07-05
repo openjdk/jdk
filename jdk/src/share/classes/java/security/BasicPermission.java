@@ -27,12 +27,10 @@ package java.security;
 
 import java.security.*;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Collections;
-import java.util.StringTokenizer;
 import java.io.ObjectStreamField;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
@@ -64,13 +62,7 @@ import java.io.IOException;
  * @see java.security.Permission
  * @see java.security.Permissions
  * @see java.security.PermissionCollection
- * @see java.lang.RuntimePermission
- * @see java.security.SecurityPermission
- * @see java.util.PropertyPermission
- * @see java.awt.AWTPermission
- * @see java.net.NetPermission
  * @see java.lang.SecurityManager
- *
  *
  * @author Marianne Mueller
  * @author Roland Schemers
@@ -95,7 +87,6 @@ implements java.io.Serializable
      * initialize a BasicPermission object. Common to all constructors.
      *
      */
-
     private void init(String name)
     {
         if (name == null)
@@ -213,8 +204,8 @@ implements java.io.Serializable
      * and has the same name as this object.
      * <P>
      * @param obj the object we are testing for equality with this object.
-     * @return true if <i>obj</i> is a BasicPermission, and has the same name
-     *  as this BasicPermission object, false otherwise.
+     * @return true if <i>obj</i>'s class is the same as this object's class
+     *  and has the same name as this BasicPermission object, false otherwise.
      */
     public boolean equals(Object obj) {
         if (obj == this)
@@ -237,7 +228,6 @@ implements java.io.Serializable
      *
      * @return a hash code value for this object.
      */
-
     public int hashCode() {
         return this.getName().hashCode();
     }
@@ -266,7 +256,6 @@ implements java.io.Serializable
      * @return a new PermissionCollection object suitable for
      * storing BasicPermissions.
      */
-
     public PermissionCollection newPermissionCollection() {
         return new BasicPermissionCollection(this.getClass());
     }

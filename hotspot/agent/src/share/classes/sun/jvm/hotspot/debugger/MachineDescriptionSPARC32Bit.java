@@ -29,10 +29,6 @@ public class MachineDescriptionSPARC32Bit extends MachineDescriptionTwosCompleme
     return 4;
   }
 
-  public long getOopSize() {
-    return 4;
-  }
-
   public boolean isBigEndian() {
     return true;
   }

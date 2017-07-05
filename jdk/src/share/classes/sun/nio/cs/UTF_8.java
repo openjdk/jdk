@@ -326,7 +326,7 @@ class UTF_8 extends Unicode
 
                         case 12: case 13:
                             // 6 bytes, 31 bits
-                            if (src.remaining() < 4)
+                            if (src.remaining() < 5)
                                 return CoderResult.UNDERFLOW;
                             if (!isContinuation(b2 = src.get()))
                                 return CoderResult.malformedForLength(1);

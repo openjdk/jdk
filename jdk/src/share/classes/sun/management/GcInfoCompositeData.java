@@ -80,19 +80,19 @@ public class GcInfoCompositeData extends LazyCompositeData {
             };
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newAssertionError(e);
+            throw new AssertionError(e);
         }
 
         // Get the item values for the extension attributes
         final int gcExtItemCount = builder.getGcExtItemCount();
         if (gcExtItemCount == 0 &&
             gcExtItemValues != null && gcExtItemValues.length != 0) {
-            throw new InternalError("Unexpected Gc Extension Item Values");
+            throw new AssertionError("Unexpected Gc Extension Item Values");
         }
 
         if (gcExtItemCount > 0 && (gcExtItemValues == null ||
              gcExtItemCount != gcExtItemValues.length)) {
-            throw new InternalError("Unmatched Gc Extension Item Values");
+            throw new AssertionError("Unmatched Gc Extension Item Values");
         }
 
         Object[] values = new Object[baseGcInfoItemValues.length +
@@ -111,7 +111,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
                                             values);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 
@@ -141,10 +141,10 @@ public class GcInfoCompositeData extends LazyCompositeData {
                 MappedMXBeanType.getMappedType(m.getGenericReturnType());
         } catch (NoSuchMethodException e) {
             // Should never reach here
-            throw Util.newAssertionError(e);
+            throw new AssertionError(e);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newAssertionError(e);
+            throw new AssertionError(e);
         }
     }
 
@@ -186,10 +186,10 @@ public class GcInfoCompositeData extends LazyCompositeData {
             return cast(memoryUsageMapType.toJavaTypeData(td));
         } catch (InvalidObjectException e) {
             // Should never reach here
-            throw Util.newAssertionError(e);
+            throw new AssertionError(e);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newAssertionError(e);
+            throw new AssertionError(e);
         }
     }
 
@@ -205,10 +205,10 @@ public class GcInfoCompositeData extends LazyCompositeData {
             return cast(memoryUsageMapType.toJavaTypeData(td));
         } catch (InvalidObjectException e) {
             // Should never reach here
-            throw Util.newAssertionError(e);
+            throw new AssertionError(e);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newAssertionError(e);
+            throw new AssertionError(e);
         }
     }
 

@@ -116,16 +116,16 @@ class PSScavenge: AllStatic {
   // If an attempt to promote fails, this method is invoked
   static void oop_promotion_failed(oop obj, markOop obj_mark);
 
-  static inline bool should_scavenge(oop p);
+  template <class T> static inline bool should_scavenge(T* p);
 
   // These call should_scavenge() above and, if it returns true, also check that
   // the object was not newly copied into to_space.  The version with the bool
   // argument is a convenience wrapper that fetches the to_space pointer from
   // the heap and calls the other version (if the arg is true).
-  static inline bool should_scavenge(oop p, MutableSpace* to_space);
-  static inline bool should_scavenge(oop p, bool check_to_space);
+  template <class T> static inline bool should_scavenge(T* p, MutableSpace* to_space);
+  template <class T> static inline bool should_scavenge(T* p, bool check_to_space);
 
-  inline static void copy_and_push_safe_barrier(PSPromotionManager* pm, oop* p);
+  template <class T> inline static void copy_and_push_safe_barrier(PSPromotionManager* pm, T* p);
 
   // Is an object in the young generation
   // This assumes that the HeapWord argument is in the heap,

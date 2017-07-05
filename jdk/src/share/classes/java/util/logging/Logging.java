@@ -29,6 +29,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.ArrayList;
 
+import javax.management.ObjectName;
+
 /**
  * Logging is the implementation class of LoggingMXBean.
  *
@@ -115,4 +117,7 @@ class Logging implements LoggingMXBean {
         }
     }
 
+    public ObjectName getObjectName() {
+        return com.sun.jmx.mbeanserver.Util.newObjectName(LogManager.LOGGING_MXBEAN_NAME);
+    }
 }

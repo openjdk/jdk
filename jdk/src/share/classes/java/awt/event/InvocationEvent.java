@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,10 @@ import java.awt.AWTEvent;
  * can use this fact to write replacement functions for <code>invokeLater
  * </code> and <code>invokeAndWait</code> without writing special-case code
  * in any <code>AWTEventListener</code> objects.
+ * <p>
+ * An unspecified behavior will be caused if the {@code id} parameter
+ * of any particular {@code InvocationEvent} instance is not
+ * in the range from {@code INVOCATION_FIRST} to {@code INVOCATION_LAST}.
  *
  * @author      Fred Ecks
  * @author      David Mendenhall
@@ -123,12 +127,13 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
      * <p> This method throws an <code>IllegalArgumentException</code>
      * if <code>source</code> is <code>null</code>.
      *
-     * @param source    the <code>Object</code> that originated the event
-     * @param runnable  the <code>Runnable</code> whose <code>run</code>
+     * @param source    The <code>Object</code> that originated the event
+     * @param runnable  The <code>Runnable</code> whose <code>run</code>
      *                  method will be executed
      * @throws IllegalArgumentException if <code>source</code> is null
      *
-     * @see     #InvocationEvent(Object, Runnable, Object, boolean)
+     * @see #getSource()
+     * @see #InvocationEvent(Object, Runnable, Object, boolean)
      */
     public InvocationEvent(Object source, Runnable runnable) {
         this(source, runnable, null, false);
@@ -147,15 +152,15 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
      * <p>This method throws an <code>IllegalArgumentException</code>
      * if <code>source</code> is <code>null</code>.
      *
-     * @param source            the <code>Object</code> that originated
+     * @param source            The <code>Object</code> that originated
      *                          the event
-     * @param runnable          the <code>Runnable</code> whose
+     * @param runnable          The <code>Runnable</code> whose
      *                          <code>run</code> method will be
      *                          executed
-     * @param notifier          the Object whose <code>notifyAll</code>
+     * @param notifier          The {@code Object} whose <code>notifyAll</code>
      *                          method will be called after
      *                          <code>Runnable.run</code> has returned
-     * @param catchThrowables   specifies whether <code>dispatch</code>
+     * @param catchThrowables   Specifies whether <code>dispatch</code>
      *                          should catch Throwable when executing
      *                          the <code>Runnable</code>'s <code>run</code>
      *                          method, or should instead propagate those
@@ -163,6 +168,7 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
      *                          dispatch loop
      * @throws IllegalArgumentException if <code>source</code> is null
      *
+     * @see #getSource()
      * @see     #InvocationEvent(Object, int, Runnable, Object, boolean)
      */
     public InvocationEvent(Object source, Runnable runnable, Object notifier,
@@ -176,26 +182,29 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
      * method when dispatched.  If notifier is non-<code>null</code>,
      * <code>notifyAll</code> will be called on it
      * immediately after <code>run</code> returns.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * <p>This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
-     * @param source            the <code>Object</code> that originated
+     * @param source            The <code>Object</code> that originated
      *                          the event
-     * @param id                the ID for the event
-     * @param runnable          the <code>Runnable</code> whose
+     * @param id     An integer indicating the type of event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link InvocationEvent}
+     * @param runnable          The <code>Runnable</code> whose
      *                          <code>run</code> method will be executed
-     * @param notifier          the <code>Object</code> whose <code>notifyAll</code>
+     * @param notifier          The <code>Object</code> whose <code>notifyAll</code>
      *                          method will be called after
      *                          <code>Runnable.run</code> has returned
-     * @param catchThrowables   specifies whether <code>dispatch</code>
+     * @param catchThrowables   Specifies whether <code>dispatch</code>
      *                          should catch Throwable when executing the
      *                          <code>Runnable</code>'s <code>run</code>
      *                          method, or should instead propagate those
      *                          Throwables to the EventDispatchThread's
      *                          dispatch loop
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getSource()
+     * @see #getID()
      */
     protected InvocationEvent(Object source, int id, Runnable runnable,
                               Object notifier, boolean catchThrowables) {

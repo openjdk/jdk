@@ -127,6 +127,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // setup thread register
     __ ld_ptr(thread.as_address(), G2_thread);
+    __ reinit_heapbase();
 
 #ifdef ASSERT
     // make sure we have no pending exceptions
@@ -896,6 +897,7 @@ class StubGenerator: public StubCodeGenerator {
   //      super: O2, argument, not changed
   //      raddr: O7, blown by call
   address generate_partial_subtype_check() {
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "partial_subtype_check");
     address start = __ pc();
     Label loop, miss;
@@ -914,7 +916,7 @@ class StubGenerator: public StubCodeGenerator {
 
 #if defined(COMPILER2) && !defined(_LP64)
     // Do not use a 'save' because it blows the 64-bit O registers.
-    __ add(SP,-4*wordSize,SP);  // Make space for 4 temps
+    __ add(SP,-4*wordSize,SP);  // Make space for 4 temps (stack must be 2 words aligned)
     __ st_ptr(L0,SP,(frame::register_save_words+0)*wordSize);
     __ st_ptr(L1,SP,(frame::register_save_words+1)*wordSize);
     __ st_ptr(L2,SP,(frame::register_save_words+2)*wordSize);
@@ -934,6 +936,17 @@ class StubGenerator: public StubCodeGenerator {
     Register L2_super   = L2;
     Register L3_index   = L3;
 
+#ifdef _LP64
+    Register L4_ooptmp  = L4;
+
+    if (UseCompressedOops) {
+      // this must be under UseCompressedOops check, as we rely upon fact
+      // that L4 not clobbered in C2 on 32-bit platforms, where we do explicit save
+      // on stack, see several lines above
+      __ encode_heap_oop(Rsuper, L4_ooptmp);
+    }
+#endif
+
     inc_counter_np(SharedRuntime::_partial_subtype_ctr, L0, L1);
 
     __ ld_ptr( Rsub, sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes(), L3 );
@@ -942,18 +955,33 @@ class StubGenerator: public StubCodeGenerator {
     __ clr(L3_index);           // zero index
     // Load a little early; will load 1 off the end of the array.
     // Ok for now; revisit if we have other uses of this routine.
-    __ ld_ptr(L1_ary_ptr,0,L2_super);// Will load a little early
-    __ align(CodeEntryAlignment);
+    if (UseCompressedOops) {
+      __ ld(L1_ary_ptr,0,L2_super);// Will load a little early
+    } else {
+      __ ld_ptr(L1_ary_ptr,0,L2_super);// Will load a little early
+    }
 
+    assert(heapOopSize != 0, "heapOopSize should be initialized");
     // The scan loop
     __ BIND(loop);
-    __ add(L1_ary_ptr,wordSize,L1_ary_ptr); // Bump by OOP size
+    __ add(L1_ary_ptr, heapOopSize, L1_ary_ptr); // Bump by OOP size
     __ cmp(L3_index,L0_ary_len);
     __ br(Assembler::equal,false,Assembler::pn,miss);
     __ delayed()->inc(L3_index); // Bump index
-    __ subcc(L2_super,Rsuper,Rret);   // Check for match; zero in Rret for a hit
-    __ brx( Assembler::notEqual, false, Assembler::pt, loop );
-    __ delayed()->ld_ptr(L1_ary_ptr,0,L2_super); // Will load a little early
+
+    if (UseCompressedOops) {
+#ifdef  _LP64
+      __ subcc(L2_super,L4_ooptmp,Rret);   // Check for match; zero in Rret for a hit
+      __ br( Assembler::notEqual, false, Assembler::pt, loop );
+      __ delayed()->ld(L1_ary_ptr,0,L2_super);// Will load a little early
+#else
+      ShouldNotReachHere();
+#endif
+    } else {
+      __ subcc(L2_super,Rsuper,Rret);   // Check for match; zero in Rret for a hit
+      __ brx( Assembler::notEqual, false, Assembler::pt, loop );
+      __ delayed()->ld_ptr(L1_ary_ptr,0,L2_super);// Will load a little early
+    }
 
     // Got a hit; report success; set cache.  Cache load doesn't
     // happen here; for speed it is directly emitted by the compiler.
@@ -1107,7 +1135,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif // 0
   }
-
   //
   //  Generate post-write barrier for array.
   //
@@ -1148,8 +1175,8 @@ class StubGenerator: public StubCodeGenerator {
 
           Label L_loop;
 
-          __ sll_ptr(count, LogBytesPerOop, count);
-          __ sub(count, BytesPerOop, count);
+          __ sll_ptr(count, LogBytesPerHeapOop, count);
+          __ sub(count, BytesPerHeapOop, count);
           __ add(count, addr, count);
           // Use two shifts to clear out those low order two bits! (Cannot opt. into 1.)
           __ srl_ptr(addr, CardTableModRefBS::card_shift, addr);
@@ -1171,7 +1198,6 @@ class StubGenerator: public StubCodeGenerator {
         ShouldNotReachHere();
 
     }
-
   }
 
 
@@ -2226,7 +2252,12 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(count, G5);
     gen_write_ref_array_pre_barrier(G1, G5);
   #ifdef _LP64
-    generate_disjoint_long_copy_core(aligned);
+    assert_clean_int(count, O3);     // Make sure 'count' is clean int.
+    if (UseCompressedOops) {
+      generate_disjoint_int_copy_core(aligned);
+    } else {
+      generate_disjoint_long_copy_core(aligned);
+    }
   #else
     generate_disjoint_int_copy_core(aligned);
   #endif
@@ -2274,10 +2305,14 @@ class StubGenerator: public StubCodeGenerator {
         StubRoutines::arrayof_oop_disjoint_arraycopy() :
         disjoint_oop_copy_entry;
 
-    array_overlap_test(nooverlap_target, LogBytesPerWord);
+    array_overlap_test(nooverlap_target, LogBytesPerHeapOop);
 
   #ifdef _LP64
-    generate_conjoint_long_copy_core(aligned);
+    if (UseCompressedOops) {
+      generate_conjoint_int_copy_core(aligned);
+    } else {
+      generate_conjoint_long_copy_core(aligned);
+    }
   #else
     generate_conjoint_int_copy_core(aligned);
   #endif
@@ -2377,8 +2412,6 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
 
-    int klass_off = oopDesc::klass_offset_in_bytes();
-
     gen_write_ref_array_pre_barrier(G1, G5);
 
 
@@ -2395,7 +2428,7 @@ class StubGenerator: public StubCodeGenerator {
     { Label L;
       __ mov(O3, G1);           // spill: overlap test smashes O3
       __ mov(O4, G4);           // spill: overlap test smashes O4
-      array_overlap_test(L, LogBytesPerWord);
+      array_overlap_test(L, LogBytesPerHeapOop);
       __ stop("checkcast_copy within a single array");
       __ bind(L);
       __ mov(G1, O3);
@@ -2429,18 +2462,18 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(store_element);
     // deccc(G1_remain);                // decrement the count (hoisted)
-    __ st_ptr(G3_oop, O1_to, O5_offset); // store the oop
-    __ inc(O5_offset, wordSize);        // step to next offset
+    __ store_heap_oop(G3_oop, O1_to, O5_offset); // store the oop
+    __ inc(O5_offset, heapOopSize);     // step to next offset
     __ brx(Assembler::zero, true, Assembler::pt, do_card_marks);
     __ delayed()->set(0, O0);           // return -1 on success
 
     // ======== loop entry is here ========
     __ bind(load_element);
-    __ ld_ptr(O0_from, O5_offset, G3_oop);  // load the oop
+    __ load_heap_oop(O0_from, O5_offset, G3_oop);  // load the oop
     __ br_null(G3_oop, true, Assembler::pt, store_element);
     __ delayed()->deccc(G1_remain);     // decrement the count
 
-    __ ld_ptr(G3_oop, klass_off, G4_klass); // query the object klass
+    __ load_klass(G3_oop, G4_klass); // query the object klass
 
     generate_type_check(G4_klass, O3_ckoff, O4_ckval, G5_super,
                         // branch to this on success:
@@ -2642,17 +2675,23 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("arraycopy argument klass checks");
     //  get src->klass()
-    __ delayed()->ld_ptr(src, oopDesc::klass_offset_in_bytes(), G3_src_klass);
+    if (UseCompressedOops) {
+      __ delayed()->nop(); // ??? not good
+      __ load_klass(src, G3_src_klass);
+    } else {
+      __ delayed()->ld_ptr(src, oopDesc::klass_offset_in_bytes(), G3_src_klass);
+    }
 
 #ifdef ASSERT
     //  assert(src->klass() != NULL);
     BLOCK_COMMENT("assert klasses not null");
     { Label L_a, L_b;
       __ br_notnull(G3_src_klass, false, Assembler::pt, L_b); // it is broken if klass is NULL
-      __ delayed()->ld_ptr(dst, oopDesc::klass_offset_in_bytes(), G4_dst_klass);
+      __ delayed()->nop();
       __ bind(L_a);
       __ stop("broken null klass");
       __ bind(L_b);
+      __ load_klass(dst, G4_dst_klass);
       __ br_null(G4_dst_klass, false, Assembler::pn, L_a); // this would be broken also
       __ delayed()->mov(G0, G4_dst_klass);      // scribble the temp
       BLOCK_COMMENT("assert done");
@@ -2673,12 +2712,19 @@ class StubGenerator: public StubCodeGenerator {
     // Load 32-bits signed value. Use br() instruction with it to check icc.
     __ lduw(G3_src_klass, lh_offset, G5_lh);
 
+    if (UseCompressedOops) {
+      __ load_klass(dst, G4_dst_klass);
+    }
     // Handle objArrays completely differently...
     juint objArray_lh = Klass::array_layout_helper(T_OBJECT);
     __ set(objArray_lh, O5_temp);
     __ cmp(G5_lh,       O5_temp);
     __ br(Assembler::equal, false, Assembler::pt, L_objArray);
-    __ delayed()->ld_ptr(dst, oopDesc::klass_offset_in_bytes(), G4_dst_klass);
+    if (UseCompressedOops) {
+      __ delayed()->nop();
+    } else {
+      __ delayed()->ld_ptr(dst, oopDesc::klass_offset_in_bytes(), G4_dst_klass);
+    }
 
     //  if (src->klass() != dst->klass()) return -1;
     __ cmp(G3_src_klass, G4_dst_klass);
@@ -2777,8 +2823,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ add(src, arrayOopDesc::base_offset_in_bytes(T_OBJECT), src); //src offset
     __ add(dst, arrayOopDesc::base_offset_in_bytes(T_OBJECT), dst); //dst offset
-    __ sll_ptr(src_pos, LogBytesPerOop, src_pos);
-    __ sll_ptr(dst_pos, LogBytesPerOop, dst_pos);
+    __ sll_ptr(src_pos, LogBytesPerHeapOop, src_pos);
+    __ sll_ptr(dst_pos, LogBytesPerHeapOop, dst_pos);
     __ add(src, src_pos, from);       // src_addr
     __ add(dst, dst_pos, to);         // dst_addr
   __ BIND(L_plain_copy);
@@ -2801,8 +2847,8 @@ class StubGenerator: public StubCodeGenerator {
       // Marshal the base address arguments now, freeing registers.
       __ add(src, arrayOopDesc::base_offset_in_bytes(T_OBJECT), src); //src offset
       __ add(dst, arrayOopDesc::base_offset_in_bytes(T_OBJECT), dst); //dst offset
-      __ sll_ptr(src_pos, LogBytesPerOop, src_pos);
-      __ sll_ptr(dst_pos, LogBytesPerOop, dst_pos);
+      __ sll_ptr(src_pos, LogBytesPerHeapOop, src_pos);
+      __ sll_ptr(dst_pos, LogBytesPerHeapOop, dst_pos);
       __ add(src, src_pos, from);               // src_addr
       __ add(dst, dst_pos, to);                 // dst_addr
       __ signx(length, count);                  // length (reloaded)

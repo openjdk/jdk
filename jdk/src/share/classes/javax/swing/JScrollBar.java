@@ -314,7 +314,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
         BoundedRangeModel oldModel = model;
         if (model != null) {
             model.removeChangeListener(fwdAdjustmentEvents);
-            oldValue = new Integer(model.getValue());
+            oldValue = Integer.valueOf(model.getValue());
         }
         model = newModel;
         if (model != null) {
@@ -465,8 +465,8 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
         if (accessibleContext != null) {
             accessibleContext.firePropertyChange(
                     AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                    new Integer(oldValue),
-                    new Integer(m.getValue()));
+                    Integer.valueOf(oldValue),
+                    Integer.valueOf(m.getValue()));
         }
     }
 
@@ -611,8 +611,8 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
         if (accessibleContext != null) {
             accessibleContext.firePropertyChange(
                     AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                    new Integer(oldValue),
-                    new Integer(m.getValue()));
+                    Integer.valueOf(oldValue),
+                    Integer.valueOf(m.getValue()));
         }
     }
 
@@ -880,7 +880,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
          * @return The current value of this object.
          */
         public Number getCurrentAccessibleValue() {
-            return new Integer(getValue());
+            return Integer.valueOf(getValue());
         }
 
         /**
@@ -903,7 +903,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
          * @return The minimum value of this object.
          */
         public Number getMinimumAccessibleValue() {
-            return new Integer(getMinimum());
+            return Integer.valueOf(getMinimum());
         }
 
         /**

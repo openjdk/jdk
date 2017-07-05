@@ -180,12 +180,16 @@ class instanceKlass: public Klass {
   // End of the oop block.
   //
 
-  int             _nonstatic_field_size; // number of non-static fields in this klass (including inherited fields)
-  int             _static_field_size;    // number of static fields (oop and non-oop) in this klass
+  // number of words used by non-static fields in this klass (including
+  // inherited fields but after header_size()).  If fields are compressed into
+  // header, this can be zero so it's not the same as number of static fields.
+  int             _nonstatic_field_size;
+  int             _static_field_size;    // number words used by static fields (oop and non-oop) in this klass
   int             _static_oop_field_size;// number of static oop fields in this klass
   int             _nonstatic_oop_map_size;// number of nonstatic oop-map blocks allocated at end of this klass
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
   bool            _rewritten;            // methods rewritten.
+  bool            _has_nonstatic_fields; // for sizing with UseCompressedOops
   u2              _minor_version;        // minor version number of class file
   u2              _major_version;        // major version number of class file
   ClassState      _init_state;           // state of class
@@ -221,6 +225,9 @@ class instanceKlass: public Klass {
   friend class SystemDictionary;
 
  public:
+  bool has_nonstatic_fields() const        { return _has_nonstatic_fields; }
+  void set_has_nonstatic_fields(bool b)    { _has_nonstatic_fields = b; }
+
   // field sizes
   int nonstatic_field_size() const         { return _nonstatic_field_size; }
   void set_nonstatic_field_size(int size)  { _nonstatic_field_size = size; }
@@ -340,8 +347,7 @@ class instanceKlass: public Klass {
 
   // find a non-static or static field given its offset within the class.
   bool contains_field_offset(int offset) {
-      return ((offset/wordSize) >= instanceOopDesc::header_size() &&
-             (offset/wordSize)-instanceOopDesc::header_size() < nonstatic_field_size());
+    return instanceOopDesc::contains_field_offset(offset, nonstatic_field_size());
   }
 
   bool find_local_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const;
@@ -570,12 +576,21 @@ class instanceKlass: public Klass {
   intptr_t* start_of_itable() const        { return start_of_vtable() + align_object_offset(vtable_length()); }
   int  itable_offset_in_words() const { return start_of_itable() - (intptr_t*)as_klassOop(); }
 
-  oop* start_of_static_fields() const { return (oop*)(start_of_itable() + align_object_offset(itable_length())); }
-  intptr_t* end_of_itable() const          { return start_of_itable() + itable_length(); }
-  oop* end_of_static_fields() const   { return start_of_static_fields() + static_field_size(); }
-  int offset_of_static_fields() const { return (intptr_t)start_of_static_fields() - (intptr_t)as_klassOop(); }
+  // Static field offset is an offset into the Heap, should be converted by
+  // based on UseCompressedOop for traversal
+  HeapWord* start_of_static_fields() const {
+    return (HeapWord*)(start_of_itable() + align_object_offset(itable_length()));
+  }
 
-  OopMapBlock* start_of_nonstatic_oop_maps() const { return (OopMapBlock*) (start_of_static_fields() + static_field_size()); }
+  intptr_t* end_of_itable() const          { return start_of_itable() + itable_length(); }
+
+  int offset_of_static_fields() const {
+    return (intptr_t)start_of_static_fields() - (intptr_t)as_klassOop();
+  }
+
+  OopMapBlock* start_of_nonstatic_oop_maps() const {
+    return (OopMapBlock*) (start_of_static_fields() + static_field_size());
+  }
 
   // Allocation profiling support
   juint alloc_size() const            { return _alloc_count * size_helper(); }

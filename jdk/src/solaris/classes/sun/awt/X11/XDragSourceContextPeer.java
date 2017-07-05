@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,11 @@ public final class XDragSourceContextPeer
         Logger.getLogger("sun.awt.X11.xembed.xdnd.XDragSourceContextPeer");
 
     /* The events selected on the root window when the drag begins. */
-    private static final int ROOT_EVENT_MASK = (int)XlibWrapper.ButtonMotionMask |
-        (int)XlibWrapper.KeyPressMask | (int)XlibWrapper.KeyReleaseMask;
+    private static final int ROOT_EVENT_MASK = (int)XConstants.ButtonMotionMask |
+        (int)XConstants.KeyPressMask | (int)XConstants.KeyReleaseMask;
     /* The events to be delivered during grab. */
-    private static final int GRAB_EVENT_MASK = (int)XlibWrapper.ButtonPressMask |
-        (int)XlibWrapper.ButtonMotionMask | (int)XlibWrapper.ButtonReleaseMask;
+    private static final int GRAB_EVENT_MASK = (int)XConstants.ButtonPressMask |
+        (int)XConstants.ButtonMotionMask | (int)XConstants.ButtonReleaseMask;
 
     /* The event mask of the root window before the drag operation starts. */
     private long rootEventMask = 0;
@@ -196,11 +196,11 @@ public final class XDragSourceContextPeer
 
                 status = XlibWrapper.XGrabPointer(XToolkit.getDisplay(), rootWindow,
                                                   0, GRAB_EVENT_MASK,
-                                                  XlibWrapper.GrabModeAsync,
-                                                  XlibWrapper.GrabModeAsync,
-                                                  XlibWrapper.None, xcursor, timeStamp);
+                                                  XConstants.GrabModeAsync,
+                                                  XConstants.GrabModeAsync,
+                                                  XConstants.None, xcursor, timeStamp);
 
-                if (status != XlibWrapper.GrabSuccess) {
+                if (status != XConstants.GrabSuccess) {
                     cleanup(timeStamp);
                     throwGrabFailureException("Cannot grab pointer", status);
                     return;
@@ -208,11 +208,11 @@ public final class XDragSourceContextPeer
 
                 status = XlibWrapper.XGrabKeyboard(XToolkit.getDisplay(), rootWindow,
                                                    0,
-                                                   XlibWrapper.GrabModeAsync,
-                                                   XlibWrapper.GrabModeAsync,
+                                                   XConstants.GrabModeAsync,
+                                                   XConstants.GrabModeAsync,
                                                    timeStamp);
 
-                if (status != XlibWrapper.GrabSuccess) {
+                if (status != XConstants.GrabSuccess) {
                     cleanup(timeStamp);
                     throwGrabFailureException("Cannot grab keyboard", status);
                     return;
@@ -276,7 +276,7 @@ public final class XDragSourceContextPeer
         XlibWrapper.XChangeActivePointerGrab(XToolkit.getDisplay(),
                                              GRAB_EVENT_MASK,
                                              xcursor,
-                                             XlibWrapper.CurrentTime);
+                                             XConstants.CurrentTime);
     }
 
     protected boolean needsBogusExitBeforeDrop() {
@@ -287,10 +287,10 @@ public final class XDragSourceContextPeer
       throws InvalidDnDOperationException {
         String msgCause = "";
         switch (grabStatus) {
-        case XlibWrapper.GrabNotViewable:  msgCause = "not viewable";    break;
-        case XlibWrapper.AlreadyGrabbed:   msgCause = "already grabbed"; break;
-        case XlibWrapper.GrabInvalidTime:  msgCause = "invalid time";    break;
-        case XlibWrapper.GrabFrozen:       msgCause = "grab frozen";     break;
+        case XConstants.GrabNotViewable:  msgCause = "not viewable";    break;
+        case XConstants.AlreadyGrabbed:   msgCause = "already grabbed"; break;
+        case XConstants.GrabInvalidTime:  msgCause = "invalid time";    break;
+        case XConstants.GrabFrozen:       msgCause = "grab frozen";     break;
         default:                           msgCause = "unknown failure"; break;
         }
         throw new InvalidDnDOperationException(msg + ": " + msgCause);
@@ -537,7 +537,7 @@ public final class XDragSourceContextPeer
             return false;
         }
 
-        if (ev.get_type() != (int)XlibWrapper.ClientMessage) {
+        if (ev.get_type() != (int)XConstants.ClientMessage) {
             return false;
         }
 
@@ -579,18 +579,18 @@ public final class XDragSourceContextPeer
         }
 
         switch (ev.get_type()) {
-        case XlibWrapper.ClientMessage: {
+        case XConstants.ClientMessage: {
             XClientMessageEvent xclient = ev.get_xclient();
             return processClientMessage(xclient);
         }
-        case XlibWrapper.DestroyNotify: {
+        case XConstants.DestroyNotify: {
             XDestroyWindowEvent xde = ev.get_xdestroywindow();
 
             /* Target crashed during drop processing - cleanup. */
             if (!dragInProgress &&
                 dragProtocol != null &&
                 xde.get_window() == dragProtocol.getTargetWindow()) {
-                cleanup(XlibWrapper.CurrentTime);
+                cleanup(XConstants.CurrentTime);
                 return true;
             }
             /* Pass along */
@@ -604,14 +604,14 @@ public final class XDragSourceContextPeer
 
         /* Process drag-only messages. */
         switch (ev.get_type()) {
-        case XlibWrapper.KeyRelease:
-        case XlibWrapper.KeyPress: {
+        case XConstants.KeyRelease:
+        case XConstants.KeyPress: {
             XKeyEvent xkey = ev.get_xkey();
             long keysym = XlibWrapper.XKeycodeToKeysym(XToolkit.getDisplay(),
                                                        xkey.get_keycode(), 0);
             switch ((int)keysym) {
             case (int)XKeySymConstants.XK_Escape: {
-                if (ev.get_type() == (int)XlibWrapper.KeyRelease) {
+                if (ev.get_type() == (int)XConstants.KeyRelease) {
                     cleanup(xkey.get_time());
                 }
                 break;
@@ -631,7 +631,7 @@ public final class XDragSourceContextPeer
                                           XlibWrapper.larg7); // modifiers
                 XMotionEvent xmotion = new XMotionEvent();
                 try {
-                    xmotion.set_type(XlibWrapper.MotionNotify);
+                    xmotion.set_type(XConstants.MotionNotify);
                     xmotion.set_serial(xkey.get_serial());
                     xmotion.set_send_event(xkey.get_send_event());
                     xmotion.set_display(xkey.get_display());
@@ -658,12 +658,12 @@ public final class XDragSourceContextPeer
             }
             return true;
         }
-        case XlibWrapper.ButtonPress:
+        case XConstants.ButtonPress:
             return true;
-        case XlibWrapper.MotionNotify:
+        case XConstants.MotionNotify:
             processMouseMove(ev.get_xmotion());
             return true;
-        case XlibWrapper.ButtonRelease: {
+        case XConstants.ButtonRelease: {
             XButtonEvent xbutton = ev.get_xbutton();
             /*
              * On some X servers it could happen that ButtonRelease coordinates
@@ -672,7 +672,7 @@ public final class XDragSourceContextPeer
              */
             XMotionEvent xmotion = new XMotionEvent();
             try {
-                xmotion.set_type(XlibWrapper.MotionNotify);
+                xmotion.set_type(XConstants.MotionNotify);
                 xmotion.set_serial(xbutton.get_serial());
                 xmotion.set_send_event(xbutton.get_send_event());
                 xmotion.set_display(xbutton.get_display());
@@ -694,8 +694,8 @@ public final class XDragSourceContextPeer
             } finally {
                 xmotion.dispose();
             }
-            if (xbutton.get_button() == XlibWrapper.Button1
-                    || xbutton.get_button() == XlibWrapper.Button2) {
+            if (xbutton.get_button() == XConstants.Button1
+                    || xbutton.get_button() == XConstants.Button2) {
                 // drag is initiated with Button1 or Button2 pressed and
                 // ended on release of either of these buttons (as the same
                 // behavior was with our old Motif DnD-based implementation)
@@ -789,6 +789,6 @@ public final class XDragSourceContextPeer
         dragDropFinished(success, action, x, y);
 
         dndInProgress = false;
-        cleanup(XlibWrapper.CurrentTime);
+        cleanup(XConstants.CurrentTime);
     }
 }

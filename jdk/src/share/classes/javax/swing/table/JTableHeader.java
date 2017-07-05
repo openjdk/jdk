@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import javax.swing.plaf.*;
 import javax.accessibility.*;
 
 import java.beans.PropertyChangeListener;
+import java.beans.Transient;
 
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
@@ -325,6 +326,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
      * @return the default renderer
      * @since 1.3
      */
+    @Transient
     public TableCellRenderer getDefaultRenderer() {
         return defaultRenderer;
     }

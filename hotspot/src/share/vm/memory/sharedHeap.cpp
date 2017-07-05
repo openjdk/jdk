@@ -74,9 +74,10 @@ void SharedHeap::set_par_threads(int t) {
 
 class AssertIsPermClosure: public OopClosure {
 public:
-  void do_oop(oop* p) {
+  virtual void do_oop(oop* p) {
     assert((*p) == NULL || (*p)->is_perm(), "Referent should be perm.");
   }
+  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 static AssertIsPermClosure assert_is_perm_closure;
 
@@ -187,12 +188,13 @@ class SkipAdjustingSharedStrings: public OopClosure {
 public:
   SkipAdjustingSharedStrings(OopClosure* clo) : _clo(clo) {}
 
-  void do_oop(oop* p) {
+  virtual void do_oop(oop* p) {
     oop o = (*p);
     if (!o->is_shared_readwrite()) {
       _clo->do_oop(p);
     }
   }
+  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 
 // Unmarked shared Strings in the StringTable (which got there due to

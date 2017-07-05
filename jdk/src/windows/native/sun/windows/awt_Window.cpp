@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,9 +121,6 @@ struct ModalDisableStruct {
 jfieldID AwtWindow::warningStringID;
 jfieldID AwtWindow::locationByPlatformID;
 jfieldID AwtWindow::autoRequestFocusID;
-
-jclass AwtWindow::wwindowPeerCls;
-jmethodID AwtWindow::getActiveWindowsMID;
 
 jfieldID AwtWindow::sysXID;
 jfieldID AwtWindow::sysYID;
@@ -2158,11 +2155,6 @@ JNIEXPORT void JNICALL
 Java_sun_awt_windows_WWindowPeer_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
-
-    AwtWindow::wwindowPeerCls = cls;
-    AwtWindow::getActiveWindowsMID =
-        env->GetStaticMethodID(cls, "getActiveWindowHandles", "()[J");
-    DASSERT(AwtWindow::getActiveWindowsMID != NULL);
 
     AwtWindow::sysXID = env->GetFieldID(cls, "sysX", "I");
     AwtWindow::sysYID = env->GetFieldID(cls, "sysY", "I");

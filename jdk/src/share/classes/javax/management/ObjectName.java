@@ -223,8 +223,7 @@ import javax.management.QueryExp;
  * @since 1.5
  */
 @SuppressWarnings("serial") // don't complain serialVersionUID not constant
-public class ObjectName extends ToQueryString
-        implements Comparable<ObjectName>, QueryExp {
+public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
     /**
      * A structure recording property structure and
@@ -1781,7 +1780,6 @@ public class ObjectName extends ToQueryString
         return getSerializedNameString();
     }
 
-    @Override
     String toQueryString() {
         return "LIKE " + Query.value(toString());
     }

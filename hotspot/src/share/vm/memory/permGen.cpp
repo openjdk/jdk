@@ -25,6 +25,70 @@
 #include "incls/_precompiled.incl"
 #include "incls/_permGen.cpp.incl"
 
+HeapWord* PermGen::mem_allocate_in_gen(size_t size, Generation* gen) {
+  MutexLocker ml(Heap_lock);
+  GCCause::Cause next_cause = GCCause::_permanent_generation_full;
+  GCCause::Cause prev_cause = GCCause::_no_gc;
+
+  for (;;) {
+    HeapWord* obj = gen->allocate(size, false);
+    if (obj != NULL) {
+      return obj;
+    }
+    if (gen->capacity() < _capacity_expansion_limit ||
+        prev_cause != GCCause::_no_gc) {
+      obj = gen->expand_and_allocate(size, false);
+    }
+    if (obj == NULL && prev_cause != GCCause::_last_ditch_collection) {
+      if (GC_locker::is_active_and_needs_gc()) {
+        // If this thread is not in a jni critical section, we stall
+        // the requestor until the critical section has cleared and
+        // GC allowed. When the critical section clears, a GC is
+        // initiated by the last thread exiting the critical section; so
+        // we retry the allocation sequence from the beginning of the loop,
+        // rather than causing more, now probably unnecessary, GC attempts.
+        JavaThread* jthr = JavaThread::current();
+        if (!jthr->in_critical()) {
+          MutexUnlocker mul(Heap_lock);
+          // Wait for JNI critical section to be exited
+          GC_locker::stall_until_clear();
+          continue;
+        } else {
+          if (CheckJNICalls) {
+            fatal("Possible deadlock due to allocating while"
+                  " in jni critical section");
+          }
+          return NULL;
+        }
+      }
+
+      // Read the GC count while holding the Heap_lock
+      unsigned int gc_count_before      = SharedHeap::heap()->total_collections();
+      unsigned int full_gc_count_before = SharedHeap::heap()->total_full_collections();
+      {
+        MutexUnlocker mu(Heap_lock);  // give up heap lock, execute gets it back
+        VM_GenCollectForPermanentAllocation op(size, gc_count_before, full_gc_count_before,
+                                               next_cause);
+        VMThread::execute(&op);
+        if (!op.prologue_succeeded() || op.gc_locked()) {
+          assert(op.result() == NULL, "must be NULL if gc_locked() is true");
+          continue;  // retry and/or stall as necessary
+        }
+        obj = op.result();
+        assert(obj == NULL || SharedHeap::heap()->is_in_reserved(obj),
+               "result not in heap");
+        if (obj != NULL) {
+          return obj;
+        }
+      }
+      prev_cause = next_cause;
+      next_cause = GCCause::_last_ditch_collection;
+    } else {
+      return obj;
+    }
+  }
+}
+
 CompactingPermGen::CompactingPermGen(ReservedSpace rs,
                                      ReservedSpace shared_rs,
                                      size_t initial_byte_size,
@@ -44,40 +108,7 @@ CompactingPermGen::CompactingPermGen(ReservedSpace rs,
 }
 
 HeapWord* CompactingPermGen::mem_allocate(size_t size) {
-  MutexLocker ml(Heap_lock);
-  HeapWord* obj = _gen->allocate(size, false);
-  bool tried_collection = false;
-  bool tried_expansion = false;
-  while (obj == NULL) {
-    if (_gen->capacity() >= _capacity_expansion_limit || tried_expansion) {
-      // Expansion limit reached, try collection before expanding further
-      // For now we force a full collection, this could be changed
-      SharedHeap::heap()->collect_locked(GCCause::_permanent_generation_full);
-      obj = _gen->allocate(size, false);
-      tried_collection = true;
-      tried_expansion =  false;    // ... following the collection:
-                                   // the collection may have shrunk the space.
-    }
-    if (obj == NULL && !tried_expansion) {
-      obj = _gen->expand_and_allocate(size, false);
-      tried_expansion = true;
-    }
-    if (obj == NULL && tried_collection && tried_expansion) {
-      // We have not been able to allocate despite a collection and
-      // an attempted space expansion. We now make a last-ditch collection
-      // attempt that will try to reclaim as much space as possible (for
-      // example by aggressively clearing all soft refs).
-      SharedHeap::heap()->collect_locked(GCCause::_last_ditch_collection);
-      obj = _gen->allocate(size, false);
-      if (obj == NULL) {
-        // An expansion attempt is necessary since the previous
-        // collection may have shrunk the space.
-        obj = _gen->expand_and_allocate(size, false);
-      }
-      break;
-    }
-  }
-  return obj;
+  return mem_allocate_in_gen(size, _gen);
 }
 
 void CompactingPermGen::compute_new_size() {

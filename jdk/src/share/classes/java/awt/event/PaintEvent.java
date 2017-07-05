@@ -36,6 +36,10 @@ import java.awt.Rectangle;
  * designed to be used with the Event Listener model; programs
  * should continue to override paint/update methods in order
  * render themselves properly.
+ * <p>
+ * An unspecified behavior will be caused if the {@code id} parameter
+ * of any particular {@code PaintEvent} instance is not
+ * in the range from {@code PAINT_FIRST} to {@code PAINT_LAST}.
  *
  * @author Amy Fowler
  * @since 1.1
@@ -82,15 +86,19 @@ public class PaintEvent extends ComponentEvent {
     /**
      * Constructs a <code>PaintEvent</code> object with the specified
      * source component and type.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * <p> This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
-     * @param source     the object where the event originated
-     * @param id         the event type
-     * @param updateRect the rectangle area which needs to be repainted
+     * @param source     The object where the event originated
+     * @param id           The integer that identifies the event type.
+     *                     For information on allowable values, see
+     *                     the class description for {@link PaintEvent}
+     * @param updateRect The rectangle area which needs to be repainted
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getSource()
+     * @see #getID()
+     * @see #getUpdateRect()
      */
     public PaintEvent(Component source, int id, Rectangle updateRect) {
         super(source, id);

@@ -286,12 +286,17 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 // is created and initialized before a class is actively used (i.e., initialized), the indivi-
 // dual cache entries are filled at resolution (i.e., "link") time (see also: rewriter.*).
 
-class constantPoolCacheOopDesc: public arrayOopDesc {
+class constantPoolCacheOopDesc: public oopDesc {
   friend class VMStructs;
  private:
+  int             _length;
   constantPoolOop _constant_pool;                // the corresponding constant pool
 
   // Sizing
+  debug_only(friend class ClassVerifier;)
+  int length() const                             { return _length; }
+  void set_length(int length)                    { _length = length; }
+
   static int header_size()                       { return sizeof(constantPoolCacheOopDesc) / HeapWordSize; }
   static int object_size(int length)             { return align_object_size(header_size() + length * in_words(ConstantPoolCacheEntry::size())); }
   int object_size()                              { return object_size(length()); }

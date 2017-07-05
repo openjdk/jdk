@@ -171,8 +171,7 @@ public class Klass extends Oop implements ClassConstants {
   }
 
   public long getObjectSize() {
-    System.out.println("should not reach here");
-    return 0;
+    throw new RuntimeException("should not reach here");
   }
 
   /** Array class with specific rank */

@@ -735,14 +735,14 @@ public abstract class MappedMXBeanType {
             throws OpenDataException, InvalidObjectException {
 
             if (fromMethod == null) {
-                throw new InternalError("Does not support data conversion");
+                throw new AssertionError("Does not support data conversion");
             }
 
             try {
                 return fromMethod.invoke(null, data);
             } catch (IllegalAccessException e) {
                 // should never reach here
-                throw Util.newAssertionError(e);
+                throw new AssertionError(e);
             } catch (InvocationTargetException e) {
                 final OpenDataException ode =
                     new OpenDataException("Failed to invoke " +
@@ -785,7 +785,7 @@ public abstract class MappedMXBeanType {
             t = new InProgress();
         } catch (OpenDataException e) {
             // Should not reach here
-            throw Util.newAssertionError(e);
+            throw new AssertionError(e);
         }
         inProgress = t;
     }
@@ -807,9 +807,9 @@ public abstract class MappedMXBeanType {
                 } catch (ClassNotFoundException e) {
                     // the classes that these predefined types declare
                     // must exist!
-                    throw Util.newAssertionError(e);
+                    throw new AssertionError(e);
                 } catch (OpenDataException e) {
-                    throw Util.newAssertionError(e);
+                    throw new AssertionError(e);
                 }
 
                 if (c.getName().startsWith("java.lang.")) {
@@ -821,12 +821,12 @@ public abstract class MappedMXBeanType {
                         // OK: must not be a primitive wrapper
                     } catch (IllegalAccessException e) {
                         // Should not reach here
-                       throw Util.newAssertionError(e);
+                       throw new AssertionError(e);
                     }
                 }
             }
         } catch (OpenDataException e) {
-            throw Util.newAssertionError(e);
+            throw new AssertionError(e);
         }
     }
 

@@ -263,6 +263,13 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
     // See if it adds up to a base + offset.
     if (index != NULL) {
       if (!index->is_Con()) {
+        const TypeNarrowOop* narrowoop = index->bottom_type()->isa_narrowoop();
+        if (narrowoop != NULL) {
+          // Memory references through narrow oops have a
+          // funny base so grab the type from the index.
+          adr_type = narrowoop->make_oopptr();
+          return NULL;
+        }
         disp = Type::OffsetBot;
       } else if (disp != Type::OffsetBot) {
         const TypeX* ti = index->bottom_type()->isa_intptr_t();

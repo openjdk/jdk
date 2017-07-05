@@ -80,11 +80,11 @@ public:
   static const size_t ChunkSize;
   static const size_t ChunkSizeBytes;
 
- // Mask for the bits in a size_t to get an offset within a chunk.
+  // Mask for the bits in a size_t to get an offset within a chunk.
   static const size_t ChunkSizeOffsetMask;
- // Mask for the bits in a pointer to get an offset within a chunk.
+  // Mask for the bits in a pointer to get an offset within a chunk.
   static const size_t ChunkAddrOffsetMask;
- // Mask for the bits in a pointer to get the address of the start of a chunk.
+  // Mask for the bits in a pointer to get the address of the start of a chunk.
   static const size_t ChunkAddrMask;
 
   static const size_t Log2BlockSize;
@@ -229,7 +229,7 @@ public:
   // 1 bit marks the end of an object.
   class BlockData
   {
-  public:
+   public:
     typedef short int blk_ofs_t;
 
     blk_ofs_t offset() const { return _offset >= 0 ? _offset : -_offset; }
@@ -269,7 +269,7 @@ public:
       return !_first_is_start_bit;
     }
 
-  private:
+   private:
     blk_ofs_t _offset;
     // This is temporary until the mark_bitmap is separated into
     // a start bit array and an end bit array.
@@ -277,7 +277,7 @@ public:
 #ifdef ASSERT
     short     _set_phase;
     static short _cur_phase;
-  public:
+   public:
     static void set_cur_phase(short v) { _cur_phase = v; }
 #endif
   };
@@ -729,48 +729,51 @@ class PSParallelCompact : AllStatic {
   } SpaceId;
 
  public:
-  // In line closure decls
+  // Inline closure decls
   //
-
   class IsAliveClosure: public BoolObjectClosure {
    public:
-    void do_object(oop p) { assert(false, "don't call"); }
-    bool do_object_b(oop p) { return mark_bitmap()->is_marked(p); }
+    virtual void do_object(oop p);
+    virtual bool do_object_b(oop p);
   };
 
   class KeepAliveClosure: public OopClosure {
+   private:
     ParCompactionManager* _compaction_manager;
+   protected:
+    template <class T> inline void do_oop_work(T* p);
    public:
-    KeepAliveClosure(ParCompactionManager* cm) {
-      _compaction_manager = cm;
-    }
-    void do_oop(oop* p);
+    KeepAliveClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
+    virtual void do_oop(oop* p);
+    virtual void do_oop(narrowOop* p);
   };
 
-  class FollowRootClosure: public OopsInGenClosure{
+  // Current unused
+  class FollowRootClosure: public OopsInGenClosure {
+   private:
     ParCompactionManager* _compaction_manager;
    public:
-    FollowRootClosure(ParCompactionManager* cm) {
-      _compaction_manager = cm;
-    }
-    void do_oop(oop* p) { follow_root(_compaction_manager, p); }
+    FollowRootClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
+    virtual void do_oop(oop* p);
+    virtual void do_oop(narrowOop* p);
     virtual const bool do_nmethods() const { return true; }
   };
 
   class FollowStackClosure: public VoidClosure {
+   private:
     ParCompactionManager* _compaction_manager;
    public:
-    FollowStackClosure(ParCompactionManager* cm) {
-      _compaction_manager = cm;
-    }
-    void do_void() { follow_stack(_compaction_manager); }
+    FollowStackClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
+    virtual void do_void();
   };
 
   class AdjustPointerClosure: public OopsInGenClosure {
+   private:
     bool _is_root;
    public:
-    AdjustPointerClosure(bool is_root) : _is_root(is_root) {}
-    void do_oop(oop* p) { adjust_pointer(p, _is_root); }
+    AdjustPointerClosure(bool is_root) : _is_root(is_root) { }
+    virtual void do_oop(oop* p);
+    virtual void do_oop(narrowOop* p);
   };
 
   // Closure for verifying update of pointers.  Does not
@@ -805,8 +808,6 @@ class PSParallelCompact : AllStatic {
   friend class instanceKlassKlass;
   friend class RefProcTaskProxy;
 
-  static void mark_and_push_internal(ParCompactionManager* cm, oop* p);
-
  private:
   static elapsedTimer         _accumulated_time;
   static unsigned int         _total_invocations;
@@ -838,9 +839,9 @@ class PSParallelCompact : AllStatic {
 
  private:
   // Closure accessors
-  static OopClosure* adjust_pointer_closure() { return (OopClosure*)&_adjust_pointer_closure; }
+  static OopClosure* adjust_pointer_closure()      { return (OopClosure*)&_adjust_pointer_closure; }
   static OopClosure* adjust_root_pointer_closure() { return (OopClosure*)&_adjust_root_pointer_closure; }
-  static BoolObjectClosure* is_alive_closure() { return (BoolObjectClosure*)&_is_alive_closure; }
+  static BoolObjectClosure* is_alive_closure()     { return (BoolObjectClosure*)&_is_alive_closure; }
 
   static void initialize_space_info();
 
@@ -859,10 +860,11 @@ class PSParallelCompact : AllStatic {
   static void follow_stack(ParCompactionManager* cm);
   static void follow_weak_klass_links(ParCompactionManager* cm);
 
-  static void adjust_pointer(oop* p, bool is_root);
+  template <class T> static inline void adjust_pointer(T* p, bool is_root);
   static void adjust_root_pointer(oop* p) { adjust_pointer(p, true); }
 
-  static void follow_root(ParCompactionManager* cm, oop* p);
+  template <class T>
+  static inline void follow_root(ParCompactionManager* cm, T* p);
 
   // Compute the dense prefix for the designated space.  This is an experimental
   // implementation currently not used in production.
@@ -971,14 +973,14 @@ class PSParallelCompact : AllStatic {
 
  protected:
 #ifdef VALIDATE_MARK_SWEEP
-  static GrowableArray<oop*>*            _root_refs_stack;
+  static GrowableArray<void*>*           _root_refs_stack;
   static GrowableArray<oop> *            _live_oops;
   static GrowableArray<oop> *            _live_oops_moved_to;
   static GrowableArray<size_t>*          _live_oops_size;
   static size_t                          _live_oops_index;
   static size_t                          _live_oops_index_at_perm;
-  static GrowableArray<oop*>*            _other_refs_stack;
-  static GrowableArray<oop*>*            _adjusted_pointers;
+  static GrowableArray<void*>*           _other_refs_stack;
+  static GrowableArray<void*>*           _adjusted_pointers;
   static bool                            _pointer_tracking;
   static bool                            _root_tracking;
 
@@ -999,12 +1001,12 @@ class PSParallelCompact : AllStatic {
 
  public:
   class MarkAndPushClosure: public OopClosure {
+   private:
     ParCompactionManager* _compaction_manager;
    public:
-    MarkAndPushClosure(ParCompactionManager* cm) {
-      _compaction_manager = cm;
-    }
-    void do_oop(oop* p) { mark_and_push(_compaction_manager, p); }
+    MarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
+    virtual void do_oop(oop* p);
+    virtual void do_oop(narrowOop* p);
     virtual const bool do_nmethods() const { return true; }
   };
 
@@ -1038,21 +1040,9 @@ class PSParallelCompact : AllStatic {
 
   // Marking support
   static inline bool mark_obj(oop obj);
-  static bool mark_obj(oop* p)  {
-    if (*p != NULL) {
-      return mark_obj(*p);
-    } else {
-      return false;
-    }
-  }
-  static void mark_and_push(ParCompactionManager* cm, oop* p) {
-                                          // Check mark and maybe push on
-                                          // marking stack
-    oop m = *p;
-    if (m != NULL && mark_bitmap()->is_unmarked(m)) {
-      mark_and_push_internal(cm, p);
-    }
-  }
+  // Check mark and maybe push on marking stack
+  template <class T> static inline void mark_and_push(ParCompactionManager* cm,
+                                                      T* p);
 
   // Compaction support.
   // Return true if p is in the range [beg_addr, end_addr).
@@ -1127,13 +1117,17 @@ class PSParallelCompact : AllStatic {
   static void update_deferred_objects(ParCompactionManager* cm, SpaceId id);
 
   // Mark pointer and follow contents.
-  static void mark_and_follow(ParCompactionManager* cm, oop* p);
+  template <class T>
+  static inline void mark_and_follow(ParCompactionManager* cm, T* p);
 
   static ParMarkBitMap* mark_bitmap() { return &_mark_bitmap; }
   static ParallelCompactData& summary_data() { return _summary_data; }
 
-  static inline void adjust_pointer(oop* p) { adjust_pointer(p, false); }
-  static inline void adjust_pointer(oop* p,
+  static inline void adjust_pointer(oop* p)       { adjust_pointer(p, false); }
+  static inline void adjust_pointer(narrowOop* p) { adjust_pointer(p, false); }
+
+  template <class T>
+  static inline void adjust_pointer(T* p,
                                     HeapWord* beg_addr,
                                     HeapWord* end_addr);
 
@@ -1147,8 +1141,8 @@ class PSParallelCompact : AllStatic {
   static jlong millis_since_last_gc();
 
 #ifdef VALIDATE_MARK_SWEEP
-  static void track_adjusted_pointer(oop* p, oop newobj, bool isroot);
-  static void check_adjust_pointer(oop* p);     // Adjust this pointer
+  static void track_adjusted_pointer(void* p, bool isroot);
+  static void check_adjust_pointer(void* p);
   static void track_interior_pointers(oop obj);
   static void check_interior_pointers();
 
@@ -1185,7 +1179,7 @@ class PSParallelCompact : AllStatic {
 #endif  // #ifdef ASSERT
 };
 
-bool PSParallelCompact::mark_obj(oop obj) {
+inline bool PSParallelCompact::mark_obj(oop obj) {
   const int obj_size = obj->size();
   if (mark_bitmap()->mark_obj(obj, obj_size)) {
     _summary_data.add_obj(obj, obj_size);
@@ -1195,13 +1189,94 @@ bool PSParallelCompact::mark_obj(oop obj) {
   }
 }
 
-inline bool PSParallelCompact::print_phases()
-{
+template <class T>
+inline void PSParallelCompact::follow_root(ParCompactionManager* cm, T* p) {
+  assert(!Universe::heap()->is_in_reserved(p),
+         "roots shouldn't be things within the heap");
+#ifdef VALIDATE_MARK_SWEEP
+  if (ValidateMarkSweep) {
+    guarantee(!_root_refs_stack->contains(p), "should only be in here once");
+    _root_refs_stack->push(p);
+  }
+#endif
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    if (mark_bitmap()->is_unmarked(obj)) {
+      if (mark_obj(obj)) {
+        obj->follow_contents(cm);
+      }
+    }
+  }
+  follow_stack(cm);
+}
+
+template <class T>
+inline void PSParallelCompact::mark_and_follow(ParCompactionManager* cm,
+                                               T* p) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    if (mark_bitmap()->is_unmarked(obj)) {
+      if (mark_obj(obj)) {
+        obj->follow_contents(cm);
+      }
+    }
+  }
+}
+
+template <class T>
+inline void PSParallelCompact::mark_and_push(ParCompactionManager* cm, T* p) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    if (mark_bitmap()->is_unmarked(obj)) {
+      if (mark_obj(obj)) {
+        // This thread marked the object and owns the subsequent processing of it.
+        cm->save_for_scanning(obj);
+      }
+    }
+  }
+}
+
+template <class T>
+inline void PSParallelCompact::adjust_pointer(T* p, bool isroot) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop obj     = oopDesc::decode_heap_oop_not_null(heap_oop);
+    oop new_obj = (oop)summary_data().calc_new_pointer(obj);
+    assert(new_obj != NULL ||                     // is forwarding ptr?
+           obj->is_shared(),                      // never forwarded?
+           "should be forwarded");
+    // Just always do the update unconditionally?
+    if (new_obj != NULL) {
+      assert(Universe::heap()->is_in_reserved(new_obj),
+             "should be in object space");
+      oopDesc::encode_store_heap_oop_not_null(p, new_obj);
+    }
+  }
+  VALIDATE_MARK_SWEEP_ONLY(track_adjusted_pointer(p, isroot));
+}
+
+template <class T>
+inline void PSParallelCompact::KeepAliveClosure::do_oop_work(T* p) {
+#ifdef VALIDATE_MARK_SWEEP
+  if (ValidateMarkSweep) {
+    if (!Universe::heap()->is_in_reserved(p)) {
+      _root_refs_stack->push(p);
+    } else {
+      _other_refs_stack->push(p);
+    }
+  }
+#endif
+  mark_and_push(_compaction_manager, p);
+}
+
+inline bool PSParallelCompact::print_phases() {
   return _print_phases;
 }
 
-inline double PSParallelCompact::normal_distribution(double density)
-{
+inline double PSParallelCompact::normal_distribution(double density) {
   assert(_dwl_initialized, "uninitialized");
   const double squared_term = (density - _dwl_mean) / _dwl_std_dev;
   return _dwl_first_term * exp(-0.5 * squared_term * squared_term);
@@ -1257,10 +1332,11 @@ inline bool PSParallelCompact::should_update_klass(klassOop k) {
   return ((HeapWord*) k) >= dense_prefix(perm_space_id);
 }
 
-inline void PSParallelCompact::adjust_pointer(oop* p,
+template <class T>
+inline void PSParallelCompact::adjust_pointer(T* p,
                                               HeapWord* beg_addr,
                                               HeapWord* end_addr) {
-  if (is_in(p, beg_addr, end_addr)) {
+  if (is_in((HeapWord*)p, beg_addr, end_addr)) {
     adjust_pointer(p);
   }
 }
@@ -1332,18 +1408,18 @@ class UpdateOnlyClosure: public ParMarkBitMapClosure {
   inline void do_addr(HeapWord* addr);
 };
 
-inline void UpdateOnlyClosure::do_addr(HeapWord* addr) {
+inline void UpdateOnlyClosure::do_addr(HeapWord* addr)
+{
   _start_array->allocate_block(addr);
   oop(addr)->update_contents(compaction_manager());
 }
 
 class FillClosure: public ParMarkBitMapClosure {
-public:
-  FillClosure(ParCompactionManager* cm, PSParallelCompact::SpaceId space_id):
+ public:
+  FillClosure(ParCompactionManager* cm, PSParallelCompact::SpaceId space_id) :
     ParMarkBitMapClosure(PSParallelCompact::mark_bitmap(), cm),
     _space_id(space_id),
-    _start_array(PSParallelCompact::start_array(space_id))
-  {
+    _start_array(PSParallelCompact::start_array(space_id)) {
     assert(_space_id == PSParallelCompact::perm_space_id ||
            _space_id == PSParallelCompact::old_space_id,
            "cannot use FillClosure in the young gen");

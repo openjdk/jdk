@@ -26,25 +26,17 @@
 package javax.swing.filechooser;
 
 
-import javax.swing.event.*;
 import javax.swing.*;
 
 import java.awt.Image;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FilenameFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Vector;
+import java.lang.ref.WeakReference;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
-
-
-import java.lang.reflect.*;
 
 import sun.awt.shell.*;
 
@@ -74,18 +66,11 @@ public abstract class FileSystemView {
     static FileSystemView unixFileSystemView = null;
     //static FileSystemView macFileSystemView = null;
     static FileSystemView genericFileSystemView = null;
-    static boolean useSystemExtensionsHiding = false;
+
+    private boolean useSystemExtensionHiding =
+            UIManager.getDefaults().getBoolean("FileChooser.useSystemExtensionHiding");
 
     public static FileSystemView getFileSystemView() {
-        useSystemExtensionsHiding = UIManager.getDefaults().getBoolean("FileChooser.useSystemExtensionHiding");
-        UIManager.addPropertyChangeListener(new PropertyChangeListener() {
-            public void propertyChange(PropertyChangeEvent e) {
-               if (e.getPropertyName().equals("lookAndFeel")) {
-                   useSystemExtensionsHiding = UIManager.getDefaults().getBoolean("FileChooser.useSystemExtensionHiding");
-               }
-            }
-        });
-
         if(File.separatorChar == '\\') {
             if(windowsFileSystemView == null) {
                 windowsFileSystemView = new WindowsFileSystemView();
@@ -111,6 +96,26 @@ public abstract class FileSystemView {
             genericFileSystemView = new GenericFileSystemView();
         }
         return genericFileSystemView;
+    }
+
+    public FileSystemView() {
+        final WeakReference<FileSystemView> weakReference = new WeakReference<FileSystemView>(this);
+
+        UIManager.addPropertyChangeListener(new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                FileSystemView fileSystemView = weakReference.get();
+
+                if (fileSystemView == null) {
+                    // FileSystemView was destroyed
+                    UIManager.removePropertyChangeListener(this);
+                } else {
+                    if (evt.getPropertyName().equals("lookAndFeel")) {
+                        fileSystemView.useSystemExtensionHiding =
+                                UIManager.getDefaults().getBoolean("FileChooser.useSystemExtensionHiding");
+                    }
+                }
+            }
+        });
     }
 
     /**
@@ -170,7 +175,7 @@ public abstract class FileSystemView {
         if (f != null) {
             name = f.getName();
             if (!name.equals("..") && !name.equals(".") &&
-                (useSystemExtensionsHiding ||
+                (useSystemExtensionHiding ||
                  !isFileSystem(f) ||
                  isFileSystemRoot(f)) &&
                 ((f instanceof ShellFolder) ||

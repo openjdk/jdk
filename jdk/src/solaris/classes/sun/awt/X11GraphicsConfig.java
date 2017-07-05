@@ -421,7 +421,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
     {
         return new SunVolatileImage(target,
                                     target.getWidth(), target.getHeight(),
-                                    new Long(backBuffer));
+                                    Long.valueOf(backBuffer));
     }
 
     /**

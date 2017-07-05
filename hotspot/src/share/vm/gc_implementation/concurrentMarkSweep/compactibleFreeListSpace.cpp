@@ -177,7 +177,7 @@ HeapWord* CompactibleFreeListSpace::forward(oop q, size_t size,
     assert(q->forwardee() == NULL, "should be forwarded to NULL");
   }
 
-  debug_only(MarkSweep::register_live_oop(q, adjusted_size));
+  VALIDATE_MARK_SWEEP_ONLY(MarkSweep::register_live_oop(q, adjusted_size));
   compact_top += adjusted_size;
 
   // we need to update the offset table so that the beginnings of objects can be
@@ -1211,7 +1211,7 @@ FreeChunk* CompactibleFreeListSpace::allocateScratch(size_t size) {
   return fc;
 }
 
-oop CompactibleFreeListSpace::promote(oop obj, size_t obj_size, oop* ref) {
+oop CompactibleFreeListSpace::promote(oop obj, size_t obj_size) {
   assert(obj_size == (size_t)obj->size(), "bad obj_size passed in");
   assert_locked();
 
@@ -2116,7 +2116,6 @@ void CompactibleFreeListSpace::split(size_t from, size_t to1) {
   splitBirth(to2);
 }
 
-
 void CompactibleFreeListSpace::print() const {
   tty->print(" CompactibleFreeListSpace");
   Space::print();
@@ -2130,6 +2129,7 @@ void CompactibleFreeListSpace::prepare_for_verify() {
 }
 
 class VerifyAllBlksClosure: public BlkClosure {
+ private:
   const CompactibleFreeListSpace* _sp;
   const MemRegion                 _span;
 
@@ -2137,7 +2137,7 @@ class VerifyAllBlksClosure: public BlkClosure {
   VerifyAllBlksClosure(const CompactibleFreeListSpace* sp,
     MemRegion span) :  _sp(sp), _span(span) { }
 
-  size_t do_blk(HeapWord* addr) {
+  virtual size_t do_blk(HeapWord* addr) {
     size_t res;
     if (_sp->block_is_obj(addr)) {
       oop p = oop(addr);
@@ -2160,11 +2160,53 @@ class VerifyAllBlksClosure: public BlkClosure {
 };
 
 class VerifyAllOopsClosure: public OopClosure {
+ private:
   const CMSCollector*             _collector;
   const CompactibleFreeListSpace* _sp;
   const MemRegion                 _span;
   const bool                      _past_remark;
   const CMSBitMap*                _bit_map;
+
+ protected:
+  void do_oop(void* p, oop obj) {
+    if (_span.contains(obj)) { // the interior oop points into CMS heap
+      if (!_span.contains(p)) { // reference from outside CMS heap
+        // Should be a valid object; the first disjunct below allows
+        // us to sidestep an assertion in block_is_obj() that insists
+        // that p be in _sp. Note that several generations (and spaces)
+        // are spanned by _span (CMS heap) above.
+        guarantee(!_sp->is_in_reserved(obj) ||
+                  _sp->block_is_obj((HeapWord*)obj),
+                  "Should be an object");
+        guarantee(obj->is_oop(), "Should be an oop");
+        obj->verify();
+        if (_past_remark) {
+          // Remark has been completed, the object should be marked
+          _bit_map->isMarked((HeapWord*)obj);
+        }
+      } else { // reference within CMS heap
+        if (_past_remark) {
+          // Remark has been completed -- so the referent should have
+          // been marked, if referring object is.
+          if (_bit_map->isMarked(_collector->block_start(p))) {
+            guarantee(_bit_map->isMarked((HeapWord*)obj), "Marking error?");
+          }
+        }
+      }
+    } else if (_sp->is_in_reserved(p)) {
+      // the reference is from FLS, and points out of FLS
+      guarantee(obj->is_oop(), "Should be an oop");
+      obj->verify();
+    }
+  }
+
+  template <class T> void do_oop_work(T* p) {
+    T heap_oop = oopDesc::load_heap_oop(p);
+    if (!oopDesc::is_null(heap_oop)) {
+      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+      do_oop(p, obj);
+    }
+  }
 
  public:
   VerifyAllOopsClosure(const CMSCollector* collector,
@@ -2173,40 +2215,8 @@ class VerifyAllOopsClosure: public OopClosure {
     OopClosure(), _collector(collector), _sp(sp), _span(span),
     _past_remark(past_remark), _bit_map(bit_map) { }
 
-  void do_oop(oop* ptr) {
-    oop p = *ptr;
-    if (p != NULL) {
-      if (_span.contains(p)) { // the interior oop points into CMS heap
-        if (!_span.contains(ptr)) { // reference from outside CMS heap
-          // Should be a valid object; the first disjunct below allows
-          // us to sidestep an assertion in block_is_obj() that insists
-          // that p be in _sp. Note that several generations (and spaces)
-          // are spanned by _span (CMS heap) above.
-          guarantee(!_sp->is_in_reserved(p) || _sp->block_is_obj((HeapWord*)p),
-                    "Should be an object");
-          guarantee(p->is_oop(), "Should be an oop");
-          p->verify();
-          if (_past_remark) {
-            // Remark has been completed, the object should be marked
-            _bit_map->isMarked((HeapWord*)p);
-          }
-        }
-        else { // reference within CMS heap
-          if (_past_remark) {
-            // Remark has been completed -- so the referent should have
-            // been marked, if referring object is.
-            if (_bit_map->isMarked(_collector->block_start(ptr))) {
-              guarantee(_bit_map->isMarked((HeapWord*)p), "Marking error?");
-            }
-          }
-        }
-      } else if (_sp->is_in_reserved(ptr)) {
-        // the reference is from FLS, and points out of FLS
-        guarantee(p->is_oop(), "Should be an oop");
-        p->verify();
-      }
-    }
-  }
+  virtual void do_oop(oop* p)       { VerifyAllOopsClosure::do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { VerifyAllOopsClosure::do_oop_work(p); }
 };
 
 void CompactibleFreeListSpace::verify(bool ignored) const {

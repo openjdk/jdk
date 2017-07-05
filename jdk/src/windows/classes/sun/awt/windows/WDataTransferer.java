@@ -568,7 +568,7 @@ class HTMLCodec extends InputStream {
         byte[] headerBytes = null, trailerBytes = null;
 
         try {
-            headerBytes = new String(header).getBytes(ENCODING);
+            headerBytes = header.toString().getBytes(ENCODING);
             trailerBytes = htmlSuffix.getBytes(ENCODING);
         } catch (UnsupportedEncodingException cannotHappen) {
         }

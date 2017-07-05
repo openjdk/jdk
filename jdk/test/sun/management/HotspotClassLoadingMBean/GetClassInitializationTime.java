@@ -37,7 +37,7 @@ import sun.management.*;
 public class GetClassInitializationTime {
 
     private static HotspotClassLoadingMBean mbean =
-        (HotspotClassLoadingMBean)ManagementFactory.getHotspotClassLoadingMBean();
+        (HotspotClassLoadingMBean)ManagementFactoryHelper.getHotspotClassLoadingMBean();
 
     // Careful with these values.
     private static final long MIN_TIME_FOR_PASS = 1;

@@ -488,7 +488,7 @@ public class WInputMethod extends InputMethodAdapter
                 attrStr.addAttribute(Attribute.INPUT_METHOD_SEGMENT,
                                         new Annotation(null), 0, text.length());
                 attrStr.addAttribute(Attribute.READING,
-                                        new Annotation(new String("")), 0, text.length());
+                                     new Annotation(""), 0, text.length());
             }
 
             // set Hilight Information

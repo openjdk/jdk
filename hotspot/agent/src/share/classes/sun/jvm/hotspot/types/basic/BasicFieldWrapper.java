@@ -95,6 +95,10 @@ public class BasicFieldWrapper implements Field {
     throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {
     return field.getOopHandle(addr);
   }
+  public OopHandle  getNarrowOopHandle(Address addr)
+    throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {
+    return field.getNarrowOopHandle(addr);
+  }
 
   public boolean    getJBoolean () throws UnmappedAddressException, UnalignedAddressException, WrongTypeException {
     return field.getJBoolean();
@@ -129,5 +133,9 @@ public class BasicFieldWrapper implements Field {
   public OopHandle  getOopHandle()
     throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {
     return field.getOopHandle();
+  }
+  public OopHandle  getNarrowOopHandle()
+    throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {
+    return field.getNarrowOopHandle();
   }
 }

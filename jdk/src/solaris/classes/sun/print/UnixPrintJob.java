@@ -867,39 +867,38 @@ public class UnixPrintJob implements CancelablePrintJob {
             execCmd[n++] = "/usr/bin/lp";
             execCmd[n++] = "-c";           // make a copy of the spool file
             if ((pFlags & PRINTER) != 0) {
-                execCmd[n++] = new String("-d" + printer);
+                execCmd[n++] = "-d" + printer;
             }
             if ((pFlags & BANNER) != 0) {
                 String quoteChar = "\"";
-                execCmd[n++] = new String("-t "  + quoteChar+banner+quoteChar);
+                execCmd[n++] = "-t "  + quoteChar+banner+quoteChar;
             }
             if ((pFlags & COPIES) != 0) {
-                execCmd[n++] = new String("-n " +
-                                          new Integer(copies).toString());
+                execCmd[n++] = "-n " + copies;
             }
             if ((pFlags & NOSHEET) != 0) {
-                execCmd[n++] = new String("-o nobanner");
+                execCmd[n++] = "-o nobanner";
             }
             if ((pFlags & OPTIONS) != 0) {
-                execCmd[n++] = new String("-o " + options);
+                execCmd[n++] = "-o " + options;
             }
         } else {
             execCmd = new String[ncomps];
             execCmd[n++] = "/usr/bin/lpr";
             if ((pFlags & PRINTER) != 0) {
-                execCmd[n++] = new String("-P" + printer);
+                execCmd[n++] = "-P" + printer;
             }
             if ((pFlags & BANNER) != 0) {
-                execCmd[n++] = new String("-J "  + banner);
+                execCmd[n++] = "-J "  + banner;
             }
             if ((pFlags & COPIES) != 0) {
-                execCmd[n++] = new String("-#" + new Integer(copies).toString());
+                execCmd[n++] = "-#" + copies;
             }
             if ((pFlags & NOSHEET) != 0) {
-                execCmd[n++] = new String("-h");
+                execCmd[n++] = "-h";
             }
             if ((pFlags & OPTIONS) != 0) {
-                execCmd[n++] = new String("-o" + options);
+                execCmd[n++] = "-o" + options;
             }
         }
         execCmd[n++] = spoolFile;

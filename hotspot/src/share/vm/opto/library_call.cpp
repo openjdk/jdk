@@ -1847,7 +1847,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
 
     // See if it is a narrow oop array.
     if (adr_type->isa_aryptr()) {
-      if (adr_type->offset() >= objArrayOopDesc::header_size() * wordSize) {
+      if (adr_type->offset() >= objArrayOopDesc::base_offset_in_bytes(type)) {
         const TypeOopPtr *elem_type = adr_type->is_aryptr()->elem()->isa_oopptr();
         if (elem_type != NULL) {
           sharpened_klass = elem_type->klass();
@@ -2164,10 +2164,19 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
     cas = _gvn.transform(new (C, 5) CompareAndSwapLNode(control(), mem, adr, newval, oldval));
     break;
   case T_OBJECT:
-    // reference stores need a store barrier.
+     // reference stores need a store barrier.
     // (They don't if CAS fails, but it isn't worth checking.)
     pre_barrier(control(), base, adr, alias_idx, newval, value_type, T_OBJECT);
-    cas = _gvn.transform(new (C, 5) CompareAndSwapPNode(control(), mem, adr, newval, oldval));
+#ifdef _LP64
+    if (adr->bottom_type()->is_narrow()) {
+      cas = _gvn.transform(new (C, 5) CompareAndSwapNNode(control(), mem, adr,
+                                                           EncodePNode::encode(&_gvn, newval),
+                                                           EncodePNode::encode(&_gvn, oldval)));
+    } else
+#endif
+      {
+        cas = _gvn.transform(new (C, 5) CompareAndSwapPNode(control(), mem, adr, newval, oldval));
+      }
     post_barrier(control(), cas, base, adr, alias_idx, newval, T_OBJECT, true);
     break;
   default:
@@ -3824,7 +3833,15 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
     Node* size = _gvn.transform(alloc_siz);
 
     // Exclude the header.
-    int base_off = sizeof(oopDesc);
+    int base_off = instanceOopDesc::base_offset_in_bytes();
+    if (UseCompressedOops) {
+      // copy the header gap though.
+      Node* sptr = basic_plus_adr(src,  base_off);
+      Node* dptr = basic_plus_adr(dest, base_off);
+      Node* sval = make_load(control(), sptr, TypeInt::INT, T_INT, raw_adr_type);
+      store_to_memory(control(), dptr, sval, T_INT, raw_adr_type);
+      base_off += sizeof(int);
+    }
     src  = basic_plus_adr(src,  base_off);
     dest = basic_plus_adr(dest, base_off);
     end  = basic_plus_adr(end,  size);
@@ -4389,7 +4406,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     // Let's see if we need card marks:
     if (alloc != NULL && use_ReduceInitialCardMarks()) {
       // If we do not need card marks, copy using the jint or jlong stub.
-      copy_type = LP64_ONLY(T_LONG) NOT_LP64(T_INT);
+      copy_type = LP64_ONLY(UseCompressedOops ? T_INT : T_LONG) NOT_LP64(T_INT);
       assert(type2aelembytes(basic_elem_type) == type2aelembytes(copy_type),
              "sizes agree");
     }
@@ -4715,23 +4732,25 @@ LibraryCallKit::generate_clear_array(const TypePtr* adr_type,
       int to_clear = (bump_bit | clear_low);
       // Align up mod 8, then store a jint zero unconditionally
       // just before the mod-8 boundary.
-      // This would only fail if the first array element were immediately
-      // after the length field, and were also at an even offset mod 8.
-      assert(((abase + bump_bit) & ~to_clear) - BytesPerInt
-             >= arrayOopDesc::length_offset_in_bytes() + BytesPerInt,
-             "store must not trash length field");
-
-      // Bump 'start' up to (or past) the next jint boundary:
-      start = _gvn.transform( new(C,3) AddXNode(start, MakeConX(bump_bit)) );
+      if (((abase + bump_bit) & ~to_clear) - bump_bit
+          < arrayOopDesc::length_offset_in_bytes() + BytesPerInt) {
+        bump_bit = 0;
+        assert((abase & to_clear) == 0, "array base must be long-aligned");
+      } else {
+        // Bump 'start' up to (or past) the next jint boundary:
+        start = _gvn.transform( new(C,3) AddXNode(start, MakeConX(bump_bit)) );
+        assert((abase & clear_low) == 0, "array base must be int-aligned");
+      }
       // Round bumped 'start' down to jlong boundary in body of array.
       start = _gvn.transform( new(C,3) AndXNode(start, MakeConX(~to_clear)) );
-      // Store a zero to the immediately preceding jint:
-      Node* x1 = _gvn.transform( new(C,3) AddXNode(start, MakeConX(-BytesPerInt)) );
-      Node* p1 = basic_plus_adr(dest, x1);
-      mem = StoreNode::make(C, control(), mem, p1, adr_type, intcon(0), T_INT);
-      mem = _gvn.transform(mem);
+      if (bump_bit != 0) {
+        // Store a zero to the immediately preceding jint:
+        Node* x1 = _gvn.transform( new(C,3) AddXNode(start, MakeConX(-bump_bit)) );
+        Node* p1 = basic_plus_adr(dest, x1);
+        mem = StoreNode::make(_gvn, control(), mem, p1, adr_type, intcon(0), T_INT);
+        mem = _gvn.transform(mem);
+      }
     }
-
     Node* end = dest_size; // pre-rounded
     mem = ClearArrayNode::clear_memory(control(), mem, dest,
                                        start, end, &_gvn);

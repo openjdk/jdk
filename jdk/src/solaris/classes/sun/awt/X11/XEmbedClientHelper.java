@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,10 +145,10 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
 
     public void dispatchEvent(XEvent xev) {
         switch(xev.get_type()) {
-          case XlibWrapper.ClientMessage:
+          case XConstants.ClientMessage:
               handleClientMessage(xev);
               break;
-          case XlibWrapper.ReparentNotify:
+          case XConstants.ReparentNotify:
               handleReparentNotify(xev);
               break;
         }

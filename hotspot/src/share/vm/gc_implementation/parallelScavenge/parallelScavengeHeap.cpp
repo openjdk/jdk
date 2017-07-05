@@ -590,6 +590,31 @@ HeapWord* ParallelScavengeHeap::permanent_mem_allocate(size_t size) {
       full_gc_count = Universe::heap()->total_full_collections();
 
       result = perm_gen()->allocate_permanent(size);
+
+      if (result != NULL) {
+        return result;
+      }
+
+      if (GC_locker::is_active_and_needs_gc()) {
+        // If this thread is not in a jni critical section, we stall
+        // the requestor until the critical section has cleared and
+        // GC allowed. When the critical section clears, a GC is
+        // initiated by the last thread exiting the critical section; so
+        // we retry the allocation sequence from the beginning of the loop,
+        // rather than causing more, now probably unnecessary, GC attempts.
+        JavaThread* jthr = JavaThread::current();
+        if (!jthr->in_critical()) {
+          MutexUnlocker mul(Heap_lock);
+          GC_locker::stall_until_clear();
+          continue;
+        } else {
+          if (CheckJNICalls) {
+            fatal("Possible deadlock due to allocating while"
+                  " in jni critical section");
+          }
+          return NULL;
+        }
+      }
     }
 
     if (result == NULL) {
@@ -622,6 +647,12 @@ HeapWord* ParallelScavengeHeap::permanent_mem_allocate(size_t size) {
       if (op.prologue_succeeded()) {
         assert(Universe::heap()->is_in_permanent_or_null(op.result()),
           "result not in heap");
+        // If GC was locked out during VM operation then retry allocation
+        // and/or stall as necessary.
+        if (op.gc_locked()) {
+          assert(op.result() == NULL, "must be NULL if gc_locked() is true");
+          continue;  // retry and/or stall as necessary
+        }
         // If a NULL results is being returned, an out-of-memory
         // will be thrown now.  Clear the gc_time_limit_exceeded
         // flag to avoid the following situation.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ class XProtocol {
     static XToolkit.XErrorHandler VerifyChangePropertyHandler = new XToolkit.XErrorHandler() {
             public int handleError(long display, XErrorEvent err) {
                 XToolkit.XERROR_SAVE(err);
-                if (err.get_request_code() == XlibWrapper.X_ChangeProperty) {
+                if (err.get_request_code() == XProtocolConstants.X_ChangeProperty) {
                     return 0;
                 } else {
                     return XToolkit.SAVED_ERROR_HANDLER(display, err);

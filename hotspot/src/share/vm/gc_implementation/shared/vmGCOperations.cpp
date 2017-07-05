@@ -144,3 +144,18 @@ void VM_GenCollectFull::doit() {
   gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_level);
   notify_gc_end();
 }
+
+void VM_GenCollectForPermanentAllocation::doit() {
+  JvmtiGCForAllocationMarker jgcm;
+  notify_gc_begin(true);
+  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  GCCauseSetter gccs(gch, _gc_cause);
+  gch->do_full_collection(gch->must_clear_all_soft_refs(),
+                          gch->n_gens() - 1);
+  _res = gch->perm_gen()->allocate(_size, false);
+  assert(gch->is_in_reserved_or_null(_res), "result not in heap");
+  if (_res == NULL && GC_locker::is_active_and_needs_gc()) {
+    set_gc_locked();
+  }
+  notify_gc_end();
+}
