@@ -96,6 +96,7 @@ int CodeCache::_number_of_blobs = 0;
 int CodeCache::_number_of_nmethods_with_dependencies = 0;
 bool CodeCache::_needs_cache_clean = false;
 nmethod* CodeCache::_scavenge_root_nmethods = NULL;
+nmethod* CodeCache::_saved_nmethods = NULL;
 
 
 CodeBlob* CodeCache::first() {
@@ -394,6 +395,85 @@ void CodeCache::verify_perm_nmethods(CodeBlobClosure* f_or_null) {
   }
 }
 #endif //PRODUCT
+
+
+nmethod* CodeCache::find_and_remove_saved_code(methodOop m) {
+  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  nmethod* saved = _saved_nmethods;
+  nmethod* prev = NULL;
+  while (saved != NULL) {
+    if (saved->is_in_use() && saved->method() == m) {
+      if (prev != NULL) {
+        prev->set_saved_nmethod_link(saved->saved_nmethod_link());
+      } else {
+        _saved_nmethods = saved->saved_nmethod_link();
+      }
+      assert(saved->is_speculatively_disconnected(), "shouldn't call for other nmethods");
+      saved->set_speculatively_disconnected(false);
+      saved->set_saved_nmethod_link(NULL);
+      if (PrintMethodFlushing) {
+        saved->print_on(tty, " ### nmethod is reconnected");
+      }
+      if (LogCompilation && (xtty != NULL)) {
+        ttyLocker ttyl;
+        xtty->begin_elem("nmethod_reconnected compile_id='%3d'", saved->compile_id());
+        xtty->method(methodOop(m));
+        xtty->stamp();
+        xtty->end_elem();
+      }
+      return saved;
+    }
+    prev = saved;
+    saved = saved->saved_nmethod_link();
+  }
+  return NULL;
+}
+
+void CodeCache::remove_saved_code(nmethod* nm) {
+  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  assert(nm->is_speculatively_disconnected(), "shouldn't call for other nmethods");
+  nmethod* saved = _saved_nmethods;
+  nmethod* prev = NULL;
+  while (saved != NULL) {
+    if (saved == nm) {
+      if (prev != NULL) {
+        prev->set_saved_nmethod_link(saved->saved_nmethod_link());
+      } else {
+        _saved_nmethods = saved->saved_nmethod_link();
+      }
+      if (LogCompilation && (xtty != NULL)) {
+        ttyLocker ttyl;
+        xtty->begin_elem("nmethod_removed compile_id='%3d'", nm->compile_id());
+        xtty->stamp();
+        xtty->end_elem();
+      }
+      return;
+    }
+    prev = saved;
+    saved = saved->saved_nmethod_link();
+  }
+  ShouldNotReachHere();
+}
+
+void CodeCache::speculatively_disconnect(nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  assert(nm->is_in_use() && !nm->is_speculatively_disconnected(), "should only disconnect live nmethods");
+  nm->set_saved_nmethod_link(_saved_nmethods);
+  _saved_nmethods = nm;
+  if (PrintMethodFlushing) {
+    nm->print_on(tty, " ### nmethod is speculatively disconnected");
+  }
+  if (LogCompilation && (xtty != NULL)) {
+    ttyLocker ttyl;
+    xtty->begin_elem("nmethod_disconnected compile_id='%3d'", nm->compile_id());
+    xtty->method(methodOop(nm->method()));
+    xtty->stamp();
+    xtty->end_elem();
+  }
+  nm->method()->clear_code();
+  nm->set_speculatively_disconnected(true);
+}
+
 
 void CodeCache::gc_prologue() {
   assert(!nmethod::oops_do_marking_is_active(), "oops_do_marking_epilogue must be called");
