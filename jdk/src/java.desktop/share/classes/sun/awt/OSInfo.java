@@ -71,7 +71,7 @@ public class OSInfo {
         windowsVersionMap.put(WINDOWS_XP.toString(), WINDOWS_XP);
         windowsVersionMap.put(WINDOWS_2003.toString(), WINDOWS_2003);
         windowsVersionMap.put(WINDOWS_VISTA.toString(), WINDOWS_VISTA);
-        windowsVersionMap.put(WINDOWS_VISTA.toString(), WINDOWS_7);
+        windowsVersionMap.put(WINDOWS_7.toString(), WINDOWS_7);
     }
 
     private static final PrivilegedAction<OSType> osTypeAction = new PrivilegedAction<OSType>() {

@@ -123,7 +123,6 @@ G1BlockOffsetArray::block_at_or_preceding(const void* addr,
     // to go back by.
     size_t n_cards_back = BlockOffsetArray::entry_to_cards_back(offset);
     q -= (N_words * n_cards_back);
-    assert(q >= gsp()->bottom(), "Went below bottom!");
     index -= n_cards_back;
     offset = _array->offset_array(index);
   }

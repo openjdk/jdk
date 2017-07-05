@@ -47,6 +47,18 @@ inline HeapRegion* HeapRegionManager::at(uint index) const {
   return hr;
 }
 
+inline HeapRegion* HeapRegionManager::next_region_in_humongous(HeapRegion* hr) const {
+  uint index = hr->hrm_index();
+  assert(is_available(index), "pre-condition");
+  assert(hr->is_humongous(), "next_region_in_humongous should only be called for a humongous region.");
+  index++;
+  if (index < max_length() && is_available(index) && at(index)->is_continues_humongous()) {
+    return at(index);
+  } else {
+    return NULL;
+  }
+}
+
 inline void HeapRegionManager::insert_into_free_list(HeapRegion* hr) {
   _free_list.add_ordered(hr);
 }

@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify UseRTMDeopt option processing on CPUs without rtm support
  *          or on VMs without rtm locking support.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestUseRTMDeoptOptionOnUnsupportedConfig
