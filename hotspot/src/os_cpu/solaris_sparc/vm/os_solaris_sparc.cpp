@@ -774,3 +774,8 @@ add_func_t*          os::atomic_add_func          = os::atomic_add_bootstrap;
 void os::verify_stack_alignment() {
 }
 #endif
+
+int os::extra_bang_size_in_bytes() {
+  // SPARC does not require an additional stack bang.
+  return 0;
+}

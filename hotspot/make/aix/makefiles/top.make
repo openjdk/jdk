@@ -69,7 +69,13 @@ AD_Files_If_Required = $(AD_Files_If_Required/$(TYPE))
 
 # Wierd argument adjustment for "gnumake -j..."
 adjust-mflags   = $(GENERATED)/adjust-mflags
-MFLAGS-adjusted = -r `$(adjust-mflags) "$(MFLAGS)" "$(HOTSPOT_BUILD_JOBS)"`
+# If SPEC is set, it's from configure and it's already controlling concurrency
+# for us. Skip setting -j with HOTSPOT_BUILD_JOBS.
+ifeq ($(SPEC), )
+  MFLAGS-adjusted = -r `$(adjust-mflags) "$(MFLAGS)" "$(HOTSPOT_BUILD_JOBS)"`
+else
+  MFLAGS-adjusted = -r $(MFLAGS)
+endif
 
 
 # default target: update lists, make vm
@@ -116,7 +122,7 @@ $(adjust-mflags): $(GAMMADIR)/make/$(Platform_os_family)/makefiles/adjust-mflags
 	@+mv $@+ $@
 
 the_vm: vm_build_preliminaries $(adjust-mflags)
-	@$(UpdatePCH)
+	+@$(UpdatePCH)
 	@$(MAKE) -f vm.make $(MFLAGS-adjusted)
 
 install gamma: the_vm
@@ -125,7 +131,7 @@ install gamma: the_vm
 # next rules support "make foo.[ois]"
 
 %.o %.i %.s:
-	$(UpdatePCH)
+	+$(UpdatePCH)
 	$(MAKE) -f vm.make $(MFLAGS) $@
 	#$(MAKE) -f vm.make $@
 
@@ -142,3 +148,5 @@ realclean:
 .PHONY: default vm_build_preliminaries
 .PHONY: lists ad_stuff jvmti_stuff sa_stuff the_vm clean realclean
 .PHONY: checks check_os_version install
+
+.NOTPARALLEL:

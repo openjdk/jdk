@@ -1216,14 +1216,13 @@ jdk/src/java.security.acl/share/classes/java/security/acl : jdk/src/share/classe
 jdk/src/java.security.acl/share/classes/sun/security/acl : jdk/src/share/classes/sun/security/acl
 jdk/src/java.security.jgss/macosx/native/libosxkrb5/nativeccache.c : jdk/src/share/native/sun/security/krb5/nativeccache.c
 jdk/src/java.security.jgss/macosx/native/libosxkrb5/SCDynamicStoreConfig.m : jdk/src/macosx/native/sun/security/krb5/SCDynamicStoreConfig.m
-jdk/src/java.security.jgss/share/classes/com/sun/security/jgss : jdk/src/share/classes/com/sun/security/jgss
-jdk/src/java.security.jgss/share/classes/com/sun/security/sasl/gsskerb : jdk/src/share/classes/com/sun/security/sasl/gsskerb
 jdk/src/java.security.jgss/share/classes/javax/security/auth/kerberos : jdk/src/share/classes/javax/security/auth/kerberos
 jdk/src/java.security.jgss/share/classes/jgss-overview.html : jdk/src/share/classes/com/sun/security/jgss/jgss-overview.html
 jdk/src/java.security.jgss/share/classes/org/ietf/jgss : jdk/src/share/classes/org/ietf/jgss
 jdk/src/java.security.jgss/share/classes/sun/net/www/protocol/http/spnego : jdk/src/share/classes/sun/net/www/protocol/http/spnego
 jdk/src/java.security.jgss/share/classes/sun/security/jgss : jdk/src/share/classes/sun/security/jgss
 jdk/src/java.security.jgss/share/classes/sun/security/krb5 : jdk/src/share/classes/sun/security/krb5
+jdk/src/java.security.jgss/windows/classes/sun/security/krb5 : jdk/src/windows/classes/sun/security/krb5
 jdk/src/java.security.jgss/share/classes/sun/security/ssl/krb5 : jdk/src/share/classes/sun/security/ssl/krb5
 jdk/src/java.security.jgss/share/native/libj2gss : jdk/src/share/native/sun/security/jgss/wrapper
 jdk/src/java.security.jgss/unix/native/libj2gss : jdk/src/solaris/native/sun/security/jgss/wrapper
@@ -1477,6 +1476,8 @@ jdk/src/jdk.security.auth/share/classes/com/sun/security/auth : jdk/src/share/cl
 jdk/src/jdk.security.auth/share/classes/jaas-overview.html : jdk/src/share/classes/com/sun/security/auth/jaas-overview.html
 jdk/src/jdk.security.auth/unix/native/libjaas : jdk/src/solaris/native/com/sun/security/auth/module
 jdk/src/jdk.security.auth/windows/native/libjaas : jdk/src/windows/native/com/sun/security/auth/module
+jdk/src/jdk.security.jgss/share/classes/com/sun/security/jgss : jdk/src/share/classes/com/sun/security/jgss
+jdk/src/jdk.security.jgss/share/classes/com/sun/security/sasl/gsskerb : jdk/src/share/classes/com/sun/security/sasl/gsskerb
 jdk/src/jdk.snmp/share/classes/com/sun/jmx/snmp : jdk/src/share/classes/com/sun/jmx/snmp
 jdk/src/jdk.snmp/share/classes/sun/management/snmp : jdk/src/share/classes/sun/management/snmp
 jdk/src/jdk.zipfs/share/classes/jdk/nio/zipfs : jdk/src/share/classes/jdk/nio/zipfs
