@@ -336,7 +336,9 @@ extern "C" {
     // Return 0 (success) + file descriptor, or non-0 (error)
     if (res == 0) {
       door_desc_t desc;
-      desc.d_attributes = DOOR_DESCRIPTOR;
+      // DOOR_RELEASE flag makes sure fd is closed after passing it to
+      // the client.  See door_return(3DOOR) man page.
+      desc.d_attributes = DOOR_DESCRIPTOR | DOOR_RELEASE;
       desc.d_data.d_desc.d_descriptor = return_fd;
       door_return((char*)&res, sizeof(res), &desc, 1);
     } else {
