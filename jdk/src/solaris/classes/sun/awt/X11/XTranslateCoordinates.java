@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class XTranslateCoordinates {
                         }
                         __executed = true;
                         if (errorHandler != null) {
-                            XToolkit.WITH_XERROR_HANDLER(errorHandler);
+                            XErrorHandlerUtil.WITH_XERROR_HANDLER(errorHandler);
                         }
                         int status =
                         XlibWrapper.XTranslateCoordinates(XToolkit.getDisplay(),
@@ -80,7 +80,7 @@ public class XTranslateCoordinates {
                                 dest_y_ptr,
                                 child_ptr                       );
                         if (errorHandler != null) {
-                            XToolkit.RESTORE_XERROR_HANDLER();
+                            XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
                         }
                         return status;
                 } finally {

@@ -30,6 +30,5 @@ public final class ObjPtr<T> {
 
     public T p;
 
-    static final ObjPtr<Void> NULL = new ObjPtr<Void>();
 }
 

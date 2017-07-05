@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,8 +138,23 @@ public abstract class Reference<T> {
                         pending = r.discovered;
                         r.discovered = null;
                     } else {
+                        // The waiting on the lock may cause an OOME because it may try to allocate
+                        // exception objects, so also catch OOME here to avoid silent exit of the
+                        // reference handler thread.
+                        //
+                        // Explicitly define the order of the two exceptions we catch here
+                        // when waiting for the lock.
+                        //
+                        // We do not want to try to potentially load the InterruptedException class
+                        // (which would be done if this was its first use, and InterruptedException
+                        // were checked first) in this situation.
+                        //
+                        // This may lead to the VM not ever trying to load the InterruptedException
+                        // class again.
                         try {
-                            lock.wait();
+                            try {
+                                lock.wait();
+                            } catch (OutOfMemoryError x) { }
                         } catch (InterruptedException x) { }
                         continue;
                     }

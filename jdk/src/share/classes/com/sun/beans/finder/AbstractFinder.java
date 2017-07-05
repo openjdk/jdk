@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
  */
 package com.sun.beans.finder;
 
+import java.lang.reflect.Executable;
+import java.lang.reflect.Modifier;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +40,7 @@ import java.util.Map;
  *
  * @author Sergey A. Malenkov
  */
-abstract class AbstractFinder<T> {
+abstract class AbstractFinder<T extends Executable> {
     private final Class<?>[] args;
 
     /**
@@ -53,27 +56,6 @@ abstract class AbstractFinder<T> {
     }
 
     /**
-     * Returns an array of {@code Class} objects
-     * that represent the formal parameter types of the method.
-     * Returns an empty array if the method takes no parameters.
-     *
-     * @param method  the object that represents method
-     * @return the parameter types of the method
-     */
-    protected abstract Class<?>[] getParameters(T method);
-
-    /**
-     * Returns {@code true} if and only if the method
-     * was declared to take a variable number of arguments.
-     *
-     * @param method  the object that represents method
-     * @return {@code true} if the method was declared
-     *         to take a variable number of arguments;
-     *         {@code false} otherwise
-     */
-    protected abstract boolean isVarArgs(T method);
-
-    /**
      * Checks validness of the method.
      * At least the valid method should be public.
      *
@@ -81,7 +63,9 @@ abstract class AbstractFinder<T> {
      * @return {@code true} if the method is valid,
      *         {@code false} otherwise
      */
-    protected abstract boolean isValid(T method);
+    protected boolean isValid(T method) {
+        return Modifier.isPublic(method.getModifiers());
+    }
 
     /**
      * Performs a search in the {@code methods} array.
@@ -109,7 +93,7 @@ abstract class AbstractFinder<T> {
 
         for (T newMethod : methods) {
             if (isValid(newMethod)) {
-                Class<?>[] newParams = getParameters(newMethod);
+                Class<?>[] newParams = newMethod.getParameterTypes();
                 if (newParams.length == this.args.length) {
                     PrimitiveWrapperMap.replacePrimitivesWithWrappers(newParams);
                     if (isAssignable(newParams, this.args)) {
@@ -120,6 +104,11 @@ abstract class AbstractFinder<T> {
                             boolean useNew = isAssignable(oldParams, newParams);
                             boolean useOld = isAssignable(newParams, oldParams);
 
+                            if (useOld && useNew) {
+                                // only if parameters are equal
+                                useNew = !newMethod.isSynthetic();
+                                useOld = !oldMethod.isSynthetic();
+                            }
                             if (useOld == useNew) {
                                 ambiguous = true;
                             } else if (useNew) {
@@ -130,7 +119,7 @@ abstract class AbstractFinder<T> {
                         }
                     }
                 }
-                if (isVarArgs(newMethod)) {
+                if (newMethod.isVarArgs()) {
                     int length = newParams.length - 1;
                     if (length <= this.args.length) {
                         Class<?>[] array = new Class<?>[this.args.length];
@@ -160,6 +149,11 @@ abstract class AbstractFinder<T> {
                         boolean useNew = isAssignable(oldParams, newParams);
                         boolean useOld = isAssignable(newParams, oldParams);
 
+                        if (useOld && useNew) {
+                            // only if parameters are equal
+                            useNew = !newMethod.isSynthetic();
+                            useOld = !oldMethod.isSynthetic();
+                        }
                         if (useOld == useNew) {
                             if (oldParams == map.get(oldMethod)) {
                                 ambiguous = true;
