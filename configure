@@ -31,4 +31,5 @@ this_script_dir=`cd $this_script_dir > /dev/null && pwd`
 
 # Delegate to wrapper, forcing wrapper to believe $0 is this script by using -c.
 # This trick is needed to get autoconf to co-operate properly.
-bash -c ". $this_script_dir/common/autoconf/configure" $this_script_dir/configure CHECKME $this_script_dir "$@"
+# The ${-:+-$-} construction passes on bash options.
+bash ${-:+-$-} -c ". $this_script_dir/common/autoconf/configure" $this_script_dir/configure CHECKME $this_script_dir "$@"

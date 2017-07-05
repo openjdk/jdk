@@ -85,8 +85,7 @@ public:
 
   // Data structure for claiming the (potentially) parallel tasks in
   // (gen-specific) roots processing.
-  SubTasksDone* _gen_process_roots_tasks;
-  SubTasksDone* gen_process_roots_tasks() { return _gen_process_roots_tasks; }
+  SubTasksDone* _process_strong_tasks;
 
   // Collects the given generation.
   void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
@@ -373,27 +372,6 @@ public:
   // collection.
   virtual bool is_maximal_no_gc() const;
 
-  // Return the generation before "gen".
-  Generation* prev_gen(Generation* gen) const {
-    guarantee(gen->level() == 1, "Out of bounds");
-    return _young_gen;
-  }
-
-  // Return the generation after "gen".
-  Generation* next_gen(Generation* gen) const {
-    guarantee(gen->level() == 0, "Out of bounds");
-    return _old_gen;
-  }
-
-  Generation* get_gen(int i) const {
-    guarantee(i == 0 || i == 1, "Out of bounds");
-    if (i == 0) {
-      return _young_gen;
-    } else {
-      return _old_gen;
-    }
-  }
-
   int n_gens() const {
     assert(_n_gens == gen_policy()->number_of_generations(), "Sanity");
     return _n_gens;
@@ -408,6 +386,7 @@ public:
   static GenCollectedHeap* heap();
 
   void set_par_threads(uint t);
+  void set_n_termination(uint t);
 
   // Invoke the "do_oop" method of one of the closures "not_older_gens"
   // or "older_gens" on root locations for the generation at
@@ -421,11 +400,25 @@ public:
   // The "so" argument determines which of the roots
   // the closure is applied to:
   // "SO_None" does none;
+  enum ScanningOption {
+    SO_None                =  0x0,
+    SO_AllCodeCache        =  0x8,
+    SO_ScavengeCodeCache   = 0x10
+  };
+
  private:
+  void process_roots(bool activate_scope,
+                     ScanningOption so,
+                     OopClosure* strong_roots,
+                     OopClosure* weak_roots,
+                     CLDClosure* strong_cld_closure,
+                     CLDClosure* weak_cld_closure,
+                     CodeBlobClosure* code_roots);
+
   void gen_process_roots(int level,
                          bool younger_gens_as_roots,
                          bool activate_scope,
-                         SharedHeap::ScanningOption so,
+                         ScanningOption so,
                          OopsInGenClosure* not_older_gens,
                          OopsInGenClosure* weak_roots,
                          OopsInGenClosure* older_gens,
@@ -440,7 +433,7 @@ public:
   void gen_process_roots(int level,
                          bool younger_gens_as_roots,
                          bool activate_scope,
-                         SharedHeap::ScanningOption so,
+                         ScanningOption so,
                          bool only_strong_roots,
                          OopsInGenClosure* not_older_gens,
                          OopsInGenClosure* older_gens,
@@ -486,7 +479,7 @@ public:
     assert(heap()->collector_policy()->is_generation_policy(),
            "the following definition may not be suitable for an n(>2)-generation system");
     return incremental_collection_failed() ||
-           (consult_young && !get_gen(0)->collection_attempt_is_safe());
+           (consult_young && !_young_gen->collection_attempt_is_safe());
   }
 
   // If a generation bails out of an incremental collection,
