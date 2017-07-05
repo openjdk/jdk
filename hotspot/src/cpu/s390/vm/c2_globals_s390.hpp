@@ -56,7 +56,6 @@ define_pd_global(bool, UseTLAB,                      true);
 define_pd_global(bool, ResizeTLAB,                   true);
 define_pd_global(intx, LoopUnrollLimit,              60);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
-define_pd_global(intx, PostLoopMultiversioning,      false);
 define_pd_global(intx, MinJumpTableSize,             18);
 
 // Peephole and CISC spilling both break the graph, and so makes the

@@ -181,7 +181,7 @@
            "Map number of unrolls for main loop via "                       \
            "Superword Level Parallelism analysis")                          \
                                                                             \
-  diagnostic_pd(bool, PostLoopMultiversioning,                              \
+  experimental(bool, PostLoopMultiversioning, false,                        \
            "Multi versioned post loops to eliminate range checks")          \
                                                                             \
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \

@@ -332,6 +332,17 @@ Flag::Error InitArrayShortSizeConstraintFunc(intx value, bool verbose) {
   }
 }
 
+Flag::Error UseAVXConstraintFunc(intx value, bool verbose) {
+  if (value > 2 && !UnlockExperimentalVMOptions) {
+    CommandLineError::print(verbose,
+                            "UseAVX (" UINTX_FORMAT ") is experimental and must be "
+                            "enabled via -XX:+UnlockExperimentalVMOptions \n", value);
+    return Flag::VIOLATES_CONSTRAINT;
+  } else {
+    return Flag::SUCCESS;
+  }
+}
+
 #ifdef COMPILER2
 Flag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
   if (InteriorEntryAlignment > CodeEntryAlignment) {
