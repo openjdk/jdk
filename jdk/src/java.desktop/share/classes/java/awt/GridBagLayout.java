@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,7 +353,7 @@ import java.util.Arrays;
  *     }
  * }
  * </pre></blockquote><hr>
- * <p>
+ *
  * @author Doug Stein
  * @author Bill Spitzak (orignial NeWS &amp; OLIT implementation)
  * @see       java.awt.GridBagConstraints
@@ -770,7 +770,7 @@ java.io.Serializable {
      * components.  The value should be a number between 0 and 1
      * where 0 represents alignment along the origin, 1 is aligned
      * the furthest away from the origin, 0.5 is centered, etc.
-     * <p>
+     *
      * @return the value <code>0.5f</code> to indicate centered
      */
     public float getLayoutAlignmentX(Container parent) {
@@ -783,7 +783,7 @@ java.io.Serializable {
      * components.  The value should be a number between 0 and 1
      * where 0 represents alignment along the origin, 1 is aligned
      * the furthest away from the origin, 0.5 is centered, etc.
-     * <p>
+     *
      * @return the value <code>0.5f</code> to indicate centered
      */
     public float getLayoutAlignmentY(Container parent) {

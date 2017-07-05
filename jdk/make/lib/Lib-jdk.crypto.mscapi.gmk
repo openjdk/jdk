@@ -35,7 +35,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       LIBRARY := sunmscapi, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBSUNMSCAPI_SRC), \
-      LANG := C++, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(LIBSUNMSCAPI_SRC), \

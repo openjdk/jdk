@@ -29,6 +29,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.peer.TrayIconPeer;
 import sun.awt.*;
+import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
+
 import java.awt.image.*;
 import java.text.BreakIterator;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -338,7 +341,7 @@ public abstract class InfoWindow extends Window {
                 lineLabels[i].setBackground(Color.white);
             }
 
-            displayer.start();
+            displayer.thread.start();
         }
 
         public void display(String caption, String text, String messageType) {
@@ -415,7 +418,7 @@ public abstract class InfoWindow extends Window {
         }
 
         public void dispose() {
-            displayer.interrupt();
+            displayer.thread.interrupt();
             super.dispose();
         }
 
@@ -444,16 +447,23 @@ public abstract class InfoWindow extends Window {
             }
         }
 
-        private class Displayer extends Thread {
+        private class Displayer implements Runnable {
             final int MAX_CONCURRENT_MSGS = 10;
 
             ArrayBlockingQueue<Message> messageQueue = new ArrayBlockingQueue<Message>(MAX_CONCURRENT_MSGS);
             boolean isDisplayed;
+            final Thread thread;
 
             Displayer() {
-                setDaemon(true);
+                if (System.getSecurityManager() == null) {
+                    this.thread = new Thread(this);
+                } else {
+                    this.thread = new ManagedLocalsThread(this);
+                }
+                this.thread.setDaemon(true);
             }
 
+            @Override
             public void run() {
                 while (true) {
                     Message msg = null;

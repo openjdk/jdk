@@ -29,12 +29,14 @@ package javax.swing;
 
 
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 import java.util.concurrent.atomic.AtomicLong;
 import sun.awt.AppContext;
-
+import sun.misc.InnocuousThread;
 
 
 /**
@@ -94,18 +96,19 @@ class TimerQueue implements Runnable
         if (! running) {
             runningLock.lock();
             try {
-                final ThreadGroup threadGroup =
-                    AppContext.getAppContext().getThreadGroup();
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Object>() {
-                    public Object run() {
-                        Thread timerThread = new Thread(threadGroup, TimerQueue.this,
-                                                        "TimerQueue");
-                        timerThread.setDaemon(true);
-                        timerThread.setPriority(Thread.NORM_PRIORITY);
-                        timerThread.start();
-                        return null;
+                final ThreadGroup threadGroup = AppContext.getAppContext().getThreadGroup();
+                AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+                    String name = "TimerQueue";
+                    Thread timerThread;
+                    if (System.getSecurityManager() == null) {
+                        timerThread = new Thread(threadGroup, TimerQueue.this, name);
+                    } else {
+                        timerThread = new InnocuousThread(threadGroup, TimerQueue.this, name);
                     }
+                    timerThread.setDaemon(true);
+                    timerThread.setPriority(Thread.NORM_PRIORITY);
+                    timerThread.start();
+                    return null;
                 });
                 running = true;
             } finally {

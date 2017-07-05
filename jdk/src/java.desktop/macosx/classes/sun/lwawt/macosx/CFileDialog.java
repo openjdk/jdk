@@ -37,6 +37,7 @@ import java.io.*;
 import sun.awt.CausedFocusEvent.Cause;
 import sun.awt.AWTAccessor;
 import sun.java2d.pipe.Region;
+import sun.misc.ManagedLocalsThread;
 import sun.security.action.GetBooleanAction;
 
 class CFileDialog implements FileDialogPeer {
@@ -119,7 +120,11 @@ class CFileDialog implements FileDialogPeer {
         if (visible) {
             // Java2 Dialog class requires peer to run code in a separate thread
             // and handles keeping the call modal
-            new Thread(new Task()).start(); // invokes my 'run' method, below...
+            if (System.getSecurityManager() == null) {
+                new Thread(new Task()).start();
+            } else {
+                new ManagedLocalsThread(new Task()).start();
+            }
         }
         // We hide ourself before "show" returns - setVisible(false)
         // doesn't apply

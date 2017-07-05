@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -477,6 +477,15 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
         return true;
     }
 
+    /**
+     * Determine the offset.
+     * @param tree      a <code>JTree</code> object
+     * @param value a value
+     * @param isSelected selection status
+     * @param expanded expansion status
+     * @param leaf leaf status
+     * @param row current row
+     */
     protected void determineOffset(JTree tree, Object value,
                                    boolean isSelected, boolean expanded,
                                    boolean leaf, int row) {
@@ -653,6 +662,9 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
 
         // This should not be used. It will be removed when new API is
         // allowed.
+        /**
+         * Do not use.
+         */
         public void EditorContainer() {
             setLayout(null);
         }
