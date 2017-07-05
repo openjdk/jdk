@@ -32,7 +32,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID MyRMI CheckAnnotations_Stub
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID RMIDSelectorProvider MyRMI CheckAnnotations_Stub
  * @run main/othervm/policy=security.policy/timeout=480 CheckAnnotations
  */
 
@@ -77,7 +78,7 @@ public class CheckAnnotations
 
             // start an rmid.
             RMID.removeLog();
-            rmid = RMID.createRMID(rmidOut, rmidErr, false);
+            rmid = RMID.createRMIDOnEphemeralPort(rmidOut, rmidErr, false);
             rmid.start();
 
             /* Cause activation groups to have a security policy that will
@@ -227,6 +228,7 @@ public class CheckAnnotations
                 (destOut == null)) {
                 return false;
             }
+
 
             // just make sure that last two strings are what we expect.
             if (execOut.equals("ExecGroup-" + iteration)

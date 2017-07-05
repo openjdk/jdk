@@ -48,7 +48,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.nashorn.api.scripting.ClassFilter;
@@ -2449,17 +2448,17 @@ public final class Global extends Scope {
     }
 
     @Override
-    public GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final StandardOperation operation) {
+    public GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final String name = NashornCallSiteDescriptor.getOperand(desc);
         final boolean isScope = NashornCallSiteDescriptor.isScope(desc);
 
         if (lexicalScope != null && isScope && !NashornCallSiteDescriptor.isApplyToCall(desc)) {
             if (lexicalScope.hasOwnProperty(name)) {
-                return lexicalScope.findGetMethod(desc, request, operation);
+                return lexicalScope.findGetMethod(desc, request);
             }
         }
 
-        final GuardedInvocation invocation =  super.findGetMethod(desc, request, operation);
+        final GuardedInvocation invocation =  super.findGetMethod(desc, request);
 
         // We want to avoid adding our generic lexical scope switchpoint to global constant invocations,
         // because those are invalidated per-key in the addBoundProperties method above.
@@ -3061,8 +3060,8 @@ public final class Global extends Scope {
         }
 
         @Override
-        protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final StandardOperation operation) {
-            return filterInvocation(super.findGetMethod(desc, request, operation));
+        protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
+            return filterInvocation(super.findGetMethod(desc, request));
         }
 
         @Override

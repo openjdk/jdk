@@ -451,7 +451,7 @@ class ClassLoader: AllStatic {
   static void set_first_append_entry(ClassPathEntry* entry);
 
   // indicates if class path already contains a entry (exact match by name)
-  static bool contains_entry(ClassPathEntry* entry);
+  static bool contains_append_entry(const char* name);
 
   // adds a class path list
   static void add_to_list(ClassPathEntry* new_entry);

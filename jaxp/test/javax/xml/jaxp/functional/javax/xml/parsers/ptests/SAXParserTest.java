@@ -24,19 +24,15 @@
 package javax.xml.parsers.ptests;
 
 import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.util.PropertyPermission;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
-import jaxp.library.JAXPTestUtilities;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
@@ -189,8 +185,7 @@ public class SAXParserTest {
      */
     @Test(expectedExceptions = { SAXException.class, IOException.class }, dataProvider = "parser-provider")
     public void testParse09(SAXParser saxparser) throws Exception {
-        JAXPTestUtilities.tryRunWithTmpPermission(() -> saxparser.parse(" ", new DefaultHandler()),
-                new FilePermission(USER_DIR + " ", "read"));
+        saxparser.parse("no-such-file", new DefaultHandler());
     }
 
     /**

@@ -27,7 +27,7 @@
 # loader, the context class loader should remain unchanged (i.e., not be
 # set to the impl's class loader) when the impl is activated.
 # @library ../../../testlibrary
-# @build TestLibrary RMID ActivationLibrary
+# @build TestLibrary RMID RMIDSelectorProvider ActivationLibrary
 # @build ExtLoadedImplTest ExtLoadedImpl ExtLoadedImpl_Stub CheckLoader
 # @run shell ext.sh
 

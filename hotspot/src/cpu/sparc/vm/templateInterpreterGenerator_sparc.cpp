@@ -384,8 +384,9 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   address entry = __ pc();
   __ get_constant_pool_cache(LcpoolCache); // load LcpoolCache
 #if INCLUDE_JVMCI
-  // Check if we need to take lock at entry of synchronized method.
-  if (UseJVMCICompiler) {
+  // Check if we need to take lock at entry of synchronized method.  This can
+  // only occur on method entry so emit it only for vtos with step 0.
+  if (UseJVMCICompiler && state == vtos && step == 0) {
     Label L;
     Address pending_monitor_enter_addr(G2_thread, JavaThread::pending_monitorenter_offset());
     __ ldbool(pending_monitor_enter_addr, Gtemp);  // Load if pending monitor enter
@@ -395,6 +396,17 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
     // Take lock.
     lock_method();
     __ bind(L);
+  } else {
+#ifdef ASSERT
+    if (UseJVMCICompiler) {
+      Label L;
+      Address pending_monitor_enter_addr(G2_thread, JavaThread::pending_monitorenter_offset());
+      __ ldbool(pending_monitor_enter_addr, Gtemp);  // Load if pending monitor enter
+      __ cmp_and_br_short(Gtemp, G0, Assembler::equal, Assembler::pn, L);
+      __ stop("unexpected pending monitor in deopt entry");
+      __ bind(L);
+    }
+#endif
   }
 #endif
   { Label L;

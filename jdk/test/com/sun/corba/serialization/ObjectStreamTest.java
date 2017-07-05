@@ -42,13 +42,8 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.PropertyPermission;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
-import javax.naming.CommunicationException;
-import javax.naming.InitialContext;
-import javax.naming.Context;
-import javax.naming.NamingException;
 import javax.rmi.CORBA.Util;
 import javax.rmi.PortableRemoteObject;
 
@@ -56,11 +51,9 @@ import org.omg.CORBA_2_3.ORB;
 import org.omg.CORBA_2_3.portable.OutputStream;
 import org.omg.CORBA_2_3.portable.InputStream;
 
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.JDKToolLauncher;
-
 import org.testng.Assert;
-import org.testng.annotations.AfterSuite;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 import org.testng.TestNG;
@@ -69,15 +62,13 @@ import org.testng.TestNG;
  * @test
  * @library /test/lib
  * @build jdk.test.lib.*
- * @compile  ObjectStreamTest.java  ObjectStreamTest$_Echo_Stub.java  ObjectStreamTest$_Server_Tie.java
- * @modules java.corba/com.sun.corba.se.impl.io java.base/java.io java.corba/com.sun.corba.se.impl.activation
+ * @compile  ObjectStreamTest.java  ObjectStreamTest$_Echo_Stub.java
+ *           ObjectStreamTest$_Server_Tie.java
+ * @modules java.corba/com.sun.corba.se.impl.io java.base/java.io
+ *          java.corba/com.sun.corba.se.impl.activation
  * @summary Tests of ReflectionFactory use in IIOP Serialization
- * @run testng/othervm
- *       -Djava.naming.factory.initial=com.sun.jndi.cosnaming.CNCtxFactory
- *       -Djava.naming.provider.url=iiop://localhost:1050 ObjectStreamTest
- * @run testng/othervm/policy=security.policy
- *       -Djava.naming.factory.initial=com.sun.jndi.cosnaming.CNCtxFactory
- *       -Djava.naming.provider.url=iiop://localhost:1050 ObjectStreamTest
+ * @run testng/othervm ObjectStreamTest
+ * @run testng/othervm/policy=security.policy ObjectStreamTest
  */
 
 @Test
@@ -91,12 +82,6 @@ public class ObjectStreamTest {
         colorSet.add(Colors.RED);
         colorSet.add(Colors.GREEN);
     }
-
-    /**
-     * The process spawned to run orbd.
-     */
-    static Process orbdProcess;
-    static Thread orbThread;
 
     @DataProvider(name = "Objects")
     static Object[][] patterns() {
@@ -141,7 +126,7 @@ public class ObjectStreamTest {
      * @param value
      */
     @Test(dataProvider = "Objects")
-    static void factCheck(Serializable value) {
+    void factCheck(Serializable value) {
         Class<?> clazz = value.getClass();
         java.io.ObjectStreamClass sOSC = java.io.ObjectStreamClass.lookup(clazz);
         java.io.ObjectStreamField[] sFields = sOSC.getFields();
@@ -150,25 +135,33 @@ public class ObjectStreamTest {
 
         Assert.assertEquals(sFields.length, cFields.length, "Different number of fields");
         for (int i = 0; i < sFields.length; i++) {
-            Assert.assertEquals(sFields[i].getName(), cFields[i].getName(), "different field names " + cFields[i].getName());
-            Assert.assertEquals(sFields[i].getType(), cFields[i].getType(), "different field types " + cFields[i].getName());
-            Assert.assertEquals(sFields[i].getTypeString(), cFields[i].getTypeString(), "different field typestrings " + cFields[i].getName());
+            Assert.assertEquals(sFields[i].getName(), cFields[i].getName(),
+                    "different field names " + cFields[i].getName());
+            Assert.assertEquals(sFields[i].getType(), cFields[i].getType(),
+                    "different field types " + cFields[i].getName());
+            Assert.assertEquals(sFields[i].getTypeString(), cFields[i].getTypeString(),
+                    "different field typestrings " + cFields[i].getName());
         }
 
         Assert.assertEquals(baseMethod("hasReadObjectMethod", sOSC, (Class<?>[]) null),
-                corbaMethod("hasReadObject", cOSC, (Class<?>[]) null), "hasReadObject: " + value.getClass());
+                corbaMethod("hasReadObject", cOSC, (Class<?>[]) null),
+                "hasReadObject: " + value.getClass());
 
         Assert.assertEquals(baseMethod("hasWriteObjectMethod", sOSC, (Class<?>[]) null),
-                corbaMethod("hasWriteObject", cOSC, (Class<?>[]) null), "hasWriteObject: " + value.getClass());
+                corbaMethod("hasWriteObject", cOSC, (Class<?>[]) null),
+                "hasWriteObject: " + value.getClass());
 
         Assert.assertEquals(baseMethod("hasWriteReplaceMethod", sOSC, (Class<?>[]) null),
-                corbaMethod("hasWriteReplaceMethod", cOSC, (Class<?>[]) null), "hasWriteReplace: " + value.getClass());
+                corbaMethod("hasWriteReplaceMethod", cOSC, (Class<?>[]) null),
+                "hasWriteReplace: " + value.getClass());
 
         Assert.assertEquals(baseMethod("hasReadResolveMethod", sOSC, (Class<?>[]) null),
-                corbaMethod("hasReadResolveMethod", cOSC, (Class<?>[]) null), "hasReadResolve: " + value.getClass());
+                corbaMethod("hasReadResolveMethod", cOSC, (Class<?>[]) null),
+                "hasReadResolve: " + value.getClass());
 
         Assert.assertEquals(baseMethod("getSerialVersionUID", sOSC, (Class<?>[]) null),
-                corbaMethod("getSerialVersionUID", cOSC, (Class<?>[]) null), "getSerialVersionUID: " + value.getClass());
+                corbaMethod("getSerialVersionUID", cOSC, (Class<?>[]) null),
+                "getSerialVersionUID: " + value.getClass());
 
     }
 
@@ -178,7 +171,7 @@ public class ObjectStreamTest {
      * and deserialized using Util.readAny to equivalent objects.
      */
     @Test(dataProvider = "Objects", enabled = true, dependsOnMethods = {"factCheck"})
-    static void WriteValueObjectStreamTest01(Serializable value) throws Exception {
+    void WriteValueObjectStreamTest01(Serializable value) throws Exception {
         ORB orb = (ORB) ORB.init(new String[0], null);
 
         OutputStream out = (OutputStream) orb.create_output_stream();
@@ -193,13 +186,41 @@ public class ObjectStreamTest {
     /**
      * Test that objects can be echoed to a server and come back equivalent.
      */
-    @Test(dataProvider = "Objects", enabled = false, dependsOnMethods = {"factCheck"})
-    static void echoObjects(Serializable value) throws Exception {
-        Context initialNamingContext = Server.init();
-        Echo echo = (Echo) PortableRemoteObject.narrow(
-                initialNamingContext.lookup(Server.serverID), Echo.class);
+    @Test(dataProvider = "Objects", enabled = true, dependsOnMethods = {"factCheck"})
+    void echoObjects(Serializable value) throws Exception {
+        Echo echo = getEchoStub();
         Object actual = echo.echo(value);
         checkEquals(actual, value);
+    }
+
+
+    /**
+     * Initialize the ORB and the singleton Echo server stub.
+     * @return the stub for the Echo server.
+     * @throws RemoteException if an error occurs
+     */
+    synchronized Echo getEchoStub() throws RemoteException {
+        if (echoStub == null) {
+            ORB orb = (ORB) ORB.init(new String[0], null);
+            Echo server = new Server();
+            echoStub = (javax.rmi.CORBA.Stub) PortableRemoteObject.toStub(server);
+            echoStub.connect(orb);
+        }
+        return (Echo)echoStub;
+    }
+
+    /**
+     * The stub for the Echo Server class. Initialized on first use.
+     */
+    private javax.rmi.CORBA.Stub echoStub;
+
+    /**
+     * After all the tests run shutdown the orb.
+     */
+    @AfterClass
+    void shutdownOrb() {
+        ORB orb = (ORB) ORB.init(new String[0], null);
+        orb.shutdown(true);
     }
 
     /**
@@ -209,15 +230,18 @@ public class ObjectStreamTest {
      */
     static void checkEquals(Object actual, Object expected) {
         Class<?> cl = expected.getClass();
-        Assert.assertEquals(actual.getClass(), cl, "type of value not equal to class of result");
+        Assert.assertEquals(actual.getClass(), cl,
+                "type of value not equal to class of result");
         try {
             if (cl.isArray() || !(cl.getDeclaredMethod("equals", cl) == null)) {
                 Assert.assertEquals(actual, expected, "echo'd object not equal");
             } else {
-                Assert.assertEquals(toString(actual), toString(expected), "toString values not equal");
+                Assert.assertEquals(toString(actual), toString(expected),
+                        "toString values not equal");
             }
         } catch (NoSuchMethodException ex) {
-            Assert.assertEquals(toString(actual), toString(expected), "toString values not equal");
+            Assert.assertEquals(toString(actual), toString(expected),
+                    "toString values not equal");
         }
     }
 
@@ -301,7 +325,9 @@ public class ObjectStreamTest {
      * @param argClasses method arguments
      * @return the value returned from invoking the method
      */
-    static Object corbaMethod(String methodName, com.sun.corba.se.impl.io.ObjectStreamClass osc, Class<?>... argClasses) {
+    static Object corbaMethod(String methodName,
+                              com.sun.corba.se.impl.io.ObjectStreamClass osc,
+                              Class<?>... argClasses) {
         Class<?> oscClass = com.sun.corba.se.impl.io.ObjectStreamClass.class;
 
         try {
@@ -325,7 +351,8 @@ public class ObjectStreamTest {
      * @param argClasses method arguments
      * @return the value returned from invoking the method
      */
-    static Object baseMethod(String methodName, java.io.ObjectStreamClass osc, Class<?>... argClasses) {
+    static Object baseMethod(String methodName, java.io.ObjectStreamClass osc,
+                             Class<?>... argClasses) {
         Class<?> oscClass = java.io.ObjectStreamClass.class;
 
         try {
@@ -342,19 +369,13 @@ public class ObjectStreamTest {
     }
 
     /**
-     * Simple echo interface to check serialization/deserialization.
+     * Simple echo interface to check IIOP serialization/deserialization.
      */
     interface Echo extends Remote {
         Object echo(Object obj) throws RemoteException;
     }
 
     static class Server extends PortableRemoteObject implements Echo {
-
-        public static final String serverID = "ObjectStreamTestServer";
-
-        private static Context initialNamingContext;
-
-        private static Server server;
 
         public Server() throws RemoteException {
             super();
@@ -363,62 +384,7 @@ public class ObjectStreamTest {
         public Object echo(Object obj) {
             return obj;
         }
-
-
-        public static Context init() {
-            if (initialNamingContext == null) {
-                try {
-                    startOrbd();
-                    Thread.sleep(5000L);        // Give it 5 seconds
-                } catch (Exception eex) {
-                    throw new RuntimeException("Orbd", eex);
-                }
-                for (int i = 0; i < 1; i++) {
-                    try {
-                        Thread.sleep(1L);
-                        initialNamingContext = new InitialContext();
-                        server = new Server();
-                        initialNamingContext.rebind(serverID, server);
-                    } catch (CommunicationException | InterruptedException cex) {
-                        System.out.printf("retry #%d sec: ex: %s%n", i, cex);
-                    } catch (NamingException ex) {
-                        throw new RuntimeException("can't initialize naming context", ex);
-                    } catch (RemoteException rex) {
-                        throw new RuntimeException("can't initialize server", rex);
-                    }
-                }
-            }
-            if (initialNamingContext == null) {
-                Assert.fail("Can't initialize the Orb, no naming context");
-            }
-            return initialNamingContext;
-        }
     }
-
-    static void startOrbd() throws Exception {
-        System.out.println("\nStarting orbd with NS port 1050 ");
-        JDKToolLauncher orbdLauncher = JDKToolLauncher.create("orbd")
-                        .addToolArg("-ORBInitialHost").addToolArg("localhost")
-                        .addToolArg("-ORBInitialPort").addToolArg("1050");
-
-        System.out.println("ObjectStreamTest: Executing: " + Arrays.asList(orbdLauncher.getCommand()));
-        ProcessBuilder pb = new ProcessBuilder(orbdLauncher.getCommand());
-
-        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        orbdProcess = pb.start();
-    }
-
-    @AfterSuite
-    static void killOrbd() throws Exception {
-        if (orbdProcess != null) {
-            orbdProcess.destroyForcibly();
-            orbdProcess.waitFor();
-            System.out.printf("destroyed orbd, pid: %d, exitValue: %d%n",
-                    orbdProcess.getPid(), orbdProcess.exitValue());
-        }
-    }
-
-
 
     // Main can be used to run the tests from the command line with only testng.jar.
     @SuppressWarnings("raw_types")

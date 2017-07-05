@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,6 +194,11 @@ abstract class OutputRecord extends ByteArrayOutputStream
         // blank
     }
 
+    // apply to DTLS SSLEngine
+    void launchRetransmission() {
+        // blank
+    }
+
     @Override
     public synchronized void close() throws IOException {
         if (!isClosed) {
@@ -224,6 +229,9 @@ abstract class OutputRecord extends ByteArrayOutputStream
             sequenceNumber = authenticator.sequenceNumber();
         }
 
+        // The sequence number may be shared for different purpose.
+        boolean sharedSequenceNumber = false;
+
         // "flip" but skip over header again, add MAC & encrypt
         if (authenticator instanceof MAC) {
             MAC signer = (MAC)authenticator;
@@ -243,6 +251,11 @@ abstract class OutputRecord extends ByteArrayOutputStream
                 // reset the position and limit
                 destination.limit(destination.position());
                 destination.position(dstContent);
+
+                // The signer has used and increased the sequence number.
+                if (isDTLS) {
+                    sharedSequenceNumber = true;
+                }
             }
         }
 
@@ -261,6 +274,11 @@ abstract class OutputRecord extends ByteArrayOutputStream
 
             // Encrypt may pad, so again the limit may be changed.
             encCipher.encrypt(destination, dstLim);
+
+            // The cipher has used and increased the sequence number.
+            if (isDTLS && encCipher.isAEADMode()) {
+                sharedSequenceNumber = true;
+            }
         } else {
             destination.position(destination.limit());
         }
@@ -290,8 +308,10 @@ abstract class OutputRecord extends ByteArrayOutputStream
             destination.put(headerOffset + 11, (byte)(fragLen >> 8));
             destination.put(headerOffset + 12, (byte)fragLen);
 
-            // Increase the sequence number for next use.
-            authenticator.increaseSequenceNumber();
+            // Increase the sequence number for next use if it is not shared.
+            if (!sharedSequenceNumber) {
+                authenticator.increaseSequenceNumber();
+            }
         }
 
         // Update destination position to reflect the amount of data produced.

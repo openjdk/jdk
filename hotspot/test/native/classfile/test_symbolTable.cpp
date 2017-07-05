@@ -26,7 +26,7 @@
 #include "classfile/symbolTable.hpp"
 #include "unittest.hpp"
 
-TEST(SymbolTable, temp_new_symbol) {
+TEST_VM(SymbolTable, temp_new_symbol) {
   // Assert messages assume these symbols are unique, and the refcounts start at
   // one, but code does not rely on this.
   JavaThread* THREAD = JavaThread::current();
