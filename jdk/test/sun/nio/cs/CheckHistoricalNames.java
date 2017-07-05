@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4513767 4961027
+   @bug 4513767 4961027 6217210
    @summary Checks canonical names match between old and (NIO) core charsets
  */
 import java.io.InputStreamReader;
@@ -154,6 +154,7 @@ public class CheckHistoricalNames {
         checkHistoricalName("Cp500");
         checkHistoricalName("Cp737");
         checkHistoricalName("Cp775");
+        checkHistoricalName("Cp833");
         checkHistoricalName("Cp838");
         checkHistoricalName("Cp850");
         checkHistoricalName("Cp852");
@@ -228,6 +229,7 @@ public class CheckHistoricalNames {
         checkMappedName("IBM856", "Cp856");
         checkMappedName("IBM857", "Cp857");
         checkMappedName("IBM00858", "Cp858");
+        checkMappedName("IBM833", "Cp833");
         checkMappedName("IBM860", "Cp860");
         checkMappedName("IBM861", "Cp861");
         checkMappedName("IBM862", "Cp862");

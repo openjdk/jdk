@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4997655
+ * @bug 4997655 7000913
  * @summary (bf) CharBuffer.slice() on wrapped CharSequence results in wrong position
  */
 
@@ -76,11 +76,26 @@ public class StringCharBufferSliceTest {
         }
 
         System.out.println(
+          ">>> StringCharBufferSliceTest-main: testing slice with result of slice");
+        buff.position(0);
+        buff.limit(buff.capacity());
+        slice = buff.slice();
+        for (int i=0; i<4; i++) {
+            slice.position(i);
+            CharBuffer nextSlice = slice.slice();
+            if (nextSlice.position() != 0)
+                throw new RuntimeException("New buffer's position should be zero");
+            if (!nextSlice.equals(slice))
+                throw new RuntimeException("New buffer should be equal");
+            slice = nextSlice;
+        }
+
+        System.out.println(
           ">>> StringCharBufferSliceTest-main: testing toString.");
         buff.position(4);
         buff.limit(7);
         slice = buff.slice();
-        if (! slice.toString().equals("tes")) {
+        if (!slice.toString().equals("tes")) {
             throw new RuntimeException("bad toString() after slice(): " + slice.toString());
         }
 
@@ -104,6 +119,7 @@ public class StringCharBufferSliceTest {
             || dupe.charAt(2) != 's' || dupe.charAt(3) != 't') {
             throw new RuntimeException("bad duplicate() after slice(): '" + dupe + "'");
         }
+
         System.out.println(">>> StringCharBufferSliceTest-main: done!");
     }
 

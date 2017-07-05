@@ -25,6 +25,9 @@
 
 package javax.security.auth;
 
+import java.security.Security;
+import sun.security.util.Debug;
+
 /**
  * <p> This is an abstract class for representing the system policy for
  * Subject-based authorization.  A subclass implementation
@@ -159,6 +162,10 @@ public abstract class Policy {
     private static Policy policy;
     private static ClassLoader contextClassLoader;
 
+    // true if a custom (not com.sun.security.auth.PolicyFile) system-wide
+    // policy object is set
+    private static boolean isCustomPolicy;
+
     static {
         contextClassLoader = java.security.AccessController.doPrivileged
                 (new java.security.PrivilegedAction<ClassLoader>() {
@@ -234,6 +241,8 @@ public abstract class Policy {
                                         contextClassLoader).newInstance();
                             }
                         });
+                        isCustomPolicy =
+                            !finalClass.equals("com.sun.security.auth.PolicyFile");
                     } catch (Exception e) {
                         throw new SecurityException
                                 (sun.security.util.ResourcesMgr.getString
@@ -265,6 +274,46 @@ public abstract class Policy {
         java.lang.SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(new AuthPermission("setPolicy"));
         Policy.policy = policy;
+        // all non-null policy objects are assumed to be custom
+        isCustomPolicy = policy != null ? true : false;
+    }
+
+    /**
+     * Returns true if a custom (not com.sun.security.auth.PolicyFile)
+     * system-wide policy object has been set or installed. This method is
+     * called by SubjectDomainCombiner to provide backwards compatibility for
+     * developers that provide their own javax.security.auth.Policy
+     * implementations.
+     *
+     * @return true if a custom (not com.sun.security.auth.PolicyFile)
+     * system-wide policy object has been set; false otherwise
+     */
+    static boolean isCustomPolicySet(Debug debug) {
+        if (policy != null) {
+            if (debug != null && isCustomPolicy) {
+                debug.println("Providing backwards compatibility for " +
+                              "javax.security.auth.policy implementation: " +
+                              policy.toString());
+            }
+            return isCustomPolicy;
+        }
+        // check if custom policy has been set using auth.policy.provider prop
+        String policyClass = java.security.AccessController.doPrivileged
+            (new java.security.PrivilegedAction<String>() {
+                public String run() {
+                    return Security.getProperty("auth.policy.provider");
+                }
+        });
+        if (policyClass != null
+            && !policyClass.equals("com.sun.security.auth.PolicyFile")) {
+            if (debug != null) {
+                debug.println("Providing backwards compatibility for " +
+                              "javax.security.auth.policy implementation: " +
+                              policyClass);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**

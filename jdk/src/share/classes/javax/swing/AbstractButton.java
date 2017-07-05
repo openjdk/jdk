@@ -1379,6 +1379,10 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * If <code>true</code> and the button has a border,
      * the border is painted. The default value for the
      * <code>borderPainted</code> property is <code>true</code>.
+     * <p/>
+     * Some look and feels might not support
+     * the <code>borderPainted</code> property,
+     * in which case they ignore this.
      *
      * @param b if true and border property is not <code>null</code>,
      *          the border is painted

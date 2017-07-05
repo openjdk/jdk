@@ -85,6 +85,7 @@ FILES_src = \
 	sun/io/ByteToCharCp500.java \
 	sun/io/ByteToCharCp737.java \
 	sun/io/ByteToCharCp775.java \
+	sun/io/ByteToCharCp833.java \
 	sun/io/ByteToCharCp834.java \
 	sun/io/ByteToCharCp838.java \
 	sun/io/ByteToCharCp850.java \
@@ -214,6 +215,7 @@ FILES_src = \
 	sun/io/CharToByteCp500.java \
 	sun/io/CharToByteCp737.java \
 	sun/io/CharToByteCp775.java \
+	sun/io/CharToByteCp833.java \
 	sun/io/CharToByteCp834.java \
 	sun/io/CharToByteCp838.java \
 	sun/io/CharToByteCp850.java \
@@ -331,6 +333,7 @@ FILES_gen_extcs = \
 	sun/nio/cs/ext/IBM420.java \
 	sun/nio/cs/ext/IBM424.java \
 	sun/nio/cs/ext/IBM500.java \
+	sun/nio/cs/ext/IBM833.java \
 	sun/nio/cs/ext/IBM838.java \
 	sun/nio/cs/ext/IBM856.java \
 	sun/nio/cs/ext/IBM860.java \

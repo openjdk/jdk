@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package javax.security.auth;
 
 import java.security.AccessController;
-import java.security.AccessControlContext;
-import java.security.AllPermission;
 import java.security.Permission;
 import java.security.Permissions;
 import java.security.PermissionCollection;
@@ -35,10 +33,8 @@ import java.security.Policy;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.lang.ClassLoader;
 import java.security.Security;
 import java.util.Set;
-import java.util.Iterator;
 import java.util.WeakHashMap;
 import java.lang.ref.WeakReference;
 
@@ -61,7 +57,8 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
                                         "\t[SubjectDomainCombiner]");
 
     // Note: check only at classloading time, not dynamically during combine()
-    private static final boolean useJavaxPolicy = compatPolicy();
+    private static final boolean useJavaxPolicy =
+        javax.security.auth.Policy.isCustomPolicySet(debug);
 
     // Relevant only when useJavaxPolicy is true
     private static final boolean allowCaching =
@@ -202,8 +199,8 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
             return null;
         }
 
-        // maintain backwards compatibility for people who provide
-        // their own javax.security.auth.Policy implementations
+        // maintain backwards compatibility for developers who provide
+        // their own custom javax.security.auth.Policy implementations
         if (useJavaxPolicy) {
             return combineJavaxPolicy(currentDomains, assignedDomains);
         }
@@ -476,8 +473,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
         String s = AccessController.doPrivileged
             (new PrivilegedAction<String>() {
             public String run() {
-                return java.security.Security.getProperty
-                                        ("cache.auth.policy");
+                return Security.getProperty("cache.auth.policy");
             }
         });
         if (s != null) {
@@ -486,29 +482,6 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
 
         // cache by default
         return true;
-    }
-
-    // maintain backwards compatibility for people who provide
-    // their own javax.security.auth.Policy implementations
-    private static boolean compatPolicy() {
-        javax.security.auth.Policy javaxPolicy = AccessController.doPrivileged
-            (new PrivilegedAction<javax.security.auth.Policy>() {
-            public javax.security.auth.Policy run() {
-                return javax.security.auth.Policy.getPolicy();
-            }
-        });
-
-        if (!(javaxPolicy instanceof com.sun.security.auth.PolicyFile)) {
-            if (debug != null) {
-                debug.println("Providing backwards compatibility for " +
-                        "javax.security.auth.policy implementation: " +
-                        javaxPolicy.toString());
-            }
-
-            return true;
-        } else {
-            return false;
-        }
     }
 
     private static void printInputDomains(ProtectionDomain[] currentDomains,

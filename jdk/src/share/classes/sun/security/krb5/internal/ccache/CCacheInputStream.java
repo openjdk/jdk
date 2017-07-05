@@ -250,16 +250,16 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         else return null;
     }
 
-    Ticket readData() throws IOException, RealmException, KrbApErrException, Asn1Exception {
+    byte[] readData() throws IOException {
         int length;
         length = read(4);
-        if (length > 0) {
+        if (length == 0) {
+            return null;
+        } else {
             byte[] bytes = new byte[length];
             read(bytes, 0, length);
-            Ticket ticket = new Ticket(bytes);
-            return ticket;
+            return bytes;
         }
-        else return null;
     }
 
     boolean[] readFlags() throws IOException {
@@ -328,6 +328,17 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         }
         return flags;
     }
+
+    /**
+     * Reads the next cred in stream.
+     * @return the next cred, null if ticket or second_ticket unparseable.
+     *
+     * Note: MIT krb5 1.8.1 might generate a config entry with server principal
+     * X-CACHECONF:/krb5_ccache_conf_data/fast_avail/krbtgt/REALM@REALM. The
+     * entry is used by KDC to inform the client that it support certain
+     * features. Its ticket is not a valid krb5 ticket and thus this method
+     * returns null.
+     */
     Credentials readCred(int version) throws IOException,RealmException, KrbApErrException, Asn1Exception {
         PrincipalName cpname = readPrincipal(version);
         if (DEBUG)
@@ -367,17 +378,17 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         if (auData != null) {
             auData = new AuthorizationData(auDataEntry);
         }
-        Ticket ticket = readData();
-        if (DEBUG) {
-            System.out.println(">>>DEBUG <CCacheInputStream>");
-            if (ticket == null) {
-                System.out.println("///ticket is null");
-            }
+        byte[] ticketData = readData();
+        byte[] ticketData2 = readData();
+
+        try {
+            return new Credentials(cpname, spname, key, authtime, starttime,
+                endtime, renewTill, skey, tFlags,
+                addrs, auData,
+                ticketData != null ? new Ticket(ticketData) : null,
+                ticketData2 != null ? new Ticket(ticketData2) : null);
+        } catch (Exception e) {     // If any of new Ticket(*) fails.
+            return null;
         }
-        Ticket secTicket = readData();
-        Credentials cred = new Credentials(cpname, spname, key, authtime, starttime,
-                                           endtime, renewTill, skey, tFlags,
-                                           addrs, auData, ticket, secTicket);
-        return cred;
     }
 }

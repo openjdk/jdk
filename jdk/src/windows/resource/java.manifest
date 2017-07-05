@@ -3,7 +3,7 @@
 <assemblyIdentity
     version="1.0.0.0"
     processorArchitecture="X86"
-    name="Sun Microsystems, Inc., Java(tm) 2 Standard Edition"
+    name="Oracle Corporation, Java(tm) 2 Standard Edition"
     type="win32"
 />
 <description>AWT</description>

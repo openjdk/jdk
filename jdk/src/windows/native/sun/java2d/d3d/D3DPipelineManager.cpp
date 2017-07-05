@@ -969,12 +969,15 @@ void D3DInitializer::InitImpl()
     }
     D3DPipelineManager *pMgr = D3DPipelineManager::CreateInstance();
     if (pMgr != NULL) {
-        UINT adapterCount = pMgr->adapterCount;
+        // init adapters if we are preloading
+        if (AwtToolkit::GetInstance().GetPreloadThread().OnPreloadThread()) {
+            UINT adapterCount = pMgr->adapterCount;
 
-        pAdapterIniters = new D3DAdapterInitializer[adapterCount];
-        for (UINT i=0; i<adapterCount; i++) {
-            pAdapterIniters[i].setAdapter(i);
-            AwtToolkit::GetInstance().GetPreloadThread().AddAction(&pAdapterIniters[i]);
+            pAdapterIniters = new D3DAdapterInitializer[adapterCount];
+            for (UINT i=0; i<adapterCount; i++) {
+                pAdapterIniters[i].setAdapter(i);
+                AwtToolkit::GetInstance().GetPreloadThread().AddAction(&pAdapterIniters[i]);
+            }
         }
     }
 }

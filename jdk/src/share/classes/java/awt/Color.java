@@ -611,12 +611,15 @@ public class Color implements Paint, java.io.Serializable {
      * <p>
      * This method applies an arbitrary scale factor to each of the three RGB
      * components of this <code>Color</code> to create a brighter version
-     * of this <code>Color</code>. Although <code>brighter</code> and
+     * of this <code>Color</code>.
+     * The {@code alpha} value is preserved.
+     * Although <code>brighter</code> and
      * <code>darker</code> are inverse operations, the results of a
      * series of invocations of these two methods might be inconsistent
      * because of rounding errors.
      * @return     a new <code>Color</code> object that is
-     *                 a brighter version of this <code>Color</code>.
+     *                 a brighter version of this <code>Color</code>
+     *                 with the same {@code alpha} value.
      * @see        java.awt.Color#darker
      * @since      JDK1.0
      */
@@ -624,6 +627,7 @@ public class Color implements Paint, java.io.Serializable {
         int r = getRed();
         int g = getGreen();
         int b = getBlue();
+        int alpha = getAlpha();
 
         /* From 2D group:
          * 1. black.brighter() should return grey
@@ -632,7 +636,7 @@ public class Color implements Paint, java.io.Serializable {
          */
         int i = (int)(1.0/(1.0-FACTOR));
         if ( r == 0 && g == 0 && b == 0) {
-           return new Color(i, i, i);
+            return new Color(i, i, i, alpha);
         }
         if ( r > 0 && r < i ) r = i;
         if ( g > 0 && g < i ) g = i;
@@ -640,7 +644,8 @@ public class Color implements Paint, java.io.Serializable {
 
         return new Color(Math.min((int)(r/FACTOR), 255),
                          Math.min((int)(g/FACTOR), 255),
-                         Math.min((int)(b/FACTOR), 255));
+                         Math.min((int)(b/FACTOR), 255),
+                         alpha);
     }
 
     /**
@@ -649,19 +654,23 @@ public class Color implements Paint, java.io.Serializable {
      * <p>
      * This method applies an arbitrary scale factor to each of the three RGB
      * components of this <code>Color</code> to create a darker version of
-     * this <code>Color</code>.  Although <code>brighter</code> and
+     * this <code>Color</code>.
+     * The {@code alpha} value is preserved.
+     * Although <code>brighter</code> and
      * <code>darker</code> are inverse operations, the results of a series
      * of invocations of these two methods might be inconsistent because
      * of rounding errors.
      * @return  a new <code>Color</code> object that is
-     *                    a darker version of this <code>Color</code>.
+     *                    a darker version of this <code>Color</code>
+     *                    with the same {@code alpha} value.
      * @see        java.awt.Color#brighter
      * @since      JDK1.0
      */
     public Color darker() {
         return new Color(Math.max((int)(getRed()  *FACTOR), 0),
                          Math.max((int)(getGreen()*FACTOR), 0),
-                         Math.max((int)(getBlue() *FACTOR), 0));
+                         Math.max((int)(getBlue() *FACTOR), 0),
+                         getAlpha());
     }
 
     /**
