@@ -31,6 +31,7 @@ import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.ImageCapabilities;
 import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import sun.java2d.SurfaceData;
@@ -286,5 +287,19 @@ public abstract class SurfaceManager {
         if (priority == 0.0f) {
             flush(true);
         }
+    }
+
+    /**
+     * Returns a scale factor of the image. This is utility method, which
+     * fetches information from the SurfaceData of the image.
+     *
+     * @see SurfaceData#getDefaultScale
+     */
+    public static int getImageScale(final Image img) {
+        if (!(img instanceof VolatileImage)) {
+            return 1;
+        }
+        final SurfaceManager sm = getManager(img);
+        return sm.getPrimarySurfaceData().getDefaultScale();
     }
 }

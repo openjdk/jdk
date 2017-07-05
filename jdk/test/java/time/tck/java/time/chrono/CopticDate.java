@@ -68,6 +68,7 @@ import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.Year;
 import java.time.chrono.ChronoLocalDate;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
@@ -75,7 +76,7 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.ValueRange;
-import java.time.Year;
+import java.time.temporal.UnsupportedTemporalTypeException;
 
 /**
  * A date in the Coptic calendar system.
@@ -201,7 +202,7 @@ public final class CopticDate
                 }
                 return getChronology().range(f);
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.rangeRefinedBy(this);
     }
@@ -223,7 +224,7 @@ public final class CopticDate
                 case YEAR: return prolepticYear;
                 case ERA: return (prolepticYear >= 1 ? 1 : 0);
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.getFrom(this);
     }
@@ -248,7 +249,7 @@ public final class CopticDate
                 case YEAR: return resolvePreviousValid(nvalue, month, day);
                 case ERA: return resolvePreviousValid(1 - prolepticYear, month, day);
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.adjustInto(this, newValue);
     }
@@ -267,7 +268,7 @@ public final class CopticDate
                 case CENTURIES: return plusYears(Math.multiplyExact(amountToAdd, 100));
                 case MILLENNIA: return plusYears(Math.multiplyExact(amountToAdd, 1000));
             }
-            throw new DateTimeException(unit.getName() + " not valid for CopticDate");
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
         }
         return unit.addTo(this, amountToAdd);
     }

@@ -66,6 +66,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.FOREVER;
 
 import java.time.DateTimeException;
+import java.time.format.ResolverStyle;
 import java.util.Collections;
 import java.util.Map;
 
@@ -106,7 +107,12 @@ public final class JulianFields {
      * When 'JULIAN_DAY.adjustInto()' is applied to a date-time, the time of day portion remains unaltered.
      * 'JULIAN_DAY.adjustInto()' and 'JULIAN_DAY.getFrom()' only apply to {@code Temporal} objects that
      * can be converted into {@link ChronoField#EPOCH_DAY}.
-     * A {@link DateTimeException} is thrown for any other type of object.
+     * An {@link UnsupportedTemporalTypeException} is thrown for any other type of object.
+     * <p>
+     * In the resolving phase of parsing, a date can be created from a Julian Day field.
+     * In {@linkplain ResolverStyle#STRICT strict mode} and {@linkplain ResolverStyle#SMART smart mode}
+     * the Julian Day value is validated against the range of valid values.
+     * In {@linkplain ResolverStyle#LENIENT lenient mode} no validation occurs.
      * <p>
      * <h3>Astronomical and Scientific Notes</h3>
      * The standard astronomical definition uses a fraction to indicate the time-of-day,
@@ -147,9 +153,14 @@ public final class JulianFields {
      * When 'MODIFIED_JULIAN_DAY.adjustInto()' is applied to a date-time, the time of day portion remains unaltered.
      * 'MODIFIED_JULIAN_DAY.adjustInto()' and 'MODIFIED_JULIAN_DAY.getFrom()' only apply to {@code Temporal} objects
      * that can be converted into {@link ChronoField#EPOCH_DAY}.
-     * A {@link DateTimeException} is thrown for any other type of object.
+     * An {@link UnsupportedTemporalTypeException} is thrown for any other type of object.
      * <p>
      * This implementation is an integer version of MJD with the decimal part rounded to floor.
+     * <p>
+     * In the resolving phase of parsing, a date can be created from a Modified Julian Day field.
+     * In {@linkplain ResolverStyle#STRICT strict mode} and {@linkplain ResolverStyle#SMART smart mode}
+     * the Modified Julian Day value is validated against the range of valid values.
+     * In {@linkplain ResolverStyle#LENIENT lenient mode} no validation occurs.
      * <p>
      * <h3>Astronomical and Scientific Notes</h3>
      * <pre>
@@ -180,7 +191,12 @@ public final class JulianFields {
      * When 'RATA_DIE.adjustInto()' is applied to a date-time, the time of day portion remains unaltered.
      * 'RATA_DIE.adjustInto()' and 'RATA_DIE.getFrom()' only apply to {@code Temporal} objects
      * that can be converted into {@link ChronoField#EPOCH_DAY}.
-     * A {@link DateTimeException} is thrown for any other type of object.
+     * An {@link UnsupportedTemporalTypeException} is thrown for any other type of object.
+     * <p>
+     * In the resolving phase of parsing, a date can be created from a Rata Die field.
+     * In {@linkplain ResolverStyle#STRICT strict mode} and {@linkplain ResolverStyle#SMART smart mode}
+     * the Rata Die value is validated against the range of valid values.
+     * In {@linkplain ResolverStyle#LENIENT lenient mode} no validation occurs.
      */
     public static final TemporalField RATA_DIE = Field.RATA_DIE;
 
@@ -232,6 +248,11 @@ public final class JulianFields {
         }
 
         @Override
+        public boolean isDateBased() {
+            return true;
+        }
+
+        @Override
         public ValueRange range() {
             return range;
         }
@@ -266,8 +287,15 @@ public final class JulianFields {
 
         //-----------------------------------------------------------------------
         @Override
-        public Map<TemporalField, Long> resolve(TemporalAccessor temporal, long value) {
-            return Collections.<TemporalField, Long>singletonMap(EPOCH_DAY, Math.subtractExact(value, offset));
+        public Map<TemporalField, Long> resolve(TemporalAccessor temporal, long value, ResolverStyle resolverStyle) {
+            long epochDay;
+            if (resolverStyle == ResolverStyle.LENIENT) {
+                epochDay = Math.subtractExact(value, offset);
+            } else {
+                range().checkValidValue(value, this);
+                epochDay = value - offset;
+            }
+            return Collections.<TemporalField, Long>singletonMap(EPOCH_DAY, epochDay);
         }
 
         //-----------------------------------------------------------------------

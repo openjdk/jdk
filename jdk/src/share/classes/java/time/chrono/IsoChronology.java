@@ -61,20 +61,41 @@
  */
 package java.time.chrono;
 
+import static java.time.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
+import static java.time.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
+import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_MONTH;
+import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.DAY_OF_WEEK;
+import static java.time.temporal.ChronoField.DAY_OF_YEAR;
+import static java.time.temporal.ChronoField.EPOCH_DAY;
+import static java.time.temporal.ChronoField.ERA;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
+import static java.time.temporal.ChronoField.YEAR;
+import static java.time.temporal.ChronoField.YEAR_OF_ERA;
+import static java.time.temporal.TemporalAdjuster.nextOrSame;
+
 import java.io.Serializable;
 import java.time.Clock;
 import java.time.DateTimeException;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -111,20 +132,6 @@ public final class IsoChronology extends Chronology implements Serializable {
      * Singleton instance of the ISO chronology.
      */
     public static final IsoChronology INSTANCE = new IsoChronology();
-    /**
-     * The singleton instance for the era BCE - 'Before Current Era'.
-     * The 'ISO' part of the name emphasizes that this differs from the BCE
-     * era in the Gregorian calendar system.
-     * This has the numeric value of {@code 0}.
-     */
-    public static final Era ERA_BCE = IsoEra.BCE;
-    /**
-     * The singleton instance for the era CE - 'Current Era'.
-     * The 'ISO' part of the name emphasizes that this differs from the CE
-     * era in the Gregorian calendar system.
-     * This has the numeric value of {@code 1}.
-     */
-    public static final Era ERA_CE = IsoEra.CE;
 
     /**
      * Serialization version.
@@ -135,15 +142,6 @@ public final class IsoChronology extends Chronology implements Serializable {
      * Restricted constructor.
      */
     private IsoChronology() {
-    }
-
-    /**
-     * Resolve singleton.
-     *
-     * @return the singleton instance, not null
-     */
-    private Object readResolve() {
-        return INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -189,6 +187,7 @@ public final class IsoChronology extends Chronology implements Serializable {
      * @param dayOfMonth  the ISO day-of-month
      * @return the ISO local date, not null
      * @throws DateTimeException if unable to create the date
+     * @throws ClassCastException if the type of {@code era} is not {@code IsoEra}
      */
     @Override  // override with covariant return type
     public LocalDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
@@ -239,6 +238,20 @@ public final class IsoChronology extends Chronology implements Serializable {
     @Override  // override with covariant return type
     public LocalDate dateYearDay(int prolepticYear, int dayOfYear) {
         return LocalDate.ofYearDay(prolepticYear, dayOfYear);
+    }
+
+    /**
+     * Obtains an ISO local date from the epoch-day.
+     * <p>
+     * This is equivalent to {@link LocalDate#ofEpochDay(long)}.
+     *
+     * @param epochDay  the epoch day
+     * @return the ISO local date, not null
+     * @throws DateTimeException if unable to create the date
+     */
+    @Override  // override with covariant return type
+    public LocalDate dateEpochDay(long epochDay) {
+        return LocalDate.ofEpochDay(epochDay);
     }
 
     //-----------------------------------------------------------------------
@@ -379,7 +392,7 @@ public final class IsoChronology extends Chronology implements Serializable {
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
         if (era instanceof IsoEra == false) {
-            throw new DateTimeException("Era must be IsoEra");
+            throw new ClassCastException("Era must be IsoEra");
         }
         return (era == IsoEra.CE ? yearOfEra : 1 - yearOfEra);
     }
@@ -392,6 +405,282 @@ public final class IsoChronology extends Chronology implements Serializable {
     @Override
     public List<Era> eras() {
         return Arrays.<Era>asList(IsoEra.values());
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Resolves parsed {@code ChronoField} values into a date during parsing.
+     * <p>
+     * Most {@code TemporalField} implementations are resolved using the
+     * resolve method on the field. By contrast, the {@code ChronoField} class
+     * defines fields that only have meaning relative to the chronology.
+     * As such, {@code ChronoField} date fields are resolved here in the
+     * context of a specific chronology.
+     * <p>
+     * {@code ChronoField} instances on the ISO calendar system are resolved
+     * as follows.
+     * <ul>
+     * <li>{@code EPOCH_DAY} - If present, this is converted to a {@code LocalDate}
+     *  all other date fields are then cross-checked against the date
+     * <li>{@code PROLEPTIC_MONTH} - If present, then it is split into the
+     *  {@code YEAR} and {@code MONTH_OF_YEAR}. If the mode is strict or smart
+     *  then the field is validated.
+     * <li>{@code YEAR_OF_ERA} and {@code ERA} - If both are present, then they
+     *  are combined to form a {@code YEAR}. In lenient mode, the {@code YEAR_OF_ERA}
+     *  range is not validated, in smart and strict mode it is. The {@code ERA} is
+     *  validated for range in all three modes. If only the {@code YEAR_OF_ERA} is
+     *  present, and the mode is smart or lenient, then the current era (CE/AD)
+     *  is assumed. In strict mode, no ers is assumed and the {@code YEAR_OF_ERA} is
+     *  left untouched. If only the {@code ERA} is present, then it is left untouched.
+     * <li>{@code YEAR}, {@code MONTH_OF_YEAR} and {@code DAY_OF_MONTH} -
+     *  If all three are present, then they are combined to form a {@code LocalDate}.
+     *  In all three modes, the {@code YEAR} is validated. If the mode is smart or strict,
+     *  then the month and day are validated, with the day validated from 1 to 31.
+     *  If the mode is lenient, then the date is combined in a manner equivalent to
+     *  creating a date on the first of January in the requested year, then adding
+     *  the difference in months, then the difference in days.
+     *  If the mode is smart, and the day-of-month is greater than the maximum for
+     *  the year-month, then the day-of-month is adjusted to the last day-of-month.
+     *  If the mode is strict, then the three fields must form a valid date.
+     * <li>{@code YEAR} and {@code DAY_OF_YEAR} -
+     *  If both are present, then they are combined to form a {@code LocalDate}.
+     *  In all three modes, the {@code YEAR} is validated.
+     *  If the mode is lenient, then the date is combined in a manner equivalent to
+     *  creating a date on the first of January in the requested year, then adding
+     *  the difference in days.
+     *  If the mode is smart or strict, then the two fields must form a valid date.
+     * <li>{@code YEAR}, {@code MONTH_OF_YEAR}, {@code ALIGNED_WEEK_OF_MONTH} and
+     *  {@code ALIGNED_DAY_OF_WEEK_IN_MONTH} -
+     *  If all four are present, then they are combined to form a {@code LocalDate}.
+     *  In all three modes, the {@code YEAR} is validated.
+     *  If the mode is lenient, then the date is combined in a manner equivalent to
+     *  creating a date on the first of January in the requested year, then adding
+     *  the difference in months, then the difference in weeks, then in days.
+     *  If the mode is smart or strict, then the all four fields are validated to
+     *  their outer ranges. The date is then combined in a manner equivalent to
+     *  creating a date on the first day of the requested year and month, then adding
+     *  the amount in weeks and days to reach their values. If the mode is strict,
+     *  the date is additionally validated to check that the day and week adjustment
+     *  did not change the month.
+     * <li>{@code YEAR}, {@code MONTH_OF_YEAR}, {@code ALIGNED_WEEK_OF_MONTH} and
+     *  {@code DAY_OF_WEEK} - If all four are present, then they are combined to
+     *  form a {@code LocalDate}. The approach is the same as described above for
+     *  years, months and weeks in {@code ALIGNED_DAY_OF_WEEK_IN_MONTH}.
+     *  The day-of-week is adjusted as the next or same matching day-of-week once
+     *  the years, months and weeks have been handled.
+     * <li>{@code YEAR}, {@code ALIGNED_WEEK_OF_YEAR} and {@code ALIGNED_DAY_OF_WEEK_IN_YEAR} -
+     *  If all three are present, then they are combined to form a {@code LocalDate}.
+     *  In all three modes, the {@code YEAR} is validated.
+     *  If the mode is lenient, then the date is combined in a manner equivalent to
+     *  creating a date on the first of January in the requested year, then adding
+     *  the difference in weeks, then in days.
+     *  If the mode is smart or strict, then the all three fields are validated to
+     *  their outer ranges. The date is then combined in a manner equivalent to
+     *  creating a date on the first day of the requested year, then adding
+     *  the amount in weeks and days to reach their values. If the mode is strict,
+     *  the date is additionally validated to check that the day and week adjustment
+     *  did not change the year.
+     * <li>{@code YEAR}, {@code ALIGNED_WEEK_OF_YEAR} and {@code DAY_OF_WEEK} -
+     *  If all three are present, then they are combined to form a {@code LocalDate}.
+     *  The approach is the same as described above for years and weeks in
+     *  {@code ALIGNED_DAY_OF_WEEK_IN_YEAR}. The day-of-week is adjusted as the
+     *  next or same matching day-of-week once the years and weeks have been handled.
+     * </ul>
+     *
+     * @param fieldValues  the map of fields to values, which can be updated, not null
+     * @param resolverStyle  the requested type of resolve, not null
+     * @return the resolved date, null if insufficient information to create a date
+     * @throws DateTimeException if the date cannot be resolved, typically
+     *  because of a conflict in the input data
+     */
+    @Override  // override for performance
+    public LocalDate resolveDate(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        // check epoch-day before inventing era
+        if (fieldValues.containsKey(EPOCH_DAY)) {
+            return LocalDate.ofEpochDay(fieldValues.remove(EPOCH_DAY));
+        }
+
+        // fix proleptic month before inventing era
+        resolveProlepticMonth(fieldValues, resolverStyle);
+
+        // invent era if necessary to resolve year-of-era
+        resolveYearOfEra(fieldValues, resolverStyle);
+
+        // build date
+        if (fieldValues.containsKey(YEAR)) {
+            if (fieldValues.containsKey(MONTH_OF_YEAR)) {
+                if (fieldValues.containsKey(DAY_OF_MONTH)) {
+                    return resolveYMD(fieldValues, resolverStyle);
+                }
+                if (fieldValues.containsKey(ALIGNED_WEEK_OF_MONTH)) {
+                    if (fieldValues.containsKey(ALIGNED_DAY_OF_WEEK_IN_MONTH)) {
+                        return resolveYMAA(fieldValues, resolverStyle);
+                    }
+                    if (fieldValues.containsKey(DAY_OF_WEEK)) {
+                        return resolveYMAD(fieldValues, resolverStyle);
+                    }
+                }
+            }
+            if (fieldValues.containsKey(DAY_OF_YEAR)) {
+                return resolveYD(fieldValues, resolverStyle);
+            }
+            if (fieldValues.containsKey(ALIGNED_WEEK_OF_YEAR)) {
+                if (fieldValues.containsKey(ALIGNED_DAY_OF_WEEK_IN_YEAR)) {
+                    return resolveYAA(fieldValues, resolverStyle);
+                }
+                if (fieldValues.containsKey(DAY_OF_WEEK)) {
+                    return resolveYAD(fieldValues, resolverStyle);
+                }
+            }
+        }
+        return null;
+    }
+
+    private void resolveProlepticMonth(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        Long pMonth = fieldValues.remove(PROLEPTIC_MONTH);
+        if (pMonth != null) {
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                PROLEPTIC_MONTH.checkValidValue(pMonth);
+            }
+            addFieldValue(fieldValues, MONTH_OF_YEAR, Math.floorMod(pMonth, 12) + 1);
+            addFieldValue(fieldValues, YEAR, Math.floorDiv(pMonth, 12));
+        }
+    }
+
+    private void resolveYearOfEra(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        Long yoeLong = fieldValues.remove(YEAR_OF_ERA);
+        if (yoeLong != null) {
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                YEAR_OF_ERA.checkValidValue(yoeLong);
+            }
+            Long era = fieldValues.remove(ERA);
+            if (era == null) {
+                Long year = fieldValues.get(YEAR);
+                if (resolverStyle == ResolverStyle.STRICT) {
+                    // do not invent era if strict, but do cross-check with year
+                    if (year != null) {
+                        addFieldValue(fieldValues, YEAR, (year > 0 ? yoeLong: Math.subtractExact(1, yoeLong)));
+                    } else {
+                        // reinstate the field removed earlier, no cross-check issues
+                        fieldValues.put(YEAR_OF_ERA, yoeLong);
+                    }
+                } else {
+                    // invent era
+                    addFieldValue(fieldValues, YEAR, (year == null || year > 0 ? yoeLong: Math.subtractExact(1, yoeLong)));
+                }
+            } else if (era.longValue() == 1L) {
+                addFieldValue(fieldValues, YEAR, yoeLong);
+            } else if (era.longValue() == 0L) {
+                addFieldValue(fieldValues, YEAR, Math.subtractExact(1, yoeLong));
+            } else {
+                throw new DateTimeException("Invalid value for era: " + era);
+            }
+        }
+    }
+
+    private LocalDate resolveYMD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
+            long days = Math.subtractExact(fieldValues.remove(DAY_OF_MONTH), 1);
+            return LocalDate.of(y, 1, 1).plusMonths(months).plusDays(days);
+        }
+        int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
+        int dom = DAY_OF_MONTH.checkValidIntValue(fieldValues.remove(DAY_OF_MONTH));
+        if (resolverStyle == ResolverStyle.SMART) {  // previous valid
+            dom = Math.min(dom, Month.of(moy).length(Year.isLeap(y)));
+        }
+        return LocalDate.of(y, moy, dom);
+    }
+
+    private LocalDate resolveYD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long days = Math.subtractExact(fieldValues.remove(DAY_OF_YEAR), 1);
+            return LocalDate.of(y, 1, 1).plusDays(days);
+        }
+        int doy = DAY_OF_YEAR.checkValidIntValue(fieldValues.remove(DAY_OF_YEAR));
+        return LocalDate.ofYearDay(y, doy);  // smart is same as strict
+    }
+
+    private LocalDate resolveYMAA(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
+            long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
+            long days = Math.subtractExact(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH), 1);
+            return LocalDate.of(y, 1, 1).plusMonths(months).plusWeeks(weeks).plusDays(days);
+        }
+        int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
+        int aw = ALIGNED_WEEK_OF_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH));
+        int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
+        LocalDate date = LocalDate.of(y, moy, 1).plusDays((aw - 1) * 7 + (ad - 1));
+        if (resolverStyle == ResolverStyle.STRICT && date.getMonthValue() != moy) {
+            throw new DateTimeException("Strict mode rejected resolved date as it is in a different month");
+        }
+        return date;
+    }
+
+    private LocalDate resolveYMAD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
+            long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
+            long dow = Math.subtractExact(fieldValues.remove(DAY_OF_WEEK), 1);
+            return resolveAligned(y, months, weeks, dow);
+        }
+        int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
+        int aw = ALIGNED_WEEK_OF_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH));
+        int dow = DAY_OF_WEEK.checkValidIntValue(fieldValues.remove(DAY_OF_WEEK));
+        LocalDate date = LocalDate.of(y, moy, 1).plusDays((aw - 1) * 7).with(nextOrSame(DayOfWeek.of(dow)));
+        if (resolverStyle == ResolverStyle.STRICT && date.getMonthValue() != moy) {
+            throw new DateTimeException("Strict mode rejected resolved date as it is in a different month");
+        }
+        return date;
+    }
+
+    private LocalDate resolveYAA(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
+            long days = Math.subtractExact(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR), 1);
+            return LocalDate.of(y, 1, 1).plusWeeks(weeks).plusDays(days);
+        }
+        int aw = ALIGNED_WEEK_OF_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR));
+        int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
+        LocalDate date = LocalDate.of(y, 1, 1).plusDays((aw - 1) * 7 + (ad - 1));
+        if (resolverStyle == ResolverStyle.STRICT && date.getYear() != y) {
+            throw new DateTimeException("Strict mode rejected resolved date as it is in a different year");
+        }
+        return date;
+    }
+
+    private LocalDate resolveYAD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
+            long dow = Math.subtractExact(fieldValues.remove(DAY_OF_WEEK), 1);
+            return resolveAligned(y, 0, weeks, dow);
+        }
+        int aw = ALIGNED_WEEK_OF_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR));
+        int dow = DAY_OF_WEEK.checkValidIntValue(fieldValues.remove(DAY_OF_WEEK));
+        LocalDate date = LocalDate.of(y, 1, 1).plusDays((aw - 1) * 7).with(nextOrSame(DayOfWeek.of(dow)));
+        if (resolverStyle == ResolverStyle.STRICT && date.getYear() != y) {
+            throw new DateTimeException("Strict mode rejected resolved date as it is in a different year");
+        }
+        return date;
+    }
+
+    private LocalDate resolveAligned(int y, long months, long weeks, long dow) {
+        LocalDate date = LocalDate.of(y, 1, 1).plusMonths(months).plusWeeks(weeks);
+        if (dow > 7) {
+            date = date.plusWeeks((dow - 1) / 7);
+            dow = ((dow - 1) % 7) + 1;
+        } else if (dow < 1) {
+            date = date.plusWeeks(Math.subtractExact(dow,  7) / 7);
+            dow = ((dow + 6) % 7) + 1;
+        }
+        return date.with(nextOrSame(DayOfWeek.of((int) dow)));
     }
 
     //-----------------------------------------------------------------------

@@ -231,12 +231,12 @@ public final class QuantifierNode extends StateNode {
                         break;
 
                     case DEL:
-                        env.reg.warnings.warn(new String(chars, p, end) +
+                        env.reg.getWarnings().warn(new String(chars, p, end) +
                                 " redundant nested repeat operator");
                         break;
 
                     default:
-                        env.reg.warnings.warn(new String(chars, p, end) +
+                        env.reg.getWarnings().warn(new String(chars, p, end) +
                                 " nested repeat operator " + Reduce.PopularQStr[targetQNum] +
                                 " and " + Reduce.PopularQStr[nestQNum] + " was replaced with '" +
                                 Reduce.ReduceQStr[Reduce.REDUCE_TABLE[targetQNum][nestQNum].ordinal()] + "'");

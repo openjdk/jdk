@@ -59,22 +59,20 @@
  */
 package tck.java.time.zone;
 
-import java.time.ZoneId;
-
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.zone.ZoneRules;
+import java.time.zone.ZoneRulesException;
+import java.time.zone.ZoneRulesProvider;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
-
-import java.time.ZoneOffset;
-import java.time.zone.ZoneRules;
-import java.time.zone.ZoneRulesException;
-import java.time.zone.ZoneRulesProvider;
 
 import org.testng.annotations.Test;
 
@@ -172,7 +170,7 @@ public class TCKZoneRulesProvider {
     //-----------------------------------------------------------------------
     // registerProvider()
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_registerProvider() {
         Set<String> pre = ZoneRulesProvider.getAvailableZoneIds();
         assertEquals(pre.contains("FooLocation"), false);

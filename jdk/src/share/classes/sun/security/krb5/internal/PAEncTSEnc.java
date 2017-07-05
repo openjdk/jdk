@@ -65,7 +65,7 @@ public class PAEncTSEnc {
     }
 
     public PAEncTSEnc() {
-        KerberosTime now = new KerberosTime(KerberosTime.NOW);
+        KerberosTime now = KerberosTime.now();
         pATimeStamp = now;
         pAUSec = new Integer(now.getMicroSeconds());
     }

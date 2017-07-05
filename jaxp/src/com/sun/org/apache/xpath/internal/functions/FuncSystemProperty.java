@@ -102,7 +102,7 @@ public class FuncSystemProperty extends FunctionOneArg
 
         try
         {
-          result = System.getProperty(propName);
+          result = SecuritySupport.getSystemProperty(propName);
 
           if (null == result)
           {
@@ -124,7 +124,7 @@ public class FuncSystemProperty extends FunctionOneArg
     {
       try
       {
-        result = System.getProperty(fullName);
+        result = SecuritySupport.getSystemProperty(fullName);
 
         if (null == result)
         {
@@ -165,12 +165,11 @@ public class FuncSystemProperty extends FunctionOneArg
    * should already be fully qualified as path/filename
    * @param target The target property bag the file will be placed into.
    */
-  private void loadPropertyFile(String file, Properties target)
+  public void loadPropertyFile(String file, Properties target)
   {
     try
     {
       // Use SecuritySupport class to provide priveleged access to property file
-
       InputStream is = SecuritySupport.getResourceAsStream(ObjectFactory.findClassLoader(),
                                               file);
 

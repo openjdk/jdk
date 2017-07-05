@@ -23,7 +23,18 @@
 
 package test.java.time.format;
 
+import static org.testng.Assert.assertEquals;
+
 import java.text.DateFormatSymbols;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatSymbols;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.TextStyle;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalQuery;
+import java.time.zone.ZoneRulesProvider;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -32,24 +43,13 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 
-import java.time.ZonedDateTime;
-import java.time.ZoneId;
-import java.time.temporal.ChronoField;
-import java.time.temporal.Queries;
-import java.time.format.DateTimeFormatSymbols;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.TextStyle;
-import java.time.zone.ZoneRulesProvider;
-
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
 
 /**
  * Test ZoneTextPrinterParser
  */
-@Test(groups={"implementation"})
+@Test
 public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
 
     protected static DateTimeFormatter getFormatter(Locale locale, TextStyle style) {
@@ -70,26 +70,23 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
             zdt = zdt.withDayOfYear(r.nextInt(365) + 1)
                      .with(ChronoField.SECOND_OF_DAY, r.nextInt(86400));
             for (String zid : zids) {
-                if (zid.equals("ROC") ||
-                    zid.startsWith("UTC") ||
-                    zid.startsWith("GMT") || zid.startsWith("Etc/GMT")) {
-                    // UTC, GMT are treated as zone offset
+                if (zid.equals("ROC") || zid.startsWith("Etc/GMT")) {
                     continue;      // TBD: match jdk behavior?
                 }
                 zdt = zdt.withZoneSameLocal(ZoneId.of(zid));
                 TimeZone tz = TimeZone.getTimeZone(zid);
                 boolean isDST = tz.inDaylightTime(new Date(zdt.toInstant().toEpochMilli()));
                 for (Locale locale : locales) {
-                    printText(locale, zdt, TextStyle.FULL,
-                              tz.getDisplayName(isDST, TimeZone.LONG, locale));
-                    printText(locale, zdt, TextStyle.SHORT,
-                              tz.getDisplayName(isDST, TimeZone.SHORT, locale));
+                    printText(locale, zdt, TextStyle.FULL, tz,
+                            tz.getDisplayName(isDST, TimeZone.LONG, locale));
+                    printText(locale, zdt, TextStyle.SHORT, tz,
+                            tz.getDisplayName(isDST, TimeZone.SHORT, locale));
                 }
             }
         }
     }
 
-    private void printText(Locale locale, ZonedDateTime zdt, TextStyle style, String expected) {
+    private void printText(Locale locale, ZonedDateTime zdt, TextStyle style, TimeZone zone, String expected) {
         String result = getFormatter(locale, style).format(zdt);
         if (!result.equals(expected)) {
             if (result.equals("FooLocation")) { // from rules provider test if same vm
@@ -97,8 +94,8 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
             }
             System.out.println("----------------");
             System.out.printf("tdz[%s]%n", zdt.toString());
-            System.out.printf("[%-4s, %5s] :[%s]%n", locale.toString(), style.toString(),result);
-            System.out.printf("%4s, %5s  :[%s]%n", "", "", expected);
+            System.out.printf("[%-5s, %5s] :[%s]%n", locale.toString(), style.toString(),result);
+            System.out.printf(" %5s, %5s  :[%s] %s%n", "", "", expected, zone);
         }
         assertEquals(result, expected);
     }
@@ -153,7 +150,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                                                               .toFormatter(locale)
                                                               .withSymbols(DateTimeFormatSymbols.of(locale));
 
-        String ret = fmt.parse(text, Queries.zone()).getId();
+        String ret = fmt.parse(text, TemporalQuery.zone()).getId();
 
         System.out.printf("[%-5s %s] %24s -> %s(%s)%n",
                           locale.toString(),
@@ -189,7 +186,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
         if (ci) {
             text = text.toUpperCase();
         }
-        String ret = fmt.parse(text, Queries.zone()).getId();
+        String ret = fmt.parse(text, TemporalQuery.zone()).getId();
         // TBD: need an excluding list
         // assertEquals(...);
         if (ret.equals(expected) ||

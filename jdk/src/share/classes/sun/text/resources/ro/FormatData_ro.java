@@ -76,11 +76,11 @@
 
 package sun.text.resources.ro;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_ro extends ListResourceBundle {
+public class FormatData_ro extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -101,6 +101,23 @@ public class FormatData_ro extends ListResourceBundle {
                     "" // month 13 if applicable
                 }
             },
+            { "standalone.MonthNames",
+                new String[] {
+                    "ianuarie",
+                    "februarie",
+                    "martie",
+                    "aprilie",
+                    "mai",
+                    "iunie",
+                    "iulie",
+                    "august",
+                    "septembrie",
+                    "octombrie",
+                    "noiembrie",
+                    "decembrie",
+                    "",
+                }
+            },
             { "MonthAbbreviations",
                 new String[] {
                     "Ian", // abb january
@@ -116,6 +133,40 @@ public class FormatData_ro extends ListResourceBundle {
                     "Nov", // abb november
                     "Dec", // abb december
                     "" // abb month 13 if applicable
+                }
+            },
+            { "standalone.MonthAbbreviations",
+                new String[] {
+                    "ian.",
+                    "feb.",
+                    "mar.",
+                    "apr.",
+                    "mai",
+                    "iun.",
+                    "iul.",
+                    "aug.",
+                    "sept.",
+                    "oct.",
+                    "nov.",
+                    "dec.",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "I",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "I",
+                    "I",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
                 }
             },
             { "standalone.MonthNarrows",
@@ -146,6 +197,17 @@ public class FormatData_ro extends ListResourceBundle {
                     "s\u00e2mb\u0103t\u0103" // Saturday
                 }
             },
+            { "standalone.DayNames",
+                new String[] {
+                    "duminic\u0103",
+                    "luni",
+                    "mar\u021bi",
+                    "miercuri",
+                    "joi",
+                    "vineri",
+                    "s\u00e2mb\u0103t\u0103",
+                }
+            },
             { "DayAbbreviations",
                 new String[] {
                     "D", // abb Sunday
@@ -157,18 +219,28 @@ public class FormatData_ro extends ListResourceBundle {
                     "S" // abb Saturday
                 }
             },
-            // commented out DayNarrows because most names are contributed.
-//          { "DayNarrows",
-//              new String[] {
-//                  "D",
-//                  "",
-//                  "",
-//                  "",
-//                  "",
-//                  "",
-//                  "",
-//              }
-//          },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "Du",
+                    "Lu",
+                    "Ma",
+                    "Mi",
+                    "Jo",
+                    "Vi",
+                    "S\u00e2",
+                }
+            },
+            { "DayNarrows",
+                new String[] {
+                    "D",
+                    "L",
+                    "M",
+                    "M",
+                    "J",
+                    "V",
+                    "S",
+                }
+            },
             { "standalone.DayNarrows",
                 new String[] {
                     "D",
@@ -223,32 +295,6 @@ public class FormatData_ro extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE, G y MMMM dd",
-                    "d MMMM y G",
-                    "d MMM y G",
-                    "d/M/yyyy",
-                }
-            },
-            { "calendarname.islamic-civil", "calendar islamic civil" },
-            { "calendarname.islamicc", "calendar islamic civil" },
-            { "calendarname.roc", "calendar al Republicii Chineze" },
-            { "calendarname.islamic", "calendar islamic" },
-            { "calendarname.buddhist", "calendar budist" },
-            { "calendarname.japanese", "calendar japonez" },
-            { "calendarname.gregorian", "calendar gregorian" },
-            { "calendarname.gregory", "calendar gregorian" },
-            { "field.era", "er\u0103" },
-            { "field.year", "an" },
-            { "field.month", "lun\u0103" },
-            { "field.week", "s\u0103pt\u0103m\u00e2n\u0103" },
-            { "field.weekday", "zi a s\u0103pt\u0103m\u00e2nii" },
-            { "field.dayperiod", "perioada zilei" },
-            { "field.hour", "or\u0103" },
-            { "field.minute", "minut" },
-            { "field.second", "secund\u0103" },
-            { "field.zone", "zon\u0103" },
         };
     }
 }

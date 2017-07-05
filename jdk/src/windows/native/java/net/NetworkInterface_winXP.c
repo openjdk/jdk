@@ -33,6 +33,7 @@
 #include "jni_util.h"
 
 #include "NetworkInterface.h"
+#include "net_util.h"
 
 /*
  * Windows implementation of the java.net.NetworkInterface native methods.
@@ -477,7 +478,7 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
             }
             /* default ctor will set family to AF_INET */
 
-            (*env)->SetIntField(env, iaObj, ni_iaAddr, ntohl(addrs->addr.him4.sin_addr.s_addr));
+            setInetAddress_addr(env, iaObj, ntohl(addrs->addr.him4.sin_addr.s_addr));
 
             ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
             if (ibObj == NULL) {
@@ -490,8 +491,7 @@ static jobject createNetworkInterfaceXP(JNIEnv *env, netif *ifs)
               free_netaddr(netaddrP);
               return NULL;
             }
-            (*env)->SetIntField(env, ia2Obj, ni_iaAddr,
-                                ntohl(addrs->brdcast.him4.sin_addr.s_addr));
+            setInetAddress_addr(env, ia2Obj, ntohl(addrs->brdcast.him4.sin_addr.s_addr));
             (*env)->SetObjectField(env, ibObj, ni_ibbroadcastID, ia2Obj);
             (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
             (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);

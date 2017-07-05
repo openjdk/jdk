@@ -321,7 +321,7 @@ public final class ZoneOffsetTransition
     }
 
     /**
-     * Does this transition represent a gap in the local time-line.
+     * Does this transition represent an overlap in the local time-line.
      * <p>
      * Overlaps occur where there are local date-times that exist twice.
      * An example would be when the offset changes from {@code +02:00} to {@code +01:00}.

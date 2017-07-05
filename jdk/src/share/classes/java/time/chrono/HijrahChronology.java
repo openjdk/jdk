@@ -59,9 +59,13 @@ package java.time.chrono;
 
 import static java.time.temporal.ChronoField.EPOCH_DAY;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
-import java.text.ParseException;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -73,106 +77,135 @@ import java.time.temporal.ValueRange;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+
+import sun.util.logging.PlatformLogger;
 
 /**
- * The Hijrah calendar system.
+ * The Hijrah calendar is a lunar calendar supporting Islamic calendars.
  * <p>
- * This chronology defines the rules of the Hijrah calendar system.
+ * The HijrahChronology follows the rules of the Hijrah calendar system. The Hijrah
+ * calendar has several variants based on differences in when the new moon is
+ * determined to have occurred and where the observation is made.
+ * In some variants the length of each month is
+ * computed algorithmically from the astronomical data for the moon and earth and
+ * in others the length of the month is determined by an authorized sighting
+ * of the new moon. For the algorithmically based calendars the calendar
+ * can project into the future.
+ * For sighting based calendars only historical data from past
+ * sightings is available.
  * <p>
- * The implementation follows the Freeman-Grenville algorithm (*1) and has following features.
- * <p><ul>
- * <li>A year has 12 months.</li>
- * <li>Over a cycle of 30 years there are 11 leap years.</li>
- * <li>There are 30 days in month number 1, 3, 5, 7, 9, and 11,
- * and 29 days in month number 2, 4, 6, 8, 10, and 12.</li>
- * <li>In a leap year month 12 has 30 days.</li>
- * <li>In a 30 year cycle, year 2, 5, 7, 10, 13, 16, 18, 21, 24,
- * 26, and 29 are leap years.</li>
- * <li>Total of 10631 days in a 30 years cycle.</li>
- * </ul><p>
- * <P>
- * The table shows the features described above.
- * <blockquote>
- * <table border="1">
- *   <caption>Hijrah Calendar Months</caption>
- *   <tbody>
- *     <tr>
- *       <th># of month</th>
- *       <th>Name of month</th>
- *       <th>Number of days</th>
- *     </tr>
- *     <tr>
- *       <td>1</td>
- *       <td>Muharram</td>
- *       <td>30</td>
- *     </tr>
- *     <tr>
- *       <td>2</td>
- *       <td>Safar</td>
- *       <td>29</td>
- *     </tr>
- *     <tr>
- *       <td>3</td>
- *       <td>Rabi'al-Awwal</td>
- *       <td>30</td>
- *     </tr>
- *     <tr>
- *       <td>4</td>
- *       <td>Rabi'ath-Thani</td>
- *       <td>29</td>
- *     </tr>
- *     <tr>
- *       <td>5</td>
- *       <td>Jumada l-Ula</td>
- *       <td>30</td>
- *     </tr>
- *     <tr>
- *       <td>6</td>
- *       <td>Jumada t-Tania</td>
- *       <td>29</td>
- *     </tr>
- *     <tr>
- *       <td>7</td>
- *       <td>Rajab</td>
- *       <td>30</td>
- *     </tr>
- *     <tr>
- *       <td>8</td>
- *       <td>Sha`ban</td>
- *       <td>29</td>
- *     </tr>
- *     <tr>
- *       <td>9</td>
- *       <td>Ramadan</td>
- *       <td>30</td>
- *     </tr>
- *     <tr>
- *       <td>10</td>
- *       <td>Shawwal</td>
- *       <td>29</td>
- *     </tr>
- *     <tr>
- *       <td>11</td>
- *       <td>Dhu 'l-Qa`da</td>
- *       <td>30</td>
- *     </tr>
- *     <tr>
- *       <td>12</td>
- *       <td>Dhu 'l-Hijja</td>
- *       <td>29, but 30 days in years 2, 5, 7, 10,<br>
- * 13, 16, 18, 21, 24, 26, and 29</td>
- *     </tr>
- *   </tbody>
+ * The length of each month is 29 or 30 days.
+ * Ordinary years have 354 days; leap years have 355 days.
+ *
+ * <p>
+ * CLDR and LDML identify variants:
+ * <table cellpadding="2" summary="Variants of Hijrah Calendars">
+ * <thead>
+ * <tr class="tableSubHeadingColor">
+ * <th class="colFirst" align="left" >Chronology ID</th>
+ * <th class="colFirst" align="left" >Calendar Type</th>
+ * <th class="colFirst" align="left" >Locale extension, see {@link java.util.Locale}</th>
+ * <th class="colLast" align="left" >Description</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr class="altColor">
+ * <td>Hijrah-umalqura</td>
+ * <td>islamic-umalqura</td>
+ * <td>ca-islamic-cv-umalqura</td>
+ * <td>Islamic - Umm Al-Qura calendar of Saudi Arabia</td>
+ * </tr>
+ * </tbody>
  * </table>
- * </blockquote>
+ * <p>Additional variants may be available through {@link Chronology#getAvailableChronologies()}.
+ *
+ * <p>Example</p>
  * <p>
- * (*1) The algorithm is taken from the book,
- * The Muslim and Christian Calendars by G.S.P. Freeman-Grenville.
- * <p>
+ * Selecting the chronology from the locale uses {@link Chronology#ofLocale}
+ * to find the Chronology based on Locale supported BCP 47 extension mechanism
+ * to request a specific calendar ("ca") and variant ("cv"). For example,
+ * </p>
+ * <pre>
+ *      Locale locale = Locale.forLanguageTag("en-US-u-ca-islamic-cv-umalqura");
+ *      Chronology chrono = Chronology.ofLocale(locale);
+ * </pre>
  *
  * <h3>Specification for implementors</h3>
  * This class is immutable and thread-safe.
+ * <h3>Implementation Note for Hijrah Calendar Variant Configuration</h3>
+ * Each Hijrah variant is configured individually. Each variant is defined by a
+ * property resource that defines the {@code ID}, the {@code calendar type},
+ * the start of the calendar, the alignment with the
+ * ISO calendar, and the length of each month for a range of years.
+ * The variants are identified in the {@code calendars.properties} file.
+ * The new properties are prefixed with {@code "calendars.hijrah."}:
+ * <table cellpadding="2" border="0" summary="Configuration of Hijrah Calendar Variants">
+ * <thead>
+ * <tr class="tableSubHeadingColor">
+ * <th class="colFirst" align="left">Property Name</th>
+ * <th class="colFirst" align="left">Property value</th>
+ * <th class="colLast" align="left">Description </th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr class="altColor">
+ * <td>calendars.hijrah.{ID}</td>
+ * <td>The property resource defining the {@code {ID}} variant</td>
+ * <td>The property resource is located with the {@code calendars.properties} file</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td>calendars.hijrah.{ID}.type</td>
+ * <td>The calendar type</td>
+ * <td>LDML defines the calendar type names</td>
+ * </tr>
+ * </tbody>
+ * </table>
+ * <p>
+ * The Hijrah property resource is a set of properties that describe the calendar.
+ * The syntax is defined by {@code java.util.Properties#load(Reader)}.
+ * <table cellpadding="2" summary="Configuration of Hijrah Calendar">
+ * <thead>
+ * <tr class="tableSubHeadingColor">
+ * <th class="colFirst" align="left" > Property Name</th>
+ * <th class="colFirst" align="left" > Property value</th>
+ * <th class="colLast" align="left" > Description </th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr class="altColor">
+ * <td>id</td>
+ * <td>Chronology Id, for example, "Hijrah-umalqura"</td>
+ * <td>The Id of the calendar in common usage</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td>type</td>
+ * <td>Calendar type, for example, "islamic-umalqura"</td>
+ * <td>LDML defines the calendar types</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td>version</td>
+ * <td>Version, for example: "1.8.0_1"</td>
+ * <td>The version of the Hijrah variant data</td>
+ * </tr>
+ * <tr class="rowColor">
+ * <td>iso-start</td>
+ * <td>ISO start date, formatted as {@code yyyy-MM-dd}, for example: "1900-04-30"</td>
+ * <td>The ISO date of the first day of the minimum Hijrah year.</td>
+ * </tr>
+ * <tr class="altColor">
+ * <td>yyyy - a numeric 4 digit year, for example "1434"</td>
+ * <td>The value is a sequence of 12 month lengths,
+ * for example: "29 30 29 30 29 30 30 30 29 30 29 29"</td>
+ * <td>The lengths of the 12 months of the year separated by whitespace.
+ * A numeric year property must be present for every year without any gaps.
+ * The month lengths must be between 29-32 inclusive.
+ * </td>
+ * </tr>
+ * </tbody>
+ * </table>
  *
  * @since 1.8
  */
@@ -182,336 +215,161 @@ public final class HijrahChronology extends Chronology implements Serializable {
      * The Hijrah Calendar id.
      */
     private final String typeId;
-
     /**
      * The Hijrah calendarType.
      */
-    private final String calendarType;
-
-    /**
-     * The singleton instance for the era before the current one - Before Hijrah -
-     * which has the value 0.
-     */
-    public static final Era ERA_BEFORE_AH = HijrahEra.BEFORE_AH;
-    /**
-     * The singleton instance for the current era - Hijrah - which has the value 1.
-     */
-    public static final Era ERA_AH = HijrahEra.AH;
+    private transient final String calendarType;
     /**
      * Serialization version.
      */
     private static final long serialVersionUID = 3127340209035924785L;
     /**
-     * The minimum valid year-of-era.
-     */
-    public static final int MIN_YEAR_OF_ERA = 1;
-    /**
-     * The maximum valid year-of-era.
-     * This is currently set to 9999 but may be changed to increase the valid range
-     * in a future version of the specification.
-     */
-    public static final int MAX_YEAR_OF_ERA = 9999;
-
-    /**
-     * Number of Gregorian day of July 19, year 622 (Gregorian), which is epoch day
-     * of Hijrah calendar.
-     */
-    private static final int HIJRAH_JAN_1_1_GREGORIAN_DAY = -492148;
-    /**
-     * 0-based, for number of day-of-year in the beginning of month in normal
-     * year.
-     */
-    private static final int NUM_DAYS[] =
-        {0, 30, 59, 89, 118, 148, 177, 207, 236, 266, 295, 325};
-    /**
-     * 0-based, for number of day-of-year in the beginning of month in leap year.
-     */
-    private static final int LEAP_NUM_DAYS[] =
-        {0, 30, 59, 89, 118, 148, 177, 207, 236, 266, 295, 325};
-    /**
-     * 0-based, for day-of-month in normal year.
-     */
-    private static final int MONTH_LENGTH[] =
-        {30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29};
-    /**
-     * 0-based, for day-of-month in leap year.
-     */
-    private static final int LEAP_MONTH_LENGTH[] =
-        {30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 30};
-
-    /**
-     * <pre>
-     *                            Greatest       Least
-     * Field name        Minimum   Minimum     Maximum     Maximum
-     * ----------        -------   -------     -------     -------
-     * ERA                     0         0           1           1
-     * YEAR_OF_ERA             1         1        9999        9999
-     * MONTH_OF_YEAR           1         1          12          12
-     * DAY_OF_MONTH            1         1          29          30
-     * DAY_OF_YEAR             1         1         354         355
-     * </pre>
-     *
-     * Minimum values.
-     */
-    private static final int MIN_VALUES[] =
-        {
-        0,
-        MIN_YEAR_OF_ERA,
-        0,
-        1,
-        0,
-        1,
-        1
-        };
-
-    /**
-     * Least maximum values.
-     */
-    private static final int LEAST_MAX_VALUES[] =
-        {
-        1,
-        MAX_YEAR_OF_ERA,
-        11,
-        51,
-        5,
-        29,
-        354
-        };
-
-    /**
-     * Maximum values.
-     */
-    private static final int MAX_VALUES[] =
-        {
-        1,
-        MAX_YEAR_OF_ERA,
-        11,
-        52,
-        6,
-        30,
-        355
-        };
-
-   /**
-     * Position of day-of-month. This value is used to get the min/max value
-     * from an array.
-     */
-    private static final int POSITION_DAY_OF_MONTH = 5;
-    /**
-     * Position of day-of-year. This value is used to get the min/max value from
-     * an array.
-     */
-    private static final int POSITION_DAY_OF_YEAR = 6;
-    /**
-     * Zero-based start date of cycle year.
-     */
-    private static final int CYCLEYEAR_START_DATE[] =
-        {
-        0,
-        354,
-        709,
-        1063,
-        1417,
-        1772,
-        2126,
-        2481,
-        2835,
-        3189,
-        3544,
-        3898,
-        4252,
-        4607,
-        4961,
-        5315,
-        5670,
-        6024,
-        6379,
-        6733,
-        7087,
-        7442,
-        7796,
-        8150,
-        8505,
-        8859,
-        9214,
-        9568,
-        9922,
-        10277
-        };
-
-    /**
-     * Holding the adjusted month days in year. The key is a year (Integer) and
-     * the value is the all the month days in year (int[]).
-     */
-    private final HashMap<Integer, int[]> ADJUSTED_MONTH_DAYS = new HashMap<>();
-    /**
-     * Holding the adjusted month length in year. The key is a year (Integer)
-     * and the value is the all the month length in year (int[]).
-     */
-    private final HashMap<Integer, int[]> ADJUSTED_MONTH_LENGTHS = new HashMap<>();
-    /**
-     * Holding the adjusted days in the 30 year cycle. The key is a cycle number
-     * (Integer) and the value is the all the starting days of the year in the
-     * cycle (int[]).
-     */
-    private final HashMap<Integer, int[]> ADJUSTED_CYCLE_YEARS = new HashMap<>();
-    /**
-     * Holding the adjusted cycle in the 1 - 30000 year. The key is the cycle
-     * number (Integer) and the value is the starting days in the cycle in the
-     * term.
-     */
-    private final long[] ADJUSTED_CYCLES;
-    /**
-     * Holding the adjusted min values.
-     */
-    private final int[] ADJUSTED_MIN_VALUES;
-    /**
-     * Holding the adjusted max least max values.
-     */
-    private final int[] ADJUSTED_LEAST_MAX_VALUES;
-    /**
-     * Holding adjusted max values.
-     */
-    private final int[] ADJUSTED_MAX_VALUES;
-    /**
-     * Holding the non-adjusted month days in year for non leap year.
-     */
-    private static final int[] DEFAULT_MONTH_DAYS;
-    /**
-     * Holding the non-adjusted month days in year for leap year.
-     */
-    private static final int[] DEFAULT_LEAP_MONTH_DAYS;
-    /**
-     * Holding the non-adjusted month length for non leap year.
-     */
-    private static final int[] DEFAULT_MONTH_LENGTHS;
-    /**
-     * Holding the non-adjusted month length for leap year.
-     */
-    private static final int[] DEFAULT_LEAP_MONTH_LENGTHS;
-    /**
-     * Holding the non-adjusted 30 year cycle starting day.
-     */
-    private static final int[] DEFAULT_CYCLE_YEARS;
-    /**
-     * number of 30-year cycles to hold the deviation data.
-     */
-    private static final int MAX_ADJUSTED_CYCLE = 334; // to support year 9999
-
-
-    /**
-     * Narrow names for eras.
-     */
-    private static final HashMap<String, String[]> ERA_NARROW_NAMES = new HashMap<>();
-    /**
-     * Short names for eras.
-     */
-    private static final HashMap<String, String[]> ERA_SHORT_NAMES = new HashMap<>();
-    /**
-     * Full names for eras.
-     */
-    private static final HashMap<String, String[]> ERA_FULL_NAMES = new HashMap<>();
-    /**
-     * Fallback language for the era names.
-     */
-    private static final String FALLBACK_LANGUAGE = "en";
-
-    /**
-     * Singleton instance of the Hijrah chronology.
-     * Must be initialized after the rest of the static initialization.
+     * Singleton instance of the Islamic Umm Al-Qura calendar of Saudi Arabia.
+     * Other Hijrah chronology variants may be available from
+     * {@link Chronology#getAvailableChronologies}.
      */
     public static final HijrahChronology INSTANCE;
+    /**
+     * Array of epoch days indexed by Hijrah Epoch month.
+     * Computed by {@link #loadCalendarData}.
+     */
+    private transient int[] hijrahEpochMonthStartDays;
+    /**
+     * The minimum epoch day of this Hijrah calendar.
+     * Computed by {@link #loadCalendarData}.
+     */
+    private transient int minEpochDay;
+    /**
+     * The maximum epoch day for which calendar data is available.
+     * Computed by {@link #loadCalendarData}.
+     */
+    private transient int maxEpochDay;
+    /**
+     * The minimum epoch month.
+     * Computed by {@link #loadCalendarData}.
+     */
+    private transient int hijrahStartEpochMonth;
+    /**
+     * The minimum length of a month.
+     * Computed by {@link #createEpochMonths}.
+     */
+    private transient int minMonthLength;
+    /**
+     * The maximum length of a month.
+     * Computed by {@link #createEpochMonths}.
+     */
+    private transient int maxMonthLength;
+    /**
+     * The minimum length of a year in days.
+     * Computed by {@link #createEpochMonths}.
+     */
+    private transient int minYearLength;
+    /**
+     * The maximum length of a year in days.
+     * Computed by {@link #createEpochMonths}.
+     */
+    private transient int maxYearLength;
+    /**
+     * A reference to the properties stored in
+     * ${java.home}/lib/calendars.properties
+     */
+    private transient final static Properties calendarProperties;
+
+    /**
+     * Prefix of property names for Hijrah calendar variants.
+     */
+    private static final String PROP_PREFIX = "calendar.hijrah.";
+    /**
+     * Suffix of property names containing the calendar type of a variant.
+     */
+    private static final String PROP_TYPE_SUFFIX = ".type";
 
     /**
      * Name data.
      */
     static {
-        ERA_NARROW_NAMES.put(FALLBACK_LANGUAGE, new String[]{"BH", "HE"});
-        ERA_SHORT_NAMES.put(FALLBACK_LANGUAGE, new String[]{"B.H.", "H.E."});
-        ERA_FULL_NAMES.put(FALLBACK_LANGUAGE, new String[]{"Before Hijrah", "Hijrah Era"});
+        try {
+            calendarProperties = sun.util.calendar.BaseCalendar.getCalendarProperties();
+        } catch (IOException ioe) {
+            throw new InternalError("Can't initialize lib/calendars.properties", ioe);
+        }
 
-        DEFAULT_MONTH_DAYS = Arrays.copyOf(NUM_DAYS, NUM_DAYS.length);
+        try {
+            INSTANCE = new HijrahChronology("Hijrah-umalqura");
+            // Register it by its aliases
+            Chronology.registerChrono(INSTANCE, "Hijrah");
+            Chronology.registerChrono(INSTANCE, "islamic");
 
-        DEFAULT_LEAP_MONTH_DAYS = Arrays.copyOf(LEAP_NUM_DAYS, LEAP_NUM_DAYS.length);
+        } catch (Exception ex) {
+            // Absence of Hijrah calendar is fatal to initializing this class.
+            PlatformLogger logger = PlatformLogger.getLogger("java.time.chrono");
+            logger.severe("Unable to initialize Hijrah calendar: Hijrah-umalqura", ex);
+            throw new RuntimeException("Unable to initialize Hijrah-umalqura calendar", ex.getCause());
+        }
+        registerVariants();
+    }
 
-        DEFAULT_MONTH_LENGTHS = Arrays.copyOf(MONTH_LENGTH, MONTH_LENGTH.length);
-
-        DEFAULT_LEAP_MONTH_LENGTHS = Arrays.copyOf(LEAP_MONTH_LENGTH, LEAP_MONTH_LENGTH.length);
-
-        DEFAULT_CYCLE_YEARS = Arrays.copyOf(CYCLEYEAR_START_DATE, CYCLEYEAR_START_DATE.length);
-
-        INSTANCE = new HijrahChronology();
-
-        String extraCalendars = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("java.time.chrono.HijrahCalendars"));
-        if (extraCalendars != null) {
-            try {
-                // Split on whitespace
-                String[] splits = extraCalendars.split("\\s");
-                for (String cal : splits) {
-                    if (!cal.isEmpty()) {
-                        // Split on the delimiter between typeId "-" calendarType
-                        String[] type = cal.split("-");
-                        Chronology cal2 = new HijrahChronology(type[0], type.length > 1 ? type[1] : type[0]);
-                    }
+    /**
+     * For each Hijrah variant listed, create the HijrahChronology and register it.
+     * Exceptions during initialization are logged but otherwise ignored.
+     */
+    private static void registerVariants() {
+        for (String name : calendarProperties.stringPropertyNames()) {
+            if (name.startsWith(PROP_PREFIX)) {
+                String id = name.substring(PROP_PREFIX.length());
+                if (id.indexOf('.') >= 0) {
+                    continue;   // no name or not a simple name of a calendar
                 }
-            } catch (Exception ex) {
-                // Log the error
-                // ex.printStackTrace();
+                if (id.equals(INSTANCE.getId())) {
+                    continue;           // do not duplicate the default
+                }
+                try {
+                    // Create and register the variant
+                    HijrahChronology chrono = new HijrahChronology(id);
+                    Chronology.registerChrono(chrono);
+                } catch (Exception ex) {
+                    // Log error and continue
+                    PlatformLogger logger = PlatformLogger.getLogger("java.time.chrono");
+                    logger.severe("Unable to initialize Hijrah calendar: " + id, ex);
+                }
             }
         }
     }
 
     /**
-     * Restricted constructor.
-     */
-    private HijrahChronology() {
-        this("Hijrah", "islamicc");
-    }
-    /**
-     * Constructor for name and type HijrahChronology.
+     * Create a HijrahChronology for the named variant.
+     * The resource and calendar type are retrieved from properties
+     * in the {@code calendars.properties}.
+     * The property names are {@code "calendar.hijrah." + id}
+     * and  {@code "calendar.hijrah." + id + ".type"}
      * @param id the id of the calendar
-     * @param calendarType the calendar type
+     * @throws Exception if the resource can not be accessed or
+     *    the format is invalid
      */
-    private HijrahChronology(String id, String calendarType) {
-        this.typeId = id;
-        this.calendarType = calendarType;
-
-        ADJUSTED_CYCLES = new long[MAX_ADJUSTED_CYCLE];
-        for (int i = 0; i < ADJUSTED_CYCLES.length; i++) {
-            ADJUSTED_CYCLES[i] = (10631L * i);
+    private HijrahChronology(String id) throws Exception {
+        if (id.isEmpty()) {
+            throw new IllegalArgumentException("calendar id is empty");
         }
-        // Initialize min values, least max values and max values.
-        ADJUSTED_MIN_VALUES = Arrays.copyOf(MIN_VALUES, MIN_VALUES.length);
-        ADJUSTED_LEAST_MAX_VALUES = Arrays.copyOf(LEAST_MAX_VALUES, LEAST_MAX_VALUES.length);
-        ADJUSTED_MAX_VALUES = Arrays.copyOf(MAX_VALUES,MAX_VALUES.length);
+        this.typeId = id;
+        this.calendarType = calendarProperties.getProperty(PROP_PREFIX + id + PROP_TYPE_SUFFIX);
 
         try {
-            // Implicitly reads deviation data for this HijrahChronology.
-            boolean any = HijrahDeviationReader.readDeviation(typeId, calendarType, this::addDeviationAsHijrah);
-        } catch (IOException | ParseException e) {
-            // do nothing. Log deviation config errors.
-            //e.printStackTrace();
+            String resource = calendarProperties.getProperty(PROP_PREFIX + id);
+            Objects.requireNonNull(resource, "Resource missing for calendar");
+            loadCalendarData(resource);
+        } catch (Exception ex) {
+            throw new Exception("Unable to initialize HijrahCalendar: " + id, ex);
         }
-    }
-
-    /**
-     * Resolve singleton.
-     *
-     * @return the singleton instance, not null
-     */
-    private Object readResolve() {
-        return INSTANCE;
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Gets the ID of the chronology - 'Hijrah'.
+     * Gets the ID of the chronology.
      * <p>
-     * The ID uniquely identifies the {@code Chronology}.
-     * It can be used to lookup the {@code Chronology} using {@link #of(String)}.
+     * The ID uniquely identifies the {@code Chronology}. It can be used to
+     * lookup the {@code Chronology} using {@link #of(String)}.
      *
-     * @return the chronology ID - 'Hijrah'
+     * @return the chronology ID, non-null
      * @see #getCalendarType()
      */
     @Override
@@ -520,15 +378,14 @@ public final class HijrahChronology extends Chronology implements Serializable {
     }
 
     /**
-     * Gets the calendar type of the underlying calendar system - 'islamicc'.
+     * Gets the calendar type of the Islamic calendar.
      * <p>
      * The calendar type is an identifier defined by the
      * <em>Unicode Locale Data Markup Language (LDML)</em> specification.
      * It can be used to lookup the {@code Chronology} using {@link #of(String)}.
-     * It can also be used as part of a locale, accessible via
-     * {@link Locale#getUnicodeLocaleType(String)} with the key 'ca'.
      *
-     * @return the calendar system type - 'islamicc'
+     * @return the calendar system type; non-null if the calendar has
+     *    a standard type, otherwise null
      * @see #getId()
      */
     @Override
@@ -537,33 +394,78 @@ public final class HijrahChronology extends Chronology implements Serializable {
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Obtains a local date in Hijrah calendar system from the
+     * era, year-of-era, month-of-year and day-of-month fields.
+     *
+     * @param era  the Hijrah era, not null
+     * @param yearOfEra  the year-of-era
+     * @param month  the month-of-year
+     * @param dayOfMonth  the day-of-month
+     * @return the Hijrah local date, not null
+     * @throws DateTimeException if unable to create the date
+     * @throws ClassCastException if the {@code era} is not a {@code HijrahEra}
+     */
+    @Override
+    public HijrahDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
+        return date(prolepticYear(era, yearOfEra), month, dayOfMonth);
+    }
+
+    /**
+     * Obtains a local date in Hijrah calendar system from the
+     * proleptic-year, month-of-year and day-of-month fields.
+     *
+     * @param prolepticYear  the proleptic-year
+     * @param month  the month-of-year
+     * @param dayOfMonth  the day-of-month
+     * @return the Hijrah local date, not null
+     * @throws DateTimeException if unable to create the date
+     */
     @Override
     public HijrahDate date(int prolepticYear, int month, int dayOfMonth) {
         return HijrahDate.of(this, prolepticYear, month, dayOfMonth);
     }
 
+    /**
+     * Obtains a local date in Hijrah calendar system from the
+     * era, year-of-era and day-of-year fields.
+     *
+     * @param era  the Hijrah era, not null
+     * @param yearOfEra  the year-of-era
+     * @param dayOfYear  the day-of-year
+     * @return the Hijrah local date, not null
+     * @throws DateTimeException if unable to create the date
+     * @throws ClassCastException if the {@code era} is not a {@code HijrahEra}
+     */
+    @Override
+    public HijrahDate dateYearDay(Era era, int yearOfEra, int dayOfYear) {
+        return dateYearDay(prolepticYear(era, yearOfEra), dayOfYear);
+    }
+
+    /**
+     * Obtains a local date in Hijrah calendar system from the
+     * proleptic-year and day-of-year fields.
+     *
+     * @param prolepticYear  the proleptic-year
+     * @param dayOfYear  the day-of-year
+     * @return the Hijrah local date, not null
+     * @throws DateTimeException if unable to create the date
+     */
     @Override
     public HijrahDate dateYearDay(int prolepticYear, int dayOfYear) {
         return HijrahDate.of(this, prolepticYear, 1, 1).plusDays(dayOfYear - 1);  // TODO better
     }
 
-    @Override
-    public HijrahDate date(TemporalAccessor temporal) {
-        if (temporal instanceof HijrahDate) {
-            return (HijrahDate) temporal;
-        }
-        return HijrahDate.ofEpochDay(this, temporal.getLong(EPOCH_DAY));
-    }
-
-    @Override
-    public HijrahDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
-        return date(prolepticYear(era, yearOfEra), month, dayOfMonth);
-
-    }
-
-    @Override
-    public HijrahDate dateYearDay(Era era, int yearOfEra, int dayOfYear) {
-        return dateYearDay(prolepticYear(era, yearOfEra), dayOfYear);
+    /**
+     * Obtains a local date in the Hijrah calendar system from the epoch-day.
+     *
+     * @param epochDay  the epoch day
+     * @return the Hijrah local date, not null
+     * @throws DateTimeException if unable to create the date
+     */
+    @Override  // override with covariant return type
+    public HijrahDate dateEpochDay(long epochDay) {
+        return HijrahDate.ofEpochDay(this, epochDay);
     }
 
     @Override
@@ -582,47 +484,50 @@ public final class HijrahChronology extends Chronology implements Serializable {
     }
 
     @Override
+    public HijrahDate date(TemporalAccessor temporal) {
+        if (temporal instanceof HijrahDate) {
+            return (HijrahDate) temporal;
+        }
+        return HijrahDate.ofEpochDay(this, temporal.getLong(EPOCH_DAY));
+    }
+
+    @Override
     public ChronoLocalDateTime<HijrahDate> localDateTime(TemporalAccessor temporal) {
-        return (ChronoLocalDateTime<HijrahDate>)super.localDateTime(temporal);
+        return (ChronoLocalDateTime<HijrahDate>) super.localDateTime(temporal);
     }
 
     @Override
     public ChronoZonedDateTime<HijrahDate> zonedDateTime(TemporalAccessor temporal) {
-        return (ChronoZonedDateTime<HijrahDate>)super.zonedDateTime(temporal);
+        return (ChronoZonedDateTime<HijrahDate>) super.zonedDateTime(temporal);
     }
 
     @Override
     public ChronoZonedDateTime<HijrahDate> zonedDateTime(Instant instant, ZoneId zone) {
-        return (ChronoZonedDateTime<HijrahDate>)super.zonedDateTime(instant, zone);
+        return (ChronoZonedDateTime<HijrahDate>) super.zonedDateTime(instant, zone);
     }
 
     //-----------------------------------------------------------------------
     @Override
     public boolean isLeapYear(long prolepticYear) {
-        return isLeapYear0(prolepticYear);
-    }
-    /**
-     * Returns if the year is a leap year.
-     * @param prolepticYear he year to compute from
-     * @return {@code true} if the year is a leap year, otherwise {@code false}
-     */
-    private static boolean isLeapYear0(long prolepticYear) {
-        return (14 + 11 * (prolepticYear > 0 ? prolepticYear : -prolepticYear)) % 30 < 11;
+        int epochMonth = yearToEpochMonth((int) prolepticYear);
+        if (epochMonth < 0 || epochMonth > maxEpochDay) {
+            throw new DateTimeException("Hijrah date out of range");
+        }
+        int len = getYearLength((int) prolepticYear);
+        return (len > 354);
     }
 
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
         if (era instanceof HijrahEra == false) {
-            throw new DateTimeException("Era must be HijrahEra");
+            throw new ClassCastException("Era must be HijrahEra");
         }
-        return (era == HijrahEra.AH ? yearOfEra : 1 - yearOfEra);
+        return yearOfEra;
     }
 
     @Override
     public Era eraOf(int eraValue) {
         switch (eraValue) {
-            case 0:
-                return HijrahEra.BEFORE_AH;
             case 1:
                 return HijrahEra.AH;
             default:
@@ -638,430 +543,159 @@ public final class HijrahChronology extends Chronology implements Serializable {
     //-----------------------------------------------------------------------
     @Override
     public ValueRange range(ChronoField field) {
+        if (field instanceof ChronoField) {
+            ChronoField f = field;
+            switch (f) {
+                case DAY_OF_MONTH:
+                    return ValueRange.of(1, 1, getMinimumMonthLength(), getMaximumMonthLength());
+                case DAY_OF_YEAR:
+                    return ValueRange.of(1, getMaximumDayOfYear());
+                case ALIGNED_WEEK_OF_MONTH:
+                    return ValueRange.of(1, 5);
+                case YEAR:
+                case YEAR_OF_ERA:
+                    return ValueRange.of(getMinimumYear(), getMaximumYear());
+                default:
+                    return field.range();
+            }
+        }
         return field.range();
     }
 
     /**
-     * Check the validity of a yearOfEra.
-     * @param yearOfEra the year to check
+     * Check the validity of a year.
+     *
+     * @param prolepticYear the year to check
      */
-    void checkValidYearOfEra(int yearOfEra) {
-         if (yearOfEra < MIN_YEAR_OF_ERA  ||
-                 yearOfEra > MAX_YEAR_OF_ERA) {
-             throw new DateTimeException("Invalid year of Hijrah Era");
-         }
+    int checkValidYear(long prolepticYear) {
+        if (prolepticYear < getMinimumYear() || prolepticYear > getMaximumYear()) {
+            throw new DateTimeException("Invalid Hijrah year: " + prolepticYear);
+        }
+        return (int) prolepticYear;
     }
 
     void checkValidDayOfYear(int dayOfYear) {
-         if (dayOfYear < 1  ||
-                 dayOfYear > getMaximumDayOfYear()) {
-             throw new DateTimeException("Invalid day of year of Hijrah date");
-         }
+        if (dayOfYear < 1 || dayOfYear > getMaximumDayOfYear()) {
+            throw new DateTimeException("Invalid Hijrah day of year: " + dayOfYear);
+        }
     }
 
     void checkValidMonth(int month) {
-         if (month < 1 || month > 12) {
-             throw new DateTimeException("Invalid month of Hijrah date");
-         }
-    }
-
-    void checkValidDayOfMonth(int dayOfMonth) {
-         if (dayOfMonth < 1  ||
-                 dayOfMonth > getMaximumDayOfMonth()) {
-             throw new DateTimeException("Invalid day of month of Hijrah date, day "
-                     + dayOfMonth + " greater than " + getMaximumDayOfMonth() + " or less than 1");
-         }
+        if (month < 1 || month > 12) {
+            throw new DateTimeException("Invalid Hijrah month: " + month);
+        }
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns the int array containing the following field from the julian day.
+     * Returns an array containing the Hijrah year, month and day
+     * computed from the epoch day.
      *
-     * int[0] = ERA
-     * int[1] = YEAR
-     * int[2] = MONTH
-     * int[3] = DATE
-     * int[4] = DAY_OF_YEAR
-     * int[5] = DAY_OF_WEEK
-     *
-     * @param gregorianDays  a julian day.
+     * @param epochDay  the EpochDay
+     * @return int[0] = YEAR, int[1] = MONTH, int[2] = DATE
      */
-    int[] getHijrahDateInfo(long gregorianDays) {
-        int era, year, month, date, dayOfWeek, dayOfYear;
-
-        int cycleNumber, yearInCycle, dayOfCycle;
-
-        long epochDay = gregorianDays - HIJRAH_JAN_1_1_GREGORIAN_DAY;
-
-        if (epochDay >= 0) {
-            cycleNumber = getCycleNumber(epochDay); // 0 - 99.
-            dayOfCycle = getDayOfCycle(epochDay, cycleNumber); // 0 - 10631.
-            yearInCycle = getYearInCycle(cycleNumber, dayOfCycle); // 0 - 29.
-            dayOfYear = getDayOfYear(cycleNumber, dayOfCycle, yearInCycle);
-            // 0 - 354/355
-            year = cycleNumber * 30 + yearInCycle + 1; // 1-based year.
-            month = getMonthOfYear(dayOfYear, year); // 0-based month-of-year
-            date = getDayOfMonth(dayOfYear, month, year); // 0-based date
-            ++date; // Convert from 0-based to 1-based
-            era = HijrahEra.AH.getValue();
-        } else {
-            cycleNumber = (int) epochDay / 10631; // 0 or negative number.
-            dayOfCycle = (int) epochDay % 10631; // -10630 - 0.
-            if (dayOfCycle == 0) {
-                dayOfCycle = -10631;
-                cycleNumber++;
-            }
-            yearInCycle = getYearInCycle(cycleNumber, dayOfCycle); // 0 - 29.
-            dayOfYear = getDayOfYear(cycleNumber, dayOfCycle, yearInCycle);
-            year = cycleNumber * 30 - yearInCycle; // negative number.
-            year = 1 - year;
-            dayOfYear = (isLeapYear(year) ? (dayOfYear + 355)
-                    : (dayOfYear + 354));
-            month = getMonthOfYear(dayOfYear, year);
-            date = getDayOfMonth(dayOfYear, month, year);
-            ++date; // Convert from 0-based to 1-based
-            era = HijrahEra.BEFORE_AH.getValue();
+    int[] getHijrahDateInfo(int epochDay) {
+        if (epochDay < minEpochDay || epochDay >= maxEpochDay) {
+            throw new DateTimeException("Hijrah date out of range");
         }
-        // Hijrah day zero is a Friday
-        dayOfWeek = (int) ((epochDay + 5) % 7);
-        dayOfWeek += (dayOfWeek <= 0) ? 7 : 0;
 
-        int dateInfo[] = new int[6];
-        dateInfo[0] = era;
-        dateInfo[1] = year;
-        dateInfo[2] = month + 1; // change to 1-based.
-        dateInfo[3] = date;
-        dateInfo[4] = dayOfYear + 1; // change to 1-based.
-        dateInfo[5] = dayOfWeek;
+        int epochMonth = epochDayToEpochMonth(epochDay);
+        int year = epochMonthToYear(epochMonth);
+        int month = epochMonthToMonth(epochMonth);
+        int day1 = epochMonthToEpochDay(epochMonth);
+        int date = epochDay - day1; // epochDay - dayOfEpoch(year, month);
+
+        int dateInfo[] = new int[3];
+        dateInfo[0] = year;
+        dateInfo[1] = month + 1; // change to 1-based.
+        dateInfo[2] = date + 1; // change to 1-based.
         return dateInfo;
     }
 
     /**
-     * Return Gregorian epoch day from Hijrah year, month, and day.
+     * Return the epoch day computed from Hijrah year, month, and day.
      *
-     * @param prolepticYear  the year to represent, caller calculated
-     * @param monthOfYear  the month-of-year to represent, caller calculated
-     * @param dayOfMonth  the day-of-month to represent, caller calculated
-     * @return a julian day
+     * @param prolepticYear the year to represent, 0-origin
+     * @param monthOfYear the month-of-year to represent, 1-origin
+     * @param dayOfMonth the day-of-month to represent, 1-origin
+     * @return the epoch day
      */
-    long getGregorianEpochDay(int prolepticYear, int monthOfYear, int dayOfMonth) {
-        long day = yearToGregorianEpochDay(prolepticYear);
-        day += getMonthDays(monthOfYear - 1, prolepticYear);
-        day += dayOfMonth;
-        return day;
+    long getEpochDay(int prolepticYear, int monthOfYear, int dayOfMonth) {
+        checkValidMonth(monthOfYear);
+        int epochMonth = yearToEpochMonth(prolepticYear) + (monthOfYear - 1);
+        if (epochMonth < 0 || epochMonth >= hijrahEpochMonthStartDays.length) {
+            throw new DateTimeException("Invalid Hijrah date, year: " +
+                    prolepticYear +  ", month: " + monthOfYear);
+        }
+        if (dayOfMonth < 1 || dayOfMonth > getMonthLength(prolepticYear, monthOfYear)) {
+            throw new DateTimeException("Invalid Hijrah day of month: " + dayOfMonth);
+        }
+        return epochMonthToEpochDay(epochMonth) + (dayOfMonth - 1);
     }
 
     /**
-     * Returns the Gregorian epoch day from the proleptic year
-     * @param prolepticYear the proleptic year
-     * @return the Epoch day
+     * Returns day of year for the year and month.
+     *
+     * @param prolepticYear a proleptic year
+     * @param month a month, 1-origin
+     * @return the day of year, 1-origin
      */
-    private long yearToGregorianEpochDay(int prolepticYear) {
-
-        int cycleNumber = (prolepticYear - 1) / 30; // 0-based.
-        int yearInCycle = (prolepticYear - 1) % 30; // 0-based.
-
-        int dayInCycle = getAdjustedCycle(cycleNumber)[Math.abs(yearInCycle)]
-                ;
-
-        if (yearInCycle < 0) {
-            dayInCycle = -dayInCycle;
-        }
-
-        Long cycleDays;
-
-        try {
-            cycleDays = ADJUSTED_CYCLES[cycleNumber];
-        } catch (ArrayIndexOutOfBoundsException e) {
-            cycleDays = null;
-        }
-
-        if (cycleDays == null) {
-            cycleDays = new Long(cycleNumber * 10631);
-        }
-
-        return (cycleDays.longValue() + dayInCycle + HIJRAH_JAN_1_1_GREGORIAN_DAY - 1);
+    int getDayOfYear(int prolepticYear, int month) {
+        return yearMonthToDayOfYear(prolepticYear, (month - 1));
     }
 
     /**
-     * Returns the 30 year cycle number from the epoch day.
+     * Returns month length for the year and month.
      *
-     * @param epochDay  an epoch day
-     * @return a cycle number
+     * @param prolepticYear a proleptic year
+     * @param monthOfYear a month, 1-origin.
+     * @return the length of the month
      */
-    private int getCycleNumber(long epochDay) {
-        long[] days = ADJUSTED_CYCLES;
-        int cycleNumber;
-        try {
-            for (int i = 0; i < days.length; i++) {
-                if (epochDay < days[i]) {
-                    return i - 1;
-                }
-            }
-            cycleNumber = (int) epochDay / 10631;
-        } catch (ArrayIndexOutOfBoundsException e) {
-            cycleNumber = (int) epochDay / 10631;
+    int getMonthLength(int prolepticYear, int monthOfYear) {
+        int epochMonth = yearToEpochMonth(prolepticYear) + (monthOfYear - 1);
+        if (epochMonth < 0 || epochMonth >= hijrahEpochMonthStartDays.length) {
+            throw new DateTimeException("Invalid Hijrah date, year: " +
+                    prolepticYear +  ", month: " + monthOfYear);
         }
-        return cycleNumber;
-    }
-
-    /**
-     * Returns day of cycle from the epoch day and cycle number.
-     *
-     * @param epochDay  an epoch day
-     * @param cycleNumber  a cycle number
-     * @return a day of cycle
-     */
-    private int getDayOfCycle(long epochDay, int cycleNumber) {
-        Long day;
-
-        try {
-            day = ADJUSTED_CYCLES[cycleNumber];
-        } catch (ArrayIndexOutOfBoundsException e) {
-            day = null;
-        }
-        if (day == null) {
-            day = new Long(cycleNumber * 10631);
-        }
-        return (int) (epochDay - day.longValue());
-    }
-
-    /**
-     * Returns the year in cycle from the cycle number and day of cycle.
-     *
-     * @param cycleNumber  a cycle number
-     * @param dayOfCycle  day of cycle
-     * @return a year in cycle
-     */
-    private int getYearInCycle(int cycleNumber, long dayOfCycle) {
-        int[] cycles = getAdjustedCycle(cycleNumber);
-        if (dayOfCycle == 0) {
-            return 0;
-        }
-
-        if (dayOfCycle > 0) {
-            for (int i = 0; i < cycles.length; i++) {
-                if (dayOfCycle < cycles[i]) {
-                    return i - 1;
-                }
-            }
-            return 29;
-        } else {
-            dayOfCycle = -dayOfCycle;
-            for (int i = 0; i < cycles.length; i++) {
-                if (dayOfCycle <= cycles[i]) {
-                    return i - 1;
-                }
-            }
-            return 29;
-        }
-    }
-
-    /**
-     * Returns adjusted 30 year cycle starting day as Integer array from the
-     * cycle number specified.
-     *
-     * @param cycleNumber  a cycle number
-     * @return an Integer array
-     */
-    int[] getAdjustedCycle(int cycleNumber) {
-        int[] cycles;
-        try {
-            cycles = ADJUSTED_CYCLE_YEARS.get(cycleNumber);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            cycles = null;
-        }
-        if (cycles == null) {
-            cycles = DEFAULT_CYCLE_YEARS;
-        }
-        return cycles;
-    }
-
-    /**
-     * Returns adjusted month days as Integer array form the year specified.
-     *
-     * @param year  a year
-     * @return an Integer array
-     */
-    int[] getAdjustedMonthDays(int year) {
-        int[] newMonths;
-        try {
-            newMonths = ADJUSTED_MONTH_DAYS.get(year);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            newMonths = null;
-        }
-        if (newMonths == null) {
-            if (isLeapYear0(year)) {
-                newMonths = DEFAULT_LEAP_MONTH_DAYS;
-            } else {
-                newMonths = DEFAULT_MONTH_DAYS;
-            }
-        }
-        return newMonths;
-    }
-
-    /**
-     * Returns adjusted month length as Integer array form the year specified.
-     *
-     * @param year  a year
-     * @return an Integer array
-     */
-    int[] getAdjustedMonthLength(int year) {
-        int[] newMonths;
-        try {
-            newMonths = ADJUSTED_MONTH_LENGTHS.get(year);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            newMonths = null;
-        }
-        if (newMonths == null) {
-            if (isLeapYear0(year)) {
-                newMonths = DEFAULT_LEAP_MONTH_LENGTHS;
-            } else {
-                newMonths = DEFAULT_MONTH_LENGTHS;
-            }
-        }
-        return newMonths;
-    }
-
-    /**
-     * Returns day-of-year.
-     *
-     * @param cycleNumber  a cycle number
-     * @param dayOfCycle  day of cycle
-     * @param yearInCycle  year in cycle
-     * @return day-of-year
-     */
-    private int getDayOfYear(int cycleNumber, int dayOfCycle, int yearInCycle) {
-        int[] cycles = getAdjustedCycle(cycleNumber);
-
-        if (dayOfCycle > 0) {
-            return dayOfCycle - cycles[yearInCycle];
-        } else {
-            return cycles[yearInCycle] + dayOfCycle;
-        }
-    }
-
-    /**
-     * Returns month-of-year. 0-based.
-     *
-     * @param dayOfYear  day-of-year
-     * @param year  a year
-     * @return month-of-year
-     */
-    private int getMonthOfYear(int dayOfYear, int year) {
-
-        int[] newMonths = getAdjustedMonthDays(year);
-
-        if (dayOfYear >= 0) {
-            for (int i = 0; i < newMonths.length; i++) {
-                if (dayOfYear < newMonths[i]) {
-                    return i - 1;
-                }
-            }
-            return 11;
-        } else {
-            dayOfYear = (isLeapYear0(year) ? (dayOfYear + 355)
-                    : (dayOfYear + 354));
-            for (int i = 0; i < newMonths.length; i++) {
-                if (dayOfYear < newMonths[i]) {
-                    return i - 1;
-                }
-            }
-            return 11;
-        }
-    }
-
-    /**
-     * Returns day-of-month.
-     *
-     * @param dayOfYear  day of  year
-     * @param month  month
-     * @param year  year
-     * @return day-of-month
-     */
-    private int getDayOfMonth(int dayOfYear, int month, int year) {
-
-        int[] newMonths = getAdjustedMonthDays(year);
-
-        if (dayOfYear >= 0) {
-            if (month > 0) {
-                return dayOfYear - newMonths[month];
-            } else {
-                return dayOfYear;
-            }
-        } else {
-            dayOfYear = (isLeapYear0(year) ? (dayOfYear + 355)
-                    : (dayOfYear + 354));
-            if (month > 0) {
-                return dayOfYear - newMonths[month];
-            } else {
-                return dayOfYear;
-            }
-        }
-    }
-
-
-    /**
-     * Returns month days from the beginning of year.
-     *
-     * @param month  month (0-based)
-     * @parma year  year
-     * @return month days from the beginning of year
-     */
-    private int getMonthDays(int month, int year) {
-        int[] newMonths = getAdjustedMonthDays(year);
-        return newMonths[month];
-    }
-
-    /**
-     * Returns month length.
-     *
-     * @param month  month (0-based)
-     * @param year  year
-     * @return month length
-     */
-    private int getMonthLength(int month, int year) {
-      int[] newMonths = getAdjustedMonthLength(year);
-      return newMonths[month];
+        return epochMonthLength(epochMonth);
     }
 
     /**
      * Returns year length.
+     * Note: The 12th month must exist in the data.
      *
-     * @param year  year
-     * @return year length
+     * @param prolepticYear a proleptic year
+     * @return year length in days
      */
-    int getYearLength(int year) {
-
-        int cycleNumber = (year - 1) / 30;
-        int[] cycleYears;
-        try {
-            cycleYears = ADJUSTED_CYCLE_YEARS.get(cycleNumber);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            cycleYears = null;
-        }
-        if (cycleYears != null) {
-            int yearInCycle = (year - 1) % 30;
-            if (yearInCycle == 29) {
-                return (int)(ADJUSTED_CYCLES[cycleNumber + 1]
-                        - ADJUSTED_CYCLES[cycleNumber]
-                        - cycleYears[yearInCycle]);
-            }
-            return cycleYears[yearInCycle + 1]
-                    - cycleYears[yearInCycle];
-        } else {
-            return isLeapYear0(year) ? 355 : 354;
-        }
+    int getYearLength(int prolepticYear) {
+        return yearMonthToDayOfYear(prolepticYear, 12);
     }
 
+    /**
+     * Return the minimum supported Hijrah year.
+     *
+     * @return the minimum
+     */
+    int getMinimumYear() {
+        return epochMonthToYear(0);
+    }
+
+    /**
+     * Return the maximum supported Hijrah ear.
+     *
+     * @return the minimum
+     */
+    int getMaximumYear() {
+        return epochMonthToYear(hijrahEpochMonthStartDays.length - 1) - 1;
+    }
 
     /**
      * Returns maximum day-of-month.
      *
      * @return maximum day-of-month
      */
-    int getMaximumDayOfMonth() {
-        return ADJUSTED_MAX_VALUES[POSITION_DAY_OF_MONTH];
+    int getMaximumMonthLength() {
+        return maxMonthLength;
     }
 
     /**
@@ -1069,8 +703,8 @@ public final class HijrahChronology extends Chronology implements Serializable {
      *
      * @return smallest maximum day-of-month
      */
-    int getSmallestMaximumDayOfMonth() {
-        return ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_MONTH];
+    int getMinimumMonthLength() {
+        return minMonthLength;
     }
 
     /**
@@ -1079,7 +713,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
      * @return maximum day-of-year
      */
     int getMaximumDayOfYear() {
-        return ADJUSTED_MAX_VALUES[POSITION_DAY_OF_YEAR];
+        return maxYearLength;
     }
 
     /**
@@ -1088,296 +722,303 @@ public final class HijrahChronology extends Chronology implements Serializable {
      * @return smallest maximum day-of-year
      */
     int getSmallestMaximumDayOfYear() {
-        return ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_YEAR];
+        return minYearLength;
     }
 
-    // ----- Deviation handling -----//
-
     /**
-     * Adds deviation definition. The year and month specified should be the
-     * calculated Hijrah year and month. The month is 1 based. e.g. 9 for
-     * Ramadan (9th month) Addition of anything minus deviation days is
-     * calculated negatively in the case the user wants to subtract days from
-     * the calendar. For example, adding -1 days will subtract one day from the
-     * current date.
+     * Returns the epochMonth found by locating the epochDay in the table. The
+     * epochMonth is the index in the table
      *
-     * @param startYear  start year, 1 origin
-     * @param startMonth  start month, 1 origin
-     * @param endYear  end year, 1 origin
-     * @param endMonth  end month, 1 origin
-     * @param offset  offset -2, -1, +1, +2
+     * @param epochDay
+     * @return The index of the element of the start of the month containing the
+     * epochDay.
      */
-    private void addDeviationAsHijrah(Deviation entry) {
-        int startYear = entry.startYear;
-        int startMonth = entry.startMonth - 1 ;
-        int endYear = entry.endYear;
-        int endMonth = entry.endMonth - 1;
-        int offset = entry.offset;
-
-        if (startYear < 1) {
-            throw new IllegalArgumentException("startYear < 1");
+    private int epochDayToEpochMonth(int epochDay) {
+        // binary search
+        int ndx = Arrays.binarySearch(hijrahEpochMonthStartDays, epochDay);
+        if (ndx < 0) {
+            ndx = -ndx - 2;
         }
-        if (endYear < 1) {
-            throw new IllegalArgumentException("endYear < 1");
-        }
-        if (startMonth < 0 || startMonth > 11) {
-            throw new IllegalArgumentException(
-                    "startMonth < 0 || startMonth > 11");
-        }
-        if (endMonth < 0 || endMonth > 11) {
-            throw new IllegalArgumentException("endMonth < 0 || endMonth > 11");
-        }
-        if (endYear > 9999) {
-            throw new IllegalArgumentException("endYear > 9999");
-        }
-        if (endYear < startYear) {
-            throw new IllegalArgumentException("startYear > endYear");
-        }
-        if (endYear == startYear && endMonth < startMonth) {
-            throw new IllegalArgumentException(
-                    "startYear == endYear && endMonth < startMonth");
-        }
-
-        // Adjusting start year.
-        boolean isStartYLeap = isLeapYear0(startYear);
-
-        // Adjusting the number of month.
-        int[] orgStartMonthNums = ADJUSTED_MONTH_DAYS.get(startYear);
-        if (orgStartMonthNums == null) {
-            if (isStartYLeap) {
-                orgStartMonthNums = Arrays.copyOf(LEAP_NUM_DAYS, LEAP_NUM_DAYS.length);
-            } else {
-                orgStartMonthNums = Arrays.copyOf(NUM_DAYS, NUM_DAYS.length);
-            }
-        }
-
-        int[] newStartMonthNums = new int[orgStartMonthNums.length];
-
-        for (int month = 0; month < 12; month++) {
-            if (month > startMonth) {
-                newStartMonthNums[month] = (orgStartMonthNums[month] - offset);
-            } else {
-                newStartMonthNums[month] = (orgStartMonthNums[month]);
-            }
-        }
-
-        ADJUSTED_MONTH_DAYS.put(startYear, newStartMonthNums);
-
-        // Adjusting the days of month.
-
-        int[] orgStartMonthLengths = ADJUSTED_MONTH_LENGTHS.get(startYear);
-        if (orgStartMonthLengths == null) {
-            if (isStartYLeap) {
-                orgStartMonthLengths = Arrays.copyOf(LEAP_MONTH_LENGTH, LEAP_MONTH_LENGTH.length);
-            } else {
-                orgStartMonthLengths = Arrays.copyOf(MONTH_LENGTH, MONTH_LENGTH.length);
-            }
-        }
-
-        int[] newStartMonthLengths = new int[orgStartMonthLengths.length];
-
-        for (int month = 0; month < 12; month++) {
-            if (month == startMonth) {
-                newStartMonthLengths[month] = orgStartMonthLengths[month] - offset;
-            } else {
-                newStartMonthLengths[month] = orgStartMonthLengths[month];
-            }
-        }
-
-        ADJUSTED_MONTH_LENGTHS.put(startYear, newStartMonthLengths);
-
-        if (startYear != endYear) {
-            // System.out.println("over year");
-            // Adjusting starting 30 year cycle.
-            int sCycleNumber = (startYear - 1) / 30;
-            int sYearInCycle = (startYear - 1) % 30; // 0-based.
-            int[] startCycles = ADJUSTED_CYCLE_YEARS.get(sCycleNumber);
-            if (startCycles == null) {
-                startCycles = Arrays.copyOf(CYCLEYEAR_START_DATE, CYCLEYEAR_START_DATE.length);
-            }
-
-            for (int j = sYearInCycle + 1; j < CYCLEYEAR_START_DATE.length; j++) {
-                startCycles[j] = startCycles[j] - offset;
-            }
-
-            // System.out.println(sCycleNumber + ":" + sYearInCycle);
-            ADJUSTED_CYCLE_YEARS.put(sCycleNumber, startCycles);
-
-            int sYearInMaxY = (startYear - 1) / 30;
-            int sEndInMaxY = (endYear - 1) / 30;
-
-            if (sYearInMaxY != sEndInMaxY) {
-                // System.out.println("over 30");
-                // Adjusting starting 30 * MAX_ADJUSTED_CYCLE year cycle.
-                // System.out.println(sYearInMaxY);
-
-                for (int j = sYearInMaxY + 1; j < ADJUSTED_CYCLES.length; j++) {
-                    ADJUSTED_CYCLES[j] = ADJUSTED_CYCLES[j] - offset;
-                }
-
-                // Adjusting ending 30 * MAX_ADJUSTED_CYCLE year cycles.
-                for (int j = sEndInMaxY + 1; j < ADJUSTED_CYCLES.length; j++) {
-                    ADJUSTED_CYCLES[j] = ADJUSTED_CYCLES[j] + offset;
-                }
-            }
-
-            // Adjusting ending 30 year cycle.
-            int eCycleNumber = (endYear - 1) / 30;
-            int sEndInCycle = (endYear - 1) % 30; // 0-based.
-            int[] endCycles = ADJUSTED_CYCLE_YEARS.get(eCycleNumber);
-            if (endCycles == null) {
-                endCycles = Arrays.copyOf(CYCLEYEAR_START_DATE, CYCLEYEAR_START_DATE.length);
-            }
-            for (int j = sEndInCycle + 1; j < CYCLEYEAR_START_DATE.length; j++) {
-                endCycles[j] = endCycles[j] + offset;
-            }
-            ADJUSTED_CYCLE_YEARS.put(eCycleNumber, endCycles);
-        }
-
-        // Adjusting ending year.
-        boolean isEndYLeap = isLeapYear0(endYear);
-
-        int[] orgEndMonthDays = ADJUSTED_MONTH_DAYS.get(endYear);
-
-        if (orgEndMonthDays == null) {
-            if (isEndYLeap) {
-                orgEndMonthDays = Arrays.copyOf(LEAP_NUM_DAYS, LEAP_NUM_DAYS.length);
-            } else {
-                orgEndMonthDays = Arrays.copyOf(NUM_DAYS, NUM_DAYS.length);
-            }
-        }
-
-        int[] newEndMonthDays = new int[orgEndMonthDays.length];
-
-        for (int month = 0; month < 12; month++) {
-            if (month > endMonth) {
-                newEndMonthDays[month] = orgEndMonthDays[month] + offset;
-            } else {
-                newEndMonthDays[month] = orgEndMonthDays[month];
-            }
-        }
-
-        ADJUSTED_MONTH_DAYS.put(endYear, newEndMonthDays);
-
-        // Adjusting the days of month.
-        int[] orgEndMonthLengths = ADJUSTED_MONTH_LENGTHS.get(endYear);
-
-        if (orgEndMonthLengths == null) {
-            if (isEndYLeap) {
-                orgEndMonthLengths = Arrays.copyOf(LEAP_MONTH_LENGTH, LEAP_MONTH_LENGTH.length);
-            } else {
-                orgEndMonthLengths = Arrays.copyOf(MONTH_LENGTH, MONTH_LENGTH.length);
-            }
-        }
-
-        int[] newEndMonthLengths = new int[orgEndMonthLengths.length];
-
-        for (int month = 0; month < 12; month++) {
-            if (month == endMonth) {
-                newEndMonthLengths[month] = orgEndMonthLengths[month] + offset;
-            } else {
-                newEndMonthLengths[month] = orgEndMonthLengths[month];
-            }
-        }
-
-        ADJUSTED_MONTH_LENGTHS.put(endYear, newEndMonthLengths);
-
-        int[] startMonthLengths = ADJUSTED_MONTH_LENGTHS.get(startYear);
-        int[] endMonthLengths = ADJUSTED_MONTH_LENGTHS.get(endYear);
-        int[] startMonthDays = ADJUSTED_MONTH_DAYS.get(startYear);
-        int[] endMonthDays = ADJUSTED_MONTH_DAYS.get(endYear);
-
-        int startMonthLength = startMonthLengths[startMonth];
-        int endMonthLength = endMonthLengths[endMonth];
-        int startMonthDay = startMonthDays[11] + startMonthLengths[11];
-        int endMonthDay = endMonthDays[11] + endMonthLengths[11];
-
-        int maxMonthLength = ADJUSTED_MAX_VALUES[POSITION_DAY_OF_MONTH];
-        int leastMaxMonthLength = ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_MONTH];
-
-        if (maxMonthLength < startMonthLength) {
-            maxMonthLength = startMonthLength;
-        }
-        if (maxMonthLength < endMonthLength) {
-            maxMonthLength = endMonthLength;
-        }
-        ADJUSTED_MAX_VALUES[POSITION_DAY_OF_MONTH] = maxMonthLength;
-
-        if (leastMaxMonthLength > startMonthLength) {
-            leastMaxMonthLength = startMonthLength;
-        }
-        if (leastMaxMonthLength > endMonthLength) {
-            leastMaxMonthLength = endMonthLength;
-        }
-        ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_MONTH] = leastMaxMonthLength;
-
-        int maxMonthDay = ADJUSTED_MAX_VALUES[POSITION_DAY_OF_YEAR];
-        int leastMaxMonthDay = ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_YEAR];
-
-        if (maxMonthDay < startMonthDay) {
-            maxMonthDay = startMonthDay;
-        }
-        if (maxMonthDay < endMonthDay) {
-            maxMonthDay = endMonthDay;
-        }
-
-        ADJUSTED_MAX_VALUES[POSITION_DAY_OF_YEAR] = maxMonthDay;
-
-        if (leastMaxMonthDay > startMonthDay) {
-            leastMaxMonthDay = startMonthDay;
-        }
-        if (leastMaxMonthDay > endMonthDay) {
-            leastMaxMonthDay = endMonthDay;
-        }
-        ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_YEAR] = leastMaxMonthDay;
+        return ndx;
     }
 
     /**
-     * Package private Entry for suppling deviations from the Reader.
-     * Each entry consists of a range using the Hijrah calendar,
-     * start year, month, end year, end month, and an offset.
-     * The offset is used to modify the length of the month +2, +1, -1, -2.
+     * Returns the year computed from the epochMonth
+     *
+     * @param epochMonth the epochMonth
+     * @return the Hijrah Year
      */
-    static final class Deviation {
+    private int epochMonthToYear(int epochMonth) {
+        return (epochMonth + hijrahStartEpochMonth) / 12;
+    }
 
-        Deviation(int startYear, int startMonth, int endYear, int endMonth, int offset) {
-            this.startYear = startYear;
-            this.startMonth = startMonth;
-            this.endYear = endYear;
-            this.endMonth = endMonth;
-            this.offset = offset;
-        }
+    /**
+     * Returns the epochMonth for the Hijrah Year.
+     *
+     * @param year the HijrahYear
+     * @return the epochMonth for the beginning of the year.
+     */
+    private int yearToEpochMonth(int year) {
+        return (year * 12) - hijrahStartEpochMonth;
+    }
 
-        final int startYear;
-        final int startMonth;
-        final int endYear;
-        final int endMonth;
-        final int offset;
+    /**
+     * Returns the Hijrah month from the epochMonth.
+     *
+     * @param epochMonth the epochMonth
+     * @return the month of the Hijrah Year
+     */
+    private int epochMonthToMonth(int epochMonth) {
+        return (epochMonth + hijrahStartEpochMonth) % 12;
+    }
 
-        int getStartYear() {
-            return startYear;
-        }
+    /**
+     * Returns the epochDay for the start of the epochMonth.
+     *
+     * @param epochMonth the epochMonth
+     * @return the epochDay for the start of the epochMonth.
+     */
+    private int epochMonthToEpochDay(int epochMonth) {
+        return hijrahEpochMonthStartDays[epochMonth];
 
-        int getStartMonth() {
-            return startMonth;
-        }
+    }
 
-        int getEndYear() {
-            return endYear;
-        }
+    /**
+     * Returns the day of year for the requested HijrahYear and month.
+     *
+     * @param prolepticYear the Hijrah year
+     * @param month the Hijrah month
+     * @return the day of year for the start of the month of the year
+     */
+    private int yearMonthToDayOfYear(int prolepticYear, int month) {
+        int epochMonthFirst = yearToEpochMonth(prolepticYear);
+        return epochMonthToEpochDay(epochMonthFirst + month)
+                - epochMonthToEpochDay(epochMonthFirst);
+    }
 
-        int getEndMonth() {
-            return endMonth;
-        }
+    /**
+     * Returns the length of the epochMonth. It is computed from the start of
+     * the following month minus the start of the requested month.
+     *
+     * @param epochMonth the epochMonth; assumed to be within range
+     * @return the length in days of the epochMonth
+     */
+    private int epochMonthLength(int epochMonth) {
+        // The very last entry in the epochMonth table is not the start of a month
+        return hijrahEpochMonthStartDays[epochMonth + 1]
+                - hijrahEpochMonthStartDays[epochMonth];
+    }
 
-        int getOffset() {
-            return offset;
-        }
+    //-----------------------------------------------------------------------
+    private static final String KEY_ID = "id";
+    private static final String KEY_TYPE = "type";
+    private static final String KEY_VERSION = "version";
+    private static final String KEY_ISO_START = "iso-start";
 
-        @Override
-        public String toString() {
-            return String.format("[year: %4d, month: %2d, offset: %+d]", startYear, startMonth, offset);
+    /**
+     * Return the configuration properties from the resource.
+     * <p>
+     * The default location of the variant configuration resource is:
+     * <pre>
+     *   "$java.home/lib/" + resource-name
+     * </pre>
+     *
+     * @param resource the name of the calendar property resource
+     * @return a Properties containing the properties read from the resource.
+     * @throws Exception if access to the property resource fails
+     */
+    private static Properties readConfigProperties(final String resource) throws Exception {
+        try {
+            return AccessController
+                    .doPrivileged((java.security.PrivilegedExceptionAction<Properties>)
+                        () -> {
+                        String libDir = System.getProperty("java.home") + File.separator + "lib";
+                        File file = new File(libDir, resource);
+                        Properties props = new Properties();
+                        try (InputStream is = new FileInputStream(file)) {
+                            props.load(is);
+                        }
+                        return props;
+                    });
+        } catch (PrivilegedActionException pax) {
+            throw pax.getException();
         }
     }
 
+    /**
+     * Loads and processes the Hijrah calendar properties file.
+     * The starting Hijrah date and the corresponding ISO date are
+     * extracted and used to calculate the epochDate offset.
+     * The version number is identified and ignored.
+     * Everything else is the data for a year with containing the length of each
+     * of 12 months.
+     *
+     * @param resourceName  containing the properties defining the calendar, not null
+     * @throws IllegalArgumentException  if any of the values are malformed
+     * @throws NumberFormatException  if numbers, including properties that should
+     *      be years are invalid
+     * @throws IOException  if access to the property resource fails.
+     */
+    private void loadCalendarData(String resourceName)  throws Exception {
+        Properties props = readConfigProperties(resourceName);
+
+        Map<Integer, int[]> years = new HashMap<>();
+        int minYear = Integer.MAX_VALUE;
+        int maxYear = Integer.MIN_VALUE;
+        String id = null;
+        String type = null;
+        String version = null;
+        int isoStart = 0;
+        for (Map.Entry<Object, Object> entry : props.entrySet()) {
+            String key = (String) entry.getKey();
+            switch (key) {
+                case KEY_ID:
+                    id = (String)entry.getValue();
+                    break;
+                case KEY_TYPE:
+                    type = (String)entry.getValue();
+                    break;
+                case KEY_VERSION:
+                    version = (String)entry.getValue();
+                    break;
+                case KEY_ISO_START: {
+                    int[] ymd = parseYMD((String) entry.getValue());
+                    isoStart = (int) LocalDate.of(ymd[0], ymd[1], ymd[2]).toEpochDay();
+                    break;
+                }
+                default:
+                    try {
+                        // Everything else is either a year or invalid
+                        int year = Integer.valueOf(key);
+                        int[] months = parseMonths((String) entry.getValue());
+                        years.put(year, months);
+                        maxYear = Math.max(maxYear, year);
+                        minYear = Math.min(minYear, year);
+                    } catch (NumberFormatException nfe) {
+                        throw new IllegalArgumentException("bad key: " + key);
+                    }
+            }
+        }
+
+        if (!getId().equals(id)) {
+            throw new IllegalArgumentException("Configuration is for a different calendar: " + id);
+        }
+        if (!getCalendarType().equals(type)) {
+            throw new IllegalArgumentException("Configuration is for a different calendar type: " + type);
+        }
+        if (version == null || version.isEmpty()) {
+            throw new IllegalArgumentException("Configuration does not contain a version");
+        }
+        if (isoStart == 0) {
+            throw new IllegalArgumentException("Configuration does not contain a ISO start date");
+        }
+
+        // Now create and validate the array of epochDays indexed by epochMonth
+        hijrahStartEpochMonth = minYear * 12;
+        minEpochDay = isoStart;
+        hijrahEpochMonthStartDays = createEpochMonths(minEpochDay, minYear, maxYear, years);
+        maxEpochDay = hijrahEpochMonthStartDays[hijrahEpochMonthStartDays.length - 1];
+
+        // Compute the min and max year length in days.
+        for (int year = minYear; year < maxYear; year++) {
+            int length = getYearLength(year);
+            minYearLength = Math.min(minYearLength, length);
+            maxYearLength = Math.max(maxYearLength, length);
+        }
+    }
+
+    /**
+     * Converts the map of year to month lengths ranging from minYear to maxYear
+     * into a linear contiguous array of epochDays. The index is the hijrahMonth
+     * computed from year and month and offset by minYear. The value of each
+     * entry is the epochDay corresponding to the first day of the month.
+     *
+     * @param minYear The minimum year for which data is provided
+     * @param maxYear The maximum year for which data is provided
+     * @param years a Map of year to the array of 12 month lengths
+     * @return array of epochDays for each month from min to max
+     */
+    private int[] createEpochMonths(int epochDay, int minYear, int maxYear, Map<Integer, int[]> years) {
+        // Compute the size for the array of dates
+        int numMonths = (maxYear - minYear + 1) * 12 + 1;
+
+        // Initialize the running epochDay as the corresponding ISO Epoch day
+        int epochMonth = 0; // index into array of epochMonths
+        int[] epochMonths = new int[numMonths];
+        minMonthLength = Integer.MAX_VALUE;
+        maxMonthLength = Integer.MIN_VALUE;
+
+        // Only whole years are valid, any zero's in the array are illegal
+        for (int year = minYear; year <= maxYear; year++) {
+            int[] months = years.get(year);// must not be gaps
+            for (int month = 0; month < 12; month++) {
+                int length = months[month];
+                epochMonths[epochMonth++] = epochDay;
+
+                if (length < 29 || length > 32) {
+                    throw new IllegalArgumentException("Invalid month length in year: " + minYear);
+                }
+                epochDay += length;
+                minMonthLength = Math.min(minMonthLength, length);
+                maxMonthLength = Math.max(maxMonthLength, length);
+            }
+        }
+
+        // Insert the final epochDay
+        epochMonths[epochMonth++] = epochDay;
+
+        if (epochMonth != epochMonths.length) {
+            throw new IllegalStateException("Did not fill epochMonths exactly: ndx = " + epochMonth
+                    + " should be " + epochMonths.length);
+        }
+
+        return epochMonths;
+    }
+
+    /**
+     * Parses the 12 months lengths from a property value for a specific year.
+     *
+     * @param line the value of a year property
+     * @return an array of int[12] containing the 12 month lengths
+     * @throws IllegalArgumentException if the number of months is not 12
+     * @throws NumberFormatException if the 12 tokens are not numbers
+     */
+    private int[] parseMonths(String line) {
+        int[] months = new int[12];
+        String[] numbers = line.split("\\s");
+        if (numbers.length != 12) {
+            throw new IllegalArgumentException("wrong number of months on line: " + Arrays.toString(numbers) + "; count: " + numbers.length);
+        }
+        for (int i = 0; i < 12; i++) {
+            try {
+                months[i] = Integer.valueOf(numbers[i]);
+            } catch (NumberFormatException nfe) {
+                throw new IllegalArgumentException("bad key: " + numbers[i]);
+            }
+        }
+        return months;
+    }
+
+    /**
+     * Parse yyyy-MM-dd into a 3 element array [yyyy, mm, dd].
+     *
+     * @param string the input string
+     * @return the 3 element array with year, month, day
+     */
+    private int[] parseYMD(String string) {
+        // yyyy-MM-dd
+        string = string.trim();
+        try {
+            if (string.charAt(4) != '-' || string.charAt(7) != '-') {
+                throw new IllegalArgumentException("date must be yyyy-MM-dd");
+            }
+            int[] ymd = new int[3];
+            ymd[0] = Integer.valueOf(string.substring(0, 4));
+            ymd[1] = Integer.valueOf(string.substring(5, 7));
+            ymd[2] = Integer.valueOf(string.substring(8, 10));
+            return ymd;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("date must be yyyy-MM-dd", ex);
+        }
+    }
 }

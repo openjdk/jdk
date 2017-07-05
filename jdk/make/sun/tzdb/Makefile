@@ -42,7 +42,6 @@ BUILD_MANIFEST=true
 # Time zone data file creation
 #
 TZDATA_DIR := ../javazic/tzdata
-TZDATA_VER := $(subst tzdata,,$(shell $(GREP) '^tzdata' $(TZDATA_DIR)/VERSION))
 TZFILE := \
     africa antarctica asia australasia europe northamerica \
     pacificnew southamerica backward etcetera \
@@ -50,9 +49,7 @@ TZFILE := \
 
 TZFILES := $(addprefix $(TZDATA_DIR)/,$(TZFILE))
 
-
-
-TZDB_JAR = tzdb.jar
+TZDB_DAT = $(LIBDIR)/tzdb.dat
 
 #
 # Rules
@@ -62,13 +59,12 @@ include $(BUILDDIR)/common/Classes.gmk
 #
 # Add to the build rule
 #
-build: $(LIBDIR)/$(TZDB_JAR)
+build: $(TZDB_DAT)
 
-$(LIBDIR)/$(TZDB_JAR): $(TZFILES)
+$(TZDB_DAT): $(TZFILES)
 	$(prep-target)
-	echo build tzdb from version $(TZDATA_VER)
 	$(BOOT_JAVA_CMD) -jar $(BUILDTOOLJARDIR)/tzdb.jar \
-	  -version $(TZDATA_VER) -srcdir $(TZDATA_DIR) -dstdir $(LIBDIR) $(TZFILE)
+	  -srcdir $(TZDATA_DIR) -dstfile $(TZDB_DAT) $(TZFILE)
 
 clean clobber::
-	$(RM) $(LIBDIR)/$(TZDB_JAR)
+	$(RM) $(TZDB_DAT)

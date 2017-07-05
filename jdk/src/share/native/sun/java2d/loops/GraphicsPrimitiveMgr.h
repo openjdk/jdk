@@ -143,9 +143,9 @@ typedef struct _SurfaceType {
  * structure from the information present in a given Java Composite
  * object.
  */
-typedef JNIEXPORT void (JNICALL CompInfoFunc)(JNIEnv *env,
-                                              CompositeInfo *pCompInfo,
-                                              jobject Composite);
+typedef void (JNICALL CompInfoFunc)(JNIEnv *env,
+                                    CompositeInfo *pCompInfo,
+                                    jobject Composite);
 
 /*
  * The additional information needed to implement a primitive that

@@ -432,7 +432,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
     int lcladdrlen;
     int address;
 
-    family = (*env)->GetIntField(env, addressObj, ia_familyID);
+    family = getInetAddress_family(env, addressObj);
     if (family == IPv6 && !ipv6_supported) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         "Protocol family not supported");
@@ -452,7 +452,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
         JNU_ThrowNullPointerException(env, "argument address");
         return;
     } else {
-        address = (*env)->GetIntField(env, addressObj, ia_addressID);
+        address = getInetAddress_addr(env, addressObj);
     }
 
     if (NET_InetAddressToSockaddr(env, addressObj, port, (struct sockaddr *)&lcladdr, &lcladdrlen, JNI_FALSE) != 0) {
@@ -552,9 +552,9 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_connect0(JNIEnv *env, jobject thi
         return;
     }
 
-    addr = (*env)->GetIntField(env, address, ia_addressID);
+    addr = getInetAddress_addr(env, address);
 
-    family = (*env)->GetIntField(env, address, ia_familyID);
+    family = getInetAddress_family(env, address);
     if (family == IPv6 && !ipv6_supported) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         "Protocol family not supported");
@@ -670,7 +670,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
         return;
     }
 
-    family = (*env)->GetIntField(env, iaObj, ia_familyID);
+    family = getInetAddress_family(env, iaObj);
     if (family == IPv4) {
         fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
     } else {
@@ -714,7 +714,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
         if (!w2k_or_later) { /* avoid this check on Win 2K or better. Does not work with IPv6.
                       * Check is not necessary on these OSes */
             if (connected) {
-                address = (*env)->GetIntField(env, iaObj, ia_addressID);
+                address = getInetAddress_addr(env, iaObj);
             } else {
                 address = ntohl(rmtaddr.him4.sin_addr.s_addr);
             }
@@ -823,7 +823,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
     if (IS_NULL(addressObj)) {
         JNU_ThrowNullPointerException(env, "Null address in peek()");
     } else {
-        address = (*env)->GetIntField(env, addressObj, ia_addressID);
+        address = getInetAddress_addr(env, addressObj);
         /* We only handle IPv4 for now. Will support IPv6 once its in the os */
         family = AF_INET;
     }
@@ -905,9 +905,8 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
         JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException", 0);
         return 0;
     }
-    (*env)->SetIntField(env, addressObj, ia_addressID,
-                        ntohl(remote_addr.sin_addr.s_addr));
-    (*env)->SetIntField(env, addressObj, ia_familyID, IPv4);
+    setInetAddress_addr(env, addressObj, ntohl(remote_addr.sin_addr.s_addr));
+    setInetAddress_family(env, addressObj, IPv4);
 
     /* return port */
     return ntohs(remote_addr.sin_port);
@@ -1574,21 +1573,16 @@ static int getInetAddrFromIf (JNIEnv *env, int family, jobject nif, jobject *iad
 {
     jobjectArray addrArray;
     static jfieldID ni_addrsID=0;
-    static jfieldID ia_familyID=0;
     jsize len;
     jobject addr;
     int i;
 
-    if (ni_addrsID == NULL || ia_familyID == NULL) {
+    if (ni_addrsID == NULL ) {
         jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
         CHECK_NULL_RETURN (c, -1);
         ni_addrsID = (*env)->GetFieldID(env, c, "addrs",
                                         "[Ljava/net/InetAddress;");
         CHECK_NULL_RETURN (ni_addrsID, -1);
-        c = (*env)->FindClass(env,"java/net/InetAddress");
-        CHECK_NULL_RETURN (c, -1);
-        ia_familyID = (*env)->GetFieldID(env, c, "family", "I");
-        CHECK_NULL_RETURN (ia_familyID, -1);
     }
 
     addrArray = (*env)->GetObjectField(env, nif, ni_addrsID);
@@ -1606,7 +1600,7 @@ static int getInetAddrFromIf (JNIEnv *env, int family, jobject nif, jobject *iad
     for (i=0; i<len; i++) {
         int fam;
         addr = (*env)->GetObjectArrayElement(env, addrArray, i);
-        fam = (*env)->GetIntField(env, addr, ia_familyID);
+        fam = getInetAddress_family(env, addr);
         if (fam == family) {
             *iaddr = addr;
             return 0;
@@ -1618,20 +1612,13 @@ static int getInetAddrFromIf (JNIEnv *env, int family, jobject nif, jobject *iad
 static int getInet4AddrFromIf (JNIEnv *env, jobject nif, struct in_addr *iaddr)
 {
     jobject addr;
-    static jfieldID ia_addressID;
 
     int ret = getInetAddrFromIf (env, IPv4, nif, &addr);
     if (ret == -1) {
         return -1;
     }
 
-    if (ia_addressID == 0) {
-        jclass c = (*env)->FindClass(env,"java/net/InetAddress");
-        CHECK_NULL_RETURN (c, -1);
-        ia_addressID = (*env)->GetFieldID(env, c, "address", "I");
-        CHECK_NULL_RETURN (ia_addressID, -1);
-    }
-    iaddr->s_addr = htonl((*env)->GetIntField(env, addr, ia_addressID));
+    iaddr->s_addr = htonl(getInetAddress_addr(env, addr));
     return 0;
 }
 
@@ -1706,17 +1693,9 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
             }
             opt = java_net_SocketOptions_IP_MULTICAST_IF2;
         } else {
-            static jfieldID ia_addressID;
             struct in_addr in;
 
-            if (ia_addressID == NULL) {
-                        jclass c = (*env)->FindClass(env,"java/net/InetAddress");
-                CHECK_NULL(c);
-                ia_addressID = (*env)->GetFieldID(env, c, "address", "I");
-                CHECK_NULL(ia_addressID);
-            }
-
-            in.s_addr = htonl((*env)->GetIntField(env, value, ia_addressID));
+            in.s_addr = htonl(getInetAddress_addr(env, value));
 
             if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
                                (const char*)&in, sizeof(in)) < 0) {
@@ -1945,7 +1924,6 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1, jint o
     if (isIPV4) {
         static jclass inet4_class;
         static jmethodID inet4_ctrID;
-        static jfieldID inet4_addrID;
 
         static jclass ni_class;
         static jmethodID ni_ctrID;
@@ -1975,15 +1953,13 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1, jint o
             CHECK_NULL_RETURN(c, NULL);
             inet4_ctrID = (*env)->GetMethodID(env, c, "<init>", "()V");
             CHECK_NULL_RETURN(inet4_ctrID, NULL);
-            inet4_addrID = (*env)->GetFieldID(env, c, "address", "I");
-            CHECK_NULL_RETURN(inet4_addrID, NULL);
             inet4_class = (*env)->NewGlobalRef(env, c);
             CHECK_NULL_RETURN(inet4_class, NULL);
         }
         addr = (*env)->NewObject(env, inet4_class, inet4_ctrID, 0);
         CHECK_NULL_RETURN(addr, NULL);
 
-        (*env)->SetIntField(env, addr, inet4_addrID, ntohl(in.s_addr));
+        setInetAddress_addr(env, addr, ntohl(in.s_addr));
 
         /*
          * For IP_MULTICAST_IF return InetAddress

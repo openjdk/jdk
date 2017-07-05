@@ -68,7 +68,7 @@ import org.testng.annotations.Test;
 /**
  * Test SettingsParser.
  */
-@Test(groups={"implementation"})
+@Test
 public class TestSettingsParser extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------

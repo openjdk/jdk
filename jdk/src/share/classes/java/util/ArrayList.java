@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +105,20 @@ public class ArrayList<E> extends AbstractList<E>
     private static final long serialVersionUID = 8683452581122892189L;
 
     /**
+     * Default initial capacity.
+     */
+    private static final int DEFAULT_CAPACITY = 10;
+
+    /**
+     * Shared empty array instance used for empty instances.
+     */
+    private static final Object[] EMPTY_ELEMENTDATA = {};
+
+    /**
      * The array buffer into which the elements of the ArrayList are stored.
-     * The capacity of the ArrayList is the length of this array buffer.
+     * The capacity of the ArrayList is the length of this array buffer. Any
+     * empty ArrayList with elementData == EMPTY_ELEMENTDATA will be expanded to
+     * DEFAULT_CAPACITY when the first element is added.
      */
     private transient Object[] elementData;
 
@@ -136,7 +148,8 @@ public class ArrayList<E> extends AbstractList<E>
      * Constructs an empty list with an initial capacity of ten.
      */
     public ArrayList() {
-        this(10);
+        super();
+        this.elementData = EMPTY_ELEMENTDATA;
     }
 
     /**
@@ -162,8 +175,7 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public void trimToSize() {
         modCount++;
-        int oldCapacity = elementData.length;
-        if (size < oldCapacity) {
+        if (size < elementData.length) {
             elementData = Arrays.copyOf(elementData, size);
         }
     }
@@ -176,12 +188,29 @@ public class ArrayList<E> extends AbstractList<E>
      * @param   minCapacity   the desired minimum capacity
      */
     public void ensureCapacity(int minCapacity) {
-        if (minCapacity > 0)
-            ensureCapacityInternal(minCapacity);
+        int minExpand = (elementData != EMPTY_ELEMENTDATA)
+            // any size if real element table
+            ? 0
+            // larger than default for empty table. It's already supposed to be
+            // at default size.
+            : DEFAULT_CAPACITY;
+
+        if (minCapacity > minExpand) {
+            ensureExplicitCapacity(minCapacity);
+        }
     }
 
     private void ensureCapacityInternal(int minCapacity) {
+        if (elementData == EMPTY_ELEMENTDATA) {
+            minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);
+        }
+
+        ensureExplicitCapacity(minCapacity);
+    }
+
+    private void ensureExplicitCapacity(int minCapacity) {
         modCount++;
+
         // overflow-conscious code
         if (minCapacity - elementData.length > 0)
             grow(minCapacity);
@@ -450,7 +479,7 @@ public class ArrayList<E> extends AbstractList<E>
         if (numMoved > 0)
             System.arraycopy(elementData, index+1, elementData, index,
                              numMoved);
-        elementData[--size] = null; // Let gc do its work
+        elementData[--size] = null; // clear to let GC do its work
 
         return oldValue;
     }
@@ -495,7 +524,7 @@ public class ArrayList<E> extends AbstractList<E>
         if (numMoved > 0)
             System.arraycopy(elementData, index+1, elementData, index,
                              numMoved);
-        elementData[--size] = null; // Let gc do its work
+        elementData[--size] = null; // clear to let GC do its work
     }
 
     /**
@@ -505,7 +534,7 @@ public class ArrayList<E> extends AbstractList<E>
     public void clear() {
         modCount++;
 
-        // Let gc do its work
+        // clear to let GC do its work
         for (int i = 0; i < size; i++)
             elementData[i] = null;
 
@@ -586,10 +615,12 @@ public class ArrayList<E> extends AbstractList<E>
         System.arraycopy(elementData, toIndex, elementData, fromIndex,
                          numMoved);
 
-        // Let gc do its work
+        // clear to let GC do its work
         int newSize = size - (toIndex-fromIndex);
-        while (size != newSize)
-            elementData[--size] = null;
+        for (int i = newSize; i < size; i++) {
+            elementData[i] = null;
+        }
+        size = newSize;
     }
 
     /**
@@ -677,6 +708,7 @@ public class ArrayList<E> extends AbstractList<E>
                 w += size - r;
             }
             if (w != size) {
+                // clear to let GC do its work
                 for (int i = w; i < size; i++)
                     elementData[i] = null;
                 modCount += size - w;
@@ -701,17 +733,17 @@ public class ArrayList<E> extends AbstractList<E>
         int expectedModCount = modCount;
         s.defaultWriteObject();
 
-        // Write out array length
-        s.writeInt(elementData.length);
+        // Write out size as capacity for behavioural compatibility with clone()
+        s.writeInt(size);
 
         // Write out all elements in the proper order.
-        for (int i=0; i<size; i++)
+        for (int i=0; i<size; i++) {
             s.writeObject(elementData[i]);
+        }
 
         if (modCount != expectedModCount) {
             throw new ConcurrentModificationException();
         }
-
     }
 
     /**
@@ -720,16 +752,24 @@ public class ArrayList<E> extends AbstractList<E>
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
+        elementData = EMPTY_ELEMENTDATA;
+
         // Read in size, and any hidden stuff
         s.defaultReadObject();
 
-        // Read in array length and allocate array
-        int arrayLength = s.readInt();
-        Object[] a = elementData = new Object[arrayLength];
+        // Read in capacity
+        s.readInt(); // ignored
 
-        // Read in all elements in the proper order.
-        for (int i=0; i<size; i++)
-            a[i] = s.readObject();
+        if (size > 0) {
+            // be like clone(), allocate array based upon size not capacity
+            ensureCapacityInternal(size);
+
+            Object[] a = elementData;
+            // Read in all elements in the proper order.
+            for (int i=0; i<size; i++) {
+                a[i] = s.readObject();
+            }
+        }
     }
 
     /**

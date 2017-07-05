@@ -76,11 +76,11 @@
 
 package sun.text.resources.et;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_et extends ListResourceBundle {
+public class FormatData_et extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -116,6 +116,23 @@ public class FormatData_et extends ListResourceBundle {
                     "nov", // abb november
                     "dets", // abb december
                     "" // abb month 13 if applicable
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "V",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
                 }
             },
             { "DayNames",
@@ -157,6 +174,12 @@ public class FormatData_et extends ListResourceBundle {
                     "m.a.j."
                 }
             },
+            { "short.Eras",
+                new String[] {
+                    "e.m.a.",
+                    "m.a.j.",
+                }
+            },
             { "NumberElements",
                 new String[] {
                     ",", // decimal separator
@@ -193,25 +216,6 @@ public class FormatData_et extends ListResourceBundle {
                     "{1} {0}" // date-time pattern
                 }
             },
-            { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
-            { "calendarname.islamic-civil", "islami ilmalik kalender" },
-            { "calendarname.islamicc", "islami ilmalik kalender" },
-            { "calendarname.roc", "Hiina Vabariigi kalender" },
-            { "calendarname.islamic", "islamikalender" },
-            { "calendarname.buddhist", "budistlik kalender" },
-            { "calendarname.japanese", "Jaapani kalender" },
-            { "calendarname.gregorian", "Gregoriuse kalender" },
-            { "calendarname.gregory", "Gregoriuse kalender" },
-            { "field.era", "ajastu" },
-            { "field.year", "aasta" },
-            { "field.month", "kuu" },
-            { "field.week", "n\u00e4dal" },
-            { "field.weekday", "n\u00e4dalap\u00e4ev" },
-            { "field.dayperiod", "enne/p\u00e4rast l\u00f5unat" },
-            { "field.hour", "tund" },
-            { "field.minute", "minut" },
-            { "field.second", "sekund" },
-            { "field.zone", "v\u00f6\u00f6nd" },
         };
     }
 }
