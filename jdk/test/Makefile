@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1995-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,25 +37,19 @@ GET=
 AWK       = awk
 CAT       = cat
 CD        = cd
-CHMOD     = chmod
 CP        = cp
 CUT       = cut
 ECHO      = echo
 EGREP     = egrep
 EXPAND    = expand
-EXPR      = expr
-KILL      = /usr/bin/kill
 MKDIR     = mkdir
-NOHUP     = nohup
 PWD       = pwd
 SED       = sed
-SLEEP     = sleep
 SORT      = sort
 TEE       = tee
 UNAME     = uname
 UNIQ      = uniq
 WC        = wc
-XHOST     = xhost
 ZIP       = zip
 
 # Get OS name from uname
@@ -211,66 +205,6 @@ ifdef JPRT_ARCHIVE_BUNDLE
   ARCHIVE_BUNDLE = $(JPRT_ARCHIVE_BUNDLE)
 endif
 
-# DISPLAY settings for virtual frame buffer
-START_XVFB = start-Xvfb.sh
-NOHUP_OUTPUT = $(ABS_TEST_OUTPUT_DIR)/start-Xvfb.nohup-output.txt
-DISPLAY_PID_FILE=$(ABS_TEST_OUTPUT_DIR)/xvfb-display-number.txt
-DISPLAY_SLEEP_TIME=10
-DISPLAY_MAX_SLEEPS=10
-ifeq ($(OS_NAME),solaris)
-  VIRTUAL_FRAME_BUFFER = true
-endif
-ifeq ($(OS_NAME),linux)
-  VIRTUAL_FRAME_BUFFER = true
-endif
-
-# Does not work yet, display dies as soon as it gets used. :^(
-VIRTUAL_FRAME_BUFFER = false
-
-# Are we using a VIRTUAL_FRAME_BUFFER (Xvfb)
-ifeq ($(VIRTUAL_FRAME_BUFFER),true)
-  
-  PREP_DISPLAY = \
-    $(CP) $(START_XVFB) $(ABS_TEST_OUTPUT_DIR); \
-    $(CHMOD) a+x $(ABS_TEST_OUTPUT_DIR)/$(START_XVFB); \
-    ( $(CD) $(ABS_TEST_OUTPUT_DIR) && \
-      $(NOHUP) $(ABS_TEST_OUTPUT_DIR)/$(START_XVFB) $(DISPLAY_PID_FILE) > $(NOHUP_OUTPUT) 2>&1 && \
-      $(SLEEP) $(DISPLAY_SLEEP_TIME) ) & \
-    count=1; \
-    while [ ! -s $(DISPLAY_PID_FILE) ] ; do \
-      $(ECHO) "Sleeping $(DISPLAY_SLEEP_TIME) more seconds, DISPLAY not ready"; \
-      $(SLEEP) $(DISPLAY_SLEEP_TIME); \
-      count=`$(EXPR) $${count} '+' 1`; \
-      if [ $${count} -gt $(DISPLAY_MAX_SLEEPS) ] ; then \
-        $(ECHO) "ERROR: DISPLAY not ready, giving up on DISPLAY"; \
-        exit 9; \
-      fi; \
-    done ; \
-    DISPLAY=":`$(CAT) $(DISPLAY_PID_FILE)`"; \
-    export DISPLAY; \
-    $(CAT) $(NOHUP_OUTPUT); \
-    $(ECHO) "Prepared DISPLAY=$${DISPLAY}"; \
-    $(XHOST) || \
-    ( $(ECHO) "ERROR: No display" ; exit 8)
-
-  KILL_DISPLAY = \
-    ( \
-      DISPLAY=":`$(CAT) $(DISPLAY_PID_FILE)`"; \
-      export DISPLAY; \
-      if [ -s "$(DISPLAY_PID_FILE)" ] ; then \
-        $(KILL) `$(CAT) $(DISPLAY_PID_FILE)` > /dev/null 2>&1; \
-        $(KILL) -9 `$(CAT) $(DISPLAY_PID_FILE)` > /dev/null 2>&1; \
-      fi; \
-      $(ECHO) "Killed DISPLAY=$${DISPLAY}"; \
-    )
-
-else
-  
-  PREP_DISPLAY = $(ECHO) "VIRTUAL_FRAME_BUFFER=$(VIRTUAL_FRAME_BUFFER)"
-  KILL_DISPLAY = $(ECHO) "VIRTUAL_FRAME_BUFFER=$(VIRTUAL_FRAME_BUFFER)"
-
-endif
-
 # How to create the test bundle (pass or fail, we want to create this)
 #   Follow command with ";$(BUNDLE_UP_AND_EXIT)", so it always gets executed.
 ZIP_UP_RESULTS = ( $(MKDIR) -p `dirname $(ARCHIVE_BUNDLE)`     \
@@ -327,7 +261,7 @@ BUNDLE_UP_AND_EXIT = \
     $(ECHO) "Missing file: $${_summary}" >> $(STATS_TXT); \
   fi; \
   $(CAT) $(STATS_TXT); \
-  $(ZIP_UP_RESULTS) && $(KILL_DISPLAY) ; \
+  $(ZIP_UP_RESULTS) ; \
   $(TESTEXIT) \
 )
 
@@ -629,7 +563,6 @@ jtreg_tests: prep $(PRODUCT_HOME) $(JTREG) $(EXCLUDELIST)
 	(                                                                    \
 	  ( JT_HOME=$(shell $(GETMIXEDPATH) "$(JT_HOME)");                   \
             export JT_HOME;                                                  \
-	    $(PREP_DISPLAY) &&                                               \
             $(shell $(GETMIXEDPATH) "$(JTREG)")                              \
               $(JTREG_BASIC_OPTIONS)                                         \
               -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTreport  \

@@ -62,6 +62,7 @@ public class SynthScrollBarUI extends BasicScrollBarUI
                      (scrollbar.getLayout() instanceof UIResource)) {
             scrollbar.setLayout(this);
         }
+        configureScrollBarColors();
         updateStyle(scrollbar);
     }
 

@@ -2152,12 +2152,20 @@ Zone Asia/Irkutsk	 6:57:20 -	LMT	1880
 # From Oscar van Vlijmen (2003-10-18): [This region consists of]
 # Aginskij Buryatskij avtonomnyj okrug, Amurskaya oblast',
 # [parts of] Respublika Sakha (Yakutiya), Chitinskaya oblast'.
+
+# From Oscar van Vlijmen (2009-11-29):
+# ...some regions of RUssia were merged with others since 2005...
+# Some names were changed, no big deal, except for one instance: a new name.
+# YAK/YAKST: UTC+9 Zabajkal'skij kraj.
+
+# From Oscar van Vlijmen (2009-11-29):
 # The Sakha districts are: Aldanskij, Amginskij, Anabarskij,
-# Bulunskij, Verkhnekolymskij, Verkhnevilyujskij, Vilyujskij, Gornyj,
+# Verkhnevilyujskij, Vilyujskij, Gornyj,
 # Zhiganskij, Kobyajskij, Lenskij, Megino-Kangalasskij, Mirninskij,
-# Namskij, Nyurbinskij, Olenekskij, Olekminskij, Srednekolymskij,
+# Namskij, Nyurbinskij, Olenyokskij, Olyokminskij,
 # Suntarskij, Tattinskij, Ust'-Aldanskij, Khangalasskij,
-# Churapchinskij, Eveno-Bytantajskij.
+# Churapchinskij, Eveno-Bytantajskij Natsional'nij.
+
 Zone Asia/Yakutsk	 8:38:40 -	LMT	1919 Dec 15
 			 8:00	-	YAKT	1930 Jun 21 # Yakutsk Time
 			 9:00	Russia	YAK%sT	1991 Mar 31 2:00s
@@ -2167,7 +2175,9 @@ Zone Asia/Yakutsk	 8:38:40 -	LMT	1919 Dec 15
 # From Oscar van Vlijmen (2003-10-18): [This region consists of]
 # Evrejskaya avtonomnaya oblast', Khabarovskij kraj, Primorskij kraj,
 # [parts of] Respublika Sakha (Yakutiya).
-# The Sakha districts are: Verkhoyanskij, Tomponskij, Ust'-Majskij,
+
+# From Oscar van Vlijmen (2009-11-29):
+# The Sakha districts are: Bulunskij, Verkhoyanskij, Tomponskij, Ust'-Majskij,
 # Ust'-Yanskij.
 Zone Asia/Vladivostok	 8:47:44 -	LMT	1922 Nov 15
 			 9:00	-	VLAT	1930 Jun 21 # Vladivostok Time
@@ -2188,8 +2198,10 @@ Zone Asia/Sakhalin	 9:30:48 -	LMT	1905 Aug 23
 # From Oscar van Vlijmen (2003-10-18): [This region consists of]
 # Magadanskaya oblast', Respublika Sakha (Yakutiya).
 # Probably also: Kuril Islands.
-# The Sakha districts are: Abyjskij, Allaikhovskij, Momskij,
-# Nizhnekolymskij, Ojmyakonskij.
+
+# From Oscar van Vlijmen (2009-11-29):
+# The Sakha districts are: Abyjskij, Allaikhovskij, Verkhhhnekolymskij, Momskij,
+# Nizhnekolymskij, Ojmyakonskij, Srednekolymskij.
 Zone Asia/Magadan	10:03:12 -	LMT	1924 May  2
 			10:00	-	MAGT	1930 Jun 21 # Magadan Time
 			11:00	Russia	MAG%sT	1991 Mar 31 2:00s
