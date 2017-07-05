@@ -818,16 +818,23 @@ class Krb5Context implements GSSContextSpi {
                 }
                 myName = (Krb5NameElement) myCred.getName();
 
-                checkPermission(myName.getKrb5PrincipalName().getName(),
-                                "accept");
-
-                EncryptionKey[] secretKeys =
-                 ((Krb5AcceptCredential) myCred).getKrb5EncryptionKeys();
+                // If there is already a bound name, check now
+                if (myName != null) {
+                    Krb5MechFactory.checkAcceptCredPermission(myName, myName);
+                }
 
                 InitSecContextToken token = new InitSecContextToken(this,
-                                                    secretKeys, is);
+                                                    (Krb5AcceptCredential) myCred, is);
                 PrincipalName clientName = token.getKrbApReq().getClient();
                 peerName = Krb5NameElement.getInstance(clientName);
+
+                // If unbound, check after the bound name is found
+                if (myName == null) {
+                    myName = Krb5NameElement.getInstance(
+                        token.getKrbApReq().getCreds().getServer());
+                    Krb5MechFactory.checkAcceptCredPermission(myName, myName);
+                }
+
                 if (getMutualAuthState()) {
                         retVal = new AcceptSecContextToken(this,
                                           token.getKrbApReq()).encode();

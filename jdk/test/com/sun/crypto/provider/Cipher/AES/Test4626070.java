@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,11 @@ import java.util.*;
 
 public class Test4626070 {
     private static final String ALGO = "AES";
-    private static final String MODE = "CBC";
-    private static final String PADDING = "PKCS5Padding";
     private static final int KEYSIZE = 16; // in bytes
 
-    public boolean execute() throws Exception {
-
-        Cipher ci = Cipher.getInstance(ALGO+"/"+MODE+"/"+PADDING, "SunJCE");
+    public void execute(String mode, String padding) throws Exception {
+        String transformation = ALGO + "/" + mode + "/" + padding;
+        Cipher ci = Cipher.getInstance(transformation, "SunJCE");
         KeyGenerator kg = KeyGenerator.getInstance(ALGO, "SunJCE");
         kg.init(KEYSIZE*8);
         SecretKey key = kg.generateKey();
@@ -58,18 +56,14 @@ public class Test4626070 {
             throw new Exception(
                 "key after wrap/unwrap is different from the original!");
         }
-        // passed all tests...hooray!
-        return true;
+        System.out.println(transformation + ": Passed");
     }
 
     public static void main (String[] args) throws Exception {
         Security.addProvider(new com.sun.crypto.provider.SunJCE());
 
         Test4626070 test = new Test4626070();
-        String testName = test.getClass().getName() + "[" + ALGO +
-            "/" + MODE + "/" + PADDING + "]";
-        if (test.execute()) {
-            System.out.println(testName + ": Passed!");
-        }
+        test.execute("CBC", "PKCS5Padding");
+        test.execute("GCM", "NoPadding");
     }
 }

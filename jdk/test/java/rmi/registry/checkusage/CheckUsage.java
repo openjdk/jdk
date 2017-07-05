@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,34 +35,21 @@ import java.io.ByteArrayOutputStream;
 
 /**
  * Make sure that the rmiregistry prints out a correct usage statement
- * when run with an incorrect command line; test written to conform to
- * new tighter bug fix/regression test guidelines.
+ * when run with an incorrect command line.
  */
 public class CheckUsage {
     public static void main(String[] args) {
 
-        System.err.println("\nregression test for 4151966\n");
-
-        JavaVM registryVM = null;
-
         try {
-            // make sure the registry exits with a proper usage statement
             ByteArrayOutputStream berr = new ByteArrayOutputStream();
 
             // run a VM to start the registry
-            registryVM = new JavaVM("sun.rmi.registry.RegistryImpl",
-                                    "", "foo",
-                                    System.out, berr);
+            JavaVM registryVM = new JavaVM("sun.rmi.registry.RegistryImpl",
+                                           "", "foo",
+                                           System.out, berr);
             System.err.println("starting registry");
-            registryVM.start();
-
-            // wait for registry exit
             System.err.println(" registry exited with status: " +
-                               registryVM.getVM().waitFor());
-            try {
-                Thread.sleep(7000);
-            } catch (InterruptedException ie) {
-            }
+                               registryVM.execute());
 
             String usage = new String(berr.toByteArray());
 
@@ -75,9 +62,6 @@ public class CheckUsage {
             }
         } catch (Exception e) {
             TestLibrary.bomb(e);
-        } finally {
-            registryVM.destroy();
-            registryVM = null;
         }
     }
 }
