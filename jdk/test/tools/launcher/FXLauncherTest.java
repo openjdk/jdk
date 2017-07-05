@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8001533
+ * @bug 8001533 8004547
  * @summary Test launching FX application with java -jar
  * Test uses main method and blank main method, a jfx app class and an incorrest
  * jfx app class, a main-class for the manifest, a bogus one and none.
@@ -47,6 +47,8 @@ public class FXLauncherTest extends TestHelper {
 
     /* standard main class can be used as java main for fx app class */
     static final String StdMainClass = "helloworld.HelloWorld";
+    static final String ExtMainClass = "helloworld.ExtHello";
+    static final String NonFXMainClass = "helloworld.HelloJava";
     static int testcount = 0;
 
     /* a main method and a blank. */
@@ -107,9 +109,7 @@ public class FXLauncherTest extends TestHelper {
     }
 
     /*
-     * Create class to extend fx java file for test application
-     * TODO: make test to create java file and this extension of the java file
-     *      and jar them together an run app via this java class.
+     * Create class that extends HelloWorld instead of Application
      */
     static void createExtJavaFile(String mainmethod) {
         try {
@@ -125,16 +125,48 @@ public class FXLauncherTest extends TestHelper {
             compile("-cp", ".", "-d", ".", mainClass + JAVA_FILE_EXT);
         } catch (java.io.IOException ioe) {
             ioe.printStackTrace();
-            throw new RuntimeException("Failed creating HelloWorld.");
+            throw new RuntimeException("Failed creating ExtHello.");
+        }
+    }
+
+    /*
+     * Create non-JavaFX class for testing if jfxrt.jar is being loaded
+     * when it shouldn't be
+     */
+    static void createNonFXJavaFile() {
+        try {
+            String mainClass = "HelloJava";
+            List<String> contents = new ArrayList<>();
+            contents.add("package helloworld;");
+            contents.add("public class HelloJava {");
+            contents.add("    public static void main(String[] args) {");
+            contents.add("        for(String aa : args)");
+            contents.add("            System.out.println(\"arg: \" + aa);" );
+            contents.add("    }");
+            contents.add("}");
+            // Create and compile java source.
+            MainJavaFile = new File(mainClass + JAVA_FILE_EXT);
+            createFile(MainJavaFile, contents);
+            compile("-cp", ".", "-d", ".", mainClass + JAVA_FILE_EXT);
+        } catch (java.io.IOException ioe) {
+            ioe.printStackTrace();
+            throw new RuntimeException("Failed creating HelloJava.");
         }
     }
 
     // Create manifest for test fx application
-    static List<String> createManifestContents(String mainclassentry) {
+    static List<String> createManifestContents(String mainClassEntry, String fxMainEntry) {
         List<String> mcontents = new ArrayList<>();
         mcontents.add("Manifest-Version: 1.0");
         mcontents.add("Created-By: FXLauncherTest");
-        mcontents.add("Main-Class: " + mainclassentry);
+        if (mainClassEntry != null) {
+            mcontents.add("Main-Class: " + mainClassEntry);
+            System.out.println("Main-Class: " + mainClassEntry);
+        }
+        if (fxMainEntry != null) {
+            mcontents.add("JavaFX-Application-Class: " + fxMainEntry);
+            System.out.println("JavaFX-Application-Class: " + fxMainEntry);
+        }
         return mcontents;
     }
 
@@ -175,31 +207,41 @@ public class FXLauncherTest extends TestHelper {
 
     /*
      * Set Main-Class and iterate main_methods.
-     * Try launching with both -jar and -cp methods.
+     * Try launching with both -jar and -cp methods, with and without FX main
+     * class manifest entry.
      * All cases should run.
+     *
+     * See sun.launcher.LauncherHelper$FXHelper for more details on how JavaFX
+     * applications are launched.
      */
     @Test
     static void testBasicFXApp() throws Exception {
-        testBasicFXApp(true);
-        testBasicFXApp(false);
+        testBasicFXApp(true, false);    // -cp, no JAC
+        testBasicFXApp(false, true);    // -jar, with JAC
+        testBasicFXApp(false, false);   // -jar, no JAC
     }
 
-    static void testBasicFXApp(boolean useCP) throws Exception {
+    static void testBasicFXApp(boolean useCP, boolean setFXMainClass) throws Exception {
         String testname = "testBasicFXApp";
+        if (useCP) {
+            testname = testname.concat("_useCP");
+        }
+        String fxMC = StdMainClass;
+        if (!setFXMainClass) {
+            testname = testname.concat("_noJAC");
+            fxMC = null;
+        }
         for (String mm : MAIN_METHODS) {
             testcount++;
             line();
-            System.out.println("test# " + testcount +
-                "-  Main method: " + mm +
-                 ";  MF main class: " + StdMainClass);
+            System.out.println("test# " + testcount + "-  Main method: " + mm);
             createJavaFile(mm);
-            createFile(ManifestFile, createManifestContents(StdMainClass));
+            createFile(ManifestFile, createManifestContents(StdMainClass, fxMC));
             createJar(FXtestJar, ManifestFile);
             String sTestJar = FXtestJar.getAbsolutePath();
             TestResult tr;
             if (useCP) {
                 tr = doExec(javaCmd, "-cp", sTestJar, StdMainClass, APP_PARMS[0], APP_PARMS[1]);
-                testname = testname.concat("_useCP");
             } else {
                 tr = doExec(javaCmd, "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
             }
@@ -224,26 +266,33 @@ public class FXLauncherTest extends TestHelper {
      */
     @Test
     static void testExtendFXApp() throws Exception {
-        testExtendFXApp(true);
-        testExtendFXApp(false);
+        testExtendFXApp(true, false);   // -cp, no JAC
+        testExtendFXApp(false, true);   // -jar, with JAC
+        testExtendFXApp(false, false);  // -jar, no JAC
     }
 
-    static void testExtendFXApp(boolean useCP) throws Exception {
+    static void testExtendFXApp(boolean useCP, boolean setFXMainClass) throws Exception {
         String testname = "testExtendFXApp";
+        if (useCP) {
+            testname = testname.concat("_useCP");
+        }
+        String fxMC = ExtMainClass;
+        if (!setFXMainClass) {
+            testname = testname.concat("_noJAC");
+            fxMC = null;
+        }
         for (String mm : MAIN_METHODS) {
             testcount++;
             line();
-            System.out.println("test# " + testcount +
-                "-  Main method: " + mm + ";  MF main class: " + StdMainClass);
+            System.out.println("test# " + testcount + "-  Main method: " + mm);
             createJavaFile(mm);
             createExtJavaFile(mm);
-            createFile(ManifestFile, createManifestContents(StdMainClass));
+            createFile(ManifestFile, createManifestContents(ExtMainClass, fxMC));
             createJar(FXtestJar, ManifestFile);
             String sTestJar = FXtestJar.getAbsolutePath();
             TestResult tr;
             if (useCP) {
-                tr = doExec(javaCmd, "-cp", sTestJar, StdMainClass, APP_PARMS[0], APP_PARMS[1]);
-                testname = testname.concat("_useCP");
+                tr = doExec(javaCmd, "-cp", sTestJar, ExtMainClass, APP_PARMS[0], APP_PARMS[1]);
             } else {
                 tr = doExec(javaCmd, "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
             }
@@ -256,27 +305,82 @@ public class FXLauncherTest extends TestHelper {
                     }
                 }
             }
-            checkStatus(tr, testname, testcount, StdMainClass);
+            checkStatus(tr, testname, testcount, ExtMainClass);
         }
+    }
+
+    /*
+     * Ensure we can NOT launch a FX app jar with no Main-Class manifest entry
+     */
+    @Test
+    static void testMissingMC() throws Exception {
+        String testname = "testMissingMC";
+        testcount++;
+        line();
+        System.out.println("test# " + testcount + ": abort on missing Main-Class");
+        createJavaFile(" "); // no main() needed
+        createFile(ManifestFile, createManifestContents(null, StdMainClass)); // No MC, but supply JAC
+        createJar(FXtestJar, ManifestFile);
+        String sTestJar = FXtestJar.getAbsolutePath();
+        TestResult tr = doExec(javaCmd, "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
+        tr.checkNegative(); // should abort if no Main-Class
+        if (tr.testStatus) {
+            if (!tr.contains("no main manifest attribute")) {
+                System.err.println("ERROR: launcher did not abort properly");
+            }
+        } else {
+            System.err.println("ERROR: jar executed with no Main-Class!");
+        }
+        checkStatus(tr, testname, testcount, StdMainClass);
     }
 
     /*
      * test to ensure that we don't load any extraneous fx jars when
      * launching a standard java application
+     * Test both -cp and -jar methods since they use different code paths.
+     * Neither case should cause jfxrt.jar to be loaded.
      */
     @Test
-    static void testExtraneousJars()throws Exception {
+    static void testExtraneousJars() throws Exception {
+        testExtraneousJars(true);
+        testExtraneousJars(false);
+    }
+
+    static void testExtraneousJars(boolean useCP) throws Exception {
         String testname = "testExtraneousJars";
+        if (useCP) {
+            testname = testname.concat("_useCP");
+        }
         testcount++;
         line();
-        System.out.println("test# " + testcount);
-        TestResult tr = doExec(javacCmd, "-J-verbose:class", "-version");
-        if (!tr.notContains("jfxrt.jar")) {
-            System.out.println("testing for extraneous jfxrt jar");
-            System.out.println(tr);
-            throw new Exception("jfxrt.jar is being loaded by javac!!!");
+        System.out.println("test# " + testcount
+                + ": test for erroneous jfxrt.jar loading");
+        createNonFXJavaFile();
+        createFile(ManifestFile, createManifestContents(NonFXMainClass, null));
+        createJar(FXtestJar, ManifestFile);
+        String sTestJar = FXtestJar.getAbsolutePath();
+        TestResult tr;
+
+        if (useCP) {
+            tr = doExec(javaCmd, "-verbose:class", "-cp", sTestJar, NonFXMainClass, APP_PARMS[0], APP_PARMS[1]);
+        } else {
+            tr = doExec(javaCmd, "-verbose:class", "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
         }
-        checkStatus(tr, testname, testcount, StdMainClass);
+        tr.checkPositive();
+        if (tr.testStatus) {
+            if (!tr.notContains("jfxrt.jar")) {
+                System.out.println("testing for extraneous jfxrt jar");
+                System.out.println(tr);
+                throw new Exception("jfxrt.jar is being loaded, it should not be!");
+            }
+            for (String p : APP_PARMS) {
+                if (!tr.contains(p)) {
+                    System.err.println("ERROR: Did not find "
+                            + p + " in output!");
+                }
+            }
+        }
+        checkStatus(tr, testname, testcount, NonFXMainClass);
     }
 
     public static void main(String... args) throws Exception {

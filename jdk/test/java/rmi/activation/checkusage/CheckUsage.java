@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4259564
+ * @summary RMID's usage message is incomplete and inconsistent with other tools
  *
  * @library ../../testlibrary
  * @build TestLibrary JavaVM
@@ -37,23 +38,16 @@ import java.io.ByteArrayOutputStream;
  */
 public class CheckUsage {
     public static void main(String[] args) {
-
-        System.err.println("\nregression test for 4259564\n");
-
-        JavaVM rmidVM = null;
-
         try {
-            // make sure the registry exits with a proper usage statement
             ByteArrayOutputStream berr = new ByteArrayOutputStream();
 
-            // run a VM to start the registry
-            rmidVM = new JavaVM("sun.rmi.server.Activation", "", "foo",
-                                    System.out, berr);
+            // create rmid with incorrect command line args
+            JavaVM rmidVM = new JavaVM("sun.rmi.server.Activation", "", "foo",
+                                       System.out, berr);
             System.err.println("starting rmid");
-            rmidVM.start();
 
-            // wait for registry exit
-            int rmidVMExitStatus = rmidVM.getVM().waitFor();
+            // run the subprocess and wait for it to exit
+            int rmidVMExitStatus = rmidVM.execute();
             System.err.println("rmid exited with status: " +
                                rmidVMExitStatus);
 
@@ -66,12 +60,8 @@ public class CheckUsage {
             } else {
                 System.err.println("test passed");
             }
-
         } catch (Exception e) {
             TestLibrary.bomb(e);
-        } finally {
-            rmidVM.destroy();
-            rmidVM = null;
         }
     }
 }

@@ -158,7 +158,7 @@ public final class Krb5MechFactory implements MechanismFactory {
     public static void checkAcceptCredPermission(Krb5NameElement name,
                                            GSSNameSpi originalName) {
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
+        if (sm != null && name != null) {
             ServicePermission perm = new ServicePermission
                 (name.getKrb5PrincipalName().getName(), "accept");
             try {

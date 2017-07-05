@@ -36,6 +36,7 @@ import javax.security.auth.login.LoginException;
 
 import sun.security.jgss.GSSCaller;
 import sun.security.jgss.krb5.Krb5Util;
+import sun.security.jgss.krb5.ServiceCreds;
 import sun.security.krb5.PrincipalName;
 import sun.security.ssl.Krb5Proxy;
 
@@ -62,7 +63,7 @@ public class Krb5ProxyImpl implements Krb5Proxy {
     @Override
     public SecretKey[] getServerKeys(AccessControlContext acc)
             throws LoginException {
-        Krb5Util.ServiceCreds serviceCreds =
+        ServiceCreds serviceCreds =
             Krb5Util.getServiceCreds(GSSCaller.CALLER_SSL_SERVER, null, acc);
         return serviceCreds != null ? serviceCreds.getKKeys() :
                                         new KerberosKey[0];

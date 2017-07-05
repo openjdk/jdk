@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KeyTab;
 
 /**
@@ -84,19 +85,37 @@ class SubjectComber {
         } else {
             List<T> answer = (oneOnly ? null : new ArrayList<T>());
 
-            if (credClass == KeyTab.class) {    // Principal un-related
-                // We are looking for credentials unrelated to serverPrincipal
-                Iterator<T> iterator =
-                    subject.getPrivateCredentials(credClass).iterator();
-                while (iterator.hasNext()) {
-                    T t = iterator.next();
-                    if (DEBUG) {
-                        System.out.println("Found " + credClass.getSimpleName());
+            if (credClass == KeyTab.class) {
+                // TODO: There is currently no good way to filter out keytabs
+                // not for serverPrincipal. We can only check the principal
+                // set. If the server is not there, we can be sure none of the
+                // keytabs should be used, otherwise, use all for safety.
+                boolean useAll = false;
+                if (serverPrincipal != null) {
+                    for (KerberosPrincipal princ:
+                            subject.getPrincipals(KerberosPrincipal.class)) {
+                        if (princ.getName().equals(serverPrincipal)) {
+                            useAll = true;
+                            break;
+                        }
                     }
-                    if (oneOnly) {
-                        return t;
-                    } else {
-                        answer.add(t);
+                } else {
+                    useAll = true;
+                }
+                if (useAll) {
+                    Iterator<KeyTab> iterator =
+                        subject.getPrivateCredentials(KeyTab.class).iterator();
+                    while (iterator.hasNext()) {
+                        KeyTab t = iterator.next();
+                        if (DEBUG) {
+                            System.out.println("Found " + credClass.getSimpleName()
+                                    + " " + t);
+                        }
+                        if (oneOnly) {
+                            return t;
+                        } else {
+                            answer.add(credClass.cast(t));
+                        }
                     }
                 }
             } else if (credClass == KerberosKey.class) {
@@ -114,11 +133,6 @@ class SubjectComber {
                          if (oneOnly) {
                              return t;
                          } else {
-                             if (serverPrincipal == null) {
-                                 // Record name so that keys returned will all
-                                 // belong to the same principal
-                                 serverPrincipal = name;
-                             }
                              answer.add(credClass.cast(t));
                          }
                     }

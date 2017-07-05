@@ -76,7 +76,7 @@ ATTACH_PKGS      = com.sun.tools.attach         \
 
 JCONSOLE_PKGS    = com.sun.tools.jconsole
 
-TREEAPI_PKGS 	 = com.sunsource.doctree \
+TREEAPI_PKGS 	 = com.sun.source.doctree \
 		   com.sun.source.tree \
 		   com.sun.source.util
 
