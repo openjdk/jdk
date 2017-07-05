@@ -2759,10 +2759,10 @@ public class ServiceDialog extends JDialog implements ActionListener {
             if (js == null) {
                 js = (JobSheets)psCurrent.getDefaultAttributeValue(jsCategory);
                 if (js == null) {
-                    js = JobSheets.NONE;
+                    js = JobSheets.STANDARD;
                 }
             }
-            cbJobSheets.setSelected(js != JobSheets.NONE);
+            cbJobSheets.setSelected(js != JobSheets.NONE && jsSupported);
             cbJobSheets.setEnabled(jsSupported);
 
             // setup JobPriority spinner

@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8032874
  * @summary Test whether ArrayIndexOutOfBoundsException is thrown or not,
  *          once selected row is removed from JTable with Sorter and Filter

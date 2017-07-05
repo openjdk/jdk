@@ -97,15 +97,6 @@ public interface ConstantReflectionProvider {
     ResolvedJavaType asJavaType(Constant constant);
 
     /**
-     * Check if the constant is embeddable in the code.
-     *
-     * @param constant the constant to test
-     */
-    default boolean isEmbeddable(Constant constant) {
-        return true;
-    }
-
-    /**
      * Gets access to the internals of {@link MethodHandle}.
      */
     MethodHandleAccessProvider getMethodHandleAccess();

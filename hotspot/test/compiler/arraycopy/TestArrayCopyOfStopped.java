@@ -25,9 +25,12 @@
  * @test
  * @bug 8074676
  * @summary after guards in Arrays.copyOf() intrinsic, control may become top
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArrayCopyOfStopped
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.arraycopy.TestArrayCopyOfStopped
  */
+
+package compiler.arraycopy;
 
 import java.util.Arrays;
 

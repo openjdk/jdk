@@ -1636,7 +1636,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
                                                  in_bytes(InvocationCounter::counter_offset()));
         Address mask(G4_scratch, in_bytes(MethodData::backedge_mask_offset()));
         __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, G3_scratch, O0,
-                                   Assembler::notZero, &Lforward);
+                                   (UseOnStackReplacement ? Assembler::notZero : Assembler::always), &Lforward);
         __ ba_short(Loverflow);
       }
 
@@ -1647,7 +1647,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
               in_bytes(InvocationCounter::counter_offset()));
       Address mask(G3_method_counters, in_bytes(MethodCounters::backedge_mask_offset()));
       __ increment_mask_and_jump(backedge_counter, increment, mask, G4_scratch, O0,
-                                 Assembler::notZero, &Lforward);
+                                 (UseOnStackReplacement ? Assembler::notZero : Assembler::always), &Lforward);
       __ bind(Loverflow);
 
       // notify point for loop, pass branch bytecode

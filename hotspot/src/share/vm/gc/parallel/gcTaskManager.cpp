@@ -537,7 +537,7 @@ void GCTaskManager::task_idle_workers() {
         created_workers() - active_workers() - idle_workers();
       if (more_inactive_workers < 0) {
         int reduced_active_workers = active_workers() + more_inactive_workers;
-        set_active_workers(reduced_active_workers);
+        update_active_workers(reduced_active_workers);
         more_inactive_workers = 0;
       }
       log_trace(gc, task)("JT: %d  workers %d  active  %d  idle %d  more %d",

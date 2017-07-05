@@ -20,12 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 6510999
-   @summary Selection in a JList with both scrollbars visible jumps on arrowkey-down
-   @author Alexander Potochkin
-   @run main bug6510999
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 6510999
+ * @summary Selection in a JList with both scrollbars visible jumps on arrowkey-down
+ * @author Alexander Potochkin
+ * @run main bug6510999
+ */
 
 import javax.swing.*;
 import java.awt.*;

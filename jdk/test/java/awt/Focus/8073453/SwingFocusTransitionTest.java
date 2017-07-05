@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8073453
  * @summary Focus doesn't move when pressing Shift + Tab keys
  * @author Dmitry Markov

@@ -21,15 +21,17 @@
  * questions.
  */
 
-/* @test
-   @bug 6596966
-   @summary Some JFileChooser mnemonics do not work with sticky keys
-   @library ../../regtesthelpers
-   @library ../../../../lib/testlibrary
-   @build Util jdk.testlibrary.OSInfo
-   @run main bug6596966
-   @author Pavel Porvatov
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 6596966
+ * @summary Some JFileChooser mnemonics do not work with sticky keys
+ * @library ../../regtesthelpers
+ * @library ../../../../lib/testlibrary
+ * @build Util jdk.testlibrary.OSInfo
+ * @run main bug6596966
+ * @author Pavel Porvatov
+ */
 
 import java.awt.*;
 import java.awt.event.KeyEvent;

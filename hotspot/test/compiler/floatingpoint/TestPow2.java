@@ -27,18 +27,22 @@
  * @summary X^2 special case for C2 yields different result than interpreter
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build TestPow2
+ *          java.management
+ *
+ * @build compiler.floatingpoint.TestPow2
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestPow2
- *
+ *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.floatingpoint.TestPow2
  */
 
-import java.lang.reflect.*;
-import sun.hotspot.WhiteBox;
+package compiler.floatingpoint;
+
 import compiler.whitebox.CompilerWhiteBoxTest;
+import sun.hotspot.WhiteBox;
+
+import java.lang.reflect.Method;
 
 public class TestPow2 {
 

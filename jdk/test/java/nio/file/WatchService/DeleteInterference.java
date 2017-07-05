@@ -38,6 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static java.lang.System.out;
 import static java.nio.file.StandardWatchEventKinds.*;
 
 public class DeleteInterference {
@@ -66,22 +67,28 @@ public class DeleteInterference {
     private static void openAndCloseWatcher(Path dir) {
         FileSystem fs = FileSystems.getDefault();
         for (int i = 0; i < ITERATIONS_COUNT; i++) {
+            out.printf("open %d begin%n", i);
             try (WatchService watcher = fs.newWatchService()) {
                 dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
             } catch (IOException ioe) {
                 // ignore
+            } finally {
+                out.printf("open %d end%n", i);
             }
         }
     }
 
     private static void deleteAndRecreateDirectory(Path dir) {
         for (int i = 0; i < ITERATIONS_COUNT; i++) {
+            out.printf("del %d begin%n", i);
             try {
                 deleteFileTree(dir);
                 Path subdir = Files.createDirectories(dir.resolve("subdir"));
                 Files.createFile(subdir.resolve("test"));
             } catch (IOException ioe) {
                 // ignore
+            } finally {
+                out.printf("del %d end%n", i);
             }
         }
     }

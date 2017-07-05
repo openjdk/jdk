@@ -22,6 +22,7 @@
  */
 /*
   @test
+  @key headful
   @bug 5066752
   @summary  Transparent JDesktopPane impossible because isOpaque() returns true
   @author mb50250: area=JDesktopPane

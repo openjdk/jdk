@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,20 @@
  * questions.
  */
 
-#ifdef __solaris__
-#define _POSIX_C_SOURCE 199506L
-#endif
-
 #include <jni.h>
 #include "jni_util.h"
 #include "com_sun_security_auth_module_UnixSystem.h"
 #include <stdio.h>
-#include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+
+/* For POSIX-compliant getpwuid_r on Solaris */
+#if defined(__solaris__)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
+#include <pwd.h>
 
 /*
  * Declare library specific JNI_Onload entry if static build

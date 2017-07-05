@@ -28,14 +28,16 @@
  * @summary Test that C2 flag UseCountedLoopSafepoints ensures a safepoint is kept in a CountedLoop
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
- * @modules java.base
  * @ignore 8146096
- * @run main UseCountedLoopSafepoints
+ * @run driver compiler.loopopts.UseCountedLoopSafepoints
  */
 
-import java.util.concurrent.atomic.AtomicLong;
-import jdk.test.lib.ProcessTools;
+package compiler.loopopts;
+
 import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 public class UseCountedLoopSafepoints {
     private static final AtomicLong _num = new AtomicLong(0);
@@ -59,7 +61,7 @@ public class UseCountedLoopSafepoints {
                     "-XX:+SafepointTimeout",
                     "-XX:SafepointTimeoutDelay=2000",
                     "-XX:+UseCountedLoopSafepoints",
-                    "UseCountedLoopSafepoints",
+                    UseCountedLoopSafepoints.class.getName(),
                     "2000000000"
                     );
             OutputAnalyzer output = new OutputAnalyzer(pb.start());

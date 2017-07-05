@@ -335,7 +335,10 @@ else
     for j in ${repos_extra} ; do
       if [ "${i}" = "${j}" ] ; then
         # it's an "extra"
-        pull_base="${pull_extra}"
+        if [ -n "${pull_extra}" ]; then
+          # if no pull_extra is defined, assume that pull_default is valid
+          pull_base="${pull_extra}"
+        fi
       fi
     done
 

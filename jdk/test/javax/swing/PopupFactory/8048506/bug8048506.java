@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8048506
  * @summary Tests that popup with null-owner does not throw NPE
  * @author Dmitry Markov

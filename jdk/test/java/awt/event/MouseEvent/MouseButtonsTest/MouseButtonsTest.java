@@ -38,6 +38,7 @@ import static jdk.testlibrary.Asserts.*;
 
 /*
  * @test
+ * @key headful
  * @bug 8043126
  * @summary Check whether getButton() returns correct mouse button
  *          number when the mouse buttons are pressed and getModifiers()

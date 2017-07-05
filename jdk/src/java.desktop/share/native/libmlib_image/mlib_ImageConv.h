@@ -34,11 +34,9 @@ extern "C" {
 // Shared macro defined for cleanup of allocated memory.
 #ifndef FREE_AND_RETURN_STATUS
 #define FREE_AND_RETURN_STATUS \
-{ \
 if (pbuff != buff) mlib_free(pbuff); \
 if (k != akernel) mlib_free(k); \
-return status; \
-}
+return status
 #endif /* FREE_AND_RETURN_STATUS */
 
 mlib_status mlib_convMxNext_s32(mlib_image       *dst,

@@ -26,7 +26,9 @@
  */
 
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 7129742
  * @summary Focus in non-editable TextArea is not shown on Linux.
  * @requires (os.family == "linux" | os.family == "solaris")

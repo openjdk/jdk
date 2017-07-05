@@ -771,6 +771,14 @@ public class ThreadInfo {
      *         <th align=left>Type</th>
      *       </tr>
      *       <tr>
+     *         <td>moduleName</td>
+     *         <td>{@code java.lang.String}</td>
+     *       </tr>
+     *       <tr>
+     *         <td>moduleVersion</td>
+     *         <td>{@code java.lang.String}</td>
+     *       </tr>
+     *       <tr>
      *         <td>className</td>
      *         <td>{@code java.lang.String}</td>
      *       </tr>

@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 8139215
-   @summary RTFEditorKit does not save alignment
-   @author Semyon Sadetsky
-  */
+/*
+ * @test
+ * @key headful
+ * @bug 8139215
+ * @summary RTFEditorKit does not save alignment
+ * @author Semyon Sadetsky
+ */
 
 import javax.swing.*;
 import javax.swing.text.*;

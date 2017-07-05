@@ -67,6 +67,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     StringDedupTableFixup,
     RedirtyCards,
     PreserveCMReferents,
+    YoungFreeCSet,
+    NonYoungFreeCSet,
     GCParPhasesSentinel
   };
 
@@ -110,8 +112,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _recorded_merge_pss_time_ms;
 
-  double _recorded_young_free_cset_time_ms;
-  double _recorded_non_young_free_cset_time_ms;
+  double _recorded_total_free_cset_time_ms;
+
+  double _recorded_serial_free_cset_time_ms;
 
   double _cur_fast_reclaim_humongous_time_ms;
   double _cur_fast_reclaim_humongous_register_time_ms;
@@ -199,12 +202,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _root_region_scan_wait_time_ms = time_ms;
   }
 
-  void record_young_free_cset_time_ms(double time_ms) {
-    _recorded_young_free_cset_time_ms = time_ms;
+  void record_total_free_cset_time_ms(double time_ms) {
+    _recorded_total_free_cset_time_ms = time_ms;
   }
 
-  void record_non_young_free_cset_time_ms(double time_ms) {
-    _recorded_non_young_free_cset_time_ms = time_ms;
+  void record_serial_free_cset_time_ms(double time_ms) {
+    _recorded_serial_free_cset_time_ms = time_ms;
   }
 
   void record_fast_reclaim_humongous_stats(double time_ms, size_t total, size_t candidates) {
@@ -278,16 +281,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     return _recorded_young_cset_choice_time_ms;
   }
 
-  double young_free_cset_time_ms() {
-    return _recorded_young_free_cset_time_ms;
+  double total_free_cset_time_ms() {
+    return _recorded_total_free_cset_time_ms;
   }
 
   double non_young_cset_choice_time_ms() {
     return _recorded_non_young_cset_choice_time_ms;
-  }
-
-  double non_young_free_cset_time_ms() {
-    return _recorded_non_young_free_cset_time_ms;
   }
 
   double fast_reclaim_humongous_time_ms() {

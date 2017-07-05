@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2012 Marti Maria Saguer
+//  Copyright (c) 1998-2016 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -56,7 +56,7 @@
 #include "lcms2_internal.h"
 
 
-// Auxiliar: append a Lab identity after the given sequence of profiles
+// Auxiliary: append a Lab identity after the given sequence of profiles
 // and return the transform. Lab profile is closed, rest of profiles are kept open.
 cmsHTRANSFORM _cmsChain2Lab(cmsContext            ContextID,
                             cmsUInt32Number        nProfiles,
@@ -201,7 +201,7 @@ cmsToneCurve* _cmsBuildKToneCurve(cmsContext        ContextID,
     }
 
     // Build the relationship. This effectively limits the maximum accuracy to 16 bits, but
-    // since this is used on black-preserving LUTs, we are not loosing  accuracy in any case
+    // since this is used on black-preserving LUTs, we are not losing  accuracy in any case
     KTone = cmsJoinToneCurve(ContextID, in, out, nPoints);
 
     // Get rid of components
@@ -307,7 +307,7 @@ int GamutSampler(register const cmsUInt16Number In[], register cmsUInt16Number O
 }
 
 // Does compute a gamut LUT going back and forth across pcs -> relativ. colorimetric intent -> pcs
-// the dE obtained is then annotated on the LUT. Values truely out of gamut are clipped to dE = 0xFFFE
+// the dE obtained is then annotated on the LUT. Values truly out of gamut are clipped to dE = 0xFFFE
 // and values changed are supposed to be handled by any gamut remapping, so, are out of gamut as well.
 //
 // **WARNING: This algorithm does assume that gamut remapping algorithms does NOT move in-gamut colors,

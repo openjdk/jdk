@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 6711682
-   @summary  JCheckBox in JTable: checkbox doesn't alaways respond to the first mouse click
-   @author Alexander Potochkin
-   @run main bug6711682
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 6711682
+ * @summary  JCheckBox in JTable: checkbox doesn't alaways respond to the first mouse click
+ * @author Alexander Potochkin
+ * @run main bug6711682
+ */
 
 import javax.swing.*;
 import javax.swing.event.CellEditorListener;

@@ -102,7 +102,8 @@ static PackageEntryTable* get_package_entry_table(Handle h_loader, TRAPS) {
 static ModuleEntry* get_module_entry(jobject module, TRAPS) {
   Handle module_h(THREAD, JNIHandles::resolve(module));
   if (!java_lang_reflect_Module::is_instance(module_h())) {
-    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Bad module object");
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                   "module is not an instance of type java.lang.reflect.Module");
   }
   return java_lang_reflect_Module::module_entry(module_h(), CHECK_NULL);
 }
@@ -131,36 +132,6 @@ static PackageEntry* get_package_entry_by_name(Symbol* package,
     }
   }
   return NULL;
-}
-
-// If using exploded build, append <java.home>/modules/module_name, if it exists,
-// to the system boot class path in order for the boot loader to locate class files.
-static void add_to_exploded_build_list(char *module_name, TRAPS) {
-  assert(!ClassLoader::has_jimage(), "Exploded build not applicable");
-  // java.base is handled by os::set_boot_path
-  assert(strcmp(module_name, "java.base") != 0, "Unexpected java.base module name");
-
-  char file_sep = os::file_separator()[0];
-  size_t module_len = strlen(module_name);
-
-  const char* home = Arguments::get_java_home();
-  size_t len = strlen(home) + module_len + 32;
-  char* path = NEW_C_HEAP_ARRAY(char, len, mtModule);
-  jio_snprintf(path, len, "%s%cmodules%c%s", home, file_sep, file_sep, module_name);
-  struct stat st;
-  // See if exploded module path exists
-  if ((os::stat(path, &st) != 0)) {
-    FREE_C_HEAP_ARRAY(char, path);
-    path = NULL;
-  }
-
-  if (path != NULL) {
-    HandleMark hm;
-    Handle loader_lock = Handle(THREAD, SystemDictionary::system_loader_lock());
-    ObjectLocker ol(loader_lock, THREAD);
-    log_info(class, load)("opened: %s", path);
-    ClassLoader::add_to_list(path);
-  }
 }
 
 bool Modules::is_package_defined(Symbol* package, Handle h_loader, TRAPS) {
@@ -297,9 +268,9 @@ void Modules::define_module(jobject module, jstring version,
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null module object");
   }
   Handle module_handle(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_subclass(module_handle->klass())) {
+  if (!java_lang_reflect_Module::is_instance(module_handle())) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "module is not a subclass of java.lang.reflect.Module");
+              "module is not an instance of type java.lang.reflect.Module");
   }
 
   char* module_name = get_module_name(module_handle(), CHECK);
@@ -470,8 +441,8 @@ void Modules::define_module(jobject module, jstring version,
   // used, prepend <java.home>/modules/modules_name, if it exists, to the system boot class path.
   if (loader == NULL &&
       !Universe::is_module_initialized() &&
-      !ClassLoader::has_jimage()) {
-    add_to_exploded_build_list(module_name, CHECK);
+      !ClassLoader::has_jrt_entry()) {
+    ClassLoader::add_to_exploded_build_list(module_symbol, CHECK);
   }
 }
 
@@ -482,9 +453,9 @@ void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null module object");
   }
   Handle module_handle(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_subclass(module_handle->klass())) {
+  if (!java_lang_reflect_Module::is_instance(module_handle())) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "module is not a subclass of java.lang.reflect.Module");
+              "module is not an instance of type java.lang.reflect.Module");
   }
 
   // Ensure that this is an unnamed module
@@ -758,7 +729,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
   oop module = java_lang_Class::module(mirror);
 
   assert(module != NULL, "java.lang.Class module field not set");
-  assert(java_lang_reflect_Module::is_subclass(module->klass()), "Module is not a java.lang.reflect.Module");
+  assert(java_lang_reflect_Module::is_instance(module), "module is not an instance of type java.lang.reflect.Module");
 
   if (log_is_enabled(Debug, modules)) {
     ResourceMark rm(THREAD);

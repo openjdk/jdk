@@ -22,32 +22,37 @@
  *
  */
 
-import java.lang.management.MemoryPoolMXBean;
-import java.util.EnumSet;
-import java.util.ArrayList;
-
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.BlobType;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.InfiniteLoop;
-
 /*
  * @test AllocationCodeBlobTest
- * @bug 8059624 8064669
- * @library /testlibrary /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- * @build AllocationCodeBlobTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
- *                   -XX:-SegmentedCodeCache AllocationCodeBlobTest
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
- *                   -XX:+SegmentedCodeCache AllocationCodeBlobTest
  * @summary testing of WB::allocate/freeCodeBlob()
+ * @bug 8059624 8064669
+ * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build compiler.whitebox.AllocationCodeBlobTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *                   -XX:-SegmentedCodeCache
+ *                   compiler.whitebox.AllocationCodeBlobTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *                   -XX:+SegmentedCodeCache
+ *                   compiler.whitebox.AllocationCodeBlobTest
  */
+
+package compiler.whitebox;
+
+import jdk.test.lib.Asserts;
+import jdk.test.lib.InfiniteLoop;
+import sun.hotspot.WhiteBox;
+import sun.hotspot.code.BlobType;
+
+import java.lang.management.MemoryPoolMXBean;
+import java.util.ArrayList;
+import java.util.EnumSet;
+
 public class AllocationCodeBlobTest {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final long CODE_CACHE_SIZE

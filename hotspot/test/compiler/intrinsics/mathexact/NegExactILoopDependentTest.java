@@ -25,13 +25,15 @@
  * @test
  * @bug 8026844
  * @summary Test negExact loop dependent
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile NegExactILoopDependentTest.java Verify.java
- * @run main NegExactILoopDependentTest
  *
+ * @run main compiler.intrinsics.mathexact.NegExactILoopDependentTest
  */
+
+package compiler.intrinsics.mathexact;
+
 public class NegExactILoopDependentTest {
     public static void main(String[] args) {
         Verify.LoopDependentTest.verify(new Verify.UnaryToBinary(new Verify.NegExactI()));

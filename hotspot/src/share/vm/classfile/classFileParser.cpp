@@ -5406,7 +5406,6 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
                                  Symbol* name,
                                  ClassLoaderData* loader_data,
                                  Handle protection_domain,
-                                 TempNewSymbol* parsed_name,
                                  const Klass* host_klass,
                                  GrowableArray<Handle>* cp_patches,
                                  Publicity pub_level,
@@ -5416,7 +5415,6 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _loader_data(loader_data),
   _host_klass(host_klass),
   _cp_patches(cp_patches),
-  _parsed_name(parsed_name),
   _super_klass(),
   _cp(NULL),
   _fields(NULL),
@@ -5657,15 +5655,6 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   Symbol* const class_name_in_cp = cp->klass_name_at(_this_class_index);
   assert(class_name_in_cp != NULL, "class_name can't be null");
 
-  if (_parsed_name != NULL) {
-    // It's important to set parsed_name *before* resolving the super class.
-    // (it's used for cleanup by the caller if parsing fails)
-    *_parsed_name = class_name_in_cp;
-    // parsed_name is returned and can be used if there's an error, so add to
-    // its reference count.  Caller will decrement the refcount.
-    (*_parsed_name)->increment_refcount();
-  }
-
   // Update _class_name which could be null previously
   // to reflect the name in the constant pool
   _class_name = class_name_in_cp;
@@ -5691,6 +5680,10 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
     );
     return;
   }
+
+  // Verification prevents us from creating names with dots in them, this
+  // asserts that that's the case.
+  assert(is_internal_format(_class_name), "external class name format used internally");
 
   if (!is_internal()) {
     if (log_is_enabled(Debug, class, preorder)){
@@ -5900,3 +5893,20 @@ const ClassFileStream* ClassFileParser::clone_stream() const {
 
   return _stream->clone();
 }
+// ----------------------------------------------------------------------------
+// debugging
+
+#ifdef ASSERT
+
+// return true if class_name contains no '.' (internal format is '/')
+bool ClassFileParser::is_internal_format(Symbol* class_name) {
+  if (class_name != NULL) {
+    ResourceMark rm;
+    char* name = class_name->as_C_string();
+    return strchr(name, '.') == NULL;
+  } else {
+    return true;
+  }
+}
+
+#endif

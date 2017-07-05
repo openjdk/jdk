@@ -26,9 +26,14 @@
  * @test
  * @bug 8069191
  * @summary predicate moved out of loops and CastPP removal causes dependency to be lost
- * @run main/othervm -Xcomp -XX:CompileOnly=TestPredicateLostDependency.m1 -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM TestPredicateLostDependency
+ *
+ * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM
+ *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestPredicateLostDependency::m1
+ *                   compiler.loopopts.TestPredicateLostDependency
  *
  */
+
+package compiler.loopopts;
 
 public class TestPredicateLostDependency {
     static class A {

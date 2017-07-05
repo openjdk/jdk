@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 8129632 8129633 8162624
+ * @bug 4313887 8129632 8129633 8162624 8146215 8162745
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
@@ -38,7 +38,6 @@ import java.util.stream.Stream;
  * set of file extension to content type mappings.
  */
 public class Basic {
-
     private static final boolean IS_UNIX =
         ! System.getProperty("os.name").startsWith("Windows");
 
@@ -55,6 +54,23 @@ public class Basic {
         return Files.createTempFile("red", ".grape");
     }
 
+    private static void checkMimeTypesFile(Path mimeTypes) {
+        if (!Files.exists(mimeTypes)) {
+            System.out.println(mimeTypes + " does not exist");
+        } else if (!Files.isReadable(mimeTypes)) {
+            System.out.println(mimeTypes + " is not readable");
+        } else {
+            System.out.println(mimeTypes + " contents:");
+            try (Stream<String> lines = Files.lines(mimeTypes)) {
+                lines.forEach(System.out::println);
+                System.out.println("");
+            } catch (IOException ioe) {
+                System.err.printf("Problem reading %s: %s%n",
+                                  mimeTypes, ioe.getMessage());
+            }
+        }
+    }
+
     private static int checkContentTypes(String expected, String actual) {
         assert expected != null;
         assert actual != null;
@@ -63,36 +79,10 @@ public class Basic {
             if (IS_UNIX) {
                 Path userMimeTypes =
                     Paths.get(System.getProperty("user.home"), ".mime.types");
-                if (!Files.exists(userMimeTypes)) {
-                    System.out.println(userMimeTypes + " does not exist");
-                } else if (!Files.isReadable(userMimeTypes)) {
-                    System.out.println(userMimeTypes + " is not readable");
-                } else {
-                    System.out.println(userMimeTypes + " contents:");
-                    try (Stream<String> lines = Files.lines(userMimeTypes)) {
-                        lines.forEach(System.out::println);
-                        System.out.println("");
-                    } catch (IOException ioe) {
-                        System.err.println("Problem reading "
-                                           + userMimeTypes);
-                    }
-                }
+                checkMimeTypesFile(userMimeTypes);
 
                 Path etcMimeTypes = Paths.get("/etc/mime.types");
-                if (!Files.exists(etcMimeTypes)) {
-                    System.out.println(etcMimeTypes + " does not exist");
-                } else if (!Files.isReadable(etcMimeTypes)) {
-                    System.out.println(etcMimeTypes + " is not readable");
-                } else {
-                    System.out.println(etcMimeTypes + " contents:");
-                    try (Stream<String> lines = Files.lines(etcMimeTypes)) {
-                        lines.forEach(System.out::println);
-                        System.out.println("");
-                    } catch (IOException ioe) {
-                        System.err.println("Problem reading "
-                                           + etcMimeTypes);
-                    }
-                }
+                checkMimeTypesFile(etcMimeTypes);
             }
 
             System.err.println("Expected \"" + expected
@@ -105,11 +95,11 @@ public class Basic {
         return 0;
     }
 
-    static int checkOSXContentTypes(String[] extensions, String[] expectedTypes)
+    static int checkContentTypes(String[] extensions, String[] expectedTypes)
         throws IOException {
         if (extensions.length != expectedTypes.length) {
-            throw new IllegalArgumentException
-                ("Parameter array lengths differ");
+            System.err.println("Parameter array lengths differ");
+            return 1;
         }
 
         int failures = 0;
@@ -157,25 +147,25 @@ public class Basic {
         file = createGrapeFile();
         try {
             String type = Files.probeContentType(file);
-            if (type == null)
-                throw new RuntimeException("Custom file type detector not installed?");
-            failures += checkContentTypes("grape/unknown", type);
+            if (type == null) {
+                System.err.println("Custom file type detector not installed?");
+                failures++;
+            } else {
+                failures += checkContentTypes("grape/unknown", type);
+            }
         } finally {
             Files.delete(file);
         }
 
-        // Verify that common file extensions are mapped to the correct content
-        // types on Mac OS X only which has consistent Uniform Type Identifiers.
-        if (System.getProperty("os.name").contains("OS X")) {
-            String[] extensions = new String[]{
-                "jpg", "mp3", "mp4", "pdf", "png"
-            };
-            String[] expectedTypes = new String[]{
-                "image/jpeg", "audio/mpeg", "video/mp4", "application/pdf",
-                "image/png"
-            };
-            failures += checkOSXContentTypes(extensions, expectedTypes);
-        }
+        // Verify that certain media extensions are mapped to the correct type.
+        String[] extensions = new String[]{
+            "aac", "flac", "jpg", "mp3", "mp4", "pdf", "png", "webm"
+        };
+        String[] expectedTypes = new String[]{
+            "audio/aac", "audio/flac", "image/jpeg", "audio/mpeg",
+            "video/mp4", "application/pdf", "image/png", "video/webm"
+        };
+        failures += checkContentTypes(extensions, expectedTypes);
 
         if (failures > 0) {
             throw new RuntimeException("Test failed!");

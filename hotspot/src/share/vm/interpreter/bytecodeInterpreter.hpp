@@ -32,6 +32,7 @@
 #include "runtime/frame.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 #ifdef CC_INTERP
 
@@ -572,7 +573,7 @@ static const char* C_msg(BytecodeInterpreter::messages msg);
 void print();
 #endif // PRODUCT
 
-#ifdef TARGET_ARCH_zero
+#ifdef ZERO
 # include "bytecodeInterpreter_zero.hpp"
 #else
 #error "Only Zero Bytecode Interpreter is supported"

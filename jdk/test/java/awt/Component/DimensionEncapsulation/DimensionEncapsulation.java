@@ -90,6 +90,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 
 /**
  * @test
+ * @key headful
  * @bug 6459798
  * @author Sergey Bylokhov
  */

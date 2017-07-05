@@ -209,16 +209,22 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
 
       int morphism = profile.morphism();
       if (speculative_receiver_type != NULL) {
-        // We have a speculative type, we should be able to resolve
-        // the call. We do that before looking at the profiling at
-        // this invoke because it may lead to bimorphic inlining which
-        // a speculative type should help us avoid.
-        receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                 speculative_receiver_type);
-        if (receiver_method == NULL) {
-          speculative_receiver_type = NULL;
+        if (!too_many_traps(caller, bci, Deoptimization::Reason_speculate_class_check)) {
+          // We have a speculative type, we should be able to resolve
+          // the call. We do that before looking at the profiling at
+          // this invoke because it may lead to bimorphic inlining which
+          // a speculative type should help us avoid.
+          receiver_method = callee->resolve_invoke(jvms->method()->holder(),
+                                                   speculative_receiver_type);
+          if (receiver_method == NULL) {
+            speculative_receiver_type = NULL;
+          } else {
+            morphism = 1;
+          }
         } else {
-          morphism = 1;
+          // speculation failed before. Use profiling at the call
+          // (could allow bimorphic inlining for instance).
+          speculative_receiver_type = NULL;
         }
       }
       if (receiver_method == NULL &&
@@ -255,7 +261,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           Deoptimization::DeoptReason reason = morphism == 2 ?
             Deoptimization::Reason_bimorphic : Deoptimization::reason_class_check(speculative_receiver_type != NULL);
           if ((morphism == 1 || (morphism == 2 && next_hit_cg != NULL)) &&
-              !too_many_traps(jvms->method(), jvms->bci(), reason)
+              !too_many_traps(caller, bci, reason)
              ) {
             // Generate uncommon trap for class check failure path
             // in case of monomorphic or bimorphic virtual call site.

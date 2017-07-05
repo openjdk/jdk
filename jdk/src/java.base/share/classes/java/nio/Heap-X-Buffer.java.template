@@ -325,20 +325,20 @@ class Heap$Type$Buffer$RW$
 
     public CharBuffer asCharBuffer() {
         int size = this.remaining() >> 1;
-        int off = offset + position();
+        long addr = address + position();
         return (bigEndian
                 ? (CharBuffer)(new ByteBufferAsCharBuffer$RW$B(this,
                                                                -1,
                                                                0,
                                                                size,
                                                                size,
-                                                               off))
+                                                               addr))
                 : (CharBuffer)(new ByteBufferAsCharBuffer$RW$L(this,
                                                                -1,
                                                                0,
                                                                size,
                                                                size,
-                                                               off)));
+                                                               addr)));
     }
 
 
@@ -376,20 +376,20 @@ class Heap$Type$Buffer$RW$
 
     public ShortBuffer asShortBuffer() {
         int size = this.remaining() >> 1;
-        int off = offset + position();
+        long addr = address + position();
         return (bigEndian
                 ? (ShortBuffer)(new ByteBufferAsShortBuffer$RW$B(this,
                                                                  -1,
                                                                  0,
                                                                  size,
                                                                  size,
-                                                                 off))
+                                                                 addr))
                 : (ShortBuffer)(new ByteBufferAsShortBuffer$RW$L(this,
                                                                  -1,
                                                                  0,
                                                                  size,
                                                                  size,
-                                                                 off)));
+                                                                 addr)));
     }
 
 
@@ -427,20 +427,20 @@ class Heap$Type$Buffer$RW$
 
     public IntBuffer asIntBuffer() {
         int size = this.remaining() >> 2;
-        int off = offset + position();
+        long addr = address + position();
         return (bigEndian
                 ? (IntBuffer)(new ByteBufferAsIntBuffer$RW$B(this,
                                                              -1,
                                                              0,
                                                              size,
                                                              size,
-                                                             off))
+                                                             addr))
                 : (IntBuffer)(new ByteBufferAsIntBuffer$RW$L(this,
                                                              -1,
                                                              0,
                                                              size,
                                                              size,
-                                                             off)));
+                                                             addr)));
     }
 
 
@@ -478,20 +478,20 @@ class Heap$Type$Buffer$RW$
 
     public LongBuffer asLongBuffer() {
         int size = this.remaining() >> 3;
-        int off = offset + position();
+        long addr = address + position();
         return (bigEndian
                 ? (LongBuffer)(new ByteBufferAsLongBuffer$RW$B(this,
                                                                -1,
                                                                0,
                                                                size,
                                                                size,
-                                                               off))
+                                                               addr))
                 : (LongBuffer)(new ByteBufferAsLongBuffer$RW$L(this,
                                                                -1,
                                                                0,
                                                                size,
                                                                size,
-                                                               off)));
+                                                               addr)));
     }
 
 
@@ -533,20 +533,20 @@ class Heap$Type$Buffer$RW$
 
     public FloatBuffer asFloatBuffer() {
         int size = this.remaining() >> 2;
-        int off = offset + position();
+        long addr = address + position();
         return (bigEndian
                 ? (FloatBuffer)(new ByteBufferAsFloatBuffer$RW$B(this,
                                                                  -1,
                                                                  0,
                                                                  size,
                                                                  size,
-                                                                 off))
+                                                                 addr))
                 : (FloatBuffer)(new ByteBufferAsFloatBuffer$RW$L(this,
                                                                  -1,
                                                                  0,
                                                                  size,
                                                                  size,
-                                                                 off)));
+                                                                 addr)));
     }
 
 
@@ -588,20 +588,20 @@ class Heap$Type$Buffer$RW$
 
     public DoubleBuffer asDoubleBuffer() {
         int size = this.remaining() >> 3;
-        int off = offset + position();
+        long addr = address + position();
         return (bigEndian
                 ? (DoubleBuffer)(new ByteBufferAsDoubleBuffer$RW$B(this,
                                                                    -1,
                                                                    0,
                                                                    size,
                                                                    size,
-                                                                   off))
+                                                                   addr))
                 : (DoubleBuffer)(new ByteBufferAsDoubleBuffer$RW$L(this,
                                                                    -1,
                                                                    0,
                                                                    size,
                                                                    size,
-                                                                   off)));
+                                                                   addr)));
     }
 
 

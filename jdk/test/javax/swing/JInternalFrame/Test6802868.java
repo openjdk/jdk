@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6802868
  * @summary JInternalFrame is not maximized when maximized parent frame
  * @author Alexander Potochkin

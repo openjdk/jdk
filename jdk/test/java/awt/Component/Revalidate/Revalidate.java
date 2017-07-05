@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 7036669
   @summary Test Component.revalidate() method
   @author anthony.petrov@oracle.com: area=awt.component
