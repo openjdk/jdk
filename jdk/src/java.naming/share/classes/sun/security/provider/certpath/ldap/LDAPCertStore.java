@@ -37,12 +37,13 @@ import javax.naming.NameNotFoundException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
 
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
+import javax.naming.CommunicationException;
+import javax.naming.ldap.InitialLdapContext;
+import javax.naming.ldap.LdapContext;
 import javax.security.auth.x500.X500Principal;
 
 import sun.misc.HexDumpEncoder;
@@ -160,7 +161,12 @@ public final class LDAPCertStore extends CertStoreSpi {
     /**
      * The JNDI directory context.
      */
-    private DirContext ctx;
+    private LdapContext ctx;
+
+    /**
+     * Flag indicating that communication error occurred.
+     */
+    private boolean communicationError = false;
 
     /**
      * Flag indicating whether we should prefetch CRLs.
@@ -218,6 +224,11 @@ public final class LDAPCertStore extends CertStoreSpi {
         certStoreCache = Cache.newSoftMemoryCache(185);
     static synchronized CertStore getInstance(LDAPCertStoreParameters params)
         throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+        // if necessary, convert params to SunLDAPCertStoreParameters because
+        // LDAPCertStoreParameters does not override equals() and hashCode()
+        if (! (params instanceof SunLDAPCertStoreParameters)) {
+            params = new SunLDAPCertStoreParameters(params.getServerName(), params.getPort());
+        }
         CertStore lcs = certStoreCache.get(params);
         if (lcs == null) {
             lcs = CertStore.getInstance("LDAP", params);
@@ -256,7 +267,7 @@ public final class LDAPCertStore extends CertStoreSpi {
         }
 
         try {
-            ctx = new InitialDirContext(env);
+            ctx = new InitialLdapContext(env, null);
             /*
              * By default, follow referrals unless application has
              * overridden property in an application resource file.
@@ -369,8 +380,17 @@ public final class LDAPCertStore extends CertStoreSpi {
             valueMap = new HashMap<>(8);
             String[] attrIds = requestedAttributes.toArray(STRING0);
             Attributes attrs;
+
+            if (communicationError) {
+                ctx.reconnect(null);
+                communicationError = false;
+            }
+
             try {
                 attrs = ctx.getAttributes(name, attrIds);
+            } catch (CommunicationException ce) {
+                communicationError = true;
+                throw ce;
             } catch (NameNotFoundException e) {
                 // name does not exist on this LDAP server
                 // treat same as not attributes found
@@ -884,7 +904,12 @@ public final class LDAPCertStore extends CertStoreSpi {
         SunLDAPCertStoreParameters() {
             super();
         }
+        @Override
         public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+
             if (!(obj instanceof LDAPCertStoreParameters)) {
                 return false;
             }
@@ -892,6 +917,7 @@ public final class LDAPCertStore extends CertStoreSpi {
             return (getPort() == params.getPort() &&
                     getServerName().equalsIgnoreCase(params.getServerName()));
         }
+        @Override
         public int hashCode() {
             if (hashCode == 0) {
                 int result = 17;

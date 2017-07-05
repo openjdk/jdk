@@ -2477,8 +2477,7 @@ void ClassVerifier::verify_invoke_init(
     // of the current class.
     VerificationType objectref_type = new_class_type;
     if (name_in_supers(ref_class_type.name(), current_class())) {
-      Klass* ref_klass = load_class(
-        ref_class_type.name(), CHECK_VERIFY(this));
+      Klass* ref_klass = load_class(ref_class_type.name(), CHECK);
       Method* m = InstanceKlass::cast(ref_klass)->uncached_lookup_method(
         vmSymbols::object_initializer_name(),
         cp->signature_ref_at(bcs->get_index_u2()),

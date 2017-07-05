@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.cert.CertificateException;
 import java.util.Enumeration;
-import java.util.Vector;
 
 import sun.security.util.*;
 
@@ -111,7 +109,7 @@ implements CertAttrSet<String> {
      */
     public PolicyConstraintsExtension(int require, int inhibit)
     throws IOException {
-        this(Boolean.FALSE, require, inhibit);
+        this(Boolean.TRUE, require, inhibit);
     }
 
     /**
@@ -202,7 +200,7 @@ implements CertAttrSet<String> {
         DerOutputStream tmp = new DerOutputStream();
         if (extensionValue == null) {
           extensionId = PKIXExtensions.PolicyConstraints_Id;
-          critical = false;
+          critical = true;
           encodeThis();
         }
         super.encode(tmp);

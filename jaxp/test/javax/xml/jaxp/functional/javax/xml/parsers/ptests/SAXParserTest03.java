@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,17 @@
 
 package javax.xml.parsers.ptests;
 
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
-
 import java.io.File;
-import java.io.IOException;
-
-import javax.xml.parsers.ParserConfigurationException;
+import java.io.FilePermission;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
+import jaxp.library.JAXPFileReadOnlyBaseTest;
+import static org.testng.Assert.fail;
+import org.testng.annotations.AfterGroups;
+import org.testng.annotations.BeforeGroups;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
@@ -41,68 +41,70 @@ import org.xml.sax.SAXException;
 /**
  * Class contains the test cases for SAXParser API
  */
-public class SAXParserTest03 {
+public class SAXParserTest03 extends JAXPFileReadOnlyBaseTest {
 
     /**
      * Provide SAXParserFactory.
      *
-     * @throws Exception
+     * @return a dimensional contains.
      */
     @DataProvider(name = "input-provider")
     public Object[][] getFactory() {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         spf.setValidating(true);
-        MyErrorHandler handler = MyErrorHandler.newInstance();
-        return new Object[][] { { spf, handler } };
+        return new Object[][] { { spf, MyErrorHandler.newInstance() } };
     }
 
     /**
      * parsertest.xml holds a valid document. This method tests the validating
      * parser.
+     *
+     * @param spf a Parser factory.
+     * @param handler an error handler for capturing events.
+     * @throws Exception If any errors occur.
      */
-    @Test(dataProvider = "input-provider")
-    public void testParseValidate01(SAXParserFactory spf, MyErrorHandler handler) {
-        try {
-            SAXParser saxparser = spf.newSAXParser();
-            saxparser.parse(new File(TestUtils.XML_DIR, "parsertest.xml"), handler);
-            assertFalse(handler.errorOccured);
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            failUnexpected(e);
-        }
+    @Test(groups = {"readLocalFiles"}, dataProvider = "input-provider")
+    public void testParseValidate01(SAXParserFactory spf, MyErrorHandler handler)
+            throws Exception {
+            spf.newSAXParser().parse(new File(XML_DIR, "parsertest.xml"), handler);
+            assertFalse(handler.isErrorOccured());
     }
 
     /**
      * validns.xml holds a valid document with XML namespaces in it. This method
      * tests the Validating parser with namespace processing on.
+     *
+     * @param spf a Parser factory.
+     * @param handler an error handler for capturing events.
+     * @throws Exception If any errors occur.
      */
-    @Test(dataProvider = "input-provider")
-    public void testParseValidate02(SAXParserFactory spf, MyErrorHandler handler) {
-        try {
+    @Test(groups = {"readLocalFiles"}, dataProvider = "input-provider")
+    public void testParseValidate02(SAXParserFactory spf, MyErrorHandler handler)
+            throws Exception {
             spf.setNamespaceAware(true);
-            SAXParser saxparser = spf.newSAXParser();
-            saxparser.parse(new File(TestUtils.XML_DIR, "validns.xml"), handler);
-            assertFalse(handler.errorOccured);
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            failUnexpected(e);
-        }
+            spf.newSAXParser().parse(new File(XML_DIR, "validns.xml"), handler);
+            assertFalse(handler.isErrorOccured());
     }
 
     /**
      * invalidns.xml holds an invalid document with XML namespaces in it. This
      * method tests the validating parser with namespace processing on. It
      * should throw validation error.
+     *
+     * @param spf a Parser factory.
+     * @param handler an error handler for capturing events.
+     * @throws Exception If any errors occur.
      */
-    @Test(dataProvider = "input-provider")
-    public void testParseValidate03(SAXParserFactory spf, MyErrorHandler handler) {
+    @Test(groups = {"readLocalFiles"}, dataProvider = "input-provider")
+    public void testParseValidate03(SAXParserFactory spf, MyErrorHandler handler)
+            throws Exception {
         try {
             spf.setNamespaceAware(true);
             SAXParser saxparser = spf.newSAXParser();
-            saxparser.parse(new File(TestUtils.XML_DIR, "invalidns.xml"), handler);
-            failUnexpected(new RuntimeException());
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            if (e instanceof SAXException) {
-                assertTrue(handler.errorOccured);
-            }
+            saxparser.parse(new File(XML_DIR, "invalidns.xml"), handler);
+            fail("Expecting SAXException here");
+        } catch (SAXException e) {
+            assertTrue(handler.isErrorOccured());
         }
     }
 

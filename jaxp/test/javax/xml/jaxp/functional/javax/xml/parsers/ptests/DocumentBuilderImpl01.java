@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,33 +24,32 @@
 package javax.xml.parsers.ptests;
 
 import static jaxp.library.JAXPTestUtilities.FILE_SEP;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertFalse;
-
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
-
+import java.io.FilePermission;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
+import jaxp.library.JAXPFileReadOnlyBaseTest;
+import static org.testng.Assert.assertNotNull;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 /**
  * This checks for the methods of DocumentBuilder
  */
-public class DocumentBuilderImpl01 implements EntityResolver {
-
+public class DocumentBuilderImpl01 extends JAXPFileReadOnlyBaseTest
+            implements EntityResolver {
     /**
      * Provide DocumentBuilder.
      *
-     * @throws ParserConfigurationException
+     * @return data provider has single DocumentBuilder.
+     * @throws ParserConfigurationException if a DocumentBuilder cannot be
+     *         created which satisfies the configuration requested.
      */
     @DataProvider(name = "builder-provider")
     public Object[][] getBuilder() throws ParserConfigurationException {
@@ -60,17 +59,18 @@ public class DocumentBuilderImpl01 implements EntityResolver {
     }
 
     /**
-     * Testcase to test the default functionality of isValidation method. Expect
+     * Test the default functionality of isValidation method. Expect
      * to return false because not setting the validation.
+     * @param docBuilder document builder instance.
      */
     @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl01(DocumentBuilder docBuilder) {
         assertFalse(docBuilder.isValidating());
-
     }
 
     /**
-     * Testcase to test the default functionality of isNamespaceAware method.
+     * Test the default functionality of isNamespaceAware method.
+     * @param docBuilder document builder instance.
      */
     @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl02(DocumentBuilder docBuilder) {
@@ -78,51 +78,71 @@ public class DocumentBuilderImpl01 implements EntityResolver {
     }
 
     /**
-     * Testcase to test the parse(InputStream).
+     * Test the parse(InputStream).
+     * @param docBuilder document builder instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(dataProvider = "builder-provider")
-    public void testCheckDocumentBuilderImpl04(DocumentBuilder docBuilder) {
-        try {
-            Document doc = docBuilder.parse(new FileInputStream(new File(TestUtils.XML_DIR, "DocumentBuilderImpl01.xml")));
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
+    @Test(groups = {"readLocalFiles"}, dataProvider = "builder-provider")
+    public void testCheckDocumentBuilderImpl04(DocumentBuilder docBuilder)
+            throws Exception {
+        try (FileInputStream fis = new FileInputStream(new File(XML_DIR,
+                "DocumentBuilderImpl01.xml"))) {
+            assertNotNull(docBuilder.parse(fis));
         }
     }
 
     /**
-     * Testcase to test the parse(File).
+     * Test the parse(File).
+     *
+     * @param docBuilder document builder instance.
+     * @throws Exception If any errors occur.
      */
-    @Test(dataProvider = "builder-provider")
-    public void testCheckDocumentBuilderImpl05(DocumentBuilder docBuilder) {
-        try {
-            Document doc = docBuilder.parse(new File(TestUtils.XML_DIR, "DocumentBuilderImpl01.xml"));
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
+    @Test(groups = {"readLocalFiles"}, dataProvider = "builder-provider")
+    public void testCheckDocumentBuilderImpl05(DocumentBuilder docBuilder)
+            throws Exception {
+        assertNotNull(docBuilder.parse(new File(XML_DIR,
+                "DocumentBuilderImpl01.xml")));
+    }
+
+    /**
+     * Test the parse(InputStream,systemId).
+     * @param docBuilder document builder instance.
+     * @throws Exception If any errors occur.
+     */
+    @Test(groups = {"readLocalFiles"}, dataProvider = "builder-provider")
+    public void testCheckDocumentBuilderImpl06(DocumentBuilder docBuilder)
+            throws Exception {
+        setPermissions(new FilePermission(XML_DIR + "../-",
+                "read"));
+        try (FileInputStream fis = new FileInputStream(new File(XML_DIR,
+                "DocumentBuilderImpl02.xml"))) {
+            assertNotNull(docBuilder.parse(fis, new File(XML_DIR).toURI()
+                    .toASCIIString() + FILE_SEP));
         }
     }
 
     /**
-     * Testcase to test the parse(InputStream,systemId).
-     */
-    @Test(dataProvider = "builder-provider")
-    public void testCheckDocumentBuilderImpl06(DocumentBuilder docBuilder) {
-        try {
-            Document doc = docBuilder.parse(new FileInputStream(new File(TestUtils.XML_DIR, "DocumentBuilderImpl02.xml")), new File(TestUtils.XML_DIR).toURI()
-                    .toASCIIString() + FILE_SEP);
-        } catch (SAXException | IOException e) {
-            failUnexpected(e);
-        }
-    }
-
-    /**
-     * Testcase to test the setEntityResolver.
+     * Test the setEntityResolver.
+     * @param docBuilder document builder instance.
      */
     @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl07(DocumentBuilder docBuilder) {
         docBuilder.setEntityResolver(this);
-        resolveEntity("publicId", "http://www.myhost.com/today");
+        assertNotNull(resolveEntity("publicId", "http://www.myhost.com/today"));
     }
 
+    /**
+     * Allow the application to resolve external entities.
+     *
+     * @param publicId The public identifier of the external entity
+     *        being referenced, or null if none was supplied.
+     * @param systemId The system identifier of the external entity
+     *        being referenced.
+     * @return An InputSource object describing the new input source,
+     *         or null to request that the parser open a regular
+     *         URI connection to the system identifier.
+     */
+    @Override
     public InputSource resolveEntity(String publicId, String systemId) {
         if (systemId.equals("http://www.myhost.com/today"))
             return new InputSource(systemId);

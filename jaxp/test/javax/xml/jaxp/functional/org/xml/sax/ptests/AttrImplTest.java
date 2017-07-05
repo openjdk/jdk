@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 package org.xml.sax.ptests;
 
+import jaxp.library.JAXPBaseTest;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import org.testng.annotations.Test;
@@ -30,7 +31,7 @@ import org.xml.sax.helpers.AttributesImpl;
 /**
  * Class containing the test cases for AttributesImpl API.
  */
-public class AttrImplTest {
+public class AttrImplTest extends JAXPBaseTest {
     private static final String CAR_URI = "http://www.cars.com/xml";
 
     private static final String CAR_LOCALNAME = "part";
