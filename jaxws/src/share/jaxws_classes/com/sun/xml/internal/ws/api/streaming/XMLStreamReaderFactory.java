@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,39 +63,43 @@ public abstract class XMLStreamReaderFactory {
 
     private static final Logger LOGGER = Logger.getLogger(XMLStreamReaderFactory.class.getName());
 
+    private static final String CLASS_NAME_OF_WSTXINPUTFACTORY = "com.ctc.wstx.stax.WstxInputFactory";
+
     /**
      * Singleton instance.
      */
-    private static volatile @NotNull XMLStreamReaderFactory theInstance;
+    private static volatile ContextClassloaderLocal<XMLStreamReaderFactory> streamReader =
+            new ContextClassloaderLocal<XMLStreamReaderFactory>() {
 
-    private static final String CLASS_NAME_OF_WSTXINPUTFACTORY = "com.ctc.wstx.stax.WstxInputFactory";
+                @Override
+                protected XMLStreamReaderFactory initialValue() {
 
-    static {
-        XMLInputFactory xif = getXMLInputFactory();
-        XMLStreamReaderFactory f=null;
+                    XMLInputFactory xif = getXMLInputFactory();
+                    XMLStreamReaderFactory f=null;
 
-        // this system property can be used to disable the pooling altogether,
-        // in case someone hits an issue with pooling in the production system.
-        if(!getProperty(XMLStreamReaderFactory.class.getName()+".noPool")) {
-            f = Zephyr.newInstance(xif);
-        }
+                    // this system property can be used to disable the pooling altogether,
+                    // in case someone hits an issue with pooling in the production system.
+                    if(!getProperty(XMLStreamReaderFactory.class.getName()+".noPool")) {
+                        f = Zephyr.newInstance(xif);
+                    }
 
-        if(f==null) {
-            // is this Woodstox?
-            if (xif.getClass().getName().equals(CLASS_NAME_OF_WSTXINPUTFACTORY)) {
-                f = new Woodstox(xif);
-            }
-        }
+                    if(f==null) {
+                        // is this Woodstox?
+                        if (xif.getClass().getName().equals(CLASS_NAME_OF_WSTXINPUTFACTORY)) {
+                            f = new Woodstox(xif);
+                        }
+                    }
 
-        if (f==null) {
-            f = new Default();
-        }
+                    if (f==null) {
+                        f = new Default();
+                    }
 
-        theInstance = f;
-        if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.log(Level.FINE, "XMLStreamReaderFactory instance is = {0}", theInstance);
-        }
-    }
+                    if (LOGGER.isLoggable(Level.FINE)) {
+                        LOGGER.log(Level.FINE, "XMLStreamReaderFactory instance is = {0}", f);
+                    }
+                    return f;
+                }
+            };
 
     private static XMLInputFactory getXMLInputFactory() {
         XMLInputFactory xif = null;
@@ -126,11 +130,11 @@ public abstract class XMLStreamReaderFactory {
         if(f==null) {
             throw new IllegalArgumentException();
         }
-        theInstance = f;
+        streamReader.set(f);
     }
 
     public static XMLStreamReaderFactory get() {
-        return theInstance;
+        return streamReader.get();
     }
 
     public static XMLStreamReader create(InputSource source, boolean rejectDTDs) {

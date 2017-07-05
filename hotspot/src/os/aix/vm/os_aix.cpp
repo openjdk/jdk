@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2811,16 +2811,11 @@ void os::yield() {
 
 os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN; }
 
-void os::yield_all(int attempts) {
+void os::yield_all() {
   // Yields to all threads, including threads with lower priorities
   // Threads on Linux are all with same priority. The Solaris style
   // os::yield_all() with nanosleep(1ms) is not necessary.
   sched_yield();
-}
-
-// Called from the tight loops to possibly influence time-sharing heuristics
-void os::loop_breaker(int attempts) {
-  os::yield_all(attempts);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3079,7 +3074,7 @@ static bool do_suspend(OSThread* osthread) {
 
   for (int n = 0; !osthread->sr.is_suspended(); n++) {
     for (int i = 0; i < RANDOMLY_LARGE_INTEGER2 && !osthread->sr.is_suspended(); i++) {
-      os::yield_all(i);
+      os::yield_all();
     }
 
     // timeout, try to cancel the request
@@ -3113,7 +3108,7 @@ static void do_resume(OSThread* osthread) {
     if (sr_notify(osthread) == 0) {
       for (int n = 0; n < RANDOMLY_LARGE_INTEGER && !osthread->sr.is_running(); n++) {
         for (int i = 0; i < 100 && !osthread->sr.is_running(); i++) {
-          os::yield_all(i);
+          os::yield_all();
         }
       }
     } else {

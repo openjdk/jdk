@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public final class ObjectStreamClassUtil_1_3 {
         });
     }
 
-    public static long computeStructuralUID(boolean hasWriteObject, Class cl) {
+    public static long computeStructuralUID(boolean hasWriteObject, Class<?> cl) {
         ByteArrayOutputStream devnull = new ByteArrayOutputStream(512);
 
         long h = 0;
@@ -119,7 +119,7 @@ public final class ObjectStreamClassUtil_1_3 {
             // Object method in there
 
             // Get SUID of parent
-            Class parent = cl.getSuperclass();
+            Class<?> parent = cl.getSuperclass();
             if ((parent != null) && (parent != java.lang.Object.class)) {
                 boolean hasWriteObjectFlag = false;
                 Class [] args = {java.io.ObjectOutputStream.class};
@@ -503,19 +503,6 @@ public final class ObjectStreamClassUtil_1_3 {
             Class classWithThisMethod = null;
 
             try {
-                try {
-                    // When using rip-int with Merlin or when this is a Merlin
-                    // workspace, the method we want is in sun.misc.ClassReflector
-                    // and absent from java.io.ObjectStreamClass.
-                    //
-                    // When compiling rip-int with JDK 1.3.x, we have to get it
-                    // from java.io.ObjectStreamClass.
-                    classWithThisMethod = Class.forName("sun.misc.ClassReflector");
-                } catch (ClassNotFoundException cnfe) {
-                    // Do nothing.  This is either not a Merlin workspace,
-                    // or rip-int is being compiled with something other than
-                    // Merlin, probably JDK 1.3.  Fall back on java.io.ObjectStreaClass.
-                }
                 if (classWithThisMethod == null)
                     classWithThisMethod = java.io.ObjectStreamClass.class;
 

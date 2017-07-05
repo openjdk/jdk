@@ -129,14 +129,6 @@ public final class JAXBContextImpl extends JAXBRIContext {
     private final Map<TypeReference,Bridge> bridges = new LinkedHashMap<TypeReference,Bridge>();
 
     /**
-     * Shared instance of {@link TransformerFactory}.
-     * Lock before use, because a {@link TransformerFactory} is not thread-safe
-     * whereas {@link JAXBContextImpl} is.
-     * Lazily created.
-     */
-    private volatile static SAXTransformerFactory tf;
-
-    /**
      * Shared instance of {@link DocumentBuilder}.
      * Lock before use. Lazily created.
      */
@@ -705,13 +697,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
      */
     static Transformer createTransformer(boolean disableSecureProcessing) {
         try {
-            if (tf==null) {
-                synchronized(JAXBContextImpl.class) {
-                    if (tf==null) {
-                        tf = (SAXTransformerFactory)XmlFactory.createTransformerFactory(disableSecureProcessing);
-                    }
-                }
-            }
+            SAXTransformerFactory tf = (SAXTransformerFactory)XmlFactory.createTransformerFactory(disableSecureProcessing);
             return tf.newTransformer();
         } catch (TransformerConfigurationException e) {
             throw new Error(e); // impossible
@@ -723,13 +709,7 @@ public final class JAXBContextImpl extends JAXBRIContext {
      */
     public static TransformerHandler createTransformerHandler(boolean disableSecureProcessing) {
         try {
-            if (tf==null) {
-                synchronized(JAXBContextImpl.class) {
-                    if (tf==null) {
-                        tf = (SAXTransformerFactory)XmlFactory.createTransformerFactory(disableSecureProcessing);
-                    }
-                }
-            }
+            SAXTransformerFactory tf = (SAXTransformerFactory)XmlFactory.createTransformerFactory(disableSecureProcessing);
             return tf.newTransformerHandler();
         } catch (TransformerConfigurationException e) {
             throw new Error(e); // impossible

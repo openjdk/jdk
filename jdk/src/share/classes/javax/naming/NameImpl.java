@@ -232,7 +232,7 @@ class NameImpl {
             syntaxDirection = FLAT;
         } else {
             throw new IllegalArgumentException(syntaxDirectionStr +
-                "is not a valid value for the jndi.syntax.direction property");
+                " is not a valid value for the jndi.syntax.direction property");
         }
 
         if (syntaxDirection != FLAT) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,6 @@ class Internalizer {
 
     private static final String WSDL_NS = "http://schemas.xmlsoap.org/wsdl/";
 
-    private static XPathFactory xpf = null;
-
     private final XPath xpath;
 
     /**
@@ -99,12 +97,7 @@ class Internalizer {
         this.errorHandler = forest.getErrorHandler();
         this.forest = forest;
         this.enableSCD = enableSCD;
-        synchronized (this) {
-            if (xpf == null) {
-                xpf = XmlFactory.createXPathFactory(disableSecureProcessing);
-            }
-        }
-        xpath = xpf.newXPath();
+        xpath = XmlFactory.createXPathFactory(disableSecureProcessing).newXPath();
     }
 
     /**
@@ -169,7 +162,6 @@ class Internalizer {
                 continue;
             if( a.getLocalName().equals("multiple") ) //
                 continue;
-
 
             // TODO: flag error for this undefined attribute
         }

@@ -85,7 +85,7 @@ do
     [ $i -lt 10 ] && i2=0$i
 
     "$TESTJAVA/bin/java" $TESTVMOPTS -XX:+IgnoreUnrecognizedVMOptions \
-        -XX:-TransmitErrorReport \
+        -XX:-TransmitErrorReport -XX:-CreateMinidumpOnCrash \
         -XX:ErrorHandlerTest=${i} -version > ${i2}.out 2>&1
 
     # If ErrorHandlerTest is ignored (product build), stop.

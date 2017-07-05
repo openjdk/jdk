@@ -321,24 +321,38 @@ void interpretedVFrame::set_locals(StackValueCollection* values) const {
   }
 }
 
-StackValueCollection*  interpretedVFrame::expressions() const {
-  int length = fr().interpreter_frame_expression_stack_size();
-  if (method()->is_native()) {
-    // If the method is native, there is no expression stack
-    length = 0;
+StackValueCollection* interpretedVFrame::expressions() const {
+
+  InterpreterOopMap oop_mask;
+
+  if (!method()->is_native()) {
+    // Get oopmap describing oops and int for current bci
+    if (TraceDeoptimization && Verbose) {
+      methodHandle m_h(method());
+      OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
+    } else {
+      method()->mask_for(bci(), &oop_mask);
+    }
+  }
+
+  // If the bci is a call instruction, i.e. any of the invoke* instructions,
+  // the InterpreterOopMap does not include expression/operand stack liveness
+  // info in the oop_mask/bit_mask. This can lead to a discrepancy of what
+  // is actually on the expression stack compared to what is given by the
+  // oop_map. We need to use the length reported in the oop_map.
+  int length = oop_mask.expression_stack_size();
+
+  assert(fr().interpreter_frame_expression_stack_size() >= length,
+    "error in expression stack!");
+
+  StackValueCollection* result = new StackValueCollection(length);
+
+  if (0 == length) {
+    return result;
   }
 
   int nof_locals = method()->max_locals();
-  StackValueCollection* result = new StackValueCollection(length);
 
-  InterpreterOopMap oop_mask;
-  // Get oopmap describing oops and int for current bci
-  if (TraceDeoptimization && Verbose) {
-    methodHandle m_h(method());
-    OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
-  } else {
-    method()->mask_for(bci(), &oop_mask);
-  }
   // handle expressions
   for(int i=0; i < length; i++) {
     // Find stack location

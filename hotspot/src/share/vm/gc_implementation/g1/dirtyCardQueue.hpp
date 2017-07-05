@@ -36,7 +36,7 @@ class CardTableEntryClosure: public CHeapObj<mtGC> {
 public:
   // Process the card whose card table entry is "card_ptr".  If returns
   // "false", terminate the iteration early.
-  virtual bool do_card_ptr(jbyte* card_ptr, int worker_i = 0) = 0;
+  virtual bool do_card_ptr(jbyte* card_ptr, uint worker_i = 0) = 0;
 };
 
 // A ptrQueue whose elements are "oops", pointers to object heads.
@@ -53,7 +53,7 @@ public:
   // deletes processed entries from logs.
   bool apply_closure(CardTableEntryClosure* cl,
                      bool consume = true,
-                     size_t worker_i = 0);
+                     uint worker_i = 0);
 
   // Apply the closure to all elements of "buf", down to "index"
   // (inclusive.)  If returns "false", then a closure application returned
@@ -63,7 +63,7 @@ public:
   static bool apply_closure_to_buffer(CardTableEntryClosure* cl,
                                       void** buf, size_t index, size_t sz,
                                       bool consume = true,
-                                      int worker_i = 0);
+                                      uint worker_i = 0);
   void **get_buf() { return _buf;}
   void set_buf(void **buf) {_buf = buf;}
   size_t get_index() { return _index;}
@@ -98,7 +98,7 @@ public:
 
   // The number of parallel ids that can be claimed to allow collector or
   // mutator threads to do card-processing work.
-  static size_t num_par_ids();
+  static uint num_par_ids();
 
   static void handle_zero_index_for_thread(JavaThread* t);
 
@@ -115,7 +115,7 @@ public:
   // change in the future.)  If "consume" is true, processed entries are
   // discarded.
   void iterate_closure_all_threads(bool consume = true,
-                                   size_t worker_i = 0);
+                                   uint worker_i = 0);
 
   // If there exists some completed buffer, pop it, then apply the
   // registered closure to all its elements, nulling out those elements
@@ -124,7 +124,7 @@ public:
   // but is only partially completed before a "yield" happens, the
   // partially completed buffer (with its processed elements set to NULL)
   // is returned to the completed buffer set, and this call returns false.
-  bool apply_closure_to_completed_buffer(int worker_i = 0,
+  bool apply_closure_to_completed_buffer(uint worker_i = 0,
                                          int stop_at = 0,
                                          bool during_pause = false);
 
@@ -136,13 +136,13 @@ public:
   // partially completed buffer (with its processed elements set to NULL)
   // is returned to the completed buffer set, and this call returns false.
   bool apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
-                                         int worker_i = 0,
+                                         uint worker_i = 0,
                                          int stop_at = 0,
                                          bool during_pause = false);
 
   // Helper routine for the above.
   bool apply_closure_to_completed_buffer_helper(CardTableEntryClosure* cl,
-                                                int worker_i,
+                                                uint worker_i,
                                                 BufferNode* nd);
 
   BufferNode* get_completed_buffer(int stop_at);

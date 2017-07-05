@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,9 @@ static const char *ETC_TIMEZONE_FILE = "/etc/timezone";
 static const char *ZONEINFO_DIR = "/usr/share/zoneinfo";
 static const char *DEFAULT_ZONEINFO_FILE = "/etc/localtime";
 #else
+#ifdef _AIX
+static const char *ETC_ENVIRONMENT_FILE = "/etc/environment";
+#endif
 static const char *SYS_INIT_FILE = "/etc/default/init";
 static const char *ZONEINFO_DIR = "/usr/share/lib/zoneinfo";
 static const char *DEFAULT_ZONEINFO_FILE = "/usr/share/lib/zoneinfo/localtime";
@@ -619,8 +622,29 @@ getSolarisDefaultZoneID() {
 static char *
 getPlatformTimeZoneID()
 {
-    return NULL;
+    FILE *fp;
+    char *tz = NULL;
+    char *tz_key = "TZ=";
+    char line[256];
+    size_t tz_key_len = strlen(tz_key);
+
+    if ((fp = fopen(ETC_ENVIRONMENT_FILE, "r")) != NULL) {
+        while (fgets(line, sizeof(line), fp) != NULL) {
+            char *p = strchr(line, '\n');
+            if (p != NULL) {
+                *p = '\0';
+            }
+            if (0 == strncmp(line, tz_key, tz_key_len)) {
+                tz = strdup(line + tz_key_len);
+                break;
+            }
+        }
+        (void) fclose(fp);
+    }
+
+    return tz;
 }
+static char *mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz);
 #endif
 
 /*
@@ -678,9 +702,19 @@ findJavaTZ_md(const char *java_home_dir, const char *country)
         if (freetz != NULL) {
             free((void *) freetz);
         }
+
+#ifdef _AIX
+        freetz = mapPlatformToJavaTimezone(java_home_dir, javatz);
+        if (javatz != NULL) {
+            free((void *) javatz);
+        }
+        javatz = freetz;
+#endif
     }
+
     return javatz;
 }
+
 /**
  * Returns a GMT-offset-based zone ID. (e.g., "GMT-08:00")
  */
@@ -747,3 +781,101 @@ getGMTOffsetID()
     return strdup(buf);
 }
 #endif /* MACOSX */
+
+#ifdef _AIX
+static char *
+mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
+    FILE *tzmapf;
+    char mapfilename[PATH_MAX+1];
+    char line[256];
+    int linecount = 0;
+    char temp[100], *temp_tz;
+    char *javatz = NULL;
+    char *str_tmp = NULL;
+    size_t temp_tz_len = 0;
+
+    /* On AIX, the TZ environment variable may end with a comma
+     * followed by modifier fields. These are ignored here.
+     */
+    strncpy(temp, tz, 100);
+    temp_tz = strtok_r(temp, ",", &str_tmp);
+
+    if(temp_tz == NULL)
+        goto tzerr;
+
+    temp_tz_len = strlen(temp_tz);
+
+    if (strlen(java_home_dir) >= (PATH_MAX - 15)) {
+        jio_fprintf(stderr, "java.home longer than maximum path length \n");
+        goto tzerr;
+    }
+
+    strncpy(mapfilename, java_home_dir, PATH_MAX);
+    strcat(mapfilename, "/lib/tzmappings");
+
+    if ((tzmapf = fopen(mapfilename, "r")) == NULL) {
+        jio_fprintf(stderr, "can't open %s\n", mapfilename);
+        goto tzerr;
+    }
+
+    while (fgets(line, sizeof(line), tzmapf) != NULL) {
+        char *p = line;
+        char *sol = line;
+        char *java;
+        int result;
+
+        linecount++;
+        /*
+         * Skip comments and blank lines
+         */
+        if (*p == '#' || *p == '\n') {
+            continue;
+        }
+
+        /*
+         * Get the first field, platform zone ID
+         */
+        while (*p != '\0' && *p != '\t') {
+            p++;
+        }
+        if (*p == '\0') {
+            /* mapping table is broken! */
+            jio_fprintf(stderr, "tzmappings: Illegal format at near line %d.\n", linecount);
+            break;
+        }
+
+        *p++ = '\0';
+        if ((result = strncmp(temp_tz, sol, temp_tz_len)) == 0) {
+            /*
+             * If this is the current platform zone ID,
+             * take the Java time zone ID (2nd field).
+             */
+            java = p;
+            while (*p != '\0' && *p != '\n') {
+                p++;
+            }
+
+            if (*p == '\0') {
+                /* mapping table is broken! */
+                jio_fprintf(stderr, "tzmappings: Illegal format at line %d.\n", linecount);
+                break;
+            }
+
+            *p = '\0';
+            javatz = strdup(java);
+            break;
+        } else if (result < 0) {
+            break;
+        }
+    }
+    (void) fclose(tzmapf);
+
+tzerr:
+    if (javatz == NULL) {
+        return getGMTOffsetID();
+    }
+
+    return javatz;
+}
+#endif
+
