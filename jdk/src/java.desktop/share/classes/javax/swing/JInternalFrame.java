@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import javax.accessibility.*;
 
 import java.io.ObjectOutputStream;
 import java.io.IOException;
-import java.lang.StringBuilder;
 import java.beans.PropertyChangeListener;
 import sun.awt.AppContext;
 import sun.swing.SwingUtilities2;
@@ -1654,7 +1653,7 @@ public class JInternalFrame extends JComponent implements
      * <dt><code>DO_NOTHING_ON_CLOSE</code>
      * <dd> Do nothing.
      *      This requires the program to handle the operation
-     *      in the <code>windowClosing</code> method
+     *      in the <code>internalFrameClosing</code> method
      *      of a registered <code>InternalFrameListener</code> object.
      * <dt><code>HIDE_ON_CLOSE</code>
      * <dd> Automatically make the internal frame invisible.

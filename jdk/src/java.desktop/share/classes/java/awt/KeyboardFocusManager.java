@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3054,11 +3054,10 @@ public abstract class KeyboardFocusManager
         return (wto != wfrom);
     }
 
-    @SuppressWarnings("deprecation")
     static Component getHeavyweight(Component comp) {
-        if (comp == null || comp.getPeer() == null) {
+        if (comp == null || comp.peer == null) {
             return null;
-        } else if (comp.getPeer() instanceof LightweightPeer) {
+        } else if (comp.peer instanceof LightweightPeer) {
             return comp.getNativeContainer();
         } else {
             return comp;

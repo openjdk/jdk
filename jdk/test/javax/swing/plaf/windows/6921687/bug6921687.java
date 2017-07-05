@@ -22,12 +22,13 @@
  */
 
 /* @test
-   @bug 6921687
+   @bug 6921687 8079428
    @summary Mnemonic disappears after repeated attempts to open menu items using
    mnemonics
    @author Semyon Sadetsky
    @library /lib/testlibrary
    @build jdk.testlibrary.OSInfo
+   @run main bug6921687
   */
 
 

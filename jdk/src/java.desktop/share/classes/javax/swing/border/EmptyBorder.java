@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,22 @@ import java.beans.ConstructorProperties;
 @SuppressWarnings("serial")
 public class EmptyBorder extends AbstractBorder implements Serializable
 {
-    protected int left, right, top, bottom;
+    /**
+     * The left inset of the border.
+     */
+    protected int left;
+    /**
+     * The right inset of the border.
+     */
+    protected int right;
+    /**
+     * The top inset of the border.
+     */
+    protected int top;
+    /**
+     * The bottom inset of the border.
+     */
+    protected int bottom;
 
     /**
      * Creates an empty border with the specified insets.

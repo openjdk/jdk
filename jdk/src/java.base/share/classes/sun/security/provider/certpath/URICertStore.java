@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.security.cert.CertStoreParameters;
 import java.security.cert.CertStoreSpi;
 import java.security.cert.CRLException;
 import java.security.cert.CRLSelector;
+import java.security.cert.URICertStoreParameters;
 import java.security.cert.X509Certificate;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509CRL;
@@ -118,9 +119,7 @@ class URICertStore extends CertStoreSpi {
 
     // true if URI is ldap
     private boolean ldap = false;
-    private CertStoreHelper ldapHelper;
     private CertStore ldapCertStore;
-    private String ldapPath;
 
     // Default maximum connect timeout in milliseconds (15 seconds)
     // allowed when downloading CRLs
@@ -165,13 +164,8 @@ class URICertStore extends CertStoreSpi {
         // if ldap URI, use an LDAPCertStore to fetch certs and CRLs
         if (uri.getScheme().toLowerCase(Locale.ENGLISH).equals("ldap")) {
             ldap = true;
-            ldapHelper = CertStoreHelper.getInstance("LDAP");
-            ldapCertStore = ldapHelper.getCertStore(uri);
-            ldapPath = uri.getPath();
-            // strip off leading '/'
-            if (ldapPath.charAt(0) == '/') {
-                ldapPath = ldapPath.substring(1);
-            }
+            URICertStoreParameters lparams = new URICertStoreParameters(uri);
+            ldapCertStore = CertStore.getInstance("LDAP", lparams);
         }
         try {
             factory = CertificateFactory.getInstance("X.509");
@@ -246,20 +240,10 @@ class URICertStore extends CertStoreSpi {
     public synchronized Collection<X509Certificate> engineGetCertificates
         (CertSelector selector) throws CertStoreException {
 
-        // if ldap URI we wrap the CertSelector in an LDAPCertSelector to
-        // avoid LDAP DN matching issues (see LDAPCertSelector for more info)
         if (ldap) {
-            X509CertSelector xsel = (X509CertSelector) selector;
-            try {
-                xsel = ldapHelper.wrap(xsel, xsel.getSubject(), ldapPath);
-            } catch (IOException ioe) {
-                throw new CertStoreException(ioe);
-            }
-            // Fetch the certificates via LDAP. LDAPCertStore has its own
             // caching mechanism, see the class description for more info.
-            // Safe cast since xsel is an X509 certificate selector.
             return (Collection<X509Certificate>)
-                ldapCertStore.getCertificates(xsel);
+                ldapCertStore.getCertificates(selector);
         }
 
         // Return the Certificates for this entry. It returns the cached value
@@ -356,20 +340,11 @@ class URICertStore extends CertStoreSpi {
     public synchronized Collection<X509CRL> engineGetCRLs(CRLSelector selector)
         throws CertStoreException {
 
-        // if ldap URI we wrap the CRLSelector in an LDAPCRLSelector to
-        // avoid LDAP DN matching issues (see LDAPCRLSelector for more info)
         if (ldap) {
-            X509CRLSelector xsel = (X509CRLSelector) selector;
-            try {
-                xsel = ldapHelper.wrap(xsel, null, ldapPath);
-            } catch (IOException ioe) {
-                throw new CertStoreException(ioe);
-            }
             // Fetch the CRLs via LDAP. LDAPCertStore has its own
             // caching mechanism, see the class description for more info.
-            // Safe cast since xsel is an X509 certificate selector.
             try {
-                return (Collection<X509CRL>) ldapCertStore.getCRLs(xsel);
+                return (Collection<X509CRL>) ldapCertStore.getCRLs(selector);
             } catch (CertStoreException cse) {
                 throw new PKIX.CertStoreTypeException("LDAP", cse);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,9 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * It will either break at word or character boundaries
      * depending upon the break argument given at
      * construction.
+     * @param p0 the starting document location
+     * @param p1 the ending document location to use
+     * @return the break position
      */
     protected int calculateBreakPosition(int p0, int p1) {
         int p;

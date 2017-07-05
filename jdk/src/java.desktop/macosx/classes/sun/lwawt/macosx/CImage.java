@@ -138,17 +138,6 @@ public class CImage extends CFRetainedResource {
             return ((DataBufferInt)bimg.getRaster().getDataBuffer()).getData();
         }
 
-        public CImage createFromImageImmediately(final Image image) {
-            int[]  buffer = imageToArray(image, false);
-
-            if (buffer == null) {
-                return null;
-            }
-
-            return new CImage(nativeCreateNSImageFromArray(buffer, image.getWidth(null),
-                                                           image.getHeight(null)));
-        }
-
         public byte[] getPlatformImageBytes(final Image image) {
             int[] buffer = imageToArray(image, false);
 
@@ -168,20 +157,33 @@ public class CImage extends CFRetainedResource {
 
         // This is used to create a CImage from a Image
         public CImage createFromImage(final Image image) {
+            return createFromImage(image, true);
+        }
+
+        public CImage createFromImageImmediately(final Image image) {
+            return createFromImage(image, false);
+        }
+
+        // This is used to create a CImage from a Image
+        private CImage createFromImage(final Image image, final boolean prepareImage) {
             if (image instanceof MultiResolutionImage) {
                 List<Image> resolutionVariants
                         = ((MultiResolutionImage) image).getResolutionVariants();
-                return createFromImages(resolutionVariants);
+                return createFromImages(resolutionVariants, prepareImage);
             }
 
-            int[] buffer = imageToArray(image, true);
+            int[] buffer = imageToArray(image, prepareImage);
             if (buffer == null) {
                 return null;
             }
             return new CImage(nativeCreateNSImageFromArray(buffer, image.getWidth(null), image.getHeight(null)));
         }
 
-        public CImage createFromImages(List<Image> images) {
+        public CImage createFromImages(final List<Image> images) {
+            return createFromImages(images, true);
+        }
+
+        private CImage createFromImages(final List<Image> images, final boolean prepareImage) {
             if (images == null || images.isEmpty()) {
                 return null;
             }
@@ -194,8 +196,8 @@ public class CImage extends CFRetainedResource {
 
             num = 0;
 
-            for (Image img : images) {
-                buffers[num] = imageToArray(img, true);
+            for (final Image img : images) {
+                buffers[num] = imageToArray(img, prepareImage);
                 if (buffers[num] == null) {
                     // Unable to process the image
                     continue;
@@ -210,9 +212,9 @@ public class CImage extends CFRetainedResource {
             }
 
             return new CImage(nativeCreateNSImageFromArrays(
-                        Arrays.copyOf(buffers, num),
-                        Arrays.copyOf(w, num),
-                        Arrays.copyOf(h, num)));
+                    Arrays.copyOf(buffers, num),
+                    Arrays.copyOf(w, num),
+                    Arrays.copyOf(h, num)));
         }
 
         static int getSelectorAsInt(final String fromString) {

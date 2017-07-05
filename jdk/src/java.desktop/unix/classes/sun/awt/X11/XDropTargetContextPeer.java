@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.IOException;
 
 import java.util.Iterator;
 
+import sun.awt.AWTAccessor;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.AppContext;
@@ -188,12 +189,12 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
     // If source is an XEmbedCanvasPeer, passes the event to it for processing and
     // return true if the event is forwarded to the XEmbed child.
     // Otherwise, does nothing and return false.
-    @SuppressWarnings("deprecation")
     private boolean processSunDropTargetEvent(SunDropTargetEvent event) {
         Object source = event.getSource();
 
         if (source instanceof Component) {
-            ComponentPeer peer = ((Component)source).getPeer();
+            Object peer = AWTAccessor.getComponentAccessor()
+                                     .getPeer((Component) source);
             if (peer instanceof XEmbedCanvasPeer) {
                 XEmbedCanvasPeer xEmbedCanvasPeer = (XEmbedCanvasPeer)peer;
                 /* The native context is the pointer to the XClientMessageEvent

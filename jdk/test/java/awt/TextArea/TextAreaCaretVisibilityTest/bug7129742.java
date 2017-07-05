@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,9 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.text.DefaultCaret;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
+
 
 public class bug7129742 {
 
@@ -64,7 +67,8 @@ public class bug7129742 {
                 frame.setVisible(true);
 
                 try {
-                    Class XTextAreaPeerClzz  = textArea.getPeer().getClass();
+                    ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+                    Class XTextAreaPeerClzz = acc.getPeer(textArea).getClass();
                     System.out.println(XTextAreaPeerClzz.getName());
                     if (!XTextAreaPeerClzz.getName().equals("sun.awt.X11.XTextAreaPeer")) {
                         fastreturn = true;
@@ -73,7 +77,7 @@ public class bug7129742 {
 
                     Field jtextField = XTextAreaPeerClzz.getDeclaredField("jtext");
                     jtextField.setAccessible(true);
-                    JTextArea jtext = (JTextArea)jtextField.get(textArea.getPeer());
+                    JTextArea jtext = (JTextArea)jtextField.get(acc.getPeer(textArea));
                     caret = (DefaultCaret) jtext.getCaret();
 
                     textArea.requestFocusInWindow();

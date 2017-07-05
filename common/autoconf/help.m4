@@ -212,7 +212,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   if test "x$TOOLCHAIN_VERSION" != "x"; then
     print_version=" $TOOLCHAIN_VERSION"
   fi
-  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION$print_version)\n" 
+  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION$print_version)\n"
   printf "* C Compiler:     Version $CC_VERSION_NUMBER (at $CC)\n"
   printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at $CXX)\n"
 
@@ -263,14 +263,20 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
 
 AC_DEFUN_ONCE([HELP_REPEAT_WARNINGS],
 [
-if test -e "$OUTPUT_ROOT/config.log"; then
-  $GREP '^configure:.*: WARNING:' "$OUTPUT_ROOT/config.log" > /dev/null 2>&1
-  if test $? -eq 0; then
-    printf "The following warnings were produced. Repeated here for convenience:\n"
-    # We must quote sed expression (using []) to stop m4 from eating the [].
-    $GREP '^configure:.*: WARNING:' "$OUTPUT_ROOT/config.log" | $SED -e [ 's/^configure:[0-9]*: //' ]
-    printf "\n"
+  # Locate config.log.
+  if test -e "$CONFIGURESUPPORT_OUTPUTDIR/config.log"; then
+    CONFIG_LOG_PATH="$CONFIGURESUPPORT_OUTPUTDIR"
+  elif test -e "./config.log"; then
+    CONFIG_LOG_PATH="."
   fi
-fi
 
+  if test -e "$CONFIG_LOG_PATH/config.log"; then
+    $GREP '^configure:.*: WARNING:' "$CONFIG_LOG_PATH/config.log" > /dev/null 2>&1
+    if test $? -eq 0; then
+      printf "The following warnings were produced. Repeated here for convenience:\n"
+      # We must quote sed expression (using []) to stop m4 from eating the [].
+      $GREP '^configure:.*: WARNING:' "$CONFIG_LOG_PATH/config.log" | $SED -e [ 's/^configure:[0-9]*: //' ]
+      printf "\n"
+    fi
+  fi
 ])

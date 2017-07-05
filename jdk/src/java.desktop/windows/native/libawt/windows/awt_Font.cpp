@@ -985,7 +985,7 @@ extern "C" {
 JNIEXPORT void JNICALL
 Java_java_awt_Font_initIDs(JNIEnv *env, jclass cls)
 {
-    CHECK_NULL(AwtFont::peerMID = env->GetMethodID(cls, "getPeer",
+    CHECK_NULL(AwtFont::peerMID = env->GetMethodID(cls, "getFontPeer",
          "()Ljava/awt/peer/FontPeer;"));
     CHECK_NULL(AwtFont::pDataID = env->GetFieldID(cls, "pData", "J"));
     CHECK_NULL(AwtFont::nameID =

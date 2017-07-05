@@ -46,6 +46,7 @@ import java.io.*;
 import java.util.*;
 import java.nio.CharBuffer;
 import java.util.function.Predicate;
+import jdk.testlibrary.RandomFactory;
 
 /**
  * This is a test class created to check the operation of

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,18 @@
 
 package sun.awt;
 
-import sun.awt.datatransfer.DataTransferer;
-
 import java.awt.*;
-import java.awt.dnd.*;
-import java.awt.dnd.peer.DragSourceContextPeer;
+import java.awt.datatransfer.Clipboard;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragGestureRecognizer;
+import java.awt.dnd.DragSource;
 import java.awt.im.InputMethodHighlight;
 import java.awt.im.spi.InputMethodDescriptor;
-import java.awt.image.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.peer.*;
+import java.awt.image.ColorModel;
+import java.awt.peer.FramePeer;
+import java.awt.peer.KeyboardFocusManagerPeer;
+import java.awt.peer.SystemTrayPeer;
+import java.awt.peer.TrayIconPeer;
 import java.util.Map;
 import java.util.Properties;
 
@@ -47,10 +49,15 @@ public class HToolkit extends SunToolkit
     implements ComponentFactory {
 
     private static final KeyboardFocusManagerPeer kfmPeer = new KeyboardFocusManagerPeer() {
+        @Override
         public void setCurrentFocusedWindow(Window win) {}
+        @Override
         public Window getCurrentFocusedWindow() { return null; }
+        @Override
         public void setCurrentFocusOwner(Component comp) {}
+        @Override
         public Component getCurrentFocusOwner() { return null; }
+        @Override
         public void clearGlobalFocusOwner(Window activeWindow) {}
     };
 
@@ -61,134 +68,33 @@ public class HToolkit extends SunToolkit
      * Component peer objects - unsupported.
      */
 
-    public WindowPeer createWindow(Window target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
+    @Override
     public FramePeer createLightweightFrame(LightweightFrame target)
         throws HeadlessException {
         throw new HeadlessException();
     }
 
-    public FramePeer createFrame(Frame target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public DialogPeer createDialog(Dialog target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public ButtonPeer createButton(Button target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public TextFieldPeer createTextField(TextField target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public ChoicePeer createChoice(Choice target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public LabelPeer createLabel(Label target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public ListPeer createList(List target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public CheckboxPeer createCheckbox(Checkbox target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public ScrollbarPeer createScrollbar(Scrollbar target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public ScrollPanePeer createScrollPane(ScrollPane target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public TextAreaPeer createTextArea(TextArea target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public FileDialogPeer createFileDialog(FileDialog target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public MenuBarPeer createMenuBar(MenuBar target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public MenuPeer createMenu(Menu target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public PopupMenuPeer createPopupMenu(PopupMenu target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public MenuItemPeer createMenuItem(MenuItem target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public CheckboxMenuItemPeer createCheckboxMenuItem(CheckboxMenuItem target)
-        throws HeadlessException {
-        throw new HeadlessException();
-    }
-
-    public DragSourceContextPeer createDragSourceContextPeer(
-        DragGestureEvent dge)
-        throws InvalidDnDOperationException {
-        throw new InvalidDnDOperationException("Headless environment");
-    }
-
-    public RobotPeer createRobot(Robot target, GraphicsDevice screen)
-        throws AWTException, HeadlessException {
-        throw new HeadlessException();
-    }
-
+    @Override
     public KeyboardFocusManagerPeer getKeyboardFocusManagerPeer() {
         // See 6833019.
         return kfmPeer;
     }
 
+    @Override
     public TrayIconPeer createTrayIcon(TrayIcon target)
       throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public SystemTrayPeer createSystemTray(SystemTray target)
       throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public boolean isTraySupported() {
         return false;
-    }
-
-    @Override
-    public DataTransferer getDataTransferer() {
-        return null;
     }
 
     public GlobalCursorManager getGlobalCursorManager()
@@ -199,57 +105,68 @@ public class HToolkit extends SunToolkit
     /*
      * Headless toolkit - unsupported.
      */
+    @Override
     protected void loadSystemColors(int[] systemColors)
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public ColorModel getColorModel()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public int getScreenResolution()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public Map<java.awt.font.TextAttribute, ?> mapInputMethodHighlight(
             InputMethodHighlight highlight)
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public int getMenuShortcutKeyMask()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public boolean getLockingKeyState(int keyCode)
         throws UnsupportedOperationException {
         throw new HeadlessException();
     }
 
+    @Override
     public void setLockingKeyState(int keyCode, boolean on)
         throws UnsupportedOperationException {
         throw new HeadlessException();
     }
 
+    @Override
     public Cursor createCustomCursor(Image cursor, Point hotSpot, String name)
         throws IndexOutOfBoundsException, HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public Dimension getBestCursorSize(int preferredWidth, int preferredHeight)
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public int getMaximumCursorColors()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public <T extends DragGestureRecognizer> T
         createDragGestureRecognizer(Class<T> abstractRecognizerClass,
                                     DragSource ds, Component c,
@@ -258,41 +175,49 @@ public class HToolkit extends SunToolkit
         return null;
     }
 
+    @Override
     public int getScreenHeight()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public int getScreenWidth()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public Dimension getScreenSize()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public Insets getScreenInsets(GraphicsConfiguration gc)
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public void setDynamicLayout(boolean dynamic)
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     protected boolean isDynamicLayoutSet()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public boolean isDynamicLayoutActive()
         throws HeadlessException {
         throw new HeadlessException();
     }
 
+    @Override
     public Clipboard getSystemClipboard()
         throws HeadlessException {
         throw new HeadlessException();
@@ -301,6 +226,7 @@ public class HToolkit extends SunToolkit
     /*
      * Printing
      */
+    @Override
     public PrintJob getPrintJob(Frame frame, String jobtitle,
         JobAttributes jobAttributes,
         PageAttributes pageAttributes) {
@@ -312,6 +238,7 @@ public class HToolkit extends SunToolkit
                 "PrintJob not supported in a headless environment");
     }
 
+    @Override
     public PrintJob getPrintJob(Frame frame, String doctitle, Properties props)
     {
         if (frame != null) {
@@ -326,65 +253,63 @@ public class HToolkit extends SunToolkit
      * Headless toolkit - supported.
      */
 
+    @Override
     public void sync() {
         // Do nothing
     }
 
+    @Override
     protected boolean syncNativeQueue(final long timeout) {
         return false;
     }
 
+    @Override
     public void beep() {
         // Send alert character
         System.out.write(0x07);
     }
 
-
-    /*
-     * Fonts
-     */
-    public FontPeer getFontPeer(String name, int style) {
-        return (FontPeer)null;
-    }
-
     /*
      * Modality
      */
+    @Override
     public boolean isModalityTypeSupported(Dialog.ModalityType modalityType) {
         return false;
     }
 
+    @Override
     public boolean isModalExclusionTypeSupported(Dialog.ModalExclusionType exclusionType) {
         return false;
     }
 
+    @Override
     public boolean isDesktopSupported() {
         return false;
-    }
-
-    public DesktopPeer createDesktopPeer(Desktop target)
-    throws HeadlessException{
-        throw new HeadlessException();
     }
 
     public boolean isWindowOpacityControlSupported() {
         return false;
     }
 
+    @Override
     public boolean isWindowShapingSupported() {
         return false;
     }
 
+    @Override
     public boolean isWindowTranslucencySupported() {
         return false;
     }
 
+    @Override
     public  void grab(Window w) { }
 
+    @Override
     public void ungrab(Window w) { }
 
     protected boolean syncNativeQueue() { return false; }
 
+    @Override
     public InputMethodDescriptor getInputMethodAdapterDescriptor()
         throws AWTException
     {
