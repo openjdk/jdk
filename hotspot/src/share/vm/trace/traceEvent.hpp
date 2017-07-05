@@ -25,12 +25,12 @@
 #ifndef SHARE_VM_TRACE_TRACEEVENT_HPP
 #define SHARE_VM_TRACE_TRACEEVENT_HPP
 
+#include "utilities/macros.hpp"
+
 enum EventStartTime {
   UNTIMED,
   TIMED
 };
-
-#include "utilities/macros.hpp"
 
 #if INCLUDE_TRACE
 
@@ -38,13 +38,10 @@ enum EventStartTime {
 #include "trace/tracing.hpp"
 #include "tracefiles/traceEventIds.hpp"
 #include "tracefiles/traceTypes.hpp"
+#include "utilities/ticks.hpp"
 
 template<typename T>
 class TraceEvent : public StackObj {
- protected:
-  jlong _startTime;
-  jlong _endTime;
-
  private:
   bool _started;
 #ifdef ASSERT
@@ -53,6 +50,18 @@ class TraceEvent : public StackObj {
  protected:
   bool _ignore_check;
 #endif
+
+ protected:
+  jlong _startTime;
+  jlong _endTime;
+
+  void set_starttime(const TracingTime& time) {
+    _startTime = time;
+  }
+
+  void set_endtime(const TracingTime& time) {
+    _endTime = time;
+  }
 
  public:
   TraceEvent(EventStartTime timing=TIMED) :
@@ -100,12 +109,12 @@ class TraceEvent : public StackObj {
     set_commited();
   }
 
-  void set_starttime(jlong time) {
-    _startTime = time;
+  void set_starttime(const Ticks& time) {
+    _startTime = time.value();
   }
 
-  void set_endtime(jlong time) {
-    _endTime = time;
+  void set_endtime(const Ticks& time) {
+    _endTime = time.value();
   }
 
   TraceEventId id() const {
