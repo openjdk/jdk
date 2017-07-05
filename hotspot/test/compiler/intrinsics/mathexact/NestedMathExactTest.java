@@ -23,16 +23,32 @@
 
 /*
  * @test
- * @bug 8026844
- * @bug 8027353
- * @summary Test non constant subtractExact
- * @compile SubExactLNonConstantTest.java Verify.java
- * @run main SubExactLNonConstantTest
+ * @bug 8027444
+ * @summary Test nested loops
+ * @compile NestedMathExactTest.java
+ * @run main NestedMathExactTest
  *
  */
 
-public class SubExactLNonConstantTest {
+public class NestedMathExactTest {
+    public static final int LIMIT = 100;
+    public static int[] result = new int[LIMIT];
+    public static int value = 17;
+
     public static void main(String[] args) {
-        Verify.NonConstantLongTest.verify(new Verify.SubExactL());
+        for (int i = 0; i < 100; ++i) {
+            result[i] = runTest();
+        }
+    }
+
+    public static int runTest() {
+        int sum = 0;
+        for (int j = 0; j < 100000; j = Math.addExact(j, 1)) {
+            sum = 1;
+            for (int i = 0; i < 5; ++i) {
+                sum *= value;
+            }
+        }
+        return sum;
     }
 }

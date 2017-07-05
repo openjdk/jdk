@@ -184,8 +184,9 @@ EntryPoint TemplateInterpreter::_deopt_entry [TemplateInterpreter::number_of_deo
 EntryPoint TemplateInterpreter::_continuation_entry;
 EntryPoint TemplateInterpreter::_safept_entry;
 
-address    TemplateInterpreter::_return_3_addrs_by_index[TemplateInterpreter::number_of_return_addrs];
-address    TemplateInterpreter::_return_5_addrs_by_index[TemplateInterpreter::number_of_return_addrs];
+address TemplateInterpreter::_invoke_return_entry[TemplateInterpreter::number_of_return_addrs];
+address TemplateInterpreter::_invokeinterface_return_entry[TemplateInterpreter::number_of_return_addrs];
+address TemplateInterpreter::_invokedynamic_return_entry[TemplateInterpreter::number_of_return_addrs];
 
 DispatchTable TemplateInterpreter::_active_table;
 DispatchTable TemplateInterpreter::_normal_table;
@@ -237,19 +238,34 @@ void TemplateInterpreterGenerator::generate_all() {
 #endif // !PRODUCT
 
   { CodeletMark cm(_masm, "return entry points");
+    const int index_size = sizeof(u2);
     for (int i = 0; i < Interpreter::number_of_return_entries; i++) {
       Interpreter::_return_entry[i] =
         EntryPoint(
-          generate_return_entry_for(itos, i),
-          generate_return_entry_for(itos, i),
-          generate_return_entry_for(itos, i),
-          generate_return_entry_for(atos, i),
-          generate_return_entry_for(itos, i),
-          generate_return_entry_for(ltos, i),
-          generate_return_entry_for(ftos, i),
-          generate_return_entry_for(dtos, i),
-          generate_return_entry_for(vtos, i)
+          generate_return_entry_for(itos, i, index_size),
+          generate_return_entry_for(itos, i, index_size),
+          generate_return_entry_for(itos, i, index_size),
+          generate_return_entry_for(atos, i, index_size),
+          generate_return_entry_for(itos, i, index_size),
+          generate_return_entry_for(ltos, i, index_size),
+          generate_return_entry_for(ftos, i, index_size),
+          generate_return_entry_for(dtos, i, index_size),
+          generate_return_entry_for(vtos, i, index_size)
         );
+    }
+  }
+
+  { CodeletMark cm(_masm, "invoke return entry points");
+    const TosState states[] = {itos, itos, itos, itos, ltos, ftos, dtos, atos, vtos};
+    const int invoke_length = Bytecodes::length_for(Bytecodes::_invokestatic);
+    const int invokeinterface_length = Bytecodes::length_for(Bytecodes::_invokeinterface);
+    const int invokedynamic_length = Bytecodes::length_for(Bytecodes::_invokedynamic);
+
+    for (int i = 0; i < Interpreter::number_of_return_addrs; i++) {
+      TosState state = states[i];
+      Interpreter::_invoke_return_entry[i] = generate_return_entry_for(state, invoke_length, sizeof(u2));
+      Interpreter::_invokeinterface_return_entry[i] = generate_return_entry_for(state, invokeinterface_length, sizeof(u2));
+      Interpreter::_invokedynamic_return_entry[i] = generate_return_entry_for(state, invokedynamic_length, sizeof(u4));
     }
   }
 
@@ -296,13 +312,6 @@ void TemplateInterpreterGenerator::generate_all() {
         Interpreter::_native_abi_to_tosca[Interpreter::BasicType_as_index(type)] = generate_result_handler_for(type);
       }
     }
-  }
-
-  for (int j = 0; j < number_of_states; j++) {
-    const TosState states[] = {btos, ctos, stos, itos, ltos, ftos, dtos, atos, vtos};
-    int index = Interpreter::TosState_as_index(states[j]);
-    Interpreter::_return_3_addrs_by_index[index] = Interpreter::return_entry(states[j], 3);
-    Interpreter::_return_5_addrs_by_index[index] = Interpreter::return_entry(states[j], 5);
   }
 
   { CodeletMark cm(_masm, "continuation entry points");
@@ -534,9 +543,46 @@ void TemplateInterpreterGenerator::generate_and_dispatch(Template* t, TosState t
 //------------------------------------------------------------------------------------------------------------------------
 // Entry points
 
-address TemplateInterpreter::return_entry(TosState state, int length) {
+/**
+ * Returns the return entry table for the given invoke bytecode.
+ */
+address* TemplateInterpreter::invoke_return_entry_table_for(Bytecodes::Code code) {
+  switch (code) {
+  case Bytecodes::_invokestatic:
+  case Bytecodes::_invokespecial:
+  case Bytecodes::_invokevirtual:
+  case Bytecodes::_invokehandle:
+    return Interpreter::invoke_return_entry_table();
+  case Bytecodes::_invokeinterface:
+    return Interpreter::invokeinterface_return_entry_table();
+  case Bytecodes::_invokedynamic:
+    return Interpreter::invokedynamic_return_entry_table();
+  default:
+    fatal(err_msg("invalid bytecode: %s", Bytecodes::name(code)));
+    return NULL;
+  }
+}
+
+/**
+ * Returns the return entry address for the given top-of-stack state and bytecode.
+ */
+address TemplateInterpreter::return_entry(TosState state, int length, Bytecodes::Code code) {
   guarantee(0 <= length && length < Interpreter::number_of_return_entries, "illegal length");
-  return _return_entry[length].entry(state);
+  const int index = TosState_as_index(state);
+  switch (code) {
+  case Bytecodes::_invokestatic:
+  case Bytecodes::_invokespecial:
+  case Bytecodes::_invokevirtual:
+  case Bytecodes::_invokehandle:
+    return _invoke_return_entry[index];
+  case Bytecodes::_invokeinterface:
+    return _invokeinterface_return_entry[index];
+  case Bytecodes::_invokedynamic:
+    return _invokedynamic_return_entry[index];
+  default:
+    assert(!Bytecodes::is_invoke(code), err_msg("invoke instructions should be handled separately: %s", Bytecodes::name(code)));
+    return _return_entry[length].entry(state);
+  }
 }
 
 
