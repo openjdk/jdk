@@ -23,8 +23,8 @@
 
 import java.util.Arrays;
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import utils.Utils;
 import java.util.concurrent.CountDownLatch;
 
@@ -33,8 +33,7 @@ import java.util.concurrent.CountDownLatch;
  * @bug 8151442
  * @summary jstack doesn't close quotation marks properly with threads' name greater than 1996 characters
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
- * @build jdk.test.lib.*
+ * @library /test/lib
  * @run main JstackThreadTest
  */
 public class JstackThreadTest {

@@ -38,7 +38,7 @@ import org.testng.TestNG;
 
 /*
  * @test
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.management
  * @build jdk.test.lib.Platform jdk.test.lib.Utils

@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @bug 8008678
  * @summary JSR 292: constant pool reconstitution must support pseudo strings
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.instrument
  *          java.management
@@ -46,9 +46,9 @@ import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
 
-import jdk.test.lib.ExitCode;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ExitCode;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestLambdaFormRetransformation {
     private static String MANIFEST = String.format("Manifest-Version: 1.0\n" +

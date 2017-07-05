@@ -1091,6 +1091,11 @@ public class KeyEvent extends InputEvent {
                 public Component getOriginalSource( KeyEvent ev ) {
                     return ev.originalSource;
                 }
+
+                @Override
+                public boolean isProxyActive(KeyEvent ev) {
+                    return ev.isProxyActive;
+                }
             });
     }
 

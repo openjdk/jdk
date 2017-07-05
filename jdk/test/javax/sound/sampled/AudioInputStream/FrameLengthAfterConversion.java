@@ -26,6 +26,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -162,7 +164,7 @@ public final class FrameLengthAfterConversion {
             ais = AudioSystem.getAudioInputStream(temp);
             final long frameLength = ais.getFrameLength();
             ais.close();
-            temp.delete();
+            Files.delete(Paths.get(temp.getAbsolutePath()));
             validate(frameLength);
         } catch (IllegalArgumentException | UnsupportedAudioFileException
                 | IOException ignored) {

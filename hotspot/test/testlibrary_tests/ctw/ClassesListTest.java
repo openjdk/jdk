@@ -24,12 +24,12 @@
 /*
  * @test
  * @bug 8012447
- * @library /testlibrary /test/lib /testlibrary/ctw/src
+ * @library /test/lib /testlibrary/ctw/src
  * @modules java.base/jdk.internal.jimage
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect
  *          java.management
- * @build ClassFileInstaller sun.hotspot.tools.ctw.CompileTheWorld sun.hotspot.WhiteBox Foo Bar
+ * @build sun.hotspot.WhiteBox Foo Bar
  * @run main ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main ClassesListTest prepare

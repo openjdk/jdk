@@ -3766,7 +3766,7 @@ class StubGenerator: public StubCodeGenerator {
     // however can use the register value directly if it is callee saved.
     __ get_thread(java_thread);
 
-    __ reset_last_Java_frame(java_thread, true, false);
+    __ reset_last_Java_frame(java_thread, true);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
 

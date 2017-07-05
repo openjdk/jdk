@@ -37,7 +37,7 @@ import sun.hotspot.WhiteBox;
  *
  * @summary Stress G1 Remembered Set using multiple threads
  * @modules java.base/jdk.internal.misc
- * @library /test/lib /testlibrary
+ * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

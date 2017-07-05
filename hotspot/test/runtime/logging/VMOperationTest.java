@@ -25,16 +25,15 @@
  * @test
  * @bug 8143157
  * @summary vmoperation=debug should have logging output
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver VMOperationTest
  */
 
 import java.lang.ref.WeakReference;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class VMOperationTest {
     public static void main(String[] args) throws Exception {

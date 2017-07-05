@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * indicate overrides, rather than using bit 7.  Also tests Bidi without loading awt classes to
  * confirm that Bidi can be used without awt. Verify that embedding level 0 is properly mapped
  * to the base embedding level.
+ * @modules java.desktop
  */
 
 import java.awt.Color;

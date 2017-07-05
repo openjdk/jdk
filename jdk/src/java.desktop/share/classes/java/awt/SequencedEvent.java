@@ -63,6 +63,10 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
             public boolean isSequencedEvent(AWTEvent event) {
                 return event instanceof SequencedEvent;
             }
+
+            public AWTEvent create(AWTEvent event) {
+                return new SequencedEvent(event);
+            }
         });
     }
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.lib.JDKToolFinder jdk.test.lib.Platform
  * @run testng Basic

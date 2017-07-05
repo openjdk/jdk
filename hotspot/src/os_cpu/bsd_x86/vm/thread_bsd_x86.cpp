@@ -45,7 +45,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
 
   // If we have a last_Java_frame, then we should use it even if
   // isInJava == true.  It should be more reliable than ucontext info.
-  if (jt->has_last_Java_frame()) {
+  if (jt->has_last_Java_frame() && jt->frame_anchor()->walkable()) {
     *fr_addr = jt->pd_last_frame();
     return true;
   }

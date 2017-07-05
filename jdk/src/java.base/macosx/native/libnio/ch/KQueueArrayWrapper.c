@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,6 @@ Java_sun_nio_ch_KQueueArrayWrapper_register0(JNIEnv *env, jobject this,
     kevent(kq, changes, 2, errors, 2, &dontBlock);
 }
 
-
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_KQueueArrayWrapper_kevent0(JNIEnv *env, jobject this, jint kq,
                                            jlong kevAddr, jint kevCount,
@@ -138,6 +137,15 @@ Java_sun_nio_ch_KQueueArrayWrapper_kevent0(JNIEnv *env, jobject this, jint kq,
     // Java timeout == -1 : wait forever : timespec timeout of NULL
     // Java timeout == 0  : return immediately : timespec timeout of zero
     if (timeout >= 0) {
+        // For some indeterminate reason kevent(2) has been found to fail with
+        // an EINVAL error for timeout values greater than or equal to
+        // 100000001000L. To avoid this problem, clamp the timeout arbitrarily
+        // to the maximum value of a 32-bit signed integer which is
+        // approximately 25 days in milliseconds.
+        const jlong timeoutMax = 0x7fffffff; // java.lang.Integer.MAX_VALUE
+        if (timeout > timeoutMax) {
+            timeout = timeoutMax;
+        }
         ts.tv_sec = timeout / 1000;
         ts.tv_nsec = (timeout % 1000) * 1000000; //nanosec = 1 million millisec
         tsp = &ts;

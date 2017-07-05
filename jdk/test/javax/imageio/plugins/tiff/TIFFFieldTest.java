@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     8152183
+ * @bug     8152183 8149562
  * @author  a.stepanov
  * @summary Some checks for TIFFField methods
  * @run     main TIFFFieldTest
@@ -455,8 +455,17 @@ public class TIFFFieldTest {
         TIFFTagSet ts = new TIFFTagSet(tags);
 
         boolean ok = false;
-        try { TIFFField.createFromMetadataNode(ts, null); }
-        catch (NullPointerException e) { ok = true; }
+        try {
+            TIFFField.createFromMetadataNode(ts, null);
+        } catch (IllegalArgumentException e) {
+            // createFromMetadataNode() formerly threw a NullPointerException
+            // if its Node parameter was null, but the specification has been
+            // modified to allow only IllegalArgumentExceptions, perhaps with
+            // a cause set. In the present invocation the cause would be set
+            // to a NullPointerException but this is not explicitly specified
+            // hence not verified here.
+            ok = true;
+        }
         check(ok, "can create TIFFField from a null node");
 
         TIFFField f = new TIFFField(tag, v);

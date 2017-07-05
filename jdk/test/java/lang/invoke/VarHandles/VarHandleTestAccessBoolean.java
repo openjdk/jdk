@@ -103,14 +103,27 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_PLAIN));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET_RELEASE));
 
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.ADD_AND_GET));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_ACQUIRE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_ADD_RELEASE));
+
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_OR_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_AND_RELEASE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_ACQUIRE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
 
@@ -266,8 +279,13 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            boolean o = (boolean) vh.addAndGet(recv, true);
+            boolean o = (boolean) vh.getAndAddAcquire(recv, true);
         });
+
+        checkUOE(() -> {
+            boolean o = (boolean) vh.getAndAddRelease(recv, true);
+        });
+
     }
 
 
@@ -321,8 +339,13 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            boolean o = (boolean) vh.addAndGet(true);
+            boolean o = (boolean) vh.getAndAddAcquire(true);
         });
+
+        checkUOE(() -> {
+            boolean o = (boolean) vh.getAndAddRelease(true);
+        });
+
     }
 
 
@@ -418,11 +441,11 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(recv, true, false);
+                success = vh.weakCompareAndSetPlain(recv, true, false);
             }
-            assertEquals(success, true, "weakCompareAndSet boolean");
+            assertEquals(success, true, "weakCompareAndSetPlain boolean");
             boolean x = (boolean) vh.get(recv);
-            assertEquals(x, false, "weakCompareAndSet boolean value");
+            assertEquals(x, false, "weakCompareAndSetPlain boolean value");
         }
 
         {
@@ -448,21 +471,125 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetVolatile(recv, false, true);
+                success = vh.weakCompareAndSet(recv, false, true);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile boolean");
+            assertEquals(success, true, "weakCompareAndSet boolean");
             boolean x = (boolean) vh.get(recv);
-            assertEquals(x, true, "weakCompareAndSetVolatile boolean value");
+            assertEquals(x, true, "weakCompareAndSet boolean value");
         }
 
         // Compare set and get
         {
+            vh.set(recv, true);
+
             boolean o = (boolean) vh.getAndSet(recv, false);
             assertEquals(o, true, "getAndSet boolean");
             boolean x = (boolean) vh.get(recv);
             assertEquals(x, false, "getAndSet boolean value");
         }
 
+        {
+            vh.set(recv, true);
+
+            boolean o = (boolean) vh.getAndSetAcquire(recv, false);
+            assertEquals(o, true, "getAndSetAcquire boolean");
+            boolean x = (boolean) vh.get(recv);
+            assertEquals(x, false, "getAndSetAcquire boolean value");
+        }
+
+        {
+            vh.set(recv, true);
+
+            boolean o = (boolean) vh.getAndSetRelease(recv, false);
+            assertEquals(o, true, "getAndSetRelease boolean");
+            boolean x = (boolean) vh.get(recv);
+            assertEquals(x, false, "getAndSetRelease boolean value");
+        }
+
+
+        // get and bitwise or
+        {
+            vh.set(recv, true);
+
+            boolean o = (boolean) vh.getAndBitwiseOr(recv, false);
+            assertEquals(o, true, "getAndBitwiseOr boolean");
+            boolean x = (boolean) vh.get(recv);
+            assertEquals(x, (boolean)(true | false), "getAndBitwiseOr boolean value");
+        }
+
+        {
+            vh.set(recv, true);
+
+            boolean o = (boolean) vh.getAndBitwiseOrAcquire(recv, false);
+            assertEquals(o, true, "getAndBitwiseOrAcquire boolean");
+            boolean x = (boolean) vh.get(recv);
+            assertEquals(x, (boolean)(true | false), "getAndBitwiseOrAcquire boolean value");
+        }
+
+        {
+            vh.set(recv, true);
+
+            boolean o = (boolean) vh.getAndBitwiseOrRelease(recv, false);
+            assertEquals(o, true, "getAndBitwiseOrRelease boolean");
+            boolean x = (boolean) vh.get(recv);
+            assertEquals(x, (boolean)(true | false), "getAndBitwiseOrRelease boolean value");
+        }
+
+        // get and bitwise and
+        {
+            vh.set(recv, true);
+
+            boolean o = (boolean) vh.getAndBitwiseAnd(recv, false);
+            assertEquals(o, true, "getAndBitwiseAnd boolean");
+            boolean x = (boolean) vh.get(recv);
+            assertEquals(x, (boolean)(true & false), "getAndBitwiseAnd boolean value");
+        }
+
+        {
+            vh.set(recv, true);
+
+            boolean o = (boolean) vh.getAndBitwiseAndAcquire(recv, false);
+            assertEquals(o, true, "getAndBitwiseAndAcquire boolean");
+            boolean x = (boolean) vh.get(recv);
+            assertEquals(x, (boolean)(true & false), "getAndBitwiseAndAcquire boolean value");
+        }
+
+        {
+            vh.set(recv, true);
+
+            boolean o = (boolean) vh.getAndBitwiseAndRelease(recv, false);
+            assertEquals(o, true, "getAndBitwiseAndRelease boolean");
+            boolean x = (boolean) vh.get(recv);
+            assertEquals(x, (boolean)(true & false), "getAndBitwiseAndRelease boolean value");
+        }
+
+        // get and bitwise xor
+        {
+            vh.set(recv, true);
+
+            boolean o = (boolean) vh.getAndBitwiseXor(recv, false);
+            assertEquals(o, true, "getAndBitwiseXor boolean");
+            boolean x = (boolean) vh.get(recv);
+            assertEquals(x, (boolean)(true ^ false), "getAndBitwiseXor boolean value");
+        }
+
+        {
+            vh.set(recv, true);
+
+            boolean o = (boolean) vh.getAndBitwiseXorAcquire(recv, false);
+            assertEquals(o, true, "getAndBitwiseXorAcquire boolean");
+            boolean x = (boolean) vh.get(recv);
+            assertEquals(x, (boolean)(true ^ false), "getAndBitwiseXorAcquire boolean value");
+        }
+
+        {
+            vh.set(recv, true);
+
+            boolean o = (boolean) vh.getAndBitwiseXorRelease(recv, false);
+            assertEquals(o, true, "getAndBitwiseXorRelease boolean");
+            boolean x = (boolean) vh.get(recv);
+            assertEquals(x, (boolean)(true ^ false), "getAndBitwiseXorRelease boolean value");
+        }
     }
 
     static void testInstanceFieldUnsupported(VarHandleTestAccessBoolean recv, VarHandle vh) {
@@ -472,8 +599,13 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            boolean o = (boolean) vh.addAndGet(recv, true);
+            boolean o = (boolean) vh.getAndAddAcquire(recv, true);
         });
+
+        checkUOE(() -> {
+            boolean o = (boolean) vh.getAndAddRelease(recv, true);
+        });
+
     }
 
 
@@ -569,11 +701,11 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(true, false);
+                success = vh.weakCompareAndSetPlain(true, false);
             }
-            assertEquals(success, true, "weakCompareAndSet boolean");
+            assertEquals(success, true, "weakCompareAndSetPlain boolean");
             boolean x = (boolean) vh.get();
-            assertEquals(x, false, "weakCompareAndSet boolean value");
+            assertEquals(x, false, "weakCompareAndSetPlain boolean value");
         }
 
         {
@@ -599,21 +731,125 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetRelease(false, true);
+                success = vh.weakCompareAndSet(false, true);
             }
-            assertEquals(success, true, "weakCompareAndSetVolatile boolean");
+            assertEquals(success, true, "weakCompareAndSet boolean");
             boolean x = (boolean) vh.get();
-            assertEquals(x, true, "weakCompareAndSetVolatile boolean");
+            assertEquals(x, true, "weakCompareAndSet boolean");
         }
 
         // Compare set and get
         {
+            vh.set(true);
+
             boolean o = (boolean) vh.getAndSet(false);
             assertEquals(o, true, "getAndSet boolean");
             boolean x = (boolean) vh.get();
             assertEquals(x, false, "getAndSet boolean value");
         }
 
+        {
+            vh.set(true);
+
+            boolean o = (boolean) vh.getAndSetAcquire(false);
+            assertEquals(o, true, "getAndSetAcquire boolean");
+            boolean x = (boolean) vh.get();
+            assertEquals(x, false, "getAndSetAcquire boolean value");
+        }
+
+        {
+            vh.set(true);
+
+            boolean o = (boolean) vh.getAndSetRelease(false);
+            assertEquals(o, true, "getAndSetRelease boolean");
+            boolean x = (boolean) vh.get();
+            assertEquals(x, false, "getAndSetRelease boolean value");
+        }
+
+
+        // get and bitwise or
+        {
+            vh.set(true);
+
+            boolean o = (boolean) vh.getAndBitwiseOr(false);
+            assertEquals(o, true, "getAndBitwiseOr boolean");
+            boolean x = (boolean) vh.get();
+            assertEquals(x, (boolean)(true | false), "getAndBitwiseOr boolean value");
+        }
+
+        {
+            vh.set(true);
+
+            boolean o = (boolean) vh.getAndBitwiseOrAcquire(false);
+            assertEquals(o, true, "getAndBitwiseOrAcquire boolean");
+            boolean x = (boolean) vh.get();
+            assertEquals(x, (boolean)(true | false), "getAndBitwiseOrAcquire boolean value");
+        }
+
+        {
+            vh.set(true);
+
+            boolean o = (boolean) vh.getAndBitwiseOrRelease(false);
+            assertEquals(o, true, "getAndBitwiseOrRelease boolean");
+            boolean x = (boolean) vh.get();
+            assertEquals(x, (boolean)(true | false), "getAndBitwiseOrRelease boolean value");
+        }
+
+        // get and bitwise and
+        {
+            vh.set(true);
+
+            boolean o = (boolean) vh.getAndBitwiseAnd(false);
+            assertEquals(o, true, "getAndBitwiseAnd boolean");
+            boolean x = (boolean) vh.get();
+            assertEquals(x, (boolean)(true & false), "getAndBitwiseAnd boolean value");
+        }
+
+        {
+            vh.set(true);
+
+            boolean o = (boolean) vh.getAndBitwiseAndAcquire(false);
+            assertEquals(o, true, "getAndBitwiseAndAcquire boolean");
+            boolean x = (boolean) vh.get();
+            assertEquals(x, (boolean)(true & false), "getAndBitwiseAndAcquire boolean value");
+        }
+
+        {
+            vh.set(true);
+
+            boolean o = (boolean) vh.getAndBitwiseAndRelease(false);
+            assertEquals(o, true, "getAndBitwiseAndRelease boolean");
+            boolean x = (boolean) vh.get();
+            assertEquals(x, (boolean)(true & false), "getAndBitwiseAndRelease boolean value");
+        }
+
+        // get and bitwise xor
+        {
+            vh.set(true);
+
+            boolean o = (boolean) vh.getAndBitwiseXor(false);
+            assertEquals(o, true, "getAndBitwiseXor boolean");
+            boolean x = (boolean) vh.get();
+            assertEquals(x, (boolean)(true ^ false), "getAndBitwiseXor boolean value");
+        }
+
+        {
+            vh.set(true);
+
+            boolean o = (boolean) vh.getAndBitwiseXorAcquire(false);
+            assertEquals(o, true, "getAndBitwiseXorAcquire boolean");
+            boolean x = (boolean) vh.get();
+            assertEquals(x, (boolean)(true ^ false), "getAndBitwiseXorAcquire boolean value");
+        }
+
+        {
+            vh.set(true);
+
+            boolean o = (boolean) vh.getAndBitwiseXorRelease(false);
+            assertEquals(o, true, "getAndBitwiseXorRelease boolean");
+            boolean x = (boolean) vh.get();
+            assertEquals(x, (boolean)(true ^ false), "getAndBitwiseXorRelease boolean value");
+        }
     }
 
     static void testStaticFieldUnsupported(VarHandle vh) {
@@ -623,8 +859,13 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            boolean o = (boolean) vh.addAndGet(true);
+            boolean o = (boolean) vh.getAndAddAcquire(true);
         });
+
+        checkUOE(() -> {
+            boolean o = (boolean) vh.getAndAddRelease(true);
+        });
+
     }
 
 
@@ -723,11 +964,11 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSet(array, i, true, false);
+                    success = vh.weakCompareAndSetPlain(array, i, true, false);
                 }
-                assertEquals(success, true, "weakCompareAndSet boolean");
+                assertEquals(success, true, "weakCompareAndSetPlain boolean");
                 boolean x = (boolean) vh.get(array, i);
-                assertEquals(x, false, "weakCompareAndSet boolean value");
+                assertEquals(x, false, "weakCompareAndSetPlain boolean value");
             }
 
             {
@@ -753,21 +994,125 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSetVolatile(array, i, false, true);
+                    success = vh.weakCompareAndSet(array, i, false, true);
                 }
-                assertEquals(success, true, "weakCompareAndSetVolatile boolean");
+                assertEquals(success, true, "weakCompareAndSet boolean");
                 boolean x = (boolean) vh.get(array, i);
-                assertEquals(x, true, "weakCompareAndSetVolatile boolean");
+                assertEquals(x, true, "weakCompareAndSet boolean");
             }
 
             // Compare set and get
             {
+                vh.set(array, i, true);
+
                 boolean o = (boolean) vh.getAndSet(array, i, false);
                 assertEquals(o, true, "getAndSet boolean");
                 boolean x = (boolean) vh.get(array, i);
                 assertEquals(x, false, "getAndSet boolean value");
             }
 
+            {
+                vh.set(array, i, true);
+
+                boolean o = (boolean) vh.getAndSetAcquire(array, i, false);
+                assertEquals(o, true, "getAndSetAcquire boolean");
+                boolean x = (boolean) vh.get(array, i);
+                assertEquals(x, false, "getAndSetAcquire boolean value");
+            }
+
+            {
+                vh.set(array, i, true);
+
+                boolean o = (boolean) vh.getAndSetRelease(array, i, false);
+                assertEquals(o, true, "getAndSetRelease boolean");
+                boolean x = (boolean) vh.get(array, i);
+                assertEquals(x, false, "getAndSetRelease boolean value");
+            }
+
+
+            // get and bitwise or
+            {
+                vh.set(array, i, true);
+
+                boolean o = (boolean) vh.getAndBitwiseOr(array, i, false);
+                assertEquals(o, true, "getAndBitwiseOr boolean");
+                boolean x = (boolean) vh.get(array, i);
+                assertEquals(x, (boolean)(true | false), "getAndBitwiseOr boolean value");
+            }
+
+            {
+                vh.set(array, i, true);
+
+                boolean o = (boolean) vh.getAndBitwiseOrAcquire(array, i, false);
+                assertEquals(o, true, "getAndBitwiseOrAcquire boolean");
+                boolean x = (boolean) vh.get(array, i);
+                assertEquals(x, (boolean)(true | false), "getAndBitwiseOrAcquire boolean value");
+            }
+
+            {
+                vh.set(array, i, true);
+
+                boolean o = (boolean) vh.getAndBitwiseOrRelease(array, i, false);
+                assertEquals(o, true, "getAndBitwiseOrRelease boolean");
+                boolean x = (boolean) vh.get(array, i);
+                assertEquals(x, (boolean)(true | false), "getAndBitwiseOrRelease boolean value");
+            }
+
+            // get and bitwise and
+            {
+                vh.set(array, i, true);
+
+                boolean o = (boolean) vh.getAndBitwiseAnd(array, i, false);
+                assertEquals(o, true, "getAndBitwiseAnd boolean");
+                boolean x = (boolean) vh.get(array, i);
+                assertEquals(x, (boolean)(true & false), "getAndBitwiseAnd boolean value");
+            }
+
+            {
+                vh.set(array, i, true);
+
+                boolean o = (boolean) vh.getAndBitwiseAndAcquire(array, i, false);
+                assertEquals(o, true, "getAndBitwiseAndAcquire boolean");
+                boolean x = (boolean) vh.get(array, i);
+                assertEquals(x, (boolean)(true & false), "getAndBitwiseAndAcquire boolean value");
+            }
+
+            {
+                vh.set(array, i, true);
+
+                boolean o = (boolean) vh.getAndBitwiseAndRelease(array, i, false);
+                assertEquals(o, true, "getAndBitwiseAndRelease boolean");
+                boolean x = (boolean) vh.get(array, i);
+                assertEquals(x, (boolean)(true & false), "getAndBitwiseAndRelease boolean value");
+            }
+
+            // get and bitwise xor
+            {
+                vh.set(array, i, true);
+
+                boolean o = (boolean) vh.getAndBitwiseXor(array, i, false);
+                assertEquals(o, true, "getAndBitwiseXor boolean");
+                boolean x = (boolean) vh.get(array, i);
+                assertEquals(x, (boolean)(true ^ false), "getAndBitwiseXor boolean value");
+            }
+
+            {
+                vh.set(array, i, true);
+
+                boolean o = (boolean) vh.getAndBitwiseXorAcquire(array, i, false);
+                assertEquals(o, true, "getAndBitwiseXorAcquire boolean");
+                boolean x = (boolean) vh.get(array, i);
+                assertEquals(x, (boolean)(true ^ false), "getAndBitwiseXorAcquire boolean value");
+            }
+
+            {
+                vh.set(array, i, true);
+
+                boolean o = (boolean) vh.getAndBitwiseXorRelease(array, i, false);
+                assertEquals(o, true, "getAndBitwiseXorRelease boolean");
+                boolean x = (boolean) vh.get(array, i);
+                assertEquals(x, (boolean)(true ^ false), "getAndBitwiseXorRelease boolean value");
+            }
         }
     }
 
@@ -781,8 +1126,13 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            boolean o = (boolean) vh.addAndGet(array, i, true);
+            boolean o = (boolean) vh.getAndAddAcquire(array, i, true);
         });
+
+        checkUOE(() -> {
+            boolean o = (boolean) vh.getAndAddRelease(array, i, true);
+        });
+
     }
 
     static void testArrayIndexOutOfBounds(VarHandle vh) throws Throwable {
@@ -840,11 +1190,11 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, true, false);
+                boolean r = vh.weakCompareAndSetPlain(array, ci, true, false);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, true, false);
+                boolean r = vh.weakCompareAndSet(array, ci, true, false);
             });
 
             checkIOOBE(() -> {
@@ -859,6 +1209,50 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
                 boolean o = (boolean) vh.getAndSet(array, ci, true);
             });
 
+            checkIOOBE(() -> {
+                boolean o = (boolean) vh.getAndSetAcquire(array, ci, true);
+            });
+
+            checkIOOBE(() -> {
+                boolean o = (boolean) vh.getAndSetRelease(array, ci, true);
+            });
+
+
+            checkIOOBE(() -> {
+                boolean o = (boolean) vh.getAndBitwiseOr(array, ci, true);
+            });
+
+            checkIOOBE(() -> {
+                boolean o = (boolean) vh.getAndBitwiseOrAcquire(array, ci, true);
+            });
+
+            checkIOOBE(() -> {
+                boolean o = (boolean) vh.getAndBitwiseOrRelease(array, ci, true);
+            });
+
+            checkIOOBE(() -> {
+                boolean o = (boolean) vh.getAndBitwiseAnd(array, ci, true);
+            });
+
+            checkIOOBE(() -> {
+                boolean o = (boolean) vh.getAndBitwiseAndAcquire(array, ci, true);
+            });
+
+            checkIOOBE(() -> {
+                boolean o = (boolean) vh.getAndBitwiseAndRelease(array, ci, true);
+            });
+
+            checkIOOBE(() -> {
+                boolean o = (boolean) vh.getAndBitwiseXor(array, ci, true);
+            });
+
+            checkIOOBE(() -> {
+                boolean o = (boolean) vh.getAndBitwiseXorAcquire(array, ci, true);
+            });
+
+            checkIOOBE(() -> {
+                boolean o = (boolean) vh.getAndBitwiseXorRelease(array, ci, true);
+            });
         }
     }
 }

@@ -342,7 +342,7 @@ methodHandle JVMCIEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
   Symbol* sig_sym  = cpool->signature_ref_at(index);
 
   if (cpool->has_preresolution()
-      || (holder() == SystemDictionary::MethodHandle_klass() &&
+      || ((holder() == SystemDictionary::MethodHandle_klass() || holder() == SystemDictionary::VarHandle_klass()) &&
           MethodHandles::is_signature_polymorphic_name(holder(), name_sym))) {
     // Short-circuit lookups for JSR 292-related call sites.
     // That is, do not rely only on name-based lookups, because they may fail

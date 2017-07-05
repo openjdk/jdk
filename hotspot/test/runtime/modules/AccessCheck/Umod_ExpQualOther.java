@@ -28,11 +28,10 @@
  * @summary Test that if package p2 in module m2 is exported to module m3,
  *          then class p1.c1 in an unnamed module can not read p2.c2 in module m2.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile myloaders/MySameClassLoader.java
  * @compile p2/c2.java
  * @compile p1/c1.java
- * @build Umod_ExpQualOther
  * @run main/othervm -Xbootclasspath/a:. Umod_ExpQualOther
  */
 

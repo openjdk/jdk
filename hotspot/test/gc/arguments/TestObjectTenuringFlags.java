@@ -28,14 +28,14 @@
  * @requires vm.gc.Parallel
  * @summary Tests argument processing for NeverTenure, AlwaysTenure,
  * and MaxTenuringThreshold
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestObjectTenuringFlags FlagsValue
  * @run main/othervm TestObjectTenuringFlags
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.util.*;
 

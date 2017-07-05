@@ -25,7 +25,6 @@
  * @test
  * @run main/othervm Zombies
  * @bug 6474073 6180151
- * @key intermittent
  * @summary Make sure zombies don't get created on Unix
  * @author Martin Buchholz
  */

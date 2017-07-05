@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
          output contain or doesn't contain expected patterns
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @library /testlibrary
+ * @library /test/lib
  * @run driver TestVerifyBeforeAndAfterGCFlags
  */
 
@@ -38,17 +38,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import jdk.test.lib.Utils;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestVerifyBeforeAndAfterGCFlags {
 
-    // VerifyBeforeGC:[Verifying threads heap tenured eden syms strs zone dict metaspace chunks hand C-heap code cache ]
+    // VerifyBeforeGC:[Verifying threads heap tenured eden syms strs zone dict metaspace chunks hand code cache ]
     public static final String VERIFY_BEFORE_GC_PATTERN = "Verifying Before GC";
     // VerifyBeforeGC: VerifyBeforeGC: VerifyBeforeGC:
     public static final String VERIFY_BEFORE_GC_CORRUPTED_PATTERN = "VerifyBeforeGC:(?!\\[Verifying[^]]+\\])";
 
-    // VerifyAfterGC:[Verifying threads heap tenured eden syms strs zone dict metaspace chunks hand C-heap code cache ]
+    // VerifyAfterGC:[Verifying threads heap tenured eden syms strs zone dict metaspace chunks hand code cache ]
     public static final String VERIFY_AFTER_GC_PATTERN = "Verifying After GC";
     // VerifyAfterGC: VerifyAfterGC: VerifyAfterGC:
     public static final String VERIFY_AFTER_GC_CORRUPTED_PATTERN = "VerifyAfterGC:(?!\\[Verifying[^]]+\\])";

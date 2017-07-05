@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main PatchModuleCDS
  */
 
 import java.io.File;
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class PatchModuleCDS {
 

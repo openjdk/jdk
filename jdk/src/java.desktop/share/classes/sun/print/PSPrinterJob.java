@@ -33,10 +33,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.HeadlessException;
-import java.awt.Rectangle;
 import java.awt.Shape;
-
-import java.awt.image.BufferedImage;
 
 import java.awt.font.FontRenderContext;
 
@@ -46,7 +43,6 @@ import java.awt.geom.Rectangle2D;
 
 import java.awt.image.BufferedImage;
 
-import java.awt.peer.FontPeer;
 import java.awt.print.Pageable;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
@@ -55,14 +51,12 @@ import java.awt.print.PrinterException;
 import java.awt.print.PrinterIOException;
 import java.awt.print.PrinterJob;
 
-import javax.print.DocFlavor;
 import javax.print.PrintService;
 import javax.print.StreamPrintService;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.attribute.standard.PrinterName;
-import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.DialogTypeSelection;
@@ -72,7 +66,6 @@ import javax.print.attribute.standard.Sides;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.CharConversionException;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -85,17 +78,14 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
 
 import sun.awt.CharsetString;
 import sun.awt.FontConfiguration;
-import sun.awt.FontDescriptor;
 import sun.awt.PlatformFont;
 import sun.awt.SunToolkit;
 import sun.font.FontAccess;
-import sun.font.FontManagerFactory;
 import sun.font.FontUtilities;
 
 import java.nio.charset.*;
@@ -105,7 +95,9 @@ import java.nio.file.Files;
 
 //REMIND: Remove use of this class when IPPPrintService is moved to share directory.
 import java.lang.reflect.Method;
+import javax.print.attribute.Attribute;
 import javax.print.attribute.standard.JobSheets;
+import javax.print.attribute.standard.Media;
 
 /**
  * A class which initiates and executes a PostScript printer job.
@@ -487,6 +479,23 @@ public class PSPrinterJob extends RasterPrinterJob {
         }
 
         return doPrint;
+    }
+
+    @Override
+    protected void setAttributes(PrintRequestAttributeSet attributes)
+                                 throws PrinterException {
+        super.setAttributes(attributes);
+        if (attributes == null) {
+            return; // now always use attributes, so this shouldn't happen.
+        }
+        Attribute attr = attributes.get(Media.class);
+        if (attr instanceof CustomMediaTray) {
+            CustomMediaTray customTray = (CustomMediaTray)attr;
+            String choice = customTray.getChoiceName();
+            if (choice != null) {
+                mOptions = " InputSlot="+ choice;
+            }
+        }
     }
 
     /**
@@ -1629,7 +1638,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                 execCmd[n++] = "-o job-sheets=standard";
             }
             if ((pFlags & OPTIONS) != 0) {
-                execCmd[n++] = new String(options);
+                execCmd[n++] = "-o" + options;
             }
         } else {
             ncomps+=1; //add 1 arg for lp

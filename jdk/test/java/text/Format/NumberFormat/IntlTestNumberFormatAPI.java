@@ -25,6 +25,7 @@
  * @test
  * @library /java/text/testlib
  * @summary test International Number Format API
+ * @modules jdk.localedata
  */
 /*
 (C) Copyright Taligent, Inc. 1996, 1997 - All Rights Reserved

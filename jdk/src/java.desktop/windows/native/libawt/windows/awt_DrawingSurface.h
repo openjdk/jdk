@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +162,16 @@ extern "C" {
     jobject JNICALL DSGetComponent(
         JNIEnv* env, void* platformInfo);
 
+    _JNI_IMPORT_OR_EXPORT_ jobject JNICALL
+        awt_CreateEmbeddedFrame(JNIEnv* env, void* platformInfo);
+
+    _JNI_IMPORT_OR_EXPORT_ void JNICALL
+        awt_SetBounds(JNIEnv *env, jobject embeddedFrame, jint x,
+                      jint y, jint w, jint h);
+
+    _JNI_IMPORT_OR_EXPORT_ void JNICALL
+        awt_SynthesizeWindowActivation(JNIEnv *env, jobject embeddedFrame,
+                                       jboolean doActivate);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
