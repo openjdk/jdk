@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ private:
   uint _time_stamp_index;
 
   GCTaskTimeStamp* time_stamp_at(uint index);
+  void add_task_timestamp(const char* name, jlong t_entry, jlong t_exit);
 
   bool _is_working;                     // True if participating in GC tasks
 
@@ -92,16 +93,16 @@ class GCTaskTimeStamp : public CHeapObj<mtGC>
  private:
   jlong  _entry_time;
   jlong  _exit_time;
-  char*  _name;
+  const char*  _name;
 
  public:
   jlong entry_time()              { return _entry_time; }
   jlong exit_time()               { return _exit_time; }
-  const char* name() const        { return (const char*)_name; }
+  const char* name() const        { return _name; }
 
   void set_entry_time(jlong time) { _entry_time = time; }
   void set_exit_time(jlong time)  { _exit_time = time; }
-  void set_name(char* name)       { _name = name; }
+  void set_name(const char* name) { _name = name; }
 };
 
 #endif // SHARE_VM_GC_PARALLEL_GCTASKTHREAD_HPP
