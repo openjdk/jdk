@@ -752,9 +752,12 @@ public final class Files {
         }
         if (parent == null) {
             // unable to find existing parent
-            if (se != null)
+            if (se == null) {
+                throw new FileSystemException(dir.toString(), null,
+                    "Unable to determine if root directory exists");
+            } else {
                 throw se;
-            throw new IOException("Root directory does not exist");
+            }
         }
 
         // create directories

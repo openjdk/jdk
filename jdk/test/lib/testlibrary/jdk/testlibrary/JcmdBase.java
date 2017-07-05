@@ -26,33 +26,90 @@ package jdk.testlibrary;
 import java.util.Arrays;
 
 /**
- * Super class for tests which need to attach jcmd to the current process.
+ * Helper class for starting jcmd process.
+ * <pre>
+ * - jcmd will send diagnostic requests to the current java process:
+ *      jcmd pid_to_current_process PerfCounter.print
+ * - jcmd will be run without sending request to any JVM
+ *      jcmd -h
+ * </pre>
  */
-public class JcmdBase {
+public final class JcmdBase {
 
     private static ProcessBuilder processBuilder = new ProcessBuilder();
 
+    private JcmdBase() {
+        // Private constructor to prevent class instantiation
+    }
+
     /**
-     * Attach jcmd to the current process
+     * Sends the diagnostic command request to the current process
      *
-     * @param toolArgs
-     *            jcmd command line parameters, e.g. VM.flags
-     * @return jcmd output
+     * @see #jcmd(boolean, String[], String[])
+     */
+    public final static OutputAnalyzer jcmd(String... jcmdArgs)
+            throws Exception {
+        return jcmd(true, null, jcmdArgs);
+    }
+
+    /**
+     * Sends the diagnostic command request to the current process.
+     * jcmd will be run with specified {@code vmArgs}.
+     *
+     * @see #jcmd(boolean, String[], String[])
+     */
+    public final static OutputAnalyzer jcmd(String[] vmArgs,
+            String[] jcmdArgs) throws Exception {
+        return jcmd(true, vmArgs, jcmdArgs);
+    }
+
+    /**
+     * Runs jcmd without sending request to any JVM
+     *
+     * @see #jcmd(boolean, String[], String[])
+     */
+    public final static OutputAnalyzer jcmdNoPid(String[] vmArgs,
+            String[] jcmdArgs) throws Exception {
+        return jcmd(false, vmArgs, jcmdArgs);
+    }
+
+    /**
+     * If {@code requestToCurrentProcess} is {@code true}
+     * sends a diagnostic command request to the current process.
+     * If {@code requestToCurrentProcess} is {@code false}
+     * runs jcmd without sending request to any JVM.
+     *
+     * @param requestToCurrentProcess
+     *            Defines if jcmd will send request to the current process
+     * @param vmArgs
+     *            jcmd will be run with VM arguments specified,
+     *            e.g. -XX:+UsePerfData
+     * @param jcmdArgs
+     *            jcmd will be run with option or command and its arguments
+     *            specified, e.g. VM.flags
+     * @return The output from {@link OutputAnalyzer} object
      * @throws Exception
      */
-    public final static OutputAnalyzer jcmd(String... toolArgs)
-            throws Exception {
+    private static final OutputAnalyzer jcmd(boolean requestToCurrentProcess,
+            String[] vmArgs, String[] jcmdArgs) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jcmd");
-        launcher.addToolArg(Integer.toString(ProcessTools.getProcessId()));
-        for (String toolArg : toolArgs) {
-            launcher.addToolArg(toolArg);
+        if (vmArgs != null) {
+            for (String vmArg : vmArgs) {
+                launcher.addVMArg(vmArg);
+            }
+        }
+        if (requestToCurrentProcess) {
+            launcher.addToolArg(Integer.toString(ProcessTools.getProcessId()));
+        }
+        if (jcmdArgs != null) {
+            for (String toolArg : jcmdArgs) {
+                launcher.addToolArg(toolArg);
+            }
         }
         processBuilder.command(launcher.getCommand());
         System.out.println(Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
         OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
         System.out.println(output.getOutput());
-
-        output.shouldHaveExitValue(0);
 
         return output;
     }

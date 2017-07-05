@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,7 +364,7 @@ public class ObjectHeap {
       }
       catch (AddressException e) {
         // This is okay at the top of these regions
-      }
+          }
       catch (UnknownOopException e) {
         // This is okay at the top of these regions
       }
@@ -373,7 +373,7 @@ public class ObjectHeap {
     visitor.epilogue();
   }
 
-  private void addLiveRegions(List input, List output) {
+  private void addLiveRegions(String name, List input, List output) {
      for (Iterator itr = input.iterator(); itr.hasNext();) {
         MemRegion reg = (MemRegion) itr.next();
         Address top = reg.end();
@@ -386,6 +386,9 @@ public class ObjectHeap {
         }
         output.add(top);
         output.add(bottom);
+        if (DEBUG) {
+          System.err.println("Live region: " + name + ": " + bottom + ", " + top);
+        }
      }
   }
 
@@ -395,7 +398,7 @@ public class ObjectHeap {
      }
 
      public void doSpace(Space s) {
-        addLiveRegions(s.getLiveRegions(), liveRegions);
+        addLiveRegions(s.toString(), s.getLiveRegions(), liveRegions);
      }
      private List liveRegions;
   }
@@ -426,11 +429,11 @@ public class ObjectHeap {
        ParallelScavengeHeap psh = (ParallelScavengeHeap) heap;
        PSYoungGen youngGen = psh.youngGen();
        // Add eden space
-       addLiveRegions(youngGen.edenSpace().getLiveRegions(), liveRegions);
+       addLiveRegions("eden", youngGen.edenSpace().getLiveRegions(), liveRegions);
        // Add from-space but not to-space
-       addLiveRegions(youngGen.fromSpace().getLiveRegions(), liveRegions);
+       addLiveRegions("from", youngGen.fromSpace().getLiveRegions(), liveRegions);
        PSOldGen oldGen = psh.oldGen();
-       addLiveRegions(oldGen.objectSpace().getLiveRegions(), liveRegions);
+       addLiveRegions("old ", oldGen.objectSpace().getLiveRegions(), liveRegions);
     } else if (heap instanceof G1CollectedHeap) {
         G1CollectedHeap g1h = (G1CollectedHeap) heap;
         g1h.heapRegionIterate(lrc);
@@ -451,23 +454,27 @@ public class ObjectHeap {
 
     if (VM.getVM().getUseTLAB()) {
       for (JavaThread thread = VM.getVM().getThreads().first(); thread != null; thread = thread.next()) {
-        if (thread.isJavaThread()) {
-          ThreadLocalAllocBuffer tlab = thread.tlab();
-          if (tlab.start() != null) {
-            if ((tlab.top() == null) || (tlab.end() == null)) {
-              System.err.print("Warning: skipping invalid TLAB for thread ");
+        ThreadLocalAllocBuffer tlab = thread.tlab();
+        if (tlab.start() != null) {
+          if ((tlab.top() == null) || (tlab.end() == null)) {
+            System.err.print("Warning: skipping invalid TLAB for thread ");
+            thread.printThreadIDOn(System.err);
+            System.err.println();
+          } else {
+            if (DEBUG) {
+              System.err.print("TLAB for " + thread.getThreadName() + ", #");
               thread.printThreadIDOn(System.err);
-              System.err.println();
-            } else {
-              // Go from:
-              //  - below start() to start()
-              //  - start() to top()
-              //  - end() and above
-              liveRegions.add(tlab.start());
-              liveRegions.add(tlab.start());
-              liveRegions.add(tlab.top());
-              liveRegions.add(tlab.hardEnd());
+              System.err.print(": ");
+              tlab.printOn(System.err);
             }
+            // Go from:
+            //  - below start() to start()
+            //  - start() to top()
+            //  - end() and above
+            liveRegions.add(tlab.start());
+            liveRegions.add(tlab.start());
+            liveRegions.add(tlab.top());
+            liveRegions.add(tlab.hardEnd());
           }
         }
       }
@@ -478,6 +485,15 @@ public class ObjectHeap {
 
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(liveRegions.size() % 2 == 0, "Must have even number of region boundaries");
+    }
+
+    if (DEBUG) {
+      System.err.println("liveRegions:");
+      for (int i = 0; i < liveRegions.size(); i += 2) {
+          Address bottom = (Address) liveRegions.get(i);
+          Address top    = (Address) liveRegions.get(i+1);
+          System.err.println(" " + bottom + " - " + top);
+      }
     }
 
     return liveRegions;

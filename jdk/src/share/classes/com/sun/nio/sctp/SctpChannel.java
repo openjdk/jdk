@@ -276,6 +276,11 @@ public abstract class SctpChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * @throws  SecurityException
+     *          If a security manager has been installed and its
+     *          {@link SecurityManager#checkListen checkListen} method denies
+     *          the operation
      */
     public abstract SctpChannel bind(SocketAddress local)
         throws IOException;

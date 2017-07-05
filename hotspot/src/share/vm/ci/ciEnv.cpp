@@ -1147,6 +1147,33 @@ ciInstance* ciEnv::unloaded_ciinstance() {
 
 // Don't change thread state and acquire any locks.
 // Safe to call from VM error reporter.
+
+void ciEnv::dump_compile_data(outputStream* out) {
+  CompileTask* task = this->task();
+  Method* method = task->method();
+  int entry_bci = task->osr_bci();
+  int comp_level = task->comp_level();
+  out->print("compile %s %s %s %d %d",
+                method->klass_name()->as_quoted_ascii(),
+                method->name()->as_quoted_ascii(),
+                method->signature()->as_quoted_ascii(),
+                entry_bci, comp_level);
+  if (compiler_data() != NULL) {
+    if (is_c2_compile(comp_level)) { // C2 or Shark
+#ifdef COMPILER2
+      // Dump C2 inlining data.
+      ((Compile*)compiler_data())->dump_inline_data(out);
+#endif
+    } else if (is_c1_compile(comp_level)) { // C1
+#ifdef COMPILER1
+      // Dump C1 inlining data.
+      ((Compilation*)compiler_data())->dump_inline_data(out);
+#endif
+    }
+  }
+  out->cr();
+}
+
 void ciEnv::dump_replay_data_unsafe(outputStream* out) {
   ResourceMark rm;
 #if INCLUDE_JVMTI
@@ -1160,16 +1187,7 @@ void ciEnv::dump_replay_data_unsafe(outputStream* out) {
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }
-  CompileTask* task = this->task();
-  Method* method = task->method();
-  int entry_bci = task->osr_bci();
-  int comp_level = task->comp_level();
-  // Klass holder = method->method_holder();
-  out->print_cr("compile %s %s %s %d %d",
-                method->klass_name()->as_quoted_ascii(),
-                method->name()->as_quoted_ascii(),
-                method->signature()->as_quoted_ascii(),
-                entry_bci, comp_level);
+  dump_compile_data(out);
   out->flush();
 }
 
@@ -1178,4 +1196,46 @@ void ciEnv::dump_replay_data(outputStream* out) {
     MutexLocker ml(Compile_lock);
     dump_replay_data_unsafe(out);
   )
+}
+
+void ciEnv::dump_replay_data(int compile_id) {
+  static char buffer[O_BUFLEN];
+  int ret = jio_snprintf(buffer, O_BUFLEN, "replay_pid%p_compid%d.log", os::current_process_id(), compile_id);
+  if (ret > 0) {
+    int fd = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
+    if (fd != -1) {
+      FILE* replay_data_file = os::open(fd, "w");
+      if (replay_data_file != NULL) {
+        fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
+        dump_replay_data(&replay_data_stream);
+        tty->print("# Compiler replay data is saved as: ");
+        tty->print_cr(buffer);
+      } else {
+        tty->print_cr("# Can't open file to dump replay data.");
+      }
+    }
+  }
+}
+
+void ciEnv::dump_inline_data(int compile_id) {
+  static char buffer[O_BUFLEN];
+  int ret = jio_snprintf(buffer, O_BUFLEN, "inline_pid%p_compid%d.log", os::current_process_id(), compile_id);
+  if (ret > 0) {
+    int fd = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
+    if (fd != -1) {
+      FILE* inline_data_file = os::open(fd, "w");
+      if (inline_data_file != NULL) {
+        fileStream replay_data_stream(inline_data_file, /*need_close=*/true);
+        GUARDED_VM_ENTRY(
+          MutexLocker ml(Compile_lock);
+          dump_compile_data(&replay_data_stream);
+        )
+        replay_data_stream.flush();
+        tty->print("# Compiler inline data is saved as: ");
+        tty->print_cr(buffer);
+      } else {
+        tty->print_cr("# Can't open file to dump inline data.");
+      }
+    }
+  }
 }

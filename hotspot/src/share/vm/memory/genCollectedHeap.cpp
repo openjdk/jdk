@@ -673,10 +673,6 @@ HeapWord** GenCollectedHeap::end_addr() const {
   return _gens[0]->end_addr();
 }
 
-size_t GenCollectedHeap::unsafe_max_alloc() {
-  return _gens[0]->unsafe_max_alloc_nogc();
-}
-
 // public collection interfaces
 
 void GenCollectedHeap::collect(GCCause::Cause cause) {

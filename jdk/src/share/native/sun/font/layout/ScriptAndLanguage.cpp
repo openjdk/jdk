@@ -106,7 +106,8 @@ LEReferenceTo<ScriptTable> ScriptListTable::findScript(const LETableReference &b
         }
     } else {
       LEReferenceToArrayOf<ScriptRecord> scriptRecordArrayRef(base, success, &scriptRecordArray[0], count);
-      scriptTableOffset = OpenTypeUtilities::getTagOffset(scriptTag, scriptRecordArrayRef, success); // TODO
+
+      scriptTableOffset = OpenTypeUtilities::getTagOffset(scriptTag, scriptRecordArrayRef, success);
     }
 
     if (scriptTableOffset != 0) {

@@ -458,7 +458,7 @@ void LEGlyphStorage::setPosition(le_int32 glyphIndex, float x, float y, LEErrorC
       success = LE_INDEX_OUT_OF_BOUNDS_ERROR;
       return;
     }
-
+    _LETRACE("set%-4d\t(%.2f, %.2f)", glyphIndex, x, y);
     fPositions[glyphIndex * 2]     = x;
     fPositions[glyphIndex * 2 + 1] = y;
 }
@@ -688,10 +688,9 @@ le_bool LEGlyphStorage::applyInsertion(le_int32 atPosition, le_int32 count, LEGl
 
     // the source glyph we're pointing at
     // just got replaced by the insertion
-        fSrcIndex -= 1;
+    fSrcIndex -= 1;
 
     return FALSE;
 }
 
 U_NAMESPACE_END
-

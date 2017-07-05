@@ -94,6 +94,9 @@ class AttachListener: AllStatic {
   // dequeue the next operation
   static AttachOperation* dequeue();
 #endif // !INCLUDE_SERVICES
+
+ private:
+  static bool has_init_error(TRAPS);
 };
 
 #if INCLUDE_SERVICES
