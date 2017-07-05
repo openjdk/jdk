@@ -551,7 +551,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       rethrow_exceptions(kit.transfer_exceptions_into_jvms());
     }
 
-    print_method("Before RemoveUseless");
+    print_method("Before RemoveUseless", 3);
 
     // Remove clutter produced by parsing.
     if (!failing()) {
@@ -822,6 +822,7 @@ void Compile::Init(int aliaslevel) {
   Copy::zero_to_bytes(_trap_hist, sizeof(_trap_hist));
   set_decompile_count(0);
 
+  set_do_freq_based_layout(BlockLayoutByFrequency || method_has_option("BlockLayoutByFrequency"));
   // Compilation level related initialization
   if (env()->comp_level() == CompLevel_fast_compile) {
     set_num_loop_opts(Tier1LoopOptsCount);
@@ -1701,8 +1702,14 @@ void Compile::Code_Gen() {
   // are not adding any new instructions.  If any basic block is empty, we
   // can now safely remove it.
   {
-    NOT_PRODUCT( TracePhase t2("removeEmpty", &_t_removeEmptyBlocks, TimeCompiler); )
-    cfg.RemoveEmpty();
+    NOT_PRODUCT( TracePhase t2("blockOrdering", &_t_blockOrdering, TimeCompiler); )
+    cfg.remove_empty();
+    if (do_freq_based_layout()) {
+      PhaseBlockLayout layout(cfg);
+    } else {
+      cfg.set_loop_alignment();
+    }
+    cfg.fixup_flow();
   }
 
   // Perform any platform dependent postallocation verifications.
@@ -1994,6 +2001,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_StorePConditional:
   case Op_StoreI:
   case Op_StoreL:
+  case Op_StoreIConditional:
   case Op_StoreLConditional:
   case Op_CompareAndSwapI:
   case Op_CompareAndSwapL:

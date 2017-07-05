@@ -906,7 +906,7 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 
   // load next super to check
   if (UseCompressedOops) {
-    ld( Rtmp2, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Rtmp3);
+    lduw( Rtmp2, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Rtmp3);
     // Bump array pointer forward one oop
     add( Rtmp2, 4, Rtmp2 );
   } else {

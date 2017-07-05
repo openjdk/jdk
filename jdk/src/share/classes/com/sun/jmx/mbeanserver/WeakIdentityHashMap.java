@@ -118,9 +118,9 @@ class WeakIdentityHashMap<K, V> {
         public boolean equals(Object o) {
             if (this == o)
                 return true;
-            if (!(o instanceof IdentityWeakReference))
+            if (!(o instanceof IdentityWeakReference<?>))
                 return false;
-            IdentityWeakReference wr = (IdentityWeakReference) o;
+            IdentityWeakReference<?> wr = (IdentityWeakReference<?>) o;
             Object got = get();
             return (got != null && got == wr.get());
         }

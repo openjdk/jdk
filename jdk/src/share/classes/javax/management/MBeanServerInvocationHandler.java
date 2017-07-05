@@ -253,12 +253,12 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
                                          boolean notificationBroadcaster) {
         final InvocationHandler handler =
             new MBeanServerInvocationHandler(connection, objectName);
-        final Class[] interfaces;
+        final Class<?>[] interfaces;
         if (notificationBroadcaster) {
             interfaces =
-                new Class[] {interfaceClass, NotificationEmitter.class};
+                new Class<?>[] {interfaceClass, NotificationEmitter.class};
         } else
-            interfaces = new Class[] {interfaceClass};
+            interfaces = new Class<?>[] {interfaceClass};
 
         Object proxy =
             Proxy.newProxyInstance(interfaceClass.getClassLoader(),
@@ -269,7 +269,7 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
 
     public Object invoke(Object proxy, Method method, Object[] args)
             throws Throwable {
-        final Class methodClass = method.getDeclaringClass();
+        final Class<?> methodClass = method.getDeclaringClass();
 
         if (methodClass.equals(NotificationBroadcaster.class)
             || methodClass.equals(NotificationEmitter.class))
@@ -285,8 +285,8 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
                 return p.invoke(connection, objectName, method, args);
             } else {
                 final String methodName = method.getName();
-                final Class[] paramTypes = method.getParameterTypes();
-                final Class returnType = method.getReturnType();
+                final Class<?>[] paramTypes = method.getParameterTypes();
+                final Class<?> returnType = method.getReturnType();
 
                 /* Inexplicably, InvocationHandler specifies that args is null
                    when the method takes no arguments rather than a
@@ -361,7 +361,13 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
                 if (p != null)
                     return p;
             }
-            p = new MXBeanProxy(mxbeanInterface, mappingFactory);
+            try {
+                p = new MXBeanProxy(mxbeanInterface, mappingFactory);
+            } catch (IllegalArgumentException e) {
+                String msg = "Cannot make MXBean proxy for " +
+                        mxbeanInterface.getName() + ": " + e.getMessage();
+                throw new IllegalArgumentException(msg, e.getCause());
+            }
             classToProxy.put(mxbeanInterface, new WeakReference<MXBeanProxy>(p));
             return p;
         }
@@ -452,7 +458,7 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
             return true;
         if (methodName.equals("equals")
             && Arrays.equals(method.getParameterTypes(),
-                             new Class[] {Object.class})
+                             new Class<?>[] {Object.class})
             && isLocal(proxy, method))
             return true;
         return false;

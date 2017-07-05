@@ -26,7 +26,7 @@ package com.sun.hotspot.igv.hierarchicallayout;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -37,13 +37,13 @@ import java.util.Queue;
  */
 public class Graph<N, E> {
 
-    private Hashtable<Object, Node<N, E>> nodes;
-    private Hashtable<Object, Edge<N, E>> edges;
+    private HashMap<Object, Node<N, E>> nodes;
+    private HashMap<Object, Edge<N, E>> edges;
     private List<Node<N, E>> nodeList;
 
     public Graph() {
-        nodes = new Hashtable<Object, Node<N, E>>();
-        edges = new Hashtable<Object, Edge<N, E>>();
+        nodes = new HashMap<Object, Node<N, E>>();
+        edges = new HashMap<Object, Edge<N, E>>();
         nodeList = new ArrayList<Node<N, E>>();
     }
 

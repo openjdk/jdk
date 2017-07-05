@@ -30,6 +30,7 @@ package javax.management.openmbean;
 // java import
 //
 import com.sun.jmx.mbeanserver.GetPropertyAction;
+import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -611,7 +612,7 @@ public class TabularDataSupport
     @SuppressWarnings("unchecked")  // historical confusion about the return type
     public Collection<Object> values() {
 
-        return (Collection) dataMap.values() ;
+        return Util.cast(dataMap.values());
     }
 
 
@@ -647,7 +648,7 @@ public class TabularDataSupport
     @SuppressWarnings("unchecked")  // historical confusion about the return type
     public Set<Map.Entry<Object,Object>> entrySet() {
 
-        return (Set) dataMap.entrySet();
+        return Util.cast(dataMap.entrySet());
     }
 
 
@@ -725,8 +726,7 @@ public class TabularDataSupport
         if (this.size() != other.size()) {
             return false;
         }
-        for (Iterator iter = this.values().iterator(); iter.hasNext();  ) {
-            CompositeData value = (CompositeData) iter.next();
+        for (CompositeData value : dataMap.values()) {
             if ( ! other.containsValue(value) ) {
                 return false;
             }
@@ -760,9 +760,8 @@ public class TabularDataSupport
         int result = 0;
 
         result += this.tabularType.hashCode();
-        for (Iterator iter = this.values().iterator(); iter.hasNext();  ) {
-            result += ((CompositeData)iter.next()).hashCode();
-        }
+        for (Object value : values())
+            result += value.hashCode();
 
         return result;
 

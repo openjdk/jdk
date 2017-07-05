@@ -67,7 +67,7 @@ public class Printer {
 
     private void export(XMLWriter writer, Group g) throws IOException {
         Properties attributes = new Properties();
-        attributes.add(new Property("difference", Boolean.toString(true)));
+        attributes.setProperty("difference", Boolean.toString(true));
         writer.startTag(Parser.GROUP_ELEMENT, attributes);
         writer.writeProperties(g.getProperties());
 

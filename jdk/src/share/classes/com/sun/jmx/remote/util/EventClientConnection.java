@@ -138,8 +138,8 @@ public class EventClientConnection implements InvocationHandler,
             Class<T> interfaceClass, Callable<EventClient> eventClientFactory) {
         final InvocationHandler handler =
                 new EventClientConnection(connection,eventClientFactory);
-        final Class[] interfaces =
-                new Class[] {interfaceClass, EventClientFactory.class};
+        final Class<?>[] interfaces =
+                new Class<?>[] {interfaceClass, EventClientFactory.class};
 
         Object proxy =
                 Proxy.newProxyInstance(interfaceClass.getClassLoader(),
@@ -156,7 +156,7 @@ public class EventClientConnection implements InvocationHandler,
         // add/remove notification listener are routed to the EventClient
         if (methodName.equals("addNotificationListener")
             || methodName.equals("removeNotificationListener")) {
-            final Class[] sig = method.getParameterTypes();
+            final Class<?>[] sig = method.getParameterTypes();
             if (sig.length>1 &&
                     NotificationListener.class.isAssignableFrom(sig[1])) {
                 return invokeBroadcasterMethod(proxy,method,args);
@@ -164,7 +164,7 @@ public class EventClientConnection implements InvocationHandler,
         }
 
         // subscribe/unsubscribe are also routed to the EventClient.
-        final Class clazz = method.getDeclaringClass();
+        final Class<?> clazz = method.getDeclaringClass();
         if (clazz.equals(EventClientFactory.class)) {
             return invokeEventClientSubscriberMethod(proxy,method,args);
         }
@@ -319,7 +319,7 @@ public class EventClientConnection implements InvocationHandler,
             return true;
         if (methodName.equals("equals")
             && Arrays.equals(method.getParameterTypes(),
-                new Class[] {Object.class})
+                new Class<?>[] {Object.class})
                 && isLocal(proxy, method))
             return true;
         return false;
