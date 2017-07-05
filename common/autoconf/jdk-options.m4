@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
       ], [ENABLE_DEBUG="no"])
 
   AC_ARG_WITH([debug-level], [AS_HELP_STRING([--with-debug-level],
-      [set the debug level (release, fastdebug, slowdebug, optimized (HotSpot build only)) @<:@release@:>@])],
+      [set the debug level (release, fastdebug, slowdebug, optimized) @<:@release@:>@])],
       [
         DEBUG_LEVEL="${withval}"
         if test "x$ENABLE_DEBUG" = xyes; then
@@ -79,7 +79,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
       test "x$DEBUG_LEVEL" != xoptimized && \
       test "x$DEBUG_LEVEL" != xfastdebug && \
       test "x$DEBUG_LEVEL" != xslowdebug; then
-    AC_MSG_ERROR([Allowed debug levels are: release, fastdebug and slowdebug])
+    AC_MSG_ERROR([Allowed debug levels are: release, fastdebug, slowdebug and optimized])
   fi
 ])
 
@@ -176,6 +176,22 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
   AC_SUBST(UNLIMITED_CRYPTO)
 
+  # Should we build the serviceability agent (SA)?
+  INCLUDE_SA=true
+  if test "x$JVM_VARIANT_ZERO" = xtrue ; then
+    INCLUDE_SA=false
+  fi
+  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+    INCLUDE_SA=false
+  fi
+  if test "x$OPENJDK_TARGET_OS" = xaix ; then
+    INCLUDE_SA=false
+  fi
+  if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+    INCLUDE_SA=false
+  fi
+  AC_SUBST(INCLUDE_SA)
+
   # Compress jars
   COMPRESS_JARS=false
 
@@ -222,7 +238,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   AC_MSG_CHECKING([what type of native debug symbols to use])
   AC_ARG_WITH([native-debug-symbols],
       [AS_HELP_STRING([--with-native-debug-symbols],
-      [set the native debug symbol configuration (none, internal, external, zipped) @<:@zipped@:>@])],
+      [set the native debug symbol configuration (none, internal, external, zipped) @<:@varying@:>@])],
       [
         if test "x$OPENJDK_TARGET_OS" = xaix; then
           if test "x$withval" = xexternal || test "x$withval" = xzipped; then
@@ -235,7 +251,11 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
           # AIX doesn't support 'zipped' so use 'internal' as default
           with_native_debug_symbols="internal"
         else
-          with_native_debug_symbols="zipped"
+          if test "x$STATIC_BUILD" = xtrue; then
+            with_native_debug_symbols="none"
+          else
+            with_native_debug_symbols="zipped"
+          fi
         fi
       ])
   NATIVE_DEBUG_SYMBOLS=$with_native_debug_symbols
@@ -258,7 +278,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
     # Hotspot legacy support, not relevant with COPY_DEBUG_SYMBOLS=true
     DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
-    
+
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
     COMPILE_WITH_DEBUG_SYMBOLS=false
     COPY_DEBUG_SYMBOLS=false
@@ -275,7 +295,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
     DEBUG_BINARIES=true
     STRIP_POLICY=no_strip
     STRIP=""
-    
+
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xexternal; then
 
     if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -356,7 +376,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
 
 ################################################################################
 #
-# Static build support.  When enabled will generate static 
+# Static build support.  When enabled will generate static
 # libraries instead of shared libraries for all JDK libs.
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
