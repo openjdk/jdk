@@ -36,6 +36,7 @@ SUNWprivate_1.1 {
 		JLI_ReportExceptionDescription;
 		JLI_GetStdArgs;
 		JLI_GetStdArgc;
+		
 	local:
 		*;
 };
