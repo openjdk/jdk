@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CONCURRENTMARKSWEEPGENERATION_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CONCURRENTMARKSWEEPGENERATION_HPP
 
+#include "gc_implementation/concurrentMarkSweep/cmsOopClosures.hpp"
 #include "gc_implementation/shared/gcHeapSummary.hpp"
 #include "gc_implementation/shared/gSpaceCounters.hpp"
 #include "gc_implementation/shared/gcStats.hpp"
@@ -55,6 +56,7 @@
 // means of a sliding mark-compact.
 
 class AdaptiveSizePolicy;
+class CMSCollector;
 class CMSConcMarkingTask;
 class CMSGCAdaptivePolicyCounters;
 class CMSTracer;
@@ -64,6 +66,7 @@ class ConcurrentMarkSweepPolicy;
 class ConcurrentMarkSweepThread;
 class CompactibleFreeListSpace;
 class FreeChunk;
+class ParNewGeneration;
 class PromotionInfo;
 class ScanMarkedObjectsAgainCarefullyClosure;
 class TenuredGeneration;

@@ -25,6 +25,8 @@
  * @test
  * @summary Verify behaviour of Unsafe.get/putObject
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main GetPutObject
  */
 
