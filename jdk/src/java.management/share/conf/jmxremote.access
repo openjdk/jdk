@@ -8,9 +8,9 @@
 # passwords.  To be functional, a role must have an entry in
 # both the password and the access files.
 #
-# The default location of this file is $JRE/lib/management/jmxremote.access
-# You can specify an alternate location by specifying a property in 
-# the management config file $JRE/lib/management/management.properties
+# The default location of this file is $JRE/conf/management/jmxremote.access
+# You can specify an alternate location by specifying a property in
+# the management config file $JRE/conf/management/management.properties
 # (See that file for details)
 #
 # The file format for password and access files is syntactically the same
@@ -69,7 +69,7 @@
 #
 #
 # Default access control entries:
-# o The "monitorRole" role has readonly access.  
+# o The "monitorRole" role has readonly access.
 # o The "controlRole" role has readwrite access and can create the standard
 #   Timer and Monitor MBeans defined by the JMX API.
 

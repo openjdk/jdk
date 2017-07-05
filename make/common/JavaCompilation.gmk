@@ -325,9 +325,15 @@ define SetupZipArchive
     $1_ZIP_INCLUDES += $$(addprefix -i$(SPACE),$$($1_INCLUDE_FILES))
   endif
   ifneq ($$($1_EXCLUDES),)
-    $1_SRC_EXCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))
     $1_ZIP_EXCLUDES := $$(addprefix -x$(SPACE)$(DQUOTE),$$(addsuffix /*$(DQUOTE),$$($1_EXCLUDES)))
+    $1_SRC_EXCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))
     $1_ALL_SRCS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_ALL_SRCS))
+  endif
+  ifneq ($$($1_EXCLUDE_FILES),)
+    # Cannot precompute ZIP_EXCLUDE_FILES as it is dependent on which src root is being
+    # zipped at the moment.
+    $1_SRC_EXCLUDE_FILES := $$(addprefix %, $$($1_EXCLUDE_FILES)) $$($1_EXCLUDE_FILES)
+    $1_ALL_SRCS := $$(filter-out $$($1_SRC_EXCLUDE_FILES), $$($1_ALL_SRCS))
   endif
 
   # Use a slightly shorter name for logging, but with enough path to identify this zip.
@@ -343,7 +349,10 @@ define SetupZipArchive
   $$($1_ZIP) : $$($1_ALL_SRCS) $$($1_EXTRA_DEPS)
 	$(MKDIR) -p $$(@D)
 	$(ECHO) Updating $$($1_NAME)
-	$$(foreach i,$$($1_SRC),(cd $$i && $(ZIP) -qru $$@ . $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* $$(addprefix -x$(SPACE),$$(patsubst $$i/%,%,$$($1_EXCLUDE_FILES))) || test "$$$$?" = "12" )$$(NEWLINE)) true
+	$$(foreach i,$$($1_SRC),(cd $$i && $(ZIP) -qru $$@ . $$($1_ZIP_INCLUDES) \
+	    $$($1_ZIP_EXCLUDES) -x \*_the.\* \
+	    $$(addprefix -x$(SPACE), $$(patsubst $$i/%,%, $$($1_EXCLUDE_FILES))) \
+	    || test "$$$$?" = "12" )$$(NEWLINE)) true
 	$(TOUCH) $$@
 
   # Add zip to target list

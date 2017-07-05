@@ -23,12 +23,10 @@
 
 /**
  *
- *
- *  This isn't the test case: ImmutableResourceTest.sh is.
- *  Refer to ImmutableResourceTest.sh when running this test.
- *
+ *  @test
  *  @bug        6287579
  *  @summary    SubClasses of ListResourceBundle should fix getContents()
+ *  @run main ImmutableResourceTest
  *
  *  @author Tim Bell
  *

@@ -66,8 +66,7 @@ public class ScriptEngineManager  {
      * <code>ScriptEngineFactory</code> visible to the given
      * <code>ClassLoader</code> using the <a href="../../../technotes/guides/jar/jar.html#Service%20Provider">service provider</a> mechanism.<br><br>
      * If loader is <code>null</code>, the script engine factories that are
-     * bundled with the platform and that are in the usual extension
-     * directories (installed extensions) are loaded. <br><br>
+     * bundled with the platform are loaded. <br>
      *
      * @param loader ClassLoader used to discover script engine factories.
      */

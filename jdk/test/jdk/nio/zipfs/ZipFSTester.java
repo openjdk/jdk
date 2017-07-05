@@ -21,16 +21,43 @@
  * questions.
  */
 
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
-import java.nio.file.*;
-import java.nio.file.spi.*;
-import java.nio.file.attribute.*;
-import java.net.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
+import java.nio.file.FileSystemException;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.spi.FileSystemProvider;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
@@ -48,16 +75,20 @@ import static java.nio.file.StandardCopyOption.*;
 
 public class ZipFSTester {
 
-    public static void main(String[] args) throws Throwable {
-        try (FileSystem fs = newZipFileSystem(
-                 Paths.get(System.getProperty("test.jdk"), "jre/lib/ext/zipfs.jar"),
-                 new HashMap<String, Object>()))
-        {
+    public static void main(String[] args) throws Exception {
+
+        // create JAR file for test, actual contents don't matter
+        Path jarFile = Utils.createJarFile("tester.jar",
+                "META-INF/MANIFEST.MF",
+                "dir1/foo",
+                "dir2/bar");
+
+        try (FileSystem fs = newZipFileSystem(jarFile, Collections.emptyMap())) {
             test0(fs);
             test1(fs);
             test2(fs);   // more tests
         }
-        testTime(Paths.get(System.getProperty("test.jdk"), "jre/lib/ext/zipfs.jar"));
+        testTime(jarFile);
     }
 
     static void test0(FileSystem fs)
@@ -102,7 +133,7 @@ public class ZipFSTester {
                      new URI("jar", tmpfsPath.toUri().toString(), null),
                      new HashMap<String, Object>()))
             {
-              throw new RuntimeException("newFileSystem(uri...) does not throw exception");
+                throw new RuntimeException("newFileSystem(URI...) does not throw exception");
             } catch (FileSystemAlreadyExistsException fsaee) {}
 
             // prepare a src

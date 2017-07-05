@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ final class SSLSecurity {
              * this class and all the SPI classes in javax.crypto are
              * loaded by the same class loader.)  That is, unless they
              * give us a SPI class that doesn't exist, say SSLFoo,
-             * or someone has removed classes from the jsse.jar file.
+             * or someone has removed classes from the java.base module.
              */
 
             Class<?> typeClassJavax;

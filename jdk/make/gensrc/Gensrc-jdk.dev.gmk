@@ -31,7 +31,9 @@ include GensrcProperties.gmk
 
 $(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
     $(filter %.properties, \
-        $(call CacheFind, $(JDK_TOPDIR)/src/jdk.dev/share/classes/sun/tools/jar/resources)), \
+        $(call CacheFind, \
+            $(JDK_TOPDIR)/src/jdk.dev/share/classes/jdk/tools/jimage/resources \
+            $(JDK_TOPDIR)/src/jdk.dev/share/classes/sun/tools/jar/resources)), \
     ListResourceBundle))
 
 TARGETS += $(COMPILE_PROPERTIES)

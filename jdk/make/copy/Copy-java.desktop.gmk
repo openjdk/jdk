@@ -29,7 +29,7 @@ $(eval $(call IncludeCustomExtension, jdk, copy/Copy-java.desktop.gmk))
 
 ################################################################################
 
-JAVA_DESKTOP_HEADERS := \
+TARGETS += \
     $(INCLUDE_DST_DIR)/jawt.h \
     $(INCLUDE_DST_OS_DIR)/jawt_md.h \
     #
@@ -62,9 +62,9 @@ ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
   #TODO: rework this to avoid hardcoding library name in the makefile
   #
   ifeq ($(OPENJDK_TARGET_OS), windows)
-    FREETYPE_TARGET_LIB := $(JDK_OUTPUTDIR)/bin/$(call SHARED_LIBRARY,freetype)
+    FREETYPE_TARGET_LIB := $(LIB_DST_DIR)/$(call SHARED_LIBRARY,freetype)
   else
-    FREETYPE_TARGET_LIB := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/$(call SHARED_LIBRARY,freetype).6
+    FREETYPE_TARGET_LIB := $(LIB_DST_DIR)$(OPENJDK_TARGET_CPU_LIBDIR)/$(call SHARED_LIBRARY,freetype).6
   endif
 
   # We can't use $(install-file) in this rule because it preserves symbolic links and
@@ -75,14 +75,16 @@ ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
         ifeq ($(OPENJDK_BUILD_OS), windows)
 	  $(CHMOD) +rx $@
         endif
+
+  TARGETS += $(FREETYPE_TARGET_LIB)
 endif
 
 ################################################################################
 
-$(JDK_OUTPUTDIR)/lib/sound.properties: $(JDK_TOPDIR)/src/java.desktop/share/conf/sound.properties
+$(CONF_DST_DIR)/sound.properties: $(JDK_TOPDIR)/src/java.desktop/share/conf/sound.properties
 	$(call install-file)
 
-DESKTOP_CONF_FILES += $(JDK_OUTPUTDIR)/lib/sound.properties
+TARGETS += $(CONF_DST_DIR)/sound.properties
 
 ################################################################################
 #
@@ -95,7 +97,7 @@ PSFONTPROPFILE_TARGET_FILES := $(subst $(PSFONTPROPFILE_SRC_DIR),$(LIB_DST_DIR),
 $(LIB_DST_DIR)/%: $(PSFONTPROPFILE_SRC_DIR)/%
 	$(call install-file)
 
-DESKTOP_CONF_FILES += $(PSFONTPROPFILE_TARGET_FILES)
+TARGETS += $(PSFONTPROPFILE_TARGET_FILES)
 
 ################################################################################
 #
@@ -113,7 +115,7 @@ CURSORS_OPENJDK_TARGET_OS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TA
 $(CURSORS_DEST_DIR)/cursors.properties: $(CURSORS_OPENJDK_TARGET_OS_LIB_SRC)/cursors.properties
 	$(call install-file)
 
-DESKTOP_CONF_FILES += $(CURSORS_DEST_DIR)/cursors.properties
+TARGETS += $(CURSORS_DEST_DIR)/cursors.properties
 
 CURSORS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/share/conf/images/cursors
 ifeq ($(OPENJDK_TARGET_OS), windows)
@@ -126,12 +128,6 @@ CURSORS_TARGET_FILES := $(subst $(CURSORS_LIB_SRC),$(CURSORS_DEST_DIR),$(CURSORS
 $(CURSORS_DEST_DIR)/%: $(CURSORS_LIB_SRC)/%
 	$(call install-file)
 
-DESKTOP_CONF_FILES += $(CURSORS_TARGET_FILES)
+TARGETS += $(CURSORS_TARGET_FILES)
 
 ################################################################################
-
-java.desktop: $(DESKTOP_CONF_FILES) $(FREETYPE_TARGET_LIB) $(JAVA_DESKTOP_HEADERS)
-
-all: java.desktop
-
-.PHONY: all java.desktop

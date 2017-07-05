@@ -66,7 +66,7 @@ import com.sun.jmx.remote.util.EnvHelp;
  *
  * <p>To override the default configuration use the
  * <code>com.sun.management.jmxremote.login.config</code> management property
- * described in the JRE/lib/management/management.properties file.
+ * described in the JRE/conf/management/management.properties file.
  * Set this property to the name of a JAAS configuration entry and ensure that
  * the entry is loaded by the installed {@link Configuration}. In addition,
  * ensure that the authentication mechanisms specified in the entry acquire

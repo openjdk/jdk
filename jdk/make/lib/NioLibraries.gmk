@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ BUILD_LIBNIO_SRC := \
 
 BUILD_LIBNIO_CFLAGS := \
     $(addprefix -I, $(BUILD_LIBNIO_SRC)) \
-    -I$(JDK_OUTPUTDIR)/gensrc_headers/java.base \
+    -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
     $(LIBJAVA_HEADER_FLAGS) \
     $(addprefix -I, $(BUILD_LIBNET_SRC))
 
@@ -78,7 +78,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
     LDFLAGS_SUFFIX_solaris := -ljvm -lsocket -lposix4 $(LIBDL) \
         -lsendfile -ljava -lnet -lc, \
     LDFLAGS_SUFFIX_windows := jvm.lib ws2_32.lib $(WIN_JAVA_LIB) \
-        $(JDK_OUTPUTDIR)/objs/libnet/net.lib \
+        $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnet/net.lib \
         advapi32.lib, \
     LDFLAGS_SUFFIX_macosx := -ljava -lnet -pthread -framework CoreFoundation, \
     LDFLAGS_SUFFIX :=, \
@@ -87,10 +87,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
         -D "JDK_FNAME=nio.dll" \
         -D "JDK_INTERNAL_NAME=nio" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libnio, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnio, \
     DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-BASE_LIBRARIES += $(BUILD_LIBNIO)
+TARGETS += $(BUILD_LIBNIO)
 
 $(BUILD_LIBNIO): $(BUILD_LIBNET)
 
