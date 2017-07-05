@@ -117,6 +117,7 @@ inline void PSPromotionManager::process_popped_location_depth(StarTask p) {
     process_array_chunk(old);
   } else {
     if (p.is_narrow()) {
+      assert(UseCompressedOops, "Error");
       PSScavenge::copy_and_push_safe_barrier(this, (narrowOop*)p);
     } else {
       PSScavenge::copy_and_push_safe_barrier(this, (oop*)p);

@@ -39,6 +39,7 @@ public:
   static void apply_closure_to_buffer(ObjectClosure* cl,
                                       void** buf, size_t index, size_t sz);
 
+  void verify_oops_in_buffer() NOT_DEBUG_RETURN;
 };
 
 
