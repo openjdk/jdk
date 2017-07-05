@@ -35,7 +35,7 @@ public abstract class BytecodeWithCPIndex extends Bytecode {
   }
 
   // the constant pool index for this bytecode
-  public int index() { return 0xFFFF & javaShortAt(1); }
+  public int index() { return getIndexU2(code(), false); }
 
   public int getSecondaryIndex() {
      throw new IllegalArgumentException("must be invokedynamic");

@@ -139,7 +139,7 @@ int PhaseChaitin::clone_projs( Block *b, uint idx, Node *con, Node *copy, uint &
   Block *bcon = _cfg._bbs[con->_idx];
   uint cindex = bcon->find_node(con);
   Node *con_next = bcon->_nodes[cindex+1];
-  if( con_next->in(0) != con || con_next->Opcode() != Op_MachProj )
+  if( con_next->in(0) != con || !con_next->is_MachProj() )
     return false;               // No MachProj's follow
 
   // Copy kills after the cloned constant
@@ -312,7 +312,7 @@ void PhaseAggressiveCoalesce::insert_copy_with_overlap( Block *b, Node *copy, ui
     // parallel renaming effort.
     if( n->_idx < _unique ) break;
     uint idx = n->is_Copy();
-    assert( idx || n->is_Con() || n->Opcode() == Op_MachProj, "Only copies during parallel renaming" );
+    assert( idx || n->is_Con() || n->is_MachProj(), "Only copies during parallel renaming" );
     if( idx && _phc.Find(n->in(idx)) == dst_name ) break;
     i--;
   }
@@ -329,7 +329,7 @@ void PhaseAggressiveCoalesce::insert_copy_with_overlap( Block *b, Node *copy, ui
     // Check for end of virtual copies; this is also the end of the
     // parallel renaming effort.
     if( n->_idx < _unique ) break;
-    assert( n->is_Copy() || n->is_Con() || n->Opcode() == Op_MachProj, "Only copies during parallel renaming" );
+    assert( n->is_Copy() || n->is_Con() || n->is_MachProj(), "Only copies during parallel renaming" );
     if( _phc.Find(n) == src_name ) {
       kill_src_idx = i;
       break;

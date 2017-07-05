@@ -389,12 +389,6 @@ int MachNode::operand_index( uint operand ) const {
 }
 
 
-//------------------------------negate-----------------------------------------
-// Negate conditional branches.  Error for non-branch Nodes
-void MachNode::negate() {
-  ShouldNotCallThis();
-}
-
 //------------------------------peephole---------------------------------------
 // Apply peephole rule(s) to this instruction
 MachNode *MachNode::peephole( Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted, Compile* C ) {
@@ -404,12 +398,6 @@ MachNode *MachNode::peephole( Block *block, int block_index, PhaseRegAlloc *ra_,
 //------------------------------add_case_label---------------------------------
 // Adds the label for the case
 void MachNode::add_case_label( int index_num, Label* blockLabel) {
-  ShouldNotCallThis();
-}
-
-//------------------------------label_set--------------------------------------
-// Set the Label for a LabelOper, if an operand for this instruction
-void MachNode::label_set( Label& label, uint block_num ) {
   ShouldNotCallThis();
 }
 
@@ -513,6 +501,12 @@ void MachNullCheckNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
 void MachNullCheckNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // only emits entries in the null-pointer exception handler table
+}
+void MachNullCheckNode::label_set(Label* label, uint block_num) {
+  // Nothing to emit
+}
+void MachNullCheckNode::save_label( Label** label, uint* block_num ) {
+  // Nothing to emit
 }
 
 const RegMask &MachNullCheckNode::in_RegMask( uint idx ) const {

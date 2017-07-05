@@ -98,7 +98,6 @@
 #include <imagehlp.h>             // For os::dll_address_to_function_name
 
 /* for enumerating dll libraries */
-#include <tlhelp32.h>
 #include <vdmdbg.h>
 
 // for timer info max values which include all bits
@@ -241,11 +240,11 @@ void os::init_system_properties_values() {
     /* Win32 library search order (See the documentation for LoadLibrary):
      *
      * 1. The directory from which application is loaded.
-     * 2. The current directory
-     * 3. The system wide Java Extensions directory (Java only)
-     * 4. System directory (GetSystemDirectory)
-     * 5. Windows directory (GetWindowsDirectory)
-     * 6. The PATH environment variable
+     * 2. The system wide Java Extensions directory (Java only)
+     * 3. System directory (GetSystemDirectory)
+     * 4. Windows directory (GetWindowsDirectory)
+     * 5. The PATH environment variable
+     * 6. The current directory
      */
 
     char *library_path;
@@ -260,8 +259,6 @@ void os::init_system_properties_values() {
     GetModuleFileName(NULL, tmp, sizeof(tmp));
     *(strrchr(tmp, '\\')) = '\0';
     strcat(library_path, tmp);
-
-    strcat(library_path, ";.");
 
     GetWindowsDirectory(tmp, sizeof(tmp));
     strcat(library_path, ";");
@@ -280,6 +277,8 @@ void os::init_system_properties_values() {
         strcat(library_path, ";");
         strcat(library_path, path_str);
     }
+
+    strcat(library_path, ";.");
 
     Arguments::set_library_path(library_path);
     FREE_C_HEAP_ARRAY(char, library_path);
@@ -939,7 +938,7 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
     return;
   }
 
-  dbghelp = LoadLibrary("DBGHELP.DLL");
+  dbghelp = os::win32::load_Windows_dll("DBGHELP.DLL", NULL, 0);
 
   if (dbghelp == NULL) {
     VMError::report_coredump_status("Failed to load dbghelp.dll", false);
@@ -1204,70 +1203,6 @@ const char* os::get_current_directory(char *buf, int buflen) {
 
 //-----------------------------------------------------------
 // Helper functions for fatal error handler
-
-// The following library functions are resolved dynamically at runtime:
-
-// PSAPI functions, for Windows NT, 2000, XP
-
-// psapi.h doesn't come with Visual Studio 6; it can be downloaded as Platform
-// SDK from Microsoft.  Here are the definitions copied from psapi.h
-typedef struct _MODULEINFO {
-    LPVOID lpBaseOfDll;
-    DWORD SizeOfImage;
-    LPVOID EntryPoint;
-} MODULEINFO, *LPMODULEINFO;
-
-static BOOL  (WINAPI *_EnumProcessModules)  ( HANDLE, HMODULE *, DWORD, LPDWORD );
-static DWORD (WINAPI *_GetModuleFileNameEx) ( HANDLE, HMODULE, LPTSTR, DWORD );
-static BOOL  (WINAPI *_GetModuleInformation)( HANDLE, HMODULE, LPMODULEINFO, DWORD );
-
-// ToolHelp Functions, for Windows 95, 98 and ME
-
-static HANDLE(WINAPI *_CreateToolhelp32Snapshot)(DWORD,DWORD) ;
-static BOOL  (WINAPI *_Module32First)           (HANDLE,LPMODULEENTRY32) ;
-static BOOL  (WINAPI *_Module32Next)            (HANDLE,LPMODULEENTRY32) ;
-
-bool _has_psapi;
-bool _psapi_init = false;
-bool _has_toolhelp;
-
-static bool _init_psapi() {
-  HINSTANCE psapi = LoadLibrary( "PSAPI.DLL" ) ;
-  if( psapi == NULL ) return false ;
-
-  _EnumProcessModules = CAST_TO_FN_PTR(
-      BOOL(WINAPI *)(HANDLE, HMODULE *, DWORD, LPDWORD),
-      GetProcAddress(psapi, "EnumProcessModules")) ;
-  _GetModuleFileNameEx = CAST_TO_FN_PTR(
-      DWORD (WINAPI *)(HANDLE, HMODULE, LPTSTR, DWORD),
-      GetProcAddress(psapi, "GetModuleFileNameExA"));
-  _GetModuleInformation = CAST_TO_FN_PTR(
-      BOOL (WINAPI *)(HANDLE, HMODULE, LPMODULEINFO, DWORD),
-      GetProcAddress(psapi, "GetModuleInformation"));
-
-  _has_psapi = (_EnumProcessModules && _GetModuleFileNameEx && _GetModuleInformation);
-  _psapi_init = true;
-  return _has_psapi;
-}
-
-static bool _init_toolhelp() {
-  HINSTANCE kernel32 = LoadLibrary("Kernel32.DLL") ;
-  if (kernel32 == NULL) return false ;
-
-  _CreateToolhelp32Snapshot = CAST_TO_FN_PTR(
-      HANDLE(WINAPI *)(DWORD,DWORD),
-      GetProcAddress(kernel32, "CreateToolhelp32Snapshot"));
-  _Module32First = CAST_TO_FN_PTR(
-      BOOL(WINAPI *)(HANDLE,LPMODULEENTRY32),
-      GetProcAddress(kernel32, "Module32First" ));
-  _Module32Next = CAST_TO_FN_PTR(
-      BOOL(WINAPI *)(HANDLE,LPMODULEENTRY32),
-      GetProcAddress(kernel32, "Module32Next" ));
-
-  _has_toolhelp = (_CreateToolhelp32Snapshot && _Module32First && _Module32Next);
-  return _has_toolhelp;
-}
-
 #ifdef _WIN64
 // Helper routine which returns true if address in
 // within the NTDLL address space.
@@ -1279,7 +1214,7 @@ static bool _addr_in_ntdll( address addr )
 
   hmod = GetModuleHandle("NTDLL.DLL");
   if ( hmod == NULL ) return false;
-  if ( !_GetModuleInformation( GetCurrentProcess(), hmod,
+  if ( !os::PSApiDll::GetModuleInformation( GetCurrentProcess(), hmod,
                                &minfo, sizeof(MODULEINFO)) )
     return false;
 
@@ -1318,14 +1253,16 @@ static int _enumerate_modules_winnt( int pid, EnumModulesCallbackFunc func, void
   static char filename[ MAX_PATH ];
   int         result = 0;
 
-  if (!_has_psapi && (_psapi_init || !_init_psapi())) return 0;
+  if (!os::PSApiDll::PSApiAvailable()) {
+    return 0;
+  }
 
   hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
                          FALSE, pid ) ;
   if (hProcess == NULL) return 0;
 
   DWORD size_needed;
-  if (!_EnumProcessModules(hProcess, modules,
+  if (!os::PSApiDll::EnumProcessModules(hProcess, modules,
                            sizeof(modules), &size_needed)) {
       CloseHandle( hProcess );
       return 0;
@@ -1336,13 +1273,13 @@ static int _enumerate_modules_winnt( int pid, EnumModulesCallbackFunc func, void
 
   for (int i = 0; i < MIN2(num_modules, MAX_NUM_MODULES); i++) {
     // Get Full pathname:
-    if(!_GetModuleFileNameEx(hProcess, modules[i],
+    if(!os::PSApiDll::GetModuleFileNameEx(hProcess, modules[i],
                              filename, sizeof(filename))) {
         filename[0] = '\0';
     }
 
     MODULEINFO modinfo;
-    if (!_GetModuleInformation(hProcess, modules[i],
+    if (!os::PSApiDll::GetModuleInformation(hProcess, modules[i],
                                &modinfo, sizeof(modinfo))) {
         modinfo.lpBaseOfDll = NULL;
         modinfo.SizeOfImage = 0;
@@ -1366,17 +1303,19 @@ static int _enumerate_modules_windows( int pid, EnumModulesCallbackFunc func, vo
   static MODULEENTRY32  modentry ;
   int                   result = 0;
 
-  if (!_has_toolhelp) return 0;
+  if (!os::Kernel32Dll::HelpToolsAvailable()) {
+    return 0;
+  }
 
   // Get a handle to a Toolhelp snapshot of the system
-  hSnapShot = _CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid ) ;
+  hSnapShot = os::Kernel32Dll::CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid ) ;
   if( hSnapShot == INVALID_HANDLE_VALUE ) {
       return FALSE ;
   }
 
   // iterate through all modules
   modentry.dwSize = sizeof(MODULEENTRY32) ;
-  bool not_done = _Module32First( hSnapShot, &modentry ) != 0;
+  bool not_done = os::Kernel32Dll::Module32First( hSnapShot, &modentry ) != 0;
 
   while( not_done ) {
     // invoke the callback
@@ -1385,7 +1324,7 @@ static int _enumerate_modules_windows( int pid, EnumModulesCallbackFunc func, vo
     if (result) break;
 
     modentry.dwSize = sizeof(MODULEENTRY32) ;
-    not_done = _Module32Next( hSnapShot, &modentry ) != 0;
+    not_done = os::Kernel32Dll::Module32Next( hSnapShot, &modentry ) != 0;
   }
 
   CloseHandle(hSnapShot);
@@ -1631,10 +1570,6 @@ void os::print_dll_info(outputStream *st) {
    enumerate_modules(pid, _print_module, (void *)st);
 }
 
-// function pointer to Windows API "GetNativeSystemInfo".
-typedef void (WINAPI *GetNativeSystemInfo_func_type)(LPSYSTEM_INFO);
-static GetNativeSystemInfo_func_type _GetNativeSystemInfo;
-
 void os::print_os_info(outputStream* st) {
   st->print("OS:");
 
@@ -1661,17 +1596,10 @@ void os::print_os_info(outputStream* st) {
       // find out whether we are running on 64 bit processor or not.
       SYSTEM_INFO si;
       ZeroMemory(&si, sizeof(SYSTEM_INFO));
-      // Check to see if _GetNativeSystemInfo has been initialized.
-      if (_GetNativeSystemInfo == NULL) {
-        HMODULE hKernel32 = GetModuleHandle(TEXT("kernel32.dll"));
-        _GetNativeSystemInfo =
-            CAST_TO_FN_PTR(GetNativeSystemInfo_func_type,
-                           GetProcAddress(hKernel32,
-                                          "GetNativeSystemInfo"));
-        if (_GetNativeSystemInfo == NULL)
+        if (!os::Kernel32Dll::GetNativeSystemInfoAvailable()){
           GetSystemInfo(&si);
       } else {
-        _GetNativeSystemInfo(&si);
+        os::Kernel32Dll::GetNativeSystemInfo(&si);
       }
       if (os_vers == 5002) {
         if (osvi.wProductType == VER_NT_WORKSTATION &&
@@ -2683,47 +2611,14 @@ int os::vm_allocation_granularity() {
 #define MEM_LARGE_PAGES 0x20000000
 #endif
 
-// GetLargePageMinimum is only available on Windows 2003. The other functions
-// are available on NT but not on Windows 98/Me. We have to resolve them at
-// runtime.
-typedef SIZE_T (WINAPI *GetLargePageMinimum_func_type) (void);
-typedef BOOL (WINAPI *AdjustTokenPrivileges_func_type)
-             (HANDLE, BOOL, PTOKEN_PRIVILEGES, DWORD, PTOKEN_PRIVILEGES, PDWORD);
-typedef BOOL (WINAPI *OpenProcessToken_func_type) (HANDLE, DWORD, PHANDLE);
-typedef BOOL (WINAPI *LookupPrivilegeValue_func_type) (LPCTSTR, LPCTSTR, PLUID);
-
-static GetLargePageMinimum_func_type   _GetLargePageMinimum;
-static AdjustTokenPrivileges_func_type _AdjustTokenPrivileges;
-static OpenProcessToken_func_type      _OpenProcessToken;
-static LookupPrivilegeValue_func_type  _LookupPrivilegeValue;
-
-static HINSTANCE _kernel32;
-static HINSTANCE _advapi32;
 static HANDLE    _hProcess;
 static HANDLE    _hToken;
 
 static size_t _large_page_size = 0;
 
 static bool resolve_functions_for_large_page_init() {
-  _kernel32 = LoadLibrary("kernel32.dll");
-  if (_kernel32 == NULL) return false;
-
-  _GetLargePageMinimum   = CAST_TO_FN_PTR(GetLargePageMinimum_func_type,
-                            GetProcAddress(_kernel32, "GetLargePageMinimum"));
-  if (_GetLargePageMinimum == NULL) return false;
-
-  _advapi32 = LoadLibrary("advapi32.dll");
-  if (_advapi32 == NULL) return false;
-
-  _AdjustTokenPrivileges = CAST_TO_FN_PTR(AdjustTokenPrivileges_func_type,
-                            GetProcAddress(_advapi32, "AdjustTokenPrivileges"));
-  _OpenProcessToken      = CAST_TO_FN_PTR(OpenProcessToken_func_type,
-                            GetProcAddress(_advapi32, "OpenProcessToken"));
-  _LookupPrivilegeValue  = CAST_TO_FN_PTR(LookupPrivilegeValue_func_type,
-                            GetProcAddress(_advapi32, "LookupPrivilegeValueA"));
-  return _AdjustTokenPrivileges != NULL &&
-         _OpenProcessToken      != NULL &&
-         _LookupPrivilegeValue  != NULL;
+  return os::Kernel32Dll::GetLargePageMinimumAvailable() &&
+    os::Advapi32Dll::AdvapiAvailable();
 }
 
 static bool request_lock_memory_privilege() {
@@ -2732,8 +2627,8 @@ static bool request_lock_memory_privilege() {
 
   LUID luid;
   if (_hProcess != NULL &&
-      _OpenProcessToken(_hProcess, TOKEN_ADJUST_PRIVILEGES, &_hToken) &&
-      _LookupPrivilegeValue(NULL, "SeLockMemoryPrivilege", &luid)) {
+      os::Advapi32Dll::OpenProcessToken(_hProcess, TOKEN_ADJUST_PRIVILEGES, &_hToken) &&
+      os::Advapi32Dll::LookupPrivilegeValue(NULL, "SeLockMemoryPrivilege", &luid)) {
 
     TOKEN_PRIVILEGES tp;
     tp.PrivilegeCount = 1;
@@ -2742,7 +2637,7 @@ static bool request_lock_memory_privilege() {
 
     // AdjustTokenPrivileges() may return TRUE even when it couldn't change the
     // privilege. Check GetLastError() too. See MSDN document.
-    if (_AdjustTokenPrivileges(_hToken, false, &tp, sizeof(tp), NULL, NULL) &&
+    if (os::Advapi32Dll::AdjustTokenPrivileges(_hToken, false, &tp, sizeof(tp), NULL, NULL) &&
         (GetLastError() == ERROR_SUCCESS)) {
       return true;
     }
@@ -2752,14 +2647,6 @@ static bool request_lock_memory_privilege() {
 }
 
 static void cleanup_after_large_page_init() {
-  _GetLargePageMinimum = NULL;
-  _AdjustTokenPrivileges = NULL;
-  _OpenProcessToken = NULL;
-  _LookupPrivilegeValue = NULL;
-  if (_kernel32) FreeLibrary(_kernel32);
-  _kernel32 = NULL;
-  if (_advapi32) FreeLibrary(_advapi32);
-  _advapi32 = NULL;
   if (_hProcess) CloseHandle(_hProcess);
   _hProcess = NULL;
   if (_hToken) CloseHandle(_hToken);
@@ -2777,7 +2664,7 @@ void os::large_page_init() {
 # define WARN(msg) if (warn_on_failure) { warning(msg); }
   if (resolve_functions_for_large_page_init()) {
     if (request_lock_memory_privilege()) {
-      size_t s = _GetLargePageMinimum();
+      size_t s = os::Kernel32Dll::GetLargePageMinimum();
       if (s) {
 #if defined(IA32) || defined(AMD64)
         if (s > 4*M || LargePageSizeInBytes > 4*M) {
@@ -3190,18 +3077,10 @@ typedef BOOL (WINAPI * STTSignature)(void) ;
 os::YieldResult os::NakedYield() {
   // Use either SwitchToThread() or Sleep(0)
   // Consider passing back the return value from SwitchToThread().
-  // We use GetProcAddress() as ancient Win9X versions of windows doen't support SwitchToThread.
-  // In that case we revert to Sleep(0).
-  static volatile STTSignature stt = (STTSignature) 1 ;
-
-  if (stt == ((STTSignature) 1)) {
-    stt = (STTSignature) ::GetProcAddress (LoadLibrary ("Kernel32.dll"), "SwitchToThread") ;
-    // It's OK if threads race during initialization as the operation above is idempotent.
-  }
-  if (stt != NULL) {
-    return (*stt)() ? os::YIELD_SWITCHED : os::YIELD_NONEREADY ;
+  if (os::Kernel32Dll::SwitchToThreadAvailable()) {
+    return SwitchToThread() ? os::YIELD_SWITCHED : os::YIELD_NONEREADY ;
   } else {
-    Sleep (0) ;
+    Sleep(0);
   }
   return os::YIELD_UNKNOWN ;
 }
@@ -3424,6 +3303,44 @@ void os::win32::initialize_system_info() {
   }
 }
 
+
+HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf, int ebuflen) {
+  char path[MAX_PATH];
+  DWORD size;
+  DWORD pathLen = (DWORD)sizeof(path);
+  HINSTANCE result = NULL;
+
+  // only allow library name without path component
+  assert(strchr(name, '\\') == NULL, "path not allowed");
+  assert(strchr(name, ':') == NULL, "path not allowed");
+  if (strchr(name, '\\') != NULL || strchr(name, ':') != NULL) {
+    jio_snprintf(ebuf, ebuflen,
+      "Invalid parameter while calling os::win32::load_windows_dll(): cannot take path: %s", name);
+    return NULL;
+  }
+
+  // search system directory
+  if ((size = GetSystemDirectory(path, pathLen)) > 0) {
+    strcat(path, "\\");
+    strcat(path, name);
+    if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != NULL) {
+      return result;
+    }
+  }
+
+  // try Windows directory
+  if ((size = GetWindowsDirectory(path, pathLen)) > 0) {
+    strcat(path, "\\");
+    strcat(path, name);
+    if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != NULL) {
+      return result;
+    }
+  }
+
+  jio_snprintf(ebuf, ebuflen,
+    "os::win32::load_windows_dll() cannot load %s from system directories.", name);
+  return NULL;
+}
 
 void os::win32::setmode_streams() {
   _setmode(_fileno(stdin), _O_BINARY);
@@ -3657,10 +3574,6 @@ jint os::init_2(void) {
       warning("os::init_2 atexit(perfMemory_exit_helper) failed");
     }
   }
-
-  // initialize PSAPI or ToolHelp for fatal error handler
-  if (win32::is_nt()) _init_psapi();
-  else _init_toolhelp();
 
 #ifndef _WIN64
   // Print something if NX is enabled (win32 on AMD64)
@@ -4708,12 +4621,6 @@ static int getLastErrorString(char *buf, size_t len)
 // We don't build a headless jre for Windows
 bool os::is_headless_jre() { return false; }
 
-// OS_SocketInterface
-// Not used on Windows
-
-// OS_SocketInterface
-typedef struct hostent * (PASCAL FAR *ws2_ifn_ptr_t)(...);
-ws2_ifn_ptr_t *get_host_by_name_fn = NULL;
 
 typedef CRITICAL_SECTION mutex_t;
 #define mutexInit(m)    InitializeCriticalSection(m)
@@ -4721,58 +4628,36 @@ typedef CRITICAL_SECTION mutex_t;
 #define mutexLock(m)    EnterCriticalSection(m)
 #define mutexUnlock(m)  LeaveCriticalSection(m)
 
-static bool sockfnptrs_initialized = FALSE;
+static bool sock_initialized = FALSE;
 static mutex_t sockFnTableMutex;
 
-/* is Winsock2 loaded? better to be explicit than to rely on sockfnptrs */
-static bool winsock2Available = FALSE;
-
-
-static void initSockFnTable() {
-  int (PASCAL FAR* WSAStartupPtr)(WORD, LPWSADATA);
+static void initSock() {
   WSADATA wsadata;
+
+  if (!os::WinSock2Dll::WinSock2Available()) {
+    jio_fprintf(stderr, "Could not load Winsock 2 (error: %d)\n",
+      ::GetLastError());
+    return;
+  }
+  if (sock_initialized == TRUE) return;
 
   ::mutexInit(&sockFnTableMutex);
   ::mutexLock(&sockFnTableMutex);
-
-  if (sockfnptrs_initialized == FALSE) {
-        HMODULE hWinsock;
-
-          /* try to load Winsock2, and if that fails, load Winsock */
-    hWinsock = ::LoadLibrary("ws2_32.dll");
-
-    if (hWinsock == NULL) {
-      jio_fprintf(stderr, "Could not load Winsock 2 (error: %d)\n",
-      ::GetLastError());
-      return;
-    }
-
-    /* If we loaded a DLL, then we might as well initialize it.  */
-    WSAStartupPtr = (int (PASCAL FAR *)(WORD, LPWSADATA))
-    ::GetProcAddress(hWinsock, "WSAStartup");
-
-    if (WSAStartupPtr(MAKEWORD(1,1), &wsadata) != 0) {
-        jio_fprintf(stderr, "Could not initialize Winsock\n");
-    }
-
-    get_host_by_name_fn
-        = (ws2_ifn_ptr_t*) GetProcAddress(hWinsock, "gethostbyname");
+  if (os::WinSock2Dll::WSAStartup(MAKEWORD(1,1), &wsadata) != 0) {
+      jio_fprintf(stderr, "Could not initialize Winsock\n");
   }
-
-  assert(get_host_by_name_fn != NULL,
-    "gethostbyname function not found");
-  sockfnptrs_initialized = TRUE;
+  sock_initialized = TRUE;
   ::mutexUnlock(&sockFnTableMutex);
 }
 
 struct hostent*  os::get_host_by_name(char* name) {
-  if (!sockfnptrs_initialized) {
-    initSockFnTable();
+  if (!sock_initialized) {
+    initSock();
   }
-
-  assert(sockfnptrs_initialized == TRUE && get_host_by_name_fn != NULL,
-    "sockfnptrs is not initialized or pointer to gethostbyname function is NULL");
-  return (*get_host_by_name_fn)(name);
+  if (!os::WinSock2Dll::WinSock2Available()) {
+    return NULL;
+  }
+  return (struct hostent*)os::WinSock2Dll::gethostbyname(name);
 }
 
 
@@ -4869,3 +4754,367 @@ int os::set_sock_opt(int fd, int level, int optname,
   ShouldNotReachHere();
   return 0;
 }
+
+
+// Kernel32 API
+typedef SIZE_T (WINAPI* GetLargePageMinimum_Fn)(void);
+GetLargePageMinimum_Fn      os::Kernel32Dll::_GetLargePageMinimum = NULL;
+BOOL                        os::Kernel32Dll::initialized = FALSE;
+SIZE_T os::Kernel32Dll::GetLargePageMinimum() {
+  assert(initialized && _GetLargePageMinimum != NULL,
+    "GetLargePageMinimumAvailable() not yet called");
+  return _GetLargePageMinimum();
+}
+
+BOOL os::Kernel32Dll::GetLargePageMinimumAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _GetLargePageMinimum != NULL;
+}
+
+
+#ifndef JDK6_OR_EARLIER
+
+void os::Kernel32Dll::initialize() {
+  if (!initialized) {
+    HMODULE handle = ::GetModuleHandle("Kernel32.dll");
+    assert(handle != NULL, "Just check");
+    _GetLargePageMinimum = (GetLargePageMinimum_Fn)::GetProcAddress(handle, "GetLargePageMinimum");
+    initialized = TRUE;
+  }
+}
+
+
+// Kernel32 API
+inline BOOL os::Kernel32Dll::SwitchToThread() {
+  return ::SwitchToThread();
+}
+
+inline BOOL os::Kernel32Dll::SwitchToThreadAvailable() {
+  return true;
+}
+
+  // Help tools
+inline BOOL os::Kernel32Dll::HelpToolsAvailable() {
+  return true;
+}
+
+inline HANDLE os::Kernel32Dll::CreateToolhelp32Snapshot(DWORD dwFlags,DWORD th32ProcessId) {
+  return ::CreateToolhelp32Snapshot(dwFlags, th32ProcessId);
+}
+
+inline BOOL os::Kernel32Dll::Module32First(HANDLE hSnapshot,LPMODULEENTRY32 lpme) {
+  return ::Module32First(hSnapshot, lpme);
+}
+
+inline BOOL os::Kernel32Dll::Module32Next(HANDLE hSnapshot,LPMODULEENTRY32 lpme) {
+  return ::Module32Next(hSnapshot, lpme);
+}
+
+
+inline BOOL os::Kernel32Dll::GetNativeSystemInfoAvailable() {
+  return true;
+}
+
+inline void os::Kernel32Dll::GetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo) {
+  ::GetNativeSystemInfo(lpSystemInfo);
+}
+
+// PSAPI API
+inline BOOL os::PSApiDll::EnumProcessModules(HANDLE hProcess, HMODULE *lpModule, DWORD cb, LPDWORD lpcbNeeded) {
+  return ::EnumProcessModules(hProcess, lpModule, cb, lpcbNeeded);
+}
+
+inline DWORD os::PSApiDll::GetModuleFileNameEx(HANDLE hProcess, HMODULE hModule, LPTSTR lpFilename, DWORD nSize) {
+  return ::GetModuleFileNameEx(hProcess, hModule, lpFilename, nSize);
+}
+
+inline BOOL os::PSApiDll::GetModuleInformation(HANDLE hProcess, HMODULE hModule, LPMODULEINFO lpmodinfo, DWORD cb) {
+  return ::GetModuleInformation(hProcess, hModule, lpmodinfo, cb);
+}
+
+inline BOOL os::PSApiDll::PSApiAvailable() {
+  return true;
+}
+
+
+// WinSock2 API
+inline BOOL os::WinSock2Dll::WSAStartup(WORD wVersionRequested, LPWSADATA lpWSAData) {
+  return ::WSAStartup(wVersionRequested, lpWSAData);
+}
+
+inline struct hostent* os::WinSock2Dll::gethostbyname(const char *name) {
+  return ::gethostbyname(name);
+}
+
+inline BOOL os::WinSock2Dll::WinSock2Available() {
+  return true;
+}
+
+// Advapi API
+inline BOOL os::Advapi32Dll::AdjustTokenPrivileges(HANDLE TokenHandle,
+   BOOL DisableAllPrivileges, PTOKEN_PRIVILEGES NewState, DWORD BufferLength,
+   PTOKEN_PRIVILEGES PreviousState, PDWORD ReturnLength) {
+     return ::AdjustTokenPrivileges(TokenHandle, DisableAllPrivileges, NewState,
+       BufferLength, PreviousState, ReturnLength);
+}
+
+inline BOOL os::Advapi32Dll::OpenProcessToken(HANDLE ProcessHandle, DWORD DesiredAccess,
+  PHANDLE TokenHandle) {
+    return ::OpenProcessToken(ProcessHandle, DesiredAccess, TokenHandle);
+}
+
+inline BOOL os::Advapi32Dll::LookupPrivilegeValue(LPCTSTR lpSystemName, LPCTSTR lpName, PLUID lpLuid) {
+  return ::LookupPrivilegeValue(lpSystemName, lpName, lpLuid);
+}
+
+inline BOOL os::Advapi32Dll::AdvapiAvailable() {
+  return true;
+}
+
+#else
+// Kernel32 API
+typedef BOOL (WINAPI* SwitchToThread_Fn)(void);
+typedef HANDLE (WINAPI* CreateToolhelp32Snapshot_Fn)(DWORD,DWORD);
+typedef BOOL (WINAPI* Module32First_Fn)(HANDLE,LPMODULEENTRY32);
+typedef BOOL (WINAPI* Module32Next_Fn)(HANDLE,LPMODULEENTRY32);
+typedef void (WINAPI* GetNativeSystemInfo_Fn)(LPSYSTEM_INFO);
+
+SwitchToThread_Fn           os::Kernel32Dll::_SwitchToThread = NULL;
+CreateToolhelp32Snapshot_Fn os::Kernel32Dll::_CreateToolhelp32Snapshot = NULL;
+Module32First_Fn            os::Kernel32Dll::_Module32First = NULL;
+Module32Next_Fn             os::Kernel32Dll::_Module32Next = NULL;
+GetNativeSystemInfo_Fn      os::Kernel32Dll::_GetNativeSystemInfo = NULL;
+
+void os::Kernel32Dll::initialize() {
+  if (!initialized) {
+    HMODULE handle = ::GetModuleHandle("Kernel32.dll");
+    assert(handle != NULL, "Just check");
+
+    _SwitchToThread = (SwitchToThread_Fn)::GetProcAddress(handle, "SwitchToThread");
+    _GetLargePageMinimum = (GetLargePageMinimum_Fn)::GetProcAddress(handle, "GetLargePageMinimum");
+    _CreateToolhelp32Snapshot = (CreateToolhelp32Snapshot_Fn)
+      ::GetProcAddress(handle, "CreateToolhelp32Snapshot");
+    _Module32First = (Module32First_Fn)::GetProcAddress(handle, "Module32First");
+    _Module32Next = (Module32Next_Fn)::GetProcAddress(handle, "Module32Next");
+    _GetNativeSystemInfo = (GetNativeSystemInfo_Fn)::GetProcAddress(handle, "GetNativeSystemInfo");
+
+    initialized = TRUE;
+  }
+}
+
+BOOL os::Kernel32Dll::SwitchToThread() {
+  assert(initialized && _SwitchToThread != NULL,
+    "SwitchToThreadAvailable() not yet called");
+  return _SwitchToThread();
+}
+
+
+BOOL os::Kernel32Dll::SwitchToThreadAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _SwitchToThread != NULL;
+}
+
+// Help tools
+BOOL os::Kernel32Dll::HelpToolsAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _CreateToolhelp32Snapshot != NULL &&
+         _Module32First != NULL &&
+         _Module32Next != NULL;
+}
+
+HANDLE os::Kernel32Dll::CreateToolhelp32Snapshot(DWORD dwFlags,DWORD th32ProcessId) {
+  assert(initialized && _CreateToolhelp32Snapshot != NULL,
+    "HelpToolsAvailable() not yet called");
+
+  return _CreateToolhelp32Snapshot(dwFlags, th32ProcessId);
+}
+
+BOOL os::Kernel32Dll::Module32First(HANDLE hSnapshot,LPMODULEENTRY32 lpme) {
+  assert(initialized && _Module32First != NULL,
+    "HelpToolsAvailable() not yet called");
+
+  return _Module32First(hSnapshot, lpme);
+}
+
+inline BOOL os::Kernel32Dll::Module32Next(HANDLE hSnapshot,LPMODULEENTRY32 lpme) {
+  assert(initialized && _Module32Next != NULL,
+    "HelpToolsAvailable() not yet called");
+
+  return _Module32Next(hSnapshot, lpme);
+}
+
+
+BOOL os::Kernel32Dll::GetNativeSystemInfoAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _GetNativeSystemInfo != NULL;
+}
+
+void os::Kernel32Dll::GetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo) {
+  assert(initialized && _GetNativeSystemInfo != NULL,
+    "GetNativeSystemInfoAvailable() not yet called");
+
+  _GetNativeSystemInfo(lpSystemInfo);
+}
+
+// PSAPI API
+
+
+typedef BOOL (WINAPI *EnumProcessModules_Fn)(HANDLE, HMODULE *, DWORD, LPDWORD);
+typedef BOOL (WINAPI *GetModuleFileNameEx_Fn)(HANDLE, HMODULE, LPTSTR, DWORD);;
+typedef BOOL (WINAPI *GetModuleInformation_Fn)(HANDLE, HMODULE, LPMODULEINFO, DWORD);
+
+EnumProcessModules_Fn   os::PSApiDll::_EnumProcessModules = NULL;
+GetModuleFileNameEx_Fn  os::PSApiDll::_GetModuleFileNameEx = NULL;
+GetModuleInformation_Fn os::PSApiDll::_GetModuleInformation = NULL;
+BOOL                    os::PSApiDll::initialized = FALSE;
+
+void os::PSApiDll::initialize() {
+  if (!initialized) {
+    HMODULE handle = os::win32::load_Windows_dll("PSAPI.DLL", NULL, 0);
+    if (handle != NULL) {
+      _EnumProcessModules = (EnumProcessModules_Fn)::GetProcAddress(handle,
+        "EnumProcessModules");
+      _GetModuleFileNameEx = (GetModuleFileNameEx_Fn)::GetProcAddress(handle,
+        "GetModuleFileNameExA");
+      _GetModuleInformation = (GetModuleInformation_Fn)::GetProcAddress(handle,
+        "GetModuleInformation");
+    }
+    initialized = TRUE;
+  }
+}
+
+
+
+BOOL os::PSApiDll::EnumProcessModules(HANDLE hProcess, HMODULE *lpModule, DWORD cb, LPDWORD lpcbNeeded) {
+  assert(initialized && _EnumProcessModules != NULL,
+    "PSApiAvailable() not yet called");
+  return _EnumProcessModules(hProcess, lpModule, cb, lpcbNeeded);
+}
+
+DWORD os::PSApiDll::GetModuleFileNameEx(HANDLE hProcess, HMODULE hModule, LPTSTR lpFilename, DWORD nSize) {
+  assert(initialized && _GetModuleFileNameEx != NULL,
+    "PSApiAvailable() not yet called");
+  return _GetModuleFileNameEx(hProcess, hModule, lpFilename, nSize);
+}
+
+BOOL os::PSApiDll::GetModuleInformation(HANDLE hProcess, HMODULE hModule, LPMODULEINFO lpmodinfo, DWORD cb) {
+  assert(initialized && _GetModuleInformation != NULL,
+    "PSApiAvailable() not yet called");
+  return _GetModuleInformation(hProcess, hModule, lpmodinfo, cb);
+}
+
+BOOL os::PSApiDll::PSApiAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _EnumProcessModules != NULL &&
+    _GetModuleFileNameEx != NULL &&
+    _GetModuleInformation != NULL;
+}
+
+
+// WinSock2 API
+typedef int (PASCAL FAR* WSAStartup_Fn)(WORD, LPWSADATA);
+typedef struct hostent *(PASCAL FAR *gethostbyname_Fn)(...);
+
+WSAStartup_Fn    os::WinSock2Dll::_WSAStartup = NULL;
+gethostbyname_Fn os::WinSock2Dll::_gethostbyname = NULL;
+BOOL             os::WinSock2Dll::initialized = FALSE;
+
+void os::WinSock2Dll::initialize() {
+  if (!initialized) {
+    HMODULE handle = os::win32::load_Windows_dll("ws2_32.dll", NULL, 0);
+    if (handle != NULL) {
+      _WSAStartup = (WSAStartup_Fn)::GetProcAddress(handle, "WSAStartup");
+      _gethostbyname = (gethostbyname_Fn)::GetProcAddress(handle, "gethostbyname");
+    }
+    initialized = TRUE;
+  }
+}
+
+
+BOOL os::WinSock2Dll::WSAStartup(WORD wVersionRequested, LPWSADATA lpWSAData) {
+  assert(initialized && _WSAStartup != NULL,
+    "WinSock2Available() not yet called");
+  return _WSAStartup(wVersionRequested, lpWSAData);
+}
+
+struct hostent* os::WinSock2Dll::gethostbyname(const char *name) {
+  assert(initialized && _gethostbyname != NULL,
+    "WinSock2Available() not yet called");
+  return _gethostbyname(name);
+}
+
+BOOL os::WinSock2Dll::WinSock2Available() {
+  if (!initialized) {
+    initialize();
+  }
+  return _WSAStartup != NULL &&
+    _gethostbyname != NULL;
+}
+
+typedef BOOL (WINAPI *AdjustTokenPrivileges_Fn)(HANDLE, BOOL, PTOKEN_PRIVILEGES, DWORD, PTOKEN_PRIVILEGES, PDWORD);
+typedef BOOL (WINAPI *OpenProcessToken_Fn)(HANDLE, DWORD, PHANDLE);
+typedef BOOL (WINAPI *LookupPrivilegeValue_Fn)(LPCTSTR, LPCTSTR, PLUID);
+
+AdjustTokenPrivileges_Fn os::Advapi32Dll::_AdjustTokenPrivileges = NULL;
+OpenProcessToken_Fn      os::Advapi32Dll::_OpenProcessToken = NULL;
+LookupPrivilegeValue_Fn  os::Advapi32Dll::_LookupPrivilegeValue = NULL;
+BOOL                     os::Advapi32Dll::initialized = FALSE;
+
+void os::Advapi32Dll::initialize() {
+  if (!initialized) {
+    HMODULE handle = os::win32::load_Windows_dll("advapi32.dll", NULL, 0);
+    if (handle != NULL) {
+      _AdjustTokenPrivileges = (AdjustTokenPrivileges_Fn)::GetProcAddress(handle,
+        "AdjustTokenPrivileges");
+      _OpenProcessToken = (OpenProcessToken_Fn)::GetProcAddress(handle,
+        "OpenProcessToken");
+      _LookupPrivilegeValue = (LookupPrivilegeValue_Fn)::GetProcAddress(handle,
+        "LookupPrivilegeValueA");
+    }
+    initialized = TRUE;
+  }
+}
+
+BOOL os::Advapi32Dll::AdjustTokenPrivileges(HANDLE TokenHandle,
+   BOOL DisableAllPrivileges, PTOKEN_PRIVILEGES NewState, DWORD BufferLength,
+   PTOKEN_PRIVILEGES PreviousState, PDWORD ReturnLength) {
+   assert(initialized && _AdjustTokenPrivileges != NULL,
+     "AdvapiAvailable() not yet called");
+   return _AdjustTokenPrivileges(TokenHandle, DisableAllPrivileges, NewState,
+       BufferLength, PreviousState, ReturnLength);
+}
+
+BOOL os::Advapi32Dll::OpenProcessToken(HANDLE ProcessHandle, DWORD DesiredAccess,
+  PHANDLE TokenHandle) {
+   assert(initialized && _OpenProcessToken != NULL,
+     "AdvapiAvailable() not yet called");
+    return _OpenProcessToken(ProcessHandle, DesiredAccess, TokenHandle);
+}
+
+BOOL os::Advapi32Dll::LookupPrivilegeValue(LPCTSTR lpSystemName, LPCTSTR lpName, PLUID lpLuid) {
+   assert(initialized && _LookupPrivilegeValue != NULL,
+     "AdvapiAvailable() not yet called");
+  return _LookupPrivilegeValue(lpSystemName, lpName, lpLuid);
+}
+
+BOOL os::Advapi32Dll::AdvapiAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _AdjustTokenPrivileges != NULL &&
+    _OpenProcessToken != NULL &&
+    _LookupPrivilegeValue != NULL;
+}
+
+#endif
+
