@@ -106,7 +106,7 @@ public:
     // do nothing.  tlabs must be inited by initialize() calls
   }
 
-  static const size_t min_size()                 { return align_object_size(MinTLABSize / HeapWordSize); }
+  static const size_t min_size()                 { return align_object_size(MinTLABSize / HeapWordSize) + alignment_reserve(); }
   static const size_t max_size()                 { assert(_max_size != 0, "max_size not set up"); return _max_size; }
   static void set_max_size(size_t max_size)      { _max_size = max_size; }
 
