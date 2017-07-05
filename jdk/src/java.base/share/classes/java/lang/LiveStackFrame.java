@@ -169,7 +169,7 @@ interface LiveStackFrame extends StackFrame {
      * it denies access to {@code RuntimePermission("liveStackFrames")}; or
      * or if the given {@code options} contains
      * {@link StackWalker.Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE}
-     * and it denies access to {@code StackFramePermission("retainClassReference")}.
+     * and it denies access to {@code RuntimePermission("getStackWalkerWithClassReference")}.
      */
     public static StackWalker getStackWalker(Set<StackWalker.Option> options) {
         SecurityManager sm = System.getSecurityManager();

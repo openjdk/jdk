@@ -26,6 +26,7 @@
 /**
  * Java Debug Wire Protocol.
  *
+ * @moduleGraph
  * @since 9
  */
 module jdk.jdwp.agent {

@@ -513,7 +513,7 @@ public class ModulePath implements ModuleFinder {
                         String pn = packageName(cn);
                         if (!packages.contains(pn)) {
                             String msg = "Provider class " + cn + " not in module";
-                            throw new IOException(msg);
+                            throw new InvalidModuleDescriptorException(msg);
                         }
                         providerClasses.add(cn);
                     }
@@ -533,7 +533,7 @@ public class ModulePath implements ModuleFinder {
                 String pn = packageName(mainClass);
                 if (!packages.contains(pn)) {
                     String msg = "Main-Class " + mainClass + " not in module";
-                    throw new IOException(msg);
+                    throw new InvalidModuleDescriptorException(msg);
                 }
                 builder.mainClass(mainClass);
             }
@@ -609,11 +609,10 @@ public class ModulePath implements ModuleFinder {
                 // no module-info.class so treat it as automatic module
                 try {
                     ModuleDescriptor md = deriveModuleDescriptor(jf);
-                    attrs = new ModuleInfo.Attributes(md, null, null);
-                } catch (IllegalArgumentException e) {
-                    throw new FindException(
-                        "Unable to derive module descriptor for: "
-                        + jf.getName(), e);
+                    attrs = new ModuleInfo.Attributes(md, null, null, null);
+                } catch (RuntimeException e) {
+                    throw new FindException("Unable to derive module descriptor for "
+                                            + jf.getName(), e);
                 }
 
             } else {
@@ -672,18 +671,18 @@ public class ModulePath implements ModuleFinder {
     /**
      * Maps the name of an entry in a JAR or ZIP file to a package name.
      *
-     * @throws IllegalArgumentException if the name is a class file in
-     *         the top-level directory of the JAR/ZIP file (and it's
-     *         not module-info.class)
+     * @throws InvalidModuleDescriptorException if the name is a class file in
+     *         the top-level directory of the JAR/ZIP file (and it's not
+     *         module-info.class)
      */
     private Optional<String> toPackageName(String name) {
         assert !name.endsWith("/");
         int index = name.lastIndexOf("/");
         if (index == -1) {
             if (name.endsWith(".class") && !name.equals(MODULE_INFO)) {
-                throw new IllegalArgumentException(name
-                        + " found in top-level directory"
-                        + " (unnamed package not allowed in module)");
+                String msg = name + " found in top-level directory"
+                             + " (unnamed package not allowed in module)";
+                throw new InvalidModuleDescriptorException(msg);
             }
             return Optional.empty();
         }
@@ -701,8 +700,8 @@ public class ModulePath implements ModuleFinder {
      * Maps the relative path of an entry in an exploded module to a package
      * name.
      *
-     * @throws IllegalArgumentException if the name is a class file in
-     *          the top-level directory (and it's not module-info.class)
+     * @throws InvalidModuleDescriptorException if the name is a class file in
+     *         the top-level directory (and it's not module-info.class)
      */
     private Optional<String> toPackageName(Path file) {
         assert file.getRoot() == null;
@@ -711,9 +710,9 @@ public class ModulePath implements ModuleFinder {
         if (parent == null) {
             String name = file.toString();
             if (name.endsWith(".class") && !name.equals(MODULE_INFO)) {
-                throw new IllegalArgumentException(name
-                        + " found in top-level directory"
-                        + " (unnamed package not allowed in module)");
+                String msg = name + " found in top-level directory"
+                             + " (unnamed package not allowed in module)";
+                throw new InvalidModuleDescriptorException(msg);
             }
             return Optional.empty();
         }

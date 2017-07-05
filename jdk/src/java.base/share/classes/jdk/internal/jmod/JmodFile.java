@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class JmodFile implements AutoCloseable {
             bis.read(magic);
             if (magic[0] != JMOD_MAGIC_NUMBER[0] ||
                 magic[1] != JMOD_MAGIC_NUMBER[1]) {
-                throw new IOException("Invalid jmod file: " + file.toString());
+                throw new IOException("Invalid JMOD file: " + file.toString());
             }
             if (magic[2] > JMOD_MAJOR_VERSION ||
                 (magic[2] == JMOD_MAJOR_VERSION && magic[3] > JMOD_MINOR_VERSION)) {
@@ -131,6 +131,13 @@ public class JmodFile implements AutoCloseable {
         }
 
         /**
+         * Returns true if the entry is a directory in the JMOD file.
+         */
+        public boolean isDirectory() {
+            return zipEntry.isDirectory();
+        }
+
+        /**
          * Returns the size of this entry.
          */
         public long size() {
@@ -186,12 +193,12 @@ public class JmodFile implements AutoCloseable {
     public Entry getEntry(Section section, String name) {
         String entry = section.jmodDir() + "/" + name;
         ZipEntry ze = zipfile.getEntry(entry);
-        return (ze == null || ze.isDirectory()) ? null : new Entry(ze);
+        return (ze != null) ? new Entry(ze) : null;
     }
 
     /**
      * Opens an {@code InputStream} for reading the named entry of the given
-     * section in this jmod file.
+     * section in this JMOD file.
      *
      * @throws IOException if the named entry is not found, or I/O error
      *         occurs when reading it
@@ -201,7 +208,7 @@ public class JmodFile implements AutoCloseable {
     {
         String entry = section.jmodDir() + "/" + name;
         ZipEntry e = zipfile.getEntry(entry);
-        if (e == null || e.isDirectory()) {
+        if (e == null) {
             throw new IOException(name + " not found: " + file);
         }
         return zipfile.getInputStream(e);
@@ -217,11 +224,10 @@ public class JmodFile implements AutoCloseable {
     }
 
     /**
-     * Returns a stream of non-directory entries in this jmod file.
+     * Returns a stream of entries in this JMOD file.
      */
     public Stream<Entry> stream() {
         return zipfile.stream()
-                      .filter(e -> !e.isDirectory())
                       .map(Entry::new);
     }
 

@@ -26,6 +26,7 @@
 /**
  * Defines the Java Debugger Interface.
  *
+ * @moduleGraph
  * @since 9
  */
 module jdk.jdi {

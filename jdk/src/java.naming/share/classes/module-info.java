@@ -26,6 +26,7 @@
 /**
  * Defines the Java Naming and Directory Interface (JNDI) API.
  *
+ * @moduleGraph
  * @since 9
  */
 module java.naming {

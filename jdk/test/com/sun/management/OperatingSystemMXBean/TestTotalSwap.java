@@ -25,14 +25,13 @@
  * @test
  * @bug     4858522
  * @summary Basic unit test of OperatingSystemMXBean.getTotalSwapSpaceSize()
- *
- * @library /lib/testlibrary
- * @modules jdk.management
- * @build TestTotalSwap jdk.testlibrary.*
- * @run main TestTotalSwap
- *
  * @author  Steve Bohne
  * @author  Jaroslav Bachorik
+ *
+ * @library /lib/testlibrary
+ *
+ * @build TestTotalSwap jdk.testlibrary.*
+ * @run main TestTotalSwap
  */
 
 /*
