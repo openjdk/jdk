@@ -36,7 +36,7 @@ import java.util.List;
  *
  * @since 9
  */
-public class ExifParentTIFFTagSet extends TIFFTagSet {
+public final class ExifParentTIFFTagSet extends TIFFTagSet {
 
     private static ExifParentTIFFTagSet theInstance = null;
 

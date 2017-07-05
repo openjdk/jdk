@@ -52,7 +52,7 @@ public class BorderFactory
 
 //// LineBorder ///////////////////////////////////////////////////////////////
     /**
-     * Creates a line border withe the specified color.
+     * Creates a line border with the specified color.
      *
      * @param color  a <code>Color</code> to use for the line
      * @return the <code>Border</code> object

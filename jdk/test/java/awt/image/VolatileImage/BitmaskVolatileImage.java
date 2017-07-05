@@ -34,6 +34,7 @@ import static java.awt.Transparency.BITMASK;
 
 /**
  * @test
+ * @key headful
  * @bug 7188942
  * @summary We should get correct volatile image, when we use BITMASK
  *          transparency

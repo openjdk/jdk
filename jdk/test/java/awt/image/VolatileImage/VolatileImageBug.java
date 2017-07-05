@@ -26,6 +26,7 @@ import java.awt.image.VolatileImage;
 
 /**
  * @test
+ * @key headful
  * @bug 8140530
  * @run main VolatileImageBug
  * @summary Creating volatileimage(0,0) should throw IAE

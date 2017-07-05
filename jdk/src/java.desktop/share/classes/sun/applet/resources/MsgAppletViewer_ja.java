@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,9 @@ public class MsgAppletViewer_ja extends ListResourceBundle {
             {"appletviewer.appletinfo.applet", "-- \u30A2\u30D7\u30EC\u30C3\u30C8\u60C5\u5831\u306A\u3057 --"},
             {"appletviewer.appletinfo.param", "-- \u30D1\u30E9\u30E1\u30FC\u30BF\u60C5\u5831\u306A\u3057 --"},
             {"appletviewer.appletinfo.textframe", "\u30A2\u30D7\u30EC\u30C3\u30C8\u60C5\u5831"},
-            {"appletviewer.appletprint.fail", "\u5370\u5237\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"},
-            {"appletviewer.appletprint.finish", "\u5370\u5237\u304C\u5B8C\u4E86\u3057\u307E\u3057\u305F\u3002"},
-            {"appletviewer.appletprint.cancel", "\u5370\u5237\u304C\u4E2D\u6B62\u3055\u308C\u307E\u3057\u305F\u3002"},
+            {"appletviewer.appletprint.fail", "\u5370\u5237\u304C\u5931\u6557\u3057\u307E\u3057\u305F\u3002"},
+            {"appletviewer.appletprint.finish", "\u5370\u5237\u3092\u7D42\u4E86\u3057\u307E\u3057\u305F\u3002"},
+            {"appletviewer.appletprint.cancel", "\u5370\u5237\u304C\u53D6\u308A\u6D88\u3055\u308C\u307E\u3057\u305F\u3002"},
             {"appletviewer.appletencoding", "\u6587\u5B57\u30A8\u30F3\u30B3\u30FC\u30C7\u30A3\u30F3\u30B0: {0}"},
             {"appletviewer.parse.warning.requiresname", "\u8B66\u544A: <param name=... value=...>\u30BF\u30B0\u306Bname\u5C5E\u6027\u304C\u5FC5\u8981\u3067\u3059\u3002"},
             {"appletviewer.parse.warning.paramoutside", "\u8B66\u544A: <param>\u30BF\u30B0\u304C<applet> ... </applet>\u306E\u5916\u5074\u3067\u3059\u3002"},
@@ -73,7 +73,8 @@ public class MsgAppletViewer_ja extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requiresheight", "\u8B66\u544A: <embed>\u30BF\u30B0\u306Bheight\u5C5E\u6027\u304C\u5FC5\u8981\u3067\u3059\u3002"},
             {"appletviewer.parse.warning.embed.requireswidth", "\u8B66\u544A: <embed>\u30BF\u30B0\u306Bwidth\u5C5E\u6027\u304C\u5FC5\u8981\u3067\u3059\u3002"},
             {"appletviewer.parse.warning.appnotLongersupported", "\u8B66\u544A: <app>\u30BF\u30B0\u306F\u73FE\u5728\u306F\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u304B\u308F\u308A\u306B<applet>\u3092\u4F7F\u7528\u3057\u3066\u304F\u3060\u3055\u3044\u3002"},
-            {"appletviewer.usage", "\u4F7F\u7528\u65B9\u6CD5: appletviewer <options> url(s)\n\n<options>\u306B\u306F\u6B21\u306E\u3082\u306E\u304C\u3042\u308A\u307E\u3059:\n  -debug                  Java\u30C7\u30D0\u30C3\u30AC\u3067\u30A2\u30D7\u30EC\u30C3\u30C8\u30FB\u30D3\u30E5\u30FC\u30A2\u3092\u958B\u59CB\u3059\u308B\n  -encoding <encoding>    HTML\u30D5\u30A1\u30A4\u30EB\u306B\u3088\u3063\u3066\u4F7F\u7528\u3055\u308C\u308B\u6587\u5B57\u30A8\u30F3\u30B3\u30FC\u30C7\u30A3\u30F3\u30B0\u3092\u6307\u5B9A\u3059\u308B\n  -J<runtime flag>        \u5F15\u6570\u3092Java\u30A4\u30F3\u30BF\u30D7\u30EA\u30BF\u306B\u6E21\u3059\n\n-J\u306F\u975E\u6A19\u6E96\u30AA\u30D7\u30B7\u30E7\u30F3\u3067\u3042\u308A\u3001\u4E88\u544A\u306A\u3057\u306B\u5909\u66F4\u3055\u308C\u308B\u53EF\u80FD\u6027\u304C\u3042\u308A\u307E\u3059\u3002"},
+            {"appletviewer.deprecated", "AppletViewer\u306F\u975E\u63A8\u5968\u3067\u3059\u3002"},
+            {"appletviewer.usage", "\u4F7F\u7528\u65B9\u6CD5: appletviewer <options> url(s)\n\n<options>\u306B\u306F\u6B21\u306E\u3082\u306E\u304C\u3042\u308A\u307E\u3059:\n  -encoding <encoding>    HTML\u30D5\u30A1\u30A4\u30EB\u306B\u3088\u3063\u3066\u4F7F\u7528\u3055\u308C\u308B\u6587\u5B57\u30A8\u30F3\u30B3\u30FC\u30C7\u30A3\u30F3\u30B0\u3092\u6307\u5B9A\u3059\u308B\n  -J<runtime flag>        \u5F15\u6570\u3092Java\u30A4\u30F3\u30BF\u30D7\u30EA\u30BF\u306B\u6E21\u3059\n\n-J\u306F\u975E\u6A19\u6E96\u30AA\u30D7\u30B7\u30E7\u30F3\u3067\u3042\u308A\u3001\u4E88\u544A\u306A\u3057\u306B\u5909\u66F4\u3055\u308C\u308B\u53EF\u80FD\u6027\u304C\u3042\u308A\u307E\u3059\u3002"},
             {"appletviewer.main.err.unsupportedopt", "\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u306A\u3044\u30AA\u30D7\u30B7\u30E7\u30F3: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "\u8A8D\u8B58\u3055\u308C\u306A\u3044\u5F15\u6570: {0}"},
             {"appletviewer.main.err.dupoption", "\u30AA\u30D7\u30B7\u30E7\u30F3\u306E\u4F7F\u7528\u304C\u91CD\u8907\u3057\u3066\u3044\u307E\u3059: {0}"},
@@ -98,7 +99,7 @@ public class MsgAppletViewer_ja extends ListResourceBundle {
             {"appletioexception.loadclass.throw.notloaded", "\u30AF\u30E9\u30B9\u304C\u30ED\u30FC\u30C9\u3055\u308C\u307E\u305B\u3093: {0}"},
             {"appletclassloader.loadcode.verbose", "{1}\u3092\u53D6\u5F97\u3059\u308B\u305F\u3081\u306E{0}\u3078\u306E\u30B9\u30C8\u30EA\u30FC\u30E0\u3092\u958B\u304D\u307E\u3059"},
             {"appletclassloader.filenotfound", "{0}\u306E\u691C\u7D22\u4E2D\u306B\u30D5\u30A1\u30A4\u30EB\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093"},
-            {"appletclassloader.fileformat", "{0}\u306E\u30ED\u30FC\u30C9\u4E2D\u306B\u30D5\u30A1\u30A4\u30EB\u30FB\u30D5\u30A9\u30FC\u30DE\u30C3\u30C8\u4F8B\u5916\u304C\u767A\u751F\u3057\u307E\u3057\u305F"},
+            {"appletclassloader.fileformat", "{0}\u306E\u30ED\u30FC\u30C9\u4E2D\u306B\u30D5\u30A1\u30A4\u30EB\u5F62\u5F0F\u4F8B\u5916\u304C\u767A\u751F\u3057\u307E\u3057\u305F"},
             {"appletclassloader.fileioexception", "{0}\u306E\u30ED\u30FC\u30C9\u4E2D\u306B\u5165\u51FA\u529B\u4F8B\u5916\u304C\u767A\u751F\u3057\u307E\u3057\u305F"},
             {"appletclassloader.fileexception", "{1}\u306E\u30ED\u30FC\u30C9\u4E2D\u306B{0}\u4F8B\u5916\u304C\u767A\u751F\u3057\u307E\u3057\u305F"},
             {"appletclassloader.filedeath", "{1}\u306E\u30ED\u30FC\u30C9\u4E2D\u306B{0}\u304C\u5F37\u5236\u7D42\u4E86\u3057\u307E\u3057\u305F"},
@@ -132,7 +133,7 @@ public class MsgAppletViewer_ja extends ListResourceBundle {
             {"appletpanel.notdisposed", "\u30ED\u30FC\u30C9: \u30A2\u30D7\u30EC\u30C3\u30C8\u304C\u7834\u68C4\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
             {"appletpanel.bail", "\u4E2D\u65AD\u6E08: \u7D42\u4E86\u3057\u3066\u3044\u307E\u3059\u3002"},
             {"appletpanel.filenotfound", "{0}\u306E\u691C\u7D22\u4E2D\u306B\u30D5\u30A1\u30A4\u30EB\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093"},
-            {"appletpanel.fileformat", "{0}\u306E\u30ED\u30FC\u30C9\u4E2D\u306B\u30D5\u30A1\u30A4\u30EB\u30FB\u30D5\u30A9\u30FC\u30DE\u30C3\u30C8\u4F8B\u5916\u304C\u767A\u751F\u3057\u307E\u3057\u305F"},
+            {"appletpanel.fileformat", "{0}\u306E\u30ED\u30FC\u30C9\u4E2D\u306B\u30D5\u30A1\u30A4\u30EB\u5F62\u5F0F\u4F8B\u5916\u304C\u767A\u751F\u3057\u307E\u3057\u305F"},
             {"appletpanel.fileioexception", "{0}\u306E\u30ED\u30FC\u30C9\u4E2D\u306B\u5165\u51FA\u529B\u4F8B\u5916\u304C\u767A\u751F\u3057\u307E\u3057\u305F"},
             {"appletpanel.fileexception", "{1}\u306E\u30ED\u30FC\u30C9\u4E2D\u306B{0}\u4F8B\u5916\u304C\u767A\u751F\u3057\u307E\u3057\u305F"},
             {"appletpanel.filedeath", "{1}\u306E\u30ED\u30FC\u30C9\u4E2D\u306B{0}\u304C\u5F37\u5236\u7D42\u4E86\u3057\u307E\u3057\u305F"},

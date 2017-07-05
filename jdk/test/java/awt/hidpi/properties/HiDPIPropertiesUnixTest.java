@@ -28,7 +28,9 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import javax.swing.UIManager;
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8137571
  * @summary Linux HiDPI Graphics support
  * @author Alexander Scherbatiy

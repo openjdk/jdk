@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,15 @@
  */
 
 /*
-   @test
-   @bug 4904961
-   @summary Test that Dialog with zero sizes won't be created with negative sizes due to overflow in peer code
-   @author Andrei Dmitriev: area=awt.toplevel
-   @library ../../regtesthelpers
-   @build Util
-   @run main DialogSizeOverflowTest
-*/
+ * @test
+ * @key headful
+ * @bug 4904961
+ * @summary Test that Dialog with zero sizes won't be created with negative sizes due to overflow in peer code
+ * @author Andrei Dmitriev: area=awt.toplevel
+ * @library ../../regtesthelpers
+ * @build Util
+ * @run main DialogSizeOverflowTest
+ */
 
 import java.awt.*;
 import java.awt.event.*;

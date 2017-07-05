@@ -28,6 +28,7 @@
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires vm.opt.FlightRecorder != true
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
+ * @requires vm.opt.MaxGCPauseMillis == "null"
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management

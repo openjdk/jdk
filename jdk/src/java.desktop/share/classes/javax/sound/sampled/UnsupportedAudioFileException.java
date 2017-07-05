@@ -38,16 +38,16 @@ public class UnsupportedAudioFileException extends Exception {
     private static final long serialVersionUID = -139127412623160368L;
 
     /**
-     * Constructs a {@code UnsupportedAudioFileException} that has {@code null}
-     * as its error detail message.
+     * Constructs an {@code UnsupportedAudioFileException} that has
+     * {@code null} as its error detail message.
      */
     public UnsupportedAudioFileException() {
         super();
     }
 
     /**
-     * Constructs a {@code UnsupportedAudioFileException} that has the specified
-     * detail message.
+     * Constructs an {@code UnsupportedAudioFileException} that has the
+     * specified detail message.
      *
      * @param  message a string containing the error detail message
      */
