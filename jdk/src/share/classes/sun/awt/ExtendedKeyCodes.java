@@ -13,7 +13,7 @@ public class ExtendedKeyCodes {
      */
      // Keycodes declared in KeyEvent.java with corresponding Unicode values.
      private final static HashMap<Integer, Integer>  regularKeyCodesMap =
-                                          new HashMap<Integer,Integer>(122, 1.0f);
+                                          new HashMap<Integer,Integer>(83, 1.0f);
 
      // Keycodes derived from Unicode values. Here should be collected codes
      // for characters appearing on the primary layer of at least one
@@ -22,7 +22,6 @@ public class ExtendedKeyCodes {
      private final static HashSet<Integer> extendedKeyCodesSet =
                                                   new HashSet<Integer>(501, 1.0f);
      final public static int getExtendedKeyCodeForChar( int c ) {
-         int rc = KeyEvent.VK_UNDEFINED;
          int uc = Character.toUpperCase( c );
          int lc = Character.toLowerCase( c );
          if (regularKeyCodesMap.containsKey( c )) {
@@ -38,22 +37,25 @@ public class ExtendedKeyCodes {
          }else if (extendedKeyCodesSet.contains( lc )) {
              return lc;
          }
-         return rc;
+         return KeyEvent.VK_UNDEFINED;
      }
      static {
-         regularKeyCodesMap.put(0x0a, KeyEvent.VK_ENTER);
          regularKeyCodesMap.put(0x08, KeyEvent.VK_BACK_SPACE);
          regularKeyCodesMap.put(0x09, KeyEvent.VK_TAB);
+         regularKeyCodesMap.put(0x0a, KeyEvent.VK_ENTER);
          regularKeyCodesMap.put(0x1B, KeyEvent.VK_ESCAPE);
+         regularKeyCodesMap.put(0x20AC, KeyEvent.VK_EURO_SIGN);
          regularKeyCodesMap.put(0x20, KeyEvent.VK_SPACE);
-         regularKeyCodesMap.put(0x21, KeyEvent.VK_PAGE_UP);
-         regularKeyCodesMap.put(0x22, KeyEvent.VK_PAGE_DOWN);
-         regularKeyCodesMap.put(0x23, KeyEvent.VK_END);
-         regularKeyCodesMap.put(0x24, KeyEvent.VK_HOME);
-         regularKeyCodesMap.put(0x25, KeyEvent.VK_LEFT);
-         regularKeyCodesMap.put(0x26, KeyEvent.VK_UP);
-         regularKeyCodesMap.put(0x27, KeyEvent.VK_RIGHT);
-         regularKeyCodesMap.put(0x28, KeyEvent.VK_DOWN);
+         regularKeyCodesMap.put(0x21, KeyEvent.VK_EXCLAMATION_MARK);
+         regularKeyCodesMap.put(0x22, KeyEvent.VK_QUOTEDBL);
+         regularKeyCodesMap.put(0x23, KeyEvent.VK_NUMBER_SIGN);
+         regularKeyCodesMap.put(0x24, KeyEvent.VK_DOLLAR);
+         regularKeyCodesMap.put(0x26, KeyEvent.VK_AMPERSAND);
+         regularKeyCodesMap.put(0x27, KeyEvent.VK_QUOTE);
+         regularKeyCodesMap.put(0x28, KeyEvent.VK_LEFT_PARENTHESIS);
+         regularKeyCodesMap.put(0x29, KeyEvent.VK_RIGHT_PARENTHESIS);
+         regularKeyCodesMap.put(0x2A, KeyEvent.VK_ASTERISK);
+         regularKeyCodesMap.put(0x2B, KeyEvent.VK_PLUS);
          regularKeyCodesMap.put(0x2C, KeyEvent.VK_COMMA);
          regularKeyCodesMap.put(0x2D, KeyEvent.VK_MINUS);
          regularKeyCodesMap.put(0x2E, KeyEvent.VK_PERIOD);
@@ -68,102 +70,59 @@ public class ExtendedKeyCodes {
          regularKeyCodesMap.put(0x37, KeyEvent.VK_7);
          regularKeyCodesMap.put(0x38, KeyEvent.VK_8);
          regularKeyCodesMap.put(0x39, KeyEvent.VK_9);
+         regularKeyCodesMap.put(0x3A, KeyEvent.VK_COLON);
          regularKeyCodesMap.put(0x3B, KeyEvent.VK_SEMICOLON);
+         regularKeyCodesMap.put(0x3C, KeyEvent.VK_LESS);
          regularKeyCodesMap.put(0x3D, KeyEvent.VK_EQUALS);
+         regularKeyCodesMap.put(0x3E, KeyEvent.VK_GREATER);
+         regularKeyCodesMap.put(0x40, KeyEvent.VK_AT);
          regularKeyCodesMap.put(0x41, KeyEvent.VK_A);
-         regularKeyCodesMap.put(0x61, KeyEvent.VK_A);
          regularKeyCodesMap.put(0x42, KeyEvent.VK_B);
-         regularKeyCodesMap.put(0x62, KeyEvent.VK_B);
          regularKeyCodesMap.put(0x43, KeyEvent.VK_C);
-         regularKeyCodesMap.put(0x63, KeyEvent.VK_C);
          regularKeyCodesMap.put(0x44, KeyEvent.VK_D);
-         regularKeyCodesMap.put(0x64, KeyEvent.VK_D);
          regularKeyCodesMap.put(0x45, KeyEvent.VK_E);
-         regularKeyCodesMap.put(0x65, KeyEvent.VK_E);
          regularKeyCodesMap.put(0x46, KeyEvent.VK_F);
-         regularKeyCodesMap.put(0x66, KeyEvent.VK_F);
          regularKeyCodesMap.put(0x47, KeyEvent.VK_G);
-         regularKeyCodesMap.put(0x67, KeyEvent.VK_G);
          regularKeyCodesMap.put(0x48, KeyEvent.VK_H);
-         regularKeyCodesMap.put(0x68, KeyEvent.VK_H);
          regularKeyCodesMap.put(0x49, KeyEvent.VK_I);
-         regularKeyCodesMap.put(0x69, KeyEvent.VK_I);
          regularKeyCodesMap.put(0x4A, KeyEvent.VK_J);
-         regularKeyCodesMap.put(0x6A, KeyEvent.VK_J);
          regularKeyCodesMap.put(0x4B, KeyEvent.VK_K);
-         regularKeyCodesMap.put(0x6B, KeyEvent.VK_K);
          regularKeyCodesMap.put(0x4C, KeyEvent.VK_L);
-         regularKeyCodesMap.put(0x6C, KeyEvent.VK_L);
          regularKeyCodesMap.put(0x4D, KeyEvent.VK_M);
-         regularKeyCodesMap.put(0x6D, KeyEvent.VK_M);
          regularKeyCodesMap.put(0x4E, KeyEvent.VK_N);
-         regularKeyCodesMap.put(0x6E, KeyEvent.VK_N);
          regularKeyCodesMap.put(0x4F, KeyEvent.VK_O);
-         regularKeyCodesMap.put(0x6F, KeyEvent.VK_O);
          regularKeyCodesMap.put(0x50, KeyEvent.VK_P);
-         regularKeyCodesMap.put(0x70, KeyEvent.VK_P);
          regularKeyCodesMap.put(0x51, KeyEvent.VK_Q);
-         regularKeyCodesMap.put(0x71, KeyEvent.VK_Q);
          regularKeyCodesMap.put(0x52, KeyEvent.VK_R);
-         regularKeyCodesMap.put(0x72, KeyEvent.VK_R);
          regularKeyCodesMap.put(0x53, KeyEvent.VK_S);
-         regularKeyCodesMap.put(0x73, KeyEvent.VK_S);
          regularKeyCodesMap.put(0x54, KeyEvent.VK_T);
-         regularKeyCodesMap.put(0x74, KeyEvent.VK_T);
          regularKeyCodesMap.put(0x55, KeyEvent.VK_U);
-         regularKeyCodesMap.put(0x75, KeyEvent.VK_U);
          regularKeyCodesMap.put(0x56, KeyEvent.VK_V);
-         regularKeyCodesMap.put(0x76, KeyEvent.VK_V);
          regularKeyCodesMap.put(0x57, KeyEvent.VK_W);
-         regularKeyCodesMap.put(0x77, KeyEvent.VK_W);
          regularKeyCodesMap.put(0x58, KeyEvent.VK_X);
-         regularKeyCodesMap.put(0x78, KeyEvent.VK_X);
          regularKeyCodesMap.put(0x59, KeyEvent.VK_Y);
-         regularKeyCodesMap.put(0x79, KeyEvent.VK_Y);
          regularKeyCodesMap.put(0x5A, KeyEvent.VK_Z);
-         regularKeyCodesMap.put(0x7A, KeyEvent.VK_Z);
          regularKeyCodesMap.put(0x5B, KeyEvent.VK_OPEN_BRACKET);
          regularKeyCodesMap.put(0x5C, KeyEvent.VK_BACK_SLASH);
          regularKeyCodesMap.put(0x5D, KeyEvent.VK_CLOSE_BRACKET);
-//         regularKeyCodesMap.put(0x60, KeyEvent.VK_NUMPAD0);
-//         regularKeyCodesMap.put(0x61, KeyEvent.VK_NUMPAD1);
-//         regularKeyCodesMap.put(0x62, KeyEvent.VK_NUMPAD2);
-//         regularKeyCodesMap.put(0x63, KeyEvent.VK_NUMPAD3);
-//         regularKeyCodesMap.put(0x64, KeyEvent.VK_NUMPAD4);
-//         regularKeyCodesMap.put(0x65, KeyEvent.VK_NUMPAD5);
-//         regularKeyCodesMap.put(0x66, KeyEvent.VK_NUMPAD6);
-//         regularKeyCodesMap.put(0x67, KeyEvent.VK_NUMPAD7);
-//         regularKeyCodesMap.put(0x68, KeyEvent.VK_NUMPAD8);
-//         regularKeyCodesMap.put(0x69, KeyEvent.VK_NUMPAD9);
-         regularKeyCodesMap.put(0x6A, KeyEvent.VK_MULTIPLY);
-         regularKeyCodesMap.put(0x6B, KeyEvent.VK_ADD);
-         regularKeyCodesMap.put(0x6C, KeyEvent.VK_SEPARATER);
-         regularKeyCodesMap.put(0x6D, KeyEvent.VK_SUBTRACT);
-         regularKeyCodesMap.put(0x6E, KeyEvent.VK_DECIMAL);
-         regularKeyCodesMap.put(0x6F, KeyEvent.VK_DIVIDE);
-         regularKeyCodesMap.put(0x7F, KeyEvent.VK_DELETE);
-         regularKeyCodesMap.put(0xC0, KeyEvent.VK_BACK_QUOTE);
-         regularKeyCodesMap.put(0xDE, KeyEvent.VK_QUOTE);
-         regularKeyCodesMap.put(0x26, KeyEvent.VK_AMPERSAND);
-         regularKeyCodesMap.put(0x2A, KeyEvent.VK_ASTERISK);
-         regularKeyCodesMap.put(0x22, KeyEvent.VK_QUOTEDBL);
-         regularKeyCodesMap.put(0x3C, KeyEvent.VK_LESS);
-         regularKeyCodesMap.put(0x3E, KeyEvent.VK_GREATER);
+         regularKeyCodesMap.put(0x5E, KeyEvent.VK_CIRCUMFLEX);
+         regularKeyCodesMap.put(0x5F, KeyEvent.VK_UNDERSCORE);
+         regularKeyCodesMap.put(0x60, KeyEvent.VK_BACK_QUOTE);
+         regularKeyCodesMap.put(0x70, KeyEvent.VK_P);
+         regularKeyCodesMap.put(0x71, KeyEvent.VK_Q);
+         regularKeyCodesMap.put(0x72, KeyEvent.VK_R);
+         regularKeyCodesMap.put(0x73, KeyEvent.VK_S);
+         regularKeyCodesMap.put(0x74, KeyEvent.VK_T);
+         regularKeyCodesMap.put(0x75, KeyEvent.VK_U);
+         regularKeyCodesMap.put(0x76, KeyEvent.VK_V);
+         regularKeyCodesMap.put(0x77, KeyEvent.VK_W);
+         regularKeyCodesMap.put(0x78, KeyEvent.VK_X);
+         regularKeyCodesMap.put(0x79, KeyEvent.VK_Y);
+         regularKeyCodesMap.put(0x7A, KeyEvent.VK_Z);
          regularKeyCodesMap.put(0x7B, KeyEvent.VK_BRACELEFT);
          regularKeyCodesMap.put(0x7D, KeyEvent.VK_BRACERIGHT);
-         regularKeyCodesMap.put(0x40, KeyEvent.VK_AT);
-         regularKeyCodesMap.put(0x3A, KeyEvent.VK_COLON);
-         regularKeyCodesMap.put(0x5E, KeyEvent.VK_CIRCUMFLEX);
-         regularKeyCodesMap.put(0x24, KeyEvent.VK_DOLLAR);
-         regularKeyCodesMap.put(0x20AC, KeyEvent.VK_EURO_SIGN);
-         regularKeyCodesMap.put(0x21, KeyEvent.VK_EXCLAMATION_MARK);
+         regularKeyCodesMap.put(0x7F, KeyEvent.VK_DELETE);
          regularKeyCodesMap.put(0xA1, KeyEvent.VK_INVERTED_EXCLAMATION_MARK);
-         regularKeyCodesMap.put(0x28, KeyEvent.VK_LEFT_PARENTHESIS);
-         regularKeyCodesMap.put(0x23, KeyEvent.VK_NUMBER_SIGN);
-         regularKeyCodesMap.put(0x2B, KeyEvent.VK_PLUS);
-         regularKeyCodesMap.put(0x29, KeyEvent.VK_RIGHT_PARENTHESIS);
-         regularKeyCodesMap.put(0x5F, KeyEvent.VK_UNDERSCORE);
-
 
          extendedKeyCodesSet.add(0x01000000+0x0060);
          extendedKeyCodesSet.add(0x01000000+0x007C);

@@ -57,7 +57,16 @@ public class SynthListUI extends BasicListUI
     }
 
     /**
-     * @inheritDoc
+     * Notifies this UI delegate to repaint the specified component.
+     * This method paints the component background, then calls
+     * the {@link #paint} method.
+     *
+     * <p>In general, this method does not need to be overridden by subclasses.
+     * All Look and Feel rendering code should reside in the {@code paint} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint
      */
     @Override
     public void update(Graphics g, JComponent c) {
