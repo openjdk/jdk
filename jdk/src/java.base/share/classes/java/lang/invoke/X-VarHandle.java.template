@@ -155,6 +155,15 @@ final class VarHandle$Type$s {
         }
 
         @ForceInline
+        static boolean weakCompareAndSetVolatile(FieldInstanceReadWrite handle, Object holder, $type$ expected, $type$ value) {
+            // TODO defer to strong form until new Unsafe method is added
+            return UNSAFE.compareAndSwap$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
+                                               handle.fieldOffset,
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(value):value});
+        }
+
+        @ForceInline
         static boolean weakCompareAndSetAcquire(FieldInstanceReadWrite handle, Object holder, $type$ expected, $type$ value) {
             return UNSAFE.weakCompareAndSwap$Type$Acquire(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset,
@@ -313,6 +322,15 @@ final class VarHandle$Type$s {
         @ForceInline
         static boolean weakCompareAndSet(FieldStaticReadWrite handle, $type$ expected, $type$ value) {
             return UNSAFE.weakCompareAndSwap$Type$(handle.base,
+                                               handle.fieldOffset,
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(value):value});
+        }
+
+        @ForceInline
+        static boolean weakCompareAndSetVolatile(FieldStaticReadWrite handle, $type$ expected, $type$ value) {
+            // TODO defer to strong form until new Unsafe method is added
+            return UNSAFE.compareAndSwap$Type$(handle.base,
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -529,6 +547,20 @@ final class VarHandle$Type$s {
             $type$[] array = ($type$[]) oarray;
 #end[Object]
             return UNSAFE.weakCompareAndSwap$Type$(array,
+                    (((long) Objects.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
+                    {#if[Object]?handle.componentType.cast(expected):expected},
+                    {#if[Object]?handle.componentType.cast(value):value});
+        }
+
+        @ForceInline
+        static boolean weakCompareAndSetVolatile(Array handle, Object oarray, int index, $type$ expected, $type$ value) {
+#if[Object]
+            Object[] array = (Object[]) handle.arrayType.cast(oarray);
+#else[Object]
+            $type$[] array = ($type$[]) oarray;
+#end[Object]
+            // TODO defer to strong form until new Unsafe method is added
+            return UNSAFE.compareAndSwap$Type$(array,
                     (((long) Objects.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?handle.componentType.cast(value):value});

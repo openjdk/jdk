@@ -108,14 +108,12 @@ public class SynthPanelUI extends BasicPanelUI
         SynthContext context = getContext(p, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
     private void updateStyle(JPanel c) {
         SynthContext context = getContext(c, ENABLED);
         style = SynthLookAndFeel.updateStyle(context, this);
-        context.dispose();
     }
 
     /**
@@ -154,7 +152,6 @@ public class SynthPanelUI extends BasicPanelUI
         context.getPainter().paintPanelBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -171,7 +168,6 @@ public class SynthPanelUI extends BasicPanelUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

@@ -197,7 +197,7 @@ public class PlatformLoggerTest {
         // create a brand new java logger
         Logger javaLogger = sun.util.logging.internal.LoggingProviderImpl.getLogManagerAccess()
                      .demandLoggerFor(LogManager.getLogManager(),
-                          logger.getName()+"."+level.getName(), Thread.class);
+                          logger.getName()+"."+level.getName(), Thread.class.getModule());
 
         // Set a non standard java.util.logging.Level on the java logger
         // (except for OFF & ALL - which will remain unchanged)

@@ -121,7 +121,6 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
                                           ENABLED);
         SynthStyle oldDividerStyle = dividerStyle;
         dividerStyle = SynthLookAndFeel.updateStyle(context, this);
-        context.dispose();
 
         context = getContext(splitPane, ENABLED);
         SynthStyle oldStyle = style;
@@ -160,7 +159,6 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
             divider.setBasicSplitPaneUI(this);
             splitPane.add(divider, JSplitPane.DIVIDER);
         }
-        context.dispose();
     }
 
     /**
@@ -180,12 +178,10 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
         SynthContext context = getContext(splitPane, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
 
         context = getContext(splitPane, Region.SPLIT_PANE_DIVIDER, ENABLED);
         dividerStyle.uninstallDefaults(context);
-        context.dispose();
         dividerStyle = null;
 
         super.uninstallDefaults();
@@ -287,7 +283,6 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
         context.getPainter().paintSplitPaneBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -304,7 +299,6 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -338,7 +332,6 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
         context.getPainter().paintSplitPaneDragDivider(context, g, x, y, w, h,
                                            splitPane.getOrientation());
         g.setClip(oldClip);
-        context.dispose();
     }
 
     /**

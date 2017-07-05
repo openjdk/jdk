@@ -21,34 +21,48 @@
  * questions.
  */
 
-import jdk.net.ExtendedSocketOptions;
-
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /*
  * @test
- * @bug 8143554
- * @run main UnsupportedOptionsTest
+ * @bug 8143554 8044773
  * @summary Test checks that UnsupportedOperationException for unsupported
  * SOCKET_OPTIONS is thrown by both getOption() and setOption() methods.
+ * @run main UnsupportedOptionsTest
+ * @run main/othervm -Djdk.launcher.limitmods=java.base UnsupportedOptionsTest
  */
+
 public class UnsupportedOptionsTest {
 
-    private static final SocketOption[] SOCKET_OPTIONS = {
-            StandardSocketOptions.IP_MULTICAST_IF,
-            StandardSocketOptions.IP_MULTICAST_LOOP,
-            StandardSocketOptions.IP_MULTICAST_TTL,
-            StandardSocketOptions.IP_TOS,
-            StandardSocketOptions.SO_BROADCAST,
-            StandardSocketOptions.SO_KEEPALIVE,
-            StandardSocketOptions.SO_LINGER,
-            StandardSocketOptions.SO_RCVBUF,
-            StandardSocketOptions.SO_REUSEADDR,
-            StandardSocketOptions.SO_SNDBUF,
-            StandardSocketOptions.TCP_NODELAY,
-            ExtendedSocketOptions.SO_FLOW_SLA
-    };
+    private static final List<SocketOption<?>> socketOptions = new ArrayList<>();
+
+    static {
+        socketOptions.add(StandardSocketOptions.IP_MULTICAST_IF);
+        socketOptions.add(StandardSocketOptions.IP_MULTICAST_LOOP);
+        socketOptions.add(StandardSocketOptions.IP_MULTICAST_TTL);
+        socketOptions.add(StandardSocketOptions.IP_TOS);
+        socketOptions.add(StandardSocketOptions.SO_BROADCAST);
+        socketOptions.add(StandardSocketOptions.SO_KEEPALIVE);
+        socketOptions.add(StandardSocketOptions.SO_LINGER);
+        socketOptions.add(StandardSocketOptions.SO_RCVBUF);
+        socketOptions.add(StandardSocketOptions.SO_REUSEADDR);
+        socketOptions.add(StandardSocketOptions.SO_SNDBUF);
+        socketOptions.add(StandardSocketOptions.TCP_NODELAY);
+
+        try {
+            Class<?> c = Class.forName("jdk.net.ExtendedSocketOptions");
+            Field field = c.getField("SO_FLOW_SLA");
+            socketOptions.add((SocketOption<?>)field.get(null));
+        } catch (ClassNotFoundException e) {
+            // ignore, jdk.net module not present
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+    }
 
     public static void main(String[] args) throws IOException {
         Socket s = new Socket();
@@ -56,7 +70,7 @@ public class UnsupportedOptionsTest {
         DatagramSocket ds = new DatagramSocket();
         MulticastSocket ms = new MulticastSocket();
 
-        for (SocketOption option : SOCKET_OPTIONS) {
+        for (SocketOption option : socketOptions) {
             if (!s.supportedOptions().contains(option)) {
                 testUnsupportedSocketOption(s, option);
             }

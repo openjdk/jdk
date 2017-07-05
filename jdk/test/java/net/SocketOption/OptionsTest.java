@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 8036979 8072384
+ * @bug 8036979 8072384 8044773
  * @run main/othervm -Xcheck:jni OptionsTest
  * @run main/othervm -Xcheck:jni -Djava.net.preferIPv4Stack=true OptionsTest
+ * @run main/othervm -Djdk.launcher.limitmods=java.base OptionsTest
  */
 
+import java.lang.reflect.Method;
 import java.net.*;
 import java.util.*;
 
@@ -43,7 +45,7 @@ public class OptionsTest {
         }
         Object option;
         Object testValue;
-    };
+    }
 
     // The tests set the option using the new API, read back the set value
     // which could be diferent, and then use the legacy get API to check
@@ -223,8 +225,7 @@ public class OptionsTest {
             } else if (option.equals(StandardSocketOptions.SO_REUSEPORT) && reuseport) {
                 return Boolean.valueOf(socket.getOption(StandardSocketOptions.SO_REUSEPORT));
             } else if (option.equals(StandardSocketOptions.IP_TOS)) {
-                return Integer.valueOf(jdk.net.Sockets.getOption(
-                    socket, StandardSocketOptions.IP_TOS));
+                return getServerSocketTrafficClass(socket);
             } else {
                 throw new RuntimeException("unexecpted socket option");
             }
@@ -280,5 +281,21 @@ public class OptionsTest {
         doServerSocketTests();
         doDgSocketTests();
         doMcSocketTests();
+    }
+
+    // Reflectively access jdk.net.Sockets.getOption so that the test can run
+    // without the jdk.net module.
+    static Object getServerSocketTrafficClass(ServerSocket ss) throws Exception {
+        try {
+            Class<?> c = Class.forName("jdk.net.Sockets");
+            Method m = c.getDeclaredMethod("getOption", ServerSocket.class, SocketOption.class);
+            return m.invoke(null, ss, StandardSocketOptions.IP_TOS);
+        } catch (ClassNotFoundException e) {
+            // Ok, jdk.net module not present, just fall back
+            System.out.println("jdk.net module not present, falling back.");
+            return Integer.valueOf(ss.getOption(StandardSocketOptions.IP_TOS));
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
     }
 }
