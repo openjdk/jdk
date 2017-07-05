@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.schemagen;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Comparator;
@@ -36,6 +36,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,10 +47,13 @@ import javax.xml.transform.Result;
 import javax.xml.transform.stream.StreamResult;
 
 import com.sun.istack.internal.Nullable;
+import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.bind.Util;
 import com.sun.xml.internal.bind.api.CompositeStructure;
+import com.sun.xml.internal.bind.api.ErrorListener;
 import com.sun.xml.internal.bind.v2.TODO;
 import com.sun.xml.internal.bind.v2.WellKnownNamespace;
+import com.sun.xml.internal.bind.v2.util.CollisionCheckStack;
 import static com.sun.xml.internal.bind.v2.WellKnownNamespace.XML_SCHEMA;
 import com.sun.xml.internal.bind.v2.model.core.Adapter;
 import com.sun.xml.internal.bind.v2.model.core.ArrayInfo;
@@ -83,7 +87,6 @@ import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Import;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.LocalAttribute;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.LocalElement;
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Occurs;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Schema;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.SimpleExtension;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.SimpleRestrictionModel;
@@ -92,10 +95,17 @@ import com.sun.xml.internal.bind.v2.schemagen.xmlschema.SimpleTypeHost;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.TopLevelAttribute;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.TopLevelElement;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.TypeHost;
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.ContentModelContainer;
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.TypeDefParticle;
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.AttributeType;
+import com.sun.xml.internal.bind.v2.schemagen.episode.Bindings;
 import com.sun.xml.internal.txw2.TXW;
 import com.sun.xml.internal.txw2.TxwException;
 import com.sun.xml.internal.txw2.TypedXmlWriter;
 import com.sun.xml.internal.txw2.output.ResultFactory;
+import com.sun.xml.internal.txw2.output.XmlSerializer;
+
+import org.xml.sax.SAXParseException;
 
 /**
  * Generates a set of W3C XML Schema documents from a set of Java classes.
@@ -127,6 +137,11 @@ public final class XmlSchemaGenerator<T,C,F,M> {
      */
     private final Map<String,Namespace> namespaces = new TreeMap<String,Namespace>(NAMESPACE_COMPARATOR);
 
+    /**
+     * {@link ErrorListener} to send errors to.
+     */
+    private ErrorListener errorListener;
+
     /** model navigator **/
     private Navigator<T,C,F,M> navigator;
 
@@ -141,6 +156,11 @@ public final class XmlSchemaGenerator<T,C,F,M> {
      * Represents xs:anyType.
      */
     private final NonElement<T,C> anyType;
+
+    /**
+     * Used to detect cycles in anonymous types.
+     */
+    private final CollisionCheckStack<ClassInfo<T,C>> collisionChecker = new CollisionCheckStack<ClassInfo<T,C>>();
 
     public XmlSchemaGenerator( Navigator<T,C,F,M> navigator, TypeInfoSet<T,C,F,M> types ) {
         this.navigator = navigator;
@@ -228,12 +248,17 @@ public final class XmlSchemaGenerator<T,C,F,M> {
                     }
                 }
             }
+
+            if(generateSwaRefAdapter(p))
+                n.useSwaRef = true;
         }
 
         // recurse on baseTypes to make sure that we can refer to them in the schema
         ClassInfo<T,C> bc = clazz.getBaseClass();
-        if (bc != null)
+        if (bc != null) {
             add(bc);
+            n.addDependencyTo(bc.getTypeName());
+        }
     }
 
     /**
@@ -316,16 +341,77 @@ public final class XmlSchemaGenerator<T,C,F,M> {
     }
 
     /**
+     * Writes out the episode file.
+     */
+    public void writeEpisodeFile(XmlSerializer out) {
+        Bindings root = TXW.create(Bindings.class, out);
+
+        if(namespaces.containsKey("")) // otherwise jaxb binding NS should be the default namespace
+            root._namespace(WellKnownNamespace.JAXB,"jaxb");
+        root.version("2.1");
+        // TODO: don't we want to bake in versions?
+
+        // generate listing per schema
+        for (Map.Entry<String,Namespace> e : namespaces.entrySet()) {
+            Bindings group = root.bindings();
+
+            String prefix;
+            String tns = e.getKey();
+            if(!tns.equals("")) {
+                group._namespace(tns,"tns");
+                prefix = "tns:";
+            } else {
+                prefix = "";
+            }
+
+            group.scd("x-schema::"+(tns.equals("")?"":"tns"));
+            group.schemaBindings().map(false);
+
+            for (ClassInfo<T,C> ci : e.getValue().classes) {
+                if(ci.getTypeName()==null)  continue;   // local type
+
+                if(ci.getTypeName().getNamespaceURI().equals(tns)) {
+                    Bindings child = group.bindings();
+                    child.scd('~'+prefix+ci.getTypeName().getLocalPart());
+                    child.klass().ref(ci.getName());
+                }
+
+                if(ci.isElement() && ci.getElementName().getNamespaceURI().equals(tns)) {
+                    Bindings child = group.bindings();
+                    child.scd(prefix+ci.getElementName().getLocalPart());
+                    child.klass().ref(ci.getName());
+                }
+            }
+
+            for (EnumLeafInfo<T,C> en : e.getValue().enums) {
+                if(en.getTypeName()==null)  continue;   // local type
+
+                Bindings child = group.bindings();
+                child.scd('~'+prefix+en.getTypeName().getLocalPart());
+                child.klass().ref(navigator.getClassName(en.getClazz()));
+            }
+
+            group.commit(true);
+        }
+
+        root.commit();
+    }
+
+    /**
      * Write out the schema documents.
      */
-    public void write(SchemaOutputResolver resolver) throws IOException {
+    public void write(SchemaOutputResolver resolver, ErrorListener errorListener) throws IOException {
         if(resolver==null)
             throw new IllegalArgumentException();
 
         // make it fool-proof
         resolver = new FoolProofResolver(resolver);
+        this.errorListener = errorListener;
+
+        Map<String, String> schemaLocations = types.getSchemaLocations();
 
         Map<Namespace,Result> out = new HashMap<Namespace,Result>();
+        Map<Namespace,String> systemIds = new HashMap<Namespace,String>();
 
         // we create a Namespace object for the XML Schema namespace
         // as a side-effect, but we don't want to generate it.
@@ -334,25 +420,29 @@ public final class XmlSchemaGenerator<T,C,F,M> {
         // first create the outputs for all so that we can resolve references among
         // schema files when we write
         for( Namespace n : namespaces.values() ) {
-            final Result output = resolver.createOutput(n.uri,"schema"+(out.size()+1)+".xsd");
-            if(output!=null) {  // null result means no schema for that namespace
-                out.put(n,output);
+            String schemaLocation = schemaLocations.get(n.uri);
+            if(schemaLocation!=null) {
+                systemIds.put(n,schemaLocation);
+            } else {
+                Result output = resolver.createOutput(n.uri,"schema"+(out.size()+1)+".xsd");
+                if(output!=null) {  // null result means no schema for that namespace
+                    out.put(n,output);
+                    systemIds.put(n,output.getSystemId());
+                }
             }
         }
 
         // then write'em all
-        for( Namespace n : namespaces.values() ) {
-            Result result = out.get(n);
-            if(result!=null) {
-                n.writeTo( result, out );
-                if(result instanceof StreamResult) {
-                    OutputStream outputStream = ((StreamResult)result).getOutputStream();
-                    if(outputStream != null) {
-                        outputStream.close(); // fix for bugid: 6291301
-                    } else {
-                        final Writer writer = ((StreamResult)result).getWriter();
-                        if(writer != null) writer.close();
-                    }
+        for( Map.Entry<Namespace,Result> e : out.entrySet() ) {
+            Result result = e.getValue();
+            e.getKey().writeTo( result, systemIds );
+            if(result instanceof StreamResult) {
+                OutputStream outputStream = ((StreamResult)result).getOutputStream();
+                if(outputStream != null) {
+                    outputStream.close(); // fix for bugid: 6291301
+                } else {
+                    final Writer writer = ((StreamResult)result).getWriter();
+                    if(writer != null) writer.close();
                 }
             }
         }
@@ -364,7 +454,7 @@ public final class XmlSchemaGenerator<T,C,F,M> {
      * Schema components are organized per namespace.
      */
     private class Namespace {
-        final String uri;
+        final @NotNull String uri;
 
         /**
          * Other {@link Namespace}s that this namespace depends on.
@@ -394,7 +484,7 @@ public final class XmlSchemaGenerator<T,C,F,M> {
         /**
          * Global attribute declarations keyed by their local names.
          */
-        private final MultiMap<String,NonElement<T,C>> attributeDecls = new MultiMap<String,NonElement<T,C>>(stringType);
+        private final MultiMap<String,AttributePropertyInfo<T,C>> attributeDecls = new MultiMap<String,AttributePropertyInfo<T,C>>(null);
 
         /**
          * Global element declarations to be written, keyed by their local names.
@@ -404,6 +494,12 @@ public final class XmlSchemaGenerator<T,C,F,M> {
 
         private Form attributeFormDefault;
         private Form elementFormDefault;
+
+        /**
+         * Does schema in this namespace uses swaRef? If so, we need to generate import
+         * statement.
+         */
+        private boolean useSwaRef;
 
         public Namespace(String uri) {
             this.uri = uri;
@@ -455,8 +551,11 @@ public final class XmlSchemaGenerator<T,C,F,M> {
 
         /**
          * Writes the schema document to the specified result.
+         *
+         * @param systemIds
+         *      System IDs of the other schema documents. "" indicates 'implied'.
          */
-        private void writeTo(Result result, Map<Namespace,Result> out) throws IOException {
+        private void writeTo(Result result, Map<Namespace,String> systemIds) throws IOException {
             try {
                 Schema schema = TXW.create(Schema.class,ResultFactory.createSerializer(result));
 
@@ -466,6 +565,9 @@ public final class XmlSchemaGenerator<T,C,F,M> {
                 for (Map.Entry<String, String> e : xmlNs.entrySet()) {
                     schema._namespace(e.getValue(),e.getKey());
                 }
+
+                if(useSwaRef)
+                    schema._namespace(WellKnownNamespace.SWA_URI,"swaRef");
 
                 attributeFormDefault = Form.get(types.getAttributeFormDefault(uri));
                 attributeFormDefault.declare("attributeFormDefault",schema);
@@ -504,8 +606,15 @@ public final class XmlSchemaGenerator<T,C,F,M> {
                     Import imp = schema._import();
                     if(n.uri.length()!=0)
                         imp.namespace(n.uri);
-                    imp.schemaLocation(relativize(out.get(n).getSystemId(),result.getSystemId()));
+                    String refSystemId = systemIds.get(n);
+                    if(refSystemId!=null && !refSystemId.equals("")) {
+                        // "" means implied. null if the SchemaOutputResolver said "don't generate!"
+                        imp.schemaLocation(relativize(refSystemId,result.getSystemId()));
+                    }
                     schema._pcdata(newline);
+                }
+                if(useSwaRef) {
+                    schema._import().namespace(WellKnownNamespace.SWA_URI).schemaLocation("http://ws-i.org/profiles/basic/1.1/swaref.xsd");
                 }
 
                 // then write each component
@@ -535,10 +644,13 @@ public final class XmlSchemaGenerator<T,C,F,M> {
                     writeArray(a,schema);
                     schema._pcdata(newline);
                 }
-                for (Map.Entry<String,NonElement<T,C>> e : attributeDecls.entrySet()) {
+                for (Map.Entry<String,AttributePropertyInfo<T,C>> e : attributeDecls.entrySet()) {
                     TopLevelAttribute a = schema.attribute();
                     a.name(e.getKey());
-                    writeTypeRef(a,e.getValue(),"type");
+                    if(e.getValue()==null)
+                        writeTypeRef(a,stringType,"type");
+                    else
+                        writeAttributeTypeRef(e.getValue(),a);
                     schema._pcdata(newline);
                 }
 
@@ -601,18 +713,6 @@ public final class XmlSchemaGenerator<T,C,F,M> {
         }
 
         /**
-         * Examine the specified element ref and determine if a swaRef attribute needs to be generated
-         * @param typeRef
-         */
-        private boolean generateSwaRefAdapter(NonElementRef<T,C> typeRef) {
-            final Adapter<T,C> adapter = typeRef.getSource().getAdapter();
-            if (adapter == null) return false;
-            final Object o = navigator.asDecl(SwaRefAdapter.class);
-            if (o == null) return false;
-            return (o.equals(adapter.adapterType));
-        }
-
-        /**
          * Writes a type attribute (if the referenced type is a global type)
          * or writes out the definition of the anonymous type in place (if the referenced
          * type is not a global type.)
@@ -626,8 +726,18 @@ public final class XmlSchemaGenerator<T,C,F,M> {
          */
         private void writeTypeRef(TypeHost th, NonElement<T,C> type, String refAttName) {
             if(type.getTypeName()==null) {
+                // anonymous
+                th.block(); // so that the caller may write other attribuets
                 if(type instanceof ClassInfo) {
-                    writeClass( (ClassInfo<T,C>)type, th );
+                    if(collisionChecker.push((ClassInfo<T,C>)type)) {
+                        errorListener.error(new SAXParseException(
+                            Messages.ANONYMOUS_TYPE_CYCLE.format(collisionChecker.getCycleString()),
+                            null
+                        ));
+                    } else {
+                        writeClass( (ClassInfo<T,C>)type, th );
+                    }
+                    collisionChecker.pop();
                 } else {
                     writeEnum( (EnumLeafInfo<T,C>)type, (SimpleTypeHost)th);
                 }
@@ -746,64 +856,57 @@ public final class XmlSchemaGenerator<T,C,F,M> {
             if(c.isAbstract())
                 ct._abstract(true);
 
-            // hold the ct open in case we need to generate @mixed below...
-            ct.block();
-
-            // either <sequence> or <all>
-            ExplicitGroup compositor = null;
-
-            // only necessary if this type has a base class we need to extend from
+            // these are where we write content model and attributes
             AttrDecls contentModel = ct;
+            TypeDefParticle contentModelOwner = ct;
 
             // if there is a base class, we need to generate an extension in the schema
             final ClassInfo<T,C> bc = c.getBaseClass();
             if (bc != null) {
-                ComplexExtension ce = ct.complexContent().extension();
-                contentModel = ce;
-
-                ce.base(bc.getTypeName());
-                // TODO: what if the base type is anonymous?
-                // ordered props go in a sequence, unordered go in an all
-                if( c.isOrdered() ) {
-                    compositor = ce.sequence();
+                if(bc.hasValueProperty()) {
+                    // extending complex type with simple content
+                    SimpleExtension se = ct.simpleContent().extension();
+                    contentModel = se;
+                    contentModelOwner = null;
+                    se.base(bc.getTypeName());
                 } else {
-                    compositor = ce.all();
+                    ComplexExtension ce = ct.complexContent().extension();
+                    contentModel = ce;
+                    contentModelOwner = ce;
+
+                    ce.base(bc.getTypeName());
+                    // TODO: what if the base type is anonymous?
                 }
             }
 
-            // iterate over the properties
-            if (c.hasProperties()) {
-                if( compositor == null ) { // if there is no extension base, create a top level seq
-                    // ordered props go in a sequence, unordered go in an all
-                    if( c.isOrdered() ) {
-                        compositor = ct.sequence();
-                    } else {
-                        compositor = ct.all();
-                    }
-                }
-
-                // block writing the compositor because we might need to
-                // write some out of order attributes to handle min/maxOccurs
-                compositor.block();
-
+            if(contentModelOwner!=null) {
+                // build the tree that represents the explicit content model from iterate over the properties
+                ArrayList<Tree> children = new ArrayList<Tree>();
                 for (PropertyInfo<T,C> p : c.getProperties()) {
                     // handling for <complexType @mixed='true' ...>
                     if(p instanceof ReferencePropertyInfo && ((ReferencePropertyInfo)p).isMixed()) {
                         ct.mixed(true);
                     }
-                    writeProperty(p, contentModel, compositor);
+                    Tree t = buildPropertyContentModel(p);
+                    if(t!=null)
+                        children.add(t);
                 }
 
-                compositor.commit();
+                Tree top = Tree.makeGroup( c.isOrdered() ? GroupKind.SEQUENCE : GroupKind.ALL, children);
+
+                // write the content model
+                top.write(contentModelOwner);
             }
 
-            // look for wildcard attributes
+            // then attributes
+            for (PropertyInfo<T,C> p : c.getProperties()) {
+                if (p instanceof AttributePropertyInfo) {
+                    handleAttributeProp((AttributePropertyInfo<T,C>)p, contentModel);
+                }
+            }
             if( c.hasAttributeWildcard()) {
-                // TODO: not type safe
                 contentModel.anyAttribute().namespace("##other").processContents("skip");
             }
-
-            // finally commit the ct
             ct.commit();
         }
 
@@ -824,27 +927,23 @@ public final class XmlSchemaGenerator<T,C,F,M> {
         }
 
         /**
-         * write the schema definition(s) for the specified property
+         * Builds content model writer for the specified property.
          */
-        private void writeProperty(PropertyInfo<T,C> p, AttrDecls attr, ExplicitGroup compositor) {
+        private Tree buildPropertyContentModel(PropertyInfo<T,C> p) {
             switch(p.kind()) {
             case ELEMENT:
-                handleElementProp((ElementPropertyInfo<T,C>)p, compositor);
-                break;
+                return handleElementProp((ElementPropertyInfo<T,C>)p);
             case ATTRIBUTE:
-                handleAttributeProp((AttributePropertyInfo<T,C>)p, attr);
-                break;
+                // attribuets are handled later
+                return null;
             case REFERENCE:
-                handleReferenceProp((ReferencePropertyInfo<T,C>)p, compositor);
-                break;
+                return handleReferenceProp((ReferencePropertyInfo<T,C>)p);
             case MAP:
-                handleMapProp((MapPropertyInfo<T,C>)p, compositor);
-                break;
+                return handleMapProp((MapPropertyInfo<T,C>)p);
             case VALUE:
                 // value props handled above in writeClass()
                 assert false;
                 throw new IllegalStateException();
-                // break();
             default:
                 assert false;
                 throw new IllegalStateException();
@@ -859,91 +958,83 @@ public final class XmlSchemaGenerator<T,C,F,M> {
          * not be wrapped.
          *
          * @param ep the element property
-         * @param compositor the schema compositor (sequence or all)
          */
-        private void handleElementProp(ElementPropertyInfo<T,C> ep, ExplicitGroup compositor) {
-            QName ename = ep.getXmlName();
-            Occurs occurs = null;
-
+        private Tree handleElementProp(final ElementPropertyInfo<T,C> ep) {
             if (ep.isValueList()) {
-                TypeRef<T,C> t = ep.getTypes().get(0);
-                LocalElement e = compositor.element();
-
-                QName tn = t.getTagName();
-                e.name(tn.getLocalPart());
-                List lst = e.simpleType().list();
-                writeTypeRef(lst,t, "itemType");
-                elementFormDefault.writeForm(e,tn);
-                return;
+                return new Tree.Term() {
+                    protected void write(ContentModelContainer parent, boolean isOptional, boolean repeated) {
+                        TypeRef<T,C> t = ep.getTypes().get(0);
+                        LocalElement e = parent.element();
+                        e.block(); // we will write occurs later
+                        QName tn = t.getTagName();
+                        e.name(tn.getLocalPart());
+                        List lst = e.simpleType().list();
+                        writeTypeRef(lst,t, "itemType");
+                        elementFormDefault.writeForm(e,tn);
+                        writeOccurs(e,isOptional||!ep.isRequired(),repeated);
+                    }
+                };
             }
 
-            if (ep.isCollection()) {
-                if (ename != null) { // wrapped collection
-                    LocalElement e = compositor.element();
-                    if(ename.getNamespaceURI().length()>0) {
-                        if (!ename.getNamespaceURI().equals(this.uri)) {
-                            // TODO: we need to generate the corresponding element declaration for this
-                            // table 8-25: Property/field element wrapper with ref attribute
-                            e.ref(new QName(ename.getNamespaceURI(), ename.getLocalPart()));
-                            return;
+            ArrayList<Tree> children = new ArrayList<Tree>();
+            for (final TypeRef<T,C> t : ep.getTypes()) {
+                children.add(new Tree.Term() {
+                    protected void write(ContentModelContainer parent, boolean isOptional, boolean repeated) {
+                        LocalElement e = parent.element();
+
+                        QName tn = t.getTagName();
+
+                        if(canBeDirectElementRef(t,tn) || (!tn.getNamespaceURI().equals(uri) && tn.getNamespaceURI().length()>0)) {
+                            e.ref(tn);
+                        } else {
+                            e.name(tn.getLocalPart());
+                            writeTypeRef(e,t, "type");
+                            elementFormDefault.writeForm(e,tn);
                         }
-                    }
-                    elementFormDefault.writeForm(e,ename);
 
-                    ComplexType p = e.name(ename.getLocalPart()).complexType();
-                    if(ep.isCollectionNillable()) {
-                        e.nillable(true);
-                    } else {
-                        e.minOccurs(0);
+                        if (t.isNillable()) {
+                            e.nillable(true);
+                        }
+                        if(t.getDefaultValue()!=null)
+                            e._default(t.getDefaultValue());
+                        writeOccurs(e,isOptional,repeated);
                     }
-                    if (ep.getTypes().size() == 1) {
-                        compositor = p.sequence();
-                    } else {
-                        compositor = p.choice();
-                        occurs = compositor;
-                    }
-                } else { // unwrapped collection
-                    if (ep.getTypes().size() > 1) {
-                        compositor = compositor.choice();
-                        occurs = compositor;
-                    }
-                }
-            } else {
-                if (ep.getTypes().size() > 1) {
-                    compositor = compositor.choice();
-                    occurs = compositor;
-                }
+                });
             }
 
+            final Tree choice = Tree.makeGroup(GroupKind.CHOICE, children)
+                    .makeOptional(!ep.isRequired())
+                    .makeRepeated(ep.isCollection()); // see Spec table 8-13
 
-            // fill in the content model
-            for (TypeRef<T,C> t : ep.getTypes()) {
-                LocalElement e = compositor.element();
-                if (occurs == null) occurs = e;
-                QName tn = t.getTagName();
 
-                if(canBeDirectElementRef(t,tn) || (!tn.getNamespaceURI().equals(uri) && tn.getNamespaceURI().length()>0)) {
-                    e.ref(tn);
-                } else {
-                    e.name(tn.getLocalPart());
-                    writeTypeRef(e,t, "type");
-                    elementFormDefault.writeForm(e,tn);
-                }
+            final QName ename = ep.getXmlName();
+            if (ename != null) { // wrapped collection
+                return new Tree.Term() {
+                    protected void write(ContentModelContainer parent, boolean isOptional, boolean repeated) {
+                        LocalElement e = parent.element();
+                        if(ename.getNamespaceURI().length()>0) {
+                            if (!ename.getNamespaceURI().equals(uri)) {
+                                // TODO: we need to generate the corresponding element declaration for this
+                                // table 8-25: Property/field element wrapper with ref attribute
+                                e.ref(new QName(ename.getNamespaceURI(), ename.getLocalPart()));
+                                return;
+                            }
+                        }
+                        e.name(ename.getLocalPart());
+                        elementFormDefault.writeForm(e,ename);
 
-                if (t.isNillable()) {
-                    e.nillable(true);
-                }
-                if(t.getDefaultValue()!=null)
-                    e._default(t.getDefaultValue());
+                        if(ep.isCollectionNillable()) {
+                            e.nillable(true);
+                        }
+                        writeOccurs(e,true,repeated);
+
+                        ComplexType p = e.complexType();
+                        choice.write(p);
+                    }
+                };
+            } else {// non-wrapped
+                return choice;
             }
-
-            if (ep.isCollection())
-                occurs.maxOccurs("unbounded");
-
-            if (!ep.isRequired())
-                // see Spec table 8-13
-                occurs.minOccurs(0);
-            // else minOccurs defaults to 1
         }
 
         /**
@@ -999,18 +1090,10 @@ public final class XmlSchemaGenerator<T,C,F,M> {
             LocalAttribute localAttribute = attr.attribute();
 
             final String attrURI = ap.getXmlName().getNamespaceURI();
-            if (attrURI.equals("") || attrURI.equals(uri)) {
+            if (attrURI.equals("") /*|| attrURI.equals(uri) --- those are generated as global attributes anyway, so use them.*/) {
                 localAttribute.name(ap.getXmlName().getLocalPart());
 
-                TypeHost th; String refAtt;
-                if( ap.isCollection() ) {
-                    th = localAttribute.simpleType().list();
-                    refAtt = "itemType";
-                } else {
-                    th = localAttribute;
-                    refAtt = "type";
-                }
-                writeTypeRef(th, ap, refAtt);
+                writeAttributeTypeRef(ap, localAttribute);
 
                 attributeFormDefault.writeForm(localAttribute,ap.getXmlName());
             } else { // generate an attr ref
@@ -1023,90 +1106,103 @@ public final class XmlSchemaGenerator<T,C,F,M> {
             }
         }
 
+        private void writeAttributeTypeRef(AttributePropertyInfo<T,C> ap, AttributeType a) {
+            if( ap.isCollection() )
+                writeTypeRef(a.simpleType().list(), ap, "itemType");
+            else
+                writeTypeRef(a, ap, "type");
+        }
+
         /**
          * Generate the proper schema fragment for the given reference property into the
          * specified schema compositor.
          *
          * The reference property may or may not refer to a collection and it may or may
          * not be wrapped.
-         *
-         * @param rp
-         * @param compositor
          */
-        private void handleReferenceProp(ReferencePropertyInfo<T,C> rp, ExplicitGroup compositor) {
-            QName ename = rp.getXmlName();
-            Occurs occurs = null;
-
-            if (rp.isCollection()) {
-                if (ename != null) { // wrapped collection
-                    LocalElement e = compositor.element();
-                    ComplexType p = e.name(ename.getLocalPart()).complexType();
-                    elementFormDefault.writeForm(e,ename);
-                    if(rp.isCollectionNillable())
-                        e.nillable(true);
-                    if (rp.getElements().size() == 1) {
-                        compositor = p.sequence();
-                    } else {
-                        compositor = p.choice();
-                        occurs = compositor;
-                    }
-                } else { // unwrapped collection
-                    if (rp.getElements().size() > 1) {
-                        compositor = compositor.choice();
-                        occurs = compositor;
-                    }
-                }
-            }
-
+        private Tree handleReferenceProp(final ReferencePropertyInfo<T, C> rp) {
             // fill in content model
-            TODO.checkSpec("should we loop in the case of a non-collection ep?");
-            for (Element<T,C> e : rp.getElements()) {
-                LocalElement eref = compositor.element();
-                if (occurs == null) occurs = eref;
+            ArrayList<Tree> children = new ArrayList<Tree>();
 
-                QName en = e.getElementName();
-                if(e.getScope()!=null) {
-                    // scoped. needs to be inlined
-                    boolean qualified = en.getNamespaceURI().equals(uri);
-                    boolean unqualified = en.getNamespaceURI().equals("");
-                    if(qualified || unqualified) {
-                        // can be inlined indeed
+            for (final Element<T,C> e : rp.getElements()) {
+                children.add(new Tree.Term() {
+                    protected void write(ContentModelContainer parent, boolean isOptional, boolean repeated) {
+                        LocalElement eref = parent.element();
 
-                        // write form="..." if necessary
-                        if(unqualified) {
-                            if(elementFormDefault.isEffectivelyQualified)
-                                eref.form("unqualified");
-                        } else {
-                            if(!elementFormDefault.isEffectivelyQualified)
-                                eref.form("qualified");
+                        boolean local=false;
+
+                        QName en = e.getElementName();
+                        if(e.getScope()!=null) {
+                            // scoped. needs to be inlined
+                            boolean qualified = en.getNamespaceURI().equals(uri);
+                            boolean unqualified = en.getNamespaceURI().equals("");
+                            if(qualified || unqualified) {
+                                // can be inlined indeed
+
+                                // write form="..." if necessary
+                                if(unqualified) {
+                                    if(elementFormDefault.isEffectivelyQualified)
+                                        eref.form("unqualified");
+                                } else {
+                                    if(!elementFormDefault.isEffectivelyQualified)
+                                        eref.form("qualified");
+                                }
+
+                                local = true;
+                                eref.name(en.getLocalPart());
+
+                                // write out type reference
+                                if(e instanceof ClassInfo) {
+                                    writeTypeRef(eref,(ClassInfo<T,C>)e,"type");
+                                } else {
+                                    writeTypeRef(eref,((ElementInfo<T,C>)e).getContentType(),"type");
+                                }
+                            }
                         }
-
-                        eref.name(en.getLocalPart());
-
-                        // write out type reference
-                        if(e instanceof ClassInfo) {
-                            writeTypeRef(eref,(ClassInfo<T,C>)e,"type");
-                        } else {
-                            writeTypeRef(eref,((ElementInfo<T,C>)e).getContentType(),"type");
-                        }
-                        continue;
+                        if(!local)
+                            eref.ref(en);
+                        writeOccurs(eref,isOptional,repeated);
                     }
-                }
-                eref.ref(en);
+                });
             }
 
-            WildcardMode wc = rp.getWildcard();
+            final WildcardMode wc = rp.getWildcard();
             if( wc != null ) {
-                Any any = compositor.any();
-                final String pcmode = getProcessContentsModeName(wc);
-                if( pcmode != null ) any.processContents(pcmode);
-                TODO.schemaGenerator("generate @namespace ???");
-                if( occurs == null ) occurs = any;
+                children.add(new Tree.Term() {
+                    protected void write(ContentModelContainer parent, boolean isOptional, boolean repeated) {
+                        Any any = parent.any();
+                        final String pcmode = getProcessContentsModeName(wc);
+                        if( pcmode != null ) any.processContents(pcmode);
+                        any.namespace("##other");
+                        writeOccurs(any,isOptional,repeated);
+                    }
+                });
             }
 
-            if(rp.isCollection())
-                occurs.maxOccurs("unbounded");
 
+            final Tree choice = Tree.makeGroup(GroupKind.CHOICE, children).makeRepeated(rp.isCollection()).makeOptional(rp.isCollection());
+            // it's a curious omission that XmlElementRef doesn't have required().
+            // instead right now a collection will make it [0,unbounded]
+
+
+            final QName ename = rp.getXmlName();
+
+            if (ename != null) { // wrapped
+                return new Tree.Term() {
+                    protected void write(ContentModelContainer parent, boolean isOptional, boolean repeated) {
+                        LocalElement e = parent.element().name(ename.getLocalPart());
+                        elementFormDefault.writeForm(e,ename);
+                        if(rp.isCollectionNillable())
+                            e.nillable(true);
+                        writeOccurs(e,true,repeated);
+
+                        ComplexType p = e.complexType();
+                        choice.write(p);
+                    }
+                };
+            } else { // unwrapped
+                return choice;
+            }
         }
 
         /**
@@ -1114,25 +1210,31 @@ public final class XmlSchemaGenerator<T,C,F,M> {
          * specified schema compositor.
          *
          * @param mp the map property
-         * @param compositor the schema compositor (sequence or all)
          */
-        private void handleMapProp(MapPropertyInfo<T,C> mp, ExplicitGroup compositor) {
-            QName ename = mp.getXmlName();
+        private Tree handleMapProp(final MapPropertyInfo<T,C> mp) {
+            return new Tree.Term() {
+                protected void write(ContentModelContainer parent, boolean isOptional, boolean repeated) {
+                    QName ename = mp.getXmlName();
 
-            LocalElement e = compositor.element();
-            elementFormDefault.writeForm(e,ename);
-            if(mp.isCollectionNillable())
-                e.nillable(true);
-            ComplexType p = e.name(ename.getLocalPart()).complexType();
+                    LocalElement e = parent.element();
+                    elementFormDefault.writeForm(e,ename);
+                    if(mp.isCollectionNillable())
+                        e.nillable(true);
 
-            // TODO: entry, key, and value are always unqualified. that needs to be fixed, too.
-            // TODO: we need to generate the corresponding element declaration, if they are qualified
-            e = p.sequence().element();
-            e.name("entry").minOccurs(0).maxOccurs("unbounded");
+                    e = e.name(ename.getLocalPart());
+                    writeOccurs(e,isOptional,repeated);
+                    ComplexType p = e.complexType();
 
-            ExplicitGroup seq = e.complexType().sequence();
-            writeKeyOrValue(seq, "key", mp.getKeyType());
-            writeKeyOrValue(seq, "value", mp.getValueType());
+                    // TODO: entry, key, and value are always unqualified. that needs to be fixed, too.
+                    // TODO: we need to generate the corresponding element declaration, if they are qualified
+                    e = p.sequence().element();
+                    e.name("entry").minOccurs(0).maxOccurs("unbounded");
+
+                    ExplicitGroup seq = e.complexType().sequence();
+                    writeKeyOrValue(seq, "key", mp.getKeyType());
+                    writeKeyOrValue(seq, "value", mp.getValueType());
+                }
+            };
         }
 
         private void writeKeyOrValue(ExplicitGroup seq, String tagName, NonElement<T, C> typeRef) {
@@ -1142,7 +1244,7 @@ public final class XmlSchemaGenerator<T,C,F,M> {
         }
 
         public void addGlobalAttribute(AttributePropertyInfo<T,C> ap) {
-            attributeDecls.put( ap.getXmlName().getLocalPart(), ap.getTarget() );
+            attributeDecls.put( ap.getXmlName().getLocalPart(), ap );
             addDependencyTo(ap.getTarget().getTypeName());
         }
 
@@ -1217,6 +1319,24 @@ public final class XmlSchemaGenerator<T,C,F,M> {
         }
     }
 
+    /**
+     * Examine the specified element ref and determine if a swaRef attribute needs to be generated
+     * @param typeRef
+     */
+    private boolean generateSwaRefAdapter(NonElementRef<T,C> typeRef) {
+        return generateSwaRefAdapter(typeRef.getSource());
+    }
+
+    /**
+     * Examine the specified element ref and determine if a swaRef attribute needs to be generated
+     */
+    private boolean generateSwaRefAdapter(PropertyInfo<T,C> prop) {
+        final Adapter<T,C> adapter = prop.getAdapter();
+        if (adapter == null) return false;
+        final Object o = navigator.asDecl(SwaRefAdapter.class);
+        if (o == null) return false;
+        return (o.equals(adapter.adapterType));
+    }
 
     /**
      * return the string representation of the processContents mode of the
@@ -1281,7 +1401,7 @@ public final class XmlSchemaGenerator<T,C,F,M> {
             if( uriPath.equals(basePath))
                 return ".";
 
-            String relPath = calculateRelativePath(uriPath, basePath);
+            String relPath = calculateRelativePath(uriPath, basePath, fixNull(theUri.getScheme()).equals("file"));
 
             if (relPath == null)
                 return uri; // recursion found no commonality in the two uris at all
@@ -1298,15 +1418,28 @@ public final class XmlSchemaGenerator<T,C,F,M> {
         }
     }
 
-    private static String calculateRelativePath(String uri, String base) {
+    private static String fixNull(String s) {
+        if(s==null)     return "";
+        else            return s;
+    }
+
+    private static String calculateRelativePath(String uri, String base, boolean fileUrl) {
+        // if this is a file URL (very likely), and if this is on a case-insensitive file system,
+        // then treat it accordingly.
+        boolean onWindows = File.pathSeparatorChar==';';
+
         if (base == null) {
             return null;
         }
-        if (uri.startsWith(base)) {
+        if ((fileUrl && onWindows && startsWithIgnoreCase(uri,base)) || uri.startsWith(base)) {
             return uri.substring(base.length());
         } else {
-            return "../" + calculateRelativePath(uri, getParentUriPath(base));
+            return "../" + calculateRelativePath(uri, getParentUriPath(base), fileUrl);
         }
+    }
+
+    private static boolean startsWithIgnoreCase(String s, String t) {
+        return s.toUpperCase().startsWith(t.toUpperCase());
     }
 
     /**

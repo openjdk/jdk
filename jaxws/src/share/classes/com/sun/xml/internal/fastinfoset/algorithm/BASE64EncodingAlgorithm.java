@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,6 @@
  * have any questions.
  *
  * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
- *
- * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- *
  */
 
 
@@ -64,7 +36,7 @@ import com.sun.xml.internal.fastinfoset.CommonResourceBundle;
 
 public class BASE64EncodingAlgorithm extends BuiltInEncodingAlgorithm {
 
-    protected static final char encodeBase64[] = {
+    /* package */ static final char encodeBase64[] = {
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
         'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -72,7 +44,7 @@ public class BASE64EncodingAlgorithm extends BuiltInEncodingAlgorithm {
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
     };
 
-    protected static final int decodeBase64[] = {
+    /* package */ static final int decodeBase64[] = {
         /*'+'*/ 62,
         -1, -1, -1,
         /*'/'*/ 63,
@@ -210,23 +182,46 @@ public class BASE64EncodingAlgorithm extends BuiltInEncodingAlgorithm {
             return;
         }
         final byte[] value = (byte[]) data;
-        if (value.length == 0) {
+
+        convertToCharacters(value, 0, value.length, s);
+    }
+
+    public final int getPrimtiveLengthFromOctetLength(int octetLength) throws EncodingAlgorithmException {
+        return octetLength;
+    }
+
+    public int getOctetLengthFromPrimitiveLength(int primitiveLength) {
+        return primitiveLength;
+    }
+
+    public final void encodeToBytes(Object array, int astart, int alength, byte[] b, int start) {
+        System.arraycopy((byte[])array, astart, b, start, alength);
+    }
+
+    public final void convertToCharacters(byte[] data, int offset, int length, StringBuffer s) {
+        if (data == null) {
+            return;
+        }
+        final byte[] value = data;
+        if (length == 0) {
             return;
         }
 
-        final int partialBlockLength = value.length % 3;
+        final int partialBlockLength = length % 3;
         final int blockCount = (partialBlockLength != 0) ?
-            value.length / 3 + 1 :
-            value.length / 3;
+            length / 3 + 1 :
+            length / 3;
 
         final int encodedLength = blockCount * 4;
-        s.ensureCapacity(encodedLength);
+        final int originalBufferSize = s.length();
+        s.ensureCapacity(encodedLength + originalBufferSize);
 
-        int idx = 0;
+        int idx = offset;
+        int lastIdx = offset + length;
         for (int i = 0; i < blockCount; ++i) {
             int b1 = value[idx++] & 0xFF;
-            int b2 = (idx < value.length) ? value[idx++] & 0xFF : 0;
-            int b3 = (idx < value.length) ? value[idx++] & 0xFF : 0;
+            int b2 = (idx < lastIdx) ? value[idx++] & 0xFF : 0;
+            int b3 = (idx < lastIdx) ? value[idx++] & 0xFF : 0;
 
             s.append(encodeBase64[b1 >> 2]);
 
@@ -239,26 +234,12 @@ public class BASE64EncodingAlgorithm extends BuiltInEncodingAlgorithm {
 
         switch (partialBlockLength) {
             case 1 :
-                s.setCharAt(encodedLength - 1, '=');
-                s.setCharAt(encodedLength - 2, '=');
+                s.setCharAt(originalBufferSize + encodedLength - 1, '=');
+                s.setCharAt(originalBufferSize + encodedLength - 2, '=');
                 break;
             case 2 :
-                s.setCharAt(encodedLength - 1, '=');
+                s.setCharAt(originalBufferSize + encodedLength - 1, '=');
                 break;
         }
-    }
-
-
-
-    public final int getPrimtiveLengthFromOctetLength(int octetLength) throws EncodingAlgorithmException {
-        return octetLength;
-    }
-
-    public int getOctetLengthFromPrimitiveLength(int primitiveLength) {
-        return primitiveLength;
-    }
-
-    public final void encodeToBytes(Object array, int astart, int alength, byte[] b, int start) {
-        System.arraycopy((byte[])array, astart, b, start, alength);
     }
 }

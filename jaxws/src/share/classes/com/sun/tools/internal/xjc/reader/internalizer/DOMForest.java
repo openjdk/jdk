@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.internalizer;
 
 import java.io.IOException;
@@ -55,11 +54,11 @@ import javax.xml.transform.sax.SAXSource;
 import javax.xml.validation.SchemaFactory;
 
 import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.XMLStreamReaderToContentHandler;
 import com.sun.tools.internal.xjc.ErrorReceiver;
 import com.sun.tools.internal.xjc.reader.Const;
 import com.sun.tools.internal.xjc.reader.xmlschema.parser.SchemaConstraintChecker;
 import com.sun.tools.internal.xjc.util.ErrorReceiverFilter;
-import com.sun.tools.internal.xjc.util.XMLStreamReaderToContentHandler;
 import com.sun.xml.internal.bind.marshaller.DataWriter;
 import com.sun.xml.internal.xsom.parser.JAXPParser;
 import com.sun.xml.internal.xsom.parser.XMLParser;
@@ -200,6 +199,18 @@ public final class DOMForest {
      */
     public Set<String> getRootDocuments() {
         return Collections.unmodifiableSet(rootDocuments);
+    }
+
+    /**
+     * Picks one document at random and returns it.
+     */
+    public Document getOneDocument() {
+        for (Document dom : core.values()) {
+            if (!dom.getDocumentElement().getNamespaceURI().equals(Const.JAXB_NSURI))
+                return dom;
+        }
+        // we should have caught this error very early on
+        throw new AssertionError();
     }
 
     /**
@@ -407,7 +418,7 @@ public final class DOMForest {
             throw new IllegalArgumentException("system id cannot be null");
         core.put( systemId, dom );
 
-        new XMLStreamReaderToContentHandler(parser,getParserHandler(dom)).bridge();
+        new XMLStreamReaderToContentHandler(parser,getParserHandler(dom),false,false).bridge();
 
         return dom;
     }
@@ -417,9 +428,13 @@ public final class DOMForest {
      *
      * This method should be called only once, only after all the
      * schemas are parsed.
+     *
+     * @return
+     *      the returned bindings need to be applied after schema
+     *      components are built.
      */
-    public void transform() {
-        Internalizer.transform(this);
+    public SCDBasedBindingSet transform(boolean enableSCD) {
+        return Internalizer.transform(this,enableSCD);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * @(#)ContentDisposition.java        1.6 02/03/27
+ */
+
+
 
 package com.sun.xml.internal.messaging.saaj.packaging.mime.internet;
 
@@ -31,6 +36,7 @@ package com.sun.xml.internal.messaging.saaj.packaging.mime.internet;
  * methods to parse a ContentDisposition string into individual components
  * and to generate a MIME style ContentDisposition string.
  *
+ * @version 1.6, 02/03/27
  * @author  John Mani
  */
 

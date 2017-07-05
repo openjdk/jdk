@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.activation.MimeType;
 import javax.xml.namespace.QName;
@@ -103,12 +103,30 @@ public final class CElementPropertyInfo extends CPropertyInfo implements Element
         return ref;
     }
 
+    public QName getSchemaType() {
+        if(types.size()!=1)
+            // if more than one kind is here, can't produce @XmlSchemaType.
+            // TODO: is it allowed to have one generated if types
+            return null;
+
+        CTypeRef t = types.get(0);
+        if(needsExplicitTypeName(t.getTarget(),t.typeName))
+            return t.typeName;
+        else
+            return null;
+    }
+
     /**
      * XJC never uses the wrapper element. Always return null.
      */
     @Deprecated
     public QName getXmlName() {
         return null;
+    }
+
+    public boolean isCollectionRequired() {
+        // in XJC, we never recognize a nillable collection pattern, so this is always false.
+        return false;
     }
 
     public boolean isCollectionNillable() {
@@ -180,5 +198,15 @@ public final class CElementPropertyInfo extends CPropertyInfo implements Element
         }
 
         public boolean isRepeated() { return col; }
+    }
+
+    @Override
+    public QName collectElementNames(Map<QName, CPropertyInfo> table) {
+        for (CTypeRef t : types) {
+            QName n = t.getTagName();
+            if(table.containsKey(n))    return n;
+            table.put(n, this);
+        }
+        return null;
     }
 }

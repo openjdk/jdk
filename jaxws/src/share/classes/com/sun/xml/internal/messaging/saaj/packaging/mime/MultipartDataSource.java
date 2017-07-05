@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * @(#)MultipartDataSource.java       1.6 02/03/27
+ */
+
+
 
 package com.sun.xml.internal.messaging.saaj.packaging.mime;
 
@@ -42,6 +47,7 @@ import javax.activation.DataSource;
  * This interface will typically be implemented by providers that
  * preparse multipart bodies, for example an IMAP provider.
  *
+ * @version     1.6, 02/03/27
  * @author      John Mani
  * @see         javax.activation.DataSource
  */

@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,33 @@
 
 package com.sun.tools.internal.ws.processor.model.java;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import com.sun.tools.internal.ws.resources.ModelMessages;
+import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
+import com.sun.tools.internal.ws.processor.model.Parameter;
 
-import com.sun.tools.internal.ws.processor.model.ModelException;
-import com.sun.codemodel.internal.JClass;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Iterator;
 
 /**
- *
  * @author WS Development Team
  */
 public class JavaMethod {
 
-    public JavaMethod() {}
+    private final ErrorReceiver errorReceiver;
+    private final String name;
+    private final List<JavaParameter> parameters = new ArrayList<JavaParameter>();
+    private final List<String> exceptions = new ArrayList<String>();
+    private JavaType returnType;
 
-    public JavaMethod(String name) {
+    public JavaMethod(String name, ErrorReceiver receiver) {
         this.name = name;
         this.returnType = null;
+        this.errorReceiver = receiver;
     }
 
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public JavaType getReturnType() {
@@ -61,109 +62,48 @@ public class JavaMethod {
         this.returnType = returnType;
     }
 
-    public boolean hasParameter(String paramName) {
-        for (int i=0; i<parameters.size();i++) {
-            if (paramName.equals(
-                ((JavaParameter)parameters.get(i)).getName())) {
-
+    private boolean hasParameter(String paramName) {
+        for (JavaParameter parameter : parameters) {
+            if (paramName.equals(parameter.getName())) {
                 return true;
             }
         }
         return false;
     }
 
-    public void addParameter(JavaParameter param) {
-        // verify that this member does not already exist
-        if (hasParameter(param.getName())) {
-            throw new ModelException("model.uniqueness");
-        }
-        parameters.add(param);
-    }
-
-    public JavaParameter getParameter(String paramName){
-        for (int i=0; i<parameters.size();i++) {
-            JavaParameter jParam = parameters.get(i);
-            if (paramName.equals(jParam.getParameter().getName())) {
-                return jParam;
+    private Parameter getParameter(String paramName){
+        for (JavaParameter parameter : parameters) {
+            if (paramName.equals(parameter.getName())) {
+                return parameter.getParameter();
             }
         }
         return null;
     }
 
-    public Iterator<JavaParameter> getParameters() {
-        return parameters.iterator();
+    public void addParameter(JavaParameter param) {
+        // verify that this member does not already exist
+        if (hasParameter(param.getName())) {
+            errorReceiver.error(param.getParameter().getLocator(), ModelMessages.MODEL_PARAMETER_NOTUNIQUE(param.getName(), param.getParameter().getEntityName()));
+            Parameter duplicParam = getParameter(param.getName());
+            errorReceiver.error(duplicParam.getLocator(), ModelMessages.MODEL_PARAMETER_NOTUNIQUE(param.getName(), duplicParam.getEntityName()));
+            return;
+        }
+        parameters.add(param);
     }
 
-    public int getParameterCount() {
-        return parameters.size();
-    }
-
-    /* serialization */
     public List<JavaParameter> getParametersList() {
         return parameters;
     }
 
-    /* serialization */
-    public void setParametersList(List<JavaParameter> l) {
-        parameters = l;
-    }
-
-    public boolean hasException(String exception) {
-        return exceptions.contains(exception);
-    }
-
     public void addException(String exception) {
-
         // verify that this exception does not already exist
-        if (hasException(exception)) {
-            throw new ModelException("model.uniqueness");
+        if (!exceptions.contains(exception)) {
+            exceptions.add(exception);
         }
-        exceptions.add(exception);
     }
 
-    public Iterator getExceptions() {
+    /** TODO: NB uses it, remove it once we expose it thru some API **/
+    public Iterator<String> getExceptions() {
         return exceptions.iterator();
     }
-
-    /* serialization */
-    public List getExceptionsList() {
-        return exceptions;
-    }
-
-    /* serialization */
-    public void setExceptionsList(List l) {
-        exceptions = l;
-    }
-
-    public String getDeclaringClass() {
-        return declaringClass;
-    }
-    public void setDeclaringClass(String declaringClass) {
-        this.declaringClass = declaringClass;
-    }
-
-    // TODO fix model importer/exporter to handle this
-    public boolean getThrowsRemoteException() {
-        return throwsRemoteException;
-    }
-    public void setThrowsRemoteException(boolean throwsRemoteException) {
-        this.throwsRemoteException = throwsRemoteException;
-    }
-
-    public void addExceptionClass(JClass ex){
-        exceptionClasses.add(ex);
-    }
-
-    public List<JClass> getExceptionClasses(){
-        return exceptionClasses;
-    }
-
-    private String name;
-    private List<JavaParameter> parameters = new ArrayList<JavaParameter>();
-    private List<String> exceptions = new ArrayList<String>();
-    private List<JClass> exceptionClasses = new ArrayList<JClass>();
-
-    private JavaType returnType;
-    private String declaringClass;
-    private boolean throwsRemoteException = true;
 }

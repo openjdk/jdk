@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,17 @@
  */
 package com.sun.tools.internal.ws.processor.modeler.annotation;
 
-import java.io.File;
-
+import com.sun.mirror.apt.AnnotationProcessorEnvironment;
+import com.sun.mirror.declaration.TypeDeclaration;
+import com.sun.mirror.type.TypeMirror;
+import com.sun.mirror.util.SourcePosition;
 import com.sun.tools.internal.ws.processor.model.Port;
 import com.sun.tools.internal.ws.processor.model.Service;
 import com.sun.tools.internal.ws.processor.modeler.ModelerException;
-import com.sun.tools.internal.ws.processor.util.ProcessorEnvironment;
+import com.sun.tools.internal.ws.wscompile.WsgenOptions;
 import com.sun.xml.internal.ws.util.localization.Localizable;
 
-import java.net.URL;
-import java.util.Properties;
-
-import com.sun.mirror.apt.*;
-import com.sun.mirror.declaration.*;
-import com.sun.mirror.type.*;
-import com.sun.mirror.util.*;
-
-import javax.xml.namespace.QName;
-import com.sun.tools.internal.ws.processor.modeler.annotation.*;
+import java.io.File;
 
 /**
  *
@@ -49,7 +42,6 @@ import com.sun.tools.internal.ws.processor.modeler.annotation.*;
  */
 public interface ModelBuilder {
     public AnnotationProcessorEnvironment getAPEnv();
-    public void createModel(TypeDeclaration d, QName modelName, String targetNamespace, String modelerClassName);
     public void setService(Service service);
     public void setPort(Port port);
     public String getOperationName(String methodName);
@@ -62,14 +54,11 @@ public interface ModelBuilder {
     public void setWrapperGenerated(boolean wrapperGenerated);
     public TypeDeclaration getTypeDeclaration(String typeName);
     public String getSourceVersion();
-    public ProcessorEnvironment getProcessorEnvironment();
+    public WsgenOptions getOptions();
     public File getSourceDir();
     public String getXMLName(String javaName);
-    public void onError(String key);
-    public void onError(String key, Object[] args) throws ModelerException;
-    public void onError(SourcePosition srcPos, String key, Object[] args) throws ModelerException;
-    public void onError(Localizable msg) throws ModelerException;
-    public void onWarning(Localizable msg);
-    public void onInfo(Localizable msg);
     public void log(String msg);
+
+    public void onError(String s);
+    public void onError(SourcePosition pos, Localizable msg) throws ModelerException;
 }

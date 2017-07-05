@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.generator.bean;
 
 import java.util.Collections;
@@ -49,6 +48,7 @@ import com.sun.tools.internal.xjc.model.CTypeRef;
 import com.sun.tools.internal.xjc.model.CValuePropertyInfo;
 import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.outline.PackageOutline;
+import com.sun.tools.internal.xjc.outline.Aspect;
 
 /**
  * {@link PackageOutline} enhanced with schema2java specific
@@ -178,7 +178,7 @@ final class PackageOutlineImpl implements PackageOutline {
         // generate package-info.java
         // we won't get this far if the user specified -npa
         if(!mostUsedNamespaceURI.equals("") || elementFormDefault==XmlNsForm.QUALIFIED) {
-            XmlSchemaWriter w = _package.annotate2(XmlSchemaWriter.class);
+            XmlSchemaWriter w = _model.strategy.getPackage(_package, Aspect.IMPLEMENTATION).annotate2(XmlSchemaWriter.class);
             if(!mostUsedNamespaceURI.equals(""))
                 w.namespace(mostUsedNamespaceURI);
             if(elementFormDefault==XmlNsForm.QUALIFIED)

@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,24 @@
 
 package com.sun.tools.internal.ws.wsdl.document;
 
-import java.util.Iterator;
-
-import javax.xml.namespace.QName;
-
+import com.sun.tools.internal.ws.api.wsdl.TWSDLExtensible;
+import com.sun.tools.internal.ws.api.wsdl.TWSDLExtension;
 import com.sun.tools.internal.ws.wsdl.framework.Entity;
 import com.sun.tools.internal.ws.wsdl.framework.EntityAction;
 import com.sun.tools.internal.ws.wsdl.framework.ExtensibilityHelper;
-import com.sun.tools.internal.ws.wsdl.framework.Extensible;
-import com.sun.tools.internal.ws.wsdl.framework.Extension;
+import org.xml.sax.Locator;
+
+import javax.xml.namespace.QName;
 
 /**
  * Entity corresponding to the "output" child element of a binding operation.
  *
  * @author WS Development Team
  */
-public class BindingOutput extends Entity implements Extensible {
+public class BindingOutput extends Entity implements TWSDLExtensible {
 
-    public BindingOutput() {
+    public BindingOutput(Locator locator) {
+        super(locator);
         _helper = new ExtensibilityHelper();
     }
 
@@ -66,12 +66,28 @@ public class BindingOutput extends Entity implements Extensible {
         _documentation = d;
     }
 
-    public void addExtension(Extension e) {
+    public String getNameValue() {
+        return getName();
+    }
+
+    public String getNamespaceURI() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public QName getWSDLElementName() {
+        return getElementName();
+    }
+
+    public void addExtension(TWSDLExtension e) {
         _helper.addExtension(e);
     }
 
-    public Iterator extensions() {
+    public Iterable<TWSDLExtension> extensions() {
         return _helper.extensions();
+    }
+
+    public TWSDLExtensible getParent() {
+        return parent;
     }
 
     public void withAllSubEntitiesDo(EntityAction action) {
@@ -87,6 +103,12 @@ public class BindingOutput extends Entity implements Extensible {
     public void validateThis() {
     }
 
+
+    public void setParent(TWSDLExtensible parent) {
+        this.parent = parent;
+    }
+
+    private TWSDLExtensible parent;
     private ExtensibilityHelper _helper;
     private Documentation _documentation;
     private String _name;

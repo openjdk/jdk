@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.unmarshaller;
 
 import java.util.Enumeration;
@@ -55,6 +54,7 @@ import org.xml.sax.helpers.NamespaceSupport;
  * classes like this.
  *
  * @author <ul><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li></ul>
+ * @version $Revision: 1.6 $ $Date: 2006/04/24 15:27:52 $
  * @since JAXB1.0
  */
 public class DOMScanner implements LocatorEx,InfosetScanner/*<Node> --- but can't do this to protect 1.0 clients, or can I? */
@@ -97,9 +97,9 @@ public class DOMScanner implements LocatorEx,InfosetScanner/*<Node> --- but can'
 
     public void scan( Element e) throws SAXException {
         setCurrentLocation( e );
-        receiver.startDocument();
 
         receiver.setDocumentLocator(locator);
+        receiver.startDocument();
 
         NamespaceSupport nss = new NamespaceSupport();
         buildNamespaceSupport( nss, e.getParentNode() );

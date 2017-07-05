@@ -56,7 +56,6 @@ public class XMLStreamFilterImpl implements javax.xml.stream.XMLStreamReader {
      * hasNext() to advance the underlining stream in order to find the next acceptable event
      */
     private boolean fStreamAdvancedByHasNext = false;
-
     /** Creates a new instance of XMLStreamFilterImpl */
 
     public XMLStreamFilterImpl(XMLStreamReader reader,StreamFilter filter){
@@ -436,7 +435,6 @@ public class XMLStreamFilterImpl implements javax.xml.stream.XMLStreamReader {
      */
     public String getVersion() {
         return fStreamReader.getVersion();
-
     }
 
     /**
@@ -532,5 +530,4 @@ public class XMLStreamFilterImpl implements javax.xml.stream.XMLStreamReader {
     public String getAttributeLocalName(int index){
         return fStreamReader.getAttributeLocalName(index);
     }
-
 }

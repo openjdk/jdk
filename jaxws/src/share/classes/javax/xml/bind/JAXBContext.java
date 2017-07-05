@@ -217,6 +217,7 @@ import java.io.IOException;
  * </blockquote>
  *
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
+ * @version $Revision: 1.23 $ $Date: 2005/08/31 20:57:57 $
  * @see Marshaller
  * @see Unmarshaller
  * @see <a href="http://java.sun.com/docs/books/jls">S 7.4.1.1 "Package Annotations" in Java Language Specification, 3rd Edition</a>

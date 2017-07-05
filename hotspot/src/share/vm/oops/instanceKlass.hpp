@@ -163,6 +163,8 @@ class instanceKlass: public Klass {
   klassOop        _implementors[implementors_limit];
   // Generic signature, or null if none.
   symbolOop       _generic_signature;
+  // invokedynamic bootstrap method (a java.dyn.MethodHandle)
+  oop             _bootstrap_method;
   // Annotations for this class, or null if none.
   typeArrayOop    _class_annotations;
   // Annotation objects (byte arrays) for fields, or null if no annotations.
@@ -464,6 +466,10 @@ class instanceKlass: public Klass {
                                     u2 method_index)  { _enclosing_method_class_index  = class_index;
                                                         _enclosing_method_method_index = method_index; }
 
+  // JSR 292 support
+  oop bootstrap_method() const                        { return _bootstrap_method; }
+  void set_bootstrap_method(oop mh)                   { oop_store(&_bootstrap_method, mh); }
+
   // jmethodID support
   static jmethodID get_jmethod_id(instanceKlassHandle ik_h, size_t idnum,
                                   jmethodID new_id, jmethodID* new_jmeths);
@@ -744,6 +750,7 @@ private:
   oop* adr_inner_classes() const     { return (oop*)&this->_inner_classes;}
   oop* adr_implementors() const      { return (oop*)&this->_implementors[0];}
   oop* adr_generic_signature() const { return (oop*)&this->_generic_signature;}
+  oop* adr_bootstrap_method() const  { return (oop*)&this->_bootstrap_method;}
   oop* adr_methods_jmethod_ids() const             { return (oop*)&this->_methods_jmethod_ids;}
   oop* adr_methods_cached_itable_indices() const   { return (oop*)&this->_methods_cached_itable_indices;}
   oop* adr_class_annotations() const   { return (oop*)&this->_class_annotations;}

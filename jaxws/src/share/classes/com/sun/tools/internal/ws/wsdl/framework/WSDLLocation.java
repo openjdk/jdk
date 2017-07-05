@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@ package com.sun.tools.internal.ws.wsdl.framework;
 /**
  *
  * Maintains wsdl:location context. This is used with
- * ParserContext, where one each WSDL being imported its location is pushed, this will be used
- * latter to resolve relative imports of schema in SchemaParser.
+ * TWSDLParserContextImpl, where one each WSDL being imported its location is pushed.
  *
  * @author WS Development Team
  */

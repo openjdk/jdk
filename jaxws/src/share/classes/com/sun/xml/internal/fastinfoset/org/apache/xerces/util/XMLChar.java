@@ -3,7 +3,7 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * have any questions.
  *
  * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- *
  */
 
 /*
@@ -113,6 +112,7 @@ import java.util.Arrays;
  * @author Michael Glavassevich, IBM
  * @author Rahul Srivastava, Sun Microsystems Inc.
  *
+ * @version $Id: XMLChar.java,v 1.1 2005/04/18 12:54:47 sandoz Exp $
  */
 public class XMLChar {
 

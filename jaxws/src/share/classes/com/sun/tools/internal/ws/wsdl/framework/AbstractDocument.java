@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,16 @@
 
 package com.sun.tools.internal.ws.wsdl.framework;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.sun.tools.internal.ws.wsdl.parser.MetadataFinder;
+import com.sun.tools.internal.ws.wsdl.parser.DOMForest;
+import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
+import com.sun.tools.internal.ws.wscompile.AbortException;
+import com.sun.tools.internal.ws.resources.WsdlMessages;
 
 import javax.xml.namespace.QName;
+import java.util.*;
+
+import org.xml.sax.helpers.LocatorImpl;
 
 /**
  * An abstract class for documents containing entities.
@@ -42,13 +43,17 @@ import javax.xml.namespace.QName;
  */
 public abstract class AbstractDocument {
 
-    protected AbstractDocument() {
-        _kinds = new HashMap();
-        _identifiables = new HashMap();
-        _importedEntities = new ArrayList();
-        _importedDocuments = new HashSet();
-        _includedEntities = new ArrayList();
-        _includedDocuments = new HashSet();
+    protected final DOMForest forest;
+    protected final ErrorReceiver errReceiver;
+
+    protected AbstractDocument(MetadataFinder forest, ErrorReceiver errReceiver) {
+        this.forest = forest;
+        this.errReceiver = errReceiver;
+        kinds = new HashMap();
+        importedEntities = new ArrayList();
+        importedDocuments = new HashSet();
+        includedEntities = new ArrayList();
+        includedDocuments = new HashSet();
     }
 
     public String getSystemId() {
@@ -63,32 +68,32 @@ public abstract class AbstractDocument {
 
         _systemId = s;
         if (s != null) {
-            _importedDocuments.add(s);
+            importedDocuments.add(s);
         }
     }
 
     public void addIncludedDocument(String systemId) {
-        _includedDocuments.add(systemId);
+        includedDocuments.add(systemId);
     }
 
     public boolean isIncludedDocument(String systemId) {
-        return _includedDocuments.contains(systemId);
+        return includedDocuments.contains(systemId);
     }
 
     public void addIncludedEntity(Entity entity) {
-        _includedEntities.add(entity);
+        includedEntities.add(entity);
     }
 
     public void addImportedDocument(String systemId) {
-        _importedDocuments.add(systemId);
+        importedDocuments.add(systemId);
     }
 
     public boolean isImportedDocument(String systemId) {
-        return _importedDocuments.contains(systemId);
+        return importedDocuments.contains(systemId);
     }
 
     public void addImportedEntity(Entity entity) {
-        _importedEntities.add(entity);
+        importedEntities.add(entity);
     }
 
     public void withAllSubEntitiesDo(EntityAction action) {
@@ -96,20 +101,20 @@ public abstract class AbstractDocument {
             action.perform(getRoot());
         }
 
-        for (Iterator iter = _importedEntities.iterator(); iter.hasNext();) {
+        for (Iterator iter = importedEntities.iterator(); iter.hasNext();) {
             action.perform((Entity) iter.next());
         }
 
-        for (Iterator iter = _includedEntities.iterator(); iter.hasNext();) {
+        for (Iterator iter = includedEntities.iterator(); iter.hasNext();) {
             action.perform((Entity) iter.next());
         }
     }
 
     public Map getMap(Kind k) {
-        Map m = (Map) _kinds.get(k.getName());
+        Map m = (Map) kinds.get(k.getName());
         if (m == null) {
             m = new HashMap();
-            _kinds.put(k.getName(), m);
+            kinds.put(k.getName(), m);
         }
         return m;
     }
@@ -121,10 +126,12 @@ public abstract class AbstractDocument {
         QName name =
             new QName(e.getDefining().getTargetNamespaceURI(), e.getName());
 
-        if (map.containsKey(name))
-            throw new DuplicateEntityException(e);
-        else
+        if (map.containsKey(name)){
+            errReceiver.error(e.getLocator(), WsdlMessages.ENTITY_DUPLICATE_WITH_TYPE(e.getElementName().getLocalPart(), e.getName()));
+            throw new AbortException();
+        }else{
             map.put(name, e);
+        }
     }
 
     public void undefine(GloballyKnown e) {
@@ -134,82 +141,22 @@ public abstract class AbstractDocument {
         QName name =
             new QName(e.getDefining().getTargetNamespaceURI(), e.getName());
 
-        if (map.containsKey(name))
-            throw new NoSuchEntityException(name);
-        else
+        if (map.containsKey(name)){
+            errReceiver.error(e.getLocator(), WsdlMessages.ENTITY_NOT_FOUND_BY_Q_NAME(e.getElementName().getLocalPart(), e.getElementName().getNamespaceURI()));
+            throw new AbortException();
+        } else{
             map.remove(name);
+        }
     }
 
     public GloballyKnown find(Kind k, QName name) {
         Map map = getMap(k);
         Object result = map.get(name);
-        if (result == null)
-            throw new NoSuchEntityException(name);
+        if (result == null){
+            errReceiver.error(new LocatorImpl(), WsdlMessages.ENTITY_NOT_FOUND_BY_Q_NAME(name.getLocalPart(), name.getNamespaceURI()));
+            throw new AbortException();
+        }
         return (GloballyKnown) result;
-    }
-
-    public void defineID(Identifiable e) {
-        String id = e.getID();
-        if (id == null)
-            return;
-
-        if (_identifiables.containsKey(id))
-            throw new DuplicateEntityException(e);
-        else
-            _identifiables.put(id, e);
-    }
-
-    public void undefineID(Identifiable e) {
-        String id = e.getID();
-
-        if (id == null)
-            return;
-
-        if (_identifiables.containsKey(id))
-            throw new NoSuchEntityException(id);
-        else
-            _identifiables.remove(id);
-    }
-
-    public Identifiable findByID(String id) {
-        Object result = _identifiables.get(id);
-        if (result == null)
-            throw new NoSuchEntityException(id);
-        return (Identifiable) result;
-    }
-
-    public Set collectAllQNames() {
-        final Set result = new HashSet();
-        EntityAction action = new EntityAction() {
-            public void perform(Entity entity) {
-                entity.withAllQNamesDo(new QNameAction() {
-                    public void perform(QName name) {
-                        result.add(name);
-                    }
-                });
-                entity.withAllSubEntitiesDo(this);
-            }
-        };
-        withAllSubEntitiesDo(action);
-        return result;
-    }
-
-    public Set collectAllNamespaces() {
-        final Set result = new HashSet();
-
-        EntityAction action = new EntityAction() {
-            public void perform(Entity entity) {
-                entity.withAllQNamesDo(new QNameAction() {
-                    public void perform(QName name) {
-                        result.add(name.getNamespaceURI());
-                    }
-                });
-
-                entity.withAllSubEntitiesDo(this);
-            }
-        };
-        withAllSubEntitiesDo(action);
-        return result;
     }
 
     public void validateLocally() {
@@ -220,21 +167,16 @@ public abstract class AbstractDocument {
         }
     }
 
-    public void validate() {
-        validate(null);
-    }
-
     public abstract void validate(EntityReferenceValidator validator);
 
     protected abstract Entity getRoot();
 
-    private Map _kinds;
-    private Map _identifiables;
+    private final Map kinds;
     private String _systemId;
-    private Set _importedDocuments;
-    private List _importedEntities;
-    private Set _includedDocuments;
-    private List _includedEntities;
+    private final Set importedDocuments;
+    private final List importedEntities;
+    private final Set includedDocuments;
+    private final List includedEntities;
 
     private class LocallyValidatingAction implements EntityAction {
         public LocallyValidatingAction() {

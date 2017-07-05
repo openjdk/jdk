@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,19 @@
  */
 package com.sun.tools.internal.ws.wsdl.parser;
 
-import javax.xml.namespace.QName;
-
+import com.sun.tools.internal.ws.wsdl.document.soap.SOAP12Binding;
 import com.sun.tools.internal.ws.wsdl.document.soap.SOAP12Constants;
 import com.sun.tools.internal.ws.wsdl.document.soap.SOAPBinding;
-import com.sun.tools.internal.ws.wsdl.document.soap.SOAP12Binding;
+import org.xml.sax.Locator;
+
+import javax.xml.namespace.QName;
+import java.util.Map;
 
 
 public class SOAP12ExtensionHandler extends SOAPExtensionHandler {
+    public SOAP12ExtensionHandler(Map<String, AbstractExtensionHandler> extensionHandlerMap) {
+        super(extensionHandlerMap);
+    }
 
     /*
      * @see SOAPExtensionHandler#getNamespaceURI()
@@ -57,8 +62,8 @@ public class SOAP12ExtensionHandler extends SOAPExtensionHandler {
         return SOAP12Constants.QNAME_BINDING;
     }
 
-    @Override protected SOAPBinding getSOAPBinding() {
-        return new SOAP12Binding();
+    @Override protected SOAPBinding getSOAPBinding(Locator location) {
+        return new SOAP12Binding(location);
     }
 
     /*

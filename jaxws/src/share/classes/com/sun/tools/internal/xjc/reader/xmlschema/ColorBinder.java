@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,10 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema;
 
 import com.sun.tools.internal.xjc.model.CClassInfo;
 import com.sun.tools.internal.xjc.model.CPropertyInfo;
-import com.sun.tools.internal.xjc.model.CTypeInfo;
-import com.sun.tools.internal.xjc.model.TypeUse;
 import com.sun.tools.internal.xjc.reader.Ring;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIProperty;
 import com.sun.xml.internal.xsom.XSAnnotation;
@@ -55,20 +52,13 @@ abstract class ColorBinder extends BindingComponent implements XSVisitor {
         return selector.getCurrentRoot();
     }
 
-    protected CTypeInfo boundToType(XSComponent sc) {
-        if(sc==selector.getCurrentRoot())    return null;
-        return selector.bindToType(sc);
-    }
-
-
-
 
     protected final void createSimpleTypeProperty(XSSimpleType type,String propName) {
         BIProperty prop = BIProperty.getCustomization(type);
 
         SimpleTypeBuilder stb = Ring.get(SimpleTypeBuilder.class);
         // since we are building the simple type here, use buildDef
-        CPropertyInfo p = prop.createValueProperty(propName,false,type,stb.buildDef(type));
+        CPropertyInfo p = prop.createValueProperty(propName,false,type,stb.buildDef(type),BGMBuilder.getName(type));
         getCurrentBean().addProperty(p);
     }
 

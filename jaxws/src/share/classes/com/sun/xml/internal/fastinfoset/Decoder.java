@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,6 @@
  * have any questions.
  *
  * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
- *
- * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- *
  */
 package com.sun.xml.internal.fastinfoset;
 
@@ -100,17 +72,23 @@ import com.sun.xml.internal.org.jvnet.fastinfoset.FastInfosetParser;
  */
 public abstract class Decoder implements FastInfosetParser {
 
+    protected static final char[] XML_NAMESPACE_NAME_CHARS = EncodingConstants.XML_NAMESPACE_NAME.toCharArray();
+
+    protected static final char[] XMLNS_NAMESPACE_PREFIX_CHARS = EncodingConstants.XMLNS_NAMESPACE_PREFIX.toCharArray();
+
+    protected static final char[] XMLNS_NAMESPACE_NAME_CHARS = EncodingConstants.XMLNS_NAMESPACE_NAME.toCharArray();
+
     /**
      * String interning system property.
      */
     public static final String STRING_INTERNING_SYSTEM_PROPERTY =
-        "com.sun.xml.internal.fastinfoset.parser.string-interning";
+            "com.sun.xml.internal.fastinfoset.parser.string-interning";
 
     /**
      * Internal buffer size interning system property.
      */
     public static final String BUFFER_SIZE_SYSTEM_PROPERTY =
-        "com.sun.xml.internal.fastinfoset.parser.buffer-size";
+            "com.sun.xml.internal.fastinfoset.parser.buffer-size";
 
     private static boolean _stringInterningSystemDefault = false;
 
@@ -118,11 +96,11 @@ public abstract class Decoder implements FastInfosetParser {
 
     static {
         String p = System.getProperty(STRING_INTERNING_SYSTEM_PROPERTY,
-            Boolean.toString(_stringInterningSystemDefault));
+                Boolean.toString(_stringInterningSystemDefault));
         _stringInterningSystemDefault = Boolean.valueOf(p).booleanValue();
 
         p = System.getProperty(BUFFER_SIZE_SYSTEM_PROPERTY,
-            Integer.toString(_bufferSizeSystemDefault));
+                Integer.toString(_bufferSizeSystemDefault));
         try {
             int i = Integer.valueOf(p).intValue();
             if (i > 0) {
@@ -146,6 +124,16 @@ public abstract class Decoder implements FastInfosetParser {
      * The map of URIs to referenced vocabularies.
      */
     private Map _externalVocabularies;
+
+    /**
+     * True if can parse fragments.
+     */
+    protected boolean _parseFragments;
+
+    /**
+     * True if needs to close underlying input stream.
+     */
+    protected boolean _needForceStreamClose;
 
     /**
      * True if the vocabulary is internally created by decoder.
@@ -359,8 +347,35 @@ public abstract class Decoder implements FastInfosetParser {
         return _externalVocabularies;
     }
 
-    // End FastInfosetParser interface
+    /**
+     * {@inheritDoc}
+     */
+    public void setParseFragments(boolean parseFragments) {
+        _parseFragments = parseFragments;
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    public boolean getParseFragments() {
+        return _parseFragments;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setForceStreamClose(boolean needForceStreamClose) {
+        _needForceStreamClose = needForceStreamClose;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean getForceStreamClose() {
+        return _needForceStreamClose;
+    }
+
+// End FastInfosetParser interface
 
     /**
      * Reset the decoder for reuse decoding another XML infoset.
@@ -404,7 +419,7 @@ public abstract class Decoder implements FastInfosetParser {
             decodeInitialVocabulary();
         } else if (b != 0) {
             throw new IOException(CommonResourceBundle.getInstance().
-                getString("message.optinalValues"));
+                    getString("message.optinalValues"));
         }
     }
 
@@ -604,9 +619,9 @@ public abstract class Decoder implements FastInfosetParser {
             String name = decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherNCName);
 
             String system_identifier = ((_b & EncodingConstants.NOTATIONS_SYSTEM_IDENTIFIER_FLAG) > 0)
-                ? decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherURI) : "";
+            ? decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherURI) : "";
             String public_identifier = ((_b & EncodingConstants.NOTATIONS_PUBLIC_IDENTIFIER_FLAG) > 0)
-                ? decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherURI) : "";
+            ? decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherURI) : "";
 
             Notation notation = new Notation(name, system_identifier, public_identifier);
             _notations.add(notation);
@@ -631,7 +646,7 @@ public abstract class Decoder implements FastInfosetParser {
             String system_identifier = decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherURI);
 
             String public_identifier = ((_b & EncodingConstants.UNPARSED_ENTITIES_PUBLIC_IDENTIFIER_FLAG) > 0)
-                ? decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherURI) : "";
+            ? decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherURI) : "";
 
             String notation_name = decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherNCName);
 
@@ -669,7 +684,7 @@ public abstract class Decoder implements FastInfosetParser {
 
     protected final QualifiedName decodeEIIIndexMedium() throws FastInfosetException, IOException {
         final int i = (((_b & EncodingConstants.INTEGER_3RD_BIT_MEDIUM_MASK) << 8) | read())
-            + EncodingConstants.INTEGER_3RD_BIT_SMALL_LIMIT;
+        + EncodingConstants.INTEGER_3RD_BIT_SMALL_LIMIT;
         return _v.elementName._array[i];
     }
 
@@ -678,20 +693,22 @@ public abstract class Decoder implements FastInfosetParser {
         if ((_b & EncodingConstants.INTEGER_3RD_BIT_LARGE_LARGE_FLAG) == 0x20) {
             // EII large index
             i = (((_b & EncodingConstants.INTEGER_3RD_BIT_LARGE_MASK) << 16) | (read() << 8) | read())
-                + EncodingConstants.INTEGER_3RD_BIT_MEDIUM_LIMIT;
+            + EncodingConstants.INTEGER_3RD_BIT_MEDIUM_LIMIT;
         } else {
             // EII large large index
             i = (((read() & EncodingConstants.INTEGER_3RD_BIT_LARGE_LARGE_MASK) << 16) | (read() << 8) | read())
-                + EncodingConstants.INTEGER_3RD_BIT_LARGE_LIMIT;
+            + EncodingConstants.INTEGER_3RD_BIT_LARGE_LIMIT;
         }
         return _v.elementName._array[i];
     }
 
-    protected final QualifiedName decodeLiteralQualifiedName(int state) throws FastInfosetException, IOException {
+    protected final QualifiedName decodeLiteralQualifiedName(int state, QualifiedName q)
+    throws FastInfosetException, IOException {
+        if (q == null) q = new QualifiedName();
         switch (state) {
             // no prefix, no namespace
             case 0:
-                return new QualifiedName(
+                return q.set(
                         "",
                         "",
                         decodeIdentifyingNonEmptyStringOnFirstBit(_v.localName),
@@ -699,9 +716,9 @@ public abstract class Decoder implements FastInfosetParser {
                         -1,
                         _identifier,
                         null);
-            // no prefix, namespace
+                // no prefix, namespace
             case 1:
-                return new QualifiedName(
+                return q.set(
                         "",
                         decodeIdentifyingNonEmptyStringIndexOnFirstBitAsNamespaceName(false),
                         decodeIdentifyingNonEmptyStringOnFirstBit(_v.localName),
@@ -709,12 +726,12 @@ public abstract class Decoder implements FastInfosetParser {
                         _namespaceNameIndex,
                         _identifier,
                         null);
-            // prefix, no namespace
+                // prefix, no namespace
             case 2:
                 throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.qNameMissingNamespaceName"));
-            // prefix, namespace
+                // prefix, namespace
             case 3:
-                return new QualifiedName(
+                return q.set(
                         decodeIdentifyingNonEmptyStringIndexOnFirstBitAsPrefix(true),
                         decodeIdentifyingNonEmptyStringIndexOnFirstBitAsNamespaceName(true),
                         decodeIdentifyingNonEmptyStringOnFirstBit(_v.localName),
@@ -753,9 +770,9 @@ public abstract class Decoder implements FastInfosetParser {
             {
                 _addToTable = (b & EncodingConstants.NISTRING_ADD_TO_TABLE_FLAG) > 0;
                 final int length = (read() << 24) |
-                    (read() << 16) |
-                    (read() << 8) |
-                    read();
+                        (read() << 16) |
+                        (read() << 8) |
+                        read();
                 _octetBufferLength = length + EncodingConstants.OCTET_STRING_LENGTH_5TH_BIT_MEDIUM_LIMIT;
                 decodeUtf8StringAsCharBuffer();
                 return NISTRING_STRING;
@@ -774,9 +791,9 @@ public abstract class Decoder implements FastInfosetParser {
             {
                 _addToTable = (b & EncodingConstants.NISTRING_ADD_TO_TABLE_FLAG) > 0;
                 final int length = (read() << 24) |
-                    (read() << 16) |
-                    (read() << 8) |
-                    read();
+                        (read() << 16) |
+                        (read() << 8) |
+                        read();
                 _octetBufferLength = length + EncodingConstants.OCTET_STRING_LENGTH_5TH_BIT_MEDIUM_LIMIT;
                 decodeUtf16StringAsCharBuffer();
                 return NISTRING_STRING;
@@ -810,11 +827,11 @@ public abstract class Decoder implements FastInfosetParser {
                 return NISTRING_INDEX;
             case DecoderStateTables.NISTRING_INDEX_MEDIUM:
                 _integer = (((b & EncodingConstants.INTEGER_2ND_BIT_MEDIUM_MASK) << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
                 return NISTRING_INDEX;
             case DecoderStateTables.NISTRING_INDEX_LARGE:
                 _integer = (((b & EncodingConstants.INTEGER_2ND_BIT_LARGE_MASK) << 16) | (read() << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
                 return NISTRING_INDEX;
             case DecoderStateTables.NISTRING_EMPTY:
                 return NISTRING_EMPTY_STRING;
@@ -836,9 +853,9 @@ public abstract class Decoder implements FastInfosetParser {
                 break;
             case DecoderStateTables.NISTRING_UTF8_LARGE_LENGTH:
                 final int length = (read() << 24) |
-                    (read() << 16) |
-                    (read() << 8) |
-                    read();
+                        (read() << 16) |
+                        (read() << 8) |
+                        read();
                 _octetBufferLength = length + EncodingConstants.OCTET_STRING_LENGTH_5TH_BIT_MEDIUM_LIMIT;
                 break;
             default:
@@ -856,20 +873,20 @@ public abstract class Decoder implements FastInfosetParser {
             case 0:
                 _octetBufferLength = 1;
                 break;
-            // Small length
+                // Small length
             case 1:
                 _octetBufferLength = 2;
                 break;
-            // Medium length
+                // Medium length
             case 2:
                 _octetBufferLength = read() + EncodingConstants.OCTET_STRING_LENGTH_7TH_BIT_SMALL_LIMIT;
                 break;
-            // Large length
+                // Large length
             case 3:
                 _octetBufferLength = (read() << 24) |
-                    (read() << 16) |
-                    (read() << 8) |
-                    read();
+                        (read() << 16) |
+                        (read() << 8) |
+                        read();
                 _octetBufferLength += EncodingConstants.OCTET_STRING_LENGTH_7TH_BIT_MEDIUM_LIMIT;
                 break;
         }
@@ -902,9 +919,9 @@ public abstract class Decoder implements FastInfosetParser {
             case DecoderStateTables.ISTRING_LARGE_LENGTH:
             {
                 final int length = (read() << 24) |
-                    (read() << 16) |
-                    (read() << 8) |
-                    read();
+                        (read() << 16) |
+                        (read() << 8) |
+                        read();
                 _octetBufferLength = length + EncodingConstants.OCTET_STRING_LENGTH_2ND_BIT_MEDIUM_LIMIT;
                 final String s = (_stringInterning) ? decodeUtf8StringAsString().intern() : decodeUtf8StringAsString();
                 _identifier = table.add(s) - 1;
@@ -915,11 +932,11 @@ public abstract class Decoder implements FastInfosetParser {
                 return table._array[_identifier];
             case DecoderStateTables.ISTRING_INDEX_MEDIUM:
                 _identifier = (((b & EncodingConstants.INTEGER_2ND_BIT_MEDIUM_MASK) << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
                 return table._array[_identifier];
             case DecoderStateTables.ISTRING_INDEX_LARGE:
                 _identifier = (((b & EncodingConstants.INTEGER_2ND_BIT_LARGE_MASK) << 16) | (read() << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
                 return table._array[_identifier];
             default:
                 throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.decodingIdentifyingString"));
@@ -987,9 +1004,9 @@ public abstract class Decoder implements FastInfosetParser {
             case DecoderStateTables.ISTRING_LARGE_LENGTH:
             {
                 final int length = (read() << 24) |
-                    (read() << 16) |
-                    (read() << 8) |
-                    read();
+                        (read() << 16) |
+                        (read() << 8) |
+                        read();
                 _octetBufferLength = length + EncodingConstants.OCTET_STRING_LENGTH_2ND_BIT_MEDIUM_LIMIT;
                 final String s = (_stringInterning) ? decodeUtf8StringAsString().intern() : decodeUtf8StringAsString();
                 _prefixIndex = _v.prefix.add(s);
@@ -999,7 +1016,7 @@ public abstract class Decoder implements FastInfosetParser {
                 if (namespaceNamePresent) {
                     _prefixIndex = 0;
                     // Peak at next byte and check the index of the XML namespace name
-                    if (DecoderStateTables.ISTRING_PREFIX_NAMESPACE[peak()]
+                    if (DecoderStateTables.ISTRING_PREFIX_NAMESPACE[peek()]
                             != DecoderStateTables.ISTRING_PREFIX_NAMESPACE_INDEX_ZERO) {
                         throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.wrongNamespaceName"));
                     }
@@ -1012,11 +1029,11 @@ public abstract class Decoder implements FastInfosetParser {
                 return _v.prefix._array[_prefixIndex - 1];
             case DecoderStateTables.ISTRING_INDEX_MEDIUM:
                 _prefixIndex = (((b & EncodingConstants.INTEGER_2ND_BIT_MEDIUM_MASK) << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
                 return _v.prefix._array[_prefixIndex - 1];
             case DecoderStateTables.ISTRING_INDEX_LARGE:
                 _prefixIndex = (((b & EncodingConstants.INTEGER_2ND_BIT_LARGE_MASK) << 16) | (read() << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
                 return _v.prefix._array[_prefixIndex - 1];
             default:
                 throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.decodingIdentifyingStringForPrefix"));
@@ -1033,7 +1050,7 @@ public abstract class Decoder implements FastInfosetParser {
                 if (namespaceNamePresent) {
                     _prefixIndex = 0;
                     // Peak at next byte and check the index of the XML namespace name
-                    if (DecoderStateTables.ISTRING_PREFIX_NAMESPACE[peak()]
+                    if (DecoderStateTables.ISTRING_PREFIX_NAMESPACE[peek()]
                             != DecoderStateTables.ISTRING_PREFIX_NAMESPACE_INDEX_ZERO) {
                         throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.wrongNamespaceName"));
                     }
@@ -1046,11 +1063,11 @@ public abstract class Decoder implements FastInfosetParser {
                 return _v.prefix._array[_prefixIndex - 1];
             case DecoderStateTables.ISTRING_INDEX_MEDIUM:
                 _prefixIndex = (((b & EncodingConstants.INTEGER_2ND_BIT_MEDIUM_MASK) << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
                 return _v.prefix._array[_prefixIndex - 1];
             case DecoderStateTables.ISTRING_INDEX_LARGE:
                 _prefixIndex = (((b & EncodingConstants.INTEGER_2ND_BIT_LARGE_MASK) << 16) | (read() << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
                 return _v.prefix._array[_prefixIndex - 1];
             default:
                 throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.decodingIdentifyingStringForPrefix"));
@@ -1079,7 +1096,7 @@ public abstract class Decoder implements FastInfosetParser {
                 _octetBufferLength = EncodingConstants.XMLNS_NAMESPACE_NAME_LENGTH;
                 decodeUtf8StringAsCharBuffer();
 
-                if (compareCharsWithCharBufferFromEndToStart(EncodingConstants.XMLNS_NAMESPACE_NAME_CHARS)) {
+                if (compareCharsWithCharBufferFromEndToStart(XMLNS_NAMESPACE_NAME_CHARS)) {
                     throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.xmlnsConnotBeBoundToPrefix"));
                 }
 
@@ -1093,7 +1110,7 @@ public abstract class Decoder implements FastInfosetParser {
                 _octetBufferLength = EncodingConstants.XML_NAMESPACE_NAME_LENGTH;
                 decodeUtf8StringAsCharBuffer();
 
-                if (compareCharsWithCharBufferFromEndToStart(EncodingConstants.XML_NAMESPACE_NAME_CHARS)) {
+                if (compareCharsWithCharBufferFromEndToStart(XML_NAMESPACE_NAME_CHARS)) {
                     throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.illegalNamespaceName"));
                 }
 
@@ -1112,9 +1129,9 @@ public abstract class Decoder implements FastInfosetParser {
             case DecoderStateTables.ISTRING_LARGE_LENGTH:
             {
                 final int length = (read() << 24) |
-                    (read() << 16) |
-                    (read() << 8) |
-                    read();
+                        (read() << 16) |
+                        (read() << 8) |
+                        read();
                 _octetBufferLength = length + EncodingConstants.OCTET_STRING_LENGTH_2ND_BIT_MEDIUM_LIMIT;
                 final String s = (_stringInterning) ? decodeUtf8StringAsString().intern() : decodeUtf8StringAsString();
                 _namespaceNameIndex = _v.namespaceName.add(s);
@@ -1132,11 +1149,11 @@ public abstract class Decoder implements FastInfosetParser {
                 return _v.namespaceName._array[_namespaceNameIndex - 1];
             case DecoderStateTables.ISTRING_INDEX_MEDIUM:
                 _namespaceNameIndex = (((b & EncodingConstants.INTEGER_2ND_BIT_MEDIUM_MASK) << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
                 return _v.namespaceName._array[_namespaceNameIndex - 1];
             case DecoderStateTables.ISTRING_INDEX_LARGE:
                 _namespaceNameIndex = (((b & EncodingConstants.INTEGER_2ND_BIT_LARGE_MASK) << 16) | (read() << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
                 return _v.namespaceName._array[_namespaceNameIndex - 1];
             default:
                 throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.decodingForNamespaceName"));
@@ -1161,11 +1178,11 @@ public abstract class Decoder implements FastInfosetParser {
                 return _v.namespaceName._array[_namespaceNameIndex - 1];
             case DecoderStateTables.ISTRING_INDEX_MEDIUM:
                 _namespaceNameIndex = (((b & EncodingConstants.INTEGER_2ND_BIT_MEDIUM_MASK) << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
                 return _v.namespaceName._array[_namespaceNameIndex - 1];
             case DecoderStateTables.ISTRING_INDEX_LARGE:
                 _namespaceNameIndex = (((b & EncodingConstants.INTEGER_2ND_BIT_LARGE_MASK) << 16) | (read() << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
                 return _v.namespaceName._array[_namespaceNameIndex - 1];
             default:
                 throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.decodingForNamespaceName"));
@@ -1213,9 +1230,9 @@ public abstract class Decoder implements FastInfosetParser {
             case DecoderStateTables.ISTRING_LARGE_LENGTH:
             {
                 final int length = (read() << 24) |
-                    (read() << 16) |
-                    (read() << 8) |
-                    read();
+                        (read() << 16) |
+                        (read() << 8) |
+                        read();
                 _octetBufferLength = length + EncodingConstants.OCTET_STRING_LENGTH_2ND_BIT_MEDIUM_LIMIT;
                 break;
             }
@@ -1237,10 +1254,10 @@ public abstract class Decoder implements FastInfosetParser {
                 return b & EncodingConstants.INTEGER_2ND_BIT_SMALL_MASK;
             case DecoderStateTables.ISTRING_INDEX_MEDIUM:
                 return (((b & EncodingConstants.INTEGER_2ND_BIT_MEDIUM_MASK) << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_SMALL_LIMIT;
             case DecoderStateTables.ISTRING_INDEX_LARGE:
                 return (((b & EncodingConstants.INTEGER_2ND_BIT_LARGE_MASK) << 16) | (read() << 8) | read())
-                    + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
+                + EncodingConstants.INTEGER_2ND_BIT_MEDIUM_LIMIT;
             case DecoderStateTables.ISTRING_SMALL_LENGTH:
             case DecoderStateTables.ISTRING_MEDIUM_LENGTH:
             case DecoderStateTables.ISTRING_LARGE_LENGTH:
@@ -1262,7 +1279,7 @@ public abstract class Decoder implements FastInfosetParser {
         } else if (_identifier >= EncodingConstants.RESTRICTED_ALPHABET_APPLICATION_START) {
             CharArray ca = _v.restrictedAlphabet.get(_identifier - EncodingConstants.RESTRICTED_ALPHABET_APPLICATION_START);
             if (ca == null) {
-                throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.alphabetNotPresent", new Object[]{new Integer(_identifier)}));
+                throw new FastInfosetException(CommonResourceBundle.getInstance().getString("message.alphabetNotPresent", new Object[]{Integer.valueOf(_identifier)}));
             }
             decodeAlphabetOctetsAsCharBuffer(ca.ch);
         } else {
@@ -1279,13 +1296,13 @@ public abstract class Decoder implements FastInfosetParser {
     }
 
     protected final String decodeRAOctetsAsString(char[] restrictedAlphabet) throws FastInfosetException, IOException {
-        decodeAlphabetOctetsAsCharBuffer(null);
+        decodeAlphabetOctetsAsCharBuffer(restrictedAlphabet);
         return new String(_charBuffer, 0, _charBufferLength);
     }
 
     protected final void decodeFourBitAlphabetOctetsAsCharBuffer(char[] restrictedAlphabet) throws FastInfosetException, IOException {
         _charBufferLength = 0;
-        final int characters = _octetBufferLength / 2;
+        final int characters = _octetBufferLength * 2;
         if (_charBuffer.length < characters) {
             _charBuffer = new char[characters];
         }
@@ -1364,6 +1381,11 @@ public abstract class Decoder implements FastInfosetParser {
         decodeUtf8StringIntoCharBuffer();
     }
 
+    protected final void decodeUtf8StringAsCharBuffer(char[] ch, int offset) throws IOException {
+        ensureOctetBufferSize();
+        decodeUtf8StringIntoCharBuffer(ch, offset);
+    }
+
     protected final String decodeUtf8StringAsString() throws IOException {
         decodeUtf8StringAsCharBuffer();
         return new String(_charBuffer, 0, _charBufferLength);
@@ -1440,6 +1462,21 @@ public abstract class Decoder implements FastInfosetParser {
         }
     }
 
+    protected final void decodeUtf8StringIntoCharBuffer(char[] ch, int offset) throws IOException {
+        _charBufferLength = offset;
+        final int end = _octetBufferLength + _octetBufferOffset;
+        int b1;
+        while (end != _octetBufferOffset) {
+            b1 = _octetBuffer[_octetBufferOffset++] & 0xFF;
+            if (DecoderStateTables.UTF8[b1] == DecoderStateTables.UTF8_ONE_BYTE) {
+                ch[_charBufferLength++] = (char) b1;
+            } else {
+                decodeTwoToFourByteUtf8Character(ch, b1, end);
+            }
+        }
+        _charBufferLength -= offset;
+    }
+
     private void decodeTwoToFourByteUtf8Character(int b1, int end) throws IOException {
         switch(DecoderStateTables.UTF8[b1]) {
             case DecoderStateTables.UTF8_TWO_BYTES:
@@ -1457,24 +1494,69 @@ public abstract class Decoder implements FastInfosetParser {
                 // since a character encoded in two bytes will be in the
                 // range [0x80, 0x1FFF]
                 _charBuffer[_charBufferLength++] = (char) (
-                    ((b1 & 0x1F) << 6)
-                    | (b2 & 0x3F));
+                        ((b1 & 0x1F) << 6)
+                        | (b2 & 0x3F));
                 break;
             }
             case DecoderStateTables.UTF8_THREE_BYTES:
                 final char c = decodeUtf8ThreeByteChar(end, b1);
                 if (XMLChar.isContent(c)) {
                     _charBuffer[_charBufferLength++] = c;
-                    break;
                 } else {
                     decodeUtf8StringIllegalState();
                 }
+                break;
             case DecoderStateTables.UTF8_FOUR_BYTES:
             {
                 final int supplemental = decodeUtf8FourByteChar(end, b1);
                 if (XMLChar.isContent(supplemental)) {
                     _charBuffer[_charBufferLength++] = _utf8_highSurrogate;
                     _charBuffer[_charBufferLength++] = _utf8_lowSurrogate;
+                } else {
+                    decodeUtf8StringIllegalState();
+                }
+                break;
+            }
+            default:
+                decodeUtf8StringIllegalState();
+        }
+    }
+
+    private void decodeTwoToFourByteUtf8Character(char ch[], int b1, int end) throws IOException {
+        switch(DecoderStateTables.UTF8[b1]) {
+            case DecoderStateTables.UTF8_TWO_BYTES:
+            {
+                // Decode byte 2
+                if (end == _octetBufferOffset) {
+                    decodeUtf8StringLengthTooSmall();
+                }
+                final int b2 = _octetBuffer[_octetBufferOffset++] & 0xFF;
+                if ((b2 & 0xC0) != 0x80) {
+                    decodeUtf8StringIllegalState();
+                }
+
+                // Character guaranteed to be in [0x20, 0xD7FF] range
+                // since a character encoded in two bytes will be in the
+                // range [0x80, 0x1FFF]
+                ch[_charBufferLength++] = (char) (
+                        ((b1 & 0x1F) << 6)
+                        | (b2 & 0x3F));
+                break;
+            }
+            case DecoderStateTables.UTF8_THREE_BYTES:
+                final char c = decodeUtf8ThreeByteChar(end, b1);
+                if (XMLChar.isContent(c)) {
+                    ch[_charBufferLength++] = c;
+                } else {
+                    decodeUtf8StringIllegalState();
+                }
+                break;
+            case DecoderStateTables.UTF8_FOUR_BYTES:
+            {
+                final int supplemental = decodeUtf8FourByteChar(end, b1);
+                if (XMLChar.isContent(supplemental)) {
+                    ch[_charBufferLength++] = _utf8_highSurrogate;
+                    ch[_charBufferLength++] = _utf8_lowSurrogate;
                 } else {
                     decodeUtf8StringIllegalState();
                 }
@@ -1524,20 +1606,19 @@ public abstract class Decoder implements FastInfosetParser {
                 }
 
                 final char c = (char) (
-                    ((b1 & 0x1F) << 6)
-                    | (b2 & 0x3F));
+                        ((b1 & 0x1F) << 6)
+                        | (b2 & 0x3F));
                 if (XMLChar.isNCNameStart(c)) {
                     _charBuffer[_charBufferLength++] = c;
-                    break;
                 } else {
                     decodeUtf8NCNameIllegalState();
                 }
+                break;
             }
             case DecoderStateTables.UTF8_THREE_BYTES:
                 final char c = decodeUtf8ThreeByteChar(end, b1);
                 if (XMLChar.isNCNameStart(c)) {
                     _charBuffer[_charBufferLength++] = c;
-                    break;
                 } else {
                     decodeUtf8NCNameIllegalState();
                 }
@@ -1574,20 +1655,19 @@ public abstract class Decoder implements FastInfosetParser {
                 }
 
                 final char c = (char) (
-                    ((b1 & 0x1F) << 6)
-                    | (b2 & 0x3F));
+                        ((b1 & 0x1F) << 6)
+                        | (b2 & 0x3F));
                 if (XMLChar.isNCName(c)) {
                     _charBuffer[_charBufferLength++] = c;
-                    break;
                 } else {
                     decodeUtf8NCNameIllegalState();
                 }
+                break;
             }
             case DecoderStateTables.UTF8_THREE_BYTES:
                 final char c = decodeUtf8ThreeByteChar(end, b1);
                 if (XMLChar.isNCName(c)) {
                     _charBuffer[_charBufferLength++] = c;
-                    break;
                 } else {
                     decodeUtf8NCNameIllegalState();
                 }
@@ -1615,8 +1695,8 @@ public abstract class Decoder implements FastInfosetParser {
         }
         final int b2 = _octetBuffer[_octetBufferOffset++] & 0xFF;
         if ((b2 & 0xC0) != 0x80
-            || (b1 == 0xED && b2 >= 0xA0)
-            || ((b1 & 0x0F) == 0 && (b2 & 0x20) == 0)) {
+                || (b1 == 0xED && b2 >= 0xA0)
+                || ((b1 & 0x0F) == 0 && (b2 & 0x20) == 0)) {
             decodeUtf8StringIllegalState();
         }
 
@@ -1630,9 +1710,9 @@ public abstract class Decoder implements FastInfosetParser {
         }
 
         return (char) (
-            (b1 & 0x0F) << 12
-            | (b2 & 0x3F) << 6
-            | (b3 & 0x3F));
+                (b1 & 0x0F) << 12
+                | (b2 & 0x3F) << 6
+                | (b3 & 0x3F));
     }
 
     private char _utf8_highSurrogate;
@@ -1645,7 +1725,7 @@ public abstract class Decoder implements FastInfosetParser {
         }
         final int b2 = _octetBuffer[_octetBufferOffset++] & 0xFF;
         if ((b2 & 0xC0) != 0x80
-            || ((b2 & 0x30) == 0 && (b1 & 0x07) == 0)) {
+                || ((b2 & 0x30) == 0 && (b1 & 0x07) == 0)) {
             decodeUtf8StringIllegalState();
         }
 
@@ -1674,8 +1754,8 @@ public abstract class Decoder implements FastInfosetParser {
         final int wwww = uuuuu - 1;
 
         _utf8_highSurrogate = (char) (0xD800 |
-             ((wwww << 6) & 0x03C0) | ((b2 << 2) & 0x003C) |
-             ((b3 >> 4) & 0x0003));
+                ((wwww << 6) & 0x03C0) | ((b2 << 2) & 0x003C) |
+                ((b3 >> 4) & 0x0003));
         _utf8_lowSurrogate = (char) (0xDC00 | ((b3 << 6) & 0x03C0) | (b4 & 0x003F));
 
         return XMLChar.supplemental(_utf8_highSurrogate, _utf8_lowSurrogate);
@@ -1738,10 +1818,24 @@ public abstract class Decoder implements FastInfosetParser {
         }
     }
 
-    protected final int peak() throws IOException {
+    protected final void closeIfRequired() throws IOException {
+        if (_s != null && _needForceStreamClose) {
+            _s.close();
+        }
+    }
+
+    protected final int peek() throws IOException {
+        return peek(null);
+    }
+
+    protected final int peek(OctetBufferListener octetBufferListener) throws IOException {
         if (_octetBufferOffset < _octetBufferEnd) {
             return _octetBuffer[_octetBufferOffset] & 0xFF;
         } else {
+            if (octetBufferListener != null) {
+                octetBufferListener.onBeforeOctetBufferOverwrite();
+            }
+
             _octetBufferEnd = _s.read(_octetBuffer);
             if (_octetBufferEnd < 0) {
                 throw new EOFException(CommonResourceBundle.getInstance().getString("message.EOF"));
@@ -1749,6 +1843,30 @@ public abstract class Decoder implements FastInfosetParser {
 
             _octetBufferOffset = 0;
             return _octetBuffer[0] & 0xFF;
+        }
+    }
+
+    protected final int peek2(OctetBufferListener octetBufferListener) throws IOException {
+        if (_octetBufferOffset + 1 < _octetBufferEnd) {
+            return _octetBuffer[_octetBufferOffset + 1] & 0xFF;
+        } else {
+            if (octetBufferListener != null) {
+                octetBufferListener.onBeforeOctetBufferOverwrite();
+            }
+
+            int offset = 0;
+            if (_octetBufferOffset < _octetBufferEnd) {
+                _octetBuffer[0] = _octetBuffer[_octetBufferOffset];
+                offset = 1;
+            }
+            _octetBufferEnd = _s.read(_octetBuffer, offset, _octetBuffer.length - offset);
+
+            if (_octetBufferEnd < 0) {
+                throw new EOFException(CommonResourceBundle.getInstance().getString("message.EOF"));
+            }
+
+            _octetBufferOffset = 0;
+            return _octetBuffer[1] & 0xFF;
         }
     }
 
@@ -1770,7 +1888,7 @@ public abstract class Decoder implements FastInfosetParser {
             if (b == null) {
                 throw new NullPointerException();
             } else if ((off < 0) || (off > b.length) || (len < 0) ||
-                       ((off + len) > b.length) || ((off + len) < 0)) {
+                    ((off + len) > b.length) || ((off + len) < 0)) {
                 throw new IndexOutOfBoundsException();
             } else if (len == 0) {
                 return 0;
@@ -1794,7 +1912,7 @@ public abstract class Decoder implements FastInfosetParser {
 
     protected final boolean _isFastInfosetDocument() throws IOException {
         // Fill up the octet buffer
-        peak();
+        peek();
 
         _octetBufferLength = EncodingConstants.BINARY_HEADER.length;
         ensureOctetBufferSize();

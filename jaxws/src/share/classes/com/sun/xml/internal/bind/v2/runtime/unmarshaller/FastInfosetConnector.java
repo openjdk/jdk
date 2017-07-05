@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import javax.xml.stream.Location;
@@ -31,12 +30,13 @@ import javax.xml.stream.XMLStreamException;
 
 import com.sun.xml.internal.bind.WhiteSpaceProcessor;
 import com.sun.xml.internal.fastinfoset.stax.StAXDocumentParser;
-
-import com.sun.xml.internal.org.jvnet.fastinfoset.EncodingAlgorithmIndexes;
 import org.xml.sax.SAXException;
 
 /**
  * Reads from FastInfoset StAX parser and feeds into JAXB Unmarshaller.
+ * <p>
+ * This class will peek at future events to ascertain if characters need to be
+ * buffered or not.
  *
  * @author Paul Sandoz.
  */
@@ -45,16 +45,14 @@ final class FastInfosetConnector extends StAXConnector {
     // event source
     private final StAXDocumentParser fastInfosetStreamReader;
 
-    // Flag set to true if there is octets instead of characters
-    boolean hasBase64Data = false;
-    // Flag set to true if the first chunk of CIIs
-    boolean firstCIIChunk = true;
+    // Flag set to true if text has been reported
+    private boolean textReported;
 
     // Buffer for octets
-    private Base64Data base64Data = new Base64Data();
+    private final Base64Data base64Data = new Base64Data();
 
     // Buffer for characters
-    private StringBuilder buffer = new StringBuilder();
+    private final StringBuilder buffer = new StringBuilder();
 
     public FastInfosetConnector(StAXDocumentParser fastInfosetStreamReader,
             XmlVisitor visitor) {
@@ -102,7 +100,17 @@ final class FastInfosetConnector extends StAXConnector {
                     case XMLStreamConstants.CHARACTERS :
                     case XMLStreamConstants.CDATA :
                     case XMLStreamConstants.SPACE :
-                        handleCharacters();
+                        if (predictor.expectText()) {
+                            // Peek at the next event to see if there are
+                            // fragmented characters
+                            event = fastInfosetStreamReader.peekNext();
+                            if (event == XMLStreamConstants.END_ELEMENT)
+                                processNonIgnorableText();
+                            else if (event == XMLStreamConstants.START_ELEMENT)
+                                processIgnorableText();
+                            else
+                                handleFragmentedCharacters();
+                        }
                         break;
                     // otherwise simply ignore
                 }
@@ -127,78 +135,142 @@ final class FastInfosetConnector extends StAXConnector {
     }
 
     private void handleStartElement() throws SAXException {
-        processText(true);
+        processUnreportedText();
 
-        for (int i = 0; i < fastInfosetStreamReader.getNamespaceCount(); i++) {
+        for (int i = 0; i < fastInfosetStreamReader.accessNamespaceCount(); i++) {
             visitor.startPrefixMapping(fastInfosetStreamReader.getNamespacePrefix(i),
                     fastInfosetStreamReader.getNamespaceURI(i));
         }
 
-        tagName.uri = fastInfosetStreamReader.getNamespaceURI();
-        tagName.local = fastInfosetStreamReader.getLocalName();
+        tagName.uri = fastInfosetStreamReader.accessNamespaceURI();
+        tagName.local = fastInfosetStreamReader.accessLocalName();
         tagName.atts = fastInfosetStreamReader.getAttributesHolder();
 
         visitor.startElement(tagName);
     }
 
-    private void handleCharacters() {
-        if (predictor.expectText()) {
-            // If the first chunk of CIIs and character data is present
-            if (firstCIIChunk &&
-                    fastInfosetStreamReader.getTextAlgorithmBytes() == null) {
-                buffer.append(fastInfosetStreamReader.getTextCharacters(),
-                        fastInfosetStreamReader.getTextStart(),
-                        fastInfosetStreamReader.getTextLength());
-                firstCIIChunk = false;
-            // If the first chunk of CIIs and octet data is present
-            } else if (firstCIIChunk &&
-                    fastInfosetStreamReader.getTextAlgorithmIndex() == EncodingAlgorithmIndexes.BASE64) {
-                firstCIIChunk = false;
-                hasBase64Data = true;
-                // Clone the octets
-                base64Data.set(fastInfosetStreamReader.getTextAlgorithmBytesClone(),null);
-                return;
-            // If a subsequent sequential chunk of CIIs
-            } else {
-                // If the first chunk is octet data
-                if (hasBase64Data) {
-                    // Append base64 encoded octets to the character buffer
-                    buffer.append(base64Data);
-                    hasBase64Data = false;
-                }
+    private void handleFragmentedCharacters() throws XMLStreamException, SAXException {
+        buffer.setLength(0);
 
-                // Append the second or subsequence chunk of CIIs to the buffer
-                buffer.append(fastInfosetStreamReader.getTextCharacters(),
-                        fastInfosetStreamReader.getTextStart(),
-                        fastInfosetStreamReader.getTextLength());
+        // Append characters of first character event
+        buffer.append(fastInfosetStreamReader.accessTextCharacters(),
+                fastInfosetStreamReader.accessTextStart(),
+                fastInfosetStreamReader.accessTextLength());
+
+        // Consume all character
+        while(true) {
+            switch(fastInfosetStreamReader.peekNext()) {
+                case XMLStreamConstants.START_ELEMENT :
+                    processBufferedText(true);
+                    return;
+                case XMLStreamConstants.END_ELEMENT :
+                    processBufferedText(false);
+                    return;
+                case XMLStreamConstants.CHARACTERS :
+                case XMLStreamConstants.CDATA :
+                case XMLStreamConstants.SPACE :
+                    // Append characters of second and subsequent character events
+                    fastInfosetStreamReader.next();
+                    buffer.append(fastInfosetStreamReader.accessTextCharacters(),
+                            fastInfosetStreamReader.accessTextStart(),
+                            fastInfosetStreamReader.accessTextLength());
+                    break;
+                default:
+                    fastInfosetStreamReader.next();
             }
-
         }
     }
 
     private void handleEndElement() throws SAXException {
-        processText(false);
+        processUnreportedText();
 
-        tagName.uri = fastInfosetStreamReader.getNamespaceURI();
-        tagName.local = fastInfosetStreamReader.getLocalName();
+        tagName.uri = fastInfosetStreamReader.accessNamespaceURI();
+        tagName.local = fastInfosetStreamReader.accessLocalName();
 
         visitor.endElement(tagName);
 
-        for (int i = fastInfosetStreamReader.getNamespaceCount() - 1; i >= 0; i--) {
+        for (int i = fastInfosetStreamReader.accessNamespaceCount() - 1; i >= 0; i--) {
             visitor.endPrefixMapping(fastInfosetStreamReader.getNamespacePrefix(i));
         }
     }
 
-    private void processText(boolean ignorable) throws SAXException {
-        firstCIIChunk = true;
-        if(predictor.expectText() && (!ignorable || !WhiteSpaceProcessor.isWhiteSpace(buffer))) {
-            if (!hasBase64Data) {
-                visitor.text(buffer);
-            } else {
-                visitor.text(base64Data);
-                hasBase64Data = false;
-            }
+    final private class CharSequenceImpl implements CharSequence {
+        char[] ch;
+        int start;
+        int length;
+
+        CharSequenceImpl() {
         }
-        buffer.setLength(0);
+
+        CharSequenceImpl(final char[] ch, final int start, final int length) {
+            this.ch = ch;
+            this.start = start;
+            this.length = length;
+        }
+
+        public void set() {
+            ch = fastInfosetStreamReader.accessTextCharacters();
+            start = fastInfosetStreamReader.accessTextStart();
+            length = fastInfosetStreamReader.accessTextLength();
+        }
+
+        // CharSequence interface
+
+        public final int length() {
+            return length;
+        }
+
+        public final char charAt(final int index) {
+            return ch[start + index];
+        }
+
+        public final CharSequence subSequence(final int start, final int end) {
+            return new CharSequenceImpl(ch, this.start + start, end - start);
+        }
+
+        public String toString() {
+            return new String(ch, start, length);
+        }
+    }
+
+    final private CharSequenceImpl charArray = new CharSequenceImpl();
+
+    private void processNonIgnorableText() throws SAXException {
+        textReported = true;
+        if (fastInfosetStreamReader.getTextAlgorithmBytes() == null) {
+            charArray.set();
+            visitor.text(charArray);
+        } else {
+            base64Data.set(fastInfosetStreamReader.getTextAlgorithmBytesClone(),null);
+            visitor.text(base64Data);
+        }
+    }
+
+    private void processIgnorableText() throws SAXException {
+        if (fastInfosetStreamReader.getTextAlgorithmBytes() == null) {
+            charArray.set();
+            if (!WhiteSpaceProcessor.isWhiteSpace(charArray)) {
+                visitor.text(charArray);
+                textReported = true;
+            }
+        } else {
+            base64Data.set(fastInfosetStreamReader.getTextAlgorithmBytesClone(),null);
+            visitor.text(base64Data);
+            textReported = true;
+        }
+    }
+
+    private void processBufferedText(boolean ignorable) throws SAXException {
+        if (!ignorable || !WhiteSpaceProcessor.isWhiteSpace(buffer)) {
+            visitor.text(buffer);
+            textReported = true;
+        }
+    }
+
+    private void processUnreportedText() throws SAXException {
+        if(!textReported && predictor.expectText()) {
+            visitor.text("");
+        }
+        textReported = false;
     }
 }

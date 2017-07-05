@@ -131,12 +131,30 @@ public abstract class FloatControl extends Control {
      * @param minLabel the label for the minimum value, such as "Left" or "Off"
      * @param midLabel the label for the midpoint value, such as "Center" or "Default"
      * @param maxLabel the label for the maximum value, such as "Right" or "Full"
+     *
+     * @throws IllegalArgumentException if {@code minimum} is greater
+     *     than {@code maximum} or {@code initialValue} does not fall
+     *     within the allowable range
      */
     protected FloatControl(Type type, float minimum, float maximum,
-                           float precision, int updatePeriod, float initialValue,
-                           String units, String minLabel, String midLabel, String maxLabel) {
+            float precision, int updatePeriod, float initialValue,
+            String units, String minLabel, String midLabel, String maxLabel) {
 
         super(type);
+
+        if (minimum > maximum) {
+            throw new IllegalArgumentException("Minimum value " + minimum
+                    + " exceeds maximum value " + maximum + ".");
+        }
+        if (initialValue < minimum) {
+            throw new IllegalArgumentException("Initial value " + initialValue
+                    + " smaller than allowable minimum value " + minimum + ".");
+        }
+        if (initialValue > maximum) {
+            throw new IllegalArgumentException("Initial value " + initialValue
+                    + " exceeds allowable maximum value " + maximum + ".");
+        }
+
 
         this.minimum = minimum;
         this.maximum = maximum;
@@ -167,10 +185,15 @@ public abstract class FloatControl extends Control {
      * @param initialValue the value that the control starts with when constructed
      * @param units the label for the units in which the control's values are expressed,
      * such as "dB" or "frames per second"
+     *
+     * @throws IllegalArgumentException if {@code minimum} is greater
+     *     than {@code maximum} or {@code initialValue} does not fall
+     *     within the allowable range
      */
     protected FloatControl(Type type, float minimum, float maximum,
-                           float precision, int updatePeriod, float initialValue, String units) {
-        this(type, minimum, maximum, precision, updatePeriod, initialValue, units, "", "", "");
+            float precision, int updatePeriod, float initialValue, String units) {
+        this(type, minimum, maximum, precision, updatePeriod,
+                initialValue, units, "", "", "");
     }
 
 
@@ -306,9 +329,21 @@ public abstract class FloatControl extends Control {
      * @param to final value after the shift
      * @param microseconds maximum duration of the shift in microseconds
      *
+     * @throws IllegalArgumentException if either {@code from} or {@code to}
+     *     value does not fall within the allowable range
+     *
      * @see #getUpdatePeriod
      */
     public void shift(float from, float to, int microseconds) {
+        // test "from" value, "to" value will be tested by setValue()
+        if (from < minimum) {
+            throw new IllegalArgumentException("Requested value " + from
+                    + " smaller than allowable minimum value " + minimum + ".");
+        }
+        if (from > maximum) {
+            throw new IllegalArgumentException("Requested value " + from
+                    + " exceeds allowable maximum value " + maximum + ".");
+        }
         setValue(to);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.xml.internal.ws.util.xml;
 
+import com.sun.istack.internal.XMLStreamReaderToContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.DTDHandler;
 import org.xml.sax.EntityResolver;
@@ -79,6 +80,7 @@ import javax.xml.transform.sax.SAXSource;
  * </pre>
  *
  * @author Ryan.Shoemaker@Sun.COM
+ * @version 1.0
  */
 public class StAXSource extends SAXSource {
 
@@ -213,7 +215,7 @@ public class StAXSource extends SAXSource {
             throw new IllegalStateException();
         }
 
-        this.reader = new XMLStreamReaderToContentHandler(reader,repeater,eagerQuit);
+        this.reader = new XMLStreamReaderToContentHandler(reader,repeater,eagerQuit,false);
 
         super.setXMLReader(pseudoParser);
         // pass a dummy InputSource. We don't care

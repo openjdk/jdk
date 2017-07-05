@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,11 +57,11 @@ public abstract class JExpr {
     }
 
     public static JInvocation invoke(JMethod method) {
-        return new JInvocation((JExpression)null,method.name());
+        return new JInvocation((JExpression)null,method);
     }
 
     public static JInvocation invoke(JExpression lhs, JMethod method) {
-        return new JInvocation(lhs, method.name());
+        return new JInvocation(lhs, method);
     }
 
     public static JInvocation invoke(JExpression lhs, String method) {

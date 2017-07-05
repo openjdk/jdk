@@ -383,6 +383,8 @@ public class UIManager implements Serializable
         ArrayList<LookAndFeelInfo> iLAFs = new ArrayList<LookAndFeelInfo>(4);
         iLAFs.add(new LookAndFeelInfo(
                       "Metal", "javax.swing.plaf.metal.MetalLookAndFeel"));
+        iLAFs.add(new LookAndFeelInfo(
+                      "Nimbus", "javax.swing.plaf.nimbus.NimbusLookAndFeel"));
         iLAFs.add(new LookAndFeelInfo("CDE/Motif",
                   "com.sun.java.swing.plaf.motif.MotifLookAndFeel"));
 

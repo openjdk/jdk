@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.api.impl.s2j;
 
 import java.net.MalformedURLException;
@@ -44,9 +43,11 @@ import com.sun.tools.internal.xjc.Options;
 import com.sun.tools.internal.xjc.api.ClassNameAllocator;
 import com.sun.tools.internal.xjc.api.ErrorListener;
 import com.sun.tools.internal.xjc.api.SchemaCompiler;
+import com.sun.tools.internal.xjc.api.SpecVersion;
 import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.outline.Outline;
 import com.sun.tools.internal.xjc.reader.internalizer.DOMForest;
+import com.sun.tools.internal.xjc.reader.internalizer.SCDBasedBindingSet;
 import com.sun.tools.internal.xjc.reader.xmlschema.parser.XMLSchemaInternalizationLogic;
 import com.sun.xml.internal.bind.unmarshaller.DOMScanner;
 import com.sun.xml.internal.xsom.XSSchemaSet;
@@ -80,7 +81,7 @@ public final class SchemaCompilerImpl extends ErrorReceiver implements SchemaCom
 
     protected final Options opts = new Options();
 
-    protected final DOMForest forest;
+    protected @NotNull DOMForest forest;
 
     /**
      * Set to true once an error is found.
@@ -88,9 +89,8 @@ public final class SchemaCompilerImpl extends ErrorReceiver implements SchemaCom
     private boolean hadError;
 
     public SchemaCompilerImpl() {
-        forest = new DOMForest(new XMLSchemaInternalizationLogic());
         opts.compatibilityMode = Options.EXTENSION;
-        forest.setErrorHandler(this);
+        resetSchema();
 
         if(System.getProperty("xjc-api.test")!=null) {
             opts.debugMode = true;
@@ -142,6 +142,12 @@ public final class SchemaCompilerImpl extends ErrorReceiver implements SchemaCom
         }
     }
 
+    public void setTargetVersion(SpecVersion version) {
+        if(version==null)
+            version = SpecVersion.LATEST;
+        opts.target = version;
+    }
+
     public void parseSchema(String systemId, XMLStreamReader reader) throws XMLStreamException {
         checkAbsoluteness(systemId);
         forest.parse(systemId,reader,true);
@@ -183,6 +189,12 @@ public final class SchemaCompilerImpl extends ErrorReceiver implements SchemaCom
         opts.classNameAllocator = allocator;
     }
 
+    public void resetSchema() {
+        forest = new DOMForest(new XMLSchemaInternalizationLogic());
+        forest.setErrorHandler(this);
+        forest.setEntityResolver(opts.entityResolver);
+    }
+
 
     public JAXBModelImpl bind() {
         // this has been problematic. turn it off.
@@ -190,7 +202,7 @@ public final class SchemaCompilerImpl extends ErrorReceiver implements SchemaCom
 //            return null;
 
         // internalization
-        forest.transform();
+        SCDBasedBindingSet scdBasedBindingSet = forest.transform(opts.isExtensionMode());
 
         if(!NO_CORRECTNESS_CHECK) {
             // correctness check
@@ -206,7 +218,7 @@ public final class SchemaCompilerImpl extends ErrorReceiver implements SchemaCom
         ModelLoader gl = new ModelLoader(opts,codeModel,this);
 
         try {
-            XSSchemaSet result = gl.createXSOM(forest);
+            XSSchemaSet result = gl.createXSOM(forest, scdBasedBindingSet);
             if(result==null)
                 return null;
 

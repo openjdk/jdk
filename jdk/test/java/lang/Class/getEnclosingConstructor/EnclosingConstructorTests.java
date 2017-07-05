@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4962341
+ * @bug 4962341 6832557
  * @summary Check getEnclosingMethod method
  * @author Joseph D. Darcy
  */
@@ -57,8 +57,8 @@ public class EnclosingConstructorTests {
     }
 
 
-    static int examine(Class enclosedClass, String constructorSig) {
-        Constructor c = enclosedClass.getEnclosingConstructor();
+    static int examine(Class<?> enclosedClass, String constructorSig) {
+        Constructor<?> c = enclosedClass.getEnclosingConstructor();
         if (c == null && constructorSig == null)
             return 0;
 

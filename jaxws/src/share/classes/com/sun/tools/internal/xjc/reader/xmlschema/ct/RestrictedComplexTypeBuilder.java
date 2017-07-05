@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema.ct;
 
-import com.sun.tools.internal.xjc.model.CClassInfo;
+import com.sun.tools.internal.xjc.model.CClass;
 import com.sun.xml.internal.xsom.XSComplexType;
 import com.sun.xml.internal.xsom.XSType;
 
@@ -46,10 +45,17 @@ final class RestrictedComplexTypeBuilder extends CTBuilder {
     }
 
     public void build(XSComplexType ct) {
+        if(bgmBuilder.getGlobalBinding().isRestrictionFreshType()) {
+            // handle derivation-by-restriction like a whole new type
+            new FreshComplexTypeBuilder().build(ct);
+            return;
+        }
+
+
         XSComplexType baseType = ct.getBaseType().asComplexType();
 
         // build the base class
-        CClassInfo baseClass = selector.bindToType(baseType,true);
+        CClass baseClass = selector.bindToType(baseType,ct,true);
         assert baseClass!=null;   // global complex type must map to a class
 
         selector.getCurrentBean().setBaseClass(baseClass);

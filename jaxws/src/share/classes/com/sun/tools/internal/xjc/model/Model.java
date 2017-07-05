@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import java.util.Collections;
@@ -59,8 +58,11 @@ import com.sun.xml.internal.bind.v2.model.core.Ref;
 import com.sun.xml.internal.bind.v2.model.core.TypeInfoSet;
 import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 import com.sun.xml.internal.bind.v2.util.FlattenIterator;
+import com.sun.xml.internal.xsom.XSComponent;
+import com.sun.xml.internal.xsom.XSSchemaSet;
 
 import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.LocatorImpl;
 
 /**
@@ -73,7 +75,7 @@ import org.xml.sax.helpers.LocatorImpl;
  *
  * @author Kohsuke Kawaguchi
  */
-public final class Model implements TypeInfoSet<NType,NClass,Void,Void> {
+public final class Model implements TypeInfoSet<NType,NClass,Void,Void>, CCustomizable {
 
     /**
      * Generated beans.
@@ -125,11 +127,24 @@ public final class Model implements TypeInfoSet<NType,NClass,Void,Void> {
     private boolean packageLevelAnnotations = true;
 
     /**
+     * If this model was built from XML Schema, this field
+     * stores the root object of the parse schema model.
+     * Otherwise null.
+     *
+     * @sine 2.1.1
+     */
+    public final XSSchemaSet schemaComponent;
+
+    private CCustomizations gloablCustomizations = new CCustomizations();
+
+    /**
      * @param nc
      *      Usually this should be set in the constructor, but we do allow this parameter
      *      to be initially null, and then set later.
+     * @param schemaComponent
+     *      The source schema model, if this is built from XSD.
      */
-    public Model( Options opts, JCodeModel cm, NameConverter nc, ClassNameAllocator allocator ) {
+    public Model( Options opts, JCodeModel cm, NameConverter nc, ClassNameAllocator allocator, XSSchemaSet schemaComponent ) {
         this.options = opts;
         this.codeModel = cm;
         this.nameConverter = nc;
@@ -138,7 +153,11 @@ public final class Model implements TypeInfoSet<NType,NClass,Void,Void> {
 
         elementMappings.put(null,new HashMap<QName,CElementInfo>());
 
+        if(opts.automaticNameConflictResolution)
+            allocator = new AutoClassNameAllocator(allocator);
         this.allocator = new ClassNameAllocatorWrapper(allocator);
+        this.schemaComponent = schemaComponent;
+        this.gloablCustomizations.setParent(this,this);
     }
 
     public void setNameConverter(NameConverter nameConverter) {
@@ -254,9 +273,13 @@ public final class Model implements TypeInfoSet<NType,NClass,Void,Void> {
 
         Outline o = BeanGenerator.generate(this, ehf);
 
-        // run extensions
-        for( Plugin ma : opt.activePlugins )
-            ma.run(o,opt,ehf);
+        try {// run extensions
+            for( Plugin ma : opt.activePlugins )
+                ma.run(o,opt,ehf);
+        } catch (SAXException e) {
+            // fatal error. error should have been reported
+            return null;
+        }
 
         // check for unused plug-in customizations.
         // these can be only checked after the plug-ins run, so it's here.
@@ -378,9 +401,39 @@ public final class Model implements TypeInfoSet<NType,NClass,Void,Void> {
     }
 
     /**
+     * @deprecated
+     *      Always return null. Perhaps you are interested in {@link #schemaComponent}?
+     */
+    public XSComponent getSchemaComponent() {
+        return null;
+    }
+
+    /**
+     * @deprecated
+     *      No line number available for the "root" component.
+     */
+    public Locator getLocator() {
+        LocatorImpl r = new LocatorImpl();
+        r.setLineNumber(-1);
+        r.setColumnNumber(-1);
+        return r;
+    }
+
+    /**
+     * Gets the global customizations.
+     */
+    public CCustomizations getCustomizations() {
+        return gloablCustomizations;
+    }
+
+    /**
      * Not implemented in the compile-time model.
      */
     public Map<String, String> getXmlNs(String namespaceUri) {
+        return Collections.emptyMap();
+    }
+
+    public Map<String, String> getSchemaLocations() {
         return Collections.emptyMap();
     }
 

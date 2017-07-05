@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.core;
 
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlValue;
 
 /**
  * Information about JAXB-bound class.
@@ -98,6 +98,12 @@ public interface ClassInfo<T,C> extends MaybeElement<T,C> {
      *      always non-null, but can be empty.
      */
     List<? extends PropertyInfo<T,C>> getProperties();
+
+    /**
+     * Returns true if this class or its ancestor has {@link XmlValue}
+     * property.
+     */
+    boolean hasValueProperty();
 
     /**
      * Gets the property that has the specified name.

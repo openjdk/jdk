@@ -39,9 +39,8 @@ package javax.xml.bind.annotation.adapters;
  */
 public final class NormalizedStringAdapter extends XmlAdapter<String,String> {
     /**
-     * Removes leading and trailing whitespaces of the string
-     * given as the parameter, then replace
-     * any tab, CR, and LF by a whitespace character ' '.
+     * Replace any tab, CR, and LF by a whitespace character ' ',
+     * as specified in <a href="http://www.w3.org/TR/xmlschema-2/#rf-whiteSpace">the whitespace facet 'replace'</a>
      */
     public String unmarshal(String text) {
         if(text==null)      return null;    // be defensive

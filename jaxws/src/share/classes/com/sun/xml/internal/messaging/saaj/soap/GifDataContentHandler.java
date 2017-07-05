@@ -1,11 +1,5 @@
 /*
- * $Id: GifDataContentHandler.java,v 1.15 2006/01/27 12:49:26 vj135062 Exp $
- * $Revision: 1.15 $
- * $Date: 2006/01/27 12:49:26 $
- */
-
-/*
- * Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +22,18 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: GifDataContentHandler.java,v 1.2.2.1 2007/11/27 07:19:29 kumarjayanti Exp $
+ * $Revision: 1.2.2.1 $
+ * $Date: 2007/11/27 07:19:29 $
+ */
+
+
 package com.sun.xml.internal.messaging.saaj.soap;
 
 import java.awt.datatransfer.DataFlavor;
 import java.io.*;
-
-import java.awt.image.BufferedImage;
 import java.awt.*;
-
 import javax.activation.*;
 
 /**
@@ -108,7 +106,7 @@ public class GifDataContentHandler extends Component implements DataContentHandl
      */
     public void writeTo(Object obj, String type, OutputStream os)
                         throws IOException {
-        if (!(obj instanceof Image))
+        if (obj != null && !(obj instanceof Image))
             throw new IOException("\"" + getDF().getMimeType() +
                 "\" DataContentHandler requires Image object, " +
                 "was given object of type " + obj.getClass().toString());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.output;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.stream.XMLStreamException;
@@ -116,8 +114,9 @@ public interface XmlOutput {
      *      true if we are marshalling a fragment.
      */
     public void startDocument(XMLSerializer serializer, boolean fragment, int[] nsUriIndex2prefixIndex, NamespaceContextImpl nsContext) throws IOException, SAXException, XMLStreamException;
+
     /**
-     * Called at the very end.
+     * Called at the very end. This is the last method to be invoked.
      *
      * @param fragment
      *      false if we are writing the whole document.
@@ -172,11 +171,4 @@ public interface XmlOutput {
      * @param needsSeparatingWhitespace
      */
     public void text( Pcdata value, boolean needsSeparatingWhitespace ) throws IOException, SAXException, XMLStreamException;
-
-    /**
-     * Flush the output.
-     *
-     * @see OutputStream#flush()
-     */
-    public void flush() throws IOException, XMLStreamException;
 }

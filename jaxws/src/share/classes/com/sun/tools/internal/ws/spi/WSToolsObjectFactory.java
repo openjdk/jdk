@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package com.sun.tools.internal.ws.spi;
 
 import com.sun.tools.internal.ws.util.WSToolsObjectFactoryImpl;
+import com.sun.xml.internal.ws.api.server.Container;
+
 import java.io.OutputStream;
 
 
@@ -35,16 +37,13 @@ import java.io.OutputStream;
  */
 public abstract class WSToolsObjectFactory {
 
-    private static WSToolsObjectFactory factory;
+    private static final WSToolsObjectFactory factory = new WSToolsObjectFactoryImpl();
 
     /**
      * Obtain an instance of a factory. Don't worry about synchronization(at the
      * most, one more factory is created).
      */
     public static WSToolsObjectFactory newInstance() {
-        if (factory == null) {
-            factory = new WSToolsObjectFactoryImpl();
-        }
         return factory;
     }
 
@@ -52,16 +51,49 @@ public abstract class WSToolsObjectFactory {
      * Invokes wsimport on the wsdl URL argument, and generates the necessary
      * portable artifacts like SEI, Service, Bean classes etc.
      *
+     * @param logStream Stream used for reporting log messages like errors, warnings etc
+     * @param container gives an environment for tool if it is run during appserver
+     *                  deployment
+     * @param args arguments with various options and wsdl url
+     *
      * @return true if there is no error, otherwise false
      */
-    public abstract boolean wsimport(OutputStream logStream, String[] args);
+    public abstract boolean wsimport(OutputStream logStream, Container container, String[] args);
+
+    /**
+     * Invokes wsimport on the wsdl URL argument, and generates the necessary
+     * portable artifacts like SEI, Service, Bean classes etc.
+     *
+     * @return true if there is no error, otherwise false
+     *
+     * @see {@link #wsimport(OutputStream, Container, String[])}
+     */
+    public boolean wsimport(OutputStream logStream, String[] args) {
+        return wsimport(logStream, Container.NONE, args);
+    }
+
+    /**
+     * Invokes wsgen on the endpoint implementation, and generates the necessary
+     * artifacts like wrapper, exception bean classes etc.
+     *
+     * @param logStream Stream used for reporting log messages like errors, warnings etc
+     * @param container gives an environment for tool if it is run during appserver
+     *                  deployment
+     * @param args arguments with various options and endpoint class
+     *
+     * @return true if there is no error, otherwise false
+     */
+    public abstract boolean wsgen(OutputStream logStream, Container container, String[] args);
 
     /**
      * Invokes wsgen on the endpoint implementation, and generates the necessary
      * artifacts like wrapper, exception bean classes etc.
      *
      * @return true if there is no error, otherwise false
+     * @see {@link #wsgen(OutputStream, Container, String[])}
      */
-    public abstract boolean wsgen(OutputStream logStream, String[] args);
+    public boolean wsgen(OutputStream logStream, String[] args) {
+        return wsgen(logStream, Container.NONE, args);
+    }
 
 }

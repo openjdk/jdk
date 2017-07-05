@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,21 @@
 
 package com.sun.tools.internal.ws.wsdl.document.soap;
 
-import javax.xml.namespace.QName;
-
-import com.sun.tools.internal.ws.wsdl.framework.Extension;
+import com.sun.tools.internal.ws.wsdl.framework.ExtensionImpl;
 import com.sun.tools.internal.ws.wsdl.framework.QNameAction;
+import org.xml.sax.Locator;
+
+import javax.xml.namespace.QName;
 
 /**
  * A SOAP header fault extension.
  *
  * @author WS Development Team
  */
-public class SOAPHeaderFault extends Extension {
+public class SOAPHeaderFault extends ExtensionImpl {
 
-    public SOAPHeaderFault() {
+    public SOAPHeaderFault(Locator locator) {
+        super(locator);
     }
 
     public QName getElementName() {

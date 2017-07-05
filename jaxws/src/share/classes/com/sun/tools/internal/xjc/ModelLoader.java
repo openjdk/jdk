@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc;
 
 import java.io.IOException;
@@ -37,6 +36,7 @@ import com.sun.tools.internal.xjc.reader.internalizer.DOMForest;
 import com.sun.tools.internal.xjc.reader.internalizer.DOMForestScanner;
 import com.sun.tools.internal.xjc.reader.internalizer.InternalizationLogic;
 import com.sun.tools.internal.xjc.reader.internalizer.VersionChecker;
+import com.sun.tools.internal.xjc.reader.internalizer.SCDBasedBindingSet;
 import com.sun.tools.internal.xjc.reader.relaxng.RELAXNGCompiler;
 import com.sun.tools.internal.xjc.reader.relaxng.RELAXNGInternalizationLogic;
 import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
@@ -89,6 +89,11 @@ public final class ModelLoader {
     private final Options opt;
     private final ErrorReceiverFilter errorReceiver;
     private final JCodeModel codeModel;
+    /**
+     * {@link DOMForest#transform(boolean)} creates this on the side.
+     */
+    private SCDBasedBindingSet scdBasedBindingSet;
+
 
     /**
      * A convenience method to load schemas into a {@link Model}.
@@ -176,6 +181,9 @@ public final class ModelLoader {
                 else
                     e.printStackTrace();
             }
+            return null;
+        } catch (AbortException e) {
+            // error should have been reported already, since this is requested by the error receiver
             return null;
         }
     }
@@ -297,11 +305,14 @@ public final class ModelLoader {
         forest.setEntityResolver(opt.entityResolver);
 
         // parse source grammars
-        for (InputSource value : opt.getGrammars())
+        for (InputSource value : opt.getGrammars()) {
+            errorReceiver.pollAbort();
             forest.parse(value, true);
+        }
 
         // parse external binding files
         for (InputSource value : opt.getBindFiles()) {
+            errorReceiver.pollAbort();
             Document dom = forest.parse(value, true);
             if(dom==null)       continue;   // error must have been reported
             Element root = dom.getDocumentElement();
@@ -317,7 +328,7 @@ public final class ModelLoader {
                         -1, -1));
         }
 
-        forest.transform();
+        scdBasedBindingSet = forest.transform(opt.isExtensionMode());
 
         return forest;
     }
@@ -350,7 +361,7 @@ public final class ModelLoader {
         // the default slower way is to parse everything into DOM first.
         // so that we can take external annotations into account.
         DOMForest forest = buildDOMForest( new XMLSchemaInternalizationLogic() );
-        return createXSOM(forest);
+        return createXSOM(forest, scdBasedBindingSet);
     }
 
     /**
@@ -479,18 +490,23 @@ public final class ModelLoader {
     /**
      * Parses a {@link DOMForest} into a {@link XSSchemaSet}.
      */
-    public XSSchemaSet createXSOM(DOMForest forest) throws SAXException {
+    public XSSchemaSet createXSOM(DOMForest forest, SCDBasedBindingSet scdBasedBindingSet) throws SAXException {
         // set up other parameters to XSOMParser
         XSOMParser reader = createXSOMParser(forest);
 
         // re-parse the transformed schemas
         for (String systemId : forest.getRootDocuments()) {
+            errorReceiver.pollAbort();
             Document dom = forest.get(systemId);
             if (!dom.getDocumentElement().getNamespaceURI().equals(Const.JAXB_NSURI))
                 reader.parse(systemId);
         }
 
-        return reader.getResult();
+        XSSchemaSet result = reader.getResult();
+
+        scdBasedBindingSet.apply(result,errorReceiver);
+
+        return result;
     }
 
     /**

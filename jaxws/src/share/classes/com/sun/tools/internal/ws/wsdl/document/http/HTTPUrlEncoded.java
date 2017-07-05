@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,21 @@
 
 package com.sun.tools.internal.ws.wsdl.document.http;
 
-import javax.xml.namespace.QName;
+import com.sun.tools.internal.ws.wsdl.framework.ExtensionImpl;
+import org.xml.sax.Locator;
 
-import com.sun.tools.internal.ws.wsdl.framework.Extension;
+import javax.xml.namespace.QName;
 
 /**
  * A HTTP urlEncoded extension.
  *
  * @author WS Development Team
  */
-public class HTTPUrlEncoded extends Extension {
+public class HTTPUrlEncoded extends ExtensionImpl {
 
-    public HTTPUrlEncoded() {}
+    public HTTPUrlEncoded(Locator locator) {
+        super(locator);
+    }
 
     public QName getElementName() {
         return HTTPConstants.QNAME_URL_ENCODED;

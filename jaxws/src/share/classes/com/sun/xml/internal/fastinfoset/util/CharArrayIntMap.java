@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,43 +23,19 @@
  * have any questions.
  *
  * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
- *
- * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- *
  */
 
 
 package com.sun.xml.internal.fastinfoset.util;
+
 import com.sun.xml.internal.fastinfoset.CommonResourceBundle;
 
 public class CharArrayIntMap extends KeyIntMap {
 
     private CharArrayIntMap _readOnlyMap;
+
+    // Total character count of Map
+    protected int _totalCharacterCount;
 
     static class Entry extends BaseEntry {
         final char[] _ch;
@@ -113,6 +89,7 @@ public class CharArrayIntMap extends KeyIntMap {
             _table[i] = null;
         }
         _size = 0;
+        _totalCharacterCount = 0;
     }
 
     public final void setReadOnlyMap(KeyIntMap readOnlyMap, boolean clear) {
@@ -166,6 +143,10 @@ public class CharArrayIntMap extends KeyIntMap {
         return NOT_PRESENT;
     }
 
+    public final int getTotalCharacterCount() {
+        return _totalCharacterCount;
+    }
+
     private final int get(char[] ch, int start, int length, int hash) {
         if (_readOnlyMap != null) {
             final int i = _readOnlyMap.get(ch, start, length, hash);
@@ -187,7 +168,8 @@ public class CharArrayIntMap extends KeyIntMap {
     private final void addEntry(char[] ch, int start, int length, int hash, int value, int bucketIndex) {
         Entry e = _table[bucketIndex];
         _table[bucketIndex] = new Entry(ch, start, length, hash, value, e);
-        if (_size++ >= _threshold) {
+        _totalCharacterCount += length;
+                if (_size++ >= _threshold) {
             resize(2 * _table.length);
         }
     }

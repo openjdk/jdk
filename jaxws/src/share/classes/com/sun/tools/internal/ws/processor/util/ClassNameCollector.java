@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,16 @@
 
 package com.sun.tools.internal.ws.processor.util;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-
-import javax.xml.namespace.QName;
-
-import com.sun.tools.internal.ws.processor.model.AbstractType;
-import com.sun.tools.internal.ws.processor.model.Block;
-import com.sun.tools.internal.ws.processor.model.ExtendedModelVisitor;
-import com.sun.tools.internal.ws.processor.model.Fault;
-import com.sun.tools.internal.ws.processor.model.Model;
-import com.sun.tools.internal.ws.processor.model.ModelProperties;
-import com.sun.tools.internal.ws.processor.model.Parameter;
-import com.sun.tools.internal.ws.processor.model.Port;
-import com.sun.tools.internal.ws.processor.model.Service;
+import com.sun.tools.internal.ws.processor.model.*;
+import com.sun.tools.internal.ws.processor.model.java.JavaInterface;
 import com.sun.tools.internal.ws.processor.model.jaxb.JAXBType;
 import com.sun.tools.internal.ws.processor.model.jaxb.JAXBTypeVisitor;
 import com.sun.tools.internal.ws.processor.model.jaxb.RpcLitStructure;
-import com.sun.tools.internal.ws.processor.model.java.JavaInterface;
-import com.sun.xml.internal.ws.util.VersionUtil;
+
+import javax.xml.namespace.QName;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * This class writes out a Model as an XML document.
@@ -238,7 +228,7 @@ public class ClassNameCollector extends ExtendedModelVisitor
     private Set<String> _exceptionClassNames;
     boolean doneVisitingJAXBModel = false;
     public void visit(JAXBType type) throws Exception {
-        if(!doneVisitingJAXBModel){
+        if(!doneVisitingJAXBModel && type.getJaxbModel() != null){
             Set<String> classNames = type.getJaxbModel().getGeneratedClassNames();
             for(String className : classNames){
                 addJAXBGeneratedClassName(className);

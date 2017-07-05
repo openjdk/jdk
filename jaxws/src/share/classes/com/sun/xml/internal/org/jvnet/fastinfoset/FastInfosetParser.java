@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,6 @@
  * have any questions.
  *
  * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
- *
- * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- *
  */
 
 package com.sun.xml.internal.org.jvnet.fastinfoset;
@@ -98,6 +70,13 @@ public interface FastInfosetParser {
     public static final String EXTERNAL_VOCABULARIES_PROPERTY =
         "http://jvnet.org/fastinfoset/parser/properties/external-vocabularies";
 
+   /**
+     * The property name to be used for getting and setting the
+     * flag, which will indicate whether underlying Parser's
+     * input stream should be really closed
+     */
+    public static final String FORCE_STREAM_CLOSE_PROPERTY =
+        "http://jvnet.org/fastinfoset/parser/properties/force-stream-close";
 
     /**
      * Set the string interning property.
@@ -171,5 +150,39 @@ public interface FastInfosetParser {
      *     method.
      */
     public Map getExternalVocabularies();
+
+    /**
+     * Set the parse fragments property.
+     *
+     * <p>If the parse fragments property is set to true then
+     * fragments of an XML infoset may be parsed.
+     *
+     * @param parseFragments The parse fragments property.
+     */
+    public void setParseFragments(boolean parseFragments);
+
+    /**
+     * Return the parse fragments property.
+     *
+     * @return The parse fragments property.
+     */
+    public boolean getParseFragments();
+
+    /**
+     * Set the force stream close property.
+     *
+     * <p>If the force stream property is set to true then
+     * Parser's underlying InputStream will be closed.
+     *
+     * @param needForceStreamClose The force stream close property.
+     */
+    public void setForceStreamClose(boolean needForceStreamClose);
+
+    /**
+     * Return the force stream close property.
+     *
+     * @return The force stream close property.
+     */
+    public boolean getForceStreamClose();
 
 }

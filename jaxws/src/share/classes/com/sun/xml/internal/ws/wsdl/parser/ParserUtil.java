@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,21 @@ import javax.xml.stream.XMLStreamReader;
 
 
 /**
+ *
+ * TODO: made public just for now
  * @author WS Development Team
  */
 public class ParserUtil {
     public static String getAttribute(XMLStreamReader reader, String name) {
         return reader.getAttributeValue(null, name);
+    }
+
+    public static String getAttribute(XMLStreamReader reader, String nsUri, String name) {
+        return reader.getAttributeValue(nsUri, name);
+    }
+
+    public static String getAttribute(XMLStreamReader reader, QName name) {
+        return reader.getAttributeValue(name.getNamespaceURI(), name.getLocalPart());
     }
 
     public static void verifyTag(XMLReader reader, QName name) {

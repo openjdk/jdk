@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
- Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -24,11 +23,19 @@
  CA 95054 USA or visit www.sun.com if you need additional information or
  have any questions.
 -->
-
 <!-- THIS IS A GENERATED FILE. DO NOT MODIFY. -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://java.sun.com/xml/ns/jaxb" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc">
   <xs:import namespace="http://java.sun.com/xml/ns/jaxb/xjc" schemaLocation="xjc.xsd"/>
   <xs:import namespace="http://www.w3.org/2001/XMLSchema" schemaLocation="xs.xsd"/>
+  <xs:element name="bindings">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+      <xs:attribute name="schemaLocation" type="xs:string" />
+      <xs:attribute name="node" type="xs:string" /> 
+    </xs:complexType>
+  </xs:element>
   <xs:element name="declaration" abstract="true"/>
   <xs:element name="globalBindings" substitutionGroup="jaxb:declaration">
     <xs:complexType>
@@ -46,6 +53,7 @@
         <xs:element ref="xjc:typeSubstitution"/>
         <xs:element ref="xjc:smartWildcardDefaultBinding"/>
         <xs:element ref="xjc:simple"/>
+        <xs:element ref="xjc:treatRestrictionLikeNewType"/>
         <xs:group   ref="xjc:globalJavaType" />
         <xs:element ref="xjc:generateElementProperty"/>
         <xs:element ref="xjc:noMarshaller"/>
@@ -114,6 +122,7 @@
       <xs:attribute name="choiceContentProperty" type="xs:boolean"/>
       <xs:attribute name="generateValueClass" type="xs:boolean"/>
       <xs:attribute name="generateElementClass" type="xs:boolean"/>
+      <xs:attribute name="generateElementProperty" type="xs:boolean"/>
       <xs:attribute name="enableValidation" type="xs:boolean"/>
       <xs:attribute name="enableFailFastCheck" type="xs:boolean"/>
     </xs:complexType>
@@ -129,6 +138,7 @@
         <xs:element minOccurs="0" ref="jaxb:package"/>
         <xs:element minOccurs="0" ref="jaxb:nameXmlTransform"/>
       </xs:sequence>
+      <xs:attribute name="map" type="xs:boolean" />
     </xs:complexType>
   </xs:element>
   <xs:element name="package">
@@ -141,13 +151,13 @@
   </xs:element>
   <xs:element name="nameXmlTransform">
     <xs:complexType>
-      <xs:choice minOccurs="0" maxOccurs="unbounded">
-        <xs:element ref="jaxb:typeName"/>
-        <xs:element ref="jaxb:elementName"/>
-        <xs:element ref="jaxb:attributeName"/>
-        <xs:element ref="jaxb:modelGroupName"/>
-        <xs:element ref="jaxb:anonymousTypeName"/>
-      </xs:choice>
+      <xs:all>
+        <xs:element ref="jaxb:typeName" minOccurs='0'/>
+        <xs:element ref="jaxb:elementName" minOccurs='0'/>
+        <xs:element ref="jaxb:attributeName" minOccurs='0'/>
+        <xs:element ref="jaxb:modelGroupName" minOccurs='0'/>
+        <xs:element ref="jaxb:anonymousTypeName" minOccurs='0'/>
+      </xs:all>
     </xs:complexType>
   </xs:element>
   <xs:element name="typeName">
@@ -190,6 +200,7 @@
       </xs:sequence>
       <xs:attribute name="name" type="xs:string"/>
       <xs:attribute name="implClass"/>
+      <xs:attribute name="ref"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="property" substitutionGroup="jaxb:declaration">
@@ -250,6 +261,7 @@
         </xs:simpleType>
       </xs:attribute>
       <xs:attribute name="name"/>
+      <xs:attribute name="ref"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="typesafeEnumMember" substitutionGroup="jaxb:declaration">

@@ -1,10 +1,4 @@
 /*
- * $Id: SOAPFault.java,v 1.19 2005/09/26 21:09:04 mk125090 Exp $
- * $Revision: 1.19 $
- * $Date: 2005/09/26 21:09:04 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SOAPFault.java,v 1.20 2006/02/14 04:40:57 vj135062 Exp $
+ * $Revision: 1.20 $
+ * $Date: 2006/02/14 04:40:57 $
+ */
+
+
 package javax.xml.soap;
 
 import java.util.Iterator;

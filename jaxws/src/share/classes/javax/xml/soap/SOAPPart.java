@@ -1,10 +1,4 @@
 /*
- * $Id: SOAPPart.java,v 1.8 2005/06/20 12:07:05 vj135062 Exp $
- * $Revision: 1.8 $
- * $Date: 2005/06/20 12:07:05 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SOAPPart.java,v 1.9 2005/06/21 17:32:45 mk125090 Exp $
+ * $Revision: 1.9 $
+ * $Date: 2005/06/21 17:32:45 $
+ */
+
+
 package javax.xml.soap;
 
 import java.util.Iterator;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.xml.internal.bind.v2.runtime;
 
 import javax.xml.namespace.NamespaceContext;
+
+import com.sun.istack.internal.NotNull;
 
 /**
  * Maintains namespace&lt;->prefix bindings.
@@ -74,4 +76,13 @@ public interface NamespaceContext2 extends NamespaceContext
      *      the default namespace, null is returned.
      */
     String declareNamespace( String namespaceUri, String preferedPrefix, boolean requirePrefix );
+
+    /**
+     * Forcibly make a namespace declaration in effect.
+     *
+     * If the (prefix,uri) binding is already in-scope, this method
+     * simply returns the assigned prefix index. Otherwise a new
+     * declaration will be put.
+     */
+    int force(@NotNull String uri, @NotNull String prefix);
 }

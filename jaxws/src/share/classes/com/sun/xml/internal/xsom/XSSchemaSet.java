@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.xsom;
 
+import javax.xml.namespace.NamespaceContext;
 import java.util.Iterator;
 import java.util.Collection;
 
@@ -81,4 +81,34 @@ public interface XSSchemaSet
     XSSimpleType getAnySimpleType();
     XSContentType getEmpty();
 
+    /**
+     * Evaluates a schema component designator against this schema component
+     * and returns the resulting schema components.
+     *
+     * @throws IllegalArgumentException
+     *      if SCD is syntactically incorrect.
+     * @param scd
+     *      Schema component designator. See {@link SCD} for more details.
+     * @param nsContext
+     *      The namespace context in which SCD is evaluated. Cannot be null.
+     * @return
+     *      Can be empty but never null.
+     */
+    Collection<XSComponent> select(String scd, NamespaceContext nsContext);
+
+    /**
+     * Evaluates a schema component designator against this schema component
+     * and returns the first resulting schema component.
+     *
+     * @throws IllegalArgumentException
+     *      if SCD is syntactically incorrect.
+     * @param scd
+     *      Schema component designator. See {@link SCD} for more details.
+     * @param nsContext
+     *      The namespace context in which SCD is evaluated. Cannot be null.
+     * @return
+     *      null if the SCD didn't match anything. If the SCD matched more than one node,
+     *      the first one will be returned.
+     */
+    XSComponent selectSingle(String scd, NamespaceContext nsContext);
 }

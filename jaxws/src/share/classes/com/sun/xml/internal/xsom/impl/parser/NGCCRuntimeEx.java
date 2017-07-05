@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,15 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.xsom.impl.parser;
 
 import com.sun.xml.internal.xsom.XSDeclaration;
 import com.sun.xml.internal.xsom.XmlString;
+import com.sun.xml.internal.xsom.XSSimpleType;
 import com.sun.xml.internal.xsom.impl.ForeignAttributesImpl;
 import com.sun.xml.internal.xsom.impl.SchemaImpl;
 import com.sun.xml.internal.xsom.impl.UName;
+import com.sun.xml.internal.xsom.impl.Const;
 import com.sun.xml.internal.xsom.impl.parser.state.NGCCRuntime;
 import com.sun.xml.internal.xsom.impl.parser.state.Schema;
 import com.sun.xml.internal.xsom.impl.util.Uri;
@@ -127,9 +128,21 @@ public class NGCCRuntimeEx extends NGCCRuntime implements PatcherManager {
     }
 
     public void checkDoubleDefError( XSDeclaration c ) throws SAXException {
-        if(c==null) return;
+        if(c==null || ignorableDuplicateComponent(c)) return;
+
         reportError( Messages.format(Messages.ERR_DOUBLE_DEFINITION,c.getName()) );
         reportError( Messages.format(Messages.ERR_DOUBLE_DEFINITION_ORIGINAL), c.getLocator() );
+    }
+
+    public static boolean ignorableDuplicateComponent(XSDeclaration c) {
+        if(c.getTargetNamespace().equals(Const.schemaNamespace)) {
+            if(c instanceof XSSimpleType)
+                // hide artificial "double definitions" on simple types
+                return true;
+            if(c.isGlobal() && c.getName().equals("anyType"))
+                return true; // ditto for anyType
+        }
+        return false;
     }
 
 
@@ -137,6 +150,9 @@ public class NGCCRuntimeEx extends NGCCRuntime implements PatcherManager {
     /* registers a patcher that will run after all the parsing has finished. */
     public void addPatcher( Patch patcher ) {
         parser.patcherManager.addPatcher(patcher);
+    }
+    public void addErrorChecker( Patch patcher ) {
+        parser.patcherManager.addErrorChecker(patcher);
     }
     public void reportError( String msg, Locator loc ) throws SAXException {
         parser.patcherManager.reportError(msg,loc);

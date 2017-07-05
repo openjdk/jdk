@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,15 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * @(#)$Id$
+ */
+
 
 package com.sun.xml.internal.bind.v2.util;
+
+import java.util.Collection;
+import java.util.Arrays;
 
 /**
  * Computes the string edit distance.
@@ -54,14 +61,24 @@ public class EditDistance {
      * @return null if group.length==0.
      */
     public static String findNearest( String key, String[] group ) {
+        return findNearest(key, Arrays.asList(group));
+    }
+
+    /**
+     * Finds the string in the <code>group</code> closest to
+     * <code>key</code> and returns it.
+     *
+     * @return null if group.length==0.
+     */
+    public static String findNearest( String key, Collection<String> group ) {
         int c = Integer.MAX_VALUE;
         String r = null;
 
-        for( int i=0; i<group.length; i++ ) {
-            int ed = editDistance(key,group[i]);
+        for (String s : group) {
+            int ed = editDistance(key,s);
             if( c>ed ) {
                 c = ed;
-                r = group[i];
+                r = s;
             }
         }
         return r;

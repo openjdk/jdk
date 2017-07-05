@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ jmethodID setRealmMethod = 0;
  * Function prototypes for internal routines
  *
  */
+BOOL native_debug = 0;
 
 BOOL PackageConnectLookup(PHANDLE,PULONG);
 
@@ -113,208 +114,221 @@ JNIEXPORT jint JNICALL JNI_OnLoad(
 
     jclass cls;
     JNIEnv *env;
+    jfieldID fldDEBUG;
 
     if ((*jvm)->GetEnv(jvm, (void **)&env, JNI_VERSION_1_2)) {
         return JNI_EVERSION; /* JNI version not supported */
     }
 
+    cls = (*env)->FindClass(env,"sun/security/krb5/internal/Krb5");
+    if (cls == NULL) {
+        printf("LSA: Couldn't find Krb5\n");
+        return JNI_ERR;
+    }
+    fldDEBUG = (*env)->GetStaticFieldID(env, cls, "DEBUG", "Z");
+    if (fldDEBUG == NULL) {
+        printf("LSA: Krb5 has no DEBUG field\n");
+        return JNI_ERR;
+    }
+    native_debug = (*env)->GetStaticBooleanField(env, cls, fldDEBUG);
+
     cls = (*env)->FindClass(env,"sun/security/krb5/internal/Ticket");
 
     if (cls == NULL) {
-        printf("Couldn't find Ticket\n");
+        printf("LSA: Couldn't find Ticket\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found Ticket\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found Ticket\n");
+    }
 
     ticketClass = (*env)->NewWeakGlobalRef(env,cls);
     if (ticketClass == NULL) {
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Made NewWeakGlobalRef\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Made NewWeakGlobalRef\n");
+    }
 
     cls = (*env)->FindClass(env, "sun/security/krb5/PrincipalName");
 
     if (cls == NULL) {
-        printf("Couldn't find PrincipalName\n");
+        printf("LSA: Couldn't find PrincipalName\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found PrincipalName\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found PrincipalName\n");
+    }
 
     principalNameClass = (*env)->NewWeakGlobalRef(env,cls);
     if (principalNameClass == NULL) {
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Made NewWeakGlobalRef\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Made NewWeakGlobalRef\n");
+    }
 
     cls = (*env)->FindClass(env,"sun/security/util/DerValue");
 
     if (cls == NULL) {
-        printf("Couldn't find DerValue\n");
+        printf("LSA: Couldn't find DerValue\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found DerValue\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found DerValue\n");
+    }
 
     derValueClass = (*env)->NewWeakGlobalRef(env,cls);
     if (derValueClass == NULL) {
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Made NewWeakGlobalRef\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Made NewWeakGlobalRef\n");
+    }
 
     cls = (*env)->FindClass(env,"sun/security/krb5/EncryptionKey");
 
     if (cls == NULL) {
-        printf("Couldn't find EncryptionKey\n");
+        printf("LSA: Couldn't find EncryptionKey\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found EncryptionKey\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found EncryptionKey\n");
+    }
 
     encryptionKeyClass = (*env)->NewWeakGlobalRef(env,cls);
     if (encryptionKeyClass == NULL) {
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Made NewWeakGlobalRef\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Made NewWeakGlobalRef\n");
+    }
 
     cls = (*env)->FindClass(env,"sun/security/krb5/internal/TicketFlags");
 
     if (cls == NULL) {
-        printf("Couldn't find TicketFlags\n");
+        printf("LSA: Couldn't find TicketFlags\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found TicketFlags\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found TicketFlags\n");
+    }
 
     ticketFlagsClass = (*env)->NewWeakGlobalRef(env,cls);
     if (ticketFlagsClass == NULL) {
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Made NewWeakGlobalRef\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Made NewWeakGlobalRef\n");
+    }
 
     cls = (*env)->FindClass(env,"sun/security/krb5/internal/KerberosTime");
 
     if (cls == NULL) {
-        printf("Couldn't find KerberosTime\n");
+        printf("LSA: Couldn't find KerberosTime\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found KerberosTime\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found KerberosTime\n");
+    }
 
     kerberosTimeClass = (*env)->NewWeakGlobalRef(env,cls);
     if (kerberosTimeClass == NULL) {
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Made NewWeakGlobalRef\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Made NewWeakGlobalRef\n");
+    }
 
     cls = (*env)->FindClass(env,"java/lang/String");
 
     if (cls == NULL) {
-        printf("Couldn't find String\n");
+        printf("LSA: Couldn't find String\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found String\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found String\n");
+    }
 
     javaLangStringClass = (*env)->NewWeakGlobalRef(env,cls);
     if (javaLangStringClass == NULL) {
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Made NewWeakGlobalRef\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Made NewWeakGlobalRef\n");
+    }
 
     derValueConstructor = (*env)->GetMethodID(env, derValueClass,
                                             "<init>", "([B)V");
     if (derValueConstructor == 0) {
-        printf("Couldn't find DerValue constructor\n");
+        printf("LSA: Couldn't find DerValue constructor\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found DerValue constructor\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found DerValue constructor\n");
+    }
 
     ticketConstructor = (*env)->GetMethodID(env, ticketClass,
                             "<init>", "(Lsun/security/util/DerValue;)V");
     if (ticketConstructor == 0) {
-        printf("Couldn't find Ticket constructor\n");
+        printf("LSA: Couldn't find Ticket constructor\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found Ticket constructor\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found Ticket constructor\n");
+    }
 
     principalNameConstructor = (*env)->GetMethodID(env, principalNameClass,
                                     "<init>", "([Ljava/lang/String;)V");
     if (principalNameConstructor == 0) {
-        printf("Couldn't find PrincipalName constructor\n");
+        printf("LSA: Couldn't find PrincipalName constructor\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found PrincipalName constructor\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found PrincipalName constructor\n");
+    }
 
     encryptionKeyConstructor = (*env)->GetMethodID(env, encryptionKeyClass,
                                             "<init>", "(I[B)V");
     if (encryptionKeyConstructor == 0) {
-        printf("Couldn't find EncryptionKey constructor\n");
+        printf("LSA: Couldn't find EncryptionKey constructor\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found EncryptionKey constructor\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found EncryptionKey constructor\n");
+    }
 
     ticketFlagsConstructor = (*env)->GetMethodID(env, ticketFlagsClass,
                                             "<init>", "(I[B)V");
     if (ticketFlagsConstructor == 0) {
-        printf("Couldn't find TicketFlags constructor\n");
+        printf("LSA: Couldn't find TicketFlags constructor\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found TicketFlags constructor\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found TicketFlags constructor\n");
+    }
 
     kerberosTimeConstructor = (*env)->GetMethodID(env, kerberosTimeClass,
                                     "<init>", "(Ljava/lang/String;)V");
     if (kerberosTimeConstructor == 0) {
-        printf("Couldn't find KerberosTime constructor\n");
+        printf("LSA: Couldn't find KerberosTime constructor\n");
         return JNI_ERR;
     }
-    #ifdef DEBUG
-    printf("Found KerberosTime constructor\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Found KerberosTime constructor\n");
+    }
 
     // load the setRealm method in PrincipalName
     setRealmMethod = (*env)->GetMethodID(env, principalNameClass,
                                     "setRealm", "(Ljava/lang/String;)V");
     if (setRealmMethod == 0) {
-        printf("Couldn't find setRealm in PrincipalName\n");
+        printf("LSA: Couldn't find setRealm in PrincipalName\n");
         return JNI_ERR;
     }
 
-    #ifdef DEBUG
-    printf("Finished OnLoad processing\n");
-    #endif /* DEBUG */
+    if (native_debug) {
+        printf("LSA: Finished OnLoad processing\n");
+    }
 
     return JNI_VERSION_1_2;
 }
@@ -389,16 +403,25 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
 
         if (krbcredsConstructor == 0) {
             krbcredsConstructor = (*env)->GetMethodID(env, krbcredsClass, "<init>",
-                    "(Lsun/security/krb5/internal/Ticket;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/EncryptionKey;Lsun/security/krb5/internal/TicketFlags;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/HostAddresses;)V");
+                    "(Lsun/security/krb5/internal/Ticket;"
+                    "Lsun/security/krb5/PrincipalName;"
+                    "Lsun/security/krb5/PrincipalName;"
+                    "Lsun/security/krb5/EncryptionKey;"
+                    "Lsun/security/krb5/internal/TicketFlags;"
+                    "Lsun/security/krb5/internal/KerberosTime;"
+                    "Lsun/security/krb5/internal/KerberosTime;"
+                    "Lsun/security/krb5/internal/KerberosTime;"
+                    "Lsun/security/krb5/internal/KerberosTime;"
+                    "Lsun/security/krb5/internal/HostAddresses;)V");
             if (krbcredsConstructor == 0) {
-                printf("Couldn't find sun.security.krb5.Credentials constructor\n");
+                printf("LSA: Couldn't find sun.security.krb5.Credentials constructor\n");
                 break;
             }
         }
 
-        #ifdef DEBUG
-        printf("Found KrbCreds constructor\n");
-        #endif
+        if (native_debug) {
+            printf("LSA: Found KrbCreds constructor\n");
+        }
 
         //
         // Get the logon handle and package ID from the
@@ -407,9 +430,9 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
         if (!PackageConnectLookup(&LogonHandle, &PackageId))
             break;
 
-        #ifdef DEBUG
-        printf("Got handle to Kerberos package\n");
-        #endif /* DEBUG */
+        if (native_debug) {
+            printf("LSA: Got handle to Kerberos package\n");
+        }
 
         // Get the MS TGT from cache
         CacheRequest.MessageType = KerbRetrieveTicketMessage;
@@ -426,9 +449,9 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
                         &SubStatus
                         );
 
-        #ifdef DEBUG
-        printf("Response size is %d\n", rspSize);
-        #endif
+        if (native_debug) {
+            printf("LSA: Response size is %d\n", rspSize);
+        }
 
         if (!LSA_SUCCESS(Status) || !LSA_SUCCESS(SubStatus)) {
             if (!LSA_SUCCESS(Status)) {
@@ -467,9 +490,9 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
         }
 
         if (ignore_cache) {
-            #ifdef DEBUG
-            printf("MS TGT in cache is invalid/not supported; request new ticket\n");
-            #endif /* DEBUG */
+            if (native_debug) {
+                printf("LSA: MS TGT in cache is invalid/not supported; request new ticket\n");
+            }
 
             // use domain to request Ticket
             Status = ConstructTicketRequest(msticket->TargetDomainName,
@@ -493,9 +516,9 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
                         &SubStatus
                         );
 
-            #ifdef DEBUG
-            printf("Response size is %d\n", responseSize);
-            #endif /* DEBUG */
+            if (native_debug) {
+                printf("LSA: Response size is %d\n", responseSize);
+            }
 
             if (!LSA_SUCCESS(Status) || !LSA_SUCCESS(SubStatus)) {
                 if (!LSA_SUCCESS(Status)) {
@@ -788,7 +811,9 @@ ShowLastError(
     static WCHAR szMsgBuf[MAX_MSG_SIZE];
     DWORD dwRes;
 
-    printf("Error calling function %s: %lu\n", szAPI, dwError);
+    if (native_debug) {
+        printf("LSA: Error calling function %s: %lu\n", szAPI, dwError);
+    }
 
     dwRes = FormatMessage (
             FORMAT_MESSAGE_FROM_SYSTEM,
@@ -798,11 +823,13 @@ ShowLastError(
             szMsgBuf,
             MAX_MSG_SIZE,
             NULL);
-    if (0 == dwRes) {
-        printf("FormatMessage failed with %d\n", GetLastError());
-        // ExitProcess(EXIT_FAILURE);
-    } else {
-        printf("%S",szMsgBuf);
+    if (native_debug) {
+        if (0 == dwRes) {
+            printf("LSA: FormatMessage failed with %d\n", GetLastError());
+            // ExitProcess(EXIT_FAILURE);
+        } else {
+            printf("LSA: %S",szMsgBuf);
+        }
     }
 }
 
@@ -896,17 +923,19 @@ jobject BuildPrincipal(JNIEnv *env, PKERB_EXTERNAL_NAME principalName,
             ((domainName.Length)*sizeof(WCHAR) + sizeof(UNICODE_NULL)));
     wcsncpy(realm, domainName.Buffer, domainName.Length/sizeof(WCHAR));
 
-    #ifdef DEBUG
-    printf("Principal domain is %S\n", realm);
-    printf("Name type is %x\n", principalName->NameType);
-    printf("Name count is %x\n", principalName->NameCount);
-    #endif
+    if (native_debug) {
+        printf("LSA: Principal domain is %S\n", realm);
+        printf("LSA: Name type is %x\n", principalName->NameType);
+        printf("LSA: Name count is %x\n", principalName->NameCount);
+    }
 
     nameCount = principalName->NameCount;
     stringArray = (*env)->NewObjectArray(env, nameCount,
                             javaLangStringClass, NULL);
     if (stringArray == NULL) {
-        printf("Can't allocate String array for Principal\n");
+        if (native_debug) {
+            printf("LSA: Can't allocate String array for Principal\n");
+        }
         LocalFree(realm);
         return principal;
     }
@@ -941,6 +970,17 @@ jobject BuildEncryptionKey(JNIEnv *env, PKERB_CRYPTO_KEY cryptoKey) {
     // First, need to build a byte array
     jbyteArray ary;
     jobject encryptionKey = NULL;
+    unsigned int i;
+
+    for (i=0; i<cryptoKey->Length; i++) {
+        if (cryptoKey->Value[i]) break;
+    }
+    if (i == cryptoKey->Length) {
+        if (native_debug) {
+            printf("LSA: Session key all zero. Stop.\n");
+        }
+        return NULL;
+    }
 
     ary = (*env)->NewByteArray(env,cryptoKey->Length);
     (*env)->SetByteArrayRegion(env, ary, (jsize) 0, cryptoKey->Length,
@@ -1005,9 +1045,9 @@ jobject BuildKerberosTime(JNIEnv *env, PLARGE_INTEGER kerbtime) {
                 hour,
                 minute,
                 second );
-        #ifdef DEBUG
-        printf("%S\n", (wchar_t *)timeString);
-        #endif /* DEBUG */
+        if (native_debug) {
+            printf("LSA: %S\n", (wchar_t *)timeString);
+        }
         stringTime = (*env)->NewString(env, timeString,
                 (sizeof(timeString)/sizeof(WCHAR))-1);
         if (stringTime != NULL) { // everything's OK so far

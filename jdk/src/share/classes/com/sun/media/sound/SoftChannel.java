@@ -93,7 +93,6 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     protected double portamento_time = 1; // keyschanges per control buffer time
     protected int[] portamento_lastnote = new int[128];
     protected int portamento_lastnote_ix = 0;
-    private int portamento_control_note = -1;
     private boolean portamento = false;
     private boolean mono = false;
     private boolean mute = false;
@@ -369,12 +368,12 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         voice.setSoloMute(solomute);
         if (releaseTriggered)
             return;
-        if (portamento_control_note != -1) {
+        if (controller[84] != 0) {
             voice.co_noteon_keynumber[0]
-                    = (tuning.getTuning(portamento_control_note) / 100.0)
+                    = (tuning.getTuning(controller[84]) / 100.0)
                     * (1f / 128f);
             voice.portamento = true;
-            portamento_control_note = -1;
+            controlChange(84, 0);
         } else if (portamento) {
             if (mono) {
                 if (portamento_lastnote[0] != -1) {
@@ -382,7 +381,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                             = (tuning.getTuning(portamento_lastnote[0]) / 100.0)
                             * (1f / 128f);
                     voice.portamento = true;
-                    portamento_control_note = -1;
+                    controlChange(84, 0);
                 }
                 portamento_lastnote[0] = noteNumber;
             } else {
@@ -449,19 +448,19 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                     }
                 }
 
-                if (portamento_control_note != -1) {
+                if (controller[84] != 0) {
                     boolean n_found = false;
                     for (int i = 0; i < voices.length; i++) {
                         if (voices[i].on && voices[i].channel == channel
                                 && voices[i].active
-                                && voices[i].note == portamento_control_note
+                                && voices[i].note == controller[84]
                                 && voices[i].releaseTriggered == false) {
                             voices[i].portamento = true;
                             voices[i].setNote(noteNumber);
                             n_found = true;
                         }
                     }
-                    portamento_control_note = -1;
+                    controlChange(84, 0);
                     if (n_found)
                         return;
                 }
@@ -555,6 +554,18 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                         && voices[i].note == noteNumber
                         && voices[i].releaseTriggered == false) {
                     voices[i].noteOff(velocity);
+                }
+                // We must also check stolen voices
+                if (voices[i].stealer_channel == this && voices[i].stealer_noteNumber == noteNumber) {
+                    SoftVoice v = voices[i];
+                    v.stealer_releaseTriggered = false;
+                    v.stealer_channel = null;
+                    v.stealer_performer = null;
+                    v.stealer_voiceID = -1;
+                    v.stealer_noteNumber = 0;
+                    v.stealer_velocity = 0;
+                    v.stealer_extendedConnectionBlocks = null;
+                    v.stealer_channelmixer = null;
                 }
             }
 
@@ -1140,9 +1151,6 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                         }
                     }
                 }
-                break;
-            case 84:
-                portamento_control_note = value;
                 break;
             case 98:
                 nrpn_control = (nrpn_control & (127 << 7)) + value;

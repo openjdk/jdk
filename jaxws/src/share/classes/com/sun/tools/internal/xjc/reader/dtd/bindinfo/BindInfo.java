@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.dtd.bindinfo;
 
 import java.io.IOException;
@@ -44,6 +43,8 @@ import com.sun.istack.internal.SAXParseException2;
 import com.sun.tools.internal.xjc.AbortException;
 import com.sun.tools.internal.xjc.ErrorReceiver;
 import com.sun.tools.internal.xjc.SchemaCache;
+import com.sun.tools.internal.xjc.model.CCustomizations;
+import com.sun.tools.internal.xjc.model.CPluginCustomization;
 import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.reader.Const;
 import com.sun.tools.internal.xjc.util.CodeModelClassFactory;
@@ -74,8 +75,7 @@ public class BindInfo
     private final String defaultPackage;
 
     public BindInfo(Model model, InputSource source, ErrorReceiver _errorReceiver) throws AbortException {
-
-        this( model, parse(source,_errorReceiver), _errorReceiver);
+        this( model, parse(model,source,_errorReceiver), _errorReceiver);
     }
 
     public BindInfo(Model model, Document _dom, ErrorReceiver _errorReceiver) {
@@ -87,6 +87,9 @@ public class BindInfo
         // TODO: decide name converter from the binding file
 
         this.defaultPackage = model.options.defaultPackage;
+
+        // copy global customizations to the model
+        model.getCustomizations().addAll(getGlobalCustomizations());
 
         // process element declarations
         for( Element ele : DOMUtil.getChildElements(dom,"element")) {
@@ -193,8 +196,14 @@ public class BindInfo
         return c;
     }
 
-    /** Gets the specified package name (options/@package). */
+    /**
+     * Gets the specified package name (options/@package).
+     */
     public JPackage getTargetPackage() {
+        if(model.options.defaultPackage!=null)
+            // "-p" takes precedence over everything else
+            return codeModel._package(model.options.defaultPackage);
+
         String p;
         if( defaultPackage!=null )
             p = defaultPackage;
@@ -236,6 +245,24 @@ public class BindInfo
         return interfaces.values();
     }
 
+    /**
+     * Gets the list of top-level {@link CPluginCustomization}s.
+     */
+    private CCustomizations getGlobalCustomizations() {
+        CCustomizations r=null;
+        for( Element e : DOMUtil.getChildElements(dom) ) {
+            if(!model.options.pluginURIs.contains(e.getNamespaceURI()))
+                continue;   // this isn't a plugin customization
+            if(r==null)
+                r = new CCustomizations();
+            r.add(new CPluginCustomization(e, DOMLocator.getLocationInfo(e)));
+        }
+
+        if(r==null)     r = CCustomizations.EMPTY;
+        return new CCustomizations(r);
+    }
+
+
 
 
 //
@@ -265,12 +292,14 @@ public class BindInfo
      * Parses an InputSource into dom4j Document.
      * Returns null in case of an exception.
      */
-    private static Document parse( InputSource is, ErrorReceiver receiver ) throws AbortException {
+    private static Document parse( Model model, InputSource is, ErrorReceiver receiver ) throws AbortException {
         try {
             ValidatorHandler validator = bindingFileSchema.newValidator();
 
             // set up the pipe line as :
-            //   parser->validator->factory
+            //              /-> extensionChecker -> validator
+            //   parser-> -<
+            //              \-> DOM builder
             SAXParserFactory pf = SAXParserFactory.newInstance();
             pf.setNamespaceAware(true);
             DOMBuilder builder = new DOMBuilder();
@@ -279,7 +308,11 @@ public class BindInfo
             validator.setErrorHandler(controller);
             XMLReader reader = pf.newSAXParser().getXMLReader();
             reader.setErrorHandler(controller);
-            reader.setContentHandler(new ForkContentHandler(validator,builder));
+
+            DTDExtensionBindingChecker checker = new DTDExtensionBindingChecker("", model.options, controller);
+            checker.setContentHandler(validator);
+
+            reader.setContentHandler(new ForkContentHandler(checker,builder));
 
             reader.parse(is);
 

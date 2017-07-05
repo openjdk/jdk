@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,26 @@
 
 package com.sun.tools.internal.ws.wsdl.document.mime;
 
+import com.sun.tools.internal.ws.wsdl.framework.Entity;
+import com.sun.tools.internal.ws.wsdl.framework.EntityAction;
+import com.sun.tools.internal.ws.wsdl.framework.ExtensionImpl;
+import com.sun.tools.internal.ws.wsdl.framework.ExtensionVisitor;
+import org.xml.sax.Locator;
+
+import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.xml.namespace.QName;
-
-import com.sun.tools.internal.ws.wsdl.framework.Entity;
-import com.sun.tools.internal.ws.wsdl.framework.EntityAction;
-import com.sun.tools.internal.ws.wsdl.framework.Extension;
-import com.sun.tools.internal.ws.wsdl.framework.ExtensionVisitor;
 
 /**
  * A MIME multipartRelated extension.
  *
  * @author WS Development Team
  */
-public class MIMEMultipartRelated extends Extension {
+public class MIMEMultipartRelated extends ExtensionImpl {
 
-    public MIMEMultipartRelated() {
+    public MIMEMultipartRelated(Locator locator) {
+        super(locator);
         _parts = new ArrayList<MIMEPart>();
     }
 
@@ -55,8 +56,8 @@ public class MIMEMultipartRelated extends Extension {
         _parts.add(part);
     }
 
-    public Iterator<MIMEPart> getParts() {
-        return _parts.iterator();
+    public Iterable<MIMEPart> getParts() {
+        return _parts;
     }
 
     public void withAllSubEntitiesDo(EntityAction action) {

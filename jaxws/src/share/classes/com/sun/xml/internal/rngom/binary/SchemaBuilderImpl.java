@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.rngom.binary;
 
 import java.util.Enumeration;
@@ -48,6 +47,7 @@ import com.sun.xml.internal.rngom.ast.om.ParsedNameClass;
 import com.sun.xml.internal.rngom.ast.om.ParsedPattern;
 import com.sun.xml.internal.rngom.ast.util.LocatorImpl;
 import com.sun.xml.internal.rngom.dt.builtin.BuiltinDatatypeLibraryFactory;
+import com.sun.xml.internal.rngom.dt.CascadingDatatypeLibraryFactory;
 import com.sun.xml.internal.rngom.nc.NameClass;
 import com.sun.xml.internal.rngom.nc.NameClassBuilderImpl;
 import com.sun.xml.internal.rngom.parse.Context;
@@ -117,7 +117,10 @@ public class SchemaBuilderImpl implements SchemaBuilder, ElementAnnotationBuilde
    *        Error handler to receive errors while building the schema.
    */
   public SchemaBuilderImpl(ErrorHandler eh) {
-      this(eh,new BuiltinDatatypeLibraryFactory(new DatatypeLibraryLoader()),new SchemaPatternBuilder());
+      this(eh,
+          new CascadingDatatypeLibraryFactory(new DatatypeLibraryLoader(),
+            new BuiltinDatatypeLibraryFactory(new DatatypeLibraryLoader())),
+          new SchemaPatternBuilder());
   }
 
   /**

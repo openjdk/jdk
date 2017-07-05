@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
+
+import javax.xml.namespace.QName;
 
 import com.sun.tools.internal.xjc.model.nav.NClass;
 import com.sun.tools.internal.xjc.model.nav.NType;
@@ -39,8 +40,8 @@ import org.xml.sax.Locator;
  * @author Kohsuke Kawaguchi
  */
 public final class CValuePropertyInfo extends CSingleTypePropertyInfo implements ValuePropertyInfo<NType,NClass> {
-    public CValuePropertyInfo(String name, XSComponent source, CCustomizations customizations, Locator locator, TypeUse type) {
-        super(name, type, source, customizations, locator);
+    public CValuePropertyInfo(String name, XSComponent source, CCustomizations customizations, Locator locator, TypeUse type, QName typeName) {
+        super(name, type, typeName, source, customizations, locator);
     }
 
     public final PropertyKind kind() {

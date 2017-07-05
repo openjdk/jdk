@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,4 +51,7 @@ class Messages
 
     static final String ERR_CASE_SENSITIVITY_COLLISION = // 2 args
         "CodeModelClassFactory.CaseSensitivityCollision";
+
+    static final String ERR_CHAMELEON_SCHEMA_GONE_WILD = // no argts
+        "ERR_CHAMELEON_SCHEMA_GONE_WILD";
 }

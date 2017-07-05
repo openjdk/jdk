@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ import org.xml.sax.Attributes;
  * @since JAXB1.0
  * @since SAX 2.0
  * @author David Megginson
+ * @version 2.0.1 (sax2r2)
  */
 public class AttributesImpl implements Attributes
 {

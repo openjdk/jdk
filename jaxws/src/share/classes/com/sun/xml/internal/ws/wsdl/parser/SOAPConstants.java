@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,8 @@ public interface SOAPConstants {
         new QName(NS_WSDL_SOAP, "headerfault");
     public static final QName QNAME_OPERATION =
         new QName(NS_WSDL_SOAP, "operation");
+    public static final QName QNAME_SOAP12OPERATION =
+        new QName(NS_WSDL_SOAP12, "operation");
     public static final QName QNAME_MUSTUNDERSTAND =
         new QName(URI_ENVELOPE, "mustUnderstand");
 

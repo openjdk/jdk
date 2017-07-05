@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,6 @@
  * have any questions.
  *
  * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
- *
- * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- *
  */
 package com.sun.xml.internal.org.jvnet.fastinfoset;
 
@@ -68,6 +40,16 @@ import java.util.Map;
  * @author Paul.Sandoz@Sun.Com
  */
 public interface FastInfosetSerializer {
+    /**
+     * The feature to ignore the document type declaration and the
+     * internal subset.
+     * <p>
+     * The default value is false. If true a serializer shall ignore document
+     * type declaration and the internal subset.
+     */
+    public static final String IGNORE_DTD_FEATURE =
+        "http://jvnet.org/fastinfoset/serializer/feature/ignore/DTD";
+
     /**
      * The feature to ignore comments.
      * <p>
@@ -123,13 +105,25 @@ public interface FastInfosetSerializer {
      * The default value for the limit on the size of character content chunks
      * that will be indexed.
      */
-    public final static int CHARACTER_CONTENT_CHUNK_SIZE_CONSTRAINT = 7;
+    public final static int CHARACTER_CONTENT_CHUNK_SIZE_CONSTRAINT = 32;
+
+    /**
+     * The default value for limit on the size of indexed Map for attribute values
+     * Limit is measured in bytes not in number of entries
+     */
+    public static final int CHARACTER_CONTENT_CHUNK_MAP_MEMORY_CONSTRAINT = Integer.MAX_VALUE;
 
     /**
      * The default value for the limit on the size of attribute values
      * that will be indexed.
      */
-    public final static int ATTRIBUTE_VALUE_SIZE_CONSTRAINT = 7;
+    public final static int ATTRIBUTE_VALUE_SIZE_CONSTRAINT = 32;
+
+    /**
+     * The default value for limit on the size of indexed Map for character content chunks
+     * Limit is measured in bytes not in number of entries
+     */
+    public static final int ATTRIBUTE_VALUE_MAP_MEMORY_CONSTRAINT = Integer.MAX_VALUE;
 
     /**
      * The character encoding scheme string for UTF-8.
@@ -140,6 +134,18 @@ public interface FastInfosetSerializer {
      * The character encoding scheme string for UTF-16BE.
      */
     public static final String UTF_16BE = "UTF-16BE";
+
+    /**
+     * Set the {@link #IGNORE_DTD_FEATURE}.
+     * @param ignoreDTD true if the feature shall be ignored.
+     */
+    public void setIgnoreDTD(boolean ignoreDTD);
+
+    /**
+     * Get the {@link #IGNORE_DTD_FEATURE}.
+     * @return true if the feature is ignored, false otherwise.
+     */
+    public boolean getIgnoreDTD();
 
     /**
      * Set the {@link #IGNORE_COMMENTS_FEATURE}.
@@ -228,6 +234,23 @@ public interface FastInfosetSerializer {
     public int getCharacterContentChunkSizeLimit();
 
     /**
+     * Sets the limit on the memory size of Map of attribute values
+     * that will be indexed.
+     *
+     * @param size The attribute value size limit. Any value less
+     * that a length of size limit will be indexed.
+     */
+    public void setCharacterContentChunkMapMemoryLimit(int size);
+
+    /**
+     * Gets the limit on the memory size of Map of attribute values
+     * that will be indexed.
+     *
+     * @return The attribute value size limit.
+     */
+    public int getCharacterContentChunkMapMemoryLimit();
+
+    /**
      * Sets the limit on the size of attribute values
      * that will be indexed.
      *
@@ -245,11 +268,42 @@ public interface FastInfosetSerializer {
     public int getAttributeValueSizeLimit();
 
     /**
+     * Sets the limit on the memory size of Map of attribute values
+     * that will be indexed.
+     *
+     * @param size The attribute value size limit. Any value less
+     * that a length of size limit will be indexed.
+     */
+    public void setAttributeValueMapMemoryLimit(int size);
+
+    /**
+     * Gets the limit on the memory size of Map of attribute values
+     * that will be indexed.
+     *
+     * @return The attribute value size limit.
+     */
+    public int getAttributeValueMapMemoryLimit();
+
+    /**
      * Set the external vocabulary that shall be used when serializing.
      *
      * @param v the vocabulary.
      */
     public void setExternalVocabulary(ExternalVocabulary v);
+
+    /**
+     * Set the application data to be associated with the serializer vocabulary.
+     *
+     * @param data the application data.
+     */
+    public void setVocabularyApplicationData(VocabularyApplicationData data);
+
+    /**
+     * Get the application data associated with the serializer vocabulary.
+     *
+     * @return the application data.
+     */
+    public VocabularyApplicationData getVocabularyApplicationData();
 
     /**
      * Reset the serializer for reuse serializing another XML infoset.

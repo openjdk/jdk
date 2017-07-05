@@ -47,7 +47,7 @@ public interface HandlerResolver {
    *  Gets the handler chain for the specified port.
    *
    *  @param portInfo Contains information about the port being accessed.
-   *  @return java.util.List Handler chain
+   *  @return java.util.List&lt;Handler> chain
   **/
   public java.util.List<Handler> getHandlerChain(PortInfo portInfo);
 }

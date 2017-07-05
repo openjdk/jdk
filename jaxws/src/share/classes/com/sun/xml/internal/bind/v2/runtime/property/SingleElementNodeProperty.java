@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import java.io.IOException;
@@ -48,7 +47,6 @@ import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Loader;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.ChildLoader;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.DefaultValueLoaderDecorator;
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiTypeLoader;
 import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
 
 import org.xml.sax.SAXException;
@@ -75,7 +73,7 @@ final class SingleElementNodeProperty<BeanT,ValueT> extends PropertyImpl<BeanT> 
 
     public SingleElementNodeProperty(JAXBContextImpl context, RuntimeElementPropertyInfo prop) {
         super(context,prop);
-        acc = prop.getAccessor().optimize();
+        acc = prop.getAccessor().optimize(context);
         this.prop = prop;
 
         QName nt = null;
@@ -155,7 +153,7 @@ final class SingleElementNodeProperty<BeanT,ValueT> extends PropertyImpl<BeanT> 
             Loader l = bi.getLoader(context,true);
             if(e.getDefaultValue()!=null)
                 l = new DefaultValueLoaderDecorator(l,e.getDefaultValue());
-            if(nillable)
+            if(nillable || chain.context.allNillable)
                 l = new XsiNilLoader.Single(l,acc);
             handlers.put( e.getTagName(), new ChildLoader(l,acc));
         }

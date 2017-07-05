@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.internal.ws.processor.model;
 import com.sun.tools.internal.ws.processor.model.java.JavaMethod;
 import com.sun.tools.internal.ws.wsdl.document.soap.SOAPStyle;
 import com.sun.tools.internal.ws.wsdl.document.soap.SOAPUse;
+import com.sun.tools.internal.ws.wsdl.framework.Entity;
 import com.sun.xml.internal.bind.api.JAXBRIContext;
 
 import javax.xml.namespace.QName;
@@ -41,15 +42,18 @@ import java.util.Set;
  */
 public class Operation extends ModelObject {
 
-    public Operation() {}
+    public Operation(Entity entity) {
+        super(entity);
+    }
 
-    public Operation(Operation operation){
-        this(operation._name);
+    public Operation(Operation operation, Entity entity){
+        this(operation._name, entity);
         this._style = operation._style;
         this._use = operation._use;
         this.customizedName = operation.customizedName;
     }
-    public Operation(QName name) {
+    public Operation(QName name, Entity entity) {
+        super(entity);
         _name = name;
         _uniqueName = name.getLocalPart();
         _faultNames = new HashSet<String>();
@@ -226,6 +230,16 @@ public class Operation extends ModelObject {
         return JAXBRIContext.mangleNameToVariableName(_name.getLocalPart());
     }
 
+    public com.sun.tools.internal.ws.wsdl.document.Operation getWSDLPortTypeOperation(){
+        return wsdlOperation;
+    }
+
+    public void setWSDLPortTypeOperation(com.sun.tools.internal.ws.wsdl.document.Operation wsdlOperation){
+        this.wsdlOperation = wsdlOperation;
+    }
+
+
+
     private String customizedName;
     private boolean _isWrapped = true;
     private QName _name;
@@ -238,5 +252,6 @@ public class Operation extends ModelObject {
     private SOAPUse _use = SOAPUse.LITERAL;
     private Set<String> _faultNames;
     private Set<Fault> _faults;
+    private com.sun.tools.internal.ws.wsdl.document.Operation wsdlOperation;
 
 }

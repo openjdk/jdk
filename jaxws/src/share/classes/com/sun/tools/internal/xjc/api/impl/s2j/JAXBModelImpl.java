@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.api.impl.s2j;
 
 import java.util.ArrayList;
@@ -34,6 +33,7 @@ import java.util.Map;
 import javax.xml.namespace.QName;
 
 import com.sun.codemodel.internal.JCodeModel;
+import com.sun.codemodel.internal.JClass;
 import com.sun.tools.internal.xjc.Plugin;
 import com.sun.tools.internal.xjc.api.ErrorListener;
 import com.sun.tools.internal.xjc.api.JAXBModel;
@@ -82,6 +82,13 @@ final class JAXBModelImpl implements S2JJAXBModel {
         return outline.getCodeModel();
     }
 
+    public List<JClass> getAllObjectFactories() {
+        List<JClass> r = new ArrayList<JClass>();
+        for (PackageOutline pkg : outline.getAllPackageContexts()) {
+            r.add(pkg.objectFactory());
+        }
+        return r;
+    }
 
     public final Mapping get(QName elementName) {
         return byXmlName.get(elementName);

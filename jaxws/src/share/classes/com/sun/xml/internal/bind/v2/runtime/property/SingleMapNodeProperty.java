@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import java.io.IOException;
@@ -54,7 +53,6 @@ import com.sun.xml.internal.bind.v2.runtime.unmarshaller.TagName;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Loader;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Receiver;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiTypeLoader;
 
 import org.xml.sax.SAXException;
 
@@ -88,7 +86,7 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
 
     public SingleMapNodeProperty(JAXBContextImpl context, RuntimeMapPropertyInfo prop) {
         super(context, prop);
-        acc = prop.getAccessor().optimize();
+        acc = prop.getAccessor().optimize(context);
         this.tagName = context.nameBuilder.createElementName(prop.getXmlName());
         this.entryTag = context.nameBuilder.createElementName("","entry");
         this.keyTag = context.nameBuilder.createElementName("","key");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.Map;
 
 import javax.activation.MimeType;
 
@@ -48,6 +48,7 @@ import com.sun.xml.internal.bind.v2.runtime.InlineBinaryTransducer;
 import com.sun.xml.internal.bind.v2.runtime.MimeTypedTransducer;
 import com.sun.xml.internal.bind.v2.runtime.SchemaTypeTransducer;
 import com.sun.xml.internal.bind.v2.runtime.Transducer;
+import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
 
 import org.xml.sax.SAXException;
@@ -63,14 +64,24 @@ import org.xml.sax.SAXException;
  * @author Kohsuke Kawaguchi (kk@kohsuke.org)
  */
 public class RuntimeModelBuilder extends ModelBuilder<Type,Class,Field,Method> {
+    /**
+     * The {@link JAXBContextImpl} for which the model is built.
+     */
+    public final JAXBContextImpl context;
 
-    public RuntimeModelBuilder(RuntimeAnnotationReader annotationReader, String defaultNamespaceRemap) {
-        super(annotationReader, Navigator.REFLECTION, defaultNamespaceRemap);
+    public RuntimeModelBuilder(JAXBContextImpl context, RuntimeAnnotationReader annotationReader, Map<Class, Class> subclassReplacements, String defaultNamespaceRemap) {
+        super(annotationReader, Navigator.REFLECTION, subclassReplacements, defaultNamespaceRemap);
+        this.context = context;
     }
 
     @Override
     public RuntimeNonElement getClassInfo( Class clazz, Locatable upstream ) {
         return (RuntimeNonElement)super.getClassInfo(clazz,upstream);
+    }
+
+    @Override
+    public RuntimeNonElement getClassInfo( Class clazz, boolean searchForSuperClass, Locatable upstream ) {
+        return (RuntimeNonElement)super.getClassInfo(clazz,searchForSuperClass,upstream);
     }
 
     @Override

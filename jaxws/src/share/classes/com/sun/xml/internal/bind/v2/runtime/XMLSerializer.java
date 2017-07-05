@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ import com.sun.xml.internal.bind.v2.runtime.output.XmlOutput;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.IntData;
 import com.sun.xml.internal.bind.v2.util.CollisionCheckStack;
+import com.sun.xml.internal.bind.CycleRecoverable;
 
 import org.xml.sax.SAXException;
 
@@ -251,6 +252,16 @@ public final class XMLSerializer extends Coordinator {
     public void startElement(String nsUri, String localName, String preferredPrefix, Object outerPeer) {
         startElement();
         int idx = nsContext.declareNsUri(nsUri, preferredPrefix, false);
+        nse.setTagName(idx,localName,outerPeer);
+    }
+
+    /**
+     * Variation of {@link #startElement(String, String, String, Object)} that forces
+     * a specific prefix. Needed to preserve the prefix when marshalling DOM.
+     */
+    public void startElementForce(String nsUri, String localName, String forcedPrefix, Object outerPeer) {
+        startElement();
+        int idx = nsContext.force(nsUri, forcedPrefix);
         nse.setTagName(idx,localName,outerPeer);
     }
 
@@ -472,25 +483,46 @@ public final class XMLSerializer extends Coordinator {
         cycleDetectionStack.pop();
     }
 
-    private void pushObject(Object obj, String fieldName) throws SAXException {
-        if(cycleDetectionStack.push(obj)) {
-            // cycle detected
-            StringBuilder sb = new StringBuilder();
-            sb.append(obj);
-            int i=cycleDetectionStack.size()-1;
-            Object x;
-            do {
-                sb.append(" -> ");
-                x = cycleDetectionStack.get(--i);
-                sb.append(x);
-            } while(obj!=x);
+    /**
+     * Pushes the object to {@link #cycleDetectionStack} and also
+     * detect any cycles.
+     *
+     * When a cycle is found, this method tries to recover from it.
+     *
+     * @return
+     *      the object that should be marshalled instead of the given <tt>obj</tt>,
+     *      or null if the error is found and we need to avoid marshalling this object
+     *      to prevent infinite recursion. When this method returns null, the error
+     *      has already been reported.
+     */
+    private Object pushObject(Object obj, String fieldName) throws SAXException {
+        if(!cycleDetectionStack.push(obj))
+            return obj;
 
-            reportError(new ValidationEventImpl(
-                ValidationEvent.ERROR,
-                Messages.CYCLE_IN_MARSHALLER.format(sb),
-                getCurrentLocation(fieldName),
-                null));
+        // allow the object to nominate its replacement
+        if(obj instanceof CycleRecoverable) {
+            obj = ((CycleRecoverable)obj).onCycleDetected(new CycleRecoverable.Context(){
+                public Marshaller getMarshaller() {
+                    return marshaller;
+                }
+            });
+            if(obj!=null) {
+                // object nominated its replacement.
+                // we still need to make sure that the nominated.
+                // this may cause inifinite recursion on its own.
+                cycleDetectionStack.pop();
+                return pushObject(obj,fieldName);
+            } else
+                return null;
         }
+
+        // cycle detected and no one is catching the error.
+        reportError(new ValidationEventImpl(
+            ValidationEvent.ERROR,
+            Messages.CYCLE_IN_MARSHALLER.format(cycleDetectionStack.getCycleString()),
+            getCurrentLocation(fieldName),
+            null));
+        return null;
     }
 
     /**
@@ -512,6 +544,14 @@ public final class XMLSerializer extends Coordinator {
         if(child==null) {
             handleMissingObjectError(fieldName);
         } else {
+            child = pushObject(child,fieldName);
+            if(child==null) {
+                // error recovery
+                endNamespaceDecls(null);
+                endAttributes();
+                cycleDetectionStack.pop();
+            }
+
             JaxBeanInfo beanInfo;
             try {
                 beanInfo = grammar.getBeanInfo(child,true);
@@ -520,10 +560,9 @@ public final class XMLSerializer extends Coordinator {
                 // recover by ignore
                 endNamespaceDecls(null);
                 endAttributes();
+                cycleDetectionStack.pop();
                 return;
             }
-
-            pushObject(child,fieldName);
 
             final boolean lookForLifecycleMethods = beanInfo.lookForLifecycleMethods();
             if (lookForLifecycleMethods) {
@@ -572,11 +611,16 @@ public final class XMLSerializer extends Coordinator {
         if(child==null) {
             handleMissingObjectError(fieldName);
         } else {
+            child = pushObject(child,fieldName);
+            if(child==null) { // error recovery
+                endNamespaceDecls(null);
+                endAttributes();
+                return;
+            }
+
             boolean asExpected = child.getClass()==expected.jaxbType;
             JaxBeanInfo actual = expected;
             QName actualTypeName = null;
-
-            pushObject(child,fieldName);
 
             if((asExpected) && (actual.lookForLifecycleMethods())) {
                 fireBeforeMarshalEvents(actual, child);
@@ -643,7 +687,7 @@ public final class XMLSerializer extends Coordinator {
     private void fireAfterMarshalEvents(final JaxBeanInfo beanInfo, Object currentTarget) {
         // first invoke bean embedded listener
         if (beanInfo.hasAfterMarshalMethod()) {
-            Method m = beanInfo.getLifecycleMethods().getAfterMarshal();
+            Method m = beanInfo.getLifecycleMethods().afterMarshal;
             fireMarshalEvent(currentTarget, m);
         }
 
@@ -667,7 +711,7 @@ public final class XMLSerializer extends Coordinator {
     private void fireBeforeMarshalEvents(final JaxBeanInfo beanInfo, Object currentTarget) {
         // first invoke bean embedded listener
         if (beanInfo.hasBeforeMarshalMethod()) {
-            Method m = beanInfo.getLifecycleMethods().getBeforeMarshal();
+            Method m = beanInfo.getLifecycleMethods().beforeMarshal;
             fireMarshalEvent(currentTarget, m);
         }
 
@@ -906,6 +950,13 @@ public final class XMLSerializer extends Coordinator {
 
     public QName getSchemaType() {
         return schemaType;
+    }
+
+    public void setObjectIdentityCycleDetection(boolean val) {
+        cycleDetectionStack.setUseIdentity(val);
+    }
+    public boolean getObjectIdentityCycleDetection() {
+        return cycleDetectionStack.getUseIdentity();
     }
 
     void reconcileID() throws SAXException {

@@ -414,6 +414,7 @@ void Parse::profile_call(Node* receiver) {
     profile_receiver_type(receiver);
     break;
   case Bytecodes::_invokestatic:
+  case Bytecodes::_invokedynamic:
   case Bytecodes::_invokespecial:
     break;
   default: fatal("unexpected call bytecode");

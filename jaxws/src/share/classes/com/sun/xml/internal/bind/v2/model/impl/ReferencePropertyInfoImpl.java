@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.util.Collections;
@@ -34,6 +33,8 @@ import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlMixed;
+import javax.xml.bind.annotation.XmlSchema;
+import javax.xml.bind.annotation.XmlNsForm;
 import javax.xml.namespace.QName;
 
 import com.sun.xml.internal.bind.v2.model.annotation.AnnotationReader;
@@ -185,8 +186,15 @@ class ReferencePropertyInfoImpl<T,C,F,M>
 
     private String getEffectiveNamespaceFor(XmlElementRef r) {
         String nsUri = r.namespace();
-        if(nsUri.length()==0)
-            nsUri = parent.builder.defaultNsUri;
+
+        XmlSchema xs = reader().getPackageAnnotation( XmlSchema.class, parent.getClazz(), this );
+        if(xs!=null && xs.attributeFormDefault()== XmlNsForm.QUALIFIED) {
+            // JAX-RPC doesn't want the default namespace URI swapping to take effect to
+            // local "unqualified" elements. UGLY.
+            if(nsUri.length()==0)
+                nsUri = parent.builder.defaultNsUri;
+        }
+
         return nsUri;
     }
 

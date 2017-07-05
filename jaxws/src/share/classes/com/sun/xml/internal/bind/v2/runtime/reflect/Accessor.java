@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.reflect;
 
 import java.lang.reflect.Field;
@@ -47,6 +46,7 @@ import com.sun.xml.internal.bind.v2.runtime.reflect.opt.OptimizedAccessorFactory
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Loader;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Receiver;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
+import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 
 import org.xml.sax.SAXException;
 
@@ -82,10 +82,12 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
     /**
      * Returns the optimized version of the same accessor.
      *
+     * @param context
+     *      The {@link JAXBContextImpl} that owns the whole thing.
      * @return
      *      At least the implementation can return <tt>this</tt>.
      */
-    public Accessor<BeanT,ValueT> optimize() {
+    public Accessor<BeanT,ValueT> optimize(JAXBContextImpl context) {
         return this;
     }
 
@@ -128,6 +130,15 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
      */
     public Object getUnadapted(BeanT bean) throws AccessorException {
         return get(bean);
+    }
+
+    /**
+     * Returns true if this accessor wraps an adapter.
+     *
+     * This method needs to be used with care, but it helps some optimization.
+     */
+    public boolean isAdapted() {
+        return false;
     }
 
     /**
@@ -219,7 +230,10 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
         }
 
         @Override
-        public Accessor<BeanT,ValueT> optimize() {
+        public Accessor<BeanT,ValueT> optimize(JAXBContextImpl context) {
+            if(context.fastBoot)
+                // let's not waste time on doing this for the sake of faster boot.
+                return this;
             Accessor<BeanT,ValueT> acc = OptimizedAccessorFactory.get(f);
             if(acc!=null)
                 return acc;
@@ -241,7 +255,7 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
         }
 
         @Override
-        public Accessor<BeanT,ValueT> optimize() {
+        public Accessor<BeanT,ValueT> optimize(JAXBContextImpl context) {
             return this;
         }
     }
@@ -325,9 +339,12 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
         }
 
         @Override
-        public Accessor<BeanT,ValueT> optimize() {
+        public Accessor<BeanT,ValueT> optimize(JAXBContextImpl context) {
             if(getter==null || setter==null)
                 // if we aren't complete, OptimizedAccessor won't always work
+                return this;
+            if(context.fastBoot)
+                // let's not waste time on doing this for the sake of faster boot.
                 return this;
 
             Accessor<BeanT,ValueT> acc = OptimizedAccessorFactory.get(getter,setter);
@@ -373,9 +390,14 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
     }
 
     /**
-     * Special {@link Accessor} used to recover from errors.
+     * Gets the special {@link Accessor} used to recover from errors.
      */
-    public static final Accessor ERROR = new Accessor(Object.class) {
+    @SuppressWarnings("unchecked")
+    public static <A,B> Accessor<A,B> getErrorInstance() {
+        return ERROR;
+    }
+
+    private static final Accessor ERROR = new Accessor<Object,Object>(Object.class) {
         public Object get(Object o) {
             return null;
         }

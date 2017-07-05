@@ -121,6 +121,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  *
  * </pre>
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
+ * @version $Revision: 1.13 $
  * @see XmlType
  * @since JAXB2.0
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import javax.xml.bind.annotation.XmlElementWrapper;
@@ -44,6 +43,7 @@ abstract class ERPropertyInfoImpl<TypeT,ClassDeclT,FieldT,MethodT>
         XmlElementWrapper e = seed.readAnnotation(XmlElementWrapper.class);
 
         boolean nil = false;
+        boolean required = false;
         if(!isCollection()) {
             xmlName = null;
             if(e!=null)
@@ -56,11 +56,13 @@ abstract class ERPropertyInfoImpl<TypeT,ClassDeclT,FieldT,MethodT>
             if(e!=null) {
                 xmlName = calcXmlName(e);
                 nil = e.nillable();
+                required = e.required();
             } else
                 xmlName = null;
         }
 
         wrapperNillable = nil;
+        wrapperRequired = required;
     }
 
     private final QName xmlName;
@@ -71,6 +73,11 @@ abstract class ERPropertyInfoImpl<TypeT,ClassDeclT,FieldT,MethodT>
     private final boolean wrapperNillable;
 
     /**
+     * True if the wrapper tag is required.
+     */
+    private final boolean wrapperRequired;
+
+    /**
      * Gets the wrapper element name.
      */
     public final QName getXmlName() {
@@ -79,5 +86,9 @@ abstract class ERPropertyInfoImpl<TypeT,ClassDeclT,FieldT,MethodT>
 
     public final boolean isCollectionNillable() {
         return wrapperNillable;
+    }
+
+    public final boolean isCollectionRequired() {
+        return wrapperRequired;
     }
 }

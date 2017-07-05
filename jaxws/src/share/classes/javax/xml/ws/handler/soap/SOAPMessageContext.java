@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,12 @@ import java.util.Set;
 public interface SOAPMessageContext
                     extends javax.xml.ws.handler.MessageContext {
 
-  /** Gets the SOAPMessage from this message context. Modifications
-   *  to the returned SOAPMessage change the message in-place, there
+  /** Gets the <code>SOAPMessage<code> from this message context. Modifications
+   *  to the returned <code>SOAPMessage</code> change the message in-place, there
    *  is no need to susequently call <code>setMessage</code>.
    *
-   *  @return Returns the SOAPMessage; returns null if no
-   *          SOAPMessage is present in this message context
+   *  @return Returns the <code>SOAPMessage</code>; returns <code>null</code> if no
+   *          <code>SOAPMessage</code> is present in this message context
   **/
   public SOAPMessage getMessage();
 
@@ -56,7 +56,7 @@ public interface SOAPMessageContext
    *
    *  @param  message SOAP message
    *  @throws WebServiceException If any error during the setting
-   *          of the SOAPMessage in this message context
+   *          of the <code>SOAPMessage</code> in this message context
    *  @throws java.lang.UnsupportedOperationException If this
    *          operation is not supported
   **/
@@ -77,8 +77,8 @@ public interface SOAPMessageContext
    *          message is present in this message context or no headers match
    *          the supplied qualified name.
    *  @throws WebServiceException If an error occurs when using the supplied
-   *     JAXBContext to unmarshall. The cause of
-   *     the WebServiceException is the original JAXBException.
+   *     <code>JAXBContext</code> to unmarshall. The cause of
+   *     the <code>WebServiceException</code> is the original <code>JAXBException</code>.
   **/
   public Object[] getHeaders(QName header, JAXBContext context,
     boolean allRoles);
@@ -86,14 +86,14 @@ public interface SOAPMessageContext
   /** Gets the SOAP actor roles associated with an execution
    *  of the handler chain.
    *  Note that SOAP actor roles apply to the SOAP node and
-   *  are managed using <code>SOAPBinding.setRoles</code> and
-   *  <code>SOAPBinding.getRoles</code>. Handler instances in
+   *  are managed using {@link javax.xml.ws.soap.SOAPBinding#setRoles} and
+   *  {@link javax.xml.ws.soap.SOAPBinding#getRoles}. <code>Handler</code> instances in
    *  the handler chain use this information about the SOAP actor
    *  roles to process the SOAP header blocks. Note that the
    *  SOAP actor roles are invariant during the processing of
    *  SOAP message through the handler chain.
    *
-   *  @return Array of String for SOAP actor roles
+   *  @return Array of <code>String</code> for SOAP actor roles
   **/
   public Set<String> getRoles();
 }

@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,26 @@
 
 package com.sun.tools.internal.ws.wsdl.document;
 
+import com.sun.tools.internal.ws.api.wsdl.TWSDLExtensible;
+import com.sun.tools.internal.ws.api.wsdl.TWSDLExtension;
+import com.sun.tools.internal.ws.wsdl.framework.*;
+import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
+import org.xml.sax.Locator;
+
+import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.xml.namespace.QName;
-
-import com.sun.tools.internal.ws.wsdl.framework.Defining;
-import com.sun.tools.internal.ws.wsdl.framework.Entity;
-import com.sun.tools.internal.ws.wsdl.framework.EntityAction;
-import com.sun.tools.internal.ws.wsdl.framework.ExtensibilityHelper;
-import com.sun.tools.internal.ws.wsdl.framework.Extensible;
-import com.sun.tools.internal.ws.wsdl.framework.Extension;
-import com.sun.tools.internal.ws.wsdl.framework.GlobalEntity;
-import com.sun.tools.internal.ws.wsdl.framework.Kind;
 
 /**
  * Entity corresponding to the "service" WSDL element.
  *
  * @author WS Development Team
  */
-public class Service extends GlobalEntity implements Extensible {
+public class Service extends GlobalEntity implements TWSDLExtensible {
 
-    public Service(Defining defining) {
-        super(defining);
+    public Service(Defining defining, Locator locator, ErrorReceiver errReceiver) {
+        super(defining, locator, errReceiver);
         _ports = new ArrayList();
         _helper = new ExtensibilityHelper();
     }
@@ -100,12 +96,28 @@ public class Service extends GlobalEntity implements Extensible {
         }
     }
 
-    public void addExtension(Extension e) {
+    public String getNameValue() {
+        return getName();
+    }
+
+    public String getNamespaceURI() {
+        return getDefining().getTargetNamespaceURI();
+    }
+
+    public QName getWSDLElementName() {
+        return getElementName();
+    }
+
+    public void addExtension(TWSDLExtension e) {
         _helper.addExtension(e);
     }
 
-    public Iterator extensions() {
+    public Iterable<TWSDLExtension> extensions() {
         return _helper.extensions();
+    }
+
+    public TWSDLExtensible getParent() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     private ExtensibilityHelper _helper;

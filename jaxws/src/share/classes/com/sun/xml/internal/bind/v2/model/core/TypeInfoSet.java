@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.core;
 
 import java.util.Map;
@@ -142,6 +141,20 @@ public interface TypeInfoSet<T,C,F,M> {
      *      Could be empty but never null.
      */
     Map<String,String> getXmlNs(String namespaceUri);
+
+    /**
+     * Gets {@link XmlSchema#location()} found in this context.
+     *
+     * <p>
+     * This operation is expected to be only used in schema generator, so it can be slow.
+     *
+     * @return
+     *      A map from namespace URI to the value of the location.
+     *      If the entry is missing, that means a schema should be generated for that namespace.
+     *      If the value is "", that means the schema location is implied
+     *      (&lt;xs:schema namespace="..."/> w/o schemaLocation.)
+     */
+    Map<String,String> getSchemaLocations();
 
     /**
      * Gets the reasonable {@link XmlNsForm} for the given namespace URI.

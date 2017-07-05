@@ -1,10 +1,4 @@
 /*
- * $Id: SOAPBody.java,v 1.16 2005/04/05 22:28:13 mk125090 Exp $
- * $Revision: 1.16 $
- * $Date: 2005/04/05 22:28:13 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SOAPBody.java,v 1.17 2005/06/22 10:24:11 vj135062 Exp $
+ * $Revision: 1.17 $
+ * $Date: 2005/06/22 10:24:11 $
+ */
+
+
 package javax.xml.soap;
 
 import java.util.Locale;
@@ -292,7 +293,7 @@ public interface SOAPBody extends SOAPElement {
      *         of the <code>SOAPBody</code> content.
      *
      * @exception SOAPException
-     *                if there is not exactly one child <code>SOAPElement</code> of the
+     *                if there is not exactly one child <code>SOAPElement</code> of the <code>
      *              <code>SOAPBody</code>.
      *
      * @since SAAJ 1.3

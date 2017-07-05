@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class AnnotationProcessorFactoryImpl implements AnnotationProcessorFactor
 
         if (wsAP == null) {
             AnnotationProcessorContext context = new AnnotationProcessorContext();
-            wsAP = new WebServiceAP(null, null, null, context);
+            wsAP = new WebServiceAP(null, context, null, null);
 
         }
         wsAP.init(apEnv);

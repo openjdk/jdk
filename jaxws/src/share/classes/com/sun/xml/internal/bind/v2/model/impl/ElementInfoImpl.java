@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.lang.annotation.Annotation;
@@ -41,6 +40,7 @@ import javax.xml.bind.annotation.XmlSchema;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
 
+import com.sun.istack.internal.FinalArrayList;
 import com.sun.xml.internal.bind.v2.TODO;
 import com.sun.xml.internal.bind.v2.model.annotation.AnnotationSource;
 import com.sun.xml.internal.bind.v2.model.annotation.Locatable;
@@ -57,7 +57,6 @@ import com.sun.xml.internal.bind.v2.model.core.TypeRef;
 import com.sun.xml.internal.bind.v2.runtime.IllegalAnnotationException;
 import com.sun.xml.internal.bind.v2.runtime.Location;
 import com.sun.xml.internal.bind.v2.runtime.SwaRefAdapter;
-import com.sun.istack.internal.FinalArrayList;
 
 /**
  * {@link ElementInfo} implementation.
@@ -69,6 +68,8 @@ class ElementInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M> implements ElementI
     private final QName tagName;
 
     private final NonElement<T,C> contentType;
+
+    private final T tOfJAXBElementT;
 
     private final T elementType;
 
@@ -138,6 +139,10 @@ class ElementInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M> implements ElementI
 
         public QName getXmlName() {
             return tagName;
+        }
+
+        public boolean isCollectionRequired() {
+            return false;
         }
 
         public boolean isCollectionNillable() {
@@ -264,15 +269,16 @@ class ElementInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M> implements ElementI
         }
         this.adapter = a;
 
+        // T of JAXBElement<T>
+        tOfJAXBElementT =
+            methodParams.length>0 ? methodParams[0] // this is more reliable, as it works even for ObjectFactory that sometimes have to return public types
+            : nav().getTypeArgument(baseClass,0); // fall back to infer from the return type if no parameter.
+
         if(adapter==null) {
-            // T of JAXBElement<T>
-            T typeType =
-                methodParams.length>0 ? methodParams[0] // this is more reliable, as it works even for ObjectFactory that sometimes have to return public types
-                : nav().getTypeArgument(baseClass,0); // fall back to infer from the return type if no parameter.
-            T list = nav().getBaseClass(typeType,nav().asDecl(List.class));
+            T list = nav().getBaseClass(tOfJAXBElementT,nav().asDecl(List.class));
             if(list==null) {
                 isCollection = false;
-                contentType = builder.getTypeInfo(typeType,this);  // suck this type into the current set.
+                contentType = builder.getTypeInfo(tOfJAXBElementT,this);  // suck this type into the current set.
             } else {
                 isCollection = true;
                 contentType = builder.getTypeInfo(nav().getTypeArgument(list,0),this);
@@ -339,7 +345,7 @@ class ElementInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M> implements ElementI
 
     public T getContentInMemoryType() {
         if(adapter==null) {
-            return contentType.getType();
+            return tOfJAXBElementT;
         } else {
             return adapter.customType;
         }

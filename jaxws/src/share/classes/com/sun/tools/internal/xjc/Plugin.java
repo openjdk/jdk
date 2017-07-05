@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc;
 
 import java.io.IOException;
@@ -35,6 +34,7 @@ import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.outline.Outline;
 
 import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Add-on that works on the generated source code.
@@ -59,6 +59,11 @@ public abstract class Plugin {
      * turn on this plugin. A plugin needs to be turned
      * on explicitly, or else no other methods of {@link Plugin}
      * will be invoked.
+     *
+     * <p>
+     * Starting 2.1, when an option matches the name returned
+     * from this method, XJC will then invoke {@link #parseArgument(Options, String[], int)},
+     * allowing plugins to handle arguments to this option.
      */
     public abstract String getOptionName();
 
@@ -227,7 +232,13 @@ public abstract class Plugin {
      *      If the add-on executes successfully, return true.
      *      If it detects some errors but those are reported and
      *      recovered gracefully, return false.
+     *
+     * @throws SAXException
+     *      After an error is reported to {@link ErrorHandler}, the
+     *      same exception can be thrown to indicate a fatal irrecoverable
+     *      error. {@link ErrorHandler} itself may throw it, if it chooses
+     *      not to recover from the error.
      */
     public abstract boolean run(
-        Outline outline, Options opt, ErrorHandler errorHandler );
+        Outline outline, Options opt, ErrorHandler errorHandler ) throws SAXException ;
 }

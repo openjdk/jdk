@@ -29,6 +29,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import javax.xml.bind.attachment.AttachmentMarshaller;
 import javax.xml.validation.Schema;
+import java.io.File;
 
 /**
  * <p>
@@ -288,10 +289,10 @@ import javax.xml.validation.Schema;
  * <blockquote>
  * <pre>
  *   // Invoked by Marshaller after it has created an instance of this object.
- *   boolean beforeMarshal(Marshaller, Object parent);
+ *   boolean beforeMarshal(Marshaller);
  *
  *   // Invoked by Marshaller after it has marshalled all properties of this object.
- *   void afterMmarshal(Marshaller, Object parent);
+ *   void afterMmarshal(Marshaller);
  * </pre>
  * </blockquote>
  * The class defined event callback methods should be used when the callback method requires
@@ -309,6 +310,7 @@ import javax.xml.validation.Schema;
  * </blockquote>
  *
  * @author <ul><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
+ * @version $Revision$ $Date$
  * @see JAXBContext
  * @see Validator
  * @see Unmarshaller
@@ -402,6 +404,29 @@ public interface Marshaller {
      *      If any of the method parameters are null
      */
     public void marshal( Object jaxbElement, java.io.OutputStream os )
+        throws JAXBException;
+
+    /**
+     * Marshal the content tree rooted at <tt>jaxbElement</tt> into a file.
+     *
+     * @param jaxbElement
+     *      The root of content tree to be marshalled.
+     * @param output
+     *      File to be written. If this file already exists, it will be overwritten.
+     *
+     * @throws JAXBException
+     *      If any unexpected problem occurs during the marshalling.
+     * @throws MarshalException
+     *      If the {@link ValidationEventHandler ValidationEventHandler}
+     *      returns false from its <tt>handleEvent</tt> method or the
+     *      <tt>Marshaller</tt> is unable to marshal <tt>obj</tt> (or any
+     *      object reachable from <tt>obj</tt>).  See <a href="#elementMarshalling">
+     *      Marshalling a JAXB element</a>.
+     * @throws IllegalArgumentException
+     *      If any of the method parameters are null
+     * @since JAXB2.1
+     */
+    public void marshal( Object jaxbElement, File output )
         throws JAXBException;
 
     /**

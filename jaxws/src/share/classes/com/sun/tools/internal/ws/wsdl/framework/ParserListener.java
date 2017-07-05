@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,6 @@ import javax.xml.namespace.QName;
  * @author WS Development Team
  */
 public interface ParserListener {
-    public void ignoringExtension(QName name, QName parent);
+    public void ignoringExtension(Entity entity, QName name, QName parent);
     public void doneParsingEntity(QName element, Entity entity);
 }

@@ -91,9 +91,10 @@ public:
     _end = _start + max;
   }
 
-  address cur_bcp()             { return _bc_start; }  // Returns bcp to current instruction
+  address cur_bcp() const       { return _bc_start; }  // Returns bcp to current instruction
   int next_bci() const          { return _pc -_start; }
   int cur_bci() const           { return _bc_start - _start; }
+  int instruction_size() const  { return _pc - _bc_start; }
 
   Bytecodes::Code cur_bc() const{ return check_java(_bc); }
   Bytecodes::Code next_bc()     { return Bytecodes::java_code((Bytecodes::Code)* _pc); }
@@ -121,33 +122,38 @@ public:
     return check_java(_bc);
   }
 
-  bool is_wide()  { return ( _pc == _was_wide ); }
+  bool is_wide() const { return ( _pc == _was_wide ); }
 
   // Get a byte index following this bytecode.
   // If prefixed with a wide bytecode, get a wide index.
   int get_index() const {
+    assert_index_size(is_wide() ? 2 : 1);
     return (_pc == _was_wide)   // was widened?
       ? Bytes::get_Java_u2(_bc_start+2) // yes, return wide index
       : _bc_start[1];           // no, return narrow index
   }
 
-  // Set a byte index following this bytecode.
-  // If prefixed with a wide bytecode, get a wide index.
-  void put_index(int idx) {
-      if (_pc == _was_wide)     // was widened?
-         Bytes::put_Java_u2(_bc_start+2,idx);   // yes, set wide index
-      else
-         _bc_start[1]=idx;              // no, set narrow index
+  // Get 2-byte index (getfield/putstatic/etc)
+  int get_index_big() const {
+    assert_index_size(2);
+    return Bytes::get_Java_u2(_bc_start+1);
   }
 
-  // Get 2-byte index (getfield/putstatic/etc)
-  int get_index_big() const { return Bytes::get_Java_u2(_bc_start+1); }
+  // Get 2-byte index (or 4-byte, for invokedynamic)
+  int get_index_int() const {
+    return has_giant_index() ? get_index_giant() : get_index_big();
+  }
+
+  // Get 4-byte index, for invokedynamic.
+  int get_index_giant() const {
+    assert_index_size(4);
+    return Bytes::get_native_u4(_bc_start+1);
+  }
+
+  bool has_giant_index() const { return (cur_bc() == Bytecodes::_invokedynamic); }
 
   // Get dimensions byte (multinewarray)
   int get_dimensions() const { return *(unsigned char*)(_pc-1); }
-
-  // Get unsigned index fast
-  int get_index_fast() const { return Bytes::get_native_u2(_pc-2); }
 
   // Sign-extended index byte/short, no widening
   int get_byte() const { return (int8_t)(_pc[-1]); }
@@ -225,6 +231,22 @@ public:
   ciKlass*  get_declared_method_holder();
   int       get_method_holder_index();
   int       get_method_signature_index();
+
+ private:
+  void assert_index_size(int required_size) const {
+#ifdef ASSERT
+    int isize = instruction_size() - (is_wide() ? 1 : 0) - 1;
+    if (isize == 2 &&  cur_bc() == Bytecodes::_iinc)
+      isize = 1;
+    else if (isize <= 2)
+      ;                         // no change
+    else if (has_giant_index())
+      isize = 4;
+    else
+      isize = 2;
+    assert(isize = required_size, "wrong index size");
+#endif
+  }
 };
 
 

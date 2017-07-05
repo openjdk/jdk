@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.gbind;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 /**
  * Factory methods for {@link ElementSet}.
@@ -53,7 +52,7 @@ public final class ElementSets {
      *
      * This isn't particularly efficient or anything, but it will do for now.
      */
-    private static final class MultiValueSet extends HashSet<Element> implements ElementSet {
+    private static final class MultiValueSet extends LinkedHashSet<Element> implements ElementSet {
         public MultiValueSet(ElementSet lhs, ElementSet rhs) {
             addAll(lhs);
             addAll(rhs);

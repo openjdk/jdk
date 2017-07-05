@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,28 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.api;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.SchemaOutputResolver;
+import javax.xml.bind.annotation.XmlAttachmentRef;
 import javax.xml.namespace.QName;
+import javax.xml.transform.Result;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.bind.api.impl.NameConverter;
+import com.sun.xml.internal.bind.v2.ContextFactory;
+import com.sun.xml.internal.bind.v2.model.annotation.RuntimeAnnotationReader;
 import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 
 /**
@@ -54,6 +57,7 @@ import com.sun.xml.internal.bind.v2.model.nav.Navigator;
  *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  */
 public abstract class JAXBRIContext extends JAXBContext {
+
     protected JAXBRIContext() {}
 
     /**
@@ -69,35 +73,46 @@ public abstract class JAXBRIContext extends JAXBContext {
      * @param typeRefs
      *      See {@link #TYPE_REFERENCES} for the meaning of this parameter.
      *      Can be null.
+     * @param subclassReplacements
+     *      See {@link #SUBCLASS_REPLACEMENTS} for the meaning of this parameter.
+     *      Can be null.
      * @param defaultNamespaceRemap
      *      See {@link #DEFAULT_NAMESPACE_REMAP} for the meaning of this parameter.
      *      Can be null (and should be null for ordinary use of JAXB.)
      * @param c14nSupport
      *      See {@link #CANONICALIZATION_SUPPORT} for the meaning of this parameter.
+     * @param ar
+     *      See {@link #ANNOTATION_READER} for the meaning of this parameter.
+     *      Can be null.
+     * @since JAXB 2.1 EA2
      */
-    public static JAXBRIContext newInstance(@NotNull Class[] classes, @Nullable Collection<TypeReference> typeRefs, @Nullable String defaultNamespaceRemap, boolean c14nSupport ) throws JAXBException {
-        try {
-            Class c = Class.forName("com.sun.xml.internal.bind.v2.ContextFactory");
-            Method method = c.getMethod("createContext",Class[].class,Collection.class,String.class,boolean.class);
-            Object o = method.invoke(null,classes,typeRefs,defaultNamespaceRemap,c14nSupport);
-            return (JAXBRIContext)o;
-        } catch (ClassNotFoundException e) {
-            throw new JAXBException(e);
-        } catch (NoSuchMethodException e) {
-            throw new JAXBException(e);
-        } catch (IllegalAccessException e) {
-            throw new JAXBException(e);
-        } catch (InvocationTargetException e) {
-            Throwable te = e.getTargetException();
-            if(te instanceof JAXBException)
-                throw (JAXBException)te;
-            if(te instanceof RuntimeException)
-                throw (RuntimeException)te;
-            if(te instanceof Error)
-                throw (Error)te;
-            throw new JAXBException(e);
-        }
+    public static JAXBRIContext newInstance(@NotNull Class[] classes,
+       @Nullable Collection<TypeReference> typeRefs,
+       @Nullable Map<Class,Class> subclassReplacements,
+       @Nullable String defaultNamespaceRemap, boolean c14nSupport,
+       @Nullable RuntimeAnnotationReader ar) throws JAXBException {
+        return ContextFactory.createContext(classes, typeRefs, subclassReplacements,
+                defaultNamespaceRemap, c14nSupport, ar, false, false);
     }
+
+    /**
+     * @deprecated
+     *      Compatibility with older versions.
+     */
+    public static JAXBRIContext newInstance(@NotNull Class[] classes,
+        @Nullable Collection<TypeReference> typeRefs,
+        @Nullable String defaultNamespaceRemap, boolean c14nSupport ) throws JAXBException {
+        return newInstance(classes,typeRefs, Collections.<Class,Class>emptyMap(),
+                defaultNamespaceRemap,c14nSupport,null);
+    }
+
+    /**
+     * Returns true if this context includes a class
+     * that has {@link XmlAttachmentRef}.
+     *
+     * @since 2.1
+     */
+    public abstract boolean hasSwaRef();
 
     /**
      * If the given object is bound to an element in XML by JAXB,
@@ -234,6 +249,21 @@ public abstract class JAXBRIContext extends JAXBContext {
     public abstract @NotNull String getBuildId();
 
     /**
+     * Generates the episode file that represents the binding known to this {@link JAXBContext},
+     * so that XJC can later do separate compilation.
+     *
+     * <p>
+     * Episode file is really just a JAXB customization file, except that currently
+     * we use the RI-specific SCD to refer to schema components.
+     *
+     * @param output
+     *      This receives the generated episode file.
+     *
+     * @since 2.1
+     */
+    public abstract void generateEpisode(Result output);
+
+    /**
      * Computes a Java identifier from a local name.
      *
      * <p>
@@ -244,12 +274,10 @@ public abstract class JAXBRIContext extends JAXBContext {
      * Accordingly, this method may return an identifier that collides with reserved words.
      *
      * <p>
-     * Use {@link JJavaName#isJavaIdentifier(String)} to check for such collision.
+     * Use <tt>JJavaName.isJavaIdentifier(String)</tt> to check for such collision.
      *
      * @return
      *      Typically, this method returns "nameLikeThis".
-     *
-     * @see JJavaName#isJavaIdentifier(String)
      */
     public static @NotNull String mangleNameToVariableName(@NotNull String localName) {
         return NameConverter.standard.toVariableName(localName);
@@ -266,6 +294,21 @@ public abstract class JAXBRIContext extends JAXBContext {
      */
     public static @NotNull String mangleNameToClassName(@NotNull String localName) {
         return NameConverter.standard.toClassName(localName);
+    }
+
+    /**
+     * Computes a Java class name from a local name.
+     *
+     * <p>
+     * This method faithfully implements the name mangling rule as specified in the JAXB spec.
+     * This method works like {@link #mangleNameToClassName(String)} except that it looks
+     * for "getClass" and returns something else.
+     *
+     * @return
+     *      Typically, this method returns "NameLikeThis".
+     */
+    public static @NotNull String mangleNameToPropertyName(@NotNull String localName) {
+        return NameConverter.standard.toPropertyName(localName);
     }
 
     /**
@@ -338,9 +381,46 @@ public abstract class JAXBRIContext extends JAXBContext {
     public static final String CANONICALIZATION_SUPPORT = "com.sun.xml.internal.bind.c14n";
 
     /**
+     * The property that you can specify to {@link JAXBContext#newInstance}
+     * to allow unmarshaller to honor <tt>xsi:nil</tt> anywhere, even if they are
+     * not specifically allowed by the schema.
+     *
+     * @since 2.1.3
+     */
+    public static final String TREAT_EVERYTHING_NILLABLE = "com.sun.xml.internal.bind.treatEverythingNillable";
+
+    /**
+     * The property that you can specify to {@link JAXBContext#newInstance}
+     * to use alternative {@link RuntimeAnnotationReader} implementation.
+     *
+     * @since 2.1 EA2
+     */
+    public static final String ANNOTATION_READER = RuntimeAnnotationReader.class.getName();
+
+    /**
      * Marshaller/Unmarshaller property to enable XOP processing.
      *
      * @since 2.0 EA2
      */
     public static final String ENABLE_XOP = "com.sun.xml.internal.bind.XOP";
+
+    /**
+     * The property that you can specify to {@link JAXBContext#newInstance}
+     * to specify specific classes that replace the reference to generic classes.
+     *
+     * <p>
+     * See the release notes for more details about this feature.
+     *
+     * @since 2.1 EA2
+     */
+    public static final String SUBCLASS_REPLACEMENTS = "com.sun.xml.internal.bind.subclassReplacements";
+
+    /**
+     * The property that you can specify to {@link JAXBContext#newInstance}
+     * enable support of XmlAccessorFactory annotation in the {@link JAXBContext}.
+     *
+     * @since 2.1 EA2
+     */
+    public static final String XMLACCESSORFACTORY_SUPPORT = "com.sun.xml.internal.bind.XmlAccessorFactory";
+
 }

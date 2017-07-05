@@ -1,10 +1,4 @@
 /*
- * $Id: SOAPFactory.java,v 1.12 2005/04/05 22:46:26 mk125090 Exp $
- * $Revision: 1.12 $
- * $Datae$
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SOAPFactory.java,v 1.13 2005/06/22 10:24:11 vj135062 Exp $
+ * $Revision: 1.13 $
+ * $Datae$
+ */
+
+
 
 package javax.xml.soap;
 

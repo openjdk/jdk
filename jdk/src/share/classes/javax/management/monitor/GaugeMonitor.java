@@ -481,7 +481,7 @@ public class GaugeMonitor extends Monitor implements GaugeMonitorMBean {
      */
     @Override
     public MBeanNotificationInfo[] getNotificationInfo() {
-        return notifsInfo;
+        return notifsInfo.clone();
     }
 
     /*

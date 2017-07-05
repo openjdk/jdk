@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.txw2.output;
 
 import org.w3c.dom.Document;
@@ -55,7 +56,7 @@ public class DomSerializer implements XmlSerializer {
 
     public DomSerializer(Node node) {
         Dom2SaxAdapter adapter = new Dom2SaxAdapter(node);
-        serializer = new SaxSerializer(adapter,adapter);
+        serializer = new SaxSerializer(adapter,adapter,false);
     }
 
     public DomSerializer(DOMResult domResult) {
@@ -68,12 +69,12 @@ public class DomSerializer implements XmlSerializer {
                 DocumentBuilder db = dbf.newDocumentBuilder();
                 Document doc = db.newDocument();
                 domResult.setNode(doc);
-                serializer = new SaxSerializer(new Dom2SaxAdapter(doc));
+                serializer = new SaxSerializer(new Dom2SaxAdapter(doc),null,false);
             } catch (ParserConfigurationException pce) {
                 throw new TxwException(pce);
             }
         } else {
-            serializer = new SaxSerializer(new Dom2SaxAdapter(node));
+            serializer = new SaxSerializer(new Dom2SaxAdapter(node),null,false);
         }
     }
 

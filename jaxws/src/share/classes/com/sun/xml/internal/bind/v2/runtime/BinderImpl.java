@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime;
 
 import javax.xml.bind.Binder;
@@ -123,6 +122,7 @@ public class BinderImpl<XmlNode> extends Binder<XmlNode> {
     }
 
     public void setSchema(Schema schema) {
+        getMarshaller().setSchema(schema);
         getUnmarshaller().setSchema(schema);
     }
 
@@ -157,6 +157,8 @@ public class BinderImpl<XmlNode> extends Binder<XmlNode> {
     }
 
     public Object getJAXBNode(XmlNode xmlNode) {
+        if(xmlNode==null)
+            throw new IllegalArgumentException();
         AssociationMap.Entry e = assoc.byElement(xmlNode);
         if(e==null)     return null;
         if(e.outer()!=null)     return e.outer();

@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package com.sun.tools.internal.ws.wsdl.framework;
 
+import org.xml.sax.Locator;
+import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
+
 /**
  * An entity that can be defined in a target namespace.
  *
@@ -32,8 +35,10 @@ package com.sun.tools.internal.ws.wsdl.framework;
  */
 public abstract class GlobalEntity extends Entity implements GloballyKnown {
 
-    public GlobalEntity(Defining defining) {
+    public GlobalEntity(Defining defining, Locator locator, ErrorReceiver errorReceiver) {
+        super(locator);
         _defining = defining;
+        this.errorReceiver = errorReceiver;
     }
 
     public String getName() {

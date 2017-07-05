@@ -27,6 +27,7 @@ package javax.activation;
 
 import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.Locale;
 
 /**
  * A parameter list of a MimeType
@@ -105,7 +106,8 @@ public class MimeTypeParameterList {
             while ((i < length) && isTokenChar(parameterList.charAt(i)))
                 i++;
 
-            name = parameterList.substring(lastIndex, i).toLowerCase();
+            name = parameterList.substring(lastIndex, i).
+                                                toLowerCase(Locale.ENGLISH);
 
             //    now parse the '=' that separates the name from the value
             i = skipWhiteSpace(parameterList, i);
@@ -202,7 +204,7 @@ public class MimeTypeParameterList {
      * @return          the parameter's value
      */
     public String get(String name) {
-        return (String)parameters.get(name.trim().toLowerCase());
+        return (String)parameters.get(name.trim().toLowerCase(Locale.ENGLISH));
     }
 
     /**
@@ -213,7 +215,7 @@ public class MimeTypeParameterList {
      * @param value     the parameter's value
      */
     public void set(String name, String value) {
-        parameters.put(name.trim().toLowerCase(), value);
+        parameters.put(name.trim().toLowerCase(Locale.ENGLISH), value);
     }
 
     /**
@@ -222,7 +224,7 @@ public class MimeTypeParameterList {
      * @param name      the parameter name
      */
     public void remove(String name) {
-        parameters.remove(name.trim().toLowerCase());
+        parameters.remove(name.trim().toLowerCase(Locale.ENGLISH));
     }
 
     /**

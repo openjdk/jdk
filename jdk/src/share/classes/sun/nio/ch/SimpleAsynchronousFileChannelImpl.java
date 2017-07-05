@@ -97,6 +97,9 @@ public class SimpleAsynchronousFileChannelImpl
             // then it will throw ClosedChannelException
         }
 
+        // Invalidate and release any locks that we still hold
+        invalidateAllLocks();
+
         // signal any threads blocked on this channel
         nd.preClose(fdObj);
         threads.signalAndWait();
@@ -108,9 +111,6 @@ public class SimpleAsynchronousFileChannelImpl
         } finally {
             closeLock.writeLock().unlock();
         }
-
-        // Invalidate and release any locks that we still hold
-        invalidateAllLocks();
 
         // close file
         nd.close(fdObj);
@@ -226,11 +226,9 @@ public class SimpleAsynchronousFileChannelImpl
                         do {
                             n = nd.lock(fdObj, true, position, size, shared);
                         } while ((n == FileDispatcher.INTERRUPTED) && isOpen());
-                        if (n == FileDispatcher.LOCKED) {
+                        if (n == FileDispatcher.LOCKED && isOpen()) {
                             result.setResult(fli);
                         } else {
-                            if (n != FileDispatcher.INTERRUPTED)
-                                throw new AssertionError();
                             throw new AsynchronousCloseException();
                         }
                     } catch (IOException x) {
@@ -279,16 +277,16 @@ public class SimpleAsynchronousFileChannelImpl
             do {
                 n = nd.lock(fdObj, false, position, size, shared);
             } while ((n == FileDispatcher.INTERRUPTED) && isOpen());
-            if (n != FileDispatcher.LOCKED) {
-                if (n == FileDispatcher.NO_LOCK)
-                    return null;    // locked by someone else
-                if (n == FileDispatcher.INTERRUPTED)
-                    throw new AsynchronousCloseException();
-                // should not get here
-                throw new AssertionError();
+            if (n == FileDispatcher.LOCKED && isOpen()) {
+                gotLock = true;
+                return fli;    // lock acquired
             }
-            gotLock = true;
-            return fli;
+            if (n == FileDispatcher.NO_LOCK)
+                return null;    // locked by someone else
+            if (n == FileDispatcher.INTERRUPTED)
+                throw new AsynchronousCloseException();
+            // should not get here
+            throw new AssertionError();
         } finally {
             if (!gotLock)
                 removeFromFileLockTable(fli);
@@ -298,14 +296,8 @@ public class SimpleAsynchronousFileChannelImpl
     }
 
     @Override
-    void release(FileLockImpl fli) throws IOException {
-        try {
-            begin();
-            nd.release(fdObj, fli.position(), fli.size());
-            removeFromFileLockTable(fli);
-        } finally {
-            end();
-        }
+    protected void implRelease(FileLockImpl fli) throws IOException {
+        nd.release(fdObj, fli.position(), fli.size());
     }
 
     @Override

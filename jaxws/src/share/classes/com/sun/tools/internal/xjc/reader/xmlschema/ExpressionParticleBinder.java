@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema;
 
 import java.util.Collection;
@@ -83,7 +82,9 @@ final class ExpressionParticleBinder extends ParticleBinder {
                 continue;
             }
             if(e instanceof GWildcardElement) {
-                rtsb.getRefs().add(new RawTypeSetBuilder.WildcardRef(WildcardMode.SKIP));
+                GWildcardElement w = (GWildcardElement)e;
+                rtsb.getRefs().add(new RawTypeSetBuilder.WildcardRef(
+                    w.isStrict() ? WildcardMode.STRICT : WildcardMode.SKIP));
                 continue;
             }
             assert false : e;   // no other kind should be here

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema.bindinfo;
 
 import java.util.HashMap;
@@ -62,7 +61,13 @@ public final class BIEnum extends AbstractDeclarationImpl {
 
     /** Gets the specified class name, or null if not specified. */
     @XmlAttribute(name="name")
-    public final String className = null;
+    public String className = null;
+
+    /**
+     * @see BIClass#getExistingClassRef()
+     */
+    @XmlAttribute(name="ref")
+    public String ref;
 
     /**
      * Gets the javadoc comment specified in the customization.
@@ -90,6 +95,11 @@ public final class BIEnum extends AbstractDeclarationImpl {
         super.setParent(p);
         for( BIEnumMember mem : members.values() )
             mem.setParent(p);
+
+        // if this specifies a reference to external class,
+        // then it's OK even if noone actually refers this class.
+        if(ref!=null)
+            markAsAcknowledged();
     }
 
     /** Name of this declaration. */

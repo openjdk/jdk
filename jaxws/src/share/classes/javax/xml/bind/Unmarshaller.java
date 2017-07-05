@@ -271,7 +271,7 @@ import java.io.Reader;
  *     </tr>
  *     <tr>
  *       <td>scope</td>
- *       <td><code>null</code> <i>(actual scope is unknown)</i></td>
+ *       <td><code>null</code> <i>(actual scope is unknown)</td>
  *     </tr>
  *   </tbody>
  *  </table>
@@ -402,6 +402,7 @@ import java.io.Reader;
  * </blockquote>
  *
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
+ * @version $Revision: 1.31 $ $Date: 2005/08/15 20:54:42 $
  * @see JAXBContext
  * @see Marshaller
  * @see Validator
@@ -708,7 +709,7 @@ public interface Unmarshaller {
      * and return the resulting content tree.
      *
      * <p>
-     * This method implements <a href="#unmarshalByDeclaredType">unmarshal by declaredType</a>.
+     * This method implements <a href="unmarshalByDeclaredType">unmarshal by declaredType</a>.
      * <p>
      * This method assumes that the parser is on a START_DOCUMENT or
      * START_ELEMENT event. Unmarshalling will be done from this
@@ -778,7 +779,7 @@ public interface Unmarshaller {
      * and return the resulting content tree.
      *
      * <p>
-     * This method implements <a href="#unmarshalByDeclaredType">unmarshal by declaredType</a>.
+     * This method implements <a href="unmarshalByDeclaredType">unmarshal by declaredType</a>.
      *
      * <p>
      * This method assumes that the parser is on a START_DOCUMENT or

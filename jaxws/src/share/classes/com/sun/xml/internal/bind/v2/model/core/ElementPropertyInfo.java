@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.core;
 
 import java.util.List;
@@ -81,6 +80,14 @@ public interface ElementPropertyInfo<T,C> extends PropertyInfo<T,C> {
      *      or it can be non-null (in which case there'll be a wrapper)
      */
     QName getXmlName();
+
+    /**
+     * Checks if the wrapper element is required.
+     *
+     * @return
+     *      Always false if {@link #getXmlName()}==null.
+     */
+    boolean isCollectionRequired();
 
     /**
      * Returns true if this property is nillable

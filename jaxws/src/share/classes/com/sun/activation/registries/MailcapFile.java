@@ -182,7 +182,8 @@ public class MailcapFile {
      */
     public String[] getNativeCommands(String mime_type) {
         String[] cmds = null;
-        List v = (List)native_commands.get(mime_type.toLowerCase());
+        List v =
+            (List)native_commands.get(mime_type.toLowerCase(Locale.ENGLISH));
         if (v != null) {
             cmds = new String[v.size()];
             cmds = (String[])v.toArray(cmds);
@@ -301,7 +302,8 @@ public class MailcapFile {
             reportParseError(MailcapTokenizer.STRING_TOKEN, currentToken,
                                         tokenizer.getCurrentTokenValue());
         }
-        String primaryType = tokenizer.getCurrentTokenValue().toLowerCase();
+        String primaryType =
+            tokenizer.getCurrentTokenValue().toLowerCase(Locale.ENGLISH);
         String subType = "*";
 
         //      parse the '/' between primary and sub
@@ -322,7 +324,8 @@ public class MailcapFile {
                 reportParseError(MailcapTokenizer.STRING_TOKEN,
                             currentToken, tokenizer.getCurrentTokenValue());
             }
-            subType = tokenizer.getCurrentTokenValue().toLowerCase();
+            subType =
+                tokenizer.getCurrentTokenValue().toLowerCase(Locale.ENGLISH);
 
             //  get the next token to simplify the next step
             currentToken = tokenizer.nextToken();
@@ -386,8 +389,8 @@ public class MailcapFile {
                     reportParseError(MailcapTokenizer.STRING_TOKEN,
                             currentToken, tokenizer.getCurrentTokenValue());
                 }
-                String paramName =
-                    tokenizer.getCurrentTokenValue().toLowerCase();
+                String paramName = tokenizer.getCurrentTokenValue().
+                                                toLowerCase(Locale.ENGLISH);
 
                 //      parse the '=' which separates the name from the value
                 currentToken = tokenizer.nextToken();
