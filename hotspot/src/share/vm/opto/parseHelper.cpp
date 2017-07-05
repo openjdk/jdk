@@ -200,7 +200,7 @@ void Parse::array_store_check() {
   // Come here for polymorphic array klasses
 
   // Extract the array element class
-  int element_klass_offset = in_bytes(objArrayKlass::element_klass_offset());
+  int element_klass_offset = in_bytes(ObjArrayKlass::element_klass_offset());
   Node *p2 = basic_plus_adr(array_klass, array_klass, element_klass_offset);
   Node *a_e_klass = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p2, tak) );
 

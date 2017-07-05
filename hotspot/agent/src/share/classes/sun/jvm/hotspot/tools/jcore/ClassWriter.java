@@ -354,15 +354,14 @@ public class ClassWriter implements /* imports */ ClassConstants
     }
 
     protected void writeFields() throws IOException {
-        U2Array fields = klass.getFields();
-        final int length = (int) fields.length();
+        final int javaFieldsCount = klass.getJavaFieldsCount();
 
         // write number of fields
-        dos.writeShort((short) length);
+        dos.writeShort((short) javaFieldsCount);
 
-        if (DEBUG) debugMessage("number of fields = " + length);
+        if (DEBUG) debugMessage("number of fields = " + javaFieldsCount);
 
-        for (int index = 0; index < length; index++) {
+        for (int index = 0; index < javaFieldsCount; index++) {
             short accessFlags    = klass.getFieldAccessFlags(index);
             dos.writeShort(accessFlags & (short) JVM_RECOGNIZED_FIELD_MODIFIERS);
 

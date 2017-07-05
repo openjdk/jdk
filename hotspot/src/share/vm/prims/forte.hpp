@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 class Forte : AllStatic {
  public:
    static void register_stub(const char* name, address start, address end)
-                                                 KERNEL_RETURN;
+                                                 NOT_JVMTI_RETURN;
                                                  // register internal VM stub
 };
 

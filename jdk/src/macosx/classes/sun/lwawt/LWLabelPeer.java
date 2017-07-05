@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,27 +26,18 @@
 
 package sun.lwawt;
 
-import java.awt.Dimension;
-import java.awt.FontMetrics;
 import java.awt.Label;
 import java.awt.peer.LabelPeer;
 
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
-import javax.tools.annotation.GenerateNativeHeader;
-
 /**
  * Lightweight implementation of {@link LabelPeer}. Delegates most of the work
  * to the {@link JLabel}.
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 final class LWLabelPeer extends LWComponentPeer<Label, JLabel>
         implements LabelPeer {
-
-    private static final int TEXT_XPAD = 5;
-    private static final int TEXT_YPAD = 1;
 
     LWLabelPeer(final Label target, final PlatformComponent platformComponent) {
         super(target, platformComponent);
@@ -54,9 +45,7 @@ final class LWLabelPeer extends LWComponentPeer<Label, JLabel>
 
     @Override
     protected JLabel createDelegate() {
-        final JLabel label = new JLabel();
-        label.setVerticalAlignment(SwingConstants.TOP);
-        return label;
+        return new JLabel();
     }
 
     @Override
@@ -78,24 +67,6 @@ final class LWLabelPeer extends LWComponentPeer<Label, JLabel>
         synchronized (getDelegateLock()) {
             getDelegate().setHorizontalAlignment(convertAlignment(alignment));
         }
-    }
-
-    @Override
-    public Dimension getMinimumSize() {
-        int w = TEXT_XPAD;
-        int h = TEXT_YPAD;
-        final FontMetrics fm = getFontMetrics(getFont());
-        if (fm != null) {
-            final String text;
-            synchronized (getDelegateLock()) {
-                text = getDelegate().getText();
-            }
-            if (text != null) {
-                w += fm.stringWidth(text);
-            }
-            h += fm.getHeight();
-        }
-        return new Dimension(w, h);
     }
 
     /**

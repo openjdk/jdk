@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ class Compilation: public StackObj {
   int _next_block_id;
   AbstractCompiler*  _compiler;
   ciEnv*             _env;
+  CompileLog*        _log;
   ciMethod*          _method;
   int                _osr_bci;
   IR*                _hir;
@@ -123,6 +124,7 @@ class Compilation: public StackObj {
 
   // accessors
   ciEnv* env() const                             { return _env; }
+  CompileLog* log() const                        { return _log; }
   AbstractCompiler* compiler() const             { return _compiler; }
   bool has_exception_handlers() const            { return _has_exception_handlers; }
   bool has_fpu_code() const                      { return _has_fpu_code; }

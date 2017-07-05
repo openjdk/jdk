@@ -28,6 +28,11 @@ LIBRARY = osxapp
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
+GEN_DIR=$(GENSRCDIR)/sun/osxapp
+ICON_DATA = $(GEN_DIR)/AWTIconData.h
+
+CLASSES_INIT += $(ICON_DATA)
+
 #
 # Files
 #
@@ -63,6 +68,7 @@ OTHER_LDLIBS += \
 	-framework QuartzCore
 
 CPPFLAGS += \
+        -I$(GEN_DIR) \
         $(call NativeSrcDirList,-I,/native/sun/osxapp)
 
 
@@ -70,6 +76,34 @@ ifeq ($(MILESTONE), internal)
   CPPFLAGS += -DINTERNAL_BUILD
 endif
 
-clean clobber::
+TEMPDIR_CLASSES = $(TEMPDIR)/classes
 
-.PHONY:
+$(TEMPDIR_CLASSES)/sun/osxapp/ToBin.class: ToBin.java
+	@$(prep-target)
+	$(BOOT_JAVAC_CMD) -d $(TEMPDIR_CLASSES) $<
+
+ifdef OPENJDK
+    ICONS_PATH_PREFIX=$(PLATFORM_SRC_MACOS)
+else
+    ICONS_PATH_PREFIX=$(CLOSED_SRC)/macosx
+endif
+
+generated.clean:
+	$(RM) -r $(GEN_DIR)/*.h
+
+ICONPATH=$(ICONS_PATH_PREFIX)/native/sun/osxapp/resource/icons
+ICON = $(ICONPATH)/JavaApp.icns
+
+$(GEN_DIR)/AWTIconData.h: $(TEMPDIR_CLASSES)/sun/osxapp/ToBin.class $(ICON) 
+	$(prep-target)
+	$(RM) $(ICON_DATA)
+	$(ECHO) "static unsigned char sAWTIconData[] = { " >> $(ICON_DATA);  \
+	$(CAT) $(ICON) | \
+	    $(BOOT_JAVA_CMD) -cp $(TEMPDIR_CLASSES) -Djava.awt.headless=true \
+	    sun.osxapp.ToBin >> $(ICON_DATA); \
+	$(ECHO) "};" >> $(ICON_DATA);
+
+
+clean clobber:: generated.clean
+
+.PHONY: generated.clean

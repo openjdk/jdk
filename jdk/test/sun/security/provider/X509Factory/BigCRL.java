@@ -25,7 +25,7 @@
  * @test
  * @bug 7099399
  * @summary cannot deal with CRL file larger than 16MB
- * @run main/othervm -Xmx1024m BigCRL
+ * @run main/othervm -Xshare:off -Xmx1024m BigCRL
  */
 
 import java.io.FileInputStream;

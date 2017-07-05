@@ -62,7 +62,7 @@ import java.math.RoundingMode;
  * derived by placing all the digits of the list to the right of the
  * decimal point, by 10^exponent.
  *
- * @see  Locale
+ * @see  java.util.Locale
  * @see  Format
  * @see  NumberFormat
  * @see  DecimalFormat

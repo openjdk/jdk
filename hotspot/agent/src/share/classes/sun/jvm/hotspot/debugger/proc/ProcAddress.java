@@ -76,6 +76,10 @@ class ProcAddress implements Address {
     return debugger.readCompOopAddress(addr + offset);
   }
 
+  public Address getCompKlassAddressAt(long offset) throws UnalignedAddressException, UnmappedAddressException {
+    return debugger.readCompKlassAddress(addr + offset);
+  }
+
   //
   // Java-related routines
   //

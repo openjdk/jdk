@@ -63,11 +63,7 @@ public class java_lang_Class {
 
   /** get Klass* field at offset hc_klass_offset from a java.lang.Class object */
   public static Klass asKlass(Oop aClass) {
-    if (VM.getVM().isCompressedHeadersEnabled()) {
-      throw new InternalError("unimplemented");
-    } else {
-      return (Klass)Metadata.instantiateWrapperFor(aClass.getHandle().getAddressAt(klassOffset));
-    }
+    return (Klass)Metadata.instantiateWrapperFor(aClass.getHandle().getAddressAt(klassOffset));
   }
 
   /** get oop_size field at offset oop_size_offset from a java.lang.Class object */

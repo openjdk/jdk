@@ -324,24 +324,6 @@ vmIntrinsics::ID vmIntrinsics::for_raw_conversion(BasicType src, BasicType dest)
   return vmIntrinsics::_none;
 }
 
-Method* vmIntrinsics::method_for(vmIntrinsics::ID id) {
-  if (id == _none)  return NULL;
-  Symbol* cname = vmSymbols::symbol_at(class_for(id));
-  Symbol* mname = vmSymbols::symbol_at(name_for(id));
-  Symbol* msig  = vmSymbols::symbol_at(signature_for(id));
-  if (cname == NULL || mname == NULL || msig == NULL)  return NULL;
-  Klass* k = SystemDictionary::find_well_known_klass(cname);
-  if (k == NULL)  return NULL;
-  Method* m = InstanceKlass::cast(k)->find_method(mname, msig);
-  if (m == NULL &&
-      cname == vmSymbols::java_lang_invoke_MethodHandle() &&
-      msig == vmSymbols::star_name()) {
-    // Any signature polymorphic method is represented by a fixed concrete signature:
-    m = InstanceKlass::cast(k)->find_method(mname, vmSymbols::object_array_object_signature());
-  }
-  return m;
-}
-
 
 #define VM_INTRINSIC_INITIALIZE(id, klass, name, sig, flags) #id "\0"
 static const char* vm_intrinsic_name_bodies =

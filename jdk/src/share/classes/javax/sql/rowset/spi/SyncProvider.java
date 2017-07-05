@@ -293,7 +293,7 @@ public abstract class SyncProvider {
      *           SyncProvider.DATASOURCE_TABLE_LOCK,
      *           SyncProvider.DATASOURCE_DB_LOCK
      * </pre>
-     * @throws SyncProviderExceptiom if an error occurs determining the data
+     * @throws SyncProviderException if an error occurs determining the data
      *        source locking level.
      * @see #setDataSourceLock
 

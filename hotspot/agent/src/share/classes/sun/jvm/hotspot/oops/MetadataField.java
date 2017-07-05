@@ -27,7 +27,6 @@ package sun.jvm.hotspot.oops;
 import sun.jvm.hotspot.runtime.VMObject;
 import sun.jvm.hotspot.debugger.*;
 
-// The class for an C int field simply provides access to the value.
 public class MetadataField extends Field {
 
   public MetadataField(sun.jvm.hotspot.types.AddressField vmField, long startOffset) {

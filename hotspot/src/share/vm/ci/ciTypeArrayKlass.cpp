@@ -35,7 +35,7 @@
 // ciTypeArrayKlass::ciTypeArrayKlass
 ciTypeArrayKlass::ciTypeArrayKlass(KlassHandle h_k) : ciArrayKlass(h_k) {
   assert(get_Klass()->oop_is_typeArray(), "wrong type");
-  assert(element_type() == get_typeArrayKlass()->element_type(), "");
+  assert(element_type() == get_TypeArrayKlass()->element_type(), "");
 }
 
 // ------------------------------------------------------------------

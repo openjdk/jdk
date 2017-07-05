@@ -1392,7 +1392,7 @@ void ADLParser::pipe_parse(void) {
       _AD.addForm(machnode);
     }
     else if (!strcmp(ident, "attributes")) {
-      bool vsi_seen = false, bhds_seen = false;
+      bool vsi_seen = false;
 
       skipws();
       if ( (_curchar != '%')
@@ -1436,7 +1436,6 @@ void ADLParser::pipe_parse(void) {
           }
 
           pipeline->_branchHasDelaySlot = true;
-          bhds_seen = true;
           continue;
         }
 
@@ -1638,6 +1637,12 @@ void ADLParser::resource_parse(PipelineForm &pipeline) {
   do {
     next_char();                   // Skip "(" or ","
     ident = get_ident();           // Grab next identifier
+
+    if (_AD._adl_debug > 1) {
+      if (ident != NULL) {
+        fprintf(stderr, "resource_parse: identifier: %s\n", ident);
+      }
+    }
 
     if (ident == NULL) {
       parse_err(SYNERR, "keyword identifier expected at \"%c\"\n", _curchar);
@@ -2427,7 +2432,6 @@ InstructForm *ADLParser::peep_match_child_parse(PeepMatch &match, int parent, in
   int        lparen = 0;          // keep track of parenthesis nesting depth
   int        rparen = 0;          // position of instruction at this depth
   InstructForm *inst_seen  = NULL;
-  InstructForm *child_seen = NULL;
 
   // Walk the match tree,
   // Record <parent, position, instruction name, input position>
@@ -2437,7 +2441,7 @@ InstructForm *ADLParser::peep_match_child_parse(PeepMatch &match, int parent, in
     if (_curchar == '(') {
       ++lparen;
       next_char();
-      child_seen = peep_match_child_parse(match, parent, position, rparen);
+      ( void ) peep_match_child_parse(match, parent, position, rparen);
     }
     // Right paren signals end of an input, may be more
     else if (_curchar == ')') {
@@ -3154,6 +3158,9 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
 
 
 //------------------------------size_parse-----------------------------------
+// Parse a 'size(<expr>)' attribute which specifies the size of the
+// emitted instructions in bytes. <expr> can be a C++ expression,
+// e.g. a constant.
 char* ADLParser::size_parse(InstructForm *instr) {
   char* sizeOfInstr = NULL;
 
@@ -4274,7 +4281,17 @@ char *ADLParser::get_ident_common(bool do_preproc) {
             || ((c >= '0') && (c <= '9'))
             || ((c == '_')) || ((c == ':')) || ((c == '#')) );
   if (start == end) {             // We popped out on the first try
-    parse_err(SYNERR, "identifier expected at %c\n", c);
+    // It can occur that `start' contains the rest of the input file.
+    // In this case the output should be truncated.
+    if (strlen(start) > 24) {
+      char buf[32];
+      strncpy(buf, start, 20);
+      buf[20] = '\0';
+      strcat(buf, "[...]");
+      parse_err(SYNERR, "Identifier expected, but found '%s'.", buf);
+    } else {
+      parse_err(SYNERR, "Identifier expected, but found '%s'.", start);
+    }
     start = NULL;
   }
   else {

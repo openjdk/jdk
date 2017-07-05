@@ -188,10 +188,10 @@ void ParCompactionManager::follow_marking_stacks() {
     // Process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
     if (_objarray_stack.pop_overflow(task)) {
-      objArrayKlass* const k = (objArrayKlass*)task.obj()->klass();
+      ObjArrayKlass* const k = (ObjArrayKlass*)task.obj()->klass();
       k->oop_follow_contents(this, task.obj(), task.index());
     } else if (_objarray_stack.pop_local(task)) {
-      objArrayKlass* const k = (objArrayKlass*)task.obj()->klass();
+      ObjArrayKlass* const k = (ObjArrayKlass*)task.obj()->klass();
       k->oop_follow_contents(this, task.obj(), task.index());
     }
   } while (!marking_stacks_empty());

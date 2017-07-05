@@ -208,8 +208,6 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   Register O1_scratch    = O1;
   Register O4_param_size = O4;   // size of parameters
 
-  address code_start = __ pc();
-
   // here's where control starts out:
   __ align(CodeEntryAlignment);
   address entry_point = __ pc();
@@ -252,22 +250,9 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   // O4_first_arg_addr is live!
 
   if (TraceMethodHandles) {
-    const char* name = vmIntrinsics::name_at(iid);
-    if (*name == '_')  name += 1;
-    const size_t len = strlen(name) + 50;
-    char* qname = NEW_C_HEAP_ARRAY(char, len, mtInternal);
-    const char* suffix = "";
-    if (vmIntrinsics::method_for(iid) == NULL ||
-        !vmIntrinsics::method_for(iid)->access_flags().is_public()) {
-      if (is_signature_polymorphic_static(iid))
-        suffix = "/static";
-      else
-        suffix = "/private";
-    }
-    jio_snprintf(qname, len, "MethodHandle::interpreter_entry::%s%s", name, suffix);
     if (O0_mh != noreg)
       __ mov(O0_mh, G3_method_handle);  // make stub happy
-    trace_method_handle(_masm, qname);
+    trace_method_handle_interpreter_entry(_masm, iid);
   }
 
   if (iid == vmIntrinsics::_invokeBasic) {
@@ -285,14 +270,6 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     __ ld_ptr(__ argument_address(constant(0)), G5_member);
     __ add(Gargs, Interpreter::stackElementSize, Gargs);
     generate_method_handle_dispatch(_masm, iid, O0_recv, G5_member, not_for_compiler_entry);
-  }
-
-  if (PrintMethodHandleStubs) {
-    address code_end = __ pc();
-    tty->print_cr("--------");
-    tty->print_cr("method handle interpreter entry for %s", vmIntrinsics::name_at(iid));
-    Disassembler::decode(code_start, code_end);
-    tty->cr();
   }
 
   return entry_point;
