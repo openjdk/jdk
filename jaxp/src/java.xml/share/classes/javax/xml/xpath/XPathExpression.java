@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 
 package javax.xml.xpath;
 
-import org.xml.sax.InputSource;
 import javax.xml.namespace.QName;
+import org.xml.sax.InputSource;
 
 /**
- * <p><code>XPathExpression</code> provides access to compiled XPath expressions.</p>
+ * <p>{@code XPathExpression} provides access to compiled XPath expressions.</p>
  *
  * <a name="XPathExpression-evaluation"/>
  * <table border="1" cellpadding="2">
@@ -53,7 +53,7 @@ import javax.xml.namespace.QName;
  *      <td>
  *        If the expression contains a variable reference, its value will be found through the {@link XPathVariableResolver}.
  *        An {@link XPathExpressionException} is raised if the variable resolver is undefined or
- *        the resolver returns <code>null</code> for the variable.
+ *        the resolver returns {@code null} for the variable.
  *        The value of a variable must be immutable through the course of any single evaluation.</p>
  *      </td>
  *    </tr>
@@ -62,7 +62,7 @@ import javax.xml.namespace.QName;
  *      <td>
  *        If the expression contains a function reference, the function will be found through the {@link XPathFunctionResolver}.
  *        An {@link XPathExpressionException} is raised if the function resolver is undefined or
- *        the function resolver returns <code>null</code> for the function.</p>
+ *        the function resolver returns {@code null} for the function.</p>
  *      </td>
  *    </tr>
  *    <tr>
@@ -84,9 +84,9 @@ import javax.xml.namespace.QName;
  * <p>An XPath expression is not thread-safe and not reentrant.
  * In other words, it is the application's responsibility to make
  * sure that one {@link XPathExpression} object is not used from
- * more than one thread at any given time, and while the <code>evaluate</code>
+ * more than one thread at any given time, and while the {@code evaluate}
  * method is invoked, applications may not recursively call
- * the <code>evaluate</code> method.
+ * the {@code evaluate} method.
  * <p>
  *
  * @author  <a href="mailto:Norman.Walsh@Sun.com">Norman Walsh</a>
@@ -96,50 +96,56 @@ import javax.xml.namespace.QName;
  */
 public interface XPathExpression {
 
+
     /**
      * <p>Evaluate the compiled XPath expression in the specified context and return the result as the specified type.</p>
      *
      * <p>See <a href="#XPathExpression-evaluation">Evaluation of XPath Expressions</a> for context item evaluation,
      * variable, function and QName resolution and return type conversion.</p>
      *
-     * <p>If <code>returnType</code> is not one of the types defined in {@link XPathConstants},
-     * then an <code>IllegalArgumentException</code> is thrown.</p>
+     * <p>
+     * The parameter {@code item} represents the context the XPath expression
+     * will be operated on. The type of the context is implementation-dependent.
+     * If the value is {@code null}, the operation must have no dependency on
+     * the context, otherwise an XPathExpressionException will be thrown.
      *
-     * <p>If a <code>null</code> value is provided for
-     * <code>item</code>, an empty document will be used for the
-     * context.
-     * If <code>returnType</code> is <code>null</code>, then a <code>NullPointerException</code> is thrown.</p>
+     * @implNote
+     * The type of the context is usually {@link org.w3c.dom.Node}.
      *
-     * @param item The starting context (a node, for example).
-     * @param returnType The desired return type.
+     * @param item The context the XPath expression will be evaluated in.
+     * @param returnType The result type expected to be returned by the XPath expression.
      *
-     * @return The <code>Object</code> that is the result of evaluating the expression and converting the result to
-     *   <code>returnType</code>.
+     * @return The {@code Object} that is the result of evaluating the expression and converting the result to
+     *   {@code returnType}.
      *
      * @throws XPathExpressionException If the expression cannot be evaluated.
-     * @throws IllegalArgumentException If <code>returnType</code> is not one of the types defined in {@link XPathConstants}.
-     * @throws NullPointerException If  <code>returnType</code> is <code>null</code>.
+     * @throws IllegalArgumentException If {@code returnType} is not one of the types defined in {@link XPathConstants}.
+     * @throws NullPointerException If {@code returnType} is {@code null}.
      */
     public Object evaluate(Object item, QName returnType)
         throws XPathExpressionException;
 
     /**
-     * <p>Evaluate the compiled XPath expression in the specified context and return the result as a <code>String</code>.</p>
+     * <p>Evaluate the compiled XPath expression in the specified context and return the result as a {@code String}.</p>
      *
-     * <p>This method calls {@link #evaluate(Object item, QName returnType)} with a <code>returnType</code> of
+     * <p>This method calls {@link #evaluate(Object item, QName returnType)} with a {@code returnType} of
      * {@link XPathConstants#STRING}.</p>
      *
      * <p>See <a href="#XPathExpression-evaluation">Evaluation of XPath Expressions</a> for context item evaluation,
      * variable, function and QName resolution and return type conversion.</p>
      *
-     * <p>If a <code>null</code> value is provided for
-     * <code>item</code>, an empty document will be used for the
-     * context.
+     * <p>
+     * The parameter {@code item} represents the context the XPath expression
+     * will be operated on. The type of the context is implementation-dependent.
+     * If the value is {@code null}, the operation must have no dependency on
+     * the context, otherwise an XPathExpressionException will be thrown.
      *
-     * @param item The starting context (a node, for example).
+     * @implNote
+     * The type of the context is usually {@link org.w3c.dom.Node}.
      *
-     * @return The <code>String</code> that is the result of evaluating the expression and converting the result to a
-     *   <code>String</code>.
+     * @param item The context the XPath expression will be evaluated in.
+     *
+     * @return The result of evaluating an XPath expression as a {@code String}.
      *
      * @throws XPathExpressionException If the expression cannot be evaluated.
      */
@@ -147,7 +153,7 @@ public interface XPathExpression {
         throws XPathExpressionException;
 
     /**
-     * <p>Evaluate the compiled XPath expression in the context of the specified <code>InputSource</code> and return the result as the
+     * <p>Evaluate the compiled XPath expression in the context of the specified {@code InputSource} and return the result as the
      * specified type.</p>
      *
      * <p>This method builds a data model for the {@link InputSource} and calls
@@ -156,45 +162,225 @@ public interface XPathExpression {
      * <p>See <a href="#XPathExpression-evaluation">Evaluation of XPath Expressions</a> for context item evaluation,
      * variable, function and QName resolution and return type conversion.</p>
      *
-     * <p>If <code>returnType</code> is not one of the types defined in {@link XPathConstants},
-     * then an <code>IllegalArgumentException</code> is thrown.</p>
+     * <p>If {@code returnType} is not one of the types defined in {@link XPathConstants},
+     * then an {@code IllegalArgumentException} is thrown.</p>
      *
-     * <p>If <code>source</code> or <code>returnType</code> is <code>null</code>,
-     * then a <code>NullPointerException</code> is thrown.</p>
+     * <p>If {@code source} or {@code returnType} is {@code null},
+     * then a {@code NullPointerException} is thrown.</p>
      *
-     * @param source The <code>InputSource</code> of the document to evaluate over.
+     * @param source The {@code InputSource} of the document to evaluate over.
      * @param returnType The desired return type.
      *
-     * @return The <code>Object</code> that is the result of evaluating the expression and converting the result to
-     *   <code>returnType</code>.
+     * @return The {@code Object} that is the result of evaluating the expression and converting the result to
+     *   {@code returnType}.
      *
      * @throws XPathExpressionException If the expression cannot be evaluated.
-     * @throws IllegalArgumentException If <code>returnType</code> is not one of the types defined in {@link XPathConstants}.
-     * @throws NullPointerException If  <code>source</code> or <code>returnType</code> is <code>null</code>.
+     * @throws IllegalArgumentException If {@code returnType} is not one of the types defined in {@link XPathConstants}.
+     * @throws NullPointerException If {@code source or returnType} is {@code null}.
      */
     public Object evaluate(InputSource source, QName returnType)
         throws XPathExpressionException;
 
     /**
-     * <p>Evaluate the compiled XPath expression in the context of the specified <code>InputSource</code> and return the result as a
-     * <code>String</code>.</p>
+     * <p>Evaluate the compiled XPath expression in the context of the specified {@code InputSource} and return the result as a
+     * {@code String}.</p>
      *
-     * <p>This method calls {@link #evaluate(InputSource source, QName returnType)} with a <code>returnType</code> of
+     * <p>This method calls {@link #evaluate(InputSource source, QName returnType)} with a {@code returnType} of
      * {@link XPathConstants#STRING}.</p>
      *
      * <p>See <a href="#XPathExpression-evaluation">Evaluation of XPath Expressions</a> for context item evaluation,
      * variable, function and QName resolution and return type conversion.</p>
      *
-     * <p>If <code>source</code> is <code>null</code>, then a <code>NullPointerException</code> is thrown.</p>
+     * <p>If {@code source} is {@code null}, then a {@code NullPointerException} is thrown.</p>
      *
-     * @param source The <code>InputSource</code> of the document to evaluate over.
+     * @param source The {@code InputSource} of the document to evaluate over.
      *
-     * @return The <code>String</code> that is the result of evaluating the expression and converting the result to a
-     *   <code>String</code>.
+     * @return The {@code String} that is the result of evaluating the expression and converting the result to a
+     *   {@code String}.
      *
      * @throws XPathExpressionException If the expression cannot be evaluated.
-     * @throws NullPointerException If  <code>source</code> is <code>null</code>.
+     * @throws NullPointerException If {@code source} is {@code null}.
      */
     public String evaluate(InputSource source)
         throws XPathExpressionException;
+
+    /**
+     * Evaluate the compiled XPath expression in the specified context, and return
+     * the result with the type specified through the {@code class type}.
+     *
+     * <p>
+     * The parameter {@code item} represents the context the XPath expression
+     * will be operated on. The type of the context is implementation-dependent.
+     * If the value is {@code null}, the operation must have no dependency on
+     * the context, otherwise an XPathExpressionException will be thrown.
+     *
+     * @implNote
+     * The type of the context is usually {@link org.w3c.dom.Node}.
+     *
+     * @implSpec
+     * The default implementation in the XPath API is equivalent to:
+     * <pre> {@code
+     *     (T)evaluate(item, XPathEvaluationResult.XPathResultType.getQNameType(type));
+     * }</pre>
+     *
+     * Since the {@code evaluate} method does not support the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type, specifying
+     * XPathEvaluationResult as the type will result in IllegalArgumentException.
+     * Any implementation supporting the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type must override
+     * this method.
+     *
+     * @param <T> The class type that will be returned by the XPath expression.
+     * @param item The context the XPath expression will be evaluated in.
+     * @param type The class type expected to be returned by the XPath expression.
+     *
+     * @return The result of evaluating the expression.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
+     * @throws IllegalArgumentException If {@code type} is not of the types
+     * corresponding to the types defined in the {@link XPathEvaluationResult.XPathResultType
+     * XPathResultType}, or XPathEvaluationResult is specified as the type but an
+     * implementation supporting the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type is not available.
+     * @throws NullPointerException If {@code type} is {@code null}.
+     *
+     * @since 1.9
+     */
+    default <T>T evaluateExpression(Object item, Class<T> type)
+        throws XPathExpressionException
+    {
+        return type.cast(evaluate(item, XPathEvaluationResult.XPathResultType.getQNameType(type)));
+    }
+
+    /**
+     * Evaluate the compiled XPath expression in the specified context. This is
+     * equivalent to calling {@link #evaluateExpression(Object item, Class type)}
+     * with type {@link XPathEvaluationResult}:
+     * <pre> {@code
+     *     evaluateExpression(item, XPathEvaluationResult.class);
+     * }</pre>
+     * <p>
+     * The parameter {@code item} represents the context the XPath expression
+     * will be operated on. The type of the context is implementation-dependent.
+     * If the value is {@code null}, the operation must have no dependency on
+     * the context, otherwise an XPathExpressionException will be thrown.
+     *
+     * @implNote
+     * The type of the context is usually {@link org.w3c.dom.Node}.
+     *
+     * @implSpec
+     * The default implementation in the XPath API is equivalent to:
+     * <pre> {@code
+     *     evaluateExpression(item, XPathEvaluationResult.class);
+     * }</pre>
+     *
+     * Since the {@code evaluate} method does not support the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY}
+     * type, the default implementation of this method will always throw an
+     * IllegalArgumentException. Any implementation supporting the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type must therefore
+     * override this method.
+     *
+     * @param item The context the XPath expression will be evaluated in.
+     *
+     * @return The result of evaluating the expression.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
+     * @throws IllegalArgumentException If the implementation of this method
+     * does not support the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type.
+     *
+     * @since 1.9
+     */
+    default XPathEvaluationResult<?> evaluateExpression(Object item)
+        throws XPathExpressionException
+    {
+        return evaluateExpression(item, XPathEvaluationResult.class);
+    }
+
+    /**
+     * Evaluate the compiled XPath expression in the specified context,
+     * and return the result with the type specified through the {@code class type}
+     * <p>
+     * This method builds a data model for the {@link InputSource} and calls
+     * {@link #evaluateExpression(Object item, Class type)} on the resulting
+     * document object.
+     * <P>
+     * By default, the JDK's data model is {@link org.w3c.dom.Document}.
+     *
+     * @implSpec
+     * The default implementation in the XPath API is equivalent to:
+     * <pre> {@code
+           (T)evaluate(source, XPathEvaluationResult.XPathResultType.getQNameType(type));
+     * }</pre>
+     *
+     * Since the {@code evaluate} method does not support the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type, specifying
+     * XPathEvaluationResult as the type will result in IllegalArgumentException.
+     * Any implementation supporting the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type must override
+     * this method.
+     *
+     * @param <T> The class type that will be returned by the XPath expression.
+     * @param source The {@code InputSource} of the document to evaluate over.
+     * @param type The class type expected to be returned by the XPath expression.
+     *
+     * @return The result of evaluating the expression.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
+     * @throws IllegalArgumentException If {@code type} is not of the types
+     * corresponding to the types defined in the {@link XPathEvaluationResult.XPathResultType
+     * XPathResultType}, or XPathEvaluationResult is specified as the type but an
+     * implementation supporting the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type
+     * is not available.
+     * @throws NullPointerException If {@code source or type} is {@code null}.
+     *
+     * @since 1.9
+     */
+    default <T>T evaluateExpression(InputSource source, Class<T> type)
+        throws XPathExpressionException
+    {
+        return type.cast(evaluate(source, XPathEvaluationResult.XPathResultType.getQNameType(type)));
+    }
+
+    /**
+     * Evaluate the compiled XPath expression in the specified context. This is
+     * equivalent to calling {@link #evaluateExpression(InputSource source, Class type)}
+     * with type {@link XPathEvaluationResult}:
+     * <pre> {@code
+     *     evaluateExpression(source, XPathEvaluationResult.class);
+     * }</pre>
+     * <p>
+     *
+     * @implSpec
+     * The default implementation in the XPath API is equivalent to:
+     * <pre> {@code
+     *     (XPathEvaluationResult)evaluateExpression(source, XPathEvaluationResult.class);
+     * }</pre>
+     *
+     * Since the {@code evaluate} method does not support the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY}
+     * type, the default implementation of this method will always throw an
+     * IllegalArgumentException. Any implementation supporting the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type must therefore
+     * override this method.
+     *
+     * @param source The {@code InputSource} of the document to evaluate over.
+     *
+     * @return The result of evaluating the expression.
+     *
+     * @throws XPathExpressionException If the expression cannot be evaluated.
+     * @throws IllegalArgumentException If the implementation of this method
+     * does not support the
+     * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type.
+     * @throws NullPointerException If {@code source} is {@code null}.
+     *
+     * @since 1.9
+     */
+    default XPathEvaluationResult<?> evaluateExpression(InputSource source)
+        throws XPathExpressionException
+    {
+        return evaluateExpression(source, XPathEvaluationResult.class);
+    }
 }

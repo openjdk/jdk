@@ -699,6 +699,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
         }
         return;
     }
+    SetHandleInformation((HANDLE)(UINT_PTR)fd, HANDLE_FLAG_INHERIT, 0);
     (*env)->SetIntField(env, socketFdObj, IO_fd_fdID, fd);
 
     if (him.him.sa_family == AF_INET) {

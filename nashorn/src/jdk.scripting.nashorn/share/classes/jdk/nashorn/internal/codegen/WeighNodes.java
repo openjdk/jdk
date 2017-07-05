@@ -40,6 +40,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
+import jdk.nashorn.internal.ir.JumpToInlinedFinally;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
@@ -195,6 +196,12 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
     public Node leaveIndexNode(final IndexNode indexNode) {
         weight += ACCESS_WEIGHT;
         return indexNode;
+    }
+
+    @Override
+    public Node leaveJumpToInlinedFinally(final JumpToInlinedFinally jumpToInlinedFinally) {
+        weight += BREAK_WEIGHT;
+        return jumpToInlinedFinally;
     }
 
     @SuppressWarnings("rawtypes")

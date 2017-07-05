@@ -179,23 +179,23 @@ $(GENOFFS): $(DTRACE_SRCDIR)/$(GENOFFS)Main.c lib$(GENOFFS).dylib
 # $@.tmp is created first to avoid an empty $(JVMOFFS).h if an error occurs.
 $(JVMOFFS).h: $(GENOFFS)
 	$(QUIETLY) DYLD_LIBRARY_PATH=.:$(DYLD_LIBRARY_PATH) ./$(GENOFFS) -header > $@.tmp; touch $@; \
-	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
-	then rm -f $@; mv $@.tmp $@; \
-	else rm -f $@.tmp; \
+	if diff $@.tmp $@ > /dev/null 2>&1 ; \
+	then rm -f $@.tmp; \
+	else rm -f $@; mv $@.tmp $@; \
 	fi
 
 $(JVMOFFS)Index.h: $(GENOFFS)
 	$(QUIETLY) DYLD_LIBRARY_PATH=.:$(DYLD_LIBRARY_PATH) ./$(GENOFFS) -index > $@.tmp; touch $@; \
-	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
-	then rm -f $@; mv $@.tmp $@; \
-	else rm -f $@.tmp; \
+	if diff $@.tmp $@ > /dev/null 2>&1 ; \
+	then rm -f $@.tmp; \
+	else rm -f $@; mv $@.tmp $@; \
 	fi
 
 $(JVMOFFS).cpp: $(GENOFFS) $(JVMOFFS).h $(JVMOFFS)Index.h
 	$(QUIETLY) DYLD_LIBRARY_PATH=.:$(DYLD_LIBRARY_PATH) ./$(GENOFFS) -table > $@.tmp; touch $@; \
-	if [ `diff $@.tmp $@ > /dev/null 2>&1; echo $$?` -ne 0 ] ; \
-	then rm -f $@; mv $@.tmp $@; \
-	else rm -f $@.tmp; \
+	if diff $@.tmp $@ > /dev/null 2>&1; \
+	then rm -f $@.tmp; \
+	else rm -f $@; mv $@.tmp $@; \
 	fi
 
 $(JVMOFFS.o): $(JVMOFFS).h $(JVMOFFS).cpp 
