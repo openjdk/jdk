@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -183,7 +183,7 @@ trap 'nice_exit' EXIT
 
 subrepos="corba jaxp jaxws langtools jdk hotspot nashorn"
 jdk_subrepos_extra="closed jdk/src/closed jdk/make/closed jdk/test/closed hotspot/make/closed hotspot/src/closed hotspot/test/closed"
-subrepos_extra="$jdk_subrepos_extra deploy install sponsors pubs"
+subrepos_extra="$jdk_subrepos_extra deploy install sponsors"
 
 # Only look in specific locations for possible forests (avoids long searches)
 pull_default=""

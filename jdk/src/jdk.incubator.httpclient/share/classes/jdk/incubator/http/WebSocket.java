@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import java.util.concurrent.CompletionStage;
  * <p> To create a {@code WebSocket} use a {@linkplain HttpClient#newWebSocketBuilder(
  * URI, Listener) builder}. Once a {@code WebSocket} is built, it's ready
  * to send and receive messages. When the {@code WebSocket} is no longer needed
- * it must be closed: a Close message must both be {@linkplain #sendClose()
+ * it must be closed: a Close message must both be {@linkplain #sendClose
  * sent} and {@linkplain Listener#onClose(WebSocket, int, String) received}.
  * The {@code WebSocket} may be also closed {@linkplain #abort() abruptly}.
  *
@@ -92,17 +92,6 @@ public interface WebSocket {
      * @see Listener#onClose(WebSocket, int, String)
      */
     int NORMAL_CLOSURE = 1000;
-
-    /**
-     * The WebSocket Close message status code (<code>{@value}</code>), is
-     * designated for use in applications expecting a status code to indicate
-     * that the connection was closed abnormally, e.g., without sending or
-     * receiving a Close message.
-     *
-     * @see Listener#onClose(WebSocket, int, String)
-     * @see #abort()
-     */
-    int CLOSED_ABNORMALLY = 1006;
 
     /**
      * A builder for creating {@code WebSocket} instances.
@@ -509,7 +498,7 @@ public interface WebSocket {
          *
          * <p> The {@code WebSocket} will close at the earliest of completion of
          * the returned {@code CompletionStage} or sending a Close message. In
-         * particular, if a Close message has been {@link WebSocket#sendClose()
+         * particular, if a Close message has been {@linkplain WebSocket#sendClose
          * sent} before, then this invocation completes the closing handshake
          * and by the time this method is invoked, the {@code WebSocket} will
          * have been closed.
@@ -641,44 +630,6 @@ public interface WebSocket {
      * @return a {@code CompletableFuture} with this {@code WebSocket}
      */
     CompletableFuture<WebSocket> sendText(CharSequence message, boolean isLast);
-
-    /**
-     * Sends a whole Text message with characters from the given {@code
-     * CharSequence}.
-     *
-     * <p> This is a convenience method. For the general case, use {@link
-     * #sendText(CharSequence, boolean)}.
-     *
-     * <p> Returns a {@code CompletableFuture<WebSocket>} which completes
-     * normally when the message has been sent or completes exceptionally if an
-     * error occurs.
-     *
-     * <p> The {@code CharSequence} must not be modified until the returned
-     * {@code CompletableFuture} completes (either normally or exceptionally).
-     *
-     * <p> The returned {@code CompletableFuture} can complete exceptionally
-     * with:
-     * <ul>
-     * <li> {@link IllegalArgumentException} -
-     *          if {@code message} is a malformed UTF-16 sequence
-     * <li> {@link IllegalStateException} -
-     *          if the {@code WebSocket} is closed;
-     *          or if a Close message has been sent;
-     *          or if there is an outstanding send operation;
-     *          or if a previous Binary message was sent with {@code isLast == false}
-     * <li> {@link IOException} -
-     *          if an I/O error occurs during this operation;
-     *          or if the {@code WebSocket} has been closed due to an error;
-     * </ul>
-     *
-     * @param message
-     *         the message
-     *
-     * @return a {@code CompletableFuture} with this {@code WebSocket}
-     */
-    default CompletableFuture<WebSocket> sendText(CharSequence message) {
-        return sendText(message, true);
-    }
 
     /**
      * Sends a Binary message with bytes from the given {@code ByteBuffer}.
@@ -831,45 +782,8 @@ public interface WebSocket {
      *         the reason
      *
      * @return a {@code CompletableFuture} with this {@code WebSocket}
-     *
-     * @see #sendClose()
      */
     CompletableFuture<WebSocket> sendClose(int statusCode, String reason);
-
-    /**
-     * Sends an empty Close message.
-     *
-     * <p> When this method has been invoked, no further messages can be sent.
-     *
-     * <p> For more details on Close message see RFC 6455 section
-     * <a href="https://tools.ietf.org/html/rfc6455#section-5.5.1">5.5.1. Close</a>
-     *
-     * <p> The method returns a {@code CompletableFuture<WebSocket>} which
-     * completes normally when the message has been sent or completes
-     * exceptionally if an error occurs.
-     *
-     * <p> The returned {@code CompletableFuture} can complete exceptionally
-     * with:
-     * <ul>
-     * <li> {@link IOException} -
-     *          if an I/O error occurs during this operation;
-     *          or the {@code WebSocket} has been closed due to an error
-     * </ul>
-     *
-     * <p> If this method has already been invoked or the {@code WebSocket} is
-     * closed, then subsequent invocations of this method have no effect and the
-     * returned {@code CompletableFuture} completes normally.
-     *
-     * <p> If a Close message has been {@linkplain Listener#onClose(WebSocket,
-     * int, String) received} before, then this invocation completes the closing
-     * handshake and by the time the returned {@code CompletableFuture}
-     * completes, the {@code WebSocket} will have been closed.
-     *
-     * @return a {@code CompletableFuture} with this {@code WebSocket}
-     *
-     * @see #sendClose(int, String)
-     */
-    CompletableFuture<WebSocket> sendClose();
 
     /**
      * Allows {@code n} more messages to be received by the {@link Listener
@@ -928,8 +842,7 @@ public interface WebSocket {
      * state.
      *
      * <p> As the result {@link Listener#onClose(WebSocket, int, String)
-     * Listener.onClose} will be invoked with the status code {@link
-     * #CLOSED_ABNORMALLY} unless either {@code onClose} or {@link
+     * Listener.onClose} will be invoked unless either {@code onClose} or {@link
      * Listener#onError(WebSocket, Throwable) onError} has been invoked before.
      * In which case no additional invocation will happen.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,28 @@ class JNIHandles : AllStatic {
   static JNIHandleBlock* _weak_global_handles;        // First weak global handle block
   static oop _deleted_handle;                         // Sentinel marking deleted handles
 
+  inline static bool is_jweak(jobject handle);
+  inline static oop& jobject_ref(jobject handle); // NOT jweak!
+  inline static oop& jweak_ref(jobject handle);
+
+  template<bool external_guard> inline static oop guard_value(oop value);
+  template<bool external_guard> inline static oop resolve_impl(jobject handle);
+  template<bool external_guard> static oop resolve_jweak(jweak handle);
+
  public:
+  // Low tag bit in jobject used to distinguish a jweak.  jweak is
+  // type equivalent to jobject, but there are places where we need to
+  // be able to distinguish jweak values from other jobjects, and
+  // is_weak_global_handle is unsuitable for performance reasons.  To
+  // provide such a test we add weak_tag_value to the (aligned) byte
+  // address designated by the jobject to produce the corresponding
+  // jweak.  Accessing the value of a jobject must account for it
+  // being a possibly offset jweak.
+  static const uintptr_t weak_tag_size = 1;
+  static const uintptr_t weak_tag_alignment = (1u << weak_tag_size);
+  static const uintptr_t weak_tag_mask = weak_tag_alignment - 1;
+  static const int weak_tag_value = 1;
+
   // Resolve handle into oop
   inline static oop resolve(jobject handle);
   // Resolve externally provided handle into oop with some guards
@@ -176,36 +197,85 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   #endif
 };
 
+inline bool JNIHandles::is_jweak(jobject handle) {
+  STATIC_ASSERT(weak_tag_size == 1);
+  STATIC_ASSERT(weak_tag_value == 1);
+  return (reinterpret_cast<uintptr_t>(handle) & weak_tag_mask) != 0;
+}
+
+inline oop& JNIHandles::jobject_ref(jobject handle) {
+  assert(!is_jweak(handle), "precondition");
+  return *reinterpret_cast<oop*>(handle);
+}
+
+inline oop& JNIHandles::jweak_ref(jobject handle) {
+  assert(is_jweak(handle), "precondition");
+  char* ptr = reinterpret_cast<char*>(handle) - weak_tag_value;
+  return *reinterpret_cast<oop*>(ptr);
+}
+
+// external_guard is true if called from resolve_external_guard.
+// Treat deleted (and possibly zapped) as NULL for external_guard,
+// else as (asserted) error.
+template<bool external_guard>
+inline oop JNIHandles::guard_value(oop value) {
+  if (!external_guard) {
+    assert(value != badJNIHandle, "Pointing to zapped jni handle area");
+    assert(value != deleted_handle(), "Used a deleted global handle");
+  } else if ((value == badJNIHandle) || (value == deleted_handle())) {
+    value = NULL;
+  }
+  return value;
+}
+
+// external_guard is true if called from resolve_external_guard.
+template<bool external_guard>
+inline oop JNIHandles::resolve_impl(jobject handle) {
+  assert(handle != NULL, "precondition");
+  oop result;
+  if (is_jweak(handle)) {       // Unlikely
+    result = resolve_jweak<external_guard>(handle);
+  } else {
+    result = jobject_ref(handle);
+    // Construction of jobjects canonicalize a null value into a null
+    // jobject, so for non-jweak the pointee should never be null.
+    assert(external_guard || result != NULL,
+           "Invalid value read from jni handle");
+    result = guard_value<external_guard>(result);
+  }
+  return result;
+}
 
 inline oop JNIHandles::resolve(jobject handle) {
-  oop result = (handle == NULL ? (oop)NULL : *(oop*)handle);
-  assert(result != NULL || (handle == NULL || !CheckJNICalls || is_weak_global_handle(handle)), "Invalid value read from jni handle");
-  assert(result != badJNIHandle, "Pointing to zapped jni handle area");
+  oop result = NULL;
+  if (handle != NULL) {
+    result = resolve_impl<false /* external_guard */ >(handle);
+  }
   return result;
-};
+}
 
-
+// Resolve some erroneous cases to NULL, rather than treating them as
+// possibly unchecked errors.  In particular, deleted handles are
+// treated as NULL (though a deleted and later reallocated handle
+// isn't detected).
 inline oop JNIHandles::resolve_external_guard(jobject handle) {
-  if (handle == NULL) return NULL;
-  oop result = *(oop*)handle;
-  if (result == NULL || result == badJNIHandle) return NULL;
+  oop result = NULL;
+  if (handle != NULL) {
+    result = resolve_impl<true /* external_guard */ >(handle);
+  }
   return result;
-};
-
+}
 
 inline oop JNIHandles::resolve_non_null(jobject handle) {
   assert(handle != NULL, "JNI handle should not be null");
-  oop result = *(oop*)handle;
-  assert(result != NULL, "Invalid value read from jni handle");
-  assert(result != badJNIHandle, "Pointing to zapped jni handle area");
-  // Don't let that private _deleted_handle object escape into the wild.
-  assert(result != deleted_handle(), "Used a deleted global handle.");
+  oop result = resolve_impl<false /* external_guard */ >(handle);
+  assert(result != NULL, "NULL read from jni handle");
   return result;
-};
+}
 
 inline void JNIHandles::destroy_local(jobject handle) {
   if (handle != NULL) {
-    *((oop*)handle) = deleted_handle(); // Mark the handle as deleted, allocate will reuse it
+    jobject_ref(handle) = deleted_handle();
   }
 }
 
