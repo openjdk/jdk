@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343
+ * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023
  * @summary Testing start-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -43,6 +43,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.function.Consumer;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -63,6 +65,8 @@ public class StartOptionTest {
     private InputStream cmdInStream;
 
     private JavaShellToolBuilder builder() {
+        // turn on logging of launch failures
+        Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
         return JavaShellToolBuilder
                     .builder()
                     .out(new PrintStream(cmdout), new PrintStream(console), new PrintStream(userout))
@@ -179,14 +183,11 @@ public class StartOptionTest {
     }
 
     public void testStartupFailedOption() throws Exception {
-        try {
-            builder().run("-R-hoge-foo-bar");
-        } catch (IllegalStateException ex) {
-            String s = ex.getMessage();
-            assertTrue(s.startsWith("Launching JShell execution engine threw: Failed remote"), s);
-            return;
-        }
-        fail("Expected IllegalStateException");
+        start(
+                s -> assertEquals(s.trim(), "", "cmdout: "),
+                s -> assertEquals(s.trim(), "", "userout: "),
+                s -> assertTrue(s.contains("Unrecognized option: -hoge-foo-bar"), "cmderr: " + s),
+                "-R-hoge-foo-bar");
     }
 
     public void testStartupUnknown() throws Exception {
@@ -199,6 +200,14 @@ public class StartOptionTest {
             start("", "Only one --class-path option may be used.", cp, ".", "--class-path", ".");
             start("", "Argument to class-path missing.", cp);
         }
+    }
+
+    public void testUnknownModule() throws Exception {
+        start(
+                s -> assertEquals(s.trim(), "", "cmdout: "),
+                s -> assertEquals(s.trim(), "", "userout: "),
+                s -> assertTrue(s.contains("rror") && s.contains("unKnown"), "cmderr: " + s),
+                "--add-modules", "unKnown");
     }
 
     public void testFeedbackOptionConflict() throws Exception {

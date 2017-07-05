@@ -36,7 +36,6 @@ import java.awt.event.*;
 import javax.swing.*;
 
 
-
 import com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.TMSchema.State.*;
 import com.sun.java.swing.plaf.windows.TMSchema.Part;
@@ -383,18 +382,25 @@ class AnimationController implements ActionListener, PropertyChangeListener {
             updateProgress();
             if (! isDone()) {
                 Graphics2D g = (Graphics2D) _g.create();
-                skin.paintSkinRaw(g, dx, dy, dw, dh, startState);
-                float alpha;
-                if (isForward) {
-                    alpha = progress;
+                if (skin.haveToSwitchStates()) {
+                    skin.paintSkinRaw(g, dx, dy, dw, dh, state);
+                    g.setComposite(AlphaComposite.SrcOver.derive(1 - progress));
+                    skin.paintSkinRaw(g, dx, dy, dw, dh, startState);
                 } else {
-                    alpha = 1 - progress;
+                    skin.paintSkinRaw(g, dx, dy, dw, dh, startState);
+                    float alpha;
+                    if (isForward) {
+                        alpha = progress;
+                    } else {
+                        alpha = 1 - progress;
+                    }
+                    g.setComposite(AlphaComposite.SrcOver.derive(alpha));
+                    skin.paintSkinRaw(g, dx, dy, dw, dh, state);
                 }
-                g.setComposite(AlphaComposite.SrcOver.derive(alpha));
-                skin.paintSkinRaw(g, dx, dy, dw, dh, state);
                 g.dispose();
             } else {
                 skin.paintSkinRaw(_g, dx, dy, dw, dh, state);
+                skin.switchStates(false);
             }
         }
         boolean isDone() {

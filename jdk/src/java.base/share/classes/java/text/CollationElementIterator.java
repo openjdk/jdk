@@ -104,6 +104,7 @@ import sun.text.normalizer.NormalizerBase;
  * @see                Collator
  * @see                RuleBasedCollator
  * @author             Helena Shih, Laura Werner, Richard Gillam
+ * @since 1.1
  */
 public final class CollationElementIterator
 {

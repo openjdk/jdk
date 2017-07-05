@@ -1079,6 +1079,7 @@ public final class Math {
      * @param x the first value
      * @param y the second value
      * @return the result
+     * @since 9
      */
     public static long multiplyFull(int x, int y) {
         return (long)x * (long)y;
@@ -1091,6 +1092,7 @@ public final class Math {
      * @param x the first value
      * @param y the second value
      * @return the result
+     * @since 9
      */
     public static long multiplyHigh(long x, long y) {
         if (x < 0 || y < 0) {
@@ -1275,7 +1277,7 @@ public final class Math {
     }
 
     /**
-     * Returns the floor modulus of the {@code long} and {@int} arguments.
+     * Returns the floor modulus of the {@code long} and {@code int} arguments.
      * <p>
      * The floor modulus is {@code x - (floorDiv(x, y) * y)},
      * has the same sign as the divisor {@code y}, and

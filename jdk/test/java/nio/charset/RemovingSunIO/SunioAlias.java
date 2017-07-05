@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4454622
-   @summary Check if all supported sun.io encoding names are supported in nio.charset
+ * @bug 4454622
+ * @summary Check if all supported sun.io encoding names are supported in nio.charset
+ * @modules jdk.charsets
  */
 
 import java.util.HashMap;

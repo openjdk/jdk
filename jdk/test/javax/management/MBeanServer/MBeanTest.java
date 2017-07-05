@@ -31,7 +31,7 @@ import javax.management.ObjectName;
  * @bug 8010285
  * @summary General MBean test.
  * @author Jaroslav Bachorik
- * @modules java.management
+ *
  * @run clean MBeanTest
  * @run build MBeanTest
  * @run main MBeanTest

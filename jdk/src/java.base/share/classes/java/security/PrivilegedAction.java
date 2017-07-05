@@ -34,6 +34,7 @@ package java.security;
  * throw checked exceptions must use {@code PrivilegedExceptionAction}
  * instead.
  *
+ * @since 1.2
  * @see AccessController
  * @see AccessController#doPrivileged(PrivilegedAction)
  * @see PrivilegedExceptionAction

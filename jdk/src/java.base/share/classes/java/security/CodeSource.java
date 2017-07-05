@@ -44,6 +44,7 @@ import sun.net.util.URLUtil;
  *
  * @author Li Gong
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public class CodeSource implements java.io.Serializable {

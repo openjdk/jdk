@@ -202,13 +202,13 @@ public class ConstantPoolTestCase {
         public final String type;
         public final ResolvedJavaMethod[] methods;
         public final byte[] opcodes;
-        public final long accFlags;
+        public final int accFlags;
 
-        public TestedCPEntry(String klass, String name, String type, byte[] opcodes, long accFlags) {
+        public TestedCPEntry(String klass, String name, String type, byte[] opcodes, int accFlags) {
                 this(klass, name, type, null, opcodes, accFlags);
         }
 
-        public TestedCPEntry(String klass, String name, String type, ResolvedJavaMethod[] methods, byte[] opcodes, long accFlags) {
+        public TestedCPEntry(String klass, String name, String type, ResolvedJavaMethod[] methods, byte[] opcodes, int accFlags) {
             this.klass = klass;
             this.name = name;
             this.type = type;
