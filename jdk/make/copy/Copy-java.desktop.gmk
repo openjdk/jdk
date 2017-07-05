@@ -1,0 +1,153 @@
+#
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include CopyCommon.gmk
+
+$(eval $(call IncludeCustomExtension, jdk, copy/Copy-java.desktop.gmk))
+
+################################################################################
+
+JAVA_DESKTOP_HEADERS := \
+    $(INCLUDEDIR)/jawt.h \
+    $(OPENJDK_TARGET_OS_INCLUDE)/jawt_md.h \
+    #
+
+$(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/java.desktop/share/native/include/%.h
+	$(call install-file)
+
+$(OPENJDK_TARGET_OS_INCLUDE)/%.h: \
+    $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_EXPORT_DIR)/native/include/%.h
+	$(call install-file)
+
+################################################################################
+
+ICCPROFILE_DEST_DIR := $(LIBDIR)/cmm
+
+ifdef OPENJDK
+  ICCPROFILE_SRC_DIR := $(JDK_TOPDIR)/src/java.desktop/share/conf/cmm/lcms
+else
+  ICCPROFILE_SRC_DIR := $(JDK_TOPDIR)/src/closed/java.desktop/share/conf/cmm/kcms
+endif
+
+ICCPROFILE_SRCS := $(wildcard $(ICCPROFILE_SRC_DIR)/*.pf)
+ICCPROFILE_TARGET_FILES := $(subst $(ICCPROFILE_SRC_DIR),$(ICCPROFILE_DEST_DIR),$(ICCPROFILE_SRCS))
+
+$(ICCPROFILE_DEST_DIR)%.pf: $(ICCPROFILE_SRC_DIR)%.pf
+	$(call install-file)
+	$(CHMOD) 444 $@
+
+DESKTOP_CONF_FILES += $(ICCPROFILE_TARGET_FILES)
+
+################################################################################
+
+ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
+  # We need to bundle the freetype library, so it will be available at runtime as well as link time.
+  #
+  # NB: Default freetype build system uses -h linker option and
+  # result .so contains hardcoded library name that is later
+  # used for adding dependencies to other objects
+  # (e.g. libfontmanager.so).
+  #
+  # It is not obvious how to extract that hardcoded name (libfreetype.so.6)
+  # without overcomplicating logic here.
+  # To workaround this we hardcode .6 suffix for now.
+  #
+  # Note that .so.6 library will not be found by System.loadLibrary()
+  # but fortunately we need to load FreeType library explicitly
+  # on windows only
+  #
+  #TODO: rework this to avoid hardcoding library name in the makefile
+  #
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    FREETYPE_TARGET_LIB := $(JDK_OUTPUTDIR)/bin/$(call SHARED_LIBRARY,freetype)
+  else
+    FREETYPE_TARGET_LIB := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/$(call SHARED_LIBRARY,freetype).6
+  endif
+
+  $(FREETYPE_TARGET_LIB): $(FREETYPE_BUNDLE_LIB_PATH)/$(call SHARED_LIBRARY,freetype)
+	$(CP) $(FREETYPE_BUNDLE_LIB_PATH)/$(call SHARED_LIBRARY,freetype) $@
+        ifeq ($(OPENJDK_BUILD_OS), windows)
+	  $(CHMOD) +rx $@
+        endif
+endif
+
+################################################################################
+
+$(JDK_OUTPUTDIR)/lib/sound.properties: $(JDK_TOPDIR)/src/java.desktop/share/conf/sound.properties
+	$(call install-file)
+
+DESKTOP_CONF_FILES += $(JDK_OUTPUTDIR)/lib/sound.properties
+
+################################################################################
+#
+# Copy property files from sun/print to LIBDIR
+#
+PSFONTPROPFILE_SRC_DIR := $(JDK_TOPDIR)/src/java.desktop/share/conf
+PSFONTPROPFILE_SRCS := $(wildcard $(PSFONTPROPFILE_SRC_DIR)/psfont*.properties*)
+PSFONTPROPFILE_TARGET_FILES := $(subst $(PSFONTPROPFILE_SRC_DIR),$(LIBDIR),$(PSFONTPROPFILE_SRCS))
+
+$(LIBDIR)/%: $(PSFONTPROPFILE_SRC_DIR)/%
+	$(call install-file)
+
+DESKTOP_CONF_FILES += $(PSFONTPROPFILE_TARGET_FILES)
+
+################################################################################
+#
+# Copy cursor.properties and cursors gif files to LIBDIR
+#
+ifneq ($(OPENJDK_TARGET_OS), macosx)
+  OPENJDK_TARGET_OS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/conf
+else
+  OPENJDK_TARGET_OS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/macosx/conf
+endif
+
+CURSORS_DEST_DIR := $(LIBDIR)/images/cursors
+CURSORS_OPENJDK_TARGET_OS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/conf/images/cursors
+
+$(CURSORS_DEST_DIR)/cursors.properties: $(CURSORS_OPENJDK_TARGET_OS_LIB_SRC)/cursors.properties
+	$(call install-file)
+
+DESKTOP_CONF_FILES += $(CURSORS_DEST_DIR)/cursors.properties
+
+CURSORS_LIB_SRC := $(JDK_TOPDIR)/src/java.desktop/share/conf/images/cursors
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  CURSORS_SRC_FILES := $(CURSORS_LIB_SRC)/invalid32x32.gif $(wildcard $(CURSORS_LIB_SRC)/win32_*.gif)
+else # OPENJDK_TARGET_OS
+  CURSORS_SRC_FILES := $(CURSORS_LIB_SRC)/invalid32x32.gif $(wildcard $(CURSORS_LIB_SRC)/motif_*.gif)
+endif # OPENJDK_TARGET_OS
+CURSORS_TARGET_FILES := $(subst $(CURSORS_LIB_SRC),$(CURSORS_DEST_DIR),$(CURSORS_SRC_FILES))
+
+$(CURSORS_DEST_DIR)/%: $(CURSORS_LIB_SRC)/%
+	$(call install-file)
+
+DESKTOP_CONF_FILES += $(CURSORS_TARGET_FILES)
+
+################################################################################
+
+java.desktop: $(DESKTOP_CONF_FILES) $(FREETYPE_TARGET_LIB) $(JAVA_DESKTOP_HEADERS)
+
+all: java.desktop
+
+.PHONY: all java.desktop

@@ -1,0 +1,167 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LauncherCommon.gmk
+
+################################################################################
+
+# On windows, the debuginfo files get the same name as for java.dll. Build
+# into another dir and copy selectively so debuginfo for java.dll isn't
+# overwritten.
+$(eval $(call SetupLauncher,java, \
+    -DEXPAND_CLASSPATH_WILDCARDS,,,user32.lib comctl32.lib, \
+    $(JDK_OUTPUTDIR)/objs/jli_static.lib, $(JAVA_RC_FLAGS), \
+    $(JAVA_VERSION_INFO_RESOURCE), $(JDK_OUTPUTDIR)/objs/java_objs,true))
+
+$(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/java$(EXE_SUFFIX): $(BUILD_LAUNCHER_java)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $(JDK_OUTPUTDIR)/objs/java_objs$(OUTPUT_SUBDIR)/java$(EXE_SUFFIX) $@
+
+LAUNCHERS += $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/java$(EXE_SUFFIX)
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  $(eval $(call SetupLauncher,javaw, \
+      -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS,,,user32.lib comctl32.lib, \
+      $(JDK_OUTPUTDIR)/objs/jli_static.lib, $(JAVA_RC_FLAGS), \
+      $(JAVA_VERSION_INFO_RESOURCE),,true))
+endif
+
+$(eval $(call SetupLauncher,keytool, \
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.keytool.Main"$(COMMA) }'))
+
+################################################################################
+
+BUILD_JEXEC :=
+BUILD_JEXEC_SRC :=
+BUILD_JEXEC_INC :=
+BUILD_JEXEC_DST_DIR := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
+
+#
+# UNHANDLED:
+# - COMPILE_APPROACH = normal
+#
+
+#
+# jdk/make/java/Makefile
+#
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+    BUILD_JEXEC := 1
+  endif
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), linux)
+  BUILD_JEXEC := 1
+endif # OPENJDK_TARGET_OS
+
+#
+# jdk/make/java/jexec/Makefile
+#
+ifeq ($(BUILD_JEXEC), 1)
+
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+  else ifeq ($(OPENJDK_TARGET_OS), macosx)
+    BUILD_JEXEC_SRC := $(JDK_TOPDIR)/src/java.base/macosx/native/launcher
+  else
+    BUILD_JEXEC_SRC := $(JDK_TOPDIR)/src/java.base/unix/native/launcher
+  endif
+
+  ifeq ($(OPENJDK_TARGET_OS), linux)
+    BUILD_JEXEC_DST_DIR := $(JDK_OUTPUTDIR)/lib
+    BUILD_JEXEC_INC += -I$(JDK_TOPDIR)/src/java.base/share/native/libjli
+  endif
+endif
+
+#
+# Note that the two Makefile's seems to contradict each other,
+# and that src/macosx/bin/jexec.c seems unused
+#
+ifneq ($(BUILD_JEXEC_SRC), )
+  $(eval $(call SetupNativeCompilation,BUILD_JEXEC, \
+      SRC := $(BUILD_JEXEC_SRC), \
+      INCLUDE_FILES := jexec.c, \
+      LANG := C, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKEXE) \
+          $(BUILD_JEXEC_INC), \
+      CFLAGS_linux := -fPIC, \
+      CFLAGS_solaris := -KPIC, \
+      LDFLAGS := $(LDFLAGS_JDKEXE) \
+          $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)), \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/jexec_obj, \
+      OUTPUT_DIR := $(BUILD_JEXEC_DST_DIR), \
+      DEBUG_SYMBOLS := true, \
+      PROGRAM := jexec))
+
+  LIBRARIES += $(BUILD_JEXEC)
+endif
+
+################################################################################
+
+BUILD_JSPAWNHELPER :=
+BUILD_JSPAWNHELPER_SRC := $(JDK_TOPDIR)/src/java.base/unix/native/jspawnhelper
+JSPAWNHELPER_CFLAGS := -I$(JDK_TOPDIR)/src/java.base/unix/native/libjava
+BUILD_JSPAWNHELPER_DST_DIR := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
+LINK_JSPAWNHELPER_OBJECTS := $(JDK_OUTPUTDIR)/objs/libjava/childproc.o
+LINK_JSPAWNHELPER_FLAGS :=
+
+ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
+  BUILD_JSPAWNHELPER := 1
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  BUILD_JSPAWNHELPER_DST_DIR := $(JDK_OUTPUTDIR)/lib
+endif
+
+ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
+  LINK_JSPAWNHELPER_FLAGS += $(COMPILER_TARGET_BITS_FLAG)64
+endif
+
+ifeq ($(BUILD_JSPAWNHELPER), 1)
+  $(eval $(call SetupNativeCompilation,BUILD_JSPAWNHELPER, \
+      SRC := $(BUILD_JSPAWNHELPER_SRC), \
+      INCLUDE_FILES := jspawnhelper.c, \
+      LANG := C, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKEXE) $(JSPAWNHELPER_CFLAGS), \
+      LDFLAGS := $(LDFLAGS_JDKEXE) $(LINK_JSPAWNHELPER_FLAGS), \
+      LDFLAGS_SUFFIX := $(LINK_JSPAWNHELPER_OBJECTS), \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/jspawnhelper, \
+      OUTPUT_DIR := $(BUILD_JSPAWNHELPER_DST_DIR), \
+      PROGRAM := jspawnhelper))
+
+  $(BUILD_JSPAWNHELPER): $(LINK_JSPAWNHELPER_OBJECTS)
+
+  LIBRARIES += $(BUILD_JSPAWNHELPER)
+endif
+
+################################################################################
+
+java.base: $(LAUNCHERS) $(LIBRARIES)
+
+all: java.base
+
+.PHONY: all java.base
