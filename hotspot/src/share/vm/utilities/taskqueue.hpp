@@ -22,94 +22,90 @@
  *
  */
 
-#ifdef LP64
-typedef juint TAG_TYPE;
-// for a taskqueue size of 4M
-#define LOG_TASKQ_SIZE 22
-#else
-typedef jushort TAG_TYPE;
-// for a taskqueue size of 16K
-#define LOG_TASKQ_SIZE 14
-#endif
-
 class TaskQueueSuper: public CHeapObj {
 protected:
-  // The first free element after the last one pushed (mod _n).
+  // Internal type for indexing the queue; also used for the tag.
+  typedef NOT_LP64(uint16_t) LP64_ONLY(uint32_t) idx_t;
+
+  // The first free element after the last one pushed (mod N).
   volatile uint _bottom;
 
-  // log2 of the size of the queue.
-  enum SomeProtectedConstants {
-    Log_n = LOG_TASKQ_SIZE
+  enum {
+    N = 1 << NOT_LP64(14) LP64_ONLY(17), // Queue size: 16K or 128K
+    MOD_N_MASK = N - 1                   // To compute x mod N efficiently.
   };
-#undef LOG_TASKQ_SIZE
 
-  // Size of the queue.
-  uint n() { return (1 << Log_n); }
-  // For computing "x mod n" efficiently.
-  uint n_mod_mask() { return n() - 1; }
+  class Age {
+  public:
+    Age(size_t data = 0)         { _data = data; }
+    Age(const Age& age)          { _data = age._data; }
+    Age(idx_t top, idx_t tag)    { _fields._top = top; _fields._tag = tag; }
 
-  struct Age {
-    TAG_TYPE _top;
-    TAG_TYPE _tag;
+    Age   get()        const volatile { return _data; }
+    void  set(Age age) volatile       { _data = age._data; }
 
-    TAG_TYPE tag() const { return _tag; }
-    TAG_TYPE top() const { return _top; }
+    idx_t top()        const volatile { return _fields._top; }
+    idx_t tag()        const volatile { return _fields._tag; }
 
-    Age() { _tag = 0; _top = 0; }
-
-    friend bool operator ==(const Age& a1, const Age& a2) {
-      return a1.tag() == a2.tag() && a1.top() == a2.top();
+    // Increment top; if it wraps, increment tag also.
+    void increment() {
+      _fields._top = increment_index(_fields._top);
+      if (_fields._top == 0) ++_fields._tag;
     }
+
+    Age cmpxchg(const Age new_age, const Age old_age) volatile {
+      return (size_t) Atomic::cmpxchg_ptr((intptr_t)new_age._data,
+                                          (volatile intptr_t *)&_data,
+                                          (intptr_t)old_age._data);
+    }
+
+    bool operator ==(const Age& other) const { return _data == other._data; }
+
+  private:
+    struct fields {
+      idx_t _top;
+      idx_t _tag;
+    };
+    union {
+      size_t _data;
+      fields _fields;
+    };
   };
-  Age _age;
-  // These make sure we do single atomic reads and writes.
-  Age get_age() {
-    uint res = *(volatile uint*)(&_age);
-    return *(Age*)(&res);
+
+  volatile Age _age;
+
+  // These both operate mod N.
+  static uint increment_index(uint ind) {
+    return (ind + 1) & MOD_N_MASK;
   }
-  void set_age(Age a) {
-    *(volatile uint*)(&_age) = *(uint*)(&a);
+  static uint decrement_index(uint ind) {
+    return (ind - 1) & MOD_N_MASK;
   }
 
-  TAG_TYPE get_top() {
-    return get_age().top();
-  }
-
-  // These both operate mod _n.
-  uint increment_index(uint ind) {
-    return (ind + 1) & n_mod_mask();
-  }
-  uint decrement_index(uint ind) {
-    return (ind - 1) & n_mod_mask();
-  }
-
-  // Returns a number in the range [0.._n).  If the result is "n-1", it
-  // should be interpreted as 0.
+  // Returns a number in the range [0..N).  If the result is "N-1", it should be
+  // interpreted as 0.
   uint dirty_size(uint bot, uint top) {
-    return ((int)bot - (int)top) & n_mod_mask();
+    return (bot - top) & MOD_N_MASK;
   }
 
   // Returns the size corresponding to the given "bot" and "top".
   uint size(uint bot, uint top) {
     uint sz = dirty_size(bot, top);
-    // Has the queue "wrapped", so that bottom is less than top?
-    // There's a complicated special case here.  A pair of threads could
-    // perform pop_local and pop_global operations concurrently, starting
-    // from a state in which _bottom == _top+1.  The pop_local could
-    // succeed in decrementing _bottom, and the pop_global in incrementing
-    // _top (in which case the pop_global will be awarded the contested
-    // queue element.)  The resulting state must be interpreted as an empty
-    // queue.  (We only need to worry about one such event: only the queue
-    // owner performs pop_local's, and several concurrent threads
-    // attempting to perform the pop_global will all perform the same CAS,
-    // and only one can succeed.  Any stealing thread that reads after
-    // either the increment or decrement will see an empty queue, and will
-    // not join the competitors.  The "sz == -1 || sz == _n-1" state will
-    // not be modified  by concurrent queues, so the owner thread can reset
-    // the state to _bottom == top so subsequent pushes will be performed
-    // normally.
-    if (sz == (n()-1)) return 0;
-    else return sz;
+    // Has the queue "wrapped", so that bottom is less than top?  There's a
+    // complicated special case here.  A pair of threads could perform pop_local
+    // and pop_global operations concurrently, starting from a state in which
+    // _bottom == _top+1.  The pop_local could succeed in decrementing _bottom,
+    // and the pop_global in incrementing _top (in which case the pop_global
+    // will be awarded the contested queue element.)  The resulting state must
+    // be interpreted as an empty queue.  (We only need to worry about one such
+    // event: only the queue owner performs pop_local's, and several concurrent
+    // threads attempting to perform the pop_global will all perform the same
+    // CAS, and only one can succeed.)  Any stealing thread that reads after
+    // either the increment or decrement will see an empty queue, and will not
+    // join the competitors.  The "sz == -1 || sz == N-1" state will not be
+    // modified by concurrent queues, so the owner thread can reset the state to
+    // _bottom == top so subsequent pushes will be performed normally.
+    return (sz == N - 1) ? 0 : sz;
   }
 
 public:
@@ -122,22 +118,21 @@ public:
   // The "careful" version admits the possibility of pop_local/pop_global
   // races.
   uint size() {
-    return size(_bottom, get_top());
+    return size(_bottom, _age.top());
   }
 
   uint dirty_size() {
-    return dirty_size(_bottom, get_top());
+    return dirty_size(_bottom, _age.top());
   }
 
   void set_empty() {
     _bottom = 0;
-    _age = Age();
+    _age.set(0);
   }
 
   // Maximum number of elements allowed in the queue.  This is two less
   // than the actual queue size, for somewhat complicated reasons.
-  uint max_elems() { return n() - 2; }
-
+  uint max_elems() { return N - 2; }
 };
 
 template<class E> class GenericTaskQueue: public TaskQueueSuper {
@@ -179,12 +174,12 @@ private:
 
 template<class E>
 GenericTaskQueue<E>::GenericTaskQueue():TaskQueueSuper() {
-  assert(sizeof(Age) == sizeof(int), "Depends on this.");
+  assert(sizeof(Age) == sizeof(size_t), "Depends on this.");
 }
 
 template<class E>
 void GenericTaskQueue<E>::initialize() {
-  _elems = NEW_C_HEAP_ARRAY(E, n());
+  _elems = NEW_C_HEAP_ARRAY(E, N);
   guarantee(_elems != NULL, "Allocation failed.");
 }
 
@@ -208,14 +203,14 @@ void GenericTaskQueue<E>::oops_do(OopClosure* f) {
 
 template<class E>
 bool GenericTaskQueue<E>::push_slow(E t, uint dirty_n_elems) {
-  if (dirty_n_elems == n() - 1) {
+  if (dirty_n_elems == N - 1) {
     // Actually means 0, so do the push.
     uint localBot = _bottom;
     _elems[localBot] = t;
     _bottom = increment_index(localBot);
     return true;
-  } else
-    return false;
+  }
+  return false;
 }
 
 template<class E>
@@ -230,53 +225,45 @@ pop_local_slow(uint localBot, Age oldAge) {
   // then have the owner thread do a pop followed by another push.  Without
   // the incrementing of "tag", the pop_global's CAS could succeed,
   // allowing it to believe it has claimed the stale element.)
-  Age newAge;
-  newAge._top = localBot;
-  newAge._tag = oldAge.tag() + 1;
+  Age newAge((idx_t)localBot, oldAge.tag() + 1);
   // Perhaps a competing pop_global has already incremented "top", in which
   // case it wins the element.
   if (localBot == oldAge.top()) {
-    Age tempAge;
     // No competing pop_global has yet incremented "top"; we'll try to
     // install new_age, thus claiming the element.
-    assert(sizeof(Age) == sizeof(int), "Assumption about CAS unit.");
-    *(uint*)&tempAge = Atomic::cmpxchg(*(uint*)&newAge, (volatile uint*)&_age, *(uint*)&oldAge);
+    Age tempAge = _age.cmpxchg(newAge, oldAge);
     if (tempAge == oldAge) {
       // We win.
-      assert(dirty_size(localBot, get_top()) != n() - 1,
-             "Shouldn't be possible...");
+      assert(dirty_size(localBot, _age.top()) != N - 1, "sanity");
       return true;
     }
   }
-  // We fail; a completing pop_global gets the element.  But the queue is
-  // empty (and top is greater than bottom.)  Fix this representation of
-  // the empty queue to become the canonical one.
-  set_age(newAge);
-  assert(dirty_size(localBot, get_top()) != n() - 1,
-         "Shouldn't be possible...");
+  // We lose; a completing pop_global gets the element.  But the queue is empty
+  // and top is greater than bottom.  Fix this representation of the empty queue
+  // to become the canonical one.
+  _age.set(newAge);
+  assert(dirty_size(localBot, _age.top()) != N - 1, "sanity");
   return false;
 }
 
 template<class E>
 bool GenericTaskQueue<E>::pop_global(E& t) {
-  Age newAge;
-  Age oldAge = get_age();
+  Age oldAge = _age.get();
   uint localBot = _bottom;
   uint n_elems = size(localBot, oldAge.top());
   if (n_elems == 0) {
     return false;
   }
+
   t = _elems[oldAge.top()];
-  newAge = oldAge;
-  newAge._top = increment_index(newAge.top());
-  if ( newAge._top == 0 ) newAge._tag++;
-  Age resAge;
-  *(uint*)&resAge = Atomic::cmpxchg(*(uint*)&newAge, (volatile uint*)&_age, *(uint*)&oldAge);
+  Age newAge(oldAge);
+  newAge.increment();
+  Age resAge = _age.cmpxchg(newAge, oldAge);
+
   // Note that using "_bottom" here might fail, since a pop_local might
   // have decremented it.
-  assert(dirty_size(localBot, newAge._top) != n() - 1,
-         "Shouldn't be possible...");
-  return (resAge == oldAge);
+  assert(dirty_size(localBot, newAge.top()) != N - 1, "sanity");
+  return resAge == oldAge;
 }
 
 template<class E>
@@ -459,7 +446,7 @@ public:
     return offer_termination(NULL);
   }
 
-  // As above, but it also terminates of the should_exit_termination()
+  // As above, but it also terminates if the should_exit_termination()
   // method of the terminator parameter returns true. If terminator is
   // NULL, then it is ignored.
   bool offer_termination(TerminatorTerminator* terminator);
@@ -492,11 +479,10 @@ template<class E> inline bool GenericTaskQueue<E>::push(E t) {
   }
 #else
   uint localBot = _bottom;
-  assert((localBot >= 0) && (localBot < n()), "_bottom out of range.");
-  TAG_TYPE top = get_top();
+  assert((localBot >= 0) && (localBot < N), "_bottom out of range.");
+  idx_t top = _age.top();
   uint dirty_n_elems = dirty_size(localBot, top);
-  assert((dirty_n_elems >= 0) && (dirty_n_elems < n()),
-         "n_elems out of range.");
+  assert((dirty_n_elems >= 0) && (dirty_n_elems < N), "n_elems out of range.");
   if (dirty_n_elems < max_elems()) {
     _elems[localBot] = t;
     _bottom = increment_index(localBot);
@@ -517,12 +503,12 @@ template<class E> inline bool GenericTaskQueue<E>::pop_local(E& t) {
   return true;
 #else
   uint localBot = _bottom;
-  // This value cannot be n-1.  That can only occur as a result of
+  // This value cannot be N-1.  That can only occur as a result of
   // the assignment to bottom in this method.  If it does, this method
   // resets the size( to 0 before the next call (which is sequential,
   // since this is pop_local.)
-  uint dirty_n_elems = dirty_size(localBot, get_top());
-  assert(dirty_n_elems != n() - 1, "Shouldn't be possible...");
+  uint dirty_n_elems = dirty_size(localBot, _age.top());
+  assert(dirty_n_elems != N - 1, "Shouldn't be possible...");
   if (dirty_n_elems == 0) return false;
   localBot = decrement_index(localBot);
   _bottom = localBot;
@@ -534,15 +520,14 @@ template<class E> inline bool GenericTaskQueue<E>::pop_local(E& t) {
   // If there's still at least one element in the queue, based on the
   // "_bottom" and "age" we've read, then there can be no interference with
   // a "pop_global" operation, and we're done.
-  TAG_TYPE tp = get_top();    // XXX
+  idx_t tp = _age.top();    // XXX
   if (size(localBot, tp) > 0) {
-    assert(dirty_size(localBot, tp) != n() - 1,
-           "Shouldn't be possible...");
+    assert(dirty_size(localBot, tp) != N - 1, "sanity");
     return true;
   } else {
     // Otherwise, the queue contained exactly one element; we take the slow
     // path.
-    return pop_local_slow(localBot, get_age());
+    return pop_local_slow(localBot, _age.get());
   }
 #endif
 }

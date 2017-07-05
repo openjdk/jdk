@@ -276,6 +276,15 @@ int compiledVFrame::raw_bci() const {
   return scope()->bci();
 }
 
+bool compiledVFrame::should_reexecute() const {
+  if (scope() == NULL) {
+    // native nmethods have no scope the method/bci is implied
+    nmethod* nm = code();
+    assert(nm->is_native_method(), "must be native");
+    return false;
+  }
+  return scope()->should_reexecute();
+}
 
 vframe* compiledVFrame::sender() const {
   const frame f = fr();
