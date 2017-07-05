@@ -192,7 +192,7 @@ public class ConcreteMethodImpl extends MethodImpl {
             return super.codeIndexToLineInfo(stratum, codeIndex);
         }
 
-        Iterator iter = lineLocations.iterator();
+        Iterator<Location> iter = lineLocations.iterator();
         /*
          * Treat code before the beginning of the first line table
          * entry as part of the first line.  javac will generate
@@ -221,9 +221,9 @@ public class ConcreteMethodImpl extends MethodImpl {
         List<LocalVariable> variables = getVariables();
 
         List<LocalVariable> retList = new ArrayList<LocalVariable>(2);
-        Iterator iter = variables.iterator();
+        Iterator<LocalVariable> iter = variables.iterator();
         while(iter.hasNext()) {
-            LocalVariable variable = (LocalVariable)iter.next();
+            LocalVariable variable = iter.next();
             if (variable.name().equals(name)) {
                 retList.add(variable);
             }
@@ -235,9 +235,9 @@ public class ConcreteMethodImpl extends MethodImpl {
         List<LocalVariable> variables = getVariables();
 
         List<LocalVariable> retList = new ArrayList<LocalVariable>(variables.size());
-        Iterator iter = variables.iterator();
+        Iterator<LocalVariable> iter = variables.iterator();
         while(iter.hasNext()) {
-            LocalVariable variable = (LocalVariable)iter.next();
+            LocalVariable variable = iter.next();
             if (variable.isArgument()) {
                 retList.add(variable);
             }
@@ -291,7 +291,7 @@ public class ConcreteMethodImpl extends MethodImpl {
         SDE.LineStratum lastLineStratum = null;
         SDE.Stratum baseStratum =
             declaringType.stratum(SDE.BASE_STRATUM_NAME);
-        Iterator it = getBaseLocations().lineLocations.iterator();
+        Iterator<Location> it = getBaseLocations().lineLocations.iterator();
         while(it.hasNext()) {
             LocationImpl loc = (LocationImpl)it.next();
             int baseLineNumber = loc.lineNumber(baseStratum);

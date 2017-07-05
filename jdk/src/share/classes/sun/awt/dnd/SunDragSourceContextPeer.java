@@ -52,6 +52,7 @@ import java.util.SortedMap;
 
 import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
+import java.awt.datatransfer.DataFlavor;
 
 /**
  * <p>
@@ -126,9 +127,9 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
         dragImageOffset   = p;
 
         Transferable transferable  = getDragSourceContext().getTransferable();
-        SortedMap formatMap = DataTransferer.getInstance().getFormatsForTransferable
-             (transferable, DataTransferer.adaptFlavorMap
-                 (getTrigger().getDragSource().getFlavorMap()));
+        SortedMap<Long,DataFlavor> formatMap = DataTransferer.getInstance().
+            getFormatsForTransferable(transferable, DataTransferer.adaptFlavorMap
+                (getTrigger().getDragSource().getFlavorMap()));
         long[] formats = DataTransferer.getInstance().
             keysToLongArray(formatMap);
         startDrag(transferable, formats, formatMap);

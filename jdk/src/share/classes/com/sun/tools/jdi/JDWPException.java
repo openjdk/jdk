@@ -27,7 +27,7 @@ package com.sun.tools.jdi;
 import com.sun.jdi.*;
 
 class JDWPException extends Exception {
-
+    private static final long serialVersionUID = -6321344442751299874L;
     short errorCode;
 
     JDWPException(short errorCode) {

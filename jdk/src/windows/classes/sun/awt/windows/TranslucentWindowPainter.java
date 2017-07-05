@@ -40,6 +40,7 @@ import sun.java2d.DestSurfaceProvider;
 import sun.java2d.InvalidPipeException;
 import sun.java2d.Surface;
 import sun.java2d.pipe.RenderQueue;
+import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.hw.AccelGraphicsConfig;
 import sun.java2d.pipe.hw.AccelSurface;
 import sun.security.action.GetPropertyAction;
@@ -310,7 +311,7 @@ public abstract class TranslucentWindowPainter {
                     RenderQueue rq = as.getContext().getRenderQueue();
                     rq.lock();
                     try {
-                        as.getContext().validateContext(as);
+                        BufferedContext.validateContext(as);
                         rq.flushAndInvokeNow(new Runnable() {
                             public void run() {
                                 long psdops = as.getNativeOps();

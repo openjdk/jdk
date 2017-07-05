@@ -1167,7 +1167,8 @@ public abstract class ClassLoader {
      * @since  1.2
      */
     public Enumeration<URL> getResources(String name) throws IOException {
-        Enumeration[] tmp = new Enumeration[2];
+        @SuppressWarnings("unchecked")
+        Enumeration<URL>[] tmp = (Enumeration<URL>[]) new Enumeration<?>[2];
         if (parent != null) {
             tmp[0] = parent.getResources(name);
         } else {

@@ -80,7 +80,7 @@ public class ClassLoaderReferenceImpl extends ObjectReferenceImpl
                 classes = Collections.unmodifiableList(classes);
                 if (local != null) {
                     local.visibleClasses = classes;
-                    if ((vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
+                    if ((vm.traceFlags & VirtualMachine.TRACE_OBJREFS) != 0) {
                         vm.printTrace(description() +
                            " temporarily caching visible classes (count = " +
                                       classes.size() + ")");
@@ -95,9 +95,9 @@ public class ClassLoaderReferenceImpl extends ObjectReferenceImpl
 
     Type findType(String signature) throws ClassNotLoadedException {
         List<ReferenceType> types = visibleClasses();
-        Iterator iter = types.iterator();
+        Iterator<ReferenceType> iter = types.iterator();
         while (iter.hasNext()) {
-            ReferenceType type = (ReferenceType)iter.next();
+            ReferenceType type = iter.next();
             if (type.signature().equals(signature)) {
                 return type;
             }

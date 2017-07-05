@@ -43,7 +43,7 @@ import java.util.*;
 class EventRequestManagerImpl extends MirrorImpl
                                        implements EventRequestManager
 {
-    List[] requestLists;
+    List<? extends EventRequest>[] requestLists;
     private static int methodExitEventCmd = 0;
 
     static int JDWPtoJDISuspendPolicy(byte jdwpPolicy) {
@@ -91,7 +91,7 @@ class EventRequestManagerImpl extends MirrorImpl
          * access/modification should be protected by synchronizing on
          * the enclosing instance of EventRequestImpl.
          */
-        List filters = new ArrayList();
+        List<Object> filters = new ArrayList<>();
 
         boolean isEnabled = false;
         boolean deleted = false;
@@ -195,7 +195,6 @@ class EventRequestManagerImpl extends MirrorImpl
          */
         synchronized void set() {
             JDWP.EventRequest.Set.Modifier[] mods =
-                (JDWP.EventRequest.Set.Modifier[])
                 filters.toArray(
                     new JDWP.EventRequest.Set.Modifier[filters.size()]);
             try {
@@ -582,10 +581,10 @@ class EventRequestManagerImpl extends MirrorImpl
             /*
              * Make sure this isn't a duplicate
              */
-            List requests = stepRequests();
-            Iterator iter = requests.iterator();
+            List<StepRequest> requests = stepRequests();
+            Iterator<StepRequest> iter = requests.iterator();
             while (iter.hasNext()) {
-                StepRequest request = (StepRequest)iter.next();
+                StepRequest request = iter.next();
                 if ((request != this) &&
                         request.isEnabled() &&
                         request.thread().equals(thread)) {
@@ -735,7 +734,7 @@ class EventRequestManagerImpl extends MirrorImpl
         }
         requestLists = new List[highest+1];
         for (int i=0; i <= highest; i++) {
-            requestLists[i] = new ArrayList();
+            requestLists[i] = new ArrayList<>();
         }
     }
 
@@ -852,7 +851,7 @@ class EventRequestManagerImpl extends MirrorImpl
     public void deleteEventRequests(List<? extends EventRequest> eventRequests) {
         validateMirrors(eventRequests);
         // copy the eventRequests to avoid ConcurrentModificationException
-        Iterator iter = (new ArrayList(eventRequests)).iterator();
+        Iterator<? extends EventRequest> iter = (new ArrayList<>(eventRequests)).iterator();
         while (iter.hasNext()) {
             ((EventRequestImpl)iter.next()).delete();
         }
@@ -869,76 +868,76 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     public List<StepRequest> stepRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.SINGLE_STEP);
+        return (List<StepRequest>)unmodifiableRequestList(JDWP.EventKind.SINGLE_STEP);
     }
 
     public List<ClassPrepareRequest> classPrepareRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.CLASS_PREPARE);
+        return (List<ClassPrepareRequest>)unmodifiableRequestList(JDWP.EventKind.CLASS_PREPARE);
     }
 
     public List<ClassUnloadRequest> classUnloadRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.CLASS_UNLOAD);
+        return (List<ClassUnloadRequest>)unmodifiableRequestList(JDWP.EventKind.CLASS_UNLOAD);
     }
 
     public List<ThreadStartRequest> threadStartRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.THREAD_START);
+        return (List<ThreadStartRequest>)unmodifiableRequestList(JDWP.EventKind.THREAD_START);
     }
 
     public List<ThreadDeathRequest> threadDeathRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.THREAD_DEATH);
+        return (List<ThreadDeathRequest>)unmodifiableRequestList(JDWP.EventKind.THREAD_DEATH);
     }
 
     public List<ExceptionRequest> exceptionRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.EXCEPTION);
+        return (List<ExceptionRequest>)unmodifiableRequestList(JDWP.EventKind.EXCEPTION);
     }
 
     public List<BreakpointRequest> breakpointRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.BREAKPOINT);
+        return (List<BreakpointRequest>)unmodifiableRequestList(JDWP.EventKind.BREAKPOINT);
     }
 
     public List<AccessWatchpointRequest> accessWatchpointRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.FIELD_ACCESS);
+        return (List<AccessWatchpointRequest>)unmodifiableRequestList(JDWP.EventKind.FIELD_ACCESS);
     }
 
     public List<ModificationWatchpointRequest> modificationWatchpointRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.FIELD_MODIFICATION);
+        return (List<ModificationWatchpointRequest>)unmodifiableRequestList(JDWP.EventKind.FIELD_MODIFICATION);
     }
 
     public List<MethodEntryRequest> methodEntryRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.METHOD_ENTRY);
+        return (List<MethodEntryRequest>)unmodifiableRequestList(JDWP.EventKind.METHOD_ENTRY);
     }
 
     public List<MethodExitRequest> methodExitRequests() {
-        return unmodifiableRequestList(
+        return (List<MethodExitRequest>)unmodifiableRequestList(
                                EventRequestManagerImpl.methodExitEventCmd);
     }
 
     public List<MonitorContendedEnterRequest> monitorContendedEnterRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.MONITOR_CONTENDED_ENTER);
+        return (List<MonitorContendedEnterRequest>)unmodifiableRequestList(JDWP.EventKind.MONITOR_CONTENDED_ENTER);
     }
 
     public List<MonitorContendedEnteredRequest> monitorContendedEnteredRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.MONITOR_CONTENDED_ENTERED);
+        return (List<MonitorContendedEnteredRequest>)unmodifiableRequestList(JDWP.EventKind.MONITOR_CONTENDED_ENTERED);
     }
 
     public List<MonitorWaitRequest> monitorWaitRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.MONITOR_WAIT);
+        return (List<MonitorWaitRequest>)unmodifiableRequestList(JDWP.EventKind.MONITOR_WAIT);
     }
 
     public List<MonitorWaitedRequest> monitorWaitedRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.MONITOR_WAITED);
+        return (List<MonitorWaitedRequest>)unmodifiableRequestList(JDWP.EventKind.MONITOR_WAITED);
     }
 
     public List<VMDeathRequest> vmDeathRequests() {
-        return unmodifiableRequestList(JDWP.EventKind.VM_DEATH);
+        return (List<VMDeathRequest>)unmodifiableRequestList(JDWP.EventKind.VM_DEATH);
     }
 
-    List unmodifiableRequestList(int eventCmd) {
+    List<? extends EventRequest> unmodifiableRequestList(int eventCmd) {
         return Collections.unmodifiableList(requestList(eventCmd));
     }
 
     EventRequest request(int eventCmd, int requestId) {
-        List rl = requestList(eventCmd);
+        List<? extends EventRequest> rl = requestList(eventCmd);
         for (int i = rl.size() - 1; i >= 0; i--) {
             EventRequestImpl er = (EventRequestImpl)rl.get(i);
             if (er.id == requestId) {

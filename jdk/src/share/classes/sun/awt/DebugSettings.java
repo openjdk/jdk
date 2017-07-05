@@ -87,9 +87,9 @@ final class DebugSettings {
     };
 
     /* global instance of the settings object */
-    private static DebugSettings        instance = null;
+    private static DebugSettings instance = null;
 
-    private Properties  props = new Properties();
+    private Properties props = new Properties();
 
     static void init() {
         if (instance != null) {
@@ -102,12 +102,13 @@ final class DebugSettings {
     }
 
     private DebugSettings() {
-        new java.security.PrivilegedAction() {
-            public Object run() {
-                loadProperties();
-                return null;
-            }
-        }.run();
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    loadProperties();
+                    return null;
+                }
+            });
     }
 
     /*
@@ -117,15 +118,14 @@ final class DebugSettings {
     private synchronized void loadProperties() {
         // setup initial properties
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction()
-        {
-            public Object run() {
-                loadDefaultProperties();
-                loadFileProperties();
-                loadSystemProperties();
-                return null;
-            }
-        });
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    loadDefaultProperties();
+                    loadFileProperties();
+                    loadSystemProperties();
+                    return null;
+                }
+            });
 
         // echo the initial property settings to stdout
         if (log.isLoggable(PlatformLogger.FINE)) {
@@ -134,12 +134,9 @@ final class DebugSettings {
     }
 
     public String toString() {
-        Enumeration enum_ = props.propertyNames();
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         PrintStream pout = new PrintStream(bout);
-
-        while (enum_.hasMoreElements()) {
-            String key = (String)enum_.nextElement();
+        for (String key : props.stringPropertyNames()) {
             String value = props.getProperty(key, "");
             pout.println(key + " = " + value);
         }
@@ -198,9 +195,7 @@ final class DebugSettings {
     private void loadSystemProperties() {
         // override file properties with system properties
         Properties sysProps = System.getProperties();
-        Enumeration enum_ = sysProps.propertyNames();
-        while ( enum_.hasMoreElements() ) {
-            String key = (String)enum_.nextElement();
+        for (String key : sysProps.stringPropertyNames()) {
             String value = sysProps.getProperty(key,"");
             // copy any "awtdebug" properties over
             if ( key.startsWith(PREFIX) ) {
@@ -244,17 +239,14 @@ final class DebugSettings {
         return value;
     }
 
-    public synchronized Enumeration getPropertyNames() {
-        Vector          propNames = new Vector();
-        Enumeration     enum_ = props.propertyNames();
-
+    private synchronized List<String> getPropertyNames() {
+        List<String> propNames = new LinkedList<>();
         // remove global prefix from property names
-        while ( enum_.hasMoreElements() ) {
-            String propName = (String)enum_.nextElement();
+        for (String propName : props.stringPropertyNames()) {
             propName = propName.substring(PREFIX.length()+1);
-            propNames.addElement(propName);
+            propNames.add(propName);
         }
-        return propNames.elements();
+        return propNames;
     }
 
     private void println(Object object) {
@@ -279,13 +271,11 @@ final class DebugSettings {
         //
         // Filter out file/line ctrace properties from debug settings
         //
-        Vector                traces = new Vector();
-        Enumeration         enum_ = getPropertyNames();
+        List<String> traces = new LinkedList<>();
 
-        while ( enum_.hasMoreElements() ) {
-            String key = (String)enum_.nextElement();
-            if ( key.startsWith(PROP_CTRACE) && key.length() > PROP_CTRACE_LEN ) {
-                traces.addElement(key);
+        for (String key : getPropertyNames()) {
+            if (key.startsWith(PROP_CTRACE) && key.length() > PROP_CTRACE_LEN) {
+                traces.add(key);
             }
         }
 
@@ -295,15 +285,12 @@ final class DebugSettings {
         //
         // Setup the trace points
         //
-        Enumeration        enumTraces = traces.elements();
-
-        while ( enumTraces.hasMoreElements() ) {
-            String        key = (String)enumTraces.nextElement();
-            String         trace = key.substring(PROP_CTRACE_LEN+1);
+        for (String key : traces) {
+            String        trace = key.substring(PROP_CTRACE_LEN+1);
             String        filespec;
             String        linespec;
-            int                delim= trace.indexOf('@');
-            boolean        enabled;
+            int           delim= trace.indexOf('@');
+            boolean       enabled;
 
             // parse out the filename and linenumber from the property name
             filespec = delim != -1 ? trace.substring(0, delim) : trace;

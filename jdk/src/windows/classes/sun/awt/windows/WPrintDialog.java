@@ -53,6 +53,7 @@ public class WPrintDialog extends Dialog {
     // Use native code to circumvent access restrictions on Component.peer
     protected native void setPeer(ComponentPeer peer);
 
+    @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized(getTreeLock()) {
             Container parent = getParent();

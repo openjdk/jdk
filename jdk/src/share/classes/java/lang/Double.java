@@ -128,6 +128,7 @@ public final class Double extends Number implements Comparable<Double> {
      *
      * @since JDK1.1
      */
+    @SuppressWarnings("unchecked")
     public static final Class<Double>   TYPE = (Class<Double>) Class.getPrimitiveClass("double");
 
     /**
@@ -715,7 +716,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return the {@code double} value represented by this object
      */
     public double doubleValue() {
-        return (double)value;
+        return value;
     }
 
     /**

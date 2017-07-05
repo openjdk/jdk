@@ -187,7 +187,7 @@ class Space: public CHeapObj {
   // expensive operation. To prevent performance problems
   // on account of its inadvertent use in product jvm's,
   // we restrict its use to assertion checks only.
-  virtual bool is_in(const void* p) const;
+  virtual bool is_in(const void* p) const = 0;
 
   // Returns true iff the given reserved memory of the space contains the
   // given address.

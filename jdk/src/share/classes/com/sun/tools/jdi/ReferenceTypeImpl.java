@@ -99,7 +99,7 @@ implements ReferenceType {
         // Fetch all methods for the class, check performance impact
         // Needs no synchronization now, since methods() returns
         // unmodifiable local data
-        Iterator it = methods().iterator();
+        Iterator<Method> it = methods().iterator();
         while (it.hasNext()) {
             MethodImpl method = (MethodImpl)it.next();
             if (method.ref() == ref) {
@@ -113,7 +113,7 @@ implements ReferenceType {
         // Fetch all fields for the class, check performance impact
         // Needs no synchronization now, since fields() returns
         // unmodifiable local data
-        Iterator it = fields().iterator();
+        Iterator<Field>it = fields().iterator();
         while (it.hasNext()) {
             FieldImpl field = (FieldImpl)it.next();
             if (field.ref() == ref) {
@@ -385,7 +385,7 @@ implements ReferenceType {
 
         /* Add inherited, visible fields */
         List<? extends ReferenceType> types = inheritedTypes();
-        Iterator iter = types.iterator();
+        Iterator<? extends ReferenceType> iter = types.iterator();
         while (iter.hasNext()) {
             /*
              * TO DO: Be defensive and check for cyclic interface inheritance
@@ -419,7 +419,7 @@ implements ReferenceType {
 
             /* Add inherited fields */
             List<? extends ReferenceType> types = inheritedTypes();
-            Iterator iter = types.iterator();
+            Iterator<? extends ReferenceType> iter = types.iterator();
             while (iter.hasNext()) {
                 ReferenceTypeImpl type = (ReferenceTypeImpl)iter.next();
                 type.addAllFields(fieldList, typeSet);
@@ -434,13 +434,10 @@ implements ReferenceType {
     }
 
     public Field fieldByName(String fieldName) {
-        java.util.List searchList;
-        Field f;
-
-        searchList = visibleFields();
+        List<Field> searchList = visibleFields();
 
         for (int i=0; i<searchList.size(); i++) {
-            f = (Field)searchList.get(i);
+            Field f = searchList.get(i);
 
             if (f.name().equals(fieldName)) {
                 return f;
@@ -575,13 +572,13 @@ implements ReferenceType {
     }
 
     public List<ReferenceType> nestedTypes() {
-        List all = vm.allClasses();
+        List<ReferenceType> all = vm.allClasses();
         List<ReferenceType> nested = new ArrayList<ReferenceType>();
         String outername = name();
         int outerlen = outername.length();
-        Iterator iter = all.iterator();
+        Iterator<ReferenceType> iter = all.iterator();
         while (iter.hasNext()) {
-            ReferenceType refType = (ReferenceType)iter.next();
+            ReferenceType refType = iter.next();
             String name = refType.name();
             int len = name.length();
             /* The separator is historically '$' but could also be '#' */
@@ -598,8 +595,8 @@ implements ReferenceType {
     public Value getValue(Field sig) {
         List<Field> list = new ArrayList<Field>(1);
         list.add(sig);
-        Map map = getValues(list);
-        return(Value)map.get(sig);
+        Map<Field, Value> map = getValues(list);
+        return map.get(sig);
     }
 
 
@@ -847,7 +844,7 @@ implements ReferenceType {
         SDE.Stratum stratum = stratum(stratumID);
         List<Location> list = new ArrayList<Location>();  // location list
 
-        for (Iterator iter = methods().iterator(); iter.hasNext(); ) {
+        for (Iterator<Method> iter = methods().iterator(); iter.hasNext(); ) {
             MethodImpl method = (MethodImpl)iter.next();
             try {
                 list.addAll(
@@ -887,7 +884,7 @@ implements ReferenceType {
 
         List<Location> list = new ArrayList<Location>();
 
-        Iterator iter = methods.iterator();
+        Iterator<Method> iter = methods.iterator();
         while(iter.hasNext()) {
             MethodImpl method = (MethodImpl)iter.next();
             // eliminate native and abstract to eliminate

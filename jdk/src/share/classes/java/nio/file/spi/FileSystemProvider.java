@@ -373,11 +373,13 @@ public abstract class FileSystemProvider {
     {
         if (options.length > 0) {
             for (OpenOption opt: options) {
-                if (opt != StandardOpenOption.READ)
+                // All OpenOption values except for APPEND and WRITE are allowed
+                if (opt == StandardOpenOption.APPEND ||
+                    opt == StandardOpenOption.WRITE)
                     throw new UnsupportedOperationException("'" + opt + "' not allowed");
             }
         }
-        return Channels.newInputStream(Files.newByteChannel(path));
+        return Channels.newInputStream(Files.newByteChannel(path, options));
     }
 
     /**

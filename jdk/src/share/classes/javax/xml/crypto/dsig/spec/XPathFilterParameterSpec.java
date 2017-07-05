@@ -52,7 +52,7 @@ import java.util.Map.Entry;
 public final class XPathFilterParameterSpec implements TransformParameterSpec {
 
     private String xPath;
-    private Map nsMap;
+    private Map<String,String> nsMap;
 
     /**
      * Creates an <code>XPathFilterParameterSpec</code> with the specified
@@ -66,7 +66,7 @@ public final class XPathFilterParameterSpec implements TransformParameterSpec {
             throw new NullPointerException();
         }
         this.xPath = xPath;
-        this.nsMap = Collections.EMPTY_MAP;
+        this.nsMap = Collections.emptyMap();
     }
 
     /**
@@ -83,21 +83,26 @@ public final class XPathFilterParameterSpec implements TransformParameterSpec {
      * @throws ClassCastException if any of the map's keys or entries are not
      *    of type <code>String</code>
      */
+    @SuppressWarnings("rawtypes")
     public XPathFilterParameterSpec(String xPath, Map namespaceMap) {
         if (xPath == null || namespaceMap == null) {
             throw new NullPointerException();
         }
         this.xPath = xPath;
-        nsMap = new HashMap(namespaceMap);
-        Iterator entries = nsMap.entrySet().iterator();
+        Map<?,?> copy = new HashMap<>((Map<?,?>)namespaceMap);
+        Iterator<? extends Map.Entry<?,?>> entries = copy.entrySet().iterator();
         while (entries.hasNext()) {
-            Map.Entry me = (Map.Entry) entries.next();
+            Map.Entry<?,?> me = entries.next();
             if (!(me.getKey() instanceof String) ||
                 !(me.getValue() instanceof String)) {
                 throw new ClassCastException("not a String");
             }
         }
-        nsMap = Collections.unmodifiableMap(nsMap);
+
+        @SuppressWarnings("unchecked")
+        Map<String,String> temp = (Map<String,String>)copy;
+
+        nsMap = Collections.unmodifiableMap(temp);
     }
 
     /**
@@ -120,6 +125,7 @@ public final class XPathFilterParameterSpec implements TransformParameterSpec {
      * @return a <code>Map</code> of namespace prefixes to namespace URIs (may
      *    be empty, but never <code>null</code>)
      */
+    @SuppressWarnings("rawtypes")
     public Map getNamespaceMap() {
         return nsMap;
     }

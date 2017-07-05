@@ -35,6 +35,7 @@ import java.awt.Component;
  * CausedFocusEvent class or implicitly, by calling appropriate requestFocusXXX method with "cause"
  * parameter. The default cause is UNKNOWN.
  */
+@SuppressWarnings("serial")
 public class CausedFocusEvent extends FocusEvent {
     public enum Cause {
         UNKNOWN,

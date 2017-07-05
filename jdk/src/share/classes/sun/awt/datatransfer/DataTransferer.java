@@ -649,8 +649,9 @@ public abstract class DataTransferer {
      * The map keys are sorted according to the native formats preference
      * order.
      */
-    public SortedMap getFormatsForTransferable(Transferable contents,
-                                               FlavorTable map) {
+    public SortedMap<Long,DataFlavor> getFormatsForTransferable(
+                               Transferable contents, FlavorTable map)
+    {
         DataFlavor[] flavors = contents.getTransferDataFlavors();
         if (flavors == null) {
             return new TreeMap();
@@ -686,9 +687,13 @@ public abstract class DataTransferer {
      *            DataFlavors and data formats
      * @throws NullPointerException if flavors or map is <code>null</code>
      */
-    public SortedMap getFormatsForFlavors(DataFlavor[] flavors, FlavorTable map) {
-        Map formatMap = new HashMap(flavors.length);
-        Map textPlainMap = new HashMap(flavors.length);
+    public SortedMap <Long, DataFlavor> getFormatsForFlavors(
+        DataFlavor[] flavors, FlavorTable map)
+    {
+        Map <Long,DataFlavor> formatMap =
+            new HashMap <> (flavors.length);
+        Map <Long,DataFlavor> textPlainMap =
+            new HashMap <> (flavors.length);
         // Maps formats to indices that will be used to sort the formats
         // according to the preference order.
         // Larger index value corresponds to the more preferable format.

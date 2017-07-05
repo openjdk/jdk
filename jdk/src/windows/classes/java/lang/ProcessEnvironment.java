@@ -68,6 +68,9 @@ import java.util.*;
 
 final class ProcessEnvironment extends HashMap<String,String>
 {
+
+    private static final long serialVersionUID = -8017839552603542824L;
+
     private static String validateName(String name) {
         // An initial `=' indicates a magic Windows variable name -- OK
         if (name.indexOf('=', 1)   != -1 ||
@@ -144,6 +147,7 @@ final class ProcessEnvironment extends HashMap<String,String>
             };
         }
         private static Map.Entry<String,String> checkedEntry(Object o) {
+            @SuppressWarnings("unchecked")
             Map.Entry<String,String> e = (Map.Entry<String,String>) o;
             nonNullString(e.getKey());
             nonNullString(e.getValue());
@@ -281,6 +285,7 @@ final class ProcessEnvironment extends HashMap<String,String>
     }
 
     // Only for use by ProcessBuilder.environment()
+    @SuppressWarnings("unchecked")
     static Map<String,String> environment() {
         return (Map<String,String>) theEnvironment.clone();
     }
