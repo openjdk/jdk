@@ -166,6 +166,9 @@ class SharedRuntime: AllStatic {
   static void throw_and_post_jvmti_exception(JavaThread *thread, Handle h_exception);
   static void throw_and_post_jvmti_exception(JavaThread *thread, symbolOop name, const char *message = NULL);
 
+  // RedefineClasses() tracing support for obsolete method entry
+  static int rc_trace_method_entry(JavaThread* thread, methodOopDesc* m);
+
   // To be used as the entry point for unresolved native methods.
   static address native_method_throw_unsatisfied_link_error_entry();
 

@@ -123,7 +123,7 @@ void PhaseChaitin::new_lrg( const Node *x, uint lrg ) {
 }
 
 //------------------------------clone_projs------------------------------------
-// After cloning some rematierialized instruction, clone any MachProj's that
+// After cloning some rematerialized instruction, clone any MachProj's that
 // follow it.  Example: Intel zero is XOR, kills flags.  Sparc FP constants
 // use G3 as an address temp.
 int PhaseChaitin::clone_projs( Block *b, uint idx, Node *con, Node *copy, uint &maxlrg ) {
@@ -694,8 +694,8 @@ uint PhaseConservativeCoalesce::compute_separating_interferences(Node *dst_copy,
           } // End of if not infinite-stack neighbor
         } // End of if actually inserted
       } // End of if live range overlaps
-    } // End of else collect intereferences for 1 node
-  } // End of while forever, scan back for intereferences
+    } // End of else collect interferences for 1 node
+  } // End of while forever, scan back for interferences
   return reg_degree;
 }
 
@@ -786,7 +786,7 @@ bool PhaseConservativeCoalesce::copy_copy( Node *dst_copy, Node *src_copy, Block
   if( rm_size == 0 ) return false;
 
   // Another early bail-out test is when we are double-coalescing and the
-  // 2 copies are seperated by some control flow.
+  // 2 copies are separated by some control flow.
   if( dst_copy != src_copy ) {
     Block *src_b = _phc._cfg._bbs[src_copy->_idx];
     Block *b2 = b;

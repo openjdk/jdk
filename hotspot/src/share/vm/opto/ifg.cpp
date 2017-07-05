@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,7 +292,7 @@ void PhaseIFG::verify( const PhaseChaitin *pc ) const {
 //------------------------------interfere_with_live----------------------------
 // Interfere this register with everything currently live.  Use the RegMasks
 // to trim the set of possible interferences. Return a count of register-only
-// inteferences as an estimate of register pressure.
+// interferences as an estimate of register pressure.
 void PhaseChaitin::interfere_with_live( uint r, IndexSet *liveout ) {
   uint retval = 0;
   // Interfere with everything live.

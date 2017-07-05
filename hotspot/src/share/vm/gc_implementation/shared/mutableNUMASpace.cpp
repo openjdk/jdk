@@ -1,6 +1,6 @@
 
 /*
- * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ void MutableNUMASpace::ensure_parsability() {
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     MutableSpace *s = ls->space();
-    if (s->top() < top()) { // For all spaces preceeding the one containing top()
+    if (s->top() < top()) { // For all spaces preceding the one containing top()
       if (s->free_in_words() > 0) {
         size_t area_touched_words = pointer_delta(s->end(), s->top());
         CollectedHeap::fill_with_object(s->top(), area_touched_words);

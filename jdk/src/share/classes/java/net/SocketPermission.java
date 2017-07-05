@@ -113,7 +113,6 @@ import sun.security.util.SecurityConstants;
  * <p>Similarly, if the following permission:
  *
  * <pre>
- *   p1 = new SocketPermission("puffin.eng.sun.com:7777", "connect,accept");
  *   p2 = new SocketPermission("localhost:1024-", "accept,connect,listen");
  * </pre>
  *

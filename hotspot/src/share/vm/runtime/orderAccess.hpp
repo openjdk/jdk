@@ -31,7 +31,7 @@
 // at runtime.
 //
 // In the following, the terms 'previous', 'subsequent', 'before',
-// 'after', 'preceeding' and 'succeeding' refer to program order.  The
+// 'after', 'preceding' and 'succeeding' refer to program order.  The
 // terms 'down' and 'below' refer to forward load or store motion
 // relative to program order, while 'up' and 'above' refer to backward
 // motion.

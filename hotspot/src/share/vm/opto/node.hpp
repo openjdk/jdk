@@ -257,7 +257,7 @@ protected:
   Node **_in;                   // Array of use-def references to Nodes
   Node **_out;                  // Array of def-use references to Nodes
 
-  // Input edges are split into two catagories.  Required edges are required
+  // Input edges are split into two categories.  Required edges are required
   // for semantic correctness; order is important and NULLs are allowed.
   // Precedence edges are used to help determine execution order and are
   // added, e.g., for scheduling purposes.  They are unordered and not
@@ -854,7 +854,7 @@ public:
 
   // If the hash function returns the special sentinel value NO_HASH,
   // the node is guaranteed never to compare equal to any other node.
-  // If we accidently generate a hash with value NO_HASH the node
+  // If we accidentally generate a hash with value NO_HASH the node
   // won't go into the table and we'll lose a little optimization.
   enum { NO_HASH = 0 };
   virtual uint hash() const;
