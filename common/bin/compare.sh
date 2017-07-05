@@ -509,30 +509,32 @@ compare_zip_file() {
             | $CUT -f 2 -d ' ' | $SED "s|$OTHER_UNZIPDIR/||g")
     fi
 
-    $RM -f $WORK_DIR/$ZIP_FILE.diffs
-    for file in $DIFFING_FILES; do
-        if [[ "$ACCEPTED_JARZIP_CONTENTS $EXCEPTIONS" != *"$file"* ]]; then
-            diff_text $OTHER_UNZIPDIR/$file $THIS_UNZIPDIR/$file >> $WORK_DIR/$ZIP_FILE.diffs
-        fi
-    done
+    if [ "$CMP_ZIPS_CONTENTS" = "true" ]; then
+        $RM -f $WORK_DIR/$ZIP_FILE.diffs
+        for file in $DIFFING_FILES; do
+            if [[ "$ACCEPTED_JARZIP_CONTENTS $EXCEPTIONS" != *"$file"* ]]; then
+                diff_text $OTHER_UNZIPDIR/$file $THIS_UNZIPDIR/$file >> $WORK_DIR/$ZIP_FILE.diffs
+            fi
+        done
 
-    if [ -s "$WORK_DIR/$ZIP_FILE.diffs" ]; then
-        return_value=1
-        echo "        Differing files in $ZIP_FILE"
-        $CAT $WORK_DIR/$ZIP_FILE.diffs | $GREP 'differ$' | cut -f 2 -d ' ' | \
-            $SED "s|$OTHER_UNZIPDIR|            |g" > $WORK_DIR/$ZIP_FILE.difflist
-        $CAT $WORK_DIR/$ZIP_FILE.difflist
+        if [ -s "$WORK_DIR/$ZIP_FILE.diffs" ]; then
+            return_value=1
+            echo "        Differing files in $ZIP_FILE"
+            $CAT $WORK_DIR/$ZIP_FILE.diffs | $GREP 'differ$' | cut -f 2 -d ' ' | \
+                $SED "s|$OTHER_UNZIPDIR|            |g" > $WORK_DIR/$ZIP_FILE.difflist
+            $CAT $WORK_DIR/$ZIP_FILE.difflist
 
-        if [ -n "$SHOW_DIFFS" ]; then
-            for i in $(cat $WORK_DIR/$ZIP_FILE.difflist) ; do
-                if [ -f "${OTHER_UNZIPDIR}/$i.javap" ]; then
-                    LC_ALL=C $DIFF ${OTHER_UNZIPDIR}/$i.javap ${THIS_UNZIPDIR}/$i.javap
-                elif [ -f "${OTHER_UNZIPDIR}/$i.cleaned" ]; then
-                    LC_ALL=C $DIFF ${OTHER_UNZIPDIR}/$i.cleaned ${THIS_UNZIPDIR}/$i
-                else
-                    LC_ALL=C $DIFF ${OTHER_UNZIPDIR}/$i ${THIS_UNZIPDIR}/$i
-                fi
-            done
+            if [ -n "$SHOW_DIFFS" ]; then
+                for i in $(cat $WORK_DIR/$ZIP_FILE.difflist) ; do
+                    if [ -f "${OTHER_UNZIPDIR}/$i.javap" ]; then
+                        LC_ALL=C $DIFF ${OTHER_UNZIPDIR}/$i.javap ${THIS_UNZIPDIR}/$i.javap
+                    elif [ -f "${OTHER_UNZIPDIR}/$i.cleaned" ]; then
+                        LC_ALL=C $DIFF ${OTHER_UNZIPDIR}/$i.cleaned ${THIS_UNZIPDIR}/$i
+                    else
+                        LC_ALL=C $DIFF ${OTHER_UNZIPDIR}/$i ${THIS_UNZIPDIR}/$i
+                    fi
+                done
+            fi
         fi
     fi
 
@@ -1072,7 +1074,8 @@ if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "-?" ] || [ "$1" = "/h" ] || [ "$1
     echo "-perms              Compare the permission bits on all files and directories"
     echo "-types              Compare the output of the file command on all files"
     echo "-general            Compare the files not convered by the specialized comparisons"
-    echo "-zips               Compare the contents of all zip files"
+    echo "-zips               Compare the contents of all zip files and files in them"
+    echo "-zips-names         Compare the file names inside all zip files"
     echo "-jars               Compare the contents of all jar files"
     echo "-libs               Compare all native libraries"
     echo "-execs              Compare all executables"
@@ -1100,6 +1103,7 @@ CMP_PERMS=false
 CMP_TYPES=false
 CMP_GENERAL=false
 CMP_ZIPS=false
+CMP_ZIPS_CONTENTS=true
 CMP_JARS=false
 CMP_LIBS=false
 CMP_EXECS=false
@@ -1143,6 +1147,11 @@ while [ -n "$1" ]; do
             ;;
         -zips)
             CMP_ZIPS=true
+            CMP_ZIPS_CONTENTS=true
+            ;;
+        -zips-names)
+            CMP_ZIPS=true
+            CMP_ZIPS_CONTENTS=false
             ;;
         -jars)
             CMP_JARS=true
