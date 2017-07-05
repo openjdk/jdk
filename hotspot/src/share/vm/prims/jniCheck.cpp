@@ -45,6 +45,12 @@
 #ifdef TARGET_ARCH_zero
 # include "jniTypes_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "jniTypes_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "jniTypes_ppc.hpp"
+#endif
 
 
 // Heap objects are allowed to be directly referenced only in VM code,

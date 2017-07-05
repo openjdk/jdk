@@ -37,6 +37,18 @@ import sun.security.jca.GetInstance;
  * with an optional set of key and trust managers and source of
  * secure random bytes.
  *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>SSLContext</code> protocol:
+ * <ul>
+ * <li><tt>TLSv1</tt></li>
+ * </ul>
+ * This protocol is described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#SSLContext">
+ * SSLContext section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other algorithms are supported.
+ *
  * @since 1.4
  */
 public class SSLContext {
@@ -124,9 +136,10 @@ public class SSLContext {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param protocol the standard name of the requested protocol.
-     *          See Appendix A in the <a href=
-     *  "{@docRoot}/../technotes/guides/security/jsse/JSSERefGuide.html#AppA">
-     *          Java Secure Socket Extension Reference Guide </a>
+     *          See the SSLContext section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SSLContext">
+     *          Java Cryptography Architecture Standard Algorithm Name
+     *          Documentation</a>
      *          for information about standard protocol names.
      *
      * @return the new <code>SSLContext</code> object.
@@ -159,9 +172,10 @@ public class SSLContext {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param protocol the standard name of the requested protocol.
-     *          See Appendix A in the <a href=
-     *  "{@docRoot}/../technotes/guides/security/jsse/JSSERefGuide.html#AppA">
-     *          Java Secure Socket Extension Reference Guide </a>
+     *          See the SSLContext section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SSLContext">
+     *          Java Cryptography Architecture Standard Algorithm Name
+     *          Documentation</a>
      *          for information about standard protocol names.
      *
      * @param provider the name of the provider.
@@ -198,9 +212,10 @@ public class SSLContext {
      * does not have to be registered in the provider list.
      *
      * @param protocol the standard name of the requested protocol.
-     *          See Appendix A in the <a href=
-     *  "{@docRoot}/../technotes/guides/security/jsse/JSSERefGuide.html#AppA">
-     *          Java Secure Socket Extension Reference Guide </a>
+     *          See the SSLContext section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SSLContext">
+     *          Java Cryptography Architecture Standard Algorithm Name
+     *          Documentation</a>
      *          for information about standard protocol names.
      *
      * @param provider an instance of the provider.

@@ -47,11 +47,11 @@ public class Basic {
     // sanity check read and writing ACL
     static void testReadWrite(Path dir) throws IOException {
         Path file = dir.resolve("foo");
-        if (file.notExists())
-            file.createFile();
+        if (Files.notExists(file))
+            Files.createFile(file);
 
-        AclFileAttributeView view = file
-            .getFileAttributeView(AclFileAttributeView.class);
+        AclFileAttributeView view =
+            Files.getFileAttributeView(file, AclFileAttributeView.class);
 
         // print existing ACL
         List<AclEntry> acl = view.getAcl();
@@ -79,7 +79,7 @@ public class Basic {
         }
 
         // if PosixFileAttributeView then repeat test with OWNER@
-        if (file.getFileStore().supportsFileAttributeView("posix")) {
+        if (Files.getFileStore(file).supportsFileAttributeView("posix")) {
             owner = file.getFileSystem().getUserPrincipalLookupService()
                 .lookupPrincipalByName("OWNER@");
             entry = AclEntry.newBuilder(entry).setPrincipal(owner).build();
@@ -115,7 +115,8 @@ public class Basic {
 
     // sanity check create a file or directory with initial ACL
     static void testCreateFile(Path dir) throws IOException {
-        UserPrincipal user = Attributes.getOwner(dir);
+        UserPrincipal user = Files.getOwner(dir);
+        AclFileAttributeView view;
 
         // create file with initial ACL
         System.out.println("-- create file with initial ACL --");
@@ -127,8 +128,9 @@ public class Basic {
                 .setPermissions(SYNCHRONIZE, READ_DATA, WRITE_DATA,
                     READ_ATTRIBUTES, READ_ACL, WRITE_ATTRIBUTES, DELETE)
                 .build());
-        file.createFile(asAclAttribute(fileAcl));
-        assertEquals(Attributes.getAcl(file), fileAcl);
+        Files.createFile(file, asAclAttribute(fileAcl));
+        view = Files.getFileAttributeView(file, AclFileAttributeView.class);
+        assertEquals(view.getAcl(), fileAcl);
 
         // create directory with initial ACL
         System.out.println("-- create directory with initial ACL --");
@@ -142,17 +144,18 @@ public class Basic {
             AclEntry.newBuilder(fileAcl.get(0))
                 .setFlags(FILE_INHERIT)
                 .build());
-        subdir.createDirectory(asAclAttribute(dirAcl));
-        assertEquals(Attributes.getAcl(subdir), dirAcl);
+        Files.createDirectory(subdir, asAclAttribute(dirAcl));
+        view = Files.getFileAttributeView(subdir, AclFileAttributeView.class);
+        assertEquals(view.getAcl(), dirAcl);
     }
 
     public static void main(String[] args) throws IOException {
         // use work directory rather than system temporary directory to
         // improve chances that ACLs are supported
-        Path dir = Paths.get("./work" + new Random().nextInt())
-            .createDirectory();
+        Path dir = Paths.get("./work" + new Random().nextInt());
+        Files.createDirectory(dir);
         try {
-            if (!dir.getFileStore().supportsFileAttributeView("acl")) {
+            if (!Files.getFileStore(dir).supportsFileAttributeView("acl")) {
                 System.out.println("ACLs not supported - test skipped!");
                 return;
             }

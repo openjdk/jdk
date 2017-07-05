@@ -81,12 +81,12 @@ FILES_src = \
 	java/nio/file/ClosedDirectoryStreamException.java \
 	java/nio/file/ClosedFileSystemException.java \
 	java/nio/file/ClosedWatchServiceException.java \
+	java/nio/file/CopyMoveHelper.java \
 	java/nio/file/CopyOption.java \
 	java/nio/file/DirectoryIteratorException.java \
 	java/nio/file/DirectoryNotEmptyException.java \
 	java/nio/file/DirectoryStream.java \
 	java/nio/file/FileAlreadyExistsException.java \
-	java/nio/file/FileRef.java \
 	java/nio/file/FileStore.java \
 	java/nio/file/FileSystem.java \
 	java/nio/file/FileSystemAlreadyExistsException.java \
@@ -116,6 +116,7 @@ FILES_src = \
 	java/nio/file/StandardCopyOption.java \
 	java/nio/file/StandardOpenOption.java \
 	java/nio/file/StandardWatchEventKind.java \
+	java/nio/file/TempFileHelper.java \
 	java/nio/file/WatchEvent.java \
 	java/nio/file/WatchKey.java \
 	java/nio/file/WatchService.java \
@@ -127,7 +128,6 @@ FILES_src = \
 	java/nio/file/attribute/AclEntryType.java \
 	java/nio/file/attribute/AclFileAttributeView.java \
 	java/nio/file/attribute/AttributeView.java \
-	java/nio/file/attribute/Attributes.java \
 	java/nio/file/attribute/BasicFileAttributeView.java \
 	java/nio/file/attribute/BasicFileAttributes.java \
 	java/nio/file/attribute/DosFileAttributeView.java \
@@ -136,8 +136,6 @@ FILES_src = \
 	java/nio/file/attribute/FileAttributeView.java \
 	java/nio/file/attribute/FileOwnerAttributeView.java \
 	java/nio/file/attribute/FileStoreAttributeView.java \
-	java/nio/file/attribute/FileStoreSpaceAttributeView.java \
-	java/nio/file/attribute/FileStoreSpaceAttributes.java \
 	java/nio/file/attribute/FileTime.java \
 	java/nio/file/attribute/GroupPrincipal.java \
 	java/nio/file/attribute/UserDefinedFileAttributeView.java \
@@ -246,6 +244,7 @@ FILES_src = \
 	sun/nio/fs/AbstractAclFileAttributeView.java \
 	sun/nio/fs/AbstractBasicFileAttributeView.java \
 	sun/nio/fs/AbstractFileTypeDetector.java \
+        sun/nio/fs/AbstractFileSystemProvider.java \
 	sun/nio/fs/AbstractPath.java \
 	sun/nio/fs/AbstractPoller.java \
 	sun/nio/fs/AbstractUserDefinedFileAttributeView.java \

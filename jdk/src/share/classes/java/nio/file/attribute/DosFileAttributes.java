@@ -29,13 +29,13 @@ package java.nio.file.attribute;
  * File attributes associated with a file in a file system that supports
  * legacy "DOS" attributes.
  *
- * <p> The DOS attributes of a file are retrieved using a {@link
- * DosFileAttributeView} by invoking its {@link DosFileAttributeView#readAttributes
- * readAttributes} method.
+ * <p> <b>Usage Example:</b>
+ * <pre>
+ *    Path file = ...
+ *    DosFileAttributes attrs = Files.readAttributes(file, DosFileAttributes.class);
+ * </pre>
  *
  * @since 1.7
- *
- * @see Attributes#readDosFileAttributes
  */
 
 public interface DosFileAttributes

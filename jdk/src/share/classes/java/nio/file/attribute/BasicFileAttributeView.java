@@ -85,16 +85,15 @@ import java.io.IOException;
  * </table>
  * </blockquote>
  *
- * <p> The {@link java.nio.file.FileRef#getAttribute getAttribute} method may be
+ * <p> The {@link java.nio.file.Files#getAttribute getAttribute} method may be
  * used to read any of these attributes as if by invoking the {@link
  * #readAttributes() readAttributes()} method.
  *
- * <p> The {@link java.nio.file.FileRef#setAttribute setAttribute} method may be
+ * <p> The {@link java.nio.file.Files#setAttribute setAttribute} method may be
  * used to update the file's last modified time, last access time or create time
  * attributes as if by invoking the {@link #setTimes setTimes} method.
  *
  * @since 1.7
- * @see Attributes
  */
 
 public interface BasicFileAttributeView
@@ -131,9 +130,10 @@ public interface BasicFileAttributeView
      * <p> This method updates the file's timestamp attributes. The values are
      * converted to the epoch and precision supported by the file system.
      * Converting from finer to coarser granularities result in precision loss.
-     * The behavior of this method when attempting to set a timestamp to a value
-     * that is outside the range supported by the underlying file store is not
-     * defined. It may or not fail by throwing an {@code IOException}.
+     * The behavior of this method when attempting to set a timestamp that is
+     * not supported or to a value that is outside the range supported by the
+     * underlying file store is not defined. It may or not fail by throwing an
+     * {@code IOException}.
      *
      * <p> If any of the {@code lastModifiedTime}, {@code lastAccessTime},
      * or {@code createTime} parameters has the value {@code null} then the
@@ -145,6 +145,14 @@ public interface BasicFileAttributeView
      * precision loss. If all of the {@code lastModifiedTime}, {@code
      * lastAccessTime} and {@code createTime} parameters are {@code null} then
      * this method has no effect.
+     *
+     * <p> <b>Usage Example:</b>
+     * Suppose we want to change a file's creation time.
+     * <pre>
+     *    Path path = ...
+     *    FileTime time = ...
+     *    Files.getFileAttributeView(path, BasicFileAttributeView.class).setTimes(null, null, time);
+     * </pre>
      *
      * @param   lastModifiedTime
      *          the new last modified time, or {@code null} to not change the
@@ -160,6 +168,8 @@ public interface BasicFileAttributeView
      *          In the case of the default provider, a security manager is
      *          installed, its  {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access to the file
+     *
+     * @see java.nio.file.Files#setLastModifiedTime
      */
     void setTimes(FileTime lastModifiedTime,
                   FileTime lastAccessTime,

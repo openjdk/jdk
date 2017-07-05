@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,9 +182,9 @@ public abstract class CertificateFactorySpi {
     /**
      * Returns an iteration of the <code>CertPath</code> encodings supported
      * by this certificate factory, with the default encoding first. See
-     * Appendix A in the
-     * <a href="../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     * Java Certification Path API Programmer's Guide</a>
+     * the CertPath Encodings section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathEncodings">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard encoding names.
      * <p>
      * Attempts to modify the returned <code>Iterator</code> via its

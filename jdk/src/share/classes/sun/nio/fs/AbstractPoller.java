@@ -92,7 +92,7 @@ abstract class AbstractPoller implements Runnable {
     /**
      * Requests, and waits on, poller thread to register given file.
      */
-    final WatchKey register(FileRef dir,
+    final WatchKey register(Path dir,
                             WatchEvent.Kind<?>[] events,
                             WatchEvent.Modifier... modifiers)
         throws IOException
@@ -102,7 +102,7 @@ abstract class AbstractPoller implements Runnable {
             throw new NullPointerException();
         if (events.length == 0)
             throw new IllegalArgumentException("No events to register");
-        Set<WatchEvent.Kind<?>> eventSet = new HashSet<WatchEvent.Kind<?>>(events.length);
+        Set<WatchEvent.Kind<?>> eventSet = new HashSet<>(events.length);
         for (WatchEvent.Kind<?> event: events) {
             // standard events
             if (event == StandardWatchEventKind.ENTRY_CREATE ||

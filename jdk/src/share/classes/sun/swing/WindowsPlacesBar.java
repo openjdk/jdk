@@ -120,6 +120,7 @@ public class WindowsPlacesBar extends JToolBar
                 buttons[i].setForeground(fgColor);
             }
             buttons[i].setMargin(new Insets(3, 2, 1, 2));
+            buttons[i].setFocusPainted(false);
             buttons[i].setIconTextGap(0);
             buttons[i].setHorizontalTextPosition(JToggleButton.CENTER);
             buttons[i].setVerticalTextPosition(JToggleButton.BOTTOM);
