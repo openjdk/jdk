@@ -18,8 +18,6 @@ then
   exit 1
 fi
 
-BIT_FLAG=""
-
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
@@ -27,12 +25,6 @@ case "$OS" in
     NULL=/dev/null
     PS=":"
     FS="/"
-    ## for solaris, linux it's HOME
-    FILE_LOCATION=$HOME
-    if [ -f ${FILE_LOCATION}${FS}JDK64BIT -a ${OS} = "SunOS" -a `uname -p`='sparc' ]
-    then
-        BIT_FLAG="-d64"
-    fi
     ;;
   Windows_95 | Windows_98 | Windows_ME )
     NULL=NUL
@@ -56,11 +48,11 @@ esac
 
 cp ${TESTSRC}${FS}*.java .
 
-${TESTJAVA}${FS}bin${FS}java ${BIT_FLAG} -fullversion
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -fullversion
 
 ${TESTJAVA}${FS}bin${FS}javac -classpath .${PS}$TESTJAVA${FS}lib${FS}tools.jar *.java
 
-${TESTJAVA}${FS}bin${FS}java ${BIT_FLAG} -classpath .${PS}$TESTJAVA${FS}lib${FS}tools.jar FieldMonitor > test.out 2>&1 &
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath .${PS}$TESTJAVA${FS}lib${FS}tools.jar FieldMonitor > test.out 2>&1 &
 
 P_PID=$!
 
