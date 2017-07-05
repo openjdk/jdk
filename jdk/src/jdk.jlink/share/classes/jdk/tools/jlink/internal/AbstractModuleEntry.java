@@ -25,7 +25,6 @@
 
 package jdk.tools.jlink.internal;
 
-import java.io.InputStream;
 import java.util.Objects;
 import jdk.tools.jlink.plugin.ModuleEntry;
 
@@ -77,9 +76,7 @@ abstract class AbstractModuleEntry implements ModuleEntry {
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 89 * hash + Objects.hashCode(this.path);
-        return hash;
+        return Objects.hashCode(this.path);
     }
 
     @Override

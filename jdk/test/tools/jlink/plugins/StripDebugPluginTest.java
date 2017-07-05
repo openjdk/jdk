@@ -58,7 +58,7 @@ import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.internal.plugins.StripDebugPlugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import tests.Helper;
 
 public class StripDebugPluginTest {
@@ -124,7 +124,7 @@ public class StripDebugPluginTest {
         checkDebugAttributes(result1.getBytes());
     }
 
-    private ModuleEntry stripDebug(TransformerPlugin debug, ModuleEntry classResource,
+    private ModuleEntry stripDebug(Plugin debug, ModuleEntry classResource,
             String path, String infoPath, byte[] moduleInfo) throws Exception {
         ModulePool resources = new ModulePoolImpl();
         resources.add(classResource);

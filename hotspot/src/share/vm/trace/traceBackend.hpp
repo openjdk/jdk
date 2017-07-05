@@ -48,9 +48,6 @@ public:
   static void on_unloading_classes(void) {
   }
 
-  static void on_vm_error(bool) {
-  }
-
 };
 
 class TraceThreadData {
