@@ -75,7 +75,7 @@ public class SimpleStandard
      * @return the current value of the "State" attribute.
      */
     public String getState() {
-        checkSubject();
+        checkSubject("getState");
         return state;
     }
 
@@ -85,7 +85,7 @@ public class SimpleStandard
      * @param <VAR>s</VAR> the new value of the "State" attribute.
      */
     public void setState(String s) {
-        checkSubject();
+        checkSubject("setState");
         state = s;
         nbChanges++;
     }
@@ -97,7 +97,7 @@ public class SimpleStandard
      * @return the current value of the "NbChanges" attribute.
      */
     public int getNbChanges() {
-        checkSubject();
+        checkSubject("getNbChanges");
         return nbChanges;
     }
 
@@ -106,7 +106,7 @@ public class SimpleStandard
      * attributes of the "SimpleStandard" standard MBean.
      */
     public void reset() {
-        checkSubject();
+        checkSubject("reset");
         AttributeChangeNotification acn =
             new AttributeChangeNotification(this,
                                             0,
@@ -149,18 +149,18 @@ public class SimpleStandard
      * Check that the principal contained in the Subject is of
      * type JMXPrincipal and refers to the principalName identity.
      */
-    private void checkSubject() {
+    private void checkSubject(String op) {
         AccessControlContext acc = AccessController.getContext();
         Subject subject = Subject.getSubject(acc);
         Set principals = subject.getPrincipals();
         Principal principal = (Principal) principals.iterator().next();
         if (!(principal instanceof JMXPrincipal))
-            throw new SecurityException("Authenticated subject contains " +
+            throw new SecurityException(op+": Authenticated subject contains " +
                                         "invalid principal type = " +
                                         principal.getClass().getName());
         String identity = principal.getName();
         if (!identity.equals(principalName))
-            throw new SecurityException("Authenticated subject contains " +
+            throw new SecurityException(op+": Authenticated subject contains " +
                                         "invalid principal name = " + identity);
     }
 

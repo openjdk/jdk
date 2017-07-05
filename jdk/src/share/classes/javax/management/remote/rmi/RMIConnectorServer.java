@@ -383,7 +383,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
         try {
             if (tracing) logger.trace("start", "setting default class loader");
             defaultClassLoader = EnvHelp.resolveServerClassLoader(
-                    attributes, getSystemMBeanServer());
+                    attributes, getSystemMBeanServerForwarder());
         } catch (InstanceNotFoundException infc) {
             IllegalArgumentException x = new
                 IllegalArgumentException("ClassLoader not found: "+infc);
@@ -398,7 +398,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
         else
             rmiServer = newServer();
 
-        rmiServer.setMBeanServer(getSystemMBeanServer());
+        rmiServer.setMBeanServer(getSystemMBeanServerForwarder());
         rmiServer.setDefaultClassLoader(defaultClassLoader);
         rmiServer.setRMIConnectorServer(this);
         rmiServer.export();
@@ -592,31 +592,6 @@ public class RMIConnectorServer extends JMXConnectorServer {
         return Collections.unmodifiableMap(map);
     }
 
-    @Override
-    public synchronized void setMBeanServerForwarder(MBeanServerForwarder mbsf) {
-        MBeanServer oldSMBS = getSystemMBeanServer();
-        super.setMBeanServerForwarder(mbsf);
-        if (oldSMBS != getSystemMBeanServer())
-            updateMBeanServer();
-        // If the system chain of MBeanServerForwarders is not empty, then
-        // there is no need to call rmiServerImpl.setMBeanServer, because
-        // it is pointing to the head of the system chain and that has not
-        // changed.  (The *end* of the system chain will have been changed
-        // to point to mbsf.)
-    }
-
-    private void updateMBeanServer() {
-        if (rmiServerImpl != null)
-            rmiServerImpl.setMBeanServer(getSystemMBeanServer());
-    }
-
-    @Override
-    public synchronized void setSystemMBeanServerForwarder(
-            MBeanServerForwarder mbsf) {
-        super.setSystemMBeanServerForwarder(mbsf);
-        updateMBeanServer();
-    }
-
     /**
      * {@inheritDoc}
      * @return true, since this connector server does support a system chain
@@ -631,16 +606,19 @@ public class RMIConnectorServer extends JMXConnectorServer {
        here so that they are accessible to other classes in this package
        even though they have protected access.  */
 
+    @Override
     protected void connectionOpened(String connectionId, String message,
                                     Object userData) {
         super.connectionOpened(connectionId, message, userData);
     }
 
+    @Override
     protected void connectionClosed(String connectionId, String message,
                                     Object userData) {
         super.connectionClosed(connectionId, message, userData);
     }
 
+    @Override
     protected void connectionFailed(String connectionId, String message,
                                     Object userData) {
         super.connectionFailed(connectionId, message, userData);

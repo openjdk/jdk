@@ -456,10 +456,32 @@ bool Reflection::verify_class_access(klassOop current_class, klassOop new_class,
   return can_relax_access_check_for(current_class, new_class, classloader_only);
 }
 
+static bool under_host_klass(instanceKlass* ik, klassOop host_klass) {
+  DEBUG_ONLY(int inf_loop_check = 1000 * 1000 * 1000);
+  for (;;) {
+    klassOop hc = (klassOop) ik->host_klass();
+    if (hc == NULL)        return false;
+    if (hc == host_klass)  return true;
+    ik = instanceKlass::cast(hc);
+
+    // There's no way to make a host class loop short of patching memory.
+    // Therefore there cannot be a loop here unles there's another bug.
+    // Still, let's check for it.
+    assert(--inf_loop_check > 0, "no host_klass loop");
+  }
+}
+
 bool Reflection::can_relax_access_check_for(
     klassOop accessor, klassOop accessee, bool classloader_only) {
   instanceKlass* accessor_ik = instanceKlass::cast(accessor);
   instanceKlass* accessee_ik  = instanceKlass::cast(accessee);
+
+  // If either is on the other's host_klass chain, access is OK,
+  // because one is inside the other.
+  if (under_host_klass(accessor_ik, accessee) ||
+      under_host_klass(accessee_ik, accessor))
+    return true;
+
   if (RelaxAccessControlCheck ||
       (accessor_ik->major_version() < JAVA_1_5_VERSION &&
        accessee_ik->major_version() < JAVA_1_5_VERSION)) {

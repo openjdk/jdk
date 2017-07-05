@@ -32,6 +32,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
+import sun.security.krb5.internal.ccache.CredentialsCache;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.util.DerInputStream;
@@ -765,7 +766,29 @@ public class KDC {
             DerOutputStream out = new DerOutputStream();
             out.write(DerValue.createTag(DerValue.TAG_APPLICATION,
                     true, (byte)Krb5.KRB_AS_REP), asRep.asn1Encode());
-            return out.toByteArray();
+            byte[] result = out.toByteArray();
+
+            // Added feature:
+            // Write the current issuing TGT into a ccache file specified
+            // by the system property below.
+            String ccache = System.getProperty("test.kdc.save.ccache");
+            if (ccache != null) {
+                asRep.encKDCRepPart = enc_part;
+                sun.security.krb5.internal.ccache.Credentials credentials =
+                    new sun.security.krb5.internal.ccache.Credentials(asRep);
+                asReq.reqBody.cname.setRealm(getRealm());
+                CredentialsCache cache =
+                    CredentialsCache.create(asReq.reqBody.cname, ccache);
+                if (cache == null) {
+                   throw new IOException("Unable to create the cache file " +
+                                         ccache);
+                }
+                cache.update(credentials);
+                cache.save();
+                new File(ccache).deleteOnExit();
+            }
+
+            return result;
         } catch (KrbException ke) {
             ke.printStackTrace(System.out);
             KRBError kerr = ke.getError();
