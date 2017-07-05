@@ -108,7 +108,11 @@ define add_native_source
         # setting -showIncludes, all included files are printed. These are filtered out and 
         # parsed into make dependences.
         ifeq ($(COMPILER_TYPE),CL)
-		$$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2 | $(TEE) $$($1_$2_DEP).raw | $(GREP) -v "^Note: including file:"
+		($$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) \
+			$(CC_OUT_OPTION)$$($1_$2_OBJ) $2 ; echo $$$$? > $$($1_$2_DEP).exitvalue) \
+			| $(TEE) $$($1_$2_DEP).raw | $(GREP) -v "^Note: including file:" \
+			&& exit `cat $$($1_$2_DEP).exitvalue`
+		$(RM) $$($1_$2_DEP).exitvalue
 		($(ECHO) $$@: \\ \
 		 && $(SED) -e '/^Note: including file:/!d' \
 			-e 's|Note: including file: *||' \
