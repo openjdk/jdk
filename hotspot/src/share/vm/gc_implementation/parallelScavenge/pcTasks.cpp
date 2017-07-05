@@ -59,8 +59,6 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
     PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
-  assert(cm->stacks_have_been_allocated(),
-         "Stack space has not been allocated");
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
 
   switch (_root_type) {
@@ -119,7 +117,6 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
 
   // Do the real work
   cm->follow_marking_stacks();
-  // cm->deallocate_stacks();
 }
 
 
@@ -135,8 +132,6 @@ void RefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
     PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
-  assert(cm->stacks_have_been_allocated(),
-         "Stack space has not been allocated");
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
   PSParallelCompact::FollowStackClosure follow_stack_closure(cm);
   _rp_task.work(_work_id, *PSParallelCompact::is_alive_closure(),

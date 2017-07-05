@@ -250,21 +250,23 @@ public:
 
   // This is lock-free; assumes that it will only be called in parallel
   // with other "push" operations (no pops).
-  void push(MemRegion mr);
-
-#if 0
-  // This is currently not used. See the comment in the .cpp file.
+  void push_lock_free(MemRegion mr);
 
   // Lock-free; assumes that it will only be called in parallel
   // with other "pop" operations (no pushes).
-  MemRegion pop();
-#endif // 0
+  MemRegion pop_lock_free();
+
+#if 0
+  // The routines that manipulate the region stack with a lock are
+  // not currently used. They should be retained, however, as a
+  // diagnostic aid.
 
   // These two are the implementations that use a lock. They can be
   // called concurrently with each other but they should not be called
   // concurrently with the lock-free versions (push() / pop()).
   void push_with_lock(MemRegion mr);
   MemRegion pop_with_lock();
+#endif
 
   bool isEmpty()    { return _index == 0; }
   bool isFull()     { return _index == _capacity; }
@@ -398,6 +400,7 @@ protected:
   volatile bool           _concurrent;
   // set at the end of a Full GC so that marking aborts
   volatile bool           _has_aborted;
+
   // used when remark aborts due to an overflow to indicate that
   // another concurrent marking phase should start
   volatile bool           _restart_for_overflow;
@@ -548,23 +551,30 @@ public:
   bool mark_stack_overflow()            { return _markStack.overflow(); }
   bool mark_stack_empty()               { return _markStack.isEmpty(); }
 
-  // Manipulation of the region stack
-  bool region_stack_push(MemRegion mr) {
+  // (Lock-free) Manipulation of the region stack
+  bool region_stack_push_lock_free(MemRegion mr) {
     // Currently we only call the lock-free version during evacuation
     // pauses.
     assert(SafepointSynchronize::is_at_safepoint(), "world should be stopped");
 
-    _regionStack.push(mr);
+    _regionStack.push_lock_free(mr);
     if (_regionStack.overflow()) {
       set_has_overflown();
       return false;
     }
     return true;
   }
+
+  // Lock-free version of region-stack pop. Should only be
+  // called in tandem with other lock-free pops.
+  MemRegion region_stack_pop_lock_free() {
+    return _regionStack.pop_lock_free();
+  }
+
 #if 0
-  // Currently this is not used. See the comment in the .cpp file.
-  MemRegion region_stack_pop() { return _regionStack.pop(); }
-#endif // 0
+  // The routines that manipulate the region stack with a lock are
+  // not currently used. They should be retained, however, as a
+  // diagnostic aid.
 
   bool region_stack_push_with_lock(MemRegion mr) {
     // Currently we only call the lock-based version during either
@@ -579,6 +589,7 @@ public:
     }
     return true;
   }
+
   MemRegion region_stack_pop_with_lock() {
     // Currently we only call the lock-based version during either
     // concurrent marking or remark.
@@ -587,10 +598,20 @@ public:
 
     return _regionStack.pop_with_lock();
   }
+#endif
 
   int region_stack_size()               { return _regionStack.size(); }
   bool region_stack_overflow()          { return _regionStack.overflow(); }
   bool region_stack_empty()             { return _regionStack.isEmpty(); }
+
+  // Iterate over any regions that were aborted while draining the
+  // region stack (any such regions are saved in the corresponding
+  // CMTask) and invalidate (i.e. assign to the empty MemRegion())
+  // any regions that point into the collection set.
+  bool invalidate_aborted_regions_in_cset();
+
+  // Returns true if there are any aborted memory regions.
+  bool has_aborted_regions();
 
   bool concurrent_marking_in_progress() {
     return _concurrent_marking_in_progress;
@@ -856,6 +877,15 @@ private:
   // stack.
   HeapWord*                   _region_finger;
 
+  // If we abort while scanning a region we record the remaining
+  // unscanned portion and check this field when marking restarts.
+  // This avoids having to push on the region stack while other
+  // marking threads may still be popping regions.
+  // If we were to push the unscanned portion directly to the
+  // region stack then we would need to using locking versions
+  // of the push and pop operations.
+  MemRegion                   _aborted_region;
+
   // the number of words this task has scanned
   size_t                      _words_scanned;
   // When _words_scanned reaches this limit, the regular clock is
@@ -1011,6 +1041,15 @@ public:
   void set_has_aborted()        { _has_aborted = true; }
   void clear_has_aborted()      { _has_aborted = false; }
   bool claimed() { return _claimed; }
+
+  // Support routines for the partially scanned region that may be
+  // recorded as a result of aborting while draining the CMRegionStack
+  MemRegion aborted_region()    { return _aborted_region; }
+  void set_aborted_region(MemRegion mr)
+                                { _aborted_region = mr; }
+
+  // Clears any recorded partially scanned region
+  void clear_aborted_region()   { set_aborted_region(MemRegion()); }
 
   void set_oop_closure(OopClosure* oop_closure) {
     _oop_closure = oop_closure;

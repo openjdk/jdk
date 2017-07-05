@@ -80,10 +80,9 @@ private:
   // type of TaskQueue.
   RegionTaskQueue               _region_stack;
 
-#if 1  // does this happen enough to need a per thread stack?
-  GrowableArray<Klass*>*        _revisit_klass_stack;
-  GrowableArray<DataLayout*>*   _revisit_mdo_stack;
-#endif
+  Stack<Klass*>                 _revisit_klass_stack;
+  Stack<DataLayout*>            _revisit_mdo_stack;
+
   static ParMarkBitMap* _mark_bitmap;
 
   Action _action;
@@ -113,10 +112,7 @@ private:
   inline static ParCompactionManager* manager_array(int index);
 
   ParCompactionManager();
-  ~ParCompactionManager();
 
-  void allocate_stacks();
-  void deallocate_stacks();
   ParMarkBitMap* mark_bitmap() { return _mark_bitmap; }
 
   // Take actions in preparation for a compaction.
@@ -129,11 +125,8 @@ private:
   bool should_verify_only();
   bool should_reset_only();
 
-#if 1
-  // Probably stays as a growable array
-  GrowableArray<Klass*>* revisit_klass_stack() { return _revisit_klass_stack; }
-  GrowableArray<DataLayout*>* revisit_mdo_stack() { return _revisit_mdo_stack; }
-#endif
+  Stack<Klass*>* revisit_klass_stack() { return &_revisit_klass_stack; }
+  Stack<DataLayout*>* revisit_mdo_stack() { return &_revisit_mdo_stack; }
 
   // Save for later processing.  Must not fail.
   inline void push(oop obj) { _marking_stack.push(obj); }
@@ -162,10 +155,6 @@ private:
   // Process tasks remaining on any stack
   void drain_region_stacks();
 
-  // Debugging support
-#ifdef ASSERT
-  bool stacks_have_been_allocated();
-#endif
 };
 
 inline ParCompactionManager* ParCompactionManager::manager_array(int index) {
