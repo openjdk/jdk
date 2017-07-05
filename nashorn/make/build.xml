@@ -38,7 +38,7 @@
     <path id="nashorn.boot.prefix.path">
       <pathelement location="${dist.jar}"/>
     </path>
-    <property name="boot.class.path" value="-Xbootclasspath/p:&quot;${toString:nashorn.boot.prefix.path}&quot;"/>
+    <property name="boot.class.path" value="-Xbootclasspath/p:${toString:nashorn.boot.prefix.path}"/>
     <condition property="svn.executable" value="/usr/local/bin/svn" else="svn">
       <available file="/usr/local/bin/svn"/>
     </condition>
@@ -271,6 +271,7 @@
            debug="${javac.debug}"
            encoding="${javac.encoding}"
            includeantruntime="false" fork="true">
+        <compilerarg value="${boot.class.path}"/>
         <compilerarg value="-Xlint:unchecked"/>
         <compilerarg value="-Xlint:deprecation"/>
         <compilerarg value="-Xdiags:verbose"/>

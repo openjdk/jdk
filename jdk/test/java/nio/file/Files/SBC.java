@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 8066915
  * @summary Unit test for java.nio.file.Files.newByteChannel
  * @library ..
  */
@@ -59,6 +59,7 @@ public class SBC {
                 dosSharingOptionTests(dir);
 
             // misc. tests
+            directoryOpenTests(dir);
             badCombinations(dir);
             unsupportedOptions(dir);
             nullTests(dir);
@@ -276,6 +277,21 @@ public class SBC {
         } finally {
             TestUtil.deleteUnchecked(file);
         }
+    }
+
+    // test opening a directory for read or write
+    static void directoryOpenTests(Path dir) throws Exception {
+        try (SeekableByteChannel sbc = Files.newByteChannel(dir, READ)) {
+            throw new RuntimeException("Opened directory for read");
+        } catch (IOException expected) { }
+
+        try (SeekableByteChannel sbc = Files.newByteChannel(dir, WRITE)) {
+            throw new RuntimeException("Opened directory for write");
+        } catch (IOException expected) { }
+
+        try (SeekableByteChannel sbc = Files.newByteChannel(dir, APPEND)) {
+            throw new RuntimeException("Opened directory for append ");
+        } catch (IOException expected) { }
     }
 
     // Windows specific options for the use by applications that really want

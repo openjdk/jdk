@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
 G1HotCardCache::~G1HotCardCache() {
   if (default_use_cache()) {
     assert(_hot_cache != NULL, "Logic");
-    FREE_C_HEAP_ARRAY(jbyte*, _hot_cache, mtGC);
+    FREE_C_HEAP_ARRAY(jbyte*, _hot_cache);
   }
 }
 

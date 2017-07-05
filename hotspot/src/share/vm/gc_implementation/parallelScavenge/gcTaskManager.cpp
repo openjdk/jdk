@@ -429,7 +429,7 @@ void GCTaskManager::initialize() {
       }
       tty->cr();
     }
-    FREE_C_HEAP_ARRAY(uint, processor_assignment, mtGC);
+    FREE_C_HEAP_ARRAY(uint, processor_assignment);
   }
   reset_busy_workers();
   set_unblocked();
@@ -458,11 +458,11 @@ GCTaskManager::~GCTaskManager() {
       GCTaskThread::destroy(thread(i));
       set_thread(i, NULL);
     }
-    FREE_C_HEAP_ARRAY(GCTaskThread*, _thread, mtGC);
+    FREE_C_HEAP_ARRAY(GCTaskThread*, _thread);
     _thread = NULL;
   }
   if (_resource_flag != NULL) {
-    FREE_C_HEAP_ARRAY(bool, _resource_flag, mtGC);
+    FREE_C_HEAP_ARRAY(bool, _resource_flag);
     _resource_flag = NULL;
   }
   if (queue() != NULL) {

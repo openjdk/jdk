@@ -2001,12 +2001,11 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
         if (find == null) {
             switch (operator) {
+            case "getElem": // getElem only gets here if element name is constant, so treat it like a property access
             case "getProp":
                 return noSuchProperty(desc, request);
             case "getMethod":
                 return noSuchMethod(desc, request);
-            case "getElem":
-                return createEmptyGetter(desc, explicitInstanceOfCheck, name);
             default:
                 throw new AssertionError(operator); // never invoked with any other operation
             }
@@ -2333,8 +2332,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
 
         final ScriptFunction func = (ScriptFunction)value;
-        final Object         thiz = scopeCall && func.isStrict() ? ScriptRuntime.UNDEFINED : this;
+        final Object         thiz = scopeCall && func.isStrict() ? UNDEFINED : this;
         // TODO: It'd be awesome if we could bind "name" without binding "this".
+        // Since we're binding this we must use an identity guard here.
         return new GuardedInvocation(
                 MH.dropArguments(
                         MH.constant(
@@ -2342,9 +2342,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
                                 func.makeBoundFunction(thiz, new Object[] { name })),
                         0,
                         Object.class),
-                NashornGuards.getMapGuard(getMap(), explicitInstanceOfCheck),
-                (SwitchPoint)null,
-                explicitInstanceOfCheck ? null : ClassCastException.class);
+                NashornGuards.combineGuards(
+                        NashornGuards.getIdentityGuard(this),
+                        NashornGuards.getMapGuard(getMap(), true)));
     }
 
     /**
@@ -3710,7 +3710,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         final ScriptObject clone = (ScriptObject) super.clone();
         if (objectSpill != null) {
             clone.objectSpill = objectSpill.clone();
-            clone.primitiveSpill = primitiveSpill.clone();
+            if (primitiveSpill != null) {
+                clone.primitiveSpill = primitiveSpill.clone();
+            }
         }
         clone.arrayData = arrayData.copy();
         return clone;

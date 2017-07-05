@@ -48,6 +48,7 @@ public class ParserTest {
         testBool();
         testQuotes();
         testMemorySize();
+        testSingleLetterArg();
     }
 
     public static void main(String... args) throws Exception  {
@@ -99,7 +100,7 @@ public class ParserTest {
                 false, "0");
         DiagnosticCommand[] args = {arg};
 
-        wb.parseCommandLine(name + "=10", args);
+        wb.parseCommandLine(name + "=10", ',', args);
         parse(name, "10", name + "=10", args);
         parse(name, "-5", name + "=-5", args);
 
@@ -149,6 +150,15 @@ public class ParserTest {
         parse(name, "Recording 1", "\"" + name + "\"" + "=\"Recording 1\",arg=value", args);
     }
 
+    public void testSingleLetterArg() throws Exception {
+        DiagnosticCommand[] args = new DiagnosticCommand[]{
+            new DiagnosticCommand("flag", "desc", DiagnosticArgumentType.STRING, true, false, null),
+            new DiagnosticCommand("value", "desc", DiagnosticArgumentType.STRING, true, false, null)
+        };
+        parse("flag", "flag", "flag v", ' ', args);
+        parse("value", "v", "flag v", ' ', args);
+    }
+
     public void testMemorySize() throws Exception {
         String name = "name";
         String defaultValue = "1024";
@@ -176,9 +186,13 @@ public class ParserTest {
 
     public void parse(String searchName, String expectedValue,
             String cmdLine, DiagnosticCommand[] argumentTypes) throws Exception {
+        parse(searchName, expectedValue, cmdLine, ',', argumentTypes);
+    }
+    public void parse(String searchName, String expectedValue,
+            String cmdLine, char delim, DiagnosticCommand[] argumentTypes) throws Exception {
         //parseCommandLine will return an object array that looks like
         //{<name of parsed object>, <of parsed object> ... }
-        Object[] res = wb.parseCommandLine(cmdLine, argumentTypes);
+        Object[] res = wb.parseCommandLine(cmdLine, delim, argumentTypes);
         for (int i = 0; i < res.length-1; i+=2) {
             String parsedName = (String) res[i];
             if (searchName.equals(parsedName)) {
@@ -196,8 +210,11 @@ public class ParserTest {
     }
 
     private void shouldFail(String argument, DiagnosticCommand[] argumentTypes) throws Exception {
+        shouldFail(argument, ',', argumentTypes);
+    }
+    private void shouldFail(String argument, char delim, DiagnosticCommand[] argumentTypes) throws Exception {
         try {
-            wb.parseCommandLine(argument, argumentTypes);
+            wb.parseCommandLine(argument, delim, argumentTypes);
             throw new Exception("Parser accepted argument: " + argument);
         } catch (IllegalArgumentException e) {
             //expected

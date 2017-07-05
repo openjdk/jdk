@@ -34,14 +34,21 @@ public class DiagnosticCommand {
     private DiagnosticArgumentType type;
     private boolean mandatory;
     private String defaultValue;
+    private boolean argument;
 
     public DiagnosticCommand(String name, String desc, DiagnosticArgumentType type,
             boolean mandatory, String defaultValue) {
+        this(name, desc, type, false, mandatory, defaultValue);
+    }
+
+    public DiagnosticCommand(String name, String desc, DiagnosticArgumentType type,
+            boolean argument, boolean mandatory, String defaultValue) {
         this.name = name;
         this.desc = desc;
         this.type = type;
         this.mandatory = mandatory;
         this.defaultValue = defaultValue;
+        this.argument = argument;
     }
 
     public String getName() {
@@ -58,6 +65,10 @@ public class DiagnosticCommand {
 
     public boolean isMandatory() {
         return mandatory;
+    }
+
+    public boolean isArgument() {
+        return argument;
     }
 
     public String getDefaultValue() {

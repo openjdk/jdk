@@ -2809,7 +2809,8 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
  */
 Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
                                         ciKlass* type,
-                                        bool not_null) {
+                                        bool not_null,
+                                        SafePointNode* sfpt) {
   // type == NULL if profiling tells us this object is always null
   if (type != NULL) {
     Deoptimization::DeoptReason class_reason = Deoptimization::Reason_speculate_class_check;
@@ -2831,7 +2832,13 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
       ciKlass* exact_kls = type;
       Node* slow_ctl  = type_check_receiver(exact_obj, exact_kls, 1.0,
                                             &exact_obj);
-      {
+      if (sfpt != NULL) {
+        GraphKit kit(sfpt->jvms());
+        PreserveJVMState pjvms(&kit);
+        kit.set_control(slow_ctl);
+        kit.uncommon_trap(class_reason,
+                          Deoptimization::Action_maybe_recompile);
+      } else {
         PreserveJVMState pjvms(this);
         set_control(slow_ctl);
         uncommon_trap(class_reason,
