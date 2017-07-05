@@ -145,9 +145,9 @@ public class BuiltinClassLoader
     /**
      * Create a new instance.
      */
-    BuiltinClassLoader(BuiltinClassLoader parent, URLClassPath ucp) {
+    BuiltinClassLoader(String name, BuiltinClassLoader parent, URLClassPath ucp) {
         // ensure getParent() returns null when the parent is the boot loader
-        super(parent == null || parent == ClassLoaders.bootLoader() ? null : parent);
+        super(name, parent == null || parent == ClassLoaders.bootLoader() ? null : parent);
 
         this.parent = parent;
         this.ucp = ucp;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,43 +23,74 @@
 
 /*
  * @test
- * @bug     4712607
+ * @bug     4712607 6479237
  * @summary Basic test for StackTraceElementPublic constructor
  * @author  Josh Bloch
  */
 
-import java.util.*;
+import java.lang.module.ModuleDescriptor;
+import java.lang.reflect.Module;
 
 public class PublicConstructor {
-    public static void main(String args[]) {
+    public static void main(String... args) {
+        testConstructor();
+        testConstructorWithModule();
+    }
+
+    static void testConstructor() {
         StackTraceElement ste = new StackTraceElement("com.acme.Widget",
-            "frobnicate", "Widget.java", 42);
+                                                      "frobnicate",
+                                                      "Widget.java", 42);
         if (!(ste.getClassName().equals("com.acme.Widget")  &&
-              ste.getFileName().equals("Widget.java") &&
-              ste.getMethodName().equals("frobnicate") &&
-              ste.getLineNumber() == 42))
+                ste.getFileName().equals("Widget.java") &&
+                ste.getMethodName().equals("frobnicate") &&
+                ste.getLineNumber() == 42))
             throw new RuntimeException("1");
+
         if (ste.isNativeMethod())
             throw new RuntimeException("2");
-        StackTraceElement ste2
-            = new StackTraceElement("jdk.module",
-                                    "9.0",
-                                    "com.acme.Widget",
-                                    "frobnicate",
-                                    "Widget.java",
-                                    42);
-        if (!(ste2.getClassName().equals("com.acme.Widget")  &&
-                ste2.getModuleName().equals("jdk.module") &&
-                ste2.getModuleVersion().equals("9.0") &&
-                ste2.getFileName().equals("Widget.java") &&
-                ste2.getMethodName().equals("frobnicate") &&
-                ste2.getLineNumber() == 42))
+
+        assertEquals(ste.toString(),
+                     "com.acme.Widget.frobnicate(Widget.java:42)");
+
+        StackTraceElement ste1 = new StackTraceElement("com.acme.Widget",
+                                                       "frobnicate",
+                                                       "Widget.java",
+                                                       -2);
+        if (!ste1.isNativeMethod())
             throw new RuntimeException("3");
-        if (ste2.isNativeMethod())
+
+        assertEquals(ste1.toString(),
+                     "com.acme.Widget.frobnicate(Native Method)");
+    }
+
+    static void testConstructorWithModule() {
+        StackTraceElement ste = new StackTraceElement("app",
+                                                      "jdk.module",
+                                                      "9.0",
+                                                      "com.acme.Widget",
+                                                      "frobnicate",
+                                                      "Widget.java",
+                                                      42);
+        if (!(ste.getClassName().equals("com.acme.Widget")  &&
+                ste.getModuleName().equals("jdk.module") &&
+                ste.getModuleVersion().equals("9.0") &&
+                ste.getClassLoaderName().equals("app") &&
+                ste.getFileName().equals("Widget.java") &&
+                ste.getMethodName().equals("frobnicate") &&
+                ste.getLineNumber() == 42))
+            throw new RuntimeException("3");
+
+        if (ste.isNativeMethod())
             throw new RuntimeException("4");
-        StackTraceElement ste3 = new StackTraceElement("com.acme.Widget",
-            "frobnicate", "Widget.java", -2);
-        if (!ste3.isNativeMethod())
-            throw new RuntimeException("5");
+
+        assertEquals(ste.toString(),
+                     "app/jdk.module@9.0/com.acme.Widget.frobnicate(Widget.java:42)");
+    }
+
+    static void assertEquals(String s, String expected) {
+        if (!s.equals(expected)) {
+            throw new RuntimeException("Expected: " + expected + " but found: " + s);
+        }
     }
 }

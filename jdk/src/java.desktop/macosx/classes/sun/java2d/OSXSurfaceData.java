@@ -74,8 +74,13 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         this.fGraphicsStatesInt = this.fGraphicsStates.asIntBuffer();
         this.fGraphicsStatesFloat = this.fGraphicsStates.asFloatBuffer();
         this.fGraphicsStatesLong = this.fGraphicsStates.asLongBuffer();
-        this.fGraphicsStatesObject = new Object[6]; // clip coordinates + clip types + texture paint image + stroke dash
-                                                    // array + font + font paint
+        this.fGraphicsStatesObject = new Object[8]; // clip coordinates +
+                                                    // clip types +
+                                                    // texture paint image +
+                                                    // stroke dash array +
+                                                    // font + font paint +
+                                                    // linear/radial gradient color +
+                                                    // linear/radial gradient fractions
 
         // NOTE: All access to the DrawingQueue comes through this OSXSurfaceData instance. Therefore
         // every instance method of OSXSurfaceData that accesses the fDrawingQueue is synchronized.
@@ -292,10 +297,10 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
     @Native static final int kHintsFractionalMetricsIndex = 46;
     @Native static final int kHintsRenderingIndex = 47;
     @Native static final int kHintsInterpolationIndex = 48;
-    // live resizing info
-    @Native static final int kCanDrawDuringLiveResizeIndex = 49;
+    //gradient info
+    @Native static final int kRadiusIndex = 49;
 
-    @Native static final int kSizeOfParameters = kCanDrawDuringLiveResizeIndex + 1;
+    @Native static final int kSizeOfParameters = kRadiusIndex + 1;
 
     // for objectParameters
     @Native static final int kClipCoordinatesIndex = 0;
@@ -304,6 +309,8 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
     @Native static final int kStrokeDashArrayIndex = 3;
     @Native static final int kFontIndex = 4;
     @Native static final int kFontPaintIndex = 5;
+    @Native static final int kColorArrayIndex = 6;
+    @Native static final int kFractionsArrayIndex = 7;
 
     // possible state changes
     @Native static final int kBoundsChangedBit = 1 << 0;
@@ -329,6 +336,8 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
     @Native static final int kColorSystem = 1;
     @Native static final int kColorGradient = 2;
     @Native static final int kColorTexture = 3;
+    @Native static final int kColorLinearGradient = 4;
+    @Native static final int kColorRadialGradient = 5;
 
     // possible gradient color states
     @Native static final int kColorNonCyclic = 0;
@@ -522,6 +531,28 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
     int lastPaintIndex = 0;
     BufferedImage texturePaintImage = null;
 
+    void setGradientViaRasterPath(SunGraphics2D sg2d) {
+        if ((this.fGraphicsStatesInt.get(kColorStateIndex) != kColorTexture) || (lastPaint != sg2d.paint) || ((this.fChangeFlag & kBoundsChangedBit) != 0)) {
+            PaintContext context = sg2d.paint.createContext(sg2d.getDeviceColorModel(), userBounds, userBounds, sIdentityMatrix, sg2d.getRenderingHints());
+            WritableRaster raster = (WritableRaster) (context.getRaster(userBounds.x, userBounds.y, userBounds.width, userBounds.height));
+            ColorModel cm = context.getColorModel();
+            texturePaintImage = new BufferedImage(cm, raster, cm.isAlphaPremultiplied(), null);
+
+            this.fGraphicsStatesInt.put(kColorStateIndex, kColorTexture);
+            this.fGraphicsStatesInt.put(kColorWidthIndex, texturePaintImage.getWidth());
+            this.fGraphicsStatesInt.put(kColorHeightIndex, texturePaintImage.getHeight());
+            this.fGraphicsStatesFloat.put(kColortxIndex, (float) userBounds.getX());
+            this.fGraphicsStatesFloat.put(kColortyIndex, (float) userBounds.getY());
+            this.fGraphicsStatesFloat.put(kColorsxIndex, 1.0f);
+            this.fGraphicsStatesFloat.put(kColorsyIndex, 1.0f);
+            this.fGraphicsStatesObject[kTextureImageIndex] = OSXOffScreenSurfaceData.createNewSurface(texturePaintImage);
+
+            this.fChangeFlag = (this.fChangeFlag | kColorChangedBit);
+        } else {
+            this.fChangeFlag = (this.fChangeFlag & kColorNotChangedBit);
+        }
+    }
+
     void setupPaint(SunGraphics2D sg2d, int x, int y, int w, int h) {
         if (sg2d.paint instanceof SystemColor) {
             SystemColor color = (SystemColor) sg2d.paint;
@@ -567,6 +598,75 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
             } else {
                 this.fChangeFlag = (this.fChangeFlag & kColorNotChangedBit);
             }
+        } else if (sg2d.paint instanceof LinearGradientPaint) {
+            LinearGradientPaint color = (LinearGradientPaint) sg2d.paint;
+            if (color.getCycleMethod() == LinearGradientPaint.CycleMethod.NO_CYCLE) {
+                if ((this.fGraphicsStatesInt.get(kColorStateIndex) != kColorLinearGradient) || (lastPaint != sg2d.paint)) {
+
+                    this.fGraphicsStatesInt.put(kColorStateIndex, kColorLinearGradient);
+                    int numColor = color.getColors().length;
+                    int colorArray[] = new int[numColor];
+                    for (int i = 0; i < numColor; i++) {
+                        colorArray[i] = color.getColors()[i].getRGB();
+                    }
+                    this.fGraphicsStatesObject[kColorArrayIndex] = colorArray;
+
+                    int numFractions = color.getFractions().length;
+                    float fractionArray[] = new float[numFractions];
+                    for (int i = 0; i < numFractions; i++) {
+                        fractionArray[i] = color.getFractions()[i];
+                    }
+                    this.fGraphicsStatesObject[kFractionsArrayIndex] = color.getFractions();
+
+                    Point2D p = color.getStartPoint();
+                    this.fGraphicsStatesFloat.put(kColorx1Index, (float) p.getX());
+                    this.fGraphicsStatesFloat.put(kColory1Index, (float) p.getY());
+                    p = color.getEndPoint();
+                    this.fGraphicsStatesFloat.put(kColorx2Index, (float) p.getX());
+                    this.fGraphicsStatesFloat.put(kColory2Index, (float) p.getY());
+
+                    this.fChangeFlag = (this.fChangeFlag | kColorChangedBit);
+                } else {
+                    this.fChangeFlag = (this.fChangeFlag & kColorNotChangedBit);
+                }
+            } else {
+                setGradientViaRasterPath(sg2d);
+            }
+        } else if (sg2d.paint instanceof RadialGradientPaint) {
+            RadialGradientPaint color = (RadialGradientPaint) sg2d.paint;
+            if (color.getCycleMethod() == RadialGradientPaint.CycleMethod.NO_CYCLE) {
+                if ((this.fGraphicsStatesInt.get(kColorStateIndex) != kColorRadialGradient) || (lastPaint != sg2d.paint)) {
+
+                    this.fGraphicsStatesInt.put(kColorStateIndex, kColorRadialGradient);
+                    int numColor = color.getColors().length;
+                    int colorArray[] = new int[numColor];
+                    for (int i = 0; i < numColor; i++) {
+                        colorArray[i] = color.getColors()[i].getRGB();
+                    }
+                    this.fGraphicsStatesObject[kColorArrayIndex] = colorArray;
+
+                    int numStops = color.getFractions().length;
+                    float stopsArray[] = new float[numStops];
+                    for (int i = 0; i < numStops; i++) {
+                        stopsArray[i] = color.getFractions()[i];
+                    }
+                    this.fGraphicsStatesObject[kFractionsArrayIndex] = color.getFractions();
+
+                    Point2D p = color.getFocusPoint();
+                    this.fGraphicsStatesFloat.put(kColorx1Index, (float) p.getX());
+                    this.fGraphicsStatesFloat.put(kColory1Index, (float) p.getY());
+                    p = color.getCenterPoint();
+                    this.fGraphicsStatesFloat.put(kColorx2Index, (float) p.getX());
+                    this.fGraphicsStatesFloat.put(kColory2Index, (float) p.getY());
+                    this.fGraphicsStatesFloat.put(kRadiusIndex,     color.getRadius());
+
+                    this.fChangeFlag = (this.fChangeFlag | kColorChangedBit);
+                } else {
+                    this.fChangeFlag = (this.fChangeFlag & kColorNotChangedBit);
+                }
+            } else {
+                setGradientViaRasterPath(sg2d);
+            }
         } else if (sg2d.paint instanceof TexturePaint) {
             if ((this.fGraphicsStatesInt.get(kColorStateIndex) != kColorTexture) || (lastPaint != sg2d.paint)) {
                 TexturePaint color = (TexturePaint) sg2d.paint;
@@ -587,27 +687,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
                 this.fChangeFlag = (this.fChangeFlag & kColorNotChangedBit);
             }
         } else {
-            if ((this.fGraphicsStatesInt.get(kColorStateIndex) != kColorTexture) || (lastPaint != sg2d.paint) || ((this.fChangeFlag & kBoundsChangedBit) != 0)) {
-                PaintContext context = sg2d.paint.createContext(sg2d.getDeviceColorModel(), userBounds, userBounds, sIdentityMatrix, sg2d.getRenderingHints());
-                WritableRaster raster = (WritableRaster) (context.getRaster(userBounds.x, userBounds.y, userBounds.width, userBounds.height));
-                ColorModel cm = context.getColorModel();
-                texturePaintImage = new BufferedImage(cm, raster, cm.isAlphaPremultiplied(), null);
-
-                this.fGraphicsStatesInt.put(kColorStateIndex, kColorTexture);
-                this.fGraphicsStatesInt.put(kColorWidthIndex, texturePaintImage.getWidth());
-                this.fGraphicsStatesInt.put(kColorHeightIndex, texturePaintImage.getHeight());
-                this.fGraphicsStatesFloat.put(kColortxIndex, (float) userBounds.getX());
-                this.fGraphicsStatesFloat.put(kColortyIndex, (float) userBounds.getY());
-                this.fGraphicsStatesFloat.put(kColorsxIndex, 1.0f);
-                this.fGraphicsStatesFloat.put(kColorsyIndex, 1.0f);
-                this.fGraphicsStatesObject[kTextureImageIndex] = sun.awt.image.BufImgSurfaceData.createData(texturePaintImage);
-
-                context.dispose();
-
-                this.fChangeFlag = (this.fChangeFlag | kColorChangedBit);
-            } else {
-                this.fChangeFlag = (this.fChangeFlag & kColorNotChangedBit);
-            }
+            setGradientViaRasterPath(sg2d);
         }
         lastPaint = sg2d.paint;
     }
