@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ package java.lang;
  */
 public
 class InstantiationException extends Exception {
+    private static final long serialVersionUID = -8441929162975509110L;
+
     /**
      * Constructs an {@code InstantiationException} with no detail message.
      */

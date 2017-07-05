@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import sun.security.action.GetPropertyAction;
 public class PatternSyntaxException
     extends IllegalArgumentException
 {
+    private static final long serialVersionUID = -3864639126226059218L;
 
     private final String desc;
     private final String pattern;

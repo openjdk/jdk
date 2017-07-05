@@ -124,22 +124,6 @@ class TagStack implements DTDConstants {
         return (exclusions != null) && exclusions.get(elem.getIndex());
     }
 
-    /**
-     * Update the Vector elemVec with all the elements that
-     * are part of the inclusions listed in DTD for the element
-     * currently on the TagStack.
-     */
-    boolean included(Vector elemVec, DTD dtd) {
-
-        for (int i = 0 ; i < inclusions.size(); i++) {
-            if (inclusions.get(i)) {
-                elemVec.addElement(dtd.getElement(i));
-                System.out.println("Element add thru' inclusions: " + dtd.getElement(i).getName());
-            }
-        }
-        return (!elemVec.isEmpty());
-    }
-
 
     /**
      * Advance the state by reducing the given element.

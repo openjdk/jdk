@@ -20,10 +20,7 @@
  */
 package com.sun.org.apache.xml.internal.security.utils;
 
-
-
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
-
 
 /**
  * Provides all constants and some translation functions for i18n.
@@ -32,13 +29,9 @@ import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
  * <A HREF="http://www.w3.org/TR/xmldsig-core/#sec-TransformAlg">XML
  * Signature specification</A>.
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class Constants {
-
-   /** {@link java.util.logging} logging facility */
-   static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(Constants.class.getName());
 
    /** Field configurationFile */
    public static final String configurationFile = "data/websig.conf";

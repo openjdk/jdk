@@ -104,7 +104,7 @@ class DTD implements DTDConstants {
      *   <code>name</code> <code>String</code>
      */
     public Entity getEntity(String name) {
-        return (Entity)entityHash.get(name);
+        return entityHash.get(name);
     }
 
     /**
@@ -113,7 +113,7 @@ class DTD implements DTDConstants {
      *    <code>ch</code> character
      */
     public Entity getEntity(int ch) {
-        return (Entity)entityHash.get(Integer.valueOf(ch));
+        return entityHash.get(Integer.valueOf(ch));
     }
 
     /**
@@ -137,7 +137,7 @@ class DTD implements DTDConstants {
      *   <code>name</code>, which may be newly created
      */
     public Element getElement(String name) {
-        Element e = (Element)elementHash.get(name);
+        Element e = elementHash.get(name);
         if (e == null) {
             e = new Element(name, elements.size());
             elements.addElement(e);
@@ -154,7 +154,7 @@ class DTD implements DTDConstants {
      *   <code>index</code>
      */
     public Element getElement(int index) {
-        return (Element)elements.elementAt(index);
+        return elements.elementAt(index);
     }
 
     /**
@@ -170,7 +170,7 @@ class DTD implements DTDConstants {
      *   if not found
      */
     public Entity defineEntity(String name, int type, char data[]) {
-        Entity ent = (Entity)entityHash.get(name);
+        Entity ent = entityHash.get(name);
         if (ent == null) {
             ent = new Entity(name, type, data);
             entityHash.put(name, ent);
@@ -259,8 +259,7 @@ class DTD implements DTDConstants {
         BitSet excl = null;
         if (exclusions != null && exclusions.length > 0) {
             excl = new BitSet();
-            for (int i = 0; i < exclusions.length; i++) {
-                String str = exclusions[i];
+            for (String str : exclusions) {
                 if (str.length() > 0) {
                     excl.set(getElement(str).getIndex());
                 }
@@ -269,8 +268,7 @@ class DTD implements DTDConstants {
         BitSet incl = null;
         if (inclusions != null && inclusions.length > 0) {
             incl = new BitSet();
-            for (int i = 0; i < inclusions.length; i++) {
-                String str = inclusions[i];
+            for (String str : inclusions) {
                 if (str.length() > 0) {
                     incl.set(getElement(str).getIndex());
                 }
@@ -285,9 +283,9 @@ class DTD implements DTDConstants {
      * @return the new <code>AttributeList</code>
      */
     protected AttributeList defAttributeList(String name, int type, int modifier, String value, String values, AttributeList atts) {
-        Vector vals = null;
+        Vector<String> vals = null;
         if (values != null) {
-            vals = new Vector();
+            vals = new Vector<String>();
             for (StringTokenizer s = new StringTokenizer(values, "|") ; s.hasMoreTokens() ;) {
                 String str = s.nextToken();
                 if (str.length() > 0) {
@@ -318,7 +316,7 @@ class DTD implements DTDConstants {
     /**
      * The hashtable of DTDs.
      */
-    static Hashtable dtdHash = new Hashtable();
+    static Hashtable<String, DTD> dtdHash = new Hashtable<String, DTD>();
 
   public static void putDTDHash(String name, DTD dtd) {
     dtdHash.put(name, dtd);
@@ -334,7 +332,7 @@ class DTD implements DTDConstants {
      */
     public static DTD getDTD(String name) throws IOException {
         name = name.toLowerCase();
-        DTD dtd = (DTD)dtdHash.get(name);
+        DTD dtd = dtdHash.get(name);
         if (dtd == null)
           dtd = new DTD(name);
 
@@ -432,10 +430,10 @@ class DTD implements DTDConstants {
             int modifier = in.readByte();
             short valueId = in.readShort();
             String value = (valueId == -1) ? null : names[valueId];
-            Vector values = null;
+            Vector<String> values = null;
             short numValues = in.readShort();
             if (numValues > 0) {
-                values = new Vector(numValues);
+                values = new Vector<String>(numValues);
                 for (int i = 0; i < numValues; i++) {
                     values.addElement(names[in.readShort()]);
                 }

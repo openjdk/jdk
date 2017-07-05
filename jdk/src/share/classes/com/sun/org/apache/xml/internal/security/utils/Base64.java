@@ -20,24 +20,17 @@
  */
 package com.sun.org.apache.xml.internal.security.utils;
 
-
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.StringReader;
 import java.math.BigInteger;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
-import org.xml.sax.InputSource;
 
 
 /**
@@ -53,16 +46,9 @@ import org.xml.sax.InputSource;
  */
 public class Base64 {
 
-   /** {@link java.util.logging} logging facility */
-    static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(Base64.class.getName());
-
 
    /** Field BASE64DEFAULTLENGTH */
    public static final int BASE64DEFAULTLENGTH = 76;
-
-   /** Field _base64length */
-   static int _base64length = Base64.BASE64DEFAULTLENGTH;
 
    private Base64() {
      // we don't allow instantiation
@@ -79,7 +65,7 @@ public class Base64 {
     * @param bitlen <code>int<code> the desired length in bits of the representation
     * @return a byte array with <code>bitlen</code> bits of <code>big</code>
     */
-   static byte[] getBytes(BigInteger big, int bitlen) {
+   static final byte[] getBytes(BigInteger big, int bitlen) {
 
       //round bitlen
       bitlen = ((bitlen + 7) >> 3) << 3;
@@ -121,7 +107,7 @@ public class Base64 {
     * @param big
     * @return String with Base64 encoding
     */
-   public static String encode(BigInteger big) {
+   public static final String encode(BigInteger big) {
       return encode(getBytes(big, big.bitLength()));
    }
 
@@ -136,7 +122,7 @@ public class Base64 {
     * @param bitlen <code>int<code> the desired length in bits of the representation
     * @return a byte array with <code>bitlen</code> bits of <code>big</code>
     */
-   public static byte[] encode(BigInteger big, int bitlen) {
+   public static final  byte[] encode(BigInteger big, int bitlen) {
 
       //round bitlen
       bitlen = ((bitlen + 7) >> 3) << 3;
@@ -179,7 +165,7 @@ public class Base64 {
     * @return the biginter obtained from the node
     * @throws Base64DecodingException
     */
-   public static BigInteger decodeBigIntegerFromElement(Element element) throws Base64DecodingException
+   public static final BigInteger decodeBigIntegerFromElement(Element element) throws Base64DecodingException
    {
       return new BigInteger(1, Base64.decode(element));
    }
@@ -191,7 +177,7 @@ public class Base64 {
     * @return the biginter obtained from the text node
     * @throws Base64DecodingException
     */
-   public static BigInteger decodeBigIntegerFromText(Text text) throws Base64DecodingException
+   public static final BigInteger decodeBigIntegerFromText(Text text) throws Base64DecodingException
    {
       return new BigInteger(1, Base64.decode(text.getData()));
    }
@@ -203,7 +189,7 @@ public class Base64 {
     * @param element
     * @param biginteger
     */
-   public static void fillElementWithBigInteger(Element element,
+   public static final void fillElementWithBigInteger(Element element,
            BigInteger biginteger) {
 
       String encodedInt = encode(biginteger);
@@ -229,7 +215,7 @@ public class Base64 {
     * $todo$ not tested yet
     * @throws Base64DecodingException
     */
-   public static byte[] decode(Element element) throws Base64DecodingException {
+   public static final byte[] decode(Element element) throws Base64DecodingException {
 
       Node sibling = element.getFirstChild();
       StringBuffer sb = new StringBuffer();
@@ -255,7 +241,7 @@ public class Base64 {
     * @return an Element with the base64 encoded in the text.
     *
     */
-   public static Element encodeToElement(Document doc, String localName,
+   public static final Element encodeToElement(Document doc, String localName,
                                          byte[] bytes) {
 
       Element el = XMLUtils.createElementInSignatureSpace(doc, localName);
@@ -275,20 +261,23 @@ public class Base64 {
     * @throws Base64DecodingException
     *
     */
-   public static byte[] decode(byte[] base64) throws Base64DecodingException  {
-         return decodeInternal(base64);
+   public final static byte[] decode(byte[] base64) throws Base64DecodingException  {
+         return decodeInternal(base64, -1);
    }
 
 
 
    /**
-    * Encode a byte array and fold lines at the standard 76th character.
+    * Encode a byte array and fold lines at the standard 76th character unless
+    * ignore line breaks property is set.
     *
     * @param binaryData <code>byte[]<code> to be base64 encoded
     * @return the <code>String<code> with encoded data
     */
-   public static String encode(byte[] binaryData) {
-        return encode(binaryData,BASE64DEFAULTLENGTH);
+   public static final String encode(byte[] binaryData) {
+      return XMLUtils.ignoreLineBreaks()
+         ? encode(binaryData, Integer.MAX_VALUE)
+         : encode(binaryData, BASE64DEFAULTLENGTH);
    }
 
    /**
@@ -302,7 +291,7 @@ public class Base64 {
     * @throws IOException
     * @throws Base64DecodingException
     */
-   public static byte[] decode(BufferedReader reader)
+   public final static byte[] decode(BufferedReader reader)
            throws IOException, Base64DecodingException {
 
       UnsyncByteArrayOutputStream baos = new UnsyncByteArrayOutputStream();
@@ -317,28 +306,6 @@ public class Base64 {
       return baos.toByteArray();
    }
 
-   /**
-    * Method main
-    *
-    *
-    * @param args
-    *
-    * @throws Exception
-    */
-   public static void main(String[] args) throws Exception {
-
-      DocumentBuilderFactory docBuilderFactory =
-         DocumentBuilderFactory.newInstance();
-      DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-      String testString1 =
-         "<container><base64 value=\"Should be 'Hallo'\">SGFsbG8=</base64></container>";
-      InputSource inputSource = new InputSource(new StringReader(testString1));
-      Document doc = docBuilder.parse(inputSource);
-      Element base64Elem =
-         (Element) doc.getDocumentElement().getChildNodes().item(0);
-
-      System.out.println(new String(decode(base64Elem)));
-   }
    static private final int  BASELENGTH         = 255;
    static private final int  LOOKUPLENGTH       = 64;
    static private final int  TWENTYFOURBITGROUP = 24;
@@ -347,7 +314,6 @@ public class Base64 {
    static private final int  FOURBYTE           = 4;
    static private final int  SIGN               = -128;
    static private final char PAD                = '=';
-   static private final boolean fDebug          = false;
    static final private byte [] base64Alphabet        = new byte[BASELENGTH];
    static final private char [] lookUpBase64Alphabet  = new char[LOOKUPLENGTH];
 
@@ -406,7 +372,7 @@ public class Base64 {
     * @param length <code>int<code> length of wrapped lines; No wrapping if less than 4.
     * @return a <code>String</code> with encoded data
     */
-    public static String encode(byte[] binaryData,int length) {
+    public static final String  encode(byte[] binaryData,int length) {
 
         if (length<4) {
                 length=Integer.MAX_VALUE;
@@ -434,9 +400,7 @@ public class Base64 {
        int encodedIndex = 0;
        int dataIndex   = 0;
        int i           = 0;
-       if (fDebug) {
-           System.out.println("number of triplets = " + numberTriplets );
-       }
+
 
        for (int line = 0; line < numberLines; line++) {
            for (int quartet = 0; quartet < 19; quartet++) {
@@ -444,9 +408,6 @@ public class Base64 {
                b2 = binaryData[dataIndex++];
                b3 = binaryData[dataIndex++];
 
-               if (fDebug) {
-                   System.out.println( "b1= " + b1 +", b2= " + b2 + ", b3= " + b3 );
-               }
 
                l  = (byte)(b2 & 0x0f);
                k  = (byte)(b1 & 0x03);
@@ -456,11 +417,6 @@ public class Base64 {
                byte val2 = ((b2 & SIGN)==0)?(byte)(b2>>4):(byte)((b2)>>4^0xf0);
                byte val3 = ((b3 & SIGN)==0)?(byte)(b3>>6):(byte)((b3)>>6^0xfc);
 
-               if (fDebug) {
-                   System.out.println( "val2 = " + val2 );
-                   System.out.println( "k4   = " + (k<<4));
-                   System.out.println( "vak  = " + (val2 | (k<<4)));
-               }
 
                encodedData[encodedIndex++] = lookUpBase64Alphabet[ val1 ];
                encodedData[encodedIndex++] = lookUpBase64Alphabet[ val2 | ( k<<4 )];
@@ -477,9 +433,6 @@ public class Base64 {
            b2 = binaryData[dataIndex++];
            b3 = binaryData[dataIndex++];
 
-           if (fDebug) {
-               System.out.println( "b1= " + b1 +", b2= " + b2 + ", b3= " + b3 );
-           }
 
            l  = (byte)(b2 & 0x0f);
            k  = (byte)(b1 & 0x03);
@@ -489,11 +442,6 @@ public class Base64 {
            byte val2 = ((b2 & SIGN)==0)?(byte)(b2>>4):(byte)((b2)>>4^0xf0);
            byte val3 = ((b3 & SIGN)==0)?(byte)(b3>>6):(byte)((b3)>>6^0xfc);
 
-           if (fDebug) {
-               System.out.println( "val2 = " + val2 );
-               System.out.println( "k4   = " + (k<<4));
-               System.out.println( "vak  = " + (val2 | (k<<4)));
-           }
 
            encodedData[encodedIndex++] = lookUpBase64Alphabet[ val1 ];
            encodedData[encodedIndex++] = lookUpBase64Alphabet[ val2 | ( k<<4 )];
@@ -505,11 +453,7 @@ public class Base64 {
        if (fewerThan24bits == EIGHTBIT) {
            b1 = binaryData[dataIndex];
            k = (byte) ( b1 &0x03 );
-           if (fDebug) {
-               System.out.println("b1=" + b1);
-               System.out.println("b1<<2 = " + (b1>>2) );
-           }
-           byte val1 = ((b1 & SIGN)==0)?(byte)(b1>>2):(byte)((b1)>>2^0xc0);
+          byte val1 = ((b1 & SIGN)==0)?(byte)(b1>>2):(byte)((b1)>>2^0xc0);
            encodedData[encodedIndex++] = lookUpBase64Alphabet[ val1 ];
            encodedData[encodedIndex++] = lookUpBase64Alphabet[ k<<4 ];
            encodedData[encodedIndex++] = PAD;
@@ -534,23 +478,38 @@ public class Base64 {
        return new String(encodedData);
    }
 
-   /**
-    * Decodes Base64 data into octects
-    *
-    * @param encoded Byte array containing Base64 data
-    * @return Array containind decoded data.
-    * @throws Base64DecodingException
-    */
-   public final static byte[] decode(String encoded) throws Base64DecodingException {
+    /**
+     * Decodes Base64 data into octects
+     *
+     * @param encoded String containing base64 encoded data
+     * @return byte array containing the decoded data
+     * @throws Base64DecodingException if there is a problem decoding the data
+     */
+    public final static byte[] decode(String encoded) throws Base64DecodingException {
 
-       if (encoded == null)
-           return null;
+        if (encoded == null)
+                return null;
+        byte []bytes=new byte[encoded.length()];
+        int len=getBytesInternal(encoded, bytes);
+        return decodeInternal(bytes, len);
+        }
 
-       return decodeInternal(encoded.getBytes());
-   }
-   protected final static byte[] decodeInternal(byte[] base64Data) throws Base64DecodingException {
+    protected static final int getBytesInternal(String s,byte[] result) {
+        int length=s.length();
+
+        int newSize=0;
+        for (int i = 0; i < length; i++) {
+            byte dataS=(byte)s.charAt(i);
+            if (!isWhiteSpace(dataS))
+                result[newSize++] = dataS;
+        }
+        return newSize;
+
+    }
+   protected final static byte[] decodeInternal(byte[] base64Data, int len) throws Base64DecodingException {
        // remove white spaces
-       int len = removeWhiteSpace(base64Data);
+           if (len==-1)
+          len = removeWhiteSpace(base64Data);
 
        if (len%FOURBYTE != 0) {
            throw new Base64DecodingException("decoding.divisible.four");
@@ -629,7 +588,20 @@ public class Base64 {
        }
        return decodedData;
    }
-
+   /**
+    * Decodes Base64 data into  outputstream
+    *
+    * @param base64Data String containing Base64 data
+    * @param os the outputstream
+    * @throws IOException
+    * @throws Base64DecodingException
+    */
+   public final static void decode(String base64Data,
+        OutputStream os) throws Base64DecodingException, IOException {
+           byte[] bytes=new byte[base64Data.length()];
+           int len=getBytesInternal(base64Data, bytes);
+           decode(bytes,os,len);
+   }
    /**
     * Decodes Base64 data into  outputstream
     *
@@ -640,8 +612,14 @@ public class Base64 {
     */
    public final static void decode(byte[] base64Data,
         OutputStream os) throws Base64DecodingException, IOException {
-    // remove white spaces
-    int len = removeWhiteSpace(base64Data);
+            decode(base64Data,os,-1);
+   }
+   protected final static void decode(byte[] base64Data,
+                        OutputStream os,int len) throws Base64DecodingException, IOException {
+
+        // remove white spaces
+    if (len==-1)
+       len = removeWhiteSpace(base64Data);
 
     if (len%FOURBYTE != 0) {
         throw new Base64DecodingException("decoding.divisible.four");
@@ -798,7 +776,7 @@ public class Base64 {
     * @param data  the byte array of base64 data (with WS)
     * @return      the new length
     */
-   protected static int removeWhiteSpace(byte[] data) {
+   protected static final int removeWhiteSpace(byte[] data) {
        if (data == null)
            return 0;
 

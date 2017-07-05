@@ -369,21 +369,21 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
      */
     private static class Grid {
         private static final int BUFFER_SIZE = 64;
-        private static HashMap map;
+        private static HashMap<String, WeakReference<Grid>> map;
 
         private BufferedImage image;
 
         static {
-            map = new HashMap();
+            map = new HashMap<String, WeakReference<Grid>>();
         }
 
         public static Grid getGrid(Color fg, Color bg) {
             String key = fg.getRGB() + " " + bg.getRGB();
-            WeakReference ref = (WeakReference)map.get(key);
-            Grid grid = (ref == null) ? null : (Grid)ref.get();
+            WeakReference<Grid> ref = map.get(key);
+            Grid grid = (ref == null) ? null : ref.get();
             if (grid == null) {
                 grid = new Grid(fg, bg);
-                map.put(key, new WeakReference(grid));
+                map.put(key, new WeakReference<Grid>(grid));
             }
             return grid;
         }

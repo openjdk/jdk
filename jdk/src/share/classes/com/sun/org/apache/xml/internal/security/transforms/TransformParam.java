@@ -23,7 +23,7 @@ package com.sun.org.apache.xml.internal.security.transforms;
 
 /**
  *
- * @author $Author: blautenb $
+ * @author $Author: mullan $
  */
 
 public interface TransformParam {

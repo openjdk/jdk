@@ -1,5 +1,5 @@
 /*
- * Copyright 1996 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ package java.util.zip;
  */
 public
 class DataFormatException extends Exception {
+    private static final long serialVersionUID = 2219632870893641452L;
+
     /**
      * Constructs a DataFormatException with no detail message.
      */

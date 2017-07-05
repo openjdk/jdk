@@ -114,7 +114,7 @@ public class AccessibleMethod {
 
     /** The action used to fetch the method and make it accessible */
     private static class AccessMethodAction implements PrivilegedExceptionAction<Method> {
-        private final Class klass;
+        private final Class<?> klass;
         private final String methodName;
         private final Class[] paramTypes;
 

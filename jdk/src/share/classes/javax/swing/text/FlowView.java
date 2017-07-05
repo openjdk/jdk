@@ -184,9 +184,9 @@ public abstract class FlowView extends BoxView {
         final int faxis = getFlowAxis();
         int newSpan;
         if (faxis == X_AXIS) {
-            newSpan = (int)width;
+            newSpan = width;
         } else {
-            newSpan = (int)height;
+            newSpan = height;
         }
         if (layoutSpan != newSpan) {
             layoutChanged(faxis);
@@ -197,7 +197,7 @@ public abstract class FlowView extends BoxView {
         // repair the flow if necessary
         if (! isLayoutValid(faxis)) {
             final int heightAxis = getAxis();
-            int oldFlowHeight = (int)((heightAxis == X_AXIS)? getWidth() : getHeight());
+            int oldFlowHeight = (heightAxis == X_AXIS)? getWidth() : getHeight();
             strategy.layout(this);
             int newFlowHeight = (int) getPreferredSpan(heightAxis);
             if (oldFlowHeight != newFlowHeight) {

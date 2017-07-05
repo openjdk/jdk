@@ -48,7 +48,7 @@ class SegmentCache {
     /**
      * A list of the currently unused Segments.
      */
-    private List segments;
+    private List<Segment> segments;
 
 
     /**
@@ -80,7 +80,7 @@ class SegmentCache {
      * Creates and returns a SegmentCache.
      */
     public SegmentCache() {
-        segments = new ArrayList(11);
+        segments = new ArrayList<Segment>(11);
     }
 
     /**
@@ -92,7 +92,7 @@ class SegmentCache {
             int size = segments.size();
 
             if (size > 0) {
-                return (Segment)segments.remove(size - 1);
+                return segments.remove(size - 1);
             }
         }
         return new CachedSegment();

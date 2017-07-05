@@ -118,8 +118,7 @@ public abstract class AbstractCellEditor implements CellEditor, Serializable {
      * @since 1.4
      */
     public CellEditorListener[] getCellEditorListeners() {
-        return (CellEditorListener[])listenerList.getListeners(
-                CellEditorListener.class);
+        return listenerList.getListeners(CellEditorListener.class);
     }
 
     /**

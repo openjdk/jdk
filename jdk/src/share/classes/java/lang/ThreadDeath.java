@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,4 +46,6 @@ package java.lang;
  * @since   JDK1.0
  */
 
-public class ThreadDeath extends Error {}
+public class ThreadDeath extends Error {
+    private static final long serialVersionUID = -4417128565033088268L;
+}

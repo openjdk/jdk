@@ -248,7 +248,7 @@ public class JFileChooser extends JComponent implements Accessible {
     private String approveButtonToolTipText = null;
     private int approveButtonMnemonic = 0;
 
-    private Vector filters = new Vector(5);
+    private Vector<FileFilter> filters = new Vector<FileFilter>(5);
     private JDialog dialog = null;
     private int dialogType = OPEN_DIALOG;
     private int returnValue = ERROR_OPTION;
@@ -503,7 +503,7 @@ public class JFileChooser extends JComponent implements Accessible {
         if(selectedFiles == null) {
             return new File[0];
         } else {
-            return (File[]) selectedFiles.clone();
+            return selectedFiles.clone();
         }
     }
 
@@ -1415,17 +1415,17 @@ public class JFileChooser extends JComponent implements Accessible {
         fileFilter = filter;
         if (filter != null) {
             if (isMultiSelectionEnabled() && selectedFiles != null && selectedFiles.length > 0) {
-                Vector fList = new Vector();
+                Vector<File> fList = new Vector<File>();
                 boolean failed = false;
-                for (int i = 0; i < selectedFiles.length; i++) {
-                    if (filter.accept(selectedFiles[i])) {
-                        fList.add(selectedFiles[i]);
+                for (File file : selectedFiles) {
+                    if (filter.accept(file)) {
+                        fList.add(file);
                     } else {
                         failed = true;
                     }
                 }
                 if (failed) {
-                    setSelectedFiles((fList.size() == 0) ? null : (File[])fList.toArray(new File[fList.size()]));
+                    setSelectedFiles((fList.size() == 0) ? null : fList.toArray(new File[fList.size()]));
                 }
             } else if (selectedFile != null && !filter.accept(selectedFile)) {
                 setSelectedFile(null);
@@ -1702,8 +1702,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * @since 1.4
      */
     public ActionListener[] getActionListeners() {
-        return (ActionListener[])listenerList.getListeners(
-                ActionListener.class);
+        return listenerList.getListeners(ActionListener.class);
     }
 
     /**
@@ -1744,7 +1743,7 @@ public class JFileChooser extends JComponent implements Accessible {
         WeakReference<JFileChooser> jfcRef;
 
         public WeakPCL(JFileChooser jfc) {
-            jfcRef = new WeakReference(jfc);
+            jfcRef = new WeakReference<JFileChooser>(jfc);
         }
         public void propertyChange(PropertyChangeEvent ev) {
             assert ev.getPropertyName().equals(SHOW_HIDDEN_PROP);

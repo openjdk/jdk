@@ -598,7 +598,7 @@ public class MetalIconFactory implements Serializable {
             }
 
             // Some calculations that are needed more than once later on.
-            int oneHalf = (int)(iconSize / 2); // 16 -> 8
+            int oneHalf = iconSize / 2; // 16 -> 8
 
             g.translate(x, y);
 
@@ -1502,7 +1502,7 @@ public class MetalIconFactory implements Serializable {
 
         // PENDING: Replace this class with CachedPainter.
 
-        Vector images = new Vector(1, 1);
+        Vector<ImageGcPair> images = new Vector<ImageGcPair>(1, 1);
         ImageGcPair currentImageGcPair;
 
         class ImageGcPair {
@@ -1514,12 +1514,8 @@ public class MetalIconFactory implements Serializable {
             }
 
             boolean hasSameConfiguration(GraphicsConfiguration newGC) {
-                if (((newGC != null) && (newGC.equals(gc))) ||
-                    ((newGC == null) && (gc == null)))
-                {
-                    return true;
-                }
-                return false;
+                return ((newGC != null) && (newGC.equals(gc))) ||
+                        ((newGC == null) && (gc == null));
             }
 
         }
@@ -1528,9 +1524,7 @@ public class MetalIconFactory implements Serializable {
             if ((currentImageGcPair == null) ||
                 !(currentImageGcPair.hasSameConfiguration(newGC)))
             {
-                Enumeration elements = images.elements();
-                while (elements.hasMoreElements()) {
-                    ImageGcPair imgGcPair = (ImageGcPair)elements.nextElement();
+                for (ImageGcPair imgGcPair : images) {
                     if (imgGcPair.hasSameConfiguration(newGC)) {
                         currentImageGcPair = imgGcPair;
                         return imgGcPair.image;

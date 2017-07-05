@@ -25,6 +25,7 @@ package com.sun.org.apache.xml.internal.security.transforms.params;
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.transforms.TransformParam;
 import com.sun.org.apache.xml.internal.security.utils.ElementProxy;
+import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -35,7 +36,7 @@ import org.w3c.dom.NodeList;
  * Implements the parameters for the <A
  * HREF="http://www.w3.org/TR/xmldsig-filter2/">XPath Filter v2.0</A>.
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  * @see <A HREF="http://www.w3.org/TR/xmldsig-filter2/">XPath Filter v2.0 (TR)</A>
  * @see <A HREF="http://www.w3.org/Signature/Drafts/xmldsig-xfilter2/">XPath Filter v2.0 (editors copy)</A>
  */
@@ -87,8 +88,9 @@ public class XPath2FilterContainer04 extends ElementProxy
 
       if ((xpath2filter.length() > 2)
               && (!Character.isWhitespace(xpath2filter.charAt(0)))) {
-         this._constructionElement.appendChild(doc.createTextNode("\n"
-                 + xpath2filter + "\n"));
+         XMLUtils.addReturnToElement(this._constructionElement);
+         this._constructionElement.appendChild(doc.createTextNode(xpath2filter));
+         XMLUtils.addReturnToElement(this._constructionElement);
       } else {
          this._constructionElement
             .appendChild(doc.createTextNode(xpath2filter));
