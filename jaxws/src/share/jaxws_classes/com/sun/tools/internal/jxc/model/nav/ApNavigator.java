@@ -65,7 +65,7 @@ import java.util.Map;
  *
  * @author Kohsuke Kawaguchi (kk@kohsuke.org)
  */
-public class ApNavigator implements Navigator<TypeMirror, TypeElement, VariableElement, ExecutableElement> {
+public final class ApNavigator implements Navigator<TypeMirror, TypeElement, VariableElement, ExecutableElement> {
 
     private final ProcessingEnvironment env;
 
@@ -236,7 +236,7 @@ public class ApNavigator implements Navigator<TypeMirror, TypeElement, VariableE
     }
 
     public boolean isFinal(TypeElement clazz) {
-        return hasModifier(clazz,Modifier.FINAL);
+        return hasModifier(clazz, Modifier.FINAL);
     }
 
     public VariableElement[] getEnumConstants(TypeElement clazz) {
@@ -258,8 +258,9 @@ public class ApNavigator implements Navigator<TypeMirror, TypeElement, VariableE
         return env.getElementUtils().getPackageOf(clazz).getQualifiedName().toString();
     }
 
-    public TypeElement findClass(String className, TypeElement referencePoint) {
-        return env.getElementUtils().getTypeElement(className);
+    @Override
+    public TypeElement loadObjectFactory(TypeElement referencePoint, String packageName) {
+        return env.getElementUtils().getTypeElement(packageName + ".ObjectFactory");
     }
 
     public boolean isBridgeMethod(ExecutableElement method) {

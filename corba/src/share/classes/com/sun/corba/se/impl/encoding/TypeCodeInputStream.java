@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,8 @@ import com.sun.corba.se.impl.encoding.CodeSetConversion;
 import com.sun.corba.se.impl.encoding.CDRInputStream;
 import com.sun.corba.se.impl.encoding.CDROutputStream;
 import com.sun.corba.se.impl.encoding.MarshalInputStream;
+
+import sun.corba.EncapsInputStreamFactory;
 
 public class TypeCodeInputStream extends EncapsInputStream implements TypeCodeReader
 {
@@ -157,11 +159,13 @@ public class TypeCodeInputStream extends EncapsInputStream implements TypeCodeRe
 
         // create an encapsulation using the marshal buffer
         if (is instanceof CDRInputStream) {
-            encap = new TypeCodeInputStream((ORB)_orb, encapBuffer, encapBuffer.length,
-                                            ((CDRInputStream)is).isLittleEndian(),
-                                            ((CDRInputStream)is).getGIOPVersion());
+            encap = EncapsInputStreamFactory.newTypeCodeInputStream((ORB) _orb,
+                    encapBuffer, encapBuffer.length,
+                    ((CDRInputStream) is).isLittleEndian(),
+                    ((CDRInputStream) is).getGIOPVersion());
         } else {
-            encap = new TypeCodeInputStream((ORB)_orb, encapBuffer, encapBuffer.length);
+            encap = EncapsInputStreamFactory.newTypeCodeInputStream((ORB) _orb,
+                    encapBuffer, encapBuffer.length);
         }
         encap.setEnclosingInputStream(is);
         encap.makeEncapsulation();

@@ -119,12 +119,11 @@ public final class TypeInfo {
         // if we are to reinstitute this check, check JAXB annotations only
         // assert annotations.length==0;   // not designed to work with adapters.
         Type t = (genericType != null)? genericType : type;
-        Type base = Navigator.REFLECTION.getBaseClass(t, Collection.class);
+        Type base = Utils.REFLECTION_NAVIGATOR.getBaseClass(t, Collection.class);
         if(base==null)
             return this;    // not a collection
 
-        return new TypeInfo(tagName,
-            Navigator.REFLECTION.getTypeArgument(base,0));
+        return new TypeInfo(tagName, Utils.REFLECTION_NAVIGATOR.getTypeArgument(base,0));
     }
 
     public Map<String, Object> properties() {
@@ -188,9 +187,9 @@ public final class TypeInfo {
         }
 //        if (type instanceof Class && java.util.Collection.class.isAssignableFrom((Class)type)) {
         Type t = (genericType != null)? genericType : type;
-        Type base = Navigator.REFLECTION.getBaseClass(t, Collection.class);
+        Type base = Utils.REFLECTION_NAVIGATOR.getBaseClass(t, Collection.class);
         if ( base != null)  {
-            return new TypeInfo(tagName, Navigator.REFLECTION.getTypeArgument(base,0), annotations);
+            return new TypeInfo(tagName, Utils.REFLECTION_NAVIGATOR.getTypeArgument(base,0), annotations);
         }
         return null;
     }

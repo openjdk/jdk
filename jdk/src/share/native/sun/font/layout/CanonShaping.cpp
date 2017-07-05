@@ -60,7 +60,7 @@ void CanonShaping::reorderMarks(const LEUnicode *inChars, le_int32 charCount, le
                                 LEUnicode *outChars, LEGlyphStorage &glyphStorage)
 {
     LEErrorCode success = LE_NO_ERROR;
-    LEReferenceTo<GlyphDefinitionTableHeader> gdefTable(CanonShaping::glyphDefinitionTable, CanonShaping::glyphDefinitionTableLen);
+    LEReferenceTo<GlyphDefinitionTableHeader> gdefTable(LETableReference::kStaticData, CanonShaping::glyphDefinitionTable, CanonShaping::glyphDefinitionTableLen);
     LEReferenceTo<ClassDefinitionTable> classTable = gdefTable->getMarkAttachClassDefinitionTable(gdefTable, success);
     le_int32 *combiningClasses = LE_NEW_ARRAY(le_int32, charCount);
     le_int32 *indices = LE_NEW_ARRAY(le_int32, charCount);

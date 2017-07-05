@@ -23,24 +23,21 @@
 
 package com.sun.org.apache.xml.internal.resolver.readers;
 
-import java.util.Hashtable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.MalformedURLException;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.ParserConfigurationException;
-
 import com.sun.org.apache.xml.internal.resolver.Catalog;
 import com.sun.org.apache.xml.internal.resolver.CatalogException;
-import com.sun.org.apache.xml.internal.resolver.readers.CatalogReader;
 import com.sun.org.apache.xml.internal.resolver.helpers.Namespaces;
-
-import org.xml.sax.SAXException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Hashtable;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.*;
+import org.xml.sax.SAXException;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * A DOM-based CatalogReader.
@@ -199,7 +196,7 @@ public class DOMCatalogReader implements CatalogReader {
     DOMCatalogParser domParser = null;
 
     try {
-      domParser = (DOMCatalogParser) Class.forName(domParserClass).newInstance();
+      domParser = (DOMCatalogParser) ReflectUtil.forName(domParserClass).newInstance();
     } catch (ClassNotFoundException cnfe) {
       catalog.getCatalogManager().debug.message(1, "Cannot load XML Catalog Parser class", domParserClass);
       throw new CatalogException(CatalogException.UNPARSEABLE);

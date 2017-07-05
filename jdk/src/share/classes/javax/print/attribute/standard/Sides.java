@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,21 +51,21 @@ import javax.print.attribute.PrintJobAttribute;
  * SINGLE_DOCUMENT -- All the input docs will be combined together into one
  * output document. Each media sheet will consist of <I>n</I> impressions from
  * the output document.
- * <P>
+ *
  * <LI>
  * SINGLE_DOCUMENT_NEW_SHEET -- All the input docs will be combined together
  * into one output document. Each media sheet will consist of <I>n</I>
  * impressions from the output document. However, the first impression of each
  * input doc will always start on a new media sheet; this means the last media
  * sheet of an input doc may have only one impression on it.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- The input docs will remain separate.
  * Each media sheet will consist of <I>n</I> impressions from the input doc.
  * Since the input docs are separate, the first impression of each input doc
  * will always start on a new media sheet; this means the last media sheet of
  * an input doc may have only one impression on it.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_COLLATED_COPIES -- The input docs will remain separate.
  * Each media sheet will consist of <I>n</I> impressions from the input doc.
@@ -73,7 +73,7 @@ import javax.print.attribute.PrintJobAttribute;
  * will always start on a new media sheet; this means the last media sheet of
  * an input doc may have only one impression on it.
  * </UL>
- * <P>
+ *
  * <UL>
  * <LI>
  * SINGLE_DOCUMENT -- All the input docs will be combined together into one
@@ -83,14 +83,14 @@ import javax.print.attribute.PrintJobAttribute;
  * input doc has a different sides value from the previous input doc, the first
  * print-stream page of the next input doc goes at the start of the next media
  * sheet, possibly leaving only one impression on the previous media sheet.
- * <P>
+ *
  * <LI>
  * SINGLE_DOCUMENT_NEW_SHEET -- All the input docs will be combined together
  * into one output document. Each media sheet will consist of <I>n</I>
  * impressions from the output document. However, the first impression of each
  * input doc will always start on a new media sheet; this means the last
  * impression of an input doc may have only one impression on it.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- The input docs will remain separate.
  * For input doc <I>i,</I> each media sheet will consist of <I>n<SUB>i</SUB></I>
@@ -98,7 +98,7 @@ import javax.print.attribute.PrintJobAttribute;
  * impression of each input doc will always start on a new media sheet; this
  * means the last media sheet of an input doc may have only one impression on
  * it.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_COLLATED_COPIES -- The input docs will remain separate.
  * For input doc <I>i,</I> each media sheet will consist of <I>n<SUB>i</SUB></I>
@@ -113,7 +113,6 @@ import javax.print.attribute.PrintJobAttribute;
  * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
  * integer value is the IPP enum value.  The <code>toString()</code> method
  * returns the IPP string representation of the attribute value.
- * <P>
  *
  * @author  Alan Kaminsky
  */

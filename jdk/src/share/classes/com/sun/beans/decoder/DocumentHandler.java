@@ -29,6 +29,7 @@ import com.sun.beans.finder.ClassFinder;
 import java.beans.ExceptionListener;
 
 import java.io.IOException;
+import java.io.StringReader;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -243,6 +244,14 @@ public final class DocumentHandler extends DefaultHandler {
      */
     void addObject(Object object) {
         this.objects.add(object);
+    }
+
+    /**
+     * Disables any external entities.
+     */
+    @Override
+    public InputSource resolveEntity(String publicId, String systemId) {
+        return new InputSource(new StringReader(""));
     }
 
     /**

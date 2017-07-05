@@ -184,11 +184,12 @@ class nmethod : public CodeBlob {
   bool _oops_are_stale;  // indicates that it's no longer safe to access oops section
 #endif
 
-  enum { alive        = 0,
-         not_entrant  = 1, // uncommon trap has happened but activations may still exist
-         zombie       = 2,
-         unloaded     = 3 };
-
+  enum { in_use       = 0,   // executable nmethod
+         not_entrant  = 1,   // marked for deoptimization but activations may still exist,
+                             // will be transformed to zombie when all activations are gone
+         zombie       = 2,   // no activations exist, nmethod is ready for purge
+         unloaded     = 3 }; // there should be no activations, should not be called,
+                             // will be transformed to zombie immediately
 
   jbyte _scavenge_root_state;
 
@@ -407,8 +408,8 @@ class nmethod : public CodeBlob {
   address verified_entry_point() const            { return _verified_entry_point;    } // if klass is correct
 
   // flag accessing and manipulation
-  bool  is_in_use() const                         { return _state == alive; }
-  bool  is_alive() const                          { return _state == alive || _state == not_entrant; }
+  bool  is_in_use() const                         { return _state == in_use; }
+  bool  is_alive() const                          { return _state == in_use || _state == not_entrant; }
   bool  is_not_entrant() const                    { return _state == not_entrant; }
   bool  is_zombie() const                         { return _state == zombie; }
   bool  is_unloaded() const                       { return _state == unloaded;   }

@@ -1,0 +1,3 @@
+ReferenceError: "g" is not defined
+	at <program> (test/script/basic/JDK-8030182_2.js#42:4<eval>@0:-1)
+	at <program> (test/script/basic/JDK-8030182_2.js:42)

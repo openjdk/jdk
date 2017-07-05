@@ -132,9 +132,9 @@ volatile jint CompileBroker::_should_compile_new_jobs = run_compilation;
 // The installed compiler(s)
 AbstractCompiler* CompileBroker::_compilers[2];
 
-// These counters are used for assigning id's to each compilation
-uint CompileBroker::_compilation_id        = 0;
-uint CompileBroker::_osr_compilation_id    = 0;
+// These counters are used to assign an unique ID to each compilation.
+volatile jint CompileBroker::_compilation_id     = 0;
+volatile jint CompileBroker::_osr_compilation_id = 0;
 
 // Debugging information
 int  CompileBroker::_last_compile_type     = no_compile;
@@ -1158,7 +1158,7 @@ void CompileBroker::compile_method_base(methodHandle method,
     // We now know that this compilation is not pending, complete,
     // or prohibited.  Assign a compile_id to this compilation
     // and check to see if it is in our [Start..Stop) range.
-    uint compile_id = assign_compile_id(method, osr_bci);
+    int compile_id = assign_compile_id(method, osr_bci);
     if (compile_id == 0) {
       // The compilation falls outside the allowed range.
       return;
@@ -1305,18 +1305,12 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
   // do the compilation
   if (method->is_native()) {
     if (!PreferInterpreterNativeStubs || method->is_method_handle_intrinsic()) {
-      // Acquire our lock.
-      int compile_id;
-      {
-        MutexLocker locker(MethodCompileQueue_lock, THREAD);
-        compile_id = assign_compile_id(method, standard_entry_bci);
-      }
       // To properly handle the appendix argument for out-of-line calls we are using a small trampoline that
       // pops off the appendix argument and jumps to the target (see gen_special_dispatch in SharedRuntime).
       //
       // Since normal compiled-to-compiled calls are not able to handle such a thing we MUST generate an adapter
       // in this case.  If we can't generate one and use it we can not execute the out-of-line method handle calls.
-      (void) AdapterHandlerLibrary::create_native_wrapper(method, compile_id);
+      AdapterHandlerLibrary::create_native_wrapper(method);
     } else {
       return NULL;
     }
@@ -1419,27 +1413,28 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
   return false;
 }
 
-
-// ------------------------------------------------------------------
-// CompileBroker::assign_compile_id
-//
-// Assign a serialized id number to this compilation request.  If the
-// number falls out of the allowed range, return a 0.  OSR
-// compilations may be numbered separately from regular compilations
-// if certain debugging flags are used.
-uint CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
-  assert(MethodCompileQueue_lock->owner() == Thread::current(),
-         "must hold the compilation queue lock");
+/**
+ * Generate serialized IDs for compilation requests. If certain debugging flags are used
+ * and the ID is not within the specified range, the method is not compiled and 0 is returned.
+ * The function also allows to generate separate compilation IDs for OSR compilations.
+ */
+int CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
+#ifdef ASSERT
   bool is_osr = (osr_bci != standard_entry_bci);
-  uint id;
-  if (CICountOSR && is_osr) {
-    id = ++_osr_compilation_id;
-    if ((uint)CIStartOSR <= id && id < (uint)CIStopOSR) {
+  int id;
+  if (method->is_native()) {
+    assert(!is_osr, "can't be osr");
+    // Adapters, native wrappers and method handle intrinsics
+    // should be generated always.
+    return Atomic::add(1, &_compilation_id);
+  } else if (CICountOSR && is_osr) {
+    id = Atomic::add(1, &_osr_compilation_id);
+    if (CIStartOSR <= id && id < CIStopOSR) {
       return id;
     }
   } else {
-    id = ++_compilation_id;
-    if ((uint)CIStart <= id && id < (uint)CIStop) {
+    id = Atomic::add(1, &_compilation_id);
+    if (CIStart <= id && id < CIStop) {
       return id;
     }
   }
@@ -1447,6 +1442,11 @@ uint CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
   // Method was not in the appropriate compilation range.
   method->set_not_compilable_quietly();
   return 0;
+#else
+  // CICountOSR is a develop flag and set to 'false' by default. In a product built,
+  // only _compilation_id is incremented.
+  return Atomic::add(1, &_compilation_id);
+#endif
 }
 
 

@@ -108,6 +108,8 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
             }
 
             throw new RuntimeException("not a function: " + toString());
+        } catch (final NashornException ne) {
+            throw ne.initEcmaError(global);
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {
@@ -135,6 +137,8 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
             }
 
             throw new RuntimeException("not a constructor: " + toString());
+        } catch (final NashornException ne) {
+            throw ne.initEcmaError(global);
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {
@@ -182,6 +186,8 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
             }
 
             throw new NoSuchMethodException("No such function " + functionName);
+        } catch (final NashornException ne) {
+            throw ne.initEcmaError(global);
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {
@@ -717,6 +723,8 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         }
         try {
             return callable.call();
+        } catch (final NashornException ne) {
+            throw ne.initEcmaError(global);
         } catch (final RuntimeException e) {
             throw e;
         } catch (final Exception e) {

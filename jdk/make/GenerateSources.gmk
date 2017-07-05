@@ -85,11 +85,6 @@ GENSRC += $(GENSRC_CLDR)
 include gensrc/GensrcSwing.gmk
 GENSRC += $(GENSRC_SWING_BEANINFO) $(GENSRC_SWING_NIMBUS)
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  include gensrc/GensrcJObjC.gmk
-  GENSRC += $(GENSRC_JOBJC)
-endif
-
 $(GENSRC): $(BUILD_TOOLS)
 
 all: $(GENSRC)

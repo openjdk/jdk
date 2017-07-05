@@ -64,7 +64,6 @@ public interface DialogPeer extends WindowPeer {
      * @param windows the windows to block
      *
      * @see Dialog#modalShow()
-     * @see Dialog#blockWindows()
      */
     void blockWindows(java.util.List<Window> windows);
 }

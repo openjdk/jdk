@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,8 +214,10 @@ static int open_file_from_debug_link(const char *name,
                                 + 2);
   strcpy(debug_pathname, name);
   char *last_slash = strrchr(debug_pathname, '/');
-  if (last_slash == NULL)
+  if (last_slash == NULL) {
+    free(debug_pathname);
     return -1;
+  }
 
   /* Look in the same directory as the object.  */
   strcpy(last_slash+1, debug_filename);

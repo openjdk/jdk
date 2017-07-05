@@ -112,7 +112,7 @@ public final class FindProperty {
         return property != null && property.hasGetterFunction(prototype) ? self : prototype;
     }
 
-   /**
+    /**
      * Return the appropriate receiver for a setter.
      * @return appropriate receiver
      */
@@ -170,6 +170,21 @@ public final class FindProperty {
      */
     public void setObjectValue(final Object value, final boolean strict) {
         property.setObjectValue(getSetterReceiver(), getOwner(), value, strict);
+    }
+
+    /**
+     * Get the number of objects in the prototype chain between the {@code self} and the
+     * {@code owner} objects.
+     * @return the prototype chain length
+     */
+    int getProtoChainLength() {
+        assert self != null;
+        int length = 0;
+        for (ScriptObject obj = self; obj != prototype; obj = obj.getProto()) {
+            assert !(obj instanceof WithObject);
+            ++length;
+        }
+        return length;
     }
 
 }
