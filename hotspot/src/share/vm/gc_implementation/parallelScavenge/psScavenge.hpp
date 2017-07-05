@@ -92,6 +92,7 @@ class PSScavenge: AllStatic {
 
   // Private accessors
   static CardTableExtension* const card_table()       { assert(_card_table != NULL, "Sanity"); return _card_table; }
+  static const ParallelScavengeTracer* gc_tracer() { return &_gc_tracer; }
 
  public:
   // Accessors

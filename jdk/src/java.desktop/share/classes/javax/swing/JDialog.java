@@ -849,6 +849,7 @@ public class JDialog extends Dialog implements WindowConstants,
     *      hidden: true
     * description: The menubar for accessing pulldown menus from this dialog.
     */
+    @SuppressWarnings("deprecation")
     public void setJMenuBar(JMenuBar menu) {
         getRootPane().setMenuBar(menu);
     }
@@ -859,6 +860,7 @@ public class JDialog extends Dialog implements WindowConstants,
     * @return the menubar set on this dialog
     * @see #setJMenuBar
     */
+    @SuppressWarnings("deprecation")
     public JMenuBar getJMenuBar() {
         return getRootPane().getMenuBar();
     }

@@ -234,6 +234,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      * Minimum size
      */
     @Override
+    @SuppressWarnings("deprecation")
     public Dimension minimumSize() {
         return new Dimension(defaultAppletSize.width,
                              defaultAppletSize.height);
@@ -243,6 +244,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      * Preferred size
      */
     @Override
+    @SuppressWarnings("deprecation")
     public Dimension preferredSize() {
         return new Dimension(currentAppletSize.width,
                              currentAppletSize.height);
@@ -700,6 +702,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      * applet event processing so that it can be gracefully interrupted from
      * things like HotJava.
      */
+    @SuppressWarnings("deprecation")
     private void runLoader() {
         if (status != APPLET_DISPOSE) {
             showAppletStatus("notdisposed");

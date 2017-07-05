@@ -39,17 +39,24 @@ public class GenericTestCaseForSupportedSparcCPU extends
 
     @Override
     protected void verifyWarnings() throws Throwable {
+
+        String shouldPassMessage = String.format("JVM should start with option"
+                + " '%s' without any warnings", optionName);
         // Verify that there are no warning when option is explicitly enabled.
         CommandLineOptionTest.verifySameJVMStartup(null, new String[] {
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
-                }, ExitCode.OK,
+                }, shouldPassMessage, shouldPassMessage, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
         // Verify that option could be disabled even if +UseSHA was passed to
         // JVM.
         CommandLineOptionTest.verifySameJVMStartup(null, new String[] {
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
-                }, ExitCode.OK,
+                }, shouldPassMessage, String.format("It should be able to "
+                        + "disable option '%s' even if %s was passed to JVM",
+                        optionName, CommandLineOptionTest.prepareBooleanFlag(
+                            SHAOptionsBase.USE_SHA_OPTION, true)),
+                ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, true),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
@@ -58,7 +65,11 @@ public class GenericTestCaseForSupportedSparcCPU extends
         // all SHA intrinsics via -UseSHA without any warnings.
         CommandLineOptionTest.verifySameJVMStartup(null, new String[] {
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
-                }, ExitCode.OK,
+                }, shouldPassMessage, String.format("It should be able to "
+                        + "enable option '%s' even if %s was passed to JVM",
+                        optionName, CommandLineOptionTest.prepareBooleanFlag(
+                            SHAOptionsBase.USE_SHA_OPTION, false)),
+                ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, false),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
@@ -66,19 +77,30 @@ public class GenericTestCaseForSupportedSparcCPU extends
 
     @Override
     protected void verifyOptionValues() throws Throwable {
-        // Verify that on supported CPU option is enabled by default.
-        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "true");
+        // Verify that "It should be able to disable option "
+
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "true",
+                String.format("Option '%s' should be enabled by default",
+                        optionName));
 
         // Verify that it is possible to explicitly enable the option.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "true",
+                String.format("Option '%s' was set to have value 'true'",
+                        optionName),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
         // Verify that it is possible to explicitly disable the option.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' was set to have value 'false'",
+                        optionName),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
 
         // verify that option is disabled when -UseSHA was passed to JVM.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' should have value 'false' when %s"
+                        + " flag set to JVM", optionName,
+                        CommandLineOptionTest.prepareBooleanFlag(
+                            SHAOptionsBase.USE_SHA_OPTION, false)),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true),
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, false));
@@ -86,6 +108,10 @@ public class GenericTestCaseForSupportedSparcCPU extends
         // Verify that it is possible to explicitly disable the tested option
         // even if +UseSHA was passed to JVM.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                String.format("Option '%s' should have value 'false' if set so"
+                        + " even if %s flag set to JVM", optionName,
+                        CommandLineOptionTest.prepareBooleanFlag(
+                            SHAOptionsBase.USE_SHA_OPTION, true)),
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, true),
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));

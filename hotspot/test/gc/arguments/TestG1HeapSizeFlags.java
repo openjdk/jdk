@@ -26,7 +26,7 @@
  * @key gc
  * @bug 8006088
  * @summary Tests argument processing for initial and maximum heap size for the G1 collector
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestG1HeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

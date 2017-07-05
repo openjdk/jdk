@@ -282,6 +282,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         return reparented;
     }
 
+    @SuppressWarnings("deprecation")
     static long getParentWindowID(Component target) {
 
         ComponentPeer peer = target.getParent().getPeer();
@@ -298,6 +299,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
 
 
+    @SuppressWarnings("deprecation")
     static XWindow getParentXWindowObject(Component target) {
         if (target == null) return null;
         Component temp = target.getParent();
@@ -374,6 +376,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
                            target.getFont());
     }
 
+    @SuppressWarnings("deprecation")
     public FontMetrics getFontMetrics(Font font) {
         return Toolkit.getDefaultToolkit().getFontMetrics(font);
     }
