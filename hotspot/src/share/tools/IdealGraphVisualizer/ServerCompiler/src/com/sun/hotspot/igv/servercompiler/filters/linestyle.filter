@@ -1,0 +1,7 @@
+var f = new ColorFilter("Line Style filter");
+f.addRule(new ColorFilter.ColorRule(new MatcherSelector(new Properties.StringPropertyMatcher("type", "int:")), null, Color.BLUE, null));
+f.addRule(new ColorFilter.ColorRule(new MatcherSelector(new Properties.StringPropertyMatcher("type", "control")), null, Color.RED, null));
+f.addRule(new ColorFilter.ColorRule(new MatcherSelector(new Properties.StringPropertyMatcher("type", "memory")), null, Color.GREEN, null));
+f.addRule(new ColorFilter.ColorRule(new MatcherSelector(new Properties.StringPropertyMatcher("type", "tuple:")), null, Color.MAGENTA, null));
+f.addRule(new ColorFilter.ColorRule(new MatcherSelector(new Properties.StringPropertyMatcher("type", "bottom")), null, Color.LIGHT_GRAY, null));
+f.apply(graph);

@@ -23,13 +23,9 @@
  */
 
 // FILEBUFF.HPP - Definitions for parser file buffering routines
-
-#if _MSC_VER >= 1300  // Visual C++ 7.0 or later
 #include <iostream>
-#else
-#include <iostream.h>
-#endif
 
+using namespace std;
 // STRUCTURE FOR HANDLING INPUT AND OUTPUT FILES
 typedef struct {
   const char *_name;

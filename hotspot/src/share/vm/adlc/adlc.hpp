@@ -29,11 +29,7 @@
 // standard library constants
 #include "stdio.h"
 #include "stdlib.h"
-#if _MSC_VER >= 1300  // Visual C++ 7.0 or later
 #include <iostream>
-#else
-#include <iostream.h>
-#endif
 #include "string.h"
 #include "ctype.h"
 #include "stdarg.h"
