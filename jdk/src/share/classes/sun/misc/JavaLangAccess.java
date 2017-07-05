@@ -73,4 +73,14 @@ public interface JavaLangAccess {
      *          the slot is not valid to register.
      */
     void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook);
+
+    /**
+     * Returns the number of stack frames represented by the given throwable.
+     */
+    int getStackTraceDepth(Throwable t);
+
+    /**
+     * Returns the ith StackTraceElement for the given throwable.
+     */
+    StackTraceElement getStackTraceElement(Throwable t, int i);
 }

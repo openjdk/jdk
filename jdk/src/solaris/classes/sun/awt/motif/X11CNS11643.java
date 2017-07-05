@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,16 +66,19 @@ public abstract class X11CNS11643 extends Charset {
             super(cs);
             this.plane = plane;
         }
+
+        private byte[] bb = new byte[4];
         public boolean canEncode(char c) {
             if (c <= 0x7F) {
                 return false;
             }
-            int p = getNative(c) >> 16;
-            if (p == 1 && plane == 0 ||
-                p == 2 && plane == 2 ||
-                p == 3 && plane == 3)
-                return true;
-            return false;
+            int nb = toEUC(c, bb);
+            if (nb == -1)
+                return false;
+            int p = 0;
+            if (nb == 4)
+                p = (bb[1] & 0xff) - 0xa0;
+            return (p == plane);
         }
 
         public boolean isLegalReplacement(byte[] repl) {
@@ -93,19 +96,26 @@ public abstract class X11CNS11643 extends Charset {
             try {
                 while (sp < sl) {
                     char c = sa[sp];
-                    if (c >= '\uFFFE' || c <= '\u007f')
-                        return CoderResult.unmappableForLength(1);
-                    int cns = getNative(c);
-                    int p = cns >> 16;
-                    if (p == 1 && plane == 0 ||
-                        p == 2 && plane == 2 ||
-                        p == 3 && plane == 3) {
-                        if (dl - dp < 2)
-                            return CoderResult.OVERFLOW;
-                        da[dp++] = (byte) ((cns  >> 8) & 0x7f);
-                        da[dp++] = (byte) (cns & 0x7f);
-                        sp++;
-                        continue;
+                    if ( c > '\u007f'&& c < '\uFFFE') {
+                        int nb = toEUC(c, bb);
+                        if (nb != -1) {
+                            int p = 0;
+                            if (nb == 4)
+                                p = (bb[1] & 0xff) - 0xa0;
+                            if (p == plane) {
+                                if (dl - dp < 2)
+                                    return CoderResult.OVERFLOW;
+                                if (nb == 2) {
+                                    da[dp++] = (byte)(bb[0] & 0x7f);
+                                    da[dp++] = (byte)(bb[1] & 0x7f);
+                                } else {
+                                    da[dp++] = (byte)(bb[2] & 0x7f);
+                                    da[dp++] = (byte)(bb[3] & 0x7f);
+                                }
+                                sp++;
+                                continue;
+                            }
+                        }
                     }
                     return CoderResult.unmappableForLength(1);
                 }
@@ -118,23 +128,17 @@ public abstract class X11CNS11643 extends Charset {
     }
 
     private class Decoder extends EUC_TW.Decoder {
+        int plane;
         private String table;
         protected Decoder(Charset cs, int plane) {
             super(cs);
-            switch (plane) {
-            case 0:
-                table = unicodeCNS1;
-                break;
-            case 2:
-                table = unicodeCNS2;
-                break;
-            case 3:
-                table = unicodeCNS3;
-                break;
-            default:
+            if (plane == 0)
+                this.plane = plane;
+            else if (plane == 2 || plane == 3)
+                this.plane = plane - 1;
+            else
                 throw new IllegalArgumentException
                     ("Only planes 1, 2, and 3 supported");
-            }
         }
 
         //we only work on array backed buffer.
@@ -142,33 +146,26 @@ public abstract class X11CNS11643 extends Charset {
             byte[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
 
             char[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
 
             try {
                 while (sp < sl) {
                     if ( sl - sp < 2) {
                         return CoderResult.UNDERFLOW;
                     }
-                    byte b1 = sa[sp];
-                    byte b2 = sa[sp + 1];
-                    char c = convToUnicode((byte)(b1 | 0x80),
-                                           (byte)(b2 | 0x80),
-                                           table);
-                    if (c == replacement().charAt(0)
-                        //to keep the compatibility with b2cX11CNS11643
-                        /*|| c == '\u0000'*/) {
+                    int b1 = (sa[sp] & 0xff) | 0x80;
+                    int b2 = (sa[sp + 1] & 0xff) | 0x80;
+                    char[] cc = toUnicode(b1, b2, plane);
+                    // plane3 has non-bmp characters(added), x11cnsp3
+                    // however does not support them
+                    if (cc == null || cc.length == 2)
                         return CoderResult.unmappableForLength(2);
-                    }
                     if (dl - dp < 1)
                         return CoderResult.OVERFLOW;
-                    da[dp++] = c;
+                    da[dp++] = cc[0];
                     sp +=2;
                 }
                 return CoderResult.UNDERFLOW;

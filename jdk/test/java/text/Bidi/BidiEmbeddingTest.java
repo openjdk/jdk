@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4396492 4396496 4778510
+ * @bug 4396492 4396496 4778510 6850113
  * @summary verify that the embedding values processed by the bidi code use negative values to
  * indicate overrides, rather than using bit 7.  Also tests Bidi without loading awt classes to
  * confirm that Bidi can be used without awt. Verify that embedding level 0 is properly mapped
@@ -89,10 +89,12 @@ public class BidiEmbeddingTest {
                                " at level " + bidi2.getRunLevel(i));
         }
 
-        System.out.println(bidi2);
+        System.out.println(bidi2 + "\n");
 
         if (bidi.getRunCount() != 3 || bidi2.getRunCount() != 3) {
             throw new Error("Bidi run count incorrect");
+        } else {
+            System.out.println("test1() passed.\n");
         }
     }
 
@@ -123,10 +125,12 @@ public class BidiEmbeddingTest {
                                " at level " + bidi.getRunLevel(i));
         }
 
-        System.out.println(bidi);
+        System.out.println(bidi + "\n");
 
         if (bidi.getRunCount() != 6) { // runs of spaces and angles at embedding bound,s and final period, each get level 1
             throw new Error("Bidi embedding processing failed");
+        } else {
+            System.out.println("test2() passed.\n");
         }
     }
 }

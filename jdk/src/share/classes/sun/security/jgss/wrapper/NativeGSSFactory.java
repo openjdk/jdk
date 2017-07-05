@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,11 @@
 package sun.security.jgss.wrapper;
 
 import java.io.UnsupportedEncodingException;
-import java.security.AccessController;
-import java.security.AccessControlContext;
-import java.security.PrivilegedAction;
 import java.security.Provider;
-import java.util.Set;
 import java.util.Vector;
-import java.util.Iterator;
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.*;
 import org.ietf.jgss.*;
 import sun.security.jgss.GSSUtil;
+import sun.security.jgss.GSSCaller;
 import sun.security.jgss.GSSExceptionImpl;
 import sun.security.jgss.spi.*;
 
@@ -49,7 +43,7 @@ import sun.security.jgss.spi.*;
 public final class NativeGSSFactory implements MechanismFactory {
 
     GSSLibStub cStub = null;
-    private final int caller;
+    private final GSSCaller caller;
 
     private GSSCredElement getCredFromSubject(GSSNameElement name,
                                               boolean initiate)
@@ -74,7 +68,7 @@ public final class NativeGSSFactory implements MechanismFactory {
         return result;
     }
 
-    public NativeGSSFactory(int caller) {
+    public NativeGSSFactory(GSSCaller caller) {
         this.caller = caller;
         // Have to call setMech(Oid) explicitly before calling other
         // methods. Otherwise, NPE may be thrown unexpectantly

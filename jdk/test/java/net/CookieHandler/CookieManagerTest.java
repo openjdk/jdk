@@ -218,21 +218,22 @@ class CookieHttpTransaction implements HttpCallback {
                 };
 
         // cookies without domain attributes
+        // RFC 2965 states that domain should default to host
         testPolicies[count] = CookiePolicy.ACCEPT_ALL;
         testCases[count++] = new CookieTestCase[]{
                 new CookieTestCase("Set-Cookie2",
                 "Customer=\"WILE_E_COYOTE\"; Version=\"1\"; Path=\"/acme\"",
-                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"",
                 "/acme/login"
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Part_Number=\"Rocket_Launcher_0001\"; Version=\"1\";Path=\"/acme\"",
-                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"",
                 "/acme/pickitem"
                 ),
                 new CookieTestCase("Set-Cookie2",
                 "Shipping=\"FedEx\"; Version=\"1\"; Path=\"/acme\"",
-                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\"" + "; Shipping=\"FedEx\";$Path=\"/acme\"",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"" + "; Part_Number=\"Rocket_Launcher_0001\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"" + "; Shipping=\"FedEx\";$Path=\"/acme\";$Domain=\""+localHostAddr+"\"",
                 "/acme/shipping"
                 )
                 };

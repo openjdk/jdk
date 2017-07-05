@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,7 +355,7 @@ public final class UCharacter
     private static int getEuropeanDigit(int ch) {
         if ((ch > 0x7a && ch < 0xff21)
             || ch < 0x41 || (ch > 0x5a && ch < 0x61)
-            || ch > 0xff5a || (ch > 0xff31 && ch < 0xff41)) {
+            || ch > 0xff5a || (ch > 0xff3a && ch < 0xff41)) {
             return -1;
         }
         if (ch <= 0x7a) {

@@ -24,33 +24,16 @@
  */
 package sun.io;
 
-import sun.nio.cs.ext.IBM935;
+import sun.nio.cs.ext.*;
 
-/**
-* Tables and data to convert Cp935 to Unicode.
-*
-* @author Malcolm Ayres, assisted by UniMap program
-*/
-public class ByteToCharCp935
-        extends ByteToCharDBCS_EBCDIC
+public class ByteToCharCp935 extends ByteToCharDBCS_EBCDIC {
 
-{
-        private static IBM935 nioCoder = new IBM935();
+    // Return the character set id
+    public String getCharacterEncoding() {
+        return "Cp935";
+    }
 
-        // Return the character set id
-        public String getCharacterEncoding()
-        {
-                return "Cp935";
-        }
-
-
-        public ByteToCharCp935() {
-                super();
-                super.mask1 = 0xFFC0;
-                super.mask2 = 0x003F;
-                super.shift = 6;
-                super.singleByteToChar = nioCoder.getDecoderByteToCharMappings();
-                super.index1 = nioCoder.getDecoderIndex1();
-                super.index2 = nioCoder.getDecoderIndex2();
-        }
+    public ByteToCharCp935() {
+        super((DoubleByte.Decoder)new IBM935().newDecoder());
+    }
 }

@@ -24,18 +24,26 @@
  */
 package sun.io;
 
+import sun.nio.cs.Surrogate;
+import sun.nio.cs.ext.DoubleByte;
+import static sun.nio.cs.CharsetMapping.*;
+
 public abstract class CharToByteDBCS_ASCII extends CharToByteConverter
 {
 
     private char highHalfZoneCode;
     private byte[] outputByte = new byte[2];
 
-    protected short index1[];
-    protected String index2;
-    protected String index2a;
-    protected int   mask1;
-    protected int   mask2;
-    protected int   shift;
+    private DoubleByte.Encoder enc;
+
+    public CharToByteDBCS_ASCII(DoubleByte.Encoder enc) {
+        super();
+        this.enc = enc;
+    }
+
+    int encodeChar(char c) {
+        return enc.encodeChar(c);
+    }
 
     /**
       * flush out any residual data and reset the buffer state
@@ -69,112 +77,97 @@ public abstract class CharToByteDBCS_ASCII extends CharToByteConverter
         charOff = inOff;
 
         while(charOff < inEnd) {
+            int   index;
+            int   theBytes;
+            int   spaceNeeded;
 
-           int   index;
-           int   theBytes;
-           int   spaceNeeded;
+            if (highHalfZoneCode == 0) {
+                inputChar = input[charOff];
+                inputSize = 1;
+            } else {
+                inputChar = highHalfZoneCode;
+                inputSize = 0;
+                highHalfZoneCode = 0;
+            }
 
-           if (highHalfZoneCode == 0) {
-              inputChar = input[charOff];
-              inputSize = 1;
-           } else {
-              inputChar = highHalfZoneCode;
-              inputSize = 0;
-              highHalfZoneCode = 0;
-           }
+            // Is this a high surrogate?
+            if (Surrogate.isHigh(inputChar)) {
+                // Is this the last character of the input?
+                if (charOff + inputSize >= inEnd) {
+                    highHalfZoneCode = inputChar;
+                    charOff += inputSize;
+                    break;
+                }
 
-
-           // Is this a high surrogate?
-           if(inputChar >= '\ud800' && inputChar <= '\udbff') {
-              // Is this the last character of the input?
-              if (charOff + inputSize >= inEnd) {
-                 highHalfZoneCode = inputChar;
-                 charOff += inputSize;
-                 break;
-              }
-
-              // Is there a low surrogate following?
-              inputChar = input[charOff + inputSize];
-              if (inputChar >= '\udc00' && inputChar <= '\udfff') {
-
-                 // We have a valid surrogate pair.  Too bad we don't do
-                 // surrogates.  Is substitution enabled?
-                 if (subMode) {
-                    if (subBytes.length == 1) {
-                       outputByte[0] = 0x00;
-                       outputByte[1] = subBytes[0];
+                // Is there a low surrogate following?
+                inputChar = input[charOff + inputSize];
+                if (Surrogate.isLow(inputChar)) {
+                    // We have a valid surrogate pair.  Too bad we don't do
+                    // surrogates.  Is substitution enabled?
+                    if (subMode) {
+                        if (subBytes.length == 1) {
+                            outputByte[0] = 0x00;
+                            outputByte[1] = subBytes[0];
+                        }
+                        else {
+                            outputByte[0] = subBytes[0];
+                            outputByte[1] = subBytes[1];
+                        }
+                        inputSize++;
+                    } else {
+                        badInputLength = 2;
+                        throw new UnknownCharacterException();
                     }
-                    else {
-                       outputByte[0] = subBytes[0];
-                       outputByte[1] = subBytes[1];
-                    }
-
-                    inputSize++;
                  } else {
-                    badInputLength = 2;
-                    throw new UnknownCharacterException();
+                     // We have a malformed surrogate pair
+                     badInputLength = 1;
+                     throw new MalformedInputException();
                  }
-              } else {
-
-                 // We have a malformed surrogate pair
-                 badInputLength = 1;
-                 throw new MalformedInputException();
-              }
-           }
-
-           // Is this an unaccompanied low surrogate?
-           else
-              if (inputChar >= '\uDC00' && inputChar <= '\uDFFF') {
-                 badInputLength = 1;
-                 throw new MalformedInputException();
-              } else {
-
-                 // We have a valid character, get the bytes for it
-                 index = index1[((inputChar & mask1) >> shift)] + (inputChar & mask2);
-                 if (index < 15000)
-                   theBytes = (int)(index2.charAt(index));
-                 else
-                   theBytes = (int)(index2a.charAt(index-15000));
-                 outputByte[0] = (byte)((theBytes & 0x0000ff00)>>8);
-                 outputByte[1] = (byte)(theBytes & 0x000000ff);
-              }
-
-           // if there was no mapping - look for substitution characters
-           if (outputByte[0] == 0x00 && outputByte[1] == 0x00
-                             && inputChar != '\u0000')
-           {
-              if (subMode) {
-                 if (subBytes.length == 1) {
-                    outputByte[0] = 0x00;
-                    outputByte[1] = subBytes[0];
-                 } else {
-                    outputByte[0] = subBytes[0];
-                    outputByte[1] = subBytes[1];
-                 }
-              } else {
+            }
+            // Is this an unaccompanied low surrogate?
+            else if (Surrogate.isLow(inputChar)) {
                 badInputLength = 1;
-                throw new UnknownCharacterException();
-              }
-           }
+                throw new MalformedInputException();
+            } else {
 
-           if (outputByte[0] == 0x00)
-              spaceNeeded = 1;
-           else
-              spaceNeeded = 2;
+                // We have a valid character, get the bytes for it
+                theBytes = encodeChar(inputChar);
+                if (theBytes == UNMAPPABLE_ENCODING) {
+                    // if there was no mapping - look for substitution characters
+                    if (subMode) {
+                        if (subBytes.length == 1) {
+                            outputByte[0] = 0x00;
+                            outputByte[1] = subBytes[0];
+                        } else {
+                            outputByte[0] = subBytes[0];
+                            outputByte[1] = subBytes[1];
+                        }
+                    } else {
+                        badInputLength = 1;
+                        throw new UnknownCharacterException();
+                    }
+                } else {
+                    outputByte[0] = (byte)(theBytes >>8);
+                    outputByte[1] = (byte)theBytes;
+                }
+            }
+            if (outputByte[0] == 0x00)
+                spaceNeeded = 1;
+            else
+                spaceNeeded = 2;
 
-           if (byteOff + spaceNeeded > outEnd)
-              throw new ConversionBufferFullException();
+            if (byteOff + spaceNeeded > outEnd)
+                throw new ConversionBufferFullException();
 
-           if (spaceNeeded == 1)
-              output[byteOff++] = outputByte[1];
-           else {
-              output[byteOff++] = outputByte[0];
-              output[byteOff++] = outputByte[1];
-           }
+            if (spaceNeeded == 1)
+                output[byteOff++] = outputByte[1];
+            else {
+                output[byteOff++] = outputByte[0];
+                output[byteOff++] = outputByte[1];
+            }
 
-           charOff += inputSize;
+            charOff += inputSize;
         }
-
         return byteOff - outOff;
     }
 
@@ -193,28 +186,11 @@ public abstract class CharToByteDBCS_ASCII extends CharToByteConverter
         return 2;
     }
 
-
     /**
      * Returns true if the given character can be converted to the
      * target character encoding.
      */
-    public boolean canConvert(char ch) {
-       int  index;
-       int  theBytes;
-
-       index = index1[((ch & mask1) >> shift)] + (ch & mask2);
-       if (index < 15000)
-         theBytes = (int)(index2.charAt(index));
-       else
-         theBytes = (int)(index2a.charAt(index-15000));
-
-       if (theBytes != 0)
-         return (true);
-
-       // only return true if input char was unicode null - all others are
-       //     undefined
-       return( ch == '\u0000');
-
+    public boolean canConvert(char c) {
+        return encodeChar(c) != UNMAPPABLE_ENCODING;
     }
-
 }
