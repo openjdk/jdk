@@ -25,6 +25,18 @@
 # include "incls/_precompiled.incl"
 # include "incls/_constantPoolOop.cpp.incl"
 
+void constantPoolOopDesc::set_flag_at(FlagBit fb) {
+  const int MAX_STATE_CHANGES = 2;
+  for (int i = MAX_STATE_CHANGES + 10; i > 0; i--) {
+    int oflags = _flags;
+    int nflags = oflags | (1 << (int)fb);
+    if (Atomic::cmpxchg(nflags, &_flags, oflags) == oflags)
+      return;
+  }
+  assert(false, "failed to cmpxchg flags");
+  _flags |= (1 << (int)fb);     // better than nothing
+}
+
 klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS) {
   // A resolved constantPool entry will contain a klassOop, otherwise a symbolOop.
   // It is not safe to rely on the tag bit's here, since we don't have a lock, and the entry and
@@ -333,8 +345,10 @@ char* constantPoolOopDesc::string_at_noresolve(int which) {
   oop entry = *(obj_at_addr(which));
   if (entry->is_symbol()) {
     return ((symbolOop)entry)->as_C_string();
-  } else {
+  } else if (java_lang_String::is_instance(entry)) {
     return java_lang_String::as_utf8_string(entry);
+  } else {
+    return (char*)"<pseudo-string>";
   }
 }
 
@@ -382,6 +396,19 @@ oop constantPoolOopDesc::string_at_impl(constantPoolHandle this_oop, int which, 
   }
   assert(java_lang_String::is_instance(entry), "must be string");
   return entry;
+}
+
+
+bool constantPoolOopDesc::is_pseudo_string_at(int which) {
+  oop entry = *(obj_at_addr(which));
+  if (entry->is_symbol())
+    // Not yet resolved, but it will resolve to a string.
+    return false;
+  else if (java_lang_String::is_instance(entry))
+    return false; // actually, it might be a non-interned or non-perm string
+  else
+    // truly pseudo
+    return true;
 }
 
 

@@ -1422,6 +1422,7 @@ static void ensure_join(JavaThread* thread) {
   thread->clear_pending_exception();
 }
 
+
 // For any new cleanup additions, please check to see if they need to be applied to
 // cleanup_failed_attach_current_thread as well.
 void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
@@ -1592,37 +1593,60 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     JvmtiExport::cleanup_thread(this);
   }
 
+#ifndef SERIALGC
+  // We must flush G1-related buffers before removing a thread from
+  // the list of active threads.
+  if (UseG1GC) {
+    flush_barrier_queues();
+  }
+#endif
+
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread
   Threads::remove(this);
 }
 
-void JavaThread::cleanup_failed_attach_current_thread() {
-
-     if (get_thread_profiler() != NULL) {
-       get_thread_profiler()->disengage();
-       ResourceMark rm;
-       get_thread_profiler()->print(get_thread_name());
-     }
-
-     if (active_handles() != NULL) {
-      JNIHandleBlock* block = active_handles();
-      set_active_handles(NULL);
-      JNIHandleBlock::release_block(block);
-     }
-
-     if (free_handle_block() != NULL) {
-       JNIHandleBlock* block = free_handle_block();
-       set_free_handle_block(NULL);
-       JNIHandleBlock::release_block(block);
-     }
-
-     if (UseTLAB) {
-       tlab().make_parsable(true);  // retire TLAB, if any
-     }
-
-     Threads::remove(this);
-     delete this;
+#ifndef SERIALGC
+// Flush G1-related queues.
+void JavaThread::flush_barrier_queues() {
+  satb_mark_queue().flush();
+  dirty_card_queue().flush();
 }
+#endif
+
+void JavaThread::cleanup_failed_attach_current_thread() {
+  if (get_thread_profiler() != NULL) {
+    get_thread_profiler()->disengage();
+    ResourceMark rm;
+    get_thread_profiler()->print(get_thread_name());
+  }
+
+  if (active_handles() != NULL) {
+    JNIHandleBlock* block = active_handles();
+    set_active_handles(NULL);
+    JNIHandleBlock::release_block(block);
+  }
+
+  if (free_handle_block() != NULL) {
+    JNIHandleBlock* block = free_handle_block();
+    set_free_handle_block(NULL);
+    JNIHandleBlock::release_block(block);
+  }
+
+  if (UseTLAB) {
+    tlab().make_parsable(true);  // retire TLAB, if any
+  }
+
+#ifndef SERIALGC
+  if (UseG1GC) {
+    flush_barrier_queues();
+  }
+#endif
+
+  Threads::remove(this);
+  delete this;
+}
+
+
 
 
 JavaThread* JavaThread::active() {

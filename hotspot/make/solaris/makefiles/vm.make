@@ -101,7 +101,7 @@ LIBM=/usr/lib$(ISA_DIR)/libm.so.1
 
 ifeq ("${Platform_compiler}", "sparcWorks")
 # The whole megilla:
-ifeq ($(shell expr $(COMPILER_REV) \>= 5.5), 1)
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 505), 1)
 # Old Comment: List the libraries in the order the compiler was designed for
 # Not sure what the 'designed for' comment is referring too above.
 #   The order may not be too significant anymore, but I have placed this

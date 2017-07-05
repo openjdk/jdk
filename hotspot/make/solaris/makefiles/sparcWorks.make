@@ -41,9 +41,9 @@ REORDER_FLAG = -xF
 
 # Get the last thing on the line that looks like x.x+ (x is a digit).
 COMPILER_REV := \
-$(shell $(CPP) -V 2>&1 | sed -e 's/^.*\([1-9]\.[0-9][0-9]*\).*/\1/')
+$(shell $(CPP) -V 2>&1 | sed -n 's/^.*[ ,\t]C++[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p')
 C_COMPILER_REV := \
-$(shell $(CC) -V 2>&1 | grep -i "cc:" |  sed -e 's/^.*\([1-9]\.[0-9][0-9]*\).*/\1/')
+$(shell $(CC) -V 2>&1 | sed -n 's/^.*[ ,\t]C[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p')
 
 # Pick which compiler is validated
 ifeq ($(JDK_MINOR_VERSION),6)
@@ -60,16 +60,18 @@ endif
 ENFORCE_COMPILER_REV${ENFORCE_COMPILER_REV} := ${VALIDATED_COMPILER_REV}
 ifneq (${COMPILER_REV},${ENFORCE_COMPILER_REV})
 dummy_target_to_enforce_compiler_rev:=\
-$(info WARNING: You are using CC version ${COMPILER_REV} \
-and should be using version ${ENFORCE_COMPILER_REV})
+$(shell echo >&2 WARNING: You are using CC version ${COMPILER_REV} \
+and should be using version ${ENFORCE_COMPILER_REV}. Set ENFORCE_COMPILER_REV=${COMPILER_REV} to avoid this warning.)
 endif
 
 ENFORCE_C_COMPILER_REV${ENFORCE_C_COMPILER_REV} := ${VALIDATED_C_COMPILER_REV}
 ifneq (${C_COMPILER_REV},${ENFORCE_C_COMPILER_REV})
 dummy_target_to_enforce_c_compiler_rev:=\
-$(info WARNING: You are using cc version ${C_COMPILER_REV} \
-and should be using version ${ENFORCE_C_COMPILER_REV})
+$(shell echo >&2 WARNING: You are using cc version ${C_COMPILER_REV} \
+and should be using version ${ENFORCE_C_COMPILER_REV}. Set ENFORCE_C_COMPILER_REV=${C_COMPILER_REV} to avoid this warning.)
 endif
+
+COMPILER_REV_NUMERIC := $(shell echo $(COMPILER_REV) | awk -F. '{ print $$1 * 100 + $$2 }')
 
 # Fail the build if __fabsf is used.  __fabsf exists only in Solaris 8 2/04
 # and newer; objects with a dependency on this symbol will not run on older
@@ -120,7 +122,7 @@ ARCHFLAG_OLD/amd64   = -xarch=amd64
 ARCHFLAG_NEW/amd64   = -m64
 
 # Select the ARCHFLAGs and other SS12 (5.9) options
-ifeq ($(shell expr $(COMPILER_REV) \>= 5.9), 1)
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
   ARCHFLAG/sparc   = $(ARCHFLAG_NEW/sparc)
   ARCHFLAG/sparcv9 = $(ARCHFLAG_NEW/sparcv9)
   ARCHFLAG/i486    = $(ARCHFLAG_NEW/i486)
@@ -150,7 +152,7 @@ OPT_CFLAGS/NOOPT=-xO1
 # Begin current (>=5.6) Forte compiler options #
 #################################################
 
-ifeq ($(shell expr $(COMPILER_REV) \>= 5.6), 1)
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 506), 1)
 
 ifeq ("${Platform_arch}", "sparc")
 
@@ -167,7 +169,7 @@ endif
 # Begin current (>=5.5) Forte compiler options #
 #################################################
 
-ifeq ($(shell expr $(COMPILER_REV) \>= 5.5), 1)
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 505), 1)
 
 CFLAGS     += $(ARCHFLAG)
 AOUT_FLAGS += $(ARCHFLAG)
@@ -255,7 +257,7 @@ LFLAGS += -library=%none
 
 LFLAGS += -mt
 
-endif	# COMPILER_REV >= 5.5
+endif	# COMPILER_REV_NUMERIC >= 505
 
 ######################################
 # End 5.5 Forte compiler options     #
@@ -265,7 +267,7 @@ endif	# COMPILER_REV >= 5.5
 # Begin 5.2 Forte compiler options   #
 ######################################
 
-ifeq ($(COMPILER_REV), 5.2)
+ifeq ($(COMPILER_REV_NUMERIC), 502)
 
 CFLAGS     += $(ARCHFLAG)
 AOUT_FLAGS += $(ARCHFLAG)
@@ -324,7 +326,7 @@ PICFLAG/BYFILE  = $(PICFLAG/$@)$(PICFLAG/DEFAULT$(PICFLAG/$@))
 LFLAGS += -library=Crun
 LIBS   += -library=Crun -lCrun
 
-endif	# COMPILER_REV == 5.2
+endif	# COMPILER_REV_NUMERIC == 502
 
 ##################################
 # End 5.2 Forte compiler options #
@@ -333,7 +335,7 @@ endif	# COMPILER_REV == 5.2
 ##################################
 # Begin old 5.1 compiler options #
 ##################################
-ifeq ($(COMPILER_REV), 5.1)
+ifeq ($(COMPILER_REV_NUMERIC), 501)
 
 _JUNK_ := $(shell echo >&2 \
        "*** ERROR: sparkWorks.make incomplete for 5.1 compiler")
@@ -347,7 +349,7 @@ endif
 # Begin old 5.0 compiler options #
 ##################################
 
-ifeq	(${COMPILER_REV}, 5.0)
+ifeq	(${COMPILER_REV_NUMERIC}, 500)
 
 # Had to hoist this higher apparently because of other changes. Must
 # come before -xarch specification.
@@ -379,7 +381,7 @@ endif # sparc
 
 ifeq ("${Platform_arch_model}", "x86_32")
 OPT_CFLAGS=-xtarget=pentium $(EXTRA_OPT_CFLAGS)
-ifeq ("${COMPILER_REV}", "5.0")
+ifeq ("${COMPILER_REV_NUMERIC}", "500")
 # SC5.0 tools on x86 are flakey at -xO4
 OPT_CFLAGS+=-xO3
 else
@@ -405,13 +407,13 @@ PICFLAG/DEFAULT = $(PICFLAG)
 PICFLAG/BETTER  = $(PICFLAG/DEFAULT)
 PICFLAG/BYFILE  = $(PICFLAG/$@)$(PICFLAG/DEFAULT$(PICFLAG/$@))
 
-endif	# COMPILER_REV = 5.0
+endif	# COMPILER_REV_NUMERIC = 500
 
 ################################
 # End old 5.0 compiler options #
 ################################
 
-ifeq ("${COMPILER_REV}", "4.2")
+ifeq ("${COMPILER_REV_NUMERIC}", "402")
 # 4.2 COMPILERS SHOULD NO LONGER BE USED
 _JUNK_ := $(shell echo >&2 \
        "*** ERROR: SC4.2 compilers are not supported by this code base!")
@@ -443,7 +445,7 @@ LINK_MODE/debug     =
 LINK_MODE/optimized = -Bsymbolic -znodefs
 
 # Have thread local errnos
-ifeq ($(shell expr $(COMPILER_REV) \>= 5.5), 1)
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 505), 1)
 CFLAGS += -mt
 else
 CFLAGS += -D_REENTRANT
@@ -460,7 +462,7 @@ FASTDEBUG_CFLAGS = -g0
 # The -g0 setting allows the C++ frontend to inline, which is a big win.
 
 # Special global options for SS12
-ifeq ($(COMPILER_REV),5.9)
+ifeq ($(COMPILER_REV_NUMERIC),509)
   # There appears to be multiple issues with the new Dwarf2 debug format, so
   #   we tell the compiler to use the older 'stabs' debug format all the time.
   #   Note that this needs to be used in optimized compiles too to be 100%.
@@ -479,8 +481,8 @@ endif
 #DEBUG_CFLAGS += -Qoption ccfe -xglobalstatic
 #FASTDEBUG_CFLAGS += -Qoption ccfe -xglobalstatic
 
-ifeq	(${COMPILER_REV}, 5.2)
-COMPILER_DATE := $(shell $(CPP) -V 2>&1 | awk '{ print $$NF; }')
+ifeq	(${COMPILER_REV_NUMERIC}, 502)
+COMPILER_DATE := $(shell $(CPP) -V 2>&1 | sed -n '/^.*[ ]C++[ ]\([1-9]\.[0-9][0-9]*\)/p' | awk '{ print $$NF; }')
 ifeq	(${COMPILER_DATE}, 2001/01/31)
 # disable -g0 in fastdebug since SC6.1 dated 2001/01/31 seems to be buggy
 # use an innocuous value because it will get -g if it's empty
@@ -493,7 +495,7 @@ endif
 CFLAGS		+= $(CFLAGS_BROWSE)
 
 # ILD is gone as of SS11 (5.8), not supportted in SS10 (5.7)
-ifeq ($(shell expr $(COMPILER_REV) \< 5.7), 1)
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \< 507), 1)
   # use ild when debugging (but when optimizing we want reproducible results)
   ILDFLAG = $(ILDFLAG/$(VERSION))
   ILDFLAG/debug     = -xildon
