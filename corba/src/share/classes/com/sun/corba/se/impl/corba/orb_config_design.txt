@@ -1,0 +1,330 @@
+Configuration of Properties for ORB
+
+attributes of propery:
+
+name	    String (* in front means OMG std, otherwise Sun internal)
+type	    int, String, boolean, float, class (or any class with a public XXX( String ) constructor) 
+default
+
+DEBUG_PROPERTY			    String		setDebugFlags( arg ) ( , list)
+*INITIAL_HOST_PROPERTY		    String		set var
+*INITIAL_PORT_PROPERTY		    int			set var, setInitialServicesPort
+SERVER_HOST_PROPERTY		    String		set var
+SERVER_PORT_PROPERRT		    int			set var
+*ORB_ID_PROPERTY		    String		set var
+*INITIAL_SERVICES_PROPERTY	    URL			setServicesURL
+*ORB_INIT_REF_PROPERTY		    String		addORBInitRef
+*DEFAULT_INIT_REF_PROPERTY	    String		setORBDefaultInitRef
+NUMBER_TO_RECLAIM_PROPERTY	    int			set var
+ALLOW_LOCAL_OPTIMIZATION	    boolean		set var
+SOCKET_FACTORY_CLASS_PROPERTY	    Class		set var
+LISTEN_SOCKET_PROPERTY		    String		add mapped to list ( , list of (S:I) )
+
+*PI_ORB_INITIALIZER_CLASS_PREFIX.*   String		map to class, instantiate, add to list
+
+PERSISTENT_SERVER_PORT_PROPERTY	    int			setPersistentServerPort
+SERVER_ID_PROPERTY		    int			setPersistentServerId
+BAD_SERVER_ID_HANDLER_CLASS_PROPERTY Class		set var (as string)
+ACTIVATED_PROPERTY		    boolean		set var
+
+GIOP transport specific properties:
+
+HIGH_WATER_MARK_PROPERTY	    int			set var
+LOW_WATER_MARK_PROPERTY		    int			set var
+GIOP_VERSION			    GIOPVersion		set var (from int.int)
+GIOP_FRAGMENT_SIZE		    int			set var (special checks)
+GIOP_BUFFER_SIZE		    int			set var
+GIOP_11_BUFFMGR			    int			set var (really enum or else 0-2) 
+GIOP_12_BUFFMGR			    int			set var (really enum or else 0-2) 
+GIOP_TARGET_ADDRESSING		    int			set mapped var (really enum or else 0-3)
+ALWAYS_SEND_CODESET_CTX_PROPERTY    boolean		set var
+USE_BOMS			    boolean		set var
+USE_BOMS_IN_ENCAPS		    boolean		set var
+CHAR_CODESETS			    CodeSetComponent	set var
+WCHAR_CODESETS			    CodeSetComponent	set var
+
+
+Parsers
+
+class IntParserFactory {
+    static IntParser makeRangeIntParser( int min, int max )  ;
+
+}
+   
+Parsing process;
+
+
+- construct 
+- unify all args, properties into a single properties object props
+- for each key k in props
+    - find matching ParseAction p
+    - p.parse( k, props.getProperty( k ) ) 
+
+Design principles:
+
+1. Get config data out of ORB
+    Discussion:	beans framework does not work this way: instead, it creates the beans,
+    which are themselves both configuration data and configured component.
+
+    Two models:
+	a. parse props -> create config data
+	b. parse props -> create config data -> create components
+
+    However, long-term bean persistence can be used in either model.  Separation of
+    concerns (and the large size of the ORB class) argues for separating data from
+    components.
+
+2. get configuration out of ORB (except for finding config class)
+    ORB responsibility:
+	- gather all property, arg data together and make it available
+	- load the ORB configurator and let it process the data, generate a config object
+	- ORB is central registry, so ORB configurator store config data in ORB
+
+3. Extensibility is required
+
+    The ORB will have large subsystems that are pluggable components (examples: aobject adaptors,
+    transport plugins).  Individual instances of these frameworks will have their own configuration
+    data.  To solve this, the ORB class will provide (read-only perhaps?) access to the collected
+    properties.
+
+    While the component config data is not needed in the ORB, it is needed in the ORB config data 
+    so that bean persistence can be used to create an XML version of the data.
+
+    problem: properties vs. config data: same or not?
+
+    properties: easier to use, also necessary to indicate where to get config data if not default
+    config data: more powerful
+
+4. Basic principle: A parser performs an action A based on a value V when it matches a property P. 
+   Actions can be:
+    
+    configObject.setP( V )
+    configObject.setP( A(V) )
+    A(V)
+
+5. ParserActions are composable
+
+    Basic action: Object parse( String arg, String value )
+    which nicely handles prefix parsing and sharing of actions across multiple keys
+
+    interface Operation {
+	Object operate( String arg, String value )
+    }
+    
+    interface OperationFactory {
+	Operation booleanAction() ;
+
+	Operation integerAction() ;
+
+	Operation stringAction() ;
+	
+	Operation integerRangeAction( int min, int max ) ;
+
+	Operation listAction( char sep, Operation act ) ;
+    }
+
+    interface ParserAction {
+	void parse( String arg, String value ) ;
+    }
+
+    interface ParserActionFactory {
+	ParserAction setFieldAction( String fieldName ) ;
+
+	ParserAction setFieldAction( String fieldName, Operation op ) ;
+
+	ParserAction operationAction( Operation op ) ;
+    }
+
+6. Parsers are created incrementally:
+
+    Constructor:
+    new Parser( Class configurationDataClass )
+	- has the parser class available for useful defaults
+
+    interface PropertyParser {
+	/** Option must look like a standard property name, which we require here to 
+	* be ( JavaIdent "." ) * JavaIdent.  The last java ident we will call the tail.
+	* If tail starts with "ORB", this option will be used in augmentWithArguments.
+	* This match operates as follows:
+	* Let name = tail stripped of its ORB prefix.
+	* (e.g. if tail = ORBLowWaterMark, name = LowWaterMark).
+	* Then if option is matched, a conversion to the result type of the method named
+	* get<name> is performed, and set<name> is called on the data object to set the
+	* result.  
+	*/
+	void addMatch( String option ) ;
+
+	void addMatch( String option, ParserAction pa )
+
+	void addPrefixMatch( String prefix, ParserAction pa ) 
+
+	/** First constructs a new property object that has props as its default, 
+	* then enters args into new property object that correspond to property
+	* names registered in match() calls.
+	*/
+	Properties augmentWithArguments( Properties props, String[] args ) ;
+
+	/** Parse all matched properties in props, updating data as required 
+	* by the actions.
+	*/
+	void parse( Properties props, ORBConfigurationData data ) ;
+    }
+
+7. A useful model:
+
+    Provide 
+
+    abstract class ConfigDataBase {
+	ConfigDataBase( Properties props )
+	{
+	    ...
+	}
+    }
+
+    and then a specific class
+
+    public class ORBConfigData extends ConfigDataBase {
+	ORBConfigData( Properties props ) 
+	{
+	    super( props ) ;
+	}
+
+	private int foo1 = fooDefault ;
+	private String foo2 = fooDefault2 ;
+	private boolean foo3 = fooDefault3 ;
+	private SomeObject foo4 = fooDefault4 ;
+
+	public int getFoo1() { return foo1 ; }
+	// and similarly
+    }
+
+    The constructor then uses reflection to automatically handle all of these variables with a number of
+    assumptions:
+    a. Standard names:
+	private <type> foo { = <default> } 
+	public <type> getFoo() { return foo ; }
+	as argument: -ORBfoo
+	as property: com.sun.CORBA.foo  (problems here)
+    b. type specific parsing
+	int: from Integer
+	String: no-op
+	boolean: true/false (from Boolean)
+	Class: must be able to load class
+	class XXX: XXX must have a public XXX( String ) constructor
+
+    Custom parsing?
+
+    What are valid prefixes?
+    1. provide com.sun.corba.prefix.XXX where XXX defines a prefix to look for
+       (some security implications)
+    2. Extend security model to ORB implementation (I like this approach best so far)
+
+8. ORB config
+
+    public interface ORBConfigurator {
+	/** This method is called from ORB.init after all ORB properties have been
+	* collected.  The corba.ORB constructor will make sure that all required
+	* registries are initialized and empty.  This constructor will also initialize
+	* some data used in the corba ORB public API, such as support for deferred
+	* asynchronous invocation.  However, all regisitration including things like
+	* the dyanmic any factory should take place in the configurator.  This method
+	* is resonsible for making PI ORBInitializer calls, if PI is configured.
+	*/
+	void configure( com.sun.corba.se.impl.core.ORB orb ) ;
+    }
+
+   The ORB will have a default configurator named
+
+    com.sun.corba.se.impl.core.ORBConfiguratorImpl
+
+   and also a property
+
+    com.sun.CORBA.ORBConfiguratorClass
+
+   than can be set to the name of the ORB configurator class to use.  Note that this
+   implementation can either be a straight Java implementation, or something more
+   interpretive, such as an XML-based config description.
+
+9. We need to construct a list of all properties, and then make sure that security is respected. 
+   The basic security check is just:
+
+    SecurityManager sman = System.getSecurityManager() ;
+    if (sman != null)
+	sman.checkPropertyAccess( key )
+
+    and also
+
+    sman.checkPropertiesAccess()
+
+   We can construct a list of all properties as we do now, which allows the ORB
+   to call System.getProperties() inside a doPrivileged() block.  Then we create
+   a subclass of java.util.Properties that overrides getProperty to
+   do the checkPropertyAccess( key ) call.  We also need to overload the
+   enumerate method, either to make it illegal, call sman.checkPropertiesAccess,
+   or just filter it to include only the accessible properties.
+   And we also need to overload store, because it does not call enumerate internally.
+
+   This allows us to provide all properties to an ORBConfigurator, while still preserving
+   the security model.  Then anyone that needs security can set up property permissions
+   like com.foo.corba.* to allow access to only the properties they care about.
+
+10. ORB APIs
+
+    The ORB needs registry support including:
+	getSubcontractRegistry
+	getServiceContextRegistry
+
+    The ORB needs to provide access to a basic (and extensible) ORB configuration object,
+    which supports at a minimum all of the standard CORBA defined properties.
+
+    Also need registries for:
+	ObjectAdapter (actually already in SubcontractRegistry, but needs extensions to
+	    ObjectAdapterFactory to work fully)
+	TaggedComponentFactory
+	TaggedProfileFactory
+
+    What does an empty ORB provide?
+	- Registration of all ORB components
+	- Request dispatching to object adapters
+	- Access to ORB properties data (as secure Properties object)
+	- Access to ORB arguments
+	- Access to ORB configuration data (base class, plus collections of base config
+	  data for plugins such as OAs and transports)
+	- shutdown support (separate tracking of invocations vs. OA tracking in POA case?
+	  How should this be designed?)
+	- INS support? (perhaps this could be pluggable too?)
+	- How does create_output_stream get plugged in?
+	- Can we separate the current IIOP transport into a TransportPluging?
+	- PI support
+	- CORBA::ORB API
+	    - NVList, DII
+	    - object <-> string (which includes INS?)
+	    - (dis)connect API for TOA (move all impl to TOAImpl?)
+	    - typecode/any
+	    - FVD 
+	    - initial services registry
+	    - value factory registry
+	    - logging, other M&M support as needed
+
+ORB classes:
+
+    core.ORB:				abstract class providing internal interface
+    corba.ORBImpl:			internal implementation of CORBA APIs
+    corba.ORBSingleton:			the singleton ORB (not much change needed)
+    corba.ConfigurationDataCollector:	collects all source of config data and canonicalizes it
+    Interceptor.PIHandler:		the interface for PI
+    Interceptor.PIHandlerImpl:		standard implementation of PIHandler
+    corba.ORBConfigurationData:		extensible bean containing all ORB config data
+
+11. RequestHandler and ORB
+
+    The RH interface is currently implemented in the ORB class, but migþt better be a separate
+    class.  The API is currently almost the same as a ServerSubcontract.  Should we regularize
+    this?  Also, the API would need to be extended to handle shutdown properly.
+
+    Extended API:
+	- void run(): does not return until shutdown(boolean) is called.
+	- shutdown(boolean) needs to be here so that requests can be 
+	  synchhronized with shutdown.  This is also a point where OAs
+	  need to be included (currently in shutdownServants)
+	    

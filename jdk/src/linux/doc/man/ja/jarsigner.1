@@ -1,0 +1,1358 @@
+'\" t
+.\"
+.\" Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\" 
+.\"
+.TH jarsigner 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH "名前"
+jarsigner \- JAR 署名および検証ツール
+.LP
+.RS 3
+
+.LP
+.LP
+Java ARchive (JAR) ファイルの署名を生成し、署名付き JAR ファイルの署名を検証します。
+.LP
+.RE
+.SH "形式"
+.B jarsigner 
+[ 
+.BI options
+]  
+jar-file alias
+.br
+.B jarsigner
+.BI \-verify
+[
+.BI options 
+]
+jar-file 
+.SH "説明"
+.IX "JAR signing and verification tool " "" "JAR signing and verification tool  \(em \fLjarsigner\fP"
+.IX "jarsigner" "" "\fLjarsigner\fP \(em JAR signing and verification tool "
+.B jarsigner 
+ツールは、次の 2 つの目的で使用します。
+.TP 5
+1. 
+Java ARchive (JAR) ファイルに署名を付ける
+.TP 5
+2. 
+署名付き JAR ファイルの署名と完全性を検証する
+.LP
+JAR 機能を使うと、クラスファイル、イメージ、サウンド、およびその他のデジタルデータ
+を単一のファイルにパッケージ化できるので、ファイルを迅速かつ容易に配布できます。
+開発者は、
+.B jar 
+という名前のツールを使って JAR ファイルを作成できます。技術的な観点から言えば、
+すべての ZIP ファイルも JAR ファイルとみなすことができます。
+.LP
+「デジタル署名」は、なんらかのデータ (「署名」の対象となるデータ) と、エンティティ
+(人、会社など) の非公開鍵とに基づいて計算されるビット列です。手書きの署名同様、
+デジタル署名には多くの利点があります。
+.TP 2
+\(bu
+署名の生成に使われた非公開鍵と対になる公開鍵を使って計算を行うことで、
+デジタル署名が本物かどうかを検証できる
+.TP 2
+\(bu
+非公開鍵が他人に知られない限り、デジタル署名の偽造は不可能である
+.TP 2
+\(bu
+デジタル署名は、その署名が付いたデータだけを対象とするものであり、ほかのデータの
+署名として機能することはない
+.TP 2
+\(bu
+署名付きのデータは変更できない。データが変更された場合は、その署名によってデータ
+が本物ではないことが検証される
+.LP
+ファイルに対してエンティティの署名を生成するには、まず、そのエンティティが公開鍵と
+非公開鍵のペアを持つ必要があります。また、公開鍵を認証する 1 つ以上の証明書も
+必要です。「証明書」とは、あるエンティティからのデジタル署名付きの文書のことです。
+証明書には、ほかのあるエンティティの公開鍵が特別な値を持っていることが書かれて
+います。
+.LP
+.B jarsigner 
+は、「キーストア」に含まれる鍵と証明書情報を使って、JAR ファイルのデジタル署名を
+生成します。キーストアは、非公開鍵と、非公開鍵に関連付けられた X.509 証明連鎖が
+収められたデータベースです。証明連鎖は、非公開鍵に対応する公開鍵を認証します。
+キーストアの作成と管理には、
+.B keytool
+ユーティリティを使います。
+.LP
+.B jarsigner 
+は、エンティティの非公開鍵を使って署名を生成します。署名付き JAR ファイルには、
+キーストアからの証明書のコピーが含まれています。これは、JAR ファイルの署名に使わ
+れた非公開鍵に対応する公開鍵の証明書のコピーです。
+.B jarsigner 
+は、署名付き JAR ファイルのデジタル署名を、ファイル内 (の署名ブロックファイル) に含
+まれている証明書を使って検証することができます。
+.LP
+J2SE 5.0 以降の \f3jarsigner\fP は、タイムスタンプを含む署名を生成できるようになりました。このため、システム/デプロイヤ (Java Plug\-in など) は、署名付きの証明書がまだ有効である期間中に JAR ファイルの署名が行われたかどうかを確認できます。さらに、そのタイムスタンプ情報をアプリケーションが取得するための API が、J2SE 5.0 で追加されました。
+.LP
+現時点では、
+.B jarsigner 
+で署名できるのは、JDK の 
+.B jar
+ツールで作成された JAR ファイル、または ZIP ファイルだけです。JAR ファイルは ZIP ファイルと同じですが、JAR ファイルには
+.B META-INF/MANIFEST.MF 
+ファイルが含まれている点が異なります。
+.B META-INF/MANIFEST.MF
+ファイルは、
+.B jarsigner 
+が ZIP ファイルに署名を付けるときに自動的に作成されます。
+.LP
+デフォルトでは、
+.B jarsigner
+は JAR ファイルに「署名」を付けます。
+署名付き JAR ファイルを「検証」する場合は、
+.I -verify 
+オプションを指定します。
+.SS 
+JDK 1.1 との互換性
+.LP
+.IX "jarsigner" "Compatibility with JDK 1.1" "\fLjarsigner\fP \(em JAR signing and verification tool "
+.B keytool
+ツールと 
+.B jarsigner 
+ツールは、JDK 1.1 で提供されていた
+.B javakey
+ツールを完全に置き換えるものです。これらの新しいツールは
+.B javakey
+よりも多くの機能を備えており、キーストアと非公開鍵をパスワードで保護する機能や、
+署名の生成だけでなく署名を検証する機能を持っています。
+.LP
+新しいキーストアアーキテクチャは、
+.B javakey 
+が作成して管理していたアイデンティティデータベースに代わるものです。キーストア形式と、JDK 1.1 の 
+.B javakey 
+が使っていたデータベース形式との間には下位互換性はありません。ただし、次のような
+ことは可能です。
+.TP 2
+\(bu
+.B keytool
+の
+.I -identitydb 
+コマンドを使うと、アイデンティティデータベースの情報をキーストアにインポートできます。
+.TP 2
+\(bu
+
+.B jarsigner
+は、以前に 
+.B javakey
+を使って署名された JAR ファイルに署名を付けることができます。
+.TP 2
+\(bu
+.B jarsigner 
+は、
+.B javakey
+を使って署名された JAR ファイルを検証できます。したがって、
+.B jarsigner
+は、JDK 1.2 のキーストアではなく JDK 1.1 のアイデンティティデータベースからの署名者別
+名を認識し、これらを対象に処理を行うことができます。
+.LP 
+次の表は、JDK 1.1.x で署名された JAR ファイルが、Java 2 プラットフォームでどのように扱われるかを
+示しています。
+.LP
+.nf
+.ft 3
+                      1.1 データ
+         1.1 データ   ベースから   ポリシー
+JAR      ベース内の   1.2 キース   ファイル      
+ファイル   アイデン   トアにイン   がアイデン   与えられる
+のタイプ   ティティ   ポートされ   ティティ/    特権 
+                      る信頼でき   別名に特権  
+                      るアイデン   を与える
+                      ティティ(4)
+
+署名付き                                         すべてのコードに
+JAR          x         x          x           与えられる
+                                                 デフォルトの
+                                                 特権
+												   
+署名のない                                       すべてのコードに
+JAR          x         x          x           与えられる
+                                                 デフォルトの
+                                                 特権
+
+署名付き                                         すべてのコードに
+JAR          x         ○          x           与えられる
+                                                 デフォルトの
+                                                 特権
+
+署名付き                                         すべてのコードに
+JAR          ○/信頼で  x          x           与えられる
+              きない                             デフォルトの
+                                                 特権 (3)
+
+署名付き                                         すべてのコードに
+JAR          ○/信頼で  x          ○           与えられる
+              きない                             デフォルトの
+                                                 特権 (1,3)
+
+署名付き                                         すべてのコードに
+JAR          x         ○          ○           与えられる
+                                                 デフォルトの
+                                                 特権とポリシー
+                                                 ファイル内
+                                                 で与えられる
+                                                 特権
+												   
+署名付き                                         すべてのコードに
+JAR          ○/信頼    ○          ○           与えられる
+              できる                             デフォルトの
+                                                 特権とポリシー
+                                                 ファイル内
+                                                 で与えられる
+                                                 特権 (2)
+
+署名付き                                         すべての
+JAR          ○/信頼    x          x           特権
+              できる 
+署名付き                                         すべての
+JAR          ○/信頼    ○          x           特権 (1)
+              できる
+署名付き                                         すべての
+JAR          ○/信頼    x          ○           特権 (1)
+              できる
+.fi
+.ft 1
+.LP
+注:
+.TP 5
+1. 
+ポリシーファイル内にアイデンティティ/別名についての言及がある場合、
+それをキーストアにインポートして、ポリシーファイルの設定が与えられた
+特権に反映されるようにする必要があります。
+.TP 5
+2. 
+ポリシーファイル/キーストアの組み合わせは、アイデンティティデータベース
+内の信頼できるアイデンティティよりも優先されます。
+.TP 5
+3. 
+Java 2 プラットフォームでは、信頼できないアイデンティティは無視されます。
+.TP 5
+4. 
+JDK キーストアにインポートできるのは、信頼できるアイデンティティだけです。
+.SS 
+キーストアの別名
+.LP
+.IX "jarsigner" "Keystore Aliases" "\fLjarsigner\fP \(em JAR signing and verification tool "
+.LP
+キーストアのすべてのエントリは、一意の「別名」を介してアクセスされます。
+.LP
+.B jarsigner 
+を使って JAR ファイルに署名を付けるときは、署名の生成に必要な非公開鍵を
+含むキーストアエントリの別名を指定する必要があります。たとえば、次の例は、
+working ディレクトリの
+.B mystore
+という名前のキーストアに含まれる別名 
+.B duke 
+に関連付けられた非公開鍵を使って、
+.BR MyJARFile.jar
+という名前の JAR ファイルに署名を付けます。出力ファイルは指定されていない
+ので、
+.BR MyJARFile.jar 
+は署名付きの JAR ファイルによって上書きされます。
+.LP
+.ft 3
+.nf
+jarsigner -keystore /working/mystore -storepass 
+   myspass -keypass dukekeypasswd MyJARFile.jar duke
+.fi
+.ft 1
+.LP
+キーストアはパスワードで保護されているので、ストアのパスワード (上の例では 
+.BR myspass
+) を指定する必要があります。コマンド行でストアのパスワードを指定しなかった場合は、パスワードの入力を求められます。同様に、非公開鍵もキーストア内でパスワードによって保護されているので、非公開鍵のパスワード (上の例では 
+.BR dukekeypasswd 
+) を指定する必要があります。コマンド行で非公開鍵のパスワードを指定しておらず、非公開鍵のパスワートがストアのパスワードと違っている場合は、非公開鍵のパスワードの入力を求められます。
+.LP
+.SS 
+キーストアの場所
+.LP
+.IX "jarsigner" "Keystore Location" "\fLjarsigner\fP \(em JAR signing and verification tool "
+.LP
+.B jarsigner 
+には、使用するキーストアの名前と場所を指定する 
+.I -keystore
+オプションがあります。キーストアは、デフォルトではユーザのホームディレクトリの 
+.I .keystore 
+という名前のファイルに格納されます。ユーザのホームディレクトリは、
+.I user.home
+システムプロパティによって決まります。
+.LP
+.I \-keystore 
+オプションからの入力ストリームは
+.I KeyStore.load 
+メソッドに渡されます。
+URL として NONE  が指定された場合は、NULL ストリームが
+.I KeyStore.load 
+メソッドに渡されます。キーストアがハードウェアトークンデバイス上にあるなど、
+ファイルベースでない場合は、
+.I NONE 
+を指定してください。
+.SS 
+キーストアの実装
+.LP
+.IX "jarsigner" "Keystore Implementation" "\fLjarsigner\fP \(em JAR signing and verification tool "
+.LP
+.I java.security 
+パッケージ内にある 
+.I KeyStore 
+クラス
+では、キーストア内の情報にアクセスし、変更できるように
+適切に定義されたインタフェースが提供されています。
+このクラスは複数のさまざまな固定実装が可能で、
+それぞれの実装は、特定の種類のキーストア用の固定実装です。
+.LP
+現在、キーストアの実装を使用するものとして、keytool と 
+.BR  jarsigner
+の 2 つのコマンド行ツールと、
+.BR policytool 
+という名前の 1 つの GUI ベースのツールがあります。
+.I KeyStore 
+クラスは public として使用可能なので、JDK ユーザは 
+.B KeyStore
+を使ってほかのセキュリティアプリケーションも作成できます。
+.LP
+キーストアには、Sun が提供する組み込みのデフォルトの実装があります。これは、
+JKS という名前の独自のキーストアタイプ (形式) を利用するもので、キーストアを
+ファイルとして実装しています。この実装では、個々の非公開鍵は個別のパスワード
+によって保護され、キーストア全体の完全性も (非公開鍵とは別の) パスワードに
+よって保護されます。
+.LP
+
+キーストアの実装は、プロバイダベースです。具体的には、
+.I KeyStore
+クラスが提供するアプリケーションインタフェースは、Service Provider Interface (SPI) 
+という形で実装されています。つまり、対応する 
+.I KeystoreSpi
+抽象クラス (これも 
+.I java.security
+パッケージに含まれている) があり、このクラスが Service Provider Interface の
+メソッドを定義しています。これらのメソッドは、「プロバイダ」が実装しなければなりま
+せん。ここで、「プロバイダ」とは、Java Security API によってアクセス可能なサービス
+のサブセットに対し、その固定実装を提供するパッケージまたはパッケージの集合の
+ことです。したがって、キーストアの実装を提供するには、「Java 暗号化アーキテク
+チャ用プロバイダの実装方法」(http://java.sun.com/javase/6/docs/technotes/guides/security/HowToImplAProvider.html) のページで説明しているように、クライアントがプロバイダを実装し、
+.I KeystoreSpi 
+サブクラスの実装を提供する必要があります。
+.LP
+アプリケーションでは、
+.I KeyStore
+クラスが提供する 
+.B getInstance
+ファクトリメソッドを使うことで、さまざまなプロバイダから異なる「タイプ」のキーストアの
+実装を選択できます。キーストアのタイプは、キーストア情報の格納形式とデータ形式、
+およびキーストア内の非公開鍵とキーストア自体の完全性を保護するために使われる
+アルゴリズムを定義します。異なるタイプのキーストアの実装には、互いに互換性は
+ありません。keytool、jarsigner、および policytool の各ツールは、
+.B KeyStore
+が提供する共通のアプリケーションインタフェースだけを使っているので、任意の
+タイプのキーストアで使用できます。
+.LP
+.B keytool 
+は、ファイルベースのキーストア実装に対して機能します。
+.B keytool 
+は、コマンド行で渡されたキーストアの位置をファイル名として扱い、
+.BR FileInputStream
+に変換して、そこからキーストア情報をロードします。一方、
+.B jarsigner
+ツールおよび 
+.B policytool
+ツールは、URL を使って指定することが可能な任意の位置にあるキーストアを
+読み取ることができます。
+.LP
+.B jarsigner 
+と 
+.BR keytool
+の場合、
+.I -storetype
+オプションを使ってコマンド行でキーストアのタイプを指定できます。
+.BR policytool 
+の場合は、[Edit] メニューの [Change Keystore] コマンドを使ってキーストアの
+タイプを指定できます。
+.LP
+キーストアのタイプを明示的に指定しない場合、
+.B keytool
+、
+.B jarsigner
+、および 
+.B policytool 
+の各ツールは、セキュリティプロパティファイル内で指定
+された
+.I keystore.type
+プロパティの値に基づいてキーストアの実装を選択します。セキュリティプロパティファ
+イルは、
+.I java.security
+という名前でセキュリティプロパティディレクトリ 
+.I java.home/lib/security
+に置かれています。
+.I java.home
+は、JDK の実行環境ディレクトリです。(SDK 内の jre ディレクトリ
+または Java Runtime Environment のトップレベルのディレクトリ)。
+.LP
+各ツールは、
+.I keystore.type
+の値を取得し、この値で指定されたタイプのキーストアを実装しているプロバイダが
+見つかるまで、現在インストールされているすべてのプロバイダを調べます。目的の
+プロバイダが見つかると、そのプロバイダからのキーストアの実装を使います。
+.LP
+.I KeyStore 
+クラスでは 
+.I getDefaultType
+という名前の static メソッドが定義されており、アプリケーションとアプレットはこの
+メソッドを使うことで 
+.I keystore.type
+プロパティの値を取得できます。次のコードは、デフォルトのキーストアタイプ (
+.I keystore.type
+プロパティで指定されたタイプ) のインスタンスを生成します。
+.LP
+.nf
+\f3
+.fl
+    KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+.fl
+\fP
+.fi
+
+.LP
+.LP
+デフォルトのキーストアタイプは jks (Sun が提供する独自のタイプのキーストアの
+実装) です。これは、セキュリティプロパティファイル内の次の行によって指定されて
+います。
+.LP
+.RS 5
+.B keystore.type=jks
+.RE
+.LP
+注: キーストアタイプの指定では、大文字と小文字は区別されません。たとえば、「JKS」と「jks」は同じものとみなされます。
+.LP
+各ツールでデフォルト以外のキーストアの実装を使用するには、上の行を変更して
+別のキーストアのタイプを指定します。
+たとえば、pkcs12 と呼ばれるタイプのキーストアの実装を提供している
+プロバイダパッケージを使用するには、上の行を次のように変更します。
+.LP
+.B keystore.type=pkcs12
+.LP
+PKCS#11 プロバイダパッケージを使用する場合、その詳細については、「Java PKCS#11 Reference Guide」(
+http://java.sun.com/javase/6/docs/technotes/guides/security/p11guide.html#keytooljarsigner)
+にある
+「\f2KeyTool and JarSigner\fP」節を参照してください。
+.LP
+.SS 
+サポートされるアルゴリズム
+.LP
+.IX "jarsigner" "Supported Algorithms and Key Sizes" "\fLjarsigner\fP \(em JAR signing and verification tool "
+.LP
+デフォルトでは、
+.B jarsigner
+は次のどちらかのアルゴリズムを使って JAR ファイルに署名します。
+.TP 2
+\(bu
+SHA-1 ダイジェストアルゴリズムを使った DSA (デジタル署名アルゴリズム)
+.TP 2
+\(bu
+MD5 ダイジェストアルゴリズムを使った RSA アルゴリズム
+.LP
+具体的には、署名者の公開鍵と非公開鍵が DSA 鍵である場合、
+.B jarsigner
+は「SHA1withDSA」アルゴリズムを使って JAR ファイルに署名を付けようとします。署名者の
+鍵が RSA 鍵である場合、
+.B jarsigner
+は「MD5withRSA」アルゴリズムを使って JAR ファイルに署名を付けます。
+.LP
+これらのデフォルトの署名アルゴリズムは、\f2\-sigalg\fP オプションを使ってオーバーライドできます。
+.LP
+.SS 
+署名付き JAR ファイル
+.LP
+.IX "jarsigner" "The Signed JAR File" "\fLjarsigner\fP \(em JAR signing and verification tool "
+.LP
+.B jarsigner
+を使って JAR ファイルに署名を付けた場合、出力される署名付き JAR ファイルは
+入力 JAR ファイルと同じですが、次の 2 つの追加ファイルが
+.B META-INF
+ディレクトリに置かれる点が異なります。
+.TP 2
+\(bu
+.B .SF
+拡張子の付いた署名ファイル
+.TP 2
+\(bu
+.B .DSA
+拡張子の付いた署名ブロックファイル
+.LP
+これら 2 つのファイルのベースファイル名は、
+.I -sigFile 
+オプションの値から作成されます。たとえば、次のようにオプションを指定したとします。
+.LP
+.B -sigFile MKSIGN
+.LP
+この場合、ファイル名はそれぞれ 
+.B MKSIGN.SF
+と
+.BR MKSIGN.DSA
+になります。
+.LP
+コマンド行に 
+.I -sigfile 
+オプションの指定がない場合、
+.B .SF
+ファイルと 
+.B .DSA
+ファイルのベースファイル名は、コマンド行で指定された別名の先頭の 8 文字を
+すべて大文字に変換したものになります。別名が 8 文字未満の場合は、別名が
+そのまま使われます。別名の中に、署名ファイル名に使用できない文字が含まれ
+ている場合は、該当する文字を下線 (_) に置き換えてファイル名が作成されます。
+使用できる文字は、アルファベット、数字、下線 (_)、ハイフンです。
+.LP
+署名 (\f3.SF\f1) ファイル
+.LP
+署名ファイル (
+.B .SF
+ファイル) は、
+.B jar
+ツールで生成された JAR ファイルに常に含まれるマニフェストファイルと似ています。つまり、マニフェストファイル同様、
+.B .SF
+ファイルには、JAR ファイルに含まれているソースファイルごとに、次の 3 つの行があります。
+.TP 2
+\(bu
+ファイル名
+.TP 2
+\(bu
+使われているダイジェストアルゴリズム (SHA) の名前
+.TP 2
+\(bu
+SHA ダイジェストの値
+.LP
+マニフェストファイルでは、SHA ダイジェストの値は、ソースファイルのバイナリデータ
+のダイジェスト (ハッシュ) です。一方、
+.B .SF
+ファイルでは、ソースファイルのダイジェストの値は、マニフェストファイル中の該当する
+ソースファイルに対応する 3 行のハッシュです。
+.LP
+署名ファイルには、デフォルトでマニフェストファイル全体のハッシュも含まれています。
+後述の「JAR ファイルの検証」で説明するように、このヘッダの存在によって検証の
+最適化が可能になっています。
+.LP
+署名ブロック (\f3.DSA\f1) ファイル
+.LP
+.B .SF
+ファイルには署名が付けられ、署名は 
+.B .DSA 
+ファイルに置かれます。
+.B .DSA
+ファイルには、キーストアからの証明書または証明連鎖も符号化された形で含まれて
+います。証明書または証明連鎖は、署名に使われた非公開鍵に対応する公開鍵を
+認証します。
+.LP
+.SS 
+署名タイムスタンプ
+.LP
+.LP
+J2SE 5.0 リリースの 
+.I jarsigner
+ツールは、JAR ファイルの署名時に署名タイムスタンプを生成および格納できるようになりました。さらに、
+.I jarsigner
+は代替の署名機構もサポートします。この動作は省略可能で、署名時に次の各オプションによって制御されます。
+.LP
+.RS 3
+.TP 2
+o
+\f2\-tsa url\fP 
+.TP 2
+o
+\f2\-tsacert alias\fP 
+.TP 2
+o
+\f2\-altsigner class\fP 
+.TP 2
+o
+\f2\-altsignerpath classpathlist\fP 
+.RE
+
+.LP
+.LP
+これらの各オプションの詳細については、後述の「オプション」節を参照してください。
+.LP
+.SS 
+JAR ファイルの検証
+.LP
+.IX "jarsigner" "JAR File Verification" "\fLjarsigner\fP \(em JAR signing and verification tool "
+.LP
+JAR ファイルの検証が成功するのは、署名が有効であり、かつ署名の生成以後に 
+JAR ファイル内のどのファイルも変更されていない場合です。JAR ファイルの検証は、次の手順で行われます。
+.TP 5
+1. 
+.B .SF 
+ファイルそれ自体の署名を検証します。
+.RS
+.LP
+この手順では、各署名ブロック (
+.B .DSA
+) ファイルに格納されている署名が、実際に、公開鍵に対応する非公開鍵を使って
+生成されたものであることを確認します。
+.B .DSA
+ファイルには、公開鍵の証明書も含まれています。また、この手順
+では、目的の署名が、対応する署名 (
+.B .SF
+) ファイル内の有効な署名であるかどうかを調べ、
+.B .SF 
+ファイルが改変されていないことも確認します。
+.RE
+.TP 5
+2. 
+.B .SF
+ファイル内の各エントリのダイジェストをマニフェスト内の対応する各セクションと突き
+合わせて検証します。
+.RS 
+.LP
+.B .SF
+ファイルには、マニフェストファイル全体のハッシュが格納されたヘッダがデフォルトで
+含まれています。このヘッダが存在する場合は、ヘッダ内のハッシュが実際にマニフェ
+ストファイルのハッシュと一致するかどうかを検証することができます。ハッシュが一致す
+る場合は、次の手順に進みます。
+.LP
+ハッシュが一致しない場合は、効率的には劣る方法を使って検証を行います。具体的
+には、
+.B .SF
+ファイル内の各ソースファイル情報セクションのハッシュが、マニフェストファイル内の
+対応するセクションのハッシュと一致するかどうかを確認します (「署名 (\f3.SF\f1) 
+ファイル」を参照)。
+.LP
+.B .SF
+ファイルのヘッダに格納されたマニフェストファイルのハッシュと、実際のマニフェスト
+ファイルのハッシュとが一致しない場合は、署名 (および 
+.B .SF
+ファイル) の生成後に、ファイルに 1 つ以上のファイルが追加 (
+.I jar
+ツールを使用) された可能性があります。
+.I jar
+ツールを使ってファイルを追加した場合、マニフェストファイルは変更されますが 
+(新しいファイル用のセクションが追加される)、
+.B .SF
+ファイルは変更されません。この場合、
+.B .SF
+ファイルのヘッダ以外のセクションに格納されたハッシュが、マニフェストファイル内の
+対応するセクションのハッシュと一致するときは、署名の生成時に JAR ファイル内に
+存在していたファイルのうち、どのファイルも変更されていないことになり、検証は成功
+したものとして扱われます。
+.RE
+.TP 5
+3. 
+JAR ファイル内のファイルのうち、
+.B .SF
+ファイル内にエントリを持つ各ファイルを読み込みます。読み込み中にファイルの
+ダイジェストを計算し、結果をマニフェストセクション内の該当するファイルの
+ダイジェストと比較します。2 つのダイジェストは同じでなければならず、そうでない
+場合は検証が失敗します。
+.LP
+検証プロセスの途中でなんらかの重大な検証エラーが発生した場合、検証プロセス
+は中止され、セキュリティ例外がスローされます。スローされたセキュリティ例外は、
+.BR jarsigner
+がキャッチして表示します。
+.LP
+.SS 
+1 つの JAR ファイルを対象とする複数の署名
+.LP
+.IX "jarsigner" "Multiple Signatures for a JAR File" "\fLjarsigner\fP \(em JAR signing and verification tool "
+.LP
+1 つの JAR ファイルに対して 
+.B jarsigner 
+ツールを複数回実行し、実行のたびに、異なるユーザの別名を指定すれば、JAR 
+ファイルに複数のユーザの署名を付けることができます。たとえば、次のようにします。
+.LP
+.ft 3
+.nf
+jarsigner myBundle.jar susan
+jarsigner myBundle.jar kevin
+.fi
+.ft 1
+.LP
+JAR ファイルが複数回署名されている場合、その JAR ファイルには
+.B .SF
+ファイルと
+.B .DSA
+ファイルの対が複数含まれることになります。
+.B .SF 
+ファイルと
+.B .DSA
+ファイルの対は、1 回の署名に対して 1 つ作成されます。したがって、上の例で出力
+される JAR ファイルには、次の名前を持つファイルが含まれます。
+.LP
+.ft 3
+.nf
+SUSAN.SF
+SUSAN.DSA
+KEVIN.SF
+KEVIN.DSA
+.fi
+.ft 1
+.LP
+注: JDK 1.1 の 
+.B javakey 
+ツールで生成した署名と、
+.B jarsigner 
+で生成した署名というように、
+1 つの JAR ファイルに署名を混在させることができます。
+つまり 
+.B javakey 
+ですでに以前署名した JAR ファイルに署名するために、
+.B jarsigner 
+を使用できます。
+.SH "オプション"
+.LP
+以下では、
+.B jarsigner 
+のオプションについて説明します。オプションを指定するときは、次の点に注意
+してください。
+.TP 2
+\(bu
+どのオプション名にも先頭にマイナス記号 (-) が付く
+.TP 2
+\(bu
+オプションは任意の順序で指定できる
+.TP 2
+\(bu
+イタリック体の項目の実際の値 (オプションの値) は、ユーザが指定する必要がある
+.TP 2
+\(bu
+.I -keystore、
+.I -storepass、
+.I -keypass、
+.I -sigfile、
+.I -sigalg、
+.I -digestalg、
+および 
+.I -signedjar 
+の各オプションを使用できるのは、JAR ファイルに署名を付ける場合だけである。
+これらのオプションは、JAR ファイルを検証する場合には使用できない。同様に、
+別名をコマンド行で指定するのは、JAR ファイルに署名を付ける場合だけである
+.LP
+.RS 3
+.TP 3
+.B -keystore  url
+キーストアの場所を示す URL を指定します。デフォルトは、ユーザのホームディレクト
+リ内のファイル 
+.I .keystore 
+です。ユーザのホームディレクトリは、
+.I user.home 
+システムプロパティによって決まります。
+.LP
+署名するときはキーストアが必要です。このため、デフォルトのキーストアが存在
+しない場合、あるいはデフォルト以外のほかのキーストアを使用する場合は、
+キーストアを明示的に指定する必要があります。
+.LP
+検証するときはキーストアは必要ありません。ただし、キーストアが指定されているか、
+あるいはデフォルトのキーストアが存在していて、さらに 
+.I -verbose
+オプションも指定されている場合は、JAR ファイルの検証に使われる証明書が
+キーストアに存在するかどうかについての追加情報が出力されます。
+.LP
+注: 
+.I -keystore 
+の引数には、URL の代わりにファイル名 (とパス) を指定できます。ファイル名 
+(とパス) を指定した場合は、「file:」URL として扱われます。たとえば、次のように
+指定できます。
+.LP
+.B -keystore filePathAndName
+.LP
+これは、次の指定と同じものとして扱われます。
+.LP
+.B -keystore file:filePathAndName
+.LP
+\fP
+.fi
+JRE の \f2$JAVA_HOME/lib/security\fP ディレクトリに格納された \f2java.security\fP セキュリティプロパティファイル内で Sun PKCS#11 プロバイダが設定されている場合、keytool と jarsigner は PKCS#11 トークンに基づいて動作できます。次のオプションを指定します。 
+.RS 3
+.TP 2
+o \f2\-keystore NONE\fP 
+.TP 2
+o \f2\-storetype PKCS11\fP 
+.RE
+たとえば、次のコマンドは、設定された PKCS#11 トークンの内容を一覧表示します。 
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+   jarsigner \-keystore NONE \-storetype PKCS11 \-list
+.fl
+  
+.fl
+\fP
+.fi
+.RE
+.TP 3
+.B -storetype  storetype
+インスタンスを生成するキーストアのタイプを指定します。デフォルトのキーストアの
+タイプは、セキュリティプロパティファイルで keystore.type プロパティの値として
+指定されたタイプで、
+.I java.security.KeyStore
+の static 
+.I getDefaultType 
+メソッドによって返されます。
+.LP
+\f2\-storepass\fP オプションを使って PCKS#11 トークンの PIN を指定することも
+できます。何も指定しなかった場合、keytool と jarsigner はユーザにトークン PIN の
+入力を求めます。トークンの認証パスが、専用の PIN パッドやバイオメトリックリーダの
+ような保護されたパスである場合、\f2\-protected\fP オプションを指定する必要があります。
+この場合、パスワードオプションは指定できません。  
+.TP
+.B -storepass  password
+キーストアにアクセスするのに必要なパスワードを指定します。このオプションが必要
+なのは、JAR ファイルに署名を付けるときだけです (JAR ファイルを検証するときは
+不要)。署名を付けるときに、コマンド行で 
+.I -storepass
+オプションを指定しなかった場合は、パスワードの入力を求められます。
+.RS 
+.LP
+注: テストを目的とする場合、または安全が保障されたシステムで実行する場合
+以外は、コマンド行やスクリプトでパスワードを指定しないでください。また、
+password プロンプトでパスワードを入力すると、入力したパスワードがエコーされ、
+そのまま画面に表示されます。このため、周囲にほかのユーザがいる場合は、
+パスワードを見られないように注意してください。
+.RE
+.TP
+.B -keypass  password
+コマンド行で指定された別名に対応するキーストアエントリの非公開鍵を保護するの
+に使うパスワードを指定します。
+.B jarsigner
+を使って JAR ファイルに署名を付けるときは、パスワードが必要です。コマンド行で
+パスワードが指定されておらず、必要なパスワードがストアのパスワードと異なる
+場合は、パスワードの入力を求められます。
+.RS 
+.LP
+注: テストを目的とする場合、または安全であることがわかっているシステムで
+実行する場合以外は、コマンド行やスクリプトでパスワードを指定しないでください。
+また、password プロンプトでパスワードを入力すると、入力したパスワードがエコー
+され、そのまま画面に表示されます。このため、周囲にほかのユーザがいる場合は、
+パスワードを見られないように注意してください。
+.RE
+.TP
+.B -sigfile  file
+SF ファイルと .DSA ファイルの生成に使うベースファイル名を指定します。
+たとえば、file に DUKESIGN を指定すると、生成される .SF ファイルと 
+.DSA ファイルの名前は、それぞれ DUKESIGN.SF と DUKESIGN.DSA になります。
+これらのファイルは、署名付き JAR ファイルの META-INF ディレクトリに置かれます。
+.RS 
+.LP
+.I file
+に使用できる文字は「a-zA-Z0-9_-」です。つまり、文字、数字、下線、
+およびハイフンだけを使用できます。注: 
+.B .SF
+および 
+.B .DSA
+のファイル名では、小文字はすべて大文字に変換されます。
+.LP
+コマンド行で 
+.I -sigfile 
+オプションを指定しなかった場合、
+.B .SF 
+ファイルと 
+.B .DSA
+ファイルのベースファイル名は、コマンド行で指定された別名の先頭の 8 文字を
+すべて大文字に変換したものになります。別名が 8 文字未満の場合は、別名が
+そのまま使われます。別名の中に、署名ファイル名に使用できない文字が含まれている
+場合は、該当する文字を下線 (_) に置き換えてファイル名が作成されます。
+.TP 3
+\-sigalg  algorithm 
+.RS 3
+
+.LP
+JAR ファイルの署名に使用する署名アルゴリズムの名前を指定します。 
+.LP
+標準署名アルゴリズム名の一覧については、「Java Cryptography Architecture」( 
+http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#appa)
+にある
+「
+.I Appendix A
+」を参照してください。このアルゴリズムは、JAR ファイルの署名に使用する秘密鍵と互換性のあるものでなければなりません。このオプションを指定しなかった場合、秘密鍵のタイプに応じて SHA1withDSA、MD5withRSA のいずれかが使用されます。指定されたアルゴリズムの実装を提供するプロバイダが静的にインストールされているか、あるいはユーザがそのようなプロバイダを 
+.I \-providerClass
+オプションを使って指定する必要があります。そうでない場合、コマンドの実行が失敗します。
+.LP
+.RE
+.TP 3
+\-digestalg  algorithm 
+.RS 3
+JAR ファイルのエントリをダイジェストする際に使用するメッセージダイジェストアルゴリズムの名前を指定します。 
+.LP
+標準メッセージダイジェストアルゴリズム名の一覧については、「Java Cryptography Architecture」(http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/CryptoSpec.html#appa)の
+「
+.I Appendix A
+」を参照してください。このオプションを指定しなかった場合、SHA\-1 が使用されます。指定されたアルゴリズムの実装を提供するプロバイダが静的にインストールされているか、あるいはユーザがそのようなプロバイダを 
+.I \-providerClass
+オプションを使って指定する必要があります。そうでない場合、コマンドの実行が失敗します。
+.RE
+.TP
+.B -signedjar  file
+署名付き JAR ファイルの名前を指定します。
+.RS 
+.LP
+コマンド行で名前を指定しなかった場合は、入力 JAR ファイル (署名の対象となる
+JAR ファイル) の名前と同じ名前が使われます。この場合、入力 JAR ファイルは署名
+付き JAR ファイルによって上書きされます。
+.RE
+.TP
+.B -verify
+コマンド行でこのオプションが指定されている場合は、指定された JAR ファイルが
+検証されます。JAR ファイルへの署名は行われません。検証が成功すると、
+「jar verified」というメッセージが表示されます。署名されていない JAR ファイル、
+またはサポートされていないアルゴリズム (RSA プロバイダがインストールされていない
+場合の RSA など) を使って署名された JAR ファイルを検証しようとすると、
+「jar is unsigned. (signatures missing or not parsable)」というメッセージが表示されます。
+.RS 
+.LP
+署名付き JAR ファイルは、
+.B jarsigner 
+または JDK 1.1 の 
+.B javakey 
+ツール、あるいはその両方を使って検証できます。
+.LP
+検証についての詳細は、「JAR ファイルの検証」を参照してください。
+.RE
+.TP
+.B -certs
+コマンド行で、
+.I -verify
+および
+.I -verbose 
+オプションとともにこのオプションが指定されている場合は、JAR ファイルの各署名者
+の証明書情報も出力されます。証明書情報には次のものが含まれます。
+.RS
+.TP 2
+\(bu
+署名者の公開鍵を証明する (
+.B .DSA
+ファイルに格納された) 証明書の種類の名前
+.TP 2
+\(bu
+証明書が X.509 証明書 (具体的には 
+.I java.security.cert.X509Certificate 
+のインスタンス) である場合は、署名者の識別名
+.LP
+キーストアの確認も行われます。コマンド行でキーストアの値が指定されていない
+場合、デフォルトのキーストアファイルがあれば、それが確認されます。署名者の
+公開鍵の証明書がキーストア内のエントリと一致した場合は、次の情報も表示
+されます。
+.TP 2
+\(bu
+署名者に該当するキーストアエントリの別名。この別名は括弧で囲まれます。
+ただし、キーストアではなく JDK 1.1 のアイデンティティデータベースに由来する
+署名者の場合は、括弧ではなく角括弧で囲まれます。
+.RE
+.TP
+.B -verbose
+コマンド行でこのオプションが指定されている場合、
+.B jarsigner
+は「冗長」モードで動作し、JAR の署名または検証の進行状況に関する追加情報を出
+力します。
+.TP
+.B -internalsf
+以前は、JAR ファイルの署名時に生成された 
+.B .DSA
+(署名ブロック) ファイルの中に、生成された 
+.B .SF
+ファイル (署名ファイル) の完全なコピーが符号化された形で含まれていました。この
+動作は変更になり、現在では、出力 JAR ファイル全体のサイズを小さくするために、
+デフォルトでは
+.B .SF 
+ファイルが 
+.B .DSA
+ファイルに含まれないようになっています。ただし、コマンド行で 
+.B -internalsf
+オプションを指定すると、以前と同じように動作します。このオプションは、テストを行う
+場合には便利ですが、それ以外には使用しないでください。このオプションを使用する
+と、有益な最適化が行われなくなります。
+.TP
+.B -sectionsonly
+コマンド行でこのオプションが指定されている場合、JAR ファイルの署名時に生成される 
+.B .SF
+ファイル (署名ファイル) には、マニフェストファイル全体のハッシュを含むヘッダは追加されません。この場合、.SF ファイルに含まれるのは、JAR ファイル内の各ソースファイルに関する情報およびハッシュだけです。詳細は、「署名 (\f3.SF\f1) ファイル」を参照してください。
+.RS 
+.LP
+デフォルトでは、最適化を行うために、マニフェストファイル全体のハッシュを含むヘッダ
+が追加されます。ヘッダが存在する場合は、JAR ファイルの検証時に、まずヘッダ内
+のハッシュが、マニフェストファイル全体のハッシュと実際に一致するかどうかが確認
+されます。ハッシュが一致する場合、検証は次の手順に進みます。ハッシュが一致
+しない場合は、効率的には劣る方法を使って検証を行います。具体的には、
+.B .SF 
+ファイル内の各ソースファイル情報セクションのハッシュが、マニフェストファイル内の
+対応するセクションのハッシュと一致するかどうかを確認します。
+.LP
+詳細は、「JAR ファイルの検証」を参照してください。
+.LP
+このオプションは、テストを行う場合には便利ですが、それ以外には使用しないで
+ください。このオプションを使用すると、有益な最適化が行われなくなります。
+.TP
+.B -protected
+\f2true\fP、\f2false\fP のいずれか。専用 PIN リーダなどの保護された認証パスを介してパスワードを指定する必要がある場合には、この値に \f2true\fP を指定してください。
+.RE
+.TP
+.B \-provider  provider_class_name
+サービスプロバイダがセキュリティプロパティファイル (\f2java.security\fP) のリストに
+入っていないときに、暗号化サービスプロバイダのマスタークラスファイルの
+名前を指定します。
+.LP
+\f2\-providerArg\fP \f2ConfigFilePath\fP オプションと組み合わせて使用します。keytool と jarsigner はプロバイダを動的にインストールします (ここで、\f2ConfigFilePath\fP はトークン設定ファイルへのパスです)。セキュリティプロパティファイル内で Sun PKCS#11 プロバイダが設定されていない場合に PKCS#11 キーストアを一覧表示するコマンドの例を次に示します。 
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+jarsigner \-keystore NONE \-storetype PKCS11 \\
+.fl
+          \-providerClass sun.security.pkcs11.SunPKCS11 \\
+.fl
+          \-providerArg /foo/bar/token.config \\
+.fl
+          \-list
+.fl
+\fP
+.fi
+.RE
+.TP 3
+.B \-providerName providerName 
+\f2java.security\fP セキュリティプロパティファイル内で 2 つ以上のプロバイダが設定されている場合、\f2\-providerName\fP オプションを使って特定のプロバイダインスタンスを選択できます。このオプションの引数は、プロバイダの名前になります。 
+.LP
+Sun PKCS#11 プロバイダの場合、\f2providerName\fP は \f2SunPKCS11\-\fP\f2TokenName\fP の形式になります。ここで、\f2TokenName\fP は、プロバイダインスタンスの設定時に使用した名前のサフィックスです。詳細については、
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/security/p11guide.html#KeyToolJarSigner#ATTRS
+の
+.na
+「\f2configuration attributes table\fP」を参照してください。たとえば、次のコマンドは、名前サフィックス \f2SmartCard\fP を持つ PKCS#11 キーストアプロバイダインスタンスの内容を一覧表示します。 
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+jarsigner \-keystore NONE \-storetype PKCS11 \\
+.fl
+        \-providerName SunPKCS11\-SmartCard \\
+.fl
+        \-list
+.fl
+\fP
+.fi
+.RE
+.TP
+.B \-Jjavaoption
+指定した 
+.I javaoption 
+文字列を直接実行時システムに渡します。
+\f3jarsigner\f1 は、実際には Java インタプリタに対する「ラッパー」です。このオプションには、空白を含めることはできません。このオプションは、実行環境またはメモリ使用を調整する場合に便利です。指定できるフラグを一覧表示するには、コマンド行で 
+.I java -h
+または 
+.I java -X 
+と入力してください。
+.LP
+.TP 3
+\-tsa url 
+JAR ファイル署名時にコマンド行に\f2「-tsa http://example.tsa.url」\fPと入力した場合、署名のタイムスタンプが生成されます。\f2http://example.tsa.url\fP という URL が、TSA (Time Stamping Authority) の場所を特定します。これは、\f2\-tsacert\fP オプション経由で見つかったどの URL よりも優先されます。\f2\-tsa\fP オプションを使用する場合、TSA の公開鍵証明書がキーストア内に存在している必要はありません。 
+.LP
+タイムスタンプを生成するために、\f2jarsigner\fP は、
+.fi
+http://www.ietf.org/rfc/rfc3161.txt
+の
+.na
+「\f2RFC 3161\fP」で規定された TSP (Time\-Stamp Protocol) を使って TSA と通信します。成功すると、TSA から返されたタイムスタンプトークンが、署名とともに署名ブロックファイル内に格納されます。 
+.LP
+.TP 3
+\-tsacert alias 
+JAR ファイル署名時にコマンド行に\f2「-tsacert alias」\fPと表示された場合、署名のタイムスタンプが生成されます。\f2alias\fP は、キーストア内で現在有効になっている TSA の公開鍵証明書を特定します。そのエントリの証明書内で、TSA の場所を特定する URL を含む Subject Information Access 拡張が検索されます。 
+.LP
+\f2\-tsacert\fP を使用する場合、TSA の公開鍵証明書がキーストア内に存在している必要があります。 
+.LP
+.TP 3
+\-altsigner class 
+使用する代替署名機構を指定します。この完全修飾クラス名は、
+.I com.sun.jarsigner.ContentSigner
+抽象クラスを拡張するクラスファイルを特定します。このクラスファイルへのパスは、
+.I \-altsignerpath
+オプションを使って定義します。
+.I \-altsigner
+オプションが指定された場合、
+.I jarsigner
+はその指定されたクラスが提供する署名機構を使用します。それ以外の場合、
+.I jarsigner
+はデフォルトの署名機構を使用します。 
+.LP
+たとえば、\f2com.sun.sun.jarsigner.AuthSigner\fP という名前のクラスが提供する署名機構を使用するには、\f2jarsigner\fP オプション\f2「-altsigner com.sun.jarsigner.AuthSigner」\fPを使用します。
+.LP
+.TP 3
+\-altsignerpath classpathlist 
+クラスファイル (このクラスファイル名は前述の \f2\-altsigner\fP オプションを使って指定) へのパスと、そのクラスが依存するすべての JAR ファイルへのパスを指定します。そのクラスファイルが JAR ファイル内に存在している場合には、次の例で示すように、その JAR ファイルへのパスを指定します。 
+.LP
+絶対パス、現在のディレクトリに対する相対パスのいずれかを指定できます。複数のパスまたは JAR ファイルを \f2classpathlist\fP に含める場合には、Solaris 上ではコロン (\f2:\fP)、Windows 上ではセミコロン (\f2;\fP) をそれぞれ使ってエントリを区切ってください。このクラスがすでに検索パスに含まれている場合、このオプションを指定する必要はありません。 
+.LP
+クラスファイルを含む JAR ファイルへのパスを指定する例: 
+.RS 3
+
+.LP
+.LP
+\f2\-altsignerpath /home/user/lib/authsigner.jar\fP
+.LP
+.RE
+.LP
+JAR ファイル名が含まれている点に注意してください。 
+.LP
+クラスファイルを含む JAR ファイルへのパスを指定する例: 
+.RS 3
+.LP
+\f2\-altsignerpath /home/user/classes/com/sun/tools/jarsigner/\fP
+.LP
+.RE
+.LP
+JAR ファイル名が含まれていない点に注意してください。  
+.RE
+.LP
+.SH "例"
+.LP
+.SS 
+JAR ファイルの署名
+.LP
+.IX "jarsigner" "Signing a JAR File" "\fLjarsigner\fP \(em JAR signing and verification tool "
+.LP
+.B bundle.jar 
+という名前の JAR ファイルがあり、このファイルに、キーストアの別名が jane であるユーザの非公開鍵を使って、署名を付けるとします。キーストアは、mystore という名前で working ディレクトリにあり、キーストアのパスワードは mypass、
+.I jane 
+の非公開鍵のパスワードは j638klm とします。この場合、次のコマンドを実行すると、JAR ファイルに署名を付けて sbundle.jar という署名付き JAR ファイルを作成できます。
+.LP
+.ft 3
+.nf
+jarsigner \-keystore "/working/mystore" \-storepass myspass
+   -keypass j638klm -signedjar sbundle.jar bundle.jar jane
+.fi
+.ft 1
+.LP
+上のコマンドでは 
+.I \-sigfile
+オプションが指定されていないので、署名付き JAR ファイルに格納される 
+.B .SF
+ファイルと 
+.B .DSA
+ファイルの名前は、別名に基づくデフォルトの名前になり、それぞれ 
+.I JANE.SF
+と 
+.I JANE.DSA
+になります。
+.LP
+ストアのパスワードと非公開鍵のパスワードをあとで入力する場合は、
+上のコマンドを短縮して次のように入力できます。
+.LP
+.ft 3
+.nf
+jarsigner \-keystore /working/mystore
+   -signedjar sbundle.jar bundle.jar jane
+.fi
+.ft 1
+.LP
+デフォルトのキーストア (ホームディレクトリ内の
+.B .keystore
+という名前のキーストア) を使用する場合は、次に示すように、キーストアの指定を
+省略できます。
+.LP
+.ft 3
+.nf
+jarsigner \-signedjar sbundle.jar bundle.jar jane
+.fi
+.ft 1
+.LP
+また、署名付き JAR ファイルで入力 JAR ファイル (
+.I bundle.jar
+) を上書きする場合は、
+.I -signedjar
+オプションの指定も省略できます。
+.LP
+.ft 3
+.nf
+jarsigner bundle.jar jane
+.fi
+.ft 1
+.LP
+.SS 
+署名付き JAR ファイルの検証
+.LP
+.IX "jarsigner" "Verifying a Signed JAR File" "\fLjarsigner\fP \(em JAR signing and verification tool "
+.LP
+次に示すのは、署名付き JAR ファイルを検証し、署名が有効で JAR ファイルが
+改変されていないことを確認するためのコマンド例です。
+.LP
+.ft 3
+.nf
+jarsigner \-verify sbundle.jar
+.fi
+.ft 1
+.LP
+検証が成功すると、次のようなメッセージが表示されます。
+.LP
+.ft 3
+.nf
+jar verified.
+.fi
+.ft 1
+.LP
+検証が成功しなかった場合は、エラーメッセージが表示されます。
+.LP
+.I -verbose
+オプションを使うと、より多くの情報が表示されます。次に示すのは、
+.I -verbose 
+オプションを指定した 
+.B jarsigner 
+の実行例とその出力結果です。
+.LP
+.ft 3
+.nf
+jarsigner -verify -verbose sbundle.jar
+
+             198 Fri Sep 26 16:14:06 PDT 1997 META-INF/MANIFEST.MF
+             199 Fri Sep 26 16:22:10 PDT 1997 META-INF/JANE.SF
+            1013 Fri Sep 26 16:22:10 PDT 1997 META-INF/JANE.DSA
+      smk   2752 Fri Sep 26 16:12:30 PDT 1997 AclEx.class
+      smk    849 Fri Sep 26 16:12:46 PDT 1997 test.class
+
+        s = signature was verified
+        m = entry is listed in manifest
+        k = at least one certificate was found in keystore
+
+      jar verified.
+.fi
+.ft 1
+.LP
+.SS 
+証明書情報を使った検証
+.LP
+.IX "jarsigner" "Verification with Certificate Information" "\fLjarsigner\fP \(em JAR signing and verification tool "
+
+検証時に、
+.I -verify 
+と 
+.I -verbose 
+オプションに加えて 
+.I -certs
+オプションを指定した場合は、JAR ファイル内の各署名者の証明書情報も出力されま
+す。これには、証明書のタイプ、署名者の識別名情報 (X.509 証明書の場合)、および、
+JAR ファイルの公開鍵の証明書がキーストアエントリの公開鍵の証明書と一致する場合
+には、括弧で囲まれた署名者のキーストア別名が含まれます。たとえば、次のように
+出力されます。
+.LP
+.ft 3
+.nf
+ jarsigner -keystore /working/mystore -verify -verbose -certs myTest.jar
+
+      198 Fri Sep 26 16:14:06 PDT 1997 META-INF/MANIFEST.MF
+      199 Fri Sep 26 16:22:10 PDT 1997 META-INF/JANE.SF
+     1013 Fri Sep 26 16:22:10 PDT 1997 META-INF/JANE.DSA
+      208 Fri Sep 26 16:23:30 PDT 1997 META-INF/JAVATEST.SF
+     1087 Fri Sep 26 16:23:30 PDT 1997 META-INF/JAVATEST.DSA
+smk  2752 Fri Sep 26 16:12:30 PDT 1997 Tst.class
+
+ X.509, CN=Test Group, OU=Java Software, O=Sun Microsystems, L=CUP, S=CA, C=US (javatest)
+ X.509, CN=Jane Smith, OU=Java Software, O=Sun, L=cup, S=ca, C=us (jane)
+
+ s = signature was verified
+ m = entry is listed in manifest
+ k = at least one certificate was found in keystore
+
+jar verified.
+.fi
+.ft 1
+.LP
+署名者の証明書が X.509 証明書でない場合は、識別名情報は表示されず、証明書の
+タイプと別名だけが表示されます。たとえば、証明書が PGP 証明書で、別名が bob の
+場合は、次のように表示されます。
+.LP
+.ft 3
+.nf
+PGP, (bob)
+.fi
+.ft 1
+.LP
+.SS 
+アイデンティティデータベース署名者を含む JAR ファイルの検証
+.LP
+.IX "jarsigner" "Verification of a JAR File" "\fLjarsigner\fP \(em JAR signing and verification tool "
+JAR ファイルが、JDK 1.1 の
+.B javakey
+ツールを使って署名されている場合、署名者はアイデンティティデータベース内の
+別名です。この場合、検証の出力には i という記号が含まれます。JAR ファイルが、
+アイデンティティデータベース内の別名とキーストア内の別名の両方によって署名
+されている場合は、k と i の両方が表示されます。
+.LP
+.I -certs
+オプションを指定した場合、キーストアの別名は括弧で囲まれるのに対し、アイデンティ
+ティデータベース内の別名は角括弧で囲まれて表示されます。たとえば、次のように
+表示されます。
+.LP
+.ft 3
+.nf
+jarsigner \-keystore /working/mystore \-verify \-verbose \-certs writeFile.jar
+
+      198 Fri Sep 26 16:14:06 PDT 1997 META-INF/MANIFEST.MF
+      199 Fri Sep 26 16:22:10 PDT 1997 META-INF/JANE.SF
+     1013 Fri Sep 26 16:22:10 PDT 1997 META-INF/JANE.DSA
+      199 Fri Sep 27 12:22:30 PDT 1997 META-INF/DUKE.SF
+     1013 Fri Sep 27 12:22:30 PDT 1997 META-INF/DUKE.DSA
+smki 2752 Fri Sep 26 16:12:30 PDT 1997 writeFile.html
+
+ X.509, CN=Jane Smith, OU=Java Software, O=Sun, L=cup, S=ca, C=us (jane)
+ X.509, CN=Duke, OU=Java Software, O=Sun, L=cup, S=ca, C=us [duke]
+
+ s = signature was verified
+ m = entry is listed in manifest
+ k = at least one certificate was found in keystore
+ i = at least one certificate was found in identity scope
+
+jar verified.
+.fi
+.ft 1
+.LP
+別名 duke は角括弧で囲まれているので、この別名はキーストアの別名ではなく、
+アイデンティティデータベースの別名です。
+.SH "関連項目"
+.LP
+
+.LP
+.RS 3
+.TP 2
+o
+jar ツールのドキュメント 
+.TP 2
+o
+keytool ツールのドキュメント 
+.TP 2
+o
+\f3jarsigner\fP ツールの使用例については、「Java Tutorial」
+(http://java.sun.com/docs/books/tutorial/trailmap.html)
+の「Security」( http://java.sun.com/docs/books/tutorial/security1.2/index.html) 
+を参照
+.na
+.RE
+
+.LP
+
+.LP
+ 

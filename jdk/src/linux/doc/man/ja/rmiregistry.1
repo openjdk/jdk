@@ -1,0 +1,108 @@
+'\" t
+.\"
+.\" Copyright 2000-2004 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+.TH rmiregistry 1 "2004 年 6 月 22 日"
+.SH "名前"
+rmiregistry \- Java リモートオブジェクトレジストリ
+.\" 
+.\"  This document was created by saving an HTML file as text
+.\"  from the JavaSoft web site:
+.\" 
+.\" http://java.sun.com/j2se/1.5/docs/tooldocs/tools.html
+.\" 
+.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
+.\"  man pages can change without notice, it may be helpful to diff
+.\"  files to identify changes other than new functionality. 
+.\" 
+.SH "形式"
+.B rmiregistry 
+[
+.I port
+]
+.SH "機能説明"
+.IX "Java remote object registry" "" "Java remote object registry \(em \fLrmiregistry\fP"
+.IX "rmiregistry" "" "\fLrmiregistry\fP \(em Java remote object registry"
+.B rmiregistry
+コマンドは、現在のホスト上の指定されたポートに、リモートオブジェクト
+レジストリを作成し起動します。
+ポート番号が省略された場合には、ポート
+1099
+が使用されます。
+.B rmiregistry
+はバックグラウンドで実行され、何も出力しません。
+以下に指定例を示します。
+.LP
+.RS
+.B example% rmiregistry &
+.RE
+.LP
+リモートオブジェクトレジストリはブートストラップネームサービスで、
+ホスト上の
+RMI
+サーバがリモートオブジェクトに名前をバインドするために使用します。
+名前がついたあとは、クライアント側でリモートオブジェクトを探して
+リモートメソッドを呼び出すことができます。
+.LP
+レジストリは通常、アプリケーションがメソッドを呼び出す必要がある
+最初のリモートオブジェクトを指定するために使用されます。
+そのあと、そのオブジェクトを使って、アプリケーション固有の
+方法で他のオブジェクトを探すことが可能になります。
+.LP
+.B java.rmi.registry.LocateRegistry
+クラスのメソッドは、特定のホストまたは特定のホストとポート上で
+動作しているレジストリを得るために用いられます。
+.LP
+.B java.rmi.Naming
+クラスの
+URL
+用のメソッドはレジストリを操作するもので、
+リモートオブジェクトの探索、リモートオブジェクトへの
+名前
+(文字列)
+のバインド、新たな名前のバインド
+(以前のバインドを上書き)、
+バインドの取り消し、およびレジストリ中でバインドされている
+URL
+の一覧表示が可能です。
+.SH "オプション"
+以下のオプションが使用できます。
+.TP 15
+.BI \-J option
+java オプションと組み合わせて使います
+(
+.B \-J
+と java オプションの間にスペースは必要ありません)。 
+.B \-J
+の後ろに続くオプションを java インタプリタに渡します。
+.SH "関連項目"
+次については、
+.BR java.sun.com 
+を参照または検索してください。
+.TP 5
+.B java.rmi.Naming @
+http://java.sun.com/j2se/1.5/docs/api/java/rmi/Naming.html
+.TP 5
+.B java.rmi.registry.LocateRegistry @
+http://java.sun.com/j2se/1.5/docs/api/java/rmi/registry/LocateRegistry.html
+

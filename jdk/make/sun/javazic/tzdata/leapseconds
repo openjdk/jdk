@@ -1,0 +1,104 @@
+#
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#  
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#  
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#  
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#  
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+# Allowance for leapseconds added to each timezone file.
+
+# The International Earth Rotation Service periodically uses leap seconds
+# to keep UTC to within 0.9 s of UT1
+# (which measures the true angular orientation of the earth in space); see
+# Terry J Quinn, The BIPM and the accurate measure of time,
+# Proc IEEE 79, 7 (July 1991), 894-905.
+# There were no leap seconds before 1972, because the official mechanism
+# accounting for the discrepancy between atomic time and the earth's rotation
+# did not exist until the early 1970s.
+
+# The correction (+ or -) is made at the given time, so lines
+# will typically look like:
+#	Leap	YEAR	MON	DAY	23:59:60	+	R/S
+# or
+#	Leap	YEAR	MON	DAY	23:59:59	-	R/S
+
+# If the leapsecond is Rolling (R) the given time is local time
+# If the leapsecond is Stationary (S) the given time is UTC
+
+# Leap	YEAR	MONTH	DAY	HH:MM:SS	CORR	R/S
+Leap	1972	Jun	30	23:59:60	+	S
+Leap	1972	Dec	31	23:59:60	+	S
+Leap	1973	Dec	31	23:59:60	+	S
+Leap	1974	Dec	31	23:59:60	+	S
+Leap	1975	Dec	31	23:59:60	+	S
+Leap	1976	Dec	31	23:59:60	+	S
+Leap	1977	Dec	31	23:59:60	+	S
+Leap	1978	Dec	31	23:59:60	+	S
+Leap	1979	Dec	31	23:59:60	+	S
+Leap	1981	Jun	30	23:59:60	+	S
+Leap	1982	Jun	30	23:59:60	+	S
+Leap	1983	Jun	30	23:59:60	+	S
+Leap	1985	Jun	30	23:59:60	+	S
+Leap	1987	Dec	31	23:59:60	+	S
+Leap	1989	Dec	31	23:59:60	+	S
+Leap	1990	Dec	31	23:59:60	+	S
+Leap	1992	Jun	30	23:59:60	+	S
+Leap	1993	Jun	30	23:59:60	+	S
+Leap	1994	Jun	30	23:59:60	+	S
+Leap	1995	Dec	31	23:59:60	+	S
+Leap	1997	Jun	30	23:59:60	+	S
+Leap	1998	Dec	31	23:59:60	+	S
+Leap	2005	Dec	31	23:59:60	+	S
+
+# INTERNATIONAL EARTH ROTATION AND REFERENCE SYSTEMS SERVICE (IERS)
+# SERVICE INTERNATIONAL DE LA ROTATION TERRESTRE ET DES SYSTEMES DE REFERENCE
+#
+# SERVICE DE LA ROTATION TERRESTRE
+# OBSERVATOIRE DE PARIS
+# 61, Av. de l'Observatoire 75014 PARIS (France)
+# Tel.      : 33 (0) 1 40 51 22 26
+# FAX       : 33 (0) 1 40 51 22 91
+# Internet  : services.iers@obspm.fr
+#
+# Paris, 28 June 2007
+#
+# Bulletin C 34
+#
+# To authorities responsible
+# for the measurement and
+# distribution of time
+#
+# INFORMATION ON UTC - TAI
+#
+# NO positive leap second will be introduced at the end of December 2007.
+# The difference between Coordinated Universal Time UTC and the
+# International Atomic Time TAI is :		
+#
+# from 2006 January 1, 0h UTC, until further notice : UTC-TAI = -33 s
+#
+# Leap seconds can be introduced in UTC at the end of the months of December
+# or June,  depending on the evolution of UT1-TAI. Bulletin C is mailed every
+# six months, either to announce a time step in UTC, or to confirm that there
+# will be no time step at the next possible date.
+#
+# Daniel GAMBIS
+# Director			
+# Earth Orientation Center of IERS
+# Observatoire de Paris, France

@@ -1,0 +1,51 @@
+URL: null
+spec: file://JavaSoft/Test
+expected: file://JavaSoft/Test
+
+URL: null
+spec: file:///JavaSoft/Test
+expected: file:/JavaSoft/Test
+
+URL: null
+spec: file:/JavaSoft/Test
+expected: file:/JavaSoft/Test
+
+URL: null
+spec: file:/c:/JavaSoft/Test
+expected: file:/c:/JavaSoft/Test
+
+URL: null
+spec: file:/c:/JavaSoft/Test:something
+expected: file:/c:/JavaSoft/Test:something
+
+URL: null
+spec: file:/c:/JavaSoft/Test#anchor
+expected: file:/c:/JavaSoft/Test#anchor
+
+URL: null
+spec: file:/JavaSoft/Test
+expected: file:/JavaSoft/Test
+
+URL: file://JavaSoft/Test
+spec: Test#bar
+expected: file://JavaSoft/Test#bar
+
+URL: file://codrus/c:/jdk/eng/index.html
+spec: pulsar.html
+expected: file://codrus/c:/jdk/eng/pulsar.html
+
+URL: file:///c:/jdk/eng/index.html
+spec: pulsar.html
+expected: file:/c:/jdk/eng/pulsar.html
+
+URL: file:///jdk/eng/index.html
+spec: pulsar.html
+expected: file:/jdk/eng/pulsar.html
+
+URL: file://JavaSoft/Test
+spec: file://radartoad.com/Test#bar
+expected: file://radartoad.com/Test#bar
+
+URL: file://JavaSoft/Test
+spec: /c:/Test#bar
+expected: file://JavaSoft/c:/Test#bar

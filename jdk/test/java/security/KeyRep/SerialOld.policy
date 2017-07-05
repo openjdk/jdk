@@ -1,0 +1,18 @@
+grant codeBase "file:${java.home}/lib/ext/*" {
+    permission java.security.AllPermission;
+};
+
+grant {
+
+    permission java.io.FilePermission "${test.src}${file.separator}*", "read";
+    permission java.util.PropertyPermission "test.src", "read";
+
+    permission java.lang.RuntimePermission
+	"accessClassInPackage.sun.security.provider";
+    permission java.lang.RuntimePermission
+	"accessClassInPackage.sun.security.pkcs";
+    permission java.lang.RuntimePermission
+	"accessClassInPackage.sun.security.x509";
+    permission java.lang.RuntimePermission
+	"accessClassInPackage.sun.security.rsa";
+};

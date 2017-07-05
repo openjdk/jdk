@@ -1,0 +1,5 @@
+# SA JDI Connectors
+
+sun.jvm.hotspot.jdi.SACoreAttachingConnector
+sun.jvm.hotspot.jdi.SADebugServerAttachingConnector
+sun.jvm.hotspot.jdi.SAPIDAttachingConnector

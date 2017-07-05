@@ -1,0 +1,322 @@
+'\" t
+.\"
+.\" Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.TH javaws 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH 名前
+\fBjavaws \fP- Java Web Start 起動コマンド
+\fB
+.SH 形式
+.RS 3
+
+.LP
+.LP
+\f2javaws [run\-options] <jnlp>\fP
+.LP
+.LP
+\f2javaws [control\-options]\fP
+.LP
+.RE
+.SS
+パラメータ
+.LP
+.RS 3
+
+.LP
+.LP
+[run\-options]
+.LP
+.RS 3
+
+.LP
+.LP
+コマンド行実行オプション。
+実行オプションの順序は任意です。個々の実行オプションについては、後述の「実行オプション」節を参照してください。
+.LP
+.RE
+.LP
+\f2<jnlp>\fP
+.LP
+.RS 3
+
+.LP
+.LP
+パスまたは JNLP (Java Network Launching Protocol) ファイルの URL (Uniform Resource Locater) を指定できます。
+.LP
+.RE
+.LP
+\f2[control\-options]\fP
+.LP
+.RS 3
+
+.LP
+.LP
+コマンド行制御オプション。制御オプションの順序は任意です。個々の制御オプションについては、後述の「制御オプション」節を参照してください。
+.LP
+.RE
+.RE
+.SS
+機能説明
+.LP
+.RS 3
+
+.LP
+.LP
+\fBjavaws\fP コマンドにより JNLP (Java Network Launching Protocol) のリファレンス実装である Java Web Start を起動できます。Java Web Start はネットワーク上に置かれる Java アプリケーションまたはアプレットを起動します。
+.LP
+.LP
+JNLP ファイルを指定すると、\fBjavaws\fP は JNLP ファイルに指定されている Java アプリケーションまたはアプレットを起動します。
+.LP
+.LP
+現在のリリースでサポートされている \f2javaws\fP 起動ツールの一連のオプションは、将来のリリースで削除される可能性があります。
+.LP
+.RE
+.SS
+実行オプション
+.LP
+.RS 3
+
+.LP
+.LP
+\f2\-offline\fP
+.LP
+.RS 3
+
+.LP
+.LP
+Java Web Start をオフラインモードで実行します。
+.LP
+.RE
+.LP
+\f2\-Xnosplash\fP
+.LP
+.RS 3
+
+.LP
+.LP
+初期スプラッシュ画面の表示を無効にします。
+.LP
+.RE
+.LP
+\f2\-open <arguments>\fP
+.LP
+.RS 3
+
+.LP
+.LP
+jnlp ファイルの引数を \f2\-open <arguments> と置き換えます。
+\fP.
+.LP
+.RE
+.LP
+\f2\-print <arguments>\fP
+.LP
+.RS 3
+
+.LP
+.LP
+jnlp ファイルの引数を \f2\-print <arguments>\fP と置き換えます。
+.LP
+.RE
+.LP
+\f2\-online\fP
+.LP
+.RS 3
+
+.LP
+.LP
+オンラインモードで実行します (デフォルトの動作)。
+.LP
+.RE
+.LP
+\f2\-wait\fP
+.LP
+.RS 3
+
+.LP
+.LP
+アプリケーションが終了するまで \f2javaws\fP プロセスは終了しません。
+.LP
+.RE
+.LP
+\f2\-verbose\fP
+.LP
+.RS 3
+
+.LP
+.LP
+追加の出力を表示します。
+.LP
+.RE
+.LP
+\f2\-J<option>\fP
+.LP
+.RS 3
+
+.LP
+.LP
+vm にオプションを補います。
+.LP
+.RE
+.LP
+\f2\-system\fP
+.LP
+.RS 3
+
+.LP
+.LP
+アプリケーションをシステムキャッシュからのみ実行します。
+.LP
+.RE
+.RE
+.SS
+制御オプション
+.LP
+.RS 3
+
+.LP
+.LP
+\f2\-viewer\fP
+.LP
+.RS 3
+
+.LP
+.LP
+Java コントロールパネルでキャッシュビューアを表示します。
+.LP
+.RE
+.LP
+\f2\-userConfig <property name>\fP
+.LP
+.RS 3
+
+.LP
+.LP
+指定された配備プロパティをクリアします。
+.LP
+.RE
+.LP
+\f2\-userConfig <property name> <property value>\fP
+.LP
+.RS 3
+
+.LP
+.LP
+指定された配備プロパティを指定された値に設定します。
+.LP
+.RE
+.LP
+\f2\-uninstall\fP
+.LP
+.RS 3
+
+.LP
+.LP
+キャッシュからすべてのアプリケーションを削除します。
+.LP
+.RE
+.LP
+\f2\-uninstall <jnlp>\fP
+.LP
+.RS 3
+
+.LP
+.LP
+キャッシュからアプリケーションを削除します。
+.LP
+.RE
+.LP
+\f2\-import [import\-options] <jnlp>\fP
+.LP
+.RS 3
+
+.LP
+.LP
+キャッシュにアプリケーションをインポートします。
+.LP
+.RE
+インポートオプション
+.LP
+.LP
+\f2\-silent\fP
+.LP
+.RS 3
+
+.LP
+.LP
+サイレントモードでインポートします (UI は表示されません)。
+.LP
+.RE
+.LP
+\f2\-system\fP
+.LP
+.RS 3
+
+.LP
+.LP
+システムキャッシュにアプリケーションをインポートします。
+.LP
+.RE
+.LP
+\f2\-codebase <url>\fP
+.LP
+.RS 3
+
+.LP
+.LP
+任意の codebase からリソースを取得します。
+.LP
+.RE
+.LP
+\f2\-shortcut\fP
+.LP
+.RS 3
+
+.LP
+.LP
+ユーザ許容プロンプトのようにショートカットをインストールします。このオプションは、\f2\-silent\fP オプションと一緒に使用しないと効果がありません。
+.LP
+.RE
+.LP
+\f2\-association\fP
+.LP
+.RS 3
+
+.LP
+.LP
+ユーザ許容プロンプトのように関連付けをインストールします。このオプションは、\f2\-silent\fP オプションと一緒に使用しないと効果がありません。
+.LP
+.RE
+.RE
+.SS
+.SH ファイル
+.LP
+ユーザキャッシュ、システムキャッシュ、および deployment.properties ファイルの詳細は、
+.na
+「\f2System\- and User\-Level Properties\fP」
+.fi
+(http://java.sun.com/javase/6/docs/technotes/guides/deployment/deployment\-guide/properties.html)
+を参照してください。
+.SH 詳細情報
+Java Web Start の詳細は、
+http://java.sun.com/javase/6/docs/technotes/guides/javaws/index.html
+を参照してください。

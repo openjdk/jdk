@@ -1,0 +1,10 @@
+-export:JNI_GetDefaultJavaVMInitArgs
+-export:JNI_CreateJavaVM
+-export:JNI_GetCreatedJavaVMs
+
+-export:jio_snprintf
+-export:jio_printf
+-export:jio_fprintf
+-export:jio_vfprintf
+-export:jio_vsnprintf
+
