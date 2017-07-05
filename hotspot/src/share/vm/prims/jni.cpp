@@ -631,7 +631,7 @@ JNI_ENTRY(void, jni_FatalError(JNIEnv *env, const char *msg))
   DTRACE_PROBE2(hotspot_jni, FatalError__entry, env, msg);
   tty->print_cr("FATAL ERROR in native method: %s", msg);
   thread->print_stack();
-  os::abort(false); // Prevent core dump, causes a jck failure.
+  os::abort(); // Dump core and abort
 JNI_END
 
 

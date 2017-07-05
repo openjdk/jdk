@@ -59,7 +59,7 @@ class ConstraintsChecker extends PKIXCertPathChecker {
     private int i;
     private NameConstraintsExtension prevNC;
 
-    private static Set<String> supportedExts;
+    private Set<String> supportedExts;
 
     /**
      * Creates a ConstraintsChecker.

@@ -71,6 +71,10 @@ inline int    hpi::send(int fd, char *buf, int nBytes, int flags) {
   INTERRUPTIBLE_RETURN_INT(::send(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
 }
 
+inline int    hpi::raw_send(int fd, char *buf, int nBytes, int flags) {
+  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
+}
+
 // As both poll and select can be interrupted by signals, we have to be
 // prepared to restart the system call after updating the timeout, unless
 // a poll() is done with timeout == -1, in which case we repeat with this

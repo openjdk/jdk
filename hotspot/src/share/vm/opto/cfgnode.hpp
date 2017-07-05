@@ -129,7 +129,7 @@ public:
   };
 
   PhiNode( Node *r, const Type *t, const TypePtr* at = NULL,
-           const int iid = TypeOopPtr::UNKNOWN_INSTANCE,
+           const int iid = TypeOopPtr::InstanceTop,
            const int iidx = Compile::AliasIdxTop,
            const int ioffs = Type::OffsetTop )
     : TypeNode(t,r->req()),

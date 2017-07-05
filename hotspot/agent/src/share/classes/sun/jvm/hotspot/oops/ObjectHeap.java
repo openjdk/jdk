@@ -316,6 +316,14 @@ public class ObjectHeap {
     iterateLiveRegions(liveRegions, visitor, null);
   }
 
+  public boolean isValidMethod(OopHandle handle) {
+    OopHandle klass = Oop.getKlassForOopHandle(handle);
+    if (klass != null && klass.equals(methodKlassHandle)) {
+      return true;
+    }
+    return false;
+  }
+
   // Creates an instance from the Oop hierarchy based based on the handle
   public Oop newOop(OopHandle handle) {
     // The only known way to detect the right type of an oop is
@@ -375,8 +383,10 @@ public class ObjectHeap {
       }
     }
 
-    System.err.println("Unknown oop at " + handle);
-    System.err.println("Oop's klass is " + klass);
+    if (DEBUG) {
+      System.err.println("Unknown oop at " + handle);
+      System.err.println("Oop's klass is " + klass);
+    }
 
     throw new UnknownOopException();
   }
