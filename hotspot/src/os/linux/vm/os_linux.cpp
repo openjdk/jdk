@@ -4839,6 +4839,10 @@ jint os::init_2(void)
 
   Linux::capture_initial_stack(JavaThread::stack_size_at_create());
 
+#if defined(IA32)
+  workaround_expand_exec_shield_cs_limit();
+#endif
+
   Linux::libpthread_init();
   if (PrintMiscellaneous && (Verbose || WizardMode)) {
      tty->print_cr("[HotSpot is running with %s, %s(%s)]\n",

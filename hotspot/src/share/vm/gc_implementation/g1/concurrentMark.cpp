@@ -2694,7 +2694,7 @@ public:
 
     if (print_it) {
       _out->print_cr(" "PTR_FORMAT"%s",
-                     o, (over_tams) ? " >" : (marked) ? " M" : "");
+                     (void *)o, (over_tams) ? " >" : (marked) ? " M" : "");
       PrintReachableOopClosure oopCl(_out, _vo, _all);
       o->oop_iterate_no_header(&oopCl);
     }
