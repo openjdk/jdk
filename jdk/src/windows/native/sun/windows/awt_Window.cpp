@@ -218,12 +218,7 @@ AwtWindow::~AwtWindow()
     if (warningString != NULL) {
         delete [] warningString;
     }
-    ::EnterCriticalSection(&contentBitmapCS);
-    if (hContentBitmap != NULL) {
-        ::DeleteObject(hContentBitmap);
-        hContentBitmap = NULL;
-    }
-    ::LeaveCriticalSection(&contentBitmapCS);
+    DeleteContentBitmap();
     ::DeleteCriticalSection(&contentBitmapCS);
 }
 
@@ -370,6 +365,10 @@ MsgRouting AwtWindow::WmWindowPosChanged(LPARAM windowPos) {
         if (wp->flags & SWP_SHOWWINDOW) {
             UpdateSecurityWarningVisibility();
         }
+    }
+
+    if (wp->flags & SWP_HIDEWINDOW) {
+        EnableTranslucency(FALSE);
     }
 
     return mrDoDefault;
@@ -1129,6 +1128,8 @@ void AwtWindow::Show()
     if (locationByPlatform) {
          moveToDefaultLocation();
     }
+
+    EnableTranslucency(TRUE);
 
     // The following block exists to support Menu/Tooltip animation for
     // Swing programs in a way which avoids introducing any new public api into
@@ -2494,27 +2495,73 @@ void AwtWindow::RedrawWindow()
     }
 }
 
-void AwtWindow::SetTranslucency(BYTE opacity, BOOL opaque)
+// Deletes the hContentBitmap if it is non-null
+void AwtWindow::DeleteContentBitmap()
 {
-    BYTE old_opacity = getOpacity();
-    BOOL old_opaque = isOpaque();
+    ::EnterCriticalSection(&contentBitmapCS);
+    if (hContentBitmap != NULL) {
+        ::DeleteObject(hContentBitmap);
+        hContentBitmap = NULL;
+    }
+    ::LeaveCriticalSection(&contentBitmapCS);
+}
+
+// The effects are enabled only upon showing the window.
+// See 6780496 for details.
+void AwtWindow::EnableTranslucency(BOOL enable)
+{
+    if (enable) {
+        SetTranslucency(getOpacity(), isOpaque(), FALSE, TRUE);
+    } else {
+        SetTranslucency(0xFF, TRUE, FALSE);
+    }
+}
+
+/**
+ * Sets the translucency effects.
+ *
+ * This method is used to:
+ *
+ * 1. Apply the translucency effects upon showing the window
+ *    (setValues == FALSE, useDefaultForOldValues == TRUE);
+ * 2. Turn off the effects upon hiding the window
+ *    (setValues == FALSE, useDefaultForOldValues == FALSE);
+ * 3. Set the effects per user's request
+ *    (setValues == TRUE, useDefaultForOldValues == FALSE);
+ *
+ * In case #3 the effects may or may not be applied immediately depending on
+ * the current visibility status of the window.
+ *
+ * The setValues argument indicates if we need to preserve the passed values
+ * in local fields for further use.
+ * The useDefaultForOldValues argument indicates whether we should consider
+ * the window as if it has not any effects applied at the moment.
+ */
+void AwtWindow::SetTranslucency(BYTE opacity, BOOL opaque, BOOL setValues,
+        BOOL useDefaultForOldValues)
+{
+    BYTE old_opacity = useDefaultForOldValues ? 0xFF : getOpacity();
+    BOOL old_opaque = useDefaultForOldValues ? TRUE : isOpaque();
 
     if (opacity == old_opacity && opaque == old_opaque) {
         return;
     }
 
-    setOpacity(opacity);
-    setOpaque(opaque);
+    if (setValues) {
+       m_opacity = opacity;
+       m_opaque = opaque;
+    }
+
+    // If we're invisible and are storing the values, return
+    // Otherwise, apply the effects immediately
+    if (!IsVisible() && setValues) {
+        return;
+    }
 
     HWND hwnd = GetHWnd();
 
     if (opaque != old_opaque) {
-        ::EnterCriticalSection(&contentBitmapCS);
-        if (hContentBitmap != NULL) {
-            ::DeleteObject(hContentBitmap);
-            hContentBitmap = NULL;
-        }
-        ::LeaveCriticalSection(&contentBitmapCS);
+        DeleteContentBitmap();
     }
 
     if (opaque && opacity == 0xff) {
@@ -2634,9 +2681,7 @@ void AwtWindow::UpdateWindow(JNIEnv* env, jintArray data, int width, int height,
     }
 
     ::EnterCriticalSection(&contentBitmapCS);
-    if (hContentBitmap != NULL) {
-        ::DeleteObject(hContentBitmap);
-    }
+    DeleteContentBitmap();
     hContentBitmap = hBitmap;
     contentWidth = width;
     contentHeight = height;

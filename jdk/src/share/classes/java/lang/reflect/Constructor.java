@@ -82,10 +82,6 @@ public final
     // remembering the last Class for which the check succeeded.
     private volatile Class securityCheckCache;
 
-    // Modifiers that can be applied to a constructor in source code
-    private static final int LANGUAGE_MODIFIERS =
-        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE;
-
     // Generics infrastructure
     // Accessor for factory
     private GenericsFactory getFactory() {
@@ -359,7 +355,7 @@ public final
     public String toString() {
         try {
             StringBuffer sb = new StringBuffer();
-            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            int mod = getModifiers() & Modifier.constructorModifiers();
             if (mod != 0) {
                 sb.append(Modifier.toString(mod) + " ");
             }
@@ -423,7 +419,7 @@ public final
     public String toGenericString() {
         try {
             StringBuilder sb = new StringBuilder();
-            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            int mod = getModifiers() & Modifier.constructorModifiers();
             if (mod != 0) {
                 sb.append(Modifier.toString(mod) + " ");
             }

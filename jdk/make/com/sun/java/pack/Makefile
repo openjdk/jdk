@@ -67,15 +67,14 @@ ifeq ($(STANDALONE),true)
 	     $(ZIPOBJDIR)/deflate.$(OBJECT_SUFFIX) \
 	     $(ZIPOBJDIR)/trees.$(OBJECT_SUFFIX) \
 	     $(ZIPOBJDIR)/zadler32.$(OBJECT_SUFFIX) \
+	     $(ZIPOBJDIR)/compress.$(OBJECT_SUFFIX) \
 	     $(ZIPOBJDIR)/zutil.$(OBJECT_SUFFIX) \
 	     $(ZIPOBJDIR)/inflate.$(OBJECT_SUFFIX) \
-	     $(ZIPOBJDIR)/infblock.$(OBJECT_SUFFIX) \
-	     $(ZIPOBJDIR)/infcodes.$(OBJECT_SUFFIX) \
+	     $(ZIPOBJDIR)/infback.$(OBJECT_SUFFIX) \
 	     $(ZIPOBJDIR)/inftrees.$(OBJECT_SUFFIX) \
-	     $(ZIPOBJDIR)/infutil.$(OBJECT_SUFFIX) \
 	     $(ZIPOBJDIR)/inffast.$(OBJECT_SUFFIX)
 
-  ZINCLUDE=-I$(SHARE_SRC)/native/java/util/zip/zlib-1.1.3
+  ZINCLUDE=-I$(SHARE_SRC)/native/java/util/zip/zlib-$(ZLIB_VERSION)
   OTHER_CXXFLAGS += $(ZINCLUDE)
   LDDFLAGS += $(ZIPOBJS)
 else

@@ -26,7 +26,6 @@ package javax.swing.plaf.nimbus;
 
 import javax.swing.Painter;
 
-import java.beans.PropertyChangeEvent;
 import javax.swing.JComponent;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
@@ -39,16 +38,13 @@ import javax.swing.plaf.synth.SynthStyle;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Insets;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import sun.awt.AppContext;
 
 /**
  * <p>A SynthStyle implementation used by Nimbus. Each Region that has been
@@ -232,42 +228,6 @@ public final class NimbusStyle extends SynthStyle {
         super.installDefaults(ctx);
     }
 
-    static String parsePrefix(String key) {
-       if (key == null) return null;
-       boolean inquotes = false;
-       for (int i=0; i<key.length(); i++) {
-           char c = key.charAt(i);
-           if (c == '"') {
-               inquotes = !inquotes;
-           } else if ((c == '[' || c == '.') && !inquotes) {
-               return key.substring(0, i);
-           }
-       }
-       return null;
-    }
-
-    /**
-     * Called by NimbusLookAndFeel when the look and feel is being uninstalled.
-     * Performs general cleanup of any app-context specific data.
-     */
-    static void uninitialize() {
-        // get the appcontext that we've stored data in
-        AppContext ctx = AppContext.getAppContext();
-
-        // get the pcl stored in app context
-        PropertyChangeListener pcl = (PropertyChangeListener)
-                ctx.get("NimbusStyle.defaults.pcl");
-
-        // if the pcl exists, uninstall it from the UIDefaults tables
-        if (pcl != null) {
-            UIManager.getDefaults().removePropertyChangeListener(pcl);
-            UIManager.getLookAndFeelDefaults().removePropertyChangeListener(pcl);
-        }
-
-        // clear out the compiled defaults
-        ctx.put("NimbusStyle.defaults", null);
-    }
-
     /**
      * Pulls data out of UIDefaults, if it has not done so already, and sets
      * up the internal state.
@@ -283,66 +243,9 @@ public final class NimbusStyle extends SynthStyle {
         // any Nimbus.Overrides)
         values = new Values();
 
-        // the profiler revealed that a great deal of CPU time and useless
-        // garbage was being produced by this method and the init method. One
-        // culprit was the creation and reparsing of the entire UIDefaults
-        // map on each call to this method where "values" was null. It turns
-        // out this was happening a lot.
-        // To remove this bottleneck, we store the compiled TreeMaps of defaults
-        // in the appContext for reuse. It is nulled whenever the UIDefaults
-        // changes and recomputed when necessary.
-        final AppContext ctx = AppContext.getAppContext();
-
-        // fetch the defaults from the app context. If null, then create and
-        // store the compiled defaults
-        Map<String, TreeMap<String, Object>> compiledDefaults =
-                (Map<String, TreeMap<String, Object>>)
-                    ctx.get("NimbusStyle.defaults");
-
-        if (compiledDefaults == null) {
-            // the entire UIDefaults tables are parsed and compiled into
-            // this map of maps. The key of the compiledDefaults is the
-            // prefix for each style, while the value is a map of
-            // keys->values for that prefix.
-            compiledDefaults = new HashMap<String, TreeMap<String, Object>>();
-
-            // get all the defaults from UIManager.getDefaults() and put them
-            // into the compiledDefaults
-            compileDefaults(compiledDefaults, UIManager.getDefaults());
-
-            // This second statement pulls defaults from the laf defaults
-            UIDefaults lafDefaults = UIManager.getLookAndFeelDefaults();
-            compileDefaults(compiledDefaults, lafDefaults);
-
-            // if it has not already been done, add a listener to both
-            // UIManager.getDefaults() and UIManager.getLookAndFeelDefaults().
-            PropertyChangeListener pcl = (PropertyChangeListener)
-                    ctx.get("NimbusStyle.defaults.pcl");
-
-            // if pcl is null, then it has not yet been registered with
-            // the UIManager defaults for this app context
-            if (pcl == null) {
-                // create a PCL which will simply clear out the compiled
-                // defaults from the app context, causing it to be recomputed
-                // on subsequent passes
-                pcl = new DefaultsListener();
-                // add the PCL to both defaults tables that we pay attention
-                // to, so that if the UIDefaults are updated, then the
-                // precompiled defaults will be cleared from the app context
-                // and recomputed on subsequent passes
-                UIManager.getDefaults().addPropertyChangeListener(pcl);
-                UIManager.getLookAndFeelDefaults().addPropertyChangeListener(pcl);
-                // save the PCL to the app context as a marker indicating
-                // that the PCL has been registered so we don't end up adding
-                // more than one listener to the UIDefaults tables.
-                ctx.put("NimbusStyle.defaults.pcl", pcl);
-            }
-
-            // store the defaults for reuse
-            ctx.put("NimbusStyle.defaults", compiledDefaults);
-        }
-
-        TreeMap<String, Object> defaults = compiledDefaults.get(prefix);
+        Map<String, Object> defaults =
+                ((NimbusLookAndFeel) UIManager.getLookAndFeel()).
+                        getDefaultsForPrefix(prefix);
 
         // inspect the client properties for the key "Nimbus.Overrides". If the
         // value is an instance of UIDefaults, then these defaults are used
@@ -371,52 +274,6 @@ public final class NimbusStyle extends SynthStyle {
             }
         }
 
-        // Now that I've accumulated all the defaults pertaining to this
-        // style, call init which will read these defaults and configure
-        // the default "values".
-        init(values, defaults);
-    }
-
-    /**
-     * Iterates over all the keys in the specified UIDefaults and compiles
-     * those keys into the comiledDefaults data structure. It relies on
-     * parsing the "prefix" out of the key. If the key is not a String or is
-     * null then it is ignored. In all other cases a prefix is parsed out
-     * (even if that prefix is the empty String or is a "fake" prefix. That
-     * is, suppose you had a key Foo~~MySpecial.KeyThing~~. In this case this
-     * is not a Nimbus formatted key, but we don't care, we treat it as if it
-     * is. This doesn't pose any harm, it will simply never be used).
-     *
-     * @param compiledDefaults
-     * @param d
-     */
-    private void compileDefaults(
-            Map<String, TreeMap<String,Object>> compiledDefaults,
-            UIDefaults d) {
-        for (Object obj : new HashSet(d.keySet())) {
-            if (obj instanceof String) {
-                String key = (String)obj;
-                String kp = parsePrefix(key);
-                if (kp == null) continue;
-                TreeMap<String,Object> map = compiledDefaults.get(kp);
-                if (map == null) {
-                    map = new TreeMap<String,Object>();
-                    compiledDefaults.put(kp, map);
-                }
-                map.put(key, d.get(key));
-            }
-        }
-    }
-
-    /**
-     * Initializes the given <code>Values</code> object with the defaults
-     * contained in the given TreeMap.
-     *
-     * @param v The Values object to be initialized
-     * @param myDefaults a map of UIDefaults to use in initializing the Values.
-     *        This map must contain only keys associated with this Style.
-     */
-    private void init(Values v, TreeMap<String, Object> myDefaults) {
         //a list of the different types of states used by this style. This
         //list may contain only "standard" states (those defined by Synth),
         //or it may contain custom states, or it may contain only "standard"
@@ -433,7 +290,7 @@ public final class NimbusStyle extends SynthStyle {
         //"values" stateTypes to be a non-null array.
         //Otherwise, let the "values" stateTypes be null to indicate that
         //there are no custom states or custom state ordering
-        String statesString = (String)myDefaults.get(prefix + ".States");
+        String statesString = (String)defaults.get(prefix + ".States");
         if (statesString != null) {
             String s[] = statesString.split(",");
             for (int i=0; i<s.length; i++) {
@@ -442,7 +299,7 @@ public final class NimbusStyle extends SynthStyle {
                     //this is a non-standard state name, so look for the
                     //custom state associated with it
                     String stateName = prefix + "." + s[i];
-                    State customState = (State)myDefaults.get(stateName);
+                    State customState = (State)defaults.get(stateName);
                     if (customState != null) {
                         states.add(customState);
                     }
@@ -455,7 +312,7 @@ public final class NimbusStyle extends SynthStyle {
             //to be non-null. Otherwise, leave it null (meaning, use the
             //standard synth states).
             if (states.size() > 0) {
-                v.stateTypes = states.toArray(new State[states.size()]);
+                values.stateTypes = states.toArray(new State[states.size()]);
             }
 
             //assign codes for each of the state types
@@ -490,7 +347,7 @@ public final class NimbusStyle extends SynthStyle {
         }
 
         //Now iterate over all the keys in the defaults table
-        for (String key : myDefaults.keySet()) {
+        for (String key : defaults.keySet()) {
             //The key is something like JButton.Enabled.backgroundPainter,
             //or JButton.States, or JButton.background.
             //Remove the "JButton." portion of the key
@@ -528,11 +385,11 @@ public final class NimbusStyle extends SynthStyle {
                 //otherwise, assume it is a property and install it on the
                 //values object
                 if ("contentMargins".equals(property)) {
-                    v.contentMargins = (Insets)myDefaults.get(key);
+                    values.contentMargins = (Insets)defaults.get(key);
                 } else if ("States".equals(property)) {
                     //ignore
                 } else {
-                    v.defaults.put(property, myDefaults.get(key));
+                    values.defaults.put(property, defaults.get(key));
                 }
             } else {
                 //it is possible that the developer has a malformed UIDefaults
@@ -582,13 +439,13 @@ public final class NimbusStyle extends SynthStyle {
                 //so put it in the UIDefaults associated with that runtime
                 //state
                 if ("backgroundPainter".equals(property)) {
-                    rs.backgroundPainter = (Painter)myDefaults.get(key);
+                    rs.backgroundPainter = getPainter(defaults, key);
                 } else if ("foregroundPainter".equals(property)) {
-                    rs.foregroundPainter = (Painter) myDefaults.get(key);
+                    rs.foregroundPainter = getPainter(defaults, key);
                 } else if ("borderPainter".equals(property)) {
-                    rs.borderPainter = (Painter) myDefaults.get(key);
+                    rs.borderPainter = getPainter(defaults, key);
                 } else {
-                    rs.defaults.put(property, myDefaults.get(key));
+                    rs.defaults.put(property, defaults.get(key));
                 }
             }
         }
@@ -598,7 +455,15 @@ public final class NimbusStyle extends SynthStyle {
         Collections.sort(runtimeStates, STATE_COMPARATOR);
 
         //finally, set the array of runtime states on the values object
-        v.states = runtimeStates.toArray(new RuntimeState[runtimeStates.size()]);
+        values.states = runtimeStates.toArray(new RuntimeState[runtimeStates.size()]);
+    }
+
+    private Painter getPainter(Map<String, Object> defaults, String key) {
+        Object p = defaults.get(key);
+        if (p instanceof UIDefaults.LazyValue) {
+            p = ((UIDefaults.LazyValue)p).createValue(UIManager.getDefaults());
+        }
+        return (p instanceof Painter ? (Painter)p : null);
     }
 
     /**
@@ -1243,17 +1108,6 @@ public final class NimbusStyle extends SynthStyle {
             hash = 29 * hash + this.key.hashCode();
             hash = 29 * hash + this.xstate;
             return hash;
-        }
-    }
-
-    /**
-     * This listener is used to listen to the UIDefaults tables and clear out
-     * the cached-precompiled map of defaults in that case.
-     */
-    private static final class DefaultsListener implements PropertyChangeListener {
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-            AppContext.getAppContext().put("NimbusStyle.defaults", null);
         }
     }
 }

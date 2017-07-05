@@ -376,7 +376,7 @@
   product(intx, AutoBoxCacheMax, 128,                                       \
           "Sets max value cached by the java.lang.Integer autobox cache")   \
                                                                             \
-  product(bool, DoEscapeAnalysis, false,                                    \
+  product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \
                                                                             \
   notproduct(bool, PrintEscapeAnalysis, false,                              \

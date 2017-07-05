@@ -101,11 +101,11 @@ import java.io.BufferedWriter;
  *    &lt;!ATTLIST entry key CDATA #REQUIRED&gt;
  * </pre>
  *
- * @see <a href="../../../technotes/tools/solaris/native2ascii.html">native2ascii tool for Solaris</a>
- * @see <a href="../../../technotes/tools/windows/native2ascii.html">native2ascii tool for Windows</a>
- *
  * <p>This class is thread-safe: multiple threads can share a single
  * <tt>Properties</tt> object without the need for external synchronization.
+ *
+ * @see <a href="../../../technotes/tools/solaris/native2ascii.html">native2ascii tool for Solaris</a>
+ * @see <a href="../../../technotes/tools/windows/native2ascii.html">native2ascii tool for Windows</a>
  *
  * @author  Arthur van Hoff
  * @author  Michael McCloskey

@@ -1,0 +1,11 @@
+--- /home/sherman/TL/zlib-1.2.3_ORG/inflate.c	Tue Jun 14 14:50:12 2005
++++ inflate.c	Tue Aug 25 14:22:09 2009
+@@ -1263,7 +1263,7 @@
+ z_streamp strm;
+ {
+     unsigned len;               /* number of bytes to look at or looked at */
+-    unsigned long in, out;      /* temporary to save total_in and total_out */
++    long long in, out;          /* temporary to save total_in and total_out */
+     unsigned char buf[4];       /* to restore bit buffer to byte string */
+     struct inflate_state FAR *state;
+ 

@@ -55,6 +55,9 @@ class BytecodeStream;
 // with invocation counter incrementation.  None of these races harm correct
 // execution of the compiled code.
 
+// forward decl
+class ProfileData;
+
 // DataLayout
 //
 // Overlay for generic profiling data.
@@ -231,6 +234,10 @@ public:
     temp._header._struct._flags = byte_constant;
     return temp._header._bits;
   }
+
+  // GC support
+  ProfileData* data_in();
+  void follow_weak_refs(BoolObjectClosure* cl);
 };
 
 
@@ -430,6 +437,7 @@ public:
   virtual void oop_iterate(OopClosure* blk) {}
   virtual void oop_iterate_m(OopClosure* blk, MemRegion mr) {}
   virtual void adjust_pointers() {}
+  virtual void follow_weak_refs(BoolObjectClosure* is_alive_closure) {}
 
 #ifndef SERIALGC
   // Parallel old support
@@ -667,9 +675,25 @@ public:
     return recv;
   }
 
+  void set_receiver(uint row, oop p) {
+    assert((uint)row < row_limit(), "oob");
+    set_oop_at(receiver_cell_index(row), p);
+  }
+
   uint receiver_count(uint row) {
     assert(row < row_limit(), "oob");
     return uint_at(receiver_count_cell_index(row));
+  }
+
+  void set_receiver_count(uint row, uint count) {
+    assert(row < row_limit(), "oob");
+    set_uint_at(receiver_count_cell_index(row), count);
+  }
+
+  void clear_row(uint row) {
+    assert(row < row_limit(), "oob");
+    set_receiver(row, NULL);
+    set_receiver_count(row, 0);
   }
 
   // Code generation support
@@ -688,6 +712,7 @@ public:
   virtual void oop_iterate(OopClosure* blk);
   virtual void oop_iterate_m(OopClosure* blk, MemRegion mr);
   virtual void adjust_pointers();
+  virtual void follow_weak_refs(BoolObjectClosure* is_alive_closure);
 
 #ifndef SERIALGC
   // Parallel old support

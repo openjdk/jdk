@@ -456,6 +456,7 @@ public:
   void verify_guard();
 
   void verify_clean_region(MemRegion mr) PRODUCT_RETURN;
+  void verify_dirty_region(MemRegion mr) PRODUCT_RETURN;
 
   static size_t par_chunk_heapword_alignment() {
     return CardsPerStrideChunk * card_size_in_words;
