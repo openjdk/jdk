@@ -61,6 +61,7 @@ import java.security.AccessControlContext;
 import javax.accessibility.*;
 import java.applet.Applet;
 
+import sun.awt.ComponentFactory;
 import sun.security.action.GetPropertyAction;
 import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
@@ -198,7 +199,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #addNotify
      * @see #removeNotify
      */
-    transient ComponentPeer peer;
+    transient volatile ComponentPeer peer;
 
     /**
      * The parent of the object. It may be <code>null</code>
@@ -924,8 +925,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
             public Cursor getCursor(Component comp) {
                 return comp.getCursor_NoClientCode();
             }
-            public ComponentPeer getPeer(Component comp) {
-                return comp.peer;
+            @SuppressWarnings("unchecked")
+            public <T extends ComponentPeer> T getPeer(Component comp) {
+                return (T) comp.peer;
             }
             public void setPeer(Component comp, ComponentPeer peer) {
                 comp.peer = peer;
@@ -1069,17 +1071,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * @deprecated As of JDK version 1.1,
-     * programs should not directly manipulate peers;
-     * replaced by <code>boolean isDisplayable()</code>.
-     * @return the peer for this component
-     */
-    @Deprecated
-    public ComponentPeer getPeer() {
-        return peer;
-    }
-
-    /**
      * Associate a <code>DropTarget</code> with this component.
      * The <code>Component</code> will receive drops only if it
      * is enabled.
@@ -1095,7 +1086,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         DropTarget old;
 
         if ((old = dropTarget) != null) {
-            if (peer != null) dropTarget.removeNotify(peer);
+            dropTarget.removeNotify();
 
             DropTarget t = dropTarget;
 
@@ -1113,12 +1104,12 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if ((dropTarget = dt) != null) {
             try {
                 dropTarget.setComponent(this);
-                if (peer != null) dropTarget.addNotify(peer);
+                dropTarget.addNotify();
             } catch (IllegalArgumentException iae) {
                 if (old != null) {
                     try {
                         old.setComponent(this);
-                        if (peer != null) dropTarget.addNotify(peer);
+                        dropTarget.addNotify();
                     } catch (IllegalArgumentException iae1) {
                         // ignore it!
                     }
@@ -1179,7 +1170,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
         graphicsConfig = gc;
 
-        ComponentPeer peer = getPeer();
+        ComponentPeer peer = this.peer;
         if (peer != null) {
             return peer.updateGraphicsData(gc);
         }
@@ -1239,6 +1230,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return Toolkit.getDefaultToolkit();
     }
 
+    final ComponentFactory getComponentFactory() {
+        final Toolkit toolkit = getToolkit();
+        if (toolkit instanceof ComponentFactory) {
+            return (ComponentFactory) toolkit;
+        }
+        throw new AWTError("UI components are unsupported by: " + toolkit);
+    }
+
     /**
      * Determines whether this component is valid. A component is valid
      * when it is correctly sized and positioned within its parent
@@ -1281,7 +1280,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since 1.2
      */
     public boolean isDisplayable() {
-        return getPeer() != null;
+        return peer != null;
     }
 
     /**
@@ -1336,7 +1335,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
             return null;
         }
         Window win = getContainingWindow();
-        if (!Toolkit.getDefaultToolkit().getMouseInfoPeer().isWindowUnderMouse(win)) {
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (!(toolkit instanceof ComponentFactory)) {
+            return null;
+        }
+        if (!((ComponentFactory) toolkit).getMouseInfoPeer().isWindowUnderMouse(win)) {
             return null;
         }
         final boolean INCLUDE_DISABLED = true;
@@ -2582,7 +2585,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since 1.2
      */
     public boolean isOpaque() {
-        if (getPeer() == null) {
+        if (peer == null) {
             return false;
         }
         else {
@@ -2608,7 +2611,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since 1.2
      */
     public boolean isLightweight() {
-        return getPeer() instanceof LightweightPeer;
+        return peer instanceof LightweightPeer;
     }
 
 
@@ -3126,7 +3129,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *          obtained
      * @return the font metrics for <code>font</code>
      * @see       #getFont
-     * @see       #getPeer
      * @see       java.awt.peer.ComponentPeer#getFontMetrics(Font)
      * @see       Toolkit#getFontMetrics(Font)
      * @since     1.0
@@ -3186,7 +3188,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
             if (nativeContainer == null) return;
 
-            ComponentPeer cPeer = nativeContainer.getPeer();
+            ComponentPeer cPeer = nativeContainer.peer;
 
             if (cPeer != null) {
                 cPeer.updateCursorImmediately();
@@ -5019,7 +5021,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 if (source != null) {
                     Container target = source.getNativeContainer();
                     if (target != null) {
-                        tpeer = target.getPeer();
+                        tpeer = target.peer;
                     }
                 }
             }
@@ -6972,7 +6974,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 if (peer == null) {
                     // Update both the Component's peer variable and the local
                     // variable we use for thread safety.
-                    this.peer = peer = getToolkit().createComponent(this);
+                    this.peer = peer = getComponentFactory().createComponent(this);
                 }
 
                 // This is a lightweight component which means it won't be
@@ -7022,7 +7024,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 popup.addNotify();
             }
 
-            if (dropTarget != null) dropTarget.addNotify(peer);
+            if (dropTarget != null) dropTarget.addNotify();
 
             peerFont = getFont();
 
@@ -7109,7 +7111,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                     ((FlipBufferStrategy)bufferStrategy).destroyBuffers();
                 }
 
-                if (dropTarget != null) dropTarget.removeNotify(peer);
+                if (dropTarget != null) dropTarget.removeNotify();
 
                 // Hide peer first to stop system events such as cursor moves.
                 if (visible) {
@@ -9851,7 +9853,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         if (!isLightweight()) {
-            ComponentPeer peer = getPeer();
+            ComponentPeer peer = this.peer;
             if (peer != null) {
                 // The Region class has some optimizations. That's why
                 // we should manually check whether it's empty and
@@ -9975,7 +9977,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             for (int i = indexAbove; i > -1; i--) {
                 Component comp = cont.getComponent(i);
                 if (comp != null && comp.isDisplayable() && !comp.isLightweight()) {
-                    return comp.getPeer();
+                    return comp.peer;
                 }
             }
             // traversing the hierarchy up to the closest HW container;

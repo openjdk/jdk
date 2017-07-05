@@ -30,8 +30,11 @@ import java.awt.*;
 import java.awt.event.InvocationEvent;
 import java.awt.peer.ComponentPeer;
 import java.awt.image.*;
+
 import sun.awt.image.ByteInterleavedRaster;
 import sun.security.action.GetPropertyAction;
+
+import java.awt.peer.FramePeer;
 import java.security.PrivilegedAction;
 import  java.security.AccessController;
 
@@ -80,9 +83,8 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void addNotify() {
-        if (getPeer() == null) {
+        if (!isDisplayable()) {
             WToolkit toolkit = (WToolkit)Toolkit.getDefaultToolkit();
             setPeer(toolkit.createEmbeddedFrame(this));
         }
@@ -232,16 +234,16 @@ public class WEmbeddedFrame extends EmbeddedFrame {
     public void activateEmbeddingTopLevel() {
     }
 
-    @SuppressWarnings("deprecation")
     public void synthesizeWindowActivation(final boolean activate) {
+        final FramePeer peer = AWTAccessor.getComponentAccessor().getPeer(this);
         if (!activate || EventQueue.isDispatchThread()) {
-            ((WFramePeer)getPeer()).emulateActivation(activate);
+            peer.emulateActivation(activate);
         } else {
             // To avoid focus concurrence b/w IE and EmbeddedFrame
             // activation is postponed by means of posting it to EDT.
             Runnable r = new Runnable() {
                 public void run() {
-                    ((WFramePeer)getPeer()).emulateActivation(true);
+                    peer.emulateActivation(true);
                 }
             };
             WToolkit.postEvent(WToolkit.targetToAppContext(this),
@@ -249,10 +251,11 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public boolean requestFocusToEmbedder() {
         if (isEmbeddedInIE) {
-            return ((WEmbeddedFramePeer) getPeer()).requestFocusToEmbedder();
+            final WEmbeddedFramePeer peer = AWTAccessor.getComponentAccessor()
+                                                       .getPeer(this);
+            return peer.requestFocusToEmbedder();
         }
         return false;
     }

@@ -117,7 +117,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         try {
             javaToplevels = XWindowPeer.collectJavaToplevels();
             for (Window w : toBlock) {
-                XWindowPeer wp = (XWindowPeer)AWTAccessor.getComponentAccessor().getPeer(w);
+                XWindowPeer wp = AWTAccessor.getComponentAccessor().getPeer(w);
                 if (wp != null) {
                     wp.setModalBlocked((Dialog)target, true, javaToplevels);
                 }
@@ -139,7 +139,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         XWindowPeer focusedWindowPeer = null;
 
         if (focusedWindow != null) {
-            focusedWindowPeer = (XWindowPeer)AWTAccessor.getComponentAccessor().getPeer(focusedWindow);
+            focusedWindowPeer = AWTAccessor.getComponentAccessor().getPeer(focusedWindow);
         } else {
             /*
              * For the case when a potential blocked window is not yet focused

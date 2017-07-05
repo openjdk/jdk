@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,25 @@ public class BevelBorder extends AbstractBorder
     /** Lowered bevel type. */
     public static final int LOWERED = 1;
 
+    /**
+     * The bevel type.
+     */
     protected int bevelType;
+    /**
+     * The color to use for the bevel outer highlight.
+     */
     protected Color highlightOuter;
+    /**
+     * The color to use for the bevel inner highlight.
+     */
     protected Color highlightInner;
+    /**
+     * The color to use for the bevel inner shadow.
+     */
     protected Color shadowInner;
+    /**
+     * the color to use for the bevel outer shadow
+     */
     protected Color shadowOuter;
 
     /**
@@ -262,6 +277,17 @@ public class BevelBorder extends AbstractBorder
      */
     public boolean isBorderOpaque() { return true; }
 
+    /**
+     * Paints a raised bevel for the specified component with the specified
+     * position and size.
+     *
+     * @param c the component for which the raised bevel is being painted
+     * @param g the paint graphics
+     * @param x the x position of the raised bevel
+     * @param y the y position of the raised bevel
+     * @param width the width of the raised bevel
+     * @param height the height of the raised bevel
+     */
     protected void paintRaisedBevel(Component c, Graphics g, int x, int y,
                                     int width, int height)  {
         Color oldColor = g.getColor();
@@ -291,6 +317,17 @@ public class BevelBorder extends AbstractBorder
 
     }
 
+    /**
+     * Paints a lowered bevel for the specified component with the specified
+     * position and size.
+     *
+     * @param c the component for which the lowered bevel is being painted
+     * @param g the paint graphics
+     * @param x the x position of the lowered bevel
+     * @param y the y position of the lowered bevel
+     * @param width the width of the lowered bevel
+     * @param height the height of the lowered bevel
+     */
     protected void paintLoweredBevel(Component c, Graphics g, int x, int y,
                                         int width, int height)  {
         Color oldColor = g.getColor();

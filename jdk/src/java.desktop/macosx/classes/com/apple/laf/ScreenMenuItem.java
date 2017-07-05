@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,18 @@ package com.apple.laf;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.peer.MenuComponentPeer;
 
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 
+import sun.awt.AWTAccessor;
 import sun.lwawt.macosx.CMenuItem;
 
 @SuppressWarnings("serial") // JDK implementation class
-final class ScreenMenuItem extends MenuItem implements ActionListener, ComponentListener, ScreenMenuPropertyHandler {
+final class ScreenMenuItem extends MenuItem
+        implements ActionListener, ComponentListener,
+                   ScreenMenuPropertyHandler {
+
     ScreenMenuPropertyListener fListener;
     JMenuItem fMenuItem;
 
@@ -97,9 +100,8 @@ final class ScreenMenuItem extends MenuItem implements ActionListener, Component
         fMenuItem.removeComponentListener(this);
     }
 
-    @SuppressWarnings("deprecation")
     static void syncLabelAndKS(MenuItem menuItem, String label, KeyStroke ks) {
-        final MenuComponentPeer peer = menuItem.getPeer();
+        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(menuItem);
         if (!(peer instanceof CMenuItem)) {
             //Is it possible?
             return;
@@ -166,18 +168,16 @@ final class ScreenMenuItem extends MenuItem implements ActionListener, Component
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void setToolTipText(final String text) {
-        final MenuComponentPeer peer = getPeer();
+        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (!(peer instanceof CMenuItem)) return;
 
         final CMenuItem cmi = (CMenuItem)peer;
         cmi.setToolTipText(text);
     }
 
-    @SuppressWarnings("deprecation")
     public void setIcon(final Icon i) {
-        final MenuComponentPeer peer = getPeer();
+        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (!(peer instanceof CMenuItem)) return;
 
         final CMenuItem cmi = (CMenuItem)peer;

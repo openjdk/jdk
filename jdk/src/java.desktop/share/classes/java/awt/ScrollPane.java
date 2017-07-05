@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package java.awt;
 
-import java.awt.peer.LightweightPeer;
 import java.awt.peer.ScrollPanePeer;
 import java.awt.event.*;
 import javax.accessibility.*;
@@ -562,7 +561,7 @@ public class ScrollPane extends Container implements Accessible {
             }
 
             if (peer == null)
-                peer = getToolkit().createScrollPane(this);
+                peer = getComponentFactory().createScrollPane(this);
             super.addNotify();
 
             // Bug 4124460. Restore the adjustable values.

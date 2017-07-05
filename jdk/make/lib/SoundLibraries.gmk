@@ -111,10 +111,6 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   LIBJSOUND_SRC_FILES += $(LIBJSOUND_DAUDIOFILES)
 endif # OPENJDK_TARGET_OS solaris
 
-
-  ifeq ($(OPENJDK_TARGET_CPU), aarch64)
-       LIBJSOUND_CFLAGS += -DX_ARCH=X_AARCH64
-  endif
 LIBJSOUND_CFLAGS += -DEXTRA_SOUND_JNI_LIBS='"$(EXTRA_SOUND_JNI_LIBS)"'
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
@@ -129,6 +125,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBJSOUND_CFLAGS), \
     DISABLED_WARNINGS_clang := implicit-function-declaration \
         deprecated-writable-strings, \
+    WARNINGS_AS_ERRORS_clang := false, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsound/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

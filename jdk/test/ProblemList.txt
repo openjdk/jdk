@@ -225,12 +225,6 @@ sun/security/krb5/auto/Unreachable.java                         windows-all,maco
 # 8058849
 sun/security/krb5/config/dns.sh                                 generic-all
 
-# 6988842: 4 tests failing on Solaris 5.10
-sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-all
-sun/security/pkcs11/ec/ReadCertificates.java                    solaris-all
-sun/security/pkcs11/ec/ReadPKCS12.java                          solaris-all
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
-
 # 7041639: Solaris DSA keypair generation bug
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
