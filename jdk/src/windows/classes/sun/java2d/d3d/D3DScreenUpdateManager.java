@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import sun.awt.AWTAccessor;
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 import sun.awt.Win32GraphicsConfig;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.InvalidPipeException;

@@ -141,10 +141,10 @@ final class XDropTargetRegistry {
         }
         public long[] getSites() {
             long[] ret = new long[sites.size()];
-            Iterator iter = sites.iterator();
+            Iterator<Long> iter = sites.iterator();
             int index = 0;
             while (iter.hasNext()) {
-                Long l = (Long)iter.next();
+                Long l = iter.next();
                 ret[index++] = l.longValue();
             }
             return ret;
@@ -199,14 +199,13 @@ final class XDropTargetRegistry {
     private EmbeddedDropSiteEntry registerEmbedderDropSite(long embedder) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
-        Iterator dropTargetProtocols =
+        Iterator<XDropTargetProtocol> dropTargetProtocols =
             XDragAndDropProtocols.getDropTargetProtocols();
         // The list of protocols supported by the embedder.
-        List<XDropTargetProtocol> embedderProtocols = new ArrayList();
+        List<XDropTargetProtocol> embedderProtocols = new ArrayList<>();
 
         while (dropTargetProtocols.hasNext()) {
-            XDropTargetProtocol dropTargetProtocol =
-                (XDropTargetProtocol)dropTargetProtocols.next();
+            XDropTargetProtocol dropTargetProtocol = dropTargetProtocols.next();
             if (dropTargetProtocol.isProtocolSupported(embedder)) {
                 embedderProtocols.add(dropTargetProtocol);
             }
@@ -262,7 +261,7 @@ final class XDropTargetRegistry {
 
     private void registerProtocols(long embedder, boolean protocols,
                                    List<XDropTargetProtocol> supportedProtocols) {
-        Iterator dropTargetProtocols = null;
+        Iterator<XDropTargetProtocol> dropTargetProtocols = null;
 
         /*
          * By default, we register a drop site that supports all dnd
@@ -289,8 +288,7 @@ final class XDropTargetRegistry {
         XlibWrapper.XGrabServer(XToolkit.getDisplay());
         try {
             while (dropTargetProtocols.hasNext()) {
-                XDropTargetProtocol dropTargetProtocol =
-                    (XDropTargetProtocol)dropTargetProtocols.next();
+                XDropTargetProtocol dropTargetProtocol = dropTargetProtocols.next();
                 if ((protocols == XEMBED_PROTOCOLS) ==
                     dropTargetProtocol.isXEmbedSupported()) {
                     dropTargetProtocol.registerEmbedderDropSite(embedder);
@@ -310,14 +308,13 @@ final class XDropTargetRegistry {
 
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
-        Iterator dropTargetProtocols =
+        Iterator<XDropTargetProtocol> dropTargetProtocols =
             XDragAndDropProtocols.getDropTargetProtocols();
         // The list of protocols supported by the embedder.
-        List<XDropTargetProtocol> embedderProtocols = new ArrayList();
+        List<XDropTargetProtocol> embedderProtocols = new ArrayList<>();
 
         while (dropTargetProtocols.hasNext()) {
-            XDropTargetProtocol dropTargetProtocol =
-                (XDropTargetProtocol)dropTargetProtocols.next();
+            XDropTargetProtocol dropTargetProtocol = dropTargetProtocols.next();
             if (dropTargetProtocol.isProtocolSupported(embedder)) {
                 embedderProtocols.add(dropTargetProtocol);
             }
@@ -361,8 +358,7 @@ final class XDropTargetRegistry {
         XlibWrapper.XGrabServer(XToolkit.getDisplay());
         try {
             while (dropTargetProtocols.hasNext()) {
-                XDropTargetProtocol dropTargetProtocol =
-                    (XDropTargetProtocol)dropTargetProtocols.next();
+                XDropTargetProtocol dropTargetProtocol = dropTargetProtocols.next();
                 if (!isXEmbedServer || !dropTargetProtocol.isXEmbedSupported()) {
                     dropTargetProtocol.registerEmbedderDropSite(embedder);
                 }
@@ -376,7 +372,7 @@ final class XDropTargetRegistry {
                                             EmbeddedDropSiteEntry entry) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
-        Iterator dropTargetProtocols =
+        Iterator<XDropTargetProtocol> dropTargetProtocols =
             XDragAndDropProtocols.getDropTargetProtocols();
 
         /* Grab server, since we are working with the window that belongs to
@@ -384,8 +380,7 @@ final class XDropTargetRegistry {
         XlibWrapper.XGrabServer(XToolkit.getDisplay());
         try {
             while (dropTargetProtocols.hasNext()) {
-                XDropTargetProtocol dropTargetProtocol =
-                    (XDropTargetProtocol)dropTargetProtocols.next();
+                XDropTargetProtocol dropTargetProtocol = dropTargetProtocols.next();
                 dropTargetProtocol.unregisterEmbedderDropSite(embedder);
             }
 
@@ -470,14 +465,14 @@ final class XDropTargetRegistry {
                     registerProtocols(toplevel, XEMBED_PROTOCOLS,
                                       entry.getSupportedProtocols());
                 } else {
-                    Iterator dropTargetProtocols =
+                    Iterator<XDropTargetProtocol> dropTargetProtocols =
                         XDragAndDropProtocols.getDropTargetProtocols();
 
                     // Register the embedded window as a plain drop site with
                     // all DnD protocols that are supported by XEmbed.
                     while (dropTargetProtocols.hasNext()) {
                         XDropTargetProtocol dropTargetProtocol =
-                            (XDropTargetProtocol)dropTargetProtocols.next();
+                            dropTargetProtocols.next();
                         if (dropTargetProtocol.isXEmbedSupported()) {
                             dropTargetProtocol.registerEmbedderDropSite(window);
                         }
@@ -558,12 +553,12 @@ final class XDropTargetRegistry {
         }
 
         if (toplevel == window) {
-            Iterator dropTargetProtocols =
+            Iterator<XDropTargetProtocol> dropTargetProtocols =
                 XDragAndDropProtocols.getDropTargetProtocols();
 
             while (dropTargetProtocols.hasNext()) {
                 XDropTargetProtocol dropTargetProtocol =
-                    (XDropTargetProtocol)dropTargetProtocols.next();
+                    dropTargetProtocols.next();
                 dropTargetProtocol.registerDropTarget(toplevel);
             }
         } else {
@@ -584,13 +579,13 @@ final class XDropTargetRegistry {
         long toplevel = getToplevelWindow(window);
 
         if (toplevel == window) {
-            Iterator dropProtocols =
+            Iterator<XDropTargetProtocol> dropProtocols =
                 XDragAndDropProtocols.getDropTargetProtocols();
 
             removeDelayedRegistrationEntry(window);
 
             while (dropProtocols.hasNext()) {
-                XDropTargetProtocol dropProtocol = (XDropTargetProtocol)dropProtocols.next();
+                XDropTargetProtocol dropProtocol = dropProtocols.next();
                 dropProtocol.unregisterDropTarget(window);
             }
         } else {
@@ -615,12 +610,11 @@ final class XDropTargetRegistry {
             }
             registerEmbeddedDropSite(canvasWindow, clientWindow);
 
-            Iterator dropTargetProtocols =
+            Iterator<XDropTargetProtocol> dropTargetProtocols =
                 XDragAndDropProtocols.getDropTargetProtocols();
 
             while (dropTargetProtocols.hasNext()) {
-                XDropTargetProtocol dropTargetProtocol =
-                    (XDropTargetProtocol)dropTargetProtocols.next();
+                XDropTargetProtocol dropTargetProtocol = dropTargetProtocols.next();
                 dropTargetProtocol.registerEmbeddedDropSite(clientWindow);
             }
 
@@ -634,12 +628,11 @@ final class XDropTargetRegistry {
         if (logger.isLoggable(PlatformLogger.Level.FINE)) {
             logger.fine("        XEmbed drop site will be unregistered for " + Long.toHexString(clientWindow));
         }
-        Iterator dropTargetProtocols =
+        Iterator<XDropTargetProtocol> dropTargetProtocols =
             XDragAndDropProtocols.getDropTargetProtocols();
 
         while (dropTargetProtocols.hasNext()) {
-            XDropTargetProtocol dropTargetProtocol =
-                (XDropTargetProtocol)dropTargetProtocols.next();
+            XDropTargetProtocol dropTargetProtocol = dropTargetProtocols.next();
             dropTargetProtocol.unregisterEmbeddedDropSite(clientWindow);
         }
 

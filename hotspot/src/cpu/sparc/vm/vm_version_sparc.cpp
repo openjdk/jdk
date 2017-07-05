@@ -318,22 +318,22 @@ void VM_Version::initialize() {
           tty->print("BIS");
       }
       if (AllocatePrefetchLines > 1) {
-        tty->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
+        tty->print_cr(" at distance %d, %d lines of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchLines, (int) AllocatePrefetchStepSize);
       } else {
-        tty->print_cr(" at distance %d, one line of %d bytes", AllocatePrefetchDistance, AllocatePrefetchStepSize);
+        tty->print_cr(" at distance %d, one line of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchStepSize);
       }
     }
     if (PrefetchCopyIntervalInBytes > 0) {
-      tty->print_cr("PrefetchCopyIntervalInBytes %d", PrefetchCopyIntervalInBytes);
+      tty->print_cr("PrefetchCopyIntervalInBytes %d", (int) PrefetchCopyIntervalInBytes);
     }
     if (PrefetchScanIntervalInBytes > 0) {
-      tty->print_cr("PrefetchScanIntervalInBytes %d", PrefetchScanIntervalInBytes);
+      tty->print_cr("PrefetchScanIntervalInBytes %d", (int) PrefetchScanIntervalInBytes);
     }
     if (PrefetchFieldsAhead > 0) {
-      tty->print_cr("PrefetchFieldsAhead %d", PrefetchFieldsAhead);
+      tty->print_cr("PrefetchFieldsAhead %d", (int) PrefetchFieldsAhead);
     }
     if (ContendedPaddingWidth > 0) {
-      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
+      tty->print_cr("ContendedPaddingWidth %d", (int) ContendedPaddingWidth);
     }
   }
 #endif // PRODUCT

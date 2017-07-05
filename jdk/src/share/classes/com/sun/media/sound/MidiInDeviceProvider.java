@@ -106,9 +106,9 @@ public final class MidiInDeviceProvider extends AbstractMidiDeviceProvider {
      * the new instance will not reflect that state...
      */
     static final class MidiInDeviceInfo extends AbstractMidiDeviceProvider.Info {
-        private final Class providerClass;
+        private final Class<?> providerClass;
 
-        private MidiInDeviceInfo(int index, Class providerClass) {
+        private MidiInDeviceInfo(int index, Class<?> providerClass) {
             super(nGetName(index), nGetVendor(index), nGetDescription(index), nGetVersion(index), index);
             this.providerClass = providerClass;
         }

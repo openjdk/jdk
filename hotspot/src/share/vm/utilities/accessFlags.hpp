@@ -54,7 +54,8 @@ enum {
   JVM_ACC_IS_OLD                  = 0x00010000,     // RedefineClasses() has replaced this method
   JVM_ACC_IS_OBSOLETE             = 0x00020000,     // RedefineClasses() has made method obsolete
   JVM_ACC_IS_PREFIXED_NATIVE      = 0x00040000,     // JVMTI has prefixed this native method
-  JVM_ACC_ON_STACK                = 0x00080000,     // RedefinedClasses() is used on the stack
+  JVM_ACC_ON_STACK                = 0x00080000,     // RedefineClasses() was used on the stack
+  JVM_ACC_IS_DELETED              = 0x00008000,     // RedefineClasses() has deleted this method
 
   // Klass* flags
   JVM_ACC_HAS_MIRANDA_METHODS     = 0x10000000,     // True if this class has miranda methods in it's vtable
@@ -131,6 +132,7 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   bool has_jsrs                () const { return (_flags & JVM_ACC_HAS_JSRS               ) != 0; }
   bool is_old                  () const { return (_flags & JVM_ACC_IS_OLD                 ) != 0; }
   bool is_obsolete             () const { return (_flags & JVM_ACC_IS_OBSOLETE            ) != 0; }
+  bool is_deleted              () const { return (_flags & JVM_ACC_IS_DELETED             ) != 0; }
   bool is_prefixed_native      () const { return (_flags & JVM_ACC_IS_PREFIXED_NATIVE     ) != 0; }
 
   // Klass* flags
@@ -195,6 +197,7 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   void set_has_jsrs()                  { atomic_set_bits(JVM_ACC_HAS_JSRS);                }
   void set_is_old()                    { atomic_set_bits(JVM_ACC_IS_OLD);                  }
   void set_is_obsolete()               { atomic_set_bits(JVM_ACC_IS_OBSOLETE);             }
+  void set_is_deleted()                { atomic_set_bits(JVM_ACC_IS_DELETED);              }
   void set_is_prefixed_native()        { atomic_set_bits(JVM_ACC_IS_PREFIXED_NATIVE);      }
 
   void clear_not_c1_compilable()       { atomic_clear_bits(JVM_ACC_NOT_C1_COMPILABLE);       }

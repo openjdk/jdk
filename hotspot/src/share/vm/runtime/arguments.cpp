@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaAssertions.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/allocation.inline.hpp"
@@ -310,6 +311,10 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "UseBoundThreads",               JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "DefaultThreadPriority",         JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "NoYieldsInMicrolock",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "BackEdgeThreshold",             JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "UseNewReflection",              JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "ReflectionWrapResolutionErrors",JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "VerifyReflectionBytecodes",     JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -579,11 +584,20 @@ char* SysClassPath::add_jars_to_path(char* path, const char* directory) {
 // Parses a memory size specification string.
 static bool atomull(const char *s, julong* result) {
   julong n = 0;
-  int args_read = sscanf(s, JULONG_FORMAT, &n);
+  int args_read = 0;
+  bool is_hex = false;
+  // Skip leading 0[xX] for hexadecimal
+  if (*s =='0' && (*(s+1) == 'x' || *(s+1) == 'X')) {
+    s += 2;
+    is_hex = true;
+    args_read = sscanf(s, JULONG_FORMAT_X, &n);
+  } else {
+    args_read = sscanf(s, JULONG_FORMAT, &n);
+  }
   if (args_read != 1) {
     return false;
   }
-  while (*s != '\0' && isdigit(*s)) {
+  while (*s != '\0' && (isdigit(*s) || (is_hex && isxdigit(*s)))) {
     s++;
   }
   // 4705540: illegal if more characters are found after the first non-digit
@@ -777,7 +791,7 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
     }
   }
 
-#define VALUE_RANGE "[-kmgtKMGT0123456789]"
+#define VALUE_RANGE "[-kmgtxKMGTX0123456789abcdefABCDEF]"
   if (sscanf(arg, "%" XSTR(BUFLEN) NAME_RANGE "=" "%" XSTR(BUFLEN) VALUE_RANGE "%c", name, value, &dummy) == 2) {
     return set_numeric_flag(name, value, origin);
   }
@@ -852,7 +866,7 @@ void Arguments::print_jvm_flags_on(outputStream* st) {
     for (int i=0; i < _num_jvm_flags; i++) {
       st->print("%s ", _jvm_flags_array[i]);
     }
-    st->print_cr("");
+    st->cr();
   }
 }
 
@@ -861,7 +875,7 @@ void Arguments::print_jvm_args_on(outputStream* st) {
     for (int i=0; i < _num_jvm_args; i++) {
       st->print("%s ", _jvm_args_array[i]);
     }
-    st->print_cr("");
+    st->cr();
   }
 }
 
@@ -1151,6 +1165,32 @@ void Arguments::set_tiered_flags() {
   }
 }
 
+/**
+ * Returns the minimum number of compiler threads needed to run the JVM. The following
+ * configurations are possible.
+ *
+ * 1) The JVM is build using an interpreter only. As a result, the minimum number of
+ *    compiler threads is 0.
+ * 2) The JVM is build using the compiler(s) and tiered compilation is disabled. As
+ *    a result, either C1 or C2 is used, so the minimum number of compiler threads is 1.
+ * 3) The JVM is build using the compiler(s) and tiered compilation is enabled. However,
+ *    the option "TieredStopAtLevel < CompLevel_full_optimization". As a result, only
+ *    C1 can be used, so the minimum number of compiler threads is 1.
+ * 4) The JVM is build using the compilers and tiered compilation is enabled. The option
+ *    'TieredStopAtLevel = CompLevel_full_optimization' (the default value). As a result,
+ *    the minimum number of compiler threads is 2.
+ */
+int Arguments::get_min_number_of_compiler_threads() {
+#if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK)
+  return 0;   // case 1
+#else
+  if (!TieredCompilation || (TieredStopAtLevel < CompLevel_full_optimization)) {
+    return 1; // case 2 or case 3
+  }
+  return 2;   // case 4 (tiered)
+#endif
+}
+
 #if INCLUDE_ALL_GCS
 static void disable_adaptive_size_policy(const char* collector_name) {
   if (UseAdaptiveSizePolicy) {
@@ -1349,8 +1389,8 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   }
   if (PrintGCDetails && Verbose) {
     tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
-      MarkStackSize / K, MarkStackSizeMax / K);
-    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
+      (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
+    tty->print_cr("ConcGCThreads: %u", (uint) ConcGCThreads);
   }
 }
 #endif // INCLUDE_ALL_GCS
@@ -1430,7 +1470,7 @@ bool Arguments::should_auto_select_low_pause_collector() {
     if (PrintGCDetails) {
       // Cannot use gclog_or_tty yet.
       tty->print_cr("Automatic selection of the low pause collector"
-       " based on pause goal of %d (ms)", MaxGCPauseMillis);
+       " based on pause goal of %d (ms)", (int) MaxGCPauseMillis);
     }
     return true;
   }
@@ -1647,8 +1687,8 @@ void Arguments::set_g1_gc_flags() {
 
   if (PrintGCDetails && Verbose) {
     tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
-      MarkStackSize / K, MarkStackSizeMax / K);
-    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
+      (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
+    tty->print_cr("ConcGCThreads: %u", (uint) ConcGCThreads);
   }
 }
 
@@ -1732,7 +1772,7 @@ void Arguments::set_heap_size() {
 
     if (PrintGCDetails && Verbose) {
       // Cannot use gclog_or_tty yet.
-      tty->print_cr("  Maximum heap size " SIZE_FORMAT, reasonable_max);
+      tty->print_cr("  Maximum heap size " SIZE_FORMAT, (size_t) reasonable_max);
     }
     FLAG_SET_ERGO(uintx, MaxHeapSize, (uintx)reasonable_max);
   }
@@ -2105,7 +2145,7 @@ bool Arguments::check_vm_args_consistency() {
     // Using "else if" below to avoid printing two error messages if min > max.
     // This will also prevent us from reporting both min>100 and max>100 at the
     // same time, but that is less annoying than printing two identical errors IMHO.
-    FormatBuffer<80> err_msg("");
+    FormatBuffer<80> err_msg("%s","");
     if (!verify_MinHeapFreeRatio(err_msg, MinHeapFreeRatio)) {
       jio_fprintf(defaultStream::error_stream(), "%s\n", err_msg.buffer());
       status = false;
@@ -2335,6 +2375,9 @@ bool Arguments::check_vm_args_consistency() {
   status = status && verify_percentage(MarkSweepDeadRatio, "MarkSweepDeadRatio");
 
   status = status && verify_min_value(MarkSweepAlwaysCompactCount, 1, "MarkSweepAlwaysCompactCount");
+#ifdef COMPILER1
+  status = status && verify_min_value(ValueMapInitialSize, 1, "ValueMapInitialSize");
+#endif
 
   if (PrintNMTStatistics) {
 #if INCLUDE_NMT
@@ -2398,9 +2441,11 @@ bool Arguments::check_vm_args_consistency() {
   status &= verify_interval(CodeCacheMinBlockLength, 1, 100, "CodeCacheMinBlockLength");
   status &= verify_interval(CodeCacheSegmentSize, 1, 1024, "CodeCacheSegmentSize");
 
-  // TieredCompilation needs at least 2 compiler threads.
-  const int num_min_compiler_threads = (TieredCompilation && (TieredStopAtLevel >= CompLevel_full_optimization)) ? 2 : CI_COMPILER_COUNT;
-  status &=verify_min_value(CICompilerCount, num_min_compiler_threads, "CICompilerCount");
+  int min_number_of_compiler_threads = get_min_number_of_compiler_threads();
+  // The default CICompilerCount's value is CI_COMPILER_COUNT.
+  assert(min_number_of_compiler_threads <= CI_COMPILER_COUNT, "minimum should be less or equal default number");
+  // Check the minimum number of compiler threads
+  status &=verify_min_value(CICompilerCount, min_number_of_compiler_threads, "CICompilerCount");
 
   if (!FLAG_IS_DEFAULT(CICompilerCount) && !FLAG_IS_DEFAULT(CICompilerCountPerCPU) && CICompilerCountPerCPU) {
     warning("The VM option CICompilerCountPerCPU overrides CICompilerCount.");

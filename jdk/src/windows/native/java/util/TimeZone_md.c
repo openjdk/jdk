@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -394,31 +394,34 @@ static int getWinTimeZone(char *winZoneName, char *winMapID)
  *
  * value_type is one of the following values:
  *      VALUE_KEY for exact key matching
- *      VALUE_MAPID for MapID and country-based mapping (this is
+ *      VALUE_MAPID for MapID (this is
  *      required for the old Windows, such as NT 4.0 SP3).
  */
 static char *matchJavaTZ(const char *java_home_dir, int value_type, char *tzName,
-                         char *mapID, const char *country)
+                         char *mapID)
 {
     int line;
     int IDmatched = 0;
     FILE *fp;
     char *javaTZName = NULL;
     char *items[TZ_NITEMS];
-    char mapFileName[_MAX_PATH + 1];
+    char *mapFileName;
     char lineBuffer[MAX_ZONE_CHAR * 4];
-    char bestMatch[MAX_ZONE_CHAR];
-    int noMapID = *mapID == '\0';       /* no mapID on Vista */
+    int noMapID = *mapID == '\0';       /* no mapID on Vista and later */
 
-    bestMatch[0] = '\0';
-
+    mapFileName = malloc(strlen(java_home_dir) + strlen(MAPPINGS_FILE) + 1);
+    if (mapFileName == NULL) {
+        return NULL;
+    }
     strcpy(mapFileName, java_home_dir);
     strcat(mapFileName, MAPPINGS_FILE);
 
     if ((fp = fopen(mapFileName, "r")) == NULL) {
         jio_fprintf(stderr, "can't open %s.\n", mapFileName);
+        free((void *) mapFileName);
         return NULL;
     }
+    free((void *) mapFileName);
 
     line = 0;
     while (fgets(lineBuffer, sizeof(lineBuffer), fp) != NULL) {
@@ -469,18 +472,6 @@ static char *matchJavaTZ(const char *java_home_dir, int value_type, char *tzName
                 javaTZName = _strdup(items[TZ_JAVA_NAME]);
                 break;
             }
-            /*
-             * Try to find the most likely time zone.
-             */
-            if (*items[TZ_REGION] == '\0') {
-                strncpy(bestMatch, items[TZ_JAVA_NAME], MAX_ZONE_CHAR);
-            } else if (country != NULL && strcmp(items[TZ_REGION], country) == 0) {
-                if (value_type == VALUE_MAPID) {
-                    javaTZName = _strdup(items[TZ_JAVA_NAME]);
-                    break;
-                }
-                strncpy(bestMatch, items[TZ_JAVA_NAME], MAX_ZONE_CHAR);
-            }
         } else {
             if (IDmatched == 1) {
                 /*
@@ -492,9 +483,6 @@ static char *matchJavaTZ(const char *java_home_dir, int value_type, char *tzName
     }
     fclose(fp);
 
-    if (javaTZName == NULL && bestMatch[0] != '\0') {
-        javaTZName = _strdup(bestMatch);
-    }
     return javaTZName;
 
  illegal_format:
@@ -506,7 +494,7 @@ static char *matchJavaTZ(const char *java_home_dir, int value_type, char *tzName
 /*
  * Detects the platform time zone which maps to a Java time zone ID.
  */
-char *findJavaTZ_md(const char *java_home_dir, const char *country)
+char *findJavaTZ_md(const char *java_home_dir)
 {
     char winZoneName[MAX_ZONE_CHAR];
     char winMapID[MAX_MAPID_LENGTH];
@@ -521,7 +509,7 @@ char *findJavaTZ_md(const char *java_home_dir, const char *country)
             std_timezone = _strdup(winZoneName);
         } else {
             std_timezone = matchJavaTZ(java_home_dir, result,
-                                       winZoneName, winMapID, country);
+                                       winZoneName, winMapID);
         }
     }
 

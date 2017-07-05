@@ -42,9 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *          without connection or username/password details.
  *          TestManager will attempt a connection to the address obtained from
  *          both agent properties and jvmstat buffer.
- * @build jdk.testlibrary.ProcessTools
- * @build jdk.testlibrary.Utils
- * @build TestManager TestApplication
+ * @build jdk.testlibrary.* TestManager TestApplication
  * @run main/othervm/timeout=300 -XX:+UsePerfData LocalManagementTest
  */
 

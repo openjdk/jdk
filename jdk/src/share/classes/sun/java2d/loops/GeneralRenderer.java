@@ -50,7 +50,7 @@ import sun.font.GlyphList;
 
 public final class GeneralRenderer {
     public static void register() {
-        Class owner = GeneralRenderer.class;
+        Class<?> owner = GeneralRenderer.class;
         GraphicsPrimitive[] primitives = {
             new  GraphicsPrimitiveProxy(owner, "SetFillRectANY",
                                         FillRect.methodSignature,

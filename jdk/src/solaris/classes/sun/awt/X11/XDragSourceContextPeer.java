@@ -29,6 +29,7 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Window;
 
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 
 import java.awt.dnd.DnDConstants;
@@ -110,7 +111,7 @@ public final class XDragSourceContextPeer
     }
 
     protected void startDrag(Transferable transferable,
-                             long[] formats, Map formatMap) {
+                             long[] formats, Map<Long, DataFlavor> formatMap) {
         Component component = getTrigger().getComponent();
         Component c = null;
         XWindowPeer wpeer = null;
@@ -161,9 +162,10 @@ public final class XDragSourceContextPeer
 
             int dropActions = getDragSourceContext().getSourceActions();
 
-            Iterator dragProtocols = XDragAndDropProtocols.getDragSourceProtocols();
+            Iterator<XDragSourceProtocol> dragProtocols =
+                XDragAndDropProtocols.getDragSourceProtocols();
             while (dragProtocols.hasNext()) {
-                XDragSourceProtocol dragProtocol = (XDragSourceProtocol)dragProtocols.next();
+                XDragSourceProtocol dragProtocol = dragProtocols.next();
                 try {
                     dragProtocol.initializeDrag(dropActions, transferable,
                                                 formatMap, formats);
@@ -313,9 +315,10 @@ public final class XDragSourceContextPeer
             dragDropFinished(false, DnDConstants.ACTION_NONE, xRoot, yRoot);
         }
 
-        Iterator dragProtocols = XDragAndDropProtocols.getDragSourceProtocols();
+        Iterator<XDragSourceProtocol> dragProtocols =
+            XDragAndDropProtocols.getDragSourceProtocols();
         while (dragProtocols.hasNext()) {
-            XDragSourceProtocol dragProtocol = (XDragSourceProtocol)dragProtocols.next();
+            XDragSourceProtocol dragProtocol = dragProtocols.next();
             try {
                 dragProtocol.cleanup();
             } catch (XException xe) {
@@ -418,9 +421,10 @@ public final class XDragSourceContextPeer
         }
 
         if (clientWindow != 0) {
-            Iterator dragProtocols = XDragAndDropProtocols.getDragSourceProtocols();
+            Iterator<XDragSourceProtocol> dragProtocols =
+                XDragAndDropProtocols.getDragSourceProtocols();
             while (dragProtocols.hasNext()) {
-                XDragSourceProtocol dragProtocol = (XDragSourceProtocol)dragProtocols.next();
+                XDragSourceProtocol dragProtocol = dragProtocols.next();
                 if (dragProtocol.attachTargetWindow(clientWindow, time)) {
                     protocol = dragProtocol;
                     break;
@@ -550,10 +554,10 @@ public final class XDragSourceContextPeer
 
         XClientMessageEvent xclient = ev.get_xclient();
 
-        Iterator dragProtocols = XDragAndDropProtocols.getDragSourceProtocols();
+        Iterator<XDragSourceProtocol> dragProtocols =
+            XDragAndDropProtocols.getDragSourceProtocols();
         while (dragProtocols.hasNext()) {
-            XDragSourceProtocol dragProtocol =
-                (XDragSourceProtocol)dragProtocols.next();
+            XDragSourceProtocol dragProtocol = dragProtocols.next();
             if (dragProtocol.processProxyModeEvent(xclient,
                                                    getProxyModeSourceWindow())) {
                 return true;

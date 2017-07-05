@@ -113,7 +113,7 @@ void JvmtiFramePops::print() {
     JvmtiFramePop fp = JvmtiFramePop(_pops->at(i));
     tty->print("%d: ", i);
     fp.print();
-    tty->print_cr("");
+    tty->cr();
   }
 }
 #endif

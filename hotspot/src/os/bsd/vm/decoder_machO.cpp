@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ bool MachODecoder::decode(address addr, char *buf,
   struct symtab_command * symt = (struct symtab_command *)
     mach_find_command((struct mach_header_64 *)mach_base, LC_SYMTAB);
   if (symt == NULL) {
-    DEBUG_ONLY(tty->print_cr("no symtab in mach file at 0x%lx", mach_base));
+    DEBUG_ONLY(tty->print_cr("no symtab in mach file at 0x%lx", p2i(mach_base)));
     return false;
   }
   uint32_t off = symt->symoff;          /* symbol table offset (within this mach file) */

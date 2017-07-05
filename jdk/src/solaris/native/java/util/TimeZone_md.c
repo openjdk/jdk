@@ -652,11 +652,11 @@ static char *mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz
  * using <java_home>/lib/tzmappings. If the TZ value is not found, it
  * trys some libc implementation dependent mappings. If it still
  * can't map to a Java time zone ID, it falls back to the GMT+/-hh:mm
- * form. `country', which can be null, is not used for UNIX platforms.
+ * form.
  */
 /*ARGSUSED1*/
 char *
-findJavaTZ_md(const char *java_home_dir, const char *country)
+findJavaTZ_md(const char *java_home_dir)
 {
     char *tz;
     char *javatz = NULL;

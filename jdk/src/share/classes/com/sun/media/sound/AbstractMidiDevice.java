@@ -70,7 +70,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
 
     /** List of Receivers and Transmitters that opened the device implicitely.
      */
-    private List openKeepingObjects;
+    private List<Object> openKeepingObjects;
 
     /**
      * This is the device handle returned from native code
@@ -284,6 +284,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
     }
 
 
+    @SuppressWarnings("unchecked") // Cast of result of clone
     public final List<Receiver> getReceivers() {
         List<Receiver> recs;
         synchronized (traRecLock) {
@@ -313,6 +314,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
     }
 
 
+    @SuppressWarnings("unchecked") // Cast of result of clone
     public final List<Transmitter> getTransmitters() {
         List<Transmitter> tras;
         synchronized (traRecLock) {
@@ -372,9 +374,9 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
 
     /** Return the list of objects that have opened the device implicitely.
      */
-    private synchronized List getOpenKeepingObjects() {
+    private synchronized List<Object> getOpenKeepingObjects() {
         if (openKeepingObjects == null) {
-            openKeepingObjects = new ArrayList();
+            openKeepingObjects = new ArrayList<>();
         }
         return openKeepingObjects;
     }

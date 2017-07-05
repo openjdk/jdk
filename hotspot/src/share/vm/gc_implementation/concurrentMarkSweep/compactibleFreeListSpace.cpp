@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/blockOffsetTable.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/space.inline.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
@@ -428,7 +429,7 @@ size_t CompactibleFreeListSpace::max_alloc_in_words() const {
 void LinearAllocBlock::print_on(outputStream* st) const {
   st->print_cr(" LinearAllocBlock: ptr = " PTR_FORMAT ", word_size = " SIZE_FORMAT
             ", refillsize = " SIZE_FORMAT ", allocation_size_limit = " SIZE_FORMAT,
-            _ptr, _word_size, _refillSize, _allocation_size_limit);
+            p2i(_ptr), _word_size, _refillSize, _allocation_size_limit);
 }
 
 void CompactibleFreeListSpace::print_on(outputStream* st) const {
@@ -459,7 +460,7 @@ const {
     for (FreeChunk* fc = _indexedFreeList[i].head(); fc != NULL;
          fc = fc->next()) {
       gclog_or_tty->print_cr("\t[" PTR_FORMAT "," PTR_FORMAT ")  %s",
-                          fc, (HeapWord*)fc + i,
+                          p2i(fc), p2i((HeapWord*)fc + i),
                           fc->cantCoalesce() ? "\t CC" : "");
     }
   }
@@ -503,7 +504,7 @@ size_t BlkPrintingClosure::do_blk(HeapWord* addr) {
   if (_sp->block_is_obj(addr)) {
     const bool dead = _post_remark && !_live_bit_map->isMarked(addr);
     _st->print_cr(PTR_FORMAT ": %s object of size " SIZE_FORMAT "%s",
-      addr,
+      p2i(addr),
       dead ? "dead" : "live",
       sz,
       (!dead && CMSPrintObjectsInDump) ? ":" : ".");
@@ -513,7 +514,7 @@ size_t BlkPrintingClosure::do_blk(HeapWord* addr) {
     }
   } else { // free block
     _st->print_cr(PTR_FORMAT ": free block of size " SIZE_FORMAT "%s",
-      addr, sz, CMSPrintChunksInDump ? ":" : ".");
+      p2i(addr), sz, CMSPrintChunksInDump ? ":" : ".");
     if (CMSPrintChunksInDump) {
       ((FreeChunk*)addr)->print_on(_st);
       _st->print_cr("--------------------------------------");
@@ -1983,7 +1984,7 @@ void CompactibleFreeListSpace::save_marks() {
   assert(ur.contains(urasm),
          err_msg(" Error at save_marks(): [" PTR_FORMAT "," PTR_FORMAT ")"
                  " should contain [" PTR_FORMAT "," PTR_FORMAT ")",
-                 ur.start(), ur.end(), urasm.start(), urasm.end()));
+                 p2i(ur.start()), p2i(ur.end()), p2i(urasm.start()), p2i(urasm.end())));
 #endif
   // inform allocator that promotions should be tracked.
   assert(_promoInfo.noPromotions(), "_promoInfo inconsistency");
@@ -2206,7 +2207,7 @@ void CompactibleFreeListSpace::endSweepFLCensus(size_t sweep_count) {
   if (PrintFLSStatistics > 0) {
     HeapWord* largestAddr = (HeapWord*) dictionary()->find_largest_dict();
     gclog_or_tty->print_cr("CMS: Large block " PTR_FORMAT,
-                           largestAddr);
+                           p2i(largestAddr));
   }
   setFLSurplus();
   setFLHints();
@@ -2355,8 +2356,8 @@ class VerifyAllBlksClosure: public BlkClosure {
       gclog_or_tty->print_cr(
         " Current:  addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n"
         " Previous: addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n",
-        addr,       res,        was_obj      ?"true":"false", was_live      ?"true":"false",
-        _last_addr, _last_size, _last_was_obj?"true":"false", _last_was_live?"true":"false");
+        p2i(addr),       res,        was_obj      ?"true":"false", was_live      ?"true":"false",
+        p2i(_last_addr), _last_size, _last_was_obj?"true":"false", _last_was_live?"true":"false");
       _sp->print_on(gclog_or_tty);
       guarantee(false, "Seppuku!");
     }

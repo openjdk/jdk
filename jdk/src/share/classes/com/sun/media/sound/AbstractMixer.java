@@ -90,13 +90,13 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     /**
      * Source lines (ports) currently open
      */
-    private final Vector sourceLines = new Vector();
+    private final Vector<Line> sourceLines = new Vector<>();
 
 
     /**
      * Target lines currently open.
      */
-    private final Vector targetLines = new Vector();
+    private final Vector<Line> targetLines = new Vector<>();
 
 
     /**
@@ -151,7 +151,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     public final Line.Info[] getSourceLineInfo(Line.Info info) {
 
         int i;
-        Vector vec = new Vector();
+        Vector<Line.Info> vec = new Vector<>();
 
         for (i = 0; i < sourceLineInfo.length; i++) {
 
@@ -162,7 +162,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
 
         Line.Info[] returnedArray = new Line.Info[vec.size()];
         for (i = 0; i < returnedArray.length; i++) {
-            returnedArray[i] = (Line.Info)vec.elementAt(i);
+            returnedArray[i] = vec.elementAt(i);
         }
 
         return returnedArray;
@@ -172,7 +172,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
     public final Line.Info[] getTargetLineInfo(Line.Info info) {
 
         int i;
-        Vector vec = new Vector();
+        Vector<Line.Info> vec = new Vector<>();
 
         for (i = 0; i < targetLineInfo.length; i++) {
 
@@ -183,7 +183,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
 
         Line.Info[] returnedArray = new Line.Info[vec.size()];
         for (i = 0; i < returnedArray.length; i++) {
-            returnedArray[i] = (Line.Info)vec.elementAt(i);
+            returnedArray[i] = vec.elementAt(i);
         }
 
         return returnedArray;
@@ -231,7 +231,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
             localLines = new Line[sourceLines.size()];
 
             for (int i = 0; i < localLines.length; i++) {
-                localLines[i] = (Line)sourceLines.elementAt(i);
+                localLines[i] = sourceLines.elementAt(i);
             }
         }
 
@@ -248,7 +248,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
             localLines = new Line[targetLines.size()];
 
             for (int i = 0; i < localLines.length; i++) {
-                localLines[i] = (Line)targetLines.elementAt(i);
+                localLines[i] = targetLines.elementAt(i);
             }
         }
 
@@ -453,7 +453,8 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
             return;
         }
 
-        Vector localSourceLines = (Vector)sourceLines.clone();
+        @SuppressWarnings("unchecked")
+        Vector<Line> localSourceLines = (Vector<Line>)sourceLines.clone();
         for (int i = 0; i < localSourceLines.size(); i++) {
 
             // if any other open line is running, return
@@ -468,7 +469,8 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
             }
         }
 
-        Vector localTargetLines = (Vector)targetLines.clone();
+        @SuppressWarnings("unchecked")
+        Vector<Line> localTargetLines = (Vector<Line>)targetLines.clone();
         for (int i = 0; i < localTargetLines.size(); i++) {
 
             // if any other open line is running, return

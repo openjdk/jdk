@@ -35,8 +35,6 @@
 #include <sys/param.h>
 #include <sys/utsname.h>
 
-#include "awt_Plugin.h"
-
 #ifdef AIX
 #include "porting_aix.h" /* For the 'dladdr' function. */
 #endif
@@ -236,55 +234,3 @@ Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jargv)
 
     (*XsessionWMcommand)(env, jargv);
 }
-
-
-#define REFLECT_VOID_FUNCTION(name, arglist, paramlist)                 \
-typedef void name##_type arglist;                                       \
-void name arglist                                                       \
-{                                                                       \
-    static name##_type *name##_ptr = NULL;                              \
-    if (name##_ptr == NULL && awtHandle == NULL) {                      \
-        return;                                                         \
-    }                                                                   \
-    name##_ptr = (name##_type *)                                        \
-        dlsym(awtHandle, #name);                                        \
-    if (name##_ptr == NULL) {                                           \
-        return;                                                         \
-    }                                                                   \
-    (*name##_ptr)paramlist;                                             \
-}
-
-#define REFLECT_FUNCTION(return_type, name, arglist, paramlist)         \
-typedef return_type name##_type arglist;                                \
-return_type name arglist                                                \
-{                                                                       \
-    static name##_type *name##_ptr = NULL;                              \
-    if (name##_ptr == NULL && awtHandle == NULL) {                      \
-        return NULL;                                                    \
-    }                                                                   \
-    name##_ptr = (name##_type *)                                        \
-        dlsym(awtHandle, #name);                                        \
-    if (name##_ptr == NULL) {                                           \
-        return NULL;                                                    \
-    }                                                                   \
-    return (*name##_ptr)paramlist;                                      \
-}
-
-
-/*
- * These entry point must remain in libawt.so ***for Java Plugin ONLY***
- * Reflect this call over to the correct libawt_<toolkit>.so.
- */
-
-REFLECT_VOID_FUNCTION(getAwtLockFunctions,
-                      (void (**AwtLock)(JNIEnv *), void (**AwtUnlock)(JNIEnv *),
-                       void (**AwtNoFlushUnlock)(JNIEnv *), void *reserved),
-                      (AwtLock, AwtUnlock, AwtNoFlushUnlock, reserved))
-
-REFLECT_VOID_FUNCTION(getAwtData,
-                      (int32_t *awt_depth, Colormap *awt_cmap, Visual **awt_visual,
-                       int32_t *awt_num_colors, void *pReserved),
-                      (awt_depth, awt_cmap, awt_visual,
-                       awt_num_colors, pReserved))
-
-REFLECT_FUNCTION(Display *, getAwtDisplay, (void), ())

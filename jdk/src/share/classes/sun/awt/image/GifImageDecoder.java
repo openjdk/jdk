@@ -61,7 +61,7 @@ public class GifImageDecoder extends ImageDecoder {
     int trans_pixel = -1;
     IndexColorModel global_model;
 
-    Hashtable props = new Hashtable();
+    Hashtable<String, Object> props = new Hashtable<>();
 
     byte[] saved_image;
     IndexColorModel saved_model;

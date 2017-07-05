@@ -295,7 +295,8 @@ abstract class XDropTargetProtocol {
     }
 
     /* Access to HashMap is synchronized on this XDropTargetProtocol instance. */
-    private final HashMap embedderRegistry = new HashMap();
+    private final HashMap<Long, EmbedderRegistryEntry> embedderRegistry =
+        new HashMap<>();
 
     protected final void putEmbedderRegistryEntry(long embedder,
                                                   boolean overriden,
@@ -310,8 +311,7 @@ abstract class XDropTargetProtocol {
 
     protected final EmbedderRegistryEntry getEmbedderRegistryEntry(long embedder) {
         synchronized (this) {
-            return
-                (EmbedderRegistryEntry)embedderRegistry.get(Long.valueOf(embedder));
+            return embedderRegistry.get(Long.valueOf(embedder));
         }
     }
 
