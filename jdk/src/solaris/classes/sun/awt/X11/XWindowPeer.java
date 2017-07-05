@@ -2070,12 +2070,12 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
         if (isGrabbed()) {
             boolean dragging = false;
-            final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
+            final int buttonsNumber = XToolkit.getNumberOfButtonsForMask();
 
             for (int i = 0; i < buttonsNumber; i++){
                 // here is the bug in WM: extra buttons doesn't have state!=0 as they should.
                 if ((i != 4) && (i != 5)){
-                    dragging = dragging || ((xme.get_state() & XConstants.buttonsMask[i]) != 0);
+                    dragging = dragging || ((xme.get_state() & XlibUtil.getButtonMask(i + 1)) != 0);
                 }
             }
             // When window is grabbed, all events are dispatched to

@@ -21,18 +21,22 @@
  * questions.
  */
 
+// This test case relies on updated static security property, no way to re-use
+// security property in samevm/agentvm mode.
+
 /**
  * @test
  * @bug 6714842
  * @library ../../../testlibrary
  * @build CertUtils
- * @run main BuildEEBasicConstraints
+ * @run main/othervm BuildEEBasicConstraints
  * @summary make sure a PKIX CertPathBuilder builds a path to an
  *      end entity certificate when the setBasicConstraints method of the
  *      X509CertSelector of the targetConstraints PKIXBuilderParameters
  *      parameter is set to -2.
  */
 
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertPath;
 import java.security.cert.CertStore;
@@ -49,6 +53,9 @@ import java.util.List;
 public final class BuildEEBasicConstraints {
 
     public static void main(String[] args) throws Exception {
+        // reset the security property to make sure that the algorithms
+        // and keys used in this test are not disabled.
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "MD2");
 
         X509Certificate rootCert = CertUtils.getCertFromFile("anchor.cer");
         TrustAnchor anchor = new TrustAnchor

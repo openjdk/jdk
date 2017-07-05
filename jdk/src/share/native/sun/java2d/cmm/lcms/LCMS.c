@@ -159,7 +159,8 @@ void LCMS_freeTransform(JNIEnv *env, jlong ID)
  */
 JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
   (JNIEnv *env, jclass cls, jlongArray profileIDs, jint renderType,
-   jint inFormatter, jint outFormatter, jobject disposerRef)
+   jint inFormatter, jboolean isInIntPacked,
+   jint outFormatter, jboolean isOutIntPacked, jobject disposerRef)
 {
     cmsHPROFILE _iccArray[DF_ICC_BUF_SIZE];
     cmsHPROFILE *iccArray = &_iccArray[0];
@@ -169,6 +170,16 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
 
     size = (*env)->GetArrayLength (env, profileIDs);
     ids = (*env)->GetPrimitiveArrayCritical(env, profileIDs, 0);
+
+#ifdef _LITTLE_ENDIAN
+    /* Reversing data packed into int for LE archs */
+    if (isInIntPacked) {
+        inFormatter ^= DOSWAP_SH(1);
+    }
+    if (isOutIntPacked) {
+        outFormatter ^= DOSWAP_SH(1);
+    }
+#endif
 
     if (DF_ICC_BUF_SIZE < size*2) {
         iccArray = (cmsHPROFILE*) malloc(
@@ -567,7 +578,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
   (JNIEnv *env, jclass obj, jobject trans, jobject src, jobject dst)
 {
     storeID_t sTrans;
-    int inFmt, outFmt, srcDType, dstDType;
+    int srcDType, dstDType;
     int srcOffset, srcNextRowOffset, dstOffset, dstNextRowOffset;
     int width, height, i;
     void* inputBuffer;
@@ -576,23 +587,13 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
     char* outputRow;
     jobject srcData, dstData;
 
-    inFmt = (*env)->GetIntField (env, src, IL_pixelType_fID);
-    outFmt = (*env)->GetIntField (env, dst, IL_pixelType_fID);
     srcOffset = (*env)->GetIntField (env, src, IL_offset_fID);
     srcNextRowOffset = (*env)->GetIntField (env, src, IL_nextRowOffset_fID);
     dstOffset = (*env)->GetIntField (env, dst, IL_offset_fID);
     dstNextRowOffset = (*env)->GetIntField (env, dst, IL_nextRowOffset_fID);
     width = (*env)->GetIntField (env, src, IL_width_fID);
     height = (*env)->GetIntField (env, src, IL_height_fID);
-#ifdef _LITTLE_ENDIAN
-    /* Reversing data packed into int for LE archs */
-    if ((*env)->GetBooleanField (env, src, IL_isIntPacked_fID) == JNI_TRUE) {
-        inFmt ^= DOSWAP_SH(1);
-    }
-    if ((*env)->GetBooleanField (env, dst, IL_isIntPacked_fID) == JNI_TRUE) {
-        outFmt ^= DOSWAP_SH(1);
-    }
-#endif
+
     sTrans.j = (*env)->GetLongField (env, trans, Trans_ID_fID);
 
     if (sTrans.xf == NULL) {
