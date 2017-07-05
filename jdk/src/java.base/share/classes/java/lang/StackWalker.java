@@ -29,6 +29,7 @@ import jdk.internal.reflect.CallerSensitive;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -207,13 +208,23 @@ public final class StackWalker {
         /**
          * Shows all reflection frames.
          *
-         * <p>By default, reflection frames are hidden.  This includes the
-         * {@link java.lang.reflect.Method#invoke} method
-         * and the reflection implementation classes. A {@code StackWalker} with
-         * this {@code SHOW_REFLECT_FRAMES} option will show all reflection frames.
-         * The {@link #SHOW_HIDDEN_FRAMES} option can also be used to show all
+         * <p>By default, reflection frames are hidden.  A {@code StackWalker}
+         * configured with this {@code SHOW_REFLECT_FRAMES} option
+         * will show all reflection frames that
+         * include {@link java.lang.reflect.Method#invoke} and
+         * {@link java.lang.reflect.Constructor#newInstance(Object...)}
+         * and their reflection implementation classes.
+         *
+         * <p>The {@link #SHOW_HIDDEN_FRAMES} option can also be used to show all
          * reflection frames and it will also show other hidden frames that
          * are implementation-specific.
+         *
+         * @apiNote
+         * This option includes the stack frames representing the invocation of
+         * {@code Method} and {@code Constructor}.  Any utility methods that
+         * are equivalent to calling {@code Method.invoke} or
+         * {@code Constructor.newInstance} such as {@code Class.newInstance}
+         * are not filtered or controlled by any stack walking option.
          */
         SHOW_REFLECT_FRAMES,
         /**
@@ -268,7 +279,7 @@ public final class StackWalker {
      * If a security manager is present and the given {@code option} is
      * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
      * it calls its {@link SecurityManager#checkPermission checkPermission}
-     * method for {@code StackFramePermission("retainClassReference")}.
+     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
      *
      * @param option {@link Option stack walking option}
      *
@@ -292,7 +303,7 @@ public final class StackWalker {
      * If a security manager is present and the given {@code options} contains
      * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
      * it calls its {@link SecurityManager#checkPermission checkPermission}
-     * method for {@code StackFramePermission("retainClassReference")}.
+     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
      *
      * @param options {@link Option stack walking option}
      *
@@ -322,7 +333,7 @@ public final class StackWalker {
      * If a security manager is present and the given {@code options} contains
      * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
      * it calls its {@link SecurityManager#checkPermission checkPermission}
-     * method for {@code StackFramePermission("retainClassReference")}.
+     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
      *
      * <p>
      * The {@code estimateDepth} specifies the estimate number of stack frames
@@ -365,7 +376,7 @@ public final class StackWalker {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (options.contains(Option.RETAIN_CLASS_REFERENCE)) {
-                sm.checkPermission(new StackFramePermission("retainClassReference"));
+                sm.checkPermission(new RuntimePermission("getStackWalkerWithClassReference"));
             }
         }
     }
@@ -465,28 +476,31 @@ public final class StackWalker {
     }
 
     /**
-     * Gets the {@code Class} object of the caller invoking the method
-     * that calls this {@code getCallerClass} method.
+     * Gets the {@code Class} object of the caller who invoked the method
+     * that invoked {@code getCallerClass}.
      *
-     * <p> Reflection frames, {@link java.lang.invoke.MethodHandle}, and
-     * hidden frames are filtered regardless of the
+     * <p> This method filters {@linkplain Option#SHOW_REFLECT_FRAMES reflection
+     * frames}, {@link java.lang.invoke.MethodHandle}, and
+     * {@linkplain Option#SHOW_HIDDEN_FRAMES hidden frames} regardless of the
      * {@link Option#SHOW_REFLECT_FRAMES SHOW_REFLECT_FRAMES}
      * and {@link Option#SHOW_HIDDEN_FRAMES SHOW_HIDDEN_FRAMES} options
      * this {@code StackWalker} has been configured with.
      *
+     * <p> This method should be called when a caller frame is present.  If
+     * it is called from the bottom most frame on the stack,
+     * {@code IllegalCallerException} will be thrown.
+     *
      * <p> This method throws {@code UnsupportedOperationException}
      * if this {@code StackWalker} is not configured with the
      * {@link Option#RETAIN_CLASS_REFERENCE RETAIN_CLASS_REFERENCE} option.
-     * This method should be called when a caller frame is present.  If
-     * it is called from the last frame on the stack,
-     * {@code IllegalStateException} will be thrown.
      *
      * @apiNote
      * For example, {@code Util::getResourceBundle} loads a resource bundle
-     * on behalf of the caller.  It calls this {@code getCallerClass} method
-     * to find the method calling {@code Util::getResourceBundle} and uses the caller's
-     * class loader to load the resource bundle. The caller class in this example
-     * is the {@code MyTool} class.
+     * on behalf of the caller.  It invokes {@code getCallerClass} to identify
+     * the class whose method called {@code Util::getResourceBundle}.
+     * Then, it obtains the class loader of that class, and uses
+     * the class loader to load the resource bundle. The caller class
+     * in this example is {@code MyTool}.
      *
      * <pre>{@code
      * class Util {
@@ -517,17 +531,17 @@ public final class StackWalker {
      * }</pre>
      *
      * When the {@code getCallerClass} method is called from a method that
-     * is the last frame on the stack,
+     * is the bottom most frame on the stack,
      * for example, {@code static public void main} method launched by the
      * {@code java} launcher, or a method invoked from a JNI attached thread,
-     * {@code IllegalStateException} is thrown.
+     * {@code IllegalCallerException} is thrown.
      *
      * @return {@code Class} object of the caller's caller invoking this method.
      *
      * @throws UnsupportedOperationException if this {@code StackWalker}
      *         is not configured with {@link Option#RETAIN_CLASS_REFERENCE
      *         Option.RETAIN_CLASS_REFERENCE}.
-     * @throws IllegalStateException if there is no caller frame, i.e.
+     * @throws IllegalCallerException if there is no caller frame, i.e.
      *         when this {@code getCallerClass} method is called from a method
      *         which is the last frame on the stack.
      */

@@ -27,7 +27,7 @@
  * @summary Check that OnUnregister is an allowed value for persistPolicy
  * in ModelMBeanAttributeInfo
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean OnUnregisterTest
  * @run build OnUnregisterTest
  * @run main OnUnregisterTest

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,8 @@ public interface Tag {
      * the following table lists those cases where there is more
      * than one tag of a given kind:
      *
-     * <table border="1" cellpadding="4" cellspacing="0" summary="related tags">
+     * <table border="1">
+     * <caption>Related Tags</caption>
      * <tr><th>{@code kind()  }</th>  <th>{@code name()      }</th></tr>
      * <tr><td>{@code @throws }</td>  <td>{@code @throws     }</td></tr>
      * <tr><td>{@code @throws }</td>  <td>{@code @exception  }</td></tr>

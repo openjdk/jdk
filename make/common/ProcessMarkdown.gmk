@@ -1,0 +1,103 @@
+# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+ifeq (,$(_MAKEBASE_GMK))
+  $(error You must include MakeBase.gmk prior to including ProcessMarkdown.gmk)
+endif
+
+# Helper function for SetupProcessMarkdown
+# $1: The $1 from SetupProcessMarkdown
+# $2: The name of the current source file, relative to $1_SRC
+define ProcessMarkdown
+  $1_$2_OUTPUT_FILE := $$($1_DEST)/$$(basename $2).html
+  $1_$2_TARGET_DIR := $$(dir $$($1_$2_OUTPUT_FILE))
+  ifneq ($$($1_CSS), )
+    ifneq ($$(findstring http:/, $$($1_CSS)), )
+      $1_$2_CSS_OPTION := --css '$$($1_CSS)'
+    else
+      $1_$2_CSS := $$(call RelativePath, $$($1_CSS), $$($1_$2_TARGET_DIR))
+      $1_$2_CSS_OPTION := --css '$$($1_$2_CSS)'
+    endif
+  endif
+  $1_$2_OPTIONS = $$(shell $$(GREP) _pandoc-options_: $$($1_SRC)/$2 | $$(CUT) -d : -f 2-)
+  $1_$2_MARKER := $$(subst /,_,$1_$2)
+
+  $1_$2_VARDEPS := $$($1_OPTIONS) $$($1_CSS)
+  $1_$2_VARDEPS_FILE := $$(call DependOnVariable, $1_$2_VARDEPS, \
+      $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER).vardeps)
+
+$$($1_$2_OUTPUT_FILE): $$($1_SRC)/$2 $$($1_$2_VARDEPS_FILE)
+	$$(call LogInfo, Converting $2 to html)
+	$$(call MakeDir, $$($1_$2_TARGET_DIR) $$(SUPPORT_OUTPUTDIR)/markdown)
+	$$(call ExecuteWithLog, $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER), \
+	    $$(PANDOC) $$($1_OPTIONS) -f markdown -t html --standalone \
+	    $$($1_$2_CSS_OPTION) $$($1_$2_OPTIONS) '$$<' -o '$$@')
+        ifneq ($$(findstring $$(LOG_LEVEL), debug trace),)
+	TOO_LONG_LINES=`$$(GREP) -E -e '^.{80}.+$$$$' $$<` || true ; \
+	if [ "x$$$$TOO_LONG_LINES" != x ]; then \
+	  $$(ECHO) "Warning: Unsuitable markdown in $$<:" ; \
+	  $$(ECHO) "The following lines are longer than 80 characters:" ; \
+	  $$(GREP) -E -n -e '^.{80}.+$$$$' $$< || true ; \
+	fi
+        endif
+
+  $1 += $$($1_$2_OUTPUT_FILE)
+endef
+
+################################################################################
+# Setup make rules for converting a markdown file to html.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These include:
+#   SRC     : Source root dir (defaults to dir of first file)
+#   DEST    : Dest root dir
+#   FILES   : List of files to copy with absolute paths, or path relative to SRC.
+#             Must be in SRC.
+#   OPTIONS : Additional options to pandoc
+#
+SetupProcessMarkdown = $(NamedParamsMacroTemplate)
+define SetupProcessMarkdownBody
+  ifeq ($$($1_FILES), )
+    $$(error FILES is missing in SetupProcessMarkdown $1)
+  endif
+
+  ifeq ($$($1_DEST), )
+    $$(error DEST is missing in SetupProcessMarkdown $1)
+  endif
+
+  # Default SRC to the dir of the first file.
+  ifeq ($$($1_SRC), )
+    $1_SRC := $$(dir $$(firstword $$($1_FILES)))
+  endif
+
+  # Remove any trailing slash from SRC and DEST
+  $1_SRC := $$(patsubst %/,%,$$($1_SRC))
+  $1_DEST := $$(patsubst %/,%,$$($1_DEST))
+
+  $$(foreach f, $$(patsubst $$($1_SRC)/%,%,$$($1_FILES)), \
+    $$(eval $$(call ProcessMarkdown,$1,$$f)) \
+  )
+endef
