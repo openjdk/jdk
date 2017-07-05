@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,10 @@ class win32 {
 #ifndef _WIN64
   // A wrapper to install a structured exception handler for fast JNI accesors.
   static address fast_jni_accessor_wrapper(BasicType);
+#endif
+
+#ifndef PRODUCT
+  static void call_test_func_with_wrapper(void (*funcPtr)(void));
 #endif
 
   // filter function to ignore faults on serializations page

@@ -19,18 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_MEMORY_KLASSINFOCLOSURE_HPP
-#define SHARE_VM_MEMORY_KLASSINFOCLOSURE_HPP
+/*
+ * @test
+ * @bug 8015635
+ * @summary Test ensures that the ReservedCodeCacheSize is at most MAXINT
+ * @library /testlibrary
+ *
+ */
+import com.oracle.java.testlibrary.*;
 
-class KlassInfoEntry;
+public class CheckUpperLimit {
+  public static void main(String[] args) throws Exception {
+    ProcessBuilder pb;
+    OutputAnalyzer out;
 
-class KlassInfoClosure : public StackObj {
- public:
-  // Called for each KlassInfoEntry.
-  virtual void do_cinfo(KlassInfoEntry* cie) = 0;
-};
+    pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=2048m", "-version");
+    out = new OutputAnalyzer(pb.start());
+    out.shouldHaveExitValue(0);
 
-#endif // SHARE_VM_MEMORY_KLASSINFOCLOSURE_HPP
+    pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=2049m", "-version");
+    out = new OutputAnalyzer(pb.start());
+    out.shouldContain("Invalid ReservedCodeCacheSize=");
+    out.shouldHaveExitValue(1);
+  }
+}
