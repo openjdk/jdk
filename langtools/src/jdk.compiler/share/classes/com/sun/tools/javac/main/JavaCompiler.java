@@ -1450,6 +1450,11 @@ public class JavaCompiler {
             return;
         }
 
+        if (!modules.multiModuleMode && env.toplevel.modle != modules.getDefaultModule()) {
+            //can only generate classfiles for a single module:
+            return;
+        }
+
         if (compileStates.isDone(env, CompileState.LOWER)) {
             results.addAll(desugaredEnvs.get(env));
             return;

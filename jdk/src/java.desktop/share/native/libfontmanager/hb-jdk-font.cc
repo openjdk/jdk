@@ -52,6 +52,9 @@ hb_jdk_get_glyph (hb_font_t *font HB_UNUSED,
 
     *glyph = (hb_codepoint_t)
           env->CallIntMethod(font2D, sunFontIDs.f2dCharToGlyphMID, u);
+    if ((int)*glyph < 0) {
+        *glyph = 0;
+    }
     return (*glyph != 0);
 }
 

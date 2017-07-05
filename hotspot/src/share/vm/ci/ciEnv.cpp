@@ -101,6 +101,7 @@ ciEnv::ciEnv(CompileTask* task, int system_dictionary_modification_counter)
   _debug_info = NULL;
   _dependencies = NULL;
   _failure_reason = NULL;
+  _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable;
   _break_at_compile = false;
   _compiler_data = NULL;
@@ -161,6 +162,7 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _debug_info = NULL;
   _dependencies = NULL;
   _failure_reason = NULL;
+  _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable_never;
   _break_at_compile = false;
   _compiler_data = NULL;
@@ -902,7 +904,12 @@ void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
     if (deps.is_klass_type())  continue;  // skip klass dependencies
     Klass* witness = deps.check_dependency();
     if (witness != NULL) {
-      record_failure("invalid non-klass dependency");
+      if (deps.type() == Dependencies::call_site_target_value) {
+        _inc_decompile_count_on_failure = false;
+        record_failure("call site target change");
+      } else {
+        record_failure("invalid non-klass dependency");
+      }
       return;
     }
   }
@@ -1017,7 +1024,7 @@ void ciEnv::register_method(ciMethod* target,
     if (failing()) {
       // While not a true deoptimization, it is a preemptive decompile.
       MethodData* mdo = method()->method_data();
-      if (mdo != NULL) {
+      if (mdo != NULL && _inc_decompile_count_on_failure) {
         mdo->inc_decompile_count();
       }
 
