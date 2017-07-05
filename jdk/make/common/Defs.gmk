@@ -667,12 +667,7 @@ LDLIBS          = $(OTHER_LDLIBS) $(LDLIBS_$(VARIANT)) $(LDLIBS_COMMON)
 LINTFLAGS       = $(LINTFLAGS_$(VARIANT)) $(LINTFLAGS_COMMON) \
 		  $(OTHER_LINTFLAGS)
 
-# this should be moved into Defs-<platform>.gmk.....
-ifeq ($(PLATFORM), windows)
-  VERSION_DEFINES = -DRELEASE="\"$(RELEASE)\""
-else
-  VERSION_DEFINES = -DRELEASE='"$(RELEASE)"'
-endif
+VERSION_DEFINES = -DRELEASE='"$(RELEASE)"'
 
 # Note: As a rule, GNU Make rules should not appear in any of the 
 # Defs*.gmk files. These were added for Kestrel-Solaris and do address
