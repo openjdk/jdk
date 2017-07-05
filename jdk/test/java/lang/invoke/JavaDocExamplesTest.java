@@ -690,7 +690,7 @@ assertEquals(120, loop.invoke(5));
         {{
 {} /// JAVADOC
 // implement the zip function for lists as a loop handle
-MethodHandle loop = MethodHandles.doWhileLoop(MH_initZip, MH_zipStep, MH_zipPred);
+MethodHandle loop = MethodHandles.whileLoop(MH_initZip, MH_zipPred, MH_zipStep);
 List<String> a = Arrays.asList("a", "b", "c", "d");
 List<String> b = Arrays.asList("e", "f", "g", "h");
 List<String> zipped = Arrays.asList("a", "e", "b", "f", "c", "g", "d", "h");

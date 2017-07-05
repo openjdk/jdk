@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ import sun.security.util.Debug;
  * associated with each of the keys.
  *
  * <p>If the algorithm is the <i>DSA</i> algorithm, and the keysize (modulus
- * size) is 512, 768, or 1024, then the <i>Sun</i> provider uses a set of
+ * size) is 512, 768, 1024, or 2048, then the <i>Sun</i> provider uses a set of
  * precomputed values for the {@code p}, {@code q}, and
  * {@code g} parameters. If the modulus size is not one of the above
  * values, the <i>Sun</i> provider creates a new set of parameters. Other
@@ -96,7 +96,7 @@ import sun.security.util.Debug;
  * (via a call to an {@code initialize} method), each provider must
  * supply (and document) a default initialization.
  * For example, the <i>Sun</i> provider uses a default modulus size (keysize)
- * of 1024 bits.
+ * of 1024 bits for DSA key pairs.
  *
  * <p>Note that this class is abstract and extends from
  * {@code KeyPairGeneratorSpi} for historical reasons.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/logTimer.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vmThread.hpp"
@@ -771,88 +772,89 @@ void MetaspaceShared::prepare_for_dumping() {
 // Preload classes from a list, populate the shared spaces and dump to a
 // file.
 void MetaspaceShared::preload_and_dump(TRAPS) {
-  TraceTime timer("Dump Shared Spaces", TraceStartupTime);
-  ResourceMark rm;
-  char class_list_path_str[JVM_MAXPATHLEN];
+  { TraceStartupTime timer("Dump Shared Spaces");
+    ResourceMark rm;
+    char class_list_path_str[JVM_MAXPATHLEN];
 
-  tty->print_cr("Allocated shared space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
-                MetaspaceShared::shared_rs()->size(),
-                p2i(MetaspaceShared::shared_rs()->base()));
+    tty->print_cr("Allocated shared space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
+                  MetaspaceShared::shared_rs()->size(),
+                  p2i(MetaspaceShared::shared_rs()->base()));
 
-  // Preload classes to be shared.
-  // Should use some os:: method rather than fopen() here. aB.
-  const char* class_list_path;
-  if (SharedClassListFile == NULL) {
-    // Construct the path to the class list (in jre/lib)
-    // Walk up two directories from the location of the VM and
-    // optionally tack on "lib" (depending on platform)
-    os::jvm_path(class_list_path_str, sizeof(class_list_path_str));
-    for (int i = 0; i < 3; i++) {
-      char *end = strrchr(class_list_path_str, *os::file_separator());
-      if (end != NULL) *end = '\0';
-    }
-    int class_list_path_len = (int)strlen(class_list_path_str);
-    if (class_list_path_len >= 3) {
-      if (strcmp(class_list_path_str + class_list_path_len - 3, "lib") != 0) {
-        if (class_list_path_len < JVM_MAXPATHLEN - 4) {
-          jio_snprintf(class_list_path_str + class_list_path_len,
-                       sizeof(class_list_path_str) - class_list_path_len,
-                       "%slib", os::file_separator());
-          class_list_path_len += 4;
+    // Preload classes to be shared.
+    // Should use some os:: method rather than fopen() here. aB.
+    const char* class_list_path;
+    if (SharedClassListFile == NULL) {
+      // Construct the path to the class list (in jre/lib)
+      // Walk up two directories from the location of the VM and
+      // optionally tack on "lib" (depending on platform)
+      os::jvm_path(class_list_path_str, sizeof(class_list_path_str));
+      for (int i = 0; i < 3; i++) {
+        char *end = strrchr(class_list_path_str, *os::file_separator());
+        if (end != NULL) *end = '\0';
+      }
+      int class_list_path_len = (int)strlen(class_list_path_str);
+      if (class_list_path_len >= 3) {
+        if (strcmp(class_list_path_str + class_list_path_len - 3, "lib") != 0) {
+          if (class_list_path_len < JVM_MAXPATHLEN - 4) {
+            jio_snprintf(class_list_path_str + class_list_path_len,
+                         sizeof(class_list_path_str) - class_list_path_len,
+                         "%slib", os::file_separator());
+            class_list_path_len += 4;
+          }
         }
       }
+      if (class_list_path_len < JVM_MAXPATHLEN - 10) {
+        jio_snprintf(class_list_path_str + class_list_path_len,
+                     sizeof(class_list_path_str) - class_list_path_len,
+                     "%sclasslist", os::file_separator());
+      }
+      class_list_path = class_list_path_str;
+    } else {
+      class_list_path = SharedClassListFile;
     }
-    if (class_list_path_len < JVM_MAXPATHLEN - 10) {
-      jio_snprintf(class_list_path_str + class_list_path_len,
-                   sizeof(class_list_path_str) - class_list_path_len,
-                   "%sclasslist", os::file_separator());
-    }
-    class_list_path = class_list_path_str;
-  } else {
-    class_list_path = SharedClassListFile;
-  }
 
-  int class_count = 0;
-  GrowableArray<Klass*>* class_promote_order = new GrowableArray<Klass*>();
+    int class_count = 0;
+    GrowableArray<Klass*>* class_promote_order = new GrowableArray<Klass*>();
 
-  // sun.io.Converters
-  static const char obj_array_sig[] = "[[Ljava/lang/Object;";
-  SymbolTable::new_permanent_symbol(obj_array_sig, THREAD);
+    // sun.io.Converters
+    static const char obj_array_sig[] = "[[Ljava/lang/Object;";
+    SymbolTable::new_permanent_symbol(obj_array_sig, THREAD);
 
-  // java.util.HashMap
-  static const char map_entry_array_sig[] = "[Ljava/util/Map$Entry;";
-  SymbolTable::new_permanent_symbol(map_entry_array_sig, THREAD);
+    // java.util.HashMap
+    static const char map_entry_array_sig[] = "[Ljava/util/Map$Entry;";
+    SymbolTable::new_permanent_symbol(map_entry_array_sig, THREAD);
 
-  // Need to allocate the op here:
-  // op.misc_data_space_alloc() will be called during preload_and_dump().
-  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  VM_PopulateDumpSharedSpace op(loader_data, class_promote_order);
+    // Need to allocate the op here:
+    // op.misc_data_space_alloc() will be called during preload_and_dump().
+    ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+    VM_PopulateDumpSharedSpace op(loader_data, class_promote_order);
 
-  tty->print_cr("Loading classes to share ...");
-  _has_error_classes = false;
-  class_count += preload_and_dump(class_list_path, class_promote_order,
-                                  THREAD);
-  if (ExtraSharedClassListFile) {
-    class_count += preload_and_dump(ExtraSharedClassListFile, class_promote_order,
+    tty->print_cr("Loading classes to share ...");
+    _has_error_classes = false;
+    class_count += preload_and_dump(class_list_path, class_promote_order,
                                     THREAD);
+    if (ExtraSharedClassListFile) {
+      class_count += preload_and_dump(ExtraSharedClassListFile, class_promote_order,
+                                      THREAD);
+    }
+    tty->print_cr("Loading classes to share: done.");
+
+    if (PrintSharedSpaces) {
+      tty->print_cr("Shared spaces: preloaded %d classes", class_count);
+    }
+
+    // Rewrite and link classes
+    tty->print_cr("Rewriting and linking classes ...");
+
+    // Link any classes which got missed. This would happen if we have loaded classes that
+    // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
+    // fails verification, all other interfaces that were not specified in the classlist but
+    // are implemented by K are not verified.
+    link_and_cleanup_shared_classes(CATCH);
+    tty->print_cr("Rewriting and linking classes: done");
+
+    VMThread::execute(&op);
   }
-  tty->print_cr("Loading classes to share: done.");
-
-  if (PrintSharedSpaces) {
-    tty->print_cr("Shared spaces: preloaded %d classes", class_count);
-  }
-
-  // Rewrite and link classes
-  tty->print_cr("Rewriting and linking classes ...");
-
-  // Link any classes which got missed. This would happen if we have loaded classes that
-  // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
-  // fails verification, all other interfaces that were not specified in the classlist but
-  // are implemented by K are not verified.
-  link_and_cleanup_shared_classes(CATCH);
-  tty->print_cr("Rewriting and linking classes: done");
-
-  VMThread::execute(&op);
   // Since various initialization steps have been undone by this process,
   // it is not reasonable to continue running a java process.
   exit(0);

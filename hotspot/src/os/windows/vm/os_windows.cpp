@@ -1531,12 +1531,10 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
   return result;
 }
 
-#ifndef PRODUCT
 bool os::get_host_name(char* buf, size_t buflen) {
   DWORD size = (DWORD)buflen;
   return (GetComputerNameEx(ComputerNameDnsHostname, buf, &size) == TRUE);
 }
-#endif // PRODUCT
 
 void os::get_summary_os_info(char* buf, size_t buflen) {
   stringStream sst(buf, buflen);

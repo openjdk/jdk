@@ -30,6 +30,6 @@ $(HTML32DTD): $(BUILD_TOOLS_JDK)
 	$(call LogInfo, Generating HTML DTD file)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	($(TOOL_DTDBUILDER) $(LOG_INFO) html32 > $@) || exit 1
+	($(TOOL_DTDBUILDER) html32 > $@) || exit 1
 
 TARGETS += $(HTML32DTD)
