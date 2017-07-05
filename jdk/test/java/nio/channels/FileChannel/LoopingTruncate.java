@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8137121 8137230
+ * @key intermittent
  * @summary (fc) Infinite loop FileChannel.truncate
  * @library /lib/testlibrary
  * @build jdk.testlibrary.Utils
@@ -76,5 +77,8 @@ public class LoopingTruncate {
         } finally {
             Files.deleteIfExists(path);
         }
+
+        System.out.println("Test succeeded.");
+        System.out.flush();
     }
 }

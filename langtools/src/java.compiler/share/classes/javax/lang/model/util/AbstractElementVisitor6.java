@@ -81,7 +81,7 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
     /**
      * Visits any program element as if by passing itself to that
      * element's {@link Element#accept accept} method.  The invocation
-     * {@code v.visit(elem)} is equivalent to {@code elem.accept(v,
+     * {@code v.visit(elem, p)} is equivalent to {@code elem.accept(v,
      * p)}.
      *
      * @param e  the element to visit
@@ -136,6 +136,7 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
      * @return the result of {@code visitUnknown}
      *
      * @since 9
+     * @spec JPMS
      */
     @Override
     public R visitModule(ModuleElement e, P p) {
