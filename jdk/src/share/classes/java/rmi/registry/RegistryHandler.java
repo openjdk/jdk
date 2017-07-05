@@ -34,7 +34,7 @@ import java.rmi.UnknownHostException;
  * by application code.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  * @deprecated no replacement
  */
 @Deprecated

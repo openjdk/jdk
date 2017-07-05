@@ -35,7 +35,7 @@ package java.lang;
  * </pre></blockquote>
  *
  * @author  unascribed
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class ArrayStoreException extends RuntimeException {

@@ -92,7 +92,7 @@ import java.util.Arrays;
  * @author      Arthur van Hoff
  * @see     java.lang.StringBuilder
  * @see     java.lang.String
- * @since   JDK1.0
+ * @since   1.0
  */
  public final class StringBuffer
     extends AbstractStringBuilder
@@ -656,7 +656,7 @@ import java.util.Arrays;
     }
 
     /**
-     * @since   JDK1.0.2
+     * @since   1.0.2
      */
     @Override
     public synchronized StringBuffer reverse() {

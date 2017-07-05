@@ -40,7 +40,7 @@ package java.lang;
  *
  * @author  unascribed
  * @see     java.lang.Class#newInstance()
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class InstantiationException extends ReflectiveOperationException {

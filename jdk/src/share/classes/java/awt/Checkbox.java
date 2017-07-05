@@ -71,7 +71,7 @@ import javax.accessibility.*;
  * @author      Sami Shaio
  * @see         java.awt.GridLayout
  * @see         java.awt.CheckboxGroup
- * @since       JDK1.0
+ * @since       1.0
  */
 public class Checkbox extends Component implements ItemSelectable, Accessible {
 
@@ -190,7 +190,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      *     <code>GraphicsEnvironment.isHeadless</code>
      *     returns <code>true</code>
      * @see java.awt.GraphicsEnvironment#isHeadless
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Checkbox(String label, boolean state, CheckboxGroup group)
         throws HeadlessException {
@@ -216,7 +216,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      *    <code>GraphicsEnvironment.isHeadless</code>
      *    returns <code>true</code>
      * @see java.awt.GraphicsEnvironment#isHeadless
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Checkbox(String label, CheckboxGroup group, boolean state)
         throws HeadlessException {
@@ -424,7 +424,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @see           #setState
      * @see           java.awt.event.ItemEvent
      * @see           java.awt.event.ItemListener
-     * @since         JDK1.1
+     * @since         1.1
      */
     public synchronized void addItemListener(ItemListener l) {
         if (l == null) {
@@ -446,7 +446,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @see           #getItemListeners
      * @see           java.awt.event.ItemEvent
      * @see           java.awt.event.ItemListener
-     * @since         JDK1.1
+     * @since         1.1
      */
     public synchronized void removeItemListener(ItemListener l) {
         if (l == null) {
@@ -540,7 +540,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @param         e the event
      * @see           java.awt.event.ItemEvent
      * @see           #processItemEvent
-     * @since         JDK1.1
+     * @since         1.1
      */
     protected void processEvent(AWTEvent e) {
         if (e instanceof ItemEvent) {
@@ -572,7 +572,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @see         java.awt.event.ItemListener
      * @see         #addItemListener
      * @see         java.awt.Component#enableEvents
-     * @since       JDK1.1
+     * @since       1.1
      */
     protected void processItemEvent(ItemEvent e) {
         ItemListener listener = itemListener;

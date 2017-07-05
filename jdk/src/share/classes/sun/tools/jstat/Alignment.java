@@ -110,7 +110,7 @@ public abstract class Alignment {
      *
      * @return     Set of Key Words for this enumeration.
      */
-    public static Set keySet() {
+    public static Set<String> keySet() {
         return map.keySet();
     }
 

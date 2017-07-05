@@ -82,9 +82,6 @@ static jclass FindClass(JNIEnv *env, char *className)
         printf("Couldn't find %s\n", className);
         return NULL;
     }
-#ifdef DEBUG
-    printf("Found %s\n", className);
-#endif /* DEBUG */
 
     jobject returnValue = (*env)->NewWeakGlobalRef(env,cls);
     return returnValue;
@@ -136,85 +133,54 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
         printf("Couldn't find DerValue constructor\n");
         return JNI_ERR;
     }
-#ifdef DEBUG
-    printf("Found DerValue constructor\n");
-#endif /* DEBUG */
 
     ticketConstructor = (*env)->GetMethodID(env, ticketClass, "<init>", "(Lsun/security/util/DerValue;)V");
     if (ticketConstructor == 0) {
         printf("Couldn't find Ticket constructor\n");
         return JNI_ERR;
     }
-#ifdef DEBUG
-    printf("Found Ticket constructor\n");
-#endif /* DEBUG */
 
     principalNameConstructor = (*env)->GetMethodID(env, principalNameClass, "<init>", "(Ljava/lang/String;I)V");
     if (principalNameConstructor == 0) {
         printf("Couldn't find PrincipalName constructor\n");
         return JNI_ERR;
     }
-#ifdef DEBUG
-    printf("Found PrincipalName constructor\n");
-#endif /* DEBUG */
 
     encryptionKeyConstructor = (*env)->GetMethodID(env, encryptionKeyClass, "<init>", "(I[B)V");
     if (encryptionKeyConstructor == 0) {
         printf("Couldn't find EncryptionKey constructor\n");
         return JNI_ERR;
     }
-#ifdef DEBUG
-    printf("Found EncryptionKey constructor\n");
-#endif /* DEBUG */
 
     ticketFlagsConstructor = (*env)->GetMethodID(env, ticketFlagsClass, "<init>", "(I[B)V");
     if (ticketFlagsConstructor == 0) {
         printf("Couldn't find TicketFlags constructor\n");
         return JNI_ERR;
     }
-#ifdef DEBUG
-    printf("Found TicketFlags constructor\n");
-#endif /* DEBUG */
 
     kerberosTimeConstructor = (*env)->GetMethodID(env, kerberosTimeClass, "<init>", "(J)V");
     if (kerberosTimeConstructor == 0) {
         printf("Couldn't find KerberosTime constructor\n");
         return JNI_ERR;
     }
-#ifdef DEBUG
-    printf("Found KerberosTime constructor\n");
-#endif /* DEBUG */
 
     integerConstructor = (*env)->GetMethodID(env, javaLangIntegerClass, "<init>", "(I)V");
     if (integerConstructor == 0) {
         printf("Couldn't find Integer constructor\n");
         return JNI_ERR;
     }
-#ifdef DEBUG
-    printf("Found Integer constructor\n");
-#endif /* DEBUG */
 
     hostAddressConstructor = (*env)->GetMethodID(env, hostAddressClass, "<init>", "(I[B)V");
     if (hostAddressConstructor == 0) {
         printf("Couldn't find HostAddress constructor\n");
         return JNI_ERR;
     }
-#ifdef DEBUG
-    printf("Found HostAddress constructor\n");
-#endif /* DEBUG */
 
     hostAddressesConstructor = (*env)->GetMethodID(env, hostAddressesClass, "<init>", "([Lsun/security/krb5/internal/HostAddress;)V");
     if (hostAddressesConstructor == 0) {
         printf("Couldn't find HostAddresses constructor\n");
         return JNI_ERR;
     }
-#ifdef DEBUG
-    printf("Found HostAddresses constructor\n");
-#endif /* DEBUG */
-
-#ifdef DEBUG
-    printf("Finished OnLoad processing\n");
-#endif /* DEBUG */
 
     return JNI_VERSION_1_2;
 }

@@ -30,7 +30,7 @@ package java.io;
  * Piped character-output streams.
  *
  * @author      Mark Reinhold
- * @since       JDK1.1
+ * @since       1.1
  */
 
 public class PipedWriter extends Writer {

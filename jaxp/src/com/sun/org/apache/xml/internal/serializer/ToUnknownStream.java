@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.util.Properties;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.Transformer;
@@ -100,12 +100,12 @@ public final class ToUnknownStream extends SerializerBase
      * A collection of namespace URI's (only for first element).
      * _namespacePrefix has the matching prefix for these URI's
      */
-    private Vector m_namespaceURI = null;
+    private ArrayList<String> m_namespaceURI = null;
     /**
      * A collection of namespace Prefix (only for first element)
      * _namespaceURI has the matching URIs for these prefix'
      */
-    private Vector m_namespacePrefix = null;
+    private ArrayList<String> m_namespacePrefix = null;
 
     /**
      * true if startDocument() was called before the underlying handler
@@ -421,11 +421,11 @@ public final class ToUnknownStream extends SerializerBase
             {
                 if (m_namespacePrefix == null)
                 {
-                    m_namespacePrefix = new Vector();
-                    m_namespaceURI = new Vector();
+                    m_namespacePrefix = new ArrayList<>();
+                    m_namespaceURI = new ArrayList<>();
                 }
-                m_namespacePrefix.addElement(prefix);
-                m_namespaceURI.addElement(uri);
+                m_namespacePrefix.add(prefix);
+                m_namespaceURI.add(uri);
 
                 if (m_firstElementURI == null)
                 {
@@ -1092,8 +1092,8 @@ public final class ToUnknownStream extends SerializerBase
                 for (int i = 0; i < n; i++)
                 {
                     final String prefix =
-                        (String) m_namespacePrefix.elementAt(i);
-                    final String uri = (String) m_namespaceURI.elementAt(i);
+                        (String) m_namespacePrefix.get(i);
+                    final String uri = (String) m_namespaceURI.get(i);
                     m_handler.startPrefixMapping(prefix, uri, false);
                 }
                 m_namespacePrefix = null;
@@ -1165,8 +1165,8 @@ public final class ToUnknownStream extends SerializerBase
             final int max = m_namespacePrefix.size();
             for (int i = 0; i < max; i++)
             {
-                final String prefix = (String) m_namespacePrefix.elementAt(i);
-                final String uri = (String) m_namespaceURI.elementAt(i);
+                final String prefix = m_namespacePrefix.get(i);
+                final String uri = m_namespaceURI.get(i);
 
                 if (m_firstElementPrefix != null
                     && m_firstElementPrefix.equals(prefix)
@@ -1194,7 +1194,7 @@ public final class ToUnknownStream extends SerializerBase
      * specified in the cdata-section-elements attribute.
      * @see SerializationHandler#setCdataSectionElements(java.util.Vector)
      */
-    public void setCdataSectionElements(Vector URI_and_localNames)
+    public void setCdataSectionElements(ArrayList<String> URI_and_localNames)
     {
         m_handler.setCdataSectionElements(URI_and_localNames);
     }

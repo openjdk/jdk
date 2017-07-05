@@ -142,7 +142,7 @@ import sun.rmi.server.UnicastServerRef2;
  *
  * @author  Ann Wollrath
  * @author  Peter Jones
- * @since   JDK1.1
+ * @since   1.1
  **/
 public class UnicastRemoteObject extends RemoteServer {
 
@@ -173,7 +173,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * created using the {@link RMISocketFactory} class.
      *
      * @throws RemoteException if failed to export object
-     * @since JDK1.1
+     * @since 1.1
      */
     protected UnicastRemoteObject() throws RemoteException
     {
@@ -242,7 +242,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * @exception CloneNotSupportedException if clone failed due to
      * a RemoteException.
      * @return the new remote object
-     * @since JDK1.1
+     * @since 1.1
      */
     public Object clone() throws CloneNotSupportedException
     {
@@ -280,7 +280,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * @param obj the remote object to be exported
      * @return remote object stub
      * @exception RemoteException if export fails
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated This method is deprecated because it supports only static stubs.
      * Use {@link #exportObject(Remote, int) exportObject(Remote, port)} or
      * {@link #exportObject(Remote, int, RMIClientSocketFactory, RMIServerSocketFactory)

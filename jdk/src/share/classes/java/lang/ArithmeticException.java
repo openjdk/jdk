@@ -36,7 +36,7 @@ package java.lang;
  * stack trace was not writable}.
  *
  * @author  unascribed
- * @since   JDK1.0
+ * @since   1.0
  */
 public class ArithmeticException extends RuntimeException {
     private static final long serialVersionUID = 2256477558314496007L;

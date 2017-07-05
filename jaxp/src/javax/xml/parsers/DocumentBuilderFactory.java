@@ -423,7 +423,7 @@ public abstract class DocumentBuilderFactory {
      * <ul>
      *   <li>
      *     <code>true</code>: the implementation will limit XML processing to conform to implementation limits.
-     *     Examples include enity expansion limits and XML Schema constructs that would consume large amounts of resources.
+     *     Examples include entity expansion limits and XML Schema constructs that would consume large amounts of resources.
      *     If XML processing is limited for security reasons, it will be reported via a call to the registered
      *    {@link org.xml.sax.ErrorHandler#fatalError(SAXParseException exception)}.
      *     See {@link  DocumentBuilder#setErrorHandler(org.xml.sax.ErrorHandler errorHandler)}.
@@ -517,7 +517,7 @@ public abstract class DocumentBuilderFactory {
      * modified DOM trees.
      *
      * <p>
-     * Initialy, null is set as the {@link Schema}.
+     * Initially, null is set as the {@link Schema}.
      *
      * <p>
      * This processing will take effect even if
@@ -531,7 +531,7 @@ public abstract class DocumentBuilderFactory {
      * exception when the {@link #newDocumentBuilder()} is invoked.</p>
      *
      *
-     * <h4>Note for implmentors</h4>
+     * <h4>Note for implementors</h4>
      *
      * <p>
      * A parser must be able to work with any {@link Schema}

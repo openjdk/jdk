@@ -31,7 +31,7 @@ package java.lang;
  * executing method depends, has since changed.
  *
  * @author  unascribed
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class IncompatibleClassChangeError extends LinkageError {

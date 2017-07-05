@@ -359,7 +359,7 @@ import java.util.Arrays;
  * @see       java.awt.GridBagConstraints
  * @see       java.awt.GridBagLayoutInfo
  * @see       java.awt.ComponentOrientation
- * @since JDK1.0
+ * @since 1.0
  */
 public class GridBagLayout implements LayoutManager2,
 java.io.Serializable {
@@ -562,7 +562,7 @@ java.io.Serializable {
      * @return     the graphics origin of the cell in the top-left
      *             corner of the layout grid
      * @see        java.awt.ComponentOrientation
-     * @since      JDK1.1
+     * @since      1.1
      */
     public Point getLayoutOrigin () {
         Point origin = new Point(0,0);
@@ -580,7 +580,7 @@ java.io.Serializable {
      * @return     an array of two arrays, containing the widths
      *                       of the layout columns and
      *                       the heights of the layout rows
-     * @since      JDK1.1
+     * @since      1.1
      */
     public int [][] getLayoutDimensions () {
         if (layoutInfo == null)
@@ -606,7 +606,7 @@ java.io.Serializable {
      * @return      an array of two arrays, representing the
      *                    horizontal weights of the layout columns
      *                    and the vertical weights of the layout rows
-     * @since       JDK1.1
+     * @since       1.1
      */
     public double [][] getLayoutWeights () {
         if (layoutInfo == null)
@@ -647,7 +647,7 @@ java.io.Serializable {
      *             in the layout grid contains the point
      *             (<i>x</i>,&nbsp;<i>y</i>).
      * @see        java.awt.ComponentOrientation
-     * @since      JDK1.1
+     * @since      1.1
      */
     public Point location(int x, int y) {
         Point loc = new Point(0,0);

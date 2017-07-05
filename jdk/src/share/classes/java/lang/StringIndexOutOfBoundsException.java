@@ -33,7 +33,7 @@ package java.lang;
  *
  * @author  unascribed
  * @see     java.lang.String#charAt(int)
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class StringIndexOutOfBoundsException extends IndexOutOfBoundsException {
@@ -42,8 +42,6 @@ class StringIndexOutOfBoundsException extends IndexOutOfBoundsException {
     /**
      * Constructs a {@code StringIndexOutOfBoundsException} with no
      * detail message.
-     *
-     * @since   JDK1.0.
      */
     public StringIndexOutOfBoundsException() {
         super();

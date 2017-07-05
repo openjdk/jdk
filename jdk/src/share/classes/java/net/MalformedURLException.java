@@ -33,7 +33,7 @@ import java.io.IOException;
  * string could not be parsed.
  *
  * @author  Arthur van Hoff
- * @since   JDK1.0
+ * @since   1.0
  */
 public class MalformedURLException extends IOException {
     private static final long serialVersionUID = -182787522200415866L;

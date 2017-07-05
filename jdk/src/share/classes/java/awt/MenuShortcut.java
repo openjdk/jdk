@@ -54,7 +54,7 @@ import java.awt.event.KeyEvent;
  * via {@link Toolkit#getMenuShortcutKeyMask}.
  *
  * @author Thomas Ball
- * @since JDK1.1
+ * @since 1.1
  */
 public class MenuShortcut implements java.io.Serializable
 {
@@ -71,7 +71,7 @@ public class MenuShortcut implements java.io.Serializable
      * @see #getKey()
      * @see #usesShiftModifier()
      * @see java.awt.event.KeyEvent
-     * @since JDK1.1
+     * @since 1.1
      */
     int key;
 
@@ -82,7 +82,7 @@ public class MenuShortcut implements java.io.Serializable
      *
      * @serial
      * @see #usesShiftModifier()
-     * @since JDK1.1
+     * @since 1.1
      */
     boolean usesShift;
 
@@ -120,7 +120,7 @@ public class MenuShortcut implements java.io.Serializable
      * Returns the raw keycode of this MenuShortcut.
      * @return the raw keycode of this MenuShortcut.
      * @see java.awt.event.KeyEvent
-     * @since JDK1.1
+     * @since 1.1
      */
     public int getKey() {
         return key;
@@ -130,7 +130,7 @@ public class MenuShortcut implements java.io.Serializable
      * Returns whether this MenuShortcut must be invoked using the SHIFT key.
      * @return <code>true</code> if this MenuShortcut must be invoked using the
      * SHIFT key, <code>false</code> otherwise.
-     * @since JDK1.1
+     * @since 1.1
      */
     public boolean usesShiftModifier() {
         return usesShift;
@@ -143,7 +143,7 @@ public class MenuShortcut implements java.io.Serializable
      * @param s the MenuShortcut to compare with this.
      * @return <code>true</code> if this MenuShortcut is the same as another,
      * <code>false</code> otherwise.
-     * @since JDK1.1
+     * @since 1.1
      */
     public boolean equals(MenuShortcut s) {
         return (s != null && (s.getKey() == key) &&
@@ -178,7 +178,7 @@ public class MenuShortcut implements java.io.Serializable
     /**
      * Returns an internationalized description of the MenuShortcut.
      * @return a string representation of this MenuShortcut.
-     * @since JDK1.1
+     * @since 1.1
      */
     public String toString() {
         int modifiers = 0;
@@ -196,7 +196,7 @@ public class MenuShortcut implements java.io.Serializable
      * Returns the parameter string representing the state of this
      * MenuShortcut. This string is useful for debugging.
      * @return    the parameter string of this MenuShortcut.
-     * @since JDK1.1
+     * @since 1.1
      */
     protected String paramString() {
         String str = "key=" + key;
