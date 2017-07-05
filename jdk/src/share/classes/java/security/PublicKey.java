@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ package java.security;
  *
  * Note: The specialized public key interfaces extend this interface.
  * See, for example, the DSAPublicKey interface in
- * <code>java.security.interfaces</code>.
+ * {@code java.security.interfaces}.
  *
  * @see Key
  * @see PrivateKey

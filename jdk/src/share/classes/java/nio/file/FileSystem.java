@@ -315,7 +315,7 @@ public abstract class FileSystem
      * that resembles regular expressions but with a simpler syntax. For example:
      *
      * <blockquote>
-     * <table border="0">
+     * <table border="0" summary="Pattern Language">
      * <tr>
      *   <td>{@code *.java}</td>
      *   <td>Matches a path that represents a file name ending in {@code .java}</td>

@@ -66,7 +66,7 @@ import java.nio.channels.spi.SelectorProvider;
  * <p> Socket options are configured using the {@link #setOption(SocketOption,Object)
  * setOption} method. Socket channels support the following options:
  * <blockquote>
- * <table border>
+ * <table border summary="Socket options">
  *   <tr>
  *     <th>Option Name</th>
  *     <th>Description</th>
@@ -120,6 +120,9 @@ public abstract class SocketChannel
 
     /**
      * Initializes a new instance of this class.
+     *
+     * @param  provider
+     *         The provider that created this channel
      */
     protected SocketChannel(SelectorProvider provider) {
         super(provider);
@@ -152,6 +155,8 @@ public abstract class SocketChannel
      *
      * @param  remote
      *         The remote address to which the new channel is to be connected
+     *
+     * @return  A new, and connected, socket channel
      *
      * @throws  AsynchronousCloseException
      *          If another thread closes this channel

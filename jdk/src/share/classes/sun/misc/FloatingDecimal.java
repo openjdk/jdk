@@ -49,12 +49,14 @@ public class FloatingDecimal{
     static final int    MAX_DECIMAL_EXPONENT = 308;
     static final int    MIN_DECIMAL_EXPONENT = -324;
     static final int    BIG_DECIMAL_EXPONENT = 324; // i.e. abs(MIN_DECIMAL_EXPONENT)
+    static final int    MAX_NDIGITS = 1100;
 
     static final int    SINGLE_EXP_SHIFT  =   FloatConsts.SIGNIFICAND_WIDTH - 1;
     static final int    SINGLE_FRACT_HOB  =   1<<SINGLE_EXP_SHIFT;
     static final int    SINGLE_MAX_DECIMAL_DIGITS = 7;
     static final int    SINGLE_MAX_DECIMAL_EXPONENT = 38;
     static final int    SINGLE_MIN_DECIMAL_EXPONENT = -45;
+    static final int    SINGLE_MAX_NDIGITS = 200;
 
     static final int    INT_DECIMAL_DIGITS = 9;
 
@@ -1002,15 +1004,11 @@ public class FloatingDecimal{
      */
     static class PreparedASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
         final private double doubleVal;
-        private int roundDir = 0;
+        final private float floatVal;
 
-        public PreparedASCIIToBinaryBuffer(double doubleVal) {
+        public PreparedASCIIToBinaryBuffer(double doubleVal, float floatVal) {
             this.doubleVal = doubleVal;
-        }
-
-        public PreparedASCIIToBinaryBuffer(double doubleVal, int roundDir) {
-            this.doubleVal = doubleVal;
-            this.roundDir = roundDir;
+            this.floatVal = floatVal;
         }
 
         @Override
@@ -1020,15 +1018,15 @@ public class FloatingDecimal{
 
         @Override
         public float floatValue() {
-            return stickyRound(doubleVal,roundDir);
+            return floatVal;
         }
     }
 
-    static final ASCIIToBinaryConverter A2BC_POSITIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.POSITIVE_INFINITY);
-    static final ASCIIToBinaryConverter A2BC_NEGATIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.NEGATIVE_INFINITY);
-    static final ASCIIToBinaryConverter A2BC_NOT_A_NUMBER  = new PreparedASCIIToBinaryBuffer(Double.NaN);
-    static final ASCIIToBinaryConverter A2BC_POSITIVE_ZERO = new PreparedASCIIToBinaryBuffer(0.0d);
-    static final ASCIIToBinaryConverter A2BC_NEGATIVE_ZERO = new PreparedASCIIToBinaryBuffer(-0.0d);
+    static final ASCIIToBinaryConverter A2BC_POSITIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
+    static final ASCIIToBinaryConverter A2BC_NEGATIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
+    static final ASCIIToBinaryConverter A2BC_NOT_A_NUMBER  = new PreparedASCIIToBinaryBuffer(Double.NaN, Float.NaN);
+    static final ASCIIToBinaryConverter A2BC_POSITIVE_ZERO = new PreparedASCIIToBinaryBuffer(0.0d, 0.0f);
+    static final ASCIIToBinaryConverter A2BC_NEGATIVE_ZERO = new PreparedASCIIToBinaryBuffer(-0.0d, -0.0f);
 
     /**
      * A buffered implementation of <code>ASCIIToBinaryConverter</code>.
@@ -1038,7 +1036,6 @@ public class FloatingDecimal{
         int         decExponent;
         char        digits[];
         int         nDigits;
-        int         roundDir = 0; // set by doubleValue
 
         ASCIIToBinaryBuffer( boolean negSign, int decExponent, char[] digits, int n)
         {
@@ -1046,40 +1043,6 @@ public class FloatingDecimal{
             this.decExponent = decExponent;
             this.digits = digits;
             this.nDigits = n;
-        }
-
-        @Override
-        public double doubleValue() {
-            return doubleValue(false);
-        }
-
-        /**
-         * Computes a number that is the ULP of the given value,
-         * for purposes of addition/subtraction. Generally easy.
-         * More difficult if subtracting and the argument
-         * is a normalized a power of 2, as the ULP changes at these points.
-         */
-        private static double ulp(double dval, boolean subtracting) {
-            long lbits = Double.doubleToLongBits(dval) & ~DoubleConsts.SIGN_BIT_MASK;
-            int binexp = (int) (lbits >>> EXP_SHIFT);
-            double ulpval;
-            if (subtracting && (binexp >= EXP_SHIFT) && ((lbits & DoubleConsts.SIGNIF_BIT_MASK) == 0L)) {
-                // for subtraction from normalized, powers of 2,
-                // use next-smaller exponent
-                binexp -= 1;
-            }
-            if (binexp > EXP_SHIFT) {
-                ulpval = Double.longBitsToDouble(((long) (binexp - EXP_SHIFT)) << EXP_SHIFT);
-            } else if (binexp == 0) {
-                ulpval = Double.MIN_VALUE;
-            } else {
-                ulpval = Double.longBitsToDouble(1L << (binexp - 1));
-            }
-            if (subtracting) {
-                ulpval = -ulpval;
-            }
-
-            return ulpval;
         }
 
         /**
@@ -1090,15 +1053,9 @@ public class FloatingDecimal{
          * ROUNDING DIRECTION in case the result is really destined
          * for a single-precision float.
          */
-        private strictfp double doubleValue(boolean mustSetRoundDir) {
+        @Override
+        public double doubleValue() {
             int kDigits = Math.min(nDigits, MAX_DECIMAL_DIGITS + 1);
-            long lValue;
-            double dValue;
-            double rValue;
-
-            if (mustSetRoundDir) {
-                roundDir = 0;
-            }
             //
             // convert the lead kDigits to a long integer.
             //
@@ -1108,11 +1065,11 @@ public class FloatingDecimal{
             for (int i = 1; i < iDigits; i++) {
                 iValue = iValue * 10 + (int) digits[i] - (int) '0';
             }
-            lValue = (long) iValue;
+            long lValue = (long) iValue;
             for (int i = iDigits; i < kDigits; i++) {
                 lValue = lValue * 10L + (long) ((int) digits[i] - (int) '0');
             }
-            dValue = (double) lValue;
+            double dValue = (double) lValue;
             int exp = decExponent - kDigits;
             //
             // lValue now contains a long integer with the value of
@@ -1140,13 +1097,7 @@ public class FloatingDecimal{
                         // Can get the answer with one operation,
                         // thus one roundoff.
                         //
-                        rValue = dValue * SMALL_10_POW[exp];
-                        if (mustSetRoundDir) {
-                            double tValue = rValue / SMALL_10_POW[exp];
-                            roundDir = (tValue == dValue) ? 0
-                                    : (tValue < dValue) ? 1
-                                    : -1;
-                        }
+                        double rValue = dValue * SMALL_10_POW[exp];
                         return (isNegative) ? -rValue : rValue;
                     }
                     int slop = MAX_DECIMAL_DIGITS - kDigits;
@@ -1158,14 +1109,7 @@ public class FloatingDecimal{
                         // with one rounding.
                         //
                         dValue *= SMALL_10_POW[slop];
-                        rValue = dValue * SMALL_10_POW[exp - slop];
-
-                        if (mustSetRoundDir) {
-                            double tValue = rValue / SMALL_10_POW[exp - slop];
-                            roundDir = (tValue == dValue) ? 0
-                                    : (tValue < dValue) ? 1
-                                    : -1;
-                        }
+                        double rValue = dValue * SMALL_10_POW[exp - slop];
                         return (isNegative) ? -rValue : rValue;
                     }
                     //
@@ -1176,13 +1120,7 @@ public class FloatingDecimal{
                         //
                         // Can get the answer in one division.
                         //
-                        rValue = dValue / SMALL_10_POW[-exp];
-                        if (mustSetRoundDir) {
-                            double tValue = rValue * SMALL_10_POW[-exp];
-                            roundDir = (tValue == dValue) ? 0
-                                    : (tValue < dValue) ? 1
-                                    : -1;
-                        }
+                        double rValue = dValue / SMALL_10_POW[-exp];
                         return (isNegative) ? -rValue : rValue;
                     }
                     //
@@ -1303,9 +1241,14 @@ public class FloatingDecimal{
             // Formulate the EXACT big-number result as
             // bigD0 * 10^exp
             //
+            if (nDigits > MAX_NDIGITS) {
+                nDigits = MAX_NDIGITS + 1;
+                digits[MAX_NDIGITS] = '1';
+            }
             FDBigInteger bigD0 = new FDBigInteger(lValue, digits, kDigits, nDigits);
             exp = decExponent - nDigits;
 
+            long ieeeBits = Double.doubleToRawLongBits(dValue); // IEEE-754 bits of double candidate
             final int B5 = Math.max(0, -exp); // powers of 5 in bigB, value is not modified inside correctionLoop
             final int D5 = Math.max(0, exp); // powers of 5 in bigD, value is not modified inside correctionLoop
             bigD0 = bigD0.multByPow52(D5, 0);
@@ -1315,10 +1258,9 @@ public class FloatingDecimal{
 
             correctionLoop:
             while (true) {
-                // here dValue can't be NaN, Infinity or zero
-                long bigBbits = Double.doubleToRawLongBits(dValue) & ~DoubleConsts.SIGN_BIT_MASK;
-                int binexp = (int) (bigBbits >>> EXP_SHIFT);
-                bigBbits &= DoubleConsts.SIGNIF_BIT_MASK;
+                // here ieeeBits can't be NaN, Infinity or zero
+                int binexp = (int) (ieeeBits >>> EXP_SHIFT);
+                long bigBbits = ieeeBits & DoubleConsts.SIGNIF_BIT_MASK;
                 if (binexp > 0) {
                     bigBbits |= FRACT_HOB;
                 } else { // Normalize denormalized numbers.
@@ -1358,7 +1300,7 @@ public class FloatingDecimal{
                 if (binexp <= -DoubleConsts.EXP_BIAS) {
                     // This is going to be a denormalized number
                     // (if not actually zero).
-                    // half an ULP is at 2^-(expBias+EXP_SHIFT+1)
+                    // half an ULP is at 2^-(DoubleConsts.EXP_BIAS+EXP_SHIFT+1)
                     hulpbias = binexp + lowOrderZeros + DoubleConsts.EXP_BIAS;
                 } else {
                     hulpbias = 1 + lowOrderZeros;
@@ -1422,17 +1364,12 @@ public class FloatingDecimal{
                 if ((cmpResult) < 0) {
                     // difference is small.
                     // this is close enough
-                    if (mustSetRoundDir) {
-                        roundDir = overvalue ? -1 : 1;
-                    }
                     break correctionLoop;
                 } else if (cmpResult == 0) {
                     // difference is exactly half an ULP
                     // round to some other value maybe, then finish
-                    dValue += 0.5 * ulp(dValue, overvalue);
-                    // should check for bigIntNBits == 1 here??
-                    if (mustSetRoundDir) {
-                        roundDir = overvalue ? -1 : 1;
+                    if ((ieeeBits & 1) != 0) { // half ties to even
+                        ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
                     }
                     break correctionLoop;
                 } else {
@@ -1440,15 +1377,18 @@ public class FloatingDecimal{
                     // could scale addend by ratio of difference to
                     // halfUlp here, if we bothered to compute that difference.
                     // Most of the time ( I hope ) it is about 1 anyway.
-                    dValue += ulp(dValue, overvalue);
-                    if (dValue == 0.0 || dValue == Double.POSITIVE_INFINITY) {
+                    ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
+                    if (ieeeBits == 0 || ieeeBits == DoubleConsts.EXP_BIT_MASK) { // 0.0 or Double.POSITIVE_INFINITY
                         break correctionLoop; // oops. Fell off end of range.
                     }
                     continue; // try again.
                 }
 
             }
-            return (isNegative) ? -dValue : dValue;
+            if (isNegative) {
+                ieeeBits |= DoubleConsts.SIGN_BIT_MASK;
+            }
+            return Double.longBitsToDouble(ieeeBits);
         }
 
         /**
@@ -1461,18 +1401,16 @@ public class FloatingDecimal{
          * ( because of the preference to a zero low-order bit ).
          */
         @Override
-        public strictfp float floatValue() {
+        public float floatValue() {
             int kDigits = Math.min(nDigits, SINGLE_MAX_DECIMAL_DIGITS + 1);
-            int iValue;
-            float fValue;
             //
             // convert the lead kDigits to an integer.
             //
-            iValue = (int) digits[0] - (int) '0';
+            int iValue = (int) digits[0] - (int) '0';
             for (int i = 1; i < kDigits; i++) {
                 iValue = iValue * 10 + (int) digits[i] - (int) '0';
             }
-            fValue = (float) iValue;
+            float fValue = (float) iValue;
             int exp = decExponent - kDigits;
             //
             // iValue now contains an integer with the value of
@@ -1505,7 +1443,7 @@ public class FloatingDecimal{
                     int slop = SINGLE_MAX_DECIMAL_DIGITS - kDigits;
                     if (exp <= SINGLE_MAX_SMALL_TEN + slop) {
                         //
-                        // We can multiply dValue by 10^(slop)
+                        // We can multiply fValue by 10^(slop)
                         // and it is still "small" and exact.
                         // Then we can multiply by 10^(exp-slop)
                         // with one rounding.
@@ -1555,38 +1493,208 @@ public class FloatingDecimal{
             // The sum of digits plus exponent is greater than
             // what we think we can do with one error.
             //
-            // Start by weeding out obviously out-of-range
-            // results, then convert to double and go to
-            // common hard-case code.
+            // Start by approximating the right answer by,
+            // naively, scaling by powers of 10.
+            // Scaling uses doubles to avoid overflow/underflow.
             //
-            if (decExponent > SINGLE_MAX_DECIMAL_EXPONENT + 1) {
-                //
-                // Lets face it. This is going to be
-                // Infinity. Cut to the chase.
-                //
-                return (isNegative) ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
-            } else if (decExponent < SINGLE_MIN_DECIMAL_EXPONENT - 1) {
-                //
-                // Lets face it. This is going to be
-                // zero. Cut to the chase.
-                //
-                return (isNegative) ? -0.0f : 0.0f;
+            double dValue = fValue;
+            if (exp > 0) {
+                if (decExponent > SINGLE_MAX_DECIMAL_EXPONENT + 1) {
+                    //
+                    // Lets face it. This is going to be
+                    // Infinity. Cut to the chase.
+                    //
+                    return (isNegative) ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
+                }
+                if ((exp & 15) != 0) {
+                    dValue *= SMALL_10_POW[exp & 15];
+                }
+                if ((exp >>= 4) != 0) {
+                    int j;
+                    for (j = 0; exp > 0; j++, exp >>= 1) {
+                        if ((exp & 1) != 0) {
+                            dValue *= BIG_10_POW[j];
+                        }
+                    }
+                }
+            } else if (exp < 0) {
+                exp = -exp;
+                if (decExponent < SINGLE_MIN_DECIMAL_EXPONENT - 1) {
+                    //
+                    // Lets face it. This is going to be
+                    // zero. Cut to the chase.
+                    //
+                    return (isNegative) ? -0.0f : 0.0f;
+                }
+                if ((exp & 15) != 0) {
+                    dValue /= SMALL_10_POW[exp & 15];
+                }
+                if ((exp >>= 4) != 0) {
+                    int j;
+                    for (j = 0; exp > 0; j++, exp >>= 1) {
+                        if ((exp & 1) != 0) {
+                            dValue *= TINY_10_POW[j];
+                        }
+                    }
+                }
             }
+            fValue = Math.max(Float.MIN_VALUE, Math.min(Float.MAX_VALUE, (float) dValue));
 
             //
-            // Here, we do 'way too much work, but throwing away
-            // our partial results, and going and doing the whole
-            // thing as double, then throwing away half the bits that computes
-            // when we convert back to float.
+            // fValue is now approximately the result.
+            // The hard part is adjusting it, by comparison
+            // with FDBigInteger arithmetic.
+            // Formulate the EXACT big-number result as
+            // bigD0 * 10^exp
             //
-            // The alternative is to reproduce the whole multiple-precision
-            // algorithm for float precision, or to try to parameterize it
-            // for common usage. The former will take about 400 lines of code,
-            // and the latter I tried without success. Thus the semi-hack
-            // answer here.
-            //
-            double dValue = doubleValue(true);
-            return stickyRound(dValue, roundDir);
+            if (nDigits > SINGLE_MAX_NDIGITS) {
+                nDigits = SINGLE_MAX_NDIGITS + 1;
+                digits[SINGLE_MAX_NDIGITS] = '1';
+            }
+            FDBigInteger bigD0 = new FDBigInteger(iValue, digits, kDigits, nDigits);
+            exp = decExponent - nDigits;
+
+            int ieeeBits = Float.floatToRawIntBits(fValue); // IEEE-754 bits of float candidate
+            final int B5 = Math.max(0, -exp); // powers of 5 in bigB, value is not modified inside correctionLoop
+            final int D5 = Math.max(0, exp); // powers of 5 in bigD, value is not modified inside correctionLoop
+            bigD0 = bigD0.multByPow52(D5, 0);
+            bigD0.makeImmutable();   // prevent bigD0 modification inside correctionLoop
+            FDBigInteger bigD = null;
+            int prevD2 = 0;
+
+            correctionLoop:
+            while (true) {
+                // here ieeeBits can't be NaN, Infinity or zero
+                int binexp = ieeeBits >>> SINGLE_EXP_SHIFT;
+                int bigBbits = ieeeBits & FloatConsts.SIGNIF_BIT_MASK;
+                if (binexp > 0) {
+                    bigBbits |= SINGLE_FRACT_HOB;
+                } else { // Normalize denormalized numbers.
+                    assert bigBbits != 0 : bigBbits; // floatToBigInt(0.0)
+                    int leadingZeros = Integer.numberOfLeadingZeros(bigBbits);
+                    int shift = leadingZeros - (31 - SINGLE_EXP_SHIFT);
+                    bigBbits <<= shift;
+                    binexp = 1 - shift;
+                }
+                binexp -= FloatConsts.EXP_BIAS;
+                int lowOrderZeros = Integer.numberOfTrailingZeros(bigBbits);
+                bigBbits >>>= lowOrderZeros;
+                final int bigIntExp = binexp - SINGLE_EXP_SHIFT + lowOrderZeros;
+                final int bigIntNBits = SINGLE_EXP_SHIFT + 1 - lowOrderZeros;
+
+                //
+                // Scale bigD, bigB appropriately for
+                // big-integer operations.
+                // Naively, we multiply by powers of ten
+                // and powers of two. What we actually do
+                // is keep track of the powers of 5 and
+                // powers of 2 we would use, then factor out
+                // common divisors before doing the work.
+                //
+                int B2 = B5; // powers of 2 in bigB
+                int D2 = D5; // powers of 2 in bigD
+                int Ulp2;   // powers of 2 in halfUlp.
+                if (bigIntExp >= 0) {
+                    B2 += bigIntExp;
+                } else {
+                    D2 -= bigIntExp;
+                }
+                Ulp2 = B2;
+                // shift bigB and bigD left by a number s. t.
+                // halfUlp is still an integer.
+                int hulpbias;
+                if (binexp <= -FloatConsts.EXP_BIAS) {
+                    // This is going to be a denormalized number
+                    // (if not actually zero).
+                    // half an ULP is at 2^-(FloatConsts.EXP_BIAS+SINGLE_EXP_SHIFT+1)
+                    hulpbias = binexp + lowOrderZeros + FloatConsts.EXP_BIAS;
+                } else {
+                    hulpbias = 1 + lowOrderZeros;
+                }
+                B2 += hulpbias;
+                D2 += hulpbias;
+                // if there are common factors of 2, we might just as well
+                // factor them out, as they add nothing useful.
+                int common2 = Math.min(B2, Math.min(D2, Ulp2));
+                B2 -= common2;
+                D2 -= common2;
+                Ulp2 -= common2;
+                // do multiplications by powers of 5 and 2
+                FDBigInteger bigB = FDBigInteger.valueOfMulPow52(bigBbits, B5, B2);
+                if (bigD == null || prevD2 != D2) {
+                    bigD = bigD0.leftShift(D2);
+                    prevD2 = D2;
+                }
+                //
+                // to recap:
+                // bigB is the scaled-big-int version of our floating-point
+                // candidate.
+                // bigD is the scaled-big-int version of the exact value
+                // as we understand it.
+                // halfUlp is 1/2 an ulp of bigB, except for special cases
+                // of exact powers of 2
+                //
+                // the plan is to compare bigB with bigD, and if the difference
+                // is less than halfUlp, then we're satisfied. Otherwise,
+                // use the ratio of difference to halfUlp to calculate a fudge
+                // factor to add to the floating value, then go 'round again.
+                //
+                FDBigInteger diff;
+                int cmpResult;
+                boolean overvalue;
+                if ((cmpResult = bigB.cmp(bigD)) > 0) {
+                    overvalue = true; // our candidate is too big.
+                    diff = bigB.leftInplaceSub(bigD); // bigB is not user further - reuse
+                    if ((bigIntNBits == 1) && (bigIntExp > -FloatConsts.EXP_BIAS + 1)) {
+                        // candidate is a normalized exact power of 2 and
+                        // is too big (larger than Float.MIN_NORMAL). We will be subtracting.
+                        // For our purposes, ulp is the ulp of the
+                        // next smaller range.
+                        Ulp2 -= 1;
+                        if (Ulp2 < 0) {
+                            // rats. Cannot de-scale ulp this far.
+                            // must scale diff in other direction.
+                            Ulp2 = 0;
+                            diff = diff.leftShift(1);
+                        }
+                    }
+                } else if (cmpResult < 0) {
+                    overvalue = false; // our candidate is too small.
+                    diff = bigD.rightInplaceSub(bigB); // bigB is not user further - reuse
+                } else {
+                    // the candidate is exactly right!
+                    // this happens with surprising frequency
+                    break correctionLoop;
+                }
+                cmpResult = diff.cmpPow52(B5, Ulp2);
+                if ((cmpResult) < 0) {
+                    // difference is small.
+                    // this is close enough
+                    break correctionLoop;
+                } else if (cmpResult == 0) {
+                    // difference is exactly half an ULP
+                    // round to some other value maybe, then finish
+                    if ((ieeeBits & 1) != 0) { // half ties to even
+                        ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
+                    }
+                    break correctionLoop;
+                } else {
+                    // difference is non-trivial.
+                    // could scale addend by ratio of difference to
+                    // halfUlp here, if we bothered to compute that difference.
+                    // Most of the time ( I hope ) it is about 1 anyway.
+                    ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
+                    if (ieeeBits == 0 || ieeeBits == FloatConsts.EXP_BIT_MASK) { // 0.0 or Float.POSITIVE_INFINITY
+                        break correctionLoop; // oops. Fell off end of range.
+                    }
+                    continue; // try again.
+                }
+
+            }
+            if (isNegative) {
+                ieeeBits |= FloatConsts.SIGN_BIT_MASK;
+            }
+            return Float.intBitsToFloat(ieeeBits);
         }
 
 
@@ -1935,32 +2043,6 @@ public class FloatingDecimal{
         throw new NumberFormatException("For input string: \"" + in + "\"");
     }
 
-    /**
-     * Rounds a double to a float.
-     * In addition to the fraction bits of the double,
-     * look at the class instance variable roundDir,
-     * which should help us avoid double-rounding error.
-     * roundDir was set in hardValueOf if the estimate was
-     * close enough, but not exact. It tells us which direction
-     * of rounding is preferred.
-     */
-    static float stickyRound( double dval, int roundDirection ){
-        if(roundDirection!=0) {
-            long lbits = Double.doubleToRawLongBits( dval );
-            long binexp = lbits & DoubleConsts.EXP_BIT_MASK;
-            if ( binexp == 0L || binexp == DoubleConsts.EXP_BIT_MASK ){
-                // what we have here is special.
-                // don't worry, the right thing will happen.
-                return (float) dval;
-            }
-            lbits += (long)roundDirection; // hack-o-matic.
-            return (float)Double.longBitsToDouble( lbits );
-        } else {
-            return (float)dval;
-        }
-    }
-
-
     private static class HexFloatPattern {
         /**
          * Grammar is compatible with hexadecimal floating-point constants
@@ -2282,6 +2364,39 @@ public class FloatingDecimal{
                 // else all of string was seen, round and sticky are
                 // correct as false.
 
+                // Float calculations
+                int floatBits = isNegative ? FloatConsts.SIGN_BIT_MASK : 0;
+                if (exponent >= FloatConsts.MIN_EXPONENT) {
+                    if (exponent > FloatConsts.MAX_EXPONENT) {
+                        // Float.POSITIVE_INFINITY
+                        floatBits |= FloatConsts.EXP_BIT_MASK;
+                    } else {
+                        int threshShift = DoubleConsts.SIGNIFICAND_WIDTH - FloatConsts.SIGNIFICAND_WIDTH - 1;
+                        boolean floatSticky = (significand & ((1L << threshShift) - 1)) != 0 || round || sticky;
+                        int iValue = (int) (significand >>> threshShift);
+                        if ((iValue & 3) != 1 || floatSticky) {
+                            iValue++;
+                        }
+                        floatBits |= (((((int) exponent) + (FloatConsts.EXP_BIAS - 1))) << SINGLE_EXP_SHIFT) + (iValue >> 1);
+                    }
+                } else {
+                    if (exponent < FloatConsts.MIN_SUB_EXPONENT - 1) {
+                        // 0
+                    } else {
+                        // exponent == -127 ==> threshShift = 53 - 2 + (-149) - (-127) = 53 - 24
+                        int threshShift = (int) ((DoubleConsts.SIGNIFICAND_WIDTH - 2 + FloatConsts.MIN_SUB_EXPONENT) - exponent);
+                        assert threshShift >= DoubleConsts.SIGNIFICAND_WIDTH - FloatConsts.SIGNIFICAND_WIDTH;
+                        assert threshShift < DoubleConsts.SIGNIFICAND_WIDTH;
+                        boolean floatSticky = (significand & ((1L << threshShift) - 1)) != 0 || round || sticky;
+                        int iValue = (int) (significand >>> threshShift);
+                        if ((iValue & 3) != 1 || floatSticky) {
+                            iValue++;
+                        }
+                        floatBits |= iValue >> 1;
+                    }
+                }
+                float fValue = Float.intBitsToFloat(floatBits);
+
                 // Check for overflow and update exponent accordingly.
                 if (exponent > DoubleConsts.MAX_EXPONENT) {         // Infinite result
                     // overflow to properly signed infinity
@@ -2390,87 +2505,7 @@ public class FloatingDecimal{
                             Double.longBitsToDouble(significand | DoubleConsts.SIGN_BIT_MASK) :
                             Double.longBitsToDouble(significand );
 
-                    int roundDir = 0;
-                    //
-                    // Set roundingDir variable field of fd properly so
-                    // that the input string can be properly rounded to a
-                    // float value.  There are two cases to consider:
-                    //
-                    // 1. rounding to double discards sticky bit
-                    // information that would change the result of a float
-                    // rounding (near halfway case between two floats)
-                    //
-                    // 2. rounding to double rounds up when rounding up
-                    // would not occur when rounding to float.
-                    //
-                    // For former case only needs to be considered when
-                    // the bits rounded away when casting to float are all
-                    // zero; otherwise, float round bit is properly set
-                    // and sticky will already be true.
-                    //
-                    // The lower exponent bound for the code below is the
-                    // minimum (normalized) subnormal exponent - 1 since a
-                    // value with that exponent can round up to the
-                    // minimum subnormal value and the sticky bit
-                    // information must be preserved (i.e. case 1).
-                    //
-                    if ((exponent >= FloatConsts.MIN_SUB_EXPONENT - 1) &&
-                            (exponent <= FloatConsts.MAX_EXPONENT)) {
-                        // Outside above exponent range, the float value
-                        // will be zero or infinity.
-
-                        //
-                        // If the low-order 28 bits of a rounded double
-                        // significand are 0, the double could be a
-                        // half-way case for a rounding to float.  If the
-                        // double value is a half-way case, the double
-                        // significand may have to be modified to round
-                        // the the right float value (see the stickyRound
-                        // method).  If the rounding to double has lost
-                        // what would be float sticky bit information, the
-                        // double significand must be incremented.  If the
-                        // double value's significand was itself
-                        // incremented, the float value may end up too
-                        // large so the increment should be undone.
-                        //
-                        if ((significand & 0xfffffffL) == 0x0L) {
-                            // For negative values, the sign of the
-                            // roundDir is the same as for positive values
-                            // since adding 1 increasing the significand's
-                            // magnitude and subtracting 1 decreases the
-                            // significand's magnitude.  If neither round
-                            // nor sticky is true, the double value is
-                            // exact and no adjustment is required for a
-                            // proper float rounding.
-                            if (round || sticky) {
-                                if (leastZero) { // prerounding lsb is 0
-                                    // If round and sticky were both true,
-                                    // and the least significant
-                                    // significand bit were 0, the rounded
-                                    // significand would not have its
-                                    // low-order bits be zero.  Therefore,
-                                    // we only need to adjust the
-                                    // significand if round XOR sticky is
-                                    // true.
-                                    if (round ^ sticky) {
-                                        roundDir = 1;
-                                    }
-                                } else { // prerounding lsb is 1
-                                    // If the prerounding lsb is 1 and the
-                                    // resulting significand has its
-                                    // low-order bits zero, the significand
-                                    // was incremented.  Here, we undo the
-                                    // increment, which will ensure the
-                                    // right guard and sticky bits for the
-                                    // float rounding.
-                                    if (round) {
-                                        roundDir = -1;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    return new PreparedASCIIToBinaryBuffer(value,roundDir);
+                    return new PreparedASCIIToBinaryBuffer(value, fValue);
                 }
             }
     }

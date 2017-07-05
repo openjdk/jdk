@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,9 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_pow,                                         // implementation of java.lang.Math.pow   (x,y)
     java_lang_math_exp,                                         // implementation of java.lang.Math.exp   (x)
     java_lang_ref_reference_get,                                // implementation of java.lang.ref.Reference.get()
+    java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()
+    java_util_zip_CRC32_updateBytes,                            // implementation of java.util.zip.CRC32.updateBytes()
+    java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()
     number_of_method_entries,
     invalid = -1
   };

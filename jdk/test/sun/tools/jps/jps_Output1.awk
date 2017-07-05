@@ -8,10 +8,10 @@ BEGIN	{
 	    matched++;
 	}
 
-# or match on a path name to a jar file - note, jar files ending with
+# or match on a path name to a jar or war file - note, jar files ending with
 # ".jar" is only a convention, not a requirement. Theoretically,
 # any valid file name could occur here.
-/^[0-9]+ .*\.jar$/	{
+/^[0-9]+ .*\.(jar|war)$/	{
 	    matched++;
 }
 

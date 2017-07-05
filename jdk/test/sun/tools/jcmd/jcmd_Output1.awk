@@ -8,10 +8,10 @@ BEGIN	{
 	    current=1;
 	}
 
-# or match on a path name to a jar file followed by arbitraty arguments
+# or match on a path name to a jar or war file followed by arbitraty arguments
 # - note, jar files ending with ".jar" is only a convention, not a requirement.
 #Theoretically, any valid file name could occur here.
-/^[0-9]+ .*\.jar($| .*$)/	{
+/^[0-9]+ .*\.(jar|war)($| .*$)/	{
 	    current=1;
 }
 

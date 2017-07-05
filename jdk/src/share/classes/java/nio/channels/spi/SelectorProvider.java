@@ -183,6 +183,9 @@ public abstract class SelectorProvider {
      * Opens a datagram channel.
      *
      * @return  The new channel
+     *
+     * @throws  IOException
+     *          If an I/O error occurs
      */
     public abstract DatagramChannel openDatagramChannel()
         throws IOException;
@@ -209,6 +212,9 @@ public abstract class SelectorProvider {
      * Opens a pipe.
      *
      * @return  The new pipe
+     *
+     * @throws  IOException
+     *          If an I/O error occurs
      */
     public abstract Pipe openPipe()
         throws IOException;
@@ -217,6 +223,9 @@ public abstract class SelectorProvider {
      * Opens a selector.
      *
      * @return  The new selector
+     *
+     * @throws  IOException
+     *          If an I/O error occurs
      */
     public abstract AbstractSelector openSelector()
         throws IOException;
@@ -225,6 +234,9 @@ public abstract class SelectorProvider {
      * Opens a server-socket channel.
      *
      * @return  The new channel
+     *
+     * @throws  IOException
+     *          If an I/O error occurs
      */
     public abstract ServerSocketChannel openServerSocketChannel()
         throws IOException;
@@ -233,6 +245,9 @@ public abstract class SelectorProvider {
      * Opens a socket channel.
      *
      * @return  The new channel
+     *
+     * @throws  IOException
+     *          If an I/O error occurs
      */
     public abstract SocketChannel openSocketChannel()
         throws IOException;

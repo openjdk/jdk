@@ -34,10 +34,9 @@
  */
 
 package java.util.concurrent.atomic;
-
-import java.util.Arrays;
 import java.util.function.UnaryOperator;
 import java.util.function.BinaryOperator;
+import java.util.Arrays;
 import java.lang.reflect.Array;
 import sun.misc.Unsafe;
 
@@ -60,19 +59,18 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     private final Object[] array; // must have exact type Object[]
 
     static {
-        int scale;
         try {
             unsafe = Unsafe.getUnsafe();
             arrayFieldOffset = unsafe.objectFieldOffset
                 (AtomicReferenceArray.class.getDeclaredField("array"));
             base = unsafe.arrayBaseOffset(Object[].class);
-            scale = unsafe.arrayIndexScale(Object[].class);
+            int scale = unsafe.arrayIndexScale(Object[].class);
+            if ((scale & (scale - 1)) != 0)
+                throw new Error("data type scale not a power of two");
+            shift = 31 - Integer.numberOfLeadingZeros(scale);
         } catch (Exception e) {
             throw new Error(e);
         }
-        if ((scale & (scale - 1)) != 0)
-            throw new Error("data type scale not a power of two");
-        shift = 31 - Integer.numberOfLeadingZeros(scale);
     }
 
     private long checkedByteOffset(int i) {
@@ -173,7 +171,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * @param i the index
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful. False return indicates that
+     * @return {@code true} if successful. False return indicates that
      * the actual value was not equal to the expected value.
      */
     public final boolean compareAndSet(int i, E expect, E update) {
@@ -188,20 +186,20 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
      * Atomically sets the element at position {@code i} to the given
      * updated value if the current value {@code ==} the expected value.
      *
-     * <p>May <a href="package-summary.html#Spurious">fail spuriously</a>
-     * and does not provide ordering guarantees, so is only rarely an
-     * appropriate alternative to {@code compareAndSet}.
+     * <p><a href="package-summary.html#weakCompareAndSet">May fail
+     * spuriously and does not provide ordering guarantees</a>, so is
+     * only rarely an appropriate alternative to {@code compareAndSet}.
      *
      * @param i the index
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful
+     * @return {@code true} if successful
      */
     public final boolean weakCompareAndSet(int i, E expect, E update) {
         return compareAndSet(i, expect, update);
     }
 
-      /**
+    /**
      * Atomically updates the element at index {@code i} with the results
      * of applying the given function, returning the previous value. The
      * function should be side-effect-free, since it may be re-applied

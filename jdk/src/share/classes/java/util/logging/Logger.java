@@ -232,6 +232,27 @@ public class Logger {
      * @since 1.7
      */
     public static final Logger getGlobal() {
+        // In order to break a cyclic dependence between the LogManager
+        // and Logger static initializers causing deadlocks, the global
+        // logger is created with a special constructor that does not
+        // initialize its log manager.
+        //
+        // If an application calls Logger.getGlobal() before any logger
+        // has been initialized, it is therefore possible that the
+        // LogManager class has not been initialized yet, and therefore
+        // Logger.global.manager will be null.
+        //
+        // In order to finish the initialization of the global logger, we
+        // will therefore call LogManager.getLogManager() here.
+        //
+        // Care must be taken *not* to call Logger.getGlobal() in
+        // LogManager static initializers in order to avoid such
+        // deadlocks.
+        //
+        if (global != null && global.manager == null) {
+            // Complete initialization of the global Logger.
+            global.manager = LogManager.getLogManager();
+        }
         return global;
     }
 

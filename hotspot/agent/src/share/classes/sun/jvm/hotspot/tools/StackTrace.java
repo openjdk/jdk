@@ -45,6 +45,16 @@ public class StackTrace extends Tool {
         run(System.out);
     }
 
+    public StackTrace(JVMDebugger d) {
+        super(d);
+    }
+
+    public StackTrace(JVMDebugger d, boolean v, boolean concurrentLocks) {
+        super(d);
+        this.verbose = v;
+        this.concurrentLocks = concurrentLocks;
+    }
+
     public void run(java.io.PrintStream tty) {
         // Ready to go with the database...
         try {

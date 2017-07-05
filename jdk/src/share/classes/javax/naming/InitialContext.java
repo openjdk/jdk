@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,6 +258,7 @@ public class InitialContext implements Context {
      * environment may be modified independently and it may be accessed
      * concurrently).
      *
+     * @param <T> the type of the returned object
      * @param name
      *          the name of the object to look up
      * @return  the object bound to <tt>name</tt>
@@ -276,11 +277,12 @@ public class InitialContext implements Context {
    /**
      * A static method to retrieve the named object.
      * See {@link #doLookup(Name)} for details.
+     * @param <T> the type of the returned object
      * @param name
      *          the name of the object to look up
      * @return  the object bound to <tt>name</tt>
      * @throws  NamingException if a naming exception is encountered
-      * @since 1.6
+     * @since 1.6
      */
     @SuppressWarnings("unchecked")
     public static <T> T doLookup(String name)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import java.util.StringTokenizer;
  *   <td>createAccessControlContext</td>
  *   <td>Creation of an AccessControlContext</td>
  *   <td>This allows someone to instantiate an AccessControlContext
- * with a <code>DomainCombiner</code>.  Extreme care must be taken when
+ * with a {@code DomainCombiner}.  Extreme care must be taken when
  * granting this permission. Malicious code could create a DomainCombiner
  * that augments the set of permissions granted to code, and even grant the
  * code {@link java.security.AllPermission}.</td>
@@ -67,7 +67,7 @@ import java.util.StringTokenizer;
  *   <td>getDomainCombiner</td>
  *   <td>Retrieval of an AccessControlContext's DomainCombiner</td>
  *   <td>This allows someone to retrieve an AccessControlContext's
- * <code>DomainCombiner</code>.  Since DomainCombiners may contain
+ * {@code DomainCombiner}.  Since DomainCombiners may contain
  * sensitive information, this could potentially lead to a privacy leak.</td>
  * </tr>
  *
@@ -76,7 +76,7 @@ import java.util.StringTokenizer;
  *   <td>Retrieval of the system-wide security policy (specifically, of the
  * currently-installed Policy object)</td>
  *   <td>This allows someone to query the policy via the
- * <code>getPermissions</code> call,
+ * {@code getPermissions} call,
  * which discloses which permissions would be granted to a given CodeSource.
  * While revealing the policy does not compromise the security of
  * the system, it does provide malicious code with additional information
@@ -303,8 +303,8 @@ public final class SecurityPermission extends BasicPermission {
      *
      * @param name the name of the SecurityPermission
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
 
     public SecurityPermission(String name)
@@ -320,8 +320,8 @@ public final class SecurityPermission extends BasicPermission {
      * @param name the name of the SecurityPermission
      * @param actions should be null.
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
 
     public SecurityPermission(String name, String actions)
