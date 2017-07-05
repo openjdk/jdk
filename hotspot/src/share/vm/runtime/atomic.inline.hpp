@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,5 +69,22 @@
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "atomic_bsd_zero.inline.hpp"
 #endif
+
+// size_t casts...
+#if (SIZE_MAX != UINTPTR_MAX)
+#error size_t is not WORD_SIZE, interesting platform, but missing implementation here
+#endif
+
+inline size_t Atomic::add(size_t add_value, volatile size_t* dest) {
+  return (size_t) add_ptr((intptr_t) add_value, (volatile intptr_t*) dest);
+}
+
+inline void Atomic::inc(volatile size_t* dest) {
+  inc_ptr((volatile intptr_t*) dest);
+}
+
+inline void Atomic::dec(volatile size_t* dest) {
+  dec_ptr((volatile intptr_t*) dest);
+}
 
 #endif // SHARE_VM_RUNTIME_ATOMIC_INLINE_HPP

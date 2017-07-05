@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1414,6 +1414,7 @@ class GTKPainter extends SynthPainter {
     }
 
     // Refer to GTKLookAndFeel for details on this.
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class ListTableFocusBorder extends AbstractBorder implements
                           UIResource {
 
@@ -1482,6 +1483,7 @@ class GTKPainter extends SynthPainter {
     }
 
     // TitledBorder implementation for GTK L&F
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class TitledBorder extends AbstractBorder implements UIResource {
 
         public void paintBorder(Component c, Graphics g, int x, int y,

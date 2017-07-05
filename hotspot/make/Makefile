@@ -287,8 +287,43 @@ else
 	@$(ECHO) "Error: trying to build a minimal target but JVM_VARIANT_MINIMAL1 is not true."
 endif
 
+remove_old_debuginfo:
+ifeq ($(JVM_VARIANT_CLIENT), true)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+    ifeq ($(OSNAME), windows)
+	  $(RM) -f $(EXPORT_CLIENT_DIR)/jvm.map $(EXPORT_CLIENT_DIR)/jvm.pdb
+    else
+	  $(RM) -f $(EXPORT_CLIENT_DIR)/libjvm.debuginfo
+    endif
+  else
+	$(RM) -f $(EXPORT_CLIENT_DIR)/libjvm.diz
+  endif
+endif
+ifeq ($(findstring true, $(JVM_VARIANT_SERVER) $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+    ifeq ($(OSNAME), windows)
+	  $(RM) -f $(EXPORT_SERVER_DIR)/jvm.map $(EXPORT_SERVER_DIR)/jvm.pdb
+    else
+      ifeq ($(OS_VENDOR), Darwin)
+	    $(RM) -rf $(EXPORT_SERVER_DIR)/libjvm.dylib.dSYM
+      else
+	    $(RM) -f $(EXPORT_SERVER_DIR)/libjvm.debuginfo
+      endif
+    endif
+  else
+	$(RM) -f $(EXPORT_SERVER_DIR)/libjvm.diz
+  endif
+endif
+ifeq ($(JVM_VARIANT_MINIMAL1),true)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(RM) -f $(EXPORT_MINIMAL_DIR)/libjvm.debuginfo
+  else
+	$(RM) -f $(EXPORT_MINIMAL_DIR)/libjvm.diz
+  endif
+endif
+
 # Export file rule
-generic_export: $(EXPORT_LIST)
+generic_export: $(EXPORT_LIST) remove_old_debuginfo
 
 export_product:
 	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) generic_export
@@ -841,4 +876,4 @@ include $(GAMMADIR)/make/jprt.gmk
 	export_jdk_product export_jdk_fastdebug export_jdk_debug \
 	create_jdk copy_jdk update_jdk test_jdk \
 	copy_product_jdk copy_fastdebug_jdk copy_debug_jdk  \
-	$(HS_ALT_MAKE)/Makefile.make
+	$(HS_ALT_MAKE)/Makefile.make remove_old_debuginfo

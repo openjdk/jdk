@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,8 @@ Mutex*   SignatureHandlerLibrary_lock = NULL;
 Mutex*   VtableStubs_lock             = NULL;
 Mutex*   SymbolTable_lock             = NULL;
 Mutex*   StringTable_lock             = NULL;
+Monitor* StringDedupQueue_lock        = NULL;
+Mutex*   StringDedupTable_lock        = NULL;
 Mutex*   CodeCache_lock               = NULL;
 Mutex*   MethodData_lock              = NULL;
 Mutex*   RetData_lock                 = NULL;
@@ -196,6 +198,9 @@ void mutex_init() {
     def(MMUTracker_lock            , Mutex  , leaf     ,   true );
     def(HotCardCache_lock          , Mutex  , special  ,   true );
     def(EvacFailureStack_lock      , Mutex  , nonleaf  ,   true );
+
+    def(StringDedupQueue_lock      , Monitor, leaf,        true );
+    def(StringDedupTable_lock      , Mutex  , leaf,        true );
   }
   def(ParGCRareEvent_lock          , Mutex  , leaf     ,   true );
   def(DerivedPointerTableGC_lock   , Mutex,   leaf,        true );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 import javax.swing.text.*;
 
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaCaret extends DefaultCaret implements UIResource, PropertyChangeListener {
     final boolean isMultiLineEditor;
     final JTextComponent c;

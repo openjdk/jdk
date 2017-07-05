@@ -266,8 +266,7 @@ class DefaultSwatchChooserPanel extends AbstractColorChooserPanel {
 
 }
 
-
-
+@SuppressWarnings("serial") // Same-version serialization only
 class SwatchPanel extends JPanel {
 
     protected Color[] colors;
@@ -438,6 +437,7 @@ class SwatchPanel extends JPanel {
 
 }
 
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 class RecentSwatchPanel extends SwatchPanel {
     protected void initValues() {
         swatchSize = UIManager.getDimension("ColorChooser.swatchesRecentSwatchSize", getLocale());
@@ -465,6 +465,7 @@ class RecentSwatchPanel extends SwatchPanel {
 
 }
 
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 class MainSwatchPanel extends SwatchPanel {
 
 

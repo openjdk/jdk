@@ -52,7 +52,20 @@ import javax.security.auth.DestroyFailedException;
  * application depends on the default JGSS Kerberos mechanism to access the
  * KerberosKey. In that case, however, the application will need an
  * appropriate
- * {@link javax.security.auth.kerberos.ServicePermission ServicePermission}.
+ * {@link javax.security.auth.kerberos.ServicePermission ServicePermission}.<p>
+ *
+ * When creating a {@code KerberosKey} using the
+ * {@link #KerberosKey(KerberosPrincipal, char[], String)} constructor,
+ * an implementation may accept non-IANA algorithm names (For example,
+ * "ArcFourMac" for "rc4-hmac"), but the {@link #getAlgorithm} method
+ * must always return the IANA algorithm name.<p>
+ *
+ * @implNote Old algorithm names used before JDK 9 are supported in the
+ * {@link #KerberosKey(KerberosPrincipal, char[], String)} constructor in this
+ * implementation for compatibility reasons, which are "DES" (and null) for
+ * "des-cbc-md5", "DESede" for "des3-cbc-sha1-kd", "ArcFourHmac" for "rc4-hmac",
+ * "AES128" for "aes128-cts-hmac-sha1-96", and "AES256" for
+ * "aes256-cts-hmac-sha1-96".
  *
  * @author Mayank Upadhyay
  * @since 1.4
@@ -73,7 +86,7 @@ public class KerberosKey implements SecretKey, Destroyable {
      *
      * @serial
      */
-    private int versionNum;
+    private final int versionNum;
 
    /**
     * {@code KeyImpl} is serialized by writing out the ASN1 Encoded bytes
@@ -113,13 +126,16 @@ public class KerberosKey implements SecretKey, Destroyable {
     }
 
     /**
-     * Constructs a KerberosKey from a principal's password.
+     * Constructs a KerberosKey from a principal's password using the specified
+     * algorithm name. The algorithm name (case insensitive) should be provided
+     * as the encryption type string defined on the IANA
+     * <a href="https://www.iana.org/assignments/kerberos-parameters/kerberos-parameters.xhtml#kerberos-parameters-1">Kerberos Encryption Type Numbers</a>
+     * page. The version number of the key generated will be 0.
      *
      * @param principal the principal that this password belongs to
      * @param password the password that should be used to compute the key
      * @param algorithm the name for the algorithm that this key will be
-     * used for. This parameter may be null in which case the default
-     * algorithm "DES" will be assumed.
+     * used for
      * @throws IllegalArgumentException if the name of the
      * algorithm passed is unsupported.
      */
@@ -128,6 +144,7 @@ public class KerberosKey implements SecretKey, Destroyable {
                        String algorithm) {
 
         this.principal = principal;
+        this.versionNum = 0;
         // Pass principal in for salt
         key = new KeyImpl(principal, password, algorithm);
     }
@@ -170,13 +187,18 @@ public class KerberosKey implements SecretKey, Destroyable {
      */
 
     /**
-     * Returns the standard algorithm name for this key. For
-     * example, "DES" would indicate that this key is a DES key.
-     * See Appendix A in the <a href=
-     * "../../../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference
-     * </a>
-     * for information about standard algorithm names.
+     * Returns the standard algorithm name for this key. The algorithm names
+     * are the encryption type string defined on the IANA
+     * <a href="https://www.iana.org/assignments/kerberos-parameters/kerberos-parameters.xhtml#kerberos-parameters-1">Kerberos Encryption Type Numbers</a>
+     * page.
+     * <p>
+     * This method can return the following value not defined on the IANA page:
+     * <ol>
+     *     <li>none: for etype equal to 0</li>
+     *     <li>unknown: for etype greater than 0 but unsupported by
+     *         the implementation</li>
+     *     <li>private: for etype smaller than 0</li>
+     * </ol>
      *
      * @return the name of the algorithm associated with this key.
      */

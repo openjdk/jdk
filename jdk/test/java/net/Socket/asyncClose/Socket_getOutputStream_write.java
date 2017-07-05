@@ -27,9 +27,16 @@
  */
 import java.net.*;
 import java.io.*;
+import java.util.concurrent.CountDownLatch;
 
 public class Socket_getOutputStream_write extends AsyncCloseTest implements Runnable {
-    Socket s;
+    private final Socket s;
+    private final CountDownLatch latch;
+
+    public Socket_getOutputStream_write() {
+        latch = new CountDownLatch(1);
+        s = new Socket();
+    }
 
     public String description() {
         return "Socket.getOutputStream().write()";
@@ -38,40 +45,45 @@ public class Socket_getOutputStream_write extends AsyncCloseTest implements Runn
     public void run() {
         try {
             OutputStream out = s.getOutputStream();
+            byte b[] = new byte[8192];
+            latch.countDown();
             for (;;) {
-                byte b[] = new byte[8192];
                 out.write(b);
             }
         } catch (SocketException se) {
-            closed();
+            if (latch.getCount() != 1) {
+                closed();
+            }
         } catch (Exception e) {
             failed(e.getMessage());
+        } finally {
+            if (latch.getCount() == 1) {
+                latch.countDown();
+            }
         }
     }
 
-    public boolean go() throws Exception {
-        ServerSocket ss = new ServerSocket(0);
+    public AsyncCloseTest go() {
+        try {
+            ServerSocket ss = new ServerSocket(0);
+            InetAddress lh = InetAddress.getLocalHost();
+            s.connect( new InetSocketAddress(lh, ss.getLocalPort()) );
+            Socket s2 = ss.accept();
+            Thread thr = new Thread(this);
+            thr.start();
+            latch.await();
+            Thread.sleep(1000);
+            s.close();
+            thr.join();
 
-        InetAddress lh = InetAddress.getLocalHost();
-        s = new Socket();
-        s.connect( new InetSocketAddress(lh, ss.getLocalPort()) );
-
-        Socket s2 = ss.accept();
-
-        Thread thr = new Thread(this);
-        thr.start();
-
-        Thread.currentThread().sleep(2000);
-
-        s.close();
-
-        Thread.currentThread().sleep(2000);
-
-        if (isClosed()) {
-            return true;
-        } else {
-            failed("getOutputStream().write() wasn't preempted");
-            return false;
+            if (isClosed()) {
+                return passed();
+            } else {
+                return failed("Socket.getOutputStream().write() wasn't preempted");
+            }
+        } catch (Exception x) {
+            failed(x.getMessage());
+            throw new RuntimeException(x);
         }
     }
 }

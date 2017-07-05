@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,6 +493,7 @@ public class AquaTreeUI extends BasicTreeUI {
         tree.getActionMap().put("aquaFullyCollapseNode", new KeyboardExpandCollapseAction(false, true));
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class KeyboardExpandCollapseAction extends AbstractAction {
         /**
          * Determines direction to traverse, 1 means expand, -1 means collapse.

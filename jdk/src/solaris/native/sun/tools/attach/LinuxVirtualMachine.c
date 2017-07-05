@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,8 +156,10 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_connect
         struct sockaddr_un addr;
         int err = 0;
 
+        memset(&addr, 0, sizeof(addr));
         addr.sun_family = AF_UNIX;
-        strcpy(addr.sun_path, p);
+        /* strncpy is safe because addr.sun_path was zero-initialized before. */
+        strncpy(addr.sun_path, p, sizeof(addr.sun_path) - 1);
 
         if (connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
             err = errno;

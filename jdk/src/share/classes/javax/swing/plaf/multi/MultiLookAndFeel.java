@@ -294,6 +294,7 @@ public class MultiLookAndFeel extends LookAndFeel {
  * emits error messages when it cannot find a UI class in the
  * LAF.
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 class MultiUIDefaults extends UIDefaults {
     MultiUIDefaults(int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor);

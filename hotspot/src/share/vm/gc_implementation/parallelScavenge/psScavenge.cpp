@@ -550,7 +550,8 @@ bool PSScavenge::invoke_no_policy() {
 
        if (PrintTenuringDistribution) {
          gclog_or_tty->cr();
-         gclog_or_tty->print_cr("Desired survivor size " SIZE_FORMAT " bytes, new threshold %u (max %u)",
+         gclog_or_tty->print_cr("Desired survivor size " SIZE_FORMAT " bytes, new threshold "
+                                UINTX_FORMAT " (max threshold " UINTX_FORMAT ")",
                                 size_policy->calculated_survivor_size_in_bytes(),
                                 _tenuring_threshold, MaxTenuringThreshold);
        }
@@ -829,10 +830,10 @@ GCTaskManager* const PSScavenge::gc_task_manager() {
 void PSScavenge::initialize() {
   // Arguments must have been parsed
 
-  if (AlwaysTenure) {
-    _tenuring_threshold = 0;
-  } else if (NeverTenure) {
-    _tenuring_threshold = markOopDesc::max_age + 1;
+  if (AlwaysTenure || NeverTenure) {
+    assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markOopDesc::max_age + 1,
+        err_msg("MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is ", MaxTenuringThreshold));
+    _tenuring_threshold = MaxTenuringThreshold;
   } else {
     // We want to smooth out our startup times for the AdaptiveSizePolicy
     _tenuring_threshold = (UseAdaptiveSizePolicy) ? InitialTenuringThreshold :

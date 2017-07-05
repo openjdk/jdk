@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,6 +180,9 @@ FileDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
                         return TRUE;
                     }
                     jstring strPath = JNU_NewStringPlatform(env, szPath);
+                    if (strPath == NULL) {
+                        throw std::bad_alloc();
+                    }
                     // Call FilenameFilter.accept with path and filename
                     UINT uRes = (env->CallBooleanMethod(peer,
                         AwtFileDialog::checkFilenameFilterMID, strPath) == JNI_TRUE);
@@ -269,6 +272,9 @@ AwtFileDialog::Show(void *p)
 
         if (title == NULL || env->GetStringLength(title)==0) {
             title = JNU_NewStringPlatform(env, L" ");
+            if (title == NULL) {
+                throw std::bad_alloc();
+            }
         }
 
         JavaStringBuffer titleBuffer(env, title);
@@ -376,6 +382,9 @@ AwtFileDialog::Show(void *p)
                     ? (jint)GetBufferLength(ofn.lpstrFile, ofn.nMaxFile)
                     : (jint)_tcslen(ofn.lpstrFile);
             jcharArray jnames = env->NewCharArray(length);
+            if (jnames == NULL) {
+                throw std::bad_alloc();
+            }
             env->SetCharArrayRegion(jnames, 0, length, (jchar*)ofn.lpstrFile);
 
             env->CallVoidMethod(peer, AwtFileDialog::handleSelectedMID, jnames);
@@ -500,38 +509,55 @@ Java_sun_awt_windows_WFileDialogPeer_initIDs(JNIEnv *env, jclass cls)
 
     AwtFileDialog::parentID =
         env->GetFieldID(cls, "parent", "Lsun/awt/windows/WComponentPeer;");
+    DASSERT(AwtFileDialog::parentID != NULL);
+    CHECK_NULL(AwtFileDialog::parentID);
+
     AwtFileDialog::fileFilterID =
         env->GetFieldID(cls, "fileFilter", "Ljava/io/FilenameFilter;");
-    AwtFileDialog::setHWndMID =
-        env->GetMethodID(cls, "setHWnd", "(J)V");
+    DASSERT(AwtFileDialog::fileFilterID != NULL);
+    CHECK_NULL(AwtFileDialog::fileFilterID);
+
+    AwtFileDialog::setHWndMID = env->GetMethodID(cls, "setHWnd", "(J)V");
+    DASSERT(AwtFileDialog::setHWndMID != NULL);
+    CHECK_NULL(AwtFileDialog::setHWndMID);
+
     AwtFileDialog::handleSelectedMID =
         env->GetMethodID(cls, "handleSelected", "([C)V");
+    DASSERT(AwtFileDialog::handleSelectedMID != NULL);
+    CHECK_NULL(AwtFileDialog::handleSelectedMID);
+
     AwtFileDialog::handleCancelMID =
         env->GetMethodID(cls, "handleCancel", "()V");
+    DASSERT(AwtFileDialog::handleCancelMID != NULL);
+    CHECK_NULL(AwtFileDialog::handleCancelMID);
+
     AwtFileDialog::checkFilenameFilterMID =
         env->GetMethodID(cls, "checkFilenameFilter", "(Ljava/lang/String;)Z");
+    DASSERT(AwtFileDialog::checkFilenameFilterMID != NULL);
+    CHECK_NULL(AwtFileDialog::checkFilenameFilterMID);
+
     AwtFileDialog::isMultipleModeMID = env->GetMethodID(cls, "isMultipleMode", "()Z");
+    DASSERT(AwtFileDialog::isMultipleModeMID != NULL);
+    CHECK_NULL(AwtFileDialog::isMultipleModeMID);
 
     /* java.awt.FileDialog fields */
     cls = env->FindClass("java/awt/FileDialog");
-    if (cls == NULL) {
-        return;
-    }
+    CHECK_NULL(cls);
+
     AwtFileDialog::modeID = env->GetFieldID(cls, "mode", "I");
+    DASSERT(AwtFileDialog::modeID != NULL);
+    CHECK_NULL(AwtFileDialog::modeID);
+
     AwtFileDialog::dirID = env->GetFieldID(cls, "dir", "Ljava/lang/String;");
+    DASSERT(AwtFileDialog::dirID != NULL);
+    CHECK_NULL(AwtFileDialog::dirID);
+
     AwtFileDialog::fileID = env->GetFieldID(cls, "file", "Ljava/lang/String;");
+    DASSERT(AwtFileDialog::fileID != NULL);
+    CHECK_NULL(AwtFileDialog::fileID);
+
     AwtFileDialog::filterID =
         env->GetFieldID(cls, "filter", "Ljava/io/FilenameFilter;");
-
-    DASSERT(AwtFileDialog::parentID != NULL);
-    DASSERT(AwtFileDialog::setHWndMID != NULL);
-    DASSERT(AwtFileDialog::handleSelectedMID != NULL);
-    DASSERT(AwtFileDialog::handleCancelMID != NULL);
-    DASSERT(AwtFileDialog::isMultipleModeMID != NULL);
-
-    DASSERT(AwtFileDialog::modeID != NULL);
-    DASSERT(AwtFileDialog::dirID != NULL);
-    DASSERT(AwtFileDialog::fileID != NULL);
     DASSERT(AwtFileDialog::filterID != NULL);
 
     CATCH_BAD_ALLOC;

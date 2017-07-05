@@ -1288,7 +1288,8 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     gather_statistics(reason, action, trap_bc);
 
     // Ensure that we can record deopt. history:
-    bool create_if_missing = ProfileTraps;
+    // Need MDO to record RTM code generation state.
+    bool create_if_missing = ProfileTraps RTM_OPT_ONLY( || UseRTMLocking );
 
     MethodData* trap_mdo =
       get_method_data(thread, trap_method, create_if_missing);
@@ -1569,6 +1570,17 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         if (tstate1 != tstate0)
           pdata->set_trap_state(tstate1);
       }
+
+#if INCLUDE_RTM_OPT
+      // Restart collecting RTM locking abort statistic if the method
+      // is recompiled for a reason other than RTM state change.
+      // Assume that in new recompiled code the statistic could be different,
+      // for example, due to different inlining.
+      if ((reason != Reason_rtm_state_change) && (trap_mdo != NULL) &&
+          UseRTMDeopt && (nm->rtm_state() != ProfileRTM)) {
+        trap_mdo->atomic_set_rtm_state(ProfileRTM);
+      }
+#endif
     }
 
     if (inc_recompile_count) {
@@ -1826,7 +1838,9 @@ const char* Deoptimization::_trap_reason_name[Reason_LIMIT] = {
   "age",
   "predicate",
   "loop_limit_check",
-  "speculate_class_check"
+  "speculate_class_check",
+  "speculate_null_check",
+  "rtm_state_change"
 };
 const char* Deoptimization::_trap_action_name[Action_LIMIT] = {
   // Note:  Keep this in sync. with enum DeoptAction.

@@ -95,7 +95,9 @@ static task_t getTask(JNIEnv *env, jobject this_obj) {
 #define CHECK_EXCEPTION_CLEAR_(value) if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return value; } 
 
 static void throw_new_debugger_exception(JNIEnv* env, const char* errMsg) {
-  (*env)->ThrowNew(env, (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException"), errMsg);
+  jclass exceptionClass = (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException");
+  CHECK_EXCEPTION;
+  (*env)->ThrowNew(env, exceptionClass, errMsg);
 }
 
 static struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj) {
@@ -129,6 +131,7 @@ static struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj) {
 JNIEXPORT void JNICALL 
 Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_init0(JNIEnv *env, jclass cls) {
   symbolicatorID = (*env)->GetFieldID(env, cls, "symbolicator", "J");
+  CHECK_EXCEPTION;
   taskID = (*env)->GetFieldID(env, cls, "task", "J");
   CHECK_EXCEPTION;
 
@@ -236,13 +239,16 @@ JNIEXPORT jobject JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_loo
   (JNIEnv *env, jobject this_obj, jlong addr) {
   uintptr_t offset;
   const char* sym = NULL;
+  jstring sym_string;
 
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
   if (ph != NULL && ph->core != NULL) {
     sym = symbol_for_pc(ph, (uintptr_t) addr, &offset);
     if (sym == NULL) return 0;
+    sym_string = (*env)->NewStringUTF(env, sym);
+    CHECK_EXCEPTION_(0);
     return (*env)->CallObjectMethod(env, this_obj, createClosestSymbol_ID,
-                          (*env)->NewStringUTF(env, sym), (jlong)offset);
+                                                sym_string, (jlong)offset);
   }
   return 0;
 }
@@ -749,11 +755,14 @@ static void fillLoadObjects(JNIEnv* env, jobject this_obj, struct ps_prochandle*
      const char* name;
      jobject loadObject;
      jobject loadObjectList;
+     jstring nameString;
 
      base = get_lib_base(ph, i);
      name = get_lib_name(ph, i);
+     nameString = (*env)->NewStringUTF(env, name);
+     CHECK_EXCEPTION;
      loadObject = (*env)->CallObjectMethod(env, this_obj, createLoadObject_ID,
-                                   (*env)->NewStringUTF(env, name), (jlong)0, (jlong)base);
+                                            nameString, (jlong)0, (jlong)base);
      CHECK_EXCEPTION;
      loadObjectList = (*env)->GetObjectField(env, this_obj, loadObjectList_ID);
      CHECK_EXCEPTION;

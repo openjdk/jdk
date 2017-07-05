@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address npe_addr = __ pc(); // npe = null pointer exception
   __ load_klass_with_trap_null_check(rcvr_klass, R3);
 
- // Set methodOop (in case of interpreted method), and destination address.
+ // Set method (in case of interpreted method), and destination address.
   int entry_offset = InstanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
 
 #ifndef PRODUCT
@@ -161,8 +161,6 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   address npe_addr = __ pc(); // npe = null pointer exception
   __ load_klass_with_trap_null_check(rcvr_klass, R3_ARG1);
 
-  //__ ld(rcvr_klass, oopDesc::klass_offset_in_bytes(), R3_ARG1);
-
   BLOCK_COMMENT("Load start of itable entries into itable_entry.");
   __ lwz(vtable_len, InstanceKlass::vtable_length_offset() * wordSize, rcvr_klass);
   __ slwi(vtable_len, vtable_len, exact_log2(vtableEntry::size() * wordSize));
@@ -199,7 +197,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
                                    itable_offset_search_inc;
   __ lwz(vtable_offset, vtable_offset_offset, itable_entry_addr);
 
-  // Compute itableMethodEntry and get methodOop and entry point for compiler.
+  // Compute itableMethodEntry and get method and entry point for compiler.
   const int method_offset = (itableMethodEntry::size() * wordSize * vtable_index) +
     itableMethodEntry::method_offset_in_bytes();
 
@@ -211,7 +209,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
     Label ok;
     __ cmpd(CCR0, R19_method, 0);
     __ bne(CCR0, ok);
-    __ stop("methodOop is null", 103);
+    __ stop("method is null", 103);
     __ bind(ok);
   }
 #endif

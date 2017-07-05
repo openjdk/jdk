@@ -1025,15 +1025,14 @@ class Assembler : public AbstractAssembler {
   }
 
   static void set_imm(int* instr, short s) {
-    short* p = ((short *)instr) + 1;
-    *p = s;
+    // imm is always in the lower 16 bits of the instruction,
+    // so this is endian-neutral. Same for the get_imm below.
+    uint32_t w = *(uint32_t *)instr;
+    *instr = (int)((w & ~0x0000FFFF) | (s & 0x0000FFFF));
   }
 
   static int get_imm(address a, int instruction_number) {
-    short imm;
-    short *p =((short *)a)+2*instruction_number+1;
-    imm = *p;
-    return (int)imm;
+    return (short)((int *)a)[instruction_number];
   }
 
   static inline int hi16_signed(  int x) { return (int)(int16_t)(x >> 16); }

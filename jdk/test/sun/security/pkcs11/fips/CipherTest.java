@@ -472,8 +472,21 @@ public class CipherTest {
                 return false;
             }
 
+            // No ECDH-capable certificate in key store. May restructure
+            // this in the future.
+            if (cipherSuite.contains("ECDHE_ECDSA") ||
+                    cipherSuite.contains("ECDH_ECDSA") ||
+                    cipherSuite.contains("ECDH_RSA")) {
+                System.out.println("Skipping unsupported test for " +
+                                    cipherSuite + " of " + protocol);
+                return false;
+            }
+
             // skip SSLv2Hello protocol
-            if (protocol.equals("SSLv2Hello")) {
+            //
+            // skip TLSv1.2 protocol, we have not implement "SunTls12Prf" and
+            // SunTls12RsaPremasterSecret in SunPKCS11 provider
+            if (protocol.equals("SSLv2Hello") || protocol.equals("TLSv1.2")) {
                 System.out.println("Skipping unsupported test for " +
                                     cipherSuite + " of " + protocol);
                 return false;
