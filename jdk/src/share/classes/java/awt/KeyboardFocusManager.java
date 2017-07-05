@@ -2578,6 +2578,10 @@ public abstract class KeyboardFocusManager
         }
     }
 
+    static boolean isAutoFocusTransferEnabledFor(Component comp) {
+        return isAutoFocusTransferEnabled() && comp.isAutoFocusTransferOnDisposal();
+    }
+
     /*
      * Used to process exceptions in dispatching focus event (in focusLost/focusGained callbacks).
      * @param ex previously caught exception that may be processed right here, or null

@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,8 @@ class Socket implements java.io.Closeable {
      *
      * @param host the name of the remote host, or <code>null</code> for the loopback address.
      * @param port the remote port
-     * @param localAddr the local address the socket is bound to
+     * @param localAddr the local address the socket is bound to, or
+     *        <code>null</code> for the <code>anyLocal</code> address.
      * @param localPort the local port the socket is bound to, or
      *        <code>zero</code> for a system selected free port.
      * @exception  IOException  if an I/O error occurs when creating the socket.

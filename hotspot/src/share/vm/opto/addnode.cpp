@@ -70,9 +70,14 @@ static bool commute( Node *add, int con_left, int con_right ) {
 
   // Convert "Load+x" into "x+Load".
   // Now check for loads
-  if( in2->is_Load() ) return false;
-  // Left is a Load and Right is not; move it right.
-  if( in1->is_Load() ) {
+  if (in2->is_Load()) {
+    if (!in1->is_Load()) {
+      // already x+Load to return
+      return false;
+    }
+    // both are loads, so fall through to sort inputs by idx
+  } else if( in1->is_Load() ) {
+    // Left is a Load and Right is not; move it right.
     add->swap_edges(1, 2);
     return true;
   }

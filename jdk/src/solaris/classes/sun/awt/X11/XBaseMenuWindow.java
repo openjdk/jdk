@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -885,14 +885,14 @@ abstract public class XBaseMenuWindow extends XWindow {
      */
      protected boolean isEventDisabled(XEvent e) {
         switch (e.get_type()) {
-          case XlibWrapper.Expose :
-          case XlibWrapper.GraphicsExpose :
-          case XlibWrapper.ButtonPress:
-          case XlibWrapper.ButtonRelease:
-          case XlibWrapper.MotionNotify:
-          case XlibWrapper.KeyPress:
-          case XlibWrapper.KeyRelease:
-          case XlibWrapper.DestroyNotify:
+          case XConstants.Expose :
+          case XConstants.GraphicsExpose :
+          case XConstants.ButtonPress:
+          case XConstants.ButtonRelease:
+          case XConstants.MotionNotify:
+          case XConstants.KeyPress:
+          case XConstants.KeyRelease:
+          case XConstants.DestroyNotify:
               return super.isEventDisabled(e);
           default:
               return true;

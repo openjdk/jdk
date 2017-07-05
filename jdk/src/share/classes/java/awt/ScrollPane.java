@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import sun.awt.ScrollPaneWheelScroller;
 import sun.awt.SunToolkit;
 
 import java.beans.ConstructorProperties;
+import java.beans.Transient;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
@@ -390,6 +391,7 @@ public class ScrollPane extends Container implements Accessible {
      * @throws NullPointerException if the scrollpane does not contain
      *     a child
      */
+    @Transient
     public Point getScrollPosition() {
         if (ncomponents <= 0) {
             throw new NullPointerException("child is null");

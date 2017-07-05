@@ -52,6 +52,10 @@ import java.awt.Rectangle;
  * (<code>ComponentAdapter</code> objects implement the
  * <code>ComponentListener</code> interface.) Each such listener object
  * gets this <code>ComponentEvent</code> when the event occurs.
+ * <p>
+ * An unspecified behavior will be caused if the {@code id} parameter
+ * of any particular {@code ComponentEvent} instance is not
+ * in the range from {@code COMPONENT_FIRST} to {@code COMPONENT_LAST}.
  *
  * @see ComponentAdapter
  * @see ComponentListener
@@ -99,14 +103,17 @@ public class ComponentEvent extends AWTEvent {
 
     /**
      * Constructs a <code>ComponentEvent</code> object.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * <p> This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
-     * @param source the <code>Component</code> that originated the event
-     * @param id     an integer indicating the type of event
+     * @param source The <code>Component</code> that originated the event
+     * @param id     An integer indicating the type of event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link ComponentEvent}
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getComponent()
+     * @see #getID()
      */
     public ComponentEvent(Component source, int id) {
         super(source, id);

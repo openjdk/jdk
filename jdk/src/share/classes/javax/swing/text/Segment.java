@@ -118,7 +118,7 @@ public class Segment implements Cloneable, CharacterIterator, CharSequence {
         if (array != null) {
             return new String(array, offset, count);
         }
-        return new String();
+        return "";
     }
 
     // --- CharacterIterator methods -------------------------------------

@@ -41,8 +41,8 @@ protected:
   size_t    _allocated;     // in HeapWord units
   size_t    _wasted;        // in HeapWord units
   char tail[32];
-  static const size_t FillerHeaderSize;
-  static const size_t AlignmentReserve;
+  static size_t FillerHeaderSize;
+  static size_t AlignmentReserve;
 
 public:
   // Initializes the buffer to be empty, but with the given "word_sz".

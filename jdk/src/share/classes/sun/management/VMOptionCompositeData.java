@@ -69,7 +69,7 @@ public class VMOptionCompositeData extends LazyCompositeData {
                                             vmOptionItemValues);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 
@@ -80,7 +80,7 @@ public class VMOptionCompositeData extends LazyCompositeData {
                 MappedMXBeanType.toOpenType(VMOption.class);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 

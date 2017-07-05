@@ -63,12 +63,22 @@ public class SystemDictionary {
     javaSystemLoaderField = type.getOopField("_java_system_loader");
     nofBuckets = db.lookupIntConstant("SystemDictionary::_nof_buckets").intValue();
 
-    objectKlassField = type.getOopField("_object_klass");
-    classLoaderKlassField = type.getOopField("_classloader_klass");
-    stringKlassField = type.getOopField("_string_klass");
-    systemKlassField = type.getOopField("_system_klass");
-    threadKlassField = type.getOopField("_thread_klass");
-    threadGroupKlassField = type.getOopField("_threadGroup_klass");
+    objectKlassField = type.getOopField(WK_KLASS("object_klass"));
+    classLoaderKlassField = type.getOopField(WK_KLASS("classloader_klass"));
+    stringKlassField = type.getOopField(WK_KLASS("string_klass"));
+    systemKlassField = type.getOopField(WK_KLASS("system_klass"));
+    threadKlassField = type.getOopField(WK_KLASS("thread_klass"));
+    threadGroupKlassField = type.getOopField(WK_KLASS("threadGroup_klass"));
+  }
+
+  // This WK functions must follow the definitions in systemDictionary.hpp:
+  private static String WK_KLASS(String name) {
+      //#define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]
+      return ("_well_known_klasses[SystemDictionary::"+WK_KLASS_ENUM_NAME(name)+"]");
+  }
+  private static String WK_KLASS_ENUM_NAME(String kname) {
+      //#define WK_KLASS_ENUM_NAME(kname)    kname##_knum
+      return (kname+"_knum");
   }
 
   public Dictionary dictionary() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             XToolkit.RESTORE_XERROR_HANDLER();
 
             if (XToolkit.saved_error != null &&
-                XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+                XToolkit.saved_error.get_error_code() != XConstants.Success) {
                 throw new XException("Cannot write XdndAware property");
             }
         } finally {
@@ -119,12 +119,12 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
         WindowPropertyGetter wpg1 =
             new WindowPropertyGetter(embedder, XDnDConstants.XA_XdndAware, 0, 1,
-                                     false, XlibWrapper.AnyPropertyType);
+                                     false, XConstants.AnyPropertyType);
 
         try {
             status = wpg1.execute(XToolkit.IgnoreBadWindowHandler);
 
-            if (status == XlibWrapper.Success &&
+            if (status == XConstants.Success &&
                 wpg1.getData() != 0 && wpg1.getActualType() == XAtom.XA_ATOM) {
 
                 overriden = true;
@@ -143,7 +143,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             try {
                 status = wpg2.execute(XToolkit.IgnoreBadWindowHandler);
 
-                if (status == XlibWrapper.Success &&
+                if (status == XConstants.Success &&
                     wpg2.getData() != 0 &&
                     wpg2.getActualType() == XAtom.XA_WINDOW) {
 
@@ -161,7 +161,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                 try {
                     status = wpg3.execute(XToolkit.IgnoreBadWindowHandler);
 
-                    if (status != XlibWrapper.Success ||
+                    if (status != XConstants.Success ||
                         wpg3.getData() == 0 ||
                         wpg3.getActualType() != XAtom.XA_WINDOW ||
                         Native.getLong(wpg3.getData()) != proxy) {
@@ -172,12 +172,12 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                             new WindowPropertyGetter(proxy,
                                                      XDnDConstants.XA_XdndAware,
                                                      0, 1, false,
-                                                     XlibWrapper.AnyPropertyType);
+                                                     XConstants.AnyPropertyType);
 
                         try {
                             status = wpg4.execute(XToolkit.IgnoreBadWindowHandler);
 
-                            if (status != XlibWrapper.Success ||
+                            if (status != XConstants.Success ||
                                 wpg4.getData() == 0 ||
                                 wpg4.getActualType() != XAtom.XA_ATOM) {
 
@@ -212,7 +212,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
             if (XToolkit.saved_error != null &&
                 XToolkit.saved_error.get_error_code() !=
-                XlibWrapper.Success) {
+                XConstants.Success) {
                 throw new XException("Cannot write XdndAware property");
             }
 
@@ -226,7 +226,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
             if (XToolkit.saved_error != null &&
                 XToolkit.saved_error.get_error_code() !=
-                XlibWrapper.Success) {
+                XConstants.Success) {
                 throw new XException("Cannot write XdndProxy property");
             }
 
@@ -239,7 +239,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
             if (XToolkit.saved_error != null &&
                 XToolkit.saved_error.get_error_code() !=
-                XlibWrapper.Success) {
+                XConstants.Success) {
                 throw new XException("Cannot write XdndAware property");
             }
 
@@ -252,7 +252,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
             if (XToolkit.saved_error != null &&
                 XToolkit.saved_error.get_error_code() !=
-                XlibWrapper.Success) {
+                XConstants.Success) {
                 throw new XException("Cannot write XdndProxy property");
             }
         } finally {
@@ -285,7 +285,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
                 if (XToolkit.saved_error != null &&
                     XToolkit.saved_error.get_error_code() !=
-                    XlibWrapper.Success) {
+                    XConstants.Success) {
                     throw new XException("Cannot write XdndAware property");
                 }
 
@@ -298,7 +298,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
                 if (XToolkit.saved_error != null &&
                     XToolkit.saved_error.get_error_code() !=
-                    XlibWrapper.Success) {
+                    XConstants.Success) {
                     throw new XException("Cannot write XdndProxy property");
                 }
             } finally {
@@ -326,12 +326,12 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
         WindowPropertyGetter wpg1 =
             new WindowPropertyGetter(embedded, XDnDConstants.XA_XdndAware, 0, 1,
-                                     false, XlibWrapper.AnyPropertyType);
+                                     false, XConstants.AnyPropertyType);
 
         try {
             status = wpg1.execute(XToolkit.IgnoreBadWindowHandler);
 
-            if (status == XlibWrapper.Success &&
+            if (status == XConstants.Success &&
                 wpg1.getData() != 0 && wpg1.getActualType() == XAtom.XA_ATOM) {
 
                 overriden = true;
@@ -350,7 +350,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             try {
                 status = wpg2.execute(XToolkit.IgnoreBadWindowHandler);
 
-                if (status == XlibWrapper.Success &&
+                if (status == XConstants.Success &&
                     wpg2.getData() != 0 &&
                     wpg2.getActualType() == XAtom.XA_WINDOW) {
 
@@ -368,7 +368,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                 try {
                     status = wpg3.execute(XToolkit.IgnoreBadWindowHandler);
 
-                    if (status != XlibWrapper.Success ||
+                    if (status != XConstants.Success ||
                         wpg3.getData() == 0 ||
                         wpg3.getActualType() != XAtom.XA_WINDOW ||
                         Native.getLong(wpg3.getData()) != proxy) {
@@ -379,12 +379,12 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                             new WindowPropertyGetter(proxy,
                                                      XDnDConstants.XA_XdndAware,
                                                      0, 1, false,
-                                                     XlibWrapper.AnyPropertyType);
+                                                     XConstants.AnyPropertyType);
 
                         try {
                             status = wpg4.execute(XToolkit.IgnoreBadWindowHandler);
 
-                            if (status != XlibWrapper.Success ||
+                            if (status != XConstants.Success ||
                                 wpg4.getData() == 0 ||
                                 wpg4.getActualType() != XAtom.XA_ATOM) {
 
@@ -408,12 +408,12 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
         WindowPropertyGetter wpg1 =
             new WindowPropertyGetter(window, XDnDConstants.XA_XdndAware, 0, 1,
-                                     false, XlibWrapper.AnyPropertyType);
+                                     false, XConstants.AnyPropertyType);
 
         try {
             int status = wpg1.execute(XToolkit.IgnoreBadWindowHandler);
 
-            if (status == XlibWrapper.Success &&
+            if (status == XConstants.Success &&
                 wpg1.getData() != 0 && wpg1.getActualType() == XAtom.XA_ATOM) {
 
                 return true;
@@ -523,7 +523,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
             for (int i = 0; i < 3; i++) {
                 long j;
-                if ((j = xclient.get_data(2 + i)) != XlibWrapper.None) {
+                if ((j = xclient.get_data(2 + i)) != XConstants.None) {
                     formats3[countFormats++] = j;
                 }
             }
@@ -549,7 +549,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
             if (status == 0 ||
                 (XToolkit.saved_error != null &&
-                 XToolkit.saved_error.get_error_code() != XlibWrapper.Success)) {
+                 XToolkit.saved_error.get_error_code() != XConstants.Success)) {
                 throw new XException("XGetWindowAttributes failed");
             }
 
@@ -561,12 +561,12 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
         XlibWrapper.XSelectInput(XToolkit.getDisplay(), source_win,
                                  source_win_mask |
-                                 XlibWrapper.StructureNotifyMask);
+                                 XConstants.StructureNotifyMask);
 
         XToolkit.RESTORE_XERROR_HANDLER();
 
         if (XToolkit.saved_error != null &&
-            XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+            XToolkit.saved_error.get_error_code() != XConstants.Success) {
             throw new XException("XSelectInput failed");
         }
 
@@ -581,7 +581,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
     }
 
     private boolean processXdndPosition(XClientMessageEvent xclient) {
-        long time_stamp = (int)XlibWrapper.CurrentTime;
+        long time_stamp = (int)XConstants.CurrentTime;
         long xdnd_action = 0;
         int java_action = DnDConstants.ACTION_NONE;
         int x = 0;
@@ -748,7 +748,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                                 long data3, long data4) {
         XClientMessageEvent enter = new XClientMessageEvent();
         try {
-            enter.set_type((int)XlibWrapper.ClientMessage);
+            enter.set_type((int)XConstants.ClientMessage);
             enter.set_window(toplevel);
             enter.set_format(32);
             enter.set_message_type(XDnDConstants.XA_XdndEnter.getAtom());
@@ -774,7 +774,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                                   long sourceWindow) {
         XClientMessageEvent leave = new XClientMessageEvent();
         try {
-            leave.set_type((int)XlibWrapper.ClientMessage);
+            leave.set_type((int)XConstants.ClientMessage);
             leave.set_window(toplevel);
             leave.set_format(32);
             leave.set_message_type(XDnDConstants.XA_XdndLeave.getAtom());
@@ -804,7 +804,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XlibWrapper.ClientMessage);
+            msg.set_type((int)XConstants.ClientMessage);
             msg.set_window(xclient.get_data(0));
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndStatus.getAtom());
@@ -826,7 +826,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             try {
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                        xclient.get_data(0),
-                                       false, XlibWrapper.NoEventMask,
+                                       false, XConstants.NoEventMask,
                                        msg.pData);
             } finally {
                 XToolkit.awtUnlock();
@@ -842,7 +842,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
       throws IllegalArgumentException, IOException {
         XClientMessageEvent xclient = new XClientMessageEvent(ctxt);
         long message_type = xclient.get_message_type();
-        long time_stamp = XlibWrapper.CurrentTime;
+        long time_stamp = XConstants.CurrentTime;
 
         // NOTE: we assume that the source supports at least version 1, so we
         // can use the time stamp
@@ -892,7 +892,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
         XClientMessageEvent msg = new XClientMessageEvent();
         try {
-            msg.set_type((int)XlibWrapper.ClientMessage);
+            msg.set_type((int)XConstants.ClientMessage);
             msg.set_window(xclient.get_data(0));
             msg.set_format(32);
             msg.set_message_type(XDnDConstants.XA_XdndFinished.getAtom());
@@ -914,7 +914,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             try {
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(),
                                        xclient.get_data(0),
-                                       false, XlibWrapper.NoEventMask,
+                                       false, XConstants.NoEventMask,
                                        msg.pData);
             } finally {
                 XToolkit.awtUnlock();
@@ -1119,7 +1119,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                 XToolkit.RESTORE_XERROR_HANDLER();
 
                                 if (XToolkit.saved_error != null &&
-                                    XToolkit.saved_error.get_error_code() != XlibWrapper.Success) {
+                                    XToolkit.saved_error.get_error_code() != XConstants.Success) {
                                     if (logger.isLoggable(Level.WARNING)) {
                                         logger.warning("Cannot set XdndTypeList on the proxy window");
                                     }

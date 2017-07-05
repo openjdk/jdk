@@ -53,7 +53,7 @@ class SynthArrowButton extends JButton implements SwingConstants, UIResource {
 
     public void setDirection(int dir) {
         direction = dir;
-        putClientProperty("__arrow_direction__", new Integer(dir));
+        putClientProperty("__arrow_direction__", Integer.valueOf(dir));
         repaint();
     }
 

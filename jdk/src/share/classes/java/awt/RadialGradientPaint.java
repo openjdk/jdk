@@ -543,7 +543,31 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
     }
 
     /**
-     * {@inheritDoc}
+     * Creates and returns a {@link PaintContext} used to
+     * generate a circular radial color gradient pattern.
+     * See the description of the {@link Paint#createContext createContext} method
+     * for information on null parameter handling.
+     *
+     * @param cm the preferred {@link ColorModel} which represents the most convenient
+     *           format for the caller to receive the pixel data, or {@code null}
+     *           if there is no preference.
+     * @param deviceBounds the device space bounding box
+     *                     of the graphics primitive being rendered.
+     * @param userBounds the user space bounding box
+     *                   of the graphics primitive being rendered.
+     * @param transform the {@link AffineTransform} from user
+     *              space into device space.
+     * @param hints the set of hints that the context object can use to
+     *              choose between rendering alternatives.
+     * @return the {@code PaintContext} for
+     *         generating color patterns.
+     * @see Paint
+     * @see PaintContext
+     * @see ColorModel
+     * @see Rectangle
+     * @see Rectangle2D
+     * @see AffineTransform
+     * @see RenderingHints
      */
     public PaintContext createContext(ColorModel cm,
                                       Rectangle deviceBounds,

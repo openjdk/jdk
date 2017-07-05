@@ -29,7 +29,25 @@ import java.awt.Adjustable;
 import java.awt.AWTEvent;
 
 /**
- * The adjustment event emitted by Adjustable objects.
+ * The adjustment event emitted by Adjustable objects like
+ * {@link java.awt.Scrollbar} and {@link java.awt.ScrollPane}.
+ * When the user changes the value of the scrolling component,
+ * it receives an instance of {@code AdjustmentEvent}.
+ * <p>
+ * An unspecified behavior will be caused if the {@code id} parameter
+ * of any particular {@code AdjustmentEvent} instance is not
+ * in the range from {@code ADJUSTMENT_FIRST} to {@code ADJUSTMENT_LAST}.
+ * <p>
+ * The {@code type} of any {@code AdjustmentEvent} instance takes one of the following
+ * values:
+ *                     <ul>
+ *                     <li> {@code UNIT_INCREMENT}
+ *                     <li> {@code UNIT_DECREMENT}
+ *                     <li> {@code BLOCK_INCREMENT}
+ *                     <li> {@code BLOCK_DECREMENT}
+ *                     <li> {@code TRACK}
+ *                     </ul>
+ * Assigning the value different from listed above will cause an unspecified behavior.
  * @see java.awt.Adjustable
  * @see AdjustmentListener
  *
@@ -130,17 +148,24 @@ public class AdjustmentEvent extends AWTEvent {
      * Constructs an <code>AdjustmentEvent</code> object with the
      * specified <code>Adjustable</code> source, event type,
      * adjustment type, and value.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior.  This method throws an
+     * <p> This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
-     * @param source the <code>Adjustable</code> object where the
+     * @param source The <code>Adjustable</code> object where the
      *               event originated
-     * @param id     the event type
-     * @param type   the adjustment type
-     * @param value  the current value of the adjustment
+     * @param id     An integer indicating the type of event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link AdjustmentEvent}
+     * @param type   An integer indicating the adjustment type.
+     *                     For information on allowable values, see
+     *                     the class description for {@link AdjustmentEvent}
+     * @param value  The current value of the adjustment
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getSource()
+     * @see #getID()
+     * @see #getAdjustmentType()
+     * @see #getValue()
      */
     public AdjustmentEvent(Adjustable source, int id, int type, int value) {
         this(source, id, type, value, false);
@@ -149,22 +174,29 @@ public class AdjustmentEvent extends AWTEvent {
     /**
      * Constructs an <code>AdjustmentEvent</code> object with the
      * specified Adjustable source, event type, adjustment type, and value.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior.  This method throws an
+     * <p> This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
-
      *
-     * @param source the <code>Adjustable</code> object where the
+     * @param source The <code>Adjustable</code> object where the
      *               event originated
-     * @param id     the event type
-     * @param type   the adjustment type
-     * @param value  the current value of the adjustment
-     * @param isAdjusting <code>true</code> if the event is one
+     * @param id     An integer indicating the type of event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link AdjustmentEvent}
+     * @param type   An integer indicating the adjustment type.
+     *                     For information on allowable values, see
+     *                     the class description for {@link AdjustmentEvent}
+     * @param value  The current value of the adjustment
+     * @param isAdjusting A boolean that equals <code>true</code> if the event is one
      *               of a series of multiple adjusting events,
      *               otherwise <code>false</code>
      * @throws IllegalArgumentException if <code>source</code> is null
      * @since 1.4
+     * @see #getSource()
+     * @see #getID()
+     * @see #getAdjustmentType()
+     * @see #getValue()
+     * @see #getValueIsAdjusting()
      */
     public AdjustmentEvent(Adjustable source, int id, int type, int value, boolean isAdjusting) {
         super(source, id);

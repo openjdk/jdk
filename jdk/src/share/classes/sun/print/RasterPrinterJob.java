@@ -245,7 +245,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /**
      * The name of the job being printed.
      */
-    private String mDocName = new String("Java Printing");
+    private String mDocName = "Java Printing";
 
 
     /**

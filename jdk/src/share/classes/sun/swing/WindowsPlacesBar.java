@@ -93,11 +93,18 @@ public class WindowsPlacesBar extends JToolBar
             if (index >= 0 && index < folderName.length() - 1) {
                 folderName = folderName.substring(index + 1);
             }
-            Icon icon = null;
+            Icon icon;
             if (files[i] instanceof ShellFolder) {
                 // We want a large icon, fsv only gives us a small.
                 ShellFolder sf = (ShellFolder)files[i];
-                icon = new ImageIcon(sf.getIcon(true), sf.getFolderType());
+                Image image = sf.getIcon(true);
+
+                if (image == null) {
+                    // Get default image
+                    image = (Image) ShellFolder.get("shell32LargeIcon 1");
+                }
+
+                icon = image == null ? null : new ImageIcon(image, sf.getFolderType());
             } else {
                 icon = fsv.getSystemIcon(files[i]);
             }

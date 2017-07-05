@@ -112,6 +112,7 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
             (*env)->SetIntField(env, iaObj, ia_familyID, IPv4);
         } else {
             static jclass inet6Cls = 0;
+            jint scope;
             if (inet6Cls == 0) {
                 jclass c = (*env)->FindClass(env, "java/net/Inet6Address");
                 CHECK_NULL_RETURN(c, NULL);
@@ -129,7 +130,10 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
             (*env)->SetObjectField(env, iaObj, ia6_ipaddressID, ipaddress);
 
             (*env)->SetIntField(env, iaObj, ia_familyID, IPv6);
-            (*env)->SetIntField(env, iaObj, ia6_scopeidID, getScopeID(him));
+            scope = getScopeID(him);
+            (*env)->SetIntField(env, iaObj, ia6_scopeidID, scope);
+            if (scope > 0)
+                (*env)->SetBooleanField(env, iaObj, ia6_scopeidsetID, JNI_TRUE);
         }
         *port = ntohs(him6->sin6_port);
     } else

@@ -168,7 +168,7 @@ void PSMarkSweepDecorator::precompact() {
           start_array->allocate_block(compact_top);
       }
 
-      debug_only(MarkSweep::register_live_oop(oop(q), size));
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::register_live_oop(oop(q), size));
       compact_top += size;
       assert(compact_top <= dest->space()->end(),
         "Exceeding space in destination");
@@ -234,7 +234,7 @@ void PSMarkSweepDecorator::precompact() {
               start_array->allocate_block(compact_top);
           }
 
-          debug_only(MarkSweep::register_live_oop(oop(q), sz));
+          VALIDATE_MARK_SWEEP_ONLY(MarkSweep::register_live_oop(oop(q), sz));
           compact_top += sz;
           assert(compact_top <= dest->space()->end(),
             "Exceeding space in destination");
@@ -326,15 +326,11 @@ void PSMarkSweepDecorator::adjust_pointers() {
     HeapWord* end = _first_dead;
 
     while (q < end) {
-      debug_only(MarkSweep::track_interior_pointers(oop(q)));
-
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::track_interior_pointers(oop(q)));
       // point all the oops to the new location
       size_t size = oop(q)->adjust_pointers();
-
-      debug_only(MarkSweep::check_interior_pointers());
-
-      debug_only(MarkSweep::validate_live_oop(oop(q), size));
-
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::check_interior_pointers());
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::validate_live_oop(oop(q), size));
       q += size;
     }
 
@@ -354,11 +350,11 @@ void PSMarkSweepDecorator::adjust_pointers() {
     Prefetch::write(q, interval);
     if (oop(q)->is_gc_marked()) {
       // q is alive
-      debug_only(MarkSweep::track_interior_pointers(oop(q)));
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::track_interior_pointers(oop(q)));
       // point all the oops to the new location
       size_t size = oop(q)->adjust_pointers();
-      debug_only(MarkSweep::check_interior_pointers());
-      debug_only(MarkSweep::validate_live_oop(oop(q), size));
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::check_interior_pointers());
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::validate_live_oop(oop(q), size));
       debug_only(prev_q = q);
       q += size;
     } else {
@@ -392,7 +388,7 @@ void PSMarkSweepDecorator::compact(bool mangle_free_space ) {
     while (q < end) {
       size_t size = oop(q)->size();
       assert(!oop(q)->is_gc_marked(), "should be unmarked (special dense prefix handling)");
-      debug_only(MarkSweep::live_oop_moved_to(q, size, q));
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::live_oop_moved_to(q, size, q));
       debug_only(prev_q = q);
       q += size;
     }
@@ -427,7 +423,7 @@ void PSMarkSweepDecorator::compact(bool mangle_free_space ) {
       Prefetch::write(compaction_top, copy_interval);
 
       // copy object and reinit its mark
-      debug_only(MarkSweep::live_oop_moved_to(q, size, compaction_top));
+      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::live_oop_moved_to(q, size, compaction_top));
       assert(q != compaction_top, "everything in this pass should be moving");
       Copy::aligned_conjoint_words(q, compaction_top, size);
       oop(compaction_top)->init_mark();

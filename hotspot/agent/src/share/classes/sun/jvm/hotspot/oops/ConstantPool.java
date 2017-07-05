@@ -31,10 +31,10 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-// A ConstantPool is an array containing class constants
+// A ConstantPool is an oop containing class constants
 // as described in the class file
 
-public class ConstantPool extends Array implements ClassConstants {
+public class ConstantPool extends Oop implements ClassConstants {
   // Used for debugging this code
   private static final boolean DEBUG = false;
 
@@ -55,8 +55,9 @@ public class ConstantPool extends Array implements ClassConstants {
     tags        = new OopField(type.getOopField("_tags"), 0);
     cache       = new OopField(type.getOopField("_cache"), 0);
     poolHolder  = new OopField(type.getOopField("_pool_holder"), 0);
+    length      = new CIntField(type.getCIntegerField("_length"), 0);
     headerSize  = type.getSize();
-    elementSize = db.getOopSize();
+    elementSize = 0;
   }
 
   ConstantPool(OopHandle handle, ObjectHeap heap) {
@@ -68,7 +69,7 @@ public class ConstantPool extends Array implements ClassConstants {
   private static OopField tags;
   private static OopField cache;
   private static OopField poolHolder;
-
+  private static CIntField length; // number of elements in oop
 
   private static long headerSize;
   private static long elementSize;
@@ -76,12 +77,22 @@ public class ConstantPool extends Array implements ClassConstants {
   public TypeArray         getTags()       { return (TypeArray)         tags.getValue(this); }
   public ConstantPoolCache getCache()      { return (ConstantPoolCache) cache.getValue(this); }
   public Klass             getPoolHolder() { return (Klass)             poolHolder.getValue(this); }
+  public int               getLength()     { return (int)length.getValue(this); }
+
+  private long getElementSize() {
+    if (elementSize !=0 ) {
+      return elementSize;
+    } else {
+      elementSize = VM.getVM().getOopSize();
+    }
+    return elementSize;
+  }
 
   private long indexOffset(long index) {
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that(index > 0 && index < getLength(),  "invalid cp index");
+      Assert.that(index > 0 && index < getLength(),  "invalid cp index " + index + " " + getLength());
     }
-    return (index * elementSize) + headerSize;
+    return (index * getElementSize()) + headerSize;
   }
 
   public ConstantTag getTagAt(long index) {
@@ -464,7 +475,7 @@ public class ConstantPool extends Array implements ClassConstants {
   }
 
   public long getObjectSize() {
-    return alignObjectSize(headerSize + (getLength() * elementSize));
+    return alignObjectSize(headerSize + (getLength() * getElementSize()));
   }
 
   //----------------------------------------------------------------------

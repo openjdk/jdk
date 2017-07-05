@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * have any questions.
  */
 
+import java.beans.BeanDescriptor;
 import java.beans.EventSetDescriptor;
 import java.beans.IndexedPropertyDescriptor;
 import java.beans.IntrospectionException;
@@ -39,18 +40,63 @@ public final class BeanUtils {
     }
 
     /**
+     * Returns a bean descriptor for specified class.
+     *
+     * @param type  the class to introspect
+     * @return a bean descriptor
+     */
+    public static BeanDescriptor getBeanDescriptor(Class type) {
+        try {
+            return Introspector.getBeanInfo(type).getBeanDescriptor();
+        } catch (IntrospectionException exception) {
+            throw new Error("unexpected exception", exception);
+        }
+    }
+
+    /**
      * Returns an array of property descriptors for specified class.
      *
      * @param type  the class to introspect
      * @return an array of property descriptors
      */
     public static PropertyDescriptor[] getPropertyDescriptors(Class type) {
-        System.out.println(type);
         try {
             return Introspector.getBeanInfo(type).getPropertyDescriptors();
         } catch (IntrospectionException exception) {
             throw new Error("unexpected exception", exception);
         }
+    }
+
+    /**
+     * Returns an array of event set descriptors for specified class.
+     *
+     * @param type  the class to introspect
+     * @return an array of event set descriptors
+     */
+    public static EventSetDescriptor[] getEventSetDescriptors(Class type) {
+        try {
+            return Introspector.getBeanInfo(type).getEventSetDescriptors();
+        } catch (IntrospectionException exception) {
+            throw new Error("unexpected exception", exception);
+        }
+    }
+
+    /**
+     * Finds an event set descriptor for the class
+     * that matches the event set name.
+     *
+     * @param type  the class to introspect
+     * @param name  the name of the event set to search
+     * @return the {@code EventSetDescriptor} or {@code null}
+     */
+    public static EventSetDescriptor findEventSetDescriptor(Class type, String name) {
+        EventSetDescriptor[] esds = getEventSetDescriptors(type);
+        for (EventSetDescriptor esd : esds) {
+            if (esd.getName().equals(name)) {
+                return esd;
+            }
+        }
+        return null;
     }
 
     /**
@@ -69,6 +115,22 @@ public final class BeanUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns a event set descriptor for the class
+     * that matches the property name.
+     *
+     * @param type the class to introspect
+     * @param name the name of the event set to search
+     * @return the {@code EventSetDescriptor}
+     */
+    public static EventSetDescriptor getEventSetDescriptor(Class type, String name) {
+        EventSetDescriptor esd = findEventSetDescriptor(type, name);
+        if (esd != null) {
+            return esd;
+        }
+        throw new Error("could not find event set '" + name + "' in " + type);
     }
 
     /**

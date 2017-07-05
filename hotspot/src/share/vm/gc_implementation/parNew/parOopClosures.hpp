@@ -26,70 +26,77 @@
 
 class ParScanThreadState;
 class ParNewGeneration;
-template<class E> class GenericTaskQueueSet;
-typedef GenericTaskQueueSet<oop> ObjToScanQueueSet;
+typedef OopTaskQueueSet ObjToScanQueueSet;
 class ParallelTaskTerminator;
 
 class ParScanClosure: public OopsInGenClosure {
-protected:
+ protected:
   ParScanThreadState* _par_scan_state;
-  ParNewGeneration* _g;
-  HeapWord* _boundary;
-  void do_oop_work(oop* p,
-                          bool gc_barrier,
-                          bool root_scan);
-
-  void par_do_barrier(oop* p);
-
-public:
+  ParNewGeneration*   _g;
+  HeapWord*           _boundary;
+  template <class T> void inline par_do_barrier(T* p);
+  template <class T> void inline do_oop_work(T* p,
+                                             bool gc_barrier,
+                                             bool root_scan);
+ public:
   ParScanClosure(ParNewGeneration* g, ParScanThreadState* par_scan_state);
 };
 
 class ParScanWithBarrierClosure: public ParScanClosure {
-public:
-  void do_oop(oop* p)    { do_oop_work(p, true, false); }
-  void do_oop_nv(oop* p) { do_oop_work(p, true, false); }
+ public:
   ParScanWithBarrierClosure(ParNewGeneration* g,
                             ParScanThreadState* par_scan_state) :
     ParScanClosure(g, par_scan_state) {}
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
+  inline void do_oop_nv(oop* p);
+  inline void do_oop_nv(narrowOop* p);
 };
 
 class ParScanWithoutBarrierClosure: public ParScanClosure {
-public:
+ public:
   ParScanWithoutBarrierClosure(ParNewGeneration* g,
                                ParScanThreadState* par_scan_state) :
     ParScanClosure(g, par_scan_state) {}
-  void do_oop(oop* p)    { do_oop_work(p, false, false); }
-  void do_oop_nv(oop* p) { do_oop_work(p, false, false); }
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
+  inline void do_oop_nv(oop* p);
+  inline void do_oop_nv(narrowOop* p);
 };
 
 class ParRootScanWithBarrierTwoGensClosure: public ParScanClosure {
-public:
+ public:
   ParRootScanWithBarrierTwoGensClosure(ParNewGeneration* g,
                                        ParScanThreadState* par_scan_state) :
     ParScanClosure(g, par_scan_state) {}
-  void do_oop(oop* p) { do_oop_work(p, true, true); }
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
 };
 
 class ParRootScanWithoutBarrierClosure: public ParScanClosure {
-public:
+ public:
   ParRootScanWithoutBarrierClosure(ParNewGeneration* g,
                                    ParScanThreadState* par_scan_state) :
     ParScanClosure(g, par_scan_state) {}
-  void do_oop(oop* p) { do_oop_work(p, false, true); }
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
 };
 
 class ParScanWeakRefClosure: public ScanWeakRefClosure {
-protected:
+ protected:
   ParScanThreadState* _par_scan_state;
-public:
+  template <class T> inline void do_oop_work(T* p);
+ public:
   ParScanWeakRefClosure(ParNewGeneration* g,
                         ParScanThreadState* par_scan_state);
-  void do_oop(oop* p);
-  void do_oop_nv(oop* p);
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
+  inline void do_oop_nv(oop* p);
+  inline void do_oop_nv(narrowOop* p);
 };
 
 class ParEvacuateFollowersClosure: public VoidClosure {
+ private:
   ParScanThreadState* _par_scan_state;
   ParScanThreadState* par_scan_state() { return _par_scan_state; }
 
@@ -121,8 +128,7 @@ class ParEvacuateFollowersClosure: public VoidClosure {
 
   ParallelTaskTerminator* _terminator;
   ParallelTaskTerminator* terminator() { return _terminator; }
-
-public:
+ public:
   ParEvacuateFollowersClosure(
     ParScanThreadState* par_scan_state_,
     ParScanWithoutBarrierClosure* to_space_closure_,
@@ -132,5 +138,5 @@ public:
     ParRootScanWithBarrierTwoGensClosure* old_gen_root_closure_,
     ObjToScanQueueSet* task_queues_,
     ParallelTaskTerminator* terminator_);
-  void do_void();
+  virtual void do_void();
 };

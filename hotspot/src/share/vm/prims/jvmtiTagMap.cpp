@@ -2662,6 +2662,7 @@ class SimpleRootsClosure : public OopClosure {
     _continue = CallbackInvoker::report_simple_root(kind, o);
 
   }
+  virtual void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
 // A supporting closure used to process JNI locals
@@ -2704,6 +2705,7 @@ class JNILocalRootsClosure : public OopClosure {
     // invoke the callback
     _continue = CallbackInvoker::report_jni_local_root(_thread_tag, _tid, _depth, _method, o);
   }
+  virtual void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
 
@@ -2878,9 +2880,11 @@ inline bool VM_HeapWalkOperation::iterate_over_type_array(oop o) {
 }
 
 // verify that a static oop field is in range
-static inline bool verify_static_oop(instanceKlass* ik, oop* obj_p) {
-  oop* start = ik->start_of_static_fields();
-  oop* end = start + ik->static_oop_field_size();
+static inline bool verify_static_oop(instanceKlass* ik,
+                                     klassOop k, int offset) {
+  address obj_p = (address)k + offset;
+  address start = (address)ik->start_of_static_fields();
+  address end = start + (ik->static_oop_field_size() * heapOopSize);
   assert(end >= start, "sanity check");
 
   if (obj_p >= start && obj_p < end) {
@@ -2981,10 +2985,8 @@ inline bool VM_HeapWalkOperation::iterate_over_class(klassOop k) {
       ClassFieldDescriptor* field = field_map->field_at(i);
       char type = field->field_type();
       if (!is_primitive_field_type(type)) {
-        address addr = (address)k + field->field_offset();
-        oop* f = (oop*)addr;
-        assert(verify_static_oop(ik, f), "sanity check");
-        oop fld_o = *f;
+        oop fld_o = k->obj_field(field->field_offset());
+        assert(verify_static_oop(ik, k, field->field_offset()), "sanity check");
         if (fld_o != NULL) {
           int slot = field->field_index();
           if (!CallbackInvoker::report_static_field_reference(mirror, fld_o, slot)) {
@@ -3026,9 +3028,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
     ClassFieldDescriptor* field = field_map->field_at(i);
     char type = field->field_type();
     if (!is_primitive_field_type(type)) {
-      address addr = (address)o + field->field_offset();
-      oop* f = (oop*)addr;
-      oop fld_o = *f;
+      oop fld_o = o->obj_field(field->field_offset());
       if (fld_o != NULL) {
         // reflection code may have a reference to a klassOop.
         // - see sun.reflect.UnsafeStaticFieldAccessorImpl and sun.misc.Unsafe

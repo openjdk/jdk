@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@ import java.awt.*;
 import java.util.Vector;
 import java.util.Locale;
 
-import java.beans.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.Transient;
 
 import javax.swing.event.*;
 import javax.accessibility.*;
@@ -724,6 +726,7 @@ public class JList extends JComponent implements Scrollable, Accessible
      * @return the value of the {@code cellRenderer} property
      * @see #setCellRenderer
      */
+    @Transient
     public ListCellRenderer getCellRenderer() {
         return cellRenderer;
     }
@@ -2153,6 +2156,7 @@ public class JList extends JComponent implements Scrollable, Accessible
      * @see #removeSelectionInterval
      * @see #addListSelectionListener
      */
+    @Transient
     public int[] getSelectedIndices() {
         ListSelectionModel sm = getSelectionModel();
         int iMin = sm.getMinSelectionIndex();

@@ -1234,7 +1234,7 @@ Java_sun_awt_X11_XWindow_initIDs
    }
 }
 
-JNIEXPORT int JNICALL
+JNIEXPORT jint JNICALL
 Java_sun_awt_X11_XWindow_getKeySymForAWTKeyCode(JNIEnv* env, jclass clazz, jint keycode) {
     return awt_getX11KeySym(keycode);
 }
