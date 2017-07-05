@@ -2329,6 +2329,19 @@ MsgRouting AwtComponent::WmMouseDown(UINT flags, int x, int y, int button)
     MSG msg;
     InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
 
+    AwtWindow *toplevel = GetContainer();
+    if (toplevel && !toplevel->IsSimpleWindow()) {
+        /*
+         * The frame should be focused by click in case it is
+         * the active window but not the focused window. See 6886678.
+         */
+        if (toplevel->GetHWnd() == ::GetActiveWindow() &&
+            toplevel->GetHWnd() != AwtComponent::GetFocusedWindow())
+        {
+            toplevel->AwtSetActiveWindow();
+        }
+    }
+
     SendMouseEvent(java_awt_event_MouseEvent_MOUSE_PRESSED, now, x, y,
                    GetJavaModifiers(), clickCount, JNI_FALSE,
                    GetButton(button), &msg);

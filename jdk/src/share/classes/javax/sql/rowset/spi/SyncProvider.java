@@ -91,8 +91,8 @@ import javax.sql.*;
  * </pre>
  * <p>
  * A vendor can register a <code>SyncProvider</code> implementation class name
- * with Sun Microsystems, Inc. by sending email to jdbc@sun.com.
- * Sun will maintain a database listing the
+ * with Oracle Corporation by sending email to jdbc@sun.com.
+ * Oracle will maintain a database listing the
  * available <code>SyncProvider</code> implementations for use with compliant
  * <code>RowSet</code> implementations.  This database will be similar to the
  * one already maintained to list available JDBC drivers.

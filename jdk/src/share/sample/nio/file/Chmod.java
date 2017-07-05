@@ -285,14 +285,8 @@ public class Chmod {
         }
 
         @Override
-        public FileVisitResult preVisitDirectory(FileRef dir) {
+        public FileVisitResult preVisitDirectory(FileRef dir, BasicFileAttributes attrs) {
             chmod(dir, changer);
-            return CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult preVisitDirectoryFailed(FileRef dir, IOException exc) {
-            System.err.println("WARNING: " + exc);
             return CONTINUE;
         }
 

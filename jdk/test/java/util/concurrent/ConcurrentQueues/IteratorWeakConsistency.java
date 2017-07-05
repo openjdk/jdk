@@ -48,6 +48,7 @@ public class IteratorWeakConsistency {
         test(new LinkedBlockingQueue(20));
         test(new LinkedBlockingDeque());
         test(new LinkedBlockingDeque(20));
+        test(new ConcurrentLinkedDeque());
         test(new ConcurrentLinkedQueue());
         test(new LinkedTransferQueue());
         // Other concurrent queues (e.g. ArrayBlockingQueue) do not

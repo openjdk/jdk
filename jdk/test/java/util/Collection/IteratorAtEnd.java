@@ -48,6 +48,7 @@ public class IteratorAtEnd {
         testCollection(new PriorityQueue());
         testCollection(new LinkedBlockingQueue());
         testCollection(new ArrayBlockingQueue(100));
+        testCollection(new ConcurrentLinkedDeque());
         testCollection(new ConcurrentLinkedQueue());
         testCollection(new LinkedTransferQueue());
 
