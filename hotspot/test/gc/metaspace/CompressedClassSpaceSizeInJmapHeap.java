@@ -41,6 +41,10 @@ public class CompressedClassSpaceSizeInJmapHeap {
             // Compressed Class Space is only available on 64-bit JVMs
             return;
         }
+        if (!Platform.shouldSAAttach()) {
+            System.out.println("SA attach not expected to work - test skipped.");
+            return;
+        }
 
         String pid = Integer.toString(ProcessTools.getProcessId());
 

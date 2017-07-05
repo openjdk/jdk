@@ -82,6 +82,9 @@ public class PrintCodeCacheRunner implements CodeCacheCLITestCase.Runner {
                 ExitCode.OK,
                 testCaseDescription.getTestOptions(options,
                         CommandLineOptionTest.prepareBooleanFlag(
-                                "PrintCodeCache", printCodeCache)));
+                                "PrintCodeCache", printCodeCache),
+                        // Do not use large pages to avoid large page
+                        // alignment of code heaps affecting their size.
+                        "-XX:-UseLargePages"));
     }
 }
