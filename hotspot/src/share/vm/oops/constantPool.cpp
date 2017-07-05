@@ -206,7 +206,8 @@ void ConstantPool::trace_class_resolution(constantPoolHandle this_cp, KlassHandl
   }
 }
 
-Klass* ConstantPool::klass_at_impl(constantPoolHandle this_cp, int which, TRAPS) {
+Klass* ConstantPool::klass_at_impl(constantPoolHandle this_cp, int which,
+                                   bool save_resolution_error, TRAPS) {
   assert(THREAD->is_Java_thread(), "must be a Java thread");
 
   // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
@@ -249,7 +250,18 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_cp, int which, TRAPS)
   // Failed to resolve class. We must record the errors so that subsequent attempts
   // to resolve this constant pool entry fail with the same error (JVMS 5.4.3).
   if (HAS_PENDING_EXCEPTION) {
-    save_and_throw_exception(this_cp, which, constantTag(JVM_CONSTANT_UnresolvedClass), CHECK_0);
+    if (save_resolution_error) {
+      save_and_throw_exception(this_cp, which, constantTag(JVM_CONSTANT_UnresolvedClass), CHECK_NULL);
+      // If CHECK_NULL above doesn't return the exception, that means that
+      // some other thread has beaten us and has resolved the class.
+      // To preserve old behavior, we return the resolved class.
+      entry = this_cp->resolved_klass_at(which);
+      assert(entry.is_resolved(), "must be resolved if exception was cleared");
+      assert(entry.get_klass()->is_klass(), "must be resolved to a klass");
+      return entry.get_klass();
+    } else {
+      return NULL;  // return the pending exception
+    }
   }
 
   // Make this class loader depend upon the class loader owning the class reference
@@ -260,10 +272,10 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_cp, int which, TRAPS)
     // skip resolving the constant pool so that this code gets
     // called the next time some bytecodes refer to this class.
     trace_class_resolution(this_cp, k);
-      return k();
-    } else {
-        this_cp->klass_at_put(which, k());
-      }
+    return k();
+  } else {
+    this_cp->klass_at_put(which, k());
+  }
 
   entry = this_cp->resolved_klass_at(which);
   assert(entry.is_resolved() && entry.get_klass()->is_klass(), "must be resolved at this point");
@@ -573,23 +585,24 @@ void ConstantPool::save_and_throw_exception(constantPoolHandle this_cp, int whic
     Symbol* message = exception_message(this_cp, which, tag, PENDING_EXCEPTION);
     SystemDictionary::add_resolution_error(this_cp, which, error, message);
     // CAS in the tag.  If a thread beat us to registering this error that's fine.
-    // If another thread resolved the reference, this is an error.  The resolution
-    // must deterministically get an error.   So why do we save this?
-    // We save this because jvmti can add classes to the bootclass path after this
-    // error, so it needs to get the same error if the error is first.
+    // If another thread resolved the reference, this is a race condition. This
+    // thread may have had a security manager or something temporary.
+    // This doesn't deterministically get an error.   So why do we save this?
+    // We save this because jvmti can add classes to the bootclass path after
+    // this error, so it needs to get the same error if the error is first.
     jbyte old_tag = Atomic::cmpxchg((jbyte)error_tag,
                             (jbyte*)this_cp->tag_addr_at(which), (jbyte)tag.value());
-    assert(old_tag == error_tag || old_tag == tag.value(), "should not be resolved otherwise");
+    if (old_tag != error_tag && old_tag != tag.value()) {
+      // MethodHandles and MethodType doesn't change to resolved version.
+      assert(this_cp->tag_at(which).is_klass(), "Wrong tag value");
+      // Forget the exception and use the resolved class.
+      CLEAR_PENDING_EXCEPTION;
+    }
   } else {
     // some other thread put this in error state
     throw_resolution_error(this_cp, which, CHECK);
   }
-
-  // This exits with some pending exception
-  assert(HAS_PENDING_EXCEPTION, "should not be cleared");
 }
-
-
 
 // Called to resolve constants in the constant pool and return an oop.
 // Some constant pool entries cache their resolved oop. This is also
@@ -627,7 +640,7 @@ oop ConstantPool::resolve_constant_at_impl(constantPoolHandle this_cp, int index
   case JVM_CONSTANT_Class:
     {
       assert(cache_index == _no_index_sentinel, "should not have been set");
-      Klass* resolved = klass_at_impl(this_cp, index, CHECK_NULL);
+      Klass* resolved = klass_at_impl(this_cp, index, true, CHECK_NULL);
       // ldc wants the java mirror.
       result_oop = resolved->java_mirror();
       break;
@@ -660,7 +673,7 @@ oop ConstantPool::resolve_constant_at_impl(constantPoolHandle this_cp, int index
                       ref_kind, index, this_cp->method_handle_index_at(index),
                       callee_index, name->as_C_string(), signature->as_C_string());
       KlassHandle callee;
-      { Klass* k = klass_at_impl(this_cp, callee_index, CHECK_NULL);
+      { Klass* k = klass_at_impl(this_cp, callee_index, true, CHECK_NULL);
         callee = KlassHandle(THREAD, k);
       }
       KlassHandle klass(THREAD, this_cp->pool_holder());

@@ -36,9 +36,9 @@
 
 import com.oracle.java.testlibrary.OutputAnalyzer;
 import com.oracle.java.testlibrary.ProcessTools;
-import scenarios.ProfilingType;
-
+import com.oracle.java.testlibrary.Utils;
 import java.util.Random;
+import scenarios.ProfilingType;
 
 public class OffTest {
     private static final String[] OPTIONS = {
@@ -63,14 +63,7 @@ public class OffTest {
     private static final int PROFILING_TYPE_INDEX = OPTIONS.length - 1;
     private static final int TYPE_PROFILE_INDEX = OPTIONS.length - 4;
     private static final int USE_TYPE_SPECULATION_INDEX = OPTIONS.length - 3;
-    private static final Random RNG;
-
-    static {
-        String str = System.getProperty("seed");
-        long seed = str != null ? Long.parseLong(str) : new Random().nextLong();
-        RNG = new Random(seed);
-        System.out.printf("-Dseed=%d%n", seed);
-    }
+    private static final Random RNG = Utils.getRandomInstance();
 
     public static void main(String[] args) throws Exception {
         int count = DEFAULT_COUNT;

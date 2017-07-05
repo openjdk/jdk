@@ -30,6 +30,7 @@
 
 #include <windows.h>
 #include <signal.h>             // SIGBREAK
+#include <stdio.h>
 
 // The AttachListener thread services a queue of operations. It blocks in the dequeue
 // function until an operation is enqueued. A client enqueues an operation by creating
@@ -269,6 +270,7 @@ HANDLE Win32AttachOperation::open_pipe() {
   if (hPipe != INVALID_HANDLE_VALUE) {
     // shouldn't happen as there is a pipe created per operation
     if (::GetLastError() == ERROR_PIPE_BUSY) {
+      ::CloseHandle(hPipe);
       return INVALID_HANDLE_VALUE;
     }
   }
@@ -313,7 +315,8 @@ void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) 
     BOOL fSuccess;
 
     char msg[32];
-    sprintf(msg, "%d\n", result);
+    _snprintf(msg, sizeof(msg), "%d\n", result);
+    msg[sizeof(msg) - 1] = '\0';
 
     fSuccess = write_pipe(hPipe, msg, (int)strlen(msg));
     if (fSuccess) {

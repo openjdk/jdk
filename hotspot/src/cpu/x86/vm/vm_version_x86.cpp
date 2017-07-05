@@ -865,14 +865,19 @@ void VM_Version::get_processor_features() {
   if (supports_bmi1()) {
     // tzcnt does not require VEX prefix
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstruction)) {
-      UseCountTrailingZerosInstruction = true;
+      if (!UseBMI1Instructions && !FLAG_IS_DEFAULT(UseBMI1Instructions)) {
+        // Don't use tzcnt if BMI1 is switched off on command line.
+        UseCountTrailingZerosInstruction = false;
+      } else {
+        UseCountTrailingZerosInstruction = true;
+      }
     }
   } else if (UseCountTrailingZerosInstruction) {
     warning("tzcnt instruction is not available on this CPU");
     FLAG_SET_DEFAULT(UseCountTrailingZerosInstruction, false);
   }
 
-  // BMI instructions use an encoding with VEX prefix.
+  // BMI instructions (except tzcnt) use an encoding with VEX prefix.
   // VEX prefix is generated only when AVX > 0.
   if (supports_bmi1() && supports_avx()) {
     if (FLAG_IS_DEFAULT(UseBMI1Instructions)) {

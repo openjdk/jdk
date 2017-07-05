@@ -383,7 +383,6 @@ Declares a structure type that can be used in other events.
     <event id="SweepCodeCache" path="vm/code_sweeper/sweep" label="Sweep Code Cache"
        has_thread="true" is_requestable="false" is_constant="false">
       <value type="INTEGER" field="sweepIndex" label="Sweep Index" relation="SWEEP_ID"/>
-      <value type="USHORT" field="sweepFractionIndex" label="Fraction Index"/>
       <value type="UINT" field="sweptCount" label="Methods Swept"/>
       <value type="UINT" field="flushedCount" label="Methods Flushed"/>
       <value type="UINT" field="markedCount" label="Methods Reclaimed"/>
