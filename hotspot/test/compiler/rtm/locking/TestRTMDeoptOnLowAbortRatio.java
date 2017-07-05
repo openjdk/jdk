@@ -48,7 +48,7 @@ import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.cli.predicate.AndPredicate;
 
@@ -133,7 +133,7 @@ public class TestRTMDeoptOnLowAbortRatio extends CommandLineOptionTest {
     }
 
     public static class Test implements CompilableTest {
-        private static final Unsafe UNSAFE = Utils.getUnsafe();
+        private static final Unsafe UNSAFE = UnsafeHelper.getUnsafe();
         private final Object monitor = new Object();
 
         @Override

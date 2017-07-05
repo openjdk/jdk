@@ -40,7 +40,7 @@
 package compiler.profiling.spectrapredefineclass;
 
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.File;
 import java.io.IOException;

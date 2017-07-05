@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 #include "precompiled.hpp"
-
 #include <string.h>
-#include "gc/shared/memset_with_concurrent_readers.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
-#include "utilities/ostream.hpp"
+#include <sstream>
+#include "gc/shared/memset_with_concurrent_readers.hpp"
+#include "unittest.hpp"
 
 #if INCLUDE_ALL_GCS
-
-// Unit test
-#ifndef PRODUCT
 
 static unsigned line_byte(const char* line, size_t i) {
   return unsigned(line[i]) & 0xFF;
 }
 
-// Verify memset_with_concurrent_readers mimics memset.
-// We don't attempt to verify the concurrent reader case.
-void test_memset_with_concurrent_readers() {
+TEST(gc, memset_with_concurrent_readers) {
   const size_t chunk_size = 8 * BytesPerWord;
   const unsigned chunk_count = 4;
   const size_t block_size = (chunk_count + 4) * chunk_size;
@@ -76,29 +68,32 @@ void test_memset_with_concurrent_readers() {
         bool middle_set = !memcmp(set_block, block + set_start, set_size);
         bool tail_clear = !memcmp(clear_block, block + set_end, block_size - set_end);
         if (!(head_clear && middle_set && tail_clear)) {
-          tty->print_cr("*** memset_with_concurrent_readers failed: "
-                        "set start " SIZE_FORMAT ", set end " SIZE_FORMAT,
-                        set_start, set_end);
+          std::ostringstream err_stream;
+          err_stream << "*** memset_with_concurrent_readers failed: set start "
+                     << set_start << ", set end " << set_end << std::endl;
           for (unsigned chunk = 0; chunk < (block_size / chunk_size); ++chunk) {
             for (unsigned line = 0; line < (chunk_size / BytesPerWord); ++line) {
+
               const char* lp = &block[chunk * chunk_size + line * BytesPerWord];
-              tty->print_cr("%d,%d: %2x %2x  %2x %2x  %2x %2x  %2x %2x",
-                            chunk, line,
-                            line_byte(lp, 0), line_byte(lp, 1),
-                            line_byte(lp, 2), line_byte(lp, 3),
-                            line_byte(lp, 4), line_byte(lp, 5),
-                            line_byte(lp, 6), line_byte(lp, 7));
+
+              err_stream << std::dec << chunk << "," << line << ": " << std::hex
+                         << std::setw(2) << line_byte(lp, 0) << " "
+                         << std::setw(2) << line_byte(lp, 1) << "  "
+                         << std::setw(2) << line_byte(lp, 2) << " "
+                         << std::setw(2) << line_byte(lp, 3) << "  "
+                         << std::setw(2) << line_byte(lp, 4) << " "
+                         << std::setw(2) << line_byte(lp, 5) << "  "
+                         << std::setw(2) << line_byte(lp, 6) << " "
+                         << std::setw(2) << line_byte(lp, 7) << std::endl;
             }
           }
-          assert(head_clear, "leading byte not clear");
-          assert(middle_set, "memset byte not set");
-          assert(tail_clear, "trailing bye not clear");
+          EXPECT_TRUE(head_clear) << "leading byte not clear";
+          EXPECT_TRUE(middle_set) << "memset byte not set";
+          EXPECT_TRUE(tail_clear) << "trailing bye not clear";
+          ASSERT_TRUE(head_clear && middle_set && tail_clear) << err_stream.str();
         }
       }
     }
   }
 }
-
-#endif // end unit test
-
-#endif // INCLUDE_ALL_GCS
+#endif

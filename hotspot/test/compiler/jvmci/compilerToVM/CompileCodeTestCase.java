@@ -107,6 +107,12 @@ public class CompileCodeTestCase {
     }
 
     public NMethod compile(int level) {
+        String directive = "[{ match: \"" + executable.getDeclaringClass().getName().replace('.', '/')
+                + "." + (executable instanceof Constructor ? "<init>" : executable.getName())
+                + "\", " + "BackgroundCompilation: false }]";
+        if (WB.addCompilerDirective(directive) != 1) {
+            throw new Error("Failed to add compiler directive: " + directive);
+        }
         boolean enqueued = WB.enqueueMethodForCompilation(executable,
                 level, bci);
         if (!enqueued) {
