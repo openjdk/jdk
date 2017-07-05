@@ -179,7 +179,16 @@ public final class ServicePermission extends Permission
      * Checks if this Kerberos service permission object "implies" the
      * specified permission.
      * <P>
-     * If none of the above are true, {@code implies} returns false.
+     * More specifically, this method returns true if all of the following
+     * are true (and returns false if any of them are not):
+     * <ul>
+     * <li> <i>p</i> is an instanceof {@code ServicePermission},
+     * <li> <i>p</i>'s actions are a proper subset of this
+     * {@code ServicePermission}'s actions,
+     * <li> <i>p</i>'s name is equal to this {@code ServicePermission}'s name
+     * or this {@code ServicePermission}'s name is "*".
+     * </ul>
+     *
      * @param p the permission to check against.
      *
      * @return true if the specified permission is implied by this object,

@@ -86,7 +86,9 @@ package jdk.internal.dynalink.beans;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.text.Collator;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -241,6 +243,35 @@ class OverloadedDynamicMethod extends DynamicMethod {
         assert !methods.isEmpty();
         return methods.getFirst().isConstructor();
     }
+
+    @Override
+    public String toString() {
+        // First gather the names and sort them. This makes it consistent and easier to read.
+        final List<String> names = new ArrayList<>(methods.size());
+        int len = 0;
+        for (final SingleDynamicMethod m: methods) {
+            final String name = m.getName();
+            len += name.length();
+            names.add(name);
+        }
+        // Case insensitive sorting, so e.g. "Object" doesn't come before "boolean".
+        final Collator collator = Collator.getInstance();
+        collator.setStrength(Collator.SECONDARY);
+        Collections.sort(names, collator);
+
+        final String className = getClass().getName();
+        // Class name length + length of signatures + 2 chars/per signature for indentation and newline +
+        // 3 for brackets and initial newline
+        final int totalLength = className.length() + len + 2 * names.size() + 3;
+        final StringBuilder b = new StringBuilder(totalLength);
+        b.append('[').append(className).append('\n');
+        for(final String name: names) {
+            b.append(' ').append(name).append('\n');
+        }
+        b.append(']');
+        assert b.length() == totalLength;
+        return b.toString();
+    };
 
     ClassLoader getClassLoader() {
         return classLoader;

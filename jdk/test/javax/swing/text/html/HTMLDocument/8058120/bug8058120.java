@@ -109,5 +109,3 @@ public class bug8058120 {
         frame.setVisible(true);
     }
 }
-
-

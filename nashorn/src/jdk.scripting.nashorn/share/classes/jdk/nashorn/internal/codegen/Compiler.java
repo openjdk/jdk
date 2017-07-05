@@ -160,42 +160,41 @@ public final class Compiler implements Loggable {
      */
     private static final int COMPILE_UNIT_NAME_BUFFER_SIZE = 32;
 
-    private final Map<Integer, byte[]> serializedAsts = new HashMap<>();
-
     /**
      * Compilation phases that a compilation goes through
      */
     public static class CompilationPhases implements Iterable<CompilationPhase> {
 
         /**
-         * Singleton that describes compilation up to the phase where a function can be serialized.
+         * Singleton that describes compilation up to the phase where a function can be cached.
          */
-        private final static CompilationPhases COMPILE_UPTO_SERIALIZABLE = new CompilationPhases(
+        private final static CompilationPhases COMPILE_UPTO_CACHED = new CompilationPhases(
                 "Common initial phases",
                 CompilationPhase.CONSTANT_FOLDING_PHASE,
                 CompilationPhase.LOWERING_PHASE,
                 CompilationPhase.TRANSFORM_BUILTINS_PHASE,
                 CompilationPhase.SPLITTING_PHASE,
                 CompilationPhase.PROGRAM_POINT_PHASE,
-                CompilationPhase.SERIALIZE_SPLIT_PHASE
-                );
-
-        private final static CompilationPhases COMPILE_SERIALIZABLE_UPTO_BYTECODE = new CompilationPhases(
-                "After common phases, before bytecode generator",
                 CompilationPhase.SYMBOL_ASSIGNMENT_PHASE,
                 CompilationPhase.SCOPE_DEPTH_COMPUTATION_PHASE,
+                CompilationPhase.CACHE_AST
+                );
+
+        private final static CompilationPhases COMPILE_CACHED_UPTO_BYTECODE = new CompilationPhases(
+                "After common phases, before bytecode generator",
+                CompilationPhase.DECLARE_LOCAL_SYMBOLS_TO_COMPILER,
                 CompilationPhase.OPTIMISTIC_TYPE_ASSIGNMENT_PHASE,
                 CompilationPhase.LOCAL_VARIABLE_TYPE_CALCULATION_PHASE
                 );
 
         /**
-         * Singleton that describes additional steps to be taken after deserializing, all the way up to (but not
-         * including) generating and installing code.
+         * Singleton that describes additional steps to be taken after retrieving a cached function, all the
+         * way up to (but not including) generating and installing code.
          */
-        public final static CompilationPhases RECOMPILE_SERIALIZED_UPTO_BYTECODE = new CompilationPhases(
-                "Recompile serialized function up to bytecode",
-                CompilationPhase.REINITIALIZE_SERIALIZED,
-                COMPILE_SERIALIZABLE_UPTO_BYTECODE
+        public final static CompilationPhases RECOMPILE_CACHED_UPTO_BYTECODE = new CompilationPhases(
+                "Recompile cached function up to bytecode",
+                CompilationPhase.REINITIALIZE_CACHED,
+                COMPILE_CACHED_UPTO_BYTECODE
                 );
 
         /**
@@ -211,8 +210,8 @@ public final class Compiler implements Loggable {
         /** Singleton that describes compilation up to the CodeGenerator, but not actually generating code */
         public final static CompilationPhases COMPILE_UPTO_BYTECODE = new CompilationPhases(
                 "Compile upto bytecode",
-                COMPILE_UPTO_SERIALIZABLE,
-                COMPILE_SERIALIZABLE_UPTO_BYTECODE);
+                COMPILE_UPTO_CACHED,
+                COMPILE_CACHED_UPTO_BYTECODE);
 
         /** Singleton that describes a standard eager compilation, but no installation, for example used by --compile-only */
         public final static CompilationPhases COMPILE_ALL_NO_INSTALL = new CompilationPhases(
@@ -227,9 +226,9 @@ public final class Compiler implements Loggable {
                 GENERATE_BYTECODE_AND_INSTALL);
 
         /** Singleton that describes a full compilation - this includes code installation - from serialized state*/
-        public final static CompilationPhases COMPILE_ALL_SERIALIZED = new CompilationPhases(
+        public final static CompilationPhases COMPILE_ALL_CACHED = new CompilationPhases(
                 "Eager compilation from serializaed state",
-                RECOMPILE_SERIALIZED_UPTO_BYTECODE,
+                RECOMPILE_CACHED_UPTO_BYTECODE,
                 GENERATE_BYTECODE_AND_INSTALL);
 
         /**
@@ -248,9 +247,9 @@ public final class Compiler implements Loggable {
                 GENERATE_BYTECODE_AND_INSTALL_RESTOF);
 
         /** Compile from serialized for a rest of method */
-        public final static CompilationPhases COMPILE_SERIALIZED_RESTOF = new CompilationPhases(
+        public final static CompilationPhases COMPILE_CACHED_RESTOF = new CompilationPhases(
                 "Compile serialized, rest of",
-                RECOMPILE_SERIALIZED_UPTO_BYTECODE,
+                RECOMPILE_CACHED_UPTO_BYTECODE,
                 GENERATE_BYTECODE_AND_INSTALL_RESTOF);
 
         private final List<CompilationPhase> phases;
@@ -313,7 +312,7 @@ public final class Compiler implements Loggable {
         }
 
         boolean isRestOfCompilation() {
-            return this == COMPILE_ALL_RESTOF || this == GENERATE_BYTECODE_AND_INSTALL_RESTOF || this == COMPILE_SERIALIZED_RESTOF;
+            return this == COMPILE_ALL_RESTOF || this == GENERATE_BYTECODE_AND_INSTALL_RESTOF || this == COMPILE_CACHED_RESTOF;
         }
 
         String getDesc() {
@@ -764,14 +763,6 @@ public final class Compiler implements Loggable {
     void replaceCompileUnits(final Set<CompileUnit> newUnits) {
         compileUnits.clear();
         compileUnits.addAll(newUnits);
-    }
-
-    void serializeAst(final FunctionNode fn) {
-        serializedAsts.put(fn.getId(), AstSerializer.serialize(fn));
-    }
-
-    byte[] removeSerializedAst(final int fnId) {
-        return serializedAsts.remove(fnId);
     }
 
     CompileUnit findUnit(final long weight) {

@@ -73,11 +73,11 @@ static g_file_query_info_func g_file_query_info;
 static g_file_info_get_content_type_func g_file_info_get_content_type;
 
 
-#include "sun_nio_fs_GnomeFileTypeDetector.h"
+#include "sun_nio_fs_GioFileTypeDetector.h"
 
 
 JNIEXPORT jboolean JNICALL
-Java_sun_nio_fs_GnomeFileTypeDetector_initializeGio
+Java_sun_nio_fs_GioFileTypeDetector_initializeGio
     (JNIEnv* env, jclass this)
 {
     void* gio_handle;
@@ -120,7 +120,7 @@ Java_sun_nio_fs_GnomeFileTypeDetector_initializeGio
 }
 
 JNIEXPORT jbyteArray JNICALL
-Java_sun_nio_fs_GnomeFileTypeDetector_probeGio
+Java_sun_nio_fs_GioFileTypeDetector_probeGio
     (JNIEnv* env, jclass this, jlong pathAddress)
 {
     char* path = (char*)jlong_to_ptr(pathAddress);

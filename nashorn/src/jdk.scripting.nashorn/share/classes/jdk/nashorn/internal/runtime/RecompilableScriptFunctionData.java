@@ -26,16 +26,24 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
@@ -45,8 +53,15 @@ import jdk.nashorn.internal.codegen.Namespace;
 import jdk.nashorn.internal.codegen.OptimisticTypesPersistence;
 import jdk.nashorn.internal.codegen.TypeMap;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.Block;
+import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.LexicalContext;
+import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.SwitchNode;
+import jdk.nashorn.internal.ir.Symbol;
+import jdk.nashorn.internal.ir.TryNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Parser;
@@ -55,6 +70,7 @@ import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
+import jdk.nashorn.internal.runtime.options.Options;
 /**
  * This is a subclass that represents a script function that may be regenerated,
  * for example with specialization based on call site types, or lazily generated.
@@ -65,6 +81,8 @@ import jdk.nashorn.internal.runtime.logging.Logger;
 public final class RecompilableScriptFunctionData extends ScriptFunctionData implements Loggable {
     /** Prefix used for all recompiled script classes */
     public static final String RECOMPILATION_PREFIX = "Recompilation$";
+
+    private static final ExecutorService astSerializerExecutorService = createAstSerializerExecutorService();
 
     /** Unique function node id for this function node */
     private final int functionNodeId;
@@ -77,8 +95,12 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     /** Source from which FunctionNode was parsed. */
     private transient Source source;
 
-    /** Serialized, compressed form of the AST. Used by split functions as they can't be reparsed from source. */
-    private final byte[] serializedAst;
+    /**
+     * Cached form of the AST. Either a {@code SerializedAst} object used by split functions as they can't be
+     * reparsed from source, or a soft reference to a {@code FunctionNode} for other functions (it is safe
+     * to be cleared as they can be reparsed).
+     */
+    private volatile Object cachedAst;
 
     /** Token of this function within the source. */
     private final long token;
@@ -128,7 +150,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * @param nestedFunctions     nested function map
      * @param externalScopeDepths external scope depths
      * @param internalSymbols     internal symbols to method, defined in its scope
-     * @param serializedAst       a serialized AST representation. Normally only used for split functions.
      */
     public RecompilableScriptFunctionData(
         final FunctionNode functionNode,
@@ -136,8 +157,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         final AllocationStrategy allocationStrategy,
         final Map<Integer, RecompilableScriptFunctionData> nestedFunctions,
         final Map<String, Integer> externalScopeDepths,
-        final Set<String> internalSymbols,
-        final byte[] serializedAst) {
+        final Set<String> internalSymbols) {
 
         super(functionName(functionNode),
               Math.min(functionNode.getParameters().size(), MAX_ARITY),
@@ -161,7 +181,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             nfn.setParent(this);
         }
 
-        this.serializedAst = serializedAst;
         createLogger();
     }
 
@@ -244,7 +263,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * @return parent data, or null if non exists and also null IF UNKNOWN.
      */
     public RecompilableScriptFunctionData getParent() {
-       return parent;
+        return parent;
     }
 
     void setParent(final RecompilableScriptFunctionData parent) {
@@ -358,13 +377,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return allocationStrategy.allocate(map);
     }
 
-    boolean isSerialized() {
-        return serializedAst != null;
-    }
-
     FunctionNode reparse() {
-        if (isSerialized()) {
-            return deserialize();
+        final FunctionNode cachedFunction = getCachedAst();
+        if (cachedFunction != null) {
+            assert cachedFunction.isCached();
+            return cachedFunction;
         }
 
         final int descPosition = Token.descPosition(token);
@@ -391,7 +408,98 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return (isProgram() ? program : extractFunctionFromScript(program)).setName(null, functionName);
     }
 
-    private FunctionNode deserialize() {
+    private FunctionNode getCachedAst() {
+        final Object lCachedAst = cachedAst;
+        // Are we softly caching the AST?
+        if (lCachedAst instanceof Reference<?>) {
+            final FunctionNode fn = (FunctionNode)((Reference<?>)lCachedAst).get();
+            if (fn != null) {
+                // Yes we are - this is fast
+                return cloneSymbols(fn);
+            }
+        // Are we strongly caching a serialized AST (for split functions only)?
+        } else if (lCachedAst instanceof SerializedAst) {
+            final SerializedAst serializedAst = (SerializedAst)lCachedAst;
+            // Even so, are we also softly caching the AST?
+            final FunctionNode cachedFn = serializedAst.cachedAst.get();
+            if (cachedFn != null) {
+                // Yes we are - this is fast
+                return cloneSymbols(cachedFn);
+            }
+            final FunctionNode deserializedFn = deserialize(serializedAst.serializedAst);
+            // Softly cache after deserialization, maybe next time we won't need to deserialize
+            serializedAst.cachedAst = new SoftReference<>(deserializedFn);
+            return deserializedFn;
+        }
+        // No cached representation; return null for reparsing
+        return null;
+    }
+
+    /**
+     * Sets the AST to cache in this function
+     * @param astToCache the new AST to cache
+     */
+    public void setCachedAst(final FunctionNode astToCache) {
+        assert astToCache.getId() == functionNodeId; // same function
+        assert !(cachedAst instanceof SerializedAst); // Can't overwrite serialized AST
+
+        final boolean isSplit = astToCache.isSplit();
+        // If we're caching a split function, we're doing it in the eager pass, hence there can be no other
+        // cached representation already. In other words, isSplit implies cachedAst == null.
+        assert !isSplit || cachedAst == null; //
+
+        final FunctionNode symbolClonedAst = cloneSymbols(astToCache);
+        final Reference<FunctionNode> ref = new SoftReference<>(symbolClonedAst);
+        cachedAst = ref;
+
+        // Asynchronously serialize split functions.
+        if (isSplit) {
+            astSerializerExecutorService.execute(() -> {
+                cachedAst = new SerializedAst(symbolClonedAst, ref);
+            });
+        }
+    }
+
+    /**
+     * Creates the AST serializer executor service used for in-memory serialization of split functions' ASTs.
+     * It is created with an unbounded queue (so it can queue any number of pending tasks). Its core and max
+     * threads is the same, but they are all allowed to time out so when there's no work, they can all go
+     * away. The threads will be daemons, and they will time out if idle for a minute. Their priority is also
+     * slightly lower than normal priority as we'd prefer the CPU to keep running the program; serializing
+     * split function is a memory conservation measure (it allows us to release the AST), it can wait a bit.
+     * @return an executor service with above described characteristics.
+     */
+    private static ExecutorService createAstSerializerExecutorService() {
+        final int threads = Math.max(1, Options.getIntProperty("nashorn.serialize.threads", Runtime.getRuntime().availableProcessors() / 2));
+        final ThreadPoolExecutor service = new ThreadPoolExecutor(threads, threads, 1, TimeUnit.MINUTES, new LinkedBlockingDeque<>(),
+            (r) -> {
+                final Thread t = new Thread(r, "Nashorn AST Serializer");
+                t.setDaemon(true);
+                t.setPriority(Thread.NORM_PRIORITY - 1);
+                return t;
+            });
+        service.allowCoreThreadTimeOut(true);
+        return service;
+    }
+
+    /**
+     * A tuple of a serialized AST and a soft reference to a deserialized AST. This is used to cache split
+     * functions. Since split functions are altered from their source form, they can't be reparsed from
+     * source. While we could just use the {@code byte[]} representation in {@link RecompilableScriptFunctionData#cachedAst}
+     * we're using this tuple instead to also keep a deserialized AST around in memory to cut down on
+     * deserialization costs.
+     */
+    private static class SerializedAst {
+        private final byte[] serializedAst;
+        private volatile Reference<FunctionNode> cachedAst;
+
+        SerializedAst(final FunctionNode fn, final Reference<FunctionNode> cachedAst) {
+            this.serializedAst = AstSerializer.serialize(fn);
+            this.cachedAst = cachedAst;
+        }
+    }
+
+    private FunctionNode deserialize(final byte[] serializedAst) {
         final ScriptEnvironment env = installer.getOwner();
         final Timing timing = env._timing;
         final long t1 = System.nanoTime();
@@ -400,6 +508,107 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         } finally {
             timing.accumulateTime("'Deserialize'", System.nanoTime() - t1);
         }
+    }
+
+    private FunctionNode cloneSymbols(final FunctionNode fn) {
+        final IdentityHashMap<Symbol, Symbol> symbolReplacements = new IdentityHashMap<>();
+        final boolean cached = fn.isCached();
+        // blockDefinedSymbols is used to re-mark symbols defined outside the function as global. We only
+        // need to do this when we cache an eagerly parsed function (which currently means a split one, as we
+        // don't cache non-split functions from the eager pass); those already cached, or those not split
+        // don't need this step.
+        final Set<Symbol> blockDefinedSymbols = fn.isSplit() && !cached ? Collections.newSetFromMap(new IdentityHashMap<>()) : null;
+        FunctionNode newFn = (FunctionNode)fn.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+
+            private Symbol getReplacement(final Symbol original) {
+                if (original == null) {
+                    return null;
+                }
+                final Symbol existingReplacement = symbolReplacements.get(original);
+                if (existingReplacement != null) {
+                    return existingReplacement;
+                }
+                final Symbol newReplacement = original.clone();
+                symbolReplacements.put(original, newReplacement);
+                return newReplacement;
+            }
+
+            @Override
+            public Node leaveIdentNode(final IdentNode identNode) {
+                final Symbol oldSymbol = identNode.getSymbol();
+                if (oldSymbol != null) {
+                    final Symbol replacement = getReplacement(oldSymbol);
+                    return identNode.setSymbol(replacement);
+                }
+                return identNode;
+            }
+
+            @Override
+            public Node leaveForNode(final ForNode forNode) {
+                return ensureUniqueLabels(forNode.setIterator(lc, getReplacement(forNode.getIterator())));
+            }
+
+            @Override
+            public Node leaveSwitchNode(final SwitchNode switchNode) {
+                return ensureUniqueLabels(switchNode.setTag(lc, getReplacement(switchNode.getTag())));
+            }
+
+            @Override
+            public Node leaveTryNode(final TryNode tryNode) {
+                return ensureUniqueLabels(tryNode.setException(lc, getReplacement(tryNode.getException())));
+            }
+
+            @Override
+            public boolean enterBlock(final Block block) {
+                for(final Symbol symbol: block.getSymbols()) {
+                    final Symbol replacement = getReplacement(symbol);
+                    if (blockDefinedSymbols != null) {
+                        blockDefinedSymbols.add(replacement);
+                    }
+                }
+                return true;
+            }
+
+            @Override
+            public Node leaveBlock(final Block block) {
+                return ensureUniqueLabels(block.replaceSymbols(lc, symbolReplacements));
+            }
+
+            @Override
+            public Node leaveFunctionNode(final FunctionNode functionNode) {
+                return functionNode.setParameters(lc, functionNode.visitParameters(this));
+            }
+
+            @Override
+            protected Node leaveDefault(final Node node) {
+                return ensureUniqueLabels(node);
+            };
+
+            private Node ensureUniqueLabels(final Node node) {
+                // If we're returning a cached AST, we must also ensure unique labels
+                return cached ? node.ensureUniqueLabels(lc) : node;
+            }
+        });
+
+        if (blockDefinedSymbols != null) {
+            // Mark all symbols not defined in blocks as globals
+            Block newBody = null;
+            for(final Symbol symbol: symbolReplacements.values()) {
+                if(!blockDefinedSymbols.contains(symbol)) {
+                    assert symbol.isScope(); // must be scope
+                    assert externalScopeDepths.containsKey(symbol.getName()); // must be known to us as an external
+                    // Register it in the function body symbol table as a new global symbol
+                    symbol.setFlags((symbol.getFlags() & ~Symbol.KINDMASK) | Symbol.IS_GLOBAL);
+                    if (newBody == null) {
+                        newBody = newFn.getBody().copyWithNewSymbols();
+                        newFn = newFn.setBody(null, newBody);
+                    }
+                    assert newBody.getExistingSymbol(symbol.getName()) == null; // must not be defined in the body already
+                    newBody.putSymbol(symbol);
+                }
+            }
+        }
+        return newFn.setCached(null);
     }
 
     private boolean getFunctionFlag(final int flag) {
@@ -512,9 +721,9 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         final FunctionNode fn = reparse();
         final Compiler compiler = getCompiler(fn, actualCallSiteType, runtimeScope);
         final FunctionNode compiledFn = compiler.compile(fn,
-                isSerialized() ? CompilationPhases.COMPILE_ALL_SERIALIZED : CompilationPhases.COMPILE_ALL);
+                fn.isCached() ? CompilationPhases.COMPILE_ALL_CACHED : CompilationPhases.COMPILE_ALL);
 
-        if (persist && !compiledFn.getFlag(FunctionNode.HAS_APPLY_TO_CALL_SPECIALIZATION)) {
+        if (persist && !compiledFn.hasApplyToCallSpecialization()) {
             compiler.persistClassInfo(cacheKey, compiledFn);
         }
         return new FunctionInitializer(compiledFn, compiler.getInvalidatedProgramPoints());

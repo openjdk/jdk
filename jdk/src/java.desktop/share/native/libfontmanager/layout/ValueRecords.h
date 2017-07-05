@@ -94,5 +94,3 @@ enum ValueFormatBits
 
 U_NAMESPACE_END
 #endif
-
-

@@ -45,8 +45,8 @@ public:
     _constraint=func;
   }
 
-  Flag::Error apply_bool(bool* value, bool verbose) {
-    return _constraint(verbose, value);
+  Flag::Error apply_bool(bool value, bool verbose) {
+    return _constraint(value, verbose);
   }
 };
 
@@ -61,8 +61,8 @@ public:
     _constraint=func;
   }
 
-  Flag::Error apply_int(int* value, bool verbose) {
-    return _constraint(verbose, value);
+  Flag::Error apply_int(int value, bool verbose) {
+    return _constraint(value, verbose);
   }
 };
 
@@ -77,8 +77,8 @@ public:
     _constraint=func;
   }
 
-  Flag::Error apply_intx(intx* value, bool verbose) {
-    return _constraint(verbose, value);
+  Flag::Error apply_intx(intx value, bool verbose) {
+    return _constraint(value, verbose);
   }
 };
 
@@ -93,8 +93,8 @@ public:
     _constraint=func;
   }
 
-  Flag::Error apply_uint(uint* value, bool verbose) {
-    return _constraint(verbose, value);
+  Flag::Error apply_uint(uint value, bool verbose) {
+    return _constraint(value, verbose);
   }
 };
 
@@ -109,8 +109,8 @@ public:
     _constraint=func;
   }
 
-  Flag::Error apply_uintx(uintx* value, bool verbose) {
-    return _constraint(verbose, value);
+  Flag::Error apply_uintx(uintx value, bool verbose) {
+    return _constraint(value, verbose);
   }
 };
 
@@ -125,8 +125,8 @@ public:
     _constraint=func;
   }
 
-  Flag::Error apply_uint64_t(uint64_t* value, bool verbose) {
-    return _constraint(verbose, value);
+  Flag::Error apply_uint64_t(uint64_t value, bool verbose) {
+    return _constraint(value, verbose);
   }
 };
 
@@ -141,8 +141,8 @@ public:
     _constraint=func;
   }
 
-  Flag::Error apply_size_t(size_t* value, bool verbose) {
-    return _constraint(verbose, value);
+  Flag::Error apply_size_t(size_t value, bool verbose) {
+    return _constraint(value, verbose);
   }
 };
 
@@ -157,8 +157,8 @@ public:
     _constraint=func;
   }
 
-  Flag::Error apply_double(double* value, bool verbose) {
-    return _constraint(verbose, value);
+  Flag::Error apply_double(double value, bool verbose) {
+    return _constraint(value, verbose);
   }
 };
 
@@ -226,7 +226,6 @@ CommandLineFlagConstraint::ConstraintType CommandLineFlagConstraintList::_valida
 
 // Check the ranges of all flags that have them or print them out and exit if requested
 void CommandLineFlagConstraintList::init(void) {
-
   _constraints = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<CommandLineFlagConstraint*>(INITIAL_CONSTRAINTS_SIZE, true);
 
   emit_constraint_no(NULL RUNTIME_FLAGS(EMIT_CONSTRAINT_DEVELOPER_FLAG,
@@ -306,40 +305,6 @@ CommandLineFlagConstraint* CommandLineFlagConstraintList::find_if_needs_check(co
 
 // Check constraints for specific constraint type.
 bool CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::ConstraintType type) {
-//#define PRINT_CONSTRAINTS_SIZES
-#ifdef PRINT_CONSTRAINTS_SIZES
-  {
-    size_t size_constraints = sizeof(CommandLineFlagConstraintList);
-    for (int i=0; i<length(); i++) {
-      size_constraints += sizeof(CommandLineFlagConstraint);
-      CommandLineFlagConstraint* constraint = at(i);
-      const char* name = constraint->name();
-      Flag* flag = Flag::find_flag(name, strlen(name), true, true);
-      if (flag->is_bool()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_bool);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      } else if (flag->is_intx()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_intx);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      } else if (flag->is_uintx()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_uintx);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      } else if (flag->is_uint64_t()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_uint64_t);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      } else if (flag->is_size_t()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_size_t);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      } else if (flag->is_double()) {
-        size_constraints += sizeof(CommandLineFlagConstraintFunc_double);
-        size_constraints += sizeof(CommandLineFlagConstraint*);
-      }
-    }
-    fprintf(stderr, "Size of %d constraints: " SIZE_FORMAT " bytes\n",
-            length(), size_constraints);
-  }
-#endif // PRINT_CONSTRAINTS_SIZES
-
   // Skip if we already checked.
   if (type < _validating_type) {
     return true;
@@ -350,27 +315,36 @@ bool CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint:
   for (int i=0; i<length(); i++) {
     CommandLineFlagConstraint* constraint = at(i);
     if (type != constraint->type()) continue;
-    const char*name = constraint->name();
+    const char* name = constraint->name();
     Flag* flag = Flag::find_flag(name, strlen(name), true, true);
+    // We must check for NULL here as lp64_product flags on 32 bit architecture
+    // can generate constraint check (despite that they are declared as constants),
+    // but they will not be returned by Flag::find_flag()
     if (flag != NULL) {
       if (flag->is_bool()) {
         bool value = flag->get_bool();
-        if (constraint->apply_bool(&value, true) != Flag::SUCCESS) status = false;
+        if (constraint->apply_bool(value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_int()) {
+        int value = flag->get_int();
+        if (constraint->apply_int(value, true) != Flag::SUCCESS) status = false;
+      } else if (flag->is_uint()) {
+        uint value = flag->get_uint();
+        if (constraint->apply_uint(value, true) != Flag::SUCCESS) status = false;
       } else if (flag->is_intx()) {
         intx value = flag->get_intx();
-        if (constraint->apply_intx(&value, true) != Flag::SUCCESS) status = false;
+        if (constraint->apply_intx(value, true) != Flag::SUCCESS) status = false;
       } else if (flag->is_uintx()) {
         uintx value = flag->get_uintx();
-        if (constraint->apply_uintx(&value, true) != Flag::SUCCESS) status = false;
+        if (constraint->apply_uintx(value, true) != Flag::SUCCESS) status = false;
       } else if (flag->is_uint64_t()) {
         uint64_t value = flag->get_uint64_t();
-        if (constraint->apply_uint64_t(&value, true) != Flag::SUCCESS) status = false;
+        if (constraint->apply_uint64_t(value, true) != Flag::SUCCESS) status = false;
       } else if (flag->is_size_t()) {
         size_t value = flag->get_size_t();
-        if (constraint->apply_size_t(&value, true) != Flag::SUCCESS) status = false;
+        if (constraint->apply_size_t(value, true) != Flag::SUCCESS) status = false;
       } else if (flag->is_double()) {
         double value = flag->get_double();
-        if (constraint->apply_double(&value, true) != Flag::SUCCESS) status = false;
+        if (constraint->apply_double(value, true) != Flag::SUCCESS) status = false;
       }
     }
   }
