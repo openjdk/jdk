@@ -25,6 +25,8 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.*;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,7 +42,11 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @bug 8142968 8173381
+ * @library /lib/testlibrary
  * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.module
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ * @build ModuleTargetHelper
  * @run testng SystemModulesTest
  * @summary Verify the properties of ModuleDescriptor created
  *          by SystemModules
@@ -62,7 +68,6 @@ public class SystemModulesTest {
             return;
 
         ModuleFinder.ofSystem().findAll().stream()
-                    .map(ModuleReference::descriptor)
                     .forEach(this::checkAttributes);
     }
 
@@ -72,9 +77,7 @@ public class SystemModulesTest {
         if (name.equals(OS_NAME))
             return true;
 
-        if (OS_NAME.equals("Mac OS X")) {
-            return name.equals("Darwin");
-        } else if (OS_NAME.startsWith("Windows")) {
+        if (OS_NAME.startsWith("Windows")) {
             return name.startsWith("Windows");
         } else {
             System.err.println("ERROR: " + name + " but expected: " + OS_NAME);
@@ -89,28 +92,28 @@ public class SystemModulesTest {
         switch (OS_ARCH) {
             case "i386":
             case "x86":
-                return name.equals("i586");
+                return name.equals("x86");
+            case "amd64":
+                return name.equals("x86_64");
             default:
                 System.err.println("ERROR: " + name + " but expected: " + OS_ARCH);
                 return false;
         }
     }
 
-    private void checkAttributes(ModuleDescriptor md) {
-        System.out.format("%s %s %s %s%n", md.name(),
-                          md.osName(), md.osArch(), md.osVersion());
-
-        if (md.name().equals("java.base")) {
-            assertTrue(checkOSName(md.osName().get()));
-            assertTrue(checkOSArch(md.osArch().get()));
-            assertTrue(md.osVersion().isPresent());
-        } else {
-            // target platform attribute is dropped by jlink plugin
-            assertFalse(md.osName().isPresent());
-            assertFalse(md.osArch().isPresent());
-            assertFalse(md.osVersion().isPresent());
-            assertTrue(md.packages().size() > 0
-                || EMPTY_MODULES.contains(md.name()), md.name());
+    private void checkAttributes(ModuleReference modRef) {
+        try {
+            if (modRef.descriptor().name().equals("java.base")) {
+                ModuleTargetHelper.ModuleTarget mt = ModuleTargetHelper.read(modRef);
+                assertTrue(checkOSName(mt.osName()));
+                assertTrue(checkOSArch(mt.osArch()));
+            } else {
+                // target platform attribute is dropped by jlink plugin for other modules
+                ModuleTargetHelper.ModuleTarget mt = ModuleTargetHelper.read(modRef);
+                assertTrue(mt == null || (mt.osName() == null && mt.osArch() == null));
+            }
+        } catch (IOException exp) {
+            throw new UncheckedIOException(exp);
         }
     }
 
