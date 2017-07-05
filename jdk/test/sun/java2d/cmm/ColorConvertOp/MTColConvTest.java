@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6476665
+ * @bug 6476665 7033534
  * @summary Verifies MT safety of color conversion of Component and Direct Color Model based images
  * @run main MTColConvTest
  */

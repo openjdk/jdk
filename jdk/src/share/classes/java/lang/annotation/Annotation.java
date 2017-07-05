@@ -31,9 +31,8 @@ package java.lang.annotation;
  * an annotation type.  Also note that this interface does not itself
  * define an annotation type.
  *
- * More information about annotation types can be found in <i>The
- * Java&trade; Language Specification, Third Edition</i>, <a
- * href="http://java.sun.com/docs/books/jls/third_edition/html/interfaces.html#9.6">&sect;9.6</a>.
+ * More information about annotation types can be found in section 9.6 of
+ * <cite>The Java&trade; Language Specification</cite>.
  *
  * @author  Josh Bloch
  * @since   1.5

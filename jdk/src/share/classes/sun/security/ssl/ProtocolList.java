@@ -37,10 +37,6 @@ import java.util.*;
  */
 final class ProtocolList {
 
-    private static final ProtocolList SUPPORTED;
-    private static final ProtocolList CLIENT_DEFAULT;
-    private static final ProtocolList SERVER_DEFAULT;
-
     // the sorted protocol version list
     private final ArrayList<ProtocolVersion> protocols;
 
@@ -154,66 +150,4 @@ final class ProtocolList {
     public String toString() {
         return protocols.toString();
     }
-
-    /**
-     * Return the list of default enabled protocols.
-     */
-    static ProtocolList getDefault(boolean isServer) {
-        return isServer ? SERVER_DEFAULT : CLIENT_DEFAULT;
-    }
-
-    /**
-     * Return whether a protocol list is the original default enabled
-     * protocols.  See: SSLSocket/SSLEngine.setEnabledProtocols()
-     */
-    static boolean isDefaultProtocolList(ProtocolList protocols) {
-        return protocols == CLIENT_DEFAULT || protocols == SERVER_DEFAULT;
-    }
-
-    /**
-     * Return the list of supported protocols.
-     */
-    static ProtocolList getSupported() {
-        return SUPPORTED;
-    }
-
-    static {
-        if (SunJSSE.isFIPS()) {
-            SUPPORTED = new ProtocolList(new String[] {
-                ProtocolVersion.TLS10.name,
-                ProtocolVersion.TLS11.name,
-                ProtocolVersion.TLS12.name
-            });
-
-            SERVER_DEFAULT = SUPPORTED;
-            CLIENT_DEFAULT = new ProtocolList(new String[] {
-                ProtocolVersion.TLS10.name
-            });
-        } else {
-            SUPPORTED = new ProtocolList(new String[] {
-                ProtocolVersion.SSL20Hello.name,
-                ProtocolVersion.SSL30.name,
-                ProtocolVersion.TLS10.name,
-                ProtocolVersion.TLS11.name,
-                ProtocolVersion.TLS12.name
-            });
-
-            SERVER_DEFAULT = SUPPORTED;
-
-            /*
-             * RFC 5246 says that sending SSLv2 backward-compatible
-             * hello SHOULD NOT be done any longer.
-             *
-             * We are not enabling TLS 1.1/1.2 by default yet on clients
-             * out of concern for interop with existing
-             * SSLv3/TLS1.0-only servers.  When these versions of TLS
-             * gain more traction, we'll enable them.
-             */
-            CLIENT_DEFAULT = new ProtocolList(new String[] {
-                ProtocolVersion.SSL30.name,
-                ProtocolVersion.TLS10.name
-            });
-        }
-    }
-
 }

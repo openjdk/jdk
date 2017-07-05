@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,29 +32,33 @@
 package sun.util.locale;
 
 public class ParseStatus {
-    int _parseLength = 0;
-    int _errorIndex = -1;
-    String _errorMsg = null;
+    int parseLength;
+    int errorIndex;
+    String errorMsg;
+
+    public ParseStatus() {
+        reset();
+    }
 
     public void reset() {
-        _parseLength = 0;
-        _errorIndex = -1;
-        _errorMsg = null;
+        parseLength = 0;
+        errorIndex = -1;
+        errorMsg = null;
     }
 
     public boolean isError() {
-        return (_errorIndex >= 0);
+        return (errorIndex >= 0);
     }
 
     public int getErrorIndex() {
-        return _errorIndex;
+        return errorIndex;
     }
 
     public int getParseLength() {
-        return _parseLength;
+        return parseLength;
     }
 
     public String getErrorMessage() {
-        return _errorMsg;
+        return errorMsg;
     }
 }

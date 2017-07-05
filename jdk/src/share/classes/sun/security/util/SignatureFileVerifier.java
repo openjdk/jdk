@@ -55,8 +55,8 @@ public class SignatureFileVerifier {
     /** the PKCS7 block for this .DSA/.RSA/.EC file */
     private PKCS7 block;
 
-    /** the raw bytes of the .SF file */
-    private byte sfBytes[];
+    // the content of the raw .SF file as an InputStream
+    private InputStream sfStream;
 
     /** the name of the signature block file, uppercased and without
      *  the extension (.DSA/.RSA/.EC)
@@ -65,6 +65,9 @@ public class SignatureFileVerifier {
 
     /** the ManifestDigester */
     private ManifestDigester md;
+
+    /** The MANIFEST.MF */
+    private Manifest man;
 
     /** cache of created MessageDigest objects */
     private HashMap<String, MessageDigest> createdDigests;
@@ -83,6 +86,7 @@ public class SignatureFileVerifier {
      * @param rawBytes the raw bytes of the signature block file
      */
     public SignatureFileVerifier(ArrayList<CodeSigner[]> signerCache,
+                                 Manifest man,
                                  ManifestDigester md,
                                  String name,
                                  byte rawBytes[])
@@ -94,13 +98,18 @@ public class SignatureFileVerifier {
         try {
             obj = Providers.startJarVerification();
             block = new PKCS7(rawBytes);
-            sfBytes = block.getContentInfo().getData();
+            byte[] contentData = block.getContentInfo().getData();
+            if (contentData != null) {
+                sfStream = new ByteArrayInputStream(contentData);
+            }
             certificateFactory = CertificateFactory.getInstance("X509");
         } finally {
             Providers.stopJarVerification(obj);
         }
         this.name = name.substring(0, name.lastIndexOf("."))
                                                    .toUpperCase(Locale.ENGLISH);
+
+        this.man = man;
         this.md = md;
         this.signerCache = signerCache;
     }
@@ -108,31 +117,13 @@ public class SignatureFileVerifier {
     /**
      * returns true if we need the .SF file
      */
-    public boolean needSignatureFileBytes()
+    public boolean needSignatureFile()
     {
-
-        return sfBytes == null;
+        return sfStream == null;
     }
 
-
-    /**
-     * returns true if we need this .SF file.
-     *
-     * @param name the name of the .SF file without the extension
-     *
-     */
-    public boolean needSignatureFile(String name)
-    {
-        return this.name.equalsIgnoreCase(name);
-    }
-
-    /**
-     * used to set the raw bytes of the .SF file when it
-     * is external to the signature block file.
-     */
-    public void setSignatureFile(byte sfBytes[])
-    {
-        this.sfBytes = sfBytes;
+    public void setSignatureFile(InputStream ins) {
+        this.sfStream = ins;
     }
 
     /**
@@ -145,12 +136,18 @@ public class SignatureFileVerifier {
      *          Signature File or PKCS7 block file name
      */
     public static boolean isBlockOrSF(String s) {
-        // we currently only support DSA and RSA PKCS7 blocks
-        if (s.endsWith(".SF") || s.endsWith(".DSA") ||
-                s.endsWith(".RSA") || s.endsWith(".EC")) {
-            return true;
-        }
-        return false;
+        return s.endsWith(".SF") || isBlock(s);
+    }
+
+    /**
+     * Utility method used by JarVerifier to determine PKCS7 block
+     * files names that are supported
+     *
+     * @param s file name
+     * @return true if the input file name is a PKCS7 block file name
+     */
+    public static boolean isBlock(String s) {
+        return s.endsWith(".DSA") || s.endsWith(".RSA") || s.endsWith(".EC");
     }
 
     /** get digest from cache */
@@ -180,7 +177,7 @@ public class SignatureFileVerifier {
      *
      *
      */
-    public void process(Hashtable<String, CodeSigner[]> signers,
+    public void process(Map<String, CodeSigner[]> signers,
             List manifestDigests)
         throws IOException, SignatureException, NoSuchAlgorithmException,
             JarException, CertificateException
@@ -197,31 +194,86 @@ public class SignatureFileVerifier {
 
     }
 
-    private void processImpl(Hashtable<String, CodeSigner[]> signers,
+    private void processImpl(Map<String, CodeSigner[]> signers,
             List manifestDigests)
         throws IOException, SignatureException, NoSuchAlgorithmException,
             JarException, CertificateException
     {
-        Manifest sf = new Manifest();
-        sf.read(new ByteArrayInputStream(sfBytes));
+        SignatureFileManifest sf = new SignatureFileManifest();
+        InputStream ins = sfStream;
 
-        String version =
-            sf.getMainAttributes().getValue(Attributes.Name.SIGNATURE_VERSION);
+        byte[] buffer = new byte[4096];
+        int sLen = block.getSignerInfos().length;
+        boolean mainOK = false;         // main attributes of SF is available...
+        boolean manifestSigned = false; // and it matches MANIFEST.MF
+        BASE64Decoder decoder = new BASE64Decoder();
 
-        if ((version == null) || !(version.equalsIgnoreCase("1.0"))) {
-            // XXX: should this be an exception?
-            // for now we just ignore this signature file
-            return;
+        PKCS7.PKCS7Verifier[] pvs = new PKCS7.PKCS7Verifier[sLen];
+        for (int i=0; i<sLen; i++) {
+            pvs[i] = PKCS7.PKCS7Verifier.from(block, block.getSignerInfos()[i]);
         }
 
-        SignerInfo[] infos = block.verify(sfBytes);
+        /*
+         * Verify SF in streaming mode. The chunks of the file are fed into
+         * the Manifest object sf and all PKCS7Verifiers. As soon as the main
+         * attributes is available, we'll check if manifestSigned is true. If
+         * yes, there is no need to fill in sf's entries field, since it should
+         * be identical to entries in man.
+         */
+        while (true) {
+            int len = ins.read(buffer);
+            if (len < 0) {
+                if (!manifestSigned) {
+                    sf.update(null, 0, 0);
+                }
+                break;
+            } else {
+                for (int i=0; i<sLen; i++) {
+                    if (pvs[i] != null) pvs[i].update(buffer, 0, len);
+                }
+                // Continue reading if verifyManifestHash fails (or, the
+                // main attributes is not available yet)
+                if (!manifestSigned) {
+                    sf.update(buffer, 0, len);
+                    if (!mainOK) {
+                        try {
+                            Attributes attr = sf.getMainAttributes();
+                            String version = attr.getValue(
+                                    Attributes.Name.SIGNATURE_VERSION);
 
-        if (infos == null) {
+                            if ((version == null) ||
+                                    !(version.equalsIgnoreCase("1.0"))) {
+                                // XXX: should this be an exception?
+                                // for now we just ignore this signature file
+                                return;
+                            }
+
+                            mainOK = true;
+                            manifestSigned = verifyManifestHash(
+                                    sf, md, decoder, manifestDigests);
+                        } catch (IllegalStateException ise) {
+                            // main attributes not available yet
+                        }
+                    }
+                }
+            }
+        }
+        List<SignerInfo> intResult = new ArrayList<>(sLen);
+        for (int i = 0; i < sLen; i++) {
+            if (pvs[i] != null) {
+                SignerInfo signerInfo = pvs[i].verify();
+                if (signerInfo != null) {
+                    intResult.add(signerInfo);
+                }
+            }
+        }
+        if (intResult.isEmpty()) {
             throw new SecurityException("cannot verify signature block file " +
                                         name);
         }
 
-        BASE64Decoder decoder = new BASE64Decoder();
+        SignerInfo[] infos =
+                intResult.toArray(new SignerInfo[intResult.size()]);
 
         CodeSigner[] newSigners = getSigners(infos, block);
 
@@ -229,26 +281,37 @@ public class SignatureFileVerifier {
         if (newSigners == null)
             return;
 
-        Iterator<Map.Entry<String,Attributes>> entries =
-                                sf.getEntries().entrySet().iterator();
-
-        // see if we can verify the whole manifest first
-        boolean manifestSigned = verifyManifestHash(sf, md, decoder, manifestDigests);
-
         // verify manifest main attributes
         if (!manifestSigned && !verifyManifestMainAttrs(sf, md, decoder)) {
             throw new SecurityException
                 ("Invalid signature file digest for Manifest main attributes");
         }
 
-        // go through each section in the signature file
+        Iterator<Map.Entry<String,Attributes>> entries;
+
+        if (manifestSigned) {
+            if (debug != null) {
+                debug.println("full manifest signature match, "
+                        + "update signer info from MANIFEST.MF");
+            }
+            entries = man.getEntries().entrySet().iterator();
+        } else {
+            if (debug != null) {
+                debug.println("full manifest signature unmatch, "
+                        + "update signer info from SF file");
+            }
+            entries = sf.getEntries().entrySet().iterator();
+        }
+
+        // go through each section
+
         while(entries.hasNext()) {
 
             Map.Entry<String,Attributes> e = entries.next();
             String name = e.getKey();
 
             if (manifestSigned ||
-                (verifySection(e.getValue(), name, md, decoder))) {
+                    (verifySection(e.getValue(), name, md, decoder))) {
 
                 if (name.startsWith("./"))
                     name = name.substring(2);
@@ -593,7 +656,6 @@ public class SignatureFileVerifier {
         if (set == subset)
             return true;
 
-        boolean match;
         for (int i = 0; i < subset.length; i++) {
             if (!contains(set, subset[i]))
                 return false;
@@ -612,8 +674,6 @@ public class SignatureFileVerifier {
         // special case
         if ((oldSigners == null) && (signers == newSigners))
             return true;
-
-        boolean match;
 
         // make sure all oldSigners are in signers
         if ((oldSigners != null) && !isSubSet(oldSigners, signers))
@@ -638,7 +698,7 @@ public class SignatureFileVerifier {
     }
 
     void updateSigners(CodeSigner[] newSigners,
-        Hashtable<String, CodeSigner[]> signers, String name) {
+        Map<String, CodeSigner[]> signers, String name) {
 
         CodeSigner[] oldSigners = signers.get(name);
 

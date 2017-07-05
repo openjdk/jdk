@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,17 +171,14 @@ class CardTableModRefBS: public ModRefBarrierSet {
   // mode if worker threads are available.
   void non_clean_card_iterate(Space* sp, MemRegion mr,
                               DirtyCardToOopClosure* dcto_cl,
-                              MemRegionClosure* cl,
-                              bool clear);
+                              MemRegionClosure* cl);
 
   // Utility function used to implement the other versions below.
-  void non_clean_card_iterate_work(MemRegion mr, MemRegionClosure* cl,
-                                   bool clear);
+  void non_clean_card_iterate_work(MemRegion mr, MemRegionClosure* cl);
 
   void par_non_clean_card_iterate_work(Space* sp, MemRegion mr,
                                        DirtyCardToOopClosure* dcto_cl,
                                        MemRegionClosure* cl,
-                                       bool clear,
                                        int n_threads);
 
   // Dirty the bytes corresponding to "mr" (not all of which must be
@@ -241,7 +238,6 @@ class CardTableModRefBS: public ModRefBarrierSet {
                       jint stride, int n_strides,
                       DirtyCardToOopClosure* dcto_cl,
                       MemRegionClosure* cl,
-                      bool clear,
                       jbyte** lowest_non_clean,
                       uintptr_t lowest_non_clean_base_chunk_index,
                       size_t lowest_non_clean_chunk_size);
@@ -402,9 +398,6 @@ public:
   virtual void invalidate(MemRegion mr, bool whole_heap = false);
   void clear(MemRegion mr);
   void dirty(MemRegion mr);
-  void mod_oop_in_space_iterate(Space* sp, OopClosure* cl,
-                                bool clear = false,
-                                bool before_save_marks = false);
 
   // *** Card-table-RemSet-specific things.
 
@@ -415,18 +408,15 @@ public:
   // *decreasing* address order.  (This order aids with imprecise card
   // marking, where a dirty card may cause scanning, and summarization
   // marking, of objects that extend onto subsequent cards.)
-  // If "clear" is true, the card is (conceptually) marked unmodified before
-  // applying the closure.
-  void mod_card_iterate(MemRegionClosure* cl, bool clear = false) {
-    non_clean_card_iterate_work(_whole_heap, cl, clear);
+  void mod_card_iterate(MemRegionClosure* cl) {
+    non_clean_card_iterate_work(_whole_heap, cl);
   }
 
   // Like the "mod_cards_iterate" above, except only invokes the closure
   // for cards within the MemRegion "mr" (which is required to be
   // card-aligned and sized.)
-  void mod_card_iterate(MemRegion mr, MemRegionClosure* cl,
-                        bool clear = false) {
-    non_clean_card_iterate_work(mr, cl, clear);
+  void mod_card_iterate(MemRegion mr, MemRegionClosure* cl) {
+    non_clean_card_iterate_work(mr, cl);
   }
 
   static uintx ct_max_alignment_constraint();

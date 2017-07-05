@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -627,11 +627,9 @@ public final class Math {
     }
 
     /**
-     * Returns the closest {@code int} to the argument. The
-     * result is rounded to an integer by adding 1/2, taking the
-     * floor of the result, and casting the result to type {@code int}.
-     * In other words, the result is equal to the value of the expression:
-     * <p>{@code (int)Math.floor(a + 0.5f)}
+     * Returns the closest {@code int} to the argument, with ties
+     * rounding up.
+     *
      * <p>
      * Special cases:
      * <ul><li>If the argument is NaN, the result is 0.
@@ -649,17 +647,17 @@ public final class Math {
      * @see     java.lang.Integer#MIN_VALUE
      */
     public static int round(float a) {
-        return (int)floor(a + 0.5f);
+        if (a != 0x1.fffffep-2f) // greatest float value less than 0.5
+            return (int)floor(a + 0.5f);
+        else
+            return 0;
     }
 
     /**
-     * Returns the closest {@code long} to the argument. The result
-     * is rounded to an integer by adding 1/2, taking the floor of the
-     * result, and casting the result to type {@code long}. In other
-     * words, the result is equal to the value of the expression:
-     * <p>{@code (long)Math.floor(a + 0.5d)}
-     * <p>
-     * Special cases:
+     * Returns the closest {@code long} to the argument, with ties
+     * rounding up.
+     *
+     * <p>Special cases:
      * <ul><li>If the argument is NaN, the result is 0.
      * <li>If the argument is negative infinity or any value less than or
      * equal to the value of {@code Long.MIN_VALUE}, the result is
@@ -676,7 +674,10 @@ public final class Math {
      * @see     java.lang.Long#MIN_VALUE
      */
     public static long round(double a) {
-        return (long)floor(a + 0.5d);
+        if (a != 0x1.fffffffffffffp-2) // greatest double value less than 0.5
+            return (long)floor(a + 0.5d);
+        else
+            return 0;
     }
 
     private static Random randomNumberGenerator;

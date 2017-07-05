@@ -2104,11 +2104,7 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // klasses are used in the update of an object?
     compact_perm(vmthread_cm);
 
-    if (UseParallelOldGCCompacting) {
-      compact();
-    } else {
-      compact_serial(vmthread_cm);
-    }
+    compact();
 
     // Reset the mark bitmap, summary data, and do other bookkeeping.  Must be
     // done before resizing.
@@ -2582,18 +2578,16 @@ void PSParallelCompact::enqueue_dense_prefix_tasks(GCTaskQueue* q,
     // each thread?
     if (total_dense_prefix_regions > 0) {
       uint tasks_for_dense_prefix = 1;
-      if (UseParallelDensePrefixUpdate) {
-        if (total_dense_prefix_regions <=
-            (parallel_gc_threads * PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING)) {
-          // Don't over partition.  This assumes that
-          // PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING is a small integer value
-          // so there are not many regions to process.
-          tasks_for_dense_prefix = parallel_gc_threads;
-        } else {
-          // Over partition
-          tasks_for_dense_prefix = parallel_gc_threads *
-            PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING;
-        }
+      if (total_dense_prefix_regions <=
+          (parallel_gc_threads * PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING)) {
+        // Don't over partition.  This assumes that
+        // PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING is a small integer value
+        // so there are not many regions to process.
+        tasks_for_dense_prefix = parallel_gc_threads;
+      } else {
+        // Over partition
+        tasks_for_dense_prefix = parallel_gc_threads *
+          PAR_OLD_DENSE_PREFIX_OVER_PARTITIONING;
       }
       size_t regions_per_thread = total_dense_prefix_regions /
         tasks_for_dense_prefix;
@@ -2732,21 +2726,6 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
   }
 }
 #endif  // #ifdef ASSERT
-
-void PSParallelCompact::compact_serial(ParCompactionManager* cm) {
-  EventMark m("5 compact serial");
-  TraceTime tm("compact serial", print_phases(), true, gclog_or_tty);
-
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
-  PSYoungGen* young_gen = heap->young_gen();
-  PSOldGen* old_gen = heap->old_gen();
-
-  old_gen->start_array()->reset();
-  old_gen->move_and_update(cm);
-  young_gen->move_and_update(cm);
-}
 
 void
 PSParallelCompact::follow_weak_klass_links() {
@@ -3530,11 +3509,8 @@ PSParallelCompact::VerifyUpdateClosure::do_addr(HeapWord* addr, size_t words) {
            "Object liveness is wrong.");
     return ParMarkBitMap::incomplete;
   }
-  assert(UseParallelOldGCDensePrefix ||
-         (HeapMaximumCompactionInterval > 1) ||
-         (MarkSweepAlwaysCompactCount > 1) ||
-         (forwarding_ptr == new_pointer),
-    "Calculation of new location is incorrect");
+  assert(HeapMaximumCompactionInterval > 1 || MarkSweepAlwaysCompactCount > 1 ||
+         forwarding_ptr == new_pointer, "new location is incorrect");
   return ParMarkBitMap::incomplete;
 }
 
