@@ -23,20 +23,20 @@
 
 /*
  * @test
- * @library ..
- * @bug 4103117 4331084 4488017 4490929 6255285 6268365 8074460
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.*
+ * @run main StringConstructor
+ * @bug 4103117 4331084 4488017 4490929 6255285 6268365 8074460 8078672
  * @summary Tests the BigDecimal string constructor (use -Dseed=X to set PRNG seed).
+ * @key randomness
  */
 
 import java.math.*;
+import java.util.Random;
 
 public class StringConstructor {
 
-    private static RandomSeed rndSeed = new RandomSeed(false);
-
     public static void main(String[] args) throws Exception {
-        System.out.println("Random number generator seed = " + rndSeed.getSeed());
-
         constructWithError("");
         constructWithError("+");
         constructWithError("-");
@@ -71,13 +71,14 @@ public class StringConstructor {
         nonAsciiZeroTest();
 
         // Roundtrip tests
+        Random random = RandomFactory.getRandom();
         for (int i=0; i<100; i++) {
-            int size = rndSeed.getRandom().nextInt(100) + 1;
-            BigInteger bi = new BigInteger(size, rndSeed.getRandom());
-            if (rndSeed.getRandom().nextBoolean())
+            int size = random.nextInt(100) + 1;
+            BigInteger bi = new BigInteger(size, random);
+            if (random.nextBoolean())
                 bi = bi.negate();
             int decimalLength = bi.toString().length();
-            int scale = rndSeed.getRandom().nextInt(decimalLength);
+            int scale = random.nextInt(decimalLength);
             BigDecimal bd = new BigDecimal(bi, scale);
             String bdString = bd.toString();
             // System.err.println("bi" + bi.toString() + "\tscale " + scale);

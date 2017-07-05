@@ -27,6 +27,7 @@
  * @run testng BytesAndLines
  * @summary Unit test for methods for Files readAllBytes, readAllLines and
  *     and write methods.
+ * @key randomness
  */
 
 import java.nio.ByteBuffer;

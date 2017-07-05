@@ -26,6 +26,7 @@
  * @bug 6348045
  * @summary GZipOutputStream/InputStream goes critical(calls JNI_Get*Critical)
  * and causes slowness.  This test uses Deflater and Inflater directly.
+ * @key randomness
  */
 
 import java.io.*;

@@ -43,6 +43,7 @@ import javax.crypto.spec.IvParameterSpec;
  * @bug 8043836
  * @summary Test AES ciphers with 4 different modes with NoPadding. Check if
  *          data before encryption and after decryption is the same.
+ * @key randomness
  */
 
 public class CTR {

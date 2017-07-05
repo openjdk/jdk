@@ -25,6 +25,7 @@
  * @bug 4563125
  * @summary Test size method of FileChannel
  * @run main/othervm Size
+ * @key randomness
  */
 
 import java.io.*;

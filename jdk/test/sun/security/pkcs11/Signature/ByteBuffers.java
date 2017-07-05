@@ -27,6 +27,7 @@
  * @summary Test the Signature.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @library ..
+ * @key randomness
  */
 
 import java.util.*;

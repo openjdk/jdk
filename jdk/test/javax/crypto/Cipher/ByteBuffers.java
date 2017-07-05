@@ -26,6 +26,7 @@
  * @bug 4844847
  * @summary Test the Cipher.update/doFinal(ByteBuffer, ByteBuffer) methods
  * @author Andreas Sterbenz
+ * @key randomness
  */
 
 import java.util.*;

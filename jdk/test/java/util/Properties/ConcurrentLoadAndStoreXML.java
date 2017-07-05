@@ -25,6 +25,7 @@
  * @bug 8005281
  * @summary Test that the Properties storeToXML and loadFromXML methods are
  *   thread safe
+ * @key randomness
  */
 
 import java.io.*;

@@ -30,6 +30,7 @@
  * @run build TransformMethodTest
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar TransformMethodTest TransformMethodTest
+ * @key randomness
  */
 import java.lang.instrument.*;
 

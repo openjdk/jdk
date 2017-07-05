@@ -26,6 +26,7 @@
  * @bug 4853306
  * @summary Test RSA Cipher implementation
  * @author Andreas Sterbenz
+ * @key randomness
  */
 
 import java.io.*;

@@ -41,14 +41,14 @@ import sun.management.GarbageCollectionNotifInfoCompositeData;
  * when the Java virtual machine completes a garbage collection action
  * The notification emitted will contain the garbage collection notification
  * information about the status of the memory:
- * <u1>
+ * <ul>
  *   <li>The name of the garbage collector used to perform the collection.</li>
  *   <li>The action performed by the garbage collector.</li>
  *   <li>The cause of the garbage collection action.</li>
  *   <li>A {@link GcInfo} object containing some statistics about the GC cycle
           (start time, end time) and the memory usage before and after
           the GC cycle.</li>
- * </u1>
+ * </ul>
  *
  * <p>
  * A {@link CompositeData CompositeData} representing
@@ -81,7 +81,7 @@ import sun.management.GarbageCollectionNotifInfoCompositeData;
  *   <li>A {@linkplain #GARBAGE_COLLECTION_NOTIFICATION garbage collection notification}.
  *       <br>Used by every notification emitted by the garbage collector, the details about
  *             the notification are provided in the {@linkplain #getGcAction action} String
- *       <p></li>
+ *       </li>
  * </ul>
  **/
 

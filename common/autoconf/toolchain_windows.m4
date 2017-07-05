@@ -210,6 +210,37 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
     done
 
     exit 0
+  elif test "x$DEVKIT_VS_VERSION" != x; then
+    VS_VERSION=$DEVKIT_VS_VERSION
+    TOOLCHAIN_VERSION=$VS_VERSION
+    eval VS_DESCRIPTION="\${VS_DESCRIPTION_${VS_VERSION}}"
+    eval VS_VERSION_INTERNAL="\${VS_VERSION_INTERNAL_${VS_VERSION}}"
+    eval MSVCR_NAME="\${VS_MSVCR_${VS_VERSION}}"
+    eval MSVCP_NAME="\${VS_MSVCP_${VS_VERSION}}"
+    eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+    VS_PATH="$TOOLCHAIN_PATH:$PATH"
+
+    # Convert DEVKIT_VS_INCLUDE into windows style VS_INCLUDE so that it
+    # can still be exported as INCLUDE for compiler invocations without
+    # SYSROOT_CFLAGS
+    OLDIFS="$IFS"
+    IFS=";"
+    for i in $DEVKIT_VS_INCLUDE; do
+      ipath=$i
+      BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([ipath])
+      VS_INCLUDE="$VS_INCLUDE;$ipath"
+    done
+    # Convert DEVKIT_VS_LIB into VS_LIB so that it can still be exported
+    # as LIB for compiler invocations without SYSROOT_LDFLAGS
+    for i in $DEVKIT_VS_LIB; do
+      libpath=$i
+      BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([libpath])
+      VS_LIB="$VS_LIB;$libpath"
+    done
+    IFS="$OLDIFS"
+
+    AC_MSG_NOTICE([Found devkit $VS_DESCRIPTION])
+
   elif test "x$with_toolchain_version" != x; then
     # User override; check that it is valid
     if test "x${VALID_VS_VERSIONS/$with_toolchain_version/}" = "x${VALID_VS_VERSIONS}"; then
@@ -262,71 +293,81 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
   # First-hand choice is to locate and run the vsvars bat file.
   TOOLCHAIN_FIND_VISUAL_STUDIO
 
-  if test "x$VS_ENV_CMD" != x; then
-    # We have found a Visual Studio environment on disk, let's extract variables from the vsvars bat file.
-    BASIC_FIXUP_EXECUTABLE(VS_ENV_CMD)
+  # If we have a devkit, skip all of the below.
+  if test "x$DEVKIT_VS_VERSION" = x; then
+    if test "x$VS_ENV_CMD" != x; then
+      # We have found a Visual Studio environment on disk, let's extract variables from the vsvars bat file.
+      BASIC_FIXUP_EXECUTABLE(VS_ENV_CMD)
 
-    # Lets extract the variables that are set by vcvarsall.bat/vsvars32.bat/vsvars64.bat
-    AC_MSG_NOTICE([Trying to extract Visual Studio environment variables])
+      # Lets extract the variables that are set by vcvarsall.bat/vsvars32.bat/vsvars64.bat
+      AC_MSG_NOTICE([Trying to extract Visual Studio environment variables])
 
-    # We need to create a couple of temporary files.
-    VS_ENV_TMP_DIR="$CONFIGURESUPPORT_OUTPUTDIR/vs-env"
-    $MKDIR -p $VS_ENV_TMP_DIR
+      # We need to create a couple of temporary files.
+      VS_ENV_TMP_DIR="$CONFIGURESUPPORT_OUTPUTDIR/vs-env"
+      $MKDIR -p $VS_ENV_TMP_DIR
 
-    # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment).
-    # Instead create a shell script which will set the relevant variables when run.
-    WINPATH_VS_ENV_CMD="$VS_ENV_CMD"
-    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([WINPATH_VS_ENV_CMD])
-    WINPATH_BASH="$BASH"
-    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([WINPATH_BASH])
+      # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment).
+      # Instead create a shell script which will set the relevant variables when run.
+      WINPATH_VS_ENV_CMD="$VS_ENV_CMD"
+      BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([WINPATH_VS_ENV_CMD])
+      WINPATH_BASH="$BASH"
+      BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH([WINPATH_BASH])
 
-    # Generate a DOS batch file which runs $VS_ENV_CMD, and then creates a shell
-    # script (executable by bash) that will setup the important variables.
-    EXTRACT_VC_ENV_BAT_FILE="$VS_ENV_TMP_DIR/extract-vs-env.bat"
-    $ECHO "@echo off" >  $EXTRACT_VC_ENV_BAT_FILE
-    # This will end up something like:
-    # call C:/progra~2/micros~2.0/vc/bin/amd64/vcvars64.bat
-    $ECHO "call $WINPATH_VS_ENV_CMD $VS_ENV_ARGS" >> $EXTRACT_VC_ENV_BAT_FILE
-    # These will end up something like:
-    # C:/CygWin/bin/bash -c 'echo VS_PATH=\"$PATH\" > localdevenv.sh
-    # The trailing space for everyone except PATH is no typo, but is needed due
-    # to trailing \ in the Windows paths. These will be stripped later.
-    $ECHO "$WINPATH_BASH -c 'echo VS_PATH="'\"$PATH\" > set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
-    $ECHO "$WINPATH_BASH -c 'echo VS_INCLUDE="'\"$INCLUDE\;$include \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
-    $ECHO "$WINPATH_BASH -c 'echo VS_LIB="'\"$LIB\;$lib \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
-    $ECHO "$WINPATH_BASH -c 'echo VCINSTALLDIR="'\"$VCINSTALLDIR \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
-    $ECHO "$WINPATH_BASH -c 'echo WindowsSdkDir="'\"$WindowsSdkDir \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
-    $ECHO "$WINPATH_BASH -c 'echo WINDOWSSDKDIR="'\"$WINDOWSSDKDIR \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+      # Generate a DOS batch file which runs $VS_ENV_CMD, and then creates a shell
+      # script (executable by bash) that will setup the important variables.
+      EXTRACT_VC_ENV_BAT_FILE="$VS_ENV_TMP_DIR/extract-vs-env.bat"
+      $ECHO "@echo off" >  $EXTRACT_VC_ENV_BAT_FILE
+      # This will end up something like:
+      # call C:/progra~2/micros~2.0/vc/bin/amd64/vcvars64.bat
+      $ECHO "call $WINPATH_VS_ENV_CMD $VS_ENV_ARGS" >> $EXTRACT_VC_ENV_BAT_FILE
+      # These will end up something like:
+      # C:/CygWin/bin/bash -c 'echo VS_PATH=\"$PATH\" > localdevenv.sh
+      # The trailing space for everyone except PATH is no typo, but is needed due
+      # to trailing \ in the Windows paths. These will be stripped later.
+      $ECHO "$WINPATH_BASH -c 'echo VS_PATH="'\"$PATH\" > set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO "$WINPATH_BASH -c 'echo VS_INCLUDE="'\"$INCLUDE\;$include \" >> set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO "$WINPATH_BASH -c 'echo VS_LIB="'\"$LIB\;$lib \" >> set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO "$WINPATH_BASH -c 'echo VCINSTALLDIR="'\"$VCINSTALLDIR \" >> set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO "$WINPATH_BASH -c 'echo WindowsSdkDir="'\"$WindowsSdkDir \" >> set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
+      $ECHO "$WINPATH_BASH -c 'echo WINDOWSSDKDIR="'\"$WINDOWSSDKDIR \" >> set-vs-env.sh' \
+          >> $EXTRACT_VC_ENV_BAT_FILE
 
-    # Now execute the newly created bat file.
-    # The | cat is to stop SetEnv.Cmd to mess with system colors on msys.
-    # Change directory so we don't need to mess with Windows paths in redirects.
-    cd $VS_ENV_TMP_DIR
-    cmd /c extract-vs-env.bat | $CAT
-    cd $CURDIR
+      # Now execute the newly created bat file.
+      # The | cat is to stop SetEnv.Cmd to mess with system colors on msys.
+      # Change directory so we don't need to mess with Windows paths in redirects.
+      cd $VS_ENV_TMP_DIR
+      cmd /c extract-vs-env.bat | $CAT
+      cd $CURDIR
 
-    if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
-      AC_MSG_NOTICE([Could not succesfully extract the envionment variables needed for the VS setup.])
-      AC_MSG_NOTICE([Try setting --with-tools-dir to the VC/bin directory within the VS installation])
-      AC_MSG_NOTICE([or run "bash.exe -l" from a VS command prompt and then run configure from there.])
-      AC_MSG_ERROR([Cannot continue])
+      if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
+        AC_MSG_NOTICE([Could not succesfully extract the envionment variables needed for the VS setup.])
+        AC_MSG_NOTICE([Try setting --with-tools-dir to the VC/bin directory within the VS installation])
+        AC_MSG_NOTICE([or run "bash.exe -l" from a VS command prompt and then run configure from there.])
+        AC_MSG_ERROR([Cannot continue])
+      fi
+
+      # Now set all paths and other env variables. This will allow the rest of
+      # the configure script to find and run the compiler in the proper way.
+      AC_MSG_NOTICE([Setting extracted environment variables])
+      . $VS_ENV_TMP_DIR/set-vs-env.sh
+      # Now we have VS_PATH, VS_INCLUDE, VS_LIB. For further checking, we
+      # also define VCINSTALLDIR, WindowsSdkDir and WINDOWSSDKDIR.
+    else
+      # We did not find a vsvars bat file, let's hope we are run from a VS command prompt.
+      AC_MSG_NOTICE([Cannot locate a valid Visual Studio installation, checking current environment])
     fi
-
-    # Now set all paths and other env variables. This will allow the rest of
-    # the configure script to find and run the compiler in the proper way.
-    AC_MSG_NOTICE([Setting extracted environment variables])
-    . $VS_ENV_TMP_DIR/set-vs-env.sh
-    # Now we have VS_PATH, VS_INCLUDE, VS_LIB. For further checking, we
-    # also define VCINSTALLDIR, WindowsSdkDir and WINDOWSSDKDIR.
-  else
-    # We did not find a vsvars bat file, let's hope we are run from a VS command prompt.
-    AC_MSG_NOTICE([Cannot locate a valid Visual Studio installation, checking current environment])
   fi
 
   # At this point, we should have correct variables in the environment, or we can't continue.
   AC_MSG_CHECKING([for Visual Studio variables])
 
-  if test "x$VCINSTALLDIR" != x || test "x$WindowsSDKDir" != x || test "x$WINDOWSSDKDIR" != x; then
+  if test "x$VCINSTALLDIR" != x || test "x$WindowsSDKDir" != x \
+      || test "x$WINDOWSSDKDIR" != x || test "x$DEVKIT_NAME" != x; then
     if test "x$VS_INCLUDE" = x || test "x$VS_LIB" = x; then
       AC_MSG_RESULT([present but broken])
       AC_MSG_ERROR([Your VC command prompt seems broken, INCLUDE and/or LIB is missing.])
@@ -403,10 +444,10 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
   POSSIBLE_MSVC_DLL="$2"
   METHOD="$3"
   if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    AC_MSG_NOTICE([Found $1 at $POSSIBLE_MSVC_DLL using $METHOD])
+    AC_MSG_NOTICE([Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD])
 
     # Need to check if the found msvcr is correct architecture
-    AC_MSG_CHECKING([found $1 architecture])
+    AC_MSG_CHECKING([found $DLL_NAME architecture])
     MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
     if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
       # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
@@ -426,19 +467,19 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
     if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       AC_MSG_RESULT([ok])
       MSVC_DLL="$POSSIBLE_MSVC_DLL"
-      AC_MSG_CHECKING([for $1])
+      BASIC_FIXUP_PATH(MSVC_DLL)
+      AC_MSG_CHECKING([for $DLL_NAME])
       AC_MSG_RESULT([$MSVC_DLL])
     else
       AC_MSG_RESULT([incorrect, ignoring])
-      AC_MSG_NOTICE([The file type of the located $1 is $MSVC_DLL_FILETYPE])
+      AC_MSG_NOTICE([The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE])
     fi
   fi
 ])
 
 AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
 [
-  VAR_NAME="$1"
-  DLL_NAME="$2"
+  DLL_NAME="$1"
   MSVC_DLL=
 
   if test "x$MSVC_DLL" = x; then
@@ -517,10 +558,6 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
     AC_MSG_RESULT([no])
     AC_MSG_ERROR([Could not find $DLL_NAME. Please specify using --with-msvcr-dll.])
   fi
-
-  $1=$MSVC_DLL
-  BASIC_FIXUP_PATH($1)
-  AC_SUBST($1, [$]$1)
 ])
 
 AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
@@ -530,14 +567,22 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
 
   if test "x$with_msvcr_dll" != x; then
     # If given explicitely by user, do not probe. If not present, fail directly.
-    TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$with_msvcr_dll],
-        [--with-msvcr-dll])
+    TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL($MSVCR_NAME, [$with_msvcr_dll], [--with-msvcr-dll])
     if test "x$MSVC_DLL" = x; then
       AC_MSG_ERROR([Could not find a proper $MSVCR_NAME as specified by --with-msvcr-dll])
     fi
+    MSVCR_DLL="$MSVC_DLL"
+  elif test "x$DEVKIT_MSVCR_DLL" != x; then
+    TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL($MSVCR_NAME, [$DEVKIT_MSVCR_DLL], [devkit])
+    if test "x$MSVC_DLL" = x; then
+      AC_MSG_ERROR([Could not find a proper $MSVCR_NAME as specified by devkit])
+    fi  
+    MSVCR_DLL="$MSVC_DLL"
   else
-    TOOLCHAIN_SETUP_MSVC_DLL([MSVCR_DLL], [${MSVCR_NAME}])
+    TOOLCHAIN_SETUP_MSVC_DLL([${MSVCR_NAME}])
+    MSVCR_DLL="$MSVC_DLL"
   fi
+  AC_SUBST(MSVCR_DLL)
 
   AC_ARG_WITH(msvcp-dll, [AS_HELP_STRING([--with-msvcp-dll],
       [path to microsoft C++ runtime dll (msvcp*.dll) (Windows only) @<:@probed@:>@])])
@@ -545,13 +590,21 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
   if test "x$MSVCP_NAME" != "x"; then
     if test "x$with_msvcp_dll" != x; then
       # If given explicitely by user, do not probe. If not present, fail directly.
-      TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$with_msvcp_dll],
-          [--with-msvcp-dll])
+      TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL($MSVCP_NAME, [$with_msvcp_dll], [--with-msvcp-dll])
       if test "x$MSVC_DLL" = x; then
         AC_MSG_ERROR([Could not find a proper $MSVCP_NAME as specified by --with-msvcp-dll])
       fi
+      MSVCP_DLL="$MSVC_DLL"
+    elif test "x$DEVKIT_MSVCP_DLL" != x; then
+      TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL($MSVCP_NAME, [$DEVKIT_MSVCP_DLL], [devkit])
+      if test "x$MSVC_DLL" = x; then
+        AC_MSG_ERROR([Could not find a proper $MSVCP_NAME as specified by devkit])
+      fi  
+      MSVCP_DLL="$MSVC_DLL"
     else
-      TOOLCHAIN_SETUP_MSVC_DLL([MSVCP_DLL], [${MSVCP_NAME}])
+      TOOLCHAIN_SETUP_MSVC_DLL([${MSVCP_NAME}])
+      MSVCP_DLL="$MSVC_DLL"
     fi
+    AC_SUBST(MSVCP_DLL)
   fi
 ])

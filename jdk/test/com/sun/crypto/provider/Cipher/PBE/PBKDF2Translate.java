@@ -37,6 +37,7 @@ import javax.crypto.spec.PBEKeySpec;
  * @summary Verify if the SecretKeyFactory.translateKey() method works
  * @author Alexander Fomin
  * @run main PBKDF2Translate
+ * @key randomness
  */
 public class PBKDF2Translate {
 

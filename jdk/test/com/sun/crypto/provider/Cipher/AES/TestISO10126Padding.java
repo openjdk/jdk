@@ -26,6 +26,7 @@
  * @bug 4921443
  * @summary Ensure ISO10126Padding works correctly.
  * @author Valerie Peng
+ * @key randomness
  */
 import java.util.Arrays;
 import java.security.*;

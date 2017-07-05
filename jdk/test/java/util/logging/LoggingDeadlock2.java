@@ -29,6 +29,10 @@
  *
  * @build    LoggingDeadlock2
  * @run  main LoggingDeadlock2
+ * @key randomness
+ */
+
+/*
  *
  * There is a clear deadlock between LogManager.<clinit> and
  * Cleaner.run() methods.

@@ -612,7 +612,7 @@ public final class AccessController {
 
     private static ProtectionDomain getCallerPD(final Class <?> caller) {
         ProtectionDomain callerPd = doPrivileged
-            (new PrivilegedAction<ProtectionDomain>() {
+            (new PrivilegedAction<>() {
             public ProtectionDomain run() {
                 return caller.getProtectionDomain();
             }

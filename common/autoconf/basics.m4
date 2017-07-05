@@ -478,6 +478,15 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   AUTOCONF_DIR=$TOPDIR/common/autoconf
 ])
 
+# Evaluates platform specific overrides for devkit variables.
+# $1: Name of variable
+AC_DEFUN([BASIC_EVAL_DEVKIT_VARIABLE],
+[
+  if test "x[$]$1" = x; then
+    eval $1="\${$1_${OPENJDK_TARGET_CPU}}"
+  fi
+])
+
 AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 [
   AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
@@ -487,12 +496,27 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
         DEVKIT_ROOT="$with_devkit"
         # Check for a meta data info file in the root of the devkit
         if test -f "$DEVKIT_ROOT/devkit.info"; then
-          # This potentially sets the following:
-          # DEVKIT_NAME: A descriptive name of the devkit
-          # DEVKIT_TOOLCHAIN_PATH: Corresponds to --with-toolchain-path
-          # DEVKIT_EXTRA_PATH: Corresponds to --with-extra-path
-          # DEVKIT_SYSROOT: Corresponds to --with-sysroot
           . $DEVKIT_ROOT/devkit.info
+          # This potentially sets the following:
+          # A descriptive name of the devkit
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_NAME])
+          # Corresponds to --with-extra-path
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_EXTRA_PATH])
+          # Corresponds to --with-toolchain-path
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_TOOLCHAIN_PATH])
+          # Corresponds to --with-sysroot
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_SYSROOT])
+
+          # Identifies the Visual Studio version in the devkit
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_VERSION])
+          # The Visual Studio include environment variable
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_INCLUDE])
+          # The Visual Studio lib environment variable
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_LIB])
+          # Corresponds to --with-msvcr-dll
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCR_DLL])
+          # Corresponds to --with-msvcp-dll
+          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCP_DLL])
         fi
 
         AC_MSG_CHECKING([for devkit])
@@ -502,9 +526,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
           AC_MSG_RESULT([$DEVKIT_ROOT])
         fi
 
-        if test "x$DEVKIT_EXTRA_PATH" != x; then
-          BASIC_PREPEND_TO_PATH([EXTRA_PATH],$DEVKIT_EXTRA_PATH)
-        fi
+        BASIC_PREPEND_TO_PATH([EXTRA_PATH],$DEVKIT_EXTRA_PATH)
 
         # Fallback default of just /bin if DEVKIT_PATH is not defined
         if test "x$DEVKIT_TOOLCHAIN_PATH" = x; then
@@ -681,8 +703,12 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
       files_present=`$LS $OUTPUT_ROOT`
       # Configure has already touched config.log and confdefs.h in the current dir when this check
       # is performed.
-      filtered_files=`$ECHO "$files_present" | $SED -e 's/config.log//g' -e 's/confdefs.h//g' -e 's/ //g' \
-      | $TR -d '\n'`
+      filtered_files=`$ECHO "$files_present" \
+          | $SED -e 's/config.log//g' \
+	      -e 's/confdefs.h//g' \
+	      -e 's/fixpath.exe//g' \
+	      -e 's/ //g' \
+          | $TR -d '\n'`
       if test "x$filtered_files" != x; then
         AC_MSG_NOTICE([Current directory is $CURDIR.])
         AC_MSG_NOTICE([Since this is not the source root, configure will output the configuration here])
