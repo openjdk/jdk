@@ -273,6 +273,7 @@ jdk_other = \
     jdk/internal/jline \
     com/sun/jndi \
     com/sun/corba \
+    org/omg/CORBA \
     lib/testlibrary \
     sample
 

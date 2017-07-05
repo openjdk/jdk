@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ public class MultiMonitorTest {
         // A couple of granularity periods to detect bad behaviour
         Thread.sleep(2);
 
+        System.out.println("Checking for all listeners to be 0");
         if (!listenersAreAll(0, listeners)) {
             System.out.println("TEST FAILED: listeners not all 0");
             System.exit(1);
@@ -124,20 +125,18 @@ public class MultiMonitorTest {
         for (int i = 0; i < 3; i++)
             proxies[i].start();
 
-        long startTime = System.currentTimeMillis();
-        while (!listenersAreAll(N, listeners)
-               && System.currentTimeMillis() < startTime + 5000)
-            Thread.sleep(1);
+        System.out.println("Waiting for listeners to all : " + N);
+        int iterations = 0;
+        while (!listenersAreAll(N, listeners)) {
+            Thread.sleep(500);
 
-        // More time for bad behaviour
-        Thread.sleep(1000);
-
-        if (!listenersAreAll(N, listeners)) {
-            System.out.print("TEST FAILED: listener counts wrong:");
-            for (int i = 0; i < listeners.length; i++)
-                System.out.print(" " + listeners[i].getCount());
-            System.out.println();
-            System.exit(1);
+            if (++iterations == 10) {
+               for (int i = 0; i < listeners.length; i++) {
+                   System.out.print(" " + listeners[i].getCount());
+               }
+               System.out.println();
+               iterations = 0;
+            }
         }
 
         for (int i = 0; i < 3; i++) {
