@@ -8284,3 +8284,6 @@ FormatData/fi/DatePatterns/3=d.M.yyyy
 
 # bug #8075173
 FormatData/de/standalone.MonthAbbreviations/2=M\u00e4r
+
+# bug #8129361
+CurrencyNames//hrk=Kuna

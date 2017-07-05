@@ -140,6 +140,9 @@ java/lang/instrument/RetransformBigClass.sh                     generic-all
 # 8072130
 java/lang/instrument/BootClassPath/BootClassPathTest.sh         macosx-all
 
+# 8130339
+java/lang/management/MemoryMXBean/LowMemoryTest.java		generic-all
+
 ############################################################################
 
 # jdk_jmx

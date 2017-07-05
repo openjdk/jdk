@@ -191,6 +191,10 @@ public class OGLContext extends BufferedContext {
         /** Indicates the presence of the GL_ARB_texture_rectangle extension. */
         @Native
         static final int CAPS_EXT_TEXRECT      = (FIRST_PRIVATE_CAP << 4);
+        /** Indicates the presence of the GL_NV_texture_barrier extension. */
+        @Native
+        static final int CAPS_EXT_TEXBARRIER = (FIRST_PRIVATE_CAP << 5);
+
 
         OGLContextCaps(int caps, String adapterId) {
             super(caps, adapterId);
@@ -216,6 +220,9 @@ public class OGLContext extends BufferedContext {
             }
             if ((caps & CAPS_EXT_TEXRECT) != 0) {
                 sb.append("CAPS_EXT_TEXRECT|");
+            }
+            if ((caps & CAPS_EXT_TEXBARRIER) != 0) {
+                sb.append("CAPS_EXT_TEXBARRIER|");
             }
             return sb.toString();
         }
