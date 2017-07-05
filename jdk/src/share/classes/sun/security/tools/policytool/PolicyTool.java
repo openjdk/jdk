@@ -643,7 +643,7 @@ public class PolicyTool {
         Class<?> pc = Class.forName(type, true,
                 Thread.currentThread().getContextClassLoader());
         Constructor<?> c = null;
-        Vector<String> objects = new Vector<String>(2);
+        Vector<String> objects = new Vector<>(2);
         if (name != null) objects.add(name);
         if (actions != null) objects.add(actions);
         switch (objects.size()) {
@@ -1722,8 +1722,7 @@ class ToolDialog extends Dialog {
                         new PolicyParser.GrantEntry(signedby, codebase);
 
         // get the new Principals
-        LinkedList<PolicyParser.PrincipalEntry> prins =
-                                new LinkedList<PolicyParser.PrincipalEntry>();
+        LinkedList<PolicyParser.PrincipalEntry> prins = new LinkedList<>();
         TaggedList prinList = (TaggedList)getComponent(PE_PRIN_LIST);
         for (int i = 0; i < prinList.getItemCount(); i++) {
             prins.add((PolicyParser.PrincipalEntry)prinList.getObject(i));
@@ -1731,8 +1730,7 @@ class ToolDialog extends Dialog {
         ge.principals = prins;
 
         // get the new Permissions
-        Vector<PolicyParser.PermissionEntry> perms =
-                        new Vector<PolicyParser.PermissionEntry>();
+        Vector<PolicyParser.PermissionEntry> perms = new Vector<>();
         TaggedList permList = (TaggedList)getComponent(PE_PERM_LIST);
         for (int i = 0; i < permList.getItemCount(); i++) {
             perms.addElement((PolicyParser.PermissionEntry)permList.getObject(i));
@@ -3649,7 +3647,7 @@ class NoDisplayException extends RuntimeException {
  * This is a java.awt.List that bind an Object to each String it holds.
  */
 class TaggedList extends List {
-    private java.util.List<Object> data = new LinkedList<Object>();
+    private java.util.List<Object> data = new LinkedList<>();
     public TaggedList(int i, boolean b) {
         super(i, b);
     }

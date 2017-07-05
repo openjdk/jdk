@@ -48,7 +48,11 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
 
     private static final Object DTD_KEY = new Object();
 
-    protected static synchronized void setDefaultDTD() {
+    protected static void setDefaultDTD() {
+        getDefaultDTD();
+    }
+
+    private static synchronized DTD getDefaultDTD() {
         AppContext appContext = AppContext.getAppContext();
 
         DTD dtd = (DTD) appContext.get(DTD_KEY);
@@ -67,6 +71,8 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
 
             appContext.put(DTD_KEY, dtd);
         }
+
+        return dtd;
     }
 
     protected static DTD createDTD(DTD dtd, String name) {
@@ -92,7 +98,7 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
     }
 
     public void parse(Reader r, HTMLEditorKit.ParserCallback cb, boolean ignoreCharSet) throws IOException {
-        new DocumentParser((DTD) AppContext.getAppContext().get(DTD_KEY)).parse(r, cb, ignoreCharSet);
+        new DocumentParser(getDefaultDTD()).parse(r, cb, ignoreCharSet);
     }
 
     /**

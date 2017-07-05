@@ -57,7 +57,7 @@ public class KeyTab implements KeyTabConstants {
     private static KeyTab singleton = null;
     private static final boolean DEBUG = Krb5.DEBUG;
     private static String name;
-    private Vector<KeyTabEntry> entries = new Vector<KeyTabEntry> ();
+    private Vector<KeyTabEntry> entries = new Vector<>();
 
     private KeyTab(String filename) throws IOException, RealmException {
         init(filename);
@@ -240,7 +240,7 @@ public class KeyTab implements KeyTabConstants {
         KeyTabEntry entry;
         EncryptionKey key;
         int size = entries.size();
-        ArrayList<EncryptionKey> keys = new ArrayList<EncryptionKey> (size);
+        ArrayList<EncryptionKey> keys = new ArrayList<>(size);
 
         for (int i = size-1; i >= 0; i--) {
             entry = entries.elementAt(i);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,8 @@ private:
     else { assert(!is_wide(), "must not be a wide instruction"); }
   }
 
-  Bytecode* bytecode() const { return Bytecode_at(_bc_start); }
-  Bytecode* next_bytecode() const { return Bytecode_at(_pc); }
+  Bytecode bytecode() const { return Bytecode(this, _bc_start); }
+  Bytecode next_bytecode() const { return Bytecode(this, _pc); }
 
 public:
   // End-Of-Bytecodes
@@ -151,11 +151,11 @@ public:
   bool has_cache_index() const { return Bytecodes::uses_cp_cache(cur_bc_raw()); }
 
   int get_index_u1() const {
-    return bytecode()->get_index_u1(cur_bc_raw());
+    return bytecode().get_index_u1(cur_bc_raw());
   }
 
   int get_index_u1_cpcache() const {
-    return bytecode()->get_index_u1_cpcache(cur_bc_raw());
+    return bytecode().get_index_u1_cpcache(cur_bc_raw());
   }
 
   // Get a byte index following this bytecode.
@@ -169,29 +169,29 @@ public:
 
   // Get 2-byte index (byte swapping depending on which bytecode)
   int get_index_u2(bool is_wide = false) const {
-    return bytecode()->get_index_u2(cur_bc_raw(), is_wide);
+    return bytecode().get_index_u2(cur_bc_raw(), is_wide);
   }
 
   // Get 2-byte index in native byte order.  (Rewriter::rewrite makes these.)
   int get_index_u2_cpcache() const {
-    return bytecode()->get_index_u2_cpcache(cur_bc_raw());
+    return bytecode().get_index_u2_cpcache(cur_bc_raw());
   }
 
   // Get 4-byte index, for invokedynamic.
   int get_index_u4() const {
-    return bytecode()->get_index_u4(cur_bc_raw());
+    return bytecode().get_index_u4(cur_bc_raw());
   }
 
   bool has_index_u4() const {
-    return bytecode()->has_index_u4(cur_bc_raw());
+    return bytecode().has_index_u4(cur_bc_raw());
   }
 
   // Get dimensions byte (multinewarray)
   int get_dimensions() const { return *(unsigned char*)(_pc-1); }
 
   // Sign-extended index byte/short, no widening
-  int get_constant_u1()                     const { return bytecode()->get_constant_u1(instruction_size()-1, cur_bc_raw()); }
-  int get_constant_u2(bool is_wide = false) const { return bytecode()->get_constant_u2(instruction_size()-2, cur_bc_raw(), is_wide); }
+  int get_constant_u1()                     const { return bytecode().get_constant_u1(instruction_size()-1, cur_bc_raw()); }
+  int get_constant_u2(bool is_wide = false) const { return bytecode().get_constant_u2(instruction_size()-2, cur_bc_raw(), is_wide); }
 
   // Get a byte signed constant for "iinc".  Invalid for other bytecodes.
   // If prefixed with a wide bytecode, get a wide constant
@@ -199,18 +199,18 @@ public:
 
   // 2-byte branch offset from current pc
   int get_dest() const {
-    return cur_bci() + bytecode()->get_offset_s2(cur_bc_raw());
+    return cur_bci() + bytecode().get_offset_s2(cur_bc_raw());
   }
 
   // 2-byte branch offset from next pc
   int next_get_dest() const {
     assert(_pc < _end, "");
-    return next_bci() + next_bytecode()->get_offset_s2(Bytecodes::_ifeq);
+    return next_bci() + next_bytecode().get_offset_s2(Bytecodes::_ifeq);
   }
 
   // 4-byte branch offset from current pc
   int get_far_dest() const {
-    return cur_bci() + bytecode()->get_offset_s4(cur_bc_raw());
+    return cur_bci() + bytecode().get_offset_s4(cur_bc_raw());
   }
 
   // For a lookup or switch table, return target destination
@@ -406,5 +406,12 @@ public:
     return _method->_exception_handlers[_pos];
   }
 };
+
+
+
+// Implementation for declarations in bytecode.hpp
+Bytecode::Bytecode(const ciBytecodeStream* stream, address bcp): _bcp(bcp != NULL ? bcp : stream->cur_bcp()), _code(Bytecodes::code_at(NULL, addr_at(0))) {}
+Bytecode_lookupswitch::Bytecode_lookupswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
+Bytecode_tableswitch::Bytecode_tableswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
 
 #endif // SHARE_VM_CI_CISTREAMS_HPP

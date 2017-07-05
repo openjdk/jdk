@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "stepControl.h"
 #include "threadControl.h"
 #include "SDE.h"
+#include "jvmti.h"
 
 typedef struct ClassFilter {
     jclass clazz;
@@ -275,6 +276,24 @@ patternStringMatch(char *classname, const char *pattern)
     }
 }
 
+static jboolean isVersionGte12x() {
+    jint version;
+    jvmtiError err =
+        JVMTI_FUNC_PTR(gdata->jvmti,GetVersionNumber)(gdata->jvmti, &version);
+
+    if (err == JVMTI_ERROR_NONE) {
+        jint major, minor;
+
+        major = (version & JVMTI_VERSION_MASK_MAJOR)
+                    >> JVMTI_VERSION_SHIFT_MAJOR;
+        minor = (version & JVMTI_VERSION_MASK_MINOR)
+                    >> JVMTI_VERSION_SHIFT_MINOR;
+        return (major > 1 || major == 1 && minor >= 2);
+    } else {
+        return JNI_FALSE;
+    }
+}
+
 /* Return the object instance in which the event occurred */
 /* Return NULL if static or if an error occurs */
 static jobject
@@ -285,6 +304,14 @@ eventInstance(EventInfo *evinfo)
     jmethodID   method          ;
     jint        modifiers       = 0;
     jvmtiError  error;
+
+    static jboolean got_version = JNI_FALSE;
+    static jboolean is_version_gte_12x = JNI_FALSE;
+
+    if (!got_version) {
+        is_version_gte_12x = isVersionGte12x();
+        got_version = JNI_TRUE;
+    }
 
     switch (evinfo->ei) {
         case EI_SINGLE_STEP:
@@ -314,11 +341,18 @@ eventInstance(EventInfo *evinfo)
     /* fail if error or static (0x8) */
     if (error == JVMTI_ERROR_NONE && thread!=NULL && (modifiers & 0x8) == 0) {
         FrameNumber fnum            = 0;
-        /* get slot zero object "this" */
-        error = JVMTI_FUNC_PTR(gdata->jvmti,GetLocalObject)
-                    (gdata->jvmti, thread, fnum, 0, &object);
-        if (error != JVMTI_ERROR_NONE)
+        if (is_version_gte_12x) {
+            /* Use new 1.2.x function, GetLocalInstance */
+            error = JVMTI_FUNC_PTR(gdata->jvmti,GetLocalInstance)
+                        (gdata->jvmti, thread, fnum, &object);
+        } else {
+            /* get slot zero object "this" */
+            error = JVMTI_FUNC_PTR(gdata->jvmti,GetLocalObject)
+                        (gdata->jvmti, thread, fnum, 0, &object);
+        }
+        if (error != JVMTI_ERROR_NONE) {
             object = NULL;
+        }
     }
 
     return object;

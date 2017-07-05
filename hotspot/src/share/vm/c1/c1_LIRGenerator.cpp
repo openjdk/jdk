@@ -1990,9 +1990,8 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
 
   LIR_Opr reg = reg = rlock_result(x, x->basic_type());
 
-  if (x->is_volatile() && os::is_MP()) __ membar_acquire();
   get_Object_unsafe(reg, src.result(), off.result(), type, x->is_volatile());
-  if (x->is_volatile() && os::is_MP()) __ membar();
+  if (x->is_volatile() && os::is_MP()) __ membar_acquire();
 }
 
 
@@ -2014,6 +2013,7 @@ void LIRGenerator::do_UnsafePutObject(UnsafePutObject* x) {
 
   if (x->is_volatile() && os::is_MP()) __ membar_release();
   put_Object_unsafe(src.result(), off.result(), data.result(), type, x->is_volatile());
+  if (x->is_volatile() && os::is_MP()) __ membar();
 }
 
 

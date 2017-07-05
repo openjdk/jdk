@@ -261,7 +261,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
         protected Set<String> decomposes(KeyExchange keyExchange,
                         boolean forCertPathOnly) {
-            Set<String> components = new HashSet<String>();
+            Set<String> components = new HashSet<>();
             switch (keyExchange) {
                 case K_NULL:
                     if (!forCertPathOnly) {
@@ -356,7 +356,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         }
 
         protected Set<String> decomposes(BulkCipher bulkCipher) {
-            Set<String> components = new HashSet<String>();
+            Set<String> components = new HashSet<>();
 
             if (bulkCipher.transformation != null) {
                 components.addAll(super.decomposes(bulkCipher.transformation));
@@ -366,7 +366,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         }
 
         protected Set<String> decomposes(MacAlg macAlg) {
-            Set<String> components = new HashSet<String>();
+            Set<String> components = new HashSet<>();
 
             if (macAlg == CipherSuite.M_MD5) {
                 components.add("MD5");
@@ -407,7 +407,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                 }
 
                 if (cipherSuite != null) {
-                    Set<String> components = new HashSet<String>();
+                    Set<String> components = new HashSet<>();
 
                     if(cipherSuite.keyExchange != null) {
                         components.addAll(
@@ -448,7 +448,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                 }
 
                 if (cipherSuite != null) {
-                    Set<String> components = new HashSet<String>();
+                    Set<String> components = new HashSet<>();
 
                     if(cipherSuite.keyExchange != null) {
                         components.addAll(

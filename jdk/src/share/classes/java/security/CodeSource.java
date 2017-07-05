@@ -188,7 +188,7 @@ public class CodeSource implements java.io.Serializable {
         } else if (signers != null) {
             // Convert the code signers to certs
             ArrayList<java.security.cert.Certificate> certChains =
-                        new ArrayList<java.security.cert.Certificate>();
+                        new ArrayList<>();
             for (int i = 0; i < signers.length; i++) {
                 certChains.addAll(
                     signers[i].getSignerCertPath().getCertificates());
@@ -606,10 +606,10 @@ public class CodeSource implements java.io.Serializable {
 
             // Iterate through all the certificates
             int i = 0;
-            List<CodeSigner> signers = new ArrayList<CodeSigner>();
+            List<CodeSigner> signers = new ArrayList<>();
             while (i < certs.length) {
                 List<java.security.cert.Certificate> certChain =
-                        new ArrayList<java.security.cert.Certificate>();
+                        new ArrayList<>();
                 certChain.add(certs[i++]); // first cert is an end-entity cert
                 int j = i;
 

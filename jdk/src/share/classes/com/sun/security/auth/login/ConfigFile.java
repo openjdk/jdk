@@ -152,7 +152,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
 
         // new configuration
         HashMap<String, LinkedList<AppConfigurationEntry>> newConfig =
-                new HashMap<String, LinkedList<AppConfigurationEntry>>();
+                new HashMap<>();
 
         if (url != null) {
 
@@ -392,8 +392,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
         String moduleClass;
         String sflag;
         AppConfigurationEntry.LoginModuleControlFlag controlFlag;
-        LinkedList<AppConfigurationEntry> configEntries =
-                                new LinkedList<AppConfigurationEntry>();
+        LinkedList<AppConfigurationEntry> configEntries = new LinkedList<>();
 
         // application name
         appName = st.sval;
@@ -433,7 +432,7 @@ public class ConfigFile extends javax.security.auth.login.Configuration {
             }
 
             // get the args
-            HashMap<String, String> options = new HashMap<String, String>();
+            HashMap<String, String> options = new HashMap<>();
             String key;
             String value;
             while (peek(";") == false) {
