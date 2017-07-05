@@ -915,7 +915,7 @@ void ParNewGeneration::collect(bool   full,
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  _gc_timer->register_gc_start(os::elapsed_counter());
+  _gc_timer->register_gc_start();
 
   assert(gch->kind() == CollectedHeap::GenCollectedHeap,
     "not a CMS generational heap");
@@ -1091,7 +1091,7 @@ void ParNewGeneration::collect(bool   full,
   gch->trace_heap_after_gc(&gc_tracer);
   gc_tracer.report_tenuring_threshold(tenuring_threshold());
 
-  _gc_timer->register_gc_end(os::elapsed_counter());
+  _gc_timer->register_gc_end();
 
   gc_tracer.report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
 }

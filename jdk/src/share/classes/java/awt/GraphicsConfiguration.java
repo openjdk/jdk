@@ -75,7 +75,7 @@ import sun.awt.image.SunVolatileImage;
  * bounds of the virtual device.  The following code sample
  * calculates the bounds of the virtual device.
  *
- * <pre>
+ * <pre>{@code
  *      Rectangle virtualBounds = new Rectangle();
  *      GraphicsEnvironment ge = GraphicsEnvironment.
  *              getLocalGraphicsEnvironment();
@@ -89,7 +89,7 @@ import sun.awt.image.SunVolatileImage;
  *              virtualBounds =
  *                  virtualBounds.union(gc[i].getBounds());
  *          }
- *      } </pre>
+ *      } }</pre>
  *
  * @see Window
  * @see Frame

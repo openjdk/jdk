@@ -66,7 +66,7 @@ import java.awt.image.ImageObserver;
  * <p>
  * Here is an example of using <code>MediaTracker</code>:
  * <p>
- * <hr><blockquote><pre>
+ * <hr><blockquote><pre>{@code
  * import java.applet.Applet;
  * import java.awt.Color;
  * import java.awt.Image;
@@ -160,7 +160,7 @@ import java.awt.image.ImageObserver;
  *          }
  *      }
  * }
- * </pre></blockquote><hr>
+ * } </pre></blockquote><hr>
  *
  * @author      Jim Graham
  * @since       JDK1.0

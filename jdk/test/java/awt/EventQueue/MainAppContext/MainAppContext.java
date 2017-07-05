@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011,2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 7122796
- * @summary Tests 7122796
- * @author anthony.petrov@oracle.com
+ * @bug 8004584
+ * @summary Tests 8004584
+ * @author anthony.petrov@oracle.com, petr.pchelko@oracle.com
  */
 
 import java.awt.*;
@@ -37,12 +37,10 @@ public class MainAppContext {
 
     public static void main(String[] args) {
         ThreadGroup secondGroup = new ThreadGroup("test");
-        new Thread(secondGroup, new Runnable() {
-                public void run() {
-                    SunToolkit.createNewAppContext();
-                    test(true);
-                }
-            }).start();
+        new Thread(secondGroup, () -> {
+            SunToolkit.createNewAppContext();
+            test(true);
+        }).start();
 
         // Sleep on the main thread so that the AWT Toolkit is initialized
         // in a user AppContext first
@@ -51,9 +49,11 @@ public class MainAppContext {
         test(false);
     }
 
-    private static void test(boolean userAppContext) {
-        if (Toolkit.getDefaultToolkit().getSystemEventQueue() == null) {
-            throw new RuntimeException("No EventQueue for the current app context! userAppContext: " + userAppContext);
+    private static void test(boolean expectAppContext) {
+        boolean appContextIsCreated = AppContext.getAppContext() != null;
+        if (expectAppContext != appContextIsCreated) {
+            throw new RuntimeException("AppContext is created: " + appContextIsCreated
+                                                 + " expected: " + expectAppContext);
         }
     }
 }

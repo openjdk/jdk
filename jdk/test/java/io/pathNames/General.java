@@ -39,12 +39,40 @@ public class General {
 
     private static int gensymCounter = 0;
 
+    protected static final String userDir = System.getProperty("user.dir");
+
+    protected static String baseDir = null;
+    protected static String relative = null;
 
     /* Generate a filename unique to this run */
-    protected static String gensym() {
+    private static String gensym() {
         return "x." + ++gensymCounter;
     }
 
+    /**
+     * Create files and folders in the test working directory.
+     * The purpose is to make sure the test will not go out of
+     * its user dir when walking the file tree.
+     *
+     * @param  depth    The number of directory levels to be created under
+     *                  the user directory. It should be the maximum value
+     *                  of the depths passed to checkNames method (including
+     *                  direct or indirect calling) in a whole test.
+     */
+    protected static void initTestData(int depth) throws IOException {
+        File parent = new File(userDir);
+        for (int i = 0; i < depth; i++) {
+            File tmp = new File(parent, gensym());
+            tmp.createNewFile();
+            tmp = new File(parent, gensym());
+            if (tmp.mkdir())
+                parent = tmp;
+            else
+                throw new IOException("Fail to create directory, " + tmp);
+        }
+        baseDir = parent.getAbsolutePath();
+        relative = baseDir.substring(userDir.length() + 1);
+    }
 
     /**
      * Find a file in the given subdirectory, or descend into further
@@ -214,7 +242,7 @@ public class General {
 
 
     /** Hash table of input pathnames, used to detect duplicates */
-    private static Hashtable checked = new Hashtable();
+    private static Hashtable<String, String> checked = new Hashtable<>();
 
     /**
      * Check the given pathname.  Its canonical pathname should be the given
@@ -272,7 +300,7 @@ public class General {
 
 
     /** Check a single slash case, plus its children */
-    public static void checkSlash(int depth, boolean create,
+    private static void checkSlash(int depth, boolean create,
                                   String ans, String ask, String slash)
         throws Exception
     {
