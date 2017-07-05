@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public final class SpNegoMechFactory implements MechanismFactory {
         return result;
     }
 
-    public SpNegoMechFactory(int caller) {
+    public SpNegoMechFactory(GSSCaller caller) {
         manager = new GSSManagerImpl(caller, false);
         Oid[] mechs = manager.getMechs();
         availableMechs = new Oid[mechs.length-1];

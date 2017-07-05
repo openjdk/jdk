@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,10 @@ package sun.security.jgss.krb5;
 
 import org.ietf.jgss.*;
 import sun.security.jgss.GSSUtil;
+import sun.security.jgss.GSSCaller;
 import sun.security.jgss.spi.*;
 import javax.security.auth.kerberos.ServicePermission;
 import java.security.Provider;
-import sun.security.util.DerOutputStream;
-import sun.security.util.ObjectIdentifier;
-import java.io.IOException;
 import java.util.Vector;
 
 /**
@@ -62,7 +60,7 @@ public final class Krb5MechFactory implements MechanismFactory {
                         GSSName.NT_EXPORT_NAME,
                         NT_GSS_KRB5_PRINCIPAL};
 
-    final private int caller;
+    final private GSSCaller caller;
 
     private static Krb5CredElement getCredFromSubject(GSSNameSpi name,
                                                       boolean initiate)
@@ -88,7 +86,7 @@ public final class Krb5MechFactory implements MechanismFactory {
         return result;
     }
 
-    public Krb5MechFactory(int caller) {
+    public Krb5MechFactory(GSSCaller caller) {
         this.caller = caller;
     }
 

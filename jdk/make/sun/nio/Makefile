@@ -60,15 +60,15 @@ endif # PLATFORM
 # this define is for the rule:
 CHARSETS_JAR = $(LIBDIR)/charsets.jar
 
-# extsbcs
-FILES_genout_extsbcs = $(FILES_gen_extsbcs:%.java=$(GENSRCDIR)/%.java)
+# extcs
+FILES_genout_extcs = $(FILES_gen_extcs:%.java=$(GENSRCDIR)/%.java)
 
 #
 # Rules
 #
 include $(BUILDDIR)/common/Classes.gmk
 
-build: $(FILES_genout_extsbcs) $(CHARSETS_JAR)
+build: $(FILES_genout_extcs) $(CHARSETS_JAR)
 
 #
 # Extra rules to build character converters.
@@ -77,6 +77,7 @@ SERVICE_DESCRIPTION = java.nio.charset.spi.CharsetProvider
 SERVICE_DESCRIPTION_PATH = META-INF/services/$(SERVICE_DESCRIPTION)
 
 GENCSDATASRC = $(BUILDDIR)/tools/CharsetMapping
+GENCSSRCDIR = $(BUILDDIR)/tools/src/build/tools/charsetmapping
 GENCSEXT = $(GENSRCDIR)/sun/nio/cs/ext
 
 FILES_MAP = $(GENCSDATASRC)/sjis0213.map
@@ -86,16 +87,18 @@ CHARSETMAPPING_JARFILE = $(BUILDTOOLJARDIR)/charsetmapping.jar
 $(FILES_DAT): $(FILES_MAP)
 	@$(prep-target)
 	$(BOOT_JAVA_CMD) -jar $(CHARSETMAPPING_JARFILE) \
-		$(FILES_MAP) $(FILES_DAT)
+		$(FILES_MAP) $(FILES_DAT) sjis0213
 
 
-$(FILES_genout_extsbcs): $(GENCSDATASRC)/SingleByte-X.java $(GENCSDATASRC)/extsbcs
+$(FILES_genout_extcs): $(GENCSDATASRC)/SingleByte-X.java  $(GENCSDATASRC)/DoubleByte-X.java \
+		$(GENCSDATASRC)/extsbcs $(GENCSDATASRC)/dbcs
 	@$(prep-target)
 	$(RM) -r $(GENCSEXT)
 	$(MKDIR) -p $(GENCSEXT)
-	$(BOOT_JAVA_CMD) -cp $(CHARSETMAPPING_JARFILE) build.tools.charsetmapping.GenerateSBCS \
-		$(GENCSDATASRC) $(GENCSEXT) extsbcs
-
+	$(BOOT_JAVA_CMD) -jar $(CHARSETMAPPING_JARFILE)	$(GENCSDATASRC) $(GENCSEXT) extsbcs
+	$(BOOT_JAVA_CMD) -jar $(CHARSETMAPPING_JARFILE) $(GENCSDATASRC) $(GENCSEXT) euctw \
+		$(GENCSSRCDIR)/GenerateEUC_TW.java
+	$(BOOT_JAVA_CMD) -jar $(CHARSETMAPPING_JARFILE) $(GENCSDATASRC) $(GENCSEXT) dbcs
 
 $(CLASSDESTDIR)/$(SERVICE_DESCRIPTION_PATH): \
   $(SHARE_SRC)/classes/sun/nio/cs/ext/$(SERVICE_DESCRIPTION_PATH)

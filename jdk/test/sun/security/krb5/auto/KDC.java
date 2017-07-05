@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,14 +201,14 @@ public class KDC {
     }
 
     /**
-     * Write all principals' keys into a keytab file. Note that the keys for
-     * the krbtgt principal for this realm will not be written.
+     * Write all principals' keys from multiple KDCsinto one keytab file.
+     * Note that the keys for the krbtgt principals will not be written.
      * <p>
      * Attention: This method references krb5.conf settings. If you need to
      * setup krb5.conf later, please call <code>Config.refresh()</code> after
      * the new setting. For example:
      * <pre>
-     * kdc.writeKtab("/etc/kdc/ktab");  // Config is initialized,
+     * KDC.writeKtab("/etc/kdc/ktab", kdc);  // Config is initialized,
      * System.setProperty("java.security.krb5.conf", "/home/mykrb5.conf");
      * Config.refresh();
      * </pre>
@@ -223,18 +223,29 @@ public class KDC {
      * @throws sun.security.krb5.KrbException for any realm and/or principal
      *         name error.
      */
-    public void writeKtab(String tab) throws IOException, KrbException {
+    public static void writeMultiKtab(String tab, KDC... kdcs)
+            throws IOException, KrbException {
         KeyTab ktab = KeyTab.create(tab);
-        for (String name : passwords.keySet()) {
-            if (name.equals("krbtgt/" + realm)) {
-                continue;
+        for (KDC kdc: kdcs) {
+            for (String name : kdc.passwords.keySet()) {
+                if (name.equals("krbtgt/" + kdc.realm)) {
+                    continue;
+                }
+                ktab.addEntry(new PrincipalName(name + "@" + kdc.realm,
+                        name.indexOf('/') < 0 ?
+                            PrincipalName.KRB_NT_UNKNOWN :
+                            PrincipalName.KRB_NT_SRV_HST),
+                            kdc.passwords.get(name));
             }
-            ktab.addEntry(new PrincipalName(name + "@" + realm,
-                    name.indexOf('/') < 0 ?
-                        PrincipalName.KRB_NT_UNKNOWN :
-                        PrincipalName.KRB_NT_SRV_HST), passwords.get(name));
         }
         ktab.save();
+    }
+
+    /**
+     * Write a ktab for this KDC.
+     */
+    public void writeKtab(String tab) throws IOException, KrbException {
+        KDC.writeMultiKtab(tab, this);
     }
 
     /**

@@ -1,0 +1,22 @@
+<HTML>
+  <!--  @test
+        @bug 4023283
+        @summary Checks that an Error which propogate up to the EventDispatch
+        loop does not crash AWT.
+        @author Andrei Dmitriev: area=awt.event
+        @library ../../regtesthelpers
+        @build Util
+        @run main LoopRobustness
+  -->
+  <HEAD>
+  <TITLE>LoopRobustness</TITLE>
+  </HEAD>
+  <BODY>
+  This is automatic test.
+  
+  <APPLET CODE="LoopRobustness.class"
+          CODEBASE = "."
+          WIDTH=350 HEIGHT=100>
+  </APPLET>
+  </BODY>                                                             
+  </HTML>
