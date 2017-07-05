@@ -312,46 +312,46 @@ public class DatagramSocketAdaptor
     public void setSendBufferSize(int size) throws SocketException {
         if (size <= 0)
             throw new IllegalArgumentException("Invalid send size");
-        setIntOption(StandardSocketOption.SO_SNDBUF, size);
+        setIntOption(StandardSocketOptions.SO_SNDBUF, size);
     }
 
     public int getSendBufferSize() throws SocketException {
-        return getIntOption(StandardSocketOption.SO_SNDBUF);
+        return getIntOption(StandardSocketOptions.SO_SNDBUF);
     }
 
     public void setReceiveBufferSize(int size) throws SocketException {
         if (size <= 0)
             throw new IllegalArgumentException("Invalid receive size");
-        setIntOption(StandardSocketOption.SO_RCVBUF, size);
+        setIntOption(StandardSocketOptions.SO_RCVBUF, size);
     }
 
     public int getReceiveBufferSize() throws SocketException {
-        return getIntOption(StandardSocketOption.SO_RCVBUF);
+        return getIntOption(StandardSocketOptions.SO_RCVBUF);
     }
 
     public void setReuseAddress(boolean on) throws SocketException {
-        setBooleanOption(StandardSocketOption.SO_REUSEADDR, on);
+        setBooleanOption(StandardSocketOptions.SO_REUSEADDR, on);
     }
 
     public boolean getReuseAddress() throws SocketException {
-        return getBooleanOption(StandardSocketOption.SO_REUSEADDR);
+        return getBooleanOption(StandardSocketOptions.SO_REUSEADDR);
 
     }
 
     public void setBroadcast(boolean on) throws SocketException {
-        setBooleanOption(StandardSocketOption.SO_BROADCAST, on);
+        setBooleanOption(StandardSocketOptions.SO_BROADCAST, on);
     }
 
     public boolean getBroadcast() throws SocketException {
-        return getBooleanOption(StandardSocketOption.SO_BROADCAST);
+        return getBooleanOption(StandardSocketOptions.SO_BROADCAST);
     }
 
     public void setTrafficClass(int tc) throws SocketException {
-        setIntOption(StandardSocketOption.IP_TOS, tc);
+        setIntOption(StandardSocketOptions.IP_TOS, tc);
     }
 
     public int getTrafficClass() throws SocketException {
-        return getIntOption(StandardSocketOption.IP_TOS);
+        return getIntOption(StandardSocketOptions.IP_TOS);
     }
 
     public void close() {

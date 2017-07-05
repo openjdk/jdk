@@ -89,7 +89,7 @@ public class BatchUpdateException extends SQLException {
    * The <code>cause</code> is not initialized, and may subsequently be
    * initialized by a call to the
    * {@link Throwable#initCause(java.lang.Throwable)} method. The vendor code
-   * is intialized to 0.
+   * is initialized to 0.
    * <p>
    *
    * @param reason a description of the exception
@@ -188,7 +188,7 @@ public class BatchUpdateException extends SQLException {
      * @since 1.6
      */
     public BatchUpdateException(Throwable cause) {
-        this(null, null, 0, null, cause);
+        this((cause == null ? null : cause.toString()), null, 0, null, cause);
     }
 
     /**
@@ -214,7 +214,7 @@ public class BatchUpdateException extends SQLException {
      * @since 1.6
      */
     public BatchUpdateException(int []updateCounts , Throwable cause) {
-        this(null, null, 0, updateCounts, cause);
+        this((cause == null ? null : cause.toString()), null, 0, updateCounts, cause);
     }
 
     /**

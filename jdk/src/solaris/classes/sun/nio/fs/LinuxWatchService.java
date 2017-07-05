@@ -210,15 +210,15 @@ class LinuxWatchService
 
             int mask = 0;
             for (WatchEvent.Kind<?> event: events) {
-                if (event == StandardWatchEventKind.ENTRY_CREATE) {
+                if (event == StandardWatchEventKinds.ENTRY_CREATE) {
                     mask |= IN_CREATE | IN_MOVED_TO;
                     continue;
                 }
-                if (event == StandardWatchEventKind.ENTRY_DELETE) {
+                if (event == StandardWatchEventKinds.ENTRY_DELETE) {
                     mask |= IN_DELETE | IN_MOVED_FROM;
                     continue;
                 }
-                if (event == StandardWatchEventKind.ENTRY_MODIFY) {
+                if (event == StandardWatchEventKinds.ENTRY_MODIFY) {
                     mask |= IN_MODIFY | IN_ATTRIB;
                     continue;
                 }
@@ -378,17 +378,17 @@ class LinuxWatchService
          */
         private WatchEvent.Kind<?> maskToEventKind(int mask) {
             if ((mask & IN_MODIFY) > 0)
-                return StandardWatchEventKind.ENTRY_MODIFY;
+                return StandardWatchEventKinds.ENTRY_MODIFY;
             if ((mask & IN_ATTRIB) > 0)
-                return StandardWatchEventKind.ENTRY_MODIFY;
+                return StandardWatchEventKinds.ENTRY_MODIFY;
             if ((mask & IN_CREATE) > 0)
-                return StandardWatchEventKind.ENTRY_CREATE;
+                return StandardWatchEventKinds.ENTRY_CREATE;
             if ((mask & IN_MOVED_TO) > 0)
-                return StandardWatchEventKind.ENTRY_CREATE;
+                return StandardWatchEventKinds.ENTRY_CREATE;
             if ((mask & IN_DELETE) > 0)
-                return StandardWatchEventKind.ENTRY_DELETE;
+                return StandardWatchEventKinds.ENTRY_DELETE;
             if ((mask & IN_MOVED_FROM) > 0)
-                return StandardWatchEventKind.ENTRY_DELETE;
+                return StandardWatchEventKinds.ENTRY_DELETE;
             return null;
         }
 
@@ -400,7 +400,7 @@ class LinuxWatchService
             if ((mask & IN_Q_OVERFLOW) > 0) {
                 for (Map.Entry<Integer,LinuxWatchKey> entry: wdToKey.entrySet()) {
                     entry.getValue()
-                        .signalEvent(StandardWatchEventKind.OVERFLOW, null);
+                        .signalEvent(StandardWatchEventKinds.OVERFLOW, null);
                 }
                 return;
             }

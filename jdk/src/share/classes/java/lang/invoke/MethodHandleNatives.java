@@ -115,6 +115,8 @@ class MethodHandleNatives {
 
     /** Which conv-ops are implemented by the JVM? */
     static final int CONV_OP_IMPLEMENTED_MASK;
+    /** Derived mode flag.  Only false on some old JVM implementations. */
+    static final boolean HAVE_RICOCHET_FRAMES;
 
     private static native void registerNatives();
     static {
@@ -141,6 +143,7 @@ class MethodHandleNatives {
         if (CONV_OP_IMPLEMENTED_MASK_ == 0)
             CONV_OP_IMPLEMENTED_MASK_ = DEFAULT_CONV_OP_IMPLEMENTED_MASK;
         CONV_OP_IMPLEMENTED_MASK = CONV_OP_IMPLEMENTED_MASK_;
+        HAVE_RICOCHET_FRAMES = (CONV_OP_IMPLEMENTED_MASK & (1<<OP_COLLECT_ARGS)) != 0;
     }
 
     // All compile-time constants go here.
@@ -186,25 +189,26 @@ class MethodHandleNatives {
          */
         static final int
             OP_RETYPE_ONLY   = 0x0, // no argument changes; straight retype
-            OP_RETYPE_RAW    = 0x1, // no argument changes; straight retype
+            OP_RETYPE_RAW    = 0x1, // straight retype, trusted (void->int, Object->T)
             OP_CHECK_CAST    = 0x2, // ref-to-ref conversion; requires a Class argument
             OP_PRIM_TO_PRIM  = 0x3, // converts from one primitive to another
             OP_REF_TO_PRIM   = 0x4, // unboxes a wrapper to produce a primitive
-            OP_PRIM_TO_REF   = 0x5, // boxes a primitive into a wrapper (NYI)
+            OP_PRIM_TO_REF   = 0x5, // boxes a primitive into a wrapper
             OP_SWAP_ARGS     = 0x6, // swap arguments (vminfo is 2nd arg)
             OP_ROT_ARGS      = 0x7, // rotate arguments (vminfo is displaced arg)
             OP_DUP_ARGS      = 0x8, // duplicates one or more arguments (at TOS)
             OP_DROP_ARGS     = 0x9, // remove one or more argument slots
-            OP_COLLECT_ARGS  = 0xA, // combine one or more arguments into a varargs (NYI)
+            OP_COLLECT_ARGS  = 0xA, // combine arguments using an auxiliary function
             OP_SPREAD_ARGS   = 0xB, // expand in place a varargs array (of known size)
-            OP_FLYBY         = 0xC, // operate first on reified argument list (NYI)
-            OP_RICOCHET      = 0xD, // run an adapter chain on the return value (NYI)
+            OP_FOLD_ARGS     = 0xC, // combine but do not remove arguments; prepend result
+            //OP_UNUSED_13   = 0xD, // unused code, perhaps for reified argument lists
             CONV_OP_LIMIT    = 0xE; // limit of CONV_OP enumeration
         /** Shift and mask values for decoding the AMH.conversion field.
          *  These numbers are shared with the JVM for creating AMHs.
          */
         static final int
             CONV_OP_MASK     = 0xF00, // this nybble contains the conversion op field
+            CONV_TYPE_MASK   = 0x0F,  // fits T_ADDRESS and below
             CONV_VMINFO_MASK = 0x0FF, // LSB is reserved for JVM use
             CONV_VMINFO_SHIFT     =  0, // position of bits in CONV_VMINFO_MASK
             CONV_OP_SHIFT         =  8, // position of bits in CONV_OP_MASK
@@ -244,8 +248,9 @@ class MethodHandleNatives {
             T_LONG     = 11,
             T_OBJECT   = 12,
             //T_ARRAY    = 13
-            T_VOID     = 14;
+            T_VOID     = 14,
             //T_ADDRESS  = 15
+            T_ILLEGAL  = 99;
 
         /**
          * Constant pool reference-kind codes, as used by CONSTANT_MethodHandle CP entries.
@@ -273,16 +278,29 @@ class MethodHandleNatives {
             try {
                 Field con = Constants.class.getDeclaredField(name);
                 int jval = con.getInt(null);
-                if (jval != vmval)
-                    throw new InternalError(name+": JVM has "+vmval+" while Java has "+jval);
+                if (jval == vmval)  continue;
+                String err = (name+": JVM has "+vmval+" while Java has "+jval);
+                if (name.equals("CONV_OP_LIMIT")) {
+                    System.err.println("warning: "+err);
+                    continue;
+                }
+                throw new InternalError(err);
             } catch (Exception ex) {
+                if (ex instanceof NoSuchFieldException) {
+                    String err = (name+": JVM has "+vmval+" which Java does not define");
+                    // ignore exotic ops the JVM cares about; we just wont issue them
+                    if (name.startsWith("OP_") || name.startsWith("GC_")) {
+                        System.err.println("warning: "+err);
+                        continue;
+                    }
+                }
                 throw new InternalError(name+": access failed, got "+ex);
             }
         }
         return true;
     }
     static {
-        verifyConstants();
+        assert(verifyConstants());
     }
 
     // Up-calls from the JVM.
@@ -313,7 +331,7 @@ class MethodHandleNatives {
     }
 
     /**
-     * The JVM wants to use a MethodType with invokeGeneric.  Give the runtime fair warning.
+     * The JVM wants to use a MethodType with inexact invoke.  Give the runtime fair warning.
      */
     static void notifyGenericMethodType(MethodType type) {
         type.form().notifyGenericMethodType();
@@ -323,15 +341,39 @@ class MethodHandleNatives {
      * The JVM wants to raise an exception.  Here's the path.
      */
     static void raiseException(int code, Object actual, Object required) {
-        String message;
-        // disregard the identity of the actual object, if it is not a class:
-        if (!(actual instanceof Class) && !(actual instanceof MethodType))
-            actual = actual.getClass();
-        if (actual != null)
-            message = "required "+required+" but encountered "+actual;
-        else
-            message = "required "+required;
+        String message = null;
         switch (code) {
+        case 190: // arraylength
+            try {
+                String reqLength = "";
+                if (required instanceof AdapterMethodHandle) {
+                    int conv = ((AdapterMethodHandle)required).getConversion();
+                    int spChange = AdapterMethodHandle.extractStackMove(conv);
+                    reqLength = " of length "+(spChange+1);
+                }
+                int actualLength = actual == null ? 0 : java.lang.reflect.Array.getLength(actual);
+                message = "required array"+reqLength+", but encountered wrong length "+actualLength;
+                break;
+            } catch (IllegalArgumentException ex) {
+            }
+            required = Object[].class;  // should have been an array
+            code = 192; // checkcast
+            break;
+        }
+        // disregard the identity of the actual object, if it is not a class:
+        if (message == null) {
+            if (!(actual instanceof Class) && !(actual instanceof MethodType))
+                actual = actual.getClass();
+           if (actual != null)
+               message = "required "+required+" but encountered "+actual;
+           else
+               message = "required "+required;
+        }
+        switch (code) {
+        case 190: // arraylength
+            throw new ArrayIndexOutOfBoundsException(message);
+        case 50: //_aaload
+            throw new ClassCastException(message);
         case 192: // checkcast
             throw new ClassCastException(message);
         default:
@@ -364,5 +406,14 @@ class MethodHandleNatives {
             err.initCause(ex);
             throw err;
         }
+    }
+
+    /**
+     * This assertion marks code which was written before ricochet frames were implemented.
+     * Such code will go away when the ports catch up.
+     */
+    static boolean workaroundWithoutRicochetFrames() {
+        assert(!HAVE_RICOCHET_FRAMES) : "this code should not be executed if `-XX:+UseRicochetFrames is enabled";
+        return true;
     }
 }

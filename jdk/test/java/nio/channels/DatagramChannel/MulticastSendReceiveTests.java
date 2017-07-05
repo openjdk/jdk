@@ -59,7 +59,7 @@ public class MulticastSendReceiveTests {
             StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
         DatagramChannel dc = DatagramChannel.open(family)
             .bind(new InetSocketAddress(local, 0))
-            .setOption(StandardSocketOption.IP_MULTICAST_IF, nif);
+            .setOption(StandardSocketOptions.IP_MULTICAST_IF, nif);
         int id = rand.nextInt();
         byte[] msg = Integer.toString(id).getBytes("UTF-8");
         ByteBuffer buf = ByteBuffer.wrap(msg);
@@ -146,7 +146,7 @@ public class MulticastSendReceiveTests {
         System.out.format("\nTest DatagramChannel to %s socket\n", family.name());
         try (DatagramChannel dc = (family == UNSPEC) ?
                 DatagramChannel.open() : DatagramChannel.open(family)) {
-            dc.setOption(StandardSocketOption.SO_REUSEADDR, true)
+            dc.setOption(StandardSocketOptions.SO_REUSEADDR, true)
               .bind(new InetSocketAddress(0));
 
             // join group

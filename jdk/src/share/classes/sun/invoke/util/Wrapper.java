@@ -26,35 +26,45 @@
 package sun.invoke.util;
 
 public enum Wrapper {
-    BOOLEAN(Boolean.class, boolean.class, 'Z', (Boolean)false, Format.unsigned(1)),
+    BOOLEAN(Boolean.class, boolean.class, 'Z', (Boolean)false, new boolean[0], Format.unsigned(1)),
     // These must be in the order defined for widening primitive conversions in JLS 5.1.2
-    BYTE(Byte.class, byte.class, 'B', (Byte)(byte)0, Format.signed(8)),
-    SHORT(Short.class, short.class, 'S', (Short)(short)0, Format.signed(16)),
-    CHAR(Character.class, char.class, 'C', (Character)(char)0, Format.unsigned(16)),
-    INT(Integer.class, int.class, 'I', (Integer)(int)0, Format.signed(32)),
-    LONG(Long.class, long.class, 'J', (Long)(long)0, Format.signed(64)),
-    FLOAT(Float.class, float.class, 'F', (Float)(float)0, Format.floating(32)),
-    DOUBLE(Double.class, double.class, 'D', (Double)(double)0, Format.floating(64)),
-    //NULL(Null.class, null.class, 'N', null, Format.other(1)),
-    OBJECT(Object.class, Object.class, 'L', null, Format.other(1)),
+    BYTE(Byte.class, byte.class, 'B', (Byte)(byte)0, new byte[0], Format.signed(8)),
+    SHORT(Short.class, short.class, 'S', (Short)(short)0, new short[0], Format.signed(16)),
+    CHAR(Character.class, char.class, 'C', (Character)(char)0, new char[0], Format.unsigned(16)),
+    INT(Integer.class, int.class, 'I', (Integer)(int)0, new int[0], Format.signed(32)),
+    LONG(Long.class, long.class, 'J', (Long)(long)0, new long[0], Format.signed(64)),
+    FLOAT(Float.class, float.class, 'F', (Float)(float)0, new float[0], Format.floating(32)),
+    DOUBLE(Double.class, double.class, 'D', (Double)(double)0, new double[0], Format.floating(64)),
+    //NULL(Null.class, null.class, 'N', null, null, Format.other(1)),
+    OBJECT(Object.class, Object.class, 'L', null, new Object[0], Format.other(1)),
     // VOID must be the last type, since it is "assignable" from any other type:
-    VOID(Void.class, void.class, 'V', null, Format.other(0)),
+    VOID(Void.class, void.class, 'V', null, null, Format.other(0)),
     ;
 
     private final Class<?> wrapperType;
     private final Class<?> primitiveType;
     private final char     basicTypeChar;
     private final Object   zero;
+    private final Object   emptyArray;
     private final int      format;
     private final String   simpleName;
 
-    private Wrapper(Class<?> wtype, Class<?> ptype, char tchar, Object zero, int format) {
+    private Wrapper(Class<?> wtype, Class<?> ptype, char tchar, Object zero, Object emptyArray, int format) {
         this.wrapperType = wtype;
         this.primitiveType = ptype;
         this.basicTypeChar = tchar;
         this.zero = zero;
+        this.emptyArray = emptyArray;
         this.format = format;
         this.simpleName = wtype.getSimpleName();
+    }
+
+    /** For debugging, give the details of this wrapper. */
+    public String detailString() {
+        return simpleName+
+                java.util.Arrays.asList(wrapperType, primitiveType,
+                basicTypeChar, zero,
+                "0x"+Integer.toHexString(format));
     }
 
     private static abstract class Format {
@@ -114,16 +124,18 @@ public enum Wrapper {
     public boolean isUnsigned()    { return format >= Format.BOOLEAN && format < Format.FLOAT; }
     /** Is the wrapped type either float or double? */
     public boolean isFloating()    { return format >= Format.FLOAT; }
+    /** Is the wrapped type either void or a reference? */
+    public boolean isOther()       { return (format & ~Format.SLOT_MASK) == 0; }
 
-    /** Does the JVM verifier allow a variable of this wrapper's
+    /** Does the JLS 5.1.2 allow a variable of this wrapper's
      *  primitive type to be assigned from a value of the given wrapper's primitive type?
      *  Cases:
      *  <ul>
      *  <li>unboxing followed by widening primitive conversion
-     *  <li>any type converted to {@code void}
+     *  <li>any type converted to {@code void} (i.e., dropping a method call's value)
      *  <li>boxing conversion followed by widening reference conversion to {@code Object}
-     *  <li>conversion of {@code boolean} to any type
      *  </ul>
+     *  These are the cases allowed by MethodHandle.asType and convertArguments.
      */
     public boolean isConvertibleFrom(Wrapper source) {
         if (this == source)  return true;
@@ -131,11 +143,73 @@ public enum Wrapper {
             // At best, this is a narrowing conversion.
             return false;
         }
-        if ((this.format ^ source.format) == (Format.SHORT ^ Format.CHAR)) {
-            assert (this == SHORT && source == CHAR) || (this == CHAR && source == SHORT);
+        // All conversions are allowed in the enum order between floats and signed ints.
+        // First detect non-signed non-float types (boolean, char, Object, void).
+        boolean floatOrSigned = (((this.format & source.format) & Format.SIGNED) != 0);
+        if (!floatOrSigned) {
+            if (this.isOther())  return true;
+            // can convert char to int or wider, but nothing else
+            if (source.format == Format.CHAR)  return true;
+            // no other conversions are classified as widening
             return false;
         }
+        // All signed and float conversions in the enum order are widening.
+        assert(this.isFloating() || this.isSigned());
+        assert(source.isFloating() || source.isSigned());
         return true;
+    }
+
+    static { assert(checkConvertibleFrom()); }
+    private static boolean checkConvertibleFrom() {
+        // Check the matrix for correct classification of widening conversions.
+        for (Wrapper w : values()) {
+            assert(w.isConvertibleFrom(w));
+            assert(VOID.isConvertibleFrom(w));
+            if (w != VOID) {
+                assert(OBJECT.isConvertibleFrom(w));
+                assert(!w.isConvertibleFrom(VOID));
+            }
+            // check relations with unsigned integral types:
+            if (w != CHAR) {
+                assert(!CHAR.isConvertibleFrom(w));
+                if (!w.isConvertibleFrom(INT))
+                    assert(!w.isConvertibleFrom(CHAR));
+            }
+            if (w != BOOLEAN) {
+                assert(!BOOLEAN.isConvertibleFrom(w));
+                if (w != VOID && w != OBJECT)
+                    assert(!w.isConvertibleFrom(BOOLEAN));
+            }
+            // check relations with signed integral types:
+            if (w.isSigned()) {
+                for (Wrapper x : values()) {
+                    if (w == x)  continue;
+                    if (x.isFloating())
+                        assert(!w.isConvertibleFrom(x));
+                    else if (x.isSigned()) {
+                        if (w.compareTo(x) < 0)
+                            assert(!w.isConvertibleFrom(x));
+                        else
+                            assert(w.isConvertibleFrom(x));
+                    }
+                }
+            }
+            // check relations with floating types:
+            if (w.isFloating()) {
+                for (Wrapper x : values()) {
+                    if (w == x)  continue;
+                    if (x.isSigned())
+                        assert(w.isConvertibleFrom(x));
+                    else if (x.isFloating()) {
+                        if (w.compareTo(x) < 0)
+                            assert(!w.isConvertibleFrom(x));
+                        else
+                            assert(w.isConvertibleFrom(x));
+                    }
+                }
+            }
+        }
+        return true;  // i.e., assert(true)
     }
 
     /** Produce a zero value for the given wrapper type.
@@ -549,7 +623,7 @@ public enum Wrapper {
     }
 
     private static boolean boolValue(long bits) {
-        //bits &= 1;  // simple 31-bit zero extension
+        bits &= 1;  // simple 31-bit zero extension
         return (bits != 0);
     }
 
@@ -558,5 +632,32 @@ public enum Wrapper {
     }
     private static RuntimeException newIllegalArgumentException(String message) {
         return new IllegalArgumentException(message);
+    }
+
+    // primitive array support
+    public Object makeArray(int len) {
+        return java.lang.reflect.Array.newInstance(primitiveType, len);
+    }
+    public Class<?> arrayType() {
+        return emptyArray.getClass();
+    }
+    public void copyArrayUnboxing(Object[] values, int vpos, Object a, int apos, int length) {
+        if (a.getClass() != arrayType())
+            arrayType().cast(a);  // throw NPE or CCE if bad type
+        for (int i = 0; i < length; i++) {
+            Object value = values[i+vpos];
+            value = convert(value, primitiveType);
+            java.lang.reflect.Array.set(a, i+apos, value);
+        }
+    }
+    public void copyArrayBoxing(Object a, int apos, Object[] values, int vpos, int length) {
+        if (a.getClass() != arrayType())
+            arrayType().cast(a);  // throw NPE or CCE if bad type
+        for (int i = 0; i < length; i++) {
+            Object value = java.lang.reflect.Array.get(a, i+apos);
+            //Already done: value = convert(value, primitiveType);
+            assert(value.getClass() == wrapperType);
+            values[i+vpos] = value;
+        }
     }
 }

@@ -160,8 +160,8 @@ class ServerSocketChannelImpl
 
         private static Set<SocketOption<?>> defaultOptions() {
             HashSet<SocketOption<?>> set = new HashSet<SocketOption<?>>(2);
-            set.add(StandardSocketOption.SO_RCVBUF);
-            set.add(StandardSocketOption.SO_REUSEADDR);
+            set.add(StandardSocketOptions.SO_RCVBUF);
+            set.add(StandardSocketOptions.SO_REUSEADDR);
             return Collections.unmodifiableSet(set);
         }
     }

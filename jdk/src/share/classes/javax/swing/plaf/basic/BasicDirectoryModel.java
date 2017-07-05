@@ -40,7 +40,7 @@ import sun.awt.shell.ShellFolder;
  *
  * @author Jeff Dinkins
  */
-public class BasicDirectoryModel extends AbstractListModel implements PropertyChangeListener {
+public class BasicDirectoryModel extends AbstractListModel<Object> implements PropertyChangeListener {
 
     private JFileChooser filechooser = null;
     // PENDING(jeff) pick the size more sensibly

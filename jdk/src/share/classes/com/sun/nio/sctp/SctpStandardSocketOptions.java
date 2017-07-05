@@ -34,8 +34,8 @@ import sun.nio.ch.SctpStdSocketOption;
  *
  * @since 1.7
  */
-public class SctpStandardSocketOption {
-    private SctpStandardSocketOption() {}
+public class SctpStandardSocketOptions {
+    private SctpStandardSocketOptions() {}
     /**
      * Enables or disables message fragmentation.
      *
@@ -127,7 +127,7 @@ public class SctpStandardSocketOption {
      * association initialization.
      *
      * <P> The value of this socket option is an {@link
-     * SctpStandardSocketOption.InitMaxStreams InitMaxStreams}, that represents
+     * SctpStandardSocketOptions.InitMaxStreams InitMaxStreams}, that represents
      * the maximum number of inbound and outbound streams that an association
      * on the channel is prepared to support.
      *
@@ -157,9 +157,9 @@ public class SctpStandardSocketOption {
      * the endpoints default value.
      */
     public static final SctpSocketOption
-        <SctpStandardSocketOption.InitMaxStreams> SCTP_INIT_MAXSTREAMS =
-        new SctpStdSocketOption<SctpStandardSocketOption.InitMaxStreams>(
-        "SCTP_INIT_MAXSTREAMS", SctpStandardSocketOption.InitMaxStreams.class);
+        <SctpStandardSocketOptions.InitMaxStreams> SCTP_INIT_MAXSTREAMS =
+        new SctpStdSocketOption<SctpStandardSocketOptions.InitMaxStreams>(
+        "SCTP_INIT_MAXSTREAMS", SctpStandardSocketOptions.InitMaxStreams.class);
 
     /**
      * Enables or disables a Nagle-like algorithm.
@@ -310,7 +310,7 @@ public class SctpStandardSocketOption {
      * This class is used to set the maximum number of inbound/outbound streams
      * used by the local endpoint during association initialization. An
      * instance of this class is used to set the {@link
-     * SctpStandardSocketOption#SCTP_INIT_MAXSTREAMS SCTP_INIT_MAXSTREAMS}
+     * SctpStandardSocketOptions#SCTP_INIT_MAXSTREAMS SCTP_INIT_MAXSTREAMS}
      * socket option.
      *
      * @since 1.7

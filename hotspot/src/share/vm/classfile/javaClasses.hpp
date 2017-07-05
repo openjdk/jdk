@@ -949,18 +949,19 @@ class java_lang_invoke_AdapterMethodHandle: public java_lang_invoke_BoundMethodH
     OP_CHECK_CAST    = 0x2, // ref-to-ref conversion; requires a Class argument
     OP_PRIM_TO_PRIM  = 0x3, // converts from one primitive to another
     OP_REF_TO_PRIM   = 0x4, // unboxes a wrapper to produce a primitive
-    OP_PRIM_TO_REF   = 0x5, // boxes a primitive into a wrapper (NYI)
+    OP_PRIM_TO_REF   = 0x5, // boxes a primitive into a wrapper
     OP_SWAP_ARGS     = 0x6, // swap arguments (vminfo is 2nd arg)
     OP_ROT_ARGS      = 0x7, // rotate arguments (vminfo is displaced arg)
     OP_DUP_ARGS      = 0x8, // duplicates one or more arguments (at TOS)
     OP_DROP_ARGS     = 0x9, // remove one or more argument slots
-    OP_COLLECT_ARGS  = 0xA, // combine one or more arguments into a varargs (NYI)
+    OP_COLLECT_ARGS  = 0xA, // combine arguments using an auxiliary function
     OP_SPREAD_ARGS   = 0xB, // expand in place a varargs array (of known size)
-    OP_FLYBY         = 0xC, // operate first on reified argument list (NYI)
-    OP_RICOCHET      = 0xD, // run an adapter chain on the return value (NYI)
+    OP_FOLD_ARGS     = 0xC, // combine but do not remove arguments; prepend result
+    //OP_UNUSED_13   = 0xD, // unused code, perhaps for reified argument lists
     CONV_OP_LIMIT    = 0xE, // limit of CONV_OP enumeration
 
     CONV_OP_MASK     = 0xF00, // this nybble contains the conversion op field
+    CONV_TYPE_MASK   = 0x0F,  // fits T_ADDRESS and below
     CONV_VMINFO_MASK = 0x0FF, // LSB is reserved for JVM use
     CONV_VMINFO_SHIFT     =  0, // position of bits in CONV_VMINFO_MASK
     CONV_OP_SHIFT         =  8, // position of bits in CONV_OP_MASK
@@ -1089,6 +1090,7 @@ class java_lang_invoke_MethodTypeForm: AllStatic {
 
  private:
   static int _vmslots_offset;           // number of argument slots needed
+  static int _vmlayout_offset;          // object describing internal calling sequence
   static int _erasedType_offset;        // erasedType = canonical MethodType
   static int _genericInvoker_offset;    // genericInvoker = adapter for invokeGeneric
 
@@ -1100,8 +1102,12 @@ class java_lang_invoke_MethodTypeForm: AllStatic {
   static oop            erasedType(oop mtform);
   static oop            genericInvoker(oop mtform);
 
+  static oop            vmlayout(oop mtform);
+  static oop       init_vmlayout(oop mtform, oop cookie);
+
   // Accessors for code generation:
   static int vmslots_offset_in_bytes()          { return _vmslots_offset; }
+  static int vmlayout_offset_in_bytes()         { return _vmlayout_offset; }
   static int erasedType_offset_in_bytes()       { return _erasedType_offset; }
   static int genericInvoker_offset_in_bytes()   { return _genericInvoker_offset; }
 };

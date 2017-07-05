@@ -48,7 +48,7 @@ enum {
   JMM_VERSION_1_0 = 0x20010000,
   JMM_VERSION_1_1 = 0x20010100, // JDK 6
   JMM_VERSION_1_2 = 0x20010200, // JDK 7
-  JMM_VERSION     = 0x20010200
+  JMM_VERSION     = 0x20010201
 };
 
 typedef struct {
@@ -293,6 +293,9 @@ typedef struct jmmInterface_1_ {
                                                   jlongArray ids,
                                                   jboolean lockedMonitors,
                                                   jboolean lockedSynchronizers);
+   void         (JNICALL *SetGCNotificationEnabled) (JNIEnv *env,
+                                                  jobject mgr,
+                                                  jboolean enabled);
 } JmmInterface;
 
 #ifdef __cplusplus

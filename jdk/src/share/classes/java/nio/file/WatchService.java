@@ -68,7 +68,7 @@ import java.util.concurrent.TimeUnit;
  * of events that it may accumulate. Where an implementation <em>knowingly</em>
  * discards events then it arranges for the key's {@link WatchKey#pollEvents
  * pollEvents} method to return an element with an event type of {@link
- * StandardWatchEventKind#OVERFLOW OVERFLOW}. This event can be used by the
+ * StandardWatchEventKinds#OVERFLOW OVERFLOW}. This event can be used by the
  * consumer as a trigger to re-examine the state of the object.
  *
  * <p> When an event is reported to indicate that a file in a watched directory
@@ -87,7 +87,7 @@ import java.util.concurrent.TimeUnit;
  * are detected, their timeliness, and whether their ordering is preserved are
  * highly implementation specific. For example, when a file in a watched
  * directory is modified then it may result in a single {@link
- * StandardWatchEventKind#ENTRY_MODIFY ENTRY_MODIFY} event in some
+ * StandardWatchEventKinds#ENTRY_MODIFY ENTRY_MODIFY} event in some
  * implementations but several events in other implementations. Short-lived
  * files (meaning files that are deleted very quickly after they are created)
  * may not be detected by primitive implementations that periodically poll the

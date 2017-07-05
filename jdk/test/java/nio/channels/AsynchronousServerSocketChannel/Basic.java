@@ -29,7 +29,7 @@
 
 import java.nio.channels.*;
 import java.net.*;
-import static java.net.StandardSocketOption.*;
+import static java.net.StandardSocketOptions.*;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;

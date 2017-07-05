@@ -25,6 +25,34 @@
 
 BUILD_PARENT_DIRECTORY=.
 
+# Basename of any originally supplied ALT_OUTPUTDIR directory
+ifndef ORIG_OUTPUTDIR_BASENAME
+  ifdef ALT_OUTPUTDIR
+    ORIG_OUTPUTDIR_BASENAME := $(shell basename $(ALT_OUTPUTDIR))
+  else
+    ORIG_OUTPUTDIR_BASENAME  = $(PLATFORM)-$(ARCH)
+  endif
+endif
+export ORIG_OUTPUTDIR_BASENAME
+
+# The three possible directories created for output (3 build flavors)
+OUTPUTDIR_BASENAME-          = $(ORIG_OUTPUTDIR_BASENAME)
+OUTPUTDIR_BASENAME-debug     = $(ORIG_OUTPUTDIR_BASENAME)-debug
+OUTPUTDIR_BASENAME-fastdebug = $(ORIG_OUTPUTDIR_BASENAME)-fastdebug
+
+# Relative path to a debug output area
+REL_JDK_OUTPUTDIR = ../$(OUTPUTDIR_BASENAME-$(DEBUG_NAME))
+
+# The created jdk image directory
+JDK_IMAGE_DIRNAME = j2sdk-image
+JDK_IMAGE_DIR     = $(OUTPUTDIR)/$(JDK_IMAGE_DIRNAME)
+ABS_JDK_IMAGE_DIR = $(ABS_OUTPUTDIR)/$(JDK_IMAGE_DIRNAME)
+
+# Relative path from an output directory to the image directory
+REL_JDK_IMAGE_DIR = ../$(OUTPUTDIR_BASENAME-$(DEBUG_NAME))/$(JDK_IMAGE_DIRNAME)
+REL_JDK_DEBUG_IMAGE_DIR = ../$(OUTPUTDIR_BASENAME-debug)/$(JDK_IMAGE_DIRNAME)
+REL_JDK_FASTDEBUG_IMAGE_DIR = ../$(OUTPUTDIR_BASENAME-fastdebug)/$(JDK_IMAGE_DIRNAME)
+
 ifndef TOPDIR
   TOPDIR:=.
 endif
@@ -98,8 +126,7 @@ endef
 
 # Generic build of basic repo series
 generic_build_repo_series:: $(SOURCE_TIPS)
-	$(MKDIR) -p $(OUTPUTDIR)
-	$(MKDIR) -p $(OUTPUTDIR)/j2sdk-image
+	$(MKDIR) -p $(JDK_IMAGE_DIR)
 	@$(call StartTimer)
 
 ifeq ($(BUILD_LANGTOOLS), true)
@@ -146,8 +173,8 @@ generic_build_repo_series::
 #
 #   DEBUG_NAME is fastdebug or debug
 #   ALT_OUTPUTDIR is changed to have -debug or -fastdebug suffix
-#   The resulting j2sdk-image is used by the install makefiles to create a
-#     debug install bundle jdk-*-debug-** bundle (tar or zip) 
+#   The resulting image directory (j2sdk-image) is used by the install makefiles
+#     to create a debug install bundle jdk-*-debug-** bundle (tar or zip) 
 #     which will install in the debug or fastdebug subdirectory of the
 #     normal product install area.
 #     The install process needs to know what the DEBUG_NAME is, so
@@ -160,8 +187,8 @@ generic_build_repo_series::
 
 # Location of fresh bootdir output
 ABS_BOOTDIR_OUTPUTDIR=$(ABS_OUTPUTDIR)/bootjdk
-FRESH_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)/j2sdk-image
-FRESH_DEBUG_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-$(DEBUG_NAME)/j2sdk-image
+FRESH_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)/$(JDK_IMAGE_DIRNAME)
+FRESH_DEBUG_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)/$(REL_JDK_IMAGE_DIR)
   
 create_fresh_product_bootdir: FRC
 	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) \
@@ -226,7 +253,7 @@ build_product_image:
 
 generic_debug_build:
 	$(MAKE) \
-		ALT_OUTPUTDIR=$(ABS_OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-$(DEBUG_NAME) \
+		ALT_OUTPUTDIR=$(ABS_OUTPUTDIR)/$(REL_JDK_OUTPUTDIR) \
 	        DEBUG_NAME=$(DEBUG_NAME) \
 		GENERATE_DOCS=false \
 	        $(BOOT_CYCLE_DEBUG_SETTINGS) \
@@ -254,8 +281,6 @@ $(SOURCE_TIPS): FRC
 clobber:: REPORT_BUILD_TIMES=
 clobber:: 
 	$(RM) -r $(OUTPUTDIR)/*
-	$(RM) -r $(OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-debug/*
-	$(RM) -r $(OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-fastdebug/*
 	-($(RMDIR) -p $(OUTPUTDIR) > $(DEV_NULL) 2>&1; $(TRUE))
 
 clean: clobber
@@ -489,8 +514,8 @@ $(OUTPUTDIR)/test_failures.txt: $(OUTPUTDIR)/test_log.txt
 
 # Get log file of all tests run
 JDK_TO_TEST := $(shell 							\
-  if [ -d "$(ABS_OUTPUTDIR)/j2sdk-image" ] ; then 			\
-    $(ECHO) "$(ABS_OUTPUTDIR)/j2sdk-image"; 				\
+  if [ -d "$(ABS_JDK_IMAGE_DIR)" ] ; then 				\
+    $(ECHO) "$(ABS_JDK_IMAGE_DIR)"; 					\
   elif [ -d "$(ABS_OUTPUTDIR)/bin" ] ; then 				\
     $(ECHO) "$(ABS_OUTPUTDIR)"; 					\
   elif [ "$(PRODUCT_HOME)" != "" -a -d "$(PRODUCT_HOME)/bin" ] ; then 	\
