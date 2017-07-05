@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -885,28 +885,104 @@ public interface IntStream extends BaseStream<Integer, IntStream> {
      * @param seed the initial element
      * @param f a function to be applied to the previous element to produce
      *          a new element
-     * @return A new sequential {@code IntStream}
+     * @return a new sequential {@code IntStream}
      */
     public static IntStream iterate(final int seed, final IntUnaryOperator f) {
         Objects.requireNonNull(f);
-        final PrimitiveIterator.OfInt iterator = new PrimitiveIterator.OfInt() {
-            int t = seed;
+        Spliterator.OfInt spliterator = new Spliterators.AbstractIntSpliterator(Long.MAX_VALUE,
+               Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL) {
+            int prev;
+            boolean started;
 
             @Override
-            public boolean hasNext() {
+            public boolean tryAdvance(IntConsumer action) {
+                Objects.requireNonNull(action);
+                int t;
+                if (started)
+                    t = f.applyAsInt(prev);
+                else {
+                    t = seed;
+                    started = true;
+                }
+                action.accept(prev = t);
+                return true;
+            }
+        };
+        return StreamSupport.intStream(spliterator, false);
+    }
+
+    /**
+     * Returns a sequential ordered {@code IntStream} produced by iterative
+     * application of a function to an initial element, conditioned on
+     * satisfying the supplied predicate.  The stream terminates as soon as
+     * the predicate returns false.
+     *
+     * <p>
+     * {@code IntStream.iterate} should produce the same sequence of elements
+     * as produced by the corresponding for-loop:
+     * <pre>{@code
+     *     for (int index=seed; predicate.test(index); index = f.apply(index)) {
+     *         ...
+     *     }
+     * }</pre>
+     *
+     * <p>
+     * The resulting sequence may be empty if the predicate does not hold on
+     * the seed value.  Otherwise the first element will be the supplied seed
+     * value, the next element (if present) will be the result of applying the
+     * function f to the seed value, and so on iteratively until the predicate
+     * indicates that the stream should terminate.
+     *
+     * @param seed the initial element
+     * @param predicate a predicate to apply to elements to determine when the
+     *          stream must terminate.
+     * @param f a function to be applied to the previous element to produce
+     *          a new element
+     * @return a new sequential {@code IntStream}
+     * @since 9
+     */
+    public static IntStream iterate(int seed, IntPredicate predicate, IntUnaryOperator f) {
+        Objects.requireNonNull(f);
+        Objects.requireNonNull(predicate);
+        Spliterator.OfInt spliterator = new Spliterators.AbstractIntSpliterator(Long.MAX_VALUE,
+               Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL) {
+            int prev;
+            boolean started, finished;
+
+            @Override
+            public boolean tryAdvance(IntConsumer action) {
+                Objects.requireNonNull(action);
+                if (finished)
+                    return false;
+                int t;
+                if (started)
+                    t = f.applyAsInt(prev);
+                else {
+                    t = seed;
+                    started = true;
+                }
+                if (!predicate.test(t)) {
+                    finished = true;
+                    return false;
+                }
+                action.accept(prev = t);
                 return true;
             }
 
             @Override
-            public int nextInt() {
-                int v = t;
-                t = f.applyAsInt(t);
-                return v;
+            public void forEachRemaining(IntConsumer action) {
+                Objects.requireNonNull(action);
+                if (finished)
+                    return;
+                finished = true;
+                int t = started ? f.applyAsInt(prev) : seed;
+                while (predicate.test(t)) {
+                    action.accept(t);
+                    t = f.applyAsInt(t);
+                }
             }
         };
-        return StreamSupport.intStream(Spliterators.spliteratorUnknownSize(
-                iterator,
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
+        return StreamSupport.intStream(spliterator, false);
     }
 
     /**

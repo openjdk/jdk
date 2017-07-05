@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_TIMER_HPP
 #define SHARE_VM_RUNTIME_TIMER_HPP
 
+#include "logging/logTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Timers for simple measurement.
@@ -85,14 +86,19 @@ class TraceTime: public StackObj {
   bool          _verbose;   // report every timing
   elapsedTimer  _t;         // timer
   elapsedTimer* _accum;     // accumulator
+  const char*   _title;     // name of timer
+  LogTagType    _tag;       // stream to print to
+
  public:
   // Constructors
   TraceTime(const char* title,
-            bool doit = true);
+            bool doit = true,
+            LogTagType tag = LogTag::__NO_TAG);
   TraceTime(const char* title,
             elapsedTimer* accumulator,
             bool doit = true,
-            bool verbose = false);
+            bool verbose = false,
+            LogTagType tag = LogTag::__NO_TAG);
   ~TraceTime();
 
   // Accessors

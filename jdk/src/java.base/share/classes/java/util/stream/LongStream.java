@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -879,24 +879,100 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      */
     public static LongStream iterate(final long seed, final LongUnaryOperator f) {
         Objects.requireNonNull(f);
-        final PrimitiveIterator.OfLong iterator = new PrimitiveIterator.OfLong() {
-            long t = seed;
+        Spliterator.OfLong spliterator = new Spliterators.AbstractLongSpliterator(Long.MAX_VALUE,
+               Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL) {
+            long prev;
+            boolean started;
 
             @Override
-            public boolean hasNext() {
+            public boolean tryAdvance(LongConsumer action) {
+                Objects.requireNonNull(action);
+                long t;
+                if (started)
+                    t = f.applyAsLong(prev);
+                else {
+                    t = seed;
+                    started = true;
+                }
+                action.accept(prev = t);
+                return true;
+            }
+        };
+        return StreamSupport.longStream(spliterator, false);
+    }
+
+    /**
+     * Returns a sequential ordered {@code LongStream} produced by iterative
+     * application of a function to an initial element, conditioned on
+     * satisfying the supplied predicate.  The stream terminates as soon as
+     * the predicate returns false.
+     *
+     * <p>
+     * {@code LongStream.iterate} should produce the same sequence of elements
+     * as produced by the corresponding for-loop:
+     * <pre>{@code
+     *     for (long index=seed; predicate.test(index); index = f.apply(index)) {
+     *         ...
+     *     }
+     * }</pre>
+     *
+     * <p>
+     * The resulting sequence may be empty if the predicate does not hold on
+     * the seed value.  Otherwise the first element will be the supplied seed
+     * value, the next element (if present) will be the result of applying the
+     * function f to the seed value, and so on iteratively until the predicate
+     * indicates that the stream should terminate.
+     *
+     * @param seed the initial element
+     * @param predicate a predicate to apply to elements to determine when the
+     *          stream must terminate.
+     * @param f a function to be applied to the previous element to produce
+     *          a new element
+     * @return a new sequential {@code LongStream}
+     * @since 9
+     */
+    public static LongStream iterate(long seed, LongPredicate predicate, LongUnaryOperator f) {
+        Objects.requireNonNull(f);
+        Objects.requireNonNull(predicate);
+        Spliterator.OfLong spliterator = new Spliterators.AbstractLongSpliterator(Long.MAX_VALUE,
+               Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL) {
+            long prev;
+            boolean started, finished;
+
+            @Override
+            public boolean tryAdvance(LongConsumer action) {
+                Objects.requireNonNull(action);
+                if (finished)
+                    return false;
+                long t;
+                if (started)
+                    t = f.applyAsLong(prev);
+                else {
+                    t = seed;
+                    started = true;
+                }
+                if (!predicate.test(t)) {
+                    finished = true;
+                    return false;
+                }
+                action.accept(prev = t);
                 return true;
             }
 
             @Override
-            public long nextLong() {
-                long v = t;
-                t = f.applyAsLong(t);
-                return v;
+            public void forEachRemaining(LongConsumer action) {
+                Objects.requireNonNull(action);
+                if (finished)
+                    return;
+                finished = true;
+                long t = started ? f.applyAsLong(prev) : seed;
+                while (predicate.test(t)) {
+                    action.accept(t);
+                    t = f.applyAsLong(t);
+                }
             }
         };
-        return StreamSupport.longStream(Spliterators.spliteratorUnknownSize(
-                iterator,
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
+        return StreamSupport.longStream(spliterator, false);
     }
 
     /**

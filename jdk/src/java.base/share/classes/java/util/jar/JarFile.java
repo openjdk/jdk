@@ -158,7 +158,7 @@ class JarFile extends ZipFile {
         RUNTIME_VERSION = AccessController.doPrivileged(
                 new PrivilegedAction<Integer>() {
                     public Integer run() {
-                        Integer v = sun.misc.Version.jdkMajorVersion(); // fixme when JEP 223 Version integrated
+                        Integer v = jdk.Version.current().major();
                         Integer i = Integer.getInteger("jdk.util.jar.version", v);
                         i = i < 0 ? 0 : i;
                         return i > v ? v : i;
@@ -359,7 +359,7 @@ class JarFile extends ZipFile {
     }
 
     private boolean runtimeVersionExists() {
-        int version = sun.misc.Version.jdkMajorVersion();  // fixme when JEP 223 integrated
+        int version = jdk.Version.current().major();
         try {
             Release.valueOf(version);
             return true;
@@ -893,11 +893,15 @@ class JarFile extends ZipFile {
     }
 
     private JarEntry verifiableEntry(ZipEntry ze) {
-        if (!(ze instanceof JarFileEntry)) {
-            ze = getJarEntry(ze.getName());
+        if (ze instanceof JarFileEntry) {
+            // assure the name and entry match for verification
+            return ((JarFileEntry)ze).reifiedEntry();
         }
-        // assure the name and entry match for verification
-        return ze == null ? null : ((JarFileEntry)ze).reifiedEntry();
+        ze = getJarEntry(ze.getName());
+        if (ze instanceof JarFileEntry) {
+            return ((JarFileEntry)ze).reifiedEntry();
+        }
+        return (JarEntry)ze;
     }
 
     // Statics for hand-coded Boyer-Moore search

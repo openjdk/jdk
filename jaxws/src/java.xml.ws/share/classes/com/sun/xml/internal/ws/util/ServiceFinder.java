@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,13 +338,13 @@ public final class ServiceFinder<T> implements Iterable<T> {
             int lc = 1;
             while ((lc = parseLine(service, u, r, lc, names, returned)) >= 0) ;
         } catch (IOException x) {
-            fail(service, ": " + x);
+            fail(service, ": " + x +";URL is :"+u.toString());
         } finally {
             try {
                 if (r != null) r.close();
                 if (in != null) in.close();
             } catch (IOException y) {
-                fail(service, ": " + y);
+                fail(service, ": " + y +";URL is :"+u.toString());
             }
         }
         return names.iterator();

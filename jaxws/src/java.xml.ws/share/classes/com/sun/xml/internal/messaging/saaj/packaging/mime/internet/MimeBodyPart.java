@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 package com.sun.xml.internal.messaging.saaj.packaging.mime.internet;
 
 
+import com.sun.xml.internal.messaging.saaj.packaging.mime.Header;
 import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
 import com.sun.xml.internal.messaging.saaj.packaging.mime.util.OutputUtil;
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
@@ -1041,7 +1042,7 @@ public final class MimeBodyPart {
      * Return all the headers from this Message as an Enumeration of
      * Header objects.
      */
-    public FinalArrayList<hdr> getAllHeaders() {
+    public List<? extends Header> getAllHeaders() {
         return headers.getAllHeaders();
     }
 

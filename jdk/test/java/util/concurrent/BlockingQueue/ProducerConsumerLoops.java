@@ -35,10 +35,11 @@
  * @test
  * @bug 4486658
  * @summary  multiple producers and consumers using blocking queues
+ * @library /lib/testlibrary/
  */
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -51,8 +52,10 @@ import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import jdk.testlibrary.Utils;
 
 public class ProducerConsumerLoops {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static ExecutorService pool;
 
     public static void main(String[] args) throws Exception {
@@ -77,7 +80,7 @@ public class ProducerConsumerLoops {
             run(new ArrayBlockingQueue<Integer>(100, true), i, 100);
         }
         pool.shutdown();
-        if (! pool.awaitTermination(60L, SECONDS))
+        if (! pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
             throw new Error();
         pool = null;
    }

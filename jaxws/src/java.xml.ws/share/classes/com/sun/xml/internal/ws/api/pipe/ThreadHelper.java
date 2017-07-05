@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.concurrent.ThreadFactory;
 
 /**
  * Simple utility class to instantiate correct Thread instance
- * depending on runtime context (jdk/non-jdk usage) and Java version.
+ * depending on Java version.
  *
  * @author miroslav.kos@oracle.com
  */
@@ -101,16 +101,16 @@ final class ThreadHelper {
         SunMiscThreadFactory(Constructor<?> ctr) { this.ctr = ctr; }
         @Override public Thread newThread(Runnable r) {
             return AccessController.doPrivileged(
-                new PrivilegedAction<Thread>() {
-                    @Override
-                    public Thread run() {
-                        try {
-                            return (Thread) ctr.newInstance(r);
-                        } catch (Exception e) {
-                            return new Thread(r);
+                    new PrivilegedAction<Thread>() {
+                        @Override
+                        public Thread run() {
+                            try {
+                                return (Thread) ctr.newInstance(r);
+                            } catch (Exception e) {
+                                return new Thread(r);
+                            }
                         }
                     }
-                }
             );
         }
     }

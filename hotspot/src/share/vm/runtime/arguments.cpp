@@ -409,6 +409,7 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceClassResolution",      LogLevel::Info,  true,  LogTag::_classresolve },
   { "TraceExceptions",           LogLevel::Info,  true,  LogTag::_exceptions },
   { "TraceMonitorInflation",     LogLevel::Debug, true,  LogTag::_monitorinflation },
+  { "TraceBiasedLocking",        LogLevel::Info,  true,  LogTag::_biasedlocking },
   { NULL,                        LogLevel::Off,   false, LogTag::__NO_TAG }
 };
 
