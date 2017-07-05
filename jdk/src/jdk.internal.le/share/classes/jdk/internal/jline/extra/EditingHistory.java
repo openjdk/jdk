@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public abstract class EditingHistory implements History {
                 //in.resetPromptLine(in.getPrompt(), in.getHistory().current().toString(), -1);
                 //but that would mean more re-writing on the screen, (and prints an additional
                 //empty line), so using setBuffer directly:
-                Method setBuffer = in.getClass().getDeclaredMethod("setBuffer", String.class);
+                Method setBuffer = ConsoleReader.class.getDeclaredMethod("setBuffer", String.class);
 
                 setBuffer.setAccessible(true);
                 setBuffer.invoke(in, in.getHistory().current().toString());

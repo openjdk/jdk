@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Robot;
@@ -30,6 +29,7 @@ import java.awt.event.ActionListener;
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import test.java.awt.regtesthelpers.Util;
 
 
@@ -55,16 +55,18 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
     private boolean lwClicked = false;
     private Point loc;
     private Point loc2;
+    private JComboBox cb;
+    private JFrame frame;
 
     {testEmbeddedFrame = true;}
 
     protected void prepareControls() {
-        final JFrame frame = new JFrame("Mixing : Dropdown Overlapping test");
+        frame = new JFrame("Mixing : Dropdown Overlapping test");
         frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
         frame.setSize(200, 200);
         frame.setVisible(true);
 
-        final JComboBox cb = new JComboBox(petStrings);
+        cb = new JComboBox(petStrings);
         cb.setPreferredSize(new Dimension(frame.getContentPane().getWidth(), 20));
         cb.addActionListener(new ActionListener() {
 
@@ -78,8 +80,6 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
         frame.add(cb);
         propagateAWTControls(frame);
         frame.setVisible(true);
-        loc = cb.getLocationOnScreen();
-        loc2 = frame.getContentPane().getLocationOnScreen();
     }
 
     @Override
@@ -87,6 +87,16 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
         // run robot
         Robot robot = Util.createRobot();
         robot.setAutoDelay(ROBOT_DELAY);
+        robot.waitForIdle();
+        robot.delay(200);
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                loc = cb.getLocationOnScreen();
+                loc2 = frame.getContentPane().getLocationOnScreen();
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         loc2.translate(75, 75);
         pixelPreCheck(robot, loc2, currentAwtControl);

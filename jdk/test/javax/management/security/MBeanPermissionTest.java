@@ -26,7 +26,7 @@
  * @bug 6228749
  * @summary MBeanPermission(null,"") should throw IllegalArgumentException.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean MBeanPermissionTest
  * @run build MBeanPermissionTest
  * @run main MBeanPermissionTest

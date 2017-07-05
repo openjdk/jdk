@@ -24,15 +24,13 @@
 /**
  *  @test
  *  @bug 4287992
+ *  @summary ClassesByName verifies that all the classes in the
+ *  loaded class list can be found with classesByName..
  *  @author Robert Field
  *
- *  @modules jdk.jdi
  *  @run build JDIScaffold VMConnection
  *  @run compile -g HelloWorld.java
  *  @run build ClassesByName
- *
- *  @summary ClassesByName verifies that all the classes in the
- *  loaded class list can be found with classesByName..
  *
  *  @run driver ClassesByName HelloWorld
  */

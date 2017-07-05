@@ -71,7 +71,7 @@
 
 #define SPLASH_FILE_ENV_ENTRY "_JAVA_SPLASH_FILE"
 #define SPLASH_JAR_ENV_ENTRY "_JAVA_SPLASH_JAR"
-#define JAVA_OPTIONS "JAVA_OPTIONS"
+#define JDK_JAVA_OPTIONS "JDK_JAVA_OPTIONS"
 
 /*
  * Pointers to the needed JNI invocation API, initialized by LoadJavaVM.
