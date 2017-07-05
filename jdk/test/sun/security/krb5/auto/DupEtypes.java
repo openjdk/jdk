@@ -34,6 +34,7 @@
  */
 
 import sun.security.jgss.GSSUtil;
+import sun.security.krb5.Config;
 
 public class DupEtypes {
 
@@ -41,6 +42,14 @@ public class DupEtypes {
 
         OneKDC kdc = new OneKDC(null);
         kdc.writeJAASConf();
+
+        KDC.saveConfig(OneKDC.KRB5_CONF, kdc,
+                "default_keytab_name = " + OneKDC.KTAB,
+                "allow_weak_crypto = true");
+        Config.refresh();
+
+        // Rewrite to include DES keys
+        kdc.writeKtab(OneKDC.KTAB);
 
         // Different test cases, read KDC.processAsReq for details
         kdc.setOption(KDC.Option.DUP_ETYPE, Integer.parseInt(args[0]));

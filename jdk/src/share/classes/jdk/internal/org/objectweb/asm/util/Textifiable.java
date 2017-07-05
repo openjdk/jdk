@@ -22,7 +22,7 @@
  * questions.
  */
 
-/*
+/**
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
  * However, the following notice accompanied the original version of this
@@ -76,8 +76,10 @@ public interface Textifiable {
     /**
      * Build a human readable representation of this attribute.
      *
-     * @param buf a buffer used for printing Java code.
-     * @param labelNames map of label instances to their names.
+     * @param buf
+     *            a buffer used for printing Java code.
+     * @param labelNames
+     *            map of label instances to their names.
      */
     void textify(StringBuffer buf, Map<Label, String> labelNames);
 }

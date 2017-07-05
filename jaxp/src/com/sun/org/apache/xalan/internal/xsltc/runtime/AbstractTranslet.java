@@ -23,6 +23,7 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.runtime;
 
+import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -109,6 +110,11 @@ public abstract class AbstractTranslet implements Translet {
     private final static String ID_INDEX_NAME = "##id";
 
     private boolean _useServicesMechanism;
+
+    /**
+     * protocols allowed for external references set by the stylesheet processing instruction, Document() function, Import and Include element.
+     */
+    private String _accessExternalStylesheet = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
 
     /************************************************************************
      * Debugging
@@ -756,6 +762,20 @@ public abstract class AbstractTranslet implements Translet {
      */
     public void setServicesMechnism(boolean flag) {
         _useServicesMechanism = flag;
+    }
+
+    /**
+     * Return allowed protocols for accessing external stylesheet.
+     */
+    public String getAllowedProtocols() {
+        return _accessExternalStylesheet;
+    }
+
+    /**
+     * Set allowed protocols for accessing external stylesheet.
+     */
+    public void setAllowedProtocols(String protocols) {
+        _accessExternalStylesheet = protocols;
     }
 
     /************************************************************************

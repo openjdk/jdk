@@ -351,6 +351,31 @@ public abstract class DocumentBuilderFactory {
     /**
      * Allows the user to set specific attributes on the underlying
      * implementation.
+     * <p>
+     * All implementations that implement JAXP 1.5 or newer are required to
+     * support the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} and
+     * {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} properties.
+     * </p>
+     * <ul>
+     *   <li>
+     *      <p>
+     *      Setting the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} property
+     *      restricts the access to external DTDs, external Entity References to the
+     *      protocols specified by the property.
+     *      If access is denied during parsing due to the restriction of this property,
+     *      {@link org.xml.sax.SAXException} will be thrown by the parse methods defined by
+     *      {@link javax.xml.parsers.DocumentBuilder}.
+     *      </p>
+     *      <p>
+     *      Setting the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} property
+     *      restricts the access to external Schema set by the schemaLocation attribute to
+     *      the protocols specified by the property.  If access is denied during parsing
+     *      due to the restriction of this property, {@link org.xml.sax.SAXException}
+     *      will be thrown by the parse methods defined by
+     *      {@link javax.xml.parsers.DocumentBuilder}.
+     *      </p>
+     *   </li>
+     * </ul>
      *
      * @param name The name of the attribute.
      * @param value The value of the attribute.

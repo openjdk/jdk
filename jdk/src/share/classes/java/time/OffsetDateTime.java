@@ -111,7 +111,7 @@ import java.util.Objects;
  * in simpler applications. This class may be used when modeling date-time concepts in
  * more detail, or when communicating to a database or in a network protocol.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
@@ -1521,10 +1521,10 @@ public final class OffsetDateTime
     }
 
     /**
-     * Calculates the period between this date-time and another date-time in
-     * terms of the specified unit.
+     * Calculates the amount of time until another date-time in terms of the specified unit.
      * <p>
-     * This calculates the period between two date-times in terms of a single unit.
+     * This calculates the amount of time between two {@code OffsetDateTime}
+     * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified date-time.
      * The result will be negative if the end is before the start.
      * For example, the period in days between two date-times can be calculated
@@ -1564,9 +1564,9 @@ public final class OffsetDateTime
      * This instance is immutable and unaffected by this method call.
      *
      * @param endDateTime  the end date-time, which must be an {@code OffsetDateTime}, not null
-     * @param unit  the unit to measure the period in, not null
-     * @return the amount of the period between this date-time and the end date-time
-     * @throws DateTimeException if the period cannot be calculated
+     * @param unit  the unit to measure the amount in, not null
+     * @return the amount of time between this date-time and the end date-time
+     * @throws DateTimeException if the amount cannot be calculated
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
@@ -1574,7 +1574,7 @@ public final class OffsetDateTime
     public long periodUntil(Temporal endDateTime, TemporalUnit unit) {
         if (endDateTime instanceof OffsetDateTime == false) {
             Objects.requireNonNull(endDateTime, "endDateTime");
-            throw new DateTimeException("Unable to calculate period between objects of two different types");
+            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
         if (unit instanceof ChronoUnit) {
             OffsetDateTime end = (OffsetDateTime) endDateTime;

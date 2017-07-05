@@ -126,17 +126,15 @@ ExceptionBlob* OptoRuntime::_exception_blob;
 
 // This should be called in an assertion at the start of OptoRuntime routines
 // which are entered from compiled code (all of them)
-#ifndef PRODUCT
+#ifdef ASSERT
 static bool check_compiled_frame(JavaThread* thread) {
   assert(thread->last_frame().is_runtime_frame(), "cannot call runtime directly from compiled code");
-#ifdef ASSERT
   RegisterMap map(thread, false);
   frame caller = thread->last_frame().sender(&map);
   assert(caller.is_compiled_frame(), "not being called from compiled like code");
-#endif  /* ASSERT */
   return true;
 }
-#endif
+#endif // ASSERT
 
 
 #define gen(env, var, type_func_gen, c_func, fancy_jump, pass_tls, save_arg_regs, return_pc) \

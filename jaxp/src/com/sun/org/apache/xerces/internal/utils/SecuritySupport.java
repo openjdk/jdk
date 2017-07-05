@@ -23,14 +23,16 @@ package com.sun.org.apache.xerces.internal.utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
-
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
@@ -194,6 +196,142 @@ public final class SecuritySupport {
                     }
                 })).longValue();
     }
+
+    /**
+     * Strip off path from an URI
+     *
+     * @param uri an URI with full path
+     * @return the file name only
+     */
+    public static String sanitizePath(String uri) {
+        if (uri == null) {
+            return "";
+        }
+        int i = uri.lastIndexOf("/");
+        if (i > 0) {
+            return uri.substring(i+1, uri.length());
+        }
+        return "";
+    }
+
+    /**
+     * Check the protocol used in the systemId against allowed protocols
+     *
+     * @param systemId the Id of the URI
+     * @param allowedProtocols a list of allowed protocols separated by comma
+     * @param accessAny keyword to indicate allowing any protocol
+     * @return the name of the protocol if rejected, null otherwise
+     */
+    public static String checkAccess(String systemId, String allowedProtocols, String accessAny) throws IOException {
+        if (systemId == null || allowedProtocols.equalsIgnoreCase(accessAny)) {
+            return null;
+        }
+
+        String protocol;
+        if (systemId.indexOf(":")==-1) {
+            protocol = "file";
+        } else {
+            URL url = new URL(systemId);
+            protocol = url.getProtocol();
+            if (protocol.equalsIgnoreCase("jar")) {
+                String path = url.getPath();
+                protocol = path.substring(0, path.indexOf(":"));
+            }
+        }
+
+        if (isProtocolAllowed(protocol, allowedProtocols)) {
+            //access allowed
+            return null;
+        } else {
+            return protocol;
+        }
+    }
+
+    /**
+     * Check if the protocol is in the allowed list of protocols. The check
+     * is case-insensitive while ignoring whitespaces.
+     *
+     * @param protocol a protocol
+     * @param allowedProtocols a list of allowed protocols
+     * @return true if the protocol is in the list
+     */
+    private static boolean isProtocolAllowed(String protocol, String allowedProtocols) {
+         String temp[] = allowedProtocols.split(",");
+         for (String t : temp) {
+             t = t.trim();
+             if (t.equalsIgnoreCase(protocol)) {
+                 return true;
+             }
+         }
+         return false;
+     }
+
+    /**
+     * Read from $java.home/lib/jaxp.properties for the specified property
+     *
+     * @param propertyId the Id of the property
+     * @return the value of the property
+     */
+    public static String getDefaultAccessProperty(String sysPropertyId, String defaultVal) {
+        String accessExternal = SecuritySupport.getSystemProperty(sysPropertyId);
+        if (accessExternal == null) {
+            accessExternal = readJAXPProperty(sysPropertyId);
+            if (accessExternal == null) {
+                accessExternal = defaultVal;
+            }
+        }
+        return accessExternal;
+    }
+
+     /**
+     * Read from $java.home/lib/jaxp.properties for the specified property
+     * The program
+     *
+     * @param propertyId the Id of the property
+     * @return the value of the property
+     */
+    static String readJAXPProperty(String propertyId) {
+        String value = null;
+        InputStream is = null;
+        try {
+            if (firstTime) {
+                synchronized (cacheProps) {
+                    if (firstTime) {
+                        String configFile = getSystemProperty("java.home") + File.separator +
+                            "lib" + File.separator + "jaxp.properties";
+                        File f = new File(configFile);
+                        if (getFileExists(f)) {
+                            is = getFileInputStream(f);
+                            cacheProps.load(is);
+                        }
+                        firstTime = false;
+                    }
+                }
+            }
+            value = cacheProps.getProperty(propertyId);
+
+        }
+        catch (Exception ex) {}
+        finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ex) {}
+            }
+        }
+
+        return value;
+    }
+
+   /**
+     * Cache for properties in java.home/lib/jaxp.properties
+     */
+    static final Properties cacheProps = new Properties();
+
+    /**
+     * Flag indicating if the program has tried reading java.home/lib/jaxp.properties
+     */
+    static volatile boolean firstTime = true;
 
     private SecuritySupport () {}
 }

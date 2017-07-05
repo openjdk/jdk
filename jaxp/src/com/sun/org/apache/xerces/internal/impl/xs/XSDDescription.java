@@ -34,6 +34,7 @@ import com.sun.org.apache.xerces.internal.xni.grammars.XMLSchemaDescription;
  * @author Neil Graham, IBM
  * @author Neeraj Bajaj, SUN Microsystems.
  *
+ * @version $Id: XSDDescription.java,v 1.6 2010-11-01 04:39:55 joehw Exp $
  */
 public class XSDDescription extends XMLResourceIdentifierImpl
                 implements XMLSchemaDescription {
@@ -180,6 +181,17 @@ public class XSDDescription extends XMLResourceIdentifierImpl
                fContextType == CONTEXT_XSITYPE;
     }
 
+    /**
+     * @return true is the schema is external
+     */
+    public boolean isExternal() {
+        return fContextType == CONTEXT_INCLUDE ||
+               fContextType == CONTEXT_REDEFINE ||
+               fContextType == CONTEXT_IMPORT ||
+               fContextType == CONTEXT_ELEMENT ||
+               fContextType == CONTEXT_ATTRIBUTE ||
+               fContextType == CONTEXT_XSITYPE;
+    }
     /**
      * Compares this grammar with the given grammar. Currently, we compare
      * the target namespaces.

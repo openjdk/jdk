@@ -747,14 +747,9 @@ public class FileFontStrike extends PhysicalStrike {
             return origMinX;
         }
 
-        long pixelData;
-        if (StrikeCache.nativeAddressSize == 4) {
-            pixelData = 0xffffffff &
-                StrikeCache.unsafe.getInt(ptr + StrikeCache.pixelDataOffset);
-        } else {
-            pixelData =
-                StrikeCache.unsafe.getLong(ptr + StrikeCache.pixelDataOffset);
-        }
+        long pixelData =
+            StrikeCache.unsafe.getAddress(ptr + StrikeCache.pixelDataOffset);
+
         if (pixelData == 0L) {
             return origMinX;
         }

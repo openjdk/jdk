@@ -115,7 +115,7 @@ import java.util.Objects;
  * However, any application that makes use of historical dates, and requires them
  * to be accurate will find the ISO-8601 approach unsuitable.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
@@ -813,10 +813,10 @@ public final class Year
     }
 
     /**
-     * Calculates the period between this year and another year in
-     * terms of the specified unit.
+     * Calculates the amount of time until another year in terms of the specified unit.
      * <p>
-     * This calculates the period between two years in terms of a single unit.
+     * This calculates the amount of time between two {@code Year}
+     * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified year.
      * The result will be negative if the end is before the start.
      * The {@code Temporal} passed to this method must be a {@code Year}.
@@ -851,9 +851,9 @@ public final class Year
      * This instance is immutable and unaffected by this method call.
      *
      * @param endYear  the end year, which must be a {@code Year}, not null
-     * @param unit  the unit to measure the period in, not null
-     * @return the amount of the period between this year and the end year
-     * @throws DateTimeException if the period cannot be calculated
+     * @param unit  the unit to measure the amount in, not null
+     * @return the amount of time between this year and the end year
+     * @throws DateTimeException if the amount cannot be calculated
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
@@ -861,7 +861,7 @@ public final class Year
     public long periodUntil(Temporal endYear, TemporalUnit unit) {
         if (endYear instanceof Year == false) {
             Objects.requireNonNull(endYear, "endYear");
-            throw new DateTimeException("Unable to calculate period between objects of two different types");
+            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
         Year end = (Year) endYear;
         if (unit instanceof ChronoUnit) {

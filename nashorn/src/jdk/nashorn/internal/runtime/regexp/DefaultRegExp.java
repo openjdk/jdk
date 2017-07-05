@@ -107,16 +107,16 @@ public class DefaultRegExp extends RegExp {
 
     class DefaultMatcher implements RegExpMatcher {
         final String input;
-        final Matcher matcher;
+        final Matcher defaultMatcher;
 
         DefaultMatcher(final String input) {
             this.input = input;
-            this.matcher = pattern.matcher(input);
+            this.defaultMatcher = pattern.matcher(input);
         }
 
         @Override
         public boolean search(final int start) {
-            return matcher.find(start);
+            return defaultMatcher.find(start);
         }
 
         @Override
@@ -126,37 +126,37 @@ public class DefaultRegExp extends RegExp {
 
         @Override
         public int start() {
-            return matcher.start();
+            return defaultMatcher.start();
         }
 
         @Override
         public int start(final int group) {
-            return matcher.start(group);
+            return defaultMatcher.start(group);
         }
 
         @Override
         public int end() {
-            return matcher.end();
+            return defaultMatcher.end();
         }
 
         @Override
         public int end(final int group) {
-            return matcher.end(group);
+            return defaultMatcher.end(group);
         }
 
         @Override
         public String group() {
-            return matcher.group();
+            return defaultMatcher.group();
         }
 
         @Override
         public String group(final int group) {
-            return matcher.group(group);
+            return defaultMatcher.group(group);
         }
 
         @Override
         public int groupCount() {
-            return matcher.groupCount();
+            return defaultMatcher.groupCount();
         }
     }
 

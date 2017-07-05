@@ -102,7 +102,7 @@ import java.util.Objects;
  * For example, the value "13:45.30.123456789+02:00" can be stored
  * in an {@code OffsetTime}.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
@@ -1077,10 +1077,10 @@ public final class OffsetTime
     }
 
     /**
-     * Calculates the period between this time and another time in
-     * terms of the specified unit.
+     * Calculates the amount of time until another time in terms of the specified unit.
      * <p>
-     * This calculates the period between two times in terms of a single unit.
+     * This calculates the amount of time between two {@code OffsetTime}
+     * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified time.
      * The result will be negative if the end is before the start.
      * For example, the period in hours between two times can be calculated
@@ -1118,9 +1118,9 @@ public final class OffsetTime
      * This instance is immutable and unaffected by this method call.
      *
      * @param endTime  the end time, which must be an {@code OffsetTime}, not null
-     * @param unit  the unit to measure the period in, not null
-     * @return the amount of the period between this time and the end time
-     * @throws DateTimeException if the period cannot be calculated
+     * @param unit  the unit to measure the amount in, not null
+     * @return the amount of time between this time and the end time
+     * @throws DateTimeException if the amount cannot be calculated
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
@@ -1128,7 +1128,7 @@ public final class OffsetTime
     public long periodUntil(Temporal endTime, TemporalUnit unit) {
         if (endTime instanceof OffsetTime == false) {
             Objects.requireNonNull(endTime, "endTime");
-            throw new DateTimeException("Unable to calculate period between objects of two different types");
+            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
         if (unit instanceof ChronoUnit) {
             OffsetTime end = (OffsetTime) endTime;

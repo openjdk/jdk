@@ -83,7 +83,7 @@ import java.util.regex.Pattern;
  * By contrast, the region identifier is well-defined and long-lived.
  * This separation also allows rules to be shared between regions if appropriate.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8

@@ -95,7 +95,7 @@ import java.util.Objects;
  * the local time-line overlaps, typically as a result of the end of daylight time.
  * Information about the local-time can be obtained using methods on the time-zone.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @param <D> the concrete type for the date of this date-time
@@ -287,12 +287,12 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate<D>>
     @Override
     public long periodUntil(Temporal endDateTime, TemporalUnit unit) {
         if (endDateTime instanceof ChronoZonedDateTime == false) {
-            throw new DateTimeException("Unable to calculate period between objects of two different types");
+            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
         @SuppressWarnings("unchecked")
         ChronoZonedDateTime<D> end = (ChronoZonedDateTime<D>) endDateTime;
         if (toLocalDate().getChronology().equals(end.toLocalDate().getChronology()) == false) {
-            throw new DateTimeException("Unable to calculate period between two different chronologies");
+            throw new DateTimeException("Unable to calculate amount as objects have different chronologies");
         }
         if (unit instanceof ChronoUnit) {
             end = end.withZoneSameInstant(offset);

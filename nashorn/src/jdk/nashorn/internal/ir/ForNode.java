@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representing a FOR statement.
@@ -57,17 +56,17 @@ public final class ForNode extends LoopNode {
     /**
      * Constructor
      *
-     * @param source the source
-     * @param token  token
-     * @param finish finish
-     * @param init   init
-     * @param test   test
-     * @param body   body
-     * @param modify modify
-     * @param flags  flags
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
+     * @param init       initialization expression
+     * @param test       test
+     * @param body       body
+     * @param modify     modify
+     * @param flags      flags
      */
-    public ForNode(final Source source, final long token, final int finish, final Node init, final Node test, final Block body, final Node modify, final int flags) {
-        super(source, token, finish, test, body, false);
+    public ForNode(final int lineNumber, final long token, final int finish, final Node init, final Node test, final Block body, final Node modify, final int flags) {
+        super(lineNumber, token, finish, test, body, false);
         this.init   = init;
         this.modify = modify;
         this.flags  = flags;

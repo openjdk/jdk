@@ -48,7 +48,7 @@
 class oop;
 class Thread;
 
-class UnhandledOopEntry {
+class UnhandledOopEntry : public CHeapObj<mtThread> {
  friend class UnhandledOops;
  private:
   oop* _oop_ptr;
@@ -62,7 +62,7 @@ class UnhandledOopEntry {
 };
 
 
-class UnhandledOops {
+class UnhandledOops : public CHeapObj<mtThread> {
  friend class Thread;
  private:
   Thread* _thread;

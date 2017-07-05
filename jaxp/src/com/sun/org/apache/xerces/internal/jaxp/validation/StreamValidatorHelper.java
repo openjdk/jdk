@@ -32,6 +32,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.XMLConstants;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
@@ -176,6 +177,8 @@ final class StreamValidatorHelper implements ValidatorHelper {
         }
         config.setProperty(SYMBOL_TABLE, fComponentManager.getProperty(SYMBOL_TABLE));
         config.setProperty(VALIDATION_MANAGER, fComponentManager.getProperty(VALIDATION_MANAGER));
+        config.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
+                fComponentManager.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
         config.setDocumentHandler(fSchemaValidator);
         config.setDTDHandler(null);
         config.setDTDContentModelHandler(null);

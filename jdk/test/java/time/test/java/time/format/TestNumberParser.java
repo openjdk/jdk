@@ -169,7 +169,7 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         DateTimeFormatter dtf = getFormatter(DAY_OF_MONTH, minWidth, maxWidth, signStyle);
         if (subsequentWidth > 0) {
             // hacky, to reserve space
-            dtf = builder.appendValue(DAY_OF_YEAR, subsequentWidth).toFormatter(locale).withSymbols(symbols);
+            dtf = builder.appendValue(DAY_OF_YEAR, subsequentWidth).toFormatter(locale).withDecimalStyle(decimalStyle);
         }
         TemporalAccessor parsed = dtf.parseUnresolved(text, ppos);
         if (ppos.getErrorIndex() != -1) {
@@ -189,7 +189,7 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         DateTimeFormatter dtf = getFormatter(DAY_OF_WEEK, minWidth, maxWidth, signStyle);
         if (subsequentWidth > 0) {
             // hacky, to reserve space
-            dtf = builder.appendValue(DAY_OF_YEAR, subsequentWidth).toFormatter(locale).withSymbols(symbols);
+            dtf = builder.appendValue(DAY_OF_YEAR, subsequentWidth).toFormatter(locale).withDecimalStyle(decimalStyle);
         }
         TemporalAccessor parsed = dtf.parseUnresolved(text, ppos);
         if (ppos.getErrorIndex() != -1) {
@@ -326,16 +326,16 @@ public class TestNumberParser extends AbstractTestPrinterParser {
             {"0", 1, 2, SignStyle.NEVER, 1, 0},
             {"5", 1, 2, SignStyle.NEVER, 1, 5},
             {"50", 1, 2, SignStyle.NEVER, 2, 50},
-            {"500", 1, 2, SignStyle.NEVER, 2, 50},
+            {"500", 1, 2, SignStyle.NEVER, 3, 500},
             {"-0", 1, 2, SignStyle.NEVER, 2, 0},
             {"-5", 1, 2, SignStyle.NEVER, 2, -5},
             {"-50", 1, 2, SignStyle.NEVER, 3, -50},
-            {"-500", 1, 2, SignStyle.NEVER, 3, -50},
+            {"-500", 1, 2, SignStyle.NEVER, 4, -500},
             {"-AAA", 1, 2, SignStyle.NEVER, 1, null},
             {"+0", 1, 2, SignStyle.NEVER, 2, 0},
             {"+5", 1, 2, SignStyle.NEVER, 2, 5},
             {"+50", 1, 2, SignStyle.NEVER, 3, 50},
-            {"+500", 1, 2, SignStyle.NEVER, 3, 50},
+            {"+500", 1, 2, SignStyle.NEVER, 4, 500},
             {"+AAA", 1, 2, SignStyle.NEVER, 1, null},
             {"50", 2, 2, SignStyle.NEVER, 2, 50},
             {"-50", 2, 2, SignStyle.NEVER, 0, null},
@@ -345,16 +345,16 @@ public class TestNumberParser extends AbstractTestPrinterParser {
             {"0", 1, 2, SignStyle.NOT_NEGATIVE, 1, 0},
             {"5", 1, 2, SignStyle.NOT_NEGATIVE, 1, 5},
             {"50", 1, 2, SignStyle.NOT_NEGATIVE, 2, 50},
-            {"500", 1, 2, SignStyle.NOT_NEGATIVE, 2, 50},
+            {"500", 1, 2, SignStyle.NOT_NEGATIVE, 3, 500},
             {"-0", 1, 2, SignStyle.NOT_NEGATIVE, 2, 0},
             {"-5", 1, 2, SignStyle.NOT_NEGATIVE, 2, -5},
             {"-50", 1, 2, SignStyle.NOT_NEGATIVE, 3, -50},
-            {"-500", 1, 2, SignStyle.NOT_NEGATIVE, 3, -50},
+            {"-500", 1, 2, SignStyle.NOT_NEGATIVE, 4, -500},
             {"-AAA", 1, 2, SignStyle.NOT_NEGATIVE, 1, null},
             {"+0", 1, 2, SignStyle.NOT_NEGATIVE, 2, 0},
             {"+5", 1, 2, SignStyle.NOT_NEGATIVE, 2, 5},
             {"+50", 1, 2, SignStyle.NOT_NEGATIVE, 3, 50},
-            {"+500", 1, 2, SignStyle.NOT_NEGATIVE, 3, 50},
+            {"+500", 1, 2, SignStyle.NOT_NEGATIVE, 4, 500},
             {"+AAA", 1, 2, SignStyle.NOT_NEGATIVE, 1, null},
             {"50", 2, 2, SignStyle.NOT_NEGATIVE, 2, 50},
             {"-50", 2, 2, SignStyle.NOT_NEGATIVE, 0, null},
@@ -364,16 +364,16 @@ public class TestNumberParser extends AbstractTestPrinterParser {
             {"0", 1, 2, SignStyle.NORMAL, 1, 0},
             {"5", 1, 2, SignStyle.NORMAL, 1, 5},
             {"50", 1, 2, SignStyle.NORMAL, 2, 50},
-            {"500", 1, 2, SignStyle.NORMAL, 2, 50},
+            {"500", 1, 2, SignStyle.NORMAL, 3, 500},
             {"-0", 1, 2, SignStyle.NORMAL, 2, 0},
             {"-5", 1, 2, SignStyle.NORMAL, 2, -5},
             {"-50", 1, 2, SignStyle.NORMAL, 3, -50},
-            {"-500", 1, 2, SignStyle.NORMAL, 3, -50},
+            {"-500", 1, 2, SignStyle.NORMAL, 4, -500},
             {"-AAA", 1, 2, SignStyle.NORMAL, 1, null},
             {"+0", 1, 2, SignStyle.NORMAL, 2, 0},
             {"+5", 1, 2, SignStyle.NORMAL, 2, 5},
             {"+50", 1, 2, SignStyle.NORMAL, 3, 50},
-            {"+500", 1, 2, SignStyle.NORMAL, 3, 50},
+            {"+500", 1, 2, SignStyle.NORMAL, 4, 500},
             {"+AAA", 1, 2, SignStyle.NORMAL, 1, null},
             {"50", 2, 2, SignStyle.NORMAL, 2, 50},
             {"-50", 2, 2, SignStyle.NORMAL, 3, -50},
@@ -383,32 +383,32 @@ public class TestNumberParser extends AbstractTestPrinterParser {
             {"0", 1, 2, SignStyle.ALWAYS, 1, 0},
             {"5", 1, 2, SignStyle.ALWAYS, 1, 5},
             {"50", 1, 2, SignStyle.ALWAYS, 2, 50},
-            {"500", 1, 2, SignStyle.ALWAYS, 2, 50},
+            {"500", 1, 2, SignStyle.ALWAYS, 3, 500},
             {"-0", 1, 2, SignStyle.ALWAYS, 2, 0},
             {"-5", 1, 2, SignStyle.ALWAYS, 2, -5},
             {"-50", 1, 2, SignStyle.ALWAYS, 3, -50},
-            {"-500", 1, 2, SignStyle.ALWAYS, 3, -50},
+            {"-500", 1, 2, SignStyle.ALWAYS, 4, -500},
             {"-AAA", 1, 2, SignStyle.ALWAYS, 1, null},
             {"+0", 1, 2, SignStyle.ALWAYS, 2, 0},
             {"+5", 1, 2, SignStyle.ALWAYS, 2, 5},
             {"+50", 1, 2, SignStyle.ALWAYS, 3, 50},
-            {"+500", 1, 2, SignStyle.ALWAYS, 3, 50},
+            {"+500", 1, 2, SignStyle.ALWAYS, 4, 500},
             {"+AAA", 1, 2, SignStyle.ALWAYS, 1, null},
 
             // exceeds pad
             {"0", 1, 2, SignStyle.EXCEEDS_PAD, 1, 0},
             {"5", 1, 2, SignStyle.EXCEEDS_PAD, 1, 5},
             {"50", 1, 2, SignStyle.EXCEEDS_PAD, 2, 50},
-            {"500", 1, 2, SignStyle.EXCEEDS_PAD, 2, 50},
+            {"500", 1, 2, SignStyle.EXCEEDS_PAD, 3, 500},
             {"-0", 1, 2, SignStyle.EXCEEDS_PAD, 2, 0},
             {"-5", 1, 2, SignStyle.EXCEEDS_PAD, 2, -5},
             {"-50", 1, 2, SignStyle.EXCEEDS_PAD, 3, -50},
-            {"-500", 1, 2, SignStyle.EXCEEDS_PAD, 3, -50},
+            {"-500", 1, 2, SignStyle.EXCEEDS_PAD, 4, -500},
             {"-AAA", 1, 2, SignStyle.EXCEEDS_PAD, 1, null},
             {"+0", 1, 2, SignStyle.EXCEEDS_PAD, 2, 0},
             {"+5", 1, 2, SignStyle.EXCEEDS_PAD, 2, 5},
             {"+50", 1, 2, SignStyle.EXCEEDS_PAD, 3, 50},
-            {"+500", 1, 2, SignStyle.EXCEEDS_PAD, 3, 50},
+            {"+500", 1, 2, SignStyle.EXCEEDS_PAD, 4, 500},
             {"+AAA", 1, 2, SignStyle.EXCEEDS_PAD, 1, null},
        };
     }
@@ -441,9 +441,9 @@ public class TestNumberParser extends AbstractTestPrinterParser {
                 {"543", 1, 3, SignStyle.NEVER, 3, 543},
                 {"543", 2, 3, SignStyle.NEVER, 3, 543},
                 {"543", 3, 3, SignStyle.NEVER, 3, 543},
-                {"5432", 1, 3, SignStyle.NEVER, 3, 543},
-                {"5432", 2, 3, SignStyle.NEVER, 3, 543},
-                {"5432", 3, 3, SignStyle.NEVER, 3, 543},
+                {"5432", 1, 3, SignStyle.NEVER, 4, 5432},
+                {"5432", 2, 3, SignStyle.NEVER, 4, 5432},
+                {"5432", 3, 3, SignStyle.NEVER, 4, 5432},
                 {"5AAA", 2, 3, SignStyle.NEVER, 1, 5},
 
                 // not negative
@@ -455,9 +455,9 @@ public class TestNumberParser extends AbstractTestPrinterParser {
                 {"543", 1, 3, SignStyle.NOT_NEGATIVE, 3, 543},
                 {"543", 2, 3, SignStyle.NOT_NEGATIVE, 3, 543},
                 {"543", 3, 3, SignStyle.NOT_NEGATIVE, 3, 543},
-                {"5432", 1, 3, SignStyle.NOT_NEGATIVE, 3, 543},
-                {"5432", 2, 3, SignStyle.NOT_NEGATIVE, 3, 543},
-                {"5432", 3, 3, SignStyle.NOT_NEGATIVE, 3, 543},
+                {"5432", 1, 3, SignStyle.NOT_NEGATIVE, 4, 5432},
+                {"5432", 2, 3, SignStyle.NOT_NEGATIVE, 4, 5432},
+                {"5432", 3, 3, SignStyle.NOT_NEGATIVE, 4, 5432},
                 {"5AAA", 2, 3, SignStyle.NOT_NEGATIVE, 1, 5},
 
                 // normal
@@ -469,9 +469,9 @@ public class TestNumberParser extends AbstractTestPrinterParser {
                 {"543", 1, 3, SignStyle.NORMAL, 3, 543},
                 {"543", 2, 3, SignStyle.NORMAL, 3, 543},
                 {"543", 3, 3, SignStyle.NORMAL, 3, 543},
-                {"5432", 1, 3, SignStyle.NORMAL, 3, 543},
-                {"5432", 2, 3, SignStyle.NORMAL, 3, 543},
-                {"5432", 3, 3, SignStyle.NORMAL, 3, 543},
+                {"5432", 1, 3, SignStyle.NORMAL, 4, 5432},
+                {"5432", 2, 3, SignStyle.NORMAL, 4, 5432},
+                {"5432", 3, 3, SignStyle.NORMAL, 4, 5432},
                 {"5AAA", 2, 3, SignStyle.NORMAL, 1, 5},
 
                 // always
@@ -483,9 +483,9 @@ public class TestNumberParser extends AbstractTestPrinterParser {
                 {"543", 1, 3, SignStyle.ALWAYS, 3, 543},
                 {"543", 2, 3, SignStyle.ALWAYS, 3, 543},
                 {"543", 3, 3, SignStyle.ALWAYS, 3, 543},
-                {"5432", 1, 3, SignStyle.ALWAYS, 3, 543},
-                {"5432", 2, 3, SignStyle.ALWAYS, 3, 543},
-                {"5432", 3, 3, SignStyle.ALWAYS, 3, 543},
+                {"5432", 1, 3, SignStyle.ALWAYS, 4, 5432},
+                {"5432", 2, 3, SignStyle.ALWAYS, 4, 5432},
+                {"5432", 3, 3, SignStyle.ALWAYS, 4, 5432},
                 {"5AAA", 2, 3, SignStyle.ALWAYS, 1, 5},
 
                 // exceeds pad
@@ -497,9 +497,9 @@ public class TestNumberParser extends AbstractTestPrinterParser {
                 {"543", 1, 3, SignStyle.EXCEEDS_PAD, 3, 543},
                 {"543", 2, 3, SignStyle.EXCEEDS_PAD, 3, 543},
                 {"543", 3, 3, SignStyle.EXCEEDS_PAD, 3, 543},
-                {"5432", 1, 3, SignStyle.EXCEEDS_PAD, 3, 543},
-                {"5432", 2, 3, SignStyle.EXCEEDS_PAD, 3, 543},
-                {"5432", 3, 3, SignStyle.EXCEEDS_PAD, 3, 543},
+                {"5432", 1, 3, SignStyle.EXCEEDS_PAD, 4, 5432},
+                {"5432", 2, 3, SignStyle.EXCEEDS_PAD, 4, 5432},
+                {"5432", 3, 3, SignStyle.EXCEEDS_PAD, 4, 5432},
                 {"5AAA", 2, 3, SignStyle.EXCEEDS_PAD, 1, 5},
         };
     }
@@ -533,8 +533,8 @@ public class TestNumberParser extends AbstractTestPrinterParser {
                 {"5432", 4, 54, 32},
                 {"5432A", 4, 54, 32},
 
-                {"54321", 4, 54, 32},
-                {"54321A", 4, 54, 32},
+                {"54321", 5, 543, 21},
+                {"54321A", 5, 543, 21},
         };
     }
 
@@ -544,7 +544,7 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         ParsePosition pos = new ParsePosition(0);
         DateTimeFormatter f = builder
                 .appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL)
-                .appendValue(DAY_OF_MONTH, 2).toFormatter(locale).withSymbols(symbols);
+                .appendValue(DAY_OF_MONTH, 2).toFormatter(locale).withDecimalStyle(decimalStyle);
         TemporalAccessor parsed = f.parseUnresolved(input, pos);
         if (pos.getErrorIndex() != -1) {
             assertEquals(pos.getErrorIndex(), parseLen);

@@ -8,6 +8,7 @@ private.xml
 private.properties
 webrev/*
 webrev.zip
+.classpath
 *.class
 *.clazz
 *.log

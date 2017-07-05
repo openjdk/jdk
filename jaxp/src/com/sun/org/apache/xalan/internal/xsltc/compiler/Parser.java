@@ -23,6 +23,16 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
+import com.sun.java_cup.internal.runtime.Symbol;
+import com.sun.org.apache.xalan.internal.XalanConstants;
+import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodType;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+import com.sun.org.apache.xml.internal.serializer.utils.SystemIDResolver;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -33,27 +43,18 @@ import java.util.Properties;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.Vector;
-
-import com.sun.java_cup.internal.runtime.Symbol;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodType;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
-import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import org.xml.sax.Attributes;
-import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * @author Jacek Ambroziak
@@ -475,6 +476,8 @@ public class Parser implements Constants, ContentHandler {
                 factory.setNamespaceAware(true);
             }
             final SAXParser parser = factory.newSAXParser();
+            parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD,
+                    _xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_DTD));
             final XMLReader reader = parser.getXMLReader();
             return(parse(reader, input));
         }
@@ -547,6 +550,25 @@ public class Parser implements Constants, ContentHandler {
             return(element);
         }
         else {
+            try {
+                String path = _target;
+                if (path.indexOf(":")==-1) {
+                    path = "file:" + path;
+                }
+                path = SystemIDResolver.getAbsoluteURI(path);
+                String accessError = SecuritySupport.checkAccess(path,
+                        _xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET),
+                        XalanConstants.ACCESS_EXTERNAL_ALL);
+                if (accessError != null) {
+                    ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
+                            SecuritySupport.sanitizePath(_target), accessError,
+                            root);
+                    throw new CompilerException(msg.toString());
+                }
+            } catch (IOException ex) {
+                throw new CompilerException(ex);
+            }
+
             return(loadExternalStylesheet(_target));
         }
     }

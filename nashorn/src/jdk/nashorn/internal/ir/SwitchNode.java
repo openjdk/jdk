@@ -32,7 +32,6 @@ import java.util.List;
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of a SWITCH statement.
@@ -54,15 +53,15 @@ public final class SwitchNode extends BreakableNode {
     /**
      * Constructor
      *
-     * @param source      the source
+     * @param lineNumber  lineNumber
      * @param token       token
      * @param finish      finish
      * @param expression  switch expression
      * @param cases       cases
      * @param defaultCase the default case node - null if none, otherwise has to be present in cases list
      */
-    public SwitchNode(final Source source, final long token, final int finish, final Node expression, final List<CaseNode> cases, final CaseNode defaultCase) {
-        super(source, token, finish, new Label("switch_break"));
+    public SwitchNode(final int lineNumber, final long token, final int finish, final Node expression, final List<CaseNode> cases, final CaseNode defaultCase) {
+        super(lineNumber, token, finish, new Label("switch_break"));
         this.expression       = expression;
         this.cases            = cases;
         this.defaultCaseIndex = defaultCase == null ? -1 : cases.indexOf(defaultCase);

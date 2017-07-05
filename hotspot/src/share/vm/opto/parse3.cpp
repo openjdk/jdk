@@ -150,6 +150,23 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
     // final field
     if (field->is_static()) {
       // final static field
+      if (C->eliminate_boxing()) {
+        // The pointers in the autobox arrays are always non-null.
+        ciSymbol* klass_name = field->holder()->name();
+        if (field->name() == ciSymbol::cache_field_name() &&
+            field->holder()->uses_default_loader() &&
+            (klass_name == ciSymbol::java_lang_Character_CharacterCache() ||
+             klass_name == ciSymbol::java_lang_Byte_ByteCache() ||
+             klass_name == ciSymbol::java_lang_Short_ShortCache() ||
+             klass_name == ciSymbol::java_lang_Integer_IntegerCache() ||
+             klass_name == ciSymbol::java_lang_Long_LongCache())) {
+          bool require_const = true;
+          bool autobox_cache = true;
+          if (push_constant(field->constant_value(), require_const, autobox_cache)) {
+            return;
+          }
+        }
+      }
       if (push_constant(field->constant_value()))
         return;
     }
@@ -304,11 +321,18 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   // out of the constructor.
   if (is_field && field->is_final()) {
     set_wrote_final(true);
+    // Preserve allocation ptr to create precedent edge to it in membar
+    // generated on exit from constructor.
+    if (C->eliminate_boxing() &&
+        adr_type->isa_oopptr() && adr_type->is_oopptr()->is_ptr_to_boxed_value() &&
+        AllocateNode::Ideal_allocation(obj, &_gvn) != NULL) {
+      set_alloc_with_final(obj);
+    }
   }
 }
 
 
-bool Parse::push_constant(ciConstant constant, bool require_constant) {
+bool Parse::push_constant(ciConstant constant, bool require_constant, bool is_autobox_cache) {
   switch (constant.basic_type()) {
   case T_BOOLEAN:  push( intcon(constant.as_boolean()) ); break;
   case T_INT:      push( intcon(constant.as_int())     ); break;
@@ -329,7 +353,7 @@ bool Parse::push_constant(ciConstant constant, bool require_constant) {
       push( zerocon(T_OBJECT) );
       break;
     } else if (require_constant || oop_constant->should_be_constant()) {
-      push( makecon(TypeOopPtr::make_from_constant(oop_constant, require_constant)) );
+      push( makecon(TypeOopPtr::make_from_constant(oop_constant, require_constant, is_autobox_cache)) );
       break;
     } else {
       // we cannot inline the oop, but we can use it later to narrow a type

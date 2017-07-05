@@ -65,6 +65,7 @@ class BuildConfig {
         String sourceBase = getFieldString(null, "SourceBase");
         String buildSpace = getFieldString(null, "BuildSpace");
         String outDir = buildBase;
+        String jdkTargetRoot = getFieldString(null, "JdkTargetRoot");
 
         put("Id", flavourBuild);
         put("OutputDir", outDir);
@@ -72,6 +73,7 @@ class BuildConfig {
         put("BuildBase", buildBase);
         put("BuildSpace", buildSpace);
         put("OutputDll", outDir + Util.sep + outDll);
+        put("JdkTargetRoot", jdkTargetRoot);
 
         context = new String [] {flavourBuild, flavour, build, null};
     }

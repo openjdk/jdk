@@ -29,6 +29,8 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 /**
  * This class implements a vector of bits that grows as needed. Each
@@ -1187,5 +1189,48 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
         b.append('}');
         return b.toString();
+    }
+
+    /**
+     * Returns a stream of indices for which this {@code BitSet}
+     * contains a bit in the set state. The indices are returned
+     * in order, from lowest to highest. The size of the stream
+     * is the number of bits in the set state, equal to the value
+     * returned by the {@link #cardinality()} method.
+     *
+     * <p>The bit set must remain constant during the execution of the
+     * terminal stream operation.  Otherwise, the result of the terminal
+     * stream operation is undefined.
+     *
+     * @return a stream of integers representing set indices
+     * @since 1.8
+     */
+    public IntStream stream() {
+        class BitSetIterator implements PrimitiveIterator.OfInt {
+            int next = nextSetBit(0);
+
+            @Override
+            public boolean hasNext() {
+                return next != -1;
+            }
+
+            @Override
+            public int nextInt() {
+                if (next != -1) {
+                    int ret = next;
+                    next = nextSetBit(next+1);
+                    return ret;
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+        }
+
+        return StreamSupport.intStream(
+                () -> Spliterators.spliterator(
+                        new BitSetIterator(), cardinality(),
+                        Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.SORTED),
+                Spliterator.SIZED | Spliterator.SUBSIZED |
+                        Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.SORTED);
     }
 }

@@ -75,8 +75,8 @@ public:
                                       PhaseTransform* phase);
   static bool adr_phi_is_loop_invariant(Node* adr_phi, Node* cast);
 
-  static Node *optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase);
-  static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase);
+  static Node *optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase);
+  static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *load, PhaseGVN *phase);
   // This one should probably be a phase-specific function:
   static bool all_controls_dominate(Node* dom, Node* sub);
 
@@ -1099,7 +1099,7 @@ public:
 
   Node* make_raw_address(intptr_t offset, PhaseTransform* phase);
 
-  bool detect_init_independence(Node* n, bool st_is_pinned, int& count);
+  bool detect_init_independence(Node* n, int& count);
 
   void coalesce_subword_stores(intptr_t header_size, Node* size_in_bytes,
                                PhaseGVN* phase);

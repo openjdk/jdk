@@ -94,6 +94,14 @@ class G1CardCounts: public CHeapObj<mtGC> {
     return (jbyte*) (_ct_bot + card_num);
   }
 
+  // Helper routine.
+  // Returns the number of cards that can be counted by the given committed
+  // table size, with a maximum of the number of cards spanned by the max
+  // capacity of the heap.
+  size_t committed_to_card_num(size_t committed_size) {
+    return MIN2(_reserved_max_card_num, committed_size / sizeof(jbyte));
+  }
+
   // Clear the counts table for the given (exclusive) index range.
   void clear_range(size_t from_card_num, size_t to_card_num);
 

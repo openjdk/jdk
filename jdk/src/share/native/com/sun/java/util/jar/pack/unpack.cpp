@@ -1791,7 +1791,7 @@ unpacker::attr_definitions::parseLayout(const char* lp, band** &res,
     switch (*lp++) {
     case 'B': case 'H': case 'I': case 'V': // unsigned_int
     case 'S': // signed_int
-      --lp;  // reparse
+      --lp; // reparse
     case 'F':
       lp = parseIntLayout(lp, b, EK_INT);
       break;
@@ -2037,47 +2037,80 @@ void unpacker::read_attr_defs() {
     MDL0
     // annotations:
 #define MDL1 \
-    "[NH[(1)]]" \
-    "[RSHNH[RUH(1)]]"
+    "[NH[(1)]]"
     MDL1
-    // member_value:
-    "[TB"
-      "(66,67,73,83,90)[KIH]"
-      "(68)[KDH]"
-      "(70)[KFH]"
-      "(74)[KJH]"
-      "(99)[RSH]"
-      "(101)[RSHRUH]"
-      "(115)[RUH]"
-      "(91)[NH[(0)]]"
-      "(64)["
-        // nested annotation:
-        "RSH"
-        "NH[RUH(0)]"
-        "]"
-      "()[]"
+#define MDL2 \
+    "[RSHNH[RUH(1)]]"
+    MDL2
+    // element_value:
+#define MDL3 \
+    "[TB"                        \
+      "(66,67,73,83,90)[KIH]"    \
+      "(68)[KDH]"                \
+      "(70)[KFH]"                \
+      "(74)[KJH]"                \
+      "(99)[RSH]"                \
+      "(101)[RSHRUH]"            \
+      "(115)[RUH]"               \
+      "(91)[NH[(0)]]"            \
+      "(64)["                    \
+        /* nested annotation: */ \
+        "RSH"                    \
+        "NH[RUH(0)]"             \
+        "]"                      \
+      "()[]"                     \
     "]"
+    MDL3
     );
 
   const char* md_layout_P = md_layout;
   const char* md_layout_A = md_layout+strlen(MDL0);
-  const char* md_layout_V = md_layout+strlen(MDL0 MDL1);
+  const char* md_layout_V = md_layout+strlen(MDL0 MDL1 MDL2);
   assert(0 == strncmp(&md_layout_A[-3], ")]][", 4));
   assert(0 == strncmp(&md_layout_V[-3], ")]][", 4));
 
+const char* type_md_layout(
+    "[NH[(1)(2)(3)]]"
+    // target-type + target_info
+    "[TB"
+       "(0,1)[B]"
+       "(16)[FH]"
+       "(17,18)[BB]"
+       "(19,20,21)[]"
+       "(22)[B]"
+       "(23)[H]"
+       "(64,65)[NH[PHOHH]]"
+       "(66)[H]"
+       "(67,68,69,70)[PH]"
+       "(71,72,73,74,75)[PHB]"
+       "()[]]"
+    // target-path
+    "[NB[BB]]"
+    // annotation + element_value
+    MDL2
+    MDL3
+);
+
   for (i = 0; i < ATTR_CONTEXT_LIMIT; i++) {
     attr_definitions& ad = attr_defs[i];
-    ad.defineLayout(X_ATTR_RuntimeVisibleAnnotations,
-                    "RuntimeVisibleAnnotations", md_layout_A);
-    ad.defineLayout(X_ATTR_RuntimeInvisibleAnnotations,
-                    "RuntimeInvisibleAnnotations", md_layout_A);
-    if (i != ATTR_CONTEXT_METHOD)  continue;
-    ad.defineLayout(METHOD_ATTR_RuntimeVisibleParameterAnnotations,
-                    "RuntimeVisibleParameterAnnotations", md_layout_P);
-    ad.defineLayout(METHOD_ATTR_RuntimeInvisibleParameterAnnotations,
-                    "RuntimeInvisibleParameterAnnotations", md_layout_P);
-    ad.defineLayout(METHOD_ATTR_AnnotationDefault,
-                    "AnnotationDefault", md_layout_V);
+    if (i != ATTR_CONTEXT_CODE) {
+      ad.defineLayout(X_ATTR_RuntimeVisibleAnnotations,
+                      "RuntimeVisibleAnnotations", md_layout_A);
+      ad.defineLayout(X_ATTR_RuntimeInvisibleAnnotations,
+                      "RuntimeInvisibleAnnotations", md_layout_A);
+      if (i == ATTR_CONTEXT_METHOD) {
+        ad.defineLayout(METHOD_ATTR_RuntimeVisibleParameterAnnotations,
+                        "RuntimeVisibleParameterAnnotations", md_layout_P);
+        ad.defineLayout(METHOD_ATTR_RuntimeInvisibleParameterAnnotations,
+                        "RuntimeInvisibleParameterAnnotations", md_layout_P);
+        ad.defineLayout(METHOD_ATTR_AnnotationDefault,
+                        "AnnotationDefault", md_layout_V);
+      }
+    }
+    ad.defineLayout(X_ATTR_RuntimeVisibleTypeAnnotations,
+                    "RuntimeVisibleTypeAnnotations", type_md_layout);
+    ad.defineLayout(X_ATTR_RuntimeInvisibleTypeAnnotations,
+                    "RuntimeInvisibleTypeAnnotations", type_md_layout);
   }
 
   attr_definition_headers.readData(attr_definition_count);
@@ -2433,6 +2466,7 @@ void unpacker::read_attrs(int attrc, int obj_count) {
 
     ad.readBandData(X_ATTR_RuntimeVisibleAnnotations);
     ad.readBandData(X_ATTR_RuntimeInvisibleAnnotations);
+    CHECK;
 
     count = ad.predefCount(CLASS_ATTR_InnerClasses);
     class_InnerClasses_N.readData(count);
@@ -2452,6 +2486,10 @@ void unpacker::read_attrs(int attrc, int obj_count) {
     class_ClassFile_version_minor_H.readData(count);
     class_ClassFile_version_major_H.readData(count);
     CHECK;
+
+    ad.readBandData(X_ATTR_RuntimeVisibleTypeAnnotations);
+    ad.readBandData(X_ATTR_RuntimeInvisibleTypeAnnotations);
+    CHECK;
     break;
 
   case ATTR_CONTEXT_FIELD:
@@ -2466,6 +2504,10 @@ void unpacker::read_attrs(int attrc, int obj_count) {
 
     ad.readBandData(X_ATTR_RuntimeVisibleAnnotations);
     ad.readBandData(X_ATTR_RuntimeInvisibleAnnotations);
+    CHECK;
+
+    ad.readBandData(X_ATTR_RuntimeVisibleTypeAnnotations);
+    ad.readBandData(X_ATTR_RuntimeInvisibleTypeAnnotations);
     CHECK;
     break;
 
@@ -2497,6 +2539,11 @@ void unpacker::read_attrs(int attrc, int obj_count) {
     method_MethodParameters_name_RUN.readData(count);
     method_MethodParameters_flag_FH.readData(count);
     CHECK;
+
+    ad.readBandData(X_ATTR_RuntimeVisibleTypeAnnotations);
+    ad.readBandData(X_ATTR_RuntimeInvisibleTypeAnnotations);
+    CHECK;
+
     break;
 
   case ATTR_CONTEXT_CODE:
@@ -2566,18 +2613,22 @@ void unpacker::read_attrs(int attrc, int obj_count) {
 
     count = ad.predefCount(CODE_ATTR_LineNumberTable);
     code_LineNumberTable_N.readData(count);
+    CHECK;
     count = code_LineNumberTable_N.getIntTotal();
     code_LineNumberTable_bci_P.readData(count);
     code_LineNumberTable_line.readData(count);
+    CHECK;
 
     count = ad.predefCount(CODE_ATTR_LocalVariableTable);
     code_LocalVariableTable_N.readData(count);
+    CHECK;
     count = code_LocalVariableTable_N.getIntTotal();
     code_LocalVariableTable_bci_P.readData(count);
     code_LocalVariableTable_span_O.readData(count);
     code_LocalVariableTable_name_RU.readData(count);
     code_LocalVariableTable_type_RS.readData(count);
     code_LocalVariableTable_slot.readData(count);
+    CHECK;
 
     count = ad.predefCount(CODE_ATTR_LocalVariableTypeTable);
     code_LocalVariableTypeTable_N.readData(count);
@@ -2587,6 +2638,12 @@ void unpacker::read_attrs(int attrc, int obj_count) {
     code_LocalVariableTypeTable_name_RU.readData(count);
     code_LocalVariableTypeTable_type_RS.readData(count);
     code_LocalVariableTypeTable_slot.readData(count);
+    CHECK;
+
+    ad.readBandData(X_ATTR_RuntimeVisibleTypeAnnotations);
+    ad.readBandData(X_ATTR_RuntimeInvisibleTypeAnnotations);
+    CHECK;
+
     break;
   }
 
@@ -5151,7 +5208,7 @@ void unpacker::redirect_stdio() {
 
 #ifndef PRODUCT
 int unpacker::printcr_if_verbose(int level, const char* fmt ...) {
-  if (verbose < level+10)  return 0;
+  if (verbose < level)  return 0;
   va_list vl;
   va_start(vl, fmt);
   char fmtbuf[300];

@@ -102,7 +102,7 @@ public class DnsContext extends ComponentDirContext {
         this.domain = new DnsName(domain.endsWith(".")
                                   ? domain
                                   : domain + ".");
-        this.servers = servers;
+        this.servers = (servers == null) ? null : servers.clone();
         this.environment = (Hashtable<Object,Object>) environment.clone();
         envShared = false;
         parentIsDns = false;
@@ -129,11 +129,11 @@ public class DnsContext extends ComponentDirContext {
      * no conflict.
      */
     private DnsContext(DnsContext ctx) {
-        environment = ctx.environment;
+        environment = ctx.environment;  // shared environment, copy-on-write
         envShared = ctx.envShared = true;
         parentIsDns = ctx.parentIsDns;
         domain = ctx.domain;
-        servers = ctx.servers;
+        servers = ctx.servers;          // shared servers, no write operation
         resolver = ctx.resolver;
         authoritative = ctx.authoritative;
         recursion = ctx.recursion;

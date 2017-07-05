@@ -142,47 +142,60 @@ import java.util.Objects;
  * introduce other changes.
  * <p>
  * Given the complexity of accurate timekeeping described above, this Java API defines
- * its own time-scale with a simplification. The Java time-scale is defined as follows:
+ * its own time-scale, the <i>Java Time-Scale</i>.
+ * <p>
+ * The Java Time-Scale divides each calendar day into exactly 86400
+ * subdivisions, known as seconds.  These seconds may differ from the
+ * SI second.  It closely matches the de facto international civil time
+ * scale, the definition of which changes from time to time.
+ * <p>
+ * The Java Time-Scale has slightly different definitions for different
+ * segments of the time-line, each based on the consensus international
+ * time scale that is used as the basis for civil time. Whenever the
+ * internationally-agreed time scale is modified or replaced, a new
+ * segment of the Java Time-Scale must be defined for it.  Each segment
+ * must meet these requirements:
  * <p><ul>
- * <li>midday will always be exactly as defined by the agreed international civil time</li>
- * <li>other times during the day will be broadly in line with the agreed international civil time</li>
- * <li>the day will be divided into exactly 86400 subdivisions, referred to as "seconds"</li>
- * <li>the Java "second" may differ from an SI second</li>
- * <li>a well-defined algorithm must be specified to map each second in the accurate agreed
- *  international civil time to each "second" in this time-scale</li>
+ * <li>the Java Time-Scale shall closely match the underlying international
+ *  civil time scale;</li>
+ * <li>the Java Time-Scale shall exactly match the international civil
+ *  time scale at noon each day;</li>
+ * <li>the Java Time-Scale shall have a precisely-defined relationship to
+ *  the international civil time scale.</li>
  * </ul><p>
- * Agreed international civil time is the base time-scale agreed by international convention,
- * which in 2012 is UTC (with leap-seconds).
+ * There are currently, as of 2013, two segments in the Java time-scale.
  * <p>
- * In 2012, the definition of the Java time-scale is the same as UTC for all days except
- * those where a leap-second occurs. On days where a leap-second does occur, the time-scale
- * effectively eliminates the leap-second, maintaining the fiction of 86400 seconds in the day.
- * The approved well-defined algorithm to eliminate leap-seconds is specified as
+ * For the segment from 1972-11-03 (exact boundary discussed below) until
+ * further notice, the consensus international time scale is UTC (with
+ * leap seconds).  In this segment, the Java Time-Scale is identical to
  * <a href="http://www.cl.cam.ac.uk/~mgk25/time/utc-sls/">UTC-SLS</a>.
+ * This is identical to UTC on days that do not have a leap second.
+ * On days that do have a leap second, the leap second is spread equally
+ * over the last 1000 seconds of the day, maintaining the appearance of
+ * exactly 86400 seconds per day.
  * <p>
- * UTC-SLS is a simple algorithm that smoothes the leap-second over the last 1000 seconds of
- * the day, making each of the last 1000 seconds 1/1000th longer or shorter than an SI second.
- * Implementations built on an accurate leap-second aware time source should use UTC-SLS.
- * Use of a different algorithm risks confusion and misinterpretation of instants around a
- * leap-second and is discouraged.
+ * For the segment prior to 1972-11-03, extending back arbitrarily far,
+ * the consensus international time scale is defined to be UT1, applied
+ * proleptically, which is equivalent to the (mean) solar time on the
+ * prime meridian (Greenwich). In this segment, the Java Time-Scale is
+ * identical to the consensus international time scale. The exact
+ * boundary between the two segments is the instant where UT1 = UTC
+ * between 1972-11-03T00:00 and 1972-11-04T12:00.
  * <p>
- * The main benefit of always dividing the day into 86400 subdivisions is that it matches the
- * expectations of most users of the API. The alternative is to force every user to understand
- * what a leap second is and to force them to have special logic to handle them.
- * Most applications do not have access to a clock that is accurate enough to record leap-seconds.
- * Most applications also do not have a problem with a second being a very small amount longer or
- * shorter than a real SI second during a leap-second.
- * <p>
- * One final problem is the definition of the agreed international civil time before the
- * introduction of modern UTC in 1972. This includes the Java epoch of {@code 1970-01-01}.
- * It is intended that instants before 1972 be interpreted based on the solar day divided
- * into 86400 subdivisions, as per the principles of UT1.
+ * Implementations of the Java time-scale using the JSR-310 API are not
+ * required to provide any clock that is sub-second accurate, or that
+ * progresses monotonically or smoothly. Implementations are therefore
+ * not required to actually perform the UTC-SLS slew or to otherwise be
+ * aware of leap seconds. JSR-310 does, however, require that
+ * implementations must document the approach they use when defining a
+ * clock representing the current instant.
+ * See {@link Clock} for details on the available clocks.
  * <p>
  * The Java time-scale is used for all date-time classes.
  * This includes {@code Instant}, {@code LocalDate}, {@code LocalTime}, {@code OffsetDateTime},
  * {@code ZonedDateTime} and {@code Duration}.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
@@ -1030,16 +1043,16 @@ public final class Instant
     }
 
     /**
-     * Calculates the period between this instant and another instant in
-     * terms of the specified unit.
+     * Calculates the amount of time until another instant in terms of the specified unit.
      * <p>
-     * This calculates the period between two instants in terms of a single unit.
+     * This calculates the amount of time between two {@code Instant}
+     * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified instant.
      * The result will be negative if the end is before the start.
      * The calculation returns a whole number, representing the number of
      * complete units between the two instants.
      * The {@code Temporal} passed to this method must be an {@code Instant}.
-     * For example, the period in days between two dates can be calculated
+     * For example, the amount in days between two dates can be calculated
      * using {@code startInstant.periodUntil(endInstant, SECONDS)}.
      * <p>
      * There are two equivalent ways of using this method.
@@ -1064,10 +1077,10 @@ public final class Instant
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endInstant  the end date, which must be a {@code LocalDate}, not null
-     * @param unit  the unit to measure the period in, not null
-     * @return the amount of the period between this date and the end date
-     * @throws DateTimeException if the period cannot be calculated
+     * @param endInstant  the end date, which must be an {@code Instant}, not null
+     * @param unit  the unit to measure the amount in, not null
+     * @return the amount of time between this instant and the end instant
+     * @throws DateTimeException if the amount cannot be calculated
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
@@ -1075,7 +1088,7 @@ public final class Instant
     public long periodUntil(Temporal endInstant, TemporalUnit unit) {
         if (endInstant instanceof Instant == false) {
             Objects.requireNonNull(endInstant, "endInstant");
-            throw new DateTimeException("Unable to calculate period between objects of two different types");
+            throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
         Instant end = (Instant) endInstant;
         if (unit instanceof ChronoUnit) {

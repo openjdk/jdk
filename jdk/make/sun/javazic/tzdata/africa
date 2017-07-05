@@ -27,9 +27,9 @@
 
 # This data is by no means authoritative; if you think you know better,
 # go ahead and edit the file (and please send any changes to
-# tz@elsie.nci.nih.gov for general use in the future).
+# tz@iana.org for general use in the future).
 
-# From Paul Eggert (2006-03-22):
+# From Paul Eggert (2013-02-21):
 #
 # A good source for time zone historical data outside the U.S. is
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
@@ -47,6 +47,10 @@
 # Another source occasionally used is Edward W. Whitman, World Time Differences,
 # Whitman Publishing Co, 2 Niagara Av, Ealing, London (undated), which
 # I found in the UCLA library.
+#
+# For data circa 1899, a common source is:
+# Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94
+# <http://www.jstor.org/stable/1774359>.
 #
 # A reliable and entertaining source about time zones is
 # Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
@@ -139,8 +143,12 @@ Zone Africa/Porto-Novo	0:10:28	-	LMT	1912
 			1:00	-	WAT
 
 # Botswana
+# From Paul Eggert (2013-02-21):
+# Milne says they were regulated by the Cape Town Signal in 1899;
+# assume they switched to 2:00 when Cape Town did.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Gaborone	1:43:40 -	LMT	1885
+			1:30	-	SAST	1903 Mar
 			2:00	-	CAT	1943 Sep 19 2:00
 			2:00	1:00	CAST	1944 Mar 19 2:00
 			2:00	-	CAT
@@ -211,6 +219,11 @@ Zone	Africa/Djibouti	2:52:36 -	LMT	1911 Jul
 ###############################################################################
 
 # Egypt
+
+# Milne says Cairo used 2:05:08.9, the local mean time of the Abbasizeh
+# observatory; round to nearest.  Milne also says that the official time for
+# Egypt was mean noon at the Great Pyramid, 2:04:30.5, but apparently this
+# did not apply to Cairo, Alexandria, or Port Said.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Egypt	1940	only	-	Jul	15	0:00	1:00	S
@@ -352,7 +365,7 @@ Rule	Egypt	2010	only	-	Sep	10	0:00	1:00	S
 Rule	Egypt	2010	only	-	Sep	lastThu	23:00s	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Cairo	2:05:00 -	LMT	1900 Oct
+Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct
 			2:00	Egypt	EE%sT
 
 # Equatorial Guinea
@@ -447,6 +460,20 @@ Zone	Africa/Monrovia	-0:43:08 -	LMT	1882
 
 # Libya
 
+# From Even Scharning (2012-11-10):
+# Libya set their time one hour back at 02:00 on Saturday November 10.
+# http://www.libyaherald.com/2012/11/04/clocks-to-go-back-an-hour-on-saturday/
+# Here is an official source [in Arabic]: http://ls.ly/fb6Yc
+#
+# Steffen Thorsen forwarded a translation (2012-11-10) in
+# http://mm.icann.org/pipermail/tz/2012-November/018451.html
+#
+# From Tim Parenti (2012-11-11):
+# Treat the 2012-11-10 change as a zone change from UTC+2 to UTC+1.
+# The DST rules planned for 2013 and onward roughly mirror those of Europe
+# (either two days before them or five days after them, so as to fall on
+# lastFri instead of lastSun).
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Libya	1951	only	-	Oct	14	2:00	1:00	S
 Rule	Libya	1952	only	-	Jan	 1	0:00	0	-
@@ -461,17 +488,21 @@ Rule	Libya	1986	only	-	Apr	 4	0:00	1:00	S
 Rule	Libya	1986	only	-	Oct	 3	0:00	0	-
 Rule	Libya	1987	1989	-	Apr	 1	0:00	1:00	S
 Rule	Libya	1987	1989	-	Oct	 1	0:00	0	-
+Rule	Libya	1997	only	-	Apr	 4	0:00	1:00	S
+Rule	Libya	1997	only	-	Oct	 4	0:00	0	-
+Rule	Libya	2013	max	-	Mar	lastFri	1:00	1:00	S
+Rule	Libya	2013	max	-	Oct	lastFri	2:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Tripoli	0:52:44 -	LMT	1920
 			1:00	Libya	CE%sT	1959
 			2:00	-	EET	1982
 			1:00	Libya	CE%sT	1990 May  4
-# The following entries are from Shanks & Pottenger;
+# The 1996 and 1997 entries are from Shanks & Pottenger;
 # the IATA SSIM data contain some obvious errors.
 			2:00	-	EET	1996 Sep 30
-			1:00	-	CET	1997 Apr  4
-			1:00	1:00	CEST	1997 Oct  4
-			2:00	-	EET
+			1:00	Libya	CE%sT	1997 Oct  4
+			2:00	-	EET	2012 Nov 10 2:00
+			1:00	Libya	CE%sT
 
 # Madagascar
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -838,6 +869,41 @@ Zone	Indian/Mayotte	3:00:56 -	LMT	1911 Jul	# Mamoutzou
 # 3:00 am Friday, July 20, 2012 and will again be advanced by 60 minutes
 # August 20, 2012 from 2:00 am.
 
+# From Paul Eggert (2013-03-06):
+# Morocco's daylight-saving transitions due to Ramadan seem to be
+# announced a bit in advance.  On 2012-07-11 the Moroccan government
+# announced that year's Ramadan daylight-saving transitions would be
+# 2012-07-20 and 2012-08-20; see
+# <http://www.mmsp.gov.ma/fr/actualites.aspx?id=288>.
+#
+# To estimate what the Moroccan government will do in future years,
+# transition dates for 2013 through 2021 were determined by running
+# the following program under GNU Emacs 24.3:
+#
+# (let ((islamic-year 1434))
+#   (while (< islamic-year 1444)
+#     (let ((a
+#	     (calendar-gregorian-from-absolute
+#	      (calendar-islamic-to-absolute (list 9 1 islamic-year))))
+#	    (b
+#	     (calendar-gregorian-from-absolute
+#	      (calendar-islamic-to-absolute (list 10 1 islamic-year)))))
+#	(insert
+#	 (format
+#	  (concat "Rule\tMorocco\t%d\tonly\t-\t%s\t %2d\t 3:00\t0\t-\n"
+#		  "Rule\tMorocco\t%d\tonly\t-\t%s\t %2d\t 2:00\t1:00\tS\n")
+#	  (car (cdr (cdr a))) (calendar-month-name (car a) t) (car (cdr a))
+#	  (car (cdr (cdr b))) (calendar-month-name (car b) t) (car (cdr b)))))
+#     (setq islamic-year (+ 1 islamic-year))))
+#
+# with the results hand-edited for 2020-2022, when the normal spring-forward
+# date falls during the estimated Ramadan.
+#
+# From 2023 through 2038 Ramadan is not predicted to overlap with
+# daylight saving time.  Starting in 2039 there will be overlap again,
+# but 32-bit time_t values roll around in 2038 so for now do not worry
+# about dates after 2038.
+
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 
 Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	S
@@ -863,10 +929,28 @@ Rule	Morocco	2010	only	-	May	 2	 0:00	1:00	S
 Rule	Morocco	2010	only	-	Aug	 8	 0:00	0	-
 Rule	Morocco	2011	only	-	Apr	 3	 0:00	1:00	S
 Rule	Morocco	2011	only	-	Jul	 31	 0	0	-
-Rule	Morocco	2012	max	-	Apr	 lastSun 2:00	1:00	S
+Rule	Morocco	2012	2019	-	Apr	 lastSun 2:00	1:00	S
 Rule	Morocco	2012	max	-	Sep	 lastSun 3:00	0	-
 Rule	Morocco	2012	only	-	Jul	 20	 3:00	0	-
 Rule	Morocco	2012	only	-	Aug	 20	 2:00	1:00	S
+Rule	Morocco	2013	only	-	Jul	  9	 3:00	0	-
+Rule	Morocco	2013	only	-	Aug	  8	 2:00	1:00	S
+Rule	Morocco	2014	only	-	Jun	 29	 3:00	0	-
+Rule	Morocco	2014	only	-	Jul	 29	 2:00	1:00	S
+Rule	Morocco	2015	only	-	Jun	 18	 3:00	0	-
+Rule	Morocco	2015	only	-	Jul	 18	 2:00	1:00	S
+Rule	Morocco	2016	only	-	Jun	  7	 3:00	0	-
+Rule	Morocco	2016	only	-	Jul	  7	 2:00	1:00	S
+Rule	Morocco	2017	only	-	May	 27	 3:00	0	-
+Rule	Morocco	2017	only	-	Jun	 26	 2:00	1:00	S
+Rule	Morocco	2018	only	-	May	 16	 3:00	0	-
+Rule	Morocco	2018	only	-	Jun	 15	 2:00	1:00	S
+Rule	Morocco	2019	only	-	May	  6	 3:00	0	-
+Rule	Morocco	2019	only	-	Jun	  5	 2:00	1:00	S
+Rule	Morocco	2020	only	-	May	 24	 2:00	1:00	S
+Rule	Morocco	2021	only	-	May	 13	 2:00	1:00	S
+Rule	Morocco	2022	only	-	May	  3	 2:00	1:00	S
+Rule	Morocco	2023	max	-	Apr	 lastSun 2:00	1:00	S
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
