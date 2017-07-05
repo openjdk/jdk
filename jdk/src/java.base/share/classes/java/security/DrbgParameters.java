@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,7 @@ import java.util.Objects;
  * @implSpec
  * By convention, a provider should name its primary DRBG implementation
  * with the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
+ * "{@docRoot}/../specs/security/standard-names.html#securerandom-number-generation-algorithms">
  * standard {@code SecureRandom} algorithm name</a> "DRBG".
  *
  * @implNote
@@ -263,14 +263,19 @@ public class DrbgParameters {
      * Capability effective = ((DrbgParametes.Initiate) s.getParameters())
      *         .getCapability();</pre>
      * </blockquote>
-     * <table border=1 summary="requested and effective capabilities">
+     * <table class="plain">
+     * <caption style="display:none">requested and effective capabilities</caption>
+     * <thead>
      * <tr>
      * <th>Requested Value</th>
      * <th>Possible Effective Values</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr><td>NONE</td><td>NONE, RESEED_ONLY, PR_AND_RESEED</td></tr>
      * <tr><td>RESEED_ONLY</td><td>RESEED_ONLY, PR_AND_RESEED</td></tr>
      * <tr><td>PR_AND_RESEED</td><td>PR_AND_RESEED</td></tr>
+     * </tbody>
      * </table>
      * <p>
      * A DRBG implementation supporting prediction resistance must also

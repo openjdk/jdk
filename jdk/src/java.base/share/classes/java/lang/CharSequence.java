@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public interface CharSequence {
      *
      * <p>The stream binds to this sequence when the terminal stream operation
      * commences (specifically, for mutable sequences the spliterator for the
-     * stream is <a href="../Spliterator.html#binding"><em>late-binding</em></a>).
+     * stream is <a href="../util/Spliterator.html#binding"><em>late-binding</em></a>).
      * If the sequence is modified during that operation then the result is
      * undefined.
      *
@@ -173,7 +173,7 @@ public interface CharSequence {
      *
      * <p>The stream binds to this sequence when the terminal stream operation
      * commences (specifically, for mutable sequences the spliterator for the
-     * stream is <a href="../Spliterator.html#binding"><em>late-binding</em></a>).
+     * stream is <a href="../util/Spliterator.html#binding"><em>late-binding</em></a>).
      * If the sequence is modified during that operation then the result is
      * undefined.
      *
