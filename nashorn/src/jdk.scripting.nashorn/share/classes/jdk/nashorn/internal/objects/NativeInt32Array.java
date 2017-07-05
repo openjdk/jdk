@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
@@ -110,6 +109,11 @@ public final class NativeInt32Array extends ArrayBufferView {
                       throw new ClassCastException();
                  }
             }
+        }
+
+        @Override
+        public Class<?> getElementType() {
+            return int.class;
         }
 
         @Override

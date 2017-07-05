@@ -51,15 +51,14 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.className;
 import static jdk.nashorn.internal.codegen.CompilerConstants.methodDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.typeDescriptor;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
-
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.util.TraceClassVisitor;
@@ -160,8 +159,12 @@ public class ClassEmitter implements Emitter {
         this.methodNames    = new HashSet<>();
     }
 
+    /**
+     * Return the method names encountered
+     * @return method names
+     */
     public Set<String> getMethodNames() {
-        return methodNames;
+        return Collections.unmodifiableSet(methodNames);
     }
 
     /**

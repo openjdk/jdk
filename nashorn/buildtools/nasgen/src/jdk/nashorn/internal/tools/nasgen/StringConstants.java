@@ -37,6 +37,7 @@ import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.Specialization;
 
 /**
  * String constants used for code generation/instrumentation.
@@ -44,20 +45,26 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 @SuppressWarnings("javadoc")
 public interface StringConstants {
     // standard jdk types, methods
-    static final Type TYPE_METHODHANDLE       = Type.getType(MethodHandle.class);
-    static final Type TYPE_METHODHANDLE_ARRAY = Type.getType(MethodHandle[].class);
-    static final Type TYPE_OBJECT             = Type.getType(Object.class);
-    static final Type TYPE_STRING             = Type.getType(String.class);
-    static final Type TYPE_COLLECTION         = Type.getType(Collection.class);
-    static final Type TYPE_COLLECTIONS        = Type.getType(Collections.class);
-    static final Type TYPE_ARRAYLIST          = Type.getType(ArrayList.class);
-    static final Type TYPE_LIST               = Type.getType(List.class);
+    static final Type TYPE_METHODHANDLE         = Type.getType(MethodHandle.class);
+    static final Type TYPE_METHODHANDLE_ARRAY   = Type.getType(MethodHandle[].class);
+    static final Type TYPE_SPECIALIZATION       = Type.getType(Specialization.class);
+    static final Type TYPE_SPECIALIZATION_ARRAY = Type.getType(Specialization[].class);
+    static final Type TYPE_OBJECT               = Type.getType(Object.class);
+    static final Type TYPE_STRING               = Type.getType(String.class);
+    static final Type TYPE_CLASS                = Type.getType(Class.class);
+    static final Type TYPE_COLLECTION           = Type.getType(Collection.class);
+    static final Type TYPE_COLLECTIONS          = Type.getType(Collections.class);
+    static final Type TYPE_ARRAYLIST            = Type.getType(ArrayList.class);
+    static final Type TYPE_LIST                 = Type.getType(List.class);
 
     static final String CLINIT = "<clinit>";
     static final String INIT = "<init>";
     static final String DEFAULT_INIT_DESC = Type.getMethodDescriptor(Type.VOID_TYPE);
 
     static final String METHODHANDLE_TYPE = TYPE_METHODHANDLE.getInternalName();
+    static final String SPECIALIZATION_TYPE = TYPE_SPECIALIZATION.getInternalName();
+    static final String SPECIALIZATION_INIT2 = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_METHODHANDLE, Type.getType(boolean.class));
+    static final String SPECIALIZATION_INIT3 = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_METHODHANDLE, TYPE_CLASS, Type.getType(boolean.class));
     static final String OBJECT_TYPE = TYPE_OBJECT.getInternalName();
     static final String OBJECT_DESC = TYPE_OBJECT.getDescriptor();
     static final String STRING_TYPE = TYPE_STRING.getInternalName();
@@ -122,11 +129,11 @@ public interface StringConstants {
     static final String SCRIPTFUNCTIONIMPL_MAKEFUNCTION_DESC =
         Type.getMethodDescriptor(TYPE_SCRIPTFUNCTION, TYPE_STRING, TYPE_METHODHANDLE);
     static final String SCRIPTFUNCTIONIMPL_MAKEFUNCTION_SPECS_DESC =
-        Type.getMethodDescriptor(TYPE_SCRIPTFUNCTION, TYPE_STRING, TYPE_METHODHANDLE, TYPE_METHODHANDLE_ARRAY);
+        Type.getMethodDescriptor(TYPE_SCRIPTFUNCTION, TYPE_STRING, TYPE_METHODHANDLE, TYPE_SPECIALIZATION_ARRAY);
     static final String SCRIPTFUNCTIONIMPL_INIT_DESC3 =
-        Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_STRING, TYPE_METHODHANDLE, TYPE_METHODHANDLE_ARRAY);
+        Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_STRING, TYPE_METHODHANDLE, TYPE_SPECIALIZATION_ARRAY);
     static final String SCRIPTFUNCTIONIMPL_INIT_DESC4 =
-        Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_STRING, TYPE_METHODHANDLE, TYPE_PROPERTYMAP, TYPE_METHODHANDLE_ARRAY);
+        Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_STRING, TYPE_METHODHANDLE, TYPE_PROPERTYMAP, TYPE_SPECIALIZATION_ARRAY);
 
     // ScriptObject
     static final String SCRIPTOBJECT_TYPE = TYPE_SCRIPTOBJECT.getInternalName();

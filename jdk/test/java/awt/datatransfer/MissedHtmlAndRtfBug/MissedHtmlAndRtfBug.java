@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import test.java.awt.regtesthelpers.process.ProcessCommunicator;
 import test.java.awt.regtesthelpers.process.ProcessResults;
 import test.java.awt.regtesthelpers.Util;
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 
 import static java.lang.Thread.sleep;
 

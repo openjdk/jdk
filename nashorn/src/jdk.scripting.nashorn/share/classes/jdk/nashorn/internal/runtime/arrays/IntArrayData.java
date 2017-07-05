@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
@@ -38,7 +37,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Implementation of {@link ArrayData} as soon as an int has been
  * written to the array. This is the default data for new arrays
  */
-final class IntArrayData extends ContinuousArrayData {
+final class IntArrayData extends ContinuousArrayData implements IntElements {
     /**
      * The wrapped array
      */
@@ -64,8 +63,18 @@ final class IntArrayData extends ContinuousArrayData {
         this.array = array;
     }
 
+    @Override
+    public Class<?> getElementType() {
+        return int.class;
+    }
+
     private static final MethodHandle HAS_GET_ELEM = specialCall(MethodHandles.lookup(), IntArrayData.class, "getElem", int.class, int.class).methodHandle();
     private static final MethodHandle SET_ELEM     = specialCall(MethodHandles.lookup(), IntArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
+
+    @Override
+    public Object[] asObjectArray() {
+        return toObjectArray();
+    }
 
     @SuppressWarnings("unused")
     private int getElem(final int index) {
@@ -100,11 +109,6 @@ final class IntArrayData extends ContinuousArrayData {
     }
 
     @Override
-    public Object[] asObjectArray() {
-        return toObjectArray(array, (int) length());
-    }
-
-    @Override
     public Object asArrayOfType(final Class<?> componentType) {
         if (componentType == int.class) {
             return array.length == length() ? array.clone() : Arrays.copyOf(array, (int) length());
@@ -112,7 +116,7 @@ final class IntArrayData extends ContinuousArrayData {
         return super.asArrayOfType(componentType);
     }
 
-    private static Object[] toObjectArray(final int[] array, final int length) {
+    private Object[] toObjectArray() {
         assert length <= array.length : "length exceeds internal array size";
         final Object[] oarray = new Object[array.length];
 
@@ -123,7 +127,7 @@ final class IntArrayData extends ContinuousArrayData {
         return oarray;
     }
 
-    private static double[] toDoubleArray(final int[] array, final int length) {
+    private double[] toDoubleArray() {
         assert length <= array.length : "length exceeds internal array size";
         final double[] darray = new double[array.length];
 
@@ -134,7 +138,7 @@ final class IntArrayData extends ContinuousArrayData {
         return darray;
     }
 
-    private static long[] toLongArray(final int[] array, final int length) {
+    private long[] toLongArray() {
         assert length <= array.length : "length exceeds internal array size";
         final long[] larray = new long[array.length];
 
@@ -145,18 +149,30 @@ final class IntArrayData extends ContinuousArrayData {
         return larray;
     }
 
+    private LongArrayData convertToLong() {
+        return new LongArrayData(toLongArray(), (int)length);
+    }
+
+    private NumberArrayData convertToDouble() {
+        return new NumberArrayData(toDoubleArray(), (int)length);
+    }
+
+    private ObjectArrayData convertToObject() {
+        return new ObjectArrayData(toObjectArray(), (int)length);
+    }
+
     @Override
     public ArrayData convert(final Class<?> type) {
         if (type == Integer.class) {
             return this;
         }
-        final int length = (int) length();
         if (type == Long.class) {
-            return new LongArrayData(IntArrayData.toLongArray(array, length), length);
+            return convertToLong();
         } else if (type == Double.class) {
-            return new NumberArrayData(IntArrayData.toDoubleArray(array, length), length);
+            return convertToDouble();
         } else {
-            return new ObjectArrayData(IntArrayData.toObjectArray(array, length), length);
+            assert type == null || (!Number.class.isAssignableFrom(type) && !type.isPrimitive());
+            return convertToObject();
         }
     }
 
@@ -354,5 +370,42 @@ final class IntArrayData extends ContinuousArrayData {
         }
 
         return returnValue;
+    }
+
+    @Override
+    public long fastPush(final int arg) {
+        final int len = (int)length;
+        if (len == array.length) {
+            array = Arrays.copyOf(array, nextSize(len));
+        }
+        array[len] = arg;
+        return ++length;
+    }
+
+    //length must not be zero
+    @Override
+    public int fastPopInt() {
+        if (length == 0) {
+            throw new ClassCastException(); //relink
+        }
+        final int newLength = (int)--length;
+        final int elem = array[newLength];
+        array[newLength] = 0;
+        return elem;
+    }
+
+    @Override
+    public long fastPopLong() {
+        return fastPopInt();
+    }
+
+    @Override
+    public double fastPopDouble() {
+        return fastPopInt();
+    }
+
+    @Override
+    public Object fastPopObject() {
+        return fastPopInt();
     }
 }

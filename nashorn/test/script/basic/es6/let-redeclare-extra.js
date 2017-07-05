@@ -34,7 +34,7 @@ function tryIt (code) {
     try {
         eval(code)
     } catch (e) {
-        print(e)
+        print(String(e).replace(/\\/g, "/"))
     }
 }
 

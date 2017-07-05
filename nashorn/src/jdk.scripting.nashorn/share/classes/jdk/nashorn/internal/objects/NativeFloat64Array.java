@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
@@ -92,6 +91,11 @@ public final class NativeFloat64Array extends ArrayBufferView {
         @Override
         protected MethodHandle getSetElem() {
             return SET_ELEM;
+        }
+
+        @Override
+        public Class<?> getElementType() {
+            return double.class;
         }
 
         private double getElem(final int index) {

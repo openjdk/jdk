@@ -161,7 +161,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
     int newAlign;       // This is the one we actually use
 
     /**
-     * The flow layout manager allows a seperation of
+     * The flow layout manager allows a separation of
      * components with gaps.  The horizontal gap will
      * specify the space between components and between
      * the components and the borders of the
@@ -174,7 +174,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
     int hgap;
 
     /**
-     * The flow layout manager allows a seperation of
+     * The flow layout manager allows a separation of
      * components with gaps.  The vertical gap will
      * specify the space between rows and between the
      * the rows and the borders of the <code>Container</code>.

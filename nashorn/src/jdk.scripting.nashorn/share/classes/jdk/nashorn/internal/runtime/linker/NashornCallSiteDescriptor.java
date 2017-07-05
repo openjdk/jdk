@@ -255,7 +255,7 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
      * @return the Nashorn-specific flags for the call site, or 0 if the passed descriptor is not a Nashorn call site
      * descriptor.
      */
-    private static int getFlags(final CallSiteDescriptor desc) {
+    public static int getFlags(final CallSiteDescriptor desc) {
         return desc instanceof NashornCallSiteDescriptor ? ((NashornCallSiteDescriptor)desc).flags : 0;
     }
 
@@ -340,6 +340,24 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
      */
     public static boolean isDeclaration(final CallSiteDescriptor desc) {
         return isFlag(desc, CALLSITE_DECLARE);
+    }
+
+    /**
+     * Returns true if {@code flags} has the {@link  #CALLSITE_STRICT} bit set.
+     * @param flags the flags
+     * @return true if the flag is set, false otherwise.
+     */
+    public static boolean isStrictFlag(final int flags) {
+        return (flags & CALLSITE_STRICT) != 0;
+    }
+
+    /**
+     * Returns true if {@code flags} has the {@link  #CALLSITE_SCOPE} bit set.
+     * @param flags the flags
+     * @return true if the flag is set, false otherwise.
+     */
+    public static boolean isScopeFlag(final int flags) {
+        return (flags & CALLSITE_SCOPE) != 0;
     }
 
     /**

@@ -238,17 +238,21 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * Note that even IS_STRICT is one such flag but that requires special handling.
      */
 
-    // parser, lower debugging this function
+    /** parser, print parse tree */
     public static final int IS_PRINT_PARSE       = 1 << 18;
+    /** parser, print lower parse tree */
     public static final int IS_PRINT_LOWER_PARSE = 1 << 19;
+    /** parser, print AST */
     public static final int IS_PRINT_AST         = 1 << 20;
+    /** parser, print lower AST */
     public static final int IS_PRINT_LOWER_AST   = 1 << 21;
+    /** parser, print symbols */
     public static final int IS_PRINT_SYMBOLS     = 1 << 22;
 
+    // callsite tracing, profiling within this function
     /** profile callsites in this function? */
     public static final int IS_PROFILE         = 1 << 23;
 
-    // callsite tracing, profiling within this function
     /** trace callsite enterexit in this function? */
     public static final int IS_TRACE_ENTEREXIT = 1 << 24;
 
@@ -337,7 +341,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     private FunctionNode(
         final FunctionNode functionNode,
         final long lastToken,
-        Object endParserState,
+        final Object endParserState,
         final int flags,
         final String name,
         final Type returnType,

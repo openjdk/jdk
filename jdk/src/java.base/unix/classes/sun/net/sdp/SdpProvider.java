@@ -257,7 +257,8 @@ public class SdpProvider extends NetHooks.Provider {
                             .getByName(s[1].substring(0, pos));
                         int prefix = -1;
                         try {
-                            prefix = Integer.parseInt(s[1].substring(pos+1));
+                            prefix = Integer.parseInt(s[1], pos + 1,
+                                s[1].length(), 10);
                             if (address instanceof Inet4Address) {
                                 // must be 1-31
                                 if (prefix < 0 || prefix > 32) prefix = -1;

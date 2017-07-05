@@ -670,7 +670,7 @@ public class RenderingHints
      * When images are rendered upright with no scaling onto a
      * destination, the choice of which image pixels map to which
      * device pixels is obvious and the samples at the integer
-     * coordinate locations in the image are transfered to the
+     * coordinate locations in the image are transferred to the
      * pixels at the corresponding integer locations on the device
      * pixel grid one for one.
      * When images are rendered in a scaled, rotated, or otherwise
@@ -1167,7 +1167,7 @@ public class RenderingHints
 
     /**
      * Returns a <code>Collection</code> view of the values
-     * contained in this <code>RenderinHints</code>.
+     * contained in this <code>RenderingHints</code>.
      * The <code>Collection</code> is backed by the
      * <code>RenderingHints</code>, so changes to
      * the <code>RenderingHints</code> are reflected in

@@ -558,7 +558,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                     // of the compilation that the object being iterated over must use strings for property
                     // names (e.g., it is a native JS object or array), then we'll not bother trying to treat
                     // the property names optimistically.
-                    !forNode.isForEach() && compiler.hasStringPropertyIterator(iterable.getExpression()));
+                    !compiler.useOptimisticTypes() || (!forNode.isForEach() && compiler.hasStringPropertyIterator(iterable.getExpression())));
         } else {
             if(init != null) {
                 init.accept(this);
@@ -686,6 +686,10 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
     @Override
     public boolean enterReturnNode(final ReturnNode returnNode) {
+        if(!reachable) {
+            return false;
+        }
+
         final Expression returnExpr = returnNode.getExpression();
         final Type returnExprType;
         if(returnExpr != null) {
@@ -701,6 +705,9 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
     @Override
     public boolean enterSplitNode(final SplitNode splitNode) {
+        if(!reachable) {
+            return false;
+        }
         // Need to visit inside of split nodes. While it's true that they don't have local variables, we need to visit
         // breaks, continues, and returns in them.
         if(topSplit == null) {
@@ -950,6 +957,9 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
     @Override
     public boolean enterVarNode(final VarNode varNode) {
+        if (!reachable) {
+            return false;
+        }
         final Expression init = varNode.getInit();
         if(init != null) {
             init.accept(this);

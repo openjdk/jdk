@@ -25,6 +25,8 @@
  * @bug 4449413
  * @summary Tests that checkbox and radiobuttons' check marks are visible when background is black
  * @author Ilya Boyandin
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run applet/manual=yesno bug4449413.html
  */
 
@@ -32,7 +34,7 @@ import javax.swing.*;
 import javax.swing.plaf.metal.*;
 import java.awt.event.*;
 import java.awt.*;
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 
 public class bug4449413 extends JApplet {
 

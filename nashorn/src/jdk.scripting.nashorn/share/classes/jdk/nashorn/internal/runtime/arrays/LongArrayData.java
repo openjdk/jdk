@@ -27,7 +27,6 @@ package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
@@ -39,7 +38,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Implementation of {@link ArrayData} as soon as a long has been
  * written to the array
  */
-final class LongArrayData extends ContinuousArrayData {
+final class LongArrayData extends ContinuousArrayData implements IntOrLongElements {
     /**
      * The wrapped array
      */
@@ -54,6 +53,11 @@ final class LongArrayData extends ContinuousArrayData {
         super(length);
         assert array.length >= length;
         this.array  = array;
+    }
+
+    @Override
+    public Class<?> getElementType() {
+        return long.class;
     }
 
     @Override
@@ -323,5 +327,42 @@ final class LongArrayData extends ContinuousArrayData {
         }
 
         return returnValue;
+    }
+
+    @Override
+    public long fastPush(final int arg) {
+        return fastPush((long)arg);
+    }
+
+    @Override
+    public long fastPush(final long arg) {
+        final int len = (int)length;
+        if (len == array.length) {
+            array = Arrays.copyOf(array, nextSize(len));
+        }
+        array[len] = arg;
+        return ++length;
+    }
+
+    @Override
+    public long fastPopLong() {
+        if (length == 0) {
+            throw new ClassCastException();
+        }
+        final int newLength = (int)--length;
+        final long elem = array[newLength];
+        array[newLength] = 0;
+        return elem;
+        //return array[(int)--length];
+    }
+
+    @Override
+    public double fastPopDouble() {
+        return fastPopLong();
+   }
+
+    @Override
+    public Object fastPopObject() {
+        return fastPopLong();
     }
 }

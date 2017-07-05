@@ -22,7 +22,7 @@
  */
 
 
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 import test.java.awt.regtesthelpers.Sysout;
 
 import java.applet.Applet;
