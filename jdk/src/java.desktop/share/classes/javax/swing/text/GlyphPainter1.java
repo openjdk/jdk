@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,7 @@ class GlyphPainter1 extends GlyphView.GlyphPainter {
      * @param v the view
      * @param p0 the location in the model where the
      *  fragment should start its representation >= 0
-     * @param pos the graphic location along the axis that the
+     * @param x the graphic location along the axis that the
      *  broken view would occupy >= 0; this may be useful for
      *  things like tab calculations
      * @param len specifies the distance into the view

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1797,8 +1797,6 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Pushes a new element onto the stack that represents
          * the current path.
-         * @param record Whether or not the push should be
-         *  recorded as an element change or not.
          * @param isFracture true if pushing on an element that was created
          * as the result of a fracture.
          */

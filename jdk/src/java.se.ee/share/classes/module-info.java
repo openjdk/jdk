@@ -32,7 +32,8 @@
  * @moduleGraph
  * @since 9
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // java.corba and other modules
 module java.se.ee {
 
     requires transitive java.se;
