@@ -62,10 +62,10 @@ import java.util.function.LongConsumer;
  * New characteristics may be defined in the future, so implementors should not
  * assign meanings to unlisted values.
  *
- * <p><a name="binding"/>A Spliterator that does not report {@code IMMUTABLE} or
+ * <p><a name="binding">A Spliterator that does not report {@code IMMUTABLE} or
  * {@code CONCURRENT} is expected to have a documented policy concerning:
  * when the spliterator <em>binds</em> to the element source; and detection of
- * structural interference of the element source detected after binding.  A
+ * structural interference of the element source detected after binding.</a>  A
  * <em>late-binding</em> Spliterator binds to the source of elements at the
  * point of first traversal, first split, or first query for estimated size,
  * rather than at the time the Spliterator is created.  A Spliterator that is
@@ -429,6 +429,7 @@ public interface Spliterator<T> {
      * The default implementation returns true if the corresponding bits
      * of the given characteristics are set.
      *
+     * @param characteristics the characteristics to check for
      * @return {@code true} if all the specified characteristics are present,
      * else {@code false}
      */

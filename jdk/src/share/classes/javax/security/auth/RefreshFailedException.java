@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 package javax.security.auth;
 
 /**
- * Signals that a <code>refresh</code> operation failed.
+ * Signals that a {@code refresh} operation failed.
  *
  * <p> This exception is thrown by credentials implementing
- * the <code>Refreshable</code> interface when the <code>refresh</code>
+ * the {@code Refreshable} interface when the {@code refresh}
  * method fails.
  *
  */

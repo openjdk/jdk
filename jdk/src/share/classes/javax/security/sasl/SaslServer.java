@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,14 @@ package javax.security.sasl;
  *<p>
  * A server such an LDAP server gets an instance of this
  * class in order to perform authentication defined by a specific SASL
- * mechanism. Invoking methods on the <tt>SaslServer</tt> instance
+ * mechanism. Invoking methods on the {@code SaslServer} instance
  * generates challenges according to the SASL
- * mechanism implemented by the <tt>SaslServer</tt>.
+ * mechanism implemented by the {@code SaslServer}.
  * As the authentication proceeds, the instance
  * encapsulates the state of a SASL server's authentication exchange.
  *<p>
- * Here's an example of how an LDAP server might use a <tt>SaslServer</tt>.
- * It first gets an instance of a <tt>SaslServer</tt> for the SASL mechanism
+ * Here's an example of how an LDAP server might use a {@code SaslServer}.
+ * It first gets an instance of a {@code SaslServer} for the SASL mechanism
  * requested by the client:
  *<blockquote><pre>
  * SaslServer ss = Sasl.createSaslServer(mechanism,
@@ -104,8 +104,8 @@ public abstract interface SaslServer {
      * to the client. It is non-null if the authentication must be continued
      * by sending a challenge to the client, or if the authentication has
      * succeeded but challenge data needs to be processed by the client.
-     * <tt>isComplete()</tt> should be called
-     * after each call to <tt>evaluateResponse()</tt>,to determine if any further
+     * {@code isComplete()} should be called
+     * after each call to {@code evaluateResponse()},to determine if any further
      * response is needed from the client.
      *
      * @param response The non-null (but possibly empty) response sent
@@ -123,7 +123,7 @@ public abstract interface SaslServer {
     /**
       * Determines whether the authentication exchange has completed.
       * This method is typically called after each invocation of
-      * <tt>evaluateResponse()</tt> to determine whether the
+      * {@code evaluateResponse()} to determine whether the
       * authentication has completed successfully or should be continued.
       * @return true if the authentication exchange has completed; false otherwise.
       */
@@ -141,22 +141,22 @@ public abstract interface SaslServer {
     /**
      * Unwraps a byte array received from the client.
      * This method can be called only after the authentication exchange has
-     * completed (i.e., when <tt>isComplete()</tt> returns true) and only if
+     * completed (i.e., when {@code isComplete()} returns true) and only if
      * the authentication exchange has negotiated integrity and/or privacy
      * as the quality of protection; otherwise,
-     * an <tt>IllegalStateException</tt> is thrown.
+     * an {@code IllegalStateException} is thrown.
      *<p>
-     * <tt>incoming</tt> is the contents of the SASL buffer as defined in RFC 2222
+     * {@code incoming} is the contents of the SASL buffer as defined in RFC 2222
      * without the leading four octet field that represents the length.
-     * <tt>offset</tt> and <tt>len</tt> specify the portion of <tt>incoming</tt>
+     * {@code offset} and {@code len} specify the portion of {@code incoming}
      * to use.
      *
      * @param incoming A non-null byte array containing the encoded bytes
      *                from the client.
-     * @param offset The starting position at <tt>incoming</tt> of the bytes to use.
-     * @param len The number of bytes from <tt>incoming</tt> to use.
+     * @param offset The starting position at {@code incoming} of the bytes to use.
+     * @param len The number of bytes from {@code incoming} to use.
      * @return A non-null byte array containing the decoded bytes.
-     * @exception SaslException if <tt>incoming</tt> cannot be successfully
+     * @exception SaslException if {@code incoming} cannot be successfully
      * unwrapped.
      * @exception IllegalStateException if the authentication exchange has
      * not completed, or if the negotiated quality of protection
@@ -168,21 +168,21 @@ public abstract interface SaslServer {
     /**
      * Wraps a byte array to be sent to the client.
      * This method can be called only after the authentication exchange has
-     * completed (i.e., when <tt>isComplete()</tt> returns true) and only if
+     * completed (i.e., when {@code isComplete()} returns true) and only if
      * the authentication exchange has negotiated integrity and/or privacy
-     * as the quality of protection; otherwise, a <tt>SaslException</tt> is thrown.
+     * as the quality of protection; otherwise, a {@code SaslException} is thrown.
      *<p>
      * The result of this method
      * will make up the contents of the SASL buffer as defined in RFC 2222
      * without the leading four octet field that represents the length.
-     * <tt>offset</tt> and <tt>len</tt> specify the portion of <tt>outgoing</tt>
+     * {@code offset} and {@code len} specify the portion of {@code outgoing}
      * to use.
      *
      * @param outgoing A non-null byte array containing the bytes to encode.
-     * @param offset The starting position at <tt>outgoing</tt> of the bytes to use.
-     * @param len The number of bytes from <tt>outgoing</tt> to use.
+     * @param offset The starting position at {@code outgoing} of the bytes to use.
+     * @param len The number of bytes from {@code outgoing} to use.
      * @return A non-null byte array containing the encoded bytes.
-     * @exception SaslException if <tt>outgoing</tt> cannot be successfully
+     * @exception SaslException if {@code outgoing} cannot be successfully
      * wrapped.
      * @exception IllegalStateException if the authentication exchange has
      * not completed, or if the negotiated quality of protection has
@@ -194,8 +194,8 @@ public abstract interface SaslServer {
     /**
      * Retrieves the negotiated property.
      * This method can be called only after the authentication exchange has
-     * completed (i.e., when <tt>isComplete()</tt> returns true); otherwise, an
-     * <tt>IllegalStateException</tt> is thrown.
+     * completed (i.e., when {@code isComplete()} returns true); otherwise, an
+     * {@code IllegalStateException} is thrown.
      *
      * @param propName the property
      * @return The value of the negotiated property. If null, the property was

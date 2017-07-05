@@ -167,15 +167,16 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
         BigInteger pMinus2 = p.subtract(BigInteger.valueOf(2));
 
         //
-        // Handbook of Applied Cryptography:  Menezes, et.al.
-        // Repeat if the following does not hold:
-        //     1 <= x <= p-2
+        // PKCS#3 section 7.1 "Private-value generation"
+        // Repeat if either of the followings does not hold:
+        //     0 < x < p-1
+        //     2^(lSize-1) <= x < 2^(lSize)
         //
         do {
             // generate random x up to 2^lSize bits long
             x = new BigInteger(lSize, random);
         } while ((x.compareTo(BigInteger.ONE) < 0) ||
-            ((x.compareTo(pMinus2) > 0)));
+            ((x.compareTo(pMinus2) > 0)) || (x.bitLength() != lSize));
 
         // calculate public value y
         BigInteger y = g.modPow(x, p);

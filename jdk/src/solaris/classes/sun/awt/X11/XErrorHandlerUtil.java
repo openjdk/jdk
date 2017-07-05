@@ -105,9 +105,15 @@ public final class XErrorHandlerUtil {
      * Unsets a current synthetic error handler. Must be called with the acquired AWT lock.
      */
     public static void RESTORE_XERROR_HANDLER() {
+        RESTORE_XERROR_HANDLER(true);
+    }
+
+    private static void RESTORE_XERROR_HANDLER(boolean doXSync) {
         // Wait until all requests are processed by the X server
         // and only then uninstall the error handler.
-        XSync();
+        if (doXSync) {
+            XSync();
+        }
         current_error_handler = null;
     }
 

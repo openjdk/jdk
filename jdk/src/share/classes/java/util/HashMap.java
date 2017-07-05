@@ -1013,7 +1013,7 @@ public class HashMap<K,V>
      */
     @SuppressWarnings("unchecked")
     final Entry<K,V> getEntry(Object key) {
-        if (isEmpty()) {
+        if (size == 0) {
             return null;
         }
         if (key == null) {
@@ -1468,7 +1468,7 @@ public class HashMap<K,V>
 
     @Override
     public boolean remove(Object key, Object value) {
-        if (isEmpty()) {
+        if (size == 0) {
             return false;
         }
         if (key == null) {
@@ -1531,7 +1531,7 @@ public class HashMap<K,V>
 
     @Override
     public boolean replace(K key, V oldValue, V newValue) {
-        if (isEmpty()) {
+        if (size == 0) {
             return false;
         }
         if (key == null) {
@@ -1574,7 +1574,7 @@ public class HashMap<K,V>
 
    @Override
     public V replace(K key, V value) {
-        if (isEmpty()) {
+        if (size == 0) {
             return null;
         }
         if (key == null) {
@@ -1694,7 +1694,7 @@ public class HashMap<K,V>
 
     @Override
     public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        if (isEmpty()) {
+        if (size == 0) {
             return null;
         }
         if (key == null) {
@@ -1980,7 +1980,7 @@ public class HashMap<K,V>
      * TreeNode in a TreeBin.
      */
     final Entry<K,V> removeEntryForKey(Object key) {
-        if (isEmpty()) {
+        if (size == 0) {
             return null;
         }
         if (key == null) {
@@ -2040,7 +2040,7 @@ public class HashMap<K,V>
      * for matching.
      */
     final Entry<K,V> removeMapping(Object o) {
-        if (isEmpty() || !(o instanceof Map.Entry))
+        if (size == 0 || !(o instanceof Map.Entry))
             return null;
 
         Map.Entry<?,?> entry = (Map.Entry<?,?>) o;

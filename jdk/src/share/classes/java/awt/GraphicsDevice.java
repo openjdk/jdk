@@ -296,6 +296,12 @@ public abstract class GraphicsDevice {
                                     bgColor.getBlue(), 255);
                 w.setBackground(bgColor);
             }
+            // Check if this window is in fullscreen mode on another device.
+            final GraphicsConfiguration gc = w.getGraphicsConfiguration();
+            if (gc != null && gc.getDevice() != this
+                    && gc.getDevice().getFullScreenWindow() == w) {
+                gc.getDevice().setFullScreenWindow(null);
+            }
         }
         if (fullScreenWindow != null && windowedModeBounds != null) {
             // if the window went into fs mode before it was realized it may

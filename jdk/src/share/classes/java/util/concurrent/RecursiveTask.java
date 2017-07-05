@@ -46,7 +46,7 @@ package java.util.concurrent;
  *   Fibonacci(int n) { this.n = n; }
  *   Integer compute() {
  *     if (n <= 1)
- *        return n;
+ *       return n;
  *     Fibonacci f1 = new Fibonacci(n - 1);
  *     f1.fork();
  *     Fibonacci f2 = new Fibonacci(n - 2);
@@ -75,6 +75,7 @@ public abstract class RecursiveTask<V> extends ForkJoinTask<V> {
 
     /**
      * The main computation performed by this task.
+     * @return the result of the computation
      */
     protected abstract V compute();
 

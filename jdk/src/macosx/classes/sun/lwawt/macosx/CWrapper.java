@@ -71,8 +71,6 @@ public final class CWrapper {
         public static native void zoom(long window);
 
         public static native void makeFirstResponder(long window, long responder);
-
-        public static native long screen(long window);
     }
 
     public static final class NSView {
@@ -93,12 +91,6 @@ public final class CWrapper {
 
     public static final class NSObject {
         public static native void release(long object);
-    }
-
-    public static final class NSScreen {
-        public static native Rectangle2D frame(long screen);
-        public static native Rectangle2D visibleFrame(long screen);
-        public static native long screenByDisplayId(int displayID);
     }
 
     public static final class NSColor {

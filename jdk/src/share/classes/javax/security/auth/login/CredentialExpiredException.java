@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@
 package javax.security.auth.login;
 
 /**
- * Signals that a <code>Credential</code> has expired.
+ * Signals that a {@code Credential} has expired.
  *
  * <p> This exception is thrown by LoginModules when they determine
- * that a <code>Credential</code> has expired.
- * For example, a <code>LoginModule</code> authenticating a user
- * in its <code>login</code> method may determine that the user's
+ * that a {@code Credential} has expired.
+ * For example, a {@code LoginModule} authenticating a user
+ * in its {@code login} method may determine that the user's
  * password, although entered correctly, has expired.  In this case
- * the <code>LoginModule</code> throws this exception to notify
+ * the {@code LoginModule} throws this exception to notify
  * the application.  The application can then take the appropriate
  * steps to assist the user in updating the password.
  *

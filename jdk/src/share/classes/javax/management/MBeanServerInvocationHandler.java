@@ -225,7 +225,7 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
      *
      * @return the new proxy instance.
      *
-     * @see JMX#newMBeanProxy(MBeanServerConnection, ObjectName, Class)
+     * @see JMX#newMBeanProxy(MBeanServerConnection, ObjectName, Class, boolean)
      */
     public static <T> T newProxyInstance(MBeanServerConnection connection,
                                          ObjectName objectName,

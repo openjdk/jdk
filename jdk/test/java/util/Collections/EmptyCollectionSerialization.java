@@ -23,13 +23,20 @@
 
 /*
  * @test
- * @bug     4684279
+ * @bug     4684279 7129185
  * @summary Empty utility collections should be singletons
  * @author  Josh Bloch
+ * @run testng EmptyCollectionSerialization
  */
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.io.*;
+import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
+
+import static org.testng.Assert.fail;
+import static org.testng.Assert.assertSame;
 
 public class EmptyCollectionSerialization {
     private static Object patheticDeepCopy(Object o) throws Exception {
@@ -45,16 +52,48 @@ public class EmptyCollectionSerialization {
         return ois.readObject();
     }
 
-    private static boolean isSingleton(Object o) throws Exception {
-        return patheticDeepCopy(o) == o;
+    @Test(dataProvider="SerializableSingletons")
+    public static void serializableSingletons(String description, Supplier<Object> o) {
+        try {
+            Object singleton = o.get();
+            assertSame(o.get(), singleton, description + ": broken Supplier not returning singleton");
+            Object copy = patheticDeepCopy(singleton);
+            assertSame( copy, singleton, description + ": " +
+                copy.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(copy)) +
+                " is not the singleton " +
+                singleton.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(singleton)));
+        } catch(Exception all) {
+            fail(description + ": Unexpected Exception", all);
+        }
     }
 
-    public static void main(String[] args) throws Exception {
-        if (!isSingleton(Collections.EMPTY_SET))
-            throw new Exception("EMPTY_SET");
-        if (!isSingleton(Collections.EMPTY_LIST))
-            throw new Exception("EMPTY_LIST");
-        if (!isSingleton(Collections.EMPTY_MAP))
-            throw new Exception("EMPTY_MAP");
+    @DataProvider(name = "SerializableSingletons", parallel = true)
+    public static Iterator<Object[]> navigableMapProvider() {
+        return makeSingletons().iterator();
+    }
+
+    public static Collection<Object[]> makeSingletons() {
+        return Arrays.asList(
+            new Object[]{"Collections.EMPTY_LIST",
+                (Supplier) () -> {return Collections.EMPTY_LIST;}},
+            new Object[]{"Collections.EMPTY_MAP",
+                (Supplier) () -> {return Collections.EMPTY_MAP;}},
+            new Object[]{"Collections.EMPTY_SET",
+                (Supplier) () -> {return Collections.EMPTY_SET;}},
+            new Object[]{"Collections.singletonMap()",
+                (Supplier) () -> {return Collections.emptyList();}},
+            new Object[]{"Collections.emptyMap()",
+                (Supplier) () -> {return Collections.emptyMap();}},
+            new Object[]{"Collections.emptySet()",
+                (Supplier) () -> {return Collections.emptySet();}},
+            new Object[]{"Collections.emptySortedSet()",
+                (Supplier) () -> {return Collections.emptySortedSet();}},
+            new Object[]{"Collections.emptySortedMap()",
+                (Supplier) () -> {return Collections.emptySortedMap();}},
+            new Object[]{"Collections.emptyNavigableSet()",
+                (Supplier) () -> {return Collections.emptyNavigableSet();}},
+            new Object[]{"Collections.emptyNavigableMap()",
+                (Supplier) () -> {return Collections.emptyNavigableMap();}}
+            );
     }
 }

@@ -2,31 +2,34 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright 2005 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 /*
  * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMXMLSignatureFactory.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
+ * $Id: DOMXMLSignatureFactory.java 1333869 2012-05-04 10:42:44Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
 import javax.xml.crypto.*;
+import javax.xml.crypto.dom.DOMCryptoContext;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.dom.DOMValidateContext;
 import javax.xml.crypto.dsig.keyinfo.*;
@@ -34,7 +37,6 @@ import javax.xml.crypto.dsig.spec.*;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
-import java.security.spec.AlgorithmParameterSpec;
 import java.util.List;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -56,6 +58,7 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
         return new DOMXMLSignature(si, ki, null, null, null);
     }
 
+    @SuppressWarnings("unchecked")
     public XMLSignature newXMLSignature(SignedInfo si, KeyInfo ki,
         List objects, String id, String signatureValueId) {
         return new DOMXMLSignature(si, ki, objects, id, signatureValueId);
@@ -65,11 +68,13 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
         return newReference(uri, dm, null, null, null);
     }
 
+    @SuppressWarnings("unchecked")
     public Reference newReference(String uri, DigestMethod dm, List transforms,
         String type, String id) {
         return new DOMReference(uri, type, dm, transforms, id, getProvider());
     }
 
+    @SuppressWarnings("unchecked")
     public Reference newReference(String uri, DigestMethod dm,
         List appliedTransforms, Data result, List transforms, String type,
         String id) {
@@ -86,6 +91,7 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
             (uri, type, dm, appliedTransforms, result, transforms, id, getProvider());
     }
 
+    @SuppressWarnings("unchecked")
     public Reference newReference(String uri, DigestMethod dm, List transforms,
         String type, String id, byte[] digestValue) {
         if (digestValue == null) {
@@ -95,34 +101,41 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
             (uri, type, dm, null, null, transforms, id, digestValue, getProvider());
     }
 
+    @SuppressWarnings("unchecked")
     public SignedInfo newSignedInfo(CanonicalizationMethod cm,
         SignatureMethod sm, List references) {
         return newSignedInfo(cm, sm, references, null);
     }
 
+    @SuppressWarnings("unchecked")
     public SignedInfo newSignedInfo(CanonicalizationMethod cm,
         SignatureMethod sm, List references, String id) {
         return new DOMSignedInfo(cm, sm, references, id);
     }
 
     // Object factory methods
+    @SuppressWarnings("unchecked")
     public XMLObject newXMLObject(List content, String id, String mimeType,
         String encoding) {
         return new DOMXMLObject(content, id, mimeType, encoding);
     }
 
+    @SuppressWarnings("unchecked")
     public Manifest newManifest(List references) {
         return newManifest(references, null);
     }
 
+    @SuppressWarnings("unchecked")
     public Manifest newManifest(List references, String id) {
         return new DOMManifest(references, id);
     }
 
+    @SuppressWarnings("unchecked")
     public SignatureProperties newSignatureProperties(List props, String id) {
         return new DOMSignatureProperties(props, id);
     }
 
+    @SuppressWarnings("unchecked")
     public SignatureProperty newSignatureProperty
         (List info, String target, String id) {
         return new DOMSignatureProperty(info, target, id);
@@ -143,12 +156,19 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
         if (xmlStructure == null) {
             throw new NullPointerException("xmlStructure cannot be null");
         }
+        if (!(xmlStructure instanceof javax.xml.crypto.dom.DOMStructure)) {
+            throw new ClassCastException("xmlStructure must be of type DOMStructure");
+        }
         return unmarshal
             (((javax.xml.crypto.dom.DOMStructure) xmlStructure).getNode(),
-             null);
+             new UnmarshalContext());
     }
 
-    private XMLSignature unmarshal(Node node, XMLValidateContext context)
+    private static class UnmarshalContext extends DOMCryptoContext {
+        UnmarshalContext() {}
+    }
+
+    private XMLSignature unmarshal(Node node, XMLCryptoContext context)
         throws MarshalException {
 
         node.normalize();
@@ -221,12 +241,20 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
             return new DOMSignatureMethod.SHA1withDSA(params);
         } else if (algorithm.equals(SignatureMethod.HMAC_SHA1)) {
             return new DOMHMACSignatureMethod.SHA1(params);
-        } else if (algorithm.equals(DOMSignatureMethod.HMAC_SHA256)) {
+        } else if (algorithm.equals(DOMHMACSignatureMethod.HMAC_SHA256)) {
             return new DOMHMACSignatureMethod.SHA256(params);
-        } else if (algorithm.equals(DOMSignatureMethod.HMAC_SHA384)) {
+        } else if (algorithm.equals(DOMHMACSignatureMethod.HMAC_SHA384)) {
             return new DOMHMACSignatureMethod.SHA384(params);
-        } else if (algorithm.equals(DOMSignatureMethod.HMAC_SHA512)) {
+        } else if (algorithm.equals(DOMHMACSignatureMethod.HMAC_SHA512)) {
             return new DOMHMACSignatureMethod.SHA512(params);
+        } else if (algorithm.equals(DOMSignatureMethod.ECDSA_SHA1)) {
+            return new DOMSignatureMethod.SHA1withECDSA(params);
+        } else if (algorithm.equals(DOMSignatureMethod.ECDSA_SHA256)) {
+            return new DOMSignatureMethod.SHA256withECDSA(params);
+        } else if (algorithm.equals(DOMSignatureMethod.ECDSA_SHA384)) {
+            return new DOMSignatureMethod.SHA384withECDSA(params);
+        } else if (algorithm.equals(DOMSignatureMethod.ECDSA_SHA512)) {
+            return new DOMSignatureMethod.SHA512withECDSA(params);
         } else {
             throw new NoSuchAlgorithmException("unsupported algorithm");
         }
@@ -235,12 +263,18 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
     public Transform newTransform(String algorithm,
         TransformParameterSpec params) throws NoSuchAlgorithmException,
         InvalidAlgorithmParameterException {
+
         TransformService spi;
-        try {
+        if (getProvider() == null) {
             spi = TransformService.getInstance(algorithm, "DOM");
-        } catch (NoSuchAlgorithmException nsae) {
-            spi = TransformService.getInstance(algorithm, "DOM", getProvider());
+        } else {
+            try {
+                spi = TransformService.getInstance(algorithm, "DOM", getProvider());
+            } catch (NoSuchAlgorithmException nsae) {
+                spi = TransformService.getInstance(algorithm, "DOM");
+            }
         }
+
         spi.init(params);
         return new DOMTransform(spi);
     }
@@ -249,11 +283,16 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
         XMLStructure params) throws NoSuchAlgorithmException,
         InvalidAlgorithmParameterException {
         TransformService spi;
-        try {
+        if (getProvider() == null) {
             spi = TransformService.getInstance(algorithm, "DOM");
-        } catch (NoSuchAlgorithmException nsae) {
-            spi = TransformService.getInstance(algorithm, "DOM", getProvider());
+        } else {
+            try {
+                spi = TransformService.getInstance(algorithm, "DOM", getProvider());
+            } catch (NoSuchAlgorithmException nsae) {
+                spi = TransformService.getInstance(algorithm, "DOM");
+            }
         }
+
         if (params == null) {
             spi.init(null);
         } else {
@@ -266,11 +305,16 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
         C14NMethodParameterSpec params) throws NoSuchAlgorithmException,
         InvalidAlgorithmParameterException {
         TransformService spi;
-        try {
+        if (getProvider() == null) {
             spi = TransformService.getInstance(algorithm, "DOM");
-        } catch (NoSuchAlgorithmException nsae) {
-            spi = TransformService.getInstance(algorithm, "DOM", getProvider());
+        } else {
+            try {
+                spi = TransformService.getInstance(algorithm, "DOM", getProvider());
+            } catch (NoSuchAlgorithmException nsae) {
+                spi = TransformService.getInstance(algorithm, "DOM");
+            }
         }
+
         spi.init(params);
         return new DOMCanonicalizationMethod(spi);
     }
@@ -279,16 +323,21 @@ public final class DOMXMLSignatureFactory extends XMLSignatureFactory {
         XMLStructure params) throws NoSuchAlgorithmException,
         InvalidAlgorithmParameterException {
         TransformService spi;
-        try {
+        if (getProvider() == null) {
             spi = TransformService.getInstance(algorithm, "DOM");
-        } catch (NoSuchAlgorithmException nsae) {
-            spi = TransformService.getInstance(algorithm, "DOM", getProvider());
+        } else {
+            try {
+                spi = TransformService.getInstance(algorithm, "DOM", getProvider());
+            } catch (NoSuchAlgorithmException nsae) {
+                spi = TransformService.getInstance(algorithm, "DOM");
+            }
         }
         if (params == null) {
             spi.init(null);
         } else {
             spi.init(params, null);
         }
+
         return new DOMCanonicalizationMethod(spi);
     }
 
