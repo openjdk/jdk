@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,15 @@ final class SunEntries {
                 "sun.security.provider.DSA$SHA224withDSA");
         map.put("Signature.SHA256withDSA",
                 "sun.security.provider.DSA$SHA256withDSA");
+
+        map.put("Signature.SHA1withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA1withDSAinP1363Format");
+        map.put("Signature.NONEwithDSAinP1363Format",
+                "sun.security.provider.DSA$RawDSAinP1363Format");
+        map.put("Signature.SHA224withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA224withDSAinP1363Format");
+        map.put("Signature.SHA256withDSAinP1363Format",
+                "sun.security.provider.DSA$SHA256withDSAinP1363Format");
 
         String dsaKeyClasses = "java.security.interfaces.DSAPublicKey" +
                 "|java.security.interfaces.DSAPrivateKey";

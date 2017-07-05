@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,7 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
 static bool magic_long_divide_constants(jlong d, jlong &M, jint &s) {
   int64_t p;
   uint64_t ad, anc, delta, q1, r1, q2, r2, t;
-  const uint64_t two63 = 0x8000000000000000LL;     // 2**63.
+  const uint64_t two63 = UCONST64(0x8000000000000000);     // 2**63.
 
   ad = ABS(d);
   if (d == 0 || d == 1) return false;

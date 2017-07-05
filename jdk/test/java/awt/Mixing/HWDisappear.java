@@ -40,6 +40,7 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 import test.java.awt.regtesthelpers.Util;
 
 public class HWDisappear
@@ -109,7 +110,7 @@ public class HWDisappear
 
         // Click on the button.
         Point bLoc = b.getLocationOnScreen();
-        robot.mouseMove(bLoc.x + b.getWidth() / 2, bLoc.y + 5);
+        robot.mouseMove(bLoc.x + b.getWidth() / 2, bLoc.y + b.getHeight() / 2);
 
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
@@ -148,8 +149,9 @@ public class HWDisappear
     //  instantiated in the same VM.  Being static (and using
     //  static vars), it aint gonna work.  Not worrying about
     //  it for now.
-    public static void main( String args[] ) throws InterruptedException
+    public static void main( String args[] ) throws Exception
     {
+        UIManager.setLookAndFeel(new MetalLookAndFeel());
         mainThread = Thread.currentThread();
         try
         {

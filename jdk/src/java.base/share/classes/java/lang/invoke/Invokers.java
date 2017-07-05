@@ -247,6 +247,7 @@ class Invokers {
         int nameCursor = OUTARG_LIMIT;
         final int MTYPE_ARG    = customized ? -1 : nameCursor++;  // might be last in-argument
         final int CHECK_TYPE   = nameCursor++;
+        final int CHECK_CUSTOM = (CUSTOMIZE_THRESHOLD >= 0) ? nameCursor++ : -1;
         final int LINKER_CALL  = nameCursor++;
         MethodType invokerFormType = mtype.invokerType();
         if (isLinker) {
@@ -278,6 +279,9 @@ class Invokers {
             names[CHECK_TYPE] = new Name(NF_checkGenericType, names[CALL_MH], mtypeArg);
             // mh.invokeGeneric(a*):R => checkGenericType(mh, TYPEOF(a*:R)).invokeBasic(a*)
             outArgs[0] = names[CHECK_TYPE];
+        }
+        if (CHECK_CUSTOM != -1) {
+            names[CHECK_CUSTOM] = new Name(NF_checkCustomized, names[CALL_MH]);
         }
         names[LINKER_CALL] = new Name(outCallType, outArgs);
         lform = new LambdaForm(debugName, INARG_LIMIT, names);
@@ -386,11 +390,32 @@ class Invokers {
         return ((CallSite)site).getTarget();
     }
 
+    /*non-public*/ static
+    @ForceInline
+    void checkCustomized(Object o) {
+        MethodHandle mh = (MethodHandle)o;
+        if (mh.form.customized == null) {
+            maybeCustomize(mh);
+        }
+    }
+
+    /*non-public*/ static
+    @DontInline
+    void maybeCustomize(MethodHandle mh) {
+        byte count = mh.customizationCount;
+        if (count >= CUSTOMIZE_THRESHOLD) {
+            mh.customize();
+        } else {
+            mh.customizationCount = (byte)(count+1);
+        }
+    }
+
     // Local constant functions:
     private static final NamedFunction
         NF_checkExactType,
         NF_checkGenericType,
-        NF_getCallSiteTarget;
+        NF_getCallSiteTarget,
+        NF_checkCustomized;
     static {
         try {
             NamedFunction nfs[] = {
@@ -399,7 +424,9 @@ class Invokers {
                 NF_checkGenericType = new NamedFunction(Invokers.class
                         .getDeclaredMethod("checkGenericType", Object.class, Object.class)),
                 NF_getCallSiteTarget = new NamedFunction(Invokers.class
-                        .getDeclaredMethod("getCallSiteTarget", Object.class))
+                        .getDeclaredMethod("getCallSiteTarget", Object.class)),
+                NF_checkCustomized = new NamedFunction(Invokers.class
+                        .getDeclaredMethod("checkCustomized", Object.class))
             };
             for (NamedFunction nf : nfs) {
                 // Each nf must be statically invocable or we get tied up in our bootstraps.

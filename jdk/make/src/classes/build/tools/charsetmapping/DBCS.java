@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,71 +24,32 @@
  */
 
 package build.tools.charsetmapping;
+
 import java.io.*;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Formatter;
-import java.util.regex.*;
-import java.nio.charset.*;
+import java.util.regex.Pattern;
 import static build.tools.charsetmapping.Utils.*;
 
 public class DBCS {
     // pattern used by this class to read in mapping table
     static Pattern mPattern = Pattern.compile("(?:0x)?(\\p{XDigit}++)\\s++(?:0x)?(\\p{XDigit}++)(?:\\s++#.*)?");
 
-    public static void genClass(String args[]) throws Exception {
-
-        Scanner s = new Scanner(new File(args[0], args[2]));
-        while (s.hasNextLine()) {
-            String line = s.nextLine();
-            if (line.startsWith("#") || line.length() == 0)
-                continue;
-            String[] fields = line.split("\\s+");
-            if (fields.length < 10) {
-                System.err.println("Misconfiged sbcs line <" + line + ">?");
-                continue;
-            }
-            String clzName = fields[0];
-            String csName  = fields[1];
-            String hisName = ("null".equals(fields[2]))?null:fields[2];
-            String type = fields[3].toUpperCase();
-            if ("BASIC".equals(type))
-                type = "";
-            else
-                type = "_" + type;
-            String pkgName  = fields[4];
-            boolean isASCII = Boolean.valueOf(fields[5]);
-            int    b1Min = toInteger(fields[6]);
-            int    b1Max = toInteger(fields[7]);
-            int    b2Min    = toInteger(fields[8]);
-            int    b2Max    = toInteger(fields[9]);
-            System.out.printf("%s,%s,%s,%b,%s%n", clzName, csName, hisName, isASCII, pkgName);
-            genClass0(args[0], args[1], "DoubleByte-X.java.template",
-                    clzName, csName, hisName, pkgName,
-                    isASCII, type,
-                    b1Min, b1Max, b2Min, b2Max);
-        }
-    }
-
-    static int toInteger(String s) {
-        if (s.startsWith("0x") || s.startsWith("0X"))
-            return Integer.valueOf(s.substring(2), 16);
-        else
-            return Integer.valueOf(s);
-    }
-
-    private static void genClass0(String srcDir, String dstDir, String template,
-                                  String clzName,
-                                  String csName,
-                                  String hisName,
-                                  String pkgName,
-                                  boolean isASCII,
-                                  String type,
-                                  int b1Min, int b1Max,
-                                  int b2Min, int b2Max)
+    public static void genClass(String type, Charset cs,
+                                String srcDir, String dstDir, String template)
         throws Exception
     {
+        String clzName = cs.clzName;
+        String csName  = cs.csName;
+        String hisName = cs.hisName;
+        String pkgName = cs.pkgName;
+        boolean isASCII = cs.isASCII;
+        int b1Min = cs.b1Min;
+        int b1Max = cs.b1Max;
+        int b2Min = cs.b2Min;
+        int b2Max = cs.b2Max;
 
         StringBuilder b2cSB = new StringBuilder();
         StringBuilder b2cNRSB = new StringBuilder();

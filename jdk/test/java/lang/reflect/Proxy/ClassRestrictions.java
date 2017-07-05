@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4227192 8004928
+ * @bug 4227192 8004928 8072656
  * @summary This is a test of the restrictions on the parameters that may
  * be passed to the Proxy.getProxyClass method.
  * @author Peter Jones
@@ -31,9 +31,12 @@
  * @run main ClassRestrictions
  */
 
+import java.io.File;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.net.URLClassLoader;
+import java.net.URL;
+import java.nio.file.Paths;
 
 public class ClassRestrictions {
 
@@ -105,8 +108,13 @@ public class ClassRestrictions {
              * All of the interfaces types must be visible by name though the
              * specified class loader.
              */
-            ClassLoader altLoader = new URLClassLoader(
-                ((URLClassLoader) loader).getURLs(), null);
+            String[] cpaths = System.getProperty("test.classes", ".")
+                                    .split(File.pathSeparator);
+            URL[] urls = new URL[cpaths.length];
+            for (int i=0; i < cpaths.length; i++) {
+                urls[i] = Paths.get(cpaths[i]).toUri().toURL();
+            }
+            ClassLoader altLoader = new URLClassLoader(urls, null);
             Class altBarClass;
             altBarClass = Class.forName(Bar.class.getName(), false, altLoader);
             try {

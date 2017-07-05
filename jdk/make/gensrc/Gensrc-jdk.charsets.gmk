@@ -30,23 +30,27 @@ include GensrcCommon.gmk
 # Generate files using the charsetmapping tool
 #
 CHARSET_DATA_DIR := $(JDK_TOPDIR)/make/data/charsetmapping
+
 CHARSET_GENSRC_JAVA_DIR_CS := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.charsets/sun/nio/cs/ext
 CHARSET_DONE_CS := $(CHARSET_GENSRC_JAVA_DIR_CS)/_the.charsetmapping
 CHARSET_COPYRIGHT_HEADER := $(JDK_TOPDIR)/make/src/classes/build/tools/charsetmapping
 CHARSET_TEMPLATES := \
     $(CHARSET_DATA_DIR)/SingleByte-X.java.template \
     $(CHARSET_DATA_DIR)/DoubleByte-X.java.template
+CHARSET_EXTENDED_JAVA_TEMPLATES := \
+    $(JDK_TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext/ExtendedCharsets.java.template
+CHARSET_EXTENDED_JAVA_DIR := $(JDK_TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext
+CHARSET_STANDARD_OS := stdcs-$(OPENJDK_TARGET_OS)
 
-$(CHARSET_DONE_CS)-extsbcs: $(CHARSET_DATA_DIR)/extsbcs  \
-    $(CHARSET_TEMPLATES) $(BUILD_TOOLS_JDK)
+$(CHARSET_DONE_CS)-extcs: $(CHARSET_DATA_DIR)/charsets \
+    $(wildcard $(CHARSET_DATA_DIR)/$(CHARSET_STANDARD_OS)) \
+    $(CHARSET_TEMPLATES) $(CHARSET_EXTENDED_JAVA_TEMPLATES) \
+    $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(@D)
-	$(TOOL_CHARSETMAPPING) $(CHARSET_DATA_DIR) $(CHARSET_GENSRC_JAVA_DIR_CS) extsbcs
-	$(TOUCH) '$@'
-
-$(CHARSET_DONE_CS)-dbcs: $(CHARSET_DATA_DIR)/dbcs \
-    $(CHARSET_TEMPLATES) $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $(@D)
-	$(TOOL_CHARSETMAPPING) $(CHARSET_DATA_DIR) $(CHARSET_GENSRC_JAVA_DIR_CS) dbcs
+	$(TOOL_CHARSETMAPPING) $(CHARSET_DATA_DIR) $(CHARSET_GENSRC_JAVA_DIR_CS) \
+	    extcs charsets  $(CHARSET_STANDARD_OS) \
+	    $(CHARSET_EXTENDED_JAVA_TEMPLATES) \
+	    $(CHARSET_EXTENDED_JAVA_DIR) $(LOG_INFO)
 	$(TOUCH) '$@'
 
 $(CHARSET_DONE_CS)-hkscs: $(CHARSET_COPYRIGHT_HEADER)/HKSCS.java \
@@ -67,8 +71,7 @@ $(CHARSET_GENSRC_JAVA_DIR_CS)/sjis0213.dat: $(CHARSET_DATA_DIR)/sjis0213.map \
 	$(TOOL_CHARSETMAPPING) '$<' '$@' sjis0213
 
 GENSRC_JDK_CHARSETS += \
-    $(CHARSET_DONE_CS)-extsbcs \
-    $(CHARSET_DONE_CS)-dbcs \
+    $(CHARSET_DONE_CS)-extcs \
     $(CHARSET_DONE_CS)-hkscs \
     $(CHARSET_DONE_CS)-euctw \
     $(CHARSET_GENSRC_JAVA_DIR_CS)/sjis0213.dat \

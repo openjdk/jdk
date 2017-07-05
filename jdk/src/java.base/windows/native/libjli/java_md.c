@@ -265,26 +265,17 @@ LoadMSVCRT()
          * assumed to be present in the "JRE path" directory.  If it is not found
          * there (or "JRE path" fails to resolve), skip the explicit load and let
          * nature take its course, which is likely to be a failure to execute.
-         * This is clearly completely specific to the exact compiler version
-         * which isn't very nice, but its hardly the only place.
-         * No attempt to look for compiler versions in between 2003 and 2010
-         * as we aren't supporting building with those.
+         * The makefiles will provide the correct lib contained in quotes in the
+         * macro MSVCR_DLL_NAME.
          */
-#ifdef _MSC_VER
-#if _MSC_VER < 1400
-#define CRT_DLL "msvcr71.dll"
-#endif
-#if _MSC_VER >= 1600
-#define CRT_DLL "msvcr100.dll"
-#endif
-#ifdef CRT_DLL
+#ifdef MSVCR_DLL_NAME
         if (GetJREPath(crtpath, MAXPATHLEN)) {
             if (JLI_StrLen(crtpath) + JLI_StrLen("\\bin\\") +
-                    JLI_StrLen(CRT_DLL) >= MAXPATHLEN) {
+                    JLI_StrLen(MSVCR_DLL_NAME) >= MAXPATHLEN) {
                 JLI_ReportErrorMessage(JRE_ERROR11);
                 return JNI_FALSE;
             }
-            (void)JLI_StrCat(crtpath, "\\bin\\" CRT_DLL);   /* Add crt dll */
+            (void)JLI_StrCat(crtpath, "\\bin\\" MSVCR_DLL_NAME);   /* Add crt dll */
             JLI_TraceLauncher("CRT path is %s\n", crtpath);
             if (_access(crtpath, 0) == 0) {
                 if (LoadLibrary(crtpath) == 0) {
@@ -293,8 +284,24 @@ LoadMSVCRT()
                 }
             }
         }
-#endif /* CRT_DLL */
-#endif /* _MSC_VER */
+#endif /* MSVCR_DLL_NAME */
+#ifdef MSVCP_DLL_NAME
+        if (GetJREPath(crtpath, MAXPATHLEN)) {
+            if (JLI_StrLen(crtpath) + JLI_StrLen("\\bin\\") +
+                    JLI_StrLen(MSVCP_DLL_NAME) >= MAXPATHLEN) {
+                JLI_ReportErrorMessage(JRE_ERROR11);
+                return JNI_FALSE;
+            }
+            (void)JLI_StrCat(crtpath, "\\bin\\" MSVCP_DLL_NAME);   /* Add prt dll */
+            JLI_TraceLauncher("PRT path is %s\n", crtpath);
+            if (_access(crtpath, 0) == 0) {
+                if (LoadLibrary(crtpath) == 0) {
+                    JLI_ReportErrorMessage(DLL_ERROR4, crtpath);
+                    return JNI_FALSE;
+                }
+            }
+        }
+#endif /* MSVCP_DLL_NAME */
         loaded = 1;
     }
     return JNI_TRUE;

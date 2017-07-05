@@ -26,6 +26,7 @@
  * @bug 7064279
  * @summary Tests that Introspector does not have strong references to context class loader
  * @author Sergey Malenkov
+ * @run main/othervm -Xmx128m Test7064279
  */
 
 import java.beans.Introspector;
