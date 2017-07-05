@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary Test TestImpl TestImpl_Stub
+ * @build TestLibrary Test TestImpl REGISTRY RegistryRunner
  * @run main/othervm/policy=security.policy/timeout=360 DGCDeadLock
  */
 
@@ -55,11 +55,12 @@ import java.rmi.*;
 import java.io.*;
 
 public class DGCDeadLock implements Runnable {
-    private static final int REGISTRY_PORT = TestLibrary.getUnusedRandomPort();
     final static public int HOLD_TARGET_TIME = 25000;
-    public static int TEST_FAIL_TIME = HOLD_TARGET_TIME + 30000;
-    public static boolean finished = false;
-    static DGCDeadLock test = new DGCDeadLock();
+    public static final double TEST_FAIL_TIME =
+            (HOLD_TARGET_TIME + 30000) * TestLibrary.getTimeoutFactor();
+    public static volatile boolean finished = false;
+    static final DGCDeadLock test = new DGCDeadLock();
+    static volatile int registryPort = -1;
 
     static {
         System.setProperty("sun.rmi.transport.cleanInterval", "50");
@@ -67,7 +68,7 @@ public class DGCDeadLock implements Runnable {
 
     static public void main(String[] args) {
 
-        JavaVM testImplVM = null;
+        REGISTRY testImplVM = null;
 
         System.err.println("\nregression test for 4118056\n");
         TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
@@ -75,18 +76,15 @@ public class DGCDeadLock implements Runnable {
         try {
             String options = " -Djava.security.policy=" +
                 TestParams.defaultPolicy +
-                " --add-exports java.rmi/sun.rmi.registry=ALL-UNNAMED" +
-                " --add-exports java.rmi/sun.rmi.server=ALL-UNNAMED" +
                 " --add-opens java.rmi/sun.rmi.transport=ALL-UNNAMED" +
-                " --add-exports java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED" +
                 " -Djava.rmi.dgc.leaseValue=500000" +
-                "  -Dsun.rmi.dgc.checkInterval=" +
+                " -Dsun.rmi.dgc.checkInterval=" +
                 (HOLD_TARGET_TIME - 5000) +
-                "   -Drmi.registry.port=" + REGISTRY_PORT +
                 "" ;
 
-            testImplVM = new JavaVM("TestImpl", options, "");
+            testImplVM = REGISTRY.createREGISTRYWithRunner("TestImpl", options);
             testImplVM.start();
+            registryPort = testImplVM.getPort();
 
             synchronized (test) {
                 Thread t = new Thread(test);
@@ -94,7 +92,7 @@ public class DGCDeadLock implements Runnable {
                 t.start();
 
                 // wait for the remote calls to take place
-                test.wait(TEST_FAIL_TIME);
+                test.wait((long)TEST_FAIL_TIME);
             }
 
             if (!finished) {
@@ -106,8 +104,12 @@ public class DGCDeadLock implements Runnable {
                                "finished in time.");
 
         } catch (Exception e) {
-            testImplVM = null;
-            TestLibrary.bomb("test failed", e);
+            TestLibrary.bomb("test failed in main()", e);
+        } finally {
+            if (testImplVM != null) {
+                testImplVM.shutdown();
+                testImplVM = null;
+            }
         }
     }
 
@@ -115,12 +117,9 @@ public class DGCDeadLock implements Runnable {
         try {
             String echo = null;
 
-            // give the test remote object time to initialize.
-            Thread.currentThread().sleep(8000);
-
             // create a test client
             Test foo = (Test) Naming.lookup("rmi://:" +
-                                            REGISTRY_PORT +
+                                            registryPort +
                                             "/Foo");
             echo = foo.echo("Hello world");
             System.err.println("Test object created.");
@@ -139,7 +138,7 @@ public class DGCDeadLock implements Runnable {
 
             //import "Bar"
             Test bar = (Test) Naming.lookup("rmi://:" +
-                                            REGISTRY_PORT +
+                                            registryPort +
                                             "/Bar");
 
             /* infinite loop to show the liveness of Client,
@@ -155,11 +154,16 @@ public class DGCDeadLock implements Runnable {
                 finished = true;
 
             } catch (RemoteException e) {
+                System.err.println("catch RemoteException");
+                e.printStackTrace();
             }
 
         } catch (Exception e) {
-            TestLibrary.bomb("test failed", e);
+            TestLibrary.bomb("test failed in run()", e);
         } finally {
+            synchronized(this) {
+                notify();
+            }
         }
     }
 }

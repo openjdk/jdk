@@ -535,13 +535,15 @@ void os::Aix::init_thread_fpu_state(void) {
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-size_t os::Posix::_compiler_thread_min_stack_allowed = 128 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 128 * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 128 * K;
+// Minimum usable stack sizes required to get to user code. Space for
+// HotSpot guard pages is added later.
+size_t os::Posix::_compiler_thread_min_stack_allowed = 192 * K;
+size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
+size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
 
-// return default stack size for thr_type
+// Return default stack size for thr_type.
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
-  // default stack size (compiler thread needs larger stack)
+  // Default stack size (compiler thread needs larger stack).
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
   return s;
 }

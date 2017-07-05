@@ -324,6 +324,22 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
                       op->result_opr(),
                       op->info());
       break;
+    case lir_fmad: {
+      const FloatRegister opr1 = op->in_opr1()->as_double_reg(),
+                          opr2 = op->in_opr2()->as_double_reg(),
+                          opr3 = op->in_opr3()->as_double_reg(),
+                          res  = op->result_opr()->as_double_reg();
+      __ z_madbr(opr3, opr1, opr2);
+      if (res != opr3) { __ z_ldr(res, opr3); }
+    } break;
+    case lir_fmaf: {
+      const FloatRegister opr1 = op->in_opr1()->as_float_reg(),
+                          opr2 = op->in_opr2()->as_float_reg(),
+                          opr3 = op->in_opr3()->as_float_reg(),
+                          res  = op->result_opr()->as_float_reg();
+      __ z_maebr(opr3, opr1, opr2);
+      if (res != opr3) { __ z_ler(res, opr3); }
+    } break;
     default: ShouldNotReachHere(); break;
   }
 }

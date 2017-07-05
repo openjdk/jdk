@@ -81,15 +81,13 @@
 
 #define MAX_PATH (2 * K)
 
-// Minimum stack size for the VM.  It's easier to document a constant
-// but it's different for x86 and sparc because the page sizes are different.
+// Minimum usable stack sizes required to get to user code. Space for
+// HotSpot guard pages is added later.
+size_t os::Posix::_compiler_thread_min_stack_allowed = 104 * K;
+size_t os::Posix::_java_thread_min_stack_allowed = 86 * K;
 #ifdef _LP64
-size_t os::Posix::_compiler_thread_min_stack_allowed = 128 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 128 * K;
 size_t os::Posix::_vm_internal_thread_min_stack_allowed = 128 * K;
 #else
-size_t os::Posix::_compiler_thread_min_stack_allowed = 96 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 96 * K;
 size_t os::Posix::_vm_internal_thread_min_stack_allowed = 96 * K;
 #endif
 

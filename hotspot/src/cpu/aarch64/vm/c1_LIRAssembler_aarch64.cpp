@@ -3111,7 +3111,7 @@ void LIR_Assembler::peephole(LIR_List *lir) {
 }
 
 void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr dest, LIR_Opr tmp_op) {
-  Address addr = as_Address(src->as_address_ptr(), noreg);
+  Address addr = as_Address(src->as_address_ptr());
   BasicType type = src->type();
   bool is_oop = type == T_OBJECT || type == T_ARRAY;
 
