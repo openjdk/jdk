@@ -46,10 +46,11 @@ import test.java.awt.regtesthelpers.Util;
  * @key headful
  * @bug 6776743
  * @summary Opaque overlapping test for each AWT component
- * @library ../../regtesthelpers
+ * @library /java/awt/patchlib  ../../regtesthelpers
  * @modules java.desktop/com.sun.awt
  *          java.desktop/java.awt.peer
  *          java.desktop/sun.awt
+ * @build java.desktop/java.awt.Helper
  * @build Util
  * @run main OpaqueOverlapping
  */

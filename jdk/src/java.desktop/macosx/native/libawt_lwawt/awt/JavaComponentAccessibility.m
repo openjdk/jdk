@@ -201,10 +201,16 @@ static NSObject *sAttributeNamesLOCK = nil;
     NSAccessibilityPostNotification(self, NSAccessibilityValueChangedNotification);
 }
 
-- (void)postSelectionChanged
+- (void)postSelectedTextChanged
 {
     AWT_ASSERT_APPKIT_THREAD;
     NSAccessibilityPostNotification(self, NSAccessibilitySelectedTextChangedNotification);
+}
+
+- (void)postSelectionChanged
+{
+    AWT_ASSERT_APPKIT_THREAD;
+    NSAccessibilityPostNotification(self, NSAccessibilitySelectedChildrenChangedNotification);
 }
 
 - (BOOL)isEqual:(id)anObject
@@ -225,7 +231,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 {
     if (sAttributeNamesForRoleCache == nil) {
         sAttributeNamesLOCK = [[NSObject alloc] init];
-        sAttributeNamesForRoleCache = [[NSMutableDictionary alloc] initWithCapacity:10];
+        sAttributeNamesForRoleCache = [[NSMutableDictionary alloc] initWithCapacity:60];
     }
 
     if (sRoles == nil) {
@@ -281,6 +287,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 
 + (NSArray *)childrenOfParent:(JavaComponentAccessibility *)parent withEnv:(JNIEnv *)env withChildrenCode:(NSInteger)whichChildren allowIgnored:(BOOL)allowIgnored
 {
+    if (parent->fAccessible == NULL) return nil;
     jobjectArray jchildrenAndRoles = (jobjectArray)JNFCallStaticObjectMethod(env, jm_getChildrenAndRoles, parent->fAccessible, parent->fComponent, whichChildren, allowIgnored); // AWT_THREADING Safe (AWTRunLoop)
     if (jchildrenAndRoles == NULL) return nil;
 
@@ -370,7 +377,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 {
     static JNF_STATIC_MEMBER_CACHE(jm_getInitialAttributeStates, sjc_CAccessibility, "getInitialAttributeStates", "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)[Z");
 
-    NSMutableArray *attributeNames = [NSMutableArray arrayWithCapacity:10];
+    NSMutableArray *attributeNames = [NSMutableArray arrayWithCapacity:20];
     [attributeNames retain];
 
     // all elements respond to parent, role, role description, window, topLevelUIElement, help
@@ -449,6 +456,12 @@ static NSObject *sAttributeNamesLOCK = nil;
     // children
     if (attributeStatesArray[6]) {
         [attributeNames addObject:NSAccessibilityChildrenAttribute];
+        if ([javaRole isEqualToString:@"list"]) {
+            [attributeNames addObject:NSAccessibilitySelectedChildrenAttribute];
+            [attributeNames addObject:NSAccessibilityVisibleChildrenAttribute];
+        }
+        // Just above, the below mentioned support has been added back in for lists.
+        // However, the following comments may still be useful for future fixes.
 //        [attributeNames addObject:NSAccessibilitySelectedChildrenAttribute];
 //        [attributeNames addObject:NSAccessibilityVisibleChildrenAttribute];
                 //According to AXRoles.txt:
@@ -567,6 +580,14 @@ static NSObject *sAttributeNamesLOCK = nil;
     return isChildSelected(env, ((JavaComponentAccessibility *)[self parent])->fAccessible, fIndex, fComponent);
 }
 
+- (BOOL)isSelectable:(JNIEnv *)env
+{
+    jobject axContext = [self axContextWithEnv:env];
+    BOOL selectable = isSelectable(env, axContext, fComponent);
+    (*env)->DeleteLocalRef(env, axContext);
+    return selectable;
+}
+
 - (BOOL)isVisible:(JNIEnv *)env
 {
     if (fIndex == -1) {
@@ -586,18 +607,32 @@ static NSObject *sAttributeNamesLOCK = nil;
 
     @synchronized(sAttributeNamesLOCK) {
         NSString *javaRole = [self javaRole];
-        NSArray *names = (NSArray *)[sAttributeNamesForRoleCache objectForKey:javaRole];
-        if (names != nil) return names;
-
-        names = [self initializeAttributeNamesWithEnv:env];
-        if (names != nil) {
+        NSArray *names =
+            (NSArray *)[sAttributeNamesForRoleCache objectForKey:javaRole];
+        if (names == nil) {
+            names = [self initializeAttributeNamesWithEnv:env];
 #ifdef JAVA_AX_DEBUG
             NSLog(@"Initializing: %s for %@: %@", __FUNCTION__, javaRole, names);
 #endif
             [sAttributeNamesForRoleCache setObject:names forKey:javaRole];
-            return names;
         }
-    }
+        // The above set of attributes is immutable per role, but some objects, if
+        // they are the child of a list, need to add the selected and index attributes.
+        id myParent = [self accessibilityParentAttribute];
+        if ([myParent isKindOfClass:[JavaComponentAccessibility class]]) {
+            NSString *parentRole = [(JavaComponentAccessibility *)myParent javaRole];
+            if ([parentRole isEqualToString:@"list"]) {
+                NSMutableArray *moreNames =
+                    [[NSMutableArray alloc] initWithCapacity: [names count] + 2];
+                [moreNames addObjectsFromArray: names];
+                [moreNames addObject:NSAccessibilitySelectedAttribute];
+                [moreNames addObject:NSAccessibilityIndexAttribute];
+                return moreNames;
+            }
+        }
+        return names;
+
+    }  // end @synchronized
 
 #ifdef JAVA_AX_DEBUG
     NSLog(@"Warning in %s: could not find attribute names for role: %@", __FUNCTION__, [self javaRole]);
@@ -656,7 +691,10 @@ static NSObject *sAttributeNamesLOCK = nil;
 - (NSArray *)accessibilityChildrenAttribute
 {
     JNIEnv* env = [ThreadUtilities getJNIEnv];
-    NSArray *children = [JavaComponentAccessibility childrenOfParent:self withEnv:env withChildrenCode:JAVA_AX_VISIBLE_CHILDREN allowIgnored:NO];
+    NSArray *children = [JavaComponentAccessibility childrenOfParent:self
+                                                    withEnv:env
+                                                    withChildrenCode:JAVA_AX_ALL_CHILDREN
+                                                    allowIgnored:NO];
 
     NSArray *value = nil;
     if ([children count] > 0) {
@@ -680,7 +718,12 @@ static NSObject *sAttributeNamesLOCK = nil;
         return [super accessibilityIndexOfChild:child];
     }
 
-    return JNFCallStaticIntMethod([ThreadUtilities getJNIEnv], sjm_getAccessibleIndexInParent, ((JavaComponentAccessibility *)child)->fAccessible, ((JavaComponentAccessibility *)child)->fComponent);
+    jint returnValue =
+        JNFCallStaticIntMethod( [ThreadUtilities getJNIEnv],
+                                sjm_getAccessibleIndexInParent,
+                                ((JavaComponentAccessibility *)child)->fAccessible,
+                                ((JavaComponentAccessibility *)child)->fComponent );
+    return (returnValue == -1) ? NSNotFound : returnValue;
 }
 
 // Without this optimization accessibilityChildrenAttribute is called in order to get the entire array of children.
@@ -754,7 +797,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 
     jobject val = JNFCallStaticObjectMethod(env, sjm_getAccessibleDescription, fAccessible, fComponent); // AWT_THREADING Safe (AWTRunLoop)
     if (val == NULL) {
-        return @"unknown";
+        return nil;
     }
     NSString* str = JNFJavaToNSString(env, val);
     (*env)->DeleteLocalRef(env, val);
@@ -762,6 +805,18 @@ static NSObject *sAttributeNamesLOCK = nil;
 }
 
 - (BOOL)accessibilityIsHelpAttributeSettable
+{
+    return NO;
+}
+
+- (NSValue *)accessibilityIndexAttribute
+{
+    NSInteger index = fIndex;
+    NSValue *returnValue = [NSValue value:&index withObjCType:@encode(NSInteger)];
+    return returnValue;
+}
+
+- (BOOL)accessibilityIsIndexAttributeSettable
 {
     return NO;
 }
@@ -939,6 +994,33 @@ static NSObject *sAttributeNamesLOCK = nil;
     return NO; // cmcnote: actually it should be. so need to write accessibilitySetSelectedChildrenAttribute also
 }
 
+- (NSNumber *)accessibilitySelectedAttribute
+{
+    return [NSNumber numberWithBool:[self isSelected:[ThreadUtilities getJNIEnv]]];
+}
+
+- (BOOL)accessibilityIsSelectedAttributeSettable
+{
+    if ([self isSelectable:[ThreadUtilities getJNIEnv]]) {
+        return YES;
+    } else {
+        return NO;
+    }
+}
+
+- (void)accessibilitySetSelectedAttribute:(id)value
+{
+    static JNF_STATIC_MEMBER_CACHE( jm_requestSelection,
+                                    sjc_CAccessibility,
+                                    "requestSelection",
+                                    "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)V" );
+    
+    if ([(NSNumber*)value boolValue]) {
+        JNIEnv* env = [ThreadUtilities getJNIEnv];
+        JNFCallStaticVoidMethod(env, jm_requestSelection, fAccessible, fComponent); // AWT_THREADING Safe (AWTRunLoop)
+    }
+}
+
 // Element size (NSValue)
 - (NSValue *)accessibilitySizeAttribute {
     JNIEnv* env = [ThreadUtilities getJNIEnv];
@@ -1005,7 +1087,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 
     jobject val = JNFCallStaticObjectMethod(env, sjm_getAccessibleName, fAccessible, fComponent); // AWT_THREADING Safe (AWTRunLoop)
     if (val == NULL) {
-        return @"unknown";
+        return nil;
     }
     NSString* str = JNFJavaToNSString(env, val);
     (*env)->DeleteLocalRef(env, val);
@@ -1210,13 +1292,10 @@ static NSObject *sAttributeNamesLOCK = nil;
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessibility_focusChanged
 (JNIEnv *env, jobject jthis)
 {
-
 JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postFocusChanged:) on:[JavaComponentAccessibility class] withObject:nil waitUntilDone:NO];
 JNF_COCOA_EXIT(env);
 }
-
-
 
 /*
  * Class:     sun_lwawt_macosx_CAccessible
@@ -1233,6 +1312,22 @@ JNF_COCOA_EXIT(env);
 
 /*
  * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    selectedTextChanged
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_selectedTextChanged
+(JNIEnv *env, jclass jklass, jlong element)
+{
+JNF_COCOA_ENTER(env);
+    [ThreadUtilities performOnMainThread:@selector(postSelectedTextChanged)
+                     on:(JavaComponentAccessibility *)jlong_to_ptr(element)
+                     withObject:nil
+                     waitUntilDone:NO];
+JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
  * Method:    selectionChanged
  * Signature: (I)V
  */
@@ -1243,7 +1338,6 @@ JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postSelectionChanged) on:(JavaComponentAccessibility *)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
 JNF_COCOA_EXIT(env);
 }
-
 
 /*
  * Class:     sun_lwawt_macosx_CAccessible

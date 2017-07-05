@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
                                                  int width, int height,
                                                  int displayMode);
     private static native void resetNativeData(int screen);
-    private static native int getNativeScaleFactor(int screen);
+    private static native double getNativeScaleFactor(int screen);
 
     /**
      * Returns true only if:
@@ -516,6 +516,11 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return scale;
     }
 
+    public int getNativeScale() {
+        isXrandrExtensionSupported();
+        return (int)Math.round(getNativeScaleFactor(screen));
+    }
+
     private int initScaleFactor() {
 
         if (SunGraphicsEnvironment.isUIScaleEnabled()) {
@@ -525,8 +530,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
             if (debugScale >= 1) {
                 return (int) debugScale;
             }
-
-            int nativeScale = getNativeScaleFactor(screen);
+            int nativeScale = getNativeScale();
             return nativeScale >= 1 ? nativeScale : 1;
         }
 

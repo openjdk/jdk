@@ -46,9 +46,10 @@ import jdk.internal.jimage.decompressor.Decompressor;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.LinkModule;
-import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolModule;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
 
 /**
  * Plugins Stack. Plugins entry point to apply transformations onto resources
@@ -61,12 +62,23 @@ public final class ImagePluginStack {
         ExecutableImage retrieve(ImagePluginStack stack) throws IOException;
     }
 
-    public static final class OrderedResourcePool extends ModulePoolImpl {
+    public static final class OrderedResourcePoolManager extends ResourcePoolManager {
+        class OrderedResourcePool extends ResourcePoolImpl {
+            List<ResourcePoolEntry> getOrderedList() {
+                return OrderedResourcePoolManager.this.getOrderedList();
+            }
+        }
 
-        private final List<ModuleEntry> orderedList = new ArrayList<>();
+        private final List<ResourcePoolEntry> orderedList = new ArrayList<>();
+        private final ResourcePoolImpl poolImpl = new OrderedResourcePool();
 
-        public OrderedResourcePool(ByteOrder order, StringTable table) {
+        public OrderedResourcePoolManager(ByteOrder order, StringTable table) {
             super(order, table);
+        }
+
+        @Override
+        public ResourcePool resourcePool() {
+            return poolImpl;
         }
 
         /**
@@ -75,22 +87,22 @@ public final class ImagePluginStack {
          * @param resource The Resource to add.
          */
         @Override
-        public void add(ModuleEntry resource) {
+        public void add(ResourcePoolEntry resource) {
             super.add(resource);
             orderedList.add(resource);
         }
 
-        List<ModuleEntry> getOrderedList() {
+        List<ResourcePoolEntry> getOrderedList() {
             return Collections.unmodifiableList(orderedList);
         }
     }
 
-    private final static class CheckOrderResourcePool extends ModulePoolImpl {
+    private final static class CheckOrderResourcePoolManager extends ResourcePoolManager {
 
-        private final List<ModuleEntry> orderedList;
+        private final List<ResourcePoolEntry> orderedList;
         private int currentIndex;
 
-        public CheckOrderResourcePool(ByteOrder order, List<ModuleEntry> orderedList, StringTable table) {
+        public CheckOrderResourcePoolManager(ByteOrder order, List<ResourcePoolEntry> orderedList, StringTable table) {
             super(order, table);
             this.orderedList = Objects.requireNonNull(orderedList);
         }
@@ -101,10 +113,10 @@ public final class ImagePluginStack {
          * @param resource The Resource to add.
          */
         @Override
-        public void add(ModuleEntry resource) {
-            ModuleEntry ordered = orderedList.get(currentIndex);
+        public void add(ResourcePoolEntry resource) {
+            ResourcePoolEntry ordered = orderedList.get(currentIndex);
             if (!resource.equals(ordered)) {
-                throw new PluginException("Resource " + resource.getPath() + " not in the right order");
+                throw new PluginException("Resource " + resource.path() + " not in the right order");
             }
             super.add(resource);
             currentIndex += 1;
@@ -209,17 +221,16 @@ public final class ImagePluginStack {
      * @return The result of the visit.
      * @throws IOException
      */
-    public ModulePoolImpl visitResources(ModulePoolImpl resources)
+    public ResourcePool visitResources(ResourcePoolManager resources)
             throws Exception {
         Objects.requireNonNull(resources);
-        resources.setReadOnly();
         if (resources.isEmpty()) {
-            return new ModulePoolImpl(resources.getByteOrder(),
-                    resources.getStringTable());
+            return new ResourcePoolManager(resources.byteOrder(),
+                    resources.getStringTable()).resourcePool();
         }
         PreVisitStrings previsit = new PreVisitStrings();
         resourcePrevisitors.stream().forEach((p) -> {
-            p.previsit(resources, previsit);
+            p.previsit(resources.resourcePool(), previsit);
         });
 
         // Store the strings resulting from the previsit.
@@ -228,89 +239,85 @@ public final class ImagePluginStack {
             resources.getStringTable().addString(s);
         });
 
-        ModulePoolImpl current = resources;
-        List<ModuleEntry> frozenOrder = null;
+        ResourcePool resPool = resources.resourcePool();
+        List<ResourcePoolEntry> frozenOrder = null;
         for (Plugin p : plugins) {
-            current.setReadOnly();
-            ModulePoolImpl output = null;
+            ResourcePoolManager resMgr = null;
             if (p == lastSorter) {
                 if (frozenOrder != null) {
                     throw new Exception("Order of resources is already frozen. Plugin "
                             + p.getName() + " is badly located");
                 }
                 // Create a special Resource pool to compute the indexes.
-                output = new OrderedResourcePool(current.getByteOrder(),
+                resMgr = new OrderedResourcePoolManager(resPool.byteOrder(),
                         resources.getStringTable());
             } else {// If we have an order, inject it
                 if (frozenOrder != null) {
-                    output = new CheckOrderResourcePool(current.getByteOrder(),
+                    resMgr = new CheckOrderResourcePoolManager(resPool.byteOrder(),
                             frozenOrder, resources.getStringTable());
                 } else {
-                    output = new ModulePoolImpl(current.getByteOrder(),
+                    resMgr = new ResourcePoolManager(resPool.byteOrder(),
                             resources.getStringTable());
                 }
             }
-            p.visit(current, output);
-            if (output.isEmpty()) {
+            resPool = p.transform(resPool, resMgr.resourcePoolBuilder());
+            if (resPool.isEmpty()) {
                 throw new Exception("Invalid resource pool for plugin " + p);
             }
-            if (output instanceof OrderedResourcePool) {
-                frozenOrder = ((OrderedResourcePool) output).getOrderedList();
+            if (resPool instanceof OrderedResourcePoolManager.OrderedResourcePool) {
+                frozenOrder = ((OrderedResourcePoolManager.OrderedResourcePool)resPool).getOrderedList();
             }
-
-            current = output;
         }
-        current.setReadOnly();
-        return current;
+        return resPool;
     }
 
     /**
-     * This pool wrap the original pool and automatically uncompress ModuleEntry
+     * This pool wrap the original pool and automatically uncompress ResourcePoolEntry
      * if needed.
      */
-    private class LastPool implements ModulePool {
-        private class LastModule implements LinkModule {
+    private class LastPoolManager extends ResourcePoolManager {
+        private class LastModule implements ResourcePoolModule {
 
-            final LinkModule module;
+            final ResourcePoolModule module;
+            // lazily initialized
+            ModuleDescriptor descriptor;
 
-            LastModule(LinkModule module) {
+            LastModule(ResourcePoolModule module) {
                 this.module = module;
             }
 
             @Override
-            public String getName() {
-                return module.getName();
+            public String name() {
+                return module.name();
             }
 
             @Override
-            public Optional<ModuleEntry> findEntry(String path) {
-                Optional<ModuleEntry> d = module.findEntry(path);
+            public Optional<ResourcePoolEntry> findEntry(String path) {
+                Optional<ResourcePoolEntry> d = module.findEntry(path);
                 return d.isPresent()? Optional.of(getUncompressed(d.get())) : Optional.empty();
             }
 
             @Override
-            public ModuleDescriptor getDescriptor() {
-                return module.getDescriptor();
+            public ModuleDescriptor descriptor() {
+                if (descriptor == null) {
+                    descriptor = ResourcePoolManager.readModuleDescriptor(this);
+                }
+                return descriptor;
             }
 
             @Override
-            public void add(ModuleEntry data) {
-                throw new PluginException("pool is readonly");
-            }
-
-            @Override
-            public Set<String> getAllPackages() {
-                return module.getAllPackages();
+            public Set<String> packages() {
+                return module.packages();
             }
 
             @Override
             public String toString() {
-                return getName();
+                return name();
             }
 
             @Override
-            public Stream<ModuleEntry> entries() {
-                List<ModuleEntry> lst = new ArrayList<>();
+            public Stream<ResourcePoolEntry> entries() {
+                List<ResourcePoolEntry> lst = new ArrayList<>();
                 module.entries().forEach(md -> {
                     lst.add(getUncompressed(md));
                 });
@@ -318,31 +325,27 @@ public final class ImagePluginStack {
             }
 
             @Override
-            public int getEntryCount() {
-                return module.getEntryCount();
+            public int entryCount() {
+                return module.entryCount();
             }
         }
-        private final ModulePoolImpl pool;
-        Decompressor decompressor = new Decompressor();
-        Collection<ModuleEntry> content;
 
-        LastPool(ModulePoolImpl pool) {
+        private final ResourcePool pool;
+        Decompressor decompressor = new Decompressor();
+        Collection<ResourcePoolEntry> content;
+
+        LastPoolManager(ResourcePool pool) {
             this.pool = pool;
         }
 
         @Override
-        public boolean isReadOnly() {
-            return true;
-        }
-
-        @Override
-        public void add(ModuleEntry resource) {
+        public void add(ResourcePoolEntry resource) {
             throw new PluginException("pool is readonly");
         }
 
         @Override
-        public Optional<LinkModule> findModule(String name) {
-            Optional<LinkModule> module = pool.findModule(name);
+        public Optional<ResourcePoolModule> findModule(String name) {
+            Optional<ResourcePoolModule> module = pool.moduleView().findModule(name);
             return module.isPresent()? Optional.of(new LastModule(module.get())) : Optional.empty();
         }
 
@@ -352,17 +355,17 @@ public final class ImagePluginStack {
          * @return The collection of modules.
          */
         @Override
-        public Stream<? extends LinkModule> modules() {
-            List<LinkModule> modules = new ArrayList<>();
-            pool.modules().forEach(m -> {
+        public Stream<ResourcePoolModule> modules() {
+            List<ResourcePoolModule> modules = new ArrayList<>();
+            pool.moduleView().modules().forEach(m -> {
                 modules.add(new LastModule(m));
             });
             return modules.stream();
         }
 
         @Override
-        public int getModuleCount() {
-            return pool.getModuleCount();
+        public int moduleCount() {
+            return pool.moduleView().moduleCount();
         }
 
         /**
@@ -371,7 +374,7 @@ public final class ImagePluginStack {
          * @return The stream of resources;
          */
         @Override
-        public Stream<? extends ModuleEntry> entries() {
+        public Stream<ResourcePoolEntry> entries() {
             if (content == null) {
                 content = new ArrayList<>();
                 pool.entries().forEach(md -> {
@@ -382,8 +385,8 @@ public final class ImagePluginStack {
         }
 
         @Override
-        public int getEntryCount() {
-            return pool.getEntryCount();
+        public int entryCount() {
+            return pool.entryCount();
         }
 
         /**
@@ -393,22 +396,22 @@ public final class ImagePluginStack {
          * @return A Resource instance if the resource is found
          */
         @Override
-        public Optional<ModuleEntry> findEntry(String path) {
+        public Optional<ResourcePoolEntry> findEntry(String path) {
             Objects.requireNonNull(path);
-            Optional<ModuleEntry> res = pool.findEntry(path);
+            Optional<ResourcePoolEntry> res = pool.findEntry(path);
             return res.isPresent()? Optional.of(getUncompressed(res.get())) : Optional.empty();
         }
 
         @Override
-        public Optional<ModuleEntry> findEntryInContext(String path, ModuleEntry context) {
+        public Optional<ResourcePoolEntry> findEntryInContext(String path, ResourcePoolEntry context) {
             Objects.requireNonNull(path);
             Objects.requireNonNull(context);
-            Optional<ModuleEntry> res = pool.findEntryInContext(path, context);
+            Optional<ResourcePoolEntry> res = pool.findEntryInContext(path, context);
             return res.map(this::getUncompressed);
         }
 
         @Override
-        public boolean contains(ModuleEntry res) {
+        public boolean contains(ResourcePoolEntry res) {
             return pool.contains(res);
         }
 
@@ -418,29 +421,22 @@ public final class ImagePluginStack {
         }
 
         @Override
-        public void transformAndCopy(Function<ModuleEntry, ModuleEntry> visitor, ModulePool output) {
-            pool.transformAndCopy(visitor, output);
+        public ByteOrder byteOrder() {
+            return pool.byteOrder();
         }
 
-        @Override
-        public ByteOrder getByteOrder() {
-            return pool.getByteOrder();
-        }
-
-        @Override
-        public Map<String, String> getReleaseProperties() {
-            return Collections.unmodifiableMap(pool.getReleaseProperties());
-        }
-
-        private ModuleEntry getUncompressed(ModuleEntry res) {
+        private ResourcePoolEntry getUncompressed(ResourcePoolEntry res) {
             if (res != null) {
-                if (res instanceof ModulePoolImpl.CompressedModuleData) {
+                if (res instanceof ResourcePoolManager.CompressedModuleData) {
                     try {
-                        byte[] bytes = decompressor.decompressResource(getByteOrder(),
-                                (int offset) -> pool.getStringTable().getString(offset),
-                                res.getBytes());
-                        res = res.create(bytes);
+                        byte[] bytes = decompressor.decompressResource(byteOrder(),
+                                (int offset) -> ((ResourcePoolImpl)pool).getStringTable().getString(offset),
+                                res.contentBytes());
+                        res = res.copyWithContent(bytes);
                     } catch (IOException ex) {
+                        if (JlinkTask.DEBUG) {
+                            ex.printStackTrace();
+                        }
                         throw new PluginException(ex);
                     }
                 }
@@ -457,24 +453,12 @@ public final class ImagePluginStack {
      * @param writer
      * @throws java.lang.Exception
      */
-    public void storeFiles(ModulePoolImpl original, ModulePoolImpl transformed,
+    public void storeFiles(ResourcePool original, ResourcePool transformed,
             BasicImageWriter writer)
             throws Exception {
         Objects.requireNonNull(original);
         Objects.requireNonNull(transformed);
-        Optional<LinkModule> javaBase = transformed.findModule("java.base");
-        javaBase.ifPresent(mod -> {
-            try {
-                Map<String, String> release = transformed.getReleaseProperties();
-                // fill release information available from transformed "java.base" module!
-                ModuleDescriptor desc = mod.getDescriptor();
-                desc.osName().ifPresent(s -> release.put("OS_NAME", s));
-                desc.osVersion().ifPresent(s -> release.put("OS_VERSION", s));
-                desc.osArch().ifPresent(s -> release.put("OS_ARCH", s));
-            } catch (Exception ignored) {}
-        });
-
-        imageBuilder.storeFiles(new LastPool(transformed));
+        imageBuilder.storeFiles(new LastPoolManager(transformed).resourcePool());
     }
 
     public ExecutableImage getExecutableImage() throws IOException {
