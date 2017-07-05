@@ -299,10 +299,7 @@ public class NumberFormatter extends InternationalFormatter {
             if (attrs.get(NumberFormat.Field.SIGN) != null) {
                 size--;
             }
-            if (size == 0) {
-                return true;
-            }
-            return false;
+            return size == 0;
         }
         return true;
     }
@@ -315,10 +312,7 @@ public class NumberFormatter extends InternationalFormatter {
     boolean isNavigatable(int index) {
         if (!super.isNavigatable(index)) {
             // Don't skip the decimal, it causes wierd behavior
-            if (getBufferedChar(index) == getDecimalSeparator()) {
-                return true;
-            }
-            return false;
+            return getBufferedChar(index) == getDecimalSeparator();
         }
         return true;
     }
@@ -341,11 +335,7 @@ public class NumberFormatter extends InternationalFormatter {
                 Map attrs = iterator.getAttributes();
 
                 if (attrs != null && attrs.size() > 0) {
-                    Iterator keys = attrs.keySet().iterator();
-
-                    while (keys.hasNext()) {
-                        Object key = keys.next();
-
+                    for (Object key : attrs.keySet()) {
                         if (key instanceof NumberFormat.Field) {
                             return (NumberFormat.Field)key;
                         }
@@ -461,7 +451,7 @@ public class NumberFormatter extends InternationalFormatter {
                     }
                 }
                 if (string != null) {
-                    Class valueClass = getValueClass();
+                    Class<?> valueClass = getValueClass();
 
                     if (valueClass == null) {
                         valueClass = value.getClass();

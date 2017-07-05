@@ -56,7 +56,8 @@ import javax.swing.border.LineBorder;
  * @author JavaSoft International
  */
 
-public class CompositionArea extends JPanel implements InputMethodListener {
+// This class is final due to the 6607310 fix. Refer to the CR for details.
+public final class CompositionArea extends JPanel implements InputMethodListener {
 
     private CompositionAreaHandler handler;
 

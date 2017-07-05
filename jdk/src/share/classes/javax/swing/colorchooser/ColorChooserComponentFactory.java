@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 
 package javax.swing.colorchooser;
 
-import javax.swing.*;
-
-
+import javax.swing.JComponent;
 
 /**
  * A class designed to produce preconfigured "accessory" objects to
@@ -49,16 +47,17 @@ public class ColorChooserComponentFactory {
 
     private ColorChooserComponentFactory() { } // can't instantiate
 
-
     public static AbstractColorChooserPanel[] getDefaultChooserPanels() {
-        AbstractColorChooserPanel[] choosers = { new DefaultSwatchChooserPanel(),
-                                                 new DefaultHSBChooserPanel(),
-                                                 new DefaultRGBChooserPanel() };
-        return choosers;
+        return new AbstractColorChooserPanel[] {
+                new DefaultSwatchChooserPanel(),
+                new ColorChooserPanel(new ColorModelHSV()),
+                new ColorChooserPanel(new ColorModelHSL()),
+                new ColorChooserPanel(new ColorModel()),
+                new ColorChooserPanel(new ColorModelCMYK()),
+        };
     }
 
     public static JComponent getPreviewPanel() {
         return new DefaultPreviewPanel();
     }
-
 }

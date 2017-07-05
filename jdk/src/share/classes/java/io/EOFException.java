@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ package java.io;
  */
 public
 class EOFException extends IOException {
+    private static final long serialVersionUID = 6433858223774886977L;
+
     /**
      * Constructs an <code>EOFException</code> with <code>null</code>
      * as its error detail message.

@@ -133,8 +133,8 @@ public class JDesktopPane extends JLayeredPane implements Accessible
             public Component getDefaultComponent(Container c) {
                 JInternalFrame jifArray[] = getAllFrames();
                 Component comp = null;
-                for (int i = 0; i < jifArray.length; i++) {
-                    comp = jifArray[i].getFocusTraversalPolicy().getDefaultComponent(jifArray[i]);
+                for (JInternalFrame jif : jifArray) {
+                    comp = jif.getFocusTraversalPolicy().getDefaultComponent(jif);
                     if (comp != null) {
                         break;
                     }
@@ -262,16 +262,15 @@ public class JDesktopPane extends JLayeredPane implements Accessible
     public JInternalFrame[] getAllFrames() {
         int i, count;
         JInternalFrame[] results;
-        Vector vResults = new Vector(10);
-        Object next, tmp;
+        Vector<JInternalFrame> vResults = new Vector<JInternalFrame>(10);
 
         count = getComponentCount();
         for(i = 0; i < count; i++) {
-            next = getComponent(i);
+            Component next = getComponent(i);
             if(next instanceof JInternalFrame)
-                vResults.addElement(next);
+                vResults.addElement((JInternalFrame) next);
             else if(next instanceof JInternalFrame.JDesktopIcon)  {
-                tmp = ((JInternalFrame.JDesktopIcon)next).getInternalFrame();
+                JInternalFrame tmp = ((JInternalFrame.JDesktopIcon)next).getInternalFrame();
                 if(tmp != null)
                     vResults.addElement(tmp);
             }
@@ -324,18 +323,17 @@ public class JDesktopPane extends JLayeredPane implements Accessible
     public JInternalFrame[] getAllFramesInLayer(int layer) {
         int i, count;
         JInternalFrame[] results;
-        Vector vResults = new Vector(10);
-        Object next, tmp;
+        Vector<JInternalFrame> vResults = new Vector<JInternalFrame>(10);
 
         count = getComponentCount();
         for(i = 0; i < count; i++) {
-            next = getComponent(i);
+            Component next = getComponent(i);
             if(next instanceof JInternalFrame) {
                 if(((JInternalFrame)next).getLayer() == layer)
-                    vResults.addElement(next);
+                    vResults.addElement((JInternalFrame) next);
             } else if(next instanceof JInternalFrame.JDesktopIcon)  {
-                tmp = ((JInternalFrame.JDesktopIcon)next).getInternalFrame();
-                if(tmp != null && ((JInternalFrame)tmp).getLayer() == layer)
+                JInternalFrame tmp = ((JInternalFrame.JDesktopIcon)next).getInternalFrame();
+                if(tmp != null && tmp.getLayer() == layer)
                     vResults.addElement(tmp);
             }
         }

@@ -62,7 +62,7 @@ import org.w3c.dom.Node;
  * -scott
  * </PRE>
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  * @see com.sun.org.apache.xml.internal.security.transforms.implementations.FuncHere
  * @see com.sun.org.apache.xml.internal.security.utils.XPathFuncHereAPI
  * @see <A HREF="http://www.w3.org/Signature/Drafts/xmldsig-core/Overview.html#function-here">XML Signature - The here() function</A>

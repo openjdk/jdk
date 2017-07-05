@@ -123,9 +123,9 @@ public class BasicMenuUI extends BasicMenuItemUI
         InputMap windowInputMap = SwingUtilities.getUIInputMap(
                        menuItem, JComponent.WHEN_IN_FOCUSED_WINDOW);
         if (lastMnemonic != 0 && windowInputMap != null) {
-            for (int i=0; i<shortcutKeys.length; i++) {
+            for (int shortcutKey : shortcutKeys) {
                 windowInputMap.remove(KeyStroke.getKeyStroke
-                                      (lastMnemonic, shortcutKeys[i], false));
+                        (lastMnemonic, shortcutKey, false));
             }
         }
         if (mnemonic != 0) {
@@ -135,10 +135,9 @@ public class BasicMenuUI extends BasicMenuItemUI
                 SwingUtilities.replaceUIInputMap(menuItem, JComponent.
                                        WHEN_IN_FOCUSED_WINDOW, windowInputMap);
             }
-            for (int i=0; i<shortcutKeys.length; i++) {
+            for (int shortcutKey : shortcutKeys) {
                 windowInputMap.put(KeyStroke.getKeyStroke(mnemonic,
-                                         shortcutKeys[i], false),
-                                   "selectMenu");
+                        shortcutKey, false), "selectMenu");
             }
         }
         lastMnemonic = mnemonic;
@@ -264,14 +263,14 @@ public class BasicMenuUI extends BasicMenuItemUI
                     if(subElements.length > 0) {
                         me = new MenuElement[4];
                         me[0] = (MenuElement) cnt;
-                        me[1] = (MenuElement) menu;
-                        me[2] = (MenuElement) menu.getPopupMenu();
+                        me[1] = menu;
+                        me[2] = menu.getPopupMenu();
                         me[3] = subElements[0];
                     } else {
                         me = new MenuElement[3];
                         me[0] = (MenuElement)cnt;
                         me[1] = menu;
-                        me[2] = (MenuElement) menu.getPopupMenu();
+                        me[2] = menu.getPopupMenu();
                     }
                     defaultManager.setSelectedPath(me);
                 }
@@ -606,7 +605,7 @@ public class BasicMenuUI extends BasicMenuItemUI
             MenuSelectionManager manager = e.getMenuSelectionManager();
             if (key == Character.toLowerCase(e.getKeyChar())) {
                 JPopupMenu popupMenu = ((JMenu)menuItem).getPopupMenu();
-                ArrayList newList = new ArrayList(Arrays.asList(path));
+                ArrayList<MenuElement> newList = new ArrayList<MenuElement>(Arrays.asList(path));
                 newList.add(popupMenu);
                 MenuElement subs[] = popupMenu.getSubElements();
                 MenuElement sub =
@@ -614,8 +613,8 @@ public class BasicMenuUI extends BasicMenuItemUI
                 if(sub != null) {
                     newList.add(sub);
                 }
-                MenuElement newPath[] = new MenuElement[0];;
-                newPath = (MenuElement[]) newList.toArray(newPath);
+                MenuElement newPath[] = new MenuElement[0];
+                newPath = newList.toArray(newPath);
                 manager.setSelectedPath(newPath);
                 e.consume();
             } else if (((JMenu)menuItem).isTopLevelMenu()

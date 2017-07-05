@@ -85,8 +85,7 @@ public abstract class AbstractListModel implements ListModel, Serializable
      * @since 1.4
      */
     public ListDataListener[] getListDataListeners() {
-        return (ListDataListener[])listenerList.getListeners(
-                ListDataListener.class);
+        return listenerList.getListeners(ListDataListener.class);
     }
 
 

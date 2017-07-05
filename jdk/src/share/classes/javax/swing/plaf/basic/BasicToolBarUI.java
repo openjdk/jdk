@@ -83,8 +83,8 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
     private static Border nonRolloverToggleBorder;
     private boolean rolloverBorders = false;
 
-    private HashMap borderTable = new HashMap();
-    private Hashtable rolloverTable = new Hashtable();
+    private HashMap<AbstractButton, Border> borderTable = new HashMap<AbstractButton, Border>();
+    private Hashtable<AbstractButton, Boolean> rolloverTable = new Hashtable<AbstractButton, Boolean>();
 
 
     /**
@@ -171,7 +171,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         uninstallKeyboardActions();
 
         // Clear instance vars
-        if (isFloating() == true)
+        if (isFloating())
             setFloating(false, null);
 
         floatingToolBar = null;
@@ -273,9 +273,8 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
             // Put focus listener on all components in toolbar
             Component[] components = toolBar.getComponents();
 
-            for ( int i = 0; i < components.length; ++i )
-            {
-                components[ i ].addFocusListener( toolBarFocusListener );
+            for (Component component : components) {
+                component.addFocusListener(toolBarFocusListener);
             }
         }
     }
@@ -307,9 +306,8 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
             // Remove focus listener from all components in toolbar
             Component[] components = toolBar.getComponents();
 
-            for ( int i = 0; i < components.length; ++i )
-            {
-                components[ i ].removeFocusListener( toolBarFocusListener );
+            for (Component component : components) {
+                component.removeFocusListener(toolBarFocusListener);
             }
 
             toolBarFocusListener = null;
@@ -616,10 +614,10 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         // Put rollover borders on buttons
         Component[] components = c.getComponents();
 
-        for ( int i = 0; i < components.length; ++i ) {
-            if ( components[ i ] instanceof JComponent ) {
-                ( (JComponent)components[ i ] ).updateUI();
-                setBorderToRollover( components[ i ] );
+        for (Component component : components) {
+            if (component instanceof JComponent) {
+                ((JComponent) component).updateUI();
+                setBorderToRollover(component);
             }
         }
     }
@@ -640,10 +638,10 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         // Put non-rollover borders on buttons. These borders reduce the margin.
         Component[] components = c.getComponents();
 
-        for ( int i = 0; i < components.length; ++i ) {
-            if ( components[ i ] instanceof JComponent ) {
-                ( (JComponent)components[ i ] ).updateUI();
-                setBorderToNonRollover( components[ i ] );
+        for (Component component : components) {
+            if (component instanceof JComponent) {
+                ((JComponent) component).updateUI();
+                setBorderToNonRollover(component);
             }
         }
     }
@@ -664,8 +662,8 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         // Put back the normal borders on buttons
         Component[] components = c.getComponents();
 
-        for ( int i = 0; i < components.length; ++i ) {
-            setBorderToNormal( components[ i ] );
+        for (Component component : components) {
+            setBorderToNormal(component);
         }
     }
 
@@ -681,7 +679,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         if (c instanceof AbstractButton) {
             AbstractButton b = (AbstractButton)c;
 
-            Border border = (Border)borderTable.get(b);
+            Border border = borderTable.get(b);
             if (border == null || border instanceof UIResource) {
                 borderTable.put(b, b.getBorder());
             }
@@ -721,7 +719,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         if (c instanceof AbstractButton) {
             AbstractButton b = (AbstractButton)c;
 
-            Border border = (Border)borderTable.get(b);
+            Border border = borderTable.get(b);
             if (border == null || border instanceof UIResource) {
                 borderTable.put(b, b.getBorder());
             }
@@ -765,10 +763,10 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
         if (c instanceof AbstractButton) {
             AbstractButton b = (AbstractButton)c;
 
-            Border border = (Border)borderTable.remove(b);
+            Border border = borderTable.remove(b);
             b.setBorder(border);
 
-            Boolean value = (Boolean)rolloverTable.remove(b);
+            Boolean value = rolloverTable.remove(b);
             if (value != null) {
                 b.setRolloverEnabled(value.booleanValue());
             }
@@ -785,7 +783,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
     }
 
     public void setFloating(boolean b, Point p) {
-        if (toolBar.isFloatable() == true) {
+        if (toolBar.isFloatable()) {
             boolean visible = false;
             Window ancestor = SwingUtilities.getWindowAncestor(toolBar);
             if (ancestor != null) {
@@ -953,7 +951,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
 
     protected void dragTo(Point position, Point origin)
     {
-        if (toolBar.isFloatable() == true)
+        if (toolBar.isFloatable())
         {
           try
           {
@@ -1003,7 +1001,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
 
     protected void floatAt(Point position, Point origin)
     {
-        if(toolBar.isFloatable() == true)
+        if(toolBar.isFloatable())
         {
           try
           {
@@ -1174,7 +1172,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
             if (!tb.isEnabled()) {
                 return;
             }
-            if (isDragging == true) {
+            if (isDragging) {
                 Point position = evt.getPoint();
                 if (origin == null)
                     origin = evt.getComponent().getLocationOnScreen();
@@ -1242,7 +1240,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
 
     protected class FrameListener extends WindowAdapter {
         public void windowClosing(WindowEvent w) {
-            if (toolBar.isFloatable() == true) {
+            if (toolBar.isFloatable()) {
                 if (dragWindow != null)
                     dragWindow.setVisible(false);
                 floating = false;

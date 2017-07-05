@@ -25,9 +25,6 @@
 
 package javax.swing.plaf.basic;
 
-import sun.swing.MenuItemCheckIconFactory;
-import sun.swing.SwingUtilities2;
-import static sun.swing.SwingUtilities2.BASICMENUITEMUI_MAX_TEXT_OFFSET;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
@@ -39,8 +36,7 @@ import javax.swing.border.*;
 import javax.swing.plaf.*;
 import javax.swing.text.View;
 
-import sun.swing.UIAction;
-import sun.swing.StringUIClientPropertyKey;
+import sun.swing.*;
 
 /**
  * BasicMenuItem implementation
@@ -90,24 +86,6 @@ public class BasicMenuItemUI extends MenuItemUI
 
     private static final boolean VERBOSE = false; // show reuse hits/misses
     private static final boolean DEBUG =   false;  // show bad params, misc.
-
-    // Allows to reuse layoutInfo object.
-    // Shouldn't be used directly. Use getLayoutInfo() instead.
-    private final transient LayoutInfo layoutInfo = new LayoutInfo();
-
-    /* Client Property keys for calculation of maximal widths */
-    static final StringUIClientPropertyKey MAX_ARROW_WIDTH =
-                        new StringUIClientPropertyKey("maxArrowWidth");
-    static final StringUIClientPropertyKey MAX_CHECK_WIDTH =
-                        new StringUIClientPropertyKey("maxCheckWidth");
-    static final StringUIClientPropertyKey MAX_ICON_WIDTH =
-                        new StringUIClientPropertyKey("maxIconWidth");
-    static final StringUIClientPropertyKey MAX_TEXT_WIDTH =
-                        new StringUIClientPropertyKey("maxTextWidth");
-    static final StringUIClientPropertyKey MAX_ACC_WIDTH =
-                        new StringUIClientPropertyKey("maxAccWidth");
-    static final StringUIClientPropertyKey MAX_LABEL_WIDTH =
-                        new StringUIClientPropertyKey("maxLabelWidth");
 
     static void loadActionMap(LazyActionMap map) {
         // NOTE: BasicMenuUI also calls into this method.
@@ -199,13 +177,14 @@ public class BasicMenuItemUI extends MenuItemUI
             //In case of column layout, .checkIconFactory is defined for this UI,
             //the icon is compatible with it and useCheckAndArrow() is true,
             //then the icon is handled by the checkIcon.
-            boolean isColumnLayout = LayoutInfo.isColumnLayout(
+            boolean isColumnLayout = MenuItemLayoutHelper.isColumnLayout(
                     BasicGraphicsUtils.isLeftToRight(menuItem), menuItem);
             if (isColumnLayout) {
                 MenuItemCheckIconFactory iconFactory =
                     (MenuItemCheckIconFactory) UIManager.get(prefix
                         + ".checkIconFactory");
-                if (iconFactory != null && useCheckAndArrow()
+                if (iconFactory != null
+                        && MenuItemLayoutHelper.useCheckAndArrow(menuItem)
                         && iconFactory.isCompatible(checkIcon, prefix)) {
                     checkIcon = iconFactory.getIcon(menuItem);
                 }
@@ -256,20 +235,7 @@ public class BasicMenuItemUI extends MenuItemUI
         uninstallComponents(menuItem);
         uninstallListeners();
         uninstallKeyboardActions();
-
-
-        // Remove values from the parent's Client Properties.
-        JComponent p = getMenuItemParent(menuItem);
-        if(p != null) {
-            p.putClientProperty(BasicMenuItemUI.MAX_ARROW_WIDTH, null );
-            p.putClientProperty(BasicMenuItemUI.MAX_CHECK_WIDTH, null );
-            p.putClientProperty(BasicMenuItemUI.MAX_ACC_WIDTH, null );
-            p.putClientProperty(BasicMenuItemUI.MAX_TEXT_WIDTH, null );
-            p.putClientProperty(BasicMenuItemUI.MAX_ICON_WIDTH, null );
-            p.putClientProperty(BasicMenuItemUI.MAX_LABEL_WIDTH, null );
-            p.putClientProperty(BASICMENUITEMUI_MAX_TEXT_OFFSET, null );
-        }
-
+        MenuItemLayoutHelper.clearUsedParentClientProperties(menuItem);
         menuItem = null;
     }
 
@@ -405,19 +371,6 @@ public class BasicMenuItemUI extends MenuItemUI
         return d;
     }
 
-    // Returns parent of this component if it is not a top-level menu
-    // Otherwise returns null
-    private static JComponent getMenuItemParent(JMenuItem mi) {
-        Container parent = mi.getParent();
-        if ((parent instanceof JComponent) &&
-             (!(mi instanceof JMenu) ||
-               !((JMenu)mi).isTopLevelMenu())) {
-            return (JComponent) parent;
-        } else {
-            return null;
-        }
-    }
-
     protected Dimension getPreferredMenuItemSize(JComponent c,
                                                  Icon checkIcon,
                                                  Icon arrowIcon,
@@ -447,32 +400,36 @@ public class BasicMenuItemUI extends MenuItemUI
         // the icon and text when user points a menu item by mouse.
 
         JMenuItem mi = (JMenuItem) c;
-        LayoutInfo li = getLayoutInfo(mi, checkIcon, arrowIcon,
-                createMaxViewRect(), defaultTextIconGap, acceleratorDelimiter,
-                BasicGraphicsUtils.isLeftToRight(mi), acceleratorFont,
-                useCheckAndArrow(), getPropertyPrefix());
+        MenuItemLayoutHelper lh = new MenuItemLayoutHelper(mi, checkIcon,
+                arrowIcon, MenuItemLayoutHelper.createMaxRect(), defaultTextIconGap,
+                acceleratorDelimiter, BasicGraphicsUtils.isLeftToRight(mi),
+                mi.getFont(), acceleratorFont,
+                MenuItemLayoutHelper.useCheckAndArrow(menuItem),
+                getPropertyPrefix());
 
         Dimension result = new Dimension();
 
         // Calculate the result width
-        result.width = li.leadingGap;
-        addWidth(li.maxCheckWidth, li.afterCheckIconGap, result);
+        result.width = lh.getLeadingGap();
+        MenuItemLayoutHelper.addMaxWidth(lh.getCheckSize(),
+                lh.getAfterCheckIconGap(), result);
         // Take into account mimimal text offset.
-        if ((!li.isTopLevelMenu)
-                && (li.minTextOffset > 0)
-                && (result.width < li.minTextOffset)) {
-            result.width = li.minTextOffset;
+        if ((!lh.isTopLevelMenu())
+                && (lh.getMinTextOffset() > 0)
+                && (result.width < lh.getMinTextOffset())) {
+            result.width = lh.getMinTextOffset();
         }
-        addWidth(li.maxLabelWidth, li.gap, result);
-        addWidth(li.maxAccWidth, li.gap, result);
-        addWidth(li.maxArrowWidth, li.gap, result);
+        MenuItemLayoutHelper.addMaxWidth(lh.getLabelSize(), lh.getGap(), result);
+        MenuItemLayoutHelper.addMaxWidth(lh.getAccSize(), lh.getGap(), result);
+        MenuItemLayoutHelper.addMaxWidth(lh.getArrowSize(), lh.getGap(), result);
 
         // Calculate the result height
-        result.height = max(li.checkRect.height, li.labelRect.height,
-                            li.accRect.height, li.arrowRect.height);
+        result.height = MenuItemLayoutHelper.max(lh.getCheckSize().getHeight(),
+                lh.getLabelSize().getHeight(), lh.getAccSize().getHeight(),
+                lh.getArrowSize().getHeight());
 
         // Take into account menu item insets
-        Insets insets = li.mi.getInsets();
+        Insets insets = lh.getMenuItem().getInsets();
         if(insets != null) {
             result.width += insets.left + insets.right;
             result.height += insets.top + insets.bottom;
@@ -492,498 +449,7 @@ public class BasicMenuItemUI extends MenuItemUI
             result.height++;
         }
 
-        li.clear();
         return result;
-    }
-
-    private Rectangle createMaxViewRect() {
-        return new Rectangle(0,0,Short.MAX_VALUE, Short.MAX_VALUE);
-    }
-
-    private void addWidth(int width, int gap, Dimension result) {
-        if (width > 0) {
-            result.width += width + gap;
-        }
-    }
-
-    private static int max(int... values) {
-        int maxValue = Integer.MIN_VALUE;
-        for (int i : values) {
-            if (i > maxValue) {
-                maxValue = i;
-            }
-        }
-        return maxValue;
-    }
-
-    // LayoutInfo helps to calculate preferred size and to paint a menu item
-    private static class LayoutInfo {
-        JMenuItem mi;
-        JComponent miParent;
-
-        FontMetrics fm;
-        FontMetrics accFm;
-
-        Icon icon;
-        Icon checkIcon;
-        Icon arrowIcon;
-        String text;
-        String accText;
-
-        boolean isColumnLayout;
-        boolean useCheckAndArrow;
-        boolean isLeftToRight;
-        boolean isTopLevelMenu;
-        View htmlView;
-
-        int verticalAlignment;
-        int horizontalAlignment;
-        int verticalTextPosition;
-        int horizontalTextPosition;
-        int gap;
-        int leadingGap;
-        int afterCheckIconGap;
-        int minTextOffset;
-
-        Rectangle viewRect;
-        Rectangle iconRect;
-        Rectangle textRect;
-        Rectangle accRect;
-        Rectangle checkRect;
-        Rectangle arrowRect;
-        Rectangle labelRect;
-
-        int origIconWidth;
-        int origTextWidth;
-        int origAccWidth;
-        int origCheckWidth;
-        int origArrowWidth;
-
-        int maxIconWidth;
-        int maxTextWidth;
-        int maxAccWidth;
-        int maxCheckWidth;
-        int maxArrowWidth;
-        int maxLabelWidth;
-
-        // Empty constructor helps to create "final" LayoutInfo object
-        public LayoutInfo() {
-        }
-
-        public LayoutInfo(JMenuItem mi, Icon checkIcon, Icon arrowIcon,
-                          Rectangle viewRect, int gap, String accDelimiter,
-                          boolean isLeftToRight, Font acceleratorFont,
-                          boolean useCheckAndArrow, String propertyPrefix) {
-            reset(mi, checkIcon, arrowIcon, viewRect, gap, accDelimiter,
-                  isLeftToRight, acceleratorFont, useCheckAndArrow,
-                  propertyPrefix);
-        }
-
-        // Allows to reuse a LayoutInfo object
-        public void reset(JMenuItem mi, Icon checkIcon, Icon arrowIcon,
-                          Rectangle viewRect, int gap, String accDelimiter,
-                          boolean isLeftToRight, Font acceleratorFont,
-                          boolean useCheckAndArrow, String propertyPrefix) {
-            this.mi = mi;
-            this.miParent = getMenuItemParent(mi);
-            this.accText = getAccText(accDelimiter);
-            this.verticalAlignment = mi.getVerticalAlignment();
-            this.horizontalAlignment = mi.getHorizontalAlignment();
-            this.verticalTextPosition = mi.getVerticalTextPosition();
-            this.horizontalTextPosition = mi.getHorizontalTextPosition();
-            this.useCheckAndArrow = useCheckAndArrow;
-            this.fm = mi.getFontMetrics(mi.getFont());
-            this.accFm = mi.getFontMetrics(acceleratorFont);
-            this.isLeftToRight = isLeftToRight;
-            this.isColumnLayout = isColumnLayout();
-            this.isTopLevelMenu = (this.miParent == null)? true : false;
-            this.checkIcon = checkIcon;
-            this.icon = getIcon(propertyPrefix);
-            this.arrowIcon = arrowIcon;
-            this.text = mi.getText();
-            this.gap = gap;
-            this.afterCheckIconGap = getAfterCheckIconGap(propertyPrefix);
-            this.minTextOffset = getMinTextOffset(propertyPrefix);
-            this.htmlView = (View) mi.getClientProperty(BasicHTML.propertyKey);
-
-            this.viewRect = viewRect;
-            this.iconRect = new Rectangle();
-            this.textRect = new Rectangle();
-            this.accRect = new Rectangle();
-            this.checkRect = new Rectangle();
-            this.arrowRect = new Rectangle();
-            this.labelRect = new Rectangle();
-
-            calcWidthsAndHeights();
-            this.origIconWidth = iconRect.width;
-            this.origTextWidth = textRect.width;
-            this.origAccWidth = accRect.width;
-            this.origCheckWidth = checkRect.width;
-            this.origArrowWidth = arrowRect.width;
-
-            calcMaxWidths();
-            this.leadingGap = getLeadingGap(propertyPrefix);
-            calcMaxTextOffset();
-        }
-
-        // Clears fields to remove all links to other objects
-        // to prevent memory leaks
-        public void clear() {
-            mi = null;
-            miParent = null;
-            fm = null;
-            accFm = null;
-            icon = null;
-            checkIcon = null;
-            arrowIcon = null;
-            text = null;
-            accText = null;
-            htmlView = null;
-            viewRect = null;
-            iconRect = null;
-            textRect = null;
-            accRect = null;
-            checkRect = null;
-            arrowRect = null;
-            labelRect = null;
-        }
-
-        private String getAccText(String acceleratorDelimiter) {
-            String accText = "";
-            KeyStroke accelerator = mi.getAccelerator();
-            if (accelerator != null) {
-                int modifiers = accelerator.getModifiers();
-                if (modifiers > 0) {
-                    accText = KeyEvent.getKeyModifiersText(modifiers);
-                    accText += acceleratorDelimiter;
-                }
-                int keyCode = accelerator.getKeyCode();
-                if (keyCode != 0) {
-                    accText += KeyEvent.getKeyText(keyCode);
-                } else {
-                    accText += accelerator.getKeyChar();
-                }
-            }
-            return accText;
-        }
-
-        // In case of column layout, .checkIconFactory is defined for this UI,
-        // the icon is compatible with it and useCheckAndArrow() is true,
-        // then the icon is handled by the checkIcon.
-        private Icon getIcon(String propertyPrefix) {
-            Icon icon = null;
-            MenuItemCheckIconFactory iconFactory =
-                (MenuItemCheckIconFactory) UIManager.get(propertyPrefix
-                    + ".checkIconFactory");
-            if (!isColumnLayout || !useCheckAndArrow || iconFactory == null
-                    || !iconFactory.isCompatible(checkIcon, propertyPrefix)) {
-               icon = mi.getIcon();
-            }
-            return icon;
-        }
-
-        private int getMinTextOffset(String propertyPrefix) {
-            int minimumTextOffset = 0;
-            Object minimumTextOffsetObject =
-                    UIManager.get(propertyPrefix + ".minimumTextOffset");
-            if (minimumTextOffsetObject instanceof Integer) {
-                minimumTextOffset = (Integer) minimumTextOffsetObject;
-            }
-            return minimumTextOffset;
-        }
-
-        private int getAfterCheckIconGap(String propertyPrefix) {
-            int afterCheckIconGap = gap;
-            Object afterCheckIconGapObject =
-                    UIManager.get(propertyPrefix + ".afterCheckIconGap");
-            if (afterCheckIconGapObject instanceof Integer) {
-                afterCheckIconGap = (Integer) afterCheckIconGapObject;
-            }
-            return afterCheckIconGap;
-        }
-
-        private int getLeadingGap(String propertyPrefix) {
-            if (maxCheckWidth > 0) {
-                return getCheckOffset(propertyPrefix);
-            } else {
-                return gap; // There is no any check icon
-            }
-        }
-
-        private int getCheckOffset(String propertyPrefix) {
-            int checkIconOffset = gap;
-            Object checkIconOffsetObject =
-                    UIManager.get(propertyPrefix + ".checkIconOffset");
-            if (checkIconOffsetObject instanceof Integer) {
-                checkIconOffset = (Integer) checkIconOffsetObject;
-            }
-            return checkIconOffset;
-        }
-
-        private void calcWidthsAndHeights()
-        {
-            // iconRect
-            if (icon != null) {
-                iconRect.width = icon.getIconWidth();
-                iconRect.height = icon.getIconHeight();
-            }
-
-            // accRect
-            if (!accText.equals("")) {
-                accRect.width = SwingUtilities2.stringWidth(
-                        mi, accFm, accText);
-                accRect.height = accFm.getHeight();
-            }
-
-            // textRect
-            if (text == null) {
-                text = "";
-            } else if (!text.equals("")) {
-                if (htmlView != null) {
-                    // Text is HTML
-                    textRect.width =
-                            (int) htmlView.getPreferredSpan(View.X_AXIS);
-                    textRect.height =
-                            (int) htmlView.getPreferredSpan(View.Y_AXIS);
-                } else {
-                    // Text isn't HTML
-                    textRect.width =
-                            SwingUtilities2.stringWidth(mi, fm, text);
-                    textRect.height = fm.getHeight();
-                }
-            }
-
-            if (useCheckAndArrow) {
-                // checkIcon
-                if (checkIcon != null) {
-                    checkRect.width = checkIcon.getIconWidth();
-                    checkRect.height = checkIcon.getIconHeight();
-                }
-                // arrowRect
-                if (arrowIcon != null) {
-                    arrowRect.width = arrowIcon.getIconWidth();
-                    arrowRect.height = arrowIcon.getIconHeight();
-                }
-            }
-
-            // labelRect
-            if (isColumnLayout) {
-                labelRect.width = iconRect.width + textRect.width + gap;
-                labelRect.height = max(checkRect.height, iconRect.height,
-                        textRect.height, accRect.height, arrowRect.height);
-            } else {
-                textRect = new Rectangle();
-                iconRect = new Rectangle();
-                SwingUtilities.layoutCompoundLabel(mi, fm, text, icon,
-                        verticalAlignment, horizontalAlignment,
-                        verticalTextPosition, horizontalTextPosition,
-                        viewRect, iconRect, textRect, gap);
-                 labelRect = iconRect.union(textRect);
-            }
-        }
-
-        private void calcMaxWidths() {
-            maxCheckWidth = calcMaxValue(BasicMenuItemUI.MAX_CHECK_WIDTH,
-                    checkRect.width);
-            maxArrowWidth = calcMaxValue(BasicMenuItemUI.MAX_ARROW_WIDTH,
-                    arrowRect.width);
-            maxAccWidth = calcMaxValue(BasicMenuItemUI.MAX_ACC_WIDTH,
-                    accRect.width);
-
-            if (isColumnLayout) {
-                maxIconWidth = calcMaxValue(BasicMenuItemUI.MAX_ICON_WIDTH,
-                        iconRect.width);
-                maxTextWidth = calcMaxValue(BasicMenuItemUI.MAX_TEXT_WIDTH,
-                        textRect.width);
-                int curGap = gap;
-                if ((maxIconWidth == 0) || (maxTextWidth == 0)) {
-                    curGap = 0;
-                }
-                maxLabelWidth =
-                        calcMaxValue(BasicMenuItemUI.MAX_LABEL_WIDTH,
-                        maxIconWidth + maxTextWidth + curGap);
-            } else {
-                // We shouldn't use current icon and text widths
-                // in maximal widths calculation for complex layout.
-                maxIconWidth = getParentIntProperty(BasicMenuItemUI.MAX_ICON_WIDTH);
-                maxLabelWidth = calcMaxValue(BasicMenuItemUI.MAX_LABEL_WIDTH,
-                        labelRect.width);
-                // If maxLabelWidth is wider
-                // than the widest icon + the widest text + gap,
-                // we should update the maximal text witdh
-                int candidateTextWidth = maxLabelWidth - maxIconWidth;
-                if (maxIconWidth > 0) {
-                    candidateTextWidth -= gap;
-                }
-                maxTextWidth = calcMaxValue(BasicMenuItemUI.MAX_TEXT_WIDTH,
-                        candidateTextWidth);
-            }
-        }
-
-        // Calculates and returns maximal value
-        // through specified parent component client property.
-        private int calcMaxValue(Object propertyName, int value) {
-            // Get maximal value from parent client property
-            int maxValue = getParentIntProperty(propertyName);
-            // Store new maximal width in parent client property
-            if (value > maxValue) {
-                if (miParent != null) {
-                    miParent.putClientProperty(propertyName, value);
-                }
-                return value;
-            } else {
-                return maxValue;
-            }
-        }
-
-        // Returns parent client property as int
-        private int getParentIntProperty(Object propertyName) {
-            Object value = null;
-            if (miParent != null) {
-                value = miParent.getClientProperty(propertyName);
-            }
-            if ((value == null) || !(value instanceof Integer)){
-                value = 0;
-            }
-            return (Integer)value;
-        }
-
-        private boolean isColumnLayout() {
-            return isColumnLayout(isLeftToRight, horizontalAlignment,
-                    horizontalTextPosition, verticalTextPosition);
-        }
-
-        public static boolean isColumnLayout(boolean isLeftToRight,
-                                             JMenuItem mi) {
-            assert(mi != null);
-            return isColumnLayout(isLeftToRight, mi.getHorizontalAlignment(),
-                    mi.getHorizontalTextPosition(), mi.getVerticalTextPosition());
-        }
-
-        // Answers should we do column layout for a menu item or not.
-        // We do it when a user doesn't set any alignments
-        // and text positions manually, except the vertical alignment.
-        public static boolean isColumnLayout( boolean isLeftToRight,
-                int horizontalAlignment, int horizontalTextPosition,
-                int verticalTextPosition) {
-            if (verticalTextPosition != SwingConstants.CENTER) {
-                return false;
-            }
-            if (isLeftToRight) {
-                if (horizontalAlignment != SwingConstants.LEADING
-                 && horizontalAlignment != SwingConstants.LEFT) {
-                    return false;
-                }
-                if (horizontalTextPosition != SwingConstants.TRAILING
-                 && horizontalTextPosition != SwingConstants.RIGHT) {
-                    return false;
-                }
-            } else {
-                if (horizontalAlignment != SwingConstants.LEADING
-                 && horizontalAlignment != SwingConstants.RIGHT) {
-                    return false;
-                }
-                if (horizontalTextPosition != SwingConstants.TRAILING
-                 && horizontalTextPosition != SwingConstants.LEFT) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        // Calculates maximal text offset.
-        // It is required for some L&Fs (ex: Vista L&F).
-        // The offset is meaningful only for L2R column layout.
-        private void calcMaxTextOffset() {
-            if (!isColumnLayout || !isLeftToRight) {
-                return;
-            }
-
-            // Calculate the current text offset
-            int offset = viewRect.x + leadingGap + maxCheckWidth
-                     + afterCheckIconGap + maxIconWidth + gap;
-            if (maxCheckWidth == 0) {
-                offset -= afterCheckIconGap;
-            }
-            if (maxIconWidth == 0) {
-                offset -= gap;
-            }
-
-            // maximal text offset shouldn't be less than minimal text offset;
-            if (offset < minTextOffset) {
-                offset = minTextOffset;
-            }
-
-            // Calculate and store the maximal text offset
-            calcMaxValue(BASICMENUITEMUI_MAX_TEXT_OFFSET, offset);
-        }
-
-        public String toString() {
-            StringBuilder result = new StringBuilder();
-            result.append(super.toString()).append("\n");
-            result.append("accFm = ").append(accFm).append("\n");
-            result.append("accRect = ").append(accRect).append("\n");
-            result.append("accText = ").append(accText).append("\n");
-            result.append("afterCheckIconGap = ").append(afterCheckIconGap)
-                    .append("\n");
-            result.append("arrowIcon = ").append(arrowIcon).append("\n");
-            result.append("arrowRect = ").append(arrowRect).append("\n");
-            result.append("checkIcon = ").append(checkIcon).append("\n");
-            result.append("checkRect = ").append(checkRect).append("\n");
-            result.append("fm = ").append(fm).append("\n");
-            result.append("gap = ").append(gap).append("\n");
-            result.append("horizontalAlignment = ").append(horizontalAlignment)
-                    .append("\n");
-            result.append("horizontalTextPosition = ")
-                    .append(horizontalTextPosition).append("\n");
-            result.append("htmlView = ").append(htmlView).append("\n");
-            result.append("icon = ").append(icon).append("\n");
-            result.append("iconRect = ").append(iconRect).append("\n");
-            result.append("isColumnLayout = ").append(isColumnLayout).append("\n");
-            result.append("isLeftToRight = ").append(isLeftToRight).append("\n");
-            result.append("isTopLevelMenu = ").append(isTopLevelMenu).append("\n");
-            result.append("labelRect = ").append(labelRect).append("\n");
-            result.append("leadingGap = ").append(leadingGap).append("\n");
-            result.append("maxAccWidth = ").append(maxAccWidth).append("\n");
-            result.append("maxArrowWidth = ").append(maxArrowWidth).append("\n");
-            result.append("maxCheckWidth = ").append(maxCheckWidth).append("\n");
-            result.append("maxIconWidth = ").append(maxIconWidth).append("\n");
-            result.append("maxLabelWidth = ").append(maxLabelWidth).append("\n");
-            result.append("maxTextWidth = ").append(maxTextWidth).append("\n");
-            result.append("maxTextOffset = ")
-                    .append(getParentIntProperty(BASICMENUITEMUI_MAX_TEXT_OFFSET))
-                    .append("\n");
-            result.append("mi = ").append(mi).append("\n");
-            result.append("minTextOffset = ").append(minTextOffset).append("\n");
-            result.append("miParent = ").append(miParent).append("\n");
-            result.append("origAccWidth = ").append(origAccWidth).append("\n");
-            result.append("origArrowWidth = ").append(origArrowWidth).append("\n");
-            result.append("origCheckWidth = ").append(origCheckWidth).append("\n");
-            result.append("origIconWidth = ").append(origIconWidth).append("\n");
-            result.append("origTextWidth = ").append(origTextWidth).append("\n");
-            result.append("text = ").append(text).append("\n");
-            result.append("textRect = ").append(textRect).append("\n");
-            result.append("useCheckAndArrow = ").append(useCheckAndArrow)
-                    .append("\n");
-            result.append("verticalAlignment = ").append(verticalAlignment)
-                    .append("\n");
-            result.append("verticalTextPosition = ")
-                    .append(verticalTextPosition).append("\n");
-            result.append("viewRect = ").append(viewRect).append("\n");
-            return result.toString();
-        }
-    } // End of LayoutInfo
-
-    // Reuses layoutInfo object to reduce the amount of produced garbage
-    private LayoutInfo getLayoutInfo(JMenuItem mi, Icon checkIcon, Icon arrowIcon,
-                             Rectangle viewRect, int gap, String accDelimiter,
-                             boolean isLeftToRight, Font acceleratorFont,
-                             boolean useCheckAndArrow, String propertyPrefix) {
-        // layoutInfo is final and always not null
-        layoutInfo.reset(mi, checkIcon, arrowIcon, viewRect,
-                gap, accDelimiter, isLeftToRight, acceleratorFont,
-                useCheckAndArrow, propertyPrefix);
-        return layoutInfo;
     }
 
     /**
@@ -1016,122 +482,132 @@ public class BasicMenuItemUI extends MenuItemUI
         Rectangle viewRect = new Rectangle(0, 0, mi.getWidth(), mi.getHeight());
         applyInsets(viewRect, mi.getInsets());
 
-        LayoutInfo li = getLayoutInfo(mi, checkIcon, arrowIcon,
-                viewRect, defaultTextIconGap, acceleratorDelimiter,
-                BasicGraphicsUtils.isLeftToRight(mi), acceleratorFont,
-                useCheckAndArrow(), getPropertyPrefix());
-        layoutMenuItem(li);
+        MenuItemLayoutHelper lh = new MenuItemLayoutHelper(mi, checkIcon,
+                arrowIcon, viewRect, defaultTextIconGap, acceleratorDelimiter,
+                BasicGraphicsUtils.isLeftToRight(mi), mi.getFont(),
+                acceleratorFont, MenuItemLayoutHelper.useCheckAndArrow(menuItem),
+                getPropertyPrefix());
+        MenuItemLayoutHelper.LayoutResult lr = lh.layoutMenuItem();
 
         paintBackground(g, mi, background);
-        paintCheckIcon(g, li, holdc, foreground);
-        paintIcon(g, li, holdc);
-        paintText(g, li);
-        paintAccText(g, li);
-        paintArrowIcon(g, li, foreground);
+        paintCheckIcon(g, lh, lr, holdc, foreground);
+        paintIcon(g, lh, lr, holdc);
+        paintText(g, lh, lr);
+        paintAccText(g, lh, lr);
+        paintArrowIcon(g, lh, lr, foreground);
 
         // Restore original graphics font and color
         g.setColor(holdc);
         g.setFont(holdf);
-
-        li.clear();
     }
 
-    private void paintIcon(Graphics g, LayoutInfo li, Color holdc) {
-        if (li.icon != null) {
+    private void paintIcon(Graphics g, MenuItemLayoutHelper lh,
+                           MenuItemLayoutHelper.LayoutResult lr, Color holdc) {
+        if (lh.getIcon() != null) {
             Icon icon;
-            ButtonModel model = li.mi.getModel();
+            ButtonModel model = lh.getMenuItem().getModel();
             if (!model.isEnabled()) {
-                icon = (Icon) li.mi.getDisabledIcon();
+                icon = lh.getMenuItem().getDisabledIcon();
             } else if (model.isPressed() && model.isArmed()) {
-                icon = (Icon) li.mi.getPressedIcon();
+                icon = lh.getMenuItem().getPressedIcon();
                 if (icon == null) {
                     // Use default icon
-                    icon = (Icon) li.mi.getIcon();
+                    icon = lh.getMenuItem().getIcon();
                 }
             } else {
-                icon = (Icon) li.mi.getIcon();
+                icon = lh.getMenuItem().getIcon();
             }
 
             if (icon != null) {
-                icon.paintIcon(li.mi, g, li.iconRect.x, li.iconRect.y);
+                icon.paintIcon(lh.getMenuItem(), g, lr.getIconRect().x,
+                        lr.getIconRect().y);
                 g.setColor(holdc);
             }
         }
     }
 
-    private void paintCheckIcon(Graphics g, LayoutInfo li,
+    private void paintCheckIcon(Graphics g, MenuItemLayoutHelper lh,
+                                MenuItemLayoutHelper.LayoutResult lr,
                                 Color holdc, Color foreground) {
-        if (li.checkIcon != null) {
-            ButtonModel model = li.mi.getModel();
-            if (model.isArmed()
-                    || (li.mi instanceof JMenu && model.isSelected())) {
+        if (lh.getCheckIcon() != null) {
+            ButtonModel model = lh.getMenuItem().getModel();
+            if (model.isArmed() || (lh.getMenuItem() instanceof JMenu
+                    && model.isSelected())) {
                 g.setColor(foreground);
             } else {
                 g.setColor(holdc);
             }
-            if (li.useCheckAndArrow) {
-                li.checkIcon.paintIcon(li.mi, g, li.checkRect.x,
-                                       li.checkRect.y);
+            if (lh.useCheckAndArrow()) {
+                lh.getCheckIcon().paintIcon(lh.getMenuItem(), g,
+                        lr.getCheckRect().x, lr.getCheckRect().y);
             }
             g.setColor(holdc);
         }
     }
 
-    private void paintAccText(Graphics g, LayoutInfo li) {
-        if (!li.accText.equals("")) {
-            ButtonModel model = li.mi.getModel();
-            g.setFont(acceleratorFont);
+    private void paintAccText(Graphics g, MenuItemLayoutHelper lh,
+                              MenuItemLayoutHelper.LayoutResult lr) {
+        if (!lh.getAccText().equals("")) {
+            ButtonModel model = lh.getMenuItem().getModel();
+            g.setFont(lh.getAccFontMetrics().getFont());
             if (!model.isEnabled()) {
                 // *** paint the accText disabled
                 if (disabledForeground != null) {
                     g.setColor(disabledForeground);
-                    SwingUtilities2.drawString(li.mi, g, li.accText,
-                                 li.accRect.x,
-                                 li.accRect.y + li.accFm.getAscent());
+                    SwingUtilities2.drawString(lh.getMenuItem(), g,
+                        lh.getAccText(), lr.getAccRect().x,
+                        lr.getAccRect().y + lh.getAccFontMetrics().getAscent());
                 } else {
-                    g.setColor(li.mi.getBackground().brighter());
-                    SwingUtilities2.drawString(li.mi, g, li.accText, li.accRect.x,
-                                 li.accRect.y + li.accFm.getAscent());
-                    g.setColor(li.mi.getBackground().darker());
-                    SwingUtilities2.drawString(li.mi, g, li.accText,
-                            li.accRect.x - 1,
-                            li.accRect.y + li.accFm.getAscent() - 1);
+                    g.setColor(lh.getMenuItem().getBackground().brighter());
+                    SwingUtilities2.drawString(lh.getMenuItem(), g,
+                        lh.getAccText(), lr.getAccRect().x,
+                        lr.getAccRect().y + lh.getAccFontMetrics().getAscent());
+                    g.setColor(lh.getMenuItem().getBackground().darker());
+                    SwingUtilities2.drawString(lh.getMenuItem(), g,
+                        lh.getAccText(), lr.getAccRect().x - 1,
+                        lr.getAccRect().y + lh.getFontMetrics().getAscent() - 1);
                 }
             } else {
                 // *** paint the accText normally
-                if (model.isArmed() ||
-                        (li.mi instanceof JMenu && model.isSelected())) {
+                if (model.isArmed()
+                        || (lh.getMenuItem() instanceof JMenu
+                        && model.isSelected())) {
                     g.setColor(acceleratorSelectionForeground);
                 } else {
                     g.setColor(acceleratorForeground);
                 }
-                SwingUtilities2.drawString(li.mi, g, li.accText, li.accRect.x,
-                        li.accRect.y + li.accFm.getAscent());
+                SwingUtilities2.drawString(lh.getMenuItem(), g, lh.getAccText(),
+                        lr.getAccRect().x, lr.getAccRect().y +
+                        lh.getAccFontMetrics().getAscent());
             }
         }
     }
 
-    private void paintText(Graphics g, LayoutInfo li) {
-        if (!li.text.equals("")) {
-            if (li.htmlView != null) {
+    private void paintText(Graphics g, MenuItemLayoutHelper lh,
+                           MenuItemLayoutHelper.LayoutResult lr) {
+        if (!lh.getText().equals("")) {
+            if (lh.getHtmlView() != null) {
                 // Text is HTML
-                li.htmlView.paint(g, li.textRect);
+                lh.getHtmlView().paint(g, lr.getTextRect());
             } else {
                 // Text isn't HTML
-                paintText(g, li.mi, li.textRect, li.text);
+                paintText(g, lh.getMenuItem(), lr.getTextRect(), lh.getText());
             }
         }
     }
 
-    private void paintArrowIcon(Graphics g, LayoutInfo li, Color foreground) {
-        if (li.arrowIcon != null) {
-            ButtonModel model = li.mi.getModel();
-            if (model.isArmed()
-                    || (li.mi instanceof JMenu && model.isSelected())) {
+    private void paintArrowIcon(Graphics g, MenuItemLayoutHelper lh,
+                                MenuItemLayoutHelper.LayoutResult lr,
+                                Color foreground) {
+        if (lh.getArrowIcon() != null) {
+            ButtonModel model = lh.getMenuItem().getModel();
+            if (model.isArmed() || (lh.getMenuItem() instanceof JMenu
+                                && model.isSelected())) {
                 g.setColor(foreground);
             }
-            if (li.useCheckAndArrow) {
-                li.arrowIcon.paintIcon(li.mi, g, li.arrowRect.x, li.arrowRect.y);
+            if (lh.useCheckAndArrow()) {
+                lh.getArrowIcon().paintIcon(lh.getMenuItem(), g,
+                        lr.getArrowRect().x, lr.getArrowRect().y);
             }
         }
     }
@@ -1216,346 +692,6 @@ public class BasicMenuItemUI extends MenuItemUI
         }
     }
 
-
-    /**
-     * Layout icon, text, check icon, accelerator text and arrow icon
-     * in the viewRect and return their positions.
-     *
-     * If horizontalAlignment, verticalTextPosition and horizontalTextPosition
-     * are default (user doesn't set any manually) the layouting algorithm is:
-     * Elements are layouted in the five columns:
-     * check icon + icon + text + accelerator text + arrow icon
-     *
-     * In the other case elements are layouted in the four columns:
-     * check icon + label + accelerator text + arrow icon
-     * Label is icon and text rectangles union.
-     *
-     * The order of columns can be reversed.
-     * It depends on the menu item orientation.
-     */
-    private void layoutMenuItem(LayoutInfo li)
-    {
-        li.checkRect.width = li.maxCheckWidth;
-        li.accRect.width = li.maxAccWidth;
-        li.arrowRect.width = li.maxArrowWidth;
-
-        if (li.isColumnLayout) {
-            if (li.isLeftToRight) {
-                doLTRColumnLayout(li);
-            } else {
-                doRTLColumnLayout(li);
-            }
-        } else {
-            if (li.isLeftToRight) {
-                doLTRComplexLayout(li);
-            } else {
-                doRTLComplexLayout(li);
-            }
-        }
-
-        alignAccCheckAndArrowVertically(li);
-    }
-
-    // Aligns the accelertor text and the check and arrow icons vertically
-    // with the center of the label rect.
-    private void alignAccCheckAndArrowVertically(LayoutInfo li) {
-        li.accRect.y = (int)(li.labelRect.y + (float)li.labelRect.height/2
-                - (float)li.accRect.height/2);
-        fixVerticalAlignment(li, li.accRect);
-        if (li.useCheckAndArrow) {
-            li.arrowRect.y = (int)(li.labelRect.y + (float)li.labelRect.height/2
-                    - (float)li.arrowRect.height/2);
-            li.checkRect.y = (int)(li.labelRect.y + (float)li.labelRect.height/2
-                    - (float)li.checkRect.height/2);
-            fixVerticalAlignment(li, li.arrowRect);
-            fixVerticalAlignment(li, li.checkRect);
-        }
-    }
-
-    // Fixes vertical alignment of all menu item elements if a rect.y
-    // or (rect.y + rect.height) is out of viewRect bounds
-    private void fixVerticalAlignment(LayoutInfo li, Rectangle r) {
-        int delta = 0;
-        if (r.y < li.viewRect.y) {
-            delta = li.viewRect.y - r.y;
-        } else if (r.y + r.height > li.viewRect.y + li.viewRect.height) {
-            delta = li.viewRect.y + li.viewRect.height - r.y - r.height;
-        }
-        if (delta != 0) {
-            li.checkRect.y += delta;
-            li.iconRect.y += delta;
-            li.textRect.y += delta;
-            li.accRect.y += delta;
-            li.arrowRect.y += delta;
-        }
-    }
-
-    private void doLTRColumnLayout(LayoutInfo li) {
-        // Set maximal width for all the five basic rects
-        // (three other ones are already maximal)
-        li.iconRect.width = li.maxIconWidth;
-        li.textRect.width = li.maxTextWidth;
-
-        // Set X coordinates
-        // All rects will be aligned at the left side
-        calcXPositionsL2R(li.viewRect.x, li.leadingGap, li.gap, li.checkRect,
-                li.iconRect, li.textRect);
-
-        // Tune afterCheckIconGap
-        if (li.checkRect.width > 0) { // there is the afterCheckIconGap
-            li.iconRect.x += li.afterCheckIconGap - li.gap;
-            li.textRect.x += li.afterCheckIconGap - li.gap;
-        }
-
-        calcXPositionsR2L(li.viewRect.x + li.viewRect.width, li.gap,
-                li.arrowRect, li.accRect);
-
-        // Take into account minimal text offset
-        int textOffset = li.textRect.x - li.viewRect.x;
-        if (!li.isTopLevelMenu && (textOffset < li.minTextOffset)) {
-            li.textRect.x += li.minTextOffset - textOffset;
-        }
-
-        // Take into account the left side bearings for text and accelerator text.
-        fixTextRects(li);
-
-        // Set Y coordinate for text and icon.
-        // Y coordinates for other rects
-        // will be calculated later in layoutMenuItem.
-        calcTextAndIconYPositions(li);
-
-        // Calculate valid X and Y coordinates for labelRect
-        li.labelRect = li.textRect.union(li.iconRect);
-    }
-
-    private void doLTRComplexLayout(LayoutInfo li) {
-        li.labelRect.width = li.maxLabelWidth;
-
-        // Set X coordinates
-        calcXPositionsL2R(li.viewRect.x, li.leadingGap, li.gap, li.checkRect,
-                li.labelRect);
-
-        // Tune afterCheckIconGap
-        if (li.checkRect.width > 0) { // there is the afterCheckIconGap
-            li.labelRect.x += li.afterCheckIconGap - li.gap;
-        }
-
-        calcXPositionsR2L(li.viewRect.x + li.viewRect.width, li.gap,
-                li.arrowRect, li.accRect);
-
-        // Take into account minimal text offset
-        int labelOffset = li.labelRect.x - li.viewRect.x;
-        if (!li.isTopLevelMenu && (labelOffset < li.minTextOffset)) {
-            li.labelRect.x += li.minTextOffset - labelOffset;
-        }
-
-        // Take into account the left side bearing for accelerator text.
-        // The LSB for text is taken into account in layoutCompoundLabel() below.
-        fixAccTextRect(li);
-
-        // Layout icon and text with SwingUtilities.layoutCompoundLabel()
-        // within the labelRect
-        li.textRect = new Rectangle();
-        li.iconRect = new Rectangle();
-        SwingUtilities.layoutCompoundLabel(
-                            li.mi, li.fm, li.text, li.icon, li.verticalAlignment,
-                            li.horizontalAlignment, li.verticalTextPosition,
-                            li.horizontalTextPosition, li.labelRect,
-                            li.iconRect, li.textRect, li.gap);
-    }
-
-    private void doRTLColumnLayout(LayoutInfo li) {
-        // Set maximal width for all the five basic rects
-        // (three other ones are already maximal)
-        li.iconRect.width = li.maxIconWidth;
-        li.textRect.width = li.maxTextWidth;
-
-        // Set X coordinates
-        calcXPositionsR2L(li.viewRect.x + li.viewRect.width, li.leadingGap,
-                li.gap, li.checkRect, li.iconRect, li.textRect);
-
-        // Tune the gap after check icon
-        if (li.checkRect.width > 0) { // there is the gap after check icon
-            li.iconRect.x -= li.afterCheckIconGap - li.gap;
-            li.textRect.x -= li.afterCheckIconGap - li.gap;
-        }
-
-        calcXPositionsL2R(li.viewRect.x, li.gap, li.arrowRect,
-                li.accRect);
-
-        // Take into account minimal text offset
-        int textOffset = (li.viewRect.x + li.viewRect.width)
-                       - (li.textRect.x + li.textRect.width);
-        if (!li.isTopLevelMenu && (textOffset < li.minTextOffset)) {
-            li.textRect.x -= li.minTextOffset - textOffset;
-        }
-
-        // Align icon, text, accelerator text, check icon and arrow icon
-        // at the right side
-        rightAlignAllRects(li);
-
-        // Take into account the left side bearings for text and accelerator text.
-        fixTextRects(li);
-
-        // Set Y coordinates for text and icon.
-        // Y coordinates for other rects
-        // will be calculated later in layoutMenuItem.
-        calcTextAndIconYPositions(li);
-
-        // Calculate valid X and Y coordinate for labelRect
-        li.labelRect = li.textRect.union(li.iconRect);
-    }
-
-    private void doRTLComplexLayout(LayoutInfo li) {
-        li.labelRect.width = li.maxLabelWidth;
-
-        // Set X coordinates
-        calcXPositionsR2L(li.viewRect.x + li.viewRect.width, li.leadingGap,
-                li.gap, li.checkRect, li.labelRect);
-
-        // Tune the gap after check icon
-        if (li.checkRect.width > 0) { // there is the gap after check icon
-            li.labelRect.x -= li.afterCheckIconGap - li.gap;
-        }
-
-        calcXPositionsL2R(li.viewRect.x, li.gap, li.arrowRect,
-                li.accRect);
-
-        // Take into account minimal text offset
-        int labelOffset = (li.viewRect.x + li.viewRect.width)
-                        - (li.labelRect.x + li.labelRect.width);
-        if (!li.isTopLevelMenu && (labelOffset < li.minTextOffset)) {
-            li.labelRect.x -= li.minTextOffset - labelOffset;
-        }
-
-        // Align icon, text, accelerator text, check icon and arrow icon
-        // at the right side
-        rightAlignAllRects(li);
-
-        // Take into account the left side bearing for accelerator text.
-        // The LSB for text is taken into account in layoutCompoundLabel() below.
-        fixAccTextRect(li);
-
-        // Layout icon and text with SwingUtilities.layoutCompoundLabel()
-        // within the labelRect
-        li.textRect = new Rectangle();
-        li.iconRect = new Rectangle();
-        SwingUtilities.layoutCompoundLabel(
-                            menuItem, li.fm, li.text, li.icon, li.verticalAlignment,
-                            li.horizontalAlignment, li.verticalTextPosition,
-                            li.horizontalTextPosition, li.labelRect,
-                            li.iconRect, li.textRect, li.gap);
-    }
-
-    private void calcXPositionsL2R(int startXPos, int leadingGap,
-                                   int gap, Rectangle... rects) {
-        int curXPos = startXPos + leadingGap;
-        for (Rectangle rect : rects) {
-            rect.x = curXPos;
-            if (rect.width > 0) {
-                curXPos += rect.width + gap;
-            }
-        }
-    }
-
-    private void calcXPositionsL2R(int startXPos, int gap, Rectangle... rects) {
-        calcXPositionsL2R(startXPos, gap, gap, rects);
-    }
-
-    private void calcXPositionsR2L(int startXPos, int leadingGap,
-                                   int gap, Rectangle... rects) {
-        int curXPos = startXPos - leadingGap;
-        for (Rectangle rect : rects) {
-            rect.x = curXPos - rect.width;
-            if (rect.width > 0) {
-                curXPos -= rect.width + gap;
-            }
-        }
-    }
-
-    private void calcXPositionsR2L(int startXPos, int gap, Rectangle... rects) {
-        calcXPositionsR2L(startXPos, gap, gap, rects);
-    }
-
-    // Takes into account the left side bearings for text and accelerator text
-    private void fixTextRects(LayoutInfo li) {
-        if (li.htmlView == null) { // The text isn't a HTML
-            int lsb = SwingUtilities2.getLeftSideBearing(li.mi, li.fm, li.text);
-            if (lsb < 0) {
-                li.textRect.x -= lsb;
-            }
-        }
-        fixAccTextRect(li);
-    }
-
-    // Takes into account the left side bearing for accelerator text
-    private void fixAccTextRect(LayoutInfo li) {
-        int lsb = SwingUtilities2
-                .getLeftSideBearing(li.mi, li.accFm, li.accText);
-        if (lsb < 0) {
-            li.accRect.x -= lsb;
-        }
-    }
-
-    // Sets Y coordinates of text and icon
-    // taking into account the vertical alignment
-    private void calcTextAndIconYPositions(LayoutInfo li) {
-        if (li.verticalAlignment == SwingUtilities.TOP) {
-            li.textRect.y  = (int)(li.viewRect.y
-                    + (float)li.labelRect.height/2
-                    - (float)li.textRect.height/2);
-            li.iconRect.y  = (int)(li.viewRect.y
-                    + (float)li.labelRect.height/2
-                    - (float)li.iconRect.height/2);
-        } else if (li.verticalAlignment == SwingUtilities.CENTER) {
-            li.textRect.y = (int)(li.viewRect.y
-                    + (float)li.viewRect.height/2
-                    - (float)li.textRect.height/2);
-            li.iconRect.y = (int)(li.viewRect.y
-                    + (float)li.viewRect.height/2
-                    - (float)li.iconRect.height/2);
-        }
-        else if (li.verticalAlignment == SwingUtilities.BOTTOM) {
-            li.textRect.y = (int)(li.viewRect.y + li.viewRect.height
-                    - (float)li.labelRect.height/2
-                    - (float)li.textRect.height/2);
-            li.iconRect.y = (int)(li.viewRect.y + li.viewRect.height
-                    - (float)li.labelRect.height/2
-                    - (float)li.iconRect.height/2);
-        }
-    }
-
-    // Aligns icon, text, accelerator text, check icon and arrow icon
-    // at the right side
-    private void rightAlignAllRects(LayoutInfo li) {
-        li.iconRect.x = li.iconRect.x + li.iconRect.width - li.origIconWidth;
-        li.iconRect.width = li.origIconWidth;
-        li.textRect.x = li.textRect.x + li.textRect.width - li.origTextWidth;
-        li.textRect.width = li.origTextWidth;
-        li.accRect.x = li.accRect.x + li.accRect.width
-                - li.origAccWidth;
-        li.accRect.width = li.origAccWidth;
-        li.checkRect.x = li.checkRect.x + li.checkRect.width
-                - li.origCheckWidth;
-        li.checkRect.width = li.origCheckWidth;
-        li.arrowRect.x = li.arrowRect.x + li.arrowRect.width -
-                li.origArrowWidth;
-        li.arrowRect.width = li.origArrowWidth;
-    }
-
-    /*
-     * Returns false if the component is a JMenu and it is a top
-     * level menu (on the menubar).
-     */
-    private boolean useCheckAndArrow(){
-        boolean b = true;
-        if((menuItem instanceof JMenu) &&
-           (((JMenu)menuItem).isTopLevelMenu())) {
-            b = false;
-        }
-        return b;
-    }
-
     public MenuElement[] getPath() {
         MenuSelectionManager m = MenuSelectionManager.defaultManager();
         MenuElement oldPath[] = m.getSelectedPath();
@@ -1601,7 +737,7 @@ public class BasicMenuItemUI extends MenuItemUI
         for(i=0,j=path.length; i<j ;i++){
             for (int k=0; k<=i; k++)
                 System.out.print("  ");
-            MenuElement me = (MenuElement) path[i];
+            MenuElement me = path[i];
             if(me instanceof JMenuItem)
                 System.out.println(((JMenuItem)me).getText() + ", ");
             else if (me == null)

@@ -124,7 +124,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
                 setIcon(null);
                 sortIcon = null;
                 SortOrder sortOrder =
-                    getColumnSortOrder(header.getTable(), column);
+                    getColumnSortOrder(table, column);
                 if (sortOrder != null) {
                     switch (sortOrder) {
                     case ASCENDING:

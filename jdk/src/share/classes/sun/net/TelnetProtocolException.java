@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-1995 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.io.*;
  */
 
 public class TelnetProtocolException extends IOException {
+    private static final long serialVersionUID = 8509127047257111343L;
+
     public TelnetProtocolException(String s) {
         super(s);
     }

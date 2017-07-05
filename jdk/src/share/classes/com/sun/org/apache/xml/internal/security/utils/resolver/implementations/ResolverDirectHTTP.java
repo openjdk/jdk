@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -67,11 +66,12 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
                             ResolverDirectHTTP.class.getName());
 
    /** Field properties[] */
-   static final String properties[] = { "http.proxy.host", "http.proxy.port",
-                                        "http.proxy.username",
-                                        "http.proxy.password",
-                                        "http.basic.username",
-                                        "http.basic.password" };
+   private static final String properties[] =
+        { "http.proxy.host", "http.proxy.port",
+          "http.proxy.username",
+          "http.proxy.password",
+          "http.basic.username",
+          "http.basic.password" };
 
    /** Field HttpProxyHost */
    private static final int HttpProxyHost = 0;
@@ -91,6 +91,9 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
    /** Field HttpProxyPass */
    private static final int HttpBasicPass = 5;
 
+   public boolean engineIsThreadSafe() {
+           return true;
+   }
    /**
     * Method resolve
     *
@@ -117,15 +120,14 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
             useProxy = true;
          }
 
-         // switch on proxy usage
          String oldProxySet = null;
          String oldProxyHost = null;
          String oldProxyPort = null;
+         // switch on proxy usage
          if (useProxy) {
             if (log.isLoggable(java.util.logging.Level.FINE)) {
-               log.log(java.util.logging.Level.FINE,
-                  "Use of HTTP proxy enabled: " + proxyHost + ":"
-                  + proxyPort);
+                log.log(java.util.logging.Level.FINE, "Use of HTTP proxy enabled: " + proxyHost + ":"
+                      + proxyPort);
             }
             oldProxySet = System.getProperty("http.proxySet");
             oldProxyHost = System.getProperty("http.proxyHost");
@@ -215,11 +217,8 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
             summarized += read;
          }
 
-         if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE,
-               "Fetched " + summarized + " bytes from URI "
-               + uriNew.toString());
-         }
+         log.log(java.util.logging.Level.FINE, "Fetched " + summarized + " bytes from URI "
+                   + uriNew.toString());
 
          XMLSignatureInput result = new XMLSignatureInput(baos.toByteArray());
 
@@ -253,39 +252,36 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
     */
    public boolean engineCanResolve(Attr uri, String BaseURI) {
       if (uri == null) {
-         if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "quick fail, uri == null");
-         }
+         log.log(java.util.logging.Level.FINE, "quick fail, uri == null");
+
          return false;
       }
 
       String uriNodeValue = uri.getNodeValue();
 
       if (uriNodeValue.equals("") || (uriNodeValue.charAt(0)=='#')) {
-         if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE,
-               "quick fail for empty URIs and local ones");
-         }
+         log.log(java.util.logging.Level.FINE, "quick fail for empty URIs and local ones");
+
          return false;
       }
 
       if (log.isLoggable(java.util.logging.Level.FINE)) {
-         log.log(java.util.logging.Level.FINE,
-               "I was asked whether I can resolve " + uriNodeValue);
+         log.log(java.util.logging.Level.FINE, "I was asked whether I can resolve " + uriNodeValue);
       }
+
       if ( uriNodeValue.startsWith("http:") ||
-                                 BaseURI.startsWith("http:")) {
+                                (BaseURI!=null && BaseURI.startsWith("http:") )) {
          if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE,
-                  "I state that I can resolve " + uriNodeValue);
+            log.log(java.util.logging.Level.FINE, "I state that I can resolve " + uriNodeValue);
          }
+
          return true;
       }
 
       if (log.isLoggable(java.util.logging.Level.FINE)) {
-         log.log(java.util.logging.Level.FINE,
-            "I state that I can't resolve " + uriNodeValue);
+         log.log(java.util.logging.Level.FINE, "I state that I can't resolve " + uriNodeValue);
       }
+
       return false;
    }
 

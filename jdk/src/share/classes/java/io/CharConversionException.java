@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ package java.io;
 public class CharConversionException
     extends java.io.IOException
 {
+    private static final long serialVersionUID = -8680016352018427031L;
+
     /**
      * This provides no detailed message.
      */

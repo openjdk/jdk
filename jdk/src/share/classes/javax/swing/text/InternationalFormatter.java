@@ -27,6 +27,7 @@ package javax.swing.text;
 import java.awt.event.ActionEvent;
 import java.io.*;
 import java.text.*;
+import java.text.AttributedCharacterIterator.Attribute;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.text.*;
@@ -352,13 +353,13 @@ public class InternationalFormatter extends DefaultFormatter {
             updateMask();
         }
 
-        Map attrs = getAttributes(offset);
+        Map<Attribute, Object> attrs = getAttributes(offset);
 
         if (attrs != null && attrs.size() > 0) {
-            ArrayList al = new ArrayList();
+            ArrayList<Attribute> al = new ArrayList<Attribute>();
 
             al.addAll(attrs.keySet());
-            return (Format.Field[])al.toArray(EMPTY_FIELD_ARRAY);
+            return al.toArray(EMPTY_FIELD_ARRAY);
         }
         return EMPTY_FIELD_ARRAY;
     }
@@ -440,7 +441,7 @@ public class InternationalFormatter extends DefaultFormatter {
     /**
      * Returns a Set of the attribute identifiers at <code>index</code>.
      */
-    Map getAttributes(int index) {
+    Map<Attribute, Object> getAttributes(int index) {
         if (isValidMask()) {
             AttributedCharacterIterator iterator = getIterator();
 

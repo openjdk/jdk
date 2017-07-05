@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -38,7 +37,7 @@ import org.w3c.dom.Element;
 
 /**
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class RSAKeyValueResolver extends KeyResolverSpi {
 
@@ -48,75 +47,55 @@ public class RSAKeyValueResolver extends KeyResolverSpi {
                         RSAKeyValueResolver.class.getName());
 
    /** Field _rsaKeyElement */
-   private Element _rsaKeyElement = null;
+
 
    /** @inheritDoc */
-   public boolean engineCanResolve(Element element, String BaseURI,
-                                   StorageResolver storage) {
-          if (true)
-                if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Can I resolve " + element.getTagName());
-
+   public PublicKey engineLookupAndResolvePublicKey(
+           Element element, String BaseURI, StorageResolver storage) {
+           if (log.isLoggable(java.util.logging.Level.FINE))
+                        log.log(java.util.logging.Level.FINE, "Can I resolve " + element.getTagName());
       if (element == null) {
-         return false;
+         return null;
       }
 
-      boolean isKeyValue = XMLUtils.elementIsInSignatureSpace(element,
-                              Constants._TAG_KEYVALUE);
-      boolean isRSAKeyValue = XMLUtils.elementIsInSignatureSpace(element,
-                                 Constants._TAG_RSAKEYVALUE);
-
-      if (isKeyValue) {
-            this._rsaKeyElement = XMLUtils.selectDsNode(element.getFirstChild(),
-                    Constants._TAG_RSAKEYVALUE, 0);
-
-            if (this._rsaKeyElement != null) {
-               return true;
-            }
-      } else if (isRSAKeyValue) {
-
+          boolean isKeyValue = XMLUtils.elementIsInSignatureSpace(element,
+                                              Constants._TAG_KEYVALUE);
+          Element rsaKeyElement=null;
+          if (isKeyValue) {
+                   rsaKeyElement = XMLUtils.selectDsNode(element.getFirstChild(),
+                                    Constants._TAG_RSAKEYVALUE, 0);
+          } else if (XMLUtils.elementIsInSignatureSpace(element,
+              Constants._TAG_RSAKEYVALUE)) {
          // this trick is needed to allow the RetrievalMethodResolver to eat a
          // ds:RSAKeyValue directly (without KeyValue)
-         this._rsaKeyElement = element;
+         rsaKeyElement = element;
+          }
 
-         return true;
-      }
 
-      return false;
-   }
-
-   /** @inheritDoc */
-   public PublicKey engineResolvePublicKey(
-           Element element, String BaseURI, StorageResolver storage) {
-
-      if (this._rsaKeyElement == null) {
-         boolean weCanResolve = this.engineCanResolve(element, BaseURI,
-                                   storage);
-
-         if (!weCanResolve || (this._rsaKeyElement == null)) {
-            return null;
-         }
+      if (rsaKeyElement == null) {
+         return null;
       }
 
       try {
-         RSAKeyValue rsaKeyValue = new RSAKeyValue(this._rsaKeyElement,
+         RSAKeyValue rsaKeyValue = new RSAKeyValue(rsaKeyElement,
                                                    BaseURI);
 
          return rsaKeyValue.getPublicKey();
       } catch (XMLSecurityException ex) {
-         if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "XMLSecurityException", ex);
+         log.log(java.util.logging.Level.FINE, "XMLSecurityException", ex);
       }
 
       return null;
    }
 
    /** @inheritDoc */
-   public X509Certificate engineResolveX509Certificate(
+   public X509Certificate engineLookupResolveX509Certificate(
            Element element, String BaseURI, StorageResolver storage) {
       return null;
    }
 
    /** @inheritDoc */
-   public javax.crypto.SecretKey engineResolveSecretKey(
+   public javax.crypto.SecretKey engineLookupAndResolveSecretKey(
            Element element, String BaseURI, StorageResolver storage) {
       return null;
    }

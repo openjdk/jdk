@@ -185,11 +185,11 @@ import java.util.*;
  * @since       1.4
  */
 public class SpringLayout implements LayoutManager2 {
-    private Map componentConstraints = new HashMap();
+    private Map<Component, Constraints> componentConstraints = new HashMap<Component, Constraints>();
 
     private Spring cyclicReference = Spring.constant(Spring.UNSET);
-    private Set cyclicSprings;
-    private Set acyclicSprings;
+    private Set<Spring> cyclicSprings;
+    private Set<Spring> acyclicSprings;
 
 
     /**
@@ -415,8 +415,7 @@ public class SpringLayout implements LayoutManager2 {
             }
             if (!valid) {
                 String[] all = horizontal ? ALL_HORIZONTAL : ALL_VERTICAL;
-                for (int i = 0; i < all.length; i++) {
-                    String s = all[i];
+                for (String s : all) {
                     if (!history.contains(s)) {
                         setConstraint(s, null);
                     }
@@ -822,8 +821,7 @@ public class SpringLayout implements LayoutManager2 {
        /*pp*/ void reset() {
            Spring[] allSprings = {x, y, width, height, east, south,
                horizontalCenter, verticalCenter, baseline};
-           for (int i = 0; i < allSprings.length; i++) {
-               Spring s = allSprings[i];
+           for (Spring s : allSprings) {
                if (s != null) {
                    s.setValue(Spring.UNSET);
                }
@@ -881,8 +879,8 @@ public class SpringLayout implements LayoutManager2 {
     public SpringLayout() {}
 
     private void resetCyclicStatuses() {
-        cyclicSprings = new HashSet();
-        acyclicSprings = new HashSet();
+        cyclicSprings = new HashSet<Spring>();
+        acyclicSprings = new HashSet<Spring>();
     }
 
     private void setParent(Container p) {
@@ -1145,7 +1143,7 @@ public class SpringLayout implements LayoutManager2 {
      * @return      the constraints for the specified component
      */
     public Constraints getConstraints(Component c) {
-       Constraints result = (Constraints)componentConstraints.get(c);
+       Constraints result = componentConstraints.get(c);
        if (result == null) {
            if (c instanceof javax.swing.JComponent) {
                 Object cp = ((javax.swing.JComponent)c).getClientProperty(SpringLayout.class);

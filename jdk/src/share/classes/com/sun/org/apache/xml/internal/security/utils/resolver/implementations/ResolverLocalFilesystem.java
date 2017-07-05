@@ -20,8 +20,6 @@
  */
 package com.sun.org.apache.xml.internal.security.utils.resolver.implementations;
 
-
-
 import java.io.FileInputStream;
 
 import com.sun.org.apache.xml.internal.utils.URI;
@@ -30,11 +28,10 @@ import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverE
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverSpi;
 import org.w3c.dom.Attr;
 
-
 /**
  * A simple ResourceResolver for requests into the local filesystem.
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class ResolverLocalFilesystem extends ResourceResolverSpi {
 
@@ -43,6 +40,9 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
         java.util.logging.Logger.getLogger(
                     ResolverLocalFilesystem.class.getName());
 
+    public boolean engineIsThreadSafe() {
+           return true;
+   }
    /**
     * @inheritDoc
     */
@@ -50,7 +50,7 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
            throws ResourceResolverException {
 
      try {
-        URI uriNew = new URI(new URI(BaseURI), uri.getNodeValue());
+        URI uriNew = getNewURI(uri.getNodeValue(), BaseURI);
 
         // if the URI contains a fragment, ignore it
         URI uriNewNoFrag = new URI(uriNew);
@@ -72,6 +72,7 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
       }
    }
 
+   private static int FILE_URI_LENGTH="file:/".length();
    /**
     * Method translateUriToFilename
     *
@@ -80,7 +81,7 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
     */
    private static String translateUriToFilename(String uri) {
 
-      String subStr = uri.substring("file:/".length());
+      String subStr = uri.substring(FILE_URI_LENGTH);
 
       if (subStr.indexOf("%20") > -1)
       {
@@ -121,26 +122,36 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
 
       String uriNodeValue = uri.getNodeValue();
 
-      if (uriNodeValue.equals("") || (uriNodeValue.charAt(0)=='#')) {
+      if (uriNodeValue.equals("") || (uriNodeValue.charAt(0)=='#') ||
+          uriNodeValue.startsWith("http:")) {
          return false;
       }
 
       try {
                  //URI uriNew = new URI(new URI(BaseURI), uri.getNodeValue());
-                 if (true)
-                        if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "I was asked whether I can resolve " + uriNodeValue/*uriNew.toString()*/);
+                 if (log.isLoggable(java.util.logging.Level.FINE))
+                        log.log(java.util.logging.Level.FINE, "I was asked whether I can resolve " + uriNodeValue/*uriNew.toString()*/);
 
                  if ( uriNodeValue.startsWith("file:") ||
                                          BaseURI.startsWith("file:")/*uriNew.getScheme().equals("file")*/) {
-                    if (true)
-                        if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "I state that I can resolve " + uriNodeValue/*uriNew.toString()*/);
+                    if (log.isLoggable(java.util.logging.Level.FINE))
+                        log.log(java.util.logging.Level.FINE, "I state that I can resolve " + uriNodeValue/*uriNew.toString()*/);
 
                     return true;
                  }
       } catch (Exception e) {}
 
-      if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "But I can't");
+      log.log(java.util.logging.Level.FINE, "But I can't");
 
       return false;
+   }
+
+   private static URI getNewURI(String uri, String BaseURI)
+           throws URI.MalformedURIException {
+
+      if ((BaseURI == null) || "".equals(BaseURI)) {
+         return new URI(uri);
+      }
+      return new URI(new URI(BaseURI), uri);
    }
 }

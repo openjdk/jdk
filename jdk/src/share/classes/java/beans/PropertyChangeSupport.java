@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,49 @@ import java.util.Map.Entry;
 
 /**
  * This is a utility class that can be used by beans that support bound
- * properties.  You can use an instance of this class as a member field
- * of your bean and delegate various work to it.
+ * properties.  It manages a list of listeners and dispatches
+ * {@link PropertyChangeEvent}s to them.  You can use an instance of this class
+ * as a member field of your bean and delegate these types of work to it.
+ * The {@link PropertyChangeListener} can be registered for all properties
+ * or for a property specified by name.
+ * <p>
+ * Here is an example of {@code PropertyChangeSupport} usage that follows
+ * the rules and recommendations laid out in the JavaBeans&trade; specification:
+ * <pre>
+ * public class MyBean {
+ *     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
  *
+ *     public void addPropertyChangeListener(PropertyChangeListener listener) {
+ *         this.pcs.addPropertyChangeListener(listener);
+ *     }
+ *
+ *     public void removePropertyChangeListener(PropertyChangeListener listener) {
+ *         this.pcs.removePropertyChangeListener(listener);
+ *     }
+ *
+ *     private String value;
+ *
+ *     public String getValue() {
+ *         return this.value;
+ *     }
+ *
+ *     public void setValue(String newValue) {
+ *         String oldValue = this.value;
+ *         this.value = newValue;
+ *         this.pcs.firePropertyChange("value", oldValue, newValue);
+ *     }
+ *
+ *     [...]
+ * }
+ * </pre>
+ * <p>
+ * A {@code PropertyChangeSupport} instance is thread-safe.
+ * <p>
  * This class is serializable.  When it is serialized it will save
  * (and restore) any listeners that are themselves serializable.  Any
  * non-serializable listeners will be skipped during serialization.
+ *
+ * @see VetoableChangeSupport
  */
 public class PropertyChangeSupport implements Serializable {
     private PropertyChangeListenerMap map = new PropertyChangeListenerMap();
@@ -208,91 +245,91 @@ public class PropertyChangeSupport implements Serializable {
     }
 
     /**
-     * Report a bound property update to any registered listeners.
-     * No event is fired if old and new are equal and non-null.
-     *
+     * Reports a bound property update to listeners
+     * that have been registered to track updates of
+     * all properties or a property with the specified name.
+     * <p>
+     * No event is fired if old and new values are equal and non-null.
      * <p>
      * This is merely a convenience wrapper around the more general
-     * firePropertyChange method that takes {@code
-     * PropertyChangeEvent} value.
+     * {@link #firePropertyChange(PropertyChangeEvent)} method.
      *
-     * @param propertyName  The programmatic name of the property
-     *          that was changed.
-     * @param oldValue  The old value of the property.
-     * @param newValue  The new value of the property.
+     * @param propertyName  the programmatic name of the property that was changed
+     * @param oldValue      the old value of the property
+     * @param newValue      the new value of the property
      */
-    public void firePropertyChange(String propertyName,
-                                        Object oldValue, Object newValue) {
-        if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
-            return;
+    public void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
+        if (oldValue == null || newValue == null || !oldValue.equals(newValue)) {
+            firePropertyChange(new PropertyChangeEvent(this.source, propertyName, oldValue, newValue));
         }
-        firePropertyChange(new PropertyChangeEvent(source, propertyName,
-                                                   oldValue, newValue));
     }
 
     /**
-     * Report an int bound property update to any registered listeners.
-     * No event is fired if old and new are equal.
+     * Reports an integer bound property update to listeners
+     * that have been registered to track updates of
+     * all properties or a property with the specified name.
+     * <p>
+     * No event is fired if old and new values are equal.
      * <p>
      * This is merely a convenience wrapper around the more general
-     * firePropertyChange method that takes Object values.
+     * {@link #firePropertyChange(String, Object, Object)}  method.
      *
-     * @param propertyName  The programmatic name of the property
-     *          that was changed.
-     * @param oldValue  The old value of the property.
-     * @param newValue  The new value of the property.
+     * @param propertyName  the programmatic name of the property that was changed
+     * @param oldValue      the old value of the property
+     * @param newValue      the new value of the property
      */
-    public void firePropertyChange(String propertyName,
-                                        int oldValue, int newValue) {
-        if (oldValue == newValue) {
-            return;
+    public void firePropertyChange(String propertyName, int oldValue, int newValue) {
+        if (oldValue != newValue) {
+            firePropertyChange(propertyName, Integer.valueOf(oldValue), Integer.valueOf(newValue));
         }
-        firePropertyChange(propertyName, Integer.valueOf(oldValue), Integer.valueOf(newValue));
     }
 
     /**
-     * Report a boolean bound property update to any registered listeners.
-     * No event is fired if old and new are equal.
+     * Reports a boolean bound property update to listeners
+     * that have been registered to track updates of
+     * all properties or a property with the specified name.
+     * <p>
+     * No event is fired if old and new values are equal.
      * <p>
      * This is merely a convenience wrapper around the more general
-     * firePropertyChange method that takes Object values.
+     * {@link #firePropertyChange(String, Object, Object)}  method.
      *
-     * @param propertyName  The programmatic name of the property
-     *          that was changed.
-     * @param oldValue  The old value of the property.
-     * @param newValue  The new value of the property.
+     * @param propertyName  the programmatic name of the property that was changed
+     * @param oldValue      the old value of the property
+     * @param newValue      the new value of the property
      */
-    public void firePropertyChange(String propertyName,
-                                        boolean oldValue, boolean newValue) {
-        if (oldValue == newValue) {
-            return;
+    public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {
+        if (oldValue != newValue) {
+            firePropertyChange(propertyName, Boolean.valueOf(oldValue), Boolean.valueOf(newValue));
         }
-        firePropertyChange(propertyName, Boolean.valueOf(oldValue), Boolean.valueOf(newValue));
     }
 
     /**
-     * Fire an existing PropertyChangeEvent to any registered listeners.
-     * No event is fired if the given event's old and new values are
-     * equal and non-null.
-     * @param evt  The PropertyChangeEvent object.
+     * Fires a property change event to listeners
+     * that have been registered to track updates of
+     * all properties or a property with the specified name.
+     * <p>
+     * No event is fired if the given event's old and new values are equal and non-null.
+     *
+     * @param event  the {@code PropertyChangeEvent} to be fired
      */
-    public void firePropertyChange(PropertyChangeEvent evt) {
-        Object oldValue = evt.getOldValue();
-        Object newValue = evt.getNewValue();
-        String propertyName = evt.getPropertyName();
-        if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
-            return;
-        }
-        PropertyChangeListener[] common = this.map.get(null);
-        PropertyChangeListener[] named = (propertyName != null)
-                    ? this.map.get(propertyName)
-                    : null;
+    public void firePropertyChange(PropertyChangeEvent event) {
+        Object oldValue = event.getOldValue();
+        Object newValue = event.getNewValue();
+        if (oldValue == null || newValue == null || !oldValue.equals(newValue)) {
+            String name = event.getPropertyName();
 
-        fire(common, evt);
-        fire(named, evt);
+            PropertyChangeListener[] common = this.map.get(null);
+            PropertyChangeListener[] named = (name != null)
+                        ? this.map.get(name)
+                        : null;
+
+            fire(common, event);
+            fire(named, event);
+        }
     }
 
-    private void fire(PropertyChangeListener[] listeners, PropertyChangeEvent event) {
+    private static void fire(PropertyChangeListener[] listeners, PropertyChangeEvent event) {
         if (listeners != null) {
             for (PropertyChangeListener listener : listeners) {
                 listener.propertyChange(event);
@@ -301,78 +338,69 @@ public class PropertyChangeSupport implements Serializable {
     }
 
     /**
-     * Report a bound indexed property update to any registered
-     * listeners.
+     * Reports a bound indexed property update to listeners
+     * that have been registered to track updates of
+     * all properties or a property with the specified name.
      * <p>
-     * No event is fired if old and new values are equal
-     * and non-null.
-     *
+     * No event is fired if old and new values are equal and non-null.
      * <p>
      * This is merely a convenience wrapper around the more general
-     * firePropertyChange method that takes {@code PropertyChangeEvent} value.
+     * {@link #firePropertyChange(PropertyChangeEvent)} method.
      *
-     * @param propertyName The programmatic name of the property that
-     *                     was changed.
-     * @param index        index of the property element that was changed.
-     * @param oldValue     The old value of the property.
-     * @param newValue     The new value of the property.
+     * @param propertyName  the programmatic name of the property that was changed
+     * @param index         the index of the property element that was changed
+     * @param oldValue      the old value of the property
+     * @param newValue      the new value of the property
      * @since 1.5
      */
-    public void fireIndexedPropertyChange(String propertyName, int index,
-                                          Object oldValue, Object newValue) {
-        firePropertyChange(new IndexedPropertyChangeEvent
-            (source, propertyName, oldValue, newValue, index));
+    public void fireIndexedPropertyChange(String propertyName, int index, Object oldValue, Object newValue) {
+        if (oldValue == null || newValue == null || !oldValue.equals(newValue)) {
+            firePropertyChange(new IndexedPropertyChangeEvent(source, propertyName, oldValue, newValue, index));
+        }
     }
 
     /**
-     * Report an <code>int</code> bound indexed property update to any registered
-     * listeners.
+     * Reports an integer bound indexed property update to listeners
+     * that have been registered to track updates of
+     * all properties or a property with the specified name.
      * <p>
      * No event is fired if old and new values are equal.
      * <p>
      * This is merely a convenience wrapper around the more general
-     * fireIndexedPropertyChange method which takes Object values.
+     * {@link #fireIndexedPropertyChange(String, int, Object, Object)} method.
      *
-     * @param propertyName The programmatic name of the property that
-     *                     was changed.
-     * @param index        index of the property element that was changed.
-     * @param oldValue     The old value of the property.
-     * @param newValue     The new value of the property.
+     * @param propertyName  the programmatic name of the property that was changed
+     * @param index         the index of the property element that was changed
+     * @param oldValue      the old value of the property
+     * @param newValue      the new value of the property
      * @since 1.5
      */
-    public void fireIndexedPropertyChange(String propertyName, int index,
-                                          int oldValue, int newValue) {
-        if (oldValue == newValue) {
-            return;
+    public void fireIndexedPropertyChange(String propertyName, int index, int oldValue, int newValue) {
+        if (oldValue != newValue) {
+            fireIndexedPropertyChange(propertyName, index, Integer.valueOf(oldValue), Integer.valueOf(newValue));
         }
-        fireIndexedPropertyChange(propertyName, index,
-                                  Integer.valueOf(oldValue),
-                                  Integer.valueOf(newValue));
     }
 
     /**
-     * Report a <code>boolean</code> bound indexed property update to any
-     * registered listeners.
+     * Reports a boolean bound indexed property update to listeners
+     * that have been registered to track updates of
+     * all properties or a property with the specified name.
      * <p>
      * No event is fired if old and new values are equal.
      * <p>
      * This is merely a convenience wrapper around the more general
-     * fireIndexedPropertyChange method which takes Object values.
+     * {@link #fireIndexedPropertyChange(String, int, Object, Object)} method.
      *
-     * @param propertyName The programmatic name of the property that
-     *                     was changed.
-     * @param index        index of the property element that was changed.
-     * @param oldValue     The old value of the property.
-     * @param newValue     The new value of the property.
+     * @param propertyName  the programmatic name of the property that was changed
+     * @param index         the index of the property element that was changed
+     * @param oldValue      the old value of the property
+     * @param newValue      the new value of the property
      * @since 1.5
      */
-    public void fireIndexedPropertyChange(String propertyName, int index,
-                                          boolean oldValue, boolean newValue) {
-        if (oldValue == newValue) {
-            return;
+    public void fireIndexedPropertyChange(String propertyName, int index, boolean oldValue, boolean newValue) {
+        if (oldValue != newValue) {
+            fireIndexedPropertyChange(propertyName, index, Boolean.valueOf(oldValue), Boolean.valueOf(newValue));
         }
-        fireIndexedPropertyChange(propertyName, index, Boolean.valueOf(oldValue),
-                                  Boolean.valueOf(newValue));
     }
 
     /**
