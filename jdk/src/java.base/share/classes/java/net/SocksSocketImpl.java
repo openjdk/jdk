@@ -178,7 +178,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 userName = pw.getUserName();
                 password = new String(pw.getPassword());
             } else {
-                userName = GetPropertyAction.getProperty("user.name");
+                userName = GetPropertyAction.privilegedGetProperty("user.name");
             }
             if (userName == null)
                 return false;
@@ -1088,7 +1088,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 userName = System.getProperty("user.name");
             } catch (SecurityException se) { /* swallow Exception */ }
         } else {
-            userName = GetPropertyAction.getProperty("user.name");
+            userName = GetPropertyAction.privilegedGetProperty("user.name");
         }
         return userName;
     }

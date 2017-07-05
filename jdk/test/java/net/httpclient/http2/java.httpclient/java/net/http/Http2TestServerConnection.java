@@ -31,6 +31,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
 import java.net.URISyntaxException;
 import static java.net.http.SettingsFrame.HEADER_TABLE_SIZE;
 import java.nio.ByteBuffer;
@@ -355,7 +357,8 @@ public class Http2TestServerConnection {
             URI uri = new URI(us);
             boolean pushAllowed = clientSettings.getParameter(SettingsFrame.ENABLE_PUSH) == 1;
             Http2TestExchange exchange = new Http2TestExchange(streamid, method,
-                    headers, rspheaders, uri, bis, bos, this, pushAllowed);
+                    headers, rspheaders, uri, bis, getSSLSession(),
+                    bos, this, pushAllowed);
 
             // give to user
             handler.handle(exchange);
@@ -368,6 +371,12 @@ public class Http2TestServerConnection {
         }
     }
 
+    private SSLSession getSSLSession() {
+        if (! (socket instanceof SSLSocket))
+            return null;
+        SSLSocket ssl = (SSLSocket)socket;
+        return ssl.getSession();
+    }
     // Runs in own thread
 
     @SuppressWarnings({"rawtypes","unchecked"})

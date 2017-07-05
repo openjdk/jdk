@@ -146,7 +146,7 @@ final class Utils {
         } else {
             sb.append(uri.getScheme())
                     .append("://")
-                    .append(uri.getHost())
+                    .append(uri.getAuthority())
                     .append(uri.getPath());
             urlstring = sb.toString();
 

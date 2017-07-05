@@ -71,7 +71,4 @@ module java.corba {
         java.naming;
     exports com.sun.jndi.url.iiopname to
         java.naming;
-
-    provides javax.naming.spi.InitialContextFactory
-        with com.sun.jndi.cosnaming.CNCtxFactory;
 }

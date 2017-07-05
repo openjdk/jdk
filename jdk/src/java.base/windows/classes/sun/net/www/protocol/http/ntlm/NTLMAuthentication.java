@@ -53,8 +53,8 @@ public class NTLMAuthentication extends AuthenticationInfo {
     private static String defaultDomain; /* Domain to use if not specified by user */
 
     static {
-        defaultDomain = GetPropertyAction.getProperty("http.auth.ntlm.domain",
-                                                      "domain");
+        defaultDomain = GetPropertyAction
+                .privilegedGetProperty("http.auth.ntlm.domain", "domain");
     };
 
     private void init0() {

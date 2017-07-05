@@ -110,7 +110,9 @@ public abstract class KeyResolverSpi {
         KeyResolverSpi tmp = this;
         if (globalResolver) {
             try {
-                tmp = getClass().newInstance();
+                @SuppressWarnings("deprecation")
+                KeyResolverSpi krs = getClass().newInstance();
+                tmp = krs;
             } catch (InstantiationException e) {
                 throw new KeyResolverException("", e);
             } catch (IllegalAccessException e) {

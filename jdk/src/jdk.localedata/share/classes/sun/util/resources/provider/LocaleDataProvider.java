@@ -46,7 +46,7 @@ public class LocaleDataProvider extends LocaleData.CommonResourceBundleProvider 
         Class<?> c = Class.forName(LocaleDataProvider.class.getModule(), bundleName);
         if (c != null && ResourceBundle.class.isAssignableFrom(c)) {
             try {
-                @SuppressWarnings("unchecked")
+                @SuppressWarnings({"unchecked", "deprecation"})
                 ResourceBundle rb = ((Class<ResourceBundle>) c).newInstance();
                 return rb;
             } catch (InstantiationException | IllegalAccessException e) {
