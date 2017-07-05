@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,15 +65,31 @@ public class Basic {
 
     private FileSystem theFileSystem;
     private FileSystem fs;
+    private boolean isExplodedBuild = false;
 
     @BeforeClass
     public void setup() {
+        theFileSystem = FileSystems.getFileSystem(URI.create("jrt:/"));
+        Path javaHomeDir = Paths.get(System.getProperty("java.home"));
+        Path jrtJarPath = javaHomeDir.resolve("jrt-fs.jar");
+        Path modulesPath = javaHomeDir.resolve("lib/modules");
+        isExplodedBuild = !Files.exists(jrtJarPath)
+                && !Files.exists(modulesPath);
+        if (Files.notExists(jrtJarPath)
+                && Files.notExists(modulesPath)) {
+            System.out.printf("Following files not exist: %s, %s",
+                    jrtJarPath.toString(), modulesPath.toString());
+            System.out.println();
+            System.out.println("It is most probably an exploded build."
+                    + " Skip non-default FileSystem testing.");
+            return;
+        }
+
+        Map<String, String> env = new HashMap<>();
+        // set java.home property to be underlying java.home
+        // so that jrt-fs.jar loading is exercised.
+        env.put("java.home", System.getProperty("java.home"));
         try {
-            theFileSystem = FileSystems.getFileSystem(URI.create("jrt:/"));
-            Map<String, String> env = new HashMap<>();
-            // set java.home property to be underlying java.home
-            // so that jrt-fs.jar loading is exercised.
-            env.put("java.home", System.getProperty("java.home"));
             fs = FileSystems.newFileSystem(URI.create("jrt:/"), env);
         } catch (IOException ioExp) {
             throw new RuntimeException(ioExp);
@@ -131,6 +147,12 @@ public class Basic {
 
     @Test
     public void testNewFileSystemWithJavaHome() throws Exception {
+        if (isExplodedBuild) {
+            System.out.println("Skip testNewFileSystemWithJavaHome"
+                    + " since this is an exploded build");
+            return;
+        }
+
         Map<String, String> env = new HashMap<>();
         // set java.home property to be underlying java.home
         // so that jrt-fs.jar loading is exercised.
@@ -154,6 +176,11 @@ public class Basic {
 
     @Test(dataProvider = "knownClassFiles")
     public void testKnownClassFiles(String path, boolean theDefault) throws Exception {
+        if (isExplodedBuild && !theDefault) {
+            System.out.println("Skip testKnownClassFiles with non-default FileSystem");
+            return;
+        }
+
         FileSystem fs = selectFileSystem(theDefault);
         Path classFile = fs.getPath(path);
 
@@ -201,6 +228,11 @@ public class Basic {
 
     @Test(dataProvider = "knownDirectories")
     public void testKnownDirectories(String path, boolean theDefault) throws Exception {
+        if (isExplodedBuild && !theDefault) {
+            System.out.println("Skip testKnownDirectories with non-default FileSystem");
+            return;
+        }
+
         FileSystem fs = selectFileSystem(theDefault);
         Path dir = fs.getPath(path);
 
@@ -684,3 +716,4 @@ public class Basic {
         assertEquals(dirPrefixOkayCount, childCount);
     }
 }
+

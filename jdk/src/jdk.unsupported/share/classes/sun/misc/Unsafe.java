@@ -296,45 +296,6 @@ public final class Unsafe {
         theInternalUnsafe.putDouble(o, offset, x);
     }
 
-
-    // These read VM internal data.
-
-    /**
-     * Fetches an uncompressed reference value from a given native variable
-     * ignoring the VM's compressed references mode.
-     *
-     * @param address a memory address locating the variable
-     * @return the value fetched from the indicated native variable
-     */
-    @ForceInline
-    public Object getUncompressedObject(long address) {
-        return theInternalUnsafe.getUncompressedObject(address);
-    }
-
-    /**
-     * Fetches the {@link java.lang.Class} Java mirror for the given native
-     * metaspace {@code Klass} pointer.
-     *
-     * @param metaspaceKlass a native metaspace {@code Klass} pointer
-     * @return the {@link java.lang.Class} Java mirror
-     */
-    @ForceInline
-    public Class<?> getJavaMirror(long metaspaceKlass) {
-        return theInternalUnsafe.getJavaMirror(metaspaceKlass);
-    }
-
-    /**
-     * Fetches a native metaspace {@code Klass} pointer for the given Java
-     * object.
-     *
-     * @param o Java heap object for which to fetch the class pointer
-     * @return a native metaspace {@code Klass} pointer
-     */
-    @ForceInline
-    public long getKlassPointer(Object o) {
-        return theInternalUnsafe.getKlassPointer(o);
-    }
-
     // These work on values in the C heap.
 
     /**

@@ -527,9 +527,13 @@ needs_jre = \
   java/net/URLConnection/HandleContentTypeWithAttrs.java \
   java/security/Security/ClassLoaderDeadlock/ClassLoaderDeadlock.sh \
   java/security/Security/ClassLoaderDeadlock/Deadlock.sh \
+  java/text/AttributedCharacterIterator/Attribute/ReadResolve.java \
+  java/text/AttributedString/TestAttributedStringCtor.java \
+  java/text/AttributedString/getRunStartLimitTest.java \
   java/util/jar/Manifest/CreateManifest.java \
   java/util/logging/TestMainAppContext.java \
   java/util/logging/TestLoggingWithMainAppContext.java \
+  java/util/TimeZone/DefaultTimeZoneTest.java \
   java/text/Bidi/BidiConformance.java \
   java/text/Bidi/BidiEmbeddingTest.java \
   java/text/Bidi/Bug7042148.java \
@@ -724,6 +728,7 @@ needs_compact2 = \
   java/util/Collections/UnmodifiableMapEntrySet.java  \
   java/util/Comparator/BasicTest.java  \
   java/util/Comparator/TypeTest.java  \
+  java/util/Date/TimestampTest.java \
   java/util/Iterator/IteratorDefaults.java  \
   java/util/Iterator/PrimitiveIteratorDefaults.java  \
   java/util/List/ListDefaults.java  \

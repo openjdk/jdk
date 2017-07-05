@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,35 @@
  * @test
  * @bug 8032808 8044773
  * @modules jdk.net
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
  * @run main/othervm -Xcheck:jni Test success
  * @run main/othervm/policy=policy.fail -Xcheck:jni Test fail
  * @run main/othervm/policy=policy.success -Xcheck:jni Test success
  */
 
-import java.net.*;
+import jdk.net.ExtendedSocketOptions;
+import jdk.net.SocketFlow;
+import jdk.net.Sockets;
+import jdk.testlibrary.OSInfo;
+
 import java.io.IOException;
-import java.nio.channels.*;
-import java.util.concurrent.*;
-import java.util.Set;
-import jdk.net.*;
+import java.net.*;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SocketChannel;
+import java.util.concurrent.Future;
+
 import static java.lang.System.out;
+import static jdk.net.ExtendedSocketOptions.SO_FLOW_SLA;
 
 public class Test {
 
     interface Runner { void run() throws Exception; }
 
     static boolean expectSuccess;
+    private static final boolean expectSupport = checkExpectedOptionSupport();
+    private static final double solarisVersionToCheck = 11.2;
 
     public static void main(String[] args) throws Exception {
 
@@ -54,9 +65,8 @@ public class Test {
         expectSuccess = args[0].equals("success");
 
         // Main thing is to check for JNI problems
-        // Doesn't matter if current system does not support the option
-        // and currently setting the option with the loopback interface
-        // doesn't work either
+        // Doesn't matter if currently setting the option with the loopback
+        // interface doesn't work
 
         boolean sm = System.getSecurityManager() != null;
         out.println("Security Manager enabled: " + sm);
@@ -75,56 +85,70 @@ public class Test {
 
             final int udp_port = dg.getLocalPort();
 
-            // If option not available, end test
-            Set<SocketOption<?>> options = dg.supportedOptions();
-            if (!options.contains(ExtendedSocketOptions.SO_FLOW_SLA)) {
-                System.out.println("SO_FLOW_SLA not supported");
-                return;
-            }
-
             final Socket s = new Socket("127.0.0.1", tcp_port);
             final SocketChannel sc = SocketChannel.open();
             sc.connect(new InetSocketAddress("127.0.0.1", tcp_port));
 
             doTest("Sockets.setOption Socket", () -> {
                 out.println(flowIn);
-                Sockets.setOption(s, ExtendedSocketOptions.SO_FLOW_SLA, flowIn);
+                if (s.supportedOptions().contains(SO_FLOW_SLA) != expectSupport) {
+                    throw new RuntimeException("Unexpected supportedOptions()");
+                }
+                Sockets.setOption(s, SO_FLOW_SLA, flowIn);
                 out.println(flowIn);
             });
-            doTest("Sockets.getOption Socket",() -> {
-                Sockets.getOption(s, ExtendedSocketOptions.SO_FLOW_SLA);
+
+            doTest("Sockets.getOption Socket", () -> {
+                Sockets.getOption(s, SO_FLOW_SLA);
                 out.println(flowIn);
             });
-            doTest("Sockets.setOption SocketChannel",() ->
-                sc.setOption(ExtendedSocketOptions.SO_FLOW_SLA, flowIn)
+
+            doTest("Sockets.setOption SocketChannel", () -> {
+                if (sc.supportedOptions().contains(SO_FLOW_SLA) != expectSupport) {
+                    throw new RuntimeException("Unexpected supportedOptions()");
+                }
+                sc.setOption(SO_FLOW_SLA, flowIn);
+            });
+            doTest("Sockets.getOption SocketChannel", () ->
+                    sc.getOption(SO_FLOW_SLA)
             );
-            doTest("Sockets.getOption SocketChannel",() ->
-                sc.getOption(ExtendedSocketOptions.SO_FLOW_SLA)
-            );
-            doTest("Sockets.setOption DatagramSocket",() -> {
+            doTest("Sockets.setOption DatagramSocket", () -> {
                 try (DatagramSocket dg1 = new DatagramSocket(0)) {
+                    if (dg1.supportedOptions().contains(SO_FLOW_SLA) != expectSupport) {
+                        throw new RuntimeException("Unexpected supportedOptions()");
+                    }
+
                     dg1.connect(loop, udp_port);
-                    Sockets.setOption(dg1, ExtendedSocketOptions.SO_FLOW_SLA, flowIn);
+                    Sockets.setOption(dg1, SO_FLOW_SLA, flowIn);
                 }
             });
             doTest("Sockets.setOption DatagramSocket 2", () -> {
                 try (DatagramChannel dg2 = DatagramChannel.open()) {
+                    if (dg2.supportedOptions().contains(SO_FLOW_SLA) != expectSupport) {
+                        throw new RuntimeException("Unexpected supportedOptions()");
+                    }
                     dg2.bind(new InetSocketAddress(loop, 0));
                     dg2.connect(new InetSocketAddress(loop, udp_port));
-                    dg2.setOption(ExtendedSocketOptions.SO_FLOW_SLA, flowIn);
+                    dg2.setOption(SO_FLOW_SLA, flowIn);
                 }
             });
             doTest("Sockets.setOption MulticastSocket", () -> {
                 try (MulticastSocket mc1 = new MulticastSocket(0)) {
+                    if (mc1.supportedOptions().contains(SO_FLOW_SLA) != expectSupport) {
+                        throw new RuntimeException("Unexpected supportedOptions()");
+                    }
                     mc1.connect(loop, udp_port);
-                    Sockets.setOption(mc1, ExtendedSocketOptions.SO_FLOW_SLA, flowIn);
+                    Sockets.setOption(mc1, SO_FLOW_SLA, flowIn);
                 }
             });
             doTest("Sockets.setOption AsynchronousSocketChannel", () -> {
                 try (AsynchronousSocketChannel asc = AsynchronousSocketChannel.open()) {
+                    if (asc.supportedOptions().contains(SO_FLOW_SLA) != expectSupport) {
+                        throw new RuntimeException("Unexpected supportedOptions()");
+                    }
                     Future<Void> f = asc.connect(loopad);
                     f.get();
-                    asc.setOption(ExtendedSocketOptions.SO_FLOW_SLA, flowIn);
+                    asc.setOption(SO_FLOW_SLA, flowIn);
                 }
             });
         }
@@ -144,14 +168,43 @@ public class Test {
                 throw new RuntimeException("Unexpected SecurityException", e);
             } else {
                 out.println("Caught expected: " + e);
+                return;
             }
         } catch (UnsupportedOperationException e) {
-            System.out.println(e);
+            if (expectSupport) {
+                throw new RuntimeException("Test failed: " +
+                        "unexpected UnsupportedOperationException");
+            }
+            out.println("UnsupportedOperationException as expected");
+            return;
         } catch (IOException e) {
             // Probably a permission error, but we're not
             // going to check unless a specific permission exception
             // is defined.
             System.out.println(e);
         }
+        if (!expectSupport) {
+            throw new RuntimeException("Test failed: " +
+                    "UnsupportedOperationException was not thrown");
+        }
     }
+
+    private static boolean checkExpectedOptionSupport() {
+        if (OSInfo.getOSType().equals(OSInfo.OSType.SOLARIS)) {
+            double solarisVersion = OSInfo.getSolarisVersion();
+            if (solarisVersion >= solarisVersionToCheck) {
+                System.out.println("This Solaris version (" + solarisVersion
+                        + ") should support SO_FLOW_SLA option");
+                return true;
+            } else {
+                System.out.println("This Solaris version (" + solarisVersion
+                        + ") should not support SO_FLOW_SLA option");
+            }
+        } else {
+            System.out.println("Not Solaris, SO_FLOW_SLA should not be " +
+                    "supported");
+        }
+        return false;
+    }
+
 }
