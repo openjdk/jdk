@@ -131,7 +131,7 @@ yum_help() {
     pulse)
       PKGHANDLER_COMMAND="sudo yum install pulseaudio-libs-devel" ;;
     x11)
-      PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel" ;;
+      PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel libXi-devel" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo yum install ccache" ;;
   esac
