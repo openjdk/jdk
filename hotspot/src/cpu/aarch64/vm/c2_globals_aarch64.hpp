@@ -55,6 +55,7 @@ define_pd_global(intx, InteriorEntryAlignment,       16);
 define_pd_global(intx, NewSizeThreadIncrease, ScaleForWordSize(4*K));
 define_pd_global(intx, LoopUnrollLimit,              60);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
+define_pd_global(intx, PostLoopMultiversioning,      false);
 // InitialCodeCacheSize derived from specjbb2000 run.
 define_pd_global(intx, InitialCodeCacheSize,         2496*K); // Integral multiple of CodeCacheExpansionSize
 define_pd_global(intx, CodeCacheExpansionSize,       64*K);

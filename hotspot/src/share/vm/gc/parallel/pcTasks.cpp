@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -166,7 +167,7 @@ void RefProcTaskExecutor::execute(ProcessTask& task)
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
   uint active_gc_threads = heap->gc_task_manager()->active_workers();
-  RegionTaskQueueSet* qset = ParCompactionManager::region_array();
+  OopTaskQueueSet* qset = ParCompactionManager::stack_array();
   ParallelTaskTerminator terminator(active_gc_threads, qset);
   GCTaskQueue* q = GCTaskQueue::create();
   for(uint i=0; i<parallel_gc_threads; i++) {

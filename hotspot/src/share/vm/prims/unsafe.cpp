@@ -26,6 +26,7 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jni.h"
@@ -867,7 +868,10 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
   }
 
   const Klass* host_klass = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(host_class));
-  assert(host_klass != NULL, "invariant");
+  // Primitive types have NULL Klass* fields in their java.lang.Class instances.
+  if (host_klass == NULL) {
+    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+  }
 
   const char* host_source = host_klass->external_name();
   Handle      host_loader(THREAD, host_klass->class_loader());

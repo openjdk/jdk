@@ -24,8 +24,6 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
-#include "gc/shared/gcId.hpp"
-#include "gc/shared/gcId.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
@@ -504,7 +502,7 @@ fileStream::fileStream(const char* file_name) {
   if (_file != NULL) {
     _need_close = true;
   } else {
-    warning("Cannot open file %s due to %s\n", file_name, strerror(errno));
+    warning("Cannot open file %s due to %s\n", file_name, os::strerror(errno));
     _need_close = false;
   }
 }
@@ -514,7 +512,7 @@ fileStream::fileStream(const char* file_name, const char* opentype) {
   if (_file != NULL) {
     _need_close = true;
   } else {
-    warning("Cannot open file %s due to %s\n", file_name, strerror(errno));
+    warning("Cannot open file %s due to %s\n", file_name, os::strerror(errno));
     _need_close = false;
   }
 }
@@ -1099,14 +1097,3 @@ bool networkStream::connect(const char *ip, short port) {
 }
 
 #endif
-
-void logStream::write(const char* s, size_t len) {
-  if (len > 0 && s[len - 1] == '\n') {
-    _current_line.write(s, len - 1);
-    _log_func("%s", _current_line.as_string());
-    _current_line.reset();
-  } else {
-    _current_line.write(s, len);
-  }
-  update_position(s, len);
-}

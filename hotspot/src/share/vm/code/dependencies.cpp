@@ -30,6 +30,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "code/dependencies.hpp"
 #include "compiler/compileLog.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/handles.hpp"

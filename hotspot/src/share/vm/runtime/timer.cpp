@@ -114,54 +114,6 @@ jlong TimeStamp::ticks_since_update() const {
   return os::elapsed_counter() - _counter;
 }
 
-TraceTime::TraceTime(const char* title,
-                     bool doit,
-                     LogTagType tag) {
-  _active   = doit;
-  _verbose  = true;
-  _tag      = tag;
-  _title    = title;
-
-  if (_active) {
-    _accum = NULL;
-    _t.start();
-  }
-}
-
-TraceTime::TraceTime(const char* title,
-                     elapsedTimer* accumulator,
-                     bool doit,
-                     bool verbose,
-                     LogTagType tag) {
-  _active   = doit;
-  _verbose  = verbose;
-  _tag      = tag;
-  _title    = title;
-
-  if (_active) {
-    _accum = accumulator;
-    _t.start();
-  }
-}
-
-TraceTime::~TraceTime() {
-  if (_active) {
-    _t.stop();
-    if (_accum!=NULL) _accum->add(_t);
-    if (_verbose) {
-      switch (_tag) {
-        case LogTag::_startuptime :
-          log_info(startuptime)("%s, %3.7f secs", _title, _t.seconds());
-          break;
-        case LogTag::__NO_TAG :
-       default :
-          tty->print_cr("[%s, %3.7f secs]", _title, _t.seconds());
-          tty->flush();
-      }
-    }
-  }
-}
-
 TraceCPUTime::TraceCPUTime(bool doit,
                bool print_cr,
                outputStream *logfile) :
@@ -216,3 +168,4 @@ TraceCPUTime::~TraceCPUTime() {
     _logfile->flush();
   }
 }
+

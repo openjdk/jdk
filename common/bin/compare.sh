@@ -41,7 +41,7 @@ if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
     STAT_PRINT_SIZE="-f %z"
 elif [ "$OPENJDK_TARGET_OS" = "windows" ]; then
     FULLDUMP_CMD="$DUMPBIN -all"
-    LDD_CMD="$DUMPBIN -dependants | $GREP .dll"
+    LDD_CMD="$DUMPBIN -dependents"
     DIS_CMD="$DUMPBIN -disasm:nobytes"
     STAT_PRINT_SIZE="-c %s"
 elif [ "$OPENJDK_TARGET_OS" = "aix" ]; then
@@ -824,12 +824,25 @@ compare_bin_file() {
 
     # Check dependencies
     if [ -n "$LDD_CMD" ]; then
-        (cd $FILE_WORK_DIR && $CP $OTHER_FILE . && $LDD_CMD $NAME 2>/dev/null | $AWK '{ print $1;}' | $SORT | $TEE $WORK_FILE_BASE.deps.other | $UNIQ > $WORK_FILE_BASE.deps.other.uniq)
-        (cd $FILE_WORK_DIR && $CP $THIS_FILE . && $LDD_CMD $NAME 2</dev/null | $AWK '{ print $1;}' | $SORT | $TEE $WORK_FILE_BASE.deps.this | $UNIQ > $WORK_FILE_BASE.deps.this.uniq)
+        if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
+            LDD_FILTER="$GREP \.dll"
+        else
+            LDD_FILTER="$CAT"
+        fi
+        (cd $FILE_WORK_DIR && $CP $OTHER_FILE . && $LDD_CMD $NAME 2>/dev/null \
+                    | $LDD_FILTER | $AWK '{ print $1;}' | $SORT \
+                    | $TEE $WORK_FILE_BASE.deps.other \
+                    | $UNIQ > $WORK_FILE_BASE.deps.other.uniq)
+        (cd $FILE_WORK_DIR && $CP $THIS_FILE . && $LDD_CMD $NAME 2</dev/null \
+                    | $LDD_FILTER | $AWK '{ print $1;}' | $SORT \
+                    | $TEE $WORK_FILE_BASE.deps.this \
+                    | $UNIQ > $WORK_FILE_BASE.deps.this.uniq)
         (cd $FILE_WORK_DIR && $RM -f $NAME)
 
-        LC_ALL=C $DIFF $WORK_FILE_BASE.deps.other $WORK_FILE_BASE.deps.this > $WORK_FILE_BASE.deps.diff
-        LC_ALL=C $DIFF $WORK_FILE_BASE.deps.other.uniq $WORK_FILE_BASE.deps.this.uniq > $WORK_FILE_BASE.deps.diff.uniq
+        LC_ALL=C $DIFF $WORK_FILE_BASE.deps.other $WORK_FILE_BASE.deps.this \
+              > $WORK_FILE_BASE.deps.diff
+        LC_ALL=C $DIFF $WORK_FILE_BASE.deps.other.uniq $WORK_FILE_BASE.deps.this.uniq \
+              > $WORK_FILE_BASE.deps.diff.uniq
 
         if [ -s $WORK_FILE_BASE.deps.diff ]; then
             if [ -s $WORK_FILE_BASE.deps.diff.uniq ]; then

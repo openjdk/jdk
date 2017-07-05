@@ -176,13 +176,22 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_work(T* p) {
 #endif // ASSERT
 
   assert(_from != NULL, "from region must be non-NULL");
-  assert(_from->is_in_reserved(p), "p is not in from");
+  assert(_from->is_in_reserved(p) ||
+         (_from->is_humongous() &&
+          _g1->heap_region_containing(p)->is_humongous() &&
+          _from->humongous_start_region() == _g1->heap_region_containing(p)->humongous_start_region()),
+         "p " PTR_FORMAT " is not in the same region %u or part of the correct humongous object starting at region %u.",
+         p2i(p), _from->hrm_index(), _from->humongous_start_region()->hrm_index());
 
   HeapRegion* to = _g1->heap_region_containing(obj);
   if (_from == to) {
     // Normally this closure should only be called with cross-region references.
     // But since Java threads are manipulating the references concurrently and we
     // reload the values things may have changed.
+    // Also this check lets slip through references from a humongous continues region
+    // to its humongous start region, as they are in different regions, and adds a
+    // remembered set entry. This is benign (apart from memory usage), as we never
+    // try to either evacuate or eager reclaim these kind of regions.
     return;
   }
 

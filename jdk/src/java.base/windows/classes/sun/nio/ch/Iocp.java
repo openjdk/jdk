@@ -34,8 +34,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
 import jdk.internal.misc.Unsafe;
 
 /**
@@ -46,7 +44,6 @@ import jdk.internal.misc.Unsafe;
 class Iocp extends AsynchronousChannelGroupImpl {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final long INVALID_HANDLE_VALUE  = -1L;
-    private static final boolean supportsThreadAgnosticIo;
 
     // maps completion key to channel
     private final ReadWriteLock keyToChannelLock = new ReentrantReadWriteLock();
@@ -88,13 +85,6 @@ class Iocp extends AsynchronousChannelGroupImpl {
          * Returns a reference to the pending I/O result.
          */
         <V,A> PendingFuture<V,A> getByOverlapped(long overlapped);
-    }
-
-    /**
-     * Indicates if this operating system supports thread agnostic I/O.
-     */
-    static boolean supportsThreadAgnosticIo() {
-        return supportsThreadAgnosticIo;
     }
 
     // release all resources
@@ -445,11 +435,5 @@ class Iocp extends AsynchronousChannelGroupImpl {
     static {
         IOUtil.load();
         initIDs();
-
-        // thread agnostic I/O on Vista/2008 or newer
-        String osversion = AccessController.doPrivileged(
-            new GetPropertyAction("os.version"));
-        String vers[] = osversion.split("\\.");
-        supportsThreadAgnosticIo = Integer.parseInt(vers[0]) >= 6;
     }
 }

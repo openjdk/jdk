@@ -26,8 +26,8 @@
 package java.security;
 
 import sun.security.util.Debug;
-import sun.reflect.CallerSensitive;
-import sun.reflect.Reflection;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
 /**
  * <p> The AccessController class is used for access control operations

@@ -2211,7 +2211,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   __ ld(R6_ARG4, tsize*Interpreter::stackElementSize, R15_esp);
   __ ld(R5_ARG3, Interpreter::stackElementSize, R15_esp);
   __ mflr(R31);
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::trace_bytecode), /* unused */ R4_ARG2, R5_ARG3, R6_ARG4, false);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::trace_bytecode), /* unused */ R4_ARG2, R5_ARG3, R6_ARG4, false);
   __ mtlr(R31);
   __ pop(state);
 

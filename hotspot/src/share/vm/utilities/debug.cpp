@@ -224,6 +224,11 @@ void report_vm_error(const char* file, int line, const char* error_msg, const ch
   va_end(detail_args);
 }
 
+void report_vm_status_error(const char* file, int line, const char* error_msg,
+                            int status, const char* detail) {
+  report_vm_error(file, line, error_msg, "error %s(%d), %s", os::errno_name(status), status, detail);
+}
+
 void report_fatal(const char* file, int line, const char* detail_fmt, ...)
 {
   if (Debugging || error_is_suppressed(file, line)) return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,11 +81,9 @@ void G1StringDedupThread::deduplicate_shared_strings(G1StringDedupStat& stat) {
   StringTable::shared_oops_do(&sharedStringDedup);
 }
 
-void G1StringDedupThread::run() {
+void G1StringDedupThread::run_service() {
   G1StringDedupStat total_stat;
 
-  initialize_in_thread();
-  wait_for_universe_init();
   deduplicate_shared_strings(total_stat);
 
   // Main loop
@@ -96,7 +94,7 @@ void G1StringDedupThread::run() {
 
     // Wait for the queue to become non-empty
     G1StringDedupQueue::wait();
-    if (_should_terminate) {
+    if (should_terminate()) {
       break;
     }
 
@@ -133,23 +131,10 @@ void G1StringDedupThread::run() {
     }
   }
 
-  terminate();
 }
 
-void G1StringDedupThread::stop() {
-  {
-    MonitorLockerEx ml(Terminator_lock);
-    _thread->_should_terminate = true;
-  }
-
+void G1StringDedupThread::stop_service() {
   G1StringDedupQueue::cancel_wait();
-
-  {
-    MonitorLockerEx ml(Terminator_lock);
-    while (!_thread->_has_terminated) {
-      ml.wait();
-    }
-  }
 }
 
 void G1StringDedupThread::print(const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat) {

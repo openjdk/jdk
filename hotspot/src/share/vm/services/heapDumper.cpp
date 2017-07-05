@@ -29,6 +29,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -459,7 +460,7 @@ DumpWriter::DumpWriter(const char* path) {
 
   // if the open failed we record the error
   if (_fd < 0) {
-    _error = (char*)os::strdup(strerror(errno));
+    _error = (char*)os::strdup(os::strerror(errno));
   }
 }
 
@@ -509,7 +510,7 @@ void DumpWriter::write_internal(void* s, size_t len) {
 
       if (n < 0) {
         // EINTR cannot happen here, os::write will take care of that
-        set_error(strerror(errno));
+        set_error(os::strerror(errno));
         os::close(file_descriptor());
         set_file_descriptor(-1);
         return;
