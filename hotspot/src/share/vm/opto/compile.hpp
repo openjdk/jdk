@@ -146,7 +146,6 @@ class Compile : public Phase {
   int                   _orig_pc_slot_offset_in_bytes;
 
   int                   _major_progress;        // Count of something big happening
-  bool                  _deopt_happens;         // TRUE if de-optimization CAN happen
   bool                  _has_loops;             // True if the method _may_ have some loops
   bool                  _has_split_ifs;         // True if the method _may_ have some split-if
   bool                  _has_unsafe_access;     // True if the method _may_ produce faults in unsafe loads or stores.
@@ -300,7 +299,6 @@ class Compile : public Phase {
   void          set_freq_inline_size(int n)     { _freq_inline_size = n; }
   int               freq_inline_size() const    { return _freq_inline_size; }
   void          set_max_inline_size(int n)      { _max_inline_size = n; }
-  bool              deopt_happens() const       { return _deopt_happens; }
   bool              has_loops() const           { return _has_loops; }
   void          set_has_loops(bool z)           { _has_loops = z; }
   bool              has_split_ifs() const       { return _has_split_ifs; }

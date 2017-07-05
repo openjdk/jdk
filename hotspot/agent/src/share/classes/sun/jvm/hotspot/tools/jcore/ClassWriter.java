@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,6 +238,7 @@ public class ClassWriter implements /* imports */ ClassConstants
                 }
 
                 // case JVM_CONSTANT_ClassIndex:
+                case JVM_CONSTANT_UnresolvedClassInError:
                 case JVM_CONSTANT_UnresolvedClass: {
                      dos.writeByte(JVM_CONSTANT_Class);
                      String klassName = cpool.getSymbolAt(ci).asString();
@@ -296,6 +297,8 @@ public class ClassWriter implements /* imports */ ClassConstants
                                         + ", type = " + signatureIndex);
                      break;
                 }
+                default:
+                  throw new InternalError("Unknown tag: " + cpConstType);
             } // switch
         }
     }

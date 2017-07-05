@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ SurvRateGroup::SurvRateGroup(G1CollectorPolicy* g1p,
 void SurvRateGroup::reset()
 {
   _all_regions_allocated = 0;
-  _scan_only_prefix      = 0;
   _setup_seq_num         = 0;
   _stats_arrays_length   = 0;
   _accum_surv_rate       = 0.0;
@@ -74,7 +73,7 @@ void SurvRateGroup::reset()
 void
 SurvRateGroup::start_adding_regions() {
   _setup_seq_num   = _stats_arrays_length;
-  _region_num      = _scan_only_prefix;
+  _region_num      = 0;
   _accum_surv_rate = 0.0;
 
 #if 0
@@ -164,12 +163,6 @@ SurvRateGroup::next_age_index() {
 }
 
 void
-SurvRateGroup::record_scan_only_prefix(size_t scan_only_prefix) {
-  guarantee( scan_only_prefix <= _region_num, "pre-condition" );
-  _scan_only_prefix = scan_only_prefix;
-}
-
-void
 SurvRateGroup::record_surviving_words(int age_in_group, size_t surv_words) {
   guarantee( 0 <= age_in_group && (size_t) age_in_group < _region_num,
              "pre-condition" );
@@ -218,13 +211,12 @@ SurvRateGroup::all_surviving_words_recorded(bool propagate) {
 #ifndef PRODUCT
 void
 SurvRateGroup::print() {
-  gclog_or_tty->print_cr("Surv Rate Group: %s (%d entries, %d scan-only)",
-                _name, _region_num, _scan_only_prefix);
+  gclog_or_tty->print_cr("Surv Rate Group: %s (%d entries)",
+                _name, _region_num);
   for (size_t i = 0; i < _region_num; ++i) {
-    gclog_or_tty->print_cr("    age %4d   surv rate %6.2lf %%   pred %6.2lf %%%s",
+    gclog_or_tty->print_cr("    age %4d   surv rate %6.2lf %%   pred %6.2lf %%",
                   i, _surv_rate[i] * 100.0,
-                  _g1p->get_new_prediction(_surv_rate_pred[i]) * 100.0,
-                  (i < _scan_only_prefix) ? " S-O" : "    ");
+                  _g1p->get_new_prediction(_surv_rate_pred[i]) * 100.0);
   }
 }
 

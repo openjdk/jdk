@@ -812,10 +812,6 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
 
   JVMState* youngest_jvms = sync_jvms();
 
-  // Do we need debug info here?  If it is a SafePoint and this method
-  // cannot de-opt, then we do NOT need any debug info.
-  bool full_info = (C->deopt_happens() || call->Opcode() != Op_SafePoint);
-
   // If we are guaranteed to throw, we can prune everything but the
   // input to the current bytecode.
   bool can_prune_locals = false;
@@ -829,10 +825,9 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     }
   }
 
-  if (env()->jvmti_can_examine_or_deopt_anywhere()) {
+  if (env()->jvmti_can_access_local_variables()) {
     // At any safepoint, this method can get breakpointed, which would
     // then require an immediate deoptimization.
-    full_info = true;
     can_prune_locals = false;  // do not prune locals
     stack_slots_not_pruned = 0;
   }
@@ -890,7 +885,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     k = in_jvms->locoff();
     l = in_jvms->loc_size();
     out_jvms->set_locoff(p);
-    if (full_info && !can_prune_locals) {
+    if (!can_prune_locals) {
       for (j = 0; j < l; j++)
         call->set_req(p++, in_map->in(k+j));
     } else {
@@ -901,7 +896,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     k = in_jvms->stkoff();
     l = in_jvms->sp();
     out_jvms->set_stkoff(p);
-    if (full_info && !can_prune_locals) {
+    if (!can_prune_locals) {
       for (j = 0; j < l; j++)
         call->set_req(p++, in_map->in(k+j));
     } else if (can_prune_locals && stack_slots_not_pruned != 0) {

@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008 Red Hat, Inc.
+ * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,9 +140,8 @@ IRT_ENTRY(address,
   int required_words =
     (align_size_up(sizeof(ffi_cif), wordSize) >> LogBytesPerWord) +
     (method->is_static() ? 2 : 1) + method->size_of_parameters() + 1;
-  if (required_words > stack->available_words()) {
-    Unimplemented();
-  }
+
+  stack->overflow_check(required_words, CHECK_NULL);
 
   intptr_t *buf = (intptr_t *) stack->alloc(required_words * wordSize);
   SlowSignatureHandlerGenerator sshg(methodHandle(thread, method), buf);
