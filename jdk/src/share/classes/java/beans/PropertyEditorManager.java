@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package java.beans;
 
-import com.sun.beans.WeakCache;
-import sun.beans.editors.*;
+import com.sun.beans.finder.PropertyEditorFinder;
+import sun.awt.AppContext;
 
 /**
  * The PropertyEditorManager can be used to locate a property editor for
@@ -55,6 +55,8 @@ import sun.beans.editors.*;
 
 public class PropertyEditorManager {
 
+    private static final Object FINDER_KEY = new Object();
+
     /**
      * Registers an editor class to edit values of the given target class.
      * If the editor class is {@code null},
@@ -74,12 +76,15 @@ public class PropertyEditorManager {
      *
      * @see SecurityManager#checkPropertiesAccess
      */
-    public static synchronized void registerEditor(Class<?> targetType, Class<?> editorClass) {
+    public static void registerEditor(Class<?> targetType, Class<?> editorClass) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        registry.put(targetType, editorClass);
+        PropertyEditorFinder finder = getFinder();
+        synchronized (finder) {
+            finder.register(targetType, editorClass);
+        }
     }
 
     /**
@@ -89,46 +94,11 @@ public class PropertyEditorManager {
      * @return An editor object for the given target class.
      * The result is null if no suitable editor can be found.
      */
-    public static synchronized PropertyEditor findEditor(Class<?> targetType) {
-        Class editorClass = registry.get(targetType);
-        if (editorClass != null) {
-            try {
-                Object o = editorClass.newInstance();
-                return (PropertyEditor)o;
-            } catch (Exception ex) {
-                System.err.println("Couldn't instantiate type editor \"" +
-                        editorClass.getName() + "\" : " + ex);
-            }
+    public static PropertyEditor findEditor(Class<?> targetType) {
+        PropertyEditorFinder finder = getFinder();
+        synchronized (finder) {
+            return finder.find(targetType);
         }
-
-        // Now try adding "Editor" to the class name.
-
-        String editorName = targetType.getName() + "Editor";
-        try {
-            return (PropertyEditor) Introspector.instantiate(targetType, editorName);
-        } catch (Exception ex) {
-           // Silently ignore any errors.
-        }
-
-        // Now try looking for <searchPath>.fooEditor
-        int index = editorName.lastIndexOf('.') + 1;
-        if (index > 0) {
-            editorName = editorName.substring(index);
-        }
-        for (String path : searchPath) {
-            String name = path + '.' + editorName;
-            try {
-                return (PropertyEditor) Introspector.instantiate(targetType, name);
-            } catch (Exception ex) {
-               // Silently ignore any errors.
-            }
-        }
-
-        if (null != targetType.getEnumConstants()) {
-            return new EnumEditor(targetType);
-        }
-        // We couldn't find a suitable Editor.
-        return null;
     }
 
     /**
@@ -139,8 +109,11 @@ public class PropertyEditorManager {
      * <p>     The default value for this array is implementation-dependent,
      *         e.g. Sun implementation initially sets to  {"sun.beans.editors"}.
      */
-    public static synchronized String[] getEditorSearchPath() {
-        return searchPath.clone();
+    public static String[] getEditorSearchPath() {
+        PropertyEditorFinder finder = getFinder();
+        synchronized (finder) {
+            return finder.getPackages();
+        }
     }
 
     /**
@@ -156,28 +129,25 @@ public class PropertyEditorManager {
      *              of system properties.
      * @see SecurityManager#checkPropertiesAccess
      */
-    public static synchronized void setEditorSearchPath(String[] path) {
+    public static void setEditorSearchPath(String[] path) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        searchPath = (path != null)
-                ? path.clone()
-                : EMPTY;
+        PropertyEditorFinder finder = getFinder();
+        synchronized (finder) {
+            finder.setPackages(path);
+        }
     }
 
-    private static String[] searchPath = { "sun.beans.editors" };
-    private static final String[] EMPTY = {};
-    private static final WeakCache<Class<?>, Class<?>> registry;
-
-    static {
-        registry = new WeakCache<Class<?>, Class<?>>();
-        registry.put(Byte.TYPE, ByteEditor.class);
-        registry.put(Short.TYPE, ShortEditor.class);
-        registry.put(Integer.TYPE, IntegerEditor.class);
-        registry.put(Long.TYPE, LongEditor.class);
-        registry.put(Boolean.TYPE, BooleanEditor.class);
-        registry.put(Float.TYPE, FloatEditor.class);
-        registry.put(Double.TYPE, DoubleEditor.class);
+    private static PropertyEditorFinder getFinder() {
+        AppContext context = AppContext.getAppContext();
+        Object object = context.get(FINDER_KEY);
+        if (object instanceof PropertyEditorFinder) {
+            return (PropertyEditorFinder) object;
+        }
+        PropertyEditorFinder finder = new PropertyEditorFinder();
+        context.put(FINDER_KEY, finder);
+        return finder;
     }
 }

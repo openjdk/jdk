@@ -638,6 +638,9 @@ public final class Integer extends Number implements Comparable<Integer> {
      * to yield significantly better space and time performance by
      * caching frequently requested values.
      *
+     * This method will always cache values in the range -128 to 127,
+     * inclusive, and may cache other values outside of this range.
+     *
      * @param  i an {@code int} value.
      * @return an {@code Integer} instance representing {@code i}.
      * @since  1.5
