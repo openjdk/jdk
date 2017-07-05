@@ -62,6 +62,12 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
      */
     @Override
     protected void test() throws Exception {
+        if (testCase.isOsr && CompilerWhiteBoxTest.MODE.startsWith(
+                "compiled ")) {
+          System.err.printf("Warning: %s is not applicable in %s%n",
+                testCase.name(), CompilerWhiteBoxTest.MODE);
+          return;
+        }
         checkNotCompiled();
         if (!isCompilable()) {
             throw new RuntimeException(method + " must be compilable");

@@ -66,7 +66,7 @@ else
     else
         # We are building multiple configurations.
         # First, find out the valid targets
-        # Run the makefile with an arbitraty SPEC using -p -q (quiet dry-run and dump rules) to find
+        # Run the makefile with an arbitrary SPEC using -p -q (quiet dry-run and dump rules) to find
         # available PHONY targets. Use this list as valid targets to pass on to the repeated calls.
         all_phony_targets=$(filter-out $(global_targets) bundles-only, $(strip $(shell \
             $(MAKE) -p -q -f common/makefiles/Main.gmk FRC SPEC=$(firstword $(SPEC)) | \
