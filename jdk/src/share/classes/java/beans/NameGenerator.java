@@ -107,7 +107,7 @@ class NameGenerator {
 
             Integer size = nameToCount.get(className);
             int instanceNumber = (size == null) ? 0 : (size).intValue() + 1;
-            nameToCount.put(className, new Integer(instanceNumber));
+            nameToCount.put(className, instanceNumber);
 
             result = className + instanceNumber;
             valueToName.put(instance, result);

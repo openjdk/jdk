@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,21 +52,40 @@ import java.awt.event.*;
 public class BasicScrollPaneUI
     extends ScrollPaneUI implements ScrollPaneConstants
 {
+    /**
+     * The instance of {@code JScrollPane}.
+     */
     protected JScrollPane scrollpane;
+
+    /**
+     * {@code ChangeListener} installed on the vertical scrollbar.
+     */
     protected ChangeListener vsbChangeListener;
+
+    /**
+     * {@code ChangeListener} installed on the horizontal scrollbar.
+     */
     protected ChangeListener hsbChangeListener;
+
+    /**
+     * {@code ChangeListener} installed on the viewport.
+     */
     protected ChangeListener viewportChangeListener;
+
+    /**
+     * {@code PropertyChangeListener} installed on the scroll pane.
+     */
     protected PropertyChangeListener spPropertyChangeListener;
     private MouseWheelListener mouseScrollListener;
     private int oldExtent = Integer.MIN_VALUE;
 
     /**
-     * PropertyChangeListener installed on the vertical scrollbar.
+     * {@code PropertyChangeListener} installed on the vertical scrollbar.
      */
     private PropertyChangeListener vsbPropertyChangeListener;
 
     /**
-     * PropertyChangeListener installed on the horizontal scrollbar.
+     * {@code PropertyChangeListener} installed on the horizontal scrollbar.
      */
     private PropertyChangeListener hsbPropertyChangeListener;
 
@@ -79,7 +98,12 @@ public class BasicScrollPaneUI
      */
     private boolean setValueCalled = false;
 
-
+    /**
+     * Returns a new instance of {@code BasicScrollPaneUI}.
+     *
+     * @param x a component.
+     * @return a new instance of {@code BasicScrollPaneUI}
+     */
     public static ComponentUI createUI(JComponent x) {
         return new BasicScrollPaneUI();
     }
@@ -115,7 +139,11 @@ public class BasicScrollPaneUI
         return new Dimension(Short.MAX_VALUE, Short.MAX_VALUE);
     }
 
-
+    /**
+     * Installs default properties.
+     *
+     * @param scrollpane an instance of {@code JScrollPane}
+     */
     protected void installDefaults(JScrollPane scrollpane)
     {
         LookAndFeel.installBorder(scrollpane, "ScrollPane.border");
@@ -132,7 +160,11 @@ public class BasicScrollPaneUI
         LookAndFeel.installProperty(scrollpane, "opaque", Boolean.TRUE);
     }
 
-
+    /**
+     * Registers listeners.
+     *
+     * @param c an instance of {@code JScrollPane}
+     */
     protected void installListeners(JScrollPane c)
     {
         vsbChangeListener = createVSBChangeListener();
@@ -165,6 +197,11 @@ public class BasicScrollPaneUI
 
     }
 
+    /**
+     * Registers keyboard actions.
+     *
+     * @param c an instance of {@code JScrollPane}
+     */
     protected void installKeyboardActions(JScrollPane c) {
         InputMap inputMap = getInputMap(JComponent.
                                   WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -201,7 +238,11 @@ public class BasicScrollPaneUI
         installKeyboardActions(scrollpane);
     }
 
-
+    /**
+     * Uninstalls default properties.
+     *
+     * @param c an instance of {@code JScrollPane}
+     */
     protected void uninstallDefaults(JScrollPane c) {
         LookAndFeel.uninstallBorder(scrollpane);
 
@@ -210,7 +251,11 @@ public class BasicScrollPaneUI
         }
     }
 
-
+    /**
+     * Unregisters listeners.
+     *
+     * @param c a component
+     */
     protected void uninstallListeners(JComponent c) {
         JViewport viewport = scrollpane.getViewport();
         JScrollBar vsb = scrollpane.getVerticalScrollBar();
@@ -242,7 +287,11 @@ public class BasicScrollPaneUI
         handler = null;
     }
 
-
+    /**
+     * Unregisters keyboard actions.
+     *
+     * @param c an instance of {@code JScrollPane}
+     */
     protected void uninstallKeyboardActions(JScrollPane c) {
         SwingUtilities.replaceUIActionMap(c, null);
         SwingUtilities.replaceUIInputMap(c, JComponent.
@@ -264,6 +313,9 @@ public class BasicScrollPaneUI
         return handler;
     }
 
+    /**
+     * Synchronizes the {@code JScrollPane} with {@code Viewport}.
+     */
     protected void syncScrollPaneWithViewport()
     {
         JViewport viewport = scrollpane.getViewport();
@@ -453,6 +505,11 @@ public class BasicScrollPaneUI
         }
     }
 
+    /**
+     * Returns an instance of viewport {@code ChangeListener}.
+     *
+     * @return an instance of viewport {@code ChangeListener}
+     */
     protected ChangeListener createViewportChangeListener() {
         return getHandler();
     }
@@ -483,6 +540,11 @@ public class BasicScrollPaneUI
         return getHandler();
     }
 
+    /**
+     * Returns an instance of horizontal scroll bar {@code ChangeListener}.
+     *
+     * @return an instance of horizontal scroll bar {@code ChangeListener}
+     */
     protected ChangeListener createHSBChangeListener() {
         return getHandler();
     }
@@ -514,6 +576,11 @@ public class BasicScrollPaneUI
         return getHandler();
     }
 
+    /**
+     * Returns an instance of vertical scroll bar {@code ChangeListener}.
+     *
+     * @return an instance of vertical scroll bar {@code ChangeListener}
+     */
     protected ChangeListener createVSBChangeListener() {
         return getHandler();
     }
@@ -565,12 +632,21 @@ public class BasicScrollPaneUI
         return getHandler();
     }
 
+    /**
+     * Updates a scroll bar display policy.
+     *
+     * @param e the property change event
+     */
     protected void updateScrollBarDisplayPolicy(PropertyChangeEvent e) {
         scrollpane.revalidate();
         scrollpane.repaint();
     }
 
-
+    /**
+     * Updates viewport.
+     *
+     * @param e the property change event
+     */
     protected void updateViewport(PropertyChangeEvent e)
     {
         JViewport oldViewport = (JViewport)(e.getOldValue());
@@ -599,7 +675,11 @@ public class BasicScrollPaneUI
         }
     }
 
-
+    /**
+     * Updates row header.
+     *
+     * @param e the property change event
+     */
     protected void updateRowHeader(PropertyChangeEvent e)
     {
         JViewport newRowHead = (JViewport)(e.getNewValue());
@@ -611,7 +691,11 @@ public class BasicScrollPaneUI
         }
     }
 
-
+    /**
+     * Updates column header.
+     *
+     * @param e the property change event
+     */
     protected void updateColumnHeader(PropertyChangeEvent e)
     {
         JViewport newColHead = (JViewport)(e.getNewValue());
@@ -679,9 +763,9 @@ public class BasicScrollPaneUI
 
 
     /**
-     * Creates an instance of PropertyChangeListener that's added to
-     * the JScrollPane by installUI().  Subclasses can override this method
-     * to return a custom PropertyChangeListener, e.g.
+     * Creates an instance of {@code PropertyChangeListener} that's added to
+     * the {@code JScrollPane} by {@code installUI()}. Subclasses can override
+     * this method to return a custom {@code PropertyChangeListener}, e.g.
      * <pre>
      * class MyScrollPaneUI extends BasicScrollPaneUI {
      *    protected PropertyChangeListener <b>createPropertyChangeListener</b>() {
@@ -697,6 +781,8 @@ public class BasicScrollPaneUI
      *    }
      * }
      * </pre>
+     *
+     * @return an instance of {@code PropertyChangeListener}
      *
      * @see java.beans.PropertyChangeListener
      * @see #installUI

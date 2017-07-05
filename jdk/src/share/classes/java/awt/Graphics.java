@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ public abstract class Graphics {
      * is specified by the <code>width</code> and <code>height</code>
      * arguments.
      * </ul>
-     * <p>
+     *
      * @param      x   the <i>x</i> coordinate.
      * @param      y   the <i>y</i> coordinate.
      * @param      width   the width of the clipping rectangle.

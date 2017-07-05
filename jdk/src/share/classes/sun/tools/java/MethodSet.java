@@ -46,7 +46,7 @@ class MethodSet {
      * A Map containing Lists of MemberDefinitions.  The Lists
      * contain methods which share the same name.
      */
-    private final Map lookupMap;
+    private final Map<Identifier,List<MemberDefinition>> lookupMap;
 
     /**
      * The number of methods stored in the MethodSet.
@@ -63,7 +63,7 @@ class MethodSet {
      */
     public MethodSet() {
         frozen = false;
-        lookupMap = new HashMap();
+        lookupMap = new HashMap<>();
         count = 0;
     }
 
@@ -89,12 +89,12 @@ class MethodSet {
             Identifier name = method.getName();
 
             // Get a List containing all methods of this name.
-            List methodList = (List) lookupMap.get(name);
+            List<MemberDefinition> methodList = lookupMap.get(name);
 
             if (methodList == null) {
                 // There is no method with this name already.
                 // Create a List, and insert it into the hash.
-                methodList = new ArrayList();
+                methodList = new ArrayList<>();
                 lookupMap.put(name, methodList);
             }
 
@@ -102,7 +102,7 @@ class MethodSet {
             // been added to the MethodSet.
             int size = methodList.size();
             for (int i = 0; i < size; i++) {
-                if (((MemberDefinition) methodList.get(i))
+                if ((methodList.get(i))
                     .getType().equalArguments(method.getType())) {
                     throw new CompilerError("duplicate addition");
                 }
@@ -128,12 +128,12 @@ class MethodSet {
             Identifier name = method.getName();
 
             // Get a List containing all methods of this name.
-            List methodList = (List) lookupMap.get(name);
+            List<MemberDefinition> methodList = lookupMap.get(name);
 
             if (methodList == null) {
                 // There is no method with this name already.
                 // Create a List, and insert it into the hash.
-                methodList = new ArrayList();
+                methodList = new ArrayList<>();
                 lookupMap.put(name, methodList);
             }
 
@@ -141,7 +141,7 @@ class MethodSet {
             // `method'.
             int size = methodList.size();
             for (int i = 0; i < size; i++) {
-                if (((MemberDefinition) methodList.get(i))
+                if ((methodList.get(i))
                     .getType().equalArguments(method.getType())) {
                     methodList.set(i, method);
                     return;
@@ -160,11 +160,11 @@ class MethodSet {
     public MemberDefinition lookupSig(Identifier name, Type type) {
         // Go through all methods of the same name and see if any
         // have the right signature.
-        Iterator matches = lookupName(name);
+        Iterator<MemberDefinition> matches = lookupName(name);
         MemberDefinition candidate;
 
         while (matches.hasNext()) {
-            candidate = (MemberDefinition) matches.next();
+            candidate = matches.next();
             if (candidate.getType().equalArguments(type)) {
                 return candidate;
             }
@@ -178,10 +178,10 @@ class MethodSet {
      * Returns an Iterator of all methods contained in the
      * MethodSet which have a given name.
      */
-    public Iterator lookupName(Identifier name) {
+    public Iterator<MemberDefinition> lookupName(Identifier name) {
         // Find the List containing all methods of this name, and
         // return that List's Iterator.
-        List methodList = (List) lookupMap.get(name);
+        List<MemberDefinition> methodList = lookupMap.get(name);
         if (methodList == null) {
             // If there is no method of this name, return a bogus, empty
             // Iterator.
@@ -193,22 +193,21 @@ class MethodSet {
     /**
      * Returns an Iterator of all methods in the MethodSet
      */
-    public Iterator iterator() {
+    public Iterator<MemberDefinition> iterator() {
 
         //----------------------------------------------------------
         // The inner class MethodIterator is used to create our
         // Iterator of all methods in the MethodSet.
-        class MethodIterator implements Iterator {
-            Iterator hashIter = lookupMap.values().iterator();
-            Iterator listIter = Collections.emptyIterator();
+        class MethodIterator implements Iterator<MemberDefinition> {
+            Iterator<List<MemberDefinition>> hashIter = lookupMap.values().iterator();
+            Iterator<MemberDefinition> listIter = Collections.emptyIterator();
 
             public boolean hasNext() {
                 if (listIter.hasNext()) {
                     return true;
                 } else {
                     if (hashIter.hasNext()) {
-                        listIter = ((List) hashIter.next())
-                            .iterator();
+                        listIter = hashIter.next().iterator();
 
                         // The following should be always true.
                         if (listIter.hasNext()) {
@@ -224,7 +223,7 @@ class MethodSet {
                 return false;
             }
 
-            public Object next() {
+            public MemberDefinition next() {
                 return listIter.next();
             }
 
@@ -262,7 +261,7 @@ class MethodSet {
     public String toString() {
         int len = size();
         StringBuilder sb = new StringBuilder();
-        Iterator all = iterator();
+        Iterator<MemberDefinition> all = iterator();
         sb.append("{");
 
         while (all.hasNext()) {

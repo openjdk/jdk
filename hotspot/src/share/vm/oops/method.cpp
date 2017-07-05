@@ -240,6 +240,9 @@ void Method::mask_for(int bci, InterpreterOopMap* mask) {
 
 
 int Method::bci_from(address bcp) const {
+  if (is_native() && bcp == 0) {
+    return 0;
+  }
 #ifdef ASSERT
   { ResourceMark rm;
   assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(),
@@ -250,24 +253,23 @@ int Method::bci_from(address bcp) const {
 }
 
 
-// Return (int)bcx if it appears to be a valid BCI.
-// Return bci_from((address)bcx) if it appears to be a valid BCP.
+int Method::validate_bci(int bci) const {
+  return (bci == 0 || bci < code_size()) ? bci : -1;
+}
+
+// Return bci if it appears to be a valid bcp
 // Return -1 otherwise.
 // Used by profiling code, when invalid data is a possibility.
 // The caller is responsible for validating the Method* itself.
-int Method::validate_bci_from_bcx(intptr_t bcx) const {
+int Method::validate_bci_from_bcp(address bcp) const {
   // keep bci as -1 if not a valid bci
   int bci = -1;
-  if (bcx == 0 || (address)bcx == code_base()) {
+  if (bcp == 0 || bcp == code_base()) {
     // code_size() may return 0 and we allow 0 here
     // the method may be native
     bci = 0;
-  } else if (frame::is_bci(bcx)) {
-    if (bcx < code_size()) {
-      bci = (int)bcx;
-    }
-  } else if (contains((address)bcx)) {
-    bci = (address)bcx - code_base();
+  } else if (contains(bcp)) {
+    bci = bcp - code_base();
   }
   // Assert that if we have dodged any asserts, bci is negative.
   assert(bci == -1 || bci == bci_from(bcp_from(bci)), "sane bci if >=0");

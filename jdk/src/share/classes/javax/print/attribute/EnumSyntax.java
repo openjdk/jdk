@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,6 @@ import java.io.Serializable;
  * uses some of the same integer values as the superclass. However, the
  * application in which the enumeration class and subclass are used may need to
  * have distinct integer values in the superclass and subclass.
- * <P>
  *
  * @author  David Mendenhall
  * @author  Alan Kaminsky

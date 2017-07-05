@@ -496,6 +496,7 @@ public abstract class JComponent extends Container implements Serializable,
     /**
      * Returns true if the JPopupMenu should be inherited from the parent.
      *
+     * @return true if the JPopupMenu should be inherited from the parent
      * @see #setComponentPopupMenu
      * @since 1.5
      */
@@ -1302,6 +1303,7 @@ public abstract class JComponent extends Container implements Serializable,
      * <code>SortingFocusTraversalPolicy</code> from considering descendants
      * of this JComponent when computing a focus traversal cycle.
      *
+     * @return false
      * @see java.awt.Component#setFocusTraversalKeys
      * @see SortingFocusTraversalPolicy
      * @deprecated As of 1.4, replaced by
@@ -2213,6 +2215,13 @@ public abstract class JComponent extends Container implements Serializable,
      * This method is now obsolete, please use a combination of
      * <code>getActionMap()</code> and <code>getInputMap()</code> for
      * similar behavior.
+     *
+     * @param anAction  action to be registered to given keystroke and condition
+     * @param aKeyStroke  a {@code KeyStroke}
+     * @param aCondition  the condition to be associated with given keystroke
+     *                    and action
+     * @see #getActionMap
+     * @see #getInputMap(int)
      */
     public void registerKeyboardAction(ActionListener anAction,KeyStroke aKeyStroke,int aCondition) {
         registerKeyboardAction(anAction,null,aKeyStroke,aCondition);
@@ -2231,6 +2240,9 @@ public abstract class JComponent extends Container implements Serializable,
      * Unregisters a keyboard action.
      * This will remove the binding from the <code>ActionMap</code>
      * (if it exists) as well as the <code>InputMap</code>s.
+     *
+     * @param aKeyStroke  the keystroke for which to unregister its
+     *                    keyboard action
      */
     public void unregisterKeyboardAction(KeyStroke aKeyStroke) {
         ActionMap am = getActionMap(false);
@@ -2286,6 +2298,8 @@ public abstract class JComponent extends Container implements Serializable,
      * conditions <code>WHEN_FOCUSED</code> and
      * <code>WHEN_IN_FOCUSED_WINDOW</code> condition.
      *
+     * @param aKeyStroke  the keystroke for which to request an
+     *                    action-keystroke condition
      * @return the action-keystroke condition
      */
     public int getConditionForKeyStroke(KeyStroke aKeyStroke) {
@@ -2302,6 +2316,7 @@ public abstract class JComponent extends Container implements Serializable,
      * Returns the object that will perform the action registered for a
      * given keystroke.
      *
+     * @param aKeyStroke  the keystroke for which to return a listener
      * @return the <code>ActionListener</code>
      *          object invoked when the keystroke occurs
      */
@@ -2610,6 +2625,8 @@ public abstract class JComponent extends Container implements Serializable,
      * <code>FocusTraversalPolicy</code> of this <code>JComponent</code>'s
      * focus-cycle-root ancestor is used.
      *
+     * @return true if this component can request to get the input focus,
+     *              false if it can not
      * @see java.awt.FocusTraversalPolicy#getDefaultComponent
      * @deprecated As of 1.4, replaced by
      * <code>FocusTraversalPolicy.getDefaultComponent(Container).requestFocus()</code>
@@ -2821,6 +2838,8 @@ public abstract class JComponent extends Container implements Serializable,
      * normally override this method if they process some
      * key events themselves.  If the event is processed,
      * it should be consumed.
+     *
+     * @param e the event to be processed
      */
     protected void processComponentKeyEvent(KeyEvent e) {
     }
@@ -3032,6 +3051,10 @@ public abstract class JComponent extends Container implements Serializable,
      * <code>setToolTipText</code>.  If a component provides
      * more extensive API to support differing tooltips at different locations,
      * this method should be overridden.
+     *
+     * @param event the {@code MouseEvent} that initiated the
+     *              {@code ToolTip} display
+     * @return a string containing the  tooltip
      */
     public String getToolTipText(MouseEvent event) {
         return getToolTipText();
@@ -3774,6 +3797,10 @@ public abstract class JComponent extends Container implements Serializable,
          * but not very pretty outside borders in compound border situations.
          * It's rather arbitrary, but hopefully decent UI programmers will
          * not create multiple titled borders for the same component.
+         *
+         * @param b  the {@code Border} for which to retrieve its title
+         * @return the border's title as a {@code String}, null if it has
+         *         no title
          */
         protected String getBorderTitle(Border b) {
             String s;
@@ -4198,6 +4225,7 @@ public abstract class JComponent extends Container implements Serializable,
      * Returns true if this component is lightweight, that is, if it doesn't
      * have a native window system peer.
      *
+     * @param c  the {@code Component} to be checked
      * @return true if this component is lightweight
      */
     @SuppressWarnings("deprecation")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.SecureRandomSpi;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 
 /**
  * <p>This class provides a crytpographically strong pseudo-random number
@@ -94,9 +95,19 @@ implements java.io.Serializable {
      */
     private void init(byte[] seed) {
         try {
-            digest = MessageDigest.getInstance("SHA");
-        } catch (NoSuchAlgorithmException e) {
-            throw new InternalError("internal error: SHA-1 not available.", e);
+            /*
+             * Use the local SUN implementation to avoid native
+             * performance overhead.
+             */
+            digest = MessageDigest.getInstance("SHA", "SUN");
+        } catch (NoSuchProviderException | NoSuchAlgorithmException e) {
+            // Fallback to any available.
+            try {
+                digest = MessageDigest.getInstance("SHA");
+            } catch (NoSuchAlgorithmException exc) {
+                throw new InternalError(
+                    "internal error: SHA-1 not available.", exc);
+            }
         }
 
         if (seed != null) {
@@ -265,9 +276,19 @@ implements java.io.Serializable {
         s.defaultReadObject ();
 
         try {
-            digest = MessageDigest.getInstance("SHA");
-        } catch (NoSuchAlgorithmException e) {
-            throw new InternalError("internal error: SHA-1 not available.", e);
+            /*
+             * Use the local SUN implementation to avoid native
+             * performance overhead.
+             */
+            digest = MessageDigest.getInstance("SHA", "SUN");
+        } catch (NoSuchProviderException | NoSuchAlgorithmException e) {
+            // Fallback to any available.
+            try {
+                digest = MessageDigest.getInstance("SHA");
+            } catch (NoSuchAlgorithmException exc) {
+                throw new InternalError(
+                    "internal error: SHA-1 not available.", exc);
+            }
         }
     }
 }

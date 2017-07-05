@@ -1196,9 +1196,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                 } else if(binaryNode.isOptimisticUndecidedType()) {
                     // At this point, we can assign a static type to the optimistic binary ADD operator as now we know
                     // the types of its operands.
-                    final Type type = Type.widest(binaryNode.lhs().getType(), binaryNode.rhs().getType());
-                    // Use Type.CHARSEQUENCE instead of Type.STRING to avoid conversion of ConsStrings to Strings.
-                    return binaryNode.setType(type.equals(Type.STRING) ? Type.CHARSEQUENCE : type);
+                    return binaryNode.decideType();
                 }
                 return binaryNode;
             }

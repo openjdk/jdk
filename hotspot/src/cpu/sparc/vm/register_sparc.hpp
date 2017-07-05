@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define CPU_SPARC_VM_REGISTER_SPARC_HPP
 
 #include "asm/register.hpp"
-#include "vm_version_sparc.hpp"
 
 // forward declaration
 class Address;
@@ -65,7 +64,7 @@ class RegisterImpl: public AbstractRegisterImpl {
   friend Register as_oRegister(int number);
   friend Register as_gRegister(int number);
 
-  VMReg as_VMReg();
+  inline VMReg as_VMReg();
 
   // accessors
   int   encoding() const                              { assert(is_valid(), "invalid register"); return value(); }
@@ -234,7 +233,7 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
   };
 
   // construction
-  VMReg as_VMReg( );
+  inline VMReg as_VMReg( );
 
   // accessors
   int encoding() const                                { assert(is_valid(), "invalid register"); return value(); }

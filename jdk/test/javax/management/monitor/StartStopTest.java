@@ -213,6 +213,6 @@ public class StartStopTest {
     }
 
     private static void doSleep(long ms) throws Exception {
-        Thread.sleep(Math.round(ms * Utils.TIMEOUT_FACTOR));
+        Thread.sleep(Utils.adjustTimeout(ms));
     }
 }

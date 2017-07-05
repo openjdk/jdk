@@ -454,6 +454,7 @@ jboolean XShared_initSurface(JNIEnv *env, X11SDOps *xsdo, jint depth, jint width
             AWT_LOCK();
             xsdo->drawable = X11SD_CreateSharedPixmap(xsdo);
             AWT_UNLOCK();
+            JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
             if (xsdo->drawable) {
                 xsdo->shmPMData.usingShmPixmap = JNI_TRUE;
                 xsdo->shmPMData.shmPixmap = xsdo->drawable;
@@ -469,6 +470,7 @@ jboolean XShared_initSurface(JNIEnv *env, X11SDOps *xsdo, jint depth, jint width
                                      xsdo->configData->awt_visInfo.screen),
                           width, height, depth);
         AWT_UNLOCK();
+        JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
 #ifdef MITSHM
         xsdo->shmPMData.usingShmPixmap = JNI_FALSE;
         xsdo->shmPMData.pixmap = xsdo->drawable;
@@ -504,6 +506,7 @@ Java_sun_java2d_x11_X11SurfaceData_initSurface(JNIEnv *env, jclass xsd,
 
     if (xsdo->configData->awt_cmap == (Colormap)NULL) {
         awtJNI_CreateColorData(env, xsdo->configData, 1);
+        JNU_CHECK_EXCEPTION(env);
     }
     /* color_data will be initialized in awtJNI_CreateColorData for
        8-bit visuals */
@@ -805,7 +808,10 @@ static jint X11SD_Lock(JNIEnv *env,
          xsdo->cData->awt_icmLUT == NULL))
     {
         AWT_UNLOCK();
-        JNU_ThrowNullPointerException(env, "colormap lookup table");
+        if (!(*env)->ExceptionCheck(env))
+        {
+             JNU_ThrowNullPointerException(env, "colormap lookup table");
+        }
         return SD_FAILURE;
     }
     if ((lockflags & SD_LOCK_INVCOLOR) != 0 &&
@@ -816,7 +822,10 @@ static jint X11SD_Lock(JNIEnv *env,
          xsdo->cData->img_oda_blue == NULL))
     {
         AWT_UNLOCK();
-        JNU_ThrowNullPointerException(env, "inverse colormap lookup table");
+        if (!(*env)->ExceptionCheck(env))
+        {
+             JNU_ThrowNullPointerException(env, "inverse colormap lookup table");
+        }
         return SD_FAILURE;
     }
     if ((lockflags & SD_LOCK_INVGRAY) != 0 &&
@@ -824,7 +833,10 @@ static jint X11SD_Lock(JNIEnv *env,
          xsdo->cData->pGrayInverseLutData == NULL))
     {
         AWT_UNLOCK();
-        JNU_ThrowNullPointerException(env, "inverse gray lookup table");
+        if (!(*env)->ExceptionCheck(env))
+        {
+            JNU_ThrowNullPointerException(env, "inverse gray lookup table");
+        }
         return SD_FAILURE;
     }
     if (xsdo->dgaAvailable && (lockflags & (SD_LOCK_RD_WR))) {
