@@ -25,6 +25,7 @@
  * @test 1.1 02/09/11
  * @bug 4176141 4655819
  * @summary Regression tests for Japanese Collation
+ * @modules jdk.localedata
  */
 
 import java.text.*;

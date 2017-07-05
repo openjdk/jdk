@@ -26,9 +26,9 @@
  * @summary testing of initial and max usage
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  *
- * @build compiler.codecache.jmx.InitialAndMaxUsageTest
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing

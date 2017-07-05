@@ -26,7 +26,8 @@ import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import sun.hotspot.WhiteBox;
 
 class ErgoArgsPrinter {

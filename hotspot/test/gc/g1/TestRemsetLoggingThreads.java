@@ -26,7 +26,7 @@
  * @requires vm.gc.G1
  * @bug 8025441 8145534
  * @key gc
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
  * @summary Ensure that various values of worker threads/concurrent
@@ -36,8 +36,8 @@
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestRemsetLoggingThreads {
 

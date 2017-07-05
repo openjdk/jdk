@@ -32,8 +32,6 @@ import java.awt.image.ColorModel;
 
 import java.lang.ref.WeakReference;
 
-import java.lang.reflect.Method;
-
 import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.util.logging.PlatformLogger;
 
@@ -395,7 +393,6 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         return false;
     }
 
-    static Method m_sendMessage;
     static void sendEvent(final AWTEvent e) {
         // The uses of this method imply that the incoming event is system-generated
         SunToolkit.setSystemGenerated(e);

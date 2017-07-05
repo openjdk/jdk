@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -91,7 +93,6 @@ public final class WriteUnsupportedAudioFormat {
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
-        FILE.deleteOnExit();
 
         for (final Boolean end : new boolean[]{false, true}) {
             for (final int sampleSize : sampleBits) {
@@ -134,6 +135,7 @@ public final class WriteUnsupportedAudioFormat {
                 }
             }
         }
+        Files.delete(Paths.get(FILE.getAbsolutePath()));
     }
 
     /**

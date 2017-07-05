@@ -24,6 +24,7 @@
 package compiler.profiling.spectrapredefineclass_classloaders;
 
 import com.sun.tools.attach.VirtualMachine;
+import jdk.test.lib.Utils;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
@@ -32,14 +33,16 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 
 public class Agent implements ClassFileTransformer {
+    public static final String AGENT_JAR = Paths.get(Utils.TEST_CLASSES, "agent.jar").toString();
     public static ClassLoader newClassLoader() {
         try {
             return new URLClassLoader(new URL[] {
-                    Paths.get(System.getProperty("test.classes",".")).toUri().toURL(),
+                    Paths.get(Utils.TEST_CLASSES).toUri().toURL(),
             }, null);
         } catch (MalformedURLException e){
             throw new RuntimeException("Unexpected URL conversion failure", e);
@@ -76,7 +79,7 @@ public class Agent implements ClassFileTransformer {
         for (int i = 0; i < 2; i++) {
             try {
                 VirtualMachine vm = VirtualMachine.attach(pid);
-                vm.loadAgent(System.getProperty("test.classes",".") + "/agent.jar", "");
+                vm.loadAgent(AGENT_JAR, "");
                 vm.detach();
             } catch (Exception e) {
                 throw new RuntimeException(e);

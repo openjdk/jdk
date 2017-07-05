@@ -43,6 +43,7 @@ typedef struct JDKFontInfo_Struct {
     float ptSize;
     float xPtSize;
     float yPtSize;
+    float devScale; // How much applying the full glyph tx scales x distance.
     jboolean aat;
 } JDKFontInfo;
 

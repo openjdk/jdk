@@ -26,13 +26,12 @@
  * @test ClassResolutionTest
  * @bug 8144874
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
- * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
+ * @library /test/lib
  * @run driver ClassResolutionTest
  */
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 

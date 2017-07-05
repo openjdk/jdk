@@ -27,10 +27,10 @@
  * @bug 8006088
  * @requires vm.gc.G1
  * @summary Tests argument processing for initial and maximum heap size for the G1 collector
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestG1HeapSizeFlags TestMaxHeapSizeTools
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm TestG1HeapSizeFlags

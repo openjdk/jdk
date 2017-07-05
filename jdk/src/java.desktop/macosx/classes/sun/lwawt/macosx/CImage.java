@@ -56,6 +56,25 @@ public class CImage extends CFRetainedResource {
         return creator;
     }
 
+    // This is used to create a CImage that represents the icon of the given file.
+    public static Image createImageOfFile(String file, int width, int height) {
+        return getCreator().createImageOfFile(file, width, height);
+    }
+
+    public static Image createSystemImageFromSelector(String iconSelector,
+            int width, int height) {
+        return getCreator().createSystemImageFromSelector(iconSelector, width, height);
+    }
+
+    public static Image createImageFromFile(String file, double width, double height) {
+        return getCreator().createImageFromFile(file, width, height);
+    }
+
+    // This is used to create a CImage from a Image
+    public static CImage createFromImage(final Image image) {
+        return getCreator().createFromImage(image);
+    }
+
     public static class Creator {
         Creator() { }
 

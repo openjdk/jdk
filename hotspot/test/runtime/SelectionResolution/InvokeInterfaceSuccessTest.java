@@ -27,7 +27,6 @@
  * generate InvokeInterfaceSuccessTest
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @library /runtime/SelectionResolution/classes
- * @build selectionresolution.*
  * @run main/othervm/timeout=300 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies InvokeInterfaceSuccessTest
  */
 
