@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import javax.print.attribute.PrintJobAttribute;
  * for purposes of finishing.
  * <P>
  * Standard Finishings values are:
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 WIDTH=100% SUMMARY="layout">
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 style="width:100%" SUMMARY="layout">
  * <TR>
  * <TD STYLE="WIDTH:10%">
  * &nbsp;
@@ -76,7 +76,7 @@ import javax.print.attribute.PrintJobAttribute;
  * <P>
  * The following Finishings values are more specific; they indicate a
  * corner or an edge as if the document were a portrait document:
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 WIDTH=100% SUMMARY="layout">
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 style="width:100%" SUMMARY="layout">
  * <TR>
  * <TD STYLE="WIDTH:10%">
  * &nbsp;

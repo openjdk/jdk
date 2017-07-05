@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,9 +256,12 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * </ul>
      *
-     * <table border>
+     * <table class="plain">
      * <caption>Examples</caption>
+     * <thead>
      * <tr><th>Floating-point Value</th><th>Hexadecimal String</th>
+     * </thead>
+     * <tbody>
      * <tr><td>{@code 1.0}</td> <td>{@code 0x1.0p0}</td>
      * <tr><td>{@code -1.0}</td>        <td>{@code -0x1.0p0}</td>
      * <tr><td>{@code 2.0}</td> <td>{@code 0x1.0p1}</td>
@@ -273,6 +276,7 @@ public final class Float extends Number implements Comparable<Float> {
      *     <td>{@code 0x0.fffffep-126}</td>
      * <tr><td>{@code Float.MIN_VALUE}</td>
      *     <td>{@code 0x0.000002p-126}</td>
+     * </tbody>
      * </table>
      * @param   f   the {@code float} to be converted.
      * @return a hex string representation of the argument.

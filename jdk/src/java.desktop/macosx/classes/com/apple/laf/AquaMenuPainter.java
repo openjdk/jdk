@@ -74,7 +74,10 @@ public class AquaMenuPainter {
         kUCapsLockGlyph = 0x21EA;
 
     static final int ALT_GRAPH_MASK = 1 << 5; // New to Java2
-    static final int sUnsupportedModifiersMask = ~(InputEvent.CTRL_MASK | InputEvent.ALT_MASK | InputEvent.SHIFT_MASK | InputEvent.META_MASK | ALT_GRAPH_MASK);
+    @SuppressWarnings("deprecation")
+    static final int sUnsupportedModifiersMask =
+            ~(InputEvent.CTRL_MASK | InputEvent.ALT_MASK | InputEvent.SHIFT_MASK
+                    | InputEvent.META_MASK | ALT_GRAPH_MASK);
 
     interface Client {
         public void paintBackground(Graphics g, JComponent c, int menuWidth, int menuHeight);
@@ -86,6 +89,7 @@ public class AquaMenuPainter {
     }
 
     // Return a string with the proper modifier glyphs
+    @SuppressWarnings("deprecation")
     private static String getKeyModifiersUnicode(final int modifiers, final boolean isLeftToRight) {
         final StringBuilder buf = new StringBuilder(2);
         // Order (from StandardMenuDef.c): control, option(alt), shift, cmd
@@ -121,7 +125,7 @@ public class AquaMenuPainter {
         return buf.toString();
     }
 
-    static final RecyclableSingleton<AquaMenuPainter> sPainter = new RecyclableSingletonFromDefaultConstructor<AquaMenuPainter>(AquaMenuPainter.class);
+    private static final RecyclableSingleton<AquaMenuPainter> sPainter = new RecyclableSingletonFromDefaultConstructor<AquaMenuPainter>(AquaMenuPainter.class);
     static AquaMenuPainter instance() {
         return sPainter.get();
     }
@@ -135,9 +139,9 @@ public class AquaMenuPainter {
         protected Border getInstance() { return UIManager.getBorder(borderName); }
     }
 
-    protected final RecyclableBorder menuBarPainter = new RecyclableBorder("MenuBar.backgroundPainter");
-    protected final RecyclableBorder selectedMenuBarItemPainter = new RecyclableBorder("MenuBar.selectedBackgroundPainter");
-    protected final RecyclableBorder selectedMenuItemPainter = new RecyclableBorder("MenuItem.selectedBackgroundPainter");
+    private static final RecyclableBorder menuBarPainter = new RecyclableBorder("MenuBar.backgroundPainter");
+    private static final RecyclableBorder selectedMenuBarItemPainter = new RecyclableBorder("MenuBar.selectedBackgroundPainter");
+    private static final RecyclableBorder selectedMenuItemPainter = new RecyclableBorder("MenuItem.selectedBackgroundPainter");
 
     public void paintMenuBarBackground(final Graphics g, final int width, final int height, final JComponent c) {
         g.setColor(c == null ? Color.white : c.getBackground());
