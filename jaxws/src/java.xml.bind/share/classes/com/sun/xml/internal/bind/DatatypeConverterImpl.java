@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
     }
 
     /**
-     * Faster but less robust String->int conversion.
+     * Faster but less robust {@code String->int} conversion.
      *
      * Note that:
      * <ol>
@@ -115,7 +115,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
     }
 
     public static long _parseLong(CharSequence s) {
-        return Long.valueOf(removeOptionalPlus(WhiteSpaceProcessor.trim(s)).toString());
+        return Long.parseLong(removeOptionalPlus(WhiteSpaceProcessor.trim(s)).toString());
     }
 
     public static short _parseShort(CharSequence s) {

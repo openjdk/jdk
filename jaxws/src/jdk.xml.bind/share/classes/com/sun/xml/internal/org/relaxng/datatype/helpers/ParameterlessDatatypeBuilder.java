@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Thai Open Source Software Center Ltd
+ * Copyright (c) 2005, 2010, Thai Open Source Software Center Ltd
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@ import com.sun.xml.internal.org.relaxng.datatype.*;
  *
  * <p>
  * Typical usage would be:
- * <PRE>{@code
+ * <PRE><XMP>
  * class MyDatatypeLibrary implements DatatypeLibrary {
  *     ....
  *     DatatypeBuilder createDatatypeBuilder( String typeName ) {
@@ -52,7 +52,7 @@ import com.sun.xml.internal.org.relaxng.datatype.*;
  *     }
  *     ....
  * }
- * }</PRE>
+ * </XMP></PRE>
  *
  * @author <a href="mailto:kohsuke.kawaguchi@sun.com">Kohsuke KAWAGUCHI</a>
  */

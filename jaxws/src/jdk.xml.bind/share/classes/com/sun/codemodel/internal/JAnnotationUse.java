@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,11 +293,10 @@ public final class JAnnotationUse extends JAnnotationValue {
       * Adds a member value pair to this annotation
       *  This can be used for e.g to specify
       * <pre>
-      *        &#64;XmlCollectionItem(type=Integer.class);
-      * <pre>
-      * For adding a value of Class<? extends Annotation>
-      * @link
-      * #annotationParam(java.lang.String, java.lang.Class<? extends java.lang.annotation.Annotation>)
+      *        {@code @XmlCollectionItem(type=Integer.class);}
+      * </pre>
+      * For adding a value of {@code Class<? extends Annotation>}
+      * {@link #annotationParam(java.lang.String, java.lang.Class)}
       * @param name
       *        The simple name for this annotation param
       *

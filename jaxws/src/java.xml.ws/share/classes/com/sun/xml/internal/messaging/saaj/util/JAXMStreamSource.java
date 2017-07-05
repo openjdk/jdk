@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,14 +65,14 @@ public class JAXMStreamSource extends StreamSource {
             this.reader = rdr;
             return;
         }
-        CharWriter cout = new CharWriter();
+        CharArrayWriter cout = new CharArrayWriter();
         char[] temp = new char[1024];
         int len;
 
         while (-1 != (len = rdr.read(temp)))
             cout.write(temp, 0, len);
 
-        this.reader = new CharReader(cout.getChars(), cout.getCount());
+        this.reader = new CharArrayReader(cout.toCharArray(), 0, cout.size());
     }
 
     public InputStream getInputStream() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Map;
 import javax.xml.namespace.QName;
 
 import com.sun.xml.internal.bind.v2.model.core.ClassInfo;
+import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
 import com.sun.xml.internal.bind.annotation.XmlLocation;
 
@@ -58,7 +59,7 @@ public interface RuntimeClassInfo extends ClassInfo<Type,Class>, RuntimeNonEleme
      *      unoptimized accessor.
      *      non-null iff {@link #hasAttributeWildcard()}==true.
      *
-     * @see Accessor#optimize()
+     * @see Accessor#optimize(JAXBContextImpl)
      */
     <BeanT> Accessor<BeanT,Map<QName,String>> getAttributeWildcard();
 

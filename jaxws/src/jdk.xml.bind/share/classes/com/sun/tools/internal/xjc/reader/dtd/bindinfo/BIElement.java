@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,12 @@ import org.xml.sax.Locator;
 
 
 /**
- * &lt;element> declaration in the binding file.
+ * {@code <element>} declaration in the binding file.
  */
 public final class BIElement
 {
     /**
-     * Wraps a given &lt;element> element in the binding file.
+     * Wraps a given {@code <element>} element in the binding file.
      *
      * <p>
      * Should be created only from {@link BindInfo}.
@@ -122,7 +122,7 @@ public final class BIElement
     /** The parent {@link BindInfo} object to which this object belongs. */
     final BindInfo parent;
 
-    /** &lt;element> element which this object is wrapping. */
+    /** {@code <element>} element which this object is wrapping. */
     private final Element e;
 
     /**

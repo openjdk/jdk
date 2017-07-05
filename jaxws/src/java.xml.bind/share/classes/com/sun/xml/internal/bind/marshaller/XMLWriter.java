@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,11 +91,11 @@ import org.xml.sax.helpers.XMLFilterImpl;
  *
  * <p>The resulting document will look like this:</p>
  *
- * <pre>
- * &lt;?xml version="1.0" standalone="yes"?>
+ * <pre>{@code
+ * <?xml version="1.0" standalone="yes"?>
  *
- * &lt;greeting>Hello, world!&lt;/greeting>
- * </pre>
+ * <greeting>Hello, world!</greeting>
+ * }</pre>
  *
  * <p>In fact, there is an even simpler convenience method,
  * <var>dataElement</var>, designed for writing elements that
@@ -125,9 +125,9 @@ import org.xml.sax.helpers.XMLFilterImpl;
  *
  * <p>you will end up with</p>
  *
- * <pre>
- * &lt;item>1&lt;/item>&lt;item>3&lt;/item>&lt;item>3&lt;/item>
- * </pre>
+ * <pre>{@code
+ * <item>1</item><item>3</item><item>3</item>
+ * }</pre>
  *
  * <p>You need to invoke one of the <var>characters</var> methods
  * explicitly to add newlines or indentation.  Alternatively, you
@@ -154,11 +154,11 @@ import org.xml.sax.helpers.XMLFilterImpl;
  *
  * <p>The resulting document will look like this:</p>
  *
- * <pre>
- * &lt;?xml version="1.0" standalone="yes"?>
+ * <pre>{@code
+ * <?xml version="1.0" standalone="yes"?>
  *
- * &lt;_NS1:foo xmlns:_NS1="http://www.foo.com/ns/"/>
- * </pre>
+ * <_NS1:foo xmlns:_NS1="http://www.foo.com/ns/"/>
+ * }</pre>
  *
  * <p>In many cases, document authors will prefer to choose their
  * own prefixes rather than using the (ugly) default names.  The
@@ -175,11 +175,11 @@ import org.xml.sax.helpers.XMLFilterImpl;
  *
  * <p>The resulting document will look like this:</p>
  *
- * <pre>
- * &lt;?xml version="1.0" standalone="yes"?>
+ * <pre>{@code
+ * <?xml version="1.0" standalone="yes"?>
  *
- * &lt;foo:foo xmlns:foo="http://www.foo.com/ns/"/>
- * </pre>
+ * <foo:foo xmlns:foo="http://www.foo.com/ns/"/>
+ * }</pre>
  *
  * <p>The default Namespace simply uses an empty string as the prefix:</p>
  *
@@ -192,28 +192,28 @@ import org.xml.sax.helpers.XMLFilterImpl;
  *
  * <p>The resulting document will look like this:</p>
  *
- * <pre>
- * &lt;?xml version="1.0" standalone="yes"?>
+ * <pre>{@code
+ * <?xml version="1.0" standalone="yes"?>
  *
- * &lt;foo xmlns="http://www.foo.com/ns/"/>
- * </pre>
+ * <foo xmlns="http://www.foo.com/ns/"/>
+ * }</pre>
  *
  * <p>By default, the XML writer will not declare a Namespace until
  * it is actually used.  Sometimes, this approach will create
  * a large number of Namespace declarations, as in the following
  * example:</p>
  *
- * <pre>
- * &lt;xml version="1.0" standalone="yes"?>
+ * <pre>{@code
+ * <xml version="1.0" standalone="yes"?>
  *
- * &lt;rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
- *  &lt;rdf:Description about="http://www.foo.com/ids/books/12345">
- *   &lt;dc:title xmlns:dc="http://www.purl.org/dc/">A Dark Night&lt;/dc:title>
- *   &lt;dc:creator xmlns:dc="http://www.purl.org/dc/">Jane Smith&lt;/dc:title>
- *   &lt;dc:date xmlns:dc="http://www.purl.org/dc/">2000-09-09&lt;/dc:title>
- *  &lt;/rdf:Description>
- * &lt;/rdf:RDF>
- * </pre>
+ * <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+ *  <rdf:Description about="http://www.foo.com/ids/books/12345">
+ *   <dc:title xmlns:dc="http://www.purl.org/dc/">A Dark Night</dc:title>
+ *   <dc:creator xmlns:dc="http://www.purl.org/dc/">Jane Smith</dc:title>
+ *   <dc:date xmlns:dc="http://www.purl.org/dc/">2000-09-09</dc:title>
+ *  </rdf:Description>
+ * </rdf:RDF>
+ * }</pre>
  *
  * <p>The "rdf" prefix is declared only once, because the RDF Namespace
  * is used by the root element and can be inherited by all of its
@@ -230,18 +230,18 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * though it's not needed there, and can be inherited by its
  * descendants:</p>
  *
- * <pre>
- * &lt;xml version="1.0" standalone="yes"?>
+ * <pre>{@code
+ * <xml version="1.0" standalone="yes"?>
  *
- * &lt;rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+ * <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
  *             xmlns:dc="http://www.purl.org/dc/">
- *  &lt;rdf:Description about="http://www.foo.com/ids/books/12345">
- *   &lt;dc:title>A Dark Night&lt;/dc:title>
- *   &lt;dc:creator>Jane Smith&lt;/dc:title>
- *   &lt;dc:date>2000-09-09&lt;/dc:title>
- *  &lt;/rdf:Description>
- * &lt;/rdf:RDF>
- * </pre>
+ *  <rdf:Description about="http://www.foo.com/ids/books/12345">
+ *   <dc:title>A Dark Night</dc:title>
+ *   <dc:creator>Jane Smith</dc:title>
+ *   <dc:date>2000-09-09</dc:title>
+ *  </rdf:Description>
+ * </rdf:RDF>
+ * }</pre>
  *
  * <p>This approach is also useful for declaring Namespace prefixes
  * that be used by qualified names appearing in attribute values or
@@ -372,7 +372,7 @@ public class XMLWriter extends XMLFilterImpl
 
     /**
      * Set whether the writer should print out the XML declaration
-     * (&lt;?xml version='1.0' ... ?>).
+     * ({@code <?xml version='1.0' ... ?>}).
      * <p>
      * This option is set to true by default.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public enum EnumMemberMode {
     ;
 
     /**
-     * The mode will change to this when there's &lt;jaxb:enum> customization.
+     * The mode will change to this when there's {@code <jaxb:enum>} customization.
      */
     public EnumMemberMode getModeWithEnum() {
         if(this==SKIP)  return ERROR;

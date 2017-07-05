@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call SetupLauncher,javadoc, \
-    -DEXPAND_CLASSPATH_WILDCARDS \
-    -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.javadoc.Main"$(COMMA) }'))
-
+$(eval $(call SetupBuildLauncher, javadoc, \
+    MAIN_CLASS := com.sun.tools.javadoc.Main, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS \
+        -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
+))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import com.sun.xml.internal.org.jvnet.fastinfoset.VocabularyApplicationData;
 import org.xml.sax.SAXException;
 
 /**
- * {@link XmlOutput} for {@link LowLevelStAXDocumentSerializer}.
+ * {@link XmlOutput} for {@link StAXDocumentSerializer}.
  * <p>
  * This class is responsible for managing the indexing of elements, attributes
  * and local names that are known to JAXB by way of the JAXBContext (generated
@@ -99,7 +99,7 @@ public final class FastInfosetStreamWriterOutput extends XMLStreamWriterOutput {
         /**
          * Create a new set of tables for a JAXB context.
          * <p>
-         * @param content the JAXB context.
+         * @param context the JAXB context.
          * @param initialIndexOffset the initial index offset to calculate
          *                           the maximum possible index
          *
@@ -124,7 +124,7 @@ public final class FastInfosetStreamWriterOutput extends XMLStreamWriterOutput {
         /**
          * Clear or reset the tables.
          * <p>
-         * @param initialIndexOffset the initial index offset to calculate
+         * @param intialIndexOffset the initial index offset to calculate
          *                           the maximum possible index
          */
         public void clearOrResetTables(int intialIndexOffset) {
@@ -202,7 +202,7 @@ public final class FastInfosetStreamWriterOutput extends XMLStreamWriterOutput {
      * Holder of JAXB contexts -> tables.
      * <p>
      * An instance will be registered with the
-     * {@link LowLevelStAXDocumentSerializer}.
+     * {@link StAXDocumentSerializer}.
      */
     final static class AppData implements VocabularyApplicationData {
         final Map<JAXBContext, TablesPerJAXBContext> contexts =

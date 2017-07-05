@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package com.sun.tools.internal.xjc.reader.dtd.bindinfo;
 import com.sun.tools.internal.xjc.model.TypeUse;
 
 /**
- * conversion declaration (&lt;conversion> and &lt;enumeration>).
+ * conversion declaration ({@code <conversion> and <enumeration>}).
  */
 public interface BIConversion
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 /*
- * Copyright (C) 2004-2011
+ * Copyright (C) 2004-2015
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * &lt;grammar> pattern, which is a collection of named patterns.
+ * {@code <grammar>} pattern, which is a collection of named patterns.
  *
  * @author Kohsuke Kawaguchi (kk@kohsuke.org)
  */

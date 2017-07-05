@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,8 @@ public final class BIEnum extends AbstractDeclarationImpl {
     }
 
     /**
-     * Gets the map that contains XML value->BIEnumMember pairs.
-     * This table is built from &lt;enumMember> customizations.
+     * Gets the map that contains {@code XML value -> BIEnumMember} pairs.
+     * This table is built from {@code <enumMember>} customizations.
      *
      * Always return non-null.
      */

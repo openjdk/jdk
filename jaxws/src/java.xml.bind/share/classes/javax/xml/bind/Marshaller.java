@@ -372,8 +372,8 @@ public interface Marshaller {
      * @throws MarshalException
      *      If the {@link ValidationEventHandler ValidationEventHandler}
      *      returns false from its {@code handleEvent} method or the
-     *      {@code Marshaller} is unable to marshal {@code obj} (or any
-     *      object reachable from {@code obj}).  See <a href="#elementMarshalling">
+     *      {@code Marshaller} is unable to marshal {@code jaxbElement} (or any
+     *      object reachable from {@code jaxbElement}).  See <a href="#elementMarshalling">
      *      Marshalling a JAXB element</a>.
      * @throws IllegalArgumentException
      *      If any of the method parameters are null
@@ -394,8 +394,8 @@ public interface Marshaller {
      * @throws MarshalException
      *      If the {@link ValidationEventHandler ValidationEventHandler}
      *      returns false from its {@code handleEvent} method or the
-     *      {@code Marshaller} is unable to marshal {@code obj} (or any
-     *      object reachable from {@code obj}).  See <a href="#elementMarshalling">
+     *      {@code Marshaller} is unable to marshal {@code jaxbElement} (or any
+     *      object reachable from {@code jaxbElement}).  See <a href="#elementMarshalling">
      *      Marshalling a JAXB element</a>.
      * @throws IllegalArgumentException
      *      If any of the method parameters are null
@@ -416,8 +416,8 @@ public interface Marshaller {
      * @throws MarshalException
      *      If the {@link ValidationEventHandler ValidationEventHandler}
      *      returns false from its {@code handleEvent} method or the
-     *      {@code Marshaller} is unable to marshal {@code obj} (or any
-     *      object reachable from {@code obj}).  See <a href="#elementMarshalling">
+     *      {@code Marshaller} is unable to marshal {@code jaxbElement} (or any
+     *      object reachable from {@code jaxbElement}).  See <a href="#elementMarshalling">
      *      Marshalling a JAXB element</a>.
      * @throws IllegalArgumentException
      *      If any of the method parameters are null
@@ -439,8 +439,8 @@ public interface Marshaller {
      * @throws MarshalException
      *      If the {@link ValidationEventHandler ValidationEventHandler}
      *      returns false from its {@code handleEvent} method or the
-     *      {@code Marshaller} is unable to marshal {@code obj} (or any
-     *      object reachable from {@code obj}).  See <a href="#elementMarshalling">
+     *      {@code Marshaller} is unable to marshal {@code jaxbElement} (or any
+     *      object reachable from {@code jaxbElement}).  See <a href="#elementMarshalling">
      *      Marshalling a JAXB element</a>.
      * @throws IllegalArgumentException
      *      If any of the method parameters are null
@@ -461,8 +461,8 @@ public interface Marshaller {
      * @throws MarshalException
      *      If the {@link ValidationEventHandler ValidationEventHandler}
      *      returns false from its {@code handleEvent} method or the
-     *      {@code Marshaller} is unable to marshal {@code obj} (or any
-     *      object reachable from {@code obj}).  See <a href="#elementMarshalling">
+     *      {@code Marshaller} is unable to marshal {@code jaxbElement} (or any
+     *      object reachable from {@code jaxbElement}).  See <a href="#elementMarshalling">
      *      Marshalling a JAXB element</a>.
      * @throws IllegalArgumentException
      *      If any of the method parameters are null
@@ -510,8 +510,8 @@ public interface Marshaller {
      * @throws MarshalException
      *      If the {@link ValidationEventHandler ValidationEventHandler}
      *      returns false from its {@code handleEvent} method or the
-     *      {@code Marshaller} is unable to marshal {@code obj} (or any
-     *      object reachable from {@code obj}).  See <a href="#elementMarshalling">
+     *      {@code Marshaller} is unable to marshal {@code jaxbElement} (or any
+     *      object reachable from {@code jaxbElement}).  See <a href="#elementMarshalling">
      *      Marshalling a JAXB element</a>.
      * @throws IllegalArgumentException
      *      If any of the method parameters are null
@@ -534,8 +534,8 @@ public interface Marshaller {
      * @throws MarshalException
      *      If the {@link ValidationEventHandler ValidationEventHandler}
      *      returns false from its {@code handleEvent} method or the
-     *      {@code Marshaller} is unable to marshal {@code obj} (or any
-     *      object reachable from {@code obj}).  See <a href="#elementMarshalling">
+     *      {@code Marshaller} is unable to marshal {@code jaxbElement} (or any
+     *      object reachable from {@code jaxbElement}).  See <a href="#elementMarshalling">
      *      Marshalling a JAXB element</a>.
      * @throws IllegalArgumentException
      *      If any of the method parameters are null

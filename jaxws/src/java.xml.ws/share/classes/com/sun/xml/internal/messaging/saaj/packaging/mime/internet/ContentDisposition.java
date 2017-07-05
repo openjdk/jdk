@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,7 @@ public class ContentDisposition {
         if (list == null)
             return disposition;
 
-        StringBuffer sb = new StringBuffer(disposition);
+        StringBuilder sb = new StringBuilder(disposition);
 
         // append the parameter list
         // use the length of the string buffer + the length of

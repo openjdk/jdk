@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import com.sun.tools.internal.xjc.generator.bean.field.FieldRenderer;
 import org.w3c.dom.Element;
 
 /**
- * Particles in the &lt;content> declaration in the binding file.
+ * Particles in the {@code <content>} declaration in the binding file.
  *
  */
 public class BIContent
@@ -100,7 +100,7 @@ public class BIContent
     /**
      * Gets the type of this property, if any.
      * <p>
-     * &lt;element-ref> particle doesn't have the type.
+     * {@code <element-ref>} particle doesn't have the type.
      *
      * @return
      *      null if none is specified.

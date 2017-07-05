@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class Const {
      * Attribute name of the expected media type.
      *
      * @see WellKnownNamespace#XML_MIME_URI
-     * @see http://www.w3.org/TR/xml-media-types/
+     * @see <a href="http://www.w3.org/TR/xml-media-types/">http://www.w3.org/TR/xml-media-types/</a>
      */
     public static final String EXPECTED_CONTENT_TYPES = "expectedContentTypes";
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,16 +36,17 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Locale;
 
 /**
  * This is how the parser talks to its input entities, of all kinds.
  * The entities are in a stack.
- * <p/>
+ * <p>
  * <P> For internal entities, the character arrays are referenced here,
  * and read from as needed (they're read-only).  External entities have
  * mutable buffers, that are read into as needed.
- * <p/>
+ * <p>
  * <P> <em>Note:</em> This maps CRLF (and CR) to LF without regard for
  * whether it's in an external (parsed) entity or not.  The XML 1.0 spec
  * is inconsistent in explaining EOL handling; this is the sensible way.
@@ -148,11 +149,12 @@ public class InputEntity {
             InputStream bytes = in.getByteStream();
 
             if (bytes == null)
-                reader = XmlReader.createReader(new URL(in.getSystemId())
-                        .openStream());
+                if (Boolean.valueOf(System.getProperty("enableExternalEntityProcessing")))
+                    reader = XmlReader.createReader(new URL(in.getSystemId()).openStream());
+                else
+                    fatal("P-082", new Object[] {in.getSystemId()});
             else if (in.getEncoding() != null)
-                reader = XmlReader.createReader(in.getByteStream(),
-                        in.getEncoding());
+                reader = XmlReader.createReader(in.getByteStream(), in.getEncoding());
             else
                 reader = XmlReader.createReader(in.getByteStream());
         }
@@ -169,7 +171,7 @@ public class InputEntity {
             throws SAXException {
 
         next = stack;
-        buf = b;
+        buf = Arrays.copyOf(b, b.length);
         finish = b.length;
         this.name = name;
         this.isPE = isPE;
@@ -384,10 +386,10 @@ public class InputEntity {
     /**
      * normal content; whitespace in markup may be handled
      * specially if the parser uses the content model.
-     * <p/>
+     * <p>
      * <P> content terminates with markup delimiter characters,
      * namely ampersand (&amp;amp;) and left angle bracket (&amp;lt;).
-     * <p/>
+     * <p>
      * <P> the document handler's characters() method is called
      * on all the content found
      */
@@ -547,11 +549,11 @@ public class InputEntity {
 
 
     /**
-     * CDATA -- character data, terminated by "]]>" and optionally
+     * CDATA -- character data, terminated by {@code "]]>"} and optionally
      * including unescaped markup delimiters (ampersand and left angle
      * bracket).  This should otherwise be exactly like character data,
      * modulo differences in error report details.
-     * <p/>
+     * <p>
      * <P> The document handler's characters() or ignorableWhitespace()
      * methods are invoked on all the character data found
      *
@@ -620,7 +622,7 @@ public class InputEntity {
                         continue;
 
                     if (white) {
-                        if (whitespaceInvalidMessage != null)
+                        if (whitespaceInvalidMessage != null && errHandler != null)
                             errHandler.error(new SAXParseException(DTDParser.messages.getMessage(locale,
                                     whitespaceInvalidMessage), null));
                         docHandler.ignorableWhitespace(buf, start,
@@ -659,7 +661,7 @@ public class InputEntity {
                 }
             }
             if (white) {
-                if (whitespaceInvalidMessage != null)
+                if (whitespaceInvalidMessage != null && errHandler != null)
                     errHandler.error(new SAXParseException(DTDParser.messages.getMessage(locale,
                             whitespaceInvalidMessage), null));
                 docHandler.ignorableWhitespace(buf, start, last - start);
@@ -701,7 +703,7 @@ public class InputEntity {
 
     /**
      * whitespace in markup (flagged to app, discardable)
-     * <p/>
+     * <p>
      * <P> the document handler's ignorableWhitespace() method
      * is called on all the whitespace found
      */
@@ -759,7 +761,7 @@ public class InputEntity {
     /**
      * returns false iff 'next' string isn't as provided,
      * else skips that text and returns true.
-     * <p/>
+     * <p>
      * <P> NOTE:  two alternative string representations are
      * both passed in, since one is faster.
      */
@@ -810,8 +812,9 @@ public class InputEntity {
             // to get rid of the symbol length constraint, since having
             // the wrong symbol is a fatal error anyway ...
             //
-            if (len > buf.length)
-                fatal("P-077", new Object[]{new Integer(buf.length)});
+            if (len > buf.length) {
+                fatal("P-077", new Object[]{Integer.valueOf(buf.length)});
+            }
 
             fillbuf();
             return peek(next, chars);
@@ -984,7 +987,9 @@ public class InputEntity {
 
         // not continuable ... e.g. WF errors
         close();
-        errHandler.fatalError(x);
+        if (errHandler != null) {
+            errHandler.fatalError(x);
+        }
         throw x;
     }
 }

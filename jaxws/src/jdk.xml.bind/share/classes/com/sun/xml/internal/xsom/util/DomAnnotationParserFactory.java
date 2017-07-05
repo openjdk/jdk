@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,12 @@ import javax.xml.transform.sax.TransformerHandler;
  *
  * <p>
  * If you use this parser factory, you'll get {@link Element} that represents
- * &lt;xs:annotation> from {@link XSAnnotation#getAnnotation()}.
+ * {@code <xs:annotation>} from {@link XSAnnotation#getAnnotation()}.
  *
  * <p>
- * When multiple &lt;xs:annotation>s are found for the given schema component,
- * you'll see all &lt;xs:appinfo>s and &lt;xs:documentation>s combined under
- * one &lt;xs:annotation> element.
+ * When multiple {@code <xs:annotation>s} are found for the given schema component,
+ * you'll see all {@code <xs:appinfo>s} and {@code <xs:documentation>s} combined under
+ * one {@code <xs:annotation>} element.
  *
  * @author Kohsuke Kawaguchi
  */

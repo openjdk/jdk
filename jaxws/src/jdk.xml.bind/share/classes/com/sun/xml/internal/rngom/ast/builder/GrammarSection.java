@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 /*
- * Copyright (C) 2004-2011
+ * Copyright (C) 2004-2015
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ import com.sun.xml.internal.rngom.ast.om.ParsedElementAnnotation;
 import com.sun.xml.internal.rngom.ast.om.ParsedPattern;
 
 /**
- * The container that can have &lt;define> elements.
+ * The container that can have {@code <define>} elements.
  * <p>
  * {@link Div}, {@link Grammar}, {@link Include}, or {@link IncludedGrammar}.
  */
@@ -82,7 +82,7 @@ public interface GrammarSection<
      * Called when a pattern is defined.
      *
      * @param name
-     *      Name of the pattern. For the definition by a &lt;start/> element,
+     *      Name of the pattern. For the definition by a {@code <start/>} element,
      *      this parameter is the same as {@link #START}.
      *      to test if it's a named pattern definition or the start pattern definition.
      * @param combine
@@ -104,11 +104,11 @@ public interface GrammarSection<
     void topLevelComment(CL comments) throws BuildException;
 
     /**
-     * Called when &lt;div> is found.
+     * Called when {@code <div>} is found.
      *
      * @return
      *      the returned {@link Div} object will receive callbacks for structures
-     *      inside the &lt;div> element.
+     *      inside the {@code <div>} element.
      */
     Div<P,E,L,A,CL> makeDiv();
 

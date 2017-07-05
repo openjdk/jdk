@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,7 +215,7 @@ public final class XSOMParser {
     }
     /**
      * Set an entity resolver that is used to resolve things
-     * like &lt;xsd:import> and &lt;xsd:include>.
+     * like {@code <xsd:import>} and {@code <xsd:include>}.
      */
     public void setEntityResolver( EntityResolver resolver ) {
         this.entityResolver = resolver;
@@ -239,7 +239,7 @@ public final class XSOMParser {
      *
      * <p>
      * For each annotation, new instance of this class will be
-     * created and used to parse &lt;xs:annotation>.
+     * created and used to parse {@code <xs:annotation>}.
      */
     public void setAnnotationParser( final Class annParser ) {
         setAnnotationParser( new AnnotationParserFactory() {

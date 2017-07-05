@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class ParseException extends Exception {
    * This constructor calls its super class with the empty string
    * to force the "toString" method of parent class "Throwable" to
    * print the error message in the form:
-   *     ParseException: <result of getMessage>
+   *     ParseException: {@code <result of getMessage>}
    */
   public ParseException(Token currentTokenVal,
                         int[][] expectedTokenSequencesVal,

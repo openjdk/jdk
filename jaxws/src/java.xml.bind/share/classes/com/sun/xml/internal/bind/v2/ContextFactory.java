@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ public class ContextFactory {
      * @param retainPropertyInfo
      * @return
      * @throws JAXBException
-     * @deprecated use createContext(Class[] classes, Map<String,Object> properties) method instead
+     * @deprecated use {@code createContext(Class[] classes, Map<String,Object> properties)} method instead
      */
     @Deprecated
     public static JAXBRIContext createContext( Class[] classes,
@@ -201,7 +201,7 @@ public class ContextFactory {
      * @param improvedXsiTypeHandling
      * @return
      * @throws JAXBException
-     * @deprecated use createContext( Class[] classes, Map<String,Object> properties) method instead
+     * @deprecated use {@code createContext( Class[] classes, Map<String,Object> properties)} method instead
      */
     @Deprecated
     public static JAXBRIContext createContext( Class[] classes,

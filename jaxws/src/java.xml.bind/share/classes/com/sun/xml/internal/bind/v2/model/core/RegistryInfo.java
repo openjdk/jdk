@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@ import javax.xml.bind.annotation.XmlRegistry;
  * Represents the information in a class with {@link XmlRegistry} annotaion.
  *
  * <p>
- * This interface is only meant to be used as a return type from {@link com.sun.xml.internal.bind.v2.model.impl.ModelBuilder}.
+ * This interface is only meant to be used as a return type from
+ * {@link com.sun.xml.internal.bind.v2.model.impl.ModelBuilder}.
  *
  * @author Kohsuke Kawaguchi
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.xml.internal.messaging.saaj.soap;
 
 import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPException;
+import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -76,7 +77,7 @@ public class StaxLazySourceBridge extends StaxBridge {
     public String getPayloadAttributeValue(String attName) {
         if (lazySource.isPayloadStreamReader()) {
             XMLStreamReader reader = lazySource.readPayload();
-            if (reader.getEventType() == reader.START_ELEMENT) {
+            if (reader.getEventType() == XMLStreamConstants.START_ELEMENT) {
                 return reader.getAttributeValue(null, attName);
             }
         }
@@ -87,7 +88,7 @@ public class StaxLazySourceBridge extends StaxBridge {
     public String getPayloadAttributeValue(QName attName) {
         if (lazySource.isPayloadStreamReader()) {
             XMLStreamReader reader = lazySource.readPayload();
-            if (reader.getEventType() == reader.START_ELEMENT) {
+            if (reader.getEventType() == XMLStreamConstants.START_ELEMENT) {
                 return reader.getAttributeValue(attName.getNamespaceURI(), attName.getLocalPart());
             }
         }

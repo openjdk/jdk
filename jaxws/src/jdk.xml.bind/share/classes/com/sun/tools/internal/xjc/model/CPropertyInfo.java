@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.util.Collection;
 import java.util.Map;
 
 import javax.xml.XMLConstants;
+import javax.xml.bind.annotation.XmlInlineBinaryData;
+import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
@@ -37,6 +39,7 @@ import javax.xml.namespace.QName;
 import com.sun.codemodel.internal.JClass;
 import com.sun.codemodel.internal.JJavaName;
 import com.sun.codemodel.internal.JType;
+import com.sun.tools.internal.xjc.Plugin;
 import com.sun.tools.internal.xjc.generator.bean.field.FieldRenderer;
 import com.sun.tools.internal.xjc.model.nav.NClass;
 import com.sun.tools.internal.xjc.model.nav.NType;
@@ -46,6 +49,7 @@ import com.sun.xml.internal.bind.v2.model.core.PropertyInfo;
 import com.sun.xml.internal.bind.v2.runtime.RuntimeUtil;
 import com.sun.xml.internal.xsom.XSComponent;
 
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.Locator;
 
 /**
@@ -81,7 +85,7 @@ public abstract class CPropertyInfo implements PropertyInfo<NType,NClass>, CCust
     public String javadoc="";
 
     /**
-     * Property with {@link @XmlInlineBinaryData}.
+     * Property annotated with {@link javax.xml.bind.annotation.XmlInlineBinaryData}.
      */
     public boolean inlineBinaryData;
 
