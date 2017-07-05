@@ -28,13 +28,14 @@
 template <class T>
 static void specialized_oop_follow_contents(instanceRefKlass* ref, oop obj) {
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
-  oop referent = oopDesc::load_decode_heap_oop(referent_addr);
+  T heap_oop = oopDesc::load_heap_oop(referent_addr);
   debug_only(
     if(TraceReferenceGC && PrintGCDetails) {
       gclog_or_tty->print_cr("instanceRefKlass::oop_follow_contents " INTPTR_FORMAT, obj);
     }
   )
-  if (referent != NULL) {
+  if (!oopDesc::is_null(heap_oop)) {
+    oop referent = oopDesc::decode_heap_oop_not_null(heap_oop);
     if (!referent->is_gc_marked() &&
         MarkSweep::ref_processor()->
           discover_reference(obj, ref->reference_type())) {
@@ -81,13 +82,14 @@ static void specialized_oop_follow_contents(instanceRefKlass* ref,
                                             ParCompactionManager* cm,
                                             oop obj) {
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
-  oop referent = oopDesc::load_decode_heap_oop(referent_addr);
+  T heap_oop = oopDesc::load_heap_oop(referent_addr);
   debug_only(
     if(TraceReferenceGC && PrintGCDetails) {
       gclog_or_tty->print_cr("instanceRefKlass::oop_follow_contents " INTPTR_FORMAT, obj);
     }
   )
-  if (referent != NULL) {
+  if (!oopDesc::is_null(heap_oop)) {
+    oop referent = oopDesc::decode_heap_oop_not_null(heap_oop);
     if (PSParallelCompact::mark_bitmap()->is_unmarked(referent) &&
         PSParallelCompact::ref_processor()->
           discover_reference(obj, ref->reference_type())) {
@@ -182,9 +184,10 @@ int instanceRefKlass::oop_adjust_pointers(oop obj) {
   }                                                                             \
                                                                                 \
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);           \
-  oop referent = oopDesc::load_decode_heap_oop(referent_addr);                  \
-  if (referent != NULL && contains(referent_addr)) {                            \
+  T heap_oop = oopDesc::load_heap_oop(referent_addr);                           \
+  if (!oopDesc::is_null(heap_oop) && contains(referent_addr)) {                 \
     ReferenceProcessor* rp = closure->_ref_processor;                           \
+    oop referent = oopDesc::decode_heap_oop_not_null(heap_oop);                 \
     if (!referent->is_gc_marked() && (rp != NULL) &&                            \
         rp->discover_reference(obj, reference_type())) {                        \
       return size;                                                              \

@@ -1489,8 +1489,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
 #ifdef ASSERT
     // Verify adr type after matching memory operation
     const MachOper* oper = mach->memory_operand();
-    if (oper != NULL && oper != (MachOper*)-1 &&
-        mach->adr_type() != TypeRawPtr::BOTTOM) { // non-direct addressing mode
+    if (oper != NULL && oper != (MachOper*)-1) {
       // It has a unique memory operand.  Find corresponding ideal mem node.
       Node* m = NULL;
       if (leaf->is_Mem()) {

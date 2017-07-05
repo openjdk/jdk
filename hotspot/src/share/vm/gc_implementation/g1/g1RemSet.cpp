@@ -65,11 +65,10 @@ public:
   void set_region(HeapRegion* from) {
     _blk->set_region(from);
   }
-  virtual void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
-  virtual void do_oop(oop* p) {
-    oop obj = *p;
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(      oop* p) { do_oop_work(p); }
+  template <class T> void do_oop_work(T* p) {
+    oop obj = oopDesc::load_decode_heap_oop(p);
     if (_g1->obj_in_cs(obj)) _blk->do_oop(p);
   }
   bool apply_to_weak_ref_discovered_field() { return true; }
@@ -110,11 +109,10 @@ class VerifyRSCleanCardOopClosure: public OopClosure {
 public:
   VerifyRSCleanCardOopClosure(G1CollectedHeap* g1) : _g1(g1) {}
 
-  virtual void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
-  virtual void do_oop(oop* p) {
-    oop obj = *p;
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(      oop* p) { do_oop_work(p); }
+  template <class T> void do_oop_work(T* p) {
+    oop obj = oopDesc::load_decode_heap_oop(p);
     HeapRegion* to = _g1->heap_region_containing(obj);
     guarantee(to == NULL || !to->in_collection_set(),
               "Missed a rem set member.");
@@ -129,9 +127,9 @@ HRInto_G1RemSet::HRInto_G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
 {
   _seq_task = new SubTasksDone(NumSeqTasks);
   guarantee(n_workers() > 0, "There should be some workers");
-  _new_refs = NEW_C_HEAP_ARRAY(GrowableArray<oop*>*, n_workers());
+  _new_refs = NEW_C_HEAP_ARRAY(GrowableArray<OopOrNarrowOopStar>*, n_workers());
   for (uint i = 0; i < n_workers(); i++) {
-    _new_refs[i] = new (ResourceObj::C_HEAP) GrowableArray<oop*>(8192,true);
+    _new_refs[i] = new (ResourceObj::C_HEAP) GrowableArray<OopOrNarrowOopStar>(8192,true);
   }
 }
 
@@ -140,7 +138,7 @@ HRInto_G1RemSet::~HRInto_G1RemSet() {
   for (uint i = 0; i < n_workers(); i++) {
     delete _new_refs[i];
   }
-  FREE_C_HEAP_ARRAY(GrowableArray<oop*>*, _new_refs);
+  FREE_C_HEAP_ARRAY(GrowableArray<OopOrNarrowOopStar>*, _new_refs);
 }
 
 void CountNonCleanMemRegionClosure::do_MemRegion(MemRegion mr) {
@@ -428,15 +426,15 @@ public:
   }
 };
 
-void
-HRInto_G1RemSet::scanNewRefsRS(OopsInHeapRegionClosure* oc,
-                                             int worker_i) {
+template <class T> void
+HRInto_G1RemSet::scanNewRefsRS_work(OopsInHeapRegionClosure* oc,
+                                    int worker_i) {
   double scan_new_refs_start_sec = os::elapsedTime();
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   CardTableModRefBS* ct_bs = (CardTableModRefBS*) (g1h->barrier_set());
   for (int i = 0; i < _new_refs[worker_i]->length(); i++) {
-    oop* p = _new_refs[worker_i]->at(i);
-    oop obj = *p;
+    T* p = (T*) _new_refs[worker_i]->at(i);
+    oop obj = oopDesc::load_decode_heap_oop(p);
     // *p was in the collection set when p was pushed on "_new_refs", but
     // another thread may have processed this location from an RS, so it
     // might not point into the CS any longer.  If so, it's obviously been
@@ -549,11 +547,10 @@ class UpdateRSetOopsIntoCSImmediate : public OopClosure {
   G1CollectedHeap* _g1;
 public:
   UpdateRSetOopsIntoCSImmediate(G1CollectedHeap* g1) : _g1(g1) { }
-  virtual void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
-  virtual void do_oop(oop* p) {
-    HeapRegion* to = _g1->heap_region_containing(*p);
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(      oop* p) { do_oop_work(p); }
+  template <class T> void do_oop_work(T* p) {
+    HeapRegion* to = _g1->heap_region_containing(oopDesc::load_decode_heap_oop(p));
     if (to->in_collection_set()) {
       to->rem_set()->add_reference(p, 0);
     }
@@ -567,11 +564,10 @@ class UpdateRSetOopsIntoCSDeferred : public OopClosure {
 public:
   UpdateRSetOopsIntoCSDeferred(G1CollectedHeap* g1, DirtyCardQueue* dcq) :
     _g1(g1), _ct_bs((CardTableModRefBS*)_g1->barrier_set()), _dcq(dcq) { }
-  virtual void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
-  virtual void do_oop(oop* p) {
-    oop obj = *p;
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(      oop* p) { do_oop_work(p); }
+  template <class T> void do_oop_work(T* p) {
+    oop obj = oopDesc::load_decode_heap_oop(p);
     if (_g1->obj_in_cs(obj)) {
       size_t card_index = _ct_bs->index_for(p);
       if (_ct_bs->mark_card_deferred(card_index)) {
@@ -581,10 +577,10 @@ public:
   }
 };
 
-void HRInto_G1RemSet::new_refs_iterate(OopClosure* cl) {
+template <class T> void HRInto_G1RemSet::new_refs_iterate_work(OopClosure* cl) {
   for (size_t i = 0; i < n_workers(); i++) {
     for (int j = 0; j < _new_refs[i]->length(); j++) {
-      oop* p = _new_refs[i]->at(j);
+      T* p = (T*) _new_refs[i]->at(j);
       cl->do_oop(p);
     }
   }

@@ -6805,14 +6805,18 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   jcc(Assembler::equal, done);
 
   // if (x.f == NULL) goto done;
-  cmpptr(Address(obj, 0), NULL_WORD);
+#ifdef _LP64
+  load_heap_oop(tmp2, Address(obj, 0));
+#else
+  movptr(tmp2, Address(obj, 0));
+#endif
+  cmpptr(tmp2, (int32_t) NULL_WORD);
   jcc(Assembler::equal, done);
 
   // Can we store original value in the thread's buffer?
 
-  LP64_ONLY(movslq(tmp, index);)
-  movptr(tmp2, Address(obj, 0));
 #ifdef _LP64
+  movslq(tmp, index);
   cmpq(tmp, 0);
 #else
   cmpl(index, 0);
@@ -6834,8 +6838,7 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   if(tosca_live) push(rax);
   push(obj);
 #ifdef _LP64
-  movq(c_rarg0, Address(obj, 0));
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), c_rarg0, r15_thread);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), tmp2, r15_thread);
 #else
   push(thread);
   call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), tmp2, thread);
