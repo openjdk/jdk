@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,9 @@ public class HandshakeCompletedEvent extends EventObject
      * Note: This method can be used only when using certificate-based
      * cipher suites; using it with non-certificate-based cipher suites,
      * such as Kerberos, will throw an SSLPeerUnverifiedException.
+     * <P>
+     * Note: The returned value may not be a valid certificate chain
+     * and should not be relied on for trust decisions.
      *
      * @return an ordered array of the peer certificates,
      *          with the peer's own certificate first followed by
@@ -140,6 +143,9 @@ public class HandshakeCompletedEvent extends EventObject
      * Note: This method can be used only when using certificate-based
      * cipher suites; using it with non-certificate-based cipher suites,
      * such as Kerberos, will throw an SSLPeerUnverifiedException.
+     * <P>
+     * Note: The returned value may not be a valid certificate chain
+     * and should not be relied on for trust decisions.
      *
      * <p><em>Note: this method exists for compatibility with previous
      * releases. New applications should use

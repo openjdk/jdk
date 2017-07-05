@@ -455,18 +455,22 @@ abstract class ECDSASignature extends SignatureSpi {
     }
 
     // Convert the DER encoding of R and S into a concatenation of R and S
-    private byte[] decodeSignature(byte[] signature) throws SignatureException {
+    private byte[] decodeSignature(byte[] sig) throws SignatureException {
 
         try {
-            DerInputStream in = new DerInputStream(signature);
+            // Enforce strict DER checking for signatures
+            DerInputStream in = new DerInputStream(sig, 0, sig.length, false);
             DerValue[] values = in.getSequence(2);
+
+            // check number of components in the read sequence
+            // and trailing data
+            if ((values.length != 2) || (in.available() != 0)) {
+                throw new IOException("Invalid encoding for signature");
+            }
+
             BigInteger r = values[0].getPositiveBigInteger();
             BigInteger s = values[1].getPositiveBigInteger();
 
-            // Check for trailing signature data
-            if (in.available() != 0) {
-                throw new IOException("Incorrect signature length");
-            }
             // trim leading zeroes
             byte[] rBytes = trimZeroes(r.toByteArray());
             byte[] sBytes = trimZeroes(s.toByteArray());
@@ -480,7 +484,7 @@ abstract class ECDSASignature extends SignatureSpi {
             return result;
 
         } catch (Exception e) {
-            throw new SignatureException("Could not decode signature", e);
+            throw new SignatureException("Invalid encoding for signature", e);
         }
     }
 

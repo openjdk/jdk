@@ -26,6 +26,8 @@
 package sun.security.tools.jarsigner;
 
 import java.io.*;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.PKIXBuilderParameters;
 import java.util.*;
 import java.util.zip.*;
 import java.util.jar.*;
@@ -40,11 +42,9 @@ import java.security.*;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.cert.CertPath;
-import java.security.cert.CertPathValidator;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.util.Map.Entry;
 
@@ -54,6 +54,8 @@ import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.SignerInfo;
 import sun.security.timestamp.TimestampToken;
 import sun.security.tools.KeyStoreUtil;
+import sun.security.validator.Validator;
+import sun.security.validator.ValidatorException;
 import sun.security.x509.*;
 import sun.security.util.*;
 
@@ -177,9 +179,7 @@ public class Main {
 
     private boolean seeWeak = false;
 
-    CertificateFactory certificateFactory;
-    CertPathValidator validator;
-    PKIXParameters pkixParameters;
+    PKIXBuilderParameters pkixParameters;
 
     public void run(String args[]) {
         try {
@@ -1623,19 +1623,10 @@ public class Main {
         try {
             validateCertChain(certs);
         } catch (Exception e) {
-            if (debug) {
-                e.printStackTrace();
-            }
-            if (e.getCause() != null &&
-                    (e.getCause() instanceof CertificateExpiredException ||
-                     e.getCause() instanceof CertificateNotYetValidException)) {
-                // No more warning, we alreay have hasExpiredCert or notYetValidCert
-            } else {
-                chainNotValidated = true;
-                chainNotValidatedReason = e;
-                sb.append(tab).append(rb.getString(".CertPath.not.validated."))
-                        .append(e.getLocalizedMessage()).append("]\n"); // TODO
-            }
+            chainNotValidated = true;
+            chainNotValidatedReason = e;
+            sb.append(tab).append(rb.getString(".CertPath.not.validated."))
+                    .append(e.getLocalizedMessage()).append("]\n"); // TODO
         }
         if (certs.size() == 1
                 && KeyStoreUtil.isSelfSigned((X509Certificate)certs.get(0))) {
@@ -1654,9 +1645,6 @@ public class Main {
         }
 
         try {
-
-            certificateFactory = CertificateFactory.getInstance("X.509");
-            validator = CertPathValidator.getInstance("PKIX");
             Set<TrustAnchor> tas = new HashSet<>();
             try {
                 KeyStore caks = KeyStoreUtil.getCacertsKeyStore();
@@ -1732,7 +1720,7 @@ public class Main {
                 }
             } finally {
                 try {
-                    pkixParameters = new PKIXParameters(tas);
+                    pkixParameters = new PKIXBuilderParameters(tas, null);
                     pkixParameters.setRevocationEnabled(false);
                 } catch (InvalidAlgorithmParameterException ex) {
                     // Only if tas is empty
@@ -1899,17 +1887,8 @@ public class Main {
             try {
                 validateCertChain(Arrays.asList(certChain));
             } catch (Exception e) {
-                if (debug) {
-                    e.printStackTrace();
-                }
-                if (e.getCause() != null &&
-                        (e.getCause() instanceof CertificateExpiredException ||
-                        e.getCause() instanceof CertificateNotYetValidException)) {
-                    // No more warning, we already have hasExpiredCert or notYetValidCert
-                } else {
-                    chainNotValidated = true;
-                    chainNotValidatedReason = e;
-                }
+                chainNotValidated = true;
+                chainNotValidatedReason = e;
             }
 
             if (KeyStoreUtil.isSelfSigned(certChain[0])) {
@@ -1966,18 +1945,40 @@ public class Main {
     }
 
     void validateCertChain(List<? extends Certificate> certs) throws Exception {
-        int cpLen = 0;
-        out: for (; cpLen<certs.size(); cpLen++) {
-            for (TrustAnchor ta: pkixParameters.getTrustAnchors()) {
-                if (ta.getTrustedCert().equals(certs.get(cpLen))) {
-                    break out;
+        try {
+            Validator.getInstance(Validator.TYPE_PKIX,
+                    Validator.VAR_CODE_SIGNING,
+                    pkixParameters)
+                    .validate(certs.toArray(new X509Certificate[certs.size()]));
+        } catch (Exception e) {
+            if (debug) {
+                e.printStackTrace();
+            }
+            if (e instanceof ValidatorException) {
+                // Throw cause if it's CertPathValidatorException,
+                if (e.getCause() != null &&
+                        e.getCause() instanceof CertPathValidatorException) {
+                    e = (Exception) e.getCause();
+                    Throwable t = e.getCause();
+                    if ((t instanceof CertificateExpiredException &&
+                                hasExpiredCert) ||
+                            (t instanceof CertificateNotYetValidException &&
+                                    notYetValidCert)) {
+                        // we already have hasExpiredCert and notYetValidCert
+                        return;
+                    }
+                }
+                if (e instanceof ValidatorException) {
+                    ValidatorException ve = (ValidatorException)e;
+                    if (ve.getErrorType() == ValidatorException.T_EE_EXTENSIONS &&
+                            (badKeyUsage || badExtendedKeyUsage || badNetscapeCertType)) {
+                        // We already have badKeyUsage, badExtendedKeyUsage
+                        // and badNetscapeCertType
+                        return;
+                    }
                 }
             }
-        }
-        if (cpLen > 0) {
-            CertPath cp = certificateFactory.generateCertPath(
-                    (cpLen == certs.size())? certs: certs.subList(0, cpLen));
-            validator.validate(cp, pkixParameters);
+            throw e;
         }
     }
 

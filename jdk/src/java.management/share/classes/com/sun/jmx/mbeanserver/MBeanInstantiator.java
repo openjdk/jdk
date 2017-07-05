@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.Map;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
@@ -186,19 +186,15 @@ public class MBeanInstantiator {
                 }
             }
         } catch (ClassNotFoundException e) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
-                MBEANSERVER_LOGGER.logp(Level.FINEST,
-                        MBeanInstantiator.class.getName(),
-                        "findSignatureClasses",
+            if (MBEANSERVER_LOGGER.isLoggable(Level.DEBUG)) {
+                MBEANSERVER_LOGGER.log(Level.DEBUG,
                         "The parameter class could not be found", e);
             }
             throw new ReflectionException(e,
                       "The parameter class could not be found");
         } catch (RuntimeException e) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
-                MBEANSERVER_LOGGER.logp(Level.FINEST,
-                        MBeanInstantiator.class.getName(),
-                        "findSignatureClasses",
+            if (MBEANSERVER_LOGGER.isLoggable(Level.DEBUG)) {
+                MBEANSERVER_LOGGER.log(Level.DEBUG,
                         "Unexpected exception", e);
             }
             throw e;
@@ -696,19 +692,15 @@ public class MBeanInstantiator {
                 tab[i] = Class.forName(signature[i], false, aLoader);
             }
         } catch (ClassNotFoundException e) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
-                MBEANSERVER_LOGGER.logp(Level.FINEST,
-                        MBeanInstantiator.class.getName(),
-                        "findSignatureClasses",
+            if (MBEANSERVER_LOGGER.isLoggable(Level.DEBUG)) {
+                MBEANSERVER_LOGGER.log(Level.DEBUG,
                         "The parameter class could not be found", e);
             }
             throw new ReflectionException(e,
                       "The parameter class could not be found");
         } catch (RuntimeException e) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
-                MBEANSERVER_LOGGER.logp(Level.FINEST,
-                        MBeanInstantiator.class.getName(),
-                        "findSignatureClasses",
+            if (MBEANSERVER_LOGGER.isLoggable(Level.DEBUG)) {
+                MBEANSERVER_LOGGER.log(Level.DEBUG,
                         "Unexpected exception", e);
             }
             throw e;

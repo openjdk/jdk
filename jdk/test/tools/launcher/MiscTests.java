@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,8 @@ public class MiscTests extends TestHelper {
         createFile(new File(mainClass + ".java"), scratch);
 
         compile(mainClass + ".java",
-                "--add-modules=jdk.crypto.token",
-                "--add-exports=jdk.crypto.token/sun.security.pkcs11=ALL-UNNAMED");
+                "--add-modules=jdk.crypto.cryptoki",
+                "--add-exports=jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED");
 
         File testJar = new File("Foo.jar");
         testJar.delete();

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1266,33 +1266,33 @@ jdk/src/jdk.crypto.ec/share/native/libsunec/ECC_JNI.cpp : jdk/src/share/native/s
 jdk/src/jdk.crypto.ec/share/native/libsunec/impl : jdk/src/share/native/sun/security/ec/impl
 jdk/src/jdk.crypto.mscapi/windows/classes/sun/security/mscapi : jdk/src/windows/classes/sun/security/mscapi
 jdk/src/jdk.crypto.mscapi/windows/native/libsunmscapi : jdk/src/windows/native/sun/security/mscapi
-jdk/src/jdk.crypto.token/share/classes/sun/security/pkcs11 : jdk/src/share/classes/sun/security/pkcs11
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/j2secmod.c : jdk/src/share/native/sun/security/pkcs11/j2secmod.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/j2secmod.h : jdk/src/share/native/sun/security/pkcs11/j2secmod.h
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_convert.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_convert.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_crypt.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_crypt.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_digest.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_digest.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_dual.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_dual.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_general.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_general.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_keymgmt.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_keymgmt.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_mutex.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_mutex.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_objmgmt.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_objmgmt.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_sessmgmt.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_sessmgmt.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_sign.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_sign.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/p11_util.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_util.c
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/pkcs11f.h : jdk/src/share/native/sun/security/pkcs11/wrapper/pkcs11f.h
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/pkcs11.h : jdk/src/share/native/sun/security/pkcs11/wrapper/pkcs11.h
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/pkcs11t.h : jdk/src/share/native/sun/security/pkcs11/wrapper/pkcs11t.h
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/pkcs-11v2-20a3.h : jdk/src/share/native/sun/security/pkcs11/wrapper/pkcs-11v2-20a3.h
-jdk/src/jdk.crypto.token/share/native/libj2pkcs11/pkcs11wrapper.h : jdk/src/share/native/sun/security/pkcs11/wrapper/pkcs11wrapper.h
-jdk/src/jdk.crypto.token/unix/native/libj2pkcs11/j2secmod_md.c : jdk/src/solaris/native/sun/security/pkcs11/j2secmod_md.c
-jdk/src/jdk.crypto.token/unix/native/libj2pkcs11/j2secmod_md.h : jdk/src/solaris/native/sun/security/pkcs11/j2secmod_md.h
-jdk/src/jdk.crypto.token/unix/native/libj2pkcs11/p11_md.c : jdk/src/solaris/native/sun/security/pkcs11/wrapper/p11_md.c
-jdk/src/jdk.crypto.token/unix/native/libj2pkcs11/p11_md.h : jdk/src/solaris/native/sun/security/pkcs11/wrapper/p11_md.h
-jdk/src/jdk.crypto.token/windows/native/libj2pkcs11/j2secmod_md.c : jdk/src/windows/native/sun/security/pkcs11/j2secmod_md.c
-jdk/src/jdk.crypto.token/windows/native/libj2pkcs11/j2secmod_md.h : jdk/src/windows/native/sun/security/pkcs11/j2secmod_md.h
-jdk/src/jdk.crypto.token/windows/native/libj2pkcs11/p11_md.c : jdk/src/windows/native/sun/security/pkcs11/wrapper/p11_md.c
-jdk/src/jdk.crypto.token/windows/native/libj2pkcs11/p11_md.h : jdk/src/windows/native/sun/security/pkcs11/wrapper/p11_md.h
+jdk/src/jdk.crypto.cryptoki/share/classes/sun/security/pkcs11 : jdk/src/share/classes/sun/security/pkcs11
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/j2secmod.c : jdk/src/share/native/sun/security/pkcs11/j2secmod.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/j2secmod.h : jdk/src/share/native/sun/security/pkcs11/j2secmod.h
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/p11_convert.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_convert.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/p11_crypt.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_crypt.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/p11_digest.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_digest.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/p11_dual.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_dual.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/p11_general.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_general.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/p11_keymgmt.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_keymgmt.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/p11_mutex.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_mutex.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/p11_objmgmt.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_objmgmt.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/p11_sessmgmt.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_sessmgmt.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/p11_sign.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_sign.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/p11_util.c : jdk/src/share/native/sun/security/pkcs11/wrapper/p11_util.c
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/pkcs11f.h : jdk/src/share/native/sun/security/pkcs11/wrapper/pkcs11f.h
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/pkcs11.h : jdk/src/share/native/sun/security/pkcs11/wrapper/pkcs11.h
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/pkcs11t.h : jdk/src/share/native/sun/security/pkcs11/wrapper/pkcs11t.h
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/pkcs-11v2-20a3.h : jdk/src/share/native/sun/security/pkcs11/wrapper/pkcs-11v2-20a3.h
+jdk/src/jdk.crypto.cryptoki/share/native/libj2pkcs11/pkcs11wrapper.h : jdk/src/share/native/sun/security/pkcs11/wrapper/pkcs11wrapper.h
+jdk/src/jdk.crypto.cryptoki/unix/native/libj2pkcs11/j2secmod_md.c : jdk/src/solaris/native/sun/security/pkcs11/j2secmod_md.c
+jdk/src/jdk.crypto.cryptoki/unix/native/libj2pkcs11/j2secmod_md.h : jdk/src/solaris/native/sun/security/pkcs11/j2secmod_md.h
+jdk/src/jdk.crypto.cryptoki/unix/native/libj2pkcs11/p11_md.c : jdk/src/solaris/native/sun/security/pkcs11/wrapper/p11_md.c
+jdk/src/jdk.crypto.cryptoki/unix/native/libj2pkcs11/p11_md.h : jdk/src/solaris/native/sun/security/pkcs11/wrapper/p11_md.h
+jdk/src/jdk.crypto.cryptoki/windows/native/libj2pkcs11/j2secmod_md.c : jdk/src/windows/native/sun/security/pkcs11/j2secmod_md.c
+jdk/src/jdk.crypto.cryptoki/windows/native/libj2pkcs11/j2secmod_md.h : jdk/src/windows/native/sun/security/pkcs11/j2secmod_md.h
+jdk/src/jdk.crypto.cryptoki/windows/native/libj2pkcs11/p11_md.c : jdk/src/windows/native/sun/security/pkcs11/wrapper/p11_md.c
+jdk/src/jdk.crypto.cryptoki/windows/native/libj2pkcs11/p11_md.h : jdk/src/windows/native/sun/security/pkcs11/wrapper/p11_md.h
 jdk/src/java.desktop/macosx/native/libosx/CFileManager.m : jdk/src/macosx/native/com/apple/eio/CFileManager.m
 jdk/src/java.base/macosx/native/libosxsecurity/KeystoreImpl.m : jdk/src/macosx/native/apple/security/KeystoreImpl.m
 jdk/src/jdk.hprof.agent/share/classes/com/sun/demo/jvmti/hprof : jdk/src/share/classes/com/sun/demo/jvmti/hprof

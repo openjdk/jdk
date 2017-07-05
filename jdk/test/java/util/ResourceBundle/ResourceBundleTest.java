@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
     @test
-    @bug 4049325 4073127 4083270 4106034 4108126 8027930
+    @bug 4049325 4073127 4083270 4106034 4108126 8027930 8171139
     @summary test Resource Bundle
     @build TestResource TestResource_de TestResource_fr TestResource_fr_CH
     @build TestResource_it FakeTestResource
@@ -65,6 +65,7 @@ import java.text.*;
 import java.util.*;
 import java.util.ResourceBundle.Control;
 import java.io.*;
+import java.net.URL;
 
 public class ResourceBundleTest extends RBTestFmwk {
     public static void main(String[] args) throws Exception {
@@ -330,6 +331,44 @@ public class ResourceBundleTest extends RBTestFmwk {
         }
     }
 
+    /*
+     * @bug 8171139
+     * @summary Make sure clearCache() clears cached ResourceBundle instances
+     */
+    public void TestClearCache() {
+        final String className = "TestResource";
+        Locale loc = Locale.getDefault();
+
+        // testing no-arg clearCache()
+        ResourceBundle rb1 = ResourceBundle.getBundle(className, loc);
+        ResourceBundle.clearCache();
+        ResourceBundle rb2 = ResourceBundle.getBundle(className, loc);
+        if (rb1 == rb2) {
+            errln("clearCache(no-arg) did not clear cache");
+        }
+
+        // clearCache() with a custom classloader
+        ClassLoader cl1 = new DummyClassLoader();
+        rb1 = ResourceBundle.getBundle(className, loc, cl1);
+        if (rb1 == rb2) {
+            errln("Same bundle was returned for different class loaders");
+        }
+        ResourceBundle.clearCache(cl1);
+        rb2= ResourceBundle.getBundle(className, loc, cl1);
+        if (rb1 == rb2) {
+            errln("clearCache(classLoader) did not clear cache");
+        }
+        ClassLoader cl2 = new DummyClassLoader();
+        rb1 = ResourceBundle.getBundle(className, loc, cl2);
+        if (rb1 == rb2) {
+            errln("Same bundle was returned for different class loaders");
+        }
+        ResourceBundle.clearCache(cl1);
+        rb2 = ResourceBundle.getBundle(className, loc, cl2);
+        if (rb1 != rb2) {
+            errln("clearCache(classLoader) incorrectly cleared cache");
+        }
+    }
 
     private void makePropertiesFile() {
         try {
@@ -392,5 +431,23 @@ public class ResourceBundleTest extends RBTestFmwk {
         if (elementCount != expectedKeys.length)
             errln("Wrong number of elements in key list: expected " + expectedKeys.length +
                 " got " + elementCount);
+    }
+
+    private static class DummyClassLoader extends ClassLoader {
+        public DummyClassLoader() {
+            super(DummyClassLoader.class.getClassLoader());
+        }
+
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
+            return DummyClassLoader.class.getClassLoader().loadClass(name);
+        }
+
+        public URL getResource(String name) {
+            return DummyClassLoader.class.getClassLoader().getResource(name);
+        }
+
+        public InputStream getResourceAsStream(String name) {
+            return DummyClassLoader.class.getClassLoader().getResourceAsStream(name);
+        }
     }
 }

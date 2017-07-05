@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import com.sun.jmx.mbeanserver.GetPropertyAction;
 import java.security.AccessController;
 import java.security.Permission;
 import java.util.ArrayList;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import javax.management.loading.ClassLoaderRepository;
 import sun.reflect.misc.ReflectUtil;
 
@@ -399,7 +399,7 @@ public class MBeanServerFactory {
             return (String) mbs.getAttribute(MBeanServerDelegate.DELEGATE_NAME,
                     "MBeanServerId");
         } catch (JMException e) {
-            JmxProperties.MISC_LOGGER.finest(
+            JmxProperties.MISC_LOGGER.log(Level.TRACE,
                     "Ignoring exception while getting MBeanServerId: "+e);
             return null;
         }
@@ -421,9 +421,7 @@ public class MBeanServerFactory {
     private static synchronized void removeMBeanServer(MBeanServer mbs) {
         boolean removed = mBeanServerList.remove(mbs);
         if (!removed) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    MBeanServerFactory.class.getName(),
-                    "removeMBeanServer(MBeanServer)",
+            MBEANSERVER_LOGGER.log(Level.TRACE,
                     "MBeanServer was not in list!");
             throw new IllegalArgumentException("MBeanServer was not in list!");
         }
@@ -504,15 +502,12 @@ public class MBeanServerFactory {
                 throw new JMRuntimeException(msg, x);
             }
         } catch (RuntimeException x) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
+            if (MBEANSERVER_LOGGER.isLoggable(Level.DEBUG)) {
                 StringBuilder strb = new StringBuilder()
                 .append("Failed to instantiate MBeanServerBuilder: ").append(x)
                 .append("\n\t\tCheck the value of the ")
                 .append(JMX_INITIAL_BUILDER).append(" property.");
-                MBEANSERVER_LOGGER.logp(Level.FINEST,
-                        MBeanServerFactory.class.getName(),
-                        "checkMBeanServerBuilder",
-                        strb.toString());
+                MBEANSERVER_LOGGER.log(Level.DEBUG, strb::toString);
             }
             throw x;
         }

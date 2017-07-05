@@ -64,9 +64,8 @@ public class UnixNumericUserPrincipal implements
     public UnixNumericUserPrincipal(String name) {
         if (name == null) {
             java.text.MessageFormat form = new java.text.MessageFormat
-                (sun.security.util.ResourcesMgr.getString
-                        ("invalid.null.input.value",
-                        "sun.security.util.AuthResources"));
+                (sun.security.util.ResourcesMgr.getAuthResourceString
+                        ("invalid.null.input.value"));
             Object[] source = {"name"};
             throw new NullPointerException(form.format(source));
         }
@@ -116,9 +115,8 @@ public class UnixNumericUserPrincipal implements
      */
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
-                (sun.security.util.ResourcesMgr.getString
-                        ("UnixNumericUserPrincipal.name",
-                        "sun.security.util.AuthResources"));
+                (sun.security.util.ResourcesMgr.getAuthResourceString
+                        ("UnixNumericUserPrincipal.name"));
         Object[] source = {name};
         return form.format(source);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,69 +23,59 @@
 
 /*
  * @test
- * @library /test/lib
+ * @library /test/lib /lib/testlibrary
  * @modules java.base/jdk.internal.misc
  *          jdk.compiler
  *          jdk.jartool
- * @build jdk.test.lib.JDKToolFinder jdk.test.lib.Utils
+ * @build jdk.test.lib.JDKToolFinder jdk.test.lib.Utils jdk.test.lib.process.*
+ * @build jdk.testlibrary.FileUtils
+ * @build MRTestBase
  * @run testng Basic
  */
 
 import static org.testng.Assert.*;
 
+import jdk.testlibrary.FileUtils;
 import org.testng.annotations.*;
 
-import java.io.*;
+import java.io.File;
 import java.nio.file.*;
-import java.nio.file.attribute.*;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.jar.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.*;
+import java.util.jar.JarFile;
+import java.util.zip.ZipFile;
 
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Utils;
-
-
-import static java.lang.String.format;
-import static java.lang.System.out;
-
-public class Basic {
-    private final String src = System.getProperty("test.src", ".");
-    private final String usr = System.getProperty("user.dir", ".");
+public class Basic extends MRTestBase {
 
     @Test
     // create a regular, non-multi-release jar
-    public void test00() throws IOException {
+    public void test00() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
 
         Path classes = Paths.get("classes");
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".")
-                .assertSuccess();
+                .shouldHaveExitValue(SUCCESS);
 
         checkMultiRelease(jarfile, false);
 
-        Map<String,String[]> names = Map.of(
+        Map<String, String[]> names = Map.of(
                 "version/Main.class",
-                new String[] {"base", "version", "Main.class"},
+                new String[]{"base", "version", "Main.class"},
 
                 "version/Version.class",
-                new String[] {"base", "version", "Version.class"}
+                new String[]{"base", "version", "Version.class"}
         );
 
         compare(jarfile, names);
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     @Test
     // create a multi-release jar
-    public void test01() throws IOException {
+    public void test01() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");
@@ -94,68 +84,96 @@ public class Basic {
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".",
                 "--release", "10", "-C", classes.resolve("v10").toString(), ".")
-                .assertSuccess();
+                .shouldHaveExitValue(SUCCESS);
 
         checkMultiRelease(jarfile, true);
 
-        Map<String,String[]> names = Map.of(
+        Map<String, String[]> names = Map.of(
                 "version/Main.class",
-                new String[] {"base", "version", "Main.class"},
+                new String[]{"base", "version", "Main.class"},
 
                 "version/Version.class",
-                new String[] {"base", "version", "Version.class"},
+                new String[]{"base", "version", "Version.class"},
 
                 "META-INF/versions/9/version/Version.class",
-                new String[] {"v9", "version", "Version.class"},
+                new String[]{"v9", "version", "Version.class"},
 
                 "META-INF/versions/10/version/Version.class",
-                new String[] {"v10", "version", "Version.class"}
+                new String[]{"v10", "version", "Version.class"}
         );
 
         compare(jarfile, names);
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
+    }
+
+    @Test
+    public void versionFormat() throws Throwable {
+        String jarfile = "test.jar";
+
+        compile("test01");
+
+        Path classes = Paths.get("classes");
+
+        // valid
+        for (String release : List.of("10000", "09", "00010", "10")) {
+            jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                    "--release", release, "-C", classes.resolve("v10").toString(), ".")
+                    .shouldHaveExitValue(SUCCESS)
+                    .shouldBeEmpty();
+        }
+        // invalid
+        for (String release : List.of("9.0", "8", "v9",
+                "9v", "0", "-10")) {
+            jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                    "--release", release, "-C", classes.resolve("v10").toString(), ".")
+                    .shouldNotHaveExitValue(SUCCESS)
+                    .shouldContain("release " + release + " not valid");
+        }
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     @Test
     // update a regular jar to a multi-release jar
-    public void test02() throws IOException {
+    public void test02() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
 
         Path classes = Paths.get("classes");
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".")
-                .assertSuccess();
+                .shouldHaveExitValue(SUCCESS);
 
         checkMultiRelease(jarfile, false);
 
-        jar("uf", jarfile, "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertSuccess();
+        jar("uf", jarfile,
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .shouldHaveExitValue(SUCCESS);
 
         checkMultiRelease(jarfile, true);
 
-        Map<String,String[]> names = Map.of(
+        Map<String, String[]> names = Map.of(
                 "version/Main.class",
-                new String[] {"base", "version", "Main.class"},
+                new String[]{"base", "version", "Main.class"},
 
                 "version/Version.class",
-                new String[] {"base", "version", "Version.class"},
+                new String[]{"base", "version", "Version.class"},
 
                 "META-INF/versions/9/version/Version.class",
-                new String[] {"v9", "version", "Version.class"}
+                new String[]{"v9", "version", "Version.class"}
         );
 
         compare(jarfile, names);
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     @Test
     // replace a base entry and a versioned entry
-    public void test03() throws IOException {
+    public void test03() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
@@ -163,19 +181,19 @@ public class Basic {
         Path classes = Paths.get("classes");
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertSuccess();
+                .shouldHaveExitValue(SUCCESS);
 
         checkMultiRelease(jarfile, true);
 
-        Map<String,String[]> names = Map.of(
+        Map<String, String[]> names = Map.of(
                 "version/Main.class",
-                new String[] {"base", "version", "Main.class"},
+                new String[]{"base", "version", "Main.class"},
 
                 "version/Version.class",
-                new String[] {"base", "version", "Version.class"},
+                new String[]{"base", "version", "Version.class"},
 
                 "META-INF/versions/9/version/Version.class",
-                new String[] {"v9", "version", "Version.class"}
+                new String[]{"v9", "version", "Version.class"}
         );
 
         compare(jarfile, names);
@@ -184,25 +202,25 @@ public class Basic {
         // version/Version.class entry in versions/9 section
         jar("uf", jarfile, "-C", classes.resolve("v9").toString(), "version",
                 "--release", "9", "-C", classes.resolve("v10").toString(), ".")
-                .assertSuccess();
+                .shouldHaveExitValue(SUCCESS);
 
         checkMultiRelease(jarfile, true);
 
         names = Map.of(
                 "version/Main.class",
-                new String[] {"base", "version", "Main.class"},
+                new String[]{"base", "version", "Main.class"},
 
                 "version/Version.class",
-                new String[] {"v9", "version", "Version.class"},
+                new String[]{"v9", "version", "Version.class"},
 
                 "META-INF/versions/9/version/Version.class",
-                new String[] {"v10", "version", "Version.class"}
+                new String[]{"v10", "version", "Version.class"}
         );
 
         compare(jarfile, names);
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     /*
@@ -211,7 +229,7 @@ public class Basic {
 
     @Test
     // META-INF/versions/9 class has different api than base class
-    public void test04() throws IOException {
+    public void test04() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
@@ -224,18 +242,16 @@ public class Basic {
 
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertFailure()
-                .resultChecker(r ->
-                    assertTrue(r.output.contains("different api from earlier"), r.output)
-                );
+                .shouldNotHaveExitValue(SUCCESS)
+                .shouldContain("different api from earlier");
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     @Test
     // META-INF/versions/9 contains an extra public class
-    public void test05() throws IOException {
+    public void test05() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
@@ -248,18 +264,16 @@ public class Basic {
 
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertFailure()
-                .resultChecker(r ->
-                        assertTrue(r.output.contains("contains a new public class"), r.output)
-                );
+                .shouldNotHaveExitValue(SUCCESS)
+                .shouldContain("contains a new public class");
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     @Test
     // META-INF/versions/9 contains an extra package private class -- this is okay
-    public void test06() throws IOException {
+    public void test06() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
@@ -272,16 +286,16 @@ public class Basic {
 
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertSuccess();
+                .shouldHaveExitValue(SUCCESS);
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     @Test
     // META-INF/versions/9 contains an identical class to base entry class
     // this is okay but produces warning
-    public void test07() throws IOException {
+    public void test07() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
@@ -294,19 +308,42 @@ public class Basic {
 
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertSuccess()
-                .resultChecker(r ->
-                        assertTrue(r.outputContains("contains a class that is identical"), r.output)
-                );
+                .shouldHaveExitValue(SUCCESS)
+                .shouldContain("contains a class that")
+                .shouldContain("is identical");
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
+    }
+
+    @Test
+    // META-INF/versions/9 contains an identical class to previous version entry class
+    // this is okay but produces warning
+    public void identicalClassToPreviousVersion() throws Throwable {
+        String jarfile = "test.jar";
+
+        compile("test01");  //use same data as test01
+
+        Path classes = Paths.get("classes");
+
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+                .shouldHaveExitValue(SUCCESS)
+                .shouldBeEmpty();
+        jar("uf", jarfile,
+                "--release", "10", "-C", classes.resolve("v9").toString(), ".")
+                .shouldHaveExitValue(SUCCESS)
+                .shouldContain("contains a class that")
+                .shouldContain("is identical");
+
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     @Test
     // resources with same name in different versions
     // this is okay but produces warning
-    public void test08() throws IOException {
+    public void test08() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
@@ -320,10 +357,8 @@ public class Basic {
 
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertSuccess()
-                .resultChecker(r ->
-                        assertTrue(r.output.isEmpty(), r.output)
-                );
+                .shouldHaveExitValue(SUCCESS)
+                .shouldBeEmpty();
 
         // now add a different resource with same name to META-INF/version/9
         Files.copy(source.resolve("Main.java"), classes.resolve("v9")
@@ -331,18 +366,16 @@ public class Basic {
 
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertSuccess()
-                .resultChecker(r ->
-                        assertTrue(r.output.contains("multiple resources with same name"), r.output)
-                );
+                .shouldHaveExitValue(SUCCESS)
+                .shouldContain("multiple resources with same name");
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     @Test
     // a class with an internal name different from the external name
-    public void test09() throws IOException {
+    public void test09() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
@@ -355,18 +388,16 @@ public class Basic {
 
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertFailure()
-                .resultChecker(r ->
-                        assertTrue(r.output.contains("names do not match"), r.output)
-                );
+                .shouldNotHaveExitValue(SUCCESS)
+                .shouldContain("names do not match");
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     @Test
     // assure that basic nested classes are acceptable
-    public void test10() throws IOException {
+    public void test10() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
@@ -383,15 +414,15 @@ public class Basic {
 
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertSuccess();
+                .shouldHaveExitValue(SUCCESS);
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     @Test
     // a base entry contains a nested class that doesn't have a matching top level class
-    public void test11() throws IOException {
+    public void test11() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
@@ -409,30 +440,29 @@ public class Basic {
         source = Paths.get(src, "data", "test10", "v9", "version");
         javac(classes.resolve("v9"), source.resolve("Nested.java"));
 
-        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+        List<String> output = jar("cf", jarfile,
+                "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertFailure()
-                .resultChecker(r -> {
-                    String[] msg = r.output.split("\\R");
-                    // There should be 3 error messages, cascading from the first.  Once we
-                    // remove the base top level class, the base nested class becomes isolated,
-                    // also the versioned top level class becomes a new public class, thus ignored
-                    // for subsequent checks, leading to the associated versioned nested class
-                    // becoming an isolated nested class
-                    assertTrue(msg.length == 4);
-                    assertTrue(msg[0].contains("an isolated nested class"), msg[0]);
-                    assertTrue(msg[1].contains("contains a new public class"), msg[1]);
-                    assertTrue(msg[2].contains("an isolated nested class"), msg[2]);
-                    assertTrue(msg[3].contains("invalid multi-release jar file"), msg[3]);
-                });
+                .shouldNotHaveExitValue(SUCCESS)
+                .asLines();
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        assertTrue(output.size() == 4);
+        assertTrue(output.get(0).contains("an isolated nested class"),
+                output.get(0));
+        assertTrue(output.get(1).contains("contains a new public class"),
+                output.get(1));
+        assertTrue(output.get(2).contains("an isolated nested class"),
+                output.get(2));
+        assertTrue(output.get(3).contains("invalid multi-release jar file"),
+                output.get(3));
+
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
     @Test
     // a versioned entry contains a nested class that doesn't have a matching top level class
-    public void test12() throws IOException {
+    public void test12() throws Throwable {
         String jarfile = "test.jar";
 
         compile("test01");  //use same data as test01
@@ -452,178 +482,59 @@ public class Basic {
 
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
-                .assertFailure()
-                .resultChecker(r ->
-                        assertTrue(r.outputContains("an isolated nested class"), r.output)
-                );
+                .shouldNotHaveExitValue(SUCCESS)
+                .shouldContain("an isolated nested class");
 
-        delete(jarfile);
-        deleteDir(Paths.get(usr, "classes"));
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 
-    /*
-     *  Test Infrastructure
-     */
-    private void compile(String test) throws IOException {
-        Path classes = Paths.get(usr, "classes", "base");
-        Files.createDirectories(classes);
-        Path source = Paths.get(src, "data", test, "base", "version");
-        javac(classes, source.resolve("Main.java"), source.resolve("Version.java"));
+    @Test
+    public void testCustomManifest() throws Throwable {
+        String jarfile = "test.jar";
 
-        classes = Paths.get(usr, "classes", "v9");
-        Files.createDirectories(classes);
-        source = Paths.get(src, "data", test, "v9", "version");
-        javac(classes, source.resolve("Version.java"));
+        compile("test01");
 
-        classes = Paths.get(usr, "classes", "v10");
-        Files.createDirectories(classes);
-        source = Paths.get(src, "data", test, "v10", "version");
-        javac(classes, source.resolve("Version.java"));
-    }
+        Path classes = Paths.get("classes");
+        Path manifest = Paths.get("Manifest.txt");
 
-    private void checkMultiRelease(String jarFile, boolean expected) throws IOException {
-        try (JarFile jf = new JarFile(new File(jarFile), true, ZipFile.OPEN_READ,
-                JarFile.runtimeVersion())) {
-            assertEquals(jf.isMultiRelease(), expected);
-        }
-    }
+        // create
+        Files.write(manifest, "Class-Path: MyUtils.jar\n".getBytes());
 
-    // compares the bytes found in the jar entries with the bytes found in the
-    // corresponding data files used to create the entries
-    private void compare(String jarfile, Map<String,String[]> names) throws IOException {
-        try (JarFile jf = new JarFile(jarfile)) {
-            for (String name : names.keySet()) {
-                Path path = Paths.get("classes", names.get(name));
-                byte[] b1 = Files.readAllBytes(path);
-                byte[] b2;
-                JarEntry je = jf.getJarEntry(name);
-                try (InputStream is = jf.getInputStream(je)) {
-                    b2 = is.readAllBytes();
-                }
-                assertEquals(b1,b2);
-            }
-        }
-    }
+        jar("cfm", jarfile, manifest.toString(),
+                "-C", classes.resolve("base").toString(), ".",
+                "--release", "10", "-C", classes.resolve("v10").toString(), ".")
+                .shouldHaveExitValue(SUCCESS)
+                .shouldBeEmpty();
 
-    private void delete(String name) throws IOException {
-        Files.deleteIfExists(Paths.get(usr, name));
-    }
-
-    private void deleteDir(Path dir) throws IOException {
-        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                Files.delete(dir);
-                return FileVisitResult.CONTINUE;
-            }
-        });
-    }
-
-    /*
-     * The following methods were taken from modular jar and other jar tests
-     */
-
-    void javac(Path dest, Path... sourceFiles) throws IOException {
-        String javac = JDKToolFinder.getJDKTool("javac");
-
-        List<String> commands = new ArrayList<>();
-        commands.add(javac);
-        String opts = System.getProperty("test.compiler.opts");
-        if (!opts.isEmpty()) {
-            commands.addAll(Arrays.asList(opts.split(" +")));
-        }
-        commands.add("-d");
-        commands.add(dest.toString());
-        Stream.of(sourceFiles).map(Object::toString).forEach(x -> commands.add(x));
-
-        quickFail(run(new ProcessBuilder(commands)));
-    }
-
-    Result jarWithStdin(File stdinSource, String... args) {
-        String jar = JDKToolFinder.getJDKTool("jar");
-        List<String> commands = new ArrayList<>();
-        commands.add(jar);
-        commands.addAll(Utils.getForwardVmOptions());
-        Stream.of(args).forEach(x -> commands.add(x));
-        ProcessBuilder p = new ProcessBuilder(commands);
-        if (stdinSource != null)
-            p.redirectInput(stdinSource);
-        return run(p);
-    }
-
-    Result jar(String... args) {
-        return jarWithStdin(null, args);
-    }
-
-    void quickFail(Result r) {
-        if (r.ec != 0)
-            throw new RuntimeException(r.output);
-    }
-
-    Result run(ProcessBuilder pb) {
-        Process p;
-        out.printf("Running: %s%n", pb.command());
-        try {
-            p = pb.start();
-        } catch (IOException e) {
-            throw new RuntimeException(
-                    format("Couldn't start process '%s'", pb.command()), e);
+        try (JarFile jf = new JarFile(new File(jarfile), true,
+                ZipFile.OPEN_READ, JarFile.runtimeVersion())) {
+            assertTrue(jf.isMultiRelease(), "Not multi-release jar");
+            assertEquals(jf.getManifest()
+                            .getMainAttributes()
+                            .getValue("Class-Path"),
+                    "MyUtils.jar");
         }
 
-        String output;
-        try {
-            output = toString(p.getInputStream(), p.getErrorStream());
-        } catch (IOException e) {
-            throw new RuntimeException(
-                    format("Couldn't read process output '%s'", pb.command()), e);
+        // update
+        Files.write(manifest, "Multi-release: false\n".getBytes());
+
+        jar("ufm", jarfile, manifest.toString(),
+                "-C", classes.resolve("base").toString(), ".",
+                "--release", "9", "-C", classes.resolve("v10").toString(), ".")
+                .shouldHaveExitValue(SUCCESS)
+                .shouldContain("WARNING: Duplicate name in Manifest: Multi-release.");
+
+        try (JarFile jf = new JarFile(new File(jarfile), true,
+                ZipFile.OPEN_READ, JarFile.runtimeVersion())) {
+            assertTrue(jf.isMultiRelease(), "Not multi-release jar");
+            assertEquals(jf.getManifest()
+                            .getMainAttributes()
+                            .getValue("Class-Path"),
+                    "MyUtils.jar");
         }
 
-        try {
-            p.waitFor();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(
-                    format("Process hasn't finished '%s'", pb.command()), e);
-        }
-        return new Result(p.exitValue(), output);
-    }
-
-    String toString(InputStream in1, InputStream in2) throws IOException {
-        try (ByteArrayOutputStream dst = new ByteArrayOutputStream();
-             InputStream concatenated = new SequenceInputStream(in1, in2)) {
-            concatenated.transferTo(dst);
-            return new String(dst.toByteArray(), "UTF-8");
-        }
-    }
-
-    static class Result {
-        final int ec;
-        final String output;
-
-        private Result(int ec, String output) {
-            this.ec = ec;
-            this.output = output;
-        }
-
-        boolean outputContains(String msg) {
-            return Arrays.stream(output.split("\\R"))
-                         .collect(Collectors.joining(" "))
-                         .contains(msg);
-        }
-
-        Result assertSuccess() {
-            assertTrue(ec == 0, format("ec: %d, output: %s", ec, output));
-            return this;
-        }
-        Result assertFailure() {
-            assertTrue(ec != 0, format("ec: %d, output: %s", ec, output));
-            return this;
-        }
-        Result resultChecker(Consumer<Result> r) { r.accept(this); return this; }
+        FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
+        FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
     }
 }
