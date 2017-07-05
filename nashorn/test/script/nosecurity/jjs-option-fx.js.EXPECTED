@@ -1,0 +1,4 @@
+-fx flag positive test:
+flag test PASSED
+-fx flag negative test:
+flag test PASSED

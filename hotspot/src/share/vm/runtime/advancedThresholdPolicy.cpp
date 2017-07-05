@@ -133,7 +133,8 @@ bool AdvancedThresholdPolicy::is_old(Method* method) {
 }
 
 double AdvancedThresholdPolicy::weight(Method* method) {
-  return (method->rate() + 1) * ((method->invocation_count() + 1) *  (method->backedge_count() + 1));
+  return (double)(method->rate() + 1) *
+    (method->invocation_count() + 1) * (method->backedge_count() + 1);
 }
 
 // Apply heuristics and return true if x should be compiled before y

@@ -57,23 +57,23 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   # Copy empty directories (jre/lib/applet).
   $(JDK_MACOSX_BUNDLE_DIR)/Home/%: $(JDK_IMAGE_DIR)/%
-	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@) $(LOG_INFO)
+	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(MKDIR) -p $(@D)
 	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -P '$<' '$@'; fi
 
   $(JRE_MACOSX_BUNDLE_DIR)/Home/%: $(JRE_IMAGE_DIR)/%
-	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@) $(LOG_INFO)
+	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(MKDIR) -p $(@D)
 	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -P '$<' '$@'; fi
 
   $(JDK_MACOSX_BUNDLE_DIR)/MacOS/libjli.dylib:
-	$(ECHO) Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@) $(LOG_INFO)
+	$(call LogInfo, Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../Home/lib/jli/libjli.dylib $@
 
   $(JRE_MACOSX_BUNDLE_DIR)/MacOS/libjli.dylib:
-	$(ECHO) Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@) $(LOG_INFO)
+	$(call LogInfo, Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../Home/lib/jli/libjli.dylib $@

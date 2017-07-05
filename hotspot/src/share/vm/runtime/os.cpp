@@ -262,7 +262,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
         VMThread::execute(&op1);
         Universe::print_heap_at_SIGBREAK();
         if (PrintClassHistogram) {
-          VM_GC_HeapInspection op1(gclog_or_tty, true /* force full GC before heap inspection */);
+          VM_GC_HeapInspection op1(tty, true /* force full GC before heap inspection */);
           VMThread::execute(&op1);
         }
         if (JvmtiExport::should_post_data_dump()) {
@@ -315,6 +315,18 @@ void os::init_before_ergo() {
   // We need to initialize large page support here because ergonomics takes some
   // decisions depending on large page support and the calculated large page size.
   large_page_init();
+
+  // We need to adapt the configured number of stack protection pages given
+  // in 4K pages to the actual os page size. We must do this before setting
+  // up minimal stack sizes etc. in os::init_2().
+  JavaThread::set_stack_red_zone_size     (align_size_up(StackRedPages      * 4 * K, vm_page_size()));
+  JavaThread::set_stack_yellow_zone_size  (align_size_up(StackYellowPages   * 4 * K, vm_page_size()));
+  JavaThread::set_stack_reserved_zone_size(align_size_up(StackReservedPages * 4 * K, vm_page_size()));
+  JavaThread::set_stack_shadow_zone_size  (align_size_up(StackShadowPages   * 4 * K, vm_page_size()));
+
+  // VM version initialization identifies some characteristics of the
+  // platform that are used during ergonomic decisions.
+  VM_Version::init_before_ergo();
 }
 
 void os::signal_init() {
@@ -815,7 +827,7 @@ void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   st->print("total %d", os::processor_count());
   // It's not safe to query number of active processors after crash
   // st->print("(active %d)", os::active_processor_count());
-  st->print(" %s", VM_Version::cpu_features());
+  st->print(" %s", VM_Version::features_string());
   st->cr();
   pd_print_cpu_info(st, buf, buflen);
 }
@@ -1011,8 +1023,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     }
     // If the addr is in the stack region for this thread then report that
     // and print thread info
-    if (thread->stack_base() >= addr &&
-        addr > (thread->stack_base() - thread->stack_size())) {
+    if (thread->on_local_stack(addr)) {
       st->print_cr(INTPTR_FORMAT " is pointing into the stack for thread: "
                    INTPTR_FORMAT, p2i(addr), p2i(thread));
       if (verbose) thread->print_on(st);
@@ -1371,9 +1382,8 @@ void os::serialize_thread_states() {
 
 // Returns true if the current stack pointer is above the stack shadow
 // pages, false otherwise.
-
 bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method) {
-  assert(StackRedPages > 0 && StackYellowPages > 0,"Sanity check");
+  if (!thread->is_Java_thread()) return false;
   address sp = current_stack_pointer();
   // Check if we have StackShadowPages above the yellow zone.  This parameter
   // is dependent on the depth of the maximum VM call stack possible from
@@ -1382,11 +1392,13 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
   // respectively.
   const int framesize_in_bytes =
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
-  int reserved_area = ((StackShadowPages + StackRedPages + StackYellowPages)
-                      * vm_page_size()) + framesize_in_bytes;
-  // The very lower end of the stack
-  address stack_limit = thread->stack_base() - thread->stack_size();
-  return (sp > (stack_limit + reserved_area));
+
+  assert((thread->stack_base() - thread->stack_size()) +
+         (JavaThread::stack_guard_zone_size() +
+          JavaThread::stack_shadow_zone_size() + framesize_in_bytes) ==
+         ((JavaThread*)thread)->stack_overflow_limit() + framesize_in_bytes, "sanity");
+
+  return (sp > ((JavaThread*)thread)->stack_overflow_limit() + framesize_in_bytes);
 }
 
 size_t os::page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned) {

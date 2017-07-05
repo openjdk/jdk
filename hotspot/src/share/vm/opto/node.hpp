@@ -1442,6 +1442,7 @@ public:
   void clear() { _cnt = 0; Node_Array::clear(); } // retain storage
   uint size() const { return _cnt; }
   void dump() const;
+  void dump_simple() const;
 };
 
 //------------------------------Unique_Node_List-------------------------------

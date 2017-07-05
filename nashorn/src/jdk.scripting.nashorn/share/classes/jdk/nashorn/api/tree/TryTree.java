@@ -39,7 +39,7 @@ import java.util.List;
  *       <em>finallyBlock</em>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface TryTree extends StatementTree {
     /**

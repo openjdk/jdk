@@ -43,7 +43,7 @@ package javax.accessibility;
  *
  * @see java.awt.Toolkit#getDefaultToolkit
  * @see java.util.ServiceLoader
- * @since 1.9
+ * @since 9
  */
 public abstract class AccessibilityProvider {
 

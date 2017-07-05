@@ -39,7 +39,7 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedBaseAddress=8g",
             "-Xmx128m",
-            "-XX:+PrintCompressedOopsMode",
+            "-Xlog:gc+metaspace=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Narrow klass base: 0x0000000000000000");
@@ -51,7 +51,7 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:CompressedClassSpaceSize=3g",
             "-Xmx128m",
-            "-XX:+PrintCompressedOopsMode",
+            "-Xlog:gc+metaspace=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Narrow klass base: 0x0000000000000000, Narrow klass shift: 3");
@@ -62,7 +62,7 @@ public class CompressedClassPointers {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-Xmx30g",
-            "-XX:+PrintCompressedOopsMode",
+            "-Xlog:gc+metaspace=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Narrow klass base: 0x0000000000000000");
@@ -75,7 +75,7 @@ public class CompressedClassPointers {
             "-XX:+UnlockDiagnosticVMOptions",
             "-Xmx128m",
             "-XX:+UseLargePages",
-            "-XX:+PrintCompressedOopsMode",
+            "-Xlog:gc+metaspace=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Narrow klass base:");

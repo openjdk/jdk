@@ -99,7 +99,7 @@ void HeapRegionManager::uncommit_regions(uint start, size_t num_regions) {
   if (G1CollectedHeap::heap()->hr_printer()->is_active()) {
     for (uint i = start; i < start + num_regions; i++) {
       HeapRegion* hr = at(i);
-      G1CollectedHeap::heap()->hr_printer()->uncommit(hr->bottom(), hr->end());
+      G1CollectedHeap::heap()->hr_printer()->uncommit(hr);
     }
   }
 
@@ -135,7 +135,7 @@ void HeapRegionManager::make_regions_available(uint start, uint num_regions) {
     assert(is_available(i), "Just made region %u available but is apparently not.", i);
     HeapRegion* hr = at(i);
     if (G1CollectedHeap::heap()->hr_printer()->is_active()) {
-      G1CollectedHeap::heap()->hr_printer()->commit(hr->bottom(), hr->end());
+      G1CollectedHeap::heap()->hr_printer()->commit(hr);
     }
     HeapWord* bottom = G1CollectedHeap::heap()->bottom_addr_for_region(i);
     MemRegion mr(bottom, bottom + HeapRegion::GrainWords);

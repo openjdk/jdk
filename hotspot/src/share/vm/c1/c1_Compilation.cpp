@@ -551,6 +551,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _would_profile(false)
 , _has_unsafe_access(false)
 , _has_method_handle_invokes(false)
+, _has_reserved_stack_access(method->has_reserved_stack_access())
 , _bailout_msg(NULL)
 , _exception_info_list(NULL)
 , _allocator(NULL)

@@ -68,5 +68,5 @@ MAPFILE = $(GAMMADIR)/make/aix/makefiles/mapfile-vers-debug
 LFLAGS_QIPA=
 
 VERSION = optimized
-SYSDEFS += -DASSERT -DFASTDEBUG
+SYSDEFS += -DASSERT
 PICFLAGS = DEFAULT

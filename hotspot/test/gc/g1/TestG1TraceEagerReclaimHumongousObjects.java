@@ -49,20 +49,18 @@ public class TestG1TraceEagerReclaimHumongousObjects {
                                                "-Xmx128M",
                                                "-Xmn16M",
                                                "-XX:G1HeapRegionSize=1M",
-                                               "-XX:+PrintGC",
+                                               "-Xlog:gc+phases=trace",
                                                "-XX:+UnlockExperimentalVMOptions",
-                                               "-XX:G1LogLevel=finest",
-                                               "-XX:+G1TraceEagerReclaimHumongousObjects",
                                                GCTest.class.getName());
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     // As G1EagerReclaimHumongousObjects is set(default), below logs should be displayed.
     // And GCTest doesn't have humongous objects, so values should be zero.
-    output.shouldContain("[Humongous Reclaim");
-    output.shouldContain("[Humongous Total: 0]");
-    output.shouldContain("[Humongous Candidate: 0]");
-    output.shouldContain("[Humongous Reclaimed: 0]");
+    output.shouldContain("Humongous Reclaim");
+    output.shouldContain("Humongous Total: 0");
+    output.shouldContain("Humongous Candidate: 0");
+    output.shouldContain("Humongous Reclaimed: 0");
 
     output.shouldHaveExitValue(0);
   }
@@ -73,19 +71,17 @@ public class TestG1TraceEagerReclaimHumongousObjects {
                                                "-Xmx128M",
                                                "-Xmn16M",
                                                "-XX:G1HeapRegionSize=1M",
-                                               "-XX:+PrintGC",
+                                               "-Xlog:gc+phases=trace,gc+humongous=trace",
                                                "-XX:+UnlockExperimentalVMOptions",
-                                               "-XX:G1LogLevel=finest",
-                                               "-XX:+G1TraceEagerReclaimHumongousObjects",
                                                GCWithHumongousObjectTest.class.getName());
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     // As G1ReclaimDeadHumongousObjectsAtYoungGC is set(default), below logs should be displayed.
-    output.shouldContain("[Humongous Reclaim");
-    output.shouldContain("[Humongous Total");
-    output.shouldContain("[Humongous Candidate");
-    output.shouldContain("[Humongous Reclaimed");
+    output.shouldContain("Humongous Reclaim");
+    output.shouldContain("Humongous Total");
+    output.shouldContain("Humongous Candidate");
+    output.shouldContain("Humongous Reclaimed");
 
     // As G1TraceReclaimDeadHumongousObjectsAtYoungGC is set and GCWithHumongousObjectTest has humongous objects,
     // these logs should be displayed.

@@ -373,22 +373,22 @@ class ServerImpl implements TimeSource {
                             }
                             SocketChannel chan = schan.accept();
 
-                            // Set TCP_NODELAY, if appropriate
-                            if (ServerConfig.noDelay()) {
-                                chan.socket().setTcpNoDelay(true);
+                            // optimist there's a channel
+                            if (chan != null) {
+                                // Set TCP_NODELAY, if appropriate
+                                if (ServerConfig.noDelay()) {
+                                    chan.socket().setTcpNoDelay(true);
+                                }
+                                chan.configureBlocking (false);
+                                SelectionKey newkey =
+                                    chan.register (selector, SelectionKey.OP_READ);
+                                HttpConnection c = new HttpConnection ();
+                                c.selectionKey = newkey;
+                                c.setChannel (chan);
+                                newkey.attach (c);
+                                requestStarted (c);
+                                allConnections.add (c);
                             }
-
-                            if (chan == null) {
-                                continue; /* cancel something ? */
-                            }
-                            chan.configureBlocking (false);
-                            SelectionKey newkey = chan.register (selector, SelectionKey.OP_READ);
-                            HttpConnection c = new HttpConnection ();
-                            c.selectionKey = newkey;
-                            c.setChannel (chan);
-                            newkey.attach (c);
-                            requestStarted (c);
-                            allConnections.add (c);
                         } else {
                             try {
                                 if (key.isReadable()) {

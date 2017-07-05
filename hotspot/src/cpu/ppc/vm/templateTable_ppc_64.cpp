@@ -39,8 +39,6 @@
 #include "runtime/synchronizer.hpp"
 #include "utilities/macros.hpp"
 
-#ifndef CC_INTERP
-
 #undef __
 #define __ _masm->
 
@@ -1626,12 +1624,13 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   // --------------------------------------------------------------------------
   // Normal (non-jsr) branch handling
 
+  // Bump bytecode pointer by displacement (take the branch).
+  __ add(R14_bcp, Rdisp, R14_bcp); // Add to bc addr.
+
   const bool increment_invocation_counter_for_backward_branches = UseCompiler && UseLoopCounter;
   if (increment_invocation_counter_for_backward_branches) {
-    //__ unimplemented("branch invocation counter");
-
     Label Lforward;
-    __ add(R14_bcp, Rdisp, R14_bcp); // Add to bc addr.
+    __ dispatch_prolog(vtos);
 
     // Check branch direction.
     __ cmpdi(CCR0, Rdisp, 0);
@@ -1642,7 +1641,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     if (TieredCompilation) {
       Label Lno_mdo, Loverflow;
       const int increment = InvocationCounter::count_increment;
-      const int mask = ((1 << Tier0BackedgeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
       if (ProfileInterpreter) {
         Register Rmdo = Rscratch1;
 
@@ -1654,7 +1652,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
         // Increment backedge counter in the MDO.
         const int mdo_bc_offs = in_bytes(MethodData::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
         __ lwz(Rscratch2, mdo_bc_offs, Rmdo);
-        __ load_const_optimized(Rscratch3, mask, R0);
+        __ lwz(Rscratch3, in_bytes(MethodData::backedge_mask_offset()), Rmdo);
         __ addi(Rscratch2, Rscratch2, increment);
         __ stw(Rscratch2, mdo_bc_offs, Rmdo);
         __ and_(Rscratch3, Rscratch2, Rscratch3);
@@ -1666,19 +1664,19 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       const int mo_bc_offs = in_bytes(MethodCounters::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
       __ bind(Lno_mdo);
       __ lwz(Rscratch2, mo_bc_offs, R4_counters);
-      __ load_const_optimized(Rscratch3, mask, R0);
+      __ lwz(Rscratch3, in_bytes(MethodCounters::backedge_mask_offset()), R4_counters);
       __ addi(Rscratch2, Rscratch2, increment);
-      __ stw(Rscratch2, mo_bc_offs, R19_method);
+      __ stw(Rscratch2, mo_bc_offs, R4_counters);
       __ and_(Rscratch3, Rscratch2, Rscratch3);
       __ bne(CCR0, Lforward);
 
       __ bind(Loverflow);
 
       // Notify point for loop, pass branch bytecode.
-      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R14_bcp, true);
+      __ subf(R4_ARG2, Rdisp, R14_bcp); // Compute branch bytecode (previous bcp).
+      __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R4_ARG2, true);
 
       // Was an OSR adapter generated?
-      // O0 = osr nmethod
       __ cmpdi(CCR0, R3_RET, 0);
       __ beq(CCR0, Lforward);
 
@@ -1714,27 +1712,23 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ increment_backedge_counter(R4_counters, invoke_ctr, Rscratch2, Rscratch3);
 
       if (ProfileInterpreter) {
-        __ test_invocation_counter_for_mdp(invoke_ctr, Rscratch2, Lforward);
+        __ test_invocation_counter_for_mdp(invoke_ctr, R4_counters, Rscratch2, Lforward);
         if (UseOnStackReplacement) {
-          __ test_backedge_count_for_osr(bumped_count, R14_bcp, Rscratch2);
+          __ test_backedge_count_for_osr(bumped_count, R4_counters, R14_bcp, Rdisp, Rscratch2);
         }
       } else {
         if (UseOnStackReplacement) {
-          __ test_backedge_count_for_osr(invoke_ctr, R14_bcp, Rscratch2);
+          __ test_backedge_count_for_osr(invoke_ctr, R4_counters, R14_bcp, Rdisp, Rscratch2);
         }
       }
     }
 
     __ bind(Lforward);
+    __ dispatch_epilog(vtos);
 
   } else {
-    // Bump bytecode pointer by displacement (take the branch).
-    __ add(R14_bcp, Rdisp, R14_bcp); // Add to bc addr.
+    __ dispatch_next(vtos);
   }
-  // Continue with bytecode @ target.
-  // %%%%% Like Intel, could speed things up by moving bytecode fetch to code above,
-  // %%%%% and changing dispatch_next to dispatch_only.
-  __ dispatch_next(vtos);
 }
 
 // Helper function for if_cmp* methods below.
@@ -4145,4 +4139,3 @@ void TemplateTable::wide() {
   __ bctr();
   // Note: the bcp increment step is part of the individual wide bytecode implementations.
 }
-#endif // !CC_INTERP

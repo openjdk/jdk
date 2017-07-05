@@ -69,7 +69,7 @@ png_destroy_png_struct(png_structrp png_ptr)
 }
 
 /* Allocate memory.  For reasonable files, size should never exceed
- * 64K.  However, zlib may allocate more then 64K if you don't tell
+ * 64K.  However, zlib may allocate more than 64K if you don't tell
  * it not to.  See zconf.h and png.h for more information.  zlib does
  * need to allocate exactly 64K, so whatever you call here must
  * have the ability to do that.
@@ -105,6 +105,9 @@ png_malloc_base,(png_const_structrp png_ptr, png_alloc_size_t size),
    PNG_UNUSED(png_ptr)
 #endif
 
+   /* Some compilers complain that this is always true.  However, it
+    * can be false when integer overflow happens.
+    */
    if (size > 0 && size <= PNG_SIZE_MAX
 #     ifdef PNG_MAX_MALLOC_64K
          && size <= 65536U

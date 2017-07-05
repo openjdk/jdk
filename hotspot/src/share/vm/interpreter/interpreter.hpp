@@ -29,9 +29,6 @@
 #include "interpreter/cppInterpreter.hpp"
 #include "interpreter/templateInterpreter.hpp"
 #include "memory/resourceArea.hpp"
-#ifdef TARGET_ARCH_zero
-# include "entry_zero.hpp"
-#endif
 
 // This file contains the platform-independent parts
 // of the interpreter and the interpreter generator.
@@ -116,34 +113,9 @@ class CodeletMark: ResourceMark {
   ~CodeletMark();
 };
 
-// Wrapper classes to produce Interpreter/InterpreterGenerator from either
+// Wrapper typedef to use the name Interpreter to mean either
 // the c++ interpreter or the template interpreter.
 
-class Interpreter: public CC_INTERP_ONLY(CppInterpreter) NOT_CC_INTERP(TemplateInterpreter) {
-
- public:
-  // Debugging/printing
-  static InterpreterCodelet* codelet_containing(address pc) { return (InterpreterCodelet*)_code->stub_containing(pc); }
-
-#ifdef TARGET_ARCH_x86
-# include "interpreter_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "interpreter_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "interpreter_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "interpreter_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "interpreter_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "interpreter_aarch64.hpp"
-#endif
-
-};
+typedef CC_INTERP_ONLY(CppInterpreter) NOT_CC_INTERP(TemplateInterpreter) Interpreter;
 
 #endif // SHARE_VM_INTERPRETER_INTERPRETER_HPP

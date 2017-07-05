@@ -59,7 +59,7 @@ public interface AnnotatedParameterizedType extends AnnotatedType {
      *     refers to a parameterized type that cannot be instantiated
      *     for any reason
      *
-     * @since 1.9
+     * @since 9
      */
     @Override
     AnnotatedType getAnnotatedOwnerType();

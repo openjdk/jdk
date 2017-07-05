@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "logging/log.hpp"
 #include "utilities/copy.hpp"
 
 // Catch-all file for utility classes
@@ -83,13 +84,9 @@ void SpaceMangler::mangle_unused_area_complete() {
 void SpaceMangler::mangle_region(MemRegion mr) {
   assert(ZapUnusedHeapArea, "Mangling should not be in use");
 #ifdef ASSERT
-  if(TraceZapUnusedHeapArea) {
-    gclog_or_tty->print("Mangling [" PTR_FORMAT " to " PTR_FORMAT ")", p2i(mr.start()), p2i(mr.end()));
-  }
+  log_develop_trace(gc)("Mangling [" PTR_FORMAT " to " PTR_FORMAT ")", p2i(mr.start()), p2i(mr.end()));
   Copy::fill_to_words(mr.start(), mr.word_size(), badHeapWord);
-  if(TraceZapUnusedHeapArea) {
-    gclog_or_tty->print_cr(" done");
-  }
+  log_develop_trace(gc)("Mangling done.");
 #endif
 }
 

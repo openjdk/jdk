@@ -53,7 +53,7 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
         LIBS_linux := -lpthread $(LIBDL), \
         LIBS_solaris := -lsocket -lc, \
         OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsctp, \
-        DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+    ))
 
     TARGETS += $(BUILD_LIBSCTP)
 

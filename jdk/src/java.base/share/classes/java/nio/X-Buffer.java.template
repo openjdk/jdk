@@ -1064,7 +1064,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public
@@ -1078,7 +1078,7 @@ public abstract class $Type$Buffer
     
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public
@@ -1092,7 +1092,7 @@ public abstract class $Type$Buffer
     
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public 
@@ -1106,7 +1106,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public 
@@ -1120,7 +1120,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public 
@@ -1134,7 +1134,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public 
@@ -1148,7 +1148,7 @@ public abstract class $Type$Buffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public 

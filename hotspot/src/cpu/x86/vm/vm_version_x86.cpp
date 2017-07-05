@@ -35,9 +35,7 @@
 int VM_Version::_cpu;
 int VM_Version::_model;
 int VM_Version::_stepping;
-uint64_t VM_Version::_cpuFeatures;
-const char*           VM_Version::_features_str = "";
-VM_Version::CpuidInfo VM_Version::_cpuid_info   = { 0, };
+VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
 
 // Address of instruction which causes SEGV
 address VM_Version::_cpuinfo_segv_addr = 0;
@@ -468,28 +466,26 @@ void VM_Version::get_processor_features() {
   _cpu = 4; // 486 by default
   _model = 0;
   _stepping = 0;
-  _cpuFeatures = 0;
+  _features = 0;
   _logical_processors_per_package = 1;
   // i486 internal cache is both I&D and has a 16-byte line size
   _L1_data_cache_line_size = 16;
 
-  if (!Use486InstrsOnly) {
-    // Get raw processor info
+  // Get raw processor info
 
-    get_cpu_info_stub(&_cpuid_info);
+  get_cpu_info_stub(&_cpuid_info);
 
-    assert_is_initialized();
-    _cpu = extended_cpu_family();
-    _model = extended_cpu_model();
-    _stepping = cpu_stepping();
+  assert_is_initialized();
+  _cpu = extended_cpu_family();
+  _model = extended_cpu_model();
+  _stepping = cpu_stepping();
 
-    if (cpu_family() > 4) { // it supports CPUID
-      _cpuFeatures = feature_flags();
-      // Logical processors are only available on P4s and above,
-      // and only if hyperthreading is available.
-      _logical_processors_per_package = logical_processor_count();
-      _L1_data_cache_line_size = L1_line_size();
-    }
+  if (cpu_family() > 4) { // it supports CPUID
+    _features = feature_flags();
+    // Logical processors are only available on P4s and above,
+    // and only if hyperthreading is available.
+    _logical_processors_per_package = logical_processor_count();
+    _L1_data_cache_line_size = L1_line_size();
   }
 
   _supports_cx8 = supports_cmpxchg8();
@@ -524,24 +520,24 @@ void VM_Version::get_processor_features() {
 
   // If the OS doesn't support SSE, we can't use this feature even if the HW does
   if (!os::supports_sse())
-    _cpuFeatures &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);
+    _features &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);
 
   if (UseSSE < 4) {
-    _cpuFeatures &= ~CPU_SSE4_1;
-    _cpuFeatures &= ~CPU_SSE4_2;
+    _features &= ~CPU_SSE4_1;
+    _features &= ~CPU_SSE4_2;
   }
 
   if (UseSSE < 3) {
-    _cpuFeatures &= ~CPU_SSE3;
-    _cpuFeatures &= ~CPU_SSSE3;
-    _cpuFeatures &= ~CPU_SSE4A;
+    _features &= ~CPU_SSE3;
+    _features &= ~CPU_SSSE3;
+    _features &= ~CPU_SSE4A;
   }
 
   if (UseSSE < 2)
-    _cpuFeatures &= ~CPU_SSE2;
+    _features &= ~CPU_SSE2;
 
   if (UseSSE < 1)
-    _cpuFeatures &= ~CPU_SSE;
+    _features &= ~CPU_SSE;
 
   // first try initial setting and detect what we can support
   if (UseAVX > 0) {
@@ -559,25 +555,25 @@ void VM_Version::get_processor_features() {
   }
 
   if (UseAVX < 3) {
-    _cpuFeatures &= ~CPU_AVX512F;
-    _cpuFeatures &= ~CPU_AVX512DQ;
-    _cpuFeatures &= ~CPU_AVX512CD;
-    _cpuFeatures &= ~CPU_AVX512BW;
-    _cpuFeatures &= ~CPU_AVX512VL;
+    _features &= ~CPU_AVX512F;
+    _features &= ~CPU_AVX512DQ;
+    _features &= ~CPU_AVX512CD;
+    _features &= ~CPU_AVX512BW;
+    _features &= ~CPU_AVX512VL;
   }
 
   if (UseAVX < 2)
-    _cpuFeatures &= ~CPU_AVX2;
+    _features &= ~CPU_AVX2;
 
   if (UseAVX < 1)
-    _cpuFeatures &= ~CPU_AVX;
+    _features &= ~CPU_AVX;
 
   if (!UseAES && !FLAG_IS_DEFAULT(UseAES))
-    _cpuFeatures &= ~CPU_AES;
+    _features &= ~CPU_AES;
 
   if (logical_processors_per_package() == 1) {
     // HT processor could be installed on a system which doesn't support HT.
-    _cpuFeatures &= ~CPU_HT;
+    _features &= ~CPU_HT;
   }
 
   char buf[256];
@@ -613,7 +609,7 @@ void VM_Version::get_processor_features() {
                (supports_bmi2() ? ", bmi2" : ""),
                (supports_adx() ? ", adx" : ""),
                (supports_evex() ? ", evex" : ""));
-  _features_str = os::strdup(buf);
+  _features_string = os::strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what
   // the command line requires.  I.e., you cannot set UseSSE to 2 on
@@ -652,6 +648,28 @@ void VM_Version::get_processor_features() {
         }
         FLAG_SET_DEFAULT(UseAESIntrinsics, false);
       }
+
+      // --AES-CTR begins--
+      if (!UseAESIntrinsics) {
+        if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+          warning("AES-CTR intrinsics require UseAESIntrinsics flag to be enabled. Intrinsics will be disabled.");
+          FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+        }
+      } else {
+        if(supports_sse4_1() && UseSSE >= 4) {
+          if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+            FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
+          }
+        } else {
+           // The AES-CTR intrinsic stubs require AES instruction support (of course)
+           // but also require sse4.1 mode or higher for instructions it use.
+          if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+             warning("X86 AES-CTR intrinsics require SSE4.1 instructions or higher. Intrinsics will be disabled.");
+           }
+           FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+        }
+      }
+      // --AES-CTR ends--
     }
   } else if (UseAES || UseAESIntrinsics) {
     if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
@@ -661,6 +679,10 @@ void VM_Version::get_processor_features() {
     if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
       warning("AES intrinsics are not available on this CPU");
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    }
+    if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+      warning("AES-CTR intrinsics are not available on this CPU");
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
   }
 
@@ -683,6 +705,16 @@ void VM_Version::get_processor_features() {
     if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics))
       warning("CRC32 Intrinsics requires CLMUL instructions (not available on this CPU)");
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
+  }
+
+  if (UseAESIntrinsics) {
+    if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+      UseAESCTRIntrinsics = true;
+    }
+  } else if (UseAESCTRIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseAESCTRIntrinsics))
+        warning("AES/CTR intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
   if (supports_sse4_2()) {
@@ -1040,6 +1072,25 @@ void VM_Version::get_processor_features() {
       AllocatePrefetchInstr = 3;
     }
   }
+
+#ifdef _LP64
+  if (UseSSE42Intrinsics) {
+    if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+      UseVectorizedMismatchIntrinsic = true;
+    }
+  } else if (UseVectorizedMismatchIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic))
+      warning("vectorizedMismatch intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+#else
+  if (UseVectorizedMismatchIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+      warning("vectorizedMismatch intrinsic is not available in 32-bit VM");
+    }
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+#endif // _LP64
 
   // Use count leading zeros count instruction if available.
   if (supports_lzcnt()) {

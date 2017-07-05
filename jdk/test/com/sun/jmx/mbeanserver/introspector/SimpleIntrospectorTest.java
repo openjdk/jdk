@@ -33,7 +33,7 @@ import java.lang.reflect.Method;
  *          with a lower-case letter
  *
  * @author Jaroslav Bachorik
- * @modules java.management
+ * @modules java.management/com.sun.jmx.mbeanserver
  * @run clean SimpleIntrospectorTest
  * @run build SimpleIntrospectorTest BeanClass
  * @run main SimpleIntrospectorTest

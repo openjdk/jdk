@@ -25,6 +25,10 @@
 
 package java.lang.invoke;
 
+import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 

@@ -30,6 +30,7 @@
  *          is not initialized.
  *
  * @modules java.base/sun.util.logging
+ *          java.logging/sun.util.logging.internal
  * @compile -XDignore.symbol.file PlatformLoggerTest.java
  * @run main/othervm PlatformLoggerTest
  */

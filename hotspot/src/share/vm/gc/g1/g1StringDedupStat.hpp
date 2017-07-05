@@ -135,8 +135,8 @@ public:
 
   void add(const G1StringDedupStat& stat);
 
-  static void print_summary(outputStream* st, const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat);
-  static void print_statistics(outputStream* st, const G1StringDedupStat& stat, bool total);
+  static void print_summary(const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat);
+  static void print_statistics(const G1StringDedupStat& stat, bool total);
 };
 
 #endif // SHARE_VM_GC_G1_G1STRINGDEDUPSTAT_HPP

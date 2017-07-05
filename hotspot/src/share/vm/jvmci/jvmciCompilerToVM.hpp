@@ -29,28 +29,45 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 
 class CompilerToVM {
-public:
-  /**
-   * Tag bits used by lookupKlassInPool to distinguish the types in Java.
-   */
-  enum Tags {
-    KLASS_TAG = 0x0,
-    SYMBOL_TAG = 0x1
+ public:
+  class Data {
+    friend class JVMCIVMStructs;
+
+   private:
+    static int InstanceKlass_vtable_start_offset;
+    static int InstanceKlass_vtable_length_offset;
+
+    static int Method_extra_stack_entries;
+
+    static address SharedRuntime_ic_miss_stub;
+    static address SharedRuntime_handle_wrong_method_stub;
+    static address SharedRuntime_deopt_blob_unpack;
+    static address SharedRuntime_deopt_blob_uncommon_trap;
+
+    static size_t ThreadLocalAllocBuffer_alignment_reserve;
+
+    static CollectedHeap* Universe_collectedHeap;
+    static int Universe_base_vtable_size;
+    static address Universe_narrow_oop_base;
+    static int Universe_narrow_oop_shift;
+    static address Universe_narrow_klass_base;
+    static int Universe_narrow_klass_shift;
+    static uintptr_t Universe_verify_oop_mask;
+    static uintptr_t Universe_verify_oop_bits;
+    static void* Universe_non_oop_bits;
+
+    static bool _supports_inline_contig_alloc;
+    static HeapWord** _heap_end_addr;
+    static HeapWord** _heap_top_addr;
+
+    static jbyte* cardtable_start_address;
+    static int cardtable_shift;
+
+   public:
+    static void initialize();
   };
 
-  // FIXME This is only temporary until the GC code is changed.
-  static bool _supports_inline_contig_alloc;
-  static HeapWord** _heap_end_addr;
-  static HeapWord** _heap_top_addr;
-
-  static intptr_t tag_pointer(Klass* klass) {
-    return ((intptr_t) klass) | KLASS_TAG;
-  }
-
-  static intptr_t tag_pointer(Symbol* symbol) {
-    return ((intptr_t) symbol) | SYMBOL_TAG;
-  }
-
+ public:
   static JNINativeMethod methods[];
   static int methods_count();
 
@@ -97,8 +114,6 @@ public:
   static oop get_jvmci_method(const methodHandle& method, TRAPS);
 
   static oop get_jvmci_type(KlassHandle klass, TRAPS);
-
-  static void invalidate_installed_code(Handle installedCode, TRAPS);
 };
 
 class JavaArgumentUnboxer : public SignatureIterator {

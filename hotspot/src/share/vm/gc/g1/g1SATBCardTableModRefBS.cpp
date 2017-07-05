@@ -28,6 +28,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
+#include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -147,17 +148,10 @@ void G1SATBCardTableLoggingModRefBS::initialize(G1RegionToSpaceMapper* mapper) {
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
   assert(byte_for(high_bound-1) <= &_byte_map[_last_valid_index], "Checking end of map");
 
-  if (TraceCardTableModRefBS) {
-    gclog_or_tty->print_cr("G1SATBCardTableModRefBS::G1SATBCardTableModRefBS: ");
-    gclog_or_tty->print_cr("  "
-                  "  &_byte_map[0]: " INTPTR_FORMAT
-                  "  &_byte_map[_last_valid_index]: " INTPTR_FORMAT,
-                  p2i(&_byte_map[0]),
-                  p2i(&_byte_map[_last_valid_index]));
-    gclog_or_tty->print_cr("  "
-                  "  byte_map_base: " INTPTR_FORMAT,
-                  p2i(byte_map_base));
-  }
+  log_trace(gc, barrier)("G1SATBCardTableModRefBS::G1SATBCardTableModRefBS: ");
+  log_trace(gc, barrier)("    &_byte_map[0]: " INTPTR_FORMAT "  &_byte_map[_last_valid_index]: " INTPTR_FORMAT,
+                         p2i(&_byte_map[0]), p2i(&_byte_map[_last_valid_index]));
+  log_trace(gc, barrier)("    byte_map_base: " INTPTR_FORMAT,  p2i(byte_map_base));
 }
 
 void

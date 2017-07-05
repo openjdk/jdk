@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8137167
- * @ignore 8140667
  * @summary Randomly generates valid commands with random types
  * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
  * @build RandomValidCommandsTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox

@@ -42,6 +42,8 @@ private:
 
   static elapsedTimer _codeInstallTimer;
 
+  static void abort_on_pending_exception(Handle exception, const char* message, bool dump_core = false);
+
 public:
   JVMCICompiler();
 

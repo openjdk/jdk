@@ -44,7 +44,7 @@ import sun.nio.ch.DirectBuffer;
  * {@link NullPointerException} to be thrown.
  * </p>
  *
- * @since 1.9
+ * @since 9
  */
 public final class CRC32C implements Checksum {
 

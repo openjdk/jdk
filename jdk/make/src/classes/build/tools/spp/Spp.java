@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,10 @@ import java.util.regex.*;
  * Spp: A simple regex-based stream preprocessor based on Mark Reinhold's
  *      sed-based spp.sh
  *
- * Usage: java build.tools.spp.Spp [-be] [-Kkey] -Dvar=value ... <in >out
+ * Usage: java build.tools.spp.Spp [-be] [-nel] [-Kkey] -Dvar=value ... <in >out
  *
- * Source-file constructs
+ * If -nel is declared then empty lines will not be substituted for lines of
+ * text in the template that do not appear in the output.
  *
  *   Meaningful only at beginning of line, works with any number of keys:
  *
@@ -64,9 +65,10 @@ import java.util.regex.*;
 
 public class Spp {
     public static void main(String args[]) throws Exception {
-        Map<String, String> vars = new HashMap<String, String>();
-        Set<String> keys = new HashSet<String>();
+        Map<String, String> vars = new HashMap<>();
+        Set<String> keys = new HashSet<>();
         boolean be = false;
+        boolean el = true;
 
         for (String arg:args) {
             if (arg.startsWith("-D")) {
@@ -76,8 +78,10 @@ public class Spp {
                 keys.add(arg.substring(2));
             } else if ("-be".equals(arg)) {
                 be = true;
+            } else if ("-nel".equals(arg)) {
+                el = false;
             } else {
-                System.err.println("Usage: java build.tools.spp.Spp [-be] [-Kkey] -Dvar=value ... <in >out");
+                System.err.println("Usage: java build.tools.spp.Spp [-be] [-nel] [-Kkey] -Dvar=value ... <in >out");
                 System.exit(-1);
             }
         }
@@ -85,7 +89,7 @@ public class Spp {
         StringBuffer out = new StringBuffer();
         new Spp().spp(new Scanner(System.in),
                       out, "",
-                      keys, vars, be,
+                      keys, vars, be, el,
                       false);
         System.out.print(out.toString());
     }
@@ -93,7 +97,7 @@ public class Spp {
     static final String LNSEP = System.getProperty("line.separator");
     static final String KEY = "([a-zA-Z0-9]+)";
     static final String VAR = "([a-zA-Z0-9_\\-]+)";
-    static final String TEXT = "([a-zA-Z0-9&;,.<>/#() \\$]+)"; // $ -- hack embedded $var$
+    static final String TEXT = "([a-zA-Z0-9&;,.<>/#() \\?\\[\\]\\$]+)"; // $ -- hack embedded $var$
 
     static final int GN_NOT = 1;
     static final int GN_KEY = 2;
@@ -101,11 +105,11 @@ public class Spp {
     static final int GN_NO  = 5;
     static final int GN_VAR = 6;
 
-    Matcher ifkey = Pattern.compile("^#if\\[(!)?" + KEY + "\\]").matcher("");
-    Matcher elsekey = Pattern.compile("^#else\\[(!)?" + KEY + "\\]").matcher("");
-    Matcher endkey = Pattern.compile("^#end\\[(!)?" + KEY + "\\]").matcher("");
-    Matcher  vardef = Pattern.compile("\\{#if\\[(!)?" + KEY + "\\]\\?" + TEXT + "(:"+ TEXT + ")?\\}|\\$" + VAR + "\\$").matcher("");
-    Matcher  vardef2 = Pattern.compile("\\$" + VAR + "\\$").matcher("");
+    final Matcher   ifkey = Pattern.compile("^#if\\[(!)?" + KEY + "\\]").matcher("");
+    final Matcher elsekey = Pattern.compile("^#else\\[(!)?" + KEY + "\\]").matcher("");
+    final Matcher  endkey = Pattern.compile("^#end\\[(!)?" + KEY + "\\]").matcher("");
+    final Matcher  vardef = Pattern.compile("\\{#if\\[(!)?" + KEY + "\\]\\?" + TEXT + "(:"+ TEXT + ")?\\}|\\$" + VAR + "\\$").matcher("");
+    final Matcher vardef2 = Pattern.compile("\\$" + VAR + "\\$").matcher("");
 
     void append(StringBuffer buf, String ln,
                 Set<String> keys, Map<String, String> vars) {
@@ -135,7 +139,7 @@ public class Spp {
     // return true if #end[key], #end or EOF reached
     boolean spp(Scanner in, StringBuffer buf, String key,
                 Set<String> keys, Map<String, String> vars,
-                boolean be, boolean skip) {
+                boolean be, boolean el, boolean skip) {
         while (in.hasNextLine()) {
             String ln = in.nextLine();
             if (be) {
@@ -154,9 +158,9 @@ public class Spp {
                 boolean test = keys.contains(k);
                 if (ifkey.group(GN_NOT) != null)
                     test = !test;
-                buf.append(LNSEP);
-                if (!spp(in, buf, k, keys, vars, be, skip || !test)) {
-                    spp(in, buf, k, keys, vars, be, skip || test);
+                if (el) buf.append(LNSEP);
+                if (!spp(in, buf, k, keys, vars, be, el, skip || !test)) {
+                    spp(in, buf, k, keys, vars, be, el, skip || test);
                 }
                 continue;
             }
@@ -164,14 +168,14 @@ public class Spp {
                 if (!key.equals(elsekey.group(GN_KEY))) {
                     throw new Error("Mis-matched #if-else-end at line <" + ln + ">");
                 }
-                buf.append(LNSEP);
+                if (el) buf.append(LNSEP);
                 return false;
             }
             if (endkey.reset(ln).find()) {
                 if (!key.equals(endkey.group(GN_KEY))) {
                     throw new Error("Mis-matched #if-else-end at line <" + ln + ">");
                 }
-                buf.append(LNSEP);
+                if (el) buf.append(LNSEP);
                 return true;
             }
             if (ln.startsWith("#warn")) {
@@ -181,8 +185,9 @@ public class Spp {
             }
             if (!skip) {
                 append(buf, ln, keys, vars);
+                if (!el) buf.append(LNSEP);
             }
-            buf.append(LNSEP);
+            if (el) buf.append(LNSEP);
         }
         return true;
     }
