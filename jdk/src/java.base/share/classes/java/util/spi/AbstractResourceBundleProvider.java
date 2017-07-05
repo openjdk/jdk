@@ -31,7 +31,6 @@ import jdk.internal.misc.SharedSecrets;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Module;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Locale;
@@ -81,6 +80,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  *     ResourceBundleProvider Service Providers</a>
  *
  * @since 9
+ * @spec JPMS
  */
 public abstract class AbstractResourceBundleProvider implements ResourceBundleProvider {
     private static final JavaUtilResourceBundleAccess RB_ACCESS =

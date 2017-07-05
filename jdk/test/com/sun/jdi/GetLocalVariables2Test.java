@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4349534 4690242 4695338
- *  @summary regression - bad LocalVariableTable attribute when no initialization needed
+ * @test
+ * @bug 4349534 4690242 4695338
+ * @summary regression - bad LocalVariableTable attribute when no initialization needed
+ * @author Tim Bell
  *
- *  @author Tim Bell
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g GetLocalVariables2Test.java
- *  @run driver GetLocalVariables2Test
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g GetLocalVariables2Test.java
+ * @run driver GetLocalVariables2Test
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

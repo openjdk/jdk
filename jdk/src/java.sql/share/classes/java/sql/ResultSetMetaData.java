@@ -40,6 +40,8 @@ package java.sql;
  *     boolean b = rsmd.isSearchable(1);
  *
  * </PRE>
+ *
+ * @since 1.1
  */
 
 public interface ResultSetMetaData extends Wrapper {

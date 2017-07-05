@@ -27,7 +27,7 @@
  * @summary Test that NotificationBroadcasterSupport can be subclassed
  * and used with synchronized(this) without causing deadlock
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean BroadcasterSupportDeadlockTest
  * @run build BroadcasterSupportDeadlockTest
  * @run main BroadcasterSupportDeadlockTest

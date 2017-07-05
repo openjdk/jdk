@@ -58,6 +58,11 @@ public abstract class DynamicLauncher {
                 }
             }
         } while (tryAgain);
+        output.shouldHaveExitValue(0);
+        // java.lang.Exception is thrown by JdpTestCase if something goes wrong
+        // for instance - see JdpTestCase::shutdown()
+        output.shouldNotContain("java.lang.Exception:");
+        output.shouldNotContain("Error: Could not find or load main class");
     }
 
     protected OutputAnalyzer runVM() throws Exception {

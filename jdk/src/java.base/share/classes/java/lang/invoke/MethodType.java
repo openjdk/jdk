@@ -88,6 +88,7 @@ import sun.invoke.util.VerifyType;
  * (But the classes need not be initialized, as is the case with a {@code CONSTANT_Class}.)
  * This loading may occur at any time before the {@code MethodType} object is first derived.
  * @author John Rose, JSR 292 EG
+ * @since 1.7
  */
 public final
 class MethodType implements java.io.Serializable {
