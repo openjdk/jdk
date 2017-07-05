@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4934778 4777599 6553182 8146427 8146475
+ * @bug      4934778 4777599 6553182 8146427 8146475 8175055
  * @summary  Make sure that -help, -helpfile and -nohelp options work correctly.
  * @author   jamieh
  * @library ../lib
@@ -111,7 +111,7 @@ public class TestHelpOption extends JavadocTester {
                 "-helpfile", testSrc("test-help.html"),
                 "-helpfile", testSrc("test-help.html"),
                 testSrc("Sample.java"));
-        checkExit(Exit.ERROR);
+        checkExit(Exit.CMDERR);
     }
 
     @Test
@@ -121,7 +121,7 @@ public class TestHelpOption extends JavadocTester {
                 "-helpfile", testSrc("test-help.html"),
                 "-nohelp",
                 testSrc("Sample.java"));
-        checkExit(Exit.ERROR);
+        checkExit(Exit.CMDERR);
     }
 
     private void checkOutput(boolean withOption) {

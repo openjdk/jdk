@@ -68,7 +68,7 @@ package org.xml.sax;
  * @see org.xml.sax.Locator
  * @see org.xml.sax.HandlerBase
  */
-@Deprecated(since="5")
+@Deprecated(since="1.5")
 public interface DocumentHandler {
 
 

@@ -199,6 +199,10 @@ public abstract class CommandLineOptionTest {
             throws Throwable {
         List<String> finalOptions = new ArrayList<>();
         finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        String extraFlagForEmulated = CommandLineOptionTest.getVMTypeOptionForEmulated();
+        if (extraFlagForEmulated != null) {
+            finalOptions.add(extraFlagForEmulated);
+        }
         Collections.addAll(finalOptions, options);
 
         CommandLineOptionTest.verifyJVMStartup(expectedMessages,
@@ -390,6 +394,10 @@ public abstract class CommandLineOptionTest {
             String... additionalVMOpts) throws Throwable {
         List<String> finalOptions = new ArrayList<>();
         finalOptions.add(CommandLineOptionTest.getVMTypeOption());
+        String extraFlagForEmulated = CommandLineOptionTest.getVMTypeOptionForEmulated();
+        if (extraFlagForEmulated != null) {
+            finalOptions.add(extraFlagForEmulated);
+        }
         Collections.addAll(finalOptions, additionalVMOpts);
 
         CommandLineOptionTest.verifyOptionValue(optionName, expectedValue,
@@ -495,6 +503,18 @@ public abstract class CommandLineOptionTest {
             return "-graal";
         }
         throw new RuntimeException("Unknown VM mode.");
+    }
+
+    /**
+     * @return addtional VMoptions(Emulated related) required to start a new VM with the same type as current.
+     */
+    private static String getVMTypeOptionForEmulated() {
+        if (Platform.isServer() && !Platform.isEmulatedClient()) {
+            return "-XX:-NeverActAsServerClassMachine";
+        } else if (Platform.isEmulatedClient()) {
+            return "-XX:+NeverActAsServerClassMachine";
+        }
+        return null;
     }
 
     private final BooleanSupplier predicate;
