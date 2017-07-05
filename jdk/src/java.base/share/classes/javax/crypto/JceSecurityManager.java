@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,7 @@ final class JceSecurityManager extends SecurityManager {
     }
 
     // See  bug 4341369 & 4334690 for more info.
-    boolean isCallerTrusted() {
+    boolean isCallerTrusted(Provider provider) {
         // Get the caller and its codebase.
         Class<?>[] context = getClassContext();
         URL callerCodeBase = null;
@@ -249,7 +249,7 @@ final class JceSecurityManager extends SecurityManager {
         }
         // Check whether the caller is a trusted provider.
         try {
-            JceSecurity.verifyProviderJar(callerCodeBase);
+            JceSecurity.verifyProvider(callerCodeBase, provider);
         } catch (Exception e2) {
             return false;
         }

@@ -333,11 +333,13 @@ class Method : public Metadata {
     return _method_counters;
   }
 
-  void set_method_counters(MethodCounters* counters) {
-    // The store into method must be released. On platforms without
-    // total store order (TSO) the reference may become visible before
-    // the initialization of data otherwise.
-    OrderAccess::release_store_ptr((volatile void *)&_method_counters, counters);
+  void clear_method_counters() {
+    _method_counters = NULL;
+  }
+
+  bool init_method_counters(MethodCounters* counters) {
+    // Try to install a pointer to MethodCounters, return true on success.
+    return Atomic::cmpxchg_ptr(counters, (volatile void*)&_method_counters, NULL) == NULL;
   }
 
 #ifdef TIERED

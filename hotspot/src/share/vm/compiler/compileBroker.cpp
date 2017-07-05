@@ -783,18 +783,22 @@ CompileQueue* CompileBroker::compile_queue(int comp_level) {
 
 
 void CompileBroker::print_compile_queues(outputStream* st) {
-  _c1_compile_queue->print(st);
-  _c2_compile_queue->print(st);
+  MutexLocker locker(MethodCompileQueue_lock);
+  if (_c1_compile_queue != NULL) {
+    _c1_compile_queue->print(st);
+  }
+  if (_c2_compile_queue != NULL) {
+    _c2_compile_queue->print(st);
+  }
 }
 
-
 void CompileQueue::print(outputStream* st) {
-  assert_locked_or_safepoint(lock());
+  assert(lock()->owned_by_self(), "must own lock");
   st->print_cr("Contents of %s", name());
   st->print_cr("----------------------------");
   CompileTask* task = _first;
   if (task == NULL) {
-    st->print_cr("Empty");;
+    st->print_cr("Empty");
   } else {
     while (task != NULL) {
       task->print_compilation(st, NULL, true, true);
@@ -1204,6 +1208,12 @@ void CompileBroker::compile_method_base(methodHandle method,
   // by a compiler thread), and compiled method registration.
   if (InstanceRefKlass::owns_pending_list_lock(JavaThread::current())) {
     return;
+  }
+
+  if (TieredCompilation) {
+    // Tiered policy requires MethodCounters to exist before adding a method to
+    // the queue. Create if we don't have them yet.
+    method->get_method_counters(thread);
   }
 
   // Outputs from the following MutexLocker block:
@@ -1747,9 +1757,11 @@ void CompileBroker::compiler_thread_loop() {
     // We need this HandleMark to avoid leaking VM handles.
     HandleMark hm(thread);
 
-    if (CodeCache::unallocated_capacity() < CodeCacheMinimumFreeSpace) {
-      // the code cache is really full
-      handle_full_code_cache();
+    // Check if the CodeCache is full
+    int code_blob_type = 0;
+    if (CodeCache::is_full(&code_blob_type)) {
+      // The CodeHeap for code_blob_type is really full
+      handle_full_code_cache(code_blob_type);
     }
 
     CompileTask* task = queue->get();
@@ -1777,22 +1789,6 @@ void CompileBroker::compiler_thread_loop() {
     if (method()->number_of_breakpoints() == 0) {
       // Compile the method.
       if ((UseCompiler || AlwaysCompileLoopMethods) && CompileBroker::should_compile_new_jobs()) {
-#ifdef COMPILER1
-        // Allow repeating compilations for the purpose of benchmarking
-        // compile speed. This is not useful for customers.
-        if (CompilationRepeat != 0) {
-          int compile_count = CompilationRepeat;
-          while (compile_count > 0) {
-            invoke_compiler_on_method(task);
-            nmethod* nm = method->code();
-            if (nm != NULL) {
-              nm->make_zombie();
-              method->clear_code();
-            }
-            compile_count--;
-          }
-        }
-#endif /* COMPILER1 */
         invoke_compiler_on_method(task);
       } else {
         // After compilation is disabled, remove remaining methods from queue
@@ -2079,7 +2075,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
  * The CodeCache is full.  Print out warning and disable compilation
  * or try code cache cleaning so compilation can continue later.
  */
-void CompileBroker::handle_full_code_cache() {
+void CompileBroker::handle_full_code_cache(int code_blob_type) {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
@@ -2095,8 +2091,6 @@ void CompileBroker::handle_full_code_cache() {
       xtty->stamp();
       xtty->end_elem();
     }
-
-    CodeCache::report_codemem_full();
 
 #ifndef PRODUCT
     if (CompileTheWorld || ExitOnFullCodeCache) {
@@ -2119,12 +2113,7 @@ void CompileBroker::handle_full_code_cache() {
       disable_compilation_forever();
     }
 
-    // Print warning only once
-    if (should_print_compiler_warning()) {
-      warning("CodeCache is full. Compiler has been disabled.");
-      warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
-      codecache_print(/* detailed= */ true);
-    }
+    CodeCache::report_codemem_full(code_blob_type, should_print_compiler_warning());
   }
 }
 

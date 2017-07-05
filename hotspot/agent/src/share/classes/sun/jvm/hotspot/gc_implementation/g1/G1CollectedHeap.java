@@ -36,7 +36,6 @@ import sun.jvm.hotspot.memory.SpaceClosure;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
 import sun.jvm.hotspot.types.AddressField;
-import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 
@@ -47,8 +46,8 @@ public class G1CollectedHeap extends SharedHeap {
     static private long hrmFieldOffset;
     // MemRegion _g1_reserved;
     static private long g1ReservedFieldOffset;
-    // size_t _summary_bytes_used;
-    static private CIntegerField summaryBytesUsedField;
+    // G1Allocator* _allocator
+    static private AddressField g1Allocator;
     // G1MonitoringSupport* _g1mm;
     static private AddressField g1mmField;
     // HeapRegionSet _old_set;
@@ -68,7 +67,7 @@ public class G1CollectedHeap extends SharedHeap {
         Type type = db.lookupType("G1CollectedHeap");
 
         hrmFieldOffset = type.getField("_hrm").getOffset();
-        summaryBytesUsedField = type.getCIntegerField("_summary_bytes_used");
+        g1Allocator = type.getAddressField("_allocator");
         g1mmField = type.getAddressField("_g1mm");
         oldSetFieldOffset = type.getField("_old_set").getOffset();
         humongousSetFieldOffset = type.getField("_humongous_set").getOffset();
@@ -79,7 +78,7 @@ public class G1CollectedHeap extends SharedHeap {
     }
 
     public long used() {
-        return summaryBytesUsedField.getValue(addr);
+        return allocator().getSummaryBytes();
     }
 
     public long n_regions() {
@@ -95,6 +94,11 @@ public class G1CollectedHeap extends SharedHeap {
     public G1MonitoringSupport g1mm() {
         Address g1mmAddr = g1mmField.getValue(addr);
         return (G1MonitoringSupport) VMObjectFactory.newObject(G1MonitoringSupport.class, g1mmAddr);
+    }
+
+    public G1Allocator allocator() {
+        Address g1AllocatorAddr = g1Allocator.getValue(addr);
+        return (G1Allocator) VMObjectFactory.newObject(G1Allocator.class, g1AllocatorAddr);
     }
 
     public HeapRegionSetBase oldSet() {

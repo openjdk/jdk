@@ -52,6 +52,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
+import jdk.nashorn.internal.ir.JumpStatement;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
@@ -382,12 +383,16 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
 
             @Override
             public Node leaveBreakNode(final BreakNode breakNode) {
-                return copy(breakNode, (Node)Lower.this.lc.getBreakable(breakNode.getLabelName()));
+                return leaveJumpStatement(breakNode);
             }
 
             @Override
             public Node leaveContinueNode(final ContinueNode continueNode) {
-                return copy(continueNode, Lower.this.lc.getContinueTo(continueNode.getLabelName()));
+                return leaveJumpStatement(continueNode);
+            }
+
+            private Node leaveJumpStatement(final JumpStatement jump) {
+                return copy(jump, (Node)jump.getTarget(Lower.this.lc));
             }
 
             @Override
@@ -627,7 +632,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
             @Override
             public Node leaveContinueNode(final ContinueNode node) {
                 // all inner loops have been popped.
-                if (lex.contains(lex.getContinueTo(node.getLabelName()))) {
+                if (lex.contains(node.getTarget(lex))) {
                     escapes.add(node);
                 }
                 return node;

@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -268,7 +269,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         if (this.source == null && this.installer == null) {
             this.source    = src;
             this.installer = inst;
-        } else if (this.source != src || this.installer != inst) {
+        } else if (this.source != src || !this.installer.isCompatibleWith(inst)) {
             // Existing values must be same as those passed as parameters
             throw new IllegalArgumentException();
         }
@@ -407,6 +408,17 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return getCompiler(fn, actualCallSiteType, newLocals(runtimeScope), null, null);
     }
 
+    /**
+     * Returns a code installer for installing new code. If we're using either optimistic typing or loader-per-compile,
+     * then asks for a code installer with a new class loader; otherwise just uses the current installer. We use
+     * a new class loader with optimistic typing so that deoptimized code can get reclaimed by GC.
+     * @return a code installer for installing new code.
+     */
+    private CodeInstaller<ScriptEnvironment> getInstallerForNewCode() {
+        final ScriptEnvironment env = installer.getOwner();
+        return env._optimistic_types || env._loader_per_compile ? installer.withNewLoader() : installer;
+    }
+
     Compiler getCompiler(final FunctionNode functionNode, final MethodType actualCallSiteType,
             final ScriptObject runtimeScope, final Map<Integer, Type> invalidatedProgramPoints,
             final int[] continuationEntryPoints) {
@@ -417,7 +429,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return new Compiler(
                 context,
                 context.getEnv(),
-                installer,
+                getInstallerForNewCode(),
                 functionNode.getSource(),  // source
                 context.getErrorManager(),
                 isStrict() | functionNode.isStrict(), // is strict
@@ -463,11 +475,12 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             final TypeMap typeMap = typeMap(actualCallSiteType);
             final Type[] paramTypes = typeMap == null ? null : typeMap.getParameterTypes(functionNodeId);
             cacheKey = CodeStore.getCacheKey(functionNodeId, paramTypes);
-            final StoredScript script = installer.loadScript(source, cacheKey);
+            final CodeInstaller<ScriptEnvironment> newInstaller = getInstallerForNewCode();
+            final StoredScript script = newInstaller.loadScript(source, cacheKey);
 
             if (script != null) {
                 Compiler.updateCompilationId(script.getCompilationId());
-                return install(script);
+                return installStoredScript(script, newInstaller);
             }
         }
 
@@ -481,15 +494,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return new FunctionInitializer(compiledFn, compiler.getInvalidatedProgramPoints());
     }
 
-
-    /**
-     * Install this script using the given {@code installer}.
-     *
-     * @param script the compiled script
-     * @return the function initializer
-     */
-    private FunctionInitializer install(final StoredScript script) {
-
+    private static Map<String, Class<?>> installStoredScriptClasses(final StoredScript script, final CodeInstaller<ScriptEnvironment> installer) {
         final Map<String, Class<?>> installedClasses = new HashMap<>();
         final Map<String, byte[]>   classBytes       = script.getClassBytes();
         final String   mainClassName   = script.getMainClassName();
@@ -501,14 +506,25 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
         for (final Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
             final String className = entry.getKey();
-            final byte[] code = entry.getValue();
+            final byte[] bytecode = entry.getValue();
 
             if (className.equals(mainClassName)) {
                 continue;
             }
 
-            installedClasses.put(className, installer.install(className, code));
+            installedClasses.put(className, installer.install(className, bytecode));
         }
+        return installedClasses;
+    }
+
+    /**
+     * Install this script using the given {@code installer}.
+     *
+     * @param script the compiled script
+     * @return the function initializer
+     */
+    private FunctionInitializer installStoredScript(final StoredScript script, final CodeInstaller<ScriptEnvironment> newInstaller) {
+        final Map<String, Class<?>> installedClasses = installStoredScriptClasses(script, newInstaller);
 
         final Map<Integer, FunctionInitializer> initializers = script.getInitializers();
         assert initializers != null;
@@ -523,7 +539,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             }
         }
 
-        installer.initialize(installedClasses.values(), source, constants);
+        newInstaller.initialize(installedClasses.values(), source, constants);
         initializer.setCode(installedClasses.get(initializer.getClassName()));
         return initializer;
     }
@@ -588,9 +604,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return lookupCodeMethod(fn.getCompileUnit().getCode(), type);
     }
 
-    MethodHandle lookupCodeMethod(final Class<?> code, final MethodType targetType) {
-        log.info("Looking up ", DebugLogger.quote(name), " type=", targetType);
-        return MH.findStatic(LOOKUP, code, functionName, targetType);
+    MethodHandle lookupCodeMethod(final Class<?> codeClass, final MethodType targetType) {
+        if (log.isEnabled()) {
+            log.info("Looking up ", DebugLogger.quote(name), " type=", targetType);
+        }
+        return MH.findStatic(LOOKUP, codeClass, functionName, targetType);
     }
 
     /**

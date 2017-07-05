@@ -427,7 +427,7 @@ public:
     return "Compiler.codelist";
   }
   static const char* description() {
-    return "Print all compiled methods in code cache.";
+    return "Print all compiled methods in code cache that are alive";
   }
   static const char* impact() {
     return "Medium";
