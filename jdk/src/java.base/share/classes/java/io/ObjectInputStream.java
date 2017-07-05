@@ -3144,7 +3144,15 @@ public class ObjectInputStream
          * utflen bytes.
          */
         private String readUTFBody(long utflen) throws IOException {
-            StringBuilder sbuf = new StringBuilder();
+            StringBuilder sbuf;
+            if (utflen > 0 && utflen < Integer.MAX_VALUE) {
+                // a reasonable initial capacity based on the UTF length
+                int initialCapacity = Math.min((int)utflen, 0xFFFF);
+                sbuf = new StringBuilder(initialCapacity);
+            } else {
+                sbuf = new StringBuilder();
+            }
+
             if (!blkmode) {
                 end = pos = 0;
             }

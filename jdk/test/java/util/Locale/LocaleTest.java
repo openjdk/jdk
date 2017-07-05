@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * 4147315 4147317 4147552 4335196 4778440 4940539 5010672 6475525 6544471 6627549
  * 6786276 7066203 7085757 8008577 8030696
  * @summary test Locales
+ * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=JRE,SPI LocaleTest
  */
 /*
