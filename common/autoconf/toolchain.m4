@@ -440,7 +440,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
 #
 # $1 = compiler to test (CC or CXX)
 # $2 = human readable name of compiler (C or C++)
-# $3 = list of compiler names to search for
+# $3 = compiler name to search for
 AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
 [
   COMPILER_NAME=$2
@@ -482,15 +482,15 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     if test -n "$TOOLCHAIN_PATH"; then
       PATH_save="$PATH"
       PATH="$TOOLCHAIN_PATH"
-      AC_PATH_PROGS(TOOLCHAIN_PATH_$1, $SEARCH_LIST)
+      AC_PATH_TOOL(TOOLCHAIN_PATH_$1, $SEARCH_LIST)
       $1=$TOOLCHAIN_PATH_$1
       PATH="$PATH_save"
     fi
 
-    # AC_PATH_PROGS can't be run multiple times with the same variable,
+    # AC_PATH_TOOL can't be run multiple times with the same variable,
     # so create a new name for this run.
     if test "x[$]$1" = x; then
-      AC_PATH_PROGS(POTENTIAL_$1, $SEARCH_LIST)
+      AC_PATH_TOOL(POTENTIAL_$1, $SEARCH_LIST)
       $1=$POTENTIAL_$1
     fi
 

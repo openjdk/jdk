@@ -25,6 +25,8 @@
 
 /**
  * Defines the Preferences API.
+ *
+ * @since 9
  */
 module java.prefs {
     requires java.xml;
