@@ -422,6 +422,11 @@ MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
   if (!mh->init_method_counters(counters)) {
     MetadataFactory::free_metadata(mh->method_holder()->class_loader_data(), counters);
   }
+
+  if (LogTouchedMethods) {
+    mh->log_touched(CHECK_NULL);
+  }
+
   return mh->method_counters();
 }
 
@@ -2129,6 +2134,85 @@ void Method::collect_statistics(KlassSizeStats *sz) const {
   }
 }
 #endif // INCLUDE_SERVICES
+
+// LogTouchedMethods and PrintTouchedMethods
+
+// TouchedMethodRecord -- we can't use a HashtableEntry<Method*> because
+// the Method may be garbage collected. Let's roll our own hash table.
+class TouchedMethodRecord : CHeapObj<mtTracing> {
+public:
+  // It's OK to store Symbols here because they will NOT be GC'ed if
+  // LogTouchedMethods is enabled.
+  TouchedMethodRecord* _next;
+  Symbol* _class_name;
+  Symbol* _method_name;
+  Symbol* _method_signature;
+};
+
+static const int TOUCHED_METHOD_TABLE_SIZE = 20011;
+static TouchedMethodRecord** _touched_method_table = NULL;
+
+void Method::log_touched(TRAPS) {
+
+  const int table_size = TOUCHED_METHOD_TABLE_SIZE;
+  Symbol* my_class = klass_name();
+  Symbol* my_name  = name();
+  Symbol* my_sig   = signature();
+
+  unsigned int hash = my_class->identity_hash() +
+                      my_name->identity_hash() +
+                      my_sig->identity_hash();
+  juint index = juint(hash) % table_size;
+
+  MutexLocker ml(TouchedMethodLog_lock, THREAD);
+  if (_touched_method_table == NULL) {
+    _touched_method_table = NEW_C_HEAP_ARRAY2(TouchedMethodRecord*, table_size,
+                                              mtTracing, CURRENT_PC);
+    memset(_touched_method_table, 0, sizeof(TouchedMethodRecord*)*table_size);
+  }
+
+  TouchedMethodRecord* ptr = _touched_method_table[index];
+  while (ptr) {
+    if (ptr->_class_name       == my_class &&
+        ptr->_method_name      == my_name &&
+        ptr->_method_signature == my_sig) {
+      return;
+    }
+    if (ptr->_next == NULL) break;
+    ptr = ptr->_next;
+  }
+  TouchedMethodRecord* nptr = NEW_C_HEAP_OBJ(TouchedMethodRecord, mtTracing);
+  my_class->set_permanent();  // prevent reclaimed by GC
+  my_name->set_permanent();
+  my_sig->set_permanent();
+  nptr->_class_name         = my_class;
+  nptr->_method_name        = my_name;
+  nptr->_method_signature   = my_sig;
+  nptr->_next               = NULL;
+
+  if (ptr == NULL) {
+    // first
+    _touched_method_table[index] = nptr;
+  } else {
+    ptr->_next = nptr;
+  }
+}
+
+void Method::print_touched_methods(outputStream* out) {
+  MutexLockerEx ml(Thread::current()->is_VM_thread() ? NULL : TouchedMethodLog_lock);
+  out->print_cr("# Method::print_touched_methods version 1");
+  if (_touched_method_table) {
+    for (int i = 0; i < TOUCHED_METHOD_TABLE_SIZE; i++) {
+      TouchedMethodRecord* ptr = _touched_method_table[i];
+      while(ptr) {
+        ptr->_class_name->print_symbol_on(out);       out->print(".");
+        ptr->_method_name->print_symbol_on(out);      out->print(":");
+        ptr->_method_signature->print_symbol_on(out); out->cr();
+        ptr = ptr->_next;
+      }
+    }
+  }
+}
 
 // Verification
 

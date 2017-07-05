@@ -1781,6 +1781,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
        cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
     } else
     if ((EmitSync & 128) == 0) {                      // avoid ST-before-CAS
+       // register juggle because we need tmpReg for cmpxchgptr below
        movptr(scrReg, boxReg);
        movptr(boxReg, tmpReg);                   // consider: LEA box, [tmp-2]
 
@@ -1814,7 +1815,10 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
        }
        cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
        movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
+       // If we weren't able to swing _owner from NULL to the BasicLock
+       // then take the slow path.
        jccb  (Assembler::notZero, DONE_LABEL);
+       // update _owner from BasicLock to thread
        get_thread (scrReg);                    // beware: clobbers ICCs
        movptr(Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), scrReg);
        xorptr(boxReg, boxReg);                 // set icc.ZFlag = 1 to indicate success
@@ -2083,6 +2087,9 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
        xorptr(boxReg, boxReg);                  // box is really EAX
        if (os::is_MP()) { lock(); }
        cmpxchgptr(rsp, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+       // There's no successor so we tried to regrab the lock with the
+       // placeholder value. If that didn't work, then another thread
+       // grabbed the lock so we're done (and exit was a success).
        jccb  (Assembler::notEqual, LSuccess);
        // Since we're low on registers we installed rsp as a placeholding in _owner.
        // Now install Self over rsp.  This is safe as we're transitioning from
@@ -2190,6 +2197,9 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
       movptr(boxReg, (int32_t)NULL_WORD);
       if (os::is_MP()) { lock(); }
       cmpxchgptr(r15_thread, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+      // There's no successor so we tried to regrab the lock.
+      // If that didn't work, then another thread grabbed the
+      // lock so we're done (and exit was a success).
       jccb  (Assembler::notEqual, LSuccess);
       // Intentional fall-through into slow-path
 
