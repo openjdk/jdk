@@ -29,7 +29,7 @@ public interface MonitoredHostService {
 
     /**
      * Construct a MonitoredHost instance to manage the
-     * connection to the host indicated by <tt>hostId</tt>.
+     * connection to the host indicated by {@code hostId}.
      *
      * @param hostId the identifier for the target host.
      * @return MonitoredHost - The MonitoredHost object needed to attach to

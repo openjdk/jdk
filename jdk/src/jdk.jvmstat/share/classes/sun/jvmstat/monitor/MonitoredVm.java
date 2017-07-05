@@ -55,12 +55,12 @@ public interface MonitoredVm {
      * instrumentation exported by this Java Virtual Machine. If an
      * instrumentation object with the given name exists, a Monitor interface
      * to that object will be return. Otherwise, the method returns
-     * <tt>null</tt>.
+     * {@code null}.
      *
      * @param name the name of the Instrumentation object to find.
      * @return Monitor - the {@link Monitor} object that can be used to
      *                   monitor the named instrumentation object, or
-     *                   <tt>null</tt> if the named object doesn't exist.
+     *                   {@code null} if the named object doesn't exist.
      * @throws MonitorException Thrown if an error occurs while communicating
      *                          with the target Java Virtual Machine.
      */
@@ -99,7 +99,7 @@ public interface MonitoredVm {
     /* ---- Methods to support polled MonitoredVm Implementations ---- */
 
     /**
-     * Set the polling interval to <code>interval</code> milliseconds.
+     * Set the polling interval to {@code interval} milliseconds.
      *
      * Polling based monitoring implementations need to refresh the
      * instrumentation data on a periodic basis. This interface allows
@@ -136,10 +136,10 @@ public interface MonitoredVm {
      * Get the last exception encountered while polling this MonitoredVm.
      *
      * Returns the last exception observed by the implementation dependent
-     * polling task or <tt>null</tt> if no such error has occurred.
+     * polling task or {@code null} if no such error has occurred.
      *
      * @return Exception - the last exception that occurred during polling
-     *                     or <tt>null</tt> if no error condition exists.
+     *                     or {@code null} if no error condition exists.
      * @see #isErrored
      * @see #setLastException
      */

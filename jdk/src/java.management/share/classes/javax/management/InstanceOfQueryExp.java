@@ -65,7 +65,7 @@ class InstanceOfQueryExp extends QueryEval implements QueryExp {
 
     /**
      * Returns the class name.
-     * @returns The {@link StringValueExp} returning the name of
+     * @return The {@link StringValueExp} returning the name of
      *        the class of which selected MBeans should be instances.
      */
     public StringValueExp getClassNameValue()  {

@@ -191,7 +191,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
 
     /**
      * return the first token.
-     * @returns the token
+     * @return the token
      * @throws IOException if <code>Negotiator.getNegotiator()</code> or
      *                     <code>Negotiator.firstToken()</code> failed.
      */
@@ -219,7 +219,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     /**
      * return more tokens
      * @param token the token to be fed into <code>negotiator.nextToken()</code>
-     * @returns the token
+     * @return the token
      * @throws IOException if <code>negotiator.nextToken()</code> throws Exception.
      *  May happen if the input token is invalid.
      */

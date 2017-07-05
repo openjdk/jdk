@@ -178,6 +178,26 @@ final class ProviderConfig {
             p = new com.sun.crypto.provider.SunJCE();
         } else if (provName.equals("SunJSSE") || provName.equals("com.sun.net.ssl.internal.ssl.Provider")) {
             p = new com.sun.net.ssl.internal.ssl.Provider();
+        } else if (provName.equals("Apple") || provName.equals("apple.security.AppleProvider")) {
+            // need to use reflection since this class only exists on MacOsx
+            p = AccessController.doPrivileged(new PrivilegedAction<Provider>() {
+                public Provider run() {
+                    try {
+                        Class<?> c = Class.forName("apple.security.AppleProvider");
+                        if (Provider.class.isAssignableFrom(c)) {
+                            return (Provider) c.newInstance();
+                        } else {
+                            return null;
+                        }
+                    } catch (Exception ex) {
+                        if (debug != null) {
+                        debug.println("Error loading provider Apple");
+                        ex.printStackTrace();
+                    }
+                    return null;
+                }
+             }
+             });
         } else {
             if (isLoading) {
                 // because this method is synchronized, this can only

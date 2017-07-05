@@ -73,6 +73,8 @@ public class TestTotalSwap {
     private static final long MAX_SIZE_FOR_PASS = Long.MAX_VALUE;
 
     public static void main(String args[]) throws Throwable {
+        // yocto might ignore the request to report swap size in bytes
+        boolean swapInKB = mbean.getVersion().contains("yocto");
 
         long expected_swap_size = getSwapSizeFromOs();
 
@@ -87,10 +89,13 @@ public class TestTotalSwap {
 
         if (expected_swap_size > -1) {
             if (size != expected_swap_size) {
-                throw new RuntimeException("Expected total swap size      : " +
-                                           expected_swap_size +
-                                           " but getTotalSwapSpaceSize returned: " +
-                                           size);
+                // try the expected size in kiloBytes
+                if (!(swapInKB && expected_swap_size * 1024 == size)) {
+                    throw new RuntimeException("Expected total swap size      : " +
+                                               expected_swap_size +
+                                               " but getTotalSwapSpaceSize returned: " +
+                                               size);
+                }
             }
         }
 

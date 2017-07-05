@@ -49,10 +49,12 @@ import org.testng.TestNG;
 
 /*
  * @test
+ * @bug 8077350 8081566 8081567 8098852
  * @build jdk.testlibrary.*
  * @library /lib/testlibrary
  * @summary Functions of ProcessHandle.Info
  * @author Roger Riggs
+ * @key intermittent
  */
 
 public class InfoTest {
@@ -136,7 +138,17 @@ public class InfoTest {
                         }
                     }
 
-
+                    if (Platform.isAix()) {
+                        // Unfortunately, on AIX the usr/sys times reported through
+                        // /proc/<pid>/psinfo which are used by ProcessHandle.Info
+                        // are running slow compared to the corresponding times reported
+                        // by the times()/getrusage() system calls which are used by
+                        // OperatingSystemMXBean.getProcessCpuTime() and returned by
+                        // the JavaChild for the "cputime" command.
+                        // This is because /proc/<pid>/status is only updated once a second.
+                        // So we better wait a little bit to get plausible values here.
+                        Thread.sleep(1000);
+                    }
                     ProcessHandle.Info info = p1.info();
                     System.out.printf(" info: %s%n", info);
 
@@ -160,19 +172,10 @@ public class InfoTest {
                     if (info.arguments().isPresent()) {
                         String[] args = info.arguments().get();
 
-                        if (Platform.isLinux() || Platform.isOSX()) {
-                            int offset = args.length - extraArgs.length;
-                            for (int i = 0; i < extraArgs.length; i++) {
-                                Assert.assertEquals(args[offset + i], extraArgs[i],
-                                        "Actual argument mismatch, index: " + i);
-                            }
-                        } else if (Platform.isSolaris()) {
-                            Assert.assertEquals(args.length, 1,
-                                    "Expected argument list length: 1");
-                            Assert.assertNotNull(args[0],
-                                    "Expected an argument");
-                        } else {
-                            System.out.printf("No argument test for OS: %s%n", Platform.getOsName());
+                        int offset = args.length - extraArgs.length;
+                        for (int i = 0; i < extraArgs.length; i++) {
+                            Assert.assertEquals(args[offset + i], extraArgs[i],
+                                                "Actual argument mismatch, index: " + i);
                         }
 
                         // Now check that the first argument is not the same as the executed command
@@ -180,6 +183,46 @@ public class InfoTest {
                             Assert.assertNotEquals(args[0], command,
                                     "First argument should not be the executable: args[0]: "
                                             + args[0] + ", command: " + command);
+                        }
+                    }
+
+                    if (command.isPresent() && info.arguments().isPresent()) {
+                        // If both, 'command' and 'arguments' are present,
+                        // 'commandLine' is just the concatenation of the two.
+                        Assert.assertTrue(info.commandLine().isPresent(),
+                                          "commandLine() must be available");
+
+                        String javaExe = System.getProperty("test.jdk") +
+                                File.separator + "bin" + File.separator + "java";
+                        String expected = Platform.isWindows() ? javaExe + ".exe" : javaExe;
+                        Path expectedPath = Paths.get(expected);
+                        String commandLine = info.commandLine().get();
+                        String commandLineCmd = commandLine.split(" ")[0];
+                        Path commandLineCmdPath = Paths.get(commandLineCmd);
+                        Assert.assertTrue(Files.isSameFile(commandLineCmdPath, expectedPath),
+                                          "commandLine() should start with: " + expectedPath +
+                                          " but starts with " + commandLineCmdPath);
+
+                        List<String> allArgs = p1.getArgs();
+                        for (int i = 0; i < allArgs.size(); i++) {
+                            Assert.assertTrue(commandLine.contains(allArgs.get(i)),
+                                              "commandLine() must contain argument: " + allArgs.get(i));
+                        }
+                    } else if (info.commandLine().isPresent()) {
+                        // If we only have the commandLine() we can only do some basic checks...
+                        String commandLine = info.commandLine().get();
+                        String javaExe = "java" + (Platform.isWindows() ? ".exe": "");
+                        int pos = commandLine.indexOf(javaExe);
+                        Assert.assertTrue(pos > 0, "commandLine() should at least contain 'java'");
+
+                        pos += javaExe.length() + 1; // +1 for the space after the command
+                        List<String> allArgs = p1.getArgs();
+                        // First argument is the command - skip it here as we've already checked that.
+                        for (int i = 1; (i < allArgs.size()) &&
+                                        (pos + allArgs.get(i).length() < commandLine.length()); i++) {
+                            Assert.assertTrue(commandLine.contains(allArgs.get(i)),
+                                              "commandLine() must contain argument: " + allArgs.get(i));
+                            pos += allArgs.get(i).length() + 1;
                         }
                     }
 
@@ -269,10 +312,27 @@ public class InfoTest {
     public static void test4() {
         Duration myCputime1 = ProcessUtil.MXBeanCpuTime();
 
+        if (Platform.isAix()) {
+            // Unfortunately, on AIX the usr/sys times reported through
+            // /proc/<pid>/psinfo which are used by ProcessHandle.Info
+            // are running slow compared to the corresponding times reported
+            // by the times()/getrusage() system calls which are used by
+            // OperatingSystemMXBean.getProcessCpuTime() and returned by
+            // the JavaChild for the "cputime" command.
+            // So we better wait a little bit to get plausible values here.
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {}
+        }
         Optional<Duration> dur1 = ProcessHandle.current().info().totalCpuDuration();
 
         Duration myCputime2 = ProcessUtil.MXBeanCpuTime();
 
+        if (Platform.isAix()) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {}
+        }
         Optional<Duration> dur2 = ProcessHandle.current().info().totalCpuDuration();
 
         if (dur1.isPresent() && dur2.isPresent()) {
