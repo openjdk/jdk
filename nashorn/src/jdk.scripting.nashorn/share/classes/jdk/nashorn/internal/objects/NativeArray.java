@@ -1726,7 +1726,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object entries(final Object self) {
-        return new ArrayIterator(Global.toObject(self), AbstractIterator.IterationKind.KEY_VALUE, Global.instance());
+        return ArrayIterator.newArrayKeyValueIterator(self);
     }
 
     /**
@@ -1737,7 +1737,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object keys(final Object self) {
-        return new ArrayIterator(Global.toObject(self), AbstractIterator.IterationKind.KEY, Global.instance());
+        return ArrayIterator.newArrayKeyIterator(self);
     }
 
     /**
@@ -1748,7 +1748,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object values(final Object self) {
-        return new ArrayIterator(Global.toObject(self), AbstractIterator.IterationKind.VALUE, Global.instance());
+        return ArrayIterator.newArrayValueIterator(self);
     }
 
     /**
@@ -1759,7 +1759,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, name = "@@iterator")
     public static Object getIterator(final Object self) {
-        return new ArrayIterator(Global.toObject(self), AbstractIterator.IterationKind.VALUE, Global.instance());
+        return ArrayIterator.newArrayValueIterator(self);
     }
 
     /**

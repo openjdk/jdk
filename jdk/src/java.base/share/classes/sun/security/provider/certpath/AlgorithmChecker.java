@@ -185,20 +185,22 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             AlgorithmConstraints constraints,
             Date pkixdate) {
 
-        if (anchor == null) {
-            throw new IllegalArgumentException(
-                    "The trust anchor cannot be null");
-        }
-
-        if (anchor.getTrustedCert() != null) {
-            this.trustedPubKey = anchor.getTrustedCert().getPublicKey();
-            // Check for anchor certificate restrictions
-            trustedMatch = checkFingerprint(anchor.getTrustedCert());
-            if (trustedMatch && debug != null) {
-                debug.println("trustedMatch = true");
+        if (anchor != null) {
+            if (anchor.getTrustedCert() != null) {
+                this.trustedPubKey = anchor.getTrustedCert().getPublicKey();
+                // Check for anchor certificate restrictions
+                trustedMatch = checkFingerprint(anchor.getTrustedCert());
+                if (trustedMatch && debug != null) {
+                    debug.println("trustedMatch = true");
+                }
+            } else {
+                this.trustedPubKey = anchor.getCAPublicKey();
             }
         } else {
-            this.trustedPubKey = anchor.getCAPublicKey();
+            this.trustedPubKey = null;
+            if (debug != null) {
+                debug.println("TrustAnchor is null, trustedMatch is false.");
+            }
         }
 
         this.prevPubKey = trustedPubKey;

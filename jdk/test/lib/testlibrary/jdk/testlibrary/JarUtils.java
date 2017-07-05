@@ -24,6 +24,7 @@
 package jdk.testlibrary;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,7 +41,8 @@ import java.util.jar.Manifest;
 public final class JarUtils {
 
     /**
-     * Create jar file with specified files.
+     * Create jar file with specified files. If a specified file does not exist,
+     * a new jar entry will be created with the file name itself as the content.
      */
     public static void createJar(String dest, String... files)
             throws IOException {
@@ -54,6 +56,8 @@ public final class JarUtils {
                 jos.putNextEntry(new JarEntry(file));
                 try (FileInputStream fis = new FileInputStream(file)) {
                     fis.transferTo(jos);
+                } catch (FileNotFoundException e) {
+                    jos.write(file.getBytes());
                 }
             }
         }
@@ -61,7 +65,17 @@ public final class JarUtils {
     }
 
     /**
-     * Add specified files to existing jar file.
+     * Add or remove specified files to existing jar file. If a specified file
+     * to be updated or added does not exist, the jar entry will be created
+     * with the file name itself as the content.
+     *
+     * @param src the original jar file name
+     * @param dest the new jar file name
+     * @param files the files to update. The list is broken into 2 groups
+     *              by a "-" string. The files before in the 1st group will
+     *              be either updated or added. The files in the 2nd group
+     *              will be removed. If no "-" exists, all files belong to
+     *              the 1st group.
      */
     public static void updateJar(String src, String dest, String... files)
             throws IOException {
@@ -77,8 +91,11 @@ public final class JarUtils {
                     JarEntry entry = entries.nextElement();
                     String name = entry.getName();
                     boolean found = false;
+                    boolean update = true;
                     for (String file : files) {
-                        if (name.equals(file)) {
+                        if (file.equals("-")) {
+                            update = false;
+                        } else if (name.equals(file)) {
                             updatedFiles.add(file);
                             found = true;
                             break;
@@ -86,11 +103,18 @@ public final class JarUtils {
                     }
 
                     if (found) {
-                        System.out.println(String.format("Updating %s with %s",
-                                dest, name));
-                        jos.putNextEntry(new JarEntry(name));
-                        try (FileInputStream fis = new FileInputStream(name)) {
-                            fis.transferTo(jos);
+                        if (update) {
+                            System.out.println(String.format("Updating %s with %s",
+                                    dest, name));
+                            jos.putNextEntry(new JarEntry(name));
+                            try (FileInputStream fis = new FileInputStream(name)) {
+                                fis.transferTo(jos);
+                            } catch (FileNotFoundException e) {
+                                jos.write(name.getBytes());
+                            }
+                        } else {
+                            System.out.println(String.format("Removing %s from %s",
+                                    name, dest));
                         }
                     } else {
                         System.out.println(String.format("Copying %s to %s",
@@ -103,12 +127,17 @@ public final class JarUtils {
 
             // append new files
             for (String file : files) {
+                if (file.equals("-")) {
+                    break;
+                }
                 if (!updatedFiles.contains(file)) {
                     System.out.println(String.format("Adding %s with %s",
                             dest, file));
                     jos.putNextEntry(new JarEntry(file));
                     try (FileInputStream fis = new FileInputStream(file)) {
                         fis.transferTo(jos);
+                    } catch (FileNotFoundException e) {
+                        jos.write(file.getBytes());
                     }
                 }
             }

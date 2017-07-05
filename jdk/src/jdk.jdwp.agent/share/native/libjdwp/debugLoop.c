@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,6 +216,20 @@ reader(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg)
 
         /* I/O error or EOF */
         if (rc != 0 || (rc == 0 && packet.type.cmd.len == 0)) {
+            shouldListen = JNI_FALSE;
+            notifyTransportError();
+        } else if (packet.type.cmd.flags != JDWPTRANSPORT_FLAGS_NONE) {
+            /*
+             * Close the connection when we get a jdwpCmdPacket with an
+             * invalid flags field value. This is a protocol violation
+             * so we drop the connection. Also this could be a web
+             * browser generating an HTTP request that passes the JDWP
+             * handshake. HTTP requests requires that everything be in
+             * the ASCII printable range so a flags value of
+             * JDWPTRANSPORT_FLAGS_NONE(0) cannot be generated via HTTP.
+             */
+            ERROR_MESSAGE(("Received jdwpPacket with flags != 0x%d (actual=0x%x) when a jdwpCmdPacket was expected.",
+                           JDWPTRANSPORT_FLAGS_NONE, packet.type.cmd.flags));
             shouldListen = JNI_FALSE;
             notifyTransportError();
         } else {
