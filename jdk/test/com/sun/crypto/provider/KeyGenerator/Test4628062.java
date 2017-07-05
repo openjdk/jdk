@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,6 @@ public class Test4628062 {
     }
 
     public static void main (String[] args) throws Exception {
-        Security.addProvider(new com.sun.crypto.provider.SunJCE());
-
         Test4628062 test = new Test4628062();
         String testName = test.getClass().getName();
         if (test.execute("AES", AES_SIZES)) {

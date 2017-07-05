@@ -25,14 +25,6 @@
  * @test
  * @bug 7077646
  * @summary gssapi wrap for CFX per-message tokens always set FLAG_ACCEPTOR_SUBKEY
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.jgss
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @compile -XDignore.symbol.file AcceptorSubKey.java
  * @run main/othervm AcceptorSubKey 0
  * @run main/othervm AcceptorSubKey 4

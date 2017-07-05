@@ -333,59 +333,36 @@ public final class DOMImplementationRegistry {
     }
 
     /**
-     * A simple JRE (Java Runtime Environment) 1.1 test
-     *
-     * @return <code>true</code> if JRE 1.1
-     */
-    private static boolean isJRE11() {
-        try {
-            Class c = Class.forName("java.security.AccessController");
-            // java.security.AccessController existed since 1.2 so, if no
-            // exception was thrown, the DOM application is running in a JRE
-            // 1.2 or higher
-            return false;
-        } catch (Exception ex) {
-            // ignore
-        }
-        return true;
-    }
-
-    /**
-     * This method returns the ContextClassLoader or <code>null</code> if
-     * running in a JRE 1.1
+     * This method returns the ContextClassLoader.
      *
      * @return The Context Classloader
      */
     private static ClassLoader getContextClassLoader() {
-        return isJRE11()
-            ? null
-            : (ClassLoader)
-              AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        ClassLoader classLoader = null;
-                        try {
-                            classLoader =
-                                Thread.currentThread().getContextClassLoader();
-                        } catch (SecurityException ex) {
-                        }
-                        return classLoader;
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
+                @Override
+                public ClassLoader run() {
+                    ClassLoader classLoader = null;
+                    try {
+                        classLoader =
+                            Thread.currentThread().getContextClassLoader();
+                    } catch (SecurityException ex) {
                     }
-                });
+                    return classLoader;
+                }
+            });
     }
 
     /**
      * This method returns the system property indicated by the specified name
-     * after checking access control privileges. For a JRE 1.1, this check is
-     * not done.
+     * after checking access control privileges.
      *
      * @param name the name of the system property
      * @return the system property
      */
     private static String getSystemProperty(final String name) {
-        return isJRE11()
-            ? (String) System.getProperty(name)
-            : (String) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
+                    @Override
+                    public String run() {
                         return System.getProperty(name);
                     }
                 });
@@ -394,7 +371,7 @@ public final class DOMImplementationRegistry {
     /**
      * This method returns an Inputstream for the reading resource
      * META_INF/services/org.w3c.dom.DOMImplementationSourceList after checking
-     * access control privileges. For a JRE 1.1, this check is not done.
+     * access control privileges.
      *
      * @param classLoader classLoader
      * @param name the resource
@@ -402,28 +379,18 @@ public final class DOMImplementationRegistry {
      */
     private static InputStream getResourceAsStream(final ClassLoader classLoader,
                                                    final String name) {
-        if (isJRE11()) {
-            InputStream ris;
-            if (classLoader == null) {
-                ris = ClassLoader.getSystemResourceAsStream(name);
-            } else {
-                ris = classLoader.getResourceAsStream(name);
-            }
-            return ris;
-        } else {
-            return (InputStream)
-                AccessController.doPrivileged(new PrivilegedAction() {
-                        public Object run() {
-                            InputStream ris;
-                            if (classLoader == null) {
-                                ris =
-                                    ClassLoader.getSystemResourceAsStream(name);
-                            } else {
-                                ris = classLoader.getResourceAsStream(name);
-                            }
-                            return ris;
-                        }
-                    });
-        }
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
+                @Override
+                public InputStream run() {
+                    InputStream ris;
+                    if (classLoader == null) {
+                        ris =
+                            ClassLoader.getSystemResourceAsStream(name);
+                    } else {
+                        ris = classLoader.getResourceAsStream(name);
+                    }
+                    return ris;
+                }
+            });
     }
 }

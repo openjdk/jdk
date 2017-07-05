@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,10 +68,8 @@ public class BlowfishTestVector {
 
     public static void main(String[] argv) throws Exception {
 
-        Provider p = new com.sun.crypto.provider.SunJCE();
-        Security.addProvider(p);
         String transformation = "Blowfish/ECB/NoPadding";
-        Cipher cipher = Cipher.getInstance(transformation);
+        Cipher cipher = Cipher.getInstance(transformation, "SunJCE");
         int MAX_KEY_SIZE = Cipher.getMaxAllowedKeyLength(transformation);
         //
         // test 1

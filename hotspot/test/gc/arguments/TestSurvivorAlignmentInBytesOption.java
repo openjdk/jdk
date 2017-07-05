@@ -45,9 +45,9 @@ public class TestSurvivorAlignmentInBytesOption {
         String optionIsExperimental
                 = CommandLineOptionTest.getExperimentalOptionErrorMessage(
                 optionName);
-        String valueIsTooSmall= ".*SurvivorAlignmentInBytes=.*must be greater"
-                + " than ObjectAlignmentInBytes.*";
-        String mustBePowerOf2 = ".*SurvivorAlignmentInBytes=.*must be "
+        String valueIsTooSmall= ".*SurvivorAlignmentInBytes.*must be greater"
+                + " than or equal to ObjectAlignmentInBytes.*";
+        String mustBePowerOf2 = ".*SurvivorAlignmentInBytes.*must be "
                 + "power of 2.*";
 
         // Verify that without -XX:+UnlockExperimentalVMOptions usage of

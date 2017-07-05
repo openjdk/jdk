@@ -110,6 +110,12 @@ public class TransformerException extends Exception {
      */
     public synchronized Throwable initCause(Throwable cause) {
 
+        // TransformerException doesn't set its cause (probably
+        // because it predates initCause()) - and we may not want
+        // to change this since Exceptions are serializable...
+        // But this also leads to the broken code in printStackTrace
+        // below...
+
         if (this.containedException != null) {
             throw new IllegalStateException("Can't overwrite cause");
         }
@@ -312,61 +318,57 @@ public class TransformerException extends Exception {
         }
 
         try {
-            String locInfo = getLocationAsString();
-
-            if (null != locInfo) {
-                s.println(locInfo);
-            }
-
-            super.printStackTrace(s);
-        } catch (Throwable e) {}
-
-        Throwable exception = getException();
-
-        for (int i = 0; (i < 10) && (null != exception); i++) {
-            s.println("---------");
-
             try {
-                if (exception instanceof TransformerException) {
-                    String locInfo =
-                        ((TransformerException) exception)
-                            .getLocationAsString();
+                String locInfo = getLocationAsString();
 
-                    if (null != locInfo) {
-                        s.println(locInfo);
-                    }
+                if (null != locInfo) {
+                    s.println(locInfo);
                 }
 
-                exception.printStackTrace(s);
-            } catch (Throwable e) {
-                s.println("Could not print stack trace...");
-            }
+                super.printStackTrace(s);
+            } catch (Throwable e) {}
 
-            try {
-                Method meth =
-                    ((Object) exception).getClass().getMethod("getException",
-                        (Class[]) null);
+            Throwable exception = getException();
 
-                if (null != meth) {
-                    Throwable prev = exception;
+            for (int i = 0; (i < 10) && (null != exception); i++) {
+                s.println("---------");
 
-                    exception = (Throwable) meth.invoke(exception, (Object[]) null);
+                try {
+                    exception.printStackTrace(s);
+                    // if exception is a TransformerException it will print
+                    // its contained exception, so we don't need to redo it here,
+                    // and we can exit the loop now.
+                    if (exception instanceof TransformerException) break;
+                } catch (Throwable e) {
+                    s.println("Could not print stack trace...");
+                }
 
-                    if (prev == exception) {
-                        break;
+                try {
+                    // Is this still needed?
+                    Method meth = exception.getClass().getMethod("getException");
+
+                    if (null != meth) {
+                        Throwable prev = exception;
+
+                        exception = (Throwable) meth.invoke(exception, (Object[]) null);
+
+                        if (prev == exception) {
+                            break;
+                        }
+                    } else {
+                        exception = null;
                     }
-                } else {
+                } catch (InvocationTargetException ite) {
+                    exception = null;
+                } catch (IllegalAccessException iae) {
+                    exception = null;
+                } catch (NoSuchMethodException nsme) {
                     exception = null;
                 }
-            } catch (InvocationTargetException ite) {
-                exception = null;
-            } catch (IllegalAccessException iae) {
-                exception = null;
-            } catch (NoSuchMethodException nsme) {
-                exception = null;
             }
+        } finally {
+            // ensure output is written
+            s.flush();
         }
-        // insure output is written
-        s.flush();
     }
 }

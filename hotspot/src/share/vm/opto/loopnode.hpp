@@ -62,7 +62,9 @@ protected:
          HasExactTripCount=8,
          InnerLoop=16,
          PartialPeelLoop=32,
-         PartialPeelFailed=64 };
+         PartialPeelFailed=64,
+         HasReductions=128,
+         PassedSlpAnalysis=256 };
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
@@ -77,6 +79,8 @@ public:
   void set_partial_peel_loop() { _loop_flags |= PartialPeelLoop; }
   int partial_peel_has_failed() const { return _loop_flags & PartialPeelFailed; }
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
+  void mark_has_reductions() { _loop_flags |= HasReductions; }
+  void mark_passed_slp() { _loop_flags |= PassedSlpAnalysis; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -155,11 +159,15 @@ class CountedLoopNode : public LoopNode {
   // unroll,optimize,unroll,optimize,... is making progress
   int _node_count_before_unroll;
 
+  // If slp analysis is performed we record the maximum
+  // vector mapped unroll factor here
+  int _slp_maximum_unroll_factor;
+
 public:
   CountedLoopNode( Node *entry, Node *backedge )
     : LoopNode(entry, backedge), _main_idx(0), _trip_count(max_juint),
       _profile_trip_cnt(COUNT_UNKNOWN), _unrolled_count_log2(0),
-      _node_count_before_unroll(0) {
+      _node_count_before_unroll(0), _slp_maximum_unroll_factor(0) {
     init_class_id(Class_CountedLoop);
     // Initialize _trip_count to the largest possible value.
     // Will be reset (lower) if the loop's trip count is known.
@@ -199,10 +207,12 @@ public:
 
   // A 'main' loop that is ONLY unrolled or peeled, never RCE'd or
   // Aligned, may be missing it's pre-loop.
-  int is_normal_loop() const { return (_loop_flags&PreMainPostFlagsMask) == Normal; }
-  int is_pre_loop   () const { return (_loop_flags&PreMainPostFlagsMask) == Pre;    }
-  int is_main_loop  () const { return (_loop_flags&PreMainPostFlagsMask) == Main;   }
-  int is_post_loop  () const { return (_loop_flags&PreMainPostFlagsMask) == Post;   }
+  int is_normal_loop   () const { return (_loop_flags&PreMainPostFlagsMask) == Normal; }
+  int is_pre_loop      () const { return (_loop_flags&PreMainPostFlagsMask) == Pre;    }
+  int is_main_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Main;   }
+  int is_post_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Post;   }
+  int is_reduction_loop() const { return (_loop_flags&HasReductions) == HasReductions; }
+  int has_passed_slp   () const { return (_loop_flags&PassedSlpAnalysis) == PassedSlpAnalysis; }
   int is_main_no_pre_loop() const { return _loop_flags & MainHasNoPreLoop; }
   void set_main_no_pre_loop() { _loop_flags |= MainHasNoPreLoop; }
 
@@ -232,8 +242,10 @@ public:
   void double_unrolled_count() { _unrolled_count_log2++; }
   int  unrolled_count()        { return 1 << MIN2(_unrolled_count_log2, BitsPerInt-3); }
 
-  void set_node_count_before_unroll(int ct) { _node_count_before_unroll = ct; }
-  int  node_count_before_unroll()           { return _node_count_before_unroll; }
+  void set_node_count_before_unroll(int ct)  { _node_count_before_unroll = ct; }
+  int  node_count_before_unroll()            { return _node_count_before_unroll; }
+  void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
+  int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -336,6 +348,8 @@ public:
   Node *_tail;                  // Tail of loop
   inline Node *tail();          // Handle lazy update of _tail field
   PhaseIdealLoop* _phase;
+  int _local_loop_unroll_limit;
+  int _local_loop_unroll_factor;
 
   Node_List _body;              // Loop body for inner loops
 
@@ -356,7 +370,8 @@ public:
       _safepts(NULL),
       _required_safept(NULL),
       _allow_optimizations(true),
-      _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0)
+      _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0),
+      _local_loop_unroll_limit(0), _local_loop_unroll_factor(0)
   { }
 
   // Is 'l' a member of 'this'?
@@ -444,7 +459,10 @@ public:
 
   // Return TRUE or FALSE if the loop should be unrolled or not.  Unroll if
   // the loop is a CountedLoop and the body is small enough.
-  bool policy_unroll( PhaseIdealLoop *phase ) const;
+  bool policy_unroll(PhaseIdealLoop *phase);
+
+  // Loop analyses to map to a maximal superword unrolling for vectorization.
+  void policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLoop *phase, int future_unroll_ct);
 
   // Return TRUE or FALSE if the loop should be range-check-eliminated.
   // Gather a list of IF tests that are dominated by iteration splitting;

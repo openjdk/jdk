@@ -72,7 +72,7 @@ inline void ParScanClosure::do_oop_work(T* p,
                                         bool root_scan) {
   assert((!GenCollectedHeap::heap()->is_in_reserved(p) ||
           generation()->is_in_reserved(p))
-         && (generation()->level() == 0 || gc_barrier),
+         && (GenCollectedHeap::heap()->is_young_gen(generation()) || gc_barrier),
          "The gen must be right, and we must be doing the barrier "
          "in older generations.");
   T heap_oop = oopDesc::load_heap_oop(p);

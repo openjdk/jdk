@@ -24,13 +24,6 @@
 /*
  * @test
  * @bug 6843127
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
- *          java.security.jgss/sun.security.krb5
- *          java.security.jgss/sun.security.krb5.internal
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @run main/othervm/timeout=300 BadKdc3
  * @summary krb5 should not try to access unavailable kdc too often
  */
