@@ -571,8 +571,6 @@ void VMError::report(outputStream* st) {
        if (fr.pc()) {
           st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
 
-          // initialize decoder to decode C frames
-          Decoder decoder;
 
           int count = 0;
           while (count++ < StackPrintLimit) {

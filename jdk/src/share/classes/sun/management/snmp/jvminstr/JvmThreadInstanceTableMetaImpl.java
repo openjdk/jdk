@@ -78,6 +78,8 @@ import sun.management.snmp.util.JvmContextFactory;
 public class JvmThreadInstanceTableMetaImpl
     extends JvmThreadInstanceTableMeta {
 
+    static final long serialVersionUID = -8432271929226397492L;
+
     /**
      * Maximum depth of the stacktrace that might be returned through
      * SNMP.
@@ -135,6 +137,7 @@ public class JvmThreadInstanceTableMetaImpl
     private static class JvmThreadInstanceTableCache
         extends SnmpTableCache {
 
+        static final long serialVersionUID = 4947330124563406878L;
         final private JvmThreadInstanceTableMetaImpl meta;
 
         /**
@@ -151,7 +154,7 @@ public class JvmThreadInstanceTableMetaImpl
          * Call <code>getTableDatas(JvmContextFactory.getUserData())</code>.
          **/
         public SnmpTableHandler getTableHandler() {
-            final Map userData = JvmContextFactory.getUserData();
+            final Map<Object, Object> userData = JvmContextFactory.getUserData();
             return getTableDatas(userData);
         }
 
@@ -172,7 +175,7 @@ public class JvmThreadInstanceTableMetaImpl
 
             SnmpOid indexes[] = new SnmpOid[id.length];
             final TreeMap<SnmpOid, Object> table =
-                    new TreeMap<SnmpOid, Object>(SnmpCachedData.oidComparator);
+                    new TreeMap<>(SnmpCachedData.oidComparator);
             for(int i = 0; i < id.length; i++) {
                 log.debug("", "Making index for thread id [" + id[i] +"]");
                 //indexes[i] = makeOid(id[i]);
@@ -277,7 +280,7 @@ public class JvmThreadInstanceTableMetaImpl
 
         // Get the request contextual cache (userData).
         //
-        final Map m = JvmContextFactory.getUserData();
+        final Map<Object,Object> m = JvmContextFactory.getUserData();
 
         // Get the handler.
         //

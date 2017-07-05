@@ -73,7 +73,7 @@ public class PerfInstrumentation {
         buffer.position(prologue.getEntryOffset());
         nextEntry = buffer.position();
         // rebuild all the counters
-        map = new TreeMap<String, Counter>();
+        map = new TreeMap<>();
     }
 
     boolean hasNext() {
@@ -154,7 +154,7 @@ public class PerfInstrumentation {
                 map.put(c.getName(), c);
             }
         }
-        return new ArrayList<Counter>(map.values());
+        return new ArrayList<>(map.values());
     }
 
     public synchronized List<Counter> findByPattern(String patternString) {
@@ -167,7 +167,8 @@ public class PerfInstrumentation {
 
         Pattern pattern = Pattern.compile(patternString);
         Matcher matcher = pattern.matcher("");
-        List<Counter> matches = new ArrayList<Counter>();
+        List<Counter> matches = new ArrayList<>();
+
 
         for (Map.Entry<String,Counter> me: map.entrySet()) {
             String name = me.getKey();

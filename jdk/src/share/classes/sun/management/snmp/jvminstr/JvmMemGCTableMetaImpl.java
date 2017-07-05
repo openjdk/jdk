@@ -58,6 +58,8 @@ import sun.management.snmp.util.JvmContextFactory;
  */
 public class JvmMemGCTableMetaImpl extends  JvmMemGCTableMeta {
 
+    static final long serialVersionUID = 8250461197108867607L;
+
     /**
      * This class acts as a filter over the SnmpTableHandler
      * used for the JvmMemoryManagerTable. It filters out

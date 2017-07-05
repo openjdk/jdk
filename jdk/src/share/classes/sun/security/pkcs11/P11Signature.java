@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,7 @@ final class P11Signature extends SignatureSpi {
                 if (keyAlgorithm.equals("DSA")) {
                     signature = new byte[40];
                 } else {
-                    signature = new byte[(p11Key.keyLength() + 7) >> 3];
+                    signature = new byte[(p11Key.length() + 7) >> 3];
                 }
                 if (type == T_UPDATE) {
                     token.p11.C_VerifyFinal(session.id(), signature);
@@ -357,7 +357,7 @@ final class P11Signature extends SignatureSpi {
         if (keyAlgorithm.equals("RSA") && publicKey != p11Key) {
             int keyLen;
             if (publicKey instanceof P11Key) {
-                keyLen = ((P11Key) publicKey).keyLength();
+                keyLen = ((P11Key) publicKey).length();
             } else {
                 keyLen = ((RSAKey) publicKey).getModulus().bitLength();
             }
@@ -618,7 +618,7 @@ final class P11Signature extends SignatureSpi {
 
     private byte[] pkcs1Pad(byte[] data) {
         try {
-            int len = (p11Key.keyLength() + 7) >> 3;
+            int len = (p11Key.length() + 7) >> 3;
             RSAPadding padding = RSAPadding.getInstance
                                         (RSAPadding.PAD_BLOCKTYPE_1, len);
             byte[] padded = padding.pad(data);

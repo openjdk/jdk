@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6402006
+ * @bug 6402006 7030573
  * @summary Test if available returns correct value when reading
  *          a large file.
  */
@@ -35,23 +35,35 @@ import java.nio.file.Files;
 import static java.nio.file.StandardOpenOption.*;
 
 public class LargeFileAvailable {
-    private static final long FILESIZE = 7405576182L;
     public static void main(String args[]) throws Exception {
-        File file = createLargeFile(FILESIZE);
+        // Create a temporary file in the current directory.
+        // Use it to check if we have 7G available for
+        // a large sparse file test. As a fallback use whatever
+        // space is available, so the test can proceed.
+        File file = File.createTempFile("largefile", null, new File("."));
+        long spaceavailable = file.getUsableSpace();
+        long filesize = Math.min(spaceavailable,  7405576182L);
+        if (spaceavailable == 0L) {
+            // A full disk is considered fatal.
+            throw new RuntimeException("No space available for temp file.");
+        }
+
+        createLargeFile(filesize, file);
+
         try (FileInputStream fis = new FileInputStream(file)) {
-            if (file.length() != FILESIZE) {
-                throw new RuntimeException("unexpected file size = " + file.length());
+            if (file.length() != filesize) {
+                throw new RuntimeException("unexpected file size = "
+                                           + file.length());
             }
 
-            long bigSkip = 3110608882L;
-            long remaining = FILESIZE;
+            long bigSkip = Math.min(filesize/2, 3110608882L);
+            long remaining = filesize;
             remaining -= skipBytes(fis, bigSkip, remaining);
             remaining -= skipBytes(fis, 10L, remaining);
             remaining -= skipBytes(fis, bigSkip, remaining);
             if (fis.available() != (int) remaining) {
-                 throw new RuntimeException("available() returns " +
-                     fis.available() +
-                     " but expected " + remaining);
+                 throw new RuntimeException("available() returns "
+                     + fis.available() + " but expected " + remaining);
             }
         } finally {
             file.delete();
@@ -64,39 +76,41 @@ public class LargeFileAvailable {
             throws IOException {
         long skip = is.skip(toSkip);
         if (skip != toSkip) {
-            throw new RuntimeException("skip() returns " + skip +
-                " but expected " + toSkip);
+            throw new RuntimeException("skip() returns " + skip
+                + " but expected " + toSkip);
         }
         long remaining = avail - skip;
         int expected = remaining >= Integer.MAX_VALUE
                            ? Integer.MAX_VALUE
                            : (int) remaining;
 
-        System.out.println("Skipped " + skip + " bytes " +
-            " available() returns " + expected +
+        System.out.println("Skipped " + skip + " bytes "
+            + " available() returns " + expected +
             " remaining=" + remaining);
         if (is.available() != expected) {
-            throw new RuntimeException("available() returns " +
-                is.available() + " but expected " + expected);
+            throw new RuntimeException("available() returns "
+                + is.available() + " but expected " + expected);
         }
         return skip;
     }
 
-    private static File createLargeFile(long filesize) throws Exception {
-        // Create a large file as a sparse file if possible
-        File largefile = File.createTempFile("largefile", null);
-        // re-create as a sparse file
-        Files.delete(largefile.toPath());
+    private static void createLargeFile(long filesize,
+                                        File file) throws Exception {
+        // Recreate a large file as a sparse file if possible
+        Files.delete(file.toPath());
+
         try (FileChannel fc =
-                FileChannel.open(largefile.toPath(),
-                                 CREATE_NEW, WRITE, SPARSE)) {
+             FileChannel.open(file.toPath(),
+                              CREATE_NEW, WRITE, SPARSE)) {
             ByteBuffer bb = ByteBuffer.allocate(1).put((byte)1);
             bb.rewind();
-            int rc = fc.write(bb, filesize-1);
+            int rc = fc.write(bb, filesize - 1);
+
             if (rc != 1) {
-                throw new RuntimeException("Failed to write 1 byte to the large file");
+                throw new RuntimeException("Failed to write 1 byte"
+                                           + " to the large file");
             }
         }
-        return largefile;
+        return;
     }
 }

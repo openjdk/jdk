@@ -216,11 +216,8 @@ public class Agent {
                     adaptorClass.getMethod("initialize",
                         String.class, Properties.class);
             initializeMethod.invoke(null,snmpPort,props);
-        } catch (ClassNotFoundException x) {
-            // The SNMP packages are not present: throws an exception.
-            throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT,x);
-        } catch (NoSuchMethodException x) {
-            // should not happen...
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException x) {
+            // snmp runtime doesn't exist - initialization fails
             throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT,x);
         } catch (InvocationTargetException x) {
             final Throwable cause = x.getCause();
@@ -230,9 +227,6 @@ public class Agent {
                 throw (Error) cause;
             // should not happen...
             throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT,cause);
-        } catch (IllegalAccessException x) {
-            // should not happen...
-            throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT,x);
         }
     }
 
@@ -273,8 +267,8 @@ public class Agent {
                 } catch (IOException e) {
                     error(CONFIG_FILE_CLOSE_FAILED, fname);
                 }
-            }
-        }
+             }
+         }
     }
 
     public static void startAgent() throws Exception {
@@ -309,7 +303,7 @@ public class Agent {
                 // invoke the premain(String args) method
                 Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(cname);
                 Method premain = clz.getMethod("premain",
-                                               new Class[] { String.class });
+                                               new Class<?>[] { String.class });
                 premain.invoke(null, /* static */
                                new Object[] { args });
             } catch (ClassNotFoundException ex) {
