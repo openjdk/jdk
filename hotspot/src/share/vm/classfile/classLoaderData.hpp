@@ -315,7 +315,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
 // An iterator that distributes Klasses to parallel worker threads.
 class ClassLoaderDataGraphKlassIteratorAtomic : public StackObj {
-  volatile Klass* _next_klass;
+ Klass* volatile _next_klass;
  public:
   ClassLoaderDataGraphKlassIteratorAtomic();
   Klass* next_klass();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,12 @@
 /**
  * @test
  * @summary Tests counting of streams
- * @bug 8031187
+ * @bug 8031187 8067969
  */
 
 package org.openjdk.tests.java.util.stream;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.DoubleStream;
 import java.util.stream.DoubleStreamTestDataProvider;
 import java.util.stream.IntStream;
@@ -52,6 +53,12 @@ public class CountTest extends OpTestCase {
                 terminal(Stream::count).
                 expectedResult(expectedCount).
                 exercise();
+
+        // Test with an unknown sized stream
+        withData(data).
+                terminal(s -> s.filter(e -> true), Stream::count).
+                expectedResult(expectedCount).
+                exercise();
     }
 
     @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)
@@ -60,6 +67,11 @@ public class CountTest extends OpTestCase {
 
         withData(data).
                 terminal(IntStream::count).
+                expectedResult(expectedCount).
+                exercise();
+
+        withData(data).
+                terminal(s -> s.filter(e -> true), IntStream::count).
                 expectedResult(expectedCount).
                 exercise();
     }
@@ -72,6 +84,11 @@ public class CountTest extends OpTestCase {
                 terminal(LongStream::count).
                 expectedResult(expectedCount).
                 exercise();
+
+        withData(data).
+                terminal(s -> s.filter(e -> true), LongStream::count).
+                expectedResult(expectedCount).
+                exercise();
     }
 
     @Test(dataProvider = "DoubleStreamTestData", dataProviderClass = DoubleStreamTestDataProvider.class)
@@ -82,5 +99,36 @@ public class CountTest extends OpTestCase {
                 terminal(DoubleStream::count).
                 expectedResult(expectedCount).
                 exercise();
+
+        withData(data).
+                terminal(s -> s.filter(e -> true), DoubleStream::count).
+                expectedResult(expectedCount).
+                exercise();
+    }
+
+    public void testNoEvaluationForSizedStream() {
+        {
+            AtomicInteger ai = new AtomicInteger();
+            Stream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count();
+            assertEquals(ai.get(), 0);
+        }
+
+        {
+            AtomicInteger ai = new AtomicInteger();
+            IntStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count();
+            assertEquals(ai.get(), 0);
+        }
+
+        {
+            AtomicInteger ai = new AtomicInteger();
+            LongStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count();
+            assertEquals(ai.get(), 0);
+        }
+
+        {
+            AtomicInteger ai = new AtomicInteger();
+            DoubleStream.of(1, 2, 3, 4).peek(e -> ai.getAndIncrement()).count();
+            assertEquals(ai.get(), 0);
+        }
     }
 }

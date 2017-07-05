@@ -238,8 +238,7 @@ class MallocSiteTable : AllStatic {
   static MallocSite* malloc_site(size_t bucket_idx, size_t pos_idx);
   static bool walk(MallocSiteWalker* walker);
 
-  static inline int hash_to_index(int  hash) {
-    hash = (hash > 0) ? hash : (-hash);
+  static inline unsigned int hash_to_index(unsigned int hash) {
     return (hash % table_size);
   }
 

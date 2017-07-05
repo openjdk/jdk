@@ -167,6 +167,15 @@ final class PiscesCache {
         rowAARLE[row][1] = end;
     }
 
+    void getBBox(int bbox[]) {
+        // Since we add +1 to bboxX1,bboxY1 so when PTG asks for bbox,
+        // we will give after -1
+        bbox[0] = bboxX0;
+        bbox[1] = bboxY0;
+        bbox[2] = bboxX1 - 1;
+        bbox[3] = bboxY1 - 1;
+    }
+
     @Override
     public String toString() {
         String ret = "bbox = ["+
