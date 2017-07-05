@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6189206
+ * @modules java.base/sun.net.www
  * @run main/othervm -Dhttp.keepAlive=false CloseOptionHeader
  * @summary  HTTP client should set "Connection: close" header in request when keepalive is disabled
  */

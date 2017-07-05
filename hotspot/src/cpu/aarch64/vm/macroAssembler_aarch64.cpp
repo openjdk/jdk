@@ -41,9 +41,9 @@
 #include "runtime/sharedRuntime.hpp"
 
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/heapRegion.hpp"
 #endif
 
 #ifdef PRODUCT

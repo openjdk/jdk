@@ -24,6 +24,9 @@
 /*
  * @test
  * @bug 8015081
+ * @modules java.base/sun.misc
+ *          java.management
+ *          java.security.jgss
  * @compile Subject.java
  * @compile SubjectNullTests.java
  * @build SubjectNullTests

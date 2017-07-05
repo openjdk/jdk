@@ -25,6 +25,7 @@
  * @test
  * @bug 7081411
  * @summary DSA keypair generation affected by Solaris bug
+ * @modules java.base/sun.security.provider
  */
 
 import java.security.KeyPair;

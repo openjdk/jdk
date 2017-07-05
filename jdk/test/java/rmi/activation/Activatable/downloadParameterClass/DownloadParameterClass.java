@@ -31,6 +31,10 @@
  * @author Peter Jones (much code taken from Ann Wollrath's activation tests)
  *
  * @library ../../../testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary RMID ActivationLibrary
  *     Foo FooReceiverImpl FooReceiverImpl_Stub Bar
  * @run main/othervm/policy=security.policy/timeout=240 DownloadParameterClass

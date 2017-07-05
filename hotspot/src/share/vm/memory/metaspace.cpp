@@ -22,14 +22,13 @@
  *
  */
 #include "precompiled.hpp"
-#include "gc_interface/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/collectorPolicy.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "memory/allocation.hpp"
 #include "memory/binaryTreeDictionary.hpp"
-#include "memory/freeList.hpp"
-#include "memory/collectorPolicy.hpp"
 #include "memory/filemap.hpp"
 #include "memory/freeList.hpp"
-#include "memory/gcLocker.hpp"
 #include "memory/metachunk.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceGCThresholdUpdater.hpp"

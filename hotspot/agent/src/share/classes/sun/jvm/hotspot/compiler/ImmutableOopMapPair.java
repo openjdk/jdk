@@ -71,4 +71,8 @@ public class ImmutableOopMapPair {
     offsetField = type.getCIntegerField("_oopmap_offset");
     classSize = type.getSize();
   }
+
+  public String toString() {
+    return "Pair{pc_offset = " + getPC() + ", data_offset = " + getOffset() + "}";
+  }
 }

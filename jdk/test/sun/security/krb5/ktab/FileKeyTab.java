@@ -24,6 +24,8 @@
  * @test
  * @bug 7144530
  * @summary KeyTab.getInstance(String) no longer handles keyTabNames with "file:" prefix
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.ktab
  */
 import java.io.File;
 import sun.security.krb5.PrincipalName;

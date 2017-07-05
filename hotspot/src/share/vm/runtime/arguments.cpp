@@ -28,10 +28,11 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "gc/shared/cardTableRS.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/cardTableRS.hpp"
-#include "memory/genCollectedHeap.hpp"
-#include "memory/referenceProcessor.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -46,11 +47,10 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stringUtils.hpp"
-#include "utilities/taskqueue.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
-#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
-#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc/cms/compactibleFreeListSpace.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/parallel/parallelScavengeHeap.hpp"
 #endif // INCLUDE_ALL_GCS
 
 // Note: This is a special bug reporting site for the JVM

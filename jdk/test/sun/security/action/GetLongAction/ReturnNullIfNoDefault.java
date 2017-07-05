@@ -26,6 +26,7 @@
  * @bug 4173993
  * @summary Make sure "null" is returned if property does not exist (or has
  * wrong numeric format) and no default has been specified.
+ * @modules java.base/sun.security.action
  */
 
 import sun.security.action.*;

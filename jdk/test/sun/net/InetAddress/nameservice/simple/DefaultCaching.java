@@ -25,6 +25,7 @@
  * @bug 6442088
  * @summary Change default DNS caching behavior for code not running under
  *          security manager.
+ * @modules java.base/sun.net.spi.nameservice
  * @compile -XDignore.symbol.file=true SimpleNameService.java
  *                                     SimpleNameServiceDescriptor.java
  * @run main/othervm/timeout=200 -Dsun.net.inetaddr.ttl=20 -Dsun.net.spi.nameservice.provider.1=simple,sun DefaultCaching

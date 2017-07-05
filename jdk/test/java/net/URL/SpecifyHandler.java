@@ -26,6 +26,7 @@
  * @bug 4135031
  * @summary Test new URL contructors that allow specification of a
  *          URLStreamHandler protocol handler.
+ * @modules java.base/sun.net.www.protocol.file
  */
 import java.net.*;
 

@@ -25,6 +25,9 @@
  * @test
  * @bug 7192202
  * @summary Make sure keytool prints both unknown and unparseable extensions
+ * @modules java.base/sun.security.tools.keytool
+ *          java.base/sun.security.util
+ *          java.base/sun.security.x509
  * @compile -XDignore.symbol.file UnknownAndUnparseable.java
  * @run main UnknownAndUnparseable
  */

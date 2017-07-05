@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -735,10 +735,10 @@ getGMTOffsetID()
     local_tm = localtime(&clock);
     if (local_tm->tm_gmtoff >= 0) {
         offset = (time_t) local_tm->tm_gmtoff;
-        sign = "+";
+        sign = '+';
     } else {
         offset = (time_t) -local_tm->tm_gmtoff;
-        sign = "-";
+        sign = '-';
     }
     sprintf(buf, (const char *)"GMT%c%02d:%02d",
             sign, (int)(offset/3600), (int)((offset%3600)/60));

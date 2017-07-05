@@ -25,6 +25,8 @@
  * @test
  * @bug 8027991
  * @summary InputStream should be closed in sun.security.tools.jarsigner.Main
+ * @modules java.base/sun.security.tools.keytool
+ *          jdk.jartool/sun.security.tools.jarsigner
  * @run main/othervm CertChainUnclosed
  */
 

@@ -26,6 +26,7 @@
  * @author Gary Ellison
  * @bug 4170635
  * @summary Verify equals()/hashCode() contract honored
+ * @modules java.base/sun.security.x509
  */
 
 import java.io.*;

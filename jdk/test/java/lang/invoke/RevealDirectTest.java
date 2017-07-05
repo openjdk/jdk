@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary verify Lookup.revealDirect on a variety of input handles
+ * @modules java.base/sun.reflect
  * @compile -XDignore.symbol.file RevealDirectTest.java
  * @run junit/othervm -ea -esa test.java.lang.invoke.RevealDirectTest
  *

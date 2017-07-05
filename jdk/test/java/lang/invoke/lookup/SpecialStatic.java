@@ -24,6 +24,7 @@
 /* @test
  * @bug 8032400
  * @summary JSR292: invokeSpecial: InternalError attempting to lookup a method
+ * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile -XDignore.symbol.file SpecialStatic.java
  * @run junit test.java.lang.invoke.lookup.SpecialStatic
  */

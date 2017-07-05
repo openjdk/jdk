@@ -26,6 +26,7 @@
  * @bug 8026213
  * @summary Reflection support for private methods in interfaces
  * @author  Robert Field
+ * @modules java.base/jdk.internal.org.objectweb.asm
  * @run main TestPrivateInterfaceMethodReflect
  */
 

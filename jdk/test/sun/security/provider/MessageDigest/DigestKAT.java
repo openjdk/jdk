@@ -25,6 +25,7 @@
  * @test
  * @bug 4819771 4834179 5008306 4963723
  * @summary Basic known-answer-test for all our MessageDigest algorithms
+ * @modules java.base/sun.security.provider
  * @author Andreas Sterbenz
  */
 

@@ -56,7 +56,7 @@ public class CorbaUtils {
       * object by using the javax.rmi.CORBA package.
       *<p>
       * This method effective does the following:
-      *<blockquote><pre>
+      * <blockquote><pre>
       * java.lang.Object stub;
       * try {
       *     stub = PortableRemoteObject.toStub(remoteObj);
@@ -72,6 +72,7 @@ public class CorbaUtils {
       *     // ignore 'already connected' error
       * }
       * return (javax.rmi.CORBA.Stub)stub;
+      * </pre></blockquote>
       *
       * @param remoteObj The non-null remote object for
       * @param orb       The non-null ORB to connect the remote object to

@@ -27,6 +27,10 @@
  * @summary Naming assumes '/' is present in relative URL; change in URL causes regression
  * @author Dana Burns
  * @library ../../testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary Legal LegalRegistryNames_Stub
  * @run main/othervm LegalRegistryNames
  */

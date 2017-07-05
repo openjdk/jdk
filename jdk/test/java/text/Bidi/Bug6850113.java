@@ -24,6 +24,7 @@
  * @test
  * @bug 6850113
  * @summary Verify the return value of digit() for some digits.
+ * @modules java.base/sun.text.normalizer
  * @compile -XDignore.symbol.file=true Bug6850113.java
  * @run main Bug6850113
  */

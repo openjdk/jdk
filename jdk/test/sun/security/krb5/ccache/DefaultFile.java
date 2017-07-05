@@ -25,6 +25,7 @@
  * @test
  * @bug 8054817
  * @summary File ccache only recognizes Linux and Solaris defaults
+ * @modules java.security.jgss/sun.security.krb5.internal.ccache
  */
 
 import sun.security.krb5.internal.ccache.FileCredentialsCache;
