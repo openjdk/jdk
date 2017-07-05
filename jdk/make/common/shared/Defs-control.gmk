@@ -75,9 +75,11 @@ include $(JDK_MAKE_SHARED_DIR)/Defs.gmk
 SRC_BUNDLEDIR       = $(OUTPUTDIR)/source-bundles
 ABS_SRC_BUNDLEDIR   = $(ABS_OUTPUTDIR)/source-bundles
 BIN_BUNDLEDIR       = $(OUTPUTDIR)/bundles
+BIN_DEMOS_BUNDLEDIR = $(OUTPUTDIR)/demos-bundles
 ABS_BIN_BUNDLEDIR   = $(ABS_OUTPUTDIR)/bundles
 
 dummy := $(shell $(MKDIR) -p $(BIN_BUNDLEDIR))
+dummy := $(shell $(MKDIR) -p $(BIN_DEMOS_BUNDLEDIR) )
 dummy := $(shell $(MKDIR) -p $(SRC_BUNDLEDIR) )
 
 TEMP_DIR = $(OUTPUTDIR)/tmp
