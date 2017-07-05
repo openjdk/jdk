@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -827,8 +827,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
     case vmIntrinsics::_dsin:   __ sin  (calc_input, calc_result, tmp1, tmp2);              break;
     case vmIntrinsics::_dcos:   __ cos  (calc_input, calc_result, tmp1, tmp2);              break;
     case vmIntrinsics::_dtan:   __ tan  (calc_input, calc_result, tmp1, tmp2);              break;
-    case vmIntrinsics::_dlog:   __ log  (calc_input, calc_result, LIR_OprFact::illegalOpr); break;
-    case vmIntrinsics::_dlog10: __ log10(calc_input, calc_result, LIR_OprFact::illegalOpr); break;
+    case vmIntrinsics::_dlog:   __ log  (calc_input, calc_result, tmp1);                    break;
+    case vmIntrinsics::_dlog10: __ log10(calc_input, calc_result, tmp1);                    break;
     default:                    ShouldNotReachHere();
   }
 

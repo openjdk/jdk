@@ -91,7 +91,7 @@ includeDB.current Dependencies: classes/MakeDeps.class $(IncludeDBs)
 classes/MakeDeps.class: $(MakeDepsSources)
 	if exist classes rmdir /s /q classes
 	mkdir classes
-	$(COMPILE_JAVAC) -classpath $(WorkSpace)\src\share\tools\MakeDeps -g -d classes $(MakeDepsSources)
+	$(COMPILE_JAVAC) -classpath $(WorkSpace)\src\share\tools\MakeDeps -d classes $(MakeDepsSources)
 
 !if ("$(Variant)" == "compiler2") || ("$(Variant)" == "tiered")
 

@@ -283,6 +283,10 @@ public class LogManager {
                         AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
                                 public Object run() throws Exception {
                                     readConfiguration();
+
+                                    // Platform loggers begin to delegate to java.util.logging.Logger
+                                    sun.util.logging.PlatformLogger.redirectPlatformLoggers();
+
                                     return null;
                                 }
                             });

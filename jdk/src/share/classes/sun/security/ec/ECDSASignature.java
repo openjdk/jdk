@@ -52,21 +52,6 @@ import sun.security.x509.AlgorithmId;
  */
 abstract class ECDSASignature extends SignatureSpi {
 
-    // flag indicating whether the native ECC implementation is present
-    private static boolean implementationPresent = true;
-    static {
-        try {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("sunecc");
-                    return null;
-                }
-            });
-        } catch (UnsatisfiedLinkError e) {
-            implementationPresent = false;
-        }
-    }
-
     // message digest implementation we use
     private final MessageDigest messageDigest;
 
@@ -88,24 +73,13 @@ abstract class ECDSASignature extends SignatureSpi {
      * @exception ProviderException if the native ECC library is unavailable.
      */
     ECDSASignature() {
-        if (!implementationPresent) {
-            throw new
-                ProviderException("ECDSA implementation is not available");
-        }
         messageDigest = null;
     }
 
     /**
      * Constructs a new ECDSASignature. Used by subclasses.
-     *
-     * @exception ProviderException if the native ECC library is unavailable.
      */
     ECDSASignature(String digestName) {
-        if (!implementationPresent) {
-            throw new
-                ProviderException("ECDSA implementation is not available");
-        }
-
         try {
             messageDigest = MessageDigest.getInstance(digestName);
         } catch (NoSuchAlgorithmException e) {
@@ -299,8 +273,8 @@ abstract class ECDSASignature extends SignatureSpi {
         byte[] encodedParams = ECParameters.encodeParameters(params); // DER OID
         int keySize = params.getCurve().getField().getFieldSize();
 
-        // seed is twice the key size (in bytes)
-        byte[] seed = new byte[((keySize + 7) >> 3) * 2];
+        // seed is twice the key size (in bytes) plus 1
+        byte[] seed = new byte[(((keySize + 7) >> 3) + 1) * 2];
         if (random == null) {
             random = JCAUtil.getSecureRandom();
         }
@@ -356,6 +330,7 @@ abstract class ECDSASignature extends SignatureSpi {
 
     // Convert the concatenation of R and S into their DER encoding
     private byte[] encodeSignature(byte[] signature) throws SignatureException {
+
         try {
 
             int n = signature.length >> 1;

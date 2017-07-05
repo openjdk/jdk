@@ -110,7 +110,7 @@ public class Level implements java.io.Serializable {
      * Typically INFO messages will be written to the console
      * or its equivalent.  So the INFO level should only be
      * used for reasonably significant messages that will
-     * make sense to end users and system admins.
+     * make sense to end users and system administrators.
      * This level is initialized to <CODE>800</CODE>.
      */
     public static final Level INFO = new Level("INFO", 800, defaultBundle);
@@ -245,6 +245,8 @@ public class Level implements java.io.Serializable {
     }
 
     /**
+     * Returns a string representation of this Level.
+     *
      * @return the non-localized name of the Level, for example "INFO".
      */
     public final String toString() {
@@ -299,14 +301,14 @@ public class Level implements java.io.Serializable {
      * @throws IllegalArgumentException if the value is not valid.
      * Valid values are integers between <CODE>Integer.MIN_VALUE</CODE>
      * and <CODE>Integer.MAX_VALUE</CODE>, and all known level names.
-     * Known names are the levels defined by this class (i.e. <CODE>FINE</CODE>,
+     * Known names are the levels defined by this class (e.g., <CODE>FINE</CODE>,
      * <CODE>FINER</CODE>, <CODE>FINEST</CODE>), or created by this class with
      * appropriate package access, or new levels defined or created
      * by subclasses.
      *
      * @return The parsed value. Passing an integer that corresponds to a known name
-     * (eg 700) will return the associated name (eg <CODE>CONFIG</CODE>).
-     * Passing an integer that does not (eg 1) will return a new level name
+     * (e.g., 700) will return the associated name (e.g., <CODE>CONFIG</CODE>).
+     * Passing an integer that does not (e.g., 1) will return a new level name
      * initialized to that value.
      */
     public static synchronized Level parse(String name) throws IllegalArgumentException {

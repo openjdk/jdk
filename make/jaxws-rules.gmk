@@ -1,5 +1,5 @@
 #
-# Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,17 @@ endif
 jaxws: jaxws-build
 jaxws-build:
 	$(MKDIR) -p $(JAXWS_OUTPUTDIR)
+	@$(call MakeStart, jaxws, all)
 	($(CD) $(JAXWS_TOPDIR)/make && \
 	 $(MAKE) $(JAXWS_BUILD_ARGUMENTS) all)
+	@$(call MakeFinish, jaxws, all)
 
 jaxws-clobber::
 	$(MKDIR) -p $(JAXWS_OUTPUTDIR)
+	@$(call MakeStart, jaxws, clobber)
 	($(CD) $(JAXWS_TOPDIR)/make &&  \
 	 $(MAKE) $(JAXWS_BUILD_ARGUMENTS) clobber)
+	@$(call MakeFinish, jaxws, clobber)
 
 .PHONY: jaxws jaxws-build jaxws-clobber
 
