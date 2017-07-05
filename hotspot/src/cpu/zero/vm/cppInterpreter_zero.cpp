@@ -37,15 +37,18 @@
   thread->reset_last_Java_frame();              \
   fixup_after_potential_safepoint()
 
-void CppInterpreter::normal_entry(methodOop method, intptr_t UNUSED, TRAPS) {
+int CppInterpreter::normal_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
 
   // Allocate and initialize our frame.
-  InterpreterFrame *frame = InterpreterFrame::build(method, CHECK);
+  InterpreterFrame *frame = InterpreterFrame::build(method, CHECK_0);
   thread->push_zero_frame(frame);
 
   // Execute those bytecodes!
   main_loop(0, THREAD);
+
+  // No deoptimized frames on the stack
+  return 0;
 }
 
 void CppInterpreter::main_loop(int recurse, TRAPS) {
@@ -165,7 +168,7 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
     stack->push(result[-i]);
 }
 
-void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
+int CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   // Make sure method is native and not abstract
   assert(method->is_native() && !method->is_abstract(), "should be");
 
@@ -173,7 +176,7 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   ZeroStack *stack = thread->zero_stack();
 
   // Allocate and initialize our frame
-  InterpreterFrame *frame = InterpreterFrame::build(method, CHECK);
+  InterpreterFrame *frame = InterpreterFrame::build(method, CHECK_0);
   thread->push_zero_frame(frame);
   interpreterState istate = frame->interpreter_state();
   intptr_t *locals = istate->locals();
@@ -430,25 +433,26 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
       ShouldNotReachHere();
     }
   }
+
+  // No deoptimized frames on the stack
+  return 0;
 }
 
-void CppInterpreter::accessor_entry(methodOop method, intptr_t UNUSED, TRAPS) {
+int CppInterpreter::accessor_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
   ZeroStack *stack = thread->zero_stack();
   intptr_t *locals = stack->sp();
 
   // Drop into the slow path if we need a safepoint check
   if (SafepointSynchronize::do_call_back()) {
-    normal_entry(method, 0, THREAD);
-    return;
+    return normal_entry(method, 0, THREAD);
   }
 
   // Load the object pointer and drop into the slow path
   // if we have a NullPointerException
   oop object = LOCALS_OBJECT(0);
   if (object == NULL) {
-    normal_entry(method, 0, THREAD);
-    return;
+    return normal_entry(method, 0, THREAD);
   }
 
   // Read the field index from the bytecode, which looks like this:
@@ -470,15 +474,14 @@ void CppInterpreter::accessor_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   constantPoolCacheOop cache = method->constants()->cache();
   ConstantPoolCacheEntry* entry = cache->entry_at(index);
   if (!entry->is_resolved(Bytecodes::_getfield)) {
-    normal_entry(method, 0, THREAD);
-    return;
+    return normal_entry(method, 0, THREAD);
   }
 
   // Get the result and push it onto the stack
   switch (entry->flag_state()) {
   case ltos:
   case dtos:
-    stack->overflow_check(1, CHECK);
+    stack->overflow_check(1, CHECK_0);
     stack->alloc(wordSize);
     break;
   }
@@ -558,20 +561,25 @@ void CppInterpreter::accessor_entry(methodOop method, intptr_t UNUSED, TRAPS) {
       ShouldNotReachHere();
     }
   }
+
+  // No deoptimized frames on the stack
+  return 0;
 }
 
-void CppInterpreter::empty_entry(methodOop method, intptr_t UNUSED, TRAPS) {
+int CppInterpreter::empty_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   JavaThread *thread = (JavaThread *) THREAD;
   ZeroStack *stack = thread->zero_stack();
 
   // Drop into the slow path if we need a safepoint check
   if (SafepointSynchronize::do_call_back()) {
-    normal_entry(method, 0, THREAD);
-    return;
+    return normal_entry(method, 0, THREAD);
   }
 
   // Pop our parameters
   stack->set_sp(stack->sp() + method->size_of_parameters());
+
+  // No deoptimized frames on the stack
+  return 0;
 }
 
 InterpreterFrame *InterpreterFrame::build(const methodOop method, TRAPS) {
@@ -833,7 +841,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
   int callee_extra_locals = callee_locals - callee_param_count;
 
   if (interpreter_frame) {
-    intptr_t *locals        = interpreter_frame->sp() + method->max_locals();
+    intptr_t *locals        = interpreter_frame->fp() + method->max_locals();
     interpreterState istate = interpreter_frame->get_interpreterState();
     intptr_t *monitor_base  = (intptr_t*) istate;
     intptr_t *stack_base    = monitor_base - monitor_words;

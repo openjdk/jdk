@@ -62,7 +62,7 @@ void MemProfiler::engage() {
     // Create log file
     _log_fp = fopen(log_name , "w+");
     if (_log_fp == NULL) {
-      fatal1("MemProfiler: Cannot create log file: %s", log_name);
+      fatal(err_msg("MemProfiler: Cannot create log file: %s", log_name));
     }
     fprintf(_log_fp, "MemProfiler: sizes are in Kb, time is in seconds since startup\n\n");
     fprintf(_log_fp, "  time, #thr, #cls,  heap,  heap,  perm,  perm,  code, hndls, rescs, oopmp\n");

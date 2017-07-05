@@ -223,11 +223,15 @@ class DictionaryEntry : public HashtableEntry {
 class SymbolPropertyEntry : public HashtableEntry {
   friend class VMStructs;
  private:
+  intptr_t _symbol_mode;  // secondary key
   oop     _property_oop;
   address _property_data;
 
  public:
   symbolOop symbol() const          { return (symbolOop) literal(); }
+
+  intptr_t symbol_mode() const      { return _symbol_mode; }
+  void set_symbol_mode(intptr_t m)  { _symbol_mode = m; }
 
   oop      property_oop() const     { return _property_oop; }
   void set_property_oop(oop p)      { _property_oop = p; }
@@ -248,6 +252,7 @@ class SymbolPropertyEntry : public HashtableEntry {
 
   void print_on(outputStream* st) const {
     symbol()->print_value_on(st);
+    st->print("/mode="INTX_FORMAT, symbol_mode());
     st->print(" -> ");
     bool printed = false;
     if (property_oop() != NULL) {
@@ -285,8 +290,9 @@ private:
     ShouldNotReachHere();
   }
 
-  SymbolPropertyEntry* new_entry(unsigned int hash, symbolOop symbol) {
+  SymbolPropertyEntry* new_entry(unsigned int hash, symbolOop symbol, intptr_t symbol_mode) {
     SymbolPropertyEntry* entry = (SymbolPropertyEntry*) Hashtable::new_entry(hash, symbol);
+    entry->set_symbol_mode(symbol_mode);
     entry->set_property_oop(NULL);
     entry->set_property_data(NULL);
     return entry;
@@ -300,16 +306,20 @@ public:
     Hashtable::free_entry(entry);
   }
 
-  unsigned int compute_hash(symbolHandle sym) {
+  unsigned int compute_hash(symbolHandle sym, intptr_t symbol_mode) {
     // Use the regular identity_hash.
-    return Hashtable::compute_hash(sym);
+    return Hashtable::compute_hash(sym) ^ symbol_mode;
+  }
+
+  int index_for(symbolHandle name, intptr_t symbol_mode) {
+    return hash_to_index(compute_hash(name, symbol_mode));
   }
 
   // need not be locked; no state change
-  SymbolPropertyEntry* find_entry(int index, unsigned int hash, symbolHandle name);
+  SymbolPropertyEntry* find_entry(int index, unsigned int hash, symbolHandle name, intptr_t name_mode);
 
   // must be done under SystemDictionary_lock
-  SymbolPropertyEntry* add_entry(int index, unsigned int hash, symbolHandle name);
+  SymbolPropertyEntry* add_entry(int index, unsigned int hash, symbolHandle name, intptr_t name_mode);
 
   // GC support
   void oops_do(OopClosure* f);

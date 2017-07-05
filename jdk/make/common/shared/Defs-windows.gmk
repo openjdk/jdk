@@ -287,11 +287,15 @@ ifeq ($(ARCH_DATA_MODEL), 32)
     # Assume VS100, then VS90, then VS80, then VS71
     _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC100.CRT)
     ifeq ($(_redist_sdk),)
-      _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC90.CRT)
-      ifeq ($(_redist_sdk),)
-        _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC80.CRT)
+      ifneq ($(VS100COMNTOOLS),)
+        _redist_sdk  :=c:/windows/system32
+      else
+        _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC90.CRT)
         ifeq ($(_redist_sdk),)
-          _redist_sdk   :=$(call FullPath,$(_msvc_dir)/../SDK/v1.1/Bin)
+          _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC80.CRT)
+          ifeq ($(_redist_sdk),)
+            _redist_sdk   :=$(call FullPath,$(_msvc_dir)/../SDK/v1.1/Bin)
+          endif
         endif
       endif
     endif

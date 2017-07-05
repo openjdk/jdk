@@ -2838,7 +2838,7 @@ void LIR_Assembler::emit_static_call_stub() {
   // On 64bit this will die since it will take a movq & jmp, must be only a jmp
   __ jump(RuntimeAddress(__ pc()));
 
-  assert(__ offset() - start <= call_stub_size, "stub too big")
+  assert(__ offset() - start <= call_stub_size, "stub too big");
   __ end_a_stub();
 }
 

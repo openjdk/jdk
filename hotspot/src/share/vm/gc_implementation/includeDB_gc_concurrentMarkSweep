@@ -122,6 +122,7 @@ compactibleFreeListSpace.cpp            vmThread.hpp
 
 compactibleFreeListSpace.hpp            binaryTreeDictionary.hpp
 compactibleFreeListSpace.hpp            freeList.hpp
+compactibleFreeListSpace.hpp            promotionInfo.hpp
 compactibleFreeListSpace.hpp            space.hpp
 
 compactingPermGenGen.cpp                concurrentMarkSweepGeneration.inline.hpp
@@ -224,6 +225,14 @@ freeList.cpp                            sharedHeap.hpp
 freeList.cpp                            vmThread.hpp
 
 freeList.hpp                            allocationStats.hpp
+
+promotionInfo.cpp                       compactibleFreeListSpace.hpp
+promotionInfo.cpp                       markOop.inline.hpp
+promotionInfo.cpp                       oop.inline.hpp
+promotionInfo.cpp                       promotionInfo.hpp
+
+promotionInfo.hpp                       allocation.hpp
+promotionInfo.hpp                       freeChunk.hpp
 
 vmCMSOperations.cpp			concurrentMarkSweepGeneration.inline.hpp
 vmCMSOperations.cpp			concurrentMarkSweepThread.hpp

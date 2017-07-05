@@ -206,10 +206,15 @@ inline void Assembler::ld(  Register s1, RegisterOrConstant s2, Register d) { ld
 inline void Assembler::ldd( Register s1, RegisterOrConstant s2, Register d) { ldd( Address(s1, s2), d); }
 
 // form effective addresses this way:
-inline void Assembler::add(   Register s1, RegisterOrConstant s2, Register d, int offset) {
-  if (s2.is_register())  add(s1, s2.as_register(), d);
+inline void Assembler::add(Register s1, RegisterOrConstant s2, Register d, int offset) {
+  if (s2.is_register())  add(s1, s2.as_register(),          d);
   else                 { add(s1, s2.as_constant() + offset, d); offset = 0; }
   if (offset != 0)       add(d,  offset,                    d);
+}
+
+inline void Assembler::andn(Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_register())  andn(s1, s2.as_register(), d);
+  else                   andn(s1, s2.as_constant(), d);
 }
 
 inline void Assembler::ldstub(  Register s1, Register s2, Register d) { emit_long( op(ldst_op) | rd(d) | op3(ldstub_op3) | rs1(s1) | rs2(s2) ); }

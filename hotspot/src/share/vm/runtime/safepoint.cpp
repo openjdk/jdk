@@ -594,7 +594,7 @@ void SafepointSynchronize::block(JavaThread *thread) {
       break;
 
     default:
-     fatal1("Illegal threadstate encountered: %d", state);
+     fatal(err_msg("Illegal threadstate encountered: %d", state));
   }
 
   // Check for pending. async. exceptions or suspends - except if the

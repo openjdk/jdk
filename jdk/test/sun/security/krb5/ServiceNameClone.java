@@ -1,12 +1,10 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,19 +21,21 @@
  * have any questions.
  */
 /*
- * Licensed Materials - Property of IBM
- * RMI-IIOP v1.0
- * Copyright IBM Corp. 1998 1999  All Rights Reserved
- *
+ * @test
+ * @bug 6856069
+ * @summary PrincipalName.clone() does not invoke super.clone()
  */
 
-package com.sun.corba.se.internal.io;
+import sun.security.krb5.ServiceName;
 
-public class LibraryManager
-{
-    native private static int getMajorVersion();
-
-    native private static int getMinorVersion();
-
-    private static native boolean setEnableOverride(Class targetClass, Object instance);
+public class ServiceNameClone {
+    public static void main(String[] args) throws Exception {
+        ServiceName sn = new ServiceName("me@HERE");
+        if (sn.clone().getClass() != ServiceName.class) {
+            throw new Exception("ServiceName's clone is not a ServiceName");
+        }
+        if (!sn.clone().equals(sn)) {
+            throw new Exception("ServiceName's clone changed");
+        }
+    }
 }
