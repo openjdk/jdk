@@ -1246,7 +1246,7 @@ static jvmtiError JNICALL
   <xsl:param name="name"/>
   <xsl:text> </xsl:text>
   <xsl:value-of select="$name"/>
-  <xsl:text>=0x%zx</xsl:text>
+  <xsl:text>=" SIZE_FORMAT_HEX "</xsl:text>
 </xsl:template>
 
 <xsl:template match="jfloat|jdouble" mode="traceInFormat">

@@ -75,17 +75,18 @@ class Method : public Metadata {
 
   // Flags
   enum Flags {
-    _jfr_towrite           = 1 << 0,
-    _caller_sensitive      = 1 << 1,
-    _force_inline          = 1 << 2,
-    _dont_inline           = 1 << 3,
-    _hidden                = 1 << 4,
-    _has_injected_profile  = 1 << 5,
-    _running_emcp          = 1 << 6,
-    _intrinsic_candidate   = 1 << 7,
-    _reserved_stack_access = 1 << 8
+    _caller_sensitive      = 1 << 0,
+    _force_inline          = 1 << 1,
+    _dont_inline           = 1 << 2,
+    _hidden                = 1 << 3,
+    _has_injected_profile  = 1 << 4,
+    _running_emcp          = 1 << 5,
+    _intrinsic_candidate   = 1 << 6,
+    _reserved_stack_access = 1 << 7
   };
   mutable u2 _flags;
+
+  TRACE_DEFINE_FLAG;
 
 #ifndef PRODUCT
   int               _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
@@ -833,13 +834,6 @@ class Method : public Metadata {
   void init_intrinsic_id();     // updates from _none if a match
   static vmSymbols::SID klass_id_for_intrinsics(const Klass* holder);
 
-  bool jfr_towrite() const {
-    return (_flags & _jfr_towrite) != 0;
-  }
-  void set_jfr_towrite(bool x) const {
-    _flags = x ? (_flags | _jfr_towrite) : (_flags & ~_jfr_towrite);
-  }
-
   bool caller_sensitive() {
     return (_flags & _caller_sensitive) != 0;
   }
@@ -889,6 +883,8 @@ class Method : public Metadata {
   void set_has_reserved_stack_access(bool x) {
     _flags = x ? (_flags | _reserved_stack_access) : (_flags & ~_reserved_stack_access);
   }
+
+  TRACE_DEFINE_FLAG_ACCESSOR;
 
   ConstMethod::MethodType method_type() const {
       return _constMethod->method_type();

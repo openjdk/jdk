@@ -147,7 +147,7 @@ public class ListModsTest {
     @Test
     public void testListWithLimitMods1() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("--limit-modules", "java.management", "--list-modules")
+            = executeTestJava("--limit-modules", "java.management.rmi", "--list-modules")
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldContain("java.rmi");

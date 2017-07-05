@@ -347,6 +347,13 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     boolean canBeInlined();
 
     /**
+     * Determines if this method is targeted by a VM directive (e.g.,
+     * {@code -XX:CompileCommand=dontinline,<pattern>}) or VM recognized annotation (e.g.,
+     * {@code jdk.internal.vm.annotation.DontInline}) that specifies it should not be inlined.
+     */
+    boolean hasNeverInlineDirective();
+
+    /**
      * Returns {@code true} if the inlining of this method should be forced.
      */
     boolean shouldBeInlined();

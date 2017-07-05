@@ -72,8 +72,7 @@ public class CoreThreadTimeOut {
     void test(String[] args) throws Throwable {
         final int threadCount = 10;
         final int timeoutMillis = 30;
-        BlockingQueue<Runnable> q
-            = new ArrayBlockingQueue<Runnable>(2*threadCount);
+        BlockingQueue<Runnable> q = new ArrayBlockingQueue<>(2*threadCount);
         ThreadPoolExecutor tpe
             = new ThreadPoolExecutor(threadCount, threadCount,
                                      timeoutMillis, TimeUnit.MILLISECONDS,

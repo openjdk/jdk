@@ -37,6 +37,7 @@ import jdk.tools.jaotc.binformat.Symbol.Binding;
 import jdk.tools.jaotc.binformat.Symbol.Kind;
 import jdk.tools.jaotc.binformat.elf.JELFRelocObject;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 
 /**
  * A format-agnostic container class that holds various components of a binary.
@@ -257,9 +258,9 @@ public class BinaryContainer implements SymbolTable {
      * prefix {@code prefix}. It also initializes internal code container, symbol table and
      * relocation tables.
      */
-    public BinaryContainer(GraalHotSpotVMConfig config, String jvmVersion) {
-        this.codeSegmentSize = config.codeSegmentSize;
-        this.codeEntryAlignment = config.codeEntryAlignment;
+    public BinaryContainer(GraalHotSpotVMConfig graalHotSpotVMConfig, GraphBuilderConfiguration graphBuilderConfig, String jvmVersion) {
+        this.codeSegmentSize = graalHotSpotVMConfig.codeSegmentSize;
+        this.codeEntryAlignment = graalHotSpotVMConfig.codeEntryAlignment;
 
         // read only, code
         codeContainer = new CodeContainer(".text", this);
@@ -289,30 +290,31 @@ public class BinaryContainer implements SymbolTable {
 
         addGlobalSymbols();
 
-        recordConfiguration(config);
+        recordConfiguration(graalHotSpotVMConfig, graphBuilderConfig);
     }
 
-    private void recordConfiguration(GraalHotSpotVMConfig config) {
+    private void recordConfiguration(GraalHotSpotVMConfig graalHotSpotVMConfig, GraphBuilderConfiguration graphBuilderConfig) {
         // @formatter:off
-        boolean[] booleanFlags = { config.cAssertions, // Debug VM
-                                   config.useCompressedOops,
-                                   config.useCompressedClassPointers,
-                                   config.compactFields,
-                                   config.useG1GC,
-                                   config.useCMSGC,
-                                   config.useTLAB,
-                                   config.useBiasedLocking,
+        boolean[] booleanFlags = { graalHotSpotVMConfig.cAssertions, // Debug VM
+                                   graalHotSpotVMConfig.useCompressedOops,
+                                   graalHotSpotVMConfig.useCompressedClassPointers,
+                                   graalHotSpotVMConfig.compactFields,
+                                   graalHotSpotVMConfig.useG1GC,
+                                   graalHotSpotVMConfig.useCMSGC,
+                                   graalHotSpotVMConfig.useTLAB,
+                                   graalHotSpotVMConfig.useBiasedLocking,
                                    TieredAOT.getValue(),
-                                   config.enableContended,
-                                   config.restrictContended,
+                                   graalHotSpotVMConfig.enableContended,
+                                   graalHotSpotVMConfig.restrictContended,
+                                   graphBuilderConfig.omitAssertions()
         };
 
-        int[] intFlags         = { config.narrowOopShift,
-                                   config.narrowKlassShift,
-                                   config.contendedPaddingWidth,
-                                   config.fieldsAllocationStyle,
-                                   config.objectAlignment,
-                                   config.codeSegmentSize,
+        int[] intFlags         = { graalHotSpotVMConfig.getOopEncoding().shift,
+                                   graalHotSpotVMConfig.getKlassEncoding().shift,
+                                   graalHotSpotVMConfig.contendedPaddingWidth,
+                                   graalHotSpotVMConfig.fieldsAllocationStyle,
+                                   1 << graalHotSpotVMConfig.getOopEncoding().alignment,
+                                   graalHotSpotVMConfig.codeSegmentSize,
         };
         // @formatter:on
 
@@ -395,6 +397,10 @@ public class BinaryContainer implements SymbolTable {
         return "_aot_narrow_klass_base_address";
     }
 
+    public String getNarrowOopBaseAddressSymbolName() {
+        return "_aot_narrow_oop_base_address";
+    }
+
     public String getLogOfHeapRegionGrainBytesSymbolName() {
         return "_aot_log_of_heap_region_grain_bytes";
     }
@@ -445,6 +451,7 @@ public class BinaryContainer implements SymbolTable {
         createGotSymbol(getHeapTopAddressSymbolName());
         createGotSymbol(getHeapEndAddressSymbolName());
         createGotSymbol(getNarrowKlassBaseAddressSymbolName());
+        createGotSymbol(getNarrowOopBaseAddressSymbolName());
         createGotSymbol(getPollingPageSymbolName());
         createGotSymbol(getLogOfHeapRegionGrainBytesSymbolName());
         createGotSymbol(getInlineContiguousAllocationSupportedSymbolName());

@@ -48,7 +48,7 @@ public class CompileJarTest {
 
     public static void main(String[] args) {
         createJar();
-        OutputAnalyzer oa = JaotcTestHelper.compileLibrary(JAR_NAME);
+        OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--jar", JAR_NAME);
         oa.shouldHaveExitValue(0);
         File compiledLibrary = new File(JaotcTestHelper.DEFAULT_LIB_PATH);
         Asserts.assertTrue(compiledLibrary.exists(), "Compiled library file missing");

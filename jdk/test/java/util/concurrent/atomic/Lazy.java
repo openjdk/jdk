@@ -48,11 +48,11 @@ public class Lazy {
         final AtomicBoolean b = new AtomicBoolean();
         final AtomicInteger i = new AtomicInteger();
         final AtomicLong    l = new AtomicLong();
-        final AtomicReference<Long> r = new AtomicReference<Long>();
+        final AtomicReference<Long> r = new AtomicReference<>();
 
         final AtomicIntegerArray ia = new AtomicIntegerArray(1);
         final AtomicLongArray    la = new AtomicLongArray(1);
-        final AtomicReferenceArray<Long> ra = new AtomicReferenceArray<Long>(1);
+        final AtomicReferenceArray<Long> ra = new AtomicReferenceArray<>(1);
 
         final AtomicIntegerFieldUpdater<Lazy> iu =
             AtomicIntegerFieldUpdater.newUpdater(Lazy.class, "ii");

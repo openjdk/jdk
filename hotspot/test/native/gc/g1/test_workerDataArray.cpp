@@ -123,19 +123,19 @@ class BasicWorkerDataArrayTest : public WorkerDataArrayTest<size_t> {
   }
 };
 
-TEST_F(BasicWorkerDataArrayTest, sum_test) {
+TEST_VM_F(BasicWorkerDataArrayTest, sum_test) {
   ASSERT_EQ(15u, array.sum());
 }
 
-TEST_F(BasicWorkerDataArrayTest, average_test) {
+TEST_VM_F(BasicWorkerDataArrayTest, average_test) {
   ASSERT_NEAR(5.0, array.average(), epsilon);
 }
 
-TEST_F(BasicWorkerDataArrayTest, print_summary_on_test) {
+TEST_VM_F(BasicWorkerDataArrayTest, print_summary_on_test) {
   ASSERT_STREQ(print_expected_summary(), print_summary());
 }
 
-TEST_F(BasicWorkerDataArrayTest, print_details_on_test) {
+TEST_VM_F(BasicWorkerDataArrayTest, print_details_on_test) {
   ASSERT_STREQ(print_expected_details(), print_details());
 }
 
@@ -161,19 +161,19 @@ class AddWorkerDataArrayTest : public WorkerDataArrayTest<size_t> {
   }
 };
 
-TEST_F(AddWorkerDataArrayTest, sum_test) {
+TEST_VM_F(AddWorkerDataArrayTest, sum_test) {
   ASSERT_EQ(18u, array.sum());
 }
 
-TEST_F(AddWorkerDataArrayTest, average_test) {
+TEST_VM_F(AddWorkerDataArrayTest, average_test) {
   ASSERT_NEAR(6.0, array.average(), epsilon);
 }
 
-TEST_F(AddWorkerDataArrayTest, print_summary_on_test) {
+TEST_VM_F(AddWorkerDataArrayTest, print_summary_on_test) {
   ASSERT_STREQ(print_expected_summary(), print_summary());
 }
 
-TEST_F(AddWorkerDataArrayTest, print_details_on_test) {
+TEST_VM_F(AddWorkerDataArrayTest, print_details_on_test) {
   ASSERT_STREQ(print_expected_details(), print_details());
 }
 
@@ -195,19 +195,19 @@ class UninitializedElementWorkerDataArrayTest : public WorkerDataArrayTest<size_
   }
 };
 
-TEST_F(UninitializedElementWorkerDataArrayTest, sum_test) {
+TEST_VM_F(UninitializedElementWorkerDataArrayTest, sum_test) {
   ASSERT_EQ(12u, array.sum());
 }
 
-TEST_F(UninitializedElementWorkerDataArrayTest, average_test) {
+TEST_VM_F(UninitializedElementWorkerDataArrayTest, average_test) {
   ASSERT_NEAR(6.0, array.average(), epsilon);
 }
 
-TEST_F(UninitializedElementWorkerDataArrayTest, print_summary_on_test) {
+TEST_VM_F(UninitializedElementWorkerDataArrayTest, print_summary_on_test) {
   ASSERT_STREQ(print_expected_summary(), print_summary());
 }
 
-TEST_F(UninitializedElementWorkerDataArrayTest, print_details_on_test) {
+TEST_VM_F(UninitializedElementWorkerDataArrayTest, print_details_on_test) {
   ASSERT_STREQ(print_expected_details(), print_details());
 }
 
@@ -229,19 +229,19 @@ class UninitializedWorkerDataArrayTest : public WorkerDataArrayTest<size_t> {
   }
 };
 
-TEST_F(UninitializedWorkerDataArrayTest, sum_test) {
+TEST_VM_F(UninitializedWorkerDataArrayTest, sum_test) {
   ASSERT_EQ(0u, array.sum());
 }
 
-TEST_F(UninitializedWorkerDataArrayTest, average_test) {
+TEST_VM_F(UninitializedWorkerDataArrayTest, average_test) {
   ASSERT_NEAR(0.0, array.average(), epsilon);
 }
 
-TEST_F(UninitializedWorkerDataArrayTest, print_summary_on_test) {
+TEST_VM_F(UninitializedWorkerDataArrayTest, print_summary_on_test) {
   ASSERT_STREQ(print_expected_summary(), print_summary());
 }
 
-TEST_F(UninitializedWorkerDataArrayTest, print_details_on_test) {
+TEST_VM_F(UninitializedWorkerDataArrayTest, print_details_on_test) {
   ASSERT_STREQ(print_expected_details(), print_details());
 }
 
@@ -265,18 +265,18 @@ class UninitializedDoubleElementWorkerDataArrayTest : public WorkerDataArrayTest
   }
 };
 
-TEST_F(UninitializedDoubleElementWorkerDataArrayTest, sum_test) {
+TEST_VM_F(UninitializedDoubleElementWorkerDataArrayTest, sum_test) {
   ASSERT_NEAR(12.3 / MILLIUNITS, array.sum(), epsilon);
 }
 
-TEST_F(UninitializedDoubleElementWorkerDataArrayTest, average_test) {
+TEST_VM_F(UninitializedDoubleElementWorkerDataArrayTest, average_test) {
   ASSERT_NEAR(6.15 / MILLIUNITS, array.average(), epsilon);
 }
 
-TEST_F(UninitializedDoubleElementWorkerDataArrayTest, print_summary_on_test) {
+TEST_VM_F(UninitializedDoubleElementWorkerDataArrayTest, print_summary_on_test) {
   ASSERT_STREQ(print_expected_summary(), print_summary());
 }
 
-TEST_F(UninitializedDoubleElementWorkerDataArrayTest, print_details_on_test) {
+TEST_VM_F(UninitializedDoubleElementWorkerDataArrayTest, print_details_on_test) {
   ASSERT_STREQ(print_expected_details(), print_details());
 }

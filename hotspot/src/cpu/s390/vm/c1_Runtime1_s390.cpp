@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -784,7 +784,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register tmp  = Z_R6; // Must be non-volatile because it is used to save pre_val.
         Register tmp2 = Z_R7;
 
-        Label refill, restart;
+        Label refill, restart, marking_not_active;
+        int satb_q_active_byte_offset =
+          in_bytes(JavaThread::satb_mark_queue_offset() +
+                   SATBMarkQueue::byte_offset_of_active());
         int satb_q_index_byte_offset =
           in_bytes(JavaThread::satb_mark_queue_offset() +
                    SATBMarkQueue::byte_offset_of_index());
@@ -795,6 +798,15 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // Save tmp registers (see assertion in G1PreBarrierStub::emit_code()).
         __ z_stg(tmp,  0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
         __ z_stg(tmp2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
+
+        // Is marking still active?
+        if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+          __ load_and_test_int(tmp, Address(Z_thread, satb_q_active_byte_offset));
+        } else {
+          assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+          __ load_and_test_byte(tmp, Address(Z_thread, satb_q_active_byte_offset));
+        }
+        __ z_bre(marking_not_active); // Activity indicator is zero, so there is no marking going on currently.
 
         __ bind(restart);
         // Load the index into the SATB buffer. SATBMarkQueue::_index is a
@@ -810,6 +822,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ z_stg(pre_val, 0, tmp, tmp2); // [_buf + index] := <address_of_card>
         __ z_stg(tmp, satb_q_index_byte_offset, Z_thread);
 
+        __ bind(marking_not_active);
         // Restore tmp registers (see assertion in G1PreBarrierStub::emit_code()).
         __ z_lg(tmp,  0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
         __ z_lg(tmp2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);

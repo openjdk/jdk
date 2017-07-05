@@ -200,7 +200,7 @@ private:
                             Node* old_eden_top, Node* new_eden_top,
                             Node* length);
 
-  Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, BasicType ft, const Type *ftype, AllocateNode *alloc);
+  Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc);
 
 public:
   PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) {

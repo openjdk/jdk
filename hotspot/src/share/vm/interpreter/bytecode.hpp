@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,11 @@ class Bytecode: public StackObj {
   address addr_at            (int offset)        const     { return (address)_bcp + offset; }
   u_char byte_at(int offset) const               { return *addr_at(offset); }
   address aligned_addr_at    (int offset)        const     { return (address)round_to((intptr_t)addr_at(offset), jintSize); }
-  int     aligned_offset     (int offset)        const     { return aligned_addr_at(offset) - addr_at(0); }
 
   // Word access:
   int     get_Java_u2_at     (int offset)        const     { return Bytes::get_Java_u2(addr_at(offset)); }
   int     get_Java_u4_at     (int offset)        const     { return Bytes::get_Java_u4(addr_at(offset)); }
+  int     get_aligned_Java_u4_at(int offset)     const     { return Bytes::get_Java_u4(aligned_addr_at(offset)); }
   int     get_native_u2_at   (int offset)        const     { return Bytes::get_native_u2(addr_at(offset)); }
   int     get_native_u4_at   (int offset)        const     { return Bytes::get_native_u4(addr_at(offset)); }
 
@@ -150,8 +150,8 @@ class Bytecode_lookupswitch: public Bytecode {
   void verify() const PRODUCT_RETURN;
 
   // Attributes
-  int  default_offset() const                    { return get_Java_u4_at(aligned_offset(1 + 0*jintSize)); }
-  int  number_of_pairs() const                   { return get_Java_u4_at(aligned_offset(1 + 1*jintSize)); }
+  int  default_offset() const                    { return get_aligned_Java_u4_at(1 + 0*jintSize); }
+  int  number_of_pairs() const                   { return get_aligned_Java_u4_at(1 + 1*jintSize); }
   LookupswitchPair pair_at(int i) const          {
     assert(0 <= i && i < number_of_pairs(), "pair index out of bounds");
     return LookupswitchPair(aligned_addr_at(1 + (1 + i)*2*jintSize));
@@ -166,9 +166,9 @@ class Bytecode_tableswitch: public Bytecode {
   void verify() const PRODUCT_RETURN;
 
   // Attributes
-  int  default_offset() const                    { return get_Java_u4_at(aligned_offset(1 + 0*jintSize)); }
-  int  low_key() const                           { return get_Java_u4_at(aligned_offset(1 + 1*jintSize)); }
-  int  high_key() const                          { return get_Java_u4_at(aligned_offset(1 + 2*jintSize)); }
+  int  default_offset() const                    { return get_aligned_Java_u4_at(1 + 0*jintSize); }
+  int  low_key() const                           { return get_aligned_Java_u4_at(1 + 1*jintSize); }
+  int  high_key() const                          { return get_aligned_Java_u4_at(1 + 2*jintSize); }
   int  dest_offset_at(int i) const;
   int  length()                                  { return high_key()-low_key()+1; }
 };
