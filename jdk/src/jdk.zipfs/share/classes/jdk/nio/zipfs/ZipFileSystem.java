@@ -936,6 +936,7 @@ class ZipFileSystem extends FileSystem {
         return zc.toString(name);
     }
 
+    @SuppressWarnings("deprecation")
     protected void finalize() throws IOException {
         close();
     }

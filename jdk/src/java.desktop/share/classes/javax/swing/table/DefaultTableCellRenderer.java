@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import sun.swing.DefaultLookup;
  * in a <code>JTable</code>.
  * <p>
  *
- * <strong><a name="override">Implementation Note:</a></strong>
+ * <strong><a id="override">Implementation Note:</a></strong>
  * This class inherits from <code>JLabel</code>, a standard component class.
  * However <code>JTable</code> employs a unique mechanism for rendering
  * its cells and therefore requires some slightly modified behavior
