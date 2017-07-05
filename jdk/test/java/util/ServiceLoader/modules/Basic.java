@@ -24,6 +24,7 @@
 /**
  * @test
  * @library modules
+ * @modules java.scripting
  * @build bananascript/*
  * @compile src/pearscript/org/pear/PearScriptEngineFactory.java
  *          src/pearscript/org/pear/PearScript.java
