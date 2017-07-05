@@ -25,9 +25,6 @@
  * @bug 4838379
  * @summary Verify that custom serialization methods defined by enum types are
  *          not invoked during serialization or deserialization.
- *
- * @compile -source 1.5 Test.java
- * @run main Test
  */
 
 import java.io.*;

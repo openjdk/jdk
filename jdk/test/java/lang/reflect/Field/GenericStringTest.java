@@ -26,8 +26,6 @@
  * @bug 5033583
  * @summary Check toGenericString() method
  * @author Joseph D. Darcy
- * @compile -source 1.5 GenericStringTest.java
- * @run main GenericStringTest
  */
 
 import java.lang.reflect.*;

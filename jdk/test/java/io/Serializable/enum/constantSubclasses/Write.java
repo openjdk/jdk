@@ -26,10 +26,10 @@
  * @summary Verify that serialization of enum constants that are instances of
  *          constant-specific subclasses functions properly.
  *
- * @compile -source 1.5 Write.java
+ * @compile Write.java
  * @run main Write
  * @clean Write
- * @compile -source 1.5 Read.java
+ * @compile Read.java
  * @run main Read
  * @clean Read
  */

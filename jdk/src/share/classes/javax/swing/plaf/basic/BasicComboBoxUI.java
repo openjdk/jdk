@@ -30,7 +30,6 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.accessibility.*;
 import javax.swing.plaf.*;
-import javax.swing.border.*;
 import javax.swing.text.*;
 import javax.swing.event.*;
 import java.beans.PropertyChangeListener;
@@ -189,19 +188,20 @@ public class BasicComboBoxUI extends ComboBoxUI {
     /**
      * Indicates whether or not the combo box button should be square.
      * If square, then the width and height are equal, and are both set to
-     * the height of the combo (minus appropriate insets).
+     * the height of the combo minus appropriate insets.
+     *
+     * @since 1.7
      */
-    private boolean squareButton = true;
+    protected boolean squareButton = true;
 
     /**
-     * Optional: if specified, these insets act as padding around the cell
-     * renderer when laying out and painting the "selected" item in the
-     * combo box. BasicComboBoxUI uses a single combo box renderer for rendering
-     * both the main combo box item and also all the items in the dropdown
-     * for the combo box. padding allows you to specify addition insets in
-     * addition to those specified by the cell renderer.
+     * If specified, these insets act as padding around the cell renderer when
+     * laying out and painting the "selected" item in the combo box. These
+     * insets add to those specified by the cell renderer.
+     *
+     * @since 1.7
      */
-    private Insets padding;
+    protected Insets padding;
 
     // Used for calculating the default size.
     private static ListCellRenderer getDefaultListCellRenderer() {
@@ -345,7 +345,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     }
 
     /**
-     * Create and install the listeners for the combo box and its model.
+     * Creates and installs listeners for the combo box and its model.
      * This method is called when the UI is installed.
      */
     protected void installListeners() {
@@ -379,8 +379,8 @@ public class BasicComboBoxUI extends ComboBoxUI {
     }
 
     /**
-     * Uninstalls the default colors, default font, default renderer, and default
-     * editor into the JComboBox.
+     * Uninstalls the default colors, default font, default renderer,
+     * and default editor from the combo box.
      */
     protected void uninstallDefaults() {
         LookAndFeel.installColorsAndFont( comboBox,
@@ -391,7 +391,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     }
 
     /**
-     * Remove the installed listeners from the combo box and its model.
+     * Removes the installed listeners from the combo box and its model.
      * The number and types of listeners removed and in this method should be
      * the same that was added in <code>installListeners</code>
      */
@@ -839,7 +839,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     }
 
     /**
-     * Creates an button which will be used as the control to show or hide
+     * Creates a button which will be used as the control to show or hide
      * the popup portion of the combo box.
      *
      * @return a button which represents the popup control
@@ -1392,12 +1392,17 @@ public class BasicComboBoxUI extends ComboBoxUI {
     }
 
     /**
-     * This has been refactored out in hopes that it may be investigated and
-     * simplified for the next major release. adding/removing
-     * the component to the currentValuePane and changing the font may be
-     * redundant operations.
+     * Returns the size a component would have if used as a cell renderer.
+     *
+     * @param comp a {@code Component} to check
+     * @return size of the component
+     * @since 1.7
      */
-    private Dimension getSizeForComponent(Component comp) {
+    protected Dimension getSizeForComponent(Component comp) {
+        // This has been refactored out in hopes that it may be investigated and
+        // simplified for the next major release. adding/removing
+        // the component to the currentValuePane and changing the font may be
+        // redundant operations.
         currentValuePane.add(comp);
         comp.setFont(comboBox.getFont());
         Dimension d = comp.getPreferredSize();

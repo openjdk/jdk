@@ -25,9 +25,6 @@
  * @test
  * @bug 4881275
  * @summary (reflect) Class.cast() - typesafe cast desired
- *
- * @compile -source 1.5 Cast.java
- * @run main Cast
  */
 
 public class Cast {

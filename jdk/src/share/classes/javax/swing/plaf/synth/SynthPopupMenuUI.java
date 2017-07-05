@@ -26,49 +26,43 @@
 package javax.swing.plaf.synth;
 
 import javax.swing.*;
-import javax.swing.event.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
-import javax.swing.border.*;
-
-import java.applet.Applet;
-
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.KeyboardFocusManager;
-import java.awt.Window;
-import java.awt.event.*;
-import java.awt.AWTEvent;
-import java.awt.Toolkit;
-
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 
-import java.util.*;
-import sun.swing.plaf.synth.SynthUI;
-
 /**
- * Synth's PopupMenuUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JPopupMenu}.
  *
  * @author Georges Saab
  * @author David Karlton
  * @author Arnaud Weber
+ * @since 1.7
  */
-class SynthPopupMenuUI extends BasicPopupMenuUI implements
-                PropertyChangeListener, SynthUI {
+public class SynthPopupMenuUI extends BasicPopupMenuUI
+                              implements PropertyChangeListener, SynthUI {
     private SynthStyle style;
 
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param x component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent x) {
         return new SynthPopupMenuUI();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void installDefaults() {
         if (popupMenu.getLayout() == null ||
             popupMenu.getLayout() instanceof UIResource) {
-            popupMenu.setLayout(new DefaultMenuLayout(
-                                    popupMenu, BoxLayout.Y_AXIS));
+            popupMenu.setLayout(new SynthMenuLayout(popupMenu, BoxLayout.Y_AXIS));
         }
         updateStyle(popupMenu);
     }
@@ -86,11 +80,19 @@ class SynthPopupMenuUI extends BasicPopupMenuUI implements
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installListeners() {
         super.installListeners();
         popupMenu.addPropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults() {
         SynthContext context = getContext(popupMenu, ENABLED);
 
@@ -103,11 +105,19 @@ class SynthPopupMenuUI extends BasicPopupMenuUI implements
         }
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
         popupMenu.removePropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
     }
@@ -117,14 +127,14 @@ class SynthPopupMenuUI extends BasicPopupMenuUI implements
                     SynthLookAndFeel.getRegion(c), style, state);
     }
 
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
-    }
-
     private int getComponentState(JComponent c) {
         return SynthLookAndFeel.getComponentState(c);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -135,6 +145,10 @@ class SynthPopupMenuUI extends BasicPopupMenuUI implements
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -142,14 +156,28 @@ class SynthPopupMenuUI extends BasicPopupMenuUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component. This implementation does nothing.
+     *
+     * @param context context for the component being painted
+     * @param g {@code Graphics} object used for painting
+     */
     protected void paint(SynthContext context, Graphics g) {
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintPopupMenuBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
             updateStyle(popupMenu);

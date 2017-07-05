@@ -25,9 +25,6 @@
  * @bug 4838379
  * @summary Verify that serialVersionUID and serialPersistentFields
  *          declarations made by enum types and constants are ignored.
- *
- * @compile -source 1.5 Test.java
- * @run main Test
  */
 
 import java.io.*;

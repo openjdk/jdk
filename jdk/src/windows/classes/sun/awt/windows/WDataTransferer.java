@@ -72,6 +72,10 @@ import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
 import sun.awt.image.ImageRepresentation;
 import sun.awt.image.ToolkitImage;
 
+import java.util.ArrayList;
+
+import java.io.ByteArrayOutputStream;
+
 /**
  * Platform-specific support for the data transfer subsystem.
  *
@@ -340,6 +344,33 @@ public class WDataTransferer extends DataTransferer {
 
         byte[] imageData = buffer.getData();
         return imageDataToPlatformImageBytes(imageData, width, height, format);
+    }
+
+    private static final byte [] UNICODE_NULL_TERMINATOR =  new byte [] {0,0};
+
+    protected ByteArrayOutputStream convertFileListToBytes(ArrayList<String> fileList)
+        throws IOException
+    {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        if(fileList.isEmpty()) {
+            //store empty unicode string (null terminator)
+            bos.write(UNICODE_NULL_TERMINATOR);
+        } else {
+            for (int i = 0; i < fileList.size(); i++) {
+                byte[] bytes = fileList.get(i).getBytes(getDefaultUnicodeEncoding());
+                //store unicode string with null terminator
+                bos.write(bytes, 0, bytes.length);
+                bos.write(UNICODE_NULL_TERMINATOR);
+            }
+        }
+
+        // According to MSDN the byte array have to be double NULL-terminated.
+        // The array contains Unicode characters, so each NULL-terminator is
+        // a pair of bytes
+
+        bos.write(UNICODE_NULL_TERMINATOR);
+        return bos;
     }
 
    /**

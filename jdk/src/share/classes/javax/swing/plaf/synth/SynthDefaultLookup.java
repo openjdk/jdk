@@ -27,7 +27,6 @@ package javax.swing.plaf.synth;
 import sun.swing.DefaultLookup;
 import javax.swing.JComponent;
 import javax.swing.plaf.ComponentUI;
-import sun.swing.plaf.synth.SynthUI;
 
 /**
  * SynthDefaultLookup redirects all lookup calls to the SynthContext.

@@ -28,7 +28,6 @@ package sun.tracing;
 import java.lang.reflect.Method;
 import java.io.PrintStream;
 import java.util.HashMap;
-import java.util.logging.Logger;
 
 import com.sun.tracing.ProviderFactory;
 import com.sun.tracing.Provider;
@@ -54,13 +53,7 @@ public class PrintStreamProviderFactory extends ProviderFactory {
 
     public <T extends Provider> T createProvider(Class<T> cls) {
         PrintStreamProvider provider = new PrintStreamProvider(cls, stream);
-        try {
-            provider.init();
-        } catch (Exception e) {
-            // Probably a permission problem (can't get declared members)
-            Logger.getAnonymousLogger().warning(
-                "Could not initialize tracing provider: " + e.getMessage());
-        }
+        provider.init();
         return provider.newProxyInstance();
     }
 }

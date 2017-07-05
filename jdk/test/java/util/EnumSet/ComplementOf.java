@@ -26,9 +26,6 @@
  * @bug     4946096
  * @summary ComplementOf static factory is broken in Regular and Jumbo enum set
  * @author  Josh Bloch
- *
- * @compile -source 1.5 ComplementOf.java
- * @run main ComplementOf
  */
 
 import java.util.*;

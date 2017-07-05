@@ -98,7 +98,7 @@ env
 set -vx
 #
 #Compile.  jconsole.jar is required on the classpath.
-${TESTJAVA}/bin/javac -source 1.5 -d "${TESTCLASSES}" ${CP} -g \
+${TESTJAVA}/bin/javac -d "${TESTCLASSES}" ${CP} -g \
                          "${TESTSRC}"/"${TARGETCLASS}".java
 #
 #Run the test class, again with the classpath we need:
