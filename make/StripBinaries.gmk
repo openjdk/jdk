@@ -53,7 +53,7 @@ else
 endif
 
 # Don't include debug info for executables.
-ALL_CMDS_SRC := $(filter-out %.debuginfo %.diz %.map %.pdb, \
+ALL_CMDS_SRC := $(filter-out %.bc %.debuginfo %.diz %.map %.pdb, \
     $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_cmds -type f -o -type l))
 COPY_CMDS_SRC := $(filter %.cgi, $(ALL_CMDS_SRC))
 STRIP_CMDS_SRC := $(filter-out $(COPY_CMDS_SRC), $(ALL_CMDS_SRC))
