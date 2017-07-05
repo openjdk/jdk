@@ -761,7 +761,7 @@ HeapWord* MutableNUMASpace::allocate(size_t size) {
 
   if (p != NULL) {
     size_t remainder = s->free_in_words();
-    if (remainder < (size_t)oopDesc::header_size() && remainder > 0) {
+    if (remainder < CollectedHeap::min_fill_size() && remainder > 0) {
       s->set_top(s->top() - size);
       p = NULL;
     }
@@ -803,7 +803,7 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   HeapWord *p = s->cas_allocate(size);
   if (p != NULL) {
     size_t remainder = pointer_delta(s->end(), p + size);
-    if (remainder < (size_t)oopDesc::header_size() && remainder > 0) {
+    if (remainder < CollectedHeap::min_fill_size() && remainder > 0) {
       if (s->cas_deallocate(p, size)) {
         // We were the last to allocate and created a fragment less than
         // a minimal object.

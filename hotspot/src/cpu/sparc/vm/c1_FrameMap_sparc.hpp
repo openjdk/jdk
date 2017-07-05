@@ -143,6 +143,3 @@
 
   static bool is_caller_save_register (LIR_Opr  reg);
   static bool is_caller_save_register (Register r);
-
-  // JSR 292
-  static LIR_Opr& method_handle_invoke_SP_save_opr() { return L7_opr; }

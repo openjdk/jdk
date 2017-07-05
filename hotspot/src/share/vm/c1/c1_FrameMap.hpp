@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,9 @@ class FrameMap : public CompilationResourceObj {
   // Opr representing the stack_pointer on this platform
   static LIR_Opr stack_pointer();
 
+  // JSR 292
+  static LIR_Opr method_handle_invoke_SP_save_opr();
+
   static BasicTypeArray*     signature_type_array_for(const ciMethod* method);
   static BasicTypeArray*     signature_type_array_for(const char * signature);
 
@@ -232,7 +235,7 @@ class FrameMap : public CompilationResourceObj {
     return _caller_save_fpu_regs[i];
   }
 
-  static void init();
+  static void initialize();
 };
 
 //               CallingConvention

@@ -914,6 +914,7 @@ class StubGenerator: public StubCodeGenerator {
   //  * [tos + 5]: error message (char*)
   //  * [tos + 6]: object to verify (oop)
   //  * [tos + 7]: saved rax - saved by caller and bashed
+  //  * [tos + 8]: saved r10 (rscratch1) - saved by caller
   //  * = popped on exit
   address generate_verify_oop() {
     StubCodeMark mark(this, "StubRoutines", "verify_oop");
@@ -934,6 +935,7 @@ class StubGenerator: public StubCodeGenerator {
            // After previous pushes.
            oop_to_verify = 6 * wordSize,
            saved_rax     = 7 * wordSize,
+           saved_r10     = 8 * wordSize,
 
            // Before the call to MacroAssembler::debug(), see below.
            return_addr   = 16 * wordSize,
@@ -983,15 +985,17 @@ class StubGenerator: public StubCodeGenerator {
     // return if everything seems ok
     __ bind(exit);
     __ movptr(rax, Address(rsp, saved_rax));     // get saved rax back
+    __ movptr(rscratch1, Address(rsp, saved_r10)); // get saved r10 back
     __ pop(c_rarg3);                             // restore c_rarg3
     __ pop(c_rarg2);                             // restore c_rarg2
     __ pop(r12);                                 // restore r12
     __ popf();                                   // restore flags
-    __ ret(3 * wordSize);                        // pop caller saved stuff
+    __ ret(4 * wordSize);                        // pop caller saved stuff
 
     // handle errors
     __ bind(error);
     __ movptr(rax, Address(rsp, saved_rax));     // get saved rax back
+    __ movptr(rscratch1, Address(rsp, saved_r10)); // get saved r10 back
     __ pop(c_rarg3);                             // get saved c_rarg3 back
     __ pop(c_rarg2);                             // get saved c_rarg2 back
     __ pop(r12);                                 // get saved r12 back
@@ -1009,6 +1013,7 @@ class StubGenerator: public StubCodeGenerator {
     //   * [tos + 17] error message (char*)
     //   * [tos + 18] object to verify (oop)
     //   * [tos + 19] saved rax - saved by caller and bashed
+    //   * [tos + 20] saved r10 (rscratch1) - saved by caller
     //   * = popped on exit
 
     __ movptr(c_rarg0, Address(rsp, error_msg));    // pass address of error message
@@ -1021,7 +1026,7 @@ class StubGenerator: public StubCodeGenerator {
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug64)));
     __ mov(rsp, r12);                               // restore rsp
     __ popa();                                      // pop registers (includes r12)
-    __ ret(3 * wordSize);                           // pop caller saved stuff
+    __ ret(4 * wordSize);                           // pop caller saved stuff
 
     return start;
   }

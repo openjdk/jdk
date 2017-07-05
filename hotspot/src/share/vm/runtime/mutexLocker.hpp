@@ -84,9 +84,6 @@ extern Mutex*   ParGCRareEvent_lock;             // Synchronizes various (rare) 
 extern Mutex*   EvacFailureStack_lock;           // guards the evac failure scan stack
 extern Mutex*   Compile_lock;                    // a lock held when Compilation is updating code (used to block CodeCache traversal, CHA updates, etc)
 extern Monitor* MethodCompileQueue_lock;         // a lock held when method compilations are enqueued, dequeued
-#ifdef TIERED
-extern Monitor* C1_lock;                         // a lock to ensure on single c1 compile is ever active
-#endif // TIERED
 extern Monitor* CompileThread_lock;              // a lock held by compile threads during compilation system initialization
 extern Mutex*   CompileTaskAlloc_lock;           // a lock held when CompileTasks are allocated
 extern Mutex*   CompileStatistics_lock;          // a lock held when updating compilation statistics
