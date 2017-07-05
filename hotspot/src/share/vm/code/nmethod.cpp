@@ -2609,7 +2609,7 @@ address nmethod::continuation_for_implicit_exception(address pc) {
   int cont_offset = ImplicitExceptionTable(this).at( exception_offset );
 #ifdef ASSERT
   if (cont_offset == 0) {
-    Thread* thread = ThreadLocalStorage::get_thread_slow();
+    Thread* thread = Thread::current();
     ResetNoHandleMark rnm; // Might be called from LEAF/QUICK ENTRY
     HandleMark hm(thread);
     ResourceMark rm(thread);

@@ -201,7 +201,7 @@ public final class Bootstrap {
      *
      * @return callsite for a math intrinsic node
      */
-    public static CallSite mathBootstrap(final MethodHandles.Lookup lookup, final String name, final MethodType type, final int programPoint) {
+    public static CallSite mathBootstrap(final Lookup lookup, final String name, final MethodType type, final int programPoint) {
         final MethodHandle mh;
         switch (name) {
         case "iadd":
@@ -221,24 +221,6 @@ public final class Bootstrap {
             break;
         case "ineg":
             mh = JSType.NEGATE_EXACT.methodHandle();
-            break;
-        case "ladd":
-            mh = JSType.ADD_EXACT_LONG.methodHandle();
-            break;
-        case "lsub":
-            mh = JSType.SUB_EXACT_LONG.methodHandle();
-            break;
-        case "lmul":
-            mh = JSType.MUL_EXACT_LONG.methodHandle();
-            break;
-        case "ldiv":
-            mh = JSType.DIV_EXACT_LONG.methodHandle();
-            break;
-        case "lrem":
-            mh = JSType.REM_EXACT_LONG.methodHandle();
-            break;
-        case "lneg":
-            mh = JSType.NEGATE_EXACT_LONG.methodHandle();
             break;
         default:
             throw new AssertionError("unsupported math intrinsic");

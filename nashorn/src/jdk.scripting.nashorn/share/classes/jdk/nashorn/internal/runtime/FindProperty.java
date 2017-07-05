@@ -218,13 +218,6 @@ public final class FindProperty {
      * Get the property value from self as object.
      * @return the property value
      */
-    public long getLongValue() {
-        return property.getLongValue(getGetterReceiver(), getOwner());
-    }
-    /**
-     * Get the property value from self as object.
-     * @return the property value
-     */
     public double getDoubleValue() {
         return property.getDoubleValue(getGetterReceiver(), getOwner());
     }
@@ -243,16 +236,6 @@ public final class FindProperty {
      * @param strict strict flag
      */
     public void setValue(final int value, final boolean strict) {
-        property.setValue(getSetterReceiver(), getOwner(), value, strict);
-    }
-
-    /**
-     * Set the property value in self.
-     *
-     * @param value the new value
-     * @param strict strict flag
-     */
-    public void setValue(final long value, final boolean strict) {
         property.setValue(getSetterReceiver(), getOwner(), value, strict);
     }
 

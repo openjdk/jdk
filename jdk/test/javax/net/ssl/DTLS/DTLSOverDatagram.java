@@ -28,6 +28,7 @@
  * @test
  * @bug 8043758
  * @summary Datagram Transport Layer Security (DTLS)
+ * @modules java.base/sun.security.util
  * @run main/othervm DTLSOverDatagram
  */
 
@@ -40,7 +41,7 @@ import java.security.cert.*;
 import javax.net.ssl.*;
 import java.util.concurrent.*;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 /**
  * An example to show the way to use SSLEngine in datagram connections.

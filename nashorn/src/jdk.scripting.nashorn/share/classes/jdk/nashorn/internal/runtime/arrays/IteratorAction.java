@@ -130,6 +130,6 @@ public abstract class IteratorAction<T> {
      *
      * @throws Throwable if invocation throws an exception/error
      */
-    protected abstract boolean forEach(final Object val, final long i) throws Throwable;
+    protected abstract boolean forEach(final Object val, final double i) throws Throwable;
 
 }

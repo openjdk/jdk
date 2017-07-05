@@ -30,6 +30,7 @@
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.zip.*;
@@ -110,6 +111,6 @@ public class ReadZip {
                                      "input"
                                       + String.valueOf(new java.util.Random().nextInt())
                                       + ".zip")));
-        } catch (FileNotFoundException fnfe) {}
+        } catch (NoSuchFileException nsfe) {}
     }
 }

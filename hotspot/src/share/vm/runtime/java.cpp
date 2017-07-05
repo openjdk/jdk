@@ -512,10 +512,10 @@ void before_exit(JavaThread * thread) {
 }
 
 void vm_exit(int code) {
-  Thread* thread = ThreadLocalStorage::is_initialized() ?
-    ThreadLocalStorage::get_thread_slow() : NULL;
+  Thread* thread =
+      ThreadLocalStorage::is_initialized() ? Thread::current_or_null() : NULL;
   if (thread == NULL) {
-    // we have serious problems -- just exit
+    // very early initialization failure -- just exit
     vm_direct_exit(code);
   }
 
@@ -551,8 +551,7 @@ void vm_perform_shutdown_actions() {
   // Calling 'exit_globals()' will disable thread-local-storage and cause all
   // kinds of assertions to trigger in debug mode.
   if (is_init_completed()) {
-    Thread* thread = ThreadLocalStorage::is_initialized() ?
-                     ThreadLocalStorage::get_thread_slow() : NULL;
+    Thread* thread = Thread::current_or_null();
     if (thread != NULL && thread->is_Java_thread()) {
       // We are leaving the VM, set state to native (in case any OS exit
       // handlers call back to the VM)
@@ -606,7 +605,7 @@ void vm_exit_during_initialization(Handle exception) {
   // If there are exceptions on this thread it must be cleared
   // first and here. Any future calls to EXCEPTION_MARK requires
   // that no pending exceptions exist.
-  Thread *THREAD = Thread::current();
+  Thread *THREAD = Thread::current(); // can't be NULL
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
   }

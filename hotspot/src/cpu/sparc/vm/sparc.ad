@@ -1651,6 +1651,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
 #endif // !_LP64
 
   Unimplemented();
+  return 0;
 }
 
 #ifndef PRODUCT

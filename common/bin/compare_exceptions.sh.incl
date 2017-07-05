@@ -57,14 +57,18 @@ ACCEPTED_BIN_DIFF="
 ./demo/jvmti/mtrace/lib/libmtrace.so
 ./demo/jvmti/versionCheck/lib/libversionCheck.so
 ./demo/jvmti/waiters/lib/libwaiters.so
+./lib/i386/client/libjsig.so
 ./lib/i386/client/libjvm.so
 ./lib/i386/libattach.so
 ./lib/i386/libdt_socket.so
 ./lib/i386/libinstrument.so
 ./lib/i386/libjsdt.so
+./lib/i386/libjsig.so
 ./lib/i386/libmanagement.so
+./lib/i386/libnet.so
 ./lib/i386/libnpt.so
 ./lib/i386/libverify.so
+./lib/i386/server/libjsig.so
 ./lib/i386/server/libjvm.so
 ./bin/appletviewer
 ./bin/idlj
@@ -105,6 +109,17 @@ ACCEPTED_BIN_DIFF="
 ./bin/xjc
 "
 
+# Issue with __FILE__ usage in generated header files prevent clean fulldump diff of
+# server jvm with old hotspot build.
+KNOWN_FULLDUMP_DIFF="
+./lib/i386/server/libjvm.so
+"
+KNOWN_DIS_DIFF="
+./lib/i386/server/libjvm.so
+"
+DIS_DIFF_FILTER="$SED \
+  -e 's/\(:\t\)\([0-9a-z]\{2,2\} \)\{1,7\}/\1<hex>/g' \
+  -e 's/0x[0-9a-z]\{2,9\}/<hex>/g'"
 fi
 
 if [ "$OPENJDK_TARGET_OS" = "linux" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
@@ -135,6 +150,7 @@ ACCEPTED_BIN_DIFF="
 ./lib/amd64/libjsdt.so
 ./lib/amd64/libjsig.so
 ./lib/amd64/libmanagement.so
+./lib/amd64/libnet.so
 ./lib/amd64/libnpt.so
 ./lib/amd64/libsaproc.so
 ./lib/amd64/libverify.so
@@ -177,6 +193,12 @@ ACCEPTED_BIN_DIFF="
 ./bin/wsgen
 ./bin/wsimport
 ./bin/xjc
+"
+
+# Issue with __FILE__ usage in generated header files prevent clean fulldump diff of
+# server jvm with old hotspot build.
+KNOWN_FULLDUMP_DIFF="
+./lib/amd64/server/libjvm.so
 "
 
 fi
@@ -299,14 +321,13 @@ SKIP_FULLDUMP_DIFF="true"
 
 # Filter random C++ symbol strings.
 # Some numbers differ randomly.
-# Can't use space in these expressions as the shell will mess with them.
 DIS_DIFF_FILTER="$SED \
-    -e 's/\.[a-zA-Z0-9_\$]\{15,15\}/<SYM>/g' \
-    -e 's/\([0-9a-f][0-9a-f].\)\{2,8\}[0-9a-f][0-9a-f]/<NUMS>/g' \
-    -e 's/\(0x\)[0-9a-f]*\([,(>]\)/\1<HEX>\2/g' \
-    -e 's/\(0x\)[0-9a-f]*$/\1<HEX>/g' \
-    -e 's/\(\#.\)[0-9a-f]*\(.<\)/\1<HEX>\2/g' \
-    -e 's/[\.A-Za-z0-9%]\{16,16\}$/<BIN>/g'"
+    -e 's/\.[a-zA-Z0-9_\$]\{15\}/<SYM>/g' \
+    -e 's/\(\# \)[0-9a-f]*\( <\)/\1<HEX>\2/g' \
+    -e 's/0x[0-9a-f]*$/<HEX>/g' \
+    -e 's/0x[0-9a-f]*\([,(>]\)/<HEX>\1/g' \
+    -e 's/:	[0-9a-f][0-9a-f]\( [0-9a-f][0-9a-f]\)\{2,10\}/:	<NUMS>/g' \
+    -e 's/     [\.A-Za-z0-9%@]\{16\}$/     <BIN>/g'"
 
 fi
 
@@ -425,18 +446,23 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/xjc
 "
 
-# Filter random C++ symbol strings.
 # Some numbers differ randomly.
 DIS_DIFF_FILTER="$SED \
-    -e 's/\$[a-zA-Z0-9_\$]\{15,15\}/<SYM>/g' \
-    -e 's/[0-9a-f][0-9a-f].[0-9a-f][0-9a-f].[0-9a-f][0-9a-f].[0-9a-f][0-9a-f]/<NUMS>/g' \
-    -e 's/\(%g1,.0x\)[0-9a-f]*\(,.%g1\)/\1<HEX>\2/g' \
-    -e 's/\(!.\)[0-9a-f]*\(.<SUNWprivate_1.1+0x\)[0-9a-f]*/\1<NUM>\2<HEX>/g' \
-    -e 's/\!.[0-9a-f]\{1,4\} <_DYNAMIC+0x[0-9a-f]\{1,4\}>/<DYNAMIC>/g'"
+    -e 's/\$[a-zA-Z0-9_\$]\{15\}/<SYM>/g' \
+    -e 's/:	[0-9a-f][0-9a-f]\( [0-9a-f][0-9a-f]\)\{2,10\}/:	<NUMS>/g' \
+    -e 's/, [0-9a-fx\-]\{1,8\}/, <CONST>/g' \
+    -e 's/call  [0-9a-f]\{7\}/call  <ADDR>/g' \
+    -e 's/0x[0-9a-f]\{1,8\}/<HEX>/g' \
+    -e 's/\! [0-9a-f]\{1,8\} /! <ADDR> /g'"
 
-# Some xor instructions end up with different args in the lib but not in the object files.
-ACCEPTED_DIS_DIFF="
-./demo/jvmti/waiters/lib/libwaiters.so
+# libjvm.so
+# __FILE__ macro usage in debug.hpp causes differences between old and new
+# hotspot builds in ad_sparc.o and ad_sparc_clone.o. The .o files compare
+# equal when stripped, but at link time differences appear. Removing
+# __FILE__ from ShouldNotCallThis() and ShouldNotReachHere() removes
+# the differences.
+KNOWN_DIS_DIFF="
+./lib/sparcv9/server/libjvm.so
 "
 
 SKIP_FULLDUMP_DIFF="true"
@@ -634,11 +660,12 @@ ACCEPTED_BIN_DIFF="
 SORT_SYMBOLS="
 ./Contents/Home/lib/libsaproc.dylib
 ./lib/libsaproc.dylib
+./lib/libjsig.dylib
 "
 
 ACCEPTED_SMALL_SIZE_DIFF="$ACCEPTED_BIN_DIFF"
 
-DIS_DIFF_FILTER="$SED \
-    -e 's/0x[0-9a-f]\{4,16\}/<HEXSTR>/g'"
+DIS_DIFF_FILTER="LANG=C $SED \
+    -e 's/0x[0-9a-f]\{3,16\}/<HEXSTR>/g' -e 's/^[0-9a-f]\{12,20\}/<ADDR>/'"
 
 fi

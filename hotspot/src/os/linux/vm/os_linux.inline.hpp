@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,6 @@
 #include <sys/socket.h>
 #include <sys/poll.h>
 #include <netdb.h>
-
-inline void* os::thread_local_storage_at(int index) {
-  return pthread_getspecific((pthread_key_t)index);
-}
 
 // File names are case-sensitive on windows only
 inline int os::file_name_strcmp(const char* s1, const char* s2) {

@@ -33,67 +33,46 @@
     
     var b = true;
     var i = 1;
-    var l = 4294967296;
     var d = 2.1;
     var o = "foo";
 
     print(inspect(b || b, "b || b"));
     print(inspect(b || i, "b || i"));
-    print(inspect(b || l, "b || l"));
     print(inspect(b || d, "b || d"));
     print(inspect(b || o, "b || o"));
         
     print(inspect(i || b, "i || b"));
     print(inspect(i || i, "i || i"));
-    print(inspect(i || l, "i || l"));
     print(inspect(i || d, "i || d"));
     print(inspect(i || o, "i || o"));
 
-    print(inspect(l || b, "l || b"));
-    print(inspect(l || i, "l || i"));
-    print(inspect(l || l, "l || l"));
-    print(inspect(l || d, "l || d"));
-    print(inspect(l || o, "l || o"));
-
     print(inspect(d || b, "d || b"));
     print(inspect(d || i, "d || i"));
-    print(inspect(d || l, "d || l"));
     print(inspect(d || d, "d || d"));
     print(inspect(d || o, "d || o"));
 
     print(inspect(o || b, "o || b"));
     print(inspect(o || i, "o || i"));
-    print(inspect(o || l, "o || l"));
     print(inspect(o || d, "o || d"));
     print(inspect(o || o, "o || o"));
 
     print(inspect(b && b, "b && b"));
     print(inspect(b && i, "b && i"));
-    print(inspect(b && l, "b && l"));
     print(inspect(b && d, "b && d"));
     print(inspect(b && o, "b && o"));
         
     print(inspect(i && b, "i && b"));
     print(inspect(i && i, "i && i"));
-    print(inspect(i && l, "i && l"));
     print(inspect(i && d, "i && d"));
     print(inspect(i && o, "i && o"));
 
-    print(inspect(l && b, "l && b"));
-    print(inspect(l && i, "l && i"));
-    print(inspect(l && l, "l && l"));
-    print(inspect(l && d, "l && d"));
-    print(inspect(l && o, "l && o"));
-
     print(inspect(d && b, "d && b"));
     print(inspect(d && i, "d && i"));
-    print(inspect(d && l, "d && l"));
     print(inspect(d && d, "d && d"));
     print(inspect(d && o, "d && o"));
 
     print(inspect(o && b, "o && b"));
     print(inspect(o && i, "o && i"));
-    print(inspect(o && l, "o && l"));
     print(inspect(o && d, "o && d"));
     print(inspect(o && o, "o && o"));
 })();

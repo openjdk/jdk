@@ -41,7 +41,6 @@ import static jdk.nashorn.internal.runtime.JSType.CONVERT_OBJECT_OPTIMISTIC;
 import static jdk.nashorn.internal.runtime.JSType.GET_UNDEFINED;
 import static jdk.nashorn.internal.runtime.JSType.TYPE_DOUBLE_INDEX;
 import static jdk.nashorn.internal.runtime.JSType.TYPE_INT_INDEX;
-import static jdk.nashorn.internal.runtime.JSType.TYPE_LONG_INDEX;
 import static jdk.nashorn.internal.runtime.JSType.TYPE_OBJECT_INDEX;
 import static jdk.nashorn.internal.runtime.JSType.TYPE_UNDEFINED_INDEX;
 import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
@@ -535,8 +534,6 @@ public final class ObjectClassGenerator implements Loggable {
         switch (getAccessorTypeIndex(forType)) {
         case TYPE_INT_INDEX:
             return MH.explicitCastArguments(primitiveGetter, primitiveGetter.type().changeReturnType(int.class));
-        case TYPE_LONG_INDEX:
-            return primitiveGetter;
         case TYPE_DOUBLE_INDEX:
             return MH.filterReturnValue(primitiveGetter, UNPACK_DOUBLE);
         case TYPE_OBJECT_INDEX:
@@ -623,7 +620,7 @@ public final class ObjectClassGenerator implements Loggable {
         }
 
         assert !isOptimistic;
-            //freely coerce the result to whatever you asked for, this is e.g. Object->int for a & b
+        // freely coerce the result to whatever you asked for, this is e.g. Object->int for a & b
         final MethodHandle tgetter = getterForType(forType, primitiveGetter, objectGetter);
         if (fti == TYPE_OBJECT_INDEX) {
             if (fti != ti) {
@@ -638,22 +635,10 @@ public final class ObjectClassGenerator implements Loggable {
         case TYPE_INT_INDEX: {
             return MH.asType(tgetter, tgetterType.changeReturnType(type));
         }
-        case TYPE_LONG_INDEX:
-            switch (ti) {
-            case TYPE_INT_INDEX:
-                //get int while an int, truncating cast of long value
-                return MH.filterReturnValue(tgetter, JSType.TO_INT32_L.methodHandle);
-            case TYPE_LONG_INDEX:
-                return primitiveGetter;
-            default:
-                return MH.asType(tgetter, tgetterType.changeReturnType(type));
-            }
         case TYPE_DOUBLE_INDEX:
             switch (ti) {
             case TYPE_INT_INDEX:
                 return MH.filterReturnValue(tgetter, JSType.TO_INT32_D.methodHandle);
-            case TYPE_LONG_INDEX:
-                return MH.explicitCastArguments(tgetter, tgetterType.changeReturnType(type));
             case TYPE_DOUBLE_INDEX:
                 assert tgetterType.returnType() == double.class;
                 return tgetter;
@@ -734,12 +719,9 @@ public final class ObjectClassGenerator implements Loggable {
 
         switch (fti) {
         case TYPE_INT_INDEX:
-        case TYPE_LONG_INDEX:
             switch (ti) {
             case TYPE_INT_INDEX:
                 return MH.asType(primitiveSetter, pmt.changeParameterType(1, int.class));
-            case TYPE_LONG_INDEX:
-                return primitiveSetter;
             case TYPE_DOUBLE_INDEX:
                 return MH.filterArguments(primitiveSetter, 1, PACK_DOUBLE);
             default:

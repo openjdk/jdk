@@ -1131,11 +1131,7 @@ public class Lexer extends Scanner {
      */
     private static Number valueOf(final String valueString, final int radix) throws NumberFormatException {
         try {
-            final long value = Long.parseLong(valueString, radix);
-            if(value >= MIN_INT_L && value <= MAX_INT_L) {
-                return (int)value;
-            }
-            return value;
+            return Integer.parseInt(valueString, radix);
         } catch (final NumberFormatException e) {
             if (radix == 10) {
                 return Double.valueOf(valueString);
@@ -1782,8 +1778,6 @@ public class Lexer extends Scanner {
             //yet we don't want e.g. 1e6 to be a double unnecessarily
             if (JSType.isStrictlyRepresentableAsInt(value)) {
                 return (int)value;
-            } else if (JSType.isStrictlyRepresentableAsLong(value)) {
-                return (long)value;
             }
             return value;
         case STRING:

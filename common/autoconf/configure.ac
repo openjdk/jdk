@@ -44,6 +44,7 @@ m4_include([boot-jdk.m4])
 m4_include([build-performance.m4])
 m4_include([flags.m4])
 m4_include([help.m4])
+m4_include([hotspot.m4])
 m4_include([jdk-options.m4])
 m4_include([jdk-version.m4])
 m4_include([libraries.m4])
@@ -94,9 +95,10 @@ JDKOPT_SETUP_OPEN_OR_CUSTOM
 
 # These are needed to be able to create a configuration name (and thus the output directory)
 JDKOPT_SETUP_JDK_VARIANT
-JDKOPT_SETUP_JVM_INTERPRETER
-JDKOPT_SETUP_JVM_VARIANTS
+HOTSPOT_SETUP_JVM_INTERPRETER
+HOTSPOT_SETUP_JVM_VARIANTS
 JDKOPT_SETUP_DEBUG_LEVEL
+HOTSPOT_SETUP_DEBUG_LEVEL
 
 # With basic setup done, call the custom early hook.
 CUSTOM_EARLY_HOOK
@@ -132,6 +134,7 @@ BASIC_SETUP_DEFAULT_MAKE_TARGET
 
 # We need build & target for this.
 JDKOPT_SETUP_JDK_OPTIONS
+HOTSPOT_SETUP_HOTSPOT_OPTIONS
 JDKVER_SETUP_JDK_VERSION_NUMBERS
 
 ###############################################################################
@@ -220,7 +223,7 @@ LIB_SETUP_LIBRARIES
 #
 ###############################################################################
 
-JDKOPT_SETUP_BUILD_TWEAKS
+HOTSPOT_SETUP_BUILD_TWEAKS
 JDKOPT_DETECT_INTREE_EC
 
 ###############################################################################
@@ -233,6 +236,7 @@ JDKOPT_DETECT_INTREE_EC
 BPERF_SETUP_BUILD_CORES
 BPERF_SETUP_BUILD_MEMORY
 BPERF_SETUP_BUILD_JOBS
+BPERF_SETUP_TEST_JOBS
 
 # Setup arguments for the boot jdk (after cores and memory have been setup)
 BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS
