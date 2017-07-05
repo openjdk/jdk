@@ -153,7 +153,6 @@ FILES_cpp = \
 	awt_Menu.cpp \
 	awt_MenuBar.cpp \
 	awt_MenuItem.cpp \
-	awt_MMStub.cpp \
 	awt_MouseEvent.cpp \
 	awt_Object.cpp \
 	awt_Palette.cpp \
@@ -171,7 +170,6 @@ FILES_cpp = \
 	awt_TextComponent.cpp \
 	awt_TextField.cpp \
 	awt_Toolkit.cpp \
-	awt_Unicode.cpp \
 	awt_Window.cpp \
 	awt_Win32GraphicsEnv.cpp \
 	awt_Win32GraphicsDevice.cpp \
@@ -202,6 +200,4 @@ FILES_cpp = \
 	ThemeReader.cpp \
 	ComCtl32Util.cpp \
 	initIDs.cpp \
-	awt_dlls.cpp \
-	UnicowsLoader.cpp \
 	MouseInfo.cpp

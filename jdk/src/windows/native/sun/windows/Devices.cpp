@@ -83,8 +83,82 @@
 
 #include "Devices.h"
 #include "Trace.h"
-#include "awt_Multimon.h"
 #include "D3DPipelineManager.h"
+
+
+/* Some helper functions (from awt_MMStub.h/cpp) */
+
+int g_nMonitorCounter;
+int g_nMonitorLimit;
+HMONITOR* g_hmpMonitors;
+
+// Callback for CountMonitors below
+BOOL WINAPI clb_fCountMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
+{
+    g_nMonitorCounter ++;
+    return TRUE;
+}
+
+int WINAPI CountMonitors(void)
+{
+    g_nMonitorCounter = 0;
+    ::EnumDisplayMonitors(NULL, NULL, clb_fCountMonitors, 0L);
+    return g_nMonitorCounter;
+
+}
+
+// Callback for CollectMonitors below
+BOOL WINAPI clb_fCollectMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
+{
+
+    if ((g_nMonitorCounter < g_nMonitorLimit) && (NULL != g_hmpMonitors)) {
+        g_hmpMonitors[g_nMonitorCounter] = hMon;
+        g_nMonitorCounter ++;
+    }
+
+    return TRUE;
+}
+
+int WINAPI CollectMonitors(HMONITOR* hmpMonitors, int nNum)
+{
+    int retCode = 0;
+
+    if (NULL != hmpMonitors) {
+
+        g_nMonitorCounter   = 0;
+        g_nMonitorLimit     = nNum;
+        g_hmpMonitors       = hmpMonitors;
+
+        ::EnumDisplayMonitors(NULL, NULL, clb_fCollectMonitors, 0L);
+
+        retCode             = g_nMonitorCounter;
+
+        g_nMonitorCounter   = 0;
+        g_nMonitorLimit     = 0;
+        g_hmpMonitors       = NULL;
+
+    }
+    return retCode;
+}
+
+BOOL WINAPI MonitorBounds(HMONITOR hmMonitor, RECT* rpBounds)
+{
+    BOOL retCode = FALSE;
+
+    if ((NULL != hmMonitor) && (NULL != rpBounds)) {
+        MONITORINFOEX miInfo;
+
+        memset((void*)(&miInfo), 0, sizeof(MONITORINFOEX));
+        miInfo.cbSize = sizeof(MONITORINFOEX);
+
+        if (TRUE == (retCode = ::GetMonitorInfo(hmMonitor, &miInfo))) {
+            (*rpBounds) = miInfo.rcMonitor;
+        }
+    }
+    return retCode;
+}
+
+/* End of helper functions */
 
 Devices* Devices::theInstance = NULL;
 CriticalSection Devices::arrayLock;
@@ -113,9 +187,9 @@ BOOL Devices::UpdateInstance(JNIEnv *env)
 {
     J2dTraceLn(J2D_TRACE_INFO, "Devices::UpdateInstance");
 
-    int numScreens = ::CountMonitors();
-    MHND *monHds = (MHND *)safe_Malloc(numScreens * sizeof(MHND));
-    if (numScreens != ::CollectMonitors(monHds, numScreens)) {
+    int numScreens = CountMonitors();
+    HMONITOR *monHds = (HMONITOR *)safe_Malloc(numScreens * sizeof(HMONITOR));
+    if (numScreens != CollectMonitors(monHds, numScreens)) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "Devices::UpdateInstance: Failed to get all "\
                       "monitor handles.");

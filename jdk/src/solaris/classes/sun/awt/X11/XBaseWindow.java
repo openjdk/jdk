@@ -979,8 +979,13 @@ public class XBaseWindow {
      */
     public void handleButtonPressRelease(XEvent xev) {
         XButtonEvent xbe = xev.get_xbutton();
-        final int buttonState = xbe.get_state() & (XConstants.Button1Mask | XConstants.Button2Mask
-            | XConstants.Button3Mask | XConstants.Button4Mask | XConstants.Button5Mask);
+        int buttonState = 0;
+        for (int i = 0; i<XToolkit.getNumMouseButtons(); i++){
+            // A bug in WM implementation: extra buttons doesn't have state!=0 as they should on Release message.
+            if ((i != 4) && (i != 5)){
+                buttonState |= (xbe.get_state() & XConstants.buttonsMask[i]);
+            }
+        }
         switch (xev.get_type()) {
         case XConstants.ButtonPress:
             if (buttonState == 0) {
@@ -1011,19 +1016,11 @@ public class XBaseWindow {
      * Checks ButtonRelease released all Mouse buttons
      */
     static boolean isFullRelease(int buttonState, int button) {
-        switch (button) {
-        case XConstants.Button1:
-            return buttonState == XConstants.Button1Mask;
-        case XConstants.Button2:
-            return buttonState == XConstants.Button2Mask;
-        case XConstants.Button3:
-            return buttonState == XConstants.Button3Mask;
-        case XConstants.Button4:
-            return buttonState == XConstants.Button4Mask;
-        case XConstants.Button5:
-            return buttonState == XConstants.Button5Mask;
+        if (button < 0 || button > XToolkit.getNumMouseButtons()) {
+            return buttonState == 0;
+        } else {
+            return buttonState == XConstants.buttonsMask[button - 1];
         }
-        return buttonState == 0;
     }
 
     static boolean isGrabbedEvent(XEvent ev, XBaseWindow target) {

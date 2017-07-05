@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,11 @@
  */
 
 #include "awt.h"
-#include "awt_dlls.h"
 #include "awt_DataTransferer.h"
 #include "awt_DnDDT.h"
 #include "awt_TextComponent.h"
-#include "awt_Unicode.h"
 #include <shlobj.h>
+#include <shellapi.h>
 #include <sun_awt_datatransfer_DataTransferer.h>
 #include <sun_awt_windows_WDataTransferer.h>
 
@@ -271,9 +270,7 @@ Java_sun_awt_windows_WDataTransferer_dragQueryFile
 
         hdrop = (HDROP)bBytes;
 
-        load_shell_procs();
-
-        UINT nFilenames = (*do_drag_query_file)(hdrop, 0xFFFFFFFF, NULL, 0);
+        UINT nFilenames = ::DragQueryFile(hdrop, 0xFFFFFFFF, NULL, 0);
 
         jclass str_clazz = env->FindClass("java/lang/String");
         DASSERT(str_clazz != NULL);
@@ -287,12 +284,12 @@ Java_sun_awt_windows_WDataTransferer_dragQueryFile
         buffer = (LPTSTR)safe_Malloc(bufsize*sizeof(TCHAR));
 
         for (UINT i = 0; i < nFilenames; i++) {
-            UINT size = (*do_drag_query_file)(hdrop, i, NULL, 0);
+            UINT size = ::DragQueryFile(hdrop, i, NULL, 0);
             if (size > bufsize) {
                 bufsize = size;
                 buffer = (LPTSTR)safe_Realloc(buffer, bufsize*sizeof(TCHAR));
             }
-            (*do_drag_query_file)(hdrop, i, buffer, bufsize);
+            ::DragQueryFile(hdrop, i, buffer, bufsize);
 
             jstring name = JNU_NewStringPlatform(env, buffer);
             if (name == NULL) {
@@ -401,7 +398,7 @@ Java_sun_awt_windows_WDataTransferer_platformImageBytesToImageData(
                 case  4:
                 case  8:
                     nColorEntries = (pSrcBmih->biClrUsed != 0) ?
-                        pSrcBmih->biClrUsed : 1 << (pSrcBmih->biBitCount - 1);
+                        pSrcBmih->biClrUsed : (1 << pSrcBmih->biBitCount);
                     break;
                 case 16:
                 case 24:
@@ -454,11 +451,6 @@ Java_sun_awt_windows_WDataTransferer_platformImageBytesToImageData(
                 width = p.x;
                 height = -p.y;
 
-                // Win9X supports only 16-bit signed coordinates.
-                if (IS_WIN95) {
-                    if (width > 0x7FFF) { width = 0x7FFF; }
-                    if (height > 0x7FFF) { height = 0x7FFF; }
-                }
                 free(lpemh);
             }
             break;
