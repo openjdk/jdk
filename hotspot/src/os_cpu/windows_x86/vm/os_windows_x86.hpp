@@ -62,4 +62,10 @@
 
   static bool      register_code_area(char *low, char *high);
 
+#ifdef AMD64
+#define PLATFORM_PRINT_NATIVE_STACK 1
+static bool platform_print_native_stack(outputStream* st, void* context,
+                                        char *buf, int buf_size);
+#endif
+
 #endif // OS_CPU_WINDOWS_X86_VM_OS_WINDOWS_X86_HPP

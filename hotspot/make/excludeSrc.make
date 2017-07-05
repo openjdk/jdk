@@ -99,7 +99,7 @@ ifeq ($(INCLUDE_ALL_GCS), false)
 	psTasks.cpp psVirtualspace.cpp psYoungGen.cpp vmPSOperations.cpp asParNewGeneration.cpp \
 	parCardTableModRefBS.cpp parGCAllocBuffer.cpp parNewGeneration.cpp mutableSpace.cpp \
 	gSpaceCounters.cpp allocationStats.cpp spaceCounters.cpp gcAdaptivePolicyCounters.cpp \
-	mutableNUMASpace.cpp immutableSpace.cpp yieldingWorkGroup.cpp
+	mutableNUMASpace.cpp immutableSpace.cpp yieldingWorkGroup.cpp hSpaceCounters.cpp
 endif
 
 ifeq ($(INCLUDE_NMT), false)
