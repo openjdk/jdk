@@ -38,7 +38,7 @@ default:: $(BUILD_PCH_FILE) $(AOUT) launcher checkAndBuildSA
 !include ../local.make
 !include compile.make
 
-CPP_FLAGS=$(CPP_FLAGS) $(FASTDEBUG_OPT_OPTION)
+CXX_FLAGS=$(CXX_FLAGS) $(FASTDEBUG_OPT_OPTION)
 
 !include $(WorkSpace)/make/windows/makefiles/vm.make
 !include local.make
@@ -52,8 +52,8 @@ vm.def: $(Obj_Files)
 	sh $(WorkSpace)/make/windows/build_vm_def.sh
 
 $(AOUT): $(Res_Files) $(Obj_Files) vm.def
-	$(LINK) @<<
-  $(LINK_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)
+	$(LD) @<<
+  $(LD_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)
 <<
 !if "$(MT)" != ""
 # The previous link command created a .manifest file that we want to

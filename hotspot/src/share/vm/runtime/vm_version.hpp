@@ -71,6 +71,7 @@ class Abstract_VM_Version: AllStatic {
 
   // Internal version providing additional build information
   static const char* internal_vm_info_string();
+  static const char* jre_release_version();
 
   // does HW support an 8-byte compare-exchange operation?
   static bool supports_cx8()  {return _supports_cx8;}
