@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "memory/metaspace.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -33,6 +34,7 @@
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 MemoryPool::MemoryPool(const char* name,
                        PoolType type,
@@ -255,4 +257,40 @@ MemoryUsage CodeHeapPool::get_memory_usage() {
   size_t maxSize   = (available_for_allocation() ? max_size() : 0);
 
   return MemoryUsage(initial_size(), used, committed, maxSize);
+}
+
+MetaspacePool::MetaspacePool() :
+  MemoryPool("Metaspace", NonHeap, capacity_in_bytes(), calculate_max_size(), true, false) { }
+
+MemoryUsage MetaspacePool::get_memory_usage() {
+  size_t committed = align_size_down_(capacity_in_bytes(), os::vm_page_size());
+  return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
+}
+
+size_t MetaspacePool::used_in_bytes() {
+  return MetaspaceAux::allocated_used_bytes(Metaspace::NonClassType);
+}
+
+size_t MetaspacePool::capacity_in_bytes() const {
+  return MetaspaceAux::allocated_capacity_bytes(Metaspace::NonClassType);
+}
+
+size_t MetaspacePool::calculate_max_size() const {
+  return FLAG_IS_CMDLINE(MaxMetaspaceSize) ? MaxMetaspaceSize : max_uintx;
+}
+
+CompressedKlassSpacePool::CompressedKlassSpacePool() :
+  MemoryPool("Compressed Class Space", NonHeap, capacity_in_bytes(), ClassMetaspaceSize, true, false) { }
+
+size_t CompressedKlassSpacePool::used_in_bytes() {
+  return MetaspaceAux::allocated_used_bytes(Metaspace::ClassType);
+}
+
+size_t CompressedKlassSpacePool::capacity_in_bytes() const {
+  return MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType);
+}
+
+MemoryUsage CompressedKlassSpacePool::get_memory_usage() {
+  size_t committed = align_size_down_(capacity_in_bytes(), os::vm_page_size());
+  return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
 }

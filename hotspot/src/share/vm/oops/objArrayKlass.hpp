@@ -151,7 +151,7 @@ class ObjArrayKlass : public ArrayKlass {
   const char* internal_name() const;
 
   // Verification
-  void verify_on(outputStream* st);
+  void verify_on(outputStream* st, bool check_dictionary);
 
   void oop_verify_on(oop obj, outputStream* st);
 };
