@@ -33,7 +33,10 @@ make-base:
 java-compilation:
 	+$(MAKE) -f TestJavaCompilation.gmk $(TEST_SUBTARGET)
 
+test-idea:
+	+$(MAKE) -f TestIdea.gmk $(TEST_SUBTARGET)
 
-all: make-base java-compilation
 
-.PHONY: default all make-base java-compilation
+all: make-base java-compilation test-idea
+
+.PHONY: default all make-base java-compilation test-idea

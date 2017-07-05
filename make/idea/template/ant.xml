@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AntConfiguration">
+    <buildFile url="file://$PROJECT_DIR$/.idea/build.xml">
+      <properties>
+        <property name="boot.java.home" value="$JDKPath$" />
+        <property name="jtreg.tests" value="$FilePath$" />
+        <property name="jtreg.home" value="###" />
+        <property name="build.target.dir" value="specDir" /> <!-- this will be replaced --> 
+        <property name="jtreg.jpda.jvmargs" value="-agentlib:jdwp=transport=dt_socket,server=n,address=localhost:5900,suspend=y" />
+        <property name="module.name" value="java.base" /> <!-- this will be replaced -->
+      </properties>
+      <executeOn event="afterCompilation" target="post-make" />
+    </buildFile>
+  </component>
+</project>

@@ -224,9 +224,9 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   endif
 
   ifdef OPENJDK
-    LIBAWT_RC_FLAGS := -i "$(JDK_TOPDIR)/src/java.base/windows/native/launcher/icons"
+    LIBAWT_RC_FLAGS := -I $(JDK_TOPDIR)/src/java.base/windows/native/launcher/icons
   else
-    LIBAWT_RC_FLAGS := -i "$(JDK_TOPDIR)/src/closed/java.base/windows/native/launcher/icons"
+    LIBAWT_RC_FLAGS := -I $(JDK_TOPDIR)/src/closed/java.base/windows/native/launcher/icons
   endif
   LIBAWT_VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/java.desktop/windows/native/libawt/windows/awt.rc
 endif

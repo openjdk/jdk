@@ -56,7 +56,7 @@ import javax.naming.NamingException;
  *{@code NameNotFoundException}).
  *<p>
  * An application can use the method {@code targetMustExist()} to check
- * whether a {@code EventContext} supports registration
+ * whether an {@code EventContext} supports registration
  * of nonexistent targets.
  *
  *<h1>Event Source</h1>
@@ -92,7 +92,7 @@ import javax.naming.NamingException;
  * which it invoked {@code addNamingListener()} (just as
  * it needs to keep a reference to the listener in order to remove it
  * later). It cannot expect to do a {@code lookup()} and get another instance of
- * a {@code EventContext} on which to perform the deregistration.
+ * an {@code EventContext} on which to perform the deregistration.
  *<h1>Lifetime of Registration</h1>
  * A registered listener becomes deregistered when:
  *<ul>
@@ -102,7 +102,7 @@ import javax.naming.NamingException;
  *<li>{@code Context.close()} is invoked on the {@code EventContext}
  * instance with which it has registered.
  </ul>
- * Until that point, a {@code EventContext} instance that has outstanding
+ * Until that point, an {@code EventContext} instance that has outstanding
  * listeners will continue to exist and be maintained by the service provider.
  *
  *<h1>Listener Implementations</h1>

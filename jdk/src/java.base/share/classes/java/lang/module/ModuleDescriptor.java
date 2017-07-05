@@ -318,7 +318,7 @@ public class ModuleDescriptor
         /**
          * Tests this module export for equality with the given object.
          *
-         * <p> If the given object is not a {@code Exports} then this method
+         * <p> If the given object is not an {@code Exports} then this method
          * returns {@code false}. Two module exports objects are equal if the
          * package names are equal and the set of target module names is equal.
          * </p>

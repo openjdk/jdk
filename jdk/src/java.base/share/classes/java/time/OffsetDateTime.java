@@ -576,7 +576,7 @@ public final class OffsetDateTime
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date-time, except {@code NANO_OF_DAY}, {@code MICRO_OF_DAY},
      * {@code EPOCH_DAY}, {@code PROLEPTIC_MONTH} and {@code INSTANT_SECONDS} which are too
-     * large to fit in an {@code int} and throw a {@code UnsupportedTemporalTypeException}.
+     * large to fit in an {@code int} and throw an {@code UnsupportedTemporalTypeException}.
      * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
