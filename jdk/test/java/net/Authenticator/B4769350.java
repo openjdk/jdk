@@ -54,6 +54,7 @@ public class B4769350 {
         boolean allowerror;
 
         Client (String authority, String path, boolean allowerror) {
+            super("Thread-" + path);
             this.authority = authority;
             this.path = path;
             this.allowerror = allowerror;
@@ -72,7 +73,8 @@ public class B4769350 {
                 error = true;
             } catch (IOException e) {
                 if (!allowerror) {
-                    System.out.println (e);
+                    System.out.println (Thread.currentThread().getName() + " " + e);
+                    e.printStackTrace();
                     error = true;
                 }
             }
@@ -94,6 +96,7 @@ public class B4769350 {
         }
 
         void okReply (HttpTransaction req) throws IOException {
+            req.addResponseHeader ("Connection", "close");
             req.setResponseEntityBody ("Hello .");
             req.sendResponse (200, "Ok");
             req.orderlyClose();

@@ -58,6 +58,11 @@ public class AtomicAttachTest {
         };
 
         t.join();
+
+        pipe.sink().close();
+        pipe.source().close();
+        selector.close();
+
         int count = errorCount.get();
         if (count > 0) {
             throw new RuntimeException("Error count:" + count);

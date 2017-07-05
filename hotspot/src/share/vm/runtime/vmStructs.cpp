@@ -614,7 +614,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   /* NMethods (NOTE: incomplete, but only a little) */                                                                               \
   /**************************************************/                                                                               \
                                                                                                                                      \
-     static_field(nmethod,             _zombie_instruction_size,                      int)                                   \
   nonstatic_field(nmethod,             _method,                                       methodOop)                             \
   nonstatic_field(nmethod,             _entry_bci,                                    int)                                   \
   nonstatic_field(nmethod,             _osr_link,                                     nmethod*)                              \

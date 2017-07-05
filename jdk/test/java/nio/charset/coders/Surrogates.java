@@ -42,9 +42,8 @@ public class Surrogates {
     static void initData() throws IOException {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < LEN; i++) {
-            int c = Surrogate.UCS4_SURROGATE_MIN + 1;
-            sb.append(Surrogate.high(c));
-            sb.append(Surrogate.low(c));
+            int c = Character.MIN_SUPPLEMENTARY_CODE_POINT + 1;
+            sb.append(Character.toChars(c));
         }
         input = sb.toString().toCharArray();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();

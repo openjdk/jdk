@@ -427,8 +427,9 @@ class Inet6Address extends InetAddress {
                     try {
                         scope_id = deriveNumericScope (scope_ifname);
                     } catch (UnknownHostException e) {
-                        // should not happen
-                        assert false;
+                        // typically should not happen, but it may be that
+                        // the machine being used for deserialization has
+                        // the same interface name but without IPv6 configured.
                     }
                 }
             } catch (SocketException e) {}

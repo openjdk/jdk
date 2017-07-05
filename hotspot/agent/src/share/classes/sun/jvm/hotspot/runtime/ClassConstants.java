@@ -40,6 +40,19 @@ public interface ClassConstants
     public static final int JVM_CONSTANT_Methodref          = 10;
     public static final int JVM_CONSTANT_InterfaceMethodref = 11;
     public static final int JVM_CONSTANT_NameAndType        = 12;
+    public static final int JVM_CONSTANT_MethodHandle       = 15;
+    public static final int JVM_CONSTANT_MethodType         = 16;
+
+    // JVM_CONSTANT_MethodHandle subtypes
+    public static final int JVM_REF_getField                = 1;
+    public static final int JVM_REF_getStatic               = 2;
+    public static final int JVM_REF_putField                = 3;
+    public static final int JVM_REF_putStatic               = 4;
+    public static final int JVM_REF_invokeVirtual           = 5;
+    public static final int JVM_REF_invokeStatic            = 6;
+    public static final int JVM_REF_invokeSpecial           = 7;
+    public static final int JVM_REF_newInvokeSpecial        = 8;
+    public static final int JVM_REF_invokeInterface         = 9;
 
     // HotSpot specific constant pool constant types.
 

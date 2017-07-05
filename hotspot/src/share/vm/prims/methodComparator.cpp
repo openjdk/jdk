@@ -163,10 +163,10 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
 
   case Bytecodes::_ldc   : // fall through
   case Bytecodes::_ldc_w : {
-    Bytecode_loadconstant* ldc_old = Bytecode_loadconstant_at(_s_old->method()(), _s_old->bcp());
-    Bytecode_loadconstant* ldc_new = Bytecode_loadconstant_at(_s_new->method()(), _s_new->bcp());
-    int cpi_old = ldc_old->index();
-    int cpi_new = ldc_new->index();
+    Bytecode_loadconstant* ldc_old = Bytecode_loadconstant_at(_s_old->method(), _s_old->bci());
+    Bytecode_loadconstant* ldc_new = Bytecode_loadconstant_at(_s_new->method(), _s_new->bci());
+    int cpi_old = ldc_old->pool_index();
+    int cpi_new = ldc_new->pool_index();
     constantTag tag_old = _old_cp->tag_at(cpi_old);
     constantTag tag_new = _new_cp->tag_at(cpi_new);
     if (tag_old.is_int() || tag_old.is_float()) {
@@ -187,12 +187,30 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
       if (strcmp(_old_cp->string_at_noresolve(cpi_old),
                  _new_cp->string_at_noresolve(cpi_new)) != 0)
         return false;
-    } else { // tag_old should be klass - 4881222
+    } else if (tag_old.is_klass() || tag_old.is_unresolved_klass()) {
+      // tag_old should be klass - 4881222
       if (! (tag_new.is_unresolved_klass() || tag_new.is_klass()))
         return false;
       if (_old_cp->klass_at_noresolve(cpi_old) !=
           _new_cp->klass_at_noresolve(cpi_new))
         return false;
+    } else if (tag_old.is_method_type() && tag_new.is_method_type()) {
+      int mti_old = _old_cp->method_type_index_at(cpi_old);
+      int mti_new = _new_cp->method_type_index_at(cpi_new);
+      if ((_old_cp->symbol_at(mti_old) != _new_cp->symbol_at(mti_new)))
+        return false;
+    } else if (tag_old.is_method_handle() && tag_new.is_method_handle()) {
+      if (_old_cp->method_handle_ref_kind_at(cpi_old) !=
+          _new_cp->method_handle_ref_kind_at(cpi_new))
+        return false;
+      int mhi_old = _old_cp->method_handle_index_at(cpi_old);
+      int mhi_new = _new_cp->method_handle_index_at(cpi_new);
+      if ((_old_cp->uncached_klass_ref_at_noresolve(mhi_old) != _new_cp->uncached_klass_ref_at_noresolve(mhi_new)) ||
+          (_old_cp->uncached_name_ref_at(mhi_old) != _new_cp->uncached_name_ref_at(mhi_new)) ||
+          (_old_cp->uncached_signature_ref_at(mhi_old) != _new_cp->uncached_signature_ref_at(mhi_new)))
+        return false;
+    } else {
+      return false;  // unknown tag
     }
     break;
   }

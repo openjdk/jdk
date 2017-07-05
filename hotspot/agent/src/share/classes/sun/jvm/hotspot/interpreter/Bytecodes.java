@@ -222,7 +222,7 @@ public class Bytecodes {
   public static final int _invokespecial        = 183; // 0xb7
   public static final int _invokestatic         = 184; // 0xb8
   public static final int _invokeinterface      = 185; // 0xb9
-  public static final int _xxxunusedxxx         = 186; // 0xba
+  public static final int _invokedynamic        = 186; // 0xba
   public static final int _new                  = 187; // 0xbb
   public static final int _newarray             = 188; // 0xbc
   public static final int _anewarray            = 189; // 0xbd
@@ -269,9 +269,12 @@ public class Bytecodes {
   public static final int _fast_invokevfinal    = 226;
   public static final int _fast_linearswitch    = 227;
   public static final int _fast_binaryswitch    = 228;
-  public static final int _shouldnotreachhere   = 229; // For debugging
+  public static final int _fast_aldc            = 229;
+  public static final int _fast_aldc_w          = 230;
+  public static final int _return_register_finalizer = 231;
+  public static final int _shouldnotreachhere   = 232; // For debugging
 
-  public static final int number_of_codes       = 230;
+  public static final int number_of_codes       = 233;
 
   public static int specialLengthAt(Method method, int bci) {
     int code = codeAt(method, bci);
@@ -458,9 +461,9 @@ public class Bytecodes {
     def(_dconst_1            , "dconst_1"            , "b"    , null    , BasicType.getTDouble() ,  2, false);
     def(_bipush              , "bipush"              , "bc"   , null    , BasicType.getTInt()    ,  1, false);
     def(_sipush              , "sipush"              , "bcc"  , null    , BasicType.getTInt()    ,  1, false);
-    def(_ldc                 , "ldc"                 , "bi"   , null    , BasicType.getTIllegal(),  1, true );
-    def(_ldc_w               , "ldc_w"               , "bii"  , null    , BasicType.getTIllegal(),  1, true );
-    def(_ldc2_w              , "ldc2_w"              , "bii"  , null    , BasicType.getTIllegal(),  2, true );
+    def(_ldc                 , "ldc"                 , "bk"   , null    , BasicType.getTIllegal(),  1, true );
+    def(_ldc_w               , "ldc_w"               , "bkk"  , null    , BasicType.getTIllegal(),  1, true );
+    def(_ldc2_w              , "ldc2_w"              , "bkk"  , null    , BasicType.getTIllegal(),  2, true );
     def(_iload               , "iload"               , "bi"   , "wbii"  , BasicType.getTInt()    ,  1, false);
     def(_lload               , "lload"               , "bi"   , "wbii"  , BasicType.getTLong()   ,  2, false);
     def(_fload               , "fload"               , "bi"   , "wbii"  , BasicType.getTFloat()  ,  1, false);
@@ -618,26 +621,26 @@ public class Bytecodes {
     def(_dreturn             , "dreturn"             , "b"    , null    , BasicType.getTDouble() , -2, true );
     def(_areturn             , "areturn"             , "b"    , null    , BasicType.getTObject() , -1, true );
     def(_return              , "return"              , "b"    , null    , BasicType.getTVoid()   ,  0, true );
-    def(_getstatic           , "getstatic"           , "bjj"  , null    , BasicType.getTIllegal(),  1, true );
-    def(_putstatic           , "putstatic"           , "bjj"  , null    , BasicType.getTIllegal(), -1, true );
-    def(_getfield            , "getfield"            , "bjj"  , null    , BasicType.getTIllegal(),  0, true );
-    def(_putfield            , "putfield"            , "bjj"  , null    , BasicType.getTIllegal(), -2, true );
-    def(_invokevirtual       , "invokevirtual"       , "bjj"  , null    , BasicType.getTIllegal(), -1, true );
-    def(_invokespecial       , "invokespecial"       , "bjj"  , null    , BasicType.getTIllegal(), -1, true );
-    def(_invokestatic        , "invokestatic"        , "bjj"  , null    , BasicType.getTIllegal(),  0, true );
-    def(_invokeinterface     , "invokeinterface"     , "bjj__", null    , BasicType.getTIllegal(), -1, true );
-    def(_xxxunusedxxx        , "xxxunusedxxx"        , null   , null    , BasicType.getTVoid()   ,  0, false);
-    def(_new                 , "new"                 , "bii"  , null    , BasicType.getTObject() ,  1, true );
+    def(_getstatic           , "getstatic"           , "bJJ"  , null    , BasicType.getTIllegal(),  1, true );
+    def(_putstatic           , "putstatic"           , "bJJ"  , null    , BasicType.getTIllegal(), -1, true );
+    def(_getfield            , "getfield"            , "bJJ"  , null    , BasicType.getTIllegal(),  0, true );
+    def(_putfield            , "putfield"            , "bJJ"  , null    , BasicType.getTIllegal(), -2, true );
+    def(_invokevirtual       , "invokevirtual"       , "bJJ"  , null    , BasicType.getTIllegal(), -1, true );
+    def(_invokespecial       , "invokespecial"       , "bJJ"  , null    , BasicType.getTIllegal(), -1, true );
+    def(_invokestatic        , "invokestatic"        , "bJJ"  , null    , BasicType.getTIllegal(),  0, true );
+    def(_invokeinterface     , "invokeinterface"     , "bJJ__", null    , BasicType.getTIllegal(), -1, true );
+    def(_invokedynamic       , "invokedynamic"       , "bJJJJ", null    , BasicType.getTIllegal(), -1, true );
+    def(_new                 , "new"                 , "bkk"  , null    , BasicType.getTObject() ,  1, true );
     def(_newarray            , "newarray"            , "bc"   , null    , BasicType.getTObject() ,  0, true );
-    def(_anewarray           , "anewarray"           , "bii"  , null    , BasicType.getTObject() ,  0, true );
+    def(_anewarray           , "anewarray"           , "bkk"  , null    , BasicType.getTObject() ,  0, true );
     def(_arraylength         , "arraylength"         , "b"    , null    , BasicType.getTVoid()   ,  0, true );
     def(_athrow              , "athrow"              , "b"    , null    , BasicType.getTVoid()   , -1, true );
-    def(_checkcast           , "checkcast"           , "bii"  , null    , BasicType.getTObject() ,  0, true );
-    def(_instanceof          , "instanceof"          , "bii"  , null    , BasicType.getTInt()    ,  0, true );
+    def(_checkcast           , "checkcast"           , "bkk"  , null    , BasicType.getTObject() ,  0, true );
+    def(_instanceof          , "instanceof"          , "bkk"  , null    , BasicType.getTInt()    ,  0, true );
     def(_monitorenter        , "monitorenter"        , "b"    , null    , BasicType.getTVoid()   , -1, true );
     def(_monitorexit         , "monitorexit"         , "b"    , null    , BasicType.getTVoid()   , -1, true );
     def(_wide                , "wide"                , ""     , null    , BasicType.getTVoid()   ,  0, false);
-    def(_multianewarray      , "multianewarray"      , "biic" , null    , BasicType.getTObject() ,  1, true );
+    def(_multianewarray      , "multianewarray"      , "bkkc" , null    , BasicType.getTObject() ,  1, true );
     def(_ifnull              , "ifnull"              , "boo"  , null    , BasicType.getTVoid()   , -1, false);
     def(_ifnonnull           , "ifnonnull"           , "boo"  , null    , BasicType.getTVoid()   , -1, false);
     def(_goto_w              , "goto_w"              , "boooo", null    , BasicType.getTVoid()   ,  0, false);
@@ -646,38 +649,44 @@ public class Bytecodes {
 
     //  JVM bytecodes
     //  bytecode               bytecode name           format   wide f.   result tp               stk traps  std code
-    def(_fast_agetfield      , "fast_agetfield"      , "bjj"  , null    , BasicType.getTObject() ,  0, true , _getfield       );
-    def(_fast_bgetfield      , "fast_bgetfield"      , "bjj"  , null    , BasicType.getTInt()    ,  0, true , _getfield       );
-    def(_fast_cgetfield      , "fast_cgetfield"      , "bjj"  , null    , BasicType.getTChar()   ,  0, true , _getfield       );
-    def(_fast_dgetfield      , "fast_dgetfield"      , "bjj"  , null    , BasicType.getTDouble() ,  0, true , _getfield       );
-    def(_fast_fgetfield      , "fast_fgetfield"      , "bjj"  , null    , BasicType.getTFloat()  ,  0, true , _getfield       );
-    def(_fast_igetfield      , "fast_igetfield"      , "bjj"  , null    , BasicType.getTInt()    ,  0, true , _getfield       );
-    def(_fast_lgetfield      , "fast_lgetfield"      , "bjj"  , null    , BasicType.getTLong()   ,  0, true , _getfield       );
-    def(_fast_sgetfield      , "fast_sgetfield"      , "bjj"  , null    , BasicType.getTShort()  ,  0, true , _getfield       );
+    def(_fast_agetfield      , "fast_agetfield"      , "bJJ"  , null    , BasicType.getTObject() ,  0, true , _getfield       );
+    def(_fast_bgetfield      , "fast_bgetfield"      , "bJJ"  , null    , BasicType.getTInt()    ,  0, true , _getfield       );
+    def(_fast_cgetfield      , "fast_cgetfield"      , "bJJ"  , null    , BasicType.getTChar()   ,  0, true , _getfield       );
+    def(_fast_dgetfield      , "fast_dgetfield"      , "bJJ"  , null    , BasicType.getTDouble() ,  0, true , _getfield       );
+    def(_fast_fgetfield      , "fast_fgetfield"      , "bJJ"  , null    , BasicType.getTFloat()  ,  0, true , _getfield       );
+    def(_fast_igetfield      , "fast_igetfield"      , "bJJ"  , null    , BasicType.getTInt()    ,  0, true , _getfield       );
+    def(_fast_lgetfield      , "fast_lgetfield"      , "bJJ"  , null    , BasicType.getTLong()   ,  0, true , _getfield       );
+    def(_fast_sgetfield      , "fast_sgetfield"      , "bJJ"  , null    , BasicType.getTShort()  ,  0, true , _getfield       );
 
-    def(_fast_aputfield      , "fast_aputfield"      , "bjj"  , null    , BasicType.getTObject() ,  0, true , _putfield       );
-    def(_fast_bputfield      , "fast_bputfield"      , "bjj"  , null    , BasicType.getTInt()    ,  0, true , _putfield       );
-    def(_fast_cputfield      , "fast_cputfield"      , "bjj"  , null    , BasicType.getTChar()   ,  0, true , _putfield       );
-    def(_fast_dputfield      , "fast_dputfield"      , "bjj"  , null    , BasicType.getTDouble() ,  0, true , _putfield       );
-    def(_fast_fputfield      , "fast_fputfield"      , "bjj"  , null    , BasicType.getTFloat()  ,  0, true , _putfield       );
-    def(_fast_iputfield      , "fast_iputfield"      , "bjj"  , null    , BasicType.getTInt()    ,  0, true , _putfield       );
-    def(_fast_lputfield      , "fast_lputfield"      , "bjj"  , null    , BasicType.getTLong()   ,  0, true , _putfield       );
-    def(_fast_sputfield      , "fast_sputfield"      , "bjj"  , null    , BasicType.getTShort()  ,  0, true , _putfield       );
+    def(_fast_aputfield      , "fast_aputfield"      , "bJJ"  , null    , BasicType.getTObject() ,  0, true , _putfield       );
+    def(_fast_bputfield      , "fast_bputfield"      , "bJJ"  , null    , BasicType.getTInt()    ,  0, true , _putfield       );
+    def(_fast_cputfield      , "fast_cputfield"      , "bJJ"  , null    , BasicType.getTChar()   ,  0, true , _putfield       );
+    def(_fast_dputfield      , "fast_dputfield"      , "bJJ"  , null    , BasicType.getTDouble() ,  0, true , _putfield       );
+    def(_fast_fputfield      , "fast_fputfield"      , "bJJ"  , null    , BasicType.getTFloat()  ,  0, true , _putfield       );
+    def(_fast_iputfield      , "fast_iputfield"      , "bJJ"  , null    , BasicType.getTInt()    ,  0, true , _putfield       );
+    def(_fast_lputfield      , "fast_lputfield"      , "bJJ"  , null    , BasicType.getTLong()   ,  0, true , _putfield       );
+    def(_fast_sputfield      , "fast_sputfield"      , "bJJ"  , null    , BasicType.getTShort()  ,  0, true , _putfield       );
 
     def(_fast_aload_0        , "fast_aload_0"        , "b"    , null    , BasicType.getTObject() ,  1, true , _aload_0        );
-    def(_fast_iaccess_0      , "fast_iaccess_0"      , "b_jj" , null    , BasicType.getTInt()    ,  1, true , _aload_0        );
-    def(_fast_aaccess_0      , "fast_aaccess_0"      , "b_jj" , null    , BasicType.getTObject() ,  1, true , _aload_0        );
-    def(_fast_faccess_0      , "fast_faccess_0"      , "b_jj" , null    , BasicType.getTObject() ,  1, true , _aload_0        );
+    def(_fast_iaccess_0      , "fast_iaccess_0"      , "b_JJ" , null    , BasicType.getTInt()    ,  1, true , _aload_0        );
+    def(_fast_aaccess_0      , "fast_aaccess_0"      , "b_JJ" , null    , BasicType.getTObject() ,  1, true , _aload_0        );
+    def(_fast_faccess_0      , "fast_faccess_0"      , "b_JJ" , null    , BasicType.getTObject() ,  1, true , _aload_0        );
 
     def(_fast_iload          , "fast_iload"          , "bi"   , null    , BasicType.getTInt()    ,  1, false, _iload);
     def(_fast_iload2         , "fast_iload2"         , "bi_i" , null    , BasicType.getTInt()    ,  2, false, _iload);
     def(_fast_icaload        , "fast_icaload"        , "bi_"  , null    , BasicType.getTInt()    ,  0, false, _iload);
 
     // Faster method invocation.
-    def(_fast_invokevfinal   , "fast_invokevfinal"   , "bjj"  , null    , BasicType.getTIllegal(), -1, true, _invokevirtual);
+    def(_fast_invokevfinal   , "fast_invokevfinal"   , "bJJ"  , null    , BasicType.getTIllegal(), -1, true, _invokevirtual);
 
     def(_fast_linearswitch   , "fast_linearswitch"   , ""     , null    , BasicType.getTVoid()   , -1, false, _lookupswitch   );
     def(_fast_binaryswitch   , "fast_binaryswitch"   , ""     , null    , BasicType.getTVoid()   , -1, false, _lookupswitch   );
+
+    def(_return_register_finalizer, "return_register_finalizer", "b"    , null    , BasicType.getTVoid()   , 0, true, _return );
+
+    def(_fast_aldc           , "fast_aldc"           , "bj"   , null    , BasicType.getTObject(),   1, true,  _ldc   );
+    def(_fast_aldc_w         , "fast_aldc_w"         , "bJJ"  , null    , BasicType.getTObject(),   1, true,  _ldc_w );
+
     def(_shouldnotreachhere  , "_shouldnotreachhere" , "b"    , null    , BasicType.getTVoid()   ,  0, false);
 
     if (Assert.ASSERTS_ENABLED) {

@@ -78,8 +78,6 @@ public class AdaptSocket {
                     throw x;
                 }
             }
-            if (shouldTimeout)
-                throw new Exception("Connection did not time out");
         }
         out.println("connected: " + so);
         out.println("           " + sc);
@@ -118,8 +116,6 @@ public class AdaptSocket {
             }
             throw x;
         }
-        if (shouldTimeout)
-            throw new Exception("Read did not time out");
     }
 
     static void testRead(String hn, int timeout, boolean shouldTimeout)

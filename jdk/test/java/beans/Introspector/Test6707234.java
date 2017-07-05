@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_vtune_linux.cpp.incl"
+/*
+ * @test
+ * @bug 6707234
+ * @summary Tests setter in a complex bean
+ * @author Sergey Malenkov
+ */
 
-// empty implementation
+public class Test6707234 {
+    public static void main(String[] args) {
+        if (null == BeanUtils.getPropertyDescriptor(C.class, "number").getWriteMethod()) {
+            throw new Error("no write method");
+        }
+    }
 
-void VTune::start_GC() {}
-void VTune::end_GC() {}
-void VTune::start_class_load() {}
-void VTune::end_class_load() {}
-void VTune::exit() {}
-void VTune::register_stub(const char* name, address start, address end) {}
+    public interface I {
+        void setNumber(Object number);
+        Number getNumber();
+    }
 
-void VTune::create_nmethod(nmethod* nm) {}
-void VTune::delete_nmethod(nmethod* nm) {}
-
-void vtune_init() {}
-
-
-// Reconciliation History
-// vtune_solaris.cpp    1.8 99/07/12 23:54:21
-// End
+    public class C implements I {
+        public void setNumber(Object value) {
+        }
+        public void setNumber(Long value) {
+        }
+        public Long getNumber() {
+            return null;
+        }
+    }
+}

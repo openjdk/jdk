@@ -1549,7 +1549,7 @@ protected:
   int _hash_seed;
   int _queue_num;
 
-  int _term_attempts;
+  size_t _term_attempts;
 #if G1_DETAILED_STATS
   int _pushes, _pops, _steals, _steal_attempts;
   int _overflow_pushes;
@@ -1727,8 +1727,8 @@ public:
   int* hash_seed() { return &_hash_seed; }
   int  queue_num() { return _queue_num; }
 
-  int term_attempts()   { return _term_attempts; }
-  void note_term_attempt()  { _term_attempts++; }
+  size_t term_attempts()   { return _term_attempts; }
+  void note_term_attempt() { _term_attempts++; }
 
 #if G1_DETAILED_STATS
   int pushes()          { return _pushes; }

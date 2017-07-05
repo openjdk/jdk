@@ -36,7 +36,7 @@ package java.io;
  * @see java.io.ObjectInputStream
  * @since   JDK1.1
  */
-public interface ObjectOutput extends DataOutput {
+public interface ObjectOutput extends DataOutput, AutoCloseable {
     /**
      * Write an object to the underlying storage or stream.  The
      * class that implements this interface defines how the object is

@@ -270,7 +270,7 @@ psParallelCompact.cpp			parallelScavengeHeap.inline.hpp
 psParallelCompact.cpp			pcTasks.hpp
 psParallelCompact.cpp			psMarkSweep.hpp
 psParallelCompact.cpp			psMarkSweepDecorator.hpp
-psParallelCompact.cpp			psCompactionManager.hpp
+psParallelCompact.cpp			psCompactionManager.inline.hpp
 psParallelCompact.cpp                   psPromotionManager.inline.hpp
 psParallelCompact.cpp			psOldGen.hpp
 psParallelCompact.cpp			psParallelCompact.hpp
