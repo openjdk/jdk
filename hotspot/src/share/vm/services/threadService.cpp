@@ -200,6 +200,12 @@ void ThreadService::oops_do(OopClosure* f) {
   }
 }
 
+void ThreadService::metadata_do(void f(Metadata*)) {
+  for (ThreadDumpResult* dump = _threaddump_list; dump != NULL; dump = dump->next()) {
+    dump->metadata_do(f);
+  }
+}
+
 void ThreadService::add_thread_dump(ThreadDumpResult* dump) {
   MutexLocker ml(Management_lock);
   if (_threaddump_list == NULL) {
@@ -451,9 +457,16 @@ void ThreadDumpResult::oops_do(OopClosure* f) {
   }
 }
 
+void ThreadDumpResult::metadata_do(void f(Metadata*)) {
+  for (ThreadSnapshot* ts = _snapshots; ts != NULL; ts = ts->next()) {
+    ts->metadata_do(f);
+  }
+}
+
 StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
   _method = jvf->method();
   _bci = jvf->bci();
+  _class_holder = _method->method_holder()->klass_holder();
   _locked_monitors = NULL;
   if (with_lock_info) {
     ResourceMark rm;
@@ -477,6 +490,11 @@ void StackFrameInfo::oops_do(OopClosure* f) {
       f->do_oop((oop*) _locked_monitors->adr_at(i));
     }
   }
+  f->do_oop(&_class_holder);
+}
+
+void StackFrameInfo::metadata_do(void f(Metadata*)) {
+  f(_method);
 }
 
 void StackFrameInfo::print_on(outputStream* st) const {
@@ -619,6 +637,14 @@ void ThreadStackTrace::oops_do(OopClosure* f) {
     f->do_oop((oop*) _jni_locked_monitors->adr_at(j));
   }
 }
+
+void ThreadStackTrace::metadata_do(void f(Metadata*)) {
+  int length = _frames->length();
+  for (int i = 0; i < length; i++) {
+    _frames->at(i)->metadata_do(f);
+  }
+}
+
 
 ConcurrentLocksDump::~ConcurrentLocksDump() {
   if (_retain_map_on_free) {
@@ -822,6 +848,13 @@ void ThreadSnapshot::oops_do(OopClosure* f) {
     _concurrent_locks->oops_do(f);
   }
 }
+
+void ThreadSnapshot::metadata_do(void f(Metadata*)) {
+  if (_stack_trace != NULL) {
+    _stack_trace->metadata_do(f);
+  }
+}
+
 
 DeadlockCycle::DeadlockCycle() {
   _is_deadlock = false;
