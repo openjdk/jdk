@@ -231,6 +231,117 @@ TEST_TARGETS += $(OUTPUT_DIR)/_jar3_updated
 .PHONY: clean-jar3 create-jar3 update-jar3
 
 ################################################################################
+# Test SetupJavaCompilation overrides of java files
+
+$(eval $(call SetupJavaCompiler,BOOT_JAVAC, \
+    JAVAC := $(JAVAC), \
+))
+
+JAVA_SRC_ROOT1 := $(OUTPUT_DIR)/javaroot1
+JAVA_SRC_ROOT2 := $(OUTPUT_DIR)/javaroot2
+
+# Since this makefile calls itself a number of times, protect this macro from
+# being executed more than once.
+# Param 1 - File name
+# Param 2 - Package name
+# Param 3 - Class name
+# Param 4 - Message
+CreateJavaSrc = \
+    $(if $(wildcard $1),,$(shell \
+        $(MKDIR) -p $(dir $1); \
+        $(ECHO) "package $2;" > $1; \
+        $(ECHO) "public class $3 {" >> $1; \
+        $(ECHO) "    public static void main(String[] args) {" >> $1; \
+        $(ECHO) "        System.out.print(\"$4\");" >> $1; \
+        $(ECHO) "    }" >> $1; \
+        $(ECHO) "}" >> $1; \
+    ))
+
+# Since this makefile calls itself a number of times, protect this macro from
+# being executed more than once.
+# Param 1 - File name
+# Param 2 - Message
+CreateTextFile = \
+    $(if $(wildcard $1),,$(shell \
+        $(MKDIR) -p $(dir $1); \
+        $(PRINTF) '$2' > $1; \
+    ))
+
+$(call CreateJavaSrc,$(JAVA_SRC_ROOT1)/a/A.java,a,A,javaroot1)
+$(call CreateJavaSrc,$(JAVA_SRC_ROOT2)/a/A.java,a,A,javaroot2)
+$(call CreateTextFile,$(JAVA_SRC_ROOT1)/a/b.txt,javaroot1\n)
+$(call CreateTextFile,$(JAVA_SRC_ROOT2)/a/b.txt,javaroot2\n)
+$(call CreateTextFile,$(JAVA_SRC_ROOT1)/a/c.properties,#javaroot1\nname=value1\n)
+$(call CreateTextFile,$(JAVA_SRC_ROOT2)/a/c.properties,#javaroot2\nname=value2\n)
+
+# Due to a bug in gnu make 3.81, need to add the src roots with trailing slash,
+# otherwise $(wildcard ) will not find the directories and the sanity check in
+# SetupJavaCompilation will fail.
+$(eval $(call SetupJavaCompilation, BUILD_ROOT1_FIRST, \
+    SETUP := BOOT_JAVAC, \
+    SRC := $(JAVA_SRC_ROOT1)/ $(JAVA_SRC_ROOT2)/, \
+    COPY := .txt .java, \
+    CLEAN := .properties, \
+    BIN := $(OUTPUT_DIR)/root1first/, \
+))
+
+$(BUILD_ROOT1_FIRST):
+
+verify-root1-first: $(BUILD_ROOT1_FIRST)
+	$(JAVA_SMALL) -cp $(OUTPUT_DIR)/root1first a.A > $(OUTPUT_DIR)/root1first.output
+	if [ "`$(CAT) $(OUTPUT_DIR)/root1first.output`" != "javaroot1" ]; then \
+	  $(ECHO) "The wrong class was compiled. Expected >javaroot1<"; \
+	  $(ECHO) "Got >`$(CAT) $(OUTPUT_DIR)/root1first.output`<"; \
+	  false; \
+	fi
+	if [ "`$(CAT) $(OUTPUT_DIR)/root1first/a/b.txt`" != "javaroot1" ]; then \
+	  $(ECHO) "The wrong file was copied. Expected >javaroot1<"; \
+	  $(ECHO) "Got >`$(CAT) $(OUTPUT_DIR)/root1first/a/b.txt`<"; \
+	  false; \
+	fi
+	if [ ! -e "$(OUTPUT_DIR)/root1first/a/A.java" ]; then \
+	  $(ECHO) "Missed copying $(OUTPUT_DIR)/root1first/a/A.java"; \
+	  false; \
+	fi
+	if [ "`$(CAT) $(OUTPUT_DIR)/root1first/a/c.properties`" != "name=value1" ]; then \
+	  $(ECHO) "The wrong file was cleaned. Expected >name=value1<"; \
+	  $(ECHO) "Got >`$(CAT) $(OUTPUT_DIR)/root1first/a/c.properties`<"; \
+	  false; \
+	fi
+
+$(eval $(call SetupJavaCompilation, BUILD_ROOT2_FIRST, \
+    SETUP := BOOT_JAVAC, \
+    SRC := $(JAVA_SRC_ROOT2)/ $(JAVA_SRC_ROOT1)/, \
+    COPY := .txt, \
+    CLEAN := .properties, \
+    BIN := $(OUTPUT_DIR)/root2first/, \
+))
+
+$(BUILD_ROOT2_FIRST):
+
+verify-root2-first: $(BUILD_ROOT2_FIRST)
+	$(JAVA_SMALL) -cp $(OUTPUT_DIR)/root2first a.A > $(OUTPUT_DIR)/root2first.output
+	if [ "`$(CAT) $(OUTPUT_DIR)/root2first.output`" != "javaroot2" ]; then \
+	  $(ECHO) "The wrong class was compiled. Expected >javaroot2<"; \
+	  $(ECHO) "Got >`$(CAT) $(OUTPUT_DIR)/root2first.output`<"; \
+	  false; \
+	fi
+	if [ "`$(CAT) $(OUTPUT_DIR)/root2first/a/b.txt`" != "javaroot2" ]; then \
+	  $(ECHO) "The wrong file was cleaned. Expected >javaroot2<"; \
+	  $(ECHO) "Got >`$(CAT) $(OUTPUT_DIR)/root2first/a/b.txt`<"; \
+	  false; \
+	fi
+	if [ "`$(CAT) $(OUTPUT_DIR)/root2first/a/c.properties`" != "name=value2" ]; then \
+	  $(ECHO) "The wrong file was cleaned. Expected >name=value2<"; \
+	  $(ECHO) "Got >`$(CAT) $(OUTPUT_DIR)/root2first/a/c.properties`<"; \
+	  false; \
+	fi
+
+TEST_TARGETS += verify-root1-first verify-root2-first
+
+.PHONY: verify-root1-first verify-root2-first
+
+################################################################################
 
 all: $(TEST_TARGETS)
 

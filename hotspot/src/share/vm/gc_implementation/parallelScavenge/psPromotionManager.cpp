@@ -32,6 +32,9 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/padded.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/instanceMirrorKlass.inline.hpp"
+#include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -41,8 +44,7 @@ PSOldGen*                      PSPromotionManager::_old_gen = NULL;
 MutableSpace*                  PSPromotionManager::_young_space = NULL;
 
 void PSPromotionManager::initialize() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   _old_gen = heap->old_gen();
   _young_space = heap->young_gen()->to_space();
@@ -85,8 +87,7 @@ PSPromotionManager* PSPromotionManager::vm_thread_promotion_manager() {
 }
 
 void PSPromotionManager::pre_scavenge() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   _young_space = heap->young_gen()->to_space();
 
@@ -129,7 +130,7 @@ static const char* const pm_stats_hdr[] = {
 void
 PSPromotionManager::print_taskqueue_stats(outputStream* const out) {
   out->print_cr("== GC Tasks Stats, GC %3d",
-                Universe::heap()->total_collections());
+                ParallelScavengeHeap::heap()->total_collections());
 
   TaskQueueStats totals;
   out->print("thr "); TaskQueueStats::print_header(1, out); out->cr();
@@ -157,8 +158,7 @@ PSPromotionManager::reset_stats() {
 #endif // TASKQUEUE_STATS
 
 PSPromotionManager::PSPromotionManager() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
@@ -188,8 +188,7 @@ void PSPromotionManager::reset() {
 
   // We need to get an assert in here to make sure the labs are always flushed.
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   // Do not prefill the LAB's, save heap wastage!
   HeapWord* lab_base = young_space()->top();
@@ -210,8 +209,7 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
   totally_drain = totally_drain || _totally_drain;
 
 #ifdef ASSERT
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   MutableSpace* to_space = heap->young_gen()->to_space();
   MutableSpace* old_space = heap->old_gen()->object_space();
 #endif /* ASSERT */
@@ -306,6 +304,118 @@ void PSPromotionManager::process_array_chunk(oop old) {
   } else {
     process_array_chunk_work<oop>(obj, start, end);
   }
+}
+
+class PushContentsClosure : public ExtendedOopClosure {
+  PSPromotionManager* _pm;
+ public:
+  PushContentsClosure(PSPromotionManager* pm) : _pm(pm) {}
+
+  template <typename T> void do_oop_nv(T* p) {
+    if (PSScavenge::should_scavenge(p)) {
+      _pm->claim_or_forward_depth(p);
+    }
+  }
+
+  virtual void do_oop(oop* p)       { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
+
+  // Don't use the oop verification code in the oop_oop_iterate framework.
+  debug_only(virtual bool should_verify_oops() { return false; })
+};
+
+void InstanceKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
+  PushContentsClosure cl(pm);
+  oop_oop_iterate_oop_maps_reverse<true>(obj, &cl);
+}
+
+void InstanceMirrorKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
+    // Note that we don't have to follow the mirror -> klass pointer, since all
+    // klasses that are dirty will be scavenged when we iterate over the
+    // ClassLoaderData objects.
+
+  InstanceKlass::oop_ps_push_contents(obj, pm);
+
+  PushContentsClosure cl(pm);
+  oop_oop_iterate_statics<true>(obj, &cl);
+}
+
+void InstanceClassLoaderKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
+  InstanceKlass::oop_ps_push_contents(obj, pm);
+
+  // This is called by the young collector. It will already have taken care of
+  // all class loader data. So, we don't have to follow the class loader ->
+  // class loader data link.
+}
+
+template <class T>
+static void oop_ps_push_contents_specialized(oop obj, InstanceRefKlass *klass, PSPromotionManager* pm) {
+  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
+  if (PSScavenge::should_scavenge(referent_addr)) {
+    ReferenceProcessor* rp = PSScavenge::reference_processor();
+    if (rp->discover_reference(obj, klass->reference_type())) {
+      // reference already enqueued, referent and next will be traversed later
+      klass->InstanceKlass::oop_ps_push_contents(obj, pm);
+      return;
+    } else {
+      // treat referent as normal oop
+      pm->claim_or_forward_depth(referent_addr);
+    }
+  }
+  // Treat discovered as normal oop, if ref is not "active",
+  // i.e. if next is non-NULL.
+  T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
+  if (ReferenceProcessor::pending_list_uses_discovered_field()) {
+    T  next_oop = oopDesc::load_heap_oop(next_addr);
+    if (!oopDesc::is_null(next_oop)) { // i.e. ref is not "active"
+      T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
+      debug_only(
+        if(TraceReferenceGC && PrintGCDetails) {
+          gclog_or_tty->print_cr("   Process discovered as normal "
+                                 PTR_FORMAT, p2i(discovered_addr));
+        }
+      )
+      if (PSScavenge::should_scavenge(discovered_addr)) {
+        pm->claim_or_forward_depth(discovered_addr);
+      }
+    }
+  } else {
+#ifdef ASSERT
+    // In the case of older JDKs which do not use the discovered
+    // field for the pending list, an inactive ref (next != NULL)
+    // must always have a NULL discovered field.
+    oop next = oopDesc::load_decode_heap_oop(next_addr);
+    oop discovered = java_lang_ref_Reference::discovered(obj);
+    assert(oopDesc::is_null(next) || oopDesc::is_null(discovered),
+           err_msg("Found an inactive reference " PTR_FORMAT " with a non-NULL discovered field",
+                   p2i(obj)));
+#endif
+  }
+
+  // Treat next as normal oop;  next is a link in the reference queue.
+  if (PSScavenge::should_scavenge(next_addr)) {
+    pm->claim_or_forward_depth(next_addr);
+  }
+  klass->InstanceKlass::oop_ps_push_contents(obj, pm);
+}
+
+void InstanceRefKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
+  if (UseCompressedOops) {
+    oop_ps_push_contents_specialized<narrowOop>(obj, this, pm);
+  } else {
+    oop_ps_push_contents_specialized<oop>(obj, this, pm);
+  }
+}
+
+void ObjArrayKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
+  assert(obj->is_objArray(), "obj must be obj array");
+  PushContentsClosure cl(pm);
+  oop_oop_iterate_elements<true>(objArrayOop(obj), &cl);
+}
+
+void TypeArrayKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
+  assert(obj->is_typeArray(),"must be a type array");
+  ShouldNotReachHere();
 }
 
 oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {

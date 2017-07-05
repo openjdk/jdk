@@ -96,11 +96,16 @@ class Stack:  public StackBase<F>
 public:
   friend class StackIterator<E, F>;
 
+  // Number of elements that fit in 4K bytes minus the size of two pointers
+  // (link field and malloc header).
+  static const size_t _default_segment_size =  (4096 - 2 * sizeof(E*)) / sizeof(E);
+  static size_t default_segment_size() { return _default_segment_size; }
+
   // segment_size:    number of items per segment
   // max_cache_size:  maxmium number of *segments* to cache
   // max_size:        maximum number of items allowed, rounded to a multiple of
   //                  the segment size (0 == unlimited)
-  inline Stack(size_t segment_size = default_segment_size(),
+  inline Stack(size_t segment_size = _default_segment_size,
                size_t max_cache_size = 4, size_t max_size = 0);
   inline ~Stack() { clear(true); }
 
@@ -121,8 +126,6 @@ public:
   // Clear everything from the stack, releasing the associated memory.  If
   // clear_cache is true, also release any cached segments.
   void clear(bool clear_cache = false);
-
-  static inline size_t default_segment_size();
 
 protected:
   // Each segment includes space for _seg_size elements followed by a link

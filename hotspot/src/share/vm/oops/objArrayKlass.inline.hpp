@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,78 +25,165 @@
 #ifndef SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP
 #define SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP
 
-#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "memory/memRegion.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/objArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/parallelScavenge/psCompactionManager.inline.hpp"
-#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
-#endif // INCLUDE_ALL_GCS
 
-void ObjArrayKlass::oop_follow_contents(oop obj, int index) {
+template <bool nv, typename T, class OopClosureType>
+void ObjArrayKlass::oop_oop_iterate_elements_specialized(objArrayOop a, OopClosureType* closure) {
+  T* p         = (T*)a->base();
+  T* const end = p + a->length();
+
+  for (;p < end; p++) {
+    Devirtualizer<nv>::do_oop(closure, p);
+  }
+}
+
+template <bool nv, typename T, class OopClosureType>
+void ObjArrayKlass::oop_oop_iterate_elements_specialized_bounded(
+    objArrayOop a, OopClosureType* closure, void* low, void* high) {
+
+  T* const l = (T*)low;
+  T* const h = (T*)high;
+
+  T* p   = (T*)a->base();
+  T* end = p + a->length();
+
+  if (p < l) {
+    p = l;
+  }
+  if (end > h) {
+    end = h;
+  }
+
+  for (;p < end; ++p) {
+    Devirtualizer<nv>::do_oop(closure, p);
+  }
+}
+
+template <bool nv, class OopClosureType>
+void ObjArrayKlass::oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure) {
   if (UseCompressedOops) {
-    objarray_follow_contents<narrowOop>(obj, index);
+    oop_oop_iterate_elements_specialized<nv, narrowOop>(a, closure);
   } else {
-    objarray_follow_contents<oop>(obj, index);
+    oop_oop_iterate_elements_specialized<nv, oop>(a, closure);
   }
 }
 
-template <class T>
-void ObjArrayKlass::objarray_follow_contents(oop obj, int index) {
+template <bool nv, class OopClosureType>
+void ObjArrayKlass::oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, MemRegion mr) {
+  if (UseCompressedOops) {
+    oop_oop_iterate_elements_specialized_bounded<nv, narrowOop>(a, closure, mr.start(), mr.end());
+  } else {
+    oop_oop_iterate_elements_specialized_bounded<nv, oop>(a, closure, mr.start(), mr.end());
+  }
+}
+
+template <bool nv, typename OopClosureType>
+int ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
+  assert (obj->is_array(), "obj must be array");
   objArrayOop a = objArrayOop(obj);
-  const size_t len = size_t(a->length());
-  const size_t beg_index = size_t(index);
-  assert(beg_index < len || len == 0, "index too large");
 
-  const size_t stride = MIN2(len - beg_index, ObjArrayMarkingStride);
-  const size_t end_index = beg_index + stride;
-  T* const base = (T*)a->base();
-  T* const beg = base + beg_index;
-  T* const end = base + end_index;
-
-  // Push the non-NULL elements of the next stride on the marking stack.
-  for (T* e = beg; e < end; e++) {
-    MarkSweep::mark_and_push<T>(e);
+  // Get size before changing pointers.
+  // Don't call size() or oop_size() since that is a virtual call.
+  int size = a->object_size();
+  if (Devirtualizer<nv>::do_metadata(closure)) {
+    Devirtualizer<nv>::do_klass(closure, obj->klass());
   }
 
-  if (end_index < len) {
-    MarkSweep::push_objarray(a, end_index); // Push the continuation.
+  oop_oop_iterate_elements<nv>(a, closure);
+
+  return size;
+}
+
+template <bool nv, typename OopClosureType>
+int ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
+  assert(obj->is_array(), "obj must be array");
+  objArrayOop a  = objArrayOop(obj);
+
+  // Get size before changing pointers.
+  // Don't call size() or oop_size() since that is a virtual call
+  int size = a->object_size();
+
+  if (Devirtualizer<nv>::do_metadata(closure)) {
+    Devirtualizer<nv>::do_klass(closure, a->klass());
   }
+
+  oop_oop_iterate_elements_bounded<nv>(a, closure, mr);
+
+  return size;
+}
+
+template <bool nv, typename T, class OopClosureType>
+void ObjArrayKlass::oop_oop_iterate_range_specialized(objArrayOop a, OopClosureType* closure, int start, int end) {
+  if (Devirtualizer<nv>::do_metadata(closure)) {
+    Devirtualizer<nv>::do_klass(closure, a->klass());
+  }
+
+  T* low = start == 0 ? cast_from_oop<T*>(a) : a->obj_at_addr<T>(start);
+  T* high = (T*)a->base() + end;
+
+  oop_oop_iterate_elements_specialized_bounded<nv, T>(a, closure, low, high);
+}
+
+// Like oop_oop_iterate but only iterates over a specified range and only used
+// for objArrayOops.
+template <bool nv, class OopClosureType>
+int ObjArrayKlass::oop_oop_iterate_range(oop obj, OopClosureType* closure, int start, int end) {
+  assert(obj->is_array(), "obj must be array");
+  objArrayOop a  = objArrayOop(obj);
+
+  // Get size before changing pointers.
+  // Don't call size() or oop_size() since that is a virtual call
+  int size = a->object_size();
+
+  if (UseCompressedOops) {
+    oop_oop_iterate_range_specialized<nv, narrowOop>(a, closure, start, end);
+  } else {
+    oop_oop_iterate_range_specialized<nv, oop>(a, closure, start, end);
+  }
+
+  return size;
+}
+
+
+#define ObjArrayKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)              \
+                                                                                   \
+int ObjArrayKlass::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {  \
+  return oop_oop_iterate<nvs_to_bool(nv_suffix)>(obj, closure);                    \
 }
 
 #if INCLUDE_ALL_GCS
-void ObjArrayKlass::oop_follow_contents(ParCompactionManager* cm, oop obj,
-                                        int index) {
-  if (UseCompressedOops) {
-    objarray_follow_contents<narrowOop>(cm, obj, index);
-  } else {
-    objarray_follow_contents<oop>(cm, obj, index);
-  }
+#define ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
+int ObjArrayKlass::oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {  \
+  /* No reverse implementation ATM. */                                                       \
+  return oop_oop_iterate<nvs_to_bool(nv_suffix)>(obj, closure);                              \
+}
+#else
+#define ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
+#endif
+
+#define ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)                              \
+                                                                                                     \
+int ObjArrayKlass::oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr) {  \
+  return oop_oop_iterate_bounded<nvs_to_bool(nv_suffix)>(obj, closure, mr);                          \
 }
 
-template <class T>
-void ObjArrayKlass::objarray_follow_contents(ParCompactionManager* cm, oop obj,
-                                             int index) {
-  objArrayOop a = objArrayOop(obj);
-  const size_t len = size_t(a->length());
-  const size_t beg_index = size_t(index);
-  assert(beg_index < len || len == 0, "index too large");
-
-  const size_t stride = MIN2(len - beg_index, ObjArrayMarkingStride);
-  const size_t end_index = beg_index + stride;
-  T* const base = (T*)a->base();
-  T* const beg = base + beg_index;
-  T* const end = base + end_index;
-
-  // Push the non-NULL elements of the next stride on the marking stack.
-  for (T* e = beg; e < end; e++) {
-    PSParallelCompact::mark_and_push<T>(cm, e);
-  }
-
-  if (end_index < len) {
-    cm->push_objarray(a, end_index); // Push the continuation.
-  }
+#define ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r(OopClosureType, nv_suffix)                                      \
+                                                                                                             \
+int ObjArrayKlass::oop_oop_iterate_range##nv_suffix(oop obj, OopClosureType* closure, int start, int end) {  \
+  return oop_oop_iterate_range<nvs_to_bool(nv_suffix)>(obj, closure, start, end);                            \
 }
-#endif // INCLUDE_ALL_GCS
+
+
+#define ALL_OBJ_ARRAY_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)  \
+  ObjArrayKlass_OOP_OOP_ITERATE_DEFN(          OopClosureType, nv_suffix)    \
+  ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)    \
+  ObjArrayKlass_OOP_OOP_ITERATE_DEFN_m(        OopClosureType, nv_suffix)    \
+  ObjArrayKlass_OOP_OOP_ITERATE_DEFN_r(        OopClosureType, nv_suffix)
+
 
 #endif // SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP

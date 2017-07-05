@@ -2,10 +2,10 @@
 .\" Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: jjs
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: ���ܥġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: 基本ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "jjs" "1" "2013ǯ11��21��" "JDK 8" "���ܥġ���"
+.TH "jjs" "1" "2013年11月21日" "JDK 8" "基本ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-jjs \- Nashorn���󥸥��ƤӽФ��ޤ���
-.SH "����"
+jjs \- Nashornエンジンを呼び出します。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,28 +64,28 @@ jjs \- Nashorn���󥸥��ƤӽФ��ޤ���
 .PP
 \fIoptions\fR
 .RS 4
-����ʸ���Ƕ��ڤ�줿��\fIjjs\fR���ޥ�ɤ�1�İʾ�Υ��ץ���󡣾ܺ٤ϡ����ץ����򻲾Ȥ��Ƥ���������
+空白文字で区切られた、\fIjjs\fRコマンドの1つ以上のオプション。詳細は、オプションを参照してください。
 .RE
 .PP
 \fIscript\-files\fR
 .RS 4
-����ʸ���Ƕ��ڤ�줿��Nashorn����Ѥ��Ʋ�᤹��1�İʾ�Υ�����ץȡ��ե����롣�ե����뤬���ꤵ��ʤ����ϡ����÷������뤬��ư����ޤ���
+空白文字で区切られた、Nashornを使用して解釈する1つ以上のスクリプト・ファイル。ファイルが指定されない場合は、対話型シェルが起動されます。
 .RE
 .PP
 \fIarguments\fR
 .RS 4
-��ťϥ��ե󡦥ޡ�����(\fI\-\-\fR)�θ�Τ��٤Ƥ��ͤ��������Ȥ��ƥ�����ץȤޤ������÷���������Ϥ���ޤ����������ͤˤ�\fIarguments\fR�ץ��ѥƥ�����Ѥ��ƥ��������Ǥ��ޤ�(Example 3�򻲾Ȥ��Ƥ�������)��
+二重ハイフン・マーカー(\fI\-\-\fR)の後のすべての値が、引数としてスクリプトまたは対話型シェルに渡されます。これらの値には\fIarguments\fRプロパティを使用してアクセスできます(Example 3を参照してください)。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fIjjs\fR���ޥ�ɥ饤�󡦥ġ������Ѥ���Nashorn���󥸥��ƤӽФ��ޤ����������Ѥ��ơ�1�Ĥޤ���ʣ���Υ�����ץȡ��ե�������ᤷ���ꡢ���÷��������¹Ԥ��뤳�Ȥ��Ǥ��ޤ���
-.SH "���ץ����"
+\fIjjs\fRコマンドライン・ツールを使用してNashornエンジンを呼び出します。これを使用して、1つまたは複数のスクリプト・ファイルを解釈したり、対話型シェルを実行することができます。
+.SH "オプション"
 .PP
-\fIjjs\fR���ޥ�ɤΥ��ץ����ϥ�����ץȤ�Nashorn�ˤ�äƲ�ᤵ���������椷�ޤ���
+\fIjjs\fRコマンドのオプションはスクリプトがNashornによって解釈される条件を制御します。
 .PP
 \-ccs=\fIsize\fR, \-\-class\-cache\-size=\fIsize\fR
 .RS 4
-���饹������å��塦��������Х���ñ�̤����ꤷ�ޤ��������Х���(KB)�򼨤������\fIk\fR�ޤ���\fIK\fR��ʸ�����ɲä����ᥬ�Х���(MB)�򼨤������\fIm\fR�ޤ���\fIM\fR��ʸ�����ɲä��������Х���(GB)�򼨤������\fIg\fR�ޤ���\fIG\fR���ɲä��ޤ����ǥե���ȤǤϡ����饹������å��塦��������50�Х��Ȥ����ꤵ��ޤ���������ϡ�1024�Х���(1 KB)�����ꤹ����ˡ�򼨤��ޤ���
+クラス・キャッシュ・サイズをバイト単位で設定します。キロバイト(KB)を示すために\fIk\fRまたは\fIK\fRの文字を追加し、メガバイト(MB)を示すために\fIm\fRまたは\fIM\fRの文字を追加し、ギガバイト(GB)を示すために\fIg\fRまたは\fIG\fRを追加します。デフォルトでは、クラス・キャッシュ・サイズは50バイトに設定されます。次の例は、1024バイト(1 KB)に設定する方法を示します。
 .sp
 .if n \{\
 .RS 4
@@ -101,17 +101,17 @@ jjs \- Nashorn���󥸥��ƤӽФ��ޤ���
 .PP
 \-co, \-\-compile\-only
 .RS 4
-������ץȤ�¹Ԥ����˥���ѥ��뤷�ޤ���
+スクリプトを実行せずにコンパイルします。
 .RE
 .PP
 \-cp \fIpath\fR, \-\-classpath \fIpath\fR
 .RS 4
-���ݡ��Ȥ��륯�饹�ؤΥѥ�����ꤷ�ޤ���ʣ���Υѥ������ꤹ��ˤϡ����Υ��ץ����򷫤��֤������ޤ��ϳƥѥ��򥳥���(:)�Ƕ��ڤ�ޤ���
+サポートするクラスへのパスを指定します。複数のパスを設定するには、このオプションを繰り返すか、または各パスをコロン(:)で区切ります。
 .RE
 .PP
 \-D\fIname\fR=\fIvalue\fR
 .RS 4
-�ץ��ѥƥ�̾���ͤ������Ƥ뤳�Ȥǡ�������ץȤ��Ϥ������ƥࡦ�ץ��ѥƥ������ꤷ�ޤ���������ǡ����÷��⡼�ɤ�Nashorn��ƤӽФ��ơ�\fImyValue\fR��\fImyKey\fR�Ȥ���̾���Υץ��ѥƥ��˳�����Ƥ���ˡ�򼨤��ޤ���
+プロパティ名に値を割り当てることで、スクリプトに渡すシステム・プロパティを設定します。次の例で、対話型モードでNashornを呼び出して、\fImyValue\fRを\fImyKey\fRという名前のプロパティに割り当てる方法を示します。
 .sp
 .if n \{\
 .RS 4
@@ -125,67 +125,67 @@ jjs>
 .if n \{\
 .RE
 .\}
-���Υ��ץ����򷫤��֤����Ѥ���ȡ�ʣ���Υץ��ѥƥ�������Ǥ��ޤ���
+このオプションを繰り返し使用すると、複数のプロパティを設定できます。
 .RE
 .PP
 \-d=\fIpath\fR, \-\-dump\-debug\-dir=\fIpath\fR
 .RS 4
-���饹���ե���������פ���ǥ��쥯�ȥ�ؤΥѥ�����ꤷ�ޤ���
+クラス・ファイルをダンプするディレクトリへのパスを指定します。
 .RE
 .PP
 \-\-debug\-lines
 .RS 4
-���饹���ե�������ι��ֹ�ɽ���������ޤ����ǥե���ȤǤϡ����Υ��ץ�����ͭ���ˤʤäƤ��ޤ���̵���ˤ���ˤ�\fI\-\-debug\-lines=false\fR����ꤷ�ޤ���
+クラス・ファイル内の行番号表を生成します。デフォルトでは、このオプションは有効になっています。無効にするには\fI\-\-debug\-lines=false\fRを指定します。
 .RE
 .PP
 \-\-debug\-locals
 .RS 4
-���饹���ե�������Υ��������ѿ����������ޤ���
+クラス・ファイル内のローカル変数を生成します。
 .RE
 .PP
 \-doe, \-\-dump\-on\-error
 .RS 4
-���顼��ȯ�������Ȥ��ˡ��ե롦�����å����ȥ졼�����󶡤��ޤ����ǥե���ȤǤϡ���ñ�ʥ��顼����å������Τߤ����Ϥ���ޤ���
+エラーが発生したときに、フル・スタック・トレースを提供します。デフォルトでは、簡単なエラー・メッセージのみが出力されます。
 .RE
 .PP
 \-\-early\-lvalue\-error
 .RS 4
-̵���ʺ����ͼ���������顼�Ȥ���(�Ĥޤꡢ�����ɤ����Ϥ����Ȥ���)��𤵤�ޤ����ǥե���ȤǤϡ����Υ��ץ�����ͭ���ˤʤäƤ��ޤ���̵���ˤ���ˤ�\fI\-\-early\-lvalue\-error=false\fR����ꤷ�ޤ���̵���ʾ�硢̵���ʺ����ͼ��ϥ����ɤ��¹Ԥ����ޤ���𤵤�ޤ���
+無効な左辺値式が早期エラーとして(つまり、コードが解析されるときに)報告されます。デフォルトでは、このオプションは有効になっています。無効にするには\fI\-\-early\-lvalue\-error=false\fRを指定します。無効な場合、無効な左辺値式はコードが実行されるまで報告されません。
 .RE
 .PP
 \-\-empty\-statements
 .RS 4
-����ʸ��Java����ݹ�ʸ�ĥ꡼����¸���ޤ���
+空の文をJavaの抽象構文ツリーに保存します。
 .RE
 .PP
 \-fv, \-\-fullversion
 .RS 4
-������Nashorn�С������ʸ�������Ϥ��ޤ���
+完全なNashornバージョン文字列を出力します。
 .RE
 .PP
 \-\-function\-statement\-error
 .RS 4
-�ؿ��������ʸ�Ȥ��ƻ��Ѥ����ȥ��顼����å����������Ϥ���ޤ���
+関数の宣言が文として使用されるとエラー・メッセージが出力されます。
 .RE
 .PP
 \-\-function\-statement\-warning
 .RS 4
-�ؿ��������ʸ�Ȥ��ƻ��Ѥ����ȷٹ��å����������Ϥ���ޤ���
+関数の宣言が文として使用されると警告メッセージが出力されます。
 .RE
 .PP
 \-fx
 .RS 4
-������ץȤ�JavaFX���ץꥱ�������Ȥ��Ƶ�ư���ޤ���
+スクリプトをJavaFXアプリケーションとして起動します。
 .RE
 .PP
 \-h, \-help
 .RS 4
-���ץ����Υꥹ�ȤȤ�����������Ϥ��ޤ���
+オプションのリストとその説明を出力します。
 .RE
 .PP
 \-J\fIoption\fR
 .RS 4
-���ꤷ��\fIjava\fR��ư���ץ�����JVM���Ϥ��ޤ���������ǡ����÷��⡼�ɤ�Nashorn��ƤӽФ��ơ�JVM�ˤ�äƻ��Ѥ���������꡼��4 GB�����ꤹ����ˡ�򼨤��ޤ���
+指定した\fIjava\fR起動オプションをJVMに渡します。次の例で、対話型モードでNashornを呼び出して、JVMによって使用される最大メモリーを4 GBに設定する方法を示します。
 .sp
 .if n \{\
 .RS 4
@@ -199,22 +199,22 @@ jjs>
 .if n \{\
 .RE
 .\}
-���Υ��ץ����򷫤��֤����Ѥ���ȡ�ʣ����\fIjava\fR���ޥ�ɡ����ץ������Ϥ����Ȥ��Ǥ��ޤ���
+このオプションを繰り返し使用すると、複数の\fIjava\fRコマンド・オプションを渡すことができます。
 .RE
 .PP
 \-\-lazy\-compilation
 .RS 4
-�쥤������������������ά(�Ĥޤꡢ������ץ����Τ����٤˥���ѥ��뤵��ʤ�)��ͭ���ˤ��ޤ������Υ��ץ����ϻŪ�ʤ�ΤǤ���
+レイジー・コード生成戦略(つまり、スクリプト全体が一度にコンパイルされない)を有効にします。このオプションは試験的なものです。
 .RE
 .PP
 \-\-loader\-per\-compile
 .RS 4
-����ѥ��뤴�Ȥ˿��������饹������������������ޤ����ǥե���ȤǤϡ����Υ��ץ�����ͭ���ˤʤäƤ��ޤ���̵���ˤ���ˤ�\fI\-\-loader\-per\-compile=false\fR����ꤷ�ޤ���
+コンパイルごとに新しいクラス・ローダーを作成します。デフォルトでは、このオプションは有効になっています。無効にするには\fI\-\-loader\-per\-compile=false\fRを指定します。
 .RE
 .PP
 \-\-log=\fIsubsystem\fR:\fIlevel\fR
 .RS 4
-���ꤵ�줿���֥����ƥ���Ф��ơ�����Υ�٥�ǥ����󥰤�¹Ԥ��ޤ�������ޤǶ��ڤä�ʣ���Υ��֥����ƥ�Υ����󥰡���٥�����Ǥ��ޤ���������򼨤��ޤ���
+指定されたサブシステムに対して、特定のレベルでロギングを実行します。カンマで区切って複数のサブシステムのロギング・レベルを指定できます。次に例を示します。
 .sp
 .if n \{\
 .RS 4
@@ -229,116 +229,116 @@ jjs>
 .PP
 \-\-package=\fIname\fR
 .RS 4
-�������줿���饹���ե�������ɲä���ѥå���������ꤷ�ޤ���
+生成されたクラス・ファイルを追加するパッケージを指定します。
 .RE
 .PP
 \-\-parse\-only
 .RS 4
-����ѥ��뤻���˥����ɤ���Ϥ��ޤ���
+コンパイルせずにコードを解析します。
 .RE
 .PP
 \-\-print\-ast
 .RS 4
-��ݹ�ʸ�ĥ꡼����Ϥ��ޤ���
+抽象構文ツリーを出力します。
 .RE
 .PP
 \-\-print\-code
 .RS 4
-�Х��ȥ����ɤ���Ϥ��ޤ���
+バイトコードを出力します。
 .RE
 .PP
 \-\-print\-lower\-ast
 .RS 4
-���겼������ݹ�ʸ�ĥ꡼����Ϥ��ޤ���
+掘り下げた抽象構文ツリーを出力します。
 .RE
 .PP
 \-\-print\-lower\-parse
 .RS 4
-���겼�������ϥĥ꡼����Ϥ��ޤ���
+掘り下げた解析ツリーを出力します。
 .RE
 .PP
 \-\-print\-no\-newline
 .RS 4
-����¾��\fI\-\-print*\fR���ץ����Ƕ���Ū��1�Ԥǽ��Ϥ��ޤ���
+その他の\fI\-\-print*\fRオプションで強制的に1行で出力します。
 .RE
 .PP
 \-\-print\-parse
 .RS 4
-���ϥĥ꡼����Ϥ��ޤ���
+解析ツリーを出力します。
 .RE
 .PP
 \-\-print\-symbols
 .RS 4
-����ɽ����Ϥ��ޤ���
+記号表を出力します。
 .RE
 .PP
 \-pcs, \-\-profile\-callsites
 .RS 4
-�ƤӽФ������ȤΥץ��ե����롦�ǡ��������פ��ޤ���
+呼び出しサイトのプロファイル・データをダンプします。
 .RE
 .PP
 \-scripting
 .RS 4
-������Υ�����ץȵ�ǽ��ͭ���ˤ��ޤ���
+シェルのスクリプト機能を有効にします。
 .RE
 .PP
 \-\-stderr=\fIfilename\fR|\fIstream\fR|\fItty\fR
 .RS 4
-ɸ�२�顼�����ȥ꡼�����ꤷ���ե����롢���ȥ꡼��(���Ȥ���\fIstdout\fR)�ˡ��ޤ��ϥƥ�����ü���˥�����쥯�Ȥ��ޤ���
+標準エラー・ストリームを指定したファイル、ストリーム(たとえば\fIstdout\fR)に、またはテキスト端末にリダイレクトします。
 .RE
 .PP
 \-\-stdout=\fIfilename\fR|\fIstream\fR|\fItty\fR
 .RS 4
-ɸ����ϥ��ȥ꡼�����ꤷ���ե����롢���ȥ꡼��(���Ȥ���\fIstderr\fR)�ˡ��ޤ��ϥƥ�����ü���˥�����쥯�Ȥ��ޤ���
+標準出力ストリームを指定したファイル、ストリーム(たとえば\fIstderr\fR)に、またはテキスト端末にリダイレクトします。
 .RE
 .PP
 \-strict
 .RS 4
-ɸ��(ECMAScript Edition 5\&.1)�ؤν��򶯲�����strict�⡼�ɤ�ͭ���ˤ�������ˤ�궦�̤Υ����ǥ��󥰡����顼���ñ�˸��ФǤ���褦�ˤʤ�ޤ���
+標準(ECMAScript Edition 5\&.1)への準拠を強化するstrictモードを有効にし、これにより共通のコーディング・エラーを簡単に検出できるようになります。
 .RE
 .PP
 \-t=\fIzone\fR, \-timezone=\fIzone\fR
 .RS 4
-������ץȤμ¹Ԥ��Ф����ꤷ�������ॾ��������ꤷ�ޤ���OS�����ꤵ�줿�����ॾ����򥪡��С��饤�ɤ���\fIDate\fR���֥������Ȥǻ��Ѥ���ޤ���
+スクリプトの実行に対し指定したタイムゾーンを設定します。OSで設定されたタイムゾーンをオーバーライドし、\fIDate\fRオブジェクトで使用されます。
 .RE
 .PP
 \-tcs=\fIparameter\fR, \-\-trace\-callsites=\fIparameter\fR
 .RS 4
-�ƽФ������ȤΥȥ졼���Υ⡼�ɤ�ͭ���ˤ��ޤ������Ѳ�ǽ�ʥѥ�᡼���ϡ����ΤȤ���Ǥ���
+呼出しサイトのトレースのモードを有効にします。使用可能なパラメータは、次のとおりです。
 .PP
 miss
 .RS 4
-�ƽФ������ȤΥߥ���ȥ졼�����ޤ���
+呼出しサイトのミスをトレースします。
 .RE
 .PP
 enterexit
 .RS 4
-�ƽФ������Ȥؤν������ȥ졼�����ޤ���
+呼出しサイトへの出入りをトレースします。
 .RE
 .PP
 objects
 .RS 4
-���֥������ȤΥץ��ѥƥ�����Ϥ��ޤ���
+オブジェクトのプロパティを出力します。
 .RE
 .RE
 .PP
 \-\-verify\-code
 .RS 4
-�Х��ȥ����ɤ�¹Ԥ������˸��ڤ��ޤ���
+バイトコードを実行する前に検証します。
 .RE
 .PP
 \-v, \-version
 .RS 4
-Nashorn�С������ʸ�������Ϥ��ޤ���
+Nashornバージョン文字列を出力します。
 .RE
 .PP
 \-xhelp
 .RS 4
-���ޥ�ɥ饤�󡦥��ץ����γ�ĥ�إ�פ���Ϥ��ޤ���
+コマンドライン・オプションの拡張ヘルプを出力します。
 .RE
-.SH "��"
+.SH "例"
 .PP
-\fBExample 1\fR, Nashorn����Ѥ���������ץȤμ¹�
+\fBExample 1\fR, Nashornを使用したスクリプトの実行
 .RS 4
 .sp
 .if n \{\
@@ -352,7 +352,7 @@ jjs script\&.js
 .\}
 .RE
 .PP
-\fBExample 2\fR, ���÷��⡼�ɤǤ�Nashorn�μ¹�
+\fBExample 2\fR, 対話型モードでのNashornの実行
 .RS 4
 .sp
 .if n \{\
@@ -370,7 +370,7 @@ jjs> \fBquit()\fR
 .\}
 .RE
 .PP
-\fBExample 3\fR, Nashorn�ؤΰ������Ϥ�
+\fBExample 3\fR, Nashornへの引数の渡し
 .RS 4
 .sp
 .if n \{\
@@ -386,7 +386,7 @@ jjs>
 .RE
 .\}
 .RE
-.SH "��Ϣ����"
+.SH "関連項目"
 .PP
 \fIjrunscript\fR
 .br

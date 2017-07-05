@@ -112,7 +112,7 @@ public class TSRequest {
     /**
      * Sets an object identifier for the Time-Stamp Protocol policy.
      *
-     * @param version The policy object identifier.
+     * @param policyId The policy object identifier.
      */
     public void setPolicyId(String policyId) {
         this.policyId = policyId;

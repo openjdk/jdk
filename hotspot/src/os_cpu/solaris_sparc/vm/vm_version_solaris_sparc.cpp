@@ -129,7 +129,7 @@ class PICL {
     bool is_inconsistent()  { return _state == INCONSISTENT; }
     void set_inconsistent() { _state = INCONSISTENT;         }
 
-    void visit(picl_nodehdl_t nodeh, const char* name) {
+    bool visit(picl_nodehdl_t nodeh, const char* name) {
       assert(!is_inconsistent(), "Precondition");
       int curr;
       if (_picl->get_int_property(nodeh, name, &curr) == PICL_SUCCESS) {
@@ -138,7 +138,9 @@ class PICL {
         } else if (curr != value()) { // following iterations
           set_inconsistent();
         }
+        return true;
       }
+      return false;
     }
   };
 
@@ -155,8 +157,19 @@ class PICL {
       if (!l1_visitor->is_inconsistent()) {
         l1_visitor->visit(nodeh, "l1-dcache-line-size");
       }
-      if (!l2_visitor->is_inconsistent()) {
-        l2_visitor->visit(nodeh, "l2-cache-line-size");
+      static const char* l2_data_cache_line_property_name = NULL;
+      // On the first visit determine the name of the l2 cache line size property and memoize it.
+      if (l2_data_cache_line_property_name == NULL) {
+        assert(!l2_visitor->is_inconsistent(), "First iteration cannot be inconsistent");
+        l2_data_cache_line_property_name = "l2-cache-line-size";
+        if (!l2_visitor->visit(nodeh, l2_data_cache_line_property_name)) {
+          l2_data_cache_line_property_name = "l2-dcache-line-size";
+          l2_visitor->visit(nodeh, l2_data_cache_line_property_name);
+        }
+      } else {
+        if (!l2_visitor->is_inconsistent()) {
+          l2_visitor->visit(nodeh, l2_data_cache_line_property_name);
+        }
       }
 
       if (l1_visitor->is_inconsistent() && l2_visitor->is_inconsistent()) {
@@ -172,13 +185,13 @@ class PICL {
     UniqueValueVisitor* l2_visitor() { return &_l2_visitor; }
   };
   int _L1_data_cache_line_size;
-  int _L2_cache_line_size;
+  int _L2_data_cache_line_size;
 public:
   static int visit_cpu(picl_nodehdl_t nodeh, void *state) {
     return CPUVisitor::visit(nodeh, state);
   }
 
-  PICL(bool is_fujitsu) : _L1_data_cache_line_size(0), _L2_cache_line_size(0), _dl_handle(NULL) {
+  PICL(bool is_fujitsu) : _L1_data_cache_line_size(0), _L2_data_cache_line_size(0), _dl_handle(NULL) {
     if (!open_library()) {
       return;
     }
@@ -196,7 +209,7 @@ public:
           _L1_data_cache_line_size = cpu_visitor.l1_visitor()->value();
         }
         if (cpu_visitor.l2_visitor()->is_assigned()) {
-          _L2_cache_line_size = cpu_visitor.l2_visitor()->value();
+          _L2_data_cache_line_size = cpu_visitor.l2_visitor()->value();
         }
       }
       _picl_shutdown();
@@ -205,7 +218,7 @@ public:
   }
 
   unsigned int L1_data_cache_line_size() const { return _L1_data_cache_line_size; }
-  unsigned int L2_cache_line_size() const      { return _L2_cache_line_size;      }
+  unsigned int L2_data_cache_line_size() const { return _L2_data_cache_line_size; }
 };
 
 
@@ -431,7 +444,7 @@ int VM_Version::platform_features(int features) {
   // Figure out cache line sizes using PICL
   PICL picl((features & sparc64_family_m) != 0);
   _L1_data_cache_line_size = picl.L1_data_cache_line_size();
-  _L2_cache_line_size      = picl.L2_cache_line_size();
+  _L2_data_cache_line_size = picl.L2_data_cache_line_size();
 
   return features;
 }

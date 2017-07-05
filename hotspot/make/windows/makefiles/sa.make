@@ -91,6 +91,9 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES)
 
 SAWINDBG=sawindbg.dll
 
+# Resource file containing VERSIONINFO
+SA_Res_Files=.\version.sares
+
 checkAndBuildSA:: $(SAWINDBG)
 
 # These do not need to be optimized (don't run a lot of code) and it
@@ -126,10 +129,13 @@ SA_CFLAGS = $(SA_CFLAGS) $(MP_FLAG)
 # Note that we do not keep sawindbj.obj around as it would then
 # get included in the dumpbin command in build_vm_def.sh
 
+# Force resources to be rebuilt every time
+$(SA_Res_Files): FORCE
+
 # In VS2005 or VS2008 the link command creates a .manifest file that we want
 # to insert into the linked artifact so we do not need to track it separately.
 # Use ";#2" for .dll and ";#1" for .exe in the MT command below:
-$(SAWINDBG): $(SASRCFILES)
+$(SAWINDBG): $(SASRCFILES) $(SA_Res_Files)
 	set INCLUDE=$(SA_INCLUDE)$(INCLUDE)
 	$(CXX) @<<
 	  -I"$(BootStrapDir)/include" -I"$(BootStrapDir)/include/win32"
@@ -138,7 +144,7 @@ $(SAWINDBG): $(SASRCFILES)
 	  -out:$*.obj
 <<
 	set LIB=$(SA_LIB)$(LIB)
-	$(LD) -out:$@ -DLL sawindbg.obj sadis.obj dbgeng.lib $(SA_LFLAGS)
+	$(LD) -out:$@ -DLL sawindbg.obj sadis.obj dbgeng.lib $(SA_LFLAGS) $(SA_Res_Files)
 !if "$(MT)" != ""
 	$(MT) -manifest $(@F).manifest -outputresource:$(@F);#2
 !endif
@@ -149,6 +155,9 @@ $(SAWINDBG): $(SASRCFILES)
 !endif
 !endif
 	-@rm -f $*.obj
+
+{$(COMMONSRC)\os\windows\vm}.rc.sares:
+        @$(RC) $(RC_FLAGS) /D "HS_FNAME=$(SAWINDBG)" /fo"$@" $<
 
 cleanall :
 	rm -rf $(GENERATED)/saclasses

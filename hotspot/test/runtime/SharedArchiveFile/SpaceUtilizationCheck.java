@@ -50,7 +50,7 @@ public class SpaceUtilizationCheck {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
            "-XX:+UnlockDiagnosticVMOptions",
-           "-XX:SharedArchiveFile=./test.jsa",
+           "-XX:SharedArchiveFile=./SpaceUtilizationCheck.jsa",
            "-Xshare:dump");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

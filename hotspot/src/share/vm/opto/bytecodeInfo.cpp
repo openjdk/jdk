@@ -631,11 +631,11 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
   }
   int max_inline_level_adjust = 0;
   if (caller_jvms->method() != NULL) {
-    if (caller_jvms->method()->is_compiled_lambda_form())
+    if (caller_jvms->method()->is_compiled_lambda_form()) {
       max_inline_level_adjust += 1;  // don't count actions in MH or indy adapter frames
-    else if (callee_method->is_method_handle_intrinsic() ||
-             callee_method->is_compiled_lambda_form()) {
-      max_inline_level_adjust += 1;  // don't count method handle calls from java.lang.invoke implem
+    } else if (callee_method->is_method_handle_intrinsic() ||
+               callee_method->is_compiled_lambda_form()) {
+      max_inline_level_adjust += 1;  // don't count method handle calls from java.lang.invoke implementation
     }
     if (max_inline_level_adjust != 0 && C->print_inlining() && (Verbose || WizardMode)) {
       CompileTask::print_inline_indent(inline_level());

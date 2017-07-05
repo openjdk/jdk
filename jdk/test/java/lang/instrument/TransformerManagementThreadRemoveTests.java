@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary multi-thread test to exercise sync and contention for removes to transformer registry
  * @author Gabriel Adauto, Wily Technology
  *
+ * @modules java.instrument
  * @run build TransformerManagementThreadRemoveTests
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar TransformerManagementThreadRemoveTests TransformerManagementThreadRemoveTests

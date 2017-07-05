@@ -101,13 +101,10 @@ import jdk.nashorn.internal.runtime.Source;
  * bytecodes that have been written. This is enabled by setting the
  * environment "nashorn.codegen.debug" to true, or --log=codegen:{@literal <level>}
  * <p>
- * A ClassEmitter implements an Emitter - i.e. it needs to have
- * well defined start and end calls for whatever it is generating. Assertions
- * detect if this is not true
  *
  * @see Compiler
  */
-public class ClassEmitter implements Emitter {
+public class ClassEmitter {
     /** Default flags for class generation - public class */
     private static final EnumSet<Flag> DEFAULT_METHOD_FLAGS = EnumSet.of(Flag.PUBLIC);
 
@@ -397,18 +394,14 @@ public class ClassEmitter implements Emitter {
 
     /**
      * Call at beginning of class emission
-     * @see Emitter
      */
-    @Override
     public void begin() {
         classStarted = true;
     }
 
     /**
      * Call at end of class emission
-     * @see Emitter
      */
-    @Override
     public void end() {
         assert classStarted : "class not started for " + unitClassName;
 

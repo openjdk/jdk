@@ -73,7 +73,6 @@ public class UniqueIdentity {
      * Create the object, decoding the values from the passed DER stream.
      *
      * @param derVal the DerValue decoded from the stream.
-     * @param tag the tag the value is encoded under.
      * @exception IOException on decoding errors.
      */
     public UniqueIdentity(DerValue derVal) throws IOException {

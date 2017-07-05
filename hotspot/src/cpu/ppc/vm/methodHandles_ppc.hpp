@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,6 @@
 // These definitions are inlined into class MethodHandles.
 
 // Adapters
-//static unsigned int adapter_code_size() {
-//  return 32*K DEBUG_ONLY(+ 16*K) + (TraceMethodHandles ? 16*K : 0) + (VerifyMethodHandles ? 32*K : 0);
-//}
 enum /* platform_dependent_constants */ {
   adapter_code_size = NOT_LP64(16000 DEBUG_ONLY(+ 25000)) LP64_ONLY(32000 DEBUG_ONLY(+ 150000))
 };
@@ -45,7 +42,9 @@ public:
 
   static void verify_method_handle(MacroAssembler* _masm, Register mh_reg,
                                    Register temp_reg, Register temp2_reg) {
-    Unimplemented();
+    verify_klass(_masm, mh_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_invoke_MethodHandle),
+                 temp_reg, temp2_reg,
+                 "reference is a MH");
   }
 
   static void verify_ref_kind(MacroAssembler* _masm, int ref_kind, Register member_reg, Register temp) NOT_DEBUG_RETURN;

@@ -27,15 +27,11 @@ package com.sun.corba.se.spi.monitoring;
 import java.util.*;
 
 /**
- * <p>
- *
  * @author Hemanth Puttaswamy
- * </p>
- * <p>
+ *
  * StatisticsMonitoredAttribute is provided as a convenience to collect the
  * Statistics of any entity. The getValue() call will be delegated to the
  * StatisticsAccumulator set by the user.
- * </p>
  */
 public class StatisticMonitoredAttribute extends MonitoredAttributeBase {
 
@@ -55,32 +51,19 @@ public class StatisticMonitoredAttribute extends MonitoredAttributeBase {
 
 
 /**
- * <p>
  * Constructs the StaisticMonitoredAttribute, builds the required
  * MonitoredAttributeInfo with Long as the class type and is always
  * readonly attribute.
- * </p>
- * <p>
  *
  * @param name Of this attribute
- * </p>
- * <p>
- * @return a StatisticMonitoredAttribute
- * </p>
- * <p>
  * @param desc should provide a good description on the kind of statistics
  * collected, a good example is "Connection Response Time Stats will Provide the
  * detailed stats based on the samples provided from every request completion
  * time"
- * </p>
- * <p>
  * @param s is the StatisticsAcumulator that user will use to accumulate the
  * samples and this Attribute Object will get the computed statistics values
  * from.
- * </p>
- * <p>
  * @param mutex using which clearState() and getValue() calls need to be locked.
- * </p>
  */
     public  StatisticMonitoredAttribute(String name, String desc,
         StatisticsAccumulator s, Object mutex)

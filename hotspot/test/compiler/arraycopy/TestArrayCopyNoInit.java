@@ -76,7 +76,7 @@ public class TestArrayCopyNoInit {
     static TestArrayCopyNoInit[] m5(Object[] src) {
         Object tmp = src[0];
         TestArrayCopyNoInit[] dest = new TestArrayCopyNoInit[10];
-        System.arraycopy(src, 0, dest, 0, 0);
+        System.arraycopy(src, 0, dest, 0, 10);
         return dest;
     }
 
@@ -110,7 +110,7 @@ public class TestArrayCopyNoInit {
     static H[] m6(Object[] src) {
         Object tmp = src[0];
         H[] dest = new H[10];
-        System.arraycopy(src, 0, dest, 0, 0);
+        System.arraycopy(src, 0, dest, 0, 10);
         return dest;
     }
 

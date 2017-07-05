@@ -33,8 +33,8 @@ import java.security.cert.CertificateException;
 import sun.security.util.*;
 
 /**
- * This class defines the mapping from OID & name to classes and vice
- * versa.  Used by CertificateExtensions & PKCS10 to get the java
+ * This class defines the mapping from OID {@literal &} name to classes and vice
+ * versa.  Used by CertificateExtensions {@literal &} PKCS10 to get the java
  * classes associated with a particular OID/name.
  *
  * @author Amit Kapoor

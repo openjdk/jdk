@@ -37,6 +37,11 @@ ifndef USE_GCC
 OPT_CFLAGS/ciEnv.o = $(OPT_CFLAGS) -xinline=no%__1cFciEnvbFpost_compiled_method_load_event6MpnHnmethod__v_
 endif
 
+# Need extra inlining to get oop_ps_push_contents functions to perform well enough.
+ifndef USE_GCC
+OPT_CFLAGS/psPromotionManager.o = $(OPT_CFLAGS) -W2,-Ainline:inc=1000
+endif
+
 # (OPT_CFLAGS/SLOWER is also available, to alter compilation of buggy files)
 ifeq ("${Platform_compiler}", "sparcWorks")
 

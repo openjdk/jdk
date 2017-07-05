@@ -876,7 +876,8 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           // Parse::do_call())
           target = C->optimize_virtual_call(caller, jvms->bci(), klass, klass,
                                             target, receiver_type, is_virtual,
-                                            call_does_dispatch, vtable_index);  // out-parameters
+                                            call_does_dispatch, vtable_index, // out-parameters
+                                            /*check_access=*/false);
           // We lack profiling at this call but type speculation may
           // provide us with a type
           speculative_receiver_type = (receiver_type != NULL) ? receiver_type->speculative_type() : NULL;

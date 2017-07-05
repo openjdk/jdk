@@ -29,6 +29,7 @@
  * @author  Mandy Chung
  * @author  Jaroslav Bachorik
  *
+ * @modules java.management
  * @run main/othervm SynchronizationStatistics
  */
 

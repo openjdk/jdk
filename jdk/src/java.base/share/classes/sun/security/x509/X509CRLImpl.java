@@ -185,8 +185,8 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * Initial CRL constructor, no revoked certs, and no extensions.
      *
      * @param issuer the name of the CA issuing this CRL.
-     * @param thisUpdate the Date of this issue.
-     * @param nextUpdate the Date of the next CRL.
+     * @param thisDate the Date of this issue.
+     * @param nextDate the Date of the next CRL.
      */
     public X509CRLImpl(X500Name issuer, Date thisDate, Date nextDate) {
         this.issuer = issuer;
@@ -198,8 +198,8 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * CRL constructor, revoked certs, no extensions.
      *
      * @param issuer the name of the CA issuing this CRL.
-     * @param thisUpdate the Date of this issue.
-     * @param nextUpdate the Date of the next CRL.
+     * @param thisDate the Date of this issue.
+     * @param nextDate the Date of the next CRL.
      * @param badCerts the array of CRL entries.
      *
      * @exception CRLException on parsing/construction errors.
@@ -237,8 +237,8 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * CRL constructor, revoked certs and extensions.
      *
      * @param issuer the name of the CA issuing this CRL.
-     * @param thisUpdate the Date of this issue.
-     * @param nextUpdate the Date of the next CRL.
+     * @param thisDate the Date of this issue.
+     * @param nextDate the Date of the next CRL.
      * @param badCerts the array of CRL entries.
      * @param crlExts the CRL extensions.
      *
@@ -832,8 +832,8 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     /**
      * return the AuthorityKeyIdentifier, if any.
      *
-     * @returns AuthorityKeyIdentifier or null
-     *          (if no AuthorityKeyIdentifierExtension)
+     * @return AuthorityKeyIdentifier or null
+     *         (if no AuthorityKeyIdentifierExtension)
      * @throws IOException on error
      */
     public KeyIdentifier getAuthKeyId() throws IOException {
@@ -850,7 +850,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     /**
      * return the AuthorityKeyIdentifierExtension, if any.
      *
-     * @returns AuthorityKeyIdentifierExtension or null (if no such extension)
+     * @return AuthorityKeyIdentifierExtension or null (if no such extension)
      * @throws IOException on error
      */
     public AuthorityKeyIdentifierExtension getAuthKeyIdExtension()
@@ -862,7 +862,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     /**
      * return the CRLNumberExtension, if any.
      *
-     * @returns CRLNumberExtension or null (if no such extension)
+     * @return CRLNumberExtension or null (if no such extension)
      * @throws IOException on error
      */
     public CRLNumberExtension getCRLNumberExtension() throws IOException {
@@ -873,7 +873,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     /**
      * return the CRL number from the CRLNumberExtension, if any.
      *
-     * @returns number or null (if no such extension)
+     * @return number or null (if no such extension)
      * @throws IOException on error
      */
     public BigInteger getCRLNumber() throws IOException {
@@ -889,7 +889,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     /**
      * return the DeltaCRLIndicatorExtension, if any.
      *
-     * @returns DeltaCRLIndicatorExtension or null (if no such extension)
+     * @return DeltaCRLIndicatorExtension or null (if no such extension)
      * @throws IOException on error
      */
     public DeltaCRLIndicatorExtension getDeltaCRLIndicatorExtension()
@@ -902,7 +902,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     /**
      * return the base CRL number from the DeltaCRLIndicatorExtension, if any.
      *
-     * @returns number or null (if no such extension)
+     * @return number or null (if no such extension)
      * @throws IOException on error
      */
     public BigInteger getBaseCRLNumber() throws IOException {
@@ -918,7 +918,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     /**
      * return the IssuerAlternativeNameExtension, if any.
      *
-     * @returns IssuerAlternativeNameExtension or null (if no such extension)
+     * @return IssuerAlternativeNameExtension or null (if no such extension)
      * @throws IOException on error
      */
     public IssuerAlternativeNameExtension getIssuerAltNameExtension()
@@ -930,8 +930,8 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     /**
      * return the IssuingDistributionPointExtension, if any.
      *
-     * @returns IssuingDistributionPointExtension or null
-     *          (if no such extension)
+     * @return IssuingDistributionPointExtension or null
+     *         (if no such extension)
      * @throws IOException on error
      */
     public IssuingDistributionPointExtension
@@ -1043,7 +1043,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * get an extension
      *
      * @param oid ObjectIdentifier of extension desired
-     * @returns Object of type <extension> or null, if not found
+     * @return Object of type {@code <extension>} or null, if not found
      * @throws IOException on error
      */
     public Object getExtension(ObjectIdentifier oid) {

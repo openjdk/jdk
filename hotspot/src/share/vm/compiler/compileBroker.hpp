@@ -172,7 +172,8 @@ class CompilerCounters : public CHeapObj<mtCompiler> {
     // these methods should be called in a thread safe context
 
     void set_current_method(const char* method) {
-      strncpy(_current_method, method, (size_t)cmname_buffer_length);
+      strncpy(_current_method, method, (size_t)cmname_buffer_length-1);
+      _current_method[cmname_buffer_length-1] = '\0';
       if (UsePerfData) _perf_current_method->set_value(method);
     }
 

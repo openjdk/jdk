@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * is run with a security manager and the test codebase has the java permission
  * to read the "java.runtime.version" system property.
  * @author Luis-Miguel Alventosa
+ * @modules java.management
  * @run clean ImplVersionTest ImplVersionCommand
  * @run build ImplVersionTest ImplVersionCommand ImplVersionReader
  * @run main ImplVersionTest
@@ -76,7 +77,6 @@ public class ImplVersionTest {
                 checkVersion = false;
             String command =
                 javaHome + File.separator + "bin" + File.separator + "java " +
-                " -Xbootclasspath/p:" + bootClassPath +
                 " -classpath " + testClasses +
                 " -Djava.security.manager -Djava.security.policy==" + testSrc +
                 File.separator + "policy -Dtest.classes=" + testClasses +

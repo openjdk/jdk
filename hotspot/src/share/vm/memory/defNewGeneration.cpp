@@ -48,6 +48,9 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/parNew/parOopClosures.hpp"
+#endif
 
 //
 // DefNewGeneration functions.
@@ -190,7 +193,9 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
 {
   MemRegion cmr((HeapWord*)_virtual_space.low(),
                 (HeapWord*)_virtual_space.high());
-  Universe::heap()->barrier_set()->resize_covered_region(cmr);
+  GenCollectedHeap* gch = GenCollectedHeap::heap();
+
+  gch->barrier_set()->resize_covered_region(cmr);
 
   _eden_space = new ContiguousSpace();
   _from_space = new ContiguousSpace();
@@ -202,13 +207,13 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   // Compute the maximum eden and survivor space sizes. These sizes
   // are computed assuming the entire reserved space is committed.
   // These values are exported as performance counters.
-  uintx alignment = GenCollectedHeap::heap()->collector_policy()->space_alignment();
+  uintx alignment = gch->collector_policy()->space_alignment();
   uintx size = _virtual_space.reserved_size();
   _max_survivor_size = compute_survivor_size(size, alignment);
   _max_eden_size = size - (2*_max_survivor_size);
 
   // allocate the performance counters
-  GenCollectorPolicy* gcp = (GenCollectorPolicy*) GenCollectedHeap::heap()->collector_policy();
+  GenCollectorPolicy* gcp = (GenCollectorPolicy*)gch->collector_policy();
 
   // Generation counters -- generation 0, 3 subspaces
   _gen_counters = new GenerationCounters("new", 0, 3,
@@ -378,8 +383,7 @@ void DefNewGeneration::compute_new_size() {
 
   int next_level = level() + 1;
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(next_level < gch->n_gens(),
-         "DefNewGeneration cannot be an oldest gen");
+  assert(next_level == 1, "DefNewGeneration must be a young gen");
 
   Generation* old_gen = gch->old_gen();
   size_t old_size = old_gen->capacity();
@@ -431,7 +435,7 @@ void DefNewGeneration::compute_new_size() {
                              SpaceDecorator::DontMangle);
     MemRegion cmr((HeapWord*)_virtual_space.low(),
                   (HeapWord*)_virtual_space.high());
-    Universe::heap()->barrier_set()->resize_covered_region(cmr);
+    gch->barrier_set()->resize_covered_region(cmr);
     if (Verbose && PrintGC) {
       size_t new_size_after  = _virtual_space.committed_size();
       size_t eden_size_after = eden()->capacity();
@@ -550,8 +554,9 @@ HeapWord* DefNewGeneration::expand_and_allocate(size_t size,
 
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
   // Set the desired survivor size to half the real survivor space
+  GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->collector_policy()->counters();
   _tenuring_threshold =
-    age_table()->compute_tenuring_threshold(to()->capacity()/HeapWordSize);
+    age_table()->compute_tenuring_threshold(to()->capacity()/HeapWordSize, gc_counters);
 }
 
 void DefNewGeneration::collect(bool   full,
@@ -688,7 +693,7 @@ void DefNewGeneration::collect(bool   full,
     gc_tracer.report_promotion_failed(_promotion_failed_info);
 
     // Reset the PromotionFailureALot counters.
-    NOT_PRODUCT(Universe::heap()->reset_promotion_should_fail();)
+    NOT_PRODUCT(gch->reset_promotion_should_fail();)
   }
   if (PrintGC && !PrintGCDetails) {
     gch->print_heap_change(gch_prev_used);

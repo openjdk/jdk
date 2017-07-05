@@ -2,10 +2,10 @@
 .\" Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: javaws
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: Java Web Start�ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: Java Web Startツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "javaws" "1" "2013ǯ11��21��" "JDK 8" "Java Web Start�ġ���"
+.TH "javaws" "1" "2013年11月21日" "JDK 8" "Java Web Startツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-javaws \- Java Web Start��ư���ޤ���
-.SH "����"
+javaws \- Java Web Startを起動します。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -74,147 +74,147 @@ javaws \- Java Web Start��ư���ޤ���
 .PP
 \fIrun\-options\fR
 .RS 4
-���ޥ�ɥ饤��\fI�¹ԥ��ץ����\fR��\fI�¹ԥ��ץ����\fR��Ǥ�դν���ǻ���Ǥ��ޤ����¹ԥ��ץ����򻲾Ȥ��Ƥ���������
+コマンドライン\fI実行オプション\fR。\fI実行オプション\fRは任意の順序で指定できます。実行オプションを参照してください。
 .RE
 .PP
 \fIjnlp\fR
 .RS 4
-JNLP (Java Network Launching Protocol)�ե�����Υѥ��ޤ���URL (Uniform Resource Locator)�Τɤ��餫��
+JNLP (Java Network Launching Protocol)ファイルのパスまたはURL (Uniform Resource Locator)のどちらか。
 .RE
 .PP
-\fI���楪�ץ����\fR
+\fI制御オプション\fR
 .RS 4
-���ޥ�ɥ饤��\fI���楪�ץ����\fR��\fI���楪�ץ����\fR��Ǥ�դν���ǻ���Ǥ��ޤ������楪�ץ����򻲾Ȥ��Ƥ���������
+コマンドライン\fI制御オプション\fR。\fI制御オプション\fRは任意の順序で指定できます。制御オプションを参照してください。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fB����:\fR
-\fIjavaws\fR���ޥ�ɤϡ�Oracle Solaris�Ǥϻ��ѤǤ��ޤ���
+\fB注意:\fR
+\fIjavaws\fRコマンドは、Oracle Solarisでは使用できません。
 .PP
-\fIjavaws\fR���ޥ�ɤϡ�JNLP�Υ�ե���󥹼����Ǥ���Java Web Start��ư���ޤ���Java Web Start�ϡ��ͥåȥ�����ư���Java���ץꥱ������󤪤�ӥ��ץ�åȤ�ư���ޤ���
+\fIjavaws\fRコマンドは、JNLPのリファレンス実装であるJava Web Startを起動します。Java Web Startは、ネットワーク上で動作するJavaアプリケーションおよびアプレットを起動します。
 .PP
-JNLP�ե����뤬���ꤵ���ȡ�\fIjavaws\fR���ޥ�ɤ�JNLP�ե�����ǻ��ꤷ��Java���ץꥱ�������ޤ��ϥ��ץ�åȤ�ư���ޤ���
+JNLPファイルが指定されると、\fIjavaws\fRコマンドはJNLPファイルで指定したJavaアプリケーションまたはアプレットを起動します。
 .PP
-\fIjavaws\fR��ư�ġ���ˤϡ����ߤΥ�꡼���ǥ��ݡ��Ȥ���Ƥ���1�ȤΥ��ץ���󤬤���ޤ����������������Υ��ץ����Ͼ���Υ�꡼���ǤϺ��������ǽ��������ޤ���
-.SH "�¹ԥ��ץ����"
+\fIjavaws\fR起動ツールには、現在のリリースでサポートされている1組のオプションがあります。ただし、これらのオプションは将来のリリースでは削除される可能性があります。
+.SH "実行オプション"
 .PP
 \-offline
 .RS 4
-Java Web Start�򥪥ե饤�󡦥⡼�ɤǼ¹Ԥ��ޤ���
+Java Web Startをオフライン・モードで実行します。
 .RE
 .PP
 \-Xnosplash
 .RS 4
-������ץ�å�����̤�ɽ�����ޤ���
+初期スプラッシュ画面を表示しません。
 .RE
 .PP
 \-open \fIarguments\fR
 .RS 4
-���Υ��ץ�������ꤹ��ȡ�JNLP�ե�������ΰ�����\fI\-open\fR
-\fIarguments\fR���֤������ޤ���
+このオプションを指定すると、JNLPファイル内の引数が\fI\-open\fR
+\fIarguments\fRに置き換わります。
 .RE
 .PP
 \-print \fIarguments\fR
 .RS 4
-���Υ��ץ�������ꤹ��ȡ�JNLP�ե�������ΰ�����\fI\-print\fR
-\fIarguments\fR���֤������ޤ���
+このオプションを指定すると、JNLPファイル内の引数が\fI\-print\fR
+\fIarguments\fRに置き換わります。
 .RE
 .PP
 \-online
 .RS 4
-����饤�󡦥⡼�ɤ���Ѥ��ޤ�������ϡ��ǥե���Ȥ�ư��Ǥ���
+オンライン・モードを使用します。これは、デフォルトの動作です。
 .RE
 .PP
 \-wait
 .RS 4
-\fIjavaws\fR�ץ������ϡ����ץꥱ������󤬽�λ����ޤǽ�λ���ޤ���Windows�ץ�åȥե������Ǥϡ����Υ��ץ��������������Ȥ���˵�ǽ���ޤ���
+\fIjavaws\fRプロセスは、アプリケーションが終了するまで終了しません。Windowsプラットフォーム上では、このオプションは説明したとおりに機能しません。
 .RE
 .PP
 \-verbose
 .RS 4
-�ɲäν��Ϥ�ɽ�����ޤ���
+追加の出力を表示します。
 .RE
 .PP
 \-J\fIoption\fR
 .RS 4
-Java���ۥޥ����option���Ϥ��ޤ���\fIoption\fR�ˤϡ�Java���ץꥱ�������ư�ġ���Υ�ե���󥹡��ڡ����˵��ܤ���Ƥ��륪�ץ�����1�Ļ��ꤷ�ޤ������Ȥ��С�\fI\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���java(1)�򻲾Ȥ��Ƥ���������
+Java仮想マシンにoptionを渡します。\fIoption\fRには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
 .RE
 .PP
 \-system
 .RS 4
-���ץꥱ�������򥷥��ƥࡦ����å���Τߤ���¹Ԥ��ޤ���
+アプリケーションをシステム・キャッシュのみから実行します。
 .RE
-.SH "���楪�ץ����"
+.SH "制御オプション"
 .PP
 \-viewer
 .RS 4
-Java����ȥ����롦�ѥͥ�ǥ���å��塦�ӥ塼����ɽ�����ޤ���
+Javaコントロール・パネルでキャッシュ・ビューアを表示します。
 .RE
 .PP
 \-clearcache
 .RS 4
-���󥹥ȡ��뤵��Ƥ��ʤ����٤ƤΥ��ץꥱ�������򥭥�å��夫�������ޤ���
+インストールされていないすべてのアプリケーションをキャッシュから削除します。
 .RE
 .PP
 \-userConfig \fIproperty\-name\fR
 .RS 4
-���ꤵ�줿�ǥץ������ȡ��ץ��ѥƥ��򥯥ꥢ���ޤ���
+指定されたデプロイメント・プロパティをクリアします。
 .RE
 .PP
 \-userConfig \fIproperty\-name property\-value\fR
 .RS 4
-���ꤵ�줿�ǥץ������ȡ��ץ��ѥƥ�����ꤵ�줿�ͤ����ꤷ�ޤ���
+指定されたデプロイメント・プロパティを指定された値に設定します。
 .RE
 .PP
 \-uninstall
 .RS 4
-����å��夫�餹�٤ƤΥ��ץꥱ�������������ޤ���
+キャッシュからすべてのアプリケーションを削除します。
 .RE
 .PP
 \-uninstall \fIjnlp\fR
 .RS 4
-����å��夫�饢�ץꥱ�������������ޤ���
+キャッシュからアプリケーションを削除します。
 .RE
 .PP
 \-print \fIimport\-options \fRjnlp
 .RS 4
-����å���˥��ץꥱ�������򥤥�ݡ��Ȥ��ޤ���
+キャッシュにアプリケーションをインポートします。
 .RE
-.SH "����ݡ��ȡ����ץ����"
+.SH "インポート・オプション"
 .PP
 \-silent
 .RS 4
-�������ȡ��⡼�ɤǥ���ݡ��Ȥ��ޤ�(�桼���������󥿥ե�������ɽ������ޤ���)��
+サイレント・モードでインポートします(ユーザー・インタフェースは表示されません)。
 .RE
 .PP
 \-system
 .RS 4
-�����ƥࡦ����å���˥��ץꥱ�������򥤥�ݡ��Ȥ��ޤ���
+システム・キャッシュにアプリケーションをインポートします。
 .RE
 .PP
 \-codebase \fIurl\fR
 .RS 4
-���ꤷ�������ɥ١�������꥽������������ޤ���
+指定したコードベースからリソースを取得します。
 .RE
 .PP
 \-shortcut
 .RS 4
-�桼�������ץ���ץȤ���������Х��硼�ȥ��åȤ򥤥󥹥ȡ��뤷�ޤ������Υ��ץ����ϡ�
-\fI\-silent\fR���ץ�������Ѥ��ʤ��ȸ��̤�����ޤ���
+ユーザーがプロンプトを受け入れればショートカットをインストールします。このオプションは、
+\fI\-silent\fRオプションも使用しないと効果がありません。
 .RE
 .PP
 \-association
 .RS 4
-�桼�������ץ���ץȤ���������Х��������������򥤥󥹥ȡ��뤷�ޤ������Υ��ץ����ϡ�
-\fI\-silent\fR���ץ�������Ѥ��ʤ��ȸ��̤�����ޤ���
+ユーザーがプロンプトを受け入れればアソシエーションをインストールします。このオプションは、
+\fI\-silent\fRオプションも使用しないと効果がありません。
 .RE
 .PP
-\fB����:\fR\fIjavaws \-shortcut \-uninstall\fR
-.SH "�ե�����"
+\fB注意:\fR\fIjavaws \-shortcut \-uninstall\fR
+.SH "ファイル"
 .PP
-�桼��������ӥ����ƥࡦ����å���ʤ�Ӥ�deployment\&.properties�ե�����ξܺ٤ϡ������ե����뤪��ӥץ��ѥƥ��Υǥץ�������
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/deployment/deployment\-guide/properties\&.html)�򻲾Ȥ��Ƥ�������
-.SH "��Ϣ����"
+ユーザーおよびシステム・キャッシュならびにdeployment\&.propertiesファイルの詳細は、構成ファイルおよびプロパティのデプロイメント
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/deployment/deployment\-guide/properties\&.html)を参照してください
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\

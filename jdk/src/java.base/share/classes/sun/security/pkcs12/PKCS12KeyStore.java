@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1642,23 +1642,22 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             Entry entry = entries.get(alias);
 
             // certificate chain
-            int chainLen = 1;
-            Certificate[] certs = null;
+            Certificate[] certs;
 
             if (entry instanceof PrivateKeyEntry) {
                 PrivateKeyEntry keyEntry = (PrivateKeyEntry) entry;
-                    if (keyEntry.chain == null) {
-                        chainLen = 0;
-                    } else {
-                        chainLen = keyEntry.chain.length;
-                    }
-                certs = keyEntry.chain;
-
+                if (keyEntry.chain != null) {
+                    certs = keyEntry.chain;
+                } else {
+                    certs = new Certificate[0];
+                }
             } else if (entry instanceof CertEntry) {
-               certs = new Certificate[]{((CertEntry) entry).cert};
+                certs = new Certificate[]{((CertEntry) entry).cert};
+            } else {
+                certs = new Certificate[0];
             }
 
-            for (int i = 0; i < chainLen; i++) {
+            for (int i = 0; i < certs.length; i++) {
                 // create SafeBag of Type CertBag
                 DerOutputStream safeBag = new DerOutputStream();
                 safeBag.putOID(CertBag_OID);

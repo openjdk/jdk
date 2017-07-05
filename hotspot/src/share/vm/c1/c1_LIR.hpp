@@ -1219,10 +1219,8 @@ class LIR_OpJavaCall: public LIR_OpCall {
   // JSR 292 support.
   bool is_invokedynamic() const                  { return code() == lir_dynamic_call; }
   bool is_method_handle_invoke() const {
-    return
-      method()->is_compiled_lambda_form()  // Java-generated adapter
-      ||
-      method()->is_method_handle_intrinsic();  // JVM-generated MH intrinsic
+    return method()->is_compiled_lambda_form() ||   // Java-generated lambda form
+           method()->is_method_handle_intrinsic();  // JVM-generated MH intrinsic
   }
 
   intptr_t vtable_offset() const {

@@ -606,44 +606,6 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
 // RedefineClasses() API support:
 // If any entry of this ConstantPoolCache points to any of
 // old_methods, replace it with the corresponding new_method.
-void ConstantPoolCache::adjust_method_entries(Method** old_methods, Method** new_methods,
-                                              int methods_length, bool * trace_name_printed) {
-
-  if (methods_length == 0) {
-    // nothing to do if there are no methods
-    return;
-  }
-
-  // get shorthand for the interesting class
-  Klass* old_holder = old_methods[0]->method_holder();
-
-  for (int i = 0; i < length(); i++) {
-    if (entry_at(i)->get_interesting_method_entry(old_holder) == NULL) {
-      // skip uninteresting methods
-      continue;
-    }
-
-    // The ConstantPoolCache contains entries for several different
-    // things, but we only care about methods. In fact, we only care
-    // about methods in the same class as the one that contains the
-    // old_methods. At this point, we have an interesting entry.
-
-    for (int j = 0; j < methods_length; j++) {
-      Method* old_method = old_methods[j];
-      Method* new_method = new_methods[j];
-
-      if (entry_at(i)->adjust_method_entry(old_method, new_method,
-          trace_name_printed)) {
-        // current old_method matched this entry and we updated it so
-        // break out and get to the next interesting entry if there one
-        break;
-      }
-    }
-  }
-}
-
-// If any entry of this ConstantPoolCache points to any of
-// old_methods, replace it with the corresponding new_method.
 void ConstantPoolCache::adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed) {
   for (int i = 0; i < length(); i++) {
     ConstantPoolCacheEntry* entry = entry_at(i);
