@@ -31,6 +31,7 @@ import jdk.nashorn.internal.codegen.Label;
  * Common base class for jump statements (e.g. {@code break} and {@code continue}).
  */
 public abstract class JumpStatement extends Statement implements JoinPredecessor {
+    private static final long serialVersionUID = 1L;
 
     private final String labelName;
     private final LocalVariableConversion conversion;

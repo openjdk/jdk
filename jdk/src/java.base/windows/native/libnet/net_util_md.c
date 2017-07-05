@@ -29,6 +29,9 @@
 #include "net_util.h"
 #include "jni.h"
 
+// Taken from mstcpip.h in Windows SDK 8.0 or newer.
+#define SIO_LOOPBACK_FAST_PATH              _WSAIOW(IOC_VENDOR,16)
+
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
 #endif
@@ -842,6 +845,25 @@ jint getDefaultIPv6Interface(JNIEnv *env, struct SOCKADDR_IN6 *target_addr)
         closesocket(fd);
         return route.sin6_scope_id;
     }
+}
+
+/**
+ * Enables SIO_LOOPBACK_FAST_PATH
+ */
+JNIEXPORT jint JNICALL
+NET_EnableFastTcpLoopback(int fd) {
+    int enabled = 1;
+    DWORD result_byte_count = -1;
+    int result = WSAIoctl(fd,
+                          SIO_LOOPBACK_FAST_PATH,
+                          &enabled,
+                          sizeof(enabled),
+                          NULL,
+                          0,
+                          &result_byte_count,
+                          NULL,
+                          NULL);
+    return result == SOCKET_ERROR ? WSAGetLastError() : 0;
 }
 
 /* If address types is IPv6, then IPv6 must be available. Otherwise

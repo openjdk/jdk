@@ -27,6 +27,7 @@ package jdk.nashorn.internal.ir;
 
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
@@ -40,6 +41,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class CallNode extends LexicalContextExpression implements Optimistic {
+    private static final long serialVersionUID = 1L;
 
     /** Function identifier or function body. */
     private final Expression function;
@@ -64,7 +66,8 @@ public final class CallNode extends LexicalContextExpression implements Optimist
     /**
      * Arguments to be passed to builtin {@code eval} function
      */
-    public static class EvalArgs {
+    public static class EvalArgs implements Serializable {
+        private static final long serialVersionUID = 1L;
         private final List<Expression> args;
 
         /** location string for the eval call */

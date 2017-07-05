@@ -68,9 +68,8 @@ class PSPromotionManager VALUE_OBJ_CLASS_SPEC {
   size_t                              _arrays_chunked;
   size_t                              _array_chunks_processed;
 
-  void print_taskqueue_stats(uint i) const;
-  void print_local_stats(uint i) const;
-  static void print_stats();
+  void print_local_stats(outputStream* const out, uint i) const;
+  static void print_taskqueue_stats(outputStream* const out = gclog_or_tty);
 
   void reset_stats();
 #endif // TASKQUEUE_STATS

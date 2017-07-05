@@ -24,6 +24,7 @@
  */
 package jdk.nashorn.internal.codegen;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -39,7 +40,9 @@ import jdk.nashorn.internal.codegen.types.Type;
  *
  * see -Dnashorn.codegen.debug, --log=codegen
  */
-public final class Label {
+public final class Label implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     //byte code generation evaluation type stack for consistency check
     //and correct opcode selection. one per label as a label may be a
     //join point
@@ -491,7 +494,7 @@ public final class Label {
     private final String name;
 
     /** Type stack at this label */
-    private Label.Stack stack;
+    private transient Label.Stack stack;
 
     /** ASM representation of this label */
     private jdk.internal.org.objectweb.asm.Label label;
@@ -500,9 +503,9 @@ public final class Label {
     private final int id;
 
     /** Is this label reachable (anything ever jumped to it)? */
-    private boolean reachable;
+    private transient boolean reachable;
 
-    private boolean breakTarget;
+    private transient boolean breakTarget;
 
     /**
      * Constructor
