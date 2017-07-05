@@ -202,7 +202,7 @@ public final class StrikeCache {
         recentStrikeIndex = index;
     }
 
-    private static final void doDispose(FontStrikeDisposer disposer) {
+    private static void doDispose(FontStrikeDisposer disposer) {
         if (disposer.intGlyphImages != null) {
             freeCachedIntMemory(disposer.intGlyphImages,
                     disposer.pScalerContext);

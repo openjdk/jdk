@@ -29,6 +29,7 @@
  * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
  * @build TestUseRTMForStackLocks
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI TestUseRTMForStackLocks
  */

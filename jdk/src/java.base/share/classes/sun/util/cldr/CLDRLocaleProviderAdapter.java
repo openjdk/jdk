@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -102,6 +103,9 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     protected Set<String> createLanguageTagSet(String category) {
         ResourceBundle rb = ResourceBundle.getBundle("sun.util.cldr.CLDRLocaleDataMetaInfo", Locale.ROOT);
+        if (rb.containsKey(category)) {
+            return Collections.emptySet();
+        }
         String supportedLocaleString = rb.getString(category);
         Set<String> tagset = new HashSet<>();
         StringTokenizer tokens = new StringTokenizer(supportedLocaleString);

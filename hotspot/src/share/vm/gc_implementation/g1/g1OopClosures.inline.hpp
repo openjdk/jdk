@@ -44,7 +44,7 @@ template <class T>
 inline void FilterIntoCSClosure::do_oop_nv(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop) &&
-      _g1->obj_in_cs(oopDesc::decode_heap_oop_not_null(heap_oop))) {
+      _g1->is_in_cset_or_humongous(oopDesc::decode_heap_oop_not_null(heap_oop))) {
     _oc->do_oop(p);
   }
 }
@@ -67,7 +67,8 @@ inline void G1ParScanClosure::do_oop_nv(T* p) {
 
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (_g1->in_cset_fast_test(obj)) {
+    G1CollectedHeap::in_cset_state_t state = _g1->in_cset_state(obj);
+    if (state == G1CollectedHeap::InCSet) {
       // We're not going to even bother checking whether the object is
       // already forwarded or not, as this usually causes an immediate
       // stall. We'll try to prefetch the object (for write, given that
@@ -86,6 +87,9 @@ inline void G1ParScanClosure::do_oop_nv(T* p) {
 
       _par_scan_state->push_on_queue(p);
     } else {
+      if (state == G1CollectedHeap::IsHumongous) {
+        _g1->set_humongous_is_live(obj);
+      }
       _par_scan_state->update_rs(_from, p, _worker_id);
     }
   }
@@ -97,12 +101,14 @@ inline void G1ParPushHeapRSClosure::do_oop_nv(T* p) {
 
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (_g1->in_cset_fast_test(obj)) {
+    if (_g1->is_in_cset_or_humongous(obj)) {
       Prefetch::write(obj->mark_addr(), 0);
       Prefetch::read(obj->mark_addr(), (HeapWordSize*2));
 
       // Place on the references queue
       _par_scan_state->push_on_queue(p);
+    } else {
+      assert(!_g1->obj_in_cs(obj), "checking");
     }
   }
 }

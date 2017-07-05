@@ -1,0 +1,11 @@
+typeof javax.script.ScriptContext evalutes to object
+typeof javax.script.ScriptEngine evalutes to object
+typeof java.util.Vector evalutes to function
+typeof java.util.Map evalutes to function
+typeof java.util.HashMap evalutes to function
+var m = new java.util.HashMap(); m.put('foo', 42); m evalutes to {foo=42}
+java.lang.System.out.println evalutes to [jdk.internal.dynalink.beans.OverloadedDynamicMethod java.io.PrintStream.println]
+java.lang.System.exit evalutes to [jdk.internal.dynalink.beans.SimpleDynamicMethod void java.lang.System.exit(int)]
+new javax.script.SimpleBindings throws java.lang.RuntimeException: java.lang.ClassNotFoundException: javax.script.SimpleBindings
+Java.type('javax.script.ScriptContext') throws java.lang.RuntimeException: java.lang.ClassNotFoundException: javax.script.ScriptContext
+java.lang.Class.forName('javax.script.ScriptContext') throws javax.script.ScriptException: TypeError: Java reflection not supported when class filter is present in <eval> at line number 1

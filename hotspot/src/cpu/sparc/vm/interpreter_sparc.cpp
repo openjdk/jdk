@@ -241,6 +241,15 @@ void InterpreterGenerator::generate_counter_overflow(Label& Lcontinue) {
 
 // Various method entries
 
+address InterpreterGenerator::generate_jump_to_normal_entry(void) {
+  address entry = __ pc();
+  assert(Interpreter::entry_for_kind(Interpreter::zerolocals) != NULL, "should already be generated");
+  AddressLiteral al(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  __ jump_to(al, G3_scratch);
+  __ delayed()->nop();
+  return entry;
+}
+
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
 //
@@ -254,159 +263,6 @@ address InterpreterGenerator::generate_abstract_entry(void) {
   return entry;
 
 }
-
-
-//----------------------------------------------------------------------------------------------------
-// Entry points & stack frame layout
-//
-// Here we generate the various kind of entries into the interpreter.
-// The two main entry type are generic bytecode methods and native call method.
-// These both come in synchronized and non-synchronized versions but the
-// frame layout they create is very similar. The other method entry
-// types are really just special purpose entries that are really entry
-// and interpretation all in one. These are for trivial methods like
-// accessor, empty, or special math methods.
-//
-// When control flow reaches any of the entry types for the interpreter
-// the following holds ->
-//
-// C2 Calling Conventions:
-//
-// The entry code below assumes that the following registers are set
-// when coming in:
-//    G5_method: holds the Method* of the method to call
-//    Lesp:    points to the TOS of the callers expression stack
-//             after having pushed all the parameters
-//
-// The entry code does the following to setup an interpreter frame
-//   pop parameters from the callers stack by adjusting Lesp
-//   set O0 to Lesp
-//   compute X = (max_locals - num_parameters)
-//   bump SP up by X to accomadate the extra locals
-//   compute X = max_expression_stack
-//               + vm_local_words
-//               + 16 words of register save area
-//   save frame doing a save sp, -X, sp growing towards lower addresses
-//   set Lbcp, Lmethod, LcpoolCache
-//   set Llocals to i0
-//   set Lmonitors to FP - rounded_vm_local_words
-//   set Lesp to Lmonitors - 4
-//
-//  The frame has now been setup to do the rest of the entry code
-
-// Try this optimization:  Most method entries could live in a
-// "one size fits all" stack frame without all the dynamic size
-// calculations.  It might be profitable to do all this calculation
-// statically and approximately for "small enough" methods.
-
-//-----------------------------------------------------------------------------------------------
-
-// C1 Calling conventions
-//
-// Upon method entry, the following registers are setup:
-//
-// g2 G2_thread: current thread
-// g5 G5_method: method to activate
-// g4 Gargs  : pointer to last argument
-//
-//
-// Stack:
-//
-// +---------------+ <--- sp
-// |               |
-// : reg save area :
-// |               |
-// +---------------+ <--- sp + 0x40
-// |               |
-// : extra 7 slots :      note: these slots are not really needed for the interpreter (fix later)
-// |               |
-// +---------------+ <--- sp + 0x5c
-// |               |
-// :     free      :
-// |               |
-// +---------------+ <--- Gargs
-// |               |
-// :   arguments   :
-// |               |
-// +---------------+
-// |               |
-//
-//
-//
-// AFTER FRAME HAS BEEN SETUP for method interpretation the stack looks like:
-//
-// +---------------+ <--- sp
-// |               |
-// : reg save area :
-// |               |
-// +---------------+ <--- sp + 0x40
-// |               |
-// : extra 7 slots :      note: these slots are not really needed for the interpreter (fix later)
-// |               |
-// +---------------+ <--- sp + 0x5c
-// |               |
-// :               :
-// |               | <--- Lesp
-// +---------------+ <--- Lmonitors (fp - 0x18)
-// |   VM locals   |
-// +---------------+ <--- fp
-// |               |
-// : reg save area :
-// |               |
-// +---------------+ <--- fp + 0x40
-// |               |
-// : extra 7 slots :      note: these slots are not really needed for the interpreter (fix later)
-// |               |
-// +---------------+ <--- fp + 0x5c
-// |               |
-// :     free      :
-// |               |
-// +---------------+
-// |               |
-// : nonarg locals :
-// |               |
-// +---------------+
-// |               |
-// :   arguments   :
-// |               | <--- Llocals
-// +---------------+ <--- Gargs
-// |               |
-
-address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter::MethodKind kind) {
-  // determine code generation flags
-  bool synchronized = false;
-  address entry_point = NULL;
-
-  switch (kind) {
-    case Interpreter::zerolocals             :                                                                             break;
-    case Interpreter::zerolocals_synchronized: synchronized = true;                                                        break;
-    case Interpreter::native                 : entry_point = ((InterpreterGenerator*)this)->generate_native_entry(false);  break;
-    case Interpreter::native_synchronized    : entry_point = ((InterpreterGenerator*)this)->generate_native_entry(true);   break;
-    case Interpreter::empty                  : entry_point = ((InterpreterGenerator*)this)->generate_empty_entry();        break;
-    case Interpreter::accessor               : entry_point = ((InterpreterGenerator*)this)->generate_accessor_entry();     break;
-    case Interpreter::abstract               : entry_point = ((InterpreterGenerator*)this)->generate_abstract_entry();     break;
-
-    case Interpreter::java_lang_math_sin     :                                                                             break;
-    case Interpreter::java_lang_math_cos     :                                                                             break;
-    case Interpreter::java_lang_math_tan     :                                                                             break;
-    case Interpreter::java_lang_math_sqrt    :                                                                             break;
-    case Interpreter::java_lang_math_abs     :                                                                             break;
-    case Interpreter::java_lang_math_log     :                                                                             break;
-    case Interpreter::java_lang_math_log10   :                                                                             break;
-    case Interpreter::java_lang_math_pow     :                                                                             break;
-    case Interpreter::java_lang_math_exp     :                                                                             break;
-    case Interpreter::java_lang_ref_reference_get
-                                             : entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
-    default:
-      fatal(err_msg("unexpected method kind: %d", kind));
-      break;
-  }
-
-  if (entry_point) return entry_point;
-
-  return ((InterpreterGenerator*)this)->generate_normal_entry(synchronized);
-}
-
 
 bool AbstractInterpreter::can_be_compiled(methodHandle m) {
   // No special entry points that preclude compilation

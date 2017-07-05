@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,6 +61,12 @@ define_pd_global(uintx, CMSYoungGenPerWorker, 16*M);  // default max size of CMS
 
 define_pd_global(uintx, TypeProfileLevel, 0);
 
-#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct)
+#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct)  \
+  product(bool, UseFastEmptyMethods, true,                                  \
+          "Use fast method entry code for empty methods")                   \
+                                                                            \
+  product(bool, UseFastAccessorMethods, true,                               \
+          "Use fast method entry code for accessor methods")                \
+                                                                            \
 
 #endif // CPU_ZERO_VM_GLOBALS_ZERO_HPP

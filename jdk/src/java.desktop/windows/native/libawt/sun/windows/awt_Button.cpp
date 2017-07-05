@@ -186,7 +186,7 @@ AwtButton::WmMouseUp(UINT flags, int x, int y, int button)
 void
 AwtButton::NotifyListeners()
 {
-    DoCallback("handleAction", "(JI)V", TimeHelper::getMessageTimeUTC(),
+    DoCallback("handleAction", "(JI)V", ::JVM_CurrentTimeMillis(NULL, 0),
                (jint)AwtComponent::GetJavaModifiers());
 }
 

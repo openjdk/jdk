@@ -354,7 +354,7 @@ public final class AWTAutoShutdown implements Runnable {
         }
     }
 
-    final void registerPeer(final Object target, final Object peer) {
+    void registerPeer(final Object target, final Object peer) {
         synchronized (activationLock) {
             synchronized (mainLock) {
                 peerMap.put(target, peer);
@@ -363,7 +363,7 @@ public final class AWTAutoShutdown implements Runnable {
         }
     }
 
-    final void unregisterPeer(final Object target, final Object peer) {
+    void unregisterPeer(final Object target, final Object peer) {
         synchronized (activationLock) {
             synchronized (mainLock) {
                 if (peerMap.get(target) == peer) {
@@ -374,7 +374,7 @@ public final class AWTAutoShutdown implements Runnable {
         }
     }
 
-    final Object getPeer(final Object target) {
+    Object getPeer(final Object target) {
         synchronized (activationLock) {
             synchronized (mainLock) {
                 return peerMap.get(target);
@@ -382,7 +382,7 @@ public final class AWTAutoShutdown implements Runnable {
         }
     }
 
-    final void dumpPeers(final PlatformLogger aLog) {
+    void dumpPeers(final PlatformLogger aLog) {
         if (aLog.isLoggable(PlatformLogger.Level.FINE)) {
             synchronized (activationLock) {
                 synchronized (mainLock) {

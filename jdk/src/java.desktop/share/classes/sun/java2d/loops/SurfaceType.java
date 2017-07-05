@@ -401,7 +401,7 @@ public final class SurfaceType {
         this.pixelConverter = parent.pixelConverter;
     }
 
-    public synchronized static final int makeUniqueID(String desc) {
+    public static synchronized int makeUniqueID(String desc) {
         Integer i = surfaceUIDMap.get(desc);
 
         if (i == null) {

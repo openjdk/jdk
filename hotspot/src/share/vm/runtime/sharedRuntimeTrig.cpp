@@ -519,7 +519,7 @@ static double __kernel_sin(double x, double y, int iy)
 {
         double z,r,v;
         int ix;
-        ix = __HI(x)&0x7fffffff;        /* high word of x */
+        ix = high(x)&0x7fffffff;                /* high word of x */
         if(ix<0x3e400000)                       /* |x| < 2**-27 */
            {if((int)x==0) return x;}            /* generate inexact */
         z       =  x*x;
@@ -574,9 +574,9 @@ C6  = -1.13596475577881948265e-11; /* 0xBDA8FAE9, 0xBE8838D4 */
 
 static double __kernel_cos(double x, double y)
 {
-  double a,h,z,r,qx;
+  double a,h,z,r,qx=0;
   int ix;
-  ix = __HI(x)&0x7fffffff;      /* ix = |x|'s high word*/
+  ix = high(x)&0x7fffffff;              /* ix = |x|'s high word*/
   if(ix<0x3e400000) {                   /* if x < 2**27 */
     if(((int)x)==0) return one;         /* generate inexact */
   }
@@ -588,8 +588,8 @@ static double __kernel_cos(double x, double y)
     if(ix > 0x3fe90000) {               /* x > 0.78125 */
       qx = 0.28125;
     } else {
-      __HI(qx) = ix-0x00200000; /* x/4 */
-      __LO(qx) = 0;
+      set_high(&qx, ix-0x00200000); /* x/4 */
+      set_low(&qx, 0);
     }
     h = 0.5*z-qx;
     a = one-qx;
@@ -654,11 +654,11 @@ static double __kernel_tan(double x, double y, int iy)
 {
   double z,r,v,w,s;
   int ix,hx;
-  hx = __HI(x);   /* high word of x */
+  hx = high(x);           /* high word of x */
   ix = hx&0x7fffffff;     /* high word of |x| */
   if(ix<0x3e300000) {                     /* x < 2**-28 */
     if((int)x==0) {                       /* generate inexact */
-      if (((ix | __LO(x)) | (iy + 1)) == 0)
+      if (((ix | low(x)) | (iy + 1)) == 0)
         return one / fabsd(x);
       else {
         if (iy == 1)
@@ -667,10 +667,10 @@ static double __kernel_tan(double x, double y, int iy)
           double a, t;
 
           z = w = x + y;
-          __LO(z) = 0;
+          set_low(&z, 0);
           v = y - (z - x);
           t = a = -one / w;
-          __LO(t) = 0;
+          set_low(&t, 0);
           s = one + t * z;
           return t + a * (s + t * v);
         }
@@ -705,10 +705,10 @@ static double __kernel_tan(double x, double y, int iy)
     /*  compute -1.0/(x+r) accurately */
     double a,t;
     z  = w;
-    __LO(z) = 0;
+    set_low(&z, 0);
     v  = r-(z - x);     /* z+v = r+x */
     t = a  = -1.0/w;    /* a = -1.0/w */
-    __LO(t) = 0;
+    set_low(&t, 0);
     s  = 1.0+t*z;
     return t+a*(s+t*v);
   }
@@ -757,7 +757,7 @@ JRT_LEAF(jdouble, SharedRuntime::dsin(jdouble x))
   int n, ix;
 
   /* High word of x. */
-  ix = __HI(x);
+  ix = high(x);
 
   /* |x| ~< pi/4 */
   ix &= 0x7fffffff;
@@ -815,7 +815,7 @@ JRT_LEAF(jdouble, SharedRuntime::dcos(jdouble x))
   int n, ix;
 
   /* High word of x. */
-  ix = __HI(x);
+  ix = high(x);
 
   /* |x| ~< pi/4 */
   ix &= 0x7fffffff;
@@ -872,7 +872,7 @@ JRT_LEAF(jdouble, SharedRuntime::dtan(jdouble x))
   int n, ix;
 
   /* High word of x. */
-  ix = __HI(x);
+  ix = high(x);
 
   /* |x| ~< pi/4 */
   ix &= 0x7fffffff;

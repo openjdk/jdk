@@ -61,8 +61,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import java.security.AccessController;
@@ -73,9 +71,10 @@ import java.security.ProtectionDomain;
 
 import java.util.*;
 
-import sun.util.logging.PlatformLogger;
+import sun.datatransfer.DataFlavorUtil;
 
 import sun.awt.AppContext;
+import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
 
 import java.awt.image.BufferedImage;
@@ -135,35 +134,6 @@ public abstract class DataTransferer {
     public static final DataFlavor javaTextEncodingFlavor;
 
     /**
-     * Lazy initialization of Standard Encodings.
-     */
-    private static class StandardEncodingsHolder {
-        private static final SortedSet<String> standardEncodings = load();
-
-        private static SortedSet<String> load() {
-            final Comparator<String> comparator =
-                    new CharsetComparator(IndexedComparator.SELECT_WORST);
-            final SortedSet<String> tempSet = new TreeSet<>(comparator);
-            tempSet.add("US-ASCII");
-            tempSet.add("ISO-8859-1");
-            tempSet.add("UTF-8");
-            tempSet.add("UTF-16BE");
-            tempSet.add("UTF-16LE");
-            tempSet.add("UTF-16");
-            tempSet.add(Charset.defaultCharset().name());
-            return Collections.unmodifiableSortedSet(tempSet);
-        }
-    }
-
-    /**
-     * Tracks whether a particular text/* MIME type supports the charset
-     * parameter. The Map is initialized with all of the standard MIME types
-     * listed in the DataFlavor.selectBestTextFlavor method comment. Additional
-     * entries may be added during the life of the JRE for text/<other> types.
-     */
-    private static final Map<String, Boolean> textMIMESubtypeCharsetSupport;
-
-    /**
      * A collection of all natives listed in flavormap.properties with
      * a primary MIME type of "text".
      */
@@ -193,8 +163,6 @@ public abstract class DataTransferer {
      */
     private static final String DATA_CONVERTER_KEY = "DATA_CONVERTER_KEY";
 
-    private static final PlatformLogger dtLog = PlatformLogger.getLogger("sun.awt.datatransfer.DataTransfer");
-
     static {
         DataFlavor tJavaTextEncodingFlavor = null;
         try {
@@ -202,24 +170,6 @@ public abstract class DataTransferer {
         } catch (ClassNotFoundException cannotHappen) {
         }
         javaTextEncodingFlavor = tJavaTextEncodingFlavor;
-
-        Map<String, Boolean> tempMap = new HashMap<>(17);
-        tempMap.put("sgml", Boolean.TRUE);
-        tempMap.put("xml", Boolean.TRUE);
-        tempMap.put("html", Boolean.TRUE);
-        tempMap.put("enriched", Boolean.TRUE);
-        tempMap.put("richtext", Boolean.TRUE);
-        tempMap.put("uri-list", Boolean.TRUE);
-        tempMap.put("directory", Boolean.TRUE);
-        tempMap.put("css", Boolean.TRUE);
-        tempMap.put("calendar", Boolean.TRUE);
-        tempMap.put("plain", Boolean.TRUE);
-        tempMap.put("rtf", Boolean.FALSE);
-        tempMap.put("tab-separated-values", Boolean.FALSE);
-        tempMap.put("t140", Boolean.FALSE);
-        tempMap.put("rfc822-headers", Boolean.FALSE);
-        tempMap.put("parityfec", Boolean.FALSE);
-        textMIMESubtypeCharsetSupport = Collections.synchronizedMap(tempMap);
     }
 
     /**
@@ -228,172 +178,7 @@ public abstract class DataTransferer {
      * instead, null will be returned.
      */
     public static synchronized DataTransferer getInstance() {
-        return ((SunToolkit) Toolkit.getDefaultToolkit()).getDataTransferer();
-    }
-
-    /**
-     * Converts an arbitrary text encoding to its canonical name.
-     */
-    public static String canonicalName(String encoding) {
-        if (encoding == null) {
-            return null;
-        }
-        try {
-            return Charset.forName(encoding).name();
-        } catch (IllegalCharsetNameException icne) {
-            return encoding;
-        } catch (UnsupportedCharsetException uce) {
-            return encoding;
-        }
-    }
-
-    /**
-     * If the specified flavor is a text flavor which supports the "charset"
-     * parameter, then this method returns that parameter, or the default
-     * charset if no such parameter was specified at construction. For non-
-     * text DataFlavors, and for non-charset text flavors, this method returns
-     * null.
-     */
-    public static String getTextCharset(DataFlavor flavor) {
-        if (!isFlavorCharsetTextType(flavor)) {
-            return null;
-        }
-
-        String encoding = flavor.getParameter("charset");
-
-        return (encoding != null) ? encoding : Charset.defaultCharset().name();
-    }
-
-    /**
-     * Tests only whether the flavor's MIME type supports the charset
-     * parameter. Must only be called for flavors with a primary type of
-     * "text".
-     */
-    public static boolean doesSubtypeSupportCharset(DataFlavor flavor) {
-        if (dtLog.isLoggable(PlatformLogger.Level.FINE)) {
-            if (!"text".equals(flavor.getPrimaryType())) {
-                dtLog.fine("Assertion (\"text\".equals(flavor.getPrimaryType())) failed");
-            }
-        }
-
-        String subType = flavor.getSubType();
-        if (subType == null) {
-            return false;
-        }
-
-        Boolean support = textMIMESubtypeCharsetSupport.get(subType);
-
-        if (support != null) {
-            return support;
-        }
-
-        boolean ret_val = (flavor.getParameter("charset") != null);
-        textMIMESubtypeCharsetSupport.put(subType, ret_val);
-        return ret_val;
-    }
-    public static boolean doesSubtypeSupportCharset(String subType,
-                                                    String charset)
-    {
-        Boolean support = textMIMESubtypeCharsetSupport.get(subType);
-
-        if (support != null) {
-            return support;
-        }
-
-        boolean ret_val = (charset != null);
-        textMIMESubtypeCharsetSupport.put(subType, ret_val);
-        return ret_val;
-    }
-
-    /**
-     * Returns whether this flavor is a text type which supports the
-     * 'charset' parameter.
-     */
-    public static boolean isFlavorCharsetTextType(DataFlavor flavor) {
-        // Although stringFlavor doesn't actually support the charset
-        // parameter (because its primary MIME type is not "text"), it should
-        // be treated as though it does. stringFlavor is semantically
-        // equivalent to "text/plain" data.
-        if (DataFlavor.stringFlavor.equals(flavor)) {
-            return true;
-        }
-
-        if (!"text".equals(flavor.getPrimaryType()) ||
-            !doesSubtypeSupportCharset(flavor))
-        {
-            return false;
-        }
-
-        Class<?> rep_class = flavor.getRepresentationClass();
-
-        if (flavor.isRepresentationClassReader() ||
-            String.class.equals(rep_class) ||
-            flavor.isRepresentationClassCharBuffer() ||
-            char[].class.equals(rep_class))
-        {
-            return true;
-        }
-
-        if (!(flavor.isRepresentationClassInputStream() ||
-              flavor.isRepresentationClassByteBuffer() ||
-              byte[].class.equals(rep_class))) {
-            return false;
-        }
-
-        String charset = flavor.getParameter("charset");
-
-        return (charset != null)
-            ? DataTransferer.isEncodingSupported(charset)
-            : true; // null equals default encoding which is always supported
-    }
-
-    /**
-     * Returns whether this flavor is a text type which does not support the
-     * 'charset' parameter.
-     */
-    public static boolean isFlavorNoncharsetTextType(DataFlavor flavor) {
-        if (!"text".equals(flavor.getPrimaryType()) ||
-            doesSubtypeSupportCharset(flavor))
-        {
-            return false;
-        }
-
-        return (flavor.isRepresentationClassInputStream() ||
-                flavor.isRepresentationClassByteBuffer() ||
-                byte[].class.equals(flavor.getRepresentationClass()));
-    }
-
-    /**
-     * Determines whether this JRE can both encode and decode text in the
-     * specified encoding.
-     */
-    private static boolean isEncodingSupported(String encoding) {
-        if (encoding == null) {
-            return false;
-        }
-        try {
-            return Charset.isSupported(encoding);
-        } catch (IllegalCharsetNameException icne) {
-            return false;
-        }
-    }
-
-    /**
-     * Returns {@code true} if the given type is a java.rmi.Remote.
-     */
-    public static boolean isRemote(Class<?> type) {
-        return RMI.isRemote(type);
-    }
-
-    /**
-     * Returns an Iterator which traverses a SortedSet of Strings which are
-     * a total order of the standard character sets supported by the JRE. The
-     * ordering follows the same principles as DataFlavor.selectBestTextFlavor.
-     * So as to avoid loading all available character converters, optional,
-     * non-standard, character sets are not included.
-     */
-    public static Set <String> standardEncodings() {
-        return StandardEncodingsHolder.standardEncodings;
+        return ((ComponentFactory) Toolkit.getDefaultToolkit()).getDataTransferer();
     }
 
     /**
@@ -600,8 +385,7 @@ public abstract class DataTransferer {
         indexMap.putAll(textPlainIndexMap);
 
         // Sort the map keys according to the formats preference order.
-        Comparator<Long> comparator =
-                new IndexOrderComparator(indexMap, IndexedComparator.SELECT_WORST);
+        Comparator<Long> comparator = DataFlavorUtil.getIndexOrderComparator(indexMap).reversed();
         SortedMap<Long, DataFlavor> sortedMap = new TreeMap<>(comparator);
         sortedMap.putAll(formatMap);
 
@@ -972,7 +756,7 @@ search:
         // target format. Append terminating NUL bytes.
         if (stringSelectionHack ||
             (String.class.equals(flavor.getRepresentationClass()) &&
-             isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
+             DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
 
             String str = removeSuspectedData(flavor, contents, (String)obj);
 
@@ -983,7 +767,7 @@ search:
         // Source data is a Reader. Convert to a String and recur. In the
         // future, we may want to rewrite this so that we encode on demand.
         } else if (flavor.isRepresentationClassReader()) {
-            if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
+            if (!(DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
                 throw new IOException
                     ("cannot transfer non-text data as Reader");
             }
@@ -1002,7 +786,7 @@ search:
 
         // Source data is a CharBuffer. Convert to a String and recur.
         } else if (flavor.isRepresentationClassCharBuffer()) {
-            if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
+            if (!(DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
                 throw new IOException
                     ("cannot transfer non-text data as CharBuffer");
             }
@@ -1018,7 +802,7 @@ search:
 
         // Source data is a char array. Convert to a String and recur.
         } else if (char[].class.equals(flavor.getRepresentationClass())) {
-            if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
+            if (!(DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
                 throw new IOException
                     ("cannot transfer non-text data as char array");
             }
@@ -1036,8 +820,8 @@ search:
             byte[] bytes = new byte[size];
             buffer.get(bytes, 0, size);
 
-            if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
-                String sourceEncoding = DataTransferer.getTextCharset(flavor);
+            if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+                String sourceEncoding = DataFlavorUtil.getTextCharset(flavor);
                 return translateTransferableString(
                     new String(bytes, sourceEncoding),
                     format);
@@ -1051,8 +835,8 @@ search:
         } else if (byte[].class.equals(flavor.getRepresentationClass())) {
             byte[] bytes = (byte[])obj;
 
-            if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
-                String sourceEncoding = DataTransferer.getTextCharset(flavor);
+            if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+                String sourceEncoding = DataFlavorUtil.getTextCharset(flavor);
                 return translateTransferableString(
                     new String(bytes, sourceEncoding),
                     format);
@@ -1155,9 +939,9 @@ search:
                     } while (!eof);
                 }
 
-                if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+                if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
                     byte[] bytes = bos.toByteArray();
-                    String sourceEncoding = DataTransferer.getTextCharset(flavor);
+                    String sourceEncoding = DataFlavorUtil.getTextCharset(flavor);
                     return translateTransferableString(
                                new String(bytes, sourceEncoding),
                                format);
@@ -1166,14 +950,11 @@ search:
             }
 
 
-
         // Source data is an RMI object
         } else if (flavor.isRepresentationClassRemote()) {
+            theByteArray = convertObjectToBytes(DataFlavorUtil.RMI.newMarshalledObject(obj));
 
-            Object mo = RMI.newMarshalledObject(obj);
-            theByteArray = convertObjectToBytes(mo);
-
-            // Source data is Serializable
+        // Source data is Serializable
         } else if (flavor.isRepresentationClassSerializable()) {
 
             theByteArray = convertObjectToBytes(obj);
@@ -1387,7 +1168,7 @@ search:
             // Target data is a String. Strip terminating NUL bytes. Decode bytes
             // into characters. Search-and-replace EOLN.
         } else if (String.class.equals(flavor.getRepresentationClass()) &&
-                       isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+                   DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
 
             theObject = translateBytesToString(bytes, format, localeTransferable);
 
@@ -1401,9 +1182,8 @@ search:
             }
             // Target data is a CharBuffer. Recur to obtain String and wrap.
         } else if (flavor.isRepresentationClassCharBuffer()) {
-            if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
-                throw new IOException
-                          ("cannot transfer non-text data as CharBuffer");
+            if (!(DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
+                throw new IOException("cannot transfer non-text data as CharBuffer");
             }
 
             CharBuffer buffer = CharBuffer.wrap(
@@ -1414,7 +1194,7 @@ search:
             // Target data is a char array. Recur to obtain String and convert to
             // char array.
         } else if (char[].class.equals(flavor.getRepresentationClass())) {
-            if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
+            if (!(DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
                 throw new IOException
                           ("cannot transfer non-text data as char array");
             }
@@ -1427,10 +1207,10 @@ search:
             // terminators and search-and-replace EOLN, then reencode according to
             // the requested flavor.
         } else if (flavor.isRepresentationClassByteBuffer()) {
-            if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+            if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
                 bytes = translateBytesToString(
                     bytes, format, localeTransferable).getBytes(
-                        DataTransferer.getTextCharset(flavor)
+                        DataFlavorUtil.getTextCharset(flavor)
                     );
             }
 
@@ -1442,10 +1222,10 @@ search:
             // terminators and search-and-replace EOLN, then reencode according to
             // the requested flavor.
         } else if (byte[].class.equals(flavor.getRepresentationClass())) {
-            if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+            if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
                 theObject = translateBytesToString(
                     bytes, format, localeTransferable
-                ).getBytes(DataTransferer.getTextCharset(flavor));
+                ).getBytes(DataFlavorUtil.getTextCharset(flavor));
             } else {
                 theObject = bytes;
             }
@@ -1462,9 +1242,9 @@ search:
 
         } else if (flavor.isRepresentationClassRemote()) {
             try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-                 ObjectInputStream ois = new ObjectInputStream(bais))
-            {
-                theObject = RMI.getMarshalledObject(ois.readObject());
+                 ObjectInputStream ois = new ObjectInputStream(bais)) {
+
+                theObject = DataFlavorUtil.RMI.getMarshalledObject(ois.readObject());
             } catch (Exception e) {
                 throw new IOException(e.getMessage());
             }
@@ -1529,7 +1309,7 @@ search:
         // Target data is a String. Strip terminating NUL bytes. Decode bytes
         // into characters. Search-and-replace EOLN.
         } else if (String.class.equals(flavor.getRepresentationClass()) &&
-                   isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+                   DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
 
             return translateBytesToString(inputStreamToByteArray(str),
                 format, localeTransferable);
@@ -1554,7 +1334,7 @@ search:
             // as "Unicode" (utf-16be). Then use an InputStreamReader to decode
             // back to chars on demand.
         } else if (flavor.isRepresentationClassReader()) {
-            if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
+            if (!(DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
                 throw new IOException
                           ("cannot transfer non-text data as Reader");
             }
@@ -1563,27 +1343,24 @@ search:
                     str, DataFlavor.plainTextFlavor,
                     format, localeTransferable);
 
-            String unicode = DataTransferer.getTextCharset(DataFlavor.plainTextFlavor);
+            String unicode = DataFlavorUtil.getTextCharset(DataFlavor.plainTextFlavor);
 
             Reader reader = new InputStreamReader(is, unicode);
 
             theObject = constructFlavoredObject(reader, flavor, Reader.class);
             // Target data is a byte array
         } else if (byte[].class.equals(flavor.getRepresentationClass())) {
-            if(isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+            if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
                 theObject = translateBytesToString(inputStreamToByteArray(str), format, localeTransferable)
-                        .getBytes(DataTransferer.getTextCharset(flavor));
+                        .getBytes(DataFlavorUtil.getTextCharset(flavor));
             } else {
                 theObject = inputStreamToByteArray(str);
             }
             // Target data is an RMI object
         } else if (flavor.isRepresentationClassRemote()) {
-
-            try (ObjectInputStream ois =
-                     new ObjectInputStream(str))
-            {
-                theObject = RMI.getMarshalledObject(ois.readObject());
-            }catch (Exception e) {
+            try (ObjectInputStream ois = new ObjectInputStream(str)) {
+                theObject = DataFlavorUtil.RMI.getMarshalledObject(ois.readObject());
+            } catch (Exception e) {
                 throw new IOException(e.getMessage());
             }
 
@@ -1621,9 +1398,9 @@ search:
         (InputStream str, DataFlavor flavor, long format,
          Transferable localeTransferable) throws IOException
     {
-        if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
+        if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
             str = new ReencodingInputStream
-                (str, format, DataTransferer.getTextCharset(flavor),
+                (str, format, DataFlavorUtil.getTextCharset(flavor),
                  localeTransferable);
         }
 
@@ -1865,8 +1642,7 @@ search:
         byte[] bytes, String mimeType) throws IOException
     {
 
-        Iterator<ImageReader> readerIterator =
-            ImageIO.getImageReadersByMIMEType(mimeType);
+        Iterator<ImageReader> readerIterator = ImageIO.getImageReadersByMIMEType(mimeType);
 
         if (!readerIterator.hasNext()) {
             throw new IOException("No registered service provider can decode " +
@@ -1919,8 +1695,7 @@ search:
       throws IOException {
         IOException originalIOE = null;
 
-        Iterator<ImageWriter> writerIterator =
-            ImageIO.getImageWritersByMIMEType(mimeType);
+        Iterator<ImageWriter> writerIterator = ImageIO.getImageWritersByMIMEType(mimeType);
 
         if (!writerIterator.hasNext()) {
             throw new IOException("No registered service provider can encode " +
@@ -1979,8 +1754,7 @@ search:
                                               String mimeType)
         throws IOException {
 
-        Iterator<ImageWriter> writerIterator =
-            ImageIO.getImageWritersByMIMEType(mimeType);
+        Iterator<ImageWriter> writerIterator = ImageIO.getImageWritersByMIMEType(mimeType);
 
         ImageTypeSpecifier typeSpecifier =
             new ImageTypeSpecifier(renderedImage);
@@ -2163,8 +1937,7 @@ search:
         }
     }
 
-    public abstract ToolkitThreadBlockedHandler
-        getToolkitThreadBlockedHandler();
+    public abstract ToolkitThreadBlockedHandler getToolkitThreadBlockedHandler();
 
     /**
      * Helper function to reduce a Map with Long keys to a long array.
@@ -2189,8 +1962,7 @@ search:
     public static DataFlavor[] setToSortedDataFlavorArray(Set<DataFlavor> flavorsSet) {
         DataFlavor[] flavors = new DataFlavor[flavorsSet.size()];
         flavorsSet.toArray(flavors);
-        final Comparator<DataFlavor> comparator =
-                new DataFlavorComparator(IndexedComparator.SELECT_WORST);
+        final Comparator<DataFlavor> comparator = DataFlavorUtil.getDataFlavorComparator().reversed();
         Arrays.sort(flavors, comparator);
         return flavors;
     }
@@ -2229,520 +2001,5 @@ search:
      */
     public LinkedHashSet<String> getPlatformMappingsForFlavor(DataFlavor df) {
         return new LinkedHashSet<>();
-    }
-
-    /**
-     * A Comparator which includes a helper function for comparing two Objects
-     * which are likely to be keys in the specified Map.
-     */
-    public abstract static class IndexedComparator<T> implements Comparator<T> {
-
-        /**
-         * The best Object (e.g., DataFlavor) will be the last in sequence.
-         */
-        public static final boolean SELECT_BEST = true;
-
-        /**
-         * The best Object (e.g., DataFlavor) will be the first in sequence.
-         */
-        public static final boolean SELECT_WORST = false;
-
-        final boolean order;
-
-        public IndexedComparator(boolean order) {
-            this.order = order;
-        }
-
-        /**
-         * Helper method to compare two objects by their Integer indices in the
-         * given map. If the map doesn't contain an entry for either of the
-         * objects, the fallback index will be used for the object instead.
-         *
-         * @param indexMap the map which maps objects into Integer indexes.
-         * @param obj1 the first object to be compared.
-         * @param obj2 the second object to be compared.
-         * @param fallbackIndex the Integer to be used as a fallback index.
-         * @return a negative integer, zero, or a positive integer as the
-         *             first object is mapped to a less, equal to, or greater
-         *             index than the second.
-         */
-        static <T> int compareIndices(Map<T, Integer> indexMap,
-                                      T obj1, T obj2,
-                                      Integer fallbackIndex) {
-            Integer index1 = indexMap.getOrDefault(obj1, fallbackIndex);
-            Integer index2 = indexMap.getOrDefault(obj2, fallbackIndex);
-            return index1.compareTo(index2);
-        }
-    }
-
-    /**
-     * An IndexedComparator which compares two String charsets. The comparison
-     * follows the rules outlined in DataFlavor.selectBestTextFlavor. In order
-     * to ensure that non-Unicode, non-ASCII, non-default charsets are sorted
-     * in alphabetical order, charsets are not automatically converted to their
-     * canonical forms.
-     */
-    public static class CharsetComparator extends IndexedComparator<String> {
-        private static final Map<String, Integer> charsets;
-
-        private static final Integer DEFAULT_CHARSET_INDEX = 2;
-        private static final Integer OTHER_CHARSET_INDEX = 1;
-        private static final Integer WORST_CHARSET_INDEX = 0;
-        private static final Integer UNSUPPORTED_CHARSET_INDEX = Integer.MIN_VALUE;
-
-        private static final String UNSUPPORTED_CHARSET = "UNSUPPORTED";
-
-        static {
-            Map<String, Integer> charsetsMap = new HashMap<>(8, 1.0f);
-
-            // we prefer Unicode charsets
-            charsetsMap.put(canonicalName("UTF-16LE"), 4);
-            charsetsMap.put(canonicalName("UTF-16BE"), 5);
-            charsetsMap.put(canonicalName("UTF-8"), 6);
-            charsetsMap.put(canonicalName("UTF-16"), 7);
-
-            // US-ASCII is the worst charset supported
-            charsetsMap.put(canonicalName("US-ASCII"), WORST_CHARSET_INDEX);
-
-            charsetsMap.putIfAbsent(Charset.defaultCharset().name(), DEFAULT_CHARSET_INDEX);
-
-            charsetsMap.put(UNSUPPORTED_CHARSET, UNSUPPORTED_CHARSET_INDEX);
-
-            charsets = Collections.unmodifiableMap(charsetsMap);
-        }
-
-        public CharsetComparator(boolean order) {
-            super(order);
-        }
-
-        /**
-         * Compares two String objects. Returns a negative integer, zero,
-         * or a positive integer as the first charset is worse than, equal to,
-         * or better than the second.
-         *
-         * @param obj1 the first charset to be compared
-         * @param obj2 the second charset to be compared
-         * @return a negative integer, zero, or a positive integer as the
-         *         first argument is worse, equal to, or better than the
-         *         second.
-         * @throws ClassCastException if either of the arguments is not
-         *         instance of String
-         * @throws NullPointerException if either of the arguments is
-         *         <code>null</code>.
-         */
-        public int compare(String obj1, String obj2) {
-            if (order == SELECT_BEST) {
-                return compareCharsets(obj1, obj2);
-            } else {
-                return compareCharsets(obj2, obj1);
-            }
-        }
-
-        /**
-         * Compares charsets. Returns a negative integer, zero, or a positive
-         * integer as the first charset is worse than, equal to, or better than
-         * the second.
-         * <p>
-         * Charsets are ordered according to the following rules:
-         * <ul>
-         * <li>All unsupported charsets are equal.
-         * <li>Any unsupported charset is worse than any supported charset.
-         * <li>Unicode charsets, such as "UTF-16", "UTF-8", "UTF-16BE" and
-         *     "UTF-16LE", are considered best.
-         * <li>After them, platform default charset is selected.
-         * <li>"US-ASCII" is the worst of supported charsets.
-         * <li>For all other supported charsets, the lexicographically less
-         *     one is considered the better.
-         * </ul>
-         *
-         * @param charset1 the first charset to be compared
-         * @param charset2 the second charset to be compared.
-         * @return a negative integer, zero, or a positive integer as the
-         *             first argument is worse, equal to, or better than the
-         *             second.
-         */
-        int compareCharsets(String charset1, String charset2) {
-            charset1 = getEncoding(charset1);
-            charset2 = getEncoding(charset2);
-
-            int comp = compareIndices(charsets, charset1, charset2,
-                                      OTHER_CHARSET_INDEX);
-
-            if (comp == 0) {
-                return charset2.compareTo(charset1);
-            }
-
-            return comp;
-        }
-
-        /**
-         * Returns encoding for the specified charset according to the
-         * following rules:
-         * <ul>
-         * <li>If the charset is <code>null</code>, then <code>null</code> will
-         *     be returned.
-         * <li>Iff the charset specifies an encoding unsupported by this JRE,
-         *     <code>UNSUPPORTED_CHARSET</code> will be returned.
-         * <li>If the charset specifies an alias name, the corresponding
-         *     canonical name will be returned iff the charset is a known
-         *     Unicode, ASCII, or default charset.
-         * </ul>
-         *
-         * @param charset the charset.
-         * @return an encoding for this charset.
-         */
-        static String getEncoding(String charset) {
-            if (charset == null) {
-                return null;
-            } else if (!DataTransferer.isEncodingSupported(charset)) {
-                return UNSUPPORTED_CHARSET;
-            } else {
-                // Only convert to canonical form if the charset is one
-                // of the charsets explicitly listed in the known charsets
-                // map. This will happen only for Unicode, ASCII, or default
-                // charsets.
-                String canonicalName = DataTransferer.canonicalName(charset);
-                return (charsets.containsKey(canonicalName))
-                    ? canonicalName
-                    : charset;
-            }
-        }
-    }
-
-    /**
-     * An IndexedComparator which compares two DataFlavors. For text flavors,
-     * the comparison follows the rules outlined in
-     * DataFlavor.selectBestTextFlavor. For non-text flavors, unknown
-     * application MIME types are preferred, followed by known
-     * application/x-java-* MIME types. Unknown application types are preferred
-     * because if the user provides his own data flavor, it will likely be the
-     * most descriptive one. For flavors which are otherwise equal, the
-     * flavors' string representation are compared in the alphabetical order.
-     */
-    public static class DataFlavorComparator extends IndexedComparator<DataFlavor> {
-
-        private final CharsetComparator charsetComparator;
-
-        private static final Map<String, Integer> exactTypes;
-        private static final Map<String, Integer> primaryTypes;
-        private static final Map<Class<?>, Integer> nonTextRepresentations;
-        private static final Map<String, Integer> textTypes;
-        private static final Map<Class<?>, Integer> decodedTextRepresentations;
-        private static final Map<Class<?>, Integer> encodedTextRepresentations;
-
-        private static final Integer UNKNOWN_OBJECT_LOSES = Integer.MIN_VALUE;
-        private static final Integer UNKNOWN_OBJECT_WINS = Integer.MAX_VALUE;
-
-        static {
-            {
-                Map<String, Integer> exactTypesMap = new HashMap<>(4, 1.0f);
-
-                // application/x-java-* MIME types
-                exactTypesMap.put("application/x-java-file-list", 0);
-                exactTypesMap.put("application/x-java-serialized-object", 1);
-                exactTypesMap.put("application/x-java-jvm-local-objectref", 2);
-                exactTypesMap.put("application/x-java-remote-object", 3);
-
-                exactTypes = Collections.unmodifiableMap(exactTypesMap);
-            }
-
-            {
-                Map<String, Integer> primaryTypesMap = new HashMap<>(1, 1.0f);
-
-                primaryTypesMap.put("application", 0);
-
-                primaryTypes = Collections.unmodifiableMap(primaryTypesMap);
-            }
-
-            {
-                Map<Class<?>, Integer> nonTextRepresentationsMap = new HashMap<>(3, 1.0f);
-
-                nonTextRepresentationsMap.put(java.io.InputStream.class, 0);
-                nonTextRepresentationsMap.put(java.io.Serializable.class, 1);
-
-                Class<?> remoteClass = RMI.remoteClass();
-                if (remoteClass != null) {
-                    nonTextRepresentationsMap.put(remoteClass, 2);
-                }
-
-                nonTextRepresentations = Collections.unmodifiableMap(nonTextRepresentationsMap);
-            }
-
-            {
-                Map<String, Integer> textTypesMap = new HashMap<>(16, 1.0f);
-
-                // plain text
-                textTypesMap.put("text/plain", 0);
-
-                // stringFlavor
-                textTypesMap.put("application/x-java-serialized-object", 1);
-
-                // misc
-                textTypesMap.put("text/calendar", 2);
-                textTypesMap.put("text/css", 3);
-                textTypesMap.put("text/directory", 4);
-                textTypesMap.put("text/parityfec", 5);
-                textTypesMap.put("text/rfc822-headers", 6);
-                textTypesMap.put("text/t140", 7);
-                textTypesMap.put("text/tab-separated-values", 8);
-                textTypesMap.put("text/uri-list", 9);
-
-                // enriched
-                textTypesMap.put("text/richtext", 10);
-                textTypesMap.put("text/enriched", 11);
-                textTypesMap.put("text/rtf", 12);
-
-                // markup
-                textTypesMap.put("text/html", 13);
-                textTypesMap.put("text/xml", 14);
-                textTypesMap.put("text/sgml", 15);
-
-                textTypes = Collections.unmodifiableMap(textTypesMap);
-            }
-
-            {
-                Map<Class<?>, Integer> decodedTextRepresentationsMap = new HashMap<>(4, 1.0f);
-
-                decodedTextRepresentationsMap.put(char[].class, 0);
-                decodedTextRepresentationsMap.put(CharBuffer.class, 1);
-                decodedTextRepresentationsMap.put(String.class, 2);
-                decodedTextRepresentationsMap.put(Reader.class, 3);
-
-                decodedTextRepresentations =
-                        Collections.unmodifiableMap(decodedTextRepresentationsMap);
-            }
-
-            {
-                Map<Class<?>, Integer> encodedTextRepresentationsMap = new HashMap<>(3, 1.0f);
-
-                encodedTextRepresentationsMap.put(byte[].class, 0);
-                encodedTextRepresentationsMap.put(ByteBuffer.class, 1);
-                encodedTextRepresentationsMap.put(InputStream.class, 2);
-
-                encodedTextRepresentations =
-                        Collections.unmodifiableMap(encodedTextRepresentationsMap);
-            }
-        }
-
-        public DataFlavorComparator() {
-            this(SELECT_BEST);
-        }
-
-        public DataFlavorComparator(boolean order) {
-            super(order);
-
-            charsetComparator = new CharsetComparator(order);
-        }
-
-        public int compare(DataFlavor obj1, DataFlavor obj2) {
-            DataFlavor flavor1 = order == SELECT_BEST ? obj1 : obj2;
-            DataFlavor flavor2 = order == SELECT_BEST ? obj2 : obj1;
-
-            if (flavor1.equals(flavor2)) {
-                return 0;
-            }
-
-            int comp = 0;
-
-            String primaryType1 = flavor1.getPrimaryType();
-            String subType1 = flavor1.getSubType();
-            String mimeType1 = primaryType1 + "/" + subType1;
-            Class<?> class1 = flavor1.getRepresentationClass();
-
-            String primaryType2 = flavor2.getPrimaryType();
-            String subType2 = flavor2.getSubType();
-            String mimeType2 = primaryType2 + "/" + subType2;
-            Class<?> class2 = flavor2.getRepresentationClass();
-
-            if (flavor1.isFlavorTextType() && flavor2.isFlavorTextType()) {
-                // First, compare MIME types
-                comp = compareIndices(textTypes, mimeType1, mimeType2,
-                                      UNKNOWN_OBJECT_LOSES);
-                if (comp != 0) {
-                    return comp;
-                }
-
-                // Only need to test one flavor because they both have the
-                // same MIME type. Also don't need to worry about accidentally
-                // passing stringFlavor because either
-                //   1. Both flavors are stringFlavor, in which case the
-                //      equality test at the top of the function succeeded.
-                //   2. Only one flavor is stringFlavor, in which case the MIME
-                //      type comparison returned a non-zero value.
-                if (doesSubtypeSupportCharset(flavor1)) {
-                    // Next, prefer the decoded text representations of Reader,
-                    // String, CharBuffer, and [C, in that order.
-                    comp = compareIndices(decodedTextRepresentations, class1,
-                                          class2, UNKNOWN_OBJECT_LOSES);
-                    if (comp != 0) {
-                        return comp;
-                    }
-
-                    // Next, compare charsets
-                    comp = charsetComparator.compareCharsets
-                        (DataTransferer.getTextCharset(flavor1),
-                         DataTransferer.getTextCharset(flavor2));
-                    if (comp != 0) {
-                        return comp;
-                    }
-                }
-
-                // Finally, prefer the encoded text representations of
-                // InputStream, ByteBuffer, and [B, in that order.
-                comp = compareIndices(encodedTextRepresentations, class1,
-                                      class2, UNKNOWN_OBJECT_LOSES);
-                if (comp != 0) {
-                    return comp;
-                }
-            } else {
-                // First, prefer application types.
-                comp = compareIndices(primaryTypes, primaryType1, primaryType2,
-                                      UNKNOWN_OBJECT_LOSES);
-                if (comp != 0) {
-                    return comp;
-                }
-
-                // Next, look for application/x-java-* types. Prefer unknown
-                // MIME types because if the user provides his own data flavor,
-                // it will likely be the most descriptive one.
-                comp = compareIndices(exactTypes, mimeType1, mimeType2,
-                                      UNKNOWN_OBJECT_WINS);
-                if (comp != 0) {
-                    return comp;
-                }
-
-                // Finally, prefer the representation classes of Remote,
-                // Serializable, and InputStream, in that order.
-                comp = compareIndices(nonTextRepresentations, class1, class2,
-                                      UNKNOWN_OBJECT_LOSES);
-                if (comp != 0) {
-                    return comp;
-                }
-            }
-
-            // The flavours are not equal but still not distinguishable.
-            // Compare String representations in alphabetical order
-            return flavor1.getMimeType().compareTo(flavor2.getMimeType());
-        }
-    }
-
-    /*
-     * Given the Map that maps objects to Integer indices and a boolean value,
-     * this Comparator imposes a direct or reverse order on set of objects.
-     * <p>
-     * If the specified boolean value is SELECT_BEST, the Comparator imposes the
-     * direct index-based order: an object A is greater than an object B if and
-     * only if the index of A is greater than the index of B. An object that
-     * doesn't have an associated index is less or equal than any other object.
-     * <p>
-     * If the specified boolean value is SELECT_WORST, the Comparator imposes the
-     * reverse index-based order: an object A is greater than an object B if and
-     * only if A is less than B with the direct index-based order.
-     */
-    public static class IndexOrderComparator extends IndexedComparator<Long> {
-        private final Map<Long, Integer> indexMap;
-        private static final Integer FALLBACK_INDEX = Integer.MIN_VALUE;
-
-        public IndexOrderComparator(Map<Long, Integer> indexMap, boolean order) {
-            super(order);
-            this.indexMap = indexMap;
-        }
-
-        public int compare(Long obj1, Long obj2) {
-            if (order == SELECT_WORST) {
-                return -compareIndices(indexMap, obj1, obj2, FALLBACK_INDEX);
-            } else {
-                return compareIndices(indexMap, obj1, obj2, FALLBACK_INDEX);
-            }
-        }
-    }
-
-    /**
-     * A class that provides access to java.rmi.Remote and java.rmi.MarshalledObject
-     * without creating a static dependency.
-     */
-    private static class RMI {
-        private static final Class<?> remoteClass = getClass("java.rmi.Remote");
-        private static final Class<?> marshallObjectClass =
-            getClass("java.rmi.MarshalledObject");
-        private static final Constructor<?> marshallCtor =
-            getConstructor(marshallObjectClass, Object.class);
-        private static final Method marshallGet =
-            getMethod(marshallObjectClass, "get");
-
-        private static Class<?> getClass(String name) {
-            try {
-                return Class.forName(name, true, null);
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
-        }
-
-        private static Constructor<?> getConstructor(Class<?> c, Class<?>... types) {
-            try {
-                return (c == null) ? null : c.getDeclaredConstructor(types);
-            } catch (NoSuchMethodException x) {
-                throw new AssertionError(x);
-            }
-        }
-
-        private static Method getMethod(Class<?> c, String name, Class<?>... types) {
-            try {
-                return (c == null) ? null : c.getMethod(name, types);
-            } catch (NoSuchMethodException e) {
-                throw new AssertionError(e);
-            }
-        }
-
-        /**
-         * Returns {@code true} if the given class is java.rmi.Remote.
-         */
-        static boolean isRemote(Class<?> c) {
-            return (remoteClass == null) ? false : remoteClass.isAssignableFrom(c);
-        }
-
-        /**
-         * Returns java.rmi.Remote.class if RMI is present; otherwise {@code null}.
-         */
-        static Class<?> remoteClass() {
-            return remoteClass;
-        }
-
-        /**
-         * Returns a new MarshalledObject containing the serialized representation
-         * of the given object.
-         */
-        static Object newMarshalledObject(Object obj) throws IOException {
-            try {
-                return marshallCtor.newInstance(obj);
-            } catch (InstantiationException | IllegalAccessException x) {
-                throw new AssertionError(x);
-            } catch (InvocationTargetException  x) {
-                Throwable cause = x.getCause();
-                if (cause instanceof IOException)
-                    throw (IOException)cause;
-                throw new AssertionError(x);
-            }
-        }
-
-        /**
-         * Returns a new copy of the contained marshalled object.
-         */
-        static Object getMarshalledObject(Object obj)
-            throws IOException, ClassNotFoundException
-        {
-            try {
-                return marshallGet.invoke(obj);
-            } catch (IllegalAccessException x) {
-                throw new AssertionError(x);
-            } catch (InvocationTargetException x) {
-                Throwable cause = x.getCause();
-                if (cause instanceof IOException)
-                    throw (IOException)cause;
-                if (cause instanceof ClassNotFoundException)
-                    throw (ClassNotFoundException)cause;
-                throw new AssertionError(x);
-            }
-        }
     }
 }
