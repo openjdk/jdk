@@ -719,8 +719,9 @@ public class GlyphView extends View implements TabableView, Cloneable {
             checkPainter();
             int p0 = getStartOffset();
             int p1 = painter.getBoundedPosition(this, p0, pos, len);
-            return ((p1 > p0) && (getBreakSpot(p0, p1) != BreakIterator.DONE)) ?
-                    View.ExcellentBreakWeight : View.BadBreakWeight;
+            return p1 == p0 ? View.BadBreakWeight :
+                   getBreakSpot(p0, p1) != BreakIterator.DONE ?
+                            View.ExcellentBreakWeight : View.GoodBreakWeight;
         }
         return super.getBreakWeight(axis, pos, len);
     }

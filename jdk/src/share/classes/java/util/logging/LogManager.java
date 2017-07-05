@@ -338,7 +338,7 @@ public class LogManager {
     // already been created with the given name it is returned.
     // Otherwise a new logger instance is created and registered
     // in the LogManager global namespace.
-    synchronized Logger demandLogger(String name) {
+    Logger demandLogger(String name) {
         Logger result = getLogger(name);
         if (result == null) {
             result = new Logger(name, null);

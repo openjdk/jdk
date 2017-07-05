@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,15 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
     }
 
     public ShellFolder createShellFolder(File file) throws FileNotFoundException {
-        return createShellFolder(getDesktop(), file);
+        try {
+            return createShellFolder(getDesktop(), file);
+        } catch (InterruptedException e) {
+            throw new FileNotFoundException("Execution was interrupted");
+        }
     }
 
-    static Win32ShellFolder2 createShellFolder(Win32ShellFolder2 parent, File file) throws FileNotFoundException {
+    static Win32ShellFolder2 createShellFolder(Win32ShellFolder2 parent, File file)
+            throws FileNotFoundException, InterruptedException {
         long pIDL;
         try {
             pIDL = parent.parseDisplayName(file.getCanonicalPath());
@@ -77,7 +82,8 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
         return folder;
     }
 
-    static Win32ShellFolder2 createShellFolderFromRelativePIDL(Win32ShellFolder2 parent, long pIDL) {
+    static Win32ShellFolder2 createShellFolderFromRelativePIDL(Win32ShellFolder2 parent, long pIDL)
+            throws InterruptedException {
         // Walk down this relative pIDL, creating new nodes for each of the entries
         while (pIDL != 0) {
             long curPIDL = Win32ShellFolder2.copyFirstPIDLEntry(pIDL);
@@ -108,7 +114,9 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             try {
                 desktop = new Win32ShellFolder2(DESKTOP);
             } catch (IOException e) {
-                desktop = null;
+                // Ignore error
+            } catch (InterruptedException e) {
+                // Ignore error
             }
         }
         return desktop;
@@ -119,7 +127,9 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             try {
                 drives = new Win32ShellFolder2(DRIVES);
             } catch (IOException e) {
-                drives = null;
+                // Ignore error
+            } catch (InterruptedException e) {
+                // Ignore error
             }
         }
         return drives;
@@ -132,8 +142,10 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                 if (path != null) {
                     recent = createShellFolder(getDesktop(), new File(path));
                 }
+            } catch (InterruptedException e) {
+                // Ignore error
             } catch (IOException e) {
-                recent = null;
+                // Ignore error
             }
         }
         return recent;
@@ -144,7 +156,9 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             try {
                 network = new Win32ShellFolder2(NETWORK);
             } catch (IOException e) {
-                network = null;
+                // Ignore error
+            } catch (InterruptedException e) {
+                // Ignore error
             }
         }
         return network;
@@ -164,8 +178,10 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                         personal.setIsPersonal();
                     }
                 }
+            } catch (InterruptedException e) {
+                // Ignore error
             } catch (IOException e) {
-                personal = null;
+                // Ignore error
             }
         }
         return personal;
@@ -267,6 +283,9 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
                     }
                 } catch (IOException e) {
                     // Skip this value
+                } catch (InterruptedException e) {
+                    // Return empty result
+                    return new File[0];
                 }
             } while (value != null);
 
@@ -476,33 +495,39 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             return comThread;
         }
 
-        public <T> T invoke(Callable<T> task) {
-            try {
-                if (Thread.currentThread() == comThread) {
-                    // if it's already called from the COM
-                    // thread, we don't need to delegate the task
-                    return task.call();
-                } else {
-                    while (true) {
-                        Future<T> future = submit(task);
+        public <T> T invoke(Callable<T> task) throws Exception {
+            if (Thread.currentThread() == comThread) {
+                // if it's already called from the COM
+                // thread, we don't need to delegate the task
+                return task.call();
+            } else {
+                Future<T> future;
 
-                        try {
-                            return future.get();
-                        } catch (InterruptedException e) {
-                            // Repeat the attempt
-                            future.cancel(true);
-                        }
+                try {
+                    future = submit(task);
+                } catch (RejectedExecutionException e) {
+                    throw new InterruptedException(e.getMessage());
+                }
+
+                try {
+                    return future.get();
+                } catch (InterruptedException e) {
+                    future.cancel(true);
+
+                    throw e;
+                } catch (ExecutionException e) {
+                    Throwable cause = e.getCause();
+
+                    if (cause instanceof Exception) {
+                        throw (Exception) cause;
                     }
+
+                    if (cause instanceof Error) {
+                        throw (Error) cause;
+                    }
+
+                    throw new RuntimeException("Unexpected error", cause);
                 }
-            } catch (Exception e) {
-                Throwable cause = (e instanceof ExecutionException) ? e.getCause() : e;
-                if (cause instanceof RuntimeException) {
-                    throw (RuntimeException) cause;
-                }
-                if (cause instanceof Error) {
-                    throw (Error) cause;
-                }
-                throw new RuntimeException(cause);
             }
         }
     }

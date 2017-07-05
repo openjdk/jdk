@@ -72,8 +72,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1CreateObject
     CK_OBJECT_HANDLE ckObjectHandle;
     CK_ATTRIBUTE_PTR ckpAttributes = NULL_PTR;
     CK_ULONG ckAttributesLength;
-    jlong jObjectHandle;
-    CK_ULONG i;
+    jlong jObjectHandle = 0L;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -114,8 +113,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1CopyObject
     CK_OBJECT_HANDLE ckNewObjectHandle;
     CK_ATTRIBUTE_PTR ckpAttributes = NULL_PTR;
     CK_ULONG ckAttributesLength;
-    jlong jNewObjectHandle;
-    CK_ULONG i;
+    jlong jNewObjectHandle = 0L;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -180,7 +178,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetObjectSize
     CK_SESSION_HANDLE ckSessionHandle;
     CK_OBJECT_HANDLE ckObjectHandle;
     CK_ULONG ckObjectSize;
-    jlong jObjectSize;
+    jlong jObjectSize = 0L;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -217,7 +215,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetAttributeVa
     CK_ATTRIBUTE_PTR ckpAttributes = NULL_PTR;
     CK_ULONG ckAttributesLength;
     CK_ULONG ckBufferLength;
-    CK_ULONG i, j;
+    CK_ULONG i;
     jobject jAttribute;
     CK_RV rv;
 
@@ -307,7 +305,6 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SetAttributeVa
     CK_OBJECT_HANDLE ckObjectHandle;
     CK_ATTRIBUTE_PTR ckpAttributes = NULL_PTR;
     CK_ULONG ckAttributesLength;
-    CK_ULONG i;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -342,7 +339,6 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1FindObjectsIni
     CK_SESSION_HANDLE ckSessionHandle;
     CK_ATTRIBUTE_PTR ckpAttributes = NULL_PTR;
     CK_ULONG ckAttributesLength;
-    CK_ULONG i;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -385,7 +381,7 @@ JNIEXPORT jlongArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1FindObje
     CK_ULONG ckMaxObjectLength;
     CK_OBJECT_HANDLE_PTR ckpObjectHandleArray;
     CK_ULONG ckActualObjectCount;
-    jlongArray jObjectHandleArray;
+    jlongArray jObjectHandleArray = NULL;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
     if (ckpFunctions == NULL) { return NULL; }
