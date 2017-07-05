@@ -62,9 +62,12 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
             else
               # We're done! :-)
               BOOT_JDK_FOUND=yes
-              SPACESAFE(BOOT_JDK,[the path to the Boot JDK])
+              BASIC_FIXUP_PATH(BOOT_JDK)
               AC_MSG_CHECKING([for Boot JDK])
-              AC_MSG_RESULT([$BOOT_JDK ($BOOT_JDK_VERSION)])
+              AC_MSG_RESULT([$BOOT_JDK])
+              AC_MSG_CHECKING([Boot JDK version])
+              BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
+              AC_MSG_RESULT([$BOOT_JDK_VERSION])
             fi # end check jdk version
           fi # end check rt.jar
         fi # end check javac
@@ -93,12 +96,8 @@ AC_DEFUN([BOOTJDK_CHECK_BUILDDEPS],
 AC_DEFUN([BOOTJDK_CHECK_JAVA_HOME],
 [
     if test "x$JAVA_HOME" != x; then
-        if test "x$OPENJDK_TARGET_OS" = xwindows; then
-          # On Windows, JAVA_HOME is likely in DOS-style
-          JAVA_HOME_PROCESSED="`$CYGPATH -u "$JAVA_HOME"`"
-        else
-          JAVA_HOME_PROCESSED="$JAVA_HOME"
-        fi
+        JAVA_HOME_PROCESSED="$JAVA_HOME"
+        BASIC_FIXUP_PATH(JAVA_HOME_PROCESSED)
         if test ! -d "$JAVA_HOME_PROCESSED"; then
             AC_MSG_NOTICE([Your JAVA_HOME points to a non-existing directory!])
         else
@@ -125,8 +124,7 @@ AC_DEFUN([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK],
         # Lets find the JDK/JRE directory by following symbolic links.
         # Linux/GNU systems often have links from /usr/bin/java to 
         # /etc/alternatives/java to the real JDK binary.
-        SET_FULL_PATH_SPACESAFE(BINARY)
-        REMOVE_SYMBOLIC_LINKS(BINARY)
+        BASIC_REMOVE_SYMBOLIC_LINKS(BINARY)
         BOOT_JDK=`dirname "$BINARY"`
         BOOT_JDK=`cd "$BOOT_JDK/.."; pwd`
         if test -x "$BOOT_JDK/bin/javac" && test -x "$BOOT_JDK/bin/java"; then
@@ -155,13 +153,17 @@ AC_DEFUN([BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY],
 [
   BOOT_JDK_PREFIX="$1"
   BOOT_JDK_SUFFIX="$2"
-  BEST_JDK_FOUND=`$LS "$BOOT_JDK_PREFIX" 2> /dev/null | $GREP jdk | $SORT -r | $HEAD -n 1 `
-  if test "x$BEST_JDK_FOUND" != x; then
-    BOOT_JDK="${BOOT_JDK_PREFIX}/${BEST_JDK_FOUND}${BOOT_JDK_SUFFIX}"
-    if test -d "$BOOT_JDK"; then
-      BOOT_JDK_FOUND=maybe
-      AC_MSG_NOTICE([Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX)])
-    fi
+  ALL_JDKS_FOUND=`$LS "$BOOT_JDK_PREFIX" 2> /dev/null | $SORT -r`
+  if test "x$ALL_JDKS_FOUND" != x; then
+    for JDK_TO_TRY in $ALL_JDKS_FOUND ; do
+      BOOTJDK_DO_CHECK([
+        BOOT_JDK="${BOOT_JDK_PREFIX}/${JDK_TO_TRY}${BOOT_JDK_SUFFIX}"
+        if test -d "$BOOT_JDK"; then
+          BOOT_JDK_FOUND=maybe
+          AC_MSG_NOTICE([Found potential Boot JDK using well-known locations (in $BOOT_JDK_PREFIX/$JDK_TO_TRY)])
+        fi
+      ])
+    done
   fi
 ])
 
@@ -171,7 +173,9 @@ AC_DEFUN([BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY],
 AC_DEFUN([BOOTJDK_FIND_BEST_JDK_IN_WINDOWS_VIRTUAL_DIRECTORY],
 [
   if test "x[$]$1" != x; then
-    BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY([`$CYGPATH -u "[$]$1"`/Java])
+    VIRTUAL_DIR="[$]$1/Java"
+    BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(VIRTUAL_DIR)
+    BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY($VIRTUAL_DIR)
   fi
 ])
 
@@ -187,6 +191,8 @@ AC_DEFUN([BOOTJDK_CHECK_WELL_KNOWN_LOCATIONS],
   elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
     BOOTJDK_DO_CHECK([BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY([/Library/Java/JavaVirtualMachines],[/Contents/Home])])
     BOOTJDK_DO_CHECK([BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY([/System/Library/Java/JavaVirtualMachines],[/Contents/Home])])
+  elif test "x$OPENJDK_TARGET_OS" = xlinux; then
+    BOOTJDK_DO_CHECK([BOOTJDK_FIND_BEST_JDK_IN_DIRECTORY([/usr/lib/jvm])])
   fi
 ])
 

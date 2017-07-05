@@ -34,16 +34,9 @@ define SetupRMICompilation
     #   RUN_IIOP:=Set to run rmic with -iiop
     #   RUN_IIOP_STDPKG:=Set to run rmic with -iiop -standardPackage
     #   KEEP_GENERATED:=Set to keep generated sources around
-    $(if $2,$1_$(strip $2))
-    $(if $3,$1_$(strip $3))
-    $(if $4,$1_$(strip $4))
-    $(if $5,$1_$(strip $5))
-    $(if $6,$1_$(strip $6))
-    $(if $7,$1_$(strip $7))
-    $(if $8,$1_$(strip $8))
-    $(if $9,$1_$(strip $9))
-    $(if $(10),$(error Internal makefile error: Too many arguments to SetupRMICompilation, please update RMICompilation.gmk))
-
+    $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+    $(call LogSetupMacroEntry,SetupRMICompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
+    $(if $(16),$(error Internal makefile error: Too many arguments to SetupRMICompilation, please update RMICompilation.gmk))
 
     $1_DEP_FILE := $$($1_STUB_CLASSES_DIR)/$1_rmic
 
@@ -86,12 +79,12 @@ define SetupRMICompilation
     $$($1_DEP_FILE): $$($1_CLASS_FILES)
 	$(MKDIR) -p $$($1_STUB_CLASSES_DIR)
 	if [ "x$$($1_ARGS)" != "x" ]; then \
-	    $(ECHO) Running rmic $$($1_ARGS) for $$($1_DOLLAR_SAFE_CLASSES) &&\
+	    $(ECHO) $(LOG_INFO) Running rmic $$($1_ARGS) for $$($1_DOLLAR_SAFE_CLASSES) &&\
 	    $(RMIC) $$($1_ARGS) -classpath "$$($1_CLASSES_DIR)" \
 			-d $$($1_STUB_CLASSES_DIR) $$($1_DOLLAR_SAFE_CLASSES);\
 	fi;
 	if [ "x$$($1_ARGS2)" != "x" ]; then \
-	    $(ECHO) Running rmic $$($1_ARGS2) for $$($1_DOLLAR_SAFE_CLASSES) &&\
+	    $(ECHO) $(LOG_INFO) Running rmic $$($1_ARGS2) for $$($1_DOLLAR_SAFE_CLASSES) &&\
 	    $(RMIC) $$($1_ARGS2) -classpath "$$($1_CLASSES_DIR)" \
 			-d $$($1_STUB_CLASSES_DIR) $$($1_DOLLAR_SAFE_CLASSES);\
 	fi;

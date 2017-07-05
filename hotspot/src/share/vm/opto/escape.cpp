@@ -893,12 +893,16 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                                        arg_has_oops && (i > TypeFunc::Parms);
 #ifdef ASSERT
           if (!(is_arraycopy ||
-                call->as_CallLeaf()->_name != NULL &&
-                (strcmp(call->as_CallLeaf()->_name, "g1_wb_pre")  == 0 ||
-                 strcmp(call->as_CallLeaf()->_name, "g1_wb_post") == 0 ))
-          ) {
+                (call->as_CallLeaf()->_name != NULL &&
+                 (strcmp(call->as_CallLeaf()->_name, "g1_wb_pre")  == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "g1_wb_post") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "aescrypt_encryptBlock") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "aescrypt_decryptBlock") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "cipherBlockChaining_encryptAESCrypt") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "cipherBlockChaining_decryptAESCrypt") == 0)
+                  ))) {
             call->dump();
-            assert(false, "EA: unexpected CallLeaf");
+            fatal(err_msg_res("EA unexpected CallLeaf %s", call->as_CallLeaf()->_name));
           }
 #endif
           // Always process arraycopy's destination object since
@@ -1080,7 +1084,7 @@ bool ConnectionGraph::complete_connection_graph(
       C->log()->text("%s", (iterations >= CG_BUILD_ITER_LIMIT) ? "iterations" : "time");
       C->log()->end_elem(" limit'");
     }
-    assert(false, err_msg_res("infinite EA connection graph build (%f sec, %d iterations) with %d nodes and worklist size %d",
+    assert(ExitEscapeAnalysisOnTimeout, err_msg_res("infinite EA connection graph build (%f sec, %d iterations) with %d nodes and worklist size %d",
            time.seconds(), iterations, nodes_size(), ptnodes_worklist.length()));
     // Possible infinite build_connection_graph loop,
     // bailout (no changes to ideal graph were made).

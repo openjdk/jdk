@@ -125,7 +125,7 @@ define CopyDir
         $1_DST_FILES := $$(patsubst $2/%,$3/%,$$($1_SRC_FILES))
         IMPORT_TARGET_FILES += $$($1_DST_FILES)
 $3/% : $2/%
-	$(ECHO) Copying $$(@F)
+	$(ECHO) $(LOG_INFO) Copying $$(@F)
 	$(do-install-file)
 endef
 
@@ -234,19 +234,14 @@ ifndef OPENJDK
 
 IMPORT_TARGET_FILES += \
             $(JDK_OUTPUTDIR)/lib/security/US_export_policy.jar \
-            $(JDK_OUTPUTDIR)/lib/security/local_policy.jar \
-            $(JDK_OUTPUTDIR)/lib/jce.jar
-
-$(JDK_OUTPUTDIR)/lib/jce.jar : $(JDK_TOPDIR)/make/closed/tools/crypto/jce/jce.jar
-	$(ECHO) Copying $(@F)
-	$(install-file)
+            $(JDK_OUTPUTDIR)/lib/security/local_policy.jar
 
 $(JDK_OUTPUTDIR)/lib/security/local_policy.jar: $(JDK_TOPDIR)/make/closed/tools/crypto/jce/local_policy.jar
-	$(ECHO) Copying $(@F)
+	$(ECHO) $(LOG_INFO) Copying $(@F)
 	$(install-file)
 
 $(JDK_OUTPUTDIR)/lib/security/US_export_policy.jar: $(JDK_TOPDIR)/make/closed/tools/crypto/jce/US_export_policy.jar
-	$(ECHO) Copying $(@F)
+	$(ECHO) $(LOG_INFO) Copying $(@F)
 	$(install-file)
 
 endif # OPENJDK

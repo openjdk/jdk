@@ -40,6 +40,7 @@ MemType2Name MemBaseline::MemType2NameMap[NUMBER_OF_MEMORY_TYPE] = {
   {mtSymbol,     "Symbol"},
   {mtNMT,        "Memory Tracking"},
   {mtChunk,      "Pooled Free Chunks"},
+  {mtClassShared,"Shared spaces for classes"},
   {mtNone,       "Unknown"}  // It can happen when type tagging records are lagging
                              // behind
 };
@@ -55,6 +56,7 @@ MemBaseline::MemBaseline() {
 
   _malloc_cs = NULL;
   _vm_cs = NULL;
+  _vm_map = NULL;
 
   _number_of_classes = 0;
   _number_of_threads = 0;
@@ -72,6 +74,11 @@ void MemBaseline::clear() {
     _vm_cs = NULL;
   }
 
+  if (_vm_map != NULL) {
+    delete _vm_map;
+    _vm_map = NULL;
+  }
+
   reset();
 }
 
@@ -85,6 +92,7 @@ void MemBaseline::reset() {
 
   if (_malloc_cs != NULL) _malloc_cs->clear();
   if (_vm_cs != NULL) _vm_cs->clear();
+  if (_vm_map != NULL) _vm_map->clear();
 
   for (int index = 0; index < NUMBER_OF_MEMORY_TYPE; index ++) {
     _malloc_data[index].clear();
@@ -94,39 +102,33 @@ void MemBaseline::reset() {
 }
 
 MemBaseline::~MemBaseline() {
-  if (_malloc_cs != NULL) {
-    delete _malloc_cs;
-  }
-
-  if (_vm_cs != NULL) {
-    delete _vm_cs;
-  }
+  clear();
 }
 
 // baseline malloc'd memory records, generate overall summary and summaries by
 // memory types
 bool MemBaseline::baseline_malloc_summary(const MemPointerArray* malloc_records) {
-  MemPointerArrayIteratorImpl mItr((MemPointerArray*)malloc_records);
-  MemPointerRecord* mptr = (MemPointerRecord*)mItr.current();
+  MemPointerArrayIteratorImpl malloc_itr((MemPointerArray*)malloc_records);
+  MemPointerRecord* malloc_ptr = (MemPointerRecord*)malloc_itr.current();
   size_t used_arena_size = 0;
   int index;
-  while (mptr != NULL) {
-    index = flag2index(FLAGS_TO_MEMORY_TYPE(mptr->flags()));
-    size_t size = mptr->size();
+  while (malloc_ptr != NULL) {
+    index = flag2index(FLAGS_TO_MEMORY_TYPE(malloc_ptr->flags()));
+    size_t size = malloc_ptr->size();
     _total_malloced += size;
     _malloc_data[index].inc(size);
-    if (MemPointerRecord::is_arena_record(mptr->flags())) {
+    if (MemPointerRecord::is_arena_record(malloc_ptr->flags())) {
       // see if arena size record present
-      MemPointerRecord* next_p = (MemPointerRecordEx*)mItr.peek_next();
-      if (MemPointerRecord::is_arena_size_record(next_p->flags())) {
-        assert(next_p->is_size_record_of_arena(mptr), "arena records do not match");
-        size = next_p->size();
+      MemPointerRecord* next_malloc_ptr = (MemPointerRecordEx*)malloc_itr.peek_next();
+      if (MemPointerRecord::is_arena_size_record(next_malloc_ptr->flags())) {
+        assert(next_malloc_ptr->is_size_record_of_arena(malloc_ptr), "arena records do not match");
+        size = next_malloc_ptr->size();
         _arena_data[index].inc(size);
         used_arena_size += size;
-        mItr.next();
+        malloc_itr.next();
       }
     }
-    mptr = (MemPointerRecordEx*)mItr.next();
+    malloc_ptr = (MemPointerRecordEx*)malloc_itr.next();
   }
 
   // substract used arena size to get size of arena chunk in free list
@@ -142,20 +144,23 @@ bool MemBaseline::baseline_malloc_summary(const MemPointerArray* malloc_records)
 // baseline mmap'd memory records, generate overall summary and summaries by
 // memory types
 bool MemBaseline::baseline_vm_summary(const MemPointerArray* vm_records) {
-  MemPointerArrayIteratorImpl vItr((MemPointerArray*)vm_records);
-  VMMemRegion* vptr = (VMMemRegion*)vItr.current();
+  MemPointerArrayIteratorImpl vm_itr((MemPointerArray*)vm_records);
+  VMMemRegion* vm_ptr = (VMMemRegion*)vm_itr.current();
   int index;
-  while (vptr != NULL) {
-    index = flag2index(FLAGS_TO_MEMORY_TYPE(vptr->flags()));
-
+  while (vm_ptr != NULL) {
+    if (vm_ptr->is_reserved_region()) {
+      index = flag2index(FLAGS_TO_MEMORY_TYPE(vm_ptr->flags()));
     // we use the number of thread stack to count threads
-    if (IS_MEMORY_TYPE(vptr->flags(), mtThreadStack)) {
+      if (IS_MEMORY_TYPE(vm_ptr->flags(), mtThreadStack)) {
       _number_of_threads ++;
     }
-    _total_vm_reserved += vptr->reserved_size();
-    _total_vm_committed += vptr->committed_size();
-    _vm_data[index].inc(vptr->reserved_size(), vptr->committed_size());
-    vptr = (VMMemRegion*)vItr.next();
+      _total_vm_reserved += vm_ptr->size();
+      _vm_data[index].inc(vm_ptr->size(), 0);
+    } else {
+      _total_vm_committed += vm_ptr->size();
+      _vm_data[index].inc(0, vm_ptr->size());
+    }
+    vm_ptr = (VMMemRegion*)vm_itr.next();
   }
   return true;
 }
@@ -165,41 +170,57 @@ bool MemBaseline::baseline_vm_summary(const MemPointerArray* vm_records) {
 bool MemBaseline::baseline_malloc_details(const MemPointerArray* malloc_records) {
   assert(MemTracker::track_callsite(), "detail tracking is off");
 
-  MemPointerArrayIteratorImpl mItr((MemPointerArray*)malloc_records);
-  MemPointerRecordEx* mptr = (MemPointerRecordEx*)mItr.current();
-  MallocCallsitePointer mp;
+  MemPointerArrayIteratorImpl malloc_itr(const_cast<MemPointerArray*>(malloc_records));
+  MemPointerRecordEx* malloc_ptr = (MemPointerRecordEx*)malloc_itr.current();
+  MallocCallsitePointer malloc_callsite;
 
+  // initailize malloc callsite array
   if (_malloc_cs == NULL) {
     _malloc_cs = new (std::nothrow) MemPointerArrayImpl<MallocCallsitePointer>(64);
     // out of native memory
-    if (_malloc_cs == NULL) {
+    if (_malloc_cs == NULL || _malloc_cs->out_of_memory()) {
       return false;
     }
   } else {
     _malloc_cs->clear();
   }
 
+  MemPointerArray* malloc_data = const_cast<MemPointerArray*>(malloc_records);
+
+  // sort into callsite pc order. Details are aggregated by callsites
+  malloc_data->sort((FN_SORT)malloc_sort_by_pc);
+  bool ret = true;
+
   // baseline memory that is totaled over 1 KB
-  while (mptr != NULL) {
-    if (!MemPointerRecord::is_arena_size_record(mptr->flags())) {
+  while (malloc_ptr != NULL) {
+    if (!MemPointerRecord::is_arena_size_record(malloc_ptr->flags())) {
       // skip thread stacks
-      if (!IS_MEMORY_TYPE(mptr->flags(), mtThreadStack)) {
-        if (mp.addr() != mptr->pc()) {
-          if ((mp.amount()/K) > 0) {
-            if (!_malloc_cs->append(&mp)) {
-              return false;
+      if (!IS_MEMORY_TYPE(malloc_ptr->flags(), mtThreadStack)) {
+        if (malloc_callsite.addr() != malloc_ptr->pc()) {
+          if ((malloc_callsite.amount()/K) > 0) {
+            if (!_malloc_cs->append(&malloc_callsite)) {
+              ret = false;
+              break;
             }
           }
-          mp = MallocCallsitePointer(mptr->pc());
+          malloc_callsite = MallocCallsitePointer(malloc_ptr->pc());
         }
-        mp.inc(mptr->size());
+        malloc_callsite.inc(malloc_ptr->size());
       }
     }
-    mptr = (MemPointerRecordEx*)mItr.next();
+    malloc_ptr = (MemPointerRecordEx*)malloc_itr.next();
   }
 
-  if (mp.addr() != 0 && (mp.amount()/K) > 0) {
-    if (!_malloc_cs->append(&mp)) {
+  // restore to address order. Snapshot malloc data is maintained in memory
+  // address order.
+  malloc_data->sort((FN_SORT)malloc_sort_by_addr);
+
+  if (!ret) {
+              return false;
+            }
+  // deal with last record
+  if (malloc_callsite.addr() != 0 && (malloc_callsite.amount()/K) > 0) {
+    if (!_malloc_cs->append(&malloc_callsite)) {
       return false;
     }
   }
@@ -210,34 +231,106 @@ bool MemBaseline::baseline_malloc_details(const MemPointerArray* malloc_records)
 bool MemBaseline::baseline_vm_details(const MemPointerArray* vm_records) {
   assert(MemTracker::track_callsite(), "detail tracking is off");
 
-  VMCallsitePointer vp;
-  MemPointerArrayIteratorImpl vItr((MemPointerArray*)vm_records);
-  VMMemRegionEx* vptr = (VMMemRegionEx*)vItr.current();
+  VMCallsitePointer  vm_callsite;
+  VMCallsitePointer* cur_callsite = NULL;
+  MemPointerArrayIteratorImpl vm_itr((MemPointerArray*)vm_records);
+  VMMemRegionEx* vm_ptr = (VMMemRegionEx*)vm_itr.current();
 
+  // initialize virtual memory map array
+  if (_vm_map == NULL) {
+    _vm_map = new (std::nothrow) MemPointerArrayImpl<VMMemRegionEx>(vm_records->length());
+   if (_vm_map == NULL || _vm_map->out_of_memory()) {
+     return false;
+   }
+  } else {
+    _vm_map->clear();
+  }
+
+  // initialize virtual memory callsite array
   if (_vm_cs == NULL) {
     _vm_cs = new (std::nothrow) MemPointerArrayImpl<VMCallsitePointer>(64);
-    if (_vm_cs == NULL) {
+    if (_vm_cs == NULL || _vm_cs->out_of_memory()) {
       return false;
     }
   } else {
     _vm_cs->clear();
   }
 
-  while (vptr != NULL) {
-    if (vp.addr() != vptr->pc()) {
-      if (!_vm_cs->append(&vp)) {
+  // consolidate virtual memory data
+  VMMemRegionEx*     reserved_rec = NULL;
+  VMMemRegionEx*     committed_rec = NULL;
+
+  // vm_ptr is coming in increasing base address order
+  while (vm_ptr != NULL) {
+    if (vm_ptr->is_reserved_region()) {
+      // consolidate reserved memory regions for virtual memory map.
+      // The criteria for consolidation is:
+      // 1. two adjacent reserved memory regions
+      // 2. belong to the same memory type
+      // 3. reserved from the same callsite
+      if (reserved_rec == NULL ||
+        reserved_rec->base() + reserved_rec->size() != vm_ptr->addr() ||
+        FLAGS_TO_MEMORY_TYPE(reserved_rec->flags()) != FLAGS_TO_MEMORY_TYPE(vm_ptr->flags()) ||
+        reserved_rec->pc() != vm_ptr->pc()) {
+        if (!_vm_map->append(vm_ptr)) {
         return false;
       }
-      vp = VMCallsitePointer(vptr->pc());
+        // inserted reserved region, we need the pointer to the element in virtual
+        // memory map array.
+        reserved_rec = (VMMemRegionEx*)_vm_map->at(_vm_map->length() - 1);
+      } else {
+        reserved_rec->expand_region(vm_ptr->addr(), vm_ptr->size());
     }
-    vp.inc(vptr->size(), vptr->committed_size());
-    vptr = (VMMemRegionEx*)vItr.next();
-  }
-  if (vp.addr() != 0) {
-    if (!_vm_cs->append(&vp)) {
+
+      if (cur_callsite != NULL && !_vm_cs->append(cur_callsite)) {
       return false;
     }
+      vm_callsite = VMCallsitePointer(vm_ptr->pc());
+      cur_callsite = &vm_callsite;
+      vm_callsite.inc(vm_ptr->size(), 0);
+    } else {
+      // consolidate committed memory regions for virtual memory map
+      // The criterial is:
+      // 1. two adjacent committed memory regions
+      // 2. committed from the same callsite
+      if (committed_rec == NULL ||
+        committed_rec->base() + committed_rec->size() != vm_ptr->addr() ||
+        committed_rec->pc() != vm_ptr->pc()) {
+        if (!_vm_map->append(vm_ptr)) {
+          return false;
   }
+        committed_rec = (VMMemRegionEx*)_vm_map->at(_vm_map->length() - 1);
+    } else {
+        committed_rec->expand_region(vm_ptr->addr(), vm_ptr->size());
+      }
+      vm_callsite.inc(0, vm_ptr->size());
+    }
+    vm_ptr = (VMMemRegionEx*)vm_itr.next();
+  }
+  // deal with last record
+  if (cur_callsite != NULL && !_vm_cs->append(cur_callsite)) {
+    return false;
+  }
+
+  // sort it into callsite pc order. Details are aggregated by callsites
+  _vm_cs->sort((FN_SORT)bl_vm_sort_by_pc);
+
+  // walk the array to consolidate record by pc
+  MemPointerArrayIteratorImpl itr(_vm_cs);
+  VMCallsitePointer* callsite_rec = (VMCallsitePointer*)itr.current();
+  VMCallsitePointer* next_rec = (VMCallsitePointer*)itr.next();
+  while (next_rec != NULL) {
+    assert(callsite_rec != NULL, "Sanity check");
+    if (next_rec->addr() == callsite_rec->addr()) {
+      callsite_rec->inc(next_rec->reserved_amount(), next_rec->committed_amount());
+      itr.remove();
+      next_rec = (VMCallsitePointer*)itr.current();
+    } else {
+      callsite_rec = next_rec;
+      next_rec = (VMCallsitePointer*)itr.next();
+    }
+  }
+
   return true;
 }
 
@@ -251,12 +344,8 @@ bool MemBaseline::baseline(MemSnapshot& snapshot, bool summary_only) {
   _number_of_classes = SystemDictionary::number_of_classes();
 
   if (!summary_only && MemTracker::track_callsite() && _baselined) {
-    ((MemPointerArray*)snapshot._alloc_ptrs)->sort((FN_SORT)malloc_sort_by_pc);
-    ((MemPointerArray*)snapshot._vm_ptrs)->sort((FN_SORT)vm_sort_by_pc);
     _baselined =  baseline_malloc_details(snapshot._alloc_ptrs) &&
       baseline_vm_details(snapshot._vm_ptrs);
-    ((MemPointerArray*)snapshot._alloc_ptrs)->sort((FN_SORT)malloc_sort_by_addr);
-    ((MemPointerArray*)snapshot._vm_ptrs)->sort((FN_SORT)vm_sort_by_addr);
   }
   return _baselined;
 }
@@ -278,7 +367,7 @@ const char* MemBaseline::type2name(MEMFLAGS type) {
       return MemType2NameMap[index]._name;
     }
   }
-  assert(false, "no type");
+  assert(false, err_msg("bad type %x", type));
   return NULL;
 }
 
@@ -341,13 +430,6 @@ int MemBaseline::bl_malloc_sort_by_pc(const void* p1, const void* p2) {
   return UNSIGNED_COMPARE(mp1->addr(), mp2->addr());
 }
 
-// sort snapshot mmap'd records in callsite pc order
-int MemBaseline::vm_sort_by_pc(const void* p1, const void* p2) {
-  assert(MemTracker::track_callsite(),"Just check");
-  const VMMemRegionEx* mp1 = (const VMMemRegionEx*)p1;
-  const VMMemRegionEx* mp2 = (const VMMemRegionEx*)p2;
-  return UNSIGNED_COMPARE(mp1->pc(), mp2->pc());
-}
 
 // sort baselined mmap'd records in size (reserved size) order
 int MemBaseline::bl_vm_sort_by_size(const void* p1, const void* p2) {
@@ -376,12 +458,3 @@ int MemBaseline::malloc_sort_by_addr(const void* p1, const void* p2) {
   return delta;
 }
 
-// sort snapshot mmap'd records in memory block address order
-int MemBaseline::vm_sort_by_addr(const void* p1, const void* p2) {
-  assert(MemTracker::is_on(), "Just check");
-  const VMMemRegion* mp1 = (const VMMemRegion*)p1;
-  const VMMemRegion* mp2 = (const VMMemRegion*)p2;
-  int delta = UNSIGNED_COMPARE(mp1->addr(), mp2->addr());
-  assert(delta != 0, "dup pointer");
-  return delta;
-}

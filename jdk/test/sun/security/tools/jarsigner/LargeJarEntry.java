@@ -35,7 +35,6 @@ import java.io.FileOutputStream;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.CRC32;
-import sun.security.tools.JarSigner;
 
 public class LargeJarEntry {
 
@@ -73,7 +72,7 @@ public class LargeJarEntry {
                 jarName, "b" };
         // now, try to sign it
         try {
-            JarSigner.main(jsArgs);
+            sun.security.tools.jarsigner.Main.main(jsArgs);
         } catch (OutOfMemoryError err) {
             throw new Exception("Test failed with OutOfMemoryError", err);
         } finally {

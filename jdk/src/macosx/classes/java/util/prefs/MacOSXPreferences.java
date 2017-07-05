@@ -100,7 +100,7 @@ class MacOSXPreferences extends AbstractPreferences {
         else
             this.isUser = isUserNode();
         path = isRoot ? absolutePath() : absolutePath() + "/";
-        file = cfFileForNode(isUser);
+        file = cfFileForNode(this.isUser);
         if (isNew)
             newNode = isNew;
         else

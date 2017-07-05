@@ -1016,6 +1016,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      *            prepared statement, and result set
      * @deprecated
      */
+    @Deprecated
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
         checkState();
 
@@ -1154,6 +1155,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @deprecated use <code>getCharacterStream</code> in place of
      *              <code>getUnicodeStream</code>
      */
+    @Deprecated
     public java.io.InputStream getUnicodeStream(int columnIndex) throws SQLException {
         checkState();
 
@@ -1336,6 +1338,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      *            prepared statement, and result set
      * @deprecated
      */
+    @Deprecated
     public BigDecimal getBigDecimal(String columnName, int scale) throws SQLException {
         return getBigDecimal(findColumn(columnName), scale);
     }
@@ -1461,6 +1464,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      *            prepared statement, and result set
      * @deprecated
      */
+    @Deprecated
     public java.io.InputStream getUnicodeStream(String columnName) throws SQLException {
         return getUnicodeStream(findColumn(columnName));
     }
