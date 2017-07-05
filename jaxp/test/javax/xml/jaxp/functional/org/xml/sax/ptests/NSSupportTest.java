@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package org.xml.sax.ptests;
 
 import java.util.Enumeration;
+import jaxp.library.JAXPBaseTest;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import org.testng.annotations.Test;
@@ -31,7 +32,7 @@ import org.xml.sax.helpers.NamespaceSupport;
 /**
  * Unit test cases for NamespaceSupport API
  */
-public class NSSupportTest {
+public class NSSupportTest extends JAXPBaseTest {
     /**
      * Empty prefix name.
      */

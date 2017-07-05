@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,40 +23,22 @@
 package javax.xml.transform.ptests;
 
 import static jaxp.library.JAXPTestUtilities.FILE_SEP;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.getPathByClassName;
 
 /**
  * This is the Base test class provide basic support for JAXP functional test
  */
 public class TransformerTestConst {
     /**
-     * Current test directory.
+     * XML source file directory.
      */
-    public static final String CLASS_DIR
-            = System.getProperty("test.classes", ".") + FILE_SEP;
+    public static final String XML_DIR = getPathByClassName(TransformerTestConst.class,
+            ".." + FILE_SEP + "xmlfiles");
+
 
     /**
-     * Package name that separates by slash.
+     * Golden validation files directory.
      */
-    public static final String PACKAGE_NAME = FILE_SEP +
-            TransformerTestConst.class.getPackage().getName().replaceAll("[.]", FILE_SEP);
-
-    /**
-     * Test base directory. Every package has its own test package directory.
-     */
-    public static final String BASE_DIR
-            = System.getProperty("test.src", USER_DIR).replaceAll("\\" + System.getProperty("file.separator"), "/")
-                + PACKAGE_NAME + FILE_SEP + "..";
-
-    /**
-     * Source XML file directory.
-     */
-    public static final String XML_DIR = BASE_DIR + FILE_SEP + "xmlfiles" + FILE_SEP;
-
-    /**
-     * Golden output file directory. We pre-define all expected output in golden
-     * output file. Test verifies whether the standard output is same as content
-     * of golden file.
-     */
-    public static final String GOLDEN_DIR = XML_DIR + FILE_SEP + "out" + FILE_SEP;
+    public static final String GOLDEN_DIR = getPathByClassName(TransformerTestConst.class,
+            ".." + FILE_SEP + "xmlfiles" + FILE_SEP + "out");
 }
