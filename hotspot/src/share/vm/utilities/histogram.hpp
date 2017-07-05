@@ -77,7 +77,7 @@
 
 #ifdef ASSERT
 
-class HistogramElement : public CHeapObj {
+class HistogramElement : public CHeapObj<mtInternal> {
  protected:
   jint _count;
   const char* _name;
@@ -91,7 +91,7 @@ class HistogramElement : public CHeapObj {
   virtual int compare(HistogramElement* e1,HistogramElement* e2);
 };
 
-class Histogram : public CHeapObj {
+class Histogram : public CHeapObj<mtInternal> {
  protected:
   GrowableArray<HistogramElement*>* _elements;
   GrowableArray<HistogramElement*>* elements() { return _elements; }

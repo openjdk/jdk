@@ -440,7 +440,7 @@ void os::init_system_properties_values() {
   // code needs to be changed accordingly.
 
   // The next few definitions allow the code to be verbatim:
-#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n))
+#define malloc(n) (char*)NEW_C_HEAP_ARRAY(char, (n), mtInternal)
 #define getenv(n) ::getenv(n)
 
 /*
@@ -1913,11 +1913,11 @@ void os::dll_build_name(char* buffer, size_t buflen,
     // release the storage
     for (int i = 0 ; i < n ; i++) {
       if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i]);
+        FREE_C_HEAP_ARRAY(char, pelements[i], mtInternal);
       }
     }
     if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements);
+      FREE_C_HEAP_ARRAY(char*, pelements, mtInternal);
     }
   } else {
     snprintf(buffer, buflen, "%s/" JNI_LIB_PREFIX "%s" JNI_LIB_SUFFIX, pname, fname);
@@ -2766,7 +2766,7 @@ void bsd_wrap_code(char* base, size_t size) {
 //       All it does is to check if there are enough free pages
 //       left at the time of mmap(). This could be a potential
 //       problem.
-bool os::commit_memory(char* addr, size_t size, bool exec) {
+bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
 #ifdef __OpenBSD__
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
@@ -2790,7 +2790,7 @@ bool os::commit_memory(char* addr, size_t size, bool exec) {
 #endif
 #endif
 
-bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
+bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
                        bool exec) {
 #ifndef _ALLBSD_SOURCE
   if (UseHugeTLBFS && alignment_hint > (size_t)vm_page_size()) {
@@ -2806,7 +2806,7 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
   return commit_memory(addr, size, exec);
 }
 
-void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 #ifndef _ALLBSD_SOURCE
   if (UseHugeTLBFS && alignment_hint > (size_t)vm_page_size()) {
     // We don't check the return value: madvise(MADV_HUGEPAGE) may not
@@ -2816,7 +2816,7 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 #endif
 }
 
-void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   ::madvise(addr, bytes, MADV_DONTNEED);
 }
 
@@ -2958,7 +2958,7 @@ os::Bsd::numa_interleave_memory_func_t os::Bsd::_numa_interleave_memory;
 unsigned long* os::Bsd::_numa_all_nodes;
 #endif
 
-bool os::uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size) {
 #ifdef __OpenBSD__
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
   return ::mprotect(addr, size, PROT_NONE) == 0;
@@ -2969,7 +2969,7 @@ bool os::uncommit_memory(char* addr, size_t size) {
 #endif
 }
 
-bool os::create_stack_guard_pages(char* addr, size_t size) {
+bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   return os::commit_memory(addr, size);
 }
 
@@ -3023,12 +3023,12 @@ static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
 
-char* os::reserve_memory(size_t bytes, char* requested_addr,
+char* os::pd_reserve_memory(size_t bytes, char* requested_addr,
                          size_t alignment_hint) {
   return anon_mmap(requested_addr, bytes, (requested_addr != NULL));
 }
 
-bool os::release_memory(char* addr, size_t size) {
+bool os::pd_release_memory(char* addr, size_t size) {
   return anon_munmap(addr, size);
 }
 
@@ -3331,7 +3331,7 @@ bool os::can_execute_large_page_memory() {
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 
-char* os::attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
+char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   const int max_tries = 10;
   char* base[max_tries];
   size_t size[max_tries];
@@ -4987,7 +4987,7 @@ int os::socket_available(int fd, jint *pbytes) {
 }
 
 // Map a block of memory.
-char* os::map_memory(int fd, const char* file_name, size_t file_offset,
+char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                      char *addr, size_t bytes, bool read_only,
                      bool allow_exec) {
   int prot;
@@ -5019,7 +5019,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 
 
 // Remap a block of memory.
-char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
+char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
                        char *addr, size_t bytes, bool read_only,
                        bool allow_exec) {
   // same as map_memory() on this OS
@@ -5029,7 +5029,7 @@ char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
 
 
 // Unmap a block of memory.
-bool os::unmap_memory(char* addr, size_t bytes) {
+bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return munmap(addr, bytes) == 0;
 }
 
@@ -5800,4 +5800,15 @@ bool os::is_headless_jre() {
     if (::stat(libmawtpath, &statbuf) == 0) return false;
 
     return true;
+}
+
+// Get the default path to the core file
+// Returns the length of the string
+int os::get_core_path(char* buffer, size_t bufferSize) {
+  int n = jio_snprintf(buffer, bufferSize, "/cores");
+
+  // Truncate if theoretical string was longer than bufferSize
+  n = MIN2(n, (int)bufferSize);
+
+  return n;
 }

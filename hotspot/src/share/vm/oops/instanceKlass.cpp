@@ -847,7 +847,6 @@ void instanceKlass::shared_symbols_iterate(SymbolClosure* closure) {
   Klass::shared_symbols_iterate(closure);
   closure->do_symbol(&_generic_signature);
   closure->do_symbol(&_source_file_name);
-  closure->do_symbol(&_source_debug_extension);
 
   for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
     int name_index = fs.name_index();
@@ -989,7 +988,7 @@ void instanceKlass::do_nonstatic_fields(FieldClosure* cl) {
   fieldDescriptor fd;
   int length = java_fields_count();
   // In DebugInfo nonstatic fields are sorted by offset.
-  int* fields_sorted = NEW_C_HEAP_ARRAY(int, 2*(length+1));
+  int* fields_sorted = NEW_C_HEAP_ARRAY(int, 2*(length+1), mtClass);
   int j = 0;
   for (int i = 0; i < length; i += 1) {
     fd.initialize(as_klassOop(), i);
@@ -1009,7 +1008,7 @@ void instanceKlass::do_nonstatic_fields(FieldClosure* cl) {
       cl->do_field(&fd);
     }
   }
-  FREE_C_HEAP_ARRAY(int, fields_sorted);
+  FREE_C_HEAP_ARRAY(int, fields_sorted, mtClass);
 }
 
 
@@ -1236,7 +1235,7 @@ jmethodID instanceKlass::get_jmethod_id(instanceKlassHandle ik_h, methodHandle m
     if (length <= idnum) {
       // allocate a new cache that might be used
       size_t size = MAX2(idnum+1, (size_t)ik_h->idnum_allocated_count());
-      new_jmeths = NEW_C_HEAP_ARRAY(jmethodID, size+1);
+      new_jmeths = NEW_C_HEAP_ARRAY(jmethodID, size+1, mtClass);
       memset(new_jmeths, 0, (size+1)*sizeof(jmethodID));
       // cache size is stored in element[0], other elements offset by one
       new_jmeths[0] = (jmethodID)size;
@@ -1397,7 +1396,7 @@ void instanceKlass::set_cached_itable_index(size_t idnum, int index) {
     // cache size is stored in element[0], other elements offset by one
     if (indices == NULL || (length = (size_t)indices[0]) <= idnum) {
       size_t size = MAX2(idnum+1, (size_t)idnum_allocated_count());
-      int* new_indices = NEW_C_HEAP_ARRAY(int, size+1);
+      int* new_indices = NEW_C_HEAP_ARRAY(int, size+1, mtClass);
       new_indices[0] = (int)size;
       // copy any existing entries
       size_t i;
@@ -1933,7 +1932,7 @@ void instanceKlass::release_C_heap_structures() {
 
   // deallocate the cached class file
   if (_cached_class_file_bytes != NULL) {
-    os::free(_cached_class_file_bytes);
+    os::free(_cached_class_file_bytes, mtClass);
     _cached_class_file_bytes = NULL;
     _cached_class_file_len = 0;
   }
@@ -1944,9 +1943,10 @@ void instanceKlass::release_C_heap_structures() {
   // class can't be referenced anymore).
   if (_array_name != NULL)  _array_name->decrement_refcount();
   if (_source_file_name != NULL) _source_file_name->decrement_refcount();
-  if (_source_debug_extension != NULL) _source_debug_extension->decrement_refcount();
   // walk constant pool and decrement symbol reference counts
   _constants->unreference_symbols();
+
+  if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension, mtClass);
 }
 
 void instanceKlass::set_source_file_name(Symbol* n) {
@@ -1954,9 +1954,22 @@ void instanceKlass::set_source_file_name(Symbol* n) {
   if (_source_file_name != NULL) _source_file_name->increment_refcount();
 }
 
-void instanceKlass::set_source_debug_extension(Symbol* n) {
-  _source_debug_extension = n;
-  if (_source_debug_extension != NULL) _source_debug_extension->increment_refcount();
+void instanceKlass::set_source_debug_extension(char* array, int length) {
+  if (array == NULL) {
+    _source_debug_extension = NULL;
+  } else {
+    // Adding one to the attribute length in order to store a null terminator
+    // character could cause an overflow because the attribute length is
+    // already coded with an u4 in the classfile, but in practice, it's
+    // unlikely to happen.
+    assert((length+1) > length, "Overflow checking");
+    char* sde = NEW_C_HEAP_ARRAY(char, (length + 1), mtClass);
+    for (int i = 0; i < length; i++) {
+      sde[i] = array[i];
+    }
+    sde[length] = '\0';
+    _source_debug_extension = sde;
+  }
 }
 
 address instanceKlass::static_field_addr(int offset) {
@@ -2530,7 +2543,7 @@ void instanceKlass::add_previous_version(instanceKlassHandle ikh,
     // This is the first previous version so make some space.
     // Start with 2 elements under the assumption that the class
     // won't be redefined much.
-    _previous_versions =  new (ResourceObj::C_HEAP)
+    _previous_versions =  new (ResourceObj::C_HEAP, mtClass)
                             GrowableArray<PreviousVersionNode *>(2, true);
   }
 
@@ -2556,7 +2569,7 @@ void instanceKlass::add_previous_version(instanceKlassHandle ikh,
       ("add: all methods are obsolete; flushing any EMCP weak refs"));
   } else {
     int local_count = 0;
-    GrowableArray<jweak>* method_refs = new (ResourceObj::C_HEAP)
+    GrowableArray<jweak>* method_refs = new (ResourceObj::C_HEAP, mtClass)
       GrowableArray<jweak>(emcp_method_count, true);
     for (int i = 0; i < old_methods->length(); i++) {
       if (emcp_methods->at(i)) {
@@ -2948,7 +2961,7 @@ PreviousVersionInfo* PreviousVersionWalker::next_previous_version() {
 
   while (_current_index < length) {
     PreviousVersionNode * pv_node = _previous_versions->at(_current_index++);
-    PreviousVersionInfo * pv_info = new (ResourceObj::C_HEAP)
+    PreviousVersionInfo * pv_info = new (ResourceObj::C_HEAP, mtClass)
                                           PreviousVersionInfo(pv_node);
 
     constantPoolHandle cp_h = pv_info->prev_constant_pool_handle();

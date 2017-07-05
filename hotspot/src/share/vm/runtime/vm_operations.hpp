@@ -96,7 +96,7 @@
   template(JFRCheckpoint)                         \
   template(Exit)                                  \
 
-class VM_Operation: public CHeapObj {
+class VM_Operation: public CHeapObj<mtInternal> {
  public:
   enum Mode {
     _safepoint,       // blocking,        safepoint, vm_op C-heap allocated
