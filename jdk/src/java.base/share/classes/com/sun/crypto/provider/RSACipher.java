@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,7 +350,7 @@ public final class RSACipher extends CipherSpi {
             switch (mode) {
             case MODE_SIGN:
                 data = padding.pad(buffer, 0, bufOfs);
-                return RSACore.rsa(data, privateKey);
+                return RSACore.rsa(data, privateKey, true);
             case MODE_VERIFY:
                 byte[] verifyBuffer = RSACore.convert(buffer, 0, bufOfs);
                 data = RSACore.rsa(verifyBuffer, publicKey);
@@ -360,7 +360,7 @@ public final class RSACipher extends CipherSpi {
                 return RSACore.rsa(data, publicKey);
             case MODE_DECRYPT:
                 byte[] decryptBuffer = RSACore.convert(buffer, 0, bufOfs);
-                data = RSACore.rsa(decryptBuffer, privateKey);
+                data = RSACore.rsa(decryptBuffer, privateKey, false);
                 return padding.unpad(data);
             default:
                 throw new AssertionError("Internal error");

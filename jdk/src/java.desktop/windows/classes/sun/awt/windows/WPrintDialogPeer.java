@@ -32,6 +32,7 @@ import java.awt.dnd.DropTarget;
 import java.util.Vector;
 import sun.awt.CausedFocusEvent;
 import sun.awt.AWTAccessor;
+import sun.misc.ManagedLocalsThread;
 
 class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
 
@@ -67,19 +68,21 @@ class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
 
     @Override
     public void show() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ((WPrintDialog)target).setRetVal(_show());
-                } catch (Exception e) {
-                    // No exception should be thrown by native dialog code,
-                    // but if it is we need to trap it so the thread does
-                    // not hide is called and the thread doesn't hang.
-                }
-                ((WPrintDialog)target).setVisible(false);
+        Runnable runnable = () -> {
+            try {
+                ((WPrintDialog)target).setRetVal(_show());
+            } catch (Exception e) {
+                // No exception should be thrown by native dialog code,
+                // but if it is we need to trap it so the thread does
+                // not hide is called and the thread doesn't hang.
             }
-        }).start();
+            ((WPrintDialog)target).setVisible(false);
+        };
+        if (System.getSecurityManager() == null) {
+            new Thread(runnable).start();
+        } else {
+            new ManagedLocalsThread(runnable).start();
+        }
     }
 
     synchronized void setHWnd(long hwnd) {

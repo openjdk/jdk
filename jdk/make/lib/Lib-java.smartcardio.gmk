@@ -37,7 +37,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC, \
     LIBRARY := j2pcsc, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJ2PCSC_SRC), \
-    LANG := C, \
     CFLAGS_unix := -D__sun_jdk, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBJ2PCSC_CPPFLAGS), \
