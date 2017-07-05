@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,7 +287,8 @@ var getJibProfilesProfiles = function (input, common) {
             target_os: "solaris",
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit", "cups"),
-            configure_args: concat(common.configure_args, "--with-zlib=system"),
+            configure_args: concat(common.configure_args, "--with-zlib=system",
+                "--enable-dtrace"),
             default_make_targets: common.default_make_targets
         },
 
@@ -295,7 +296,8 @@ var getJibProfilesProfiles = function (input, common) {
             target_os: "solaris",
             target_cpu: "sparcv9",
             dependencies: concat(common.dependencies, "devkit", "cups"),
-            configure_args: concat(common.configure_args, "--with-zlib=system"),
+            configure_args: concat(common.configure_args, "--with-zlib=system",
+                "--enable-dtrace"),
             default_make_targets: common.default_make_targets
         },
 
