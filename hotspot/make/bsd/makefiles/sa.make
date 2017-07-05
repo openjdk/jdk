@@ -63,6 +63,10 @@ else
   SA_CLASSPATH=$(shell test -f $(ALT_SA_CLASSPATH) && echo $(ALT_SA_CLASSPATH))
 endif
 
+ifneq ($(SA_CLASSPATH),)
+  SA_CLASSPATH_ARG := -classpath $(SA_CLASSPATH)
+endif
+
 # TODO: if it's a modules image, check if SA module is installed.
 MODULELIB_PATH= $(BOOT_JAVA_HOME)/lib/modules
 
@@ -114,7 +118,7 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES)
 # are in AGENT_FILES, so use the shell to expand them.
 # Be extra carefull to not produce too long command lines in the shell!
 	$(foreach file,$(AGENT_FILES),$(shell ls -1 $(file) >> $(AGENT_FILES_LIST)))
-	$(QUIETLY) $(REMOTE) $(COMPILE.JAVAC) -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) @$(AGENT_FILES_LIST)
+	$(QUIETLY) $(REMOTE) $(COMPILE.JAVAC) $(SA_CLASSPATH_ARG) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) @$(AGENT_FILES_LIST)
 	$(QUIETLY) $(REMOTE) $(COMPILE.RMIC)  -classpath $(SA_CLASSDIR) -d $(SA_CLASSDIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	$(QUIETLY) echo "$(SA_BUILD_VERSION_PROP)" > $(SA_PROPERTIES)
 	$(QUIETLY) rm -f $(SA_CLASSDIR)/sun/jvm/hotspot/utilities/soql/sa.js
