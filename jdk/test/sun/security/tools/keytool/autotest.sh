@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,8 @@ case "$OS" in
   Linux )
     if [ $B32 = true ]; then
         LIBNAME=`find_one \
+            "/usr/lib32/libsoftokn3.so" \
+            "/usr/lib32/nss/libsoftokn3.so" \
             "/usr/lib/libsoftokn3.so" \
             "/usr/lib/i386-linux-gnu/nss/libsoftokn3.so" \
             "/usr/lib/nss/libsoftokn3.so"`

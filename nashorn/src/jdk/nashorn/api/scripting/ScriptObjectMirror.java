@@ -621,6 +621,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     /**
      * Utilitity to convert this script object to the given type.
      *
+     * @param <T> destination type to convert to
      * @param type destination type to convert to
      * @return converted object
      */
