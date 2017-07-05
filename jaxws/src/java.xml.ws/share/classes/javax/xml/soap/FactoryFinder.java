@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ class FactoryFinder {
     private static String fromJDKProperties(String factoryId, String deprecatedFactoryId) {
         Path path = null;
         try {
-            String JAVA_HOME = System.getProperty("java.home");
+            String JAVA_HOME = getSystemProperty("java.home");
             path = Paths.get(JAVA_HOME, "conf", "jaxm.properties");
             logger.log(Level.FINE, "Checking configuration in {0}", path);
 

@@ -34,7 +34,6 @@
 /*
  * @test
  * @bug 4486658
- * @run main/timeout=1600 MapLoops
  * @summary Exercise multithreaded maps, by default ConcurrentHashMap.
  * Multithreaded hash table test.  Each thread does a random walk
  * though elements of "key" array. On each iteration, it checks if
@@ -42,9 +41,11 @@
  * inserts it, and if present, with probability premove it removes
  * it.  (pinsert and premove are expressed as percentages to simplify
  * parsing from command line.)
+ * @library /lib/testlibrary/
+ * @run main/timeout=1600 MapLoops
  */
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.List;
 import java.util.Map;
@@ -53,8 +54,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import jdk.testlibrary.Utils;
 
 public class MapLoops {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static int nkeys       = 1000; // 10_000
     static int pinsert     = 60;
     static int premove     = 2;
@@ -126,7 +129,7 @@ public class MapLoops {
                 i = k;
         }
         pool.shutdown();
-        if (! pool.awaitTermination(60L, SECONDS))
+        if (! pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
             throw new Error();
 
         if (! throwables.isEmpty())

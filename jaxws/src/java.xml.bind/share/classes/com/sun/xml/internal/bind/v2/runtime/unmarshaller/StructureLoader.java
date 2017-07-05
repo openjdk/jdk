@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,22 +231,11 @@ public final class StructureLoader extends Loader {
     @Override
     public void childElement(UnmarshallingContext.State state, TagName arg) throws SAXException {
         ChildLoader child = childUnmarshallers.get(arg.uri,arg.local);
-        if(child==null) {
-            if ((beanInfo != null) && (beanInfo.getTypeNames() != null)) {
-                Iterator typeNamesIt = beanInfo.getTypeNames().iterator();
-                QName parentQName = null;
-                if ((typeNamesIt != null) && (typeNamesIt.hasNext()) && (catchAll == null)) {
-                    parentQName = (QName) typeNamesIt.next();
-                    String parentUri = parentQName.getNamespaceURI();
-                    child = childUnmarshallers.get(parentUri, arg.local);
-                }
-            }
-            if (child == null) {
-                child = catchAll;
-                if(child==null) {
-                    super.childElement(state,arg);
-                    return;
-                }
+        if (child == null) {
+            child = catchAll;
+            if (child==null) {
+                super.childElement(state,arg);
+                return;
             }
         }
 

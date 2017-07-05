@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,7 +285,7 @@ public final class InternetHeaders {
      *
      * @return  Header objects
      */
-    public FinalArrayList<hdr> getAllHeaders() {
+    public List<? extends Header> getAllHeaders() {
         return headers; // conceptually it should be read-only, but for performance reason I'm not wrapping it here
     }
 

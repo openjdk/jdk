@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,6 @@ public final class CTypeRef implements TypeRef<NType,NClass> {
 
     public CTypeRef(CNonElement type, XSElementDecl decl) {
         this(type, BGMBuilder.getName(decl),getSimpleTypeName(decl), decl.isNillable(), decl.getDefaultValue() );
-
     }
 
     public QName getTypeName() {
@@ -100,10 +99,15 @@ public final class CTypeRef implements TypeRef<NType,NClass> {
      */
     private static QName resolveSimpleTypeName(XSType declType) {
         QName name = BGMBuilder.getName(declType);
-        if (name != null && !XMLConstants.W3C_XML_SCHEMA_NS_URI.equals(name.getNamespaceURI()))
-            return resolveSimpleTypeName(declType.getBaseType());
-        else
-            return name;
+        QName result = null;
+        if (name != null && !XMLConstants.W3C_XML_SCHEMA_NS_URI.equals(name.getNamespaceURI())) {
+            result = resolveSimpleTypeName(declType.getBaseType());
+        } else {
+            if ( !"anySimpleType".equals(declType.getName()) ) {
+                result = name;
+            }
+        }
+        return result;
     }
 
     public CTypeRef(CNonElement type, QName elementName, QName typeName, boolean nillable, XmlString defaultValue) {

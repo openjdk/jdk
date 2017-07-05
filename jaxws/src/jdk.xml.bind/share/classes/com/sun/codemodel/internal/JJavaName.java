@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class JJavaName {
      *      ("my_children","MyChildren","myChildren", and "MY-CHILDREN", "CODE003-children" respectively)
      *      <p>
      *      Although this method only works for English words, it handles non-English
-     *      words gracefully (by just returning it as-is.) For example, &#x65E5;&#x672C;&#x8A9E;
+     *      words gracefully (by just returning it as-is.) For example, "&#x65E5;&#x672C;&#x8A9E;"
      *      will be returned as-is without modified, not "&#x65E5;&#x672C;&#x8A9E;s"
      *      <p>
      *      This method doesn't handle suffixes very well. For example, passing
