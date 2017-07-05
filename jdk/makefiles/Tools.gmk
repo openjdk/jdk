@@ -23,15 +23,25 @@
 # questions.
 #
 
+# Cache all finds needed for this file. Only used on windows.
+$(eval $(call FillCacheFind,$(JDK_TOPDIR)/make/tools \
+    $(JDK_TOPDIR)/src/solaris/classes \
+    $(JDK_TOPDIR)/makefiles/sun))
+
+TOOLS_SRC:=$(JDK_TOPDIR)/make/tools/src \
+           $(JDK_TOPDIR)/makefiles/sun/awt/X11 \
+           $(JDK_TOPDIR)/makefiles/sun/osxapp \
+           $(JDK_TOPDIR)/make/tools/swing-beans
+
+ifneq ($(OPENJDK_TARGET_OS),windows)
+  TOOLS_SRC+=$(JDK_TOPDIR)/src/solaris/classes/sun/awt/X11/generator
+endif
+
 # The exception handling of swing beaninfo which have the own tool directory
 ifeq (,$(BUILD_TOOLS))
 $(eval $(call SetupJavaCompilation,BUILD_TOOLS,\
                 SETUP:=GENERATE_OLDBYTECODE,\
-		SRC:=$(JDK_TOPDIR)/make/tools/src \
-                     $(JDK_TOPDIR)/src/solaris/classes/sun/awt/X11/generator \
-                     $(JDK_TOPDIR)/makefiles/sun/awt/X11 \
-                     $(JDK_TOPDIR)/makefiles/sun/osxapp \
-                     $(JDK_TOPDIR)/make/tools/swing-beans,\
+		SRC:=$(TOOLS_SRC),\
 		BIN:=$(JDK_OUTPUTDIR)/btclasses))
 
 endif

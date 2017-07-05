@@ -93,3 +93,10 @@ void ClassFileStream::skip_u2(int length, TRAPS) {
   }
   _current += length * 2;
 }
+
+void ClassFileStream::skip_u4(int length, TRAPS) {
+  if (_need_verify) {
+    guarantee_more(length * 4, CHECK);
+  }
+  _current += length * 4;
+}

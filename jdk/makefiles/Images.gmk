@@ -30,6 +30,15 @@ include Setup.gmk
 
 default: images
 
+# Prepare the find cache. Only used if running on windows.
+$(eval $(call FillCacheFind,\
+    $(wildcard $(JDK_OUTPUTDIR)/bin \
+               $(JDK_OUTPUTDIR)/lib \
+               $(IMAGES_OUTPUTDIR)/lib \
+               $(JDK_OUTPUTDIR)/include \
+               $(JDK_OUTPUTDIR)/sample \
+               $(JDK_OUTPUTDIR)/demo)))
+
 include Tools.gmk
 
 # Note: This double-colon rule is intentional, to support
@@ -67,12 +76,6 @@ define AddFileToCopy
 
   $4 += $2/$$($2_$3_FILE)
 endef
-
-JDK_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2sdk-image
-JRE_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2re-image
-
-JDK_OVERLAY_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2sdk-overlay-image
-JRE_OVERLAY_IMAGE_DIR:=$(IMAGES_OUTPUTDIR)/j2re-overlay-image
 
 ################################################################################
 #
@@ -133,7 +136,7 @@ WINDOWS_JDKJRE_BIN_FILES := \
 	$(SALIB_NAME)
 
 # Find all files in bin dir
-ALL_BIN_LIST := $(shell $(FIND) $(JDK_OUTPUTDIR)/bin -type f)
+ALL_BIN_LIST := $(call CacheFind,$(JDK_OUTPUTDIR)/bin)
 
 # Prevent sjavac from entering the images.
 ALL_BIN_LIST := $(filter-out %/sjavac,$(ALL_BIN_LIST))
@@ -145,7 +148,7 @@ ifneq ($(OPENJDK_TARGET_OS),windows)
 else
 # On windows, the libraries are in the bin dir, only filter out debuginfo files
 # for executables. "java" is both a library and executable.
-    ALL_BIN_EXEC_FILES := $(filter-out java.exe,$(notdir $(shell $(FIND) $(JDK_OUTPUTDIR)/bin -type f -name "*.exe")))
+    ALL_BIN_EXEC_FILES := $(filter-out java.exe,$(notdir $(filter %.exe,$(ALL_BIN_LIST))))
     ALL_BIN_DEBUG_FILTER := $(addprefix %,$(patsubst %.exe,%.debuginfo,$(ALL_BIN_EXEC_FILES)) \
 					   $(patsubst %.exe,%.diz,$(ALL_BIN_EXEC_FILES))) %.pdb
     ALL_BIN_LIST := $(filter-out $(ALL_BIN_DEBUG_FILTER),$(ALL_BIN_LIST))
@@ -213,13 +216,13 @@ endif
 
 # Find all files to copy from $(JDK_OUTPUTDIR)/lib
 # Jar files are not expected to be here
-ALL_JDKOUT_LIB_LIST := $(shell $(FIND) $(JDK_OUTPUTDIR)/lib \( -type f -o -type l \) -a ! \
-                       \( -name "_the*" -o -name "javac_state " -o -name "*.jar" \) )
+ALL_JDKOUT_LIB_LIST := $(call not-containing,_the.,$(filter-out %.jar,\
+                            $(call CacheFind,$(JDK_OUTPUTDIR)/lib)))
 # Find all files to copy from $(IMAGES_OUTPUTDIR)/lib
 # This is were the jar files are and might not exist if building overlay-images
 ifneq ($(wildcard $(IMAGES_OUTPUTDIR)/lib),)
-    ALL_IMAGES_LIB_LIST := $(shell $(FIND) $(IMAGES_OUTPUTDIR)/lib \( -type f -o -type l \) -a ! \
-                       \( -name "_the*" -o -name "javac_state " \) )
+    ALL_IMAGES_LIB_LIST := $(call not-containing,_the.,\
+                            $(call CacheFind,$(IMAGES_OUTPUTDIR)/lib))
 endif
 
 # Filter files to copy for each destination
@@ -494,13 +497,13 @@ define CreateOverlayDemoRule
 
     JDK_OVERLAY_DEMO_TARGETS += $$($1_TARGET)
 endef
-JDK_OVERLAY_DEMO_SOURCES := $(shell $(FIND) $(JDK_OUTPUTDIR)/demo -name "*$(SHARED_LIBRARY_SUFFIX)")
+JDK_OVERLAY_DEMO_SOURCES := $(filter %$(SHARED_LIBRARY_SUFFIX),$(call CacheFind,$(JDK_OUTPUTDIR)/demo))
 $(foreach lib,$(JDK_OVERLAY_DEMO_SOURCES),$(eval $(call CreateOverlayDemoRule,$(lib))))
 
 ################################################################################
 # /sample dir
 
-$(foreach f,$(shell $(FIND) $(JDK_OUTPUTDIR)/sample -type f),\
+$(foreach f,$(call CacheFind,$(JDK_OUTPUTDIR)/sample),\
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_IMAGE_DIR),$f,JDK_SAMPLE_TARGETS)))
 
 ################################################################################
@@ -519,7 +522,7 @@ ifndef OPENJDK
 	$(install-file)
 
     JDK_DB_TARGETS := $(patsubst $(JDK_TOPDIR)/src/closed/share/db/%,$(IMAGES_OUTPUTDIR)/_unzip/%.unzipped,\
-			$(shell $(FIND) $(JDK_TOPDIR)/src/closed/share/db -name "*.zip" ! -name "*demo*")) \
+			$(call not-containing,demo,$(wildcard $(JDK_TOPDIR)/src/closed/share/db/*.zip))) \
 		      $(JDK_IMAGE_DIR)/db/README-JDK.html
 
 endif
@@ -527,7 +530,7 @@ endif
 ################################################################################
 # /include dir
 
-$(foreach f,$(shell $(FIND) $(JDK_OUTPUTDIR)/include -type f),\
+$(foreach f,$(call CacheFind,$(JDK_OUTPUTDIR)/include),\
     $(eval $(call AddFileToCopy,$(JDK_OUTPUTDIR),$(JDK_IMAGE_DIR),$f,JDK_INCLUDE_TARGETS)))
 
 ################################################################################
@@ -626,8 +629,7 @@ $(JDK_IMAGE_DIR)/src.zip: $(IMAGES_OUTPUTDIR)/src.zip
 
 ifneq ($(POST_STRIP_CMD),)
     ifeq ($(OPENJDK_TARGET_OS), windows)
-        EXEC_LIST_BIN:=$(shell $(FIND) $(JDK_OUTPUTDIR)/bin -type f -name \*.exe \
-		-o -name \*.dll | $(EGREP) -v -i "$(MSVCR_DLL)")
+        EXEC_LIST_BIN:=$(filter-out %$(notdir $(MSVCR_DLL)),$(filter %.exe %.dll,$(ALL_BIN_LIST)))
     else
         # Find all executables in JDK_OUTPUTDIR since they exist when this makefile is parsed
         EXEC_LIST_BIN:=$(shell $(FILE) `$(FIND) $(JDK_OUTPUTDIR)/bin -type f -name \*$(EXE_SUFFIX)` \

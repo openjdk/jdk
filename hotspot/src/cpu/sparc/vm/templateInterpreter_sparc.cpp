@@ -259,7 +259,7 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
   }
   __ ret();                           // return from interpreter activation
   __ delayed()->restore(I5_savedSP, G0, SP);  // remove interpreter frame
-  NOT_PRODUCT(__ emit_long(0);)       // marker for disassembly
+  NOT_PRODUCT(__ emit_int32(0);)       // marker for disassembly
   return entry;
 }
 

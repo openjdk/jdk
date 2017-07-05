@@ -61,6 +61,9 @@ void Annotations::deallocate_contents(ClassLoaderData* loader_data) {
   free_contents(loader_data, methods_annotations());
   free_contents(loader_data, methods_parameter_annotations());
   free_contents(loader_data, methods_default_annotations());
+
+  // Recursively deallocate optional Annotations linked through this one
+  MetadataFactory::free_metadata(loader_data, type_annotations());
 }
 
 // Set the annotation at 'idnum' to 'anno'.

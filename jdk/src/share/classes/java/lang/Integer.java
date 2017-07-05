@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import java.lang.annotation.Native;
 import java.util.Properties;
 
 /**
@@ -54,13 +55,13 @@ public final class Integer extends Number implements Comparable<Integer> {
      * A constant holding the minimum value an {@code int} can
      * have, -2<sup>31</sup>.
      */
-    public static final int   MIN_VALUE = 0x80000000;
+    @Native public static final int   MIN_VALUE = 0x80000000;
 
     /**
      * A constant holding the maximum value an {@code int} can
      * have, 2<sup>31</sup>-1.
      */
-    public static final int   MAX_VALUE = 0x7fffffff;
+    @Native public static final int   MAX_VALUE = 0x7fffffff;
 
     /**
      * The {@code Class} instance representing the primitive type
@@ -1295,7 +1296,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * @since 1.5
      */
-    public static final int SIZE = 32;
+    @Native public static final int SIZE = 32;
 
     /**
      * The number of bytes used to represent a {@code int} value in two's
@@ -1513,5 +1514,5 @@ public final class Integer extends Number implements Comparable<Integer> {
     }
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    private static final long serialVersionUID = 1360826667806852920L;
+    @Native private static final long serialVersionUID = 1360826667806852920L;
 }

@@ -1515,7 +1515,7 @@ JVM_ENTRY(jbyteArray, JVM_GetFieldAnnotations(JNIEnv *env, jobject field))
 JVM_END
 
 
-static Method* jvm_get_method_common(jobject method, TRAPS) {
+static Method* jvm_get_method_common(jobject method) {
   // some of this code was adapted from from jni_FromReflectedMethod
 
   oop reflected = JNIHandles::resolve_non_null(method);
@@ -1533,8 +1533,7 @@ static Method* jvm_get_method_common(jobject method, TRAPS) {
   }
   Klass* k = java_lang_Class::as_Klass(mirror);
 
-  KlassHandle kh(THREAD, k);
-  Method* m = InstanceKlass::cast(kh())->method_with_idnum(slot);
+  Method* m = InstanceKlass::cast(k)->method_with_idnum(slot);
   if (m == NULL) {
     assert(false, "cannot find method");
     return NULL;  // robustness
@@ -1548,7 +1547,7 @@ JVM_ENTRY(jbyteArray, JVM_GetMethodAnnotations(JNIEnv *env, jobject method))
   JVMWrapper("JVM_GetMethodAnnotations");
 
   // method is a handle to a java.lang.reflect.Method object
-  Method* m = jvm_get_method_common(method, CHECK_NULL);
+  Method* m = jvm_get_method_common(method);
   return (jbyteArray) JNIHandles::make_local(env,
     Annotations::make_java_array(m->annotations(), THREAD));
 JVM_END
@@ -1558,7 +1557,7 @@ JVM_ENTRY(jbyteArray, JVM_GetMethodDefaultAnnotationValue(JNIEnv *env, jobject m
   JVMWrapper("JVM_GetMethodDefaultAnnotationValue");
 
   // method is a handle to a java.lang.reflect.Method object
-  Method* m = jvm_get_method_common(method, CHECK_NULL);
+  Method* m = jvm_get_method_common(method);
   return (jbyteArray) JNIHandles::make_local(env,
     Annotations::make_java_array(m->annotation_default(), THREAD));
 JVM_END
@@ -1568,11 +1567,54 @@ JVM_ENTRY(jbyteArray, JVM_GetMethodParameterAnnotations(JNIEnv *env, jobject met
   JVMWrapper("JVM_GetMethodParameterAnnotations");
 
   // method is a handle to a java.lang.reflect.Method object
-  Method* m = jvm_get_method_common(method, CHECK_NULL);
+  Method* m = jvm_get_method_common(method);
   return (jbyteArray) JNIHandles::make_local(env,
     Annotations::make_java_array(m->parameter_annotations(), THREAD));
 JVM_END
 
+/* Type use annotations support (JDK 1.8) */
+
+JVM_ENTRY(jbyteArray, JVM_GetClassTypeAnnotations(JNIEnv *env, jclass cls))
+  assert (cls != NULL, "illegal class");
+  JVMWrapper("JVM_GetClassTypeAnnotations");
+  ResourceMark rm(THREAD);
+  // Return null for arrays and primitives
+  if (!java_lang_Class::is_primitive(JNIHandles::resolve(cls))) {
+    Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
+    if (k->oop_is_instance()) {
+      typeArrayOop a = Annotations::make_java_array(InstanceKlass::cast(k)->type_annotations()->class_annotations(), CHECK_NULL);
+      return (jbyteArray) JNIHandles::make_local(env, a);
+    }
+  }
+  return NULL;
+JVM_END
+
+JVM_ENTRY(jobjectArray, JVM_GetMethodParameters(JNIEnv *env, jobject method))
+{
+  JVMWrapper("JVM_GetMethodParameters");
+  // method is a handle to a java.lang.reflect.Method object
+  Method* method_ptr = jvm_get_method_common(method);
+  methodHandle mh (THREAD, method_ptr);
+  Handle reflected_method (THREAD, JNIHandles::resolve_non_null(method));
+  const int num_params = mh->method_parameters_length();
+
+  if(0 != num_params) {
+    objArrayOop result_oop = oopFactory::new_objArray(SystemDictionary::reflect_Parameter_klass(), num_params, CHECK_NULL);
+    objArrayHandle result (THREAD, result_oop);
+
+    for(int i = 0; i < num_params; i++) {
+      MethodParametersElement* params = mh->method_parameters_start();
+      Symbol* const sym = mh->constants()->symbol_at(params[i].name_cp_index);
+      oop param = Reflection::new_parameter(reflected_method, i, sym,
+                                            params[i].flags, CHECK_NULL);
+      result->obj_at_put(i, param);
+    }
+    return (jobjectArray)JNIHandles::make_local(env, result());
+  } else {
+    return (jobjectArray)NULL;
+  }
+}
+JVM_END
 
 // New (JDK 1.4) reflection implementation /////////////////////////////////////
 
