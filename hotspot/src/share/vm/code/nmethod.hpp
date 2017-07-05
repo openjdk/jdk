@@ -74,8 +74,6 @@ class nmethod : public CompiledMethod {
   static nmethod* volatile _oops_do_mark_nmethods;
   nmethod*        volatile _oops_do_mark_link;
 
-  AbstractCompiler* _compiler; // The compiler which compiled this nmethod
-
   // offsets for entry points
   address _entry_point;                      // entry point with class check
   address _verified_entry_point;             // entry point without class check
@@ -166,6 +164,7 @@ class nmethod : public CompiledMethod {
 
   // For native wrappers
   nmethod(Method* method,
+          CompilerType type,
           int nmethod_size,
           int compile_id,
           CodeOffsets* offsets,
@@ -177,6 +176,7 @@ class nmethod : public CompiledMethod {
 
   // Creation support
   nmethod(Method* method,
+          CompilerType type,
           int nmethod_size,
           int compile_id,
           int entry_bci,
@@ -251,17 +251,9 @@ class nmethod : public CompiledMethod {
                                      ByteSize basic_lock_sp_offset,
                                      OopMapSet* oop_maps);
 
-  // accessors
-  AbstractCompiler* compiler() const              { return _compiler; }
-
   // type info
   bool is_nmethod() const                         { return true; }
   bool is_osr_method() const                      { return _entry_bci != InvocationEntryBci; }
-
-  bool is_compiled_by_c1() const;
-  bool is_compiled_by_jvmci() const;
-  bool is_compiled_by_c2() const;
-  bool is_compiled_by_shark() const;
 
   // boundaries for different parts
   address consts_begin          () const          { return           header_begin() + _consts_offset        ; }

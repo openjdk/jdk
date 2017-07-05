@@ -68,7 +68,7 @@ public class GatherDiagnosticInfoObserver implements Harness.Observer {
         boolean needClose = false;
         try {
             log = new PrintWriter(new FileWriter(
-                    workDir.resolve(LOG_FILENAME).toFile(), true));
+                    workDir.resolve(LOG_FILENAME).toFile(), true), true);
             needClose = true;
         } catch (IOException e) {
             log = new PrintWriter(System.out);
@@ -100,7 +100,7 @@ public class GatherDiagnosticInfoObserver implements Harness.Observer {
                                EnvironmentInfoGatherer gatherer) {
         File output = workDir.resolve(ENVIRONMENT_OUTPUT).toFile();
         try (HtmlPage html = new HtmlPage(new PrintWriter(
-                new FileWriter(output, true)))) {
+                new FileWriter(output, true), true))) {
             try (ElapsedTimePrinter timePrinter
                          = new ElapsedTimePrinter(new Stopwatch(), name, log)) {
                 gatherer.gatherEnvironmentInfo(html.getRootSection());

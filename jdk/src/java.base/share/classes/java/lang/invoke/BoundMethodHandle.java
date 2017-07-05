@@ -80,7 +80,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             default : throw newInternalError("unexpected xtype: " + xtype);
             }
         } catch (Throwable t) {
-            throw newInternalError(t);
+            throw uncaughtException(t);
         }
     }
 
@@ -188,7 +188,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             case D_TYPE: return (double) speciesData().getters[i].invokeBasic(this);
             }
         } catch (Throwable ex) {
-            throw newInternalError(ex);
+            throw uncaughtException(ex);
         }
         throw new InternalError("unexpected type: " + speciesData().typeChars+"."+i);
     }
@@ -408,18 +408,14 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
          */
         static boolean speciesDataCachePopulated() {
             Class<BoundMethodHandle> rootCls = BoundMethodHandle.class;
-            try {
-                for (Class<?> c : rootCls.getDeclaredClasses()) {
-                    if (rootCls.isAssignableFrom(c)) {
-                        final Class<? extends BoundMethodHandle> cbmh = c.asSubclass(BoundMethodHandle.class);
-                        SpeciesData d = Factory.getSpeciesDataFromConcreteBMHClass(cbmh);
-                        assert(d != null) : cbmh.getName();
-                        assert(d.clazz == cbmh);
-                        assert(CACHE.get(d.typeChars) == d);
-                    }
+            for (Class<?> c : rootCls.getDeclaredClasses()) {
+                if (rootCls.isAssignableFrom(c)) {
+                    final Class<? extends BoundMethodHandle> cbmh = c.asSubclass(BoundMethodHandle.class);
+                    SpeciesData d = Factory.getSpeciesDataFromConcreteBMHClass(cbmh);
+                    assert(d != null) : cbmh.getName();
+                    assert(d.clazz == cbmh);
+                    assert(CACHE.get(d.typeChars) == d);
                 }
-            } catch (Throwable e) {
-                throw newInternalError(e);
             }
             return true;
         }
