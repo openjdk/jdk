@@ -65,7 +65,7 @@ MemTracker::ShutdownReason      MemTracker::_reason = NMT_shutdown_none;
 int                             MemTracker::_thread_count = 255;
 volatile jint                   MemTracker::_pooled_recorder_count = 0;
 debug_only(intx                 MemTracker::_main_thread_tid = 0;)
-debug_only(volatile jint        MemTracker::_pending_recorder_count = 0;)
+NOT_PRODUCT(volatile jint       MemTracker::_pending_recorder_count = 0;)
 
 void MemTracker::init_tracking_options(const char* option_line) {
   _tracking_level = NMT_off;
@@ -291,7 +291,7 @@ MemRecorder* MemTracker::get_pending_recorders() {
     (void*)cur_head)) {
     cur_head = const_cast<MemRecorder*>(_merge_pending_queue);
   }
-  debug_only(Atomic::store(0, &_pending_recorder_count));
+  NOT_PRODUCT(Atomic::store(0, &_pending_recorder_count));
   return cur_head;
 }
 
@@ -420,7 +420,7 @@ void MemTracker::enqueue_pending_recorder(MemRecorder* rec) {
     cur_head = const_cast<MemRecorder*>(_merge_pending_queue);
     rec->set_next(cur_head);
   }
-  debug_only(Atomic::inc(&_pending_recorder_count);)
+  NOT_PRODUCT(Atomic::inc(&_pending_recorder_count);)
 }
 
 /*

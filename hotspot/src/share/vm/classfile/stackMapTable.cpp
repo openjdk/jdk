@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,9 @@ StackMapTable::StackMapTable(StackMapReader* reader, StackMapFrame* init_frame,
       _frame_array[i] = frame;
       int offset = frame->offset();
       if (offset >= code_len || code_data[offset] == 0) {
-        frame->verifier()->verify_error("StackMapTable error: bad offset");
+        frame->verifier()->verify_error(
+            ErrorContext::bad_stackmap(i, frame),
+            "StackMapTable error: bad offset");
         return;
       }
       pre_frame = frame;
@@ -68,12 +70,9 @@ int StackMapTable::get_index_from_offset(int32_t offset) const {
 
 bool StackMapTable::match_stackmap(
     StackMapFrame* frame, int32_t target,
-    bool match, bool update, TRAPS) const {
+    bool match, bool update, ErrorContext* ctx, TRAPS) const {
   int index = get_index_from_offset(target);
-
-  return match_stackmap(
-    frame, target, index, match,
-    update, CHECK_VERIFY_(frame->verifier(), false));
+  return match_stackmap(frame, target, index, match, update, ctx, THREAD);
 }
 
 // Match and/or update current_frame to the frame in stackmap table with
@@ -88,23 +87,23 @@ bool StackMapTable::match_stackmap(
 // unconditional branch:                                 true   true
 bool StackMapTable::match_stackmap(
     StackMapFrame* frame, int32_t target, int32_t frame_index,
-    bool match, bool update, TRAPS) const {
+    bool match, bool update, ErrorContext* ctx, TRAPS) const {
   if (frame_index < 0 || frame_index >= _frame_count) {
-    frame->verifier()->verify_error(frame->offset(),
-      "Expecting a stackmap frame at branch target %d", target);
+    *ctx = ErrorContext::missing_stackmap(frame->offset());
+    frame->verifier()->verify_error(
+        *ctx, "Expecting a stackmap frame at branch target %d", target);
     return false;
   }
 
-  bool result = true;
   StackMapFrame *stackmap_frame = _frame_array[frame_index];
+  bool result = true;
   if (match) {
     // when checking handler target, match == true && update == false
     bool is_exception_handler = !update;
     // Has direct control flow from last instruction, need to match the two
     // frames.
-    result = frame->is_assignable_to(
-      stackmap_frame, is_exception_handler,
-      CHECK_VERIFY_(frame->verifier(), false));
+    result = frame->is_assignable_to(stackmap_frame, is_exception_handler,
+        ctx, CHECK_VERIFY_(frame->verifier(), result));
   }
   if (update) {
     // Use the frame in stackmap table as current frame
@@ -125,11 +124,12 @@ bool StackMapTable::match_stackmap(
 
 void StackMapTable::check_jump_target(
     StackMapFrame* frame, int32_t target, TRAPS) const {
+  ErrorContext ctx;
   bool match = match_stackmap(
-    frame, target, true, false, CHECK_VERIFY(frame->verifier()));
+    frame, target, true, false, &ctx, CHECK_VERIFY(frame->verifier()));
   if (!match || (target < 0 || target >= _code_length)) {
-    frame->verifier()->verify_error(frame->offset(),
-      "Inconsistent stackmap frames at branch target %d", target);
+    frame->verifier()->verify_error(ctx,
+        "Inconsistent stackmap frames at branch target %d", target);
     return;
   }
   // check if uninitialized objects exist on backward branches
@@ -139,24 +139,24 @@ void StackMapTable::check_jump_target(
 void StackMapTable::check_new_object(
     const StackMapFrame* frame, int32_t target, TRAPS) const {
   if (frame->offset() > target && frame->has_new_object()) {
-    frame->verifier()->verify_error(frame->offset(),
-      "Uninitialized object exists on backward branch %d", target);
+    frame->verifier()->verify_error(
+        ErrorContext::bad_code(frame->offset()),
+        "Uninitialized object exists on backward branch %d", target);
     return;
   }
 }
 
-#ifndef PRODUCT
-
-void StackMapTable::print() const {
-  tty->print_cr("StackMapTable: frame_count = %d", _frame_count);
-  tty->print_cr("table = { ");
-  for (int32_t i = 0; i < _frame_count; i++) {
-    _frame_array[i]->print();
+void StackMapTable::print_on(outputStream* str) const {
+  str->indent().print_cr("StackMapTable: frame_count = %d", _frame_count);
+  str->indent().print_cr("table = { ");
+  {
+    streamIndentor si(str);
+    for (int32_t i = 0; i < _frame_count; ++i) {
+      _frame_array[i]->print_on(str);
+    }
   }
-  tty->print_cr(" }");
+  str->print_cr(" }");
 }
-
-#endif
 
 int32_t StackMapReader::chop(
     VerificationType* locals, int32_t length, int32_t chops) {
