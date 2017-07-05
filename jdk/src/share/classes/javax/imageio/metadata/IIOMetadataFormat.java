@@ -242,8 +242,12 @@ public interface IIOMetadataFormat {
 
     /**
      * A constant returned by <code>getAttributeDataType</code>
-     * indicating that the value of an attribute is one of 'true' or
-     * 'false'.
+     * indicating that the value of an attribute is one of the boolean
+     * values 'true' or 'false'.
+     * Attribute values of type DATATYPE_BOOLEAN should be marked as
+     * enumerations, and the permitted values should be the string
+     * literal values "TRUE" or "FALSE", although a plugin may also
+     * recognise lower or mixed case equivalents.
      */
     int DATATYPE_BOOLEAN = 1;
 

@@ -29,7 +29,7 @@
 //
 //
 //  Little cms
-//  Copyright (C) 1998-2006 Marti Maria
+//  Copyright (C) 1998-2007 Marti Maria
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -282,7 +282,7 @@ void Eval8Inputs(WORD StageABC[], WORD StageLMN[], WORD LutTable[], LPL16PARAMS 
 // Fills optimization parameters
 
 void cmsCalcCLUT16ParamsEx(int nSamples, int InputChan, int OutputChan,
-                                            BOOL lUseTetrahedral, LPL16PARAMS p)
+                                            LCMSBOOL lUseTetrahedral, LPL16PARAMS p)
 {
        int clutPoints;
 
@@ -579,7 +579,7 @@ WORD cmsReverseLinearInterpLUT16(WORD Value, WORD LutTable[], LPL16PARAMS p)
 
                 // Identify if value fall downto 0 or FFFF zone
                 if (Value == 0) return 0;
-                if (Value == 0xFFFF) return 0xFFFF;
+               // if (Value == 0xFFFF) return 0xFFFF;
 
                 // else restrict to valid zone
 
@@ -631,7 +631,7 @@ WORD cmsReverseLinearInterpLUT16(WORD Value, WORD LutTable[], LPL16PARAMS p)
         a = (y1 - y0) / (x1 - x0);
         b = y0 - a * x0;
 
-        if (a == 0) return (WORD) x;
+        if (fabs(a) < 0.01) return (WORD) x;
 
         f = ((Value - b) / a);
 
@@ -763,7 +763,7 @@ void cmsTrilinearInterp16(WORD Input[], WORD Output[],
     X0 = p -> opta3 * x0;
     X1 = X0 + (Input[0] == 0xFFFFU ? 0 : p->opta3);
 
-        Y0 = p -> opta2 * y0;
+    Y0 = p -> opta2 * y0;
     Y1 = Y0 + (Input[1] == 0xFFFFU ? 0 : p->opta2);
 
     Z0 = p -> opta1 * z0;
@@ -942,7 +942,7 @@ void cmsTetrahedralInterp16(WORD Input[],
     X0 = p -> opta3 * x0;
     X1 = X0 + (Input[0] == 0xFFFFU ? 0 : p->opta3);
 
-        Y0 = p -> opta2 * y0;
+    Y0 = p -> opta2 * y0;
     Y1 = Y0 + (Input[1] == 0xFFFFU ? 0 : p->opta2);
 
     Z0 = p -> opta1 * z0;
@@ -1009,11 +1009,11 @@ void cmsTetrahedralInterp16(WORD Input[],
 
         Rest = c1 * rx + c2 * ry + c3 * rz;
 
-                // There is a lot of math hidden in this expression. The rest is in fixed domain
-                // and the result in 0..ffff domain. So the complete expression should be
-                // ROUND_FIXED_TO_INT(ToFixedDomain(Rest)) But that can be optimized as (Rest + 0x7FFF) / 0xFFFF
+        // There is a lot of math hidden in this expression. The rest is in fixed domain
+        // and the result in 0..ffff domain. So the complete expression should be
+        // ROUND_FIXED_TO_INT(ToFixedDomain(Rest)) But that can be optimized as (Rest + 0x7FFF) / 0xFFFF
 
-                Output[OutChan] = (WORD) (c0 + ((Rest + 0x7FFF) / 0xFFFF));
+        Output[OutChan] = (WORD) (c0 + ((Rest + 0x7FFF) / 0xFFFF));
 
     }
 
@@ -1131,3 +1131,4 @@ void cmsTetrahedralInterp8(WORD Input[],
 }
 
 #undef DENS
+

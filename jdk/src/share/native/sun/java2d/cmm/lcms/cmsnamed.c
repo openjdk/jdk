@@ -29,7 +29,7 @@
 //
 //
 //  Little cms
-//  Copyright (C) 1998-2006 Marti Maria
+//  Copyright (C) 1998-2007 Marti Maria
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -74,7 +74,7 @@ LPcmsNAMEDCOLORLIST GrowNamedColorList(LPcmsNAMEDCOLORLIST v, int ByElements)
                 NewElements *= 2;
 
         size = sizeof(cmsNAMEDCOLORLIST) + (sizeof(cmsNAMEDCOLOR) * NewElements);
-        TheNewList = (LPcmsNAMEDCOLORLIST) malloc(size);
+        TheNewList = (LPcmsNAMEDCOLORLIST) _cmsMalloc(size);
 
 
         if (TheNewList == NULL) {
@@ -86,7 +86,7 @@ LPcmsNAMEDCOLORLIST GrowNamedColorList(LPcmsNAMEDCOLORLIST v, int ByElements)
               CopyMemory(TheNewList, v, sizeof(cmsNAMEDCOLORLIST) + (v ->nColors - 1) * sizeof(cmsNAMEDCOLOR));
               TheNewList -> Allocated = NewElements;
 
-              free(v);
+              _cmsFree(v);
               return TheNewList;
         }
     }
@@ -99,7 +99,7 @@ LPcmsNAMEDCOLORLIST cmsAllocNamedColorList(int n)
 {
     size_t size = sizeof(cmsNAMEDCOLORLIST) + (n - 1) * sizeof(cmsNAMEDCOLOR);
 
-    LPcmsNAMEDCOLORLIST v = (LPcmsNAMEDCOLORLIST) malloc(size);
+    LPcmsNAMEDCOLORLIST v = (LPcmsNAMEDCOLORLIST) _cmsMalloc(size);
 
 
     if (v == NULL) {
@@ -124,10 +124,10 @@ void cmsFreeNamedColorList(LPcmsNAMEDCOLORLIST v)
         return;
     }
 
-    free(v);
+    _cmsFree(v);
 }
 
-BOOL cmsAppendNamedColor(cmsHTRANSFORM xform, const char* Name, WORD PCS[3], WORD Colorant[MAXCHANNELS])
+LCMSBOOL cmsAppendNamedColor(cmsHTRANSFORM xform, const char* Name, WORD PCS[3], WORD Colorant[MAXCHANNELS])
 {
     _LPcmsTRANSFORM v = (_LPcmsTRANSFORM) xform;
     LPcmsNAMEDCOLORLIST List;
@@ -146,6 +146,7 @@ BOOL cmsAppendNamedColor(cmsHTRANSFORM xform, const char* Name, WORD PCS[3], WOR
         List ->List[List ->nColors].PCS[i] = PCS[i];
 
     strncpy(List ->List[List ->nColors].Name, Name, MAX_PATH-1);
+    List ->List[List ->nColors].Name[MAX_PATH-1] = 0;
 
     List ->nColors++;
     return TRUE;
@@ -164,18 +165,17 @@ int LCMSEXPORT cmsNamedColorCount(cmsHTRANSFORM xform)
 }
 
 
-BOOL LCMSEXPORT cmsNamedColorInfo(cmsHTRANSFORM xform, int nColor, char* Name, char* Prefix, char* Suffix)
+LCMSBOOL LCMSEXPORT cmsNamedColorInfo(cmsHTRANSFORM xform, int nColor, char* Name, char* Prefix, char* Suffix)
 {
     _LPcmsTRANSFORM v = (_LPcmsTRANSFORM) xform;
-
 
      if (v ->NamedColorList == NULL) return FALSE;
 
      if (nColor < 0 || nColor >= cmsNamedColorCount(xform)) return FALSE;
 
-     if (Name) strncpy(Name, v ->NamedColorList->List[nColor].Name, 31);
-     if (Prefix) strncpy(Prefix, v ->NamedColorList->Prefix, 31);
-     if (Suffix) strncpy(Suffix, v ->NamedColorList->Suffix, 31);
+         if (Name)   { strncpy(Name, v ->NamedColorList->List[nColor].Name, 31); Name[31] = 0; }
+         if (Prefix) { strncpy(Prefix, v ->NamedColorList->Prefix, 31); Prefix[31] = 0; }
+         if (Suffix) { strncpy(Suffix, v ->NamedColorList->Suffix, 31); Suffix[31] = 0; }
 
      return TRUE;
 }
@@ -196,3 +196,5 @@ int  LCMSEXPORT cmsNamedColorIndex(cmsHTRANSFORM xform, const char* Name)
 
         return -1;
 }
+
+

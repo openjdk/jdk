@@ -60,6 +60,7 @@ define_pd_global(uintx, NewSize,                  1024 * K);
 define_pd_global(intx, StackShadowPages, 3 DEBUG_ONLY(+1));
 #endif // AMD64
 define_pd_global(intx,  InlineFrequencyCount,     100);
+define_pd_global(intx,  InlineSmallCode,          1000);
 define_pd_global(intx,  PreInflateSpin,           10);
 
 define_pd_global(intx, StackYellowPages, 2);

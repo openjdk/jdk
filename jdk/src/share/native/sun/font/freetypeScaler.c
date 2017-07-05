@@ -394,12 +394,14 @@ static int setupFTContext(JNIEnv *env,
     scalerInfo->env = env;
     scalerInfo->font2D = font2D;
 
-    FT_Set_Transform(scalerInfo->face, &context->transform, NULL);
+    if (context != NULL) {
+        FT_Set_Transform(scalerInfo->face, &context->transform, NULL);
 
-    errCode = FT_Set_Char_Size(scalerInfo->face, 0, context->ptsz, 72, 72);
+        errCode = FT_Set_Char_Size(scalerInfo->face, 0, context->ptsz, 72, 72);
 
-    if (errCode == 0) {
-        errCode = FT_Activate_Size(scalerInfo->face->size);
+        if (errCode == 0) {
+            errCode = FT_Activate_Size(scalerInfo->face->size);
+        }
     }
 
     return errCode;
@@ -885,6 +887,14 @@ Java_sun_font_FreetypeFontScaler_disposeNativeScaler(
         JNIEnv *env, jobject scaler, jlong pScaler) {
     FTScalerInfo* scalerInfo = (FTScalerInfo *) jlong_to_ptr(pScaler);
 
+    /* Freetype functions *may* cause callback to java
+       that can use cached values. Make sure our cache is up to date.
+       NB: scaler context is not important at this point, can use NULL. */
+    int errCode = setupFTContext(env, scaler, scalerInfo, NULL);
+    if (errCode) {
+        return;
+    }
+
     freeNativeResources(env, scalerInfo);
 }
 
@@ -932,9 +942,18 @@ Java_sun_font_FreetypeFontScaler_getGlyphCodeNative(
         JNIEnv *env, jobject scaler, jlong pScaler, jchar charCode) {
 
     FTScalerInfo* scalerInfo = (FTScalerInfo *) jlong_to_ptr(pScaler);
+    int errCode;
 
     if (scaler == NULL || scalerInfo->face == NULL) { /* bad/null scaler */
         invalidateJavaScaler(env, scaler, scalerInfo);
+        return 0;
+    }
+
+    /* Freetype functions *may* cause callback to java
+       that can use cached values. Make sure our cache is up to date.
+       Scaler context is not important here, can use NULL. */
+    errCode = setupFTContext(env, scaler, scalerInfo, NULL);
+    if (errCode) {
         return 0;
     }
 

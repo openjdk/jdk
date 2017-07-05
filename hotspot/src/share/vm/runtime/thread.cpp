@@ -3007,17 +3007,19 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       }
 
       if (UseStringCache) {
-        // Forcibly initialize java/lang/String and mutate the private
+        // Forcibly initialize java/lang/StringValue and mutate the private
         // static final "stringCacheEnabled" field before we start creating instances
-        klassOop k_o = SystemDictionary::resolve_or_null(vmSymbolHandles::java_lang_String(), Handle(), Handle(), CHECK_0);
-        KlassHandle k = KlassHandle(THREAD, k_o);
-        guarantee(k.not_null(), "Must find java/lang/String");
-        instanceKlassHandle ik = instanceKlassHandle(THREAD, k());
-        ik->initialize(CHECK_0);
-        fieldDescriptor fd;
-        // Possible we might not find this field; if so, don't break
-        if (ik->find_local_field(vmSymbols::stringCacheEnabled_name(), vmSymbols::bool_signature(), &fd)) {
-          k()->bool_field_put(fd.offset(), true);
+        klassOop k_o = SystemDictionary::resolve_or_null(vmSymbolHandles::java_lang_StringValue(), Handle(), Handle(), CHECK_0);
+        // Possible that StringValue isn't present: if so, silently don't break
+        if (k_o != NULL) {
+          KlassHandle k = KlassHandle(THREAD, k_o);
+          instanceKlassHandle ik = instanceKlassHandle(THREAD, k());
+          ik->initialize(CHECK_0);
+          fieldDescriptor fd;
+          // Possible we might not find this field: if so, silently don't break
+          if (ik->find_local_field(vmSymbols::stringCacheEnabled_name(), vmSymbols::bool_signature(), &fd)) {
+            k()->bool_field_put(fd.offset(), true);
+          }
         }
       }
     }

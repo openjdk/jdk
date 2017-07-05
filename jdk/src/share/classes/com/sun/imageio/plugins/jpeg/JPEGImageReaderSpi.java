@@ -39,8 +39,6 @@ public class JPEGImageReaderSpi extends ImageReaderSpi {
     private static String [] writerSpiNames =
         {"com.sun.imageio.plugins.jpeg.JPEGImageWriterSpi"};
 
-    private boolean registered = false;
-
     public JPEGImageReaderSpi() {
         super(JPEG.vendor,
               JPEG.version,
@@ -59,26 +57,6 @@ public class JPEGImageReaderSpi extends ImageReaderSpi {
               JPEG.nativeImageMetadataFormatClassName,
               null, null
               );
-    }
-
-    public void onRegistration(ServiceRegistry registry,
-                               Class<?> category) {
-        if (registered) {
-            return;
-        }
-        try {
-            java.security.AccessController.doPrivileged(
-                new sun.security.action.LoadLibraryAction("jpeg"));
-            // Stuff it all into one lib for first pass
-            //java.security.AccessController.doPrivileged(
-            //new sun.security.action.LoadLibraryAction("imageioIJG"));
-        } catch (Throwable e) { // Fail on any Throwable
-            // if it can't be loaded, deregister and return
-            registry.deregisterServiceProvider(this);
-            return;
-        }
-
-        registered = true;
     }
 
     public String getDescription(Locale locale) {

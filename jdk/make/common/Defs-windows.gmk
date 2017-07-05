@@ -111,6 +111,9 @@ ifndef OPTIMIZATION_LEVEL
     OPTIMIZATION_LEVEL = LOWER
   endif
 endif
+ifndef FASTDEBUG_OPTIMIZATION_LEVEL
+  FASTDEBUG_OPTIMIZATION_LEVEL = LOWER
+endif
 
 ifeq ($(CC_VERSION),msvc)
   # Visual Studio .NET 2003 or VS2003 compiler option definitions:
