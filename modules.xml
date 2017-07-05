@@ -1777,6 +1777,11 @@
     <name>jdk.policytool</name>
     <depend>java.base</depend>
     <depend>java.desktop</depend>
+    <depend>java.logging</depend>
+    <depend>java.management</depend>
+    <depend>java.security.jgss</depend>
+    <depend>java.sql</depend>
+    <depend>jdk.security.jgss</depend>
   </module>
   <module>
     <name>jdk.rmic</name>
