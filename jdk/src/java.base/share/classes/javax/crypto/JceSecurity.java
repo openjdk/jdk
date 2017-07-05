@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,7 @@ final class JceSecurity {
     private static final Map<Provider, Object> verifyingProviders =
             new IdentityHashMap<>();
 
-    // Set the default value. May be changed in the static initializer.
-    private static boolean isRestricted = true;
+    private static final boolean isRestricted;
 
     /*
      * Don't let anyone instantiate this.

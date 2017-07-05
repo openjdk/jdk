@@ -1,0 +1,24 @@
+// Policy 2
+grant {
+    // permissions common to all tests
+    permission java.util.PropertyPermission "test.src", "read";
+    permission java.util.PropertyPermission "test.classes", "read";
+    permission java.io.FilePermission "${test.classes}${/}-", "read,write,delete";
+    permission java.net.NetPermission "getDefaultHttpClient";
+    permission java.lang.RuntimePermission "modifyThread";
+    permission java.util.logging.LoggingPermission "control", "";
+    permission java.net.SocketPermission "localhost:1024-", "accept,listen";
+    permission java.io.FilePermission "${test.src}${/}docs${/}-", "read";
+    permission java.lang.RuntimePermission "createClassLoader";
+
+
+    // permissions specific to this test
+    permission java.net.URLPermission "http://127.0.0.1:*/files/*", "GET";
+};
+
+// For proxy only. Not being tested
+grant codebase "file:${test.classes}/proxydir/-" {
+    permission java.net.SocketPermission "localhost:1024-", "accept,listen,connect";
+    permission java.net.SocketPermission "127.0.0.1:1024-", "connect,resolve";
+};
+

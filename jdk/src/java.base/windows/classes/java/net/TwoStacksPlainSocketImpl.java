@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,9 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
         } else if (opt == SO_REUSEADDR && exclusiveBind) {
             // SO_REUSEADDR emulated when using exclusive bind
             return isReuseAddress;
+        } else if (opt == SO_REUSEPORT) {
+            // SO_REUSEPORT is not supported on Windows.
+            throw new UnsupportedOperationException("unsupported option");
         } else
             return super.getOption(opt);
     }
@@ -144,6 +147,10 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
         // SO_REUSEADDR emulated when using exclusive bind
         if (opt == SO_REUSEADDR && exclusiveBind)
             isReuseAddress = on;
+        else if (opt == SO_REUSEPORT) {
+            // SO_REUSEPORT is not supported on Windows.
+            throw new UnsupportedOperationException("unsupported option");
+        }
         else
             socketNativeSetOption(opt, on, value);
     }

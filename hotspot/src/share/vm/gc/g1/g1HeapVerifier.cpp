@@ -63,10 +63,10 @@ public:
         LogHandle(gc, verify) log;
         log.info("Root location " PTR_FORMAT " points to dead obj " PTR_FORMAT, p2i(p), p2i(obj));
         if (_vo == VerifyOption_G1UseMarkWord) {
-          log.info("  Mark word: " PTR_FORMAT, p2i(obj->mark()));
+          log.error("  Mark word: " PTR_FORMAT, p2i(obj->mark()));
         }
         ResourceMark rm;
-        obj->print_on(log.info_stream());
+        obj->print_on(log.error_stream());
         _failures = true;
       }
     }
@@ -111,10 +111,10 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
       // Verify that the strong code root list for this region
       // contains the nmethod
       if (!hrrs->strong_code_roots_list_contains(_nm)) {
-        log_info(gc, verify)("Code root location " PTR_FORMAT " "
-                             "from nmethod " PTR_FORMAT " not in strong "
-                             "code roots for region [" PTR_FORMAT "," PTR_FORMAT ")",
-                             p2i(p), p2i(_nm), p2i(hr->bottom()), p2i(hr->end()));
+        log_error(gc, verify)("Code root location " PTR_FORMAT " "
+                              "from nmethod " PTR_FORMAT " not in strong "
+                              "code roots for region [" PTR_FORMAT "," PTR_FORMAT ")",
+                              p2i(p), p2i(_nm), p2i(hr->bottom()), p2i(hr->end()));
         _failures = true;
       }
     }
@@ -292,8 +292,8 @@ public:
         r->object_iterate(&not_dead_yet_cl);
         if (_vo != VerifyOption_G1UseNextMarking) {
           if (r->max_live_bytes() < not_dead_yet_cl.live_bytes()) {
-            log_info(gc, verify)("[" PTR_FORMAT "," PTR_FORMAT "] max_live_bytes " SIZE_FORMAT " < calculated " SIZE_FORMAT,
-                                 p2i(r->bottom()), p2i(r->end()), r->max_live_bytes(), not_dead_yet_cl.live_bytes());
+            log_error(gc, verify)("[" PTR_FORMAT "," PTR_FORMAT "] max_live_bytes " SIZE_FORMAT " < calculated " SIZE_FORMAT,
+                                  p2i(r->bottom()), p2i(r->end()), r->max_live_bytes(), not_dead_yet_cl.live_bytes());
             _failures = true;
           }
         } else {
@@ -402,13 +402,13 @@ void G1HeapVerifier::verify(VerifyOption vo) {
   }
 
   if (failures) {
-    log_info(gc, verify)("Heap after failed verification:");
+    log_error(gc, verify)("Heap after failed verification:");
     // It helps to have the per-region information in the output to
     // help us track down what went wrong. This is why we call
     // print_extended_on() instead of print_on().
     LogHandle(gc, verify) log;
     ResourceMark rm;
-    _g1h->print_extended_on(log.info_stream());
+    _g1h->print_extended_on(log.error_stream());
   }
   guarantee(!failures, "there should not have been any failures");
 }
@@ -597,8 +597,8 @@ bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, G1CMBitMa
             "tams: " PTR_FORMAT " end: " PTR_FORMAT, p2i(tams), p2i(end));
   HeapWord* result = bitmap->getNextMarkedWordAddress(tams, end);
   if (result < end) {
-    log_info(gc, verify)("## wrong marked address on %s bitmap: " PTR_FORMAT, bitmap_name, p2i(result));
-    log_info(gc, verify)("## %s tams: " PTR_FORMAT " end: " PTR_FORMAT, bitmap_name, p2i(tams), p2i(end));
+    log_error(gc, verify)("## wrong marked address on %s bitmap: " PTR_FORMAT, bitmap_name, p2i(result));
+    log_error(gc, verify)("## %s tams: " PTR_FORMAT " end: " PTR_FORMAT, bitmap_name, p2i(tams), p2i(end));
     return false;
   }
   return true;
@@ -623,8 +623,8 @@ bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
     res_n = verify_no_bits_over_tams("next", next_bitmap, ntams, end);
   }
   if (!res_p || !res_n) {
-    log_info(gc, verify)("#### Bitmap verification failed for " HR_FORMAT, HR_FORMAT_PARAMS(hr));
-    log_info(gc, verify)("#### Caller: %s", caller);
+    log_error(gc, verify)("#### Bitmap verification failed for " HR_FORMAT, HR_FORMAT_PARAMS(hr));
+    log_error(gc, verify)("#### Caller: %s", caller);
     return false;
   }
   return true;
@@ -676,41 +676,41 @@ class G1CheckCSetFastTableClosure : public HeapRegionClosure {
     InCSetState cset_state = (InCSetState) G1CollectedHeap::heap()->_in_cset_fast_test.get_by_index(i);
     if (hr->is_humongous()) {
       if (hr->in_collection_set()) {
-        log_info(gc, verify)("## humongous region %u in CSet", i);
+        log_error(gc, verify)("## humongous region %u in CSet", i);
         _failures = true;
         return true;
       }
       if (cset_state.is_in_cset()) {
-        log_info(gc, verify)("## inconsistent cset state " CSETSTATE_FORMAT " for humongous region %u", cset_state.value(), i);
+        log_error(gc, verify)("## inconsistent cset state " CSETSTATE_FORMAT " for humongous region %u", cset_state.value(), i);
         _failures = true;
         return true;
       }
       if (hr->is_continues_humongous() && cset_state.is_humongous()) {
-        log_info(gc, verify)("## inconsistent cset state " CSETSTATE_FORMAT " for continues humongous region %u", cset_state.value(), i);
+        log_error(gc, verify)("## inconsistent cset state " CSETSTATE_FORMAT " for continues humongous region %u", cset_state.value(), i);
         _failures = true;
         return true;
       }
     } else {
       if (cset_state.is_humongous()) {
-        log_info(gc, verify)("## inconsistent cset state " CSETSTATE_FORMAT " for non-humongous region %u", cset_state.value(), i);
+        log_error(gc, verify)("## inconsistent cset state " CSETSTATE_FORMAT " for non-humongous region %u", cset_state.value(), i);
         _failures = true;
         return true;
       }
       if (hr->in_collection_set() != cset_state.is_in_cset()) {
-        log_info(gc, verify)("## in CSet %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
+        log_error(gc, verify)("## in CSet %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
                              hr->in_collection_set(), cset_state.value(), i);
         _failures = true;
         return true;
       }
       if (cset_state.is_in_cset()) {
         if (hr->is_young() != (cset_state.is_young())) {
-          log_info(gc, verify)("## is_young %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
+          log_error(gc, verify)("## is_young %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
                                hr->is_young(), cset_state.value(), i);
           _failures = true;
           return true;
         }
         if (hr->is_old() != (cset_state.is_old())) {
-          log_info(gc, verify)("## is_old %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
+          log_error(gc, verify)("## is_old %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
                                hr->is_old(), cset_state.value(), i);
           _failures = true;
           return true;

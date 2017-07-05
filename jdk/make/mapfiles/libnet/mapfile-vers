@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,9 @@ SUNWprivate_1.1 {
 		Java_java_net_PlainSocketImpl_socketConnect;
 		Java_java_net_PlainDatagramSocketImpl_getTimeToLive;
 		Java_java_net_PlainDatagramSocketImpl_setTimeToLive;
+                Java_java_net_AbstractPlainSocketImpl_isReusePortAvailable0;
+                Java_java_net_AbstractPlainDatagramSocketImpl_isReusePortAvailable0;
+                Java_jdk_net_Sockets_isReusePortAvailable0;
 		Java_sun_net_PortConfig_getUpper0;
 		Java_sun_net_PortConfig_getLower0;
 		Java_sun_net_dns_ResolverConfigurationImpl_localDomain0;
@@ -112,6 +115,7 @@ SUNWprivate_1.1 {
 		NET_EnableFastTcpLoopback;
 		NET_ThrowNew;
                 ipv6_available;
+                reuseport_available;
                 initInetAddressIDs;
 
 	local:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,6 +386,9 @@ public abstract class SocketImpl implements SocketOptions {
             setOption(SocketOptions.SO_RCVBUF, value);
         } else if (name == StandardSocketOptions.SO_REUSEADDR) {
             setOption(SocketOptions.SO_REUSEADDR, value);
+        } else if (name == StandardSocketOptions.SO_REUSEPORT &&
+            supportedOptions().contains(name)) {
+            setOption(SocketOptions.SO_REUSEPORT, value);
         } else if (name == StandardSocketOptions.SO_LINGER &&
                 (getSocket() != null)) {
             setOption(SocketOptions.SO_LINGER, value);
@@ -426,6 +429,9 @@ public abstract class SocketImpl implements SocketOptions {
             return (T)getOption(SocketOptions.SO_RCVBUF);
         } else if (name == StandardSocketOptions.SO_REUSEADDR) {
             return (T)getOption(SocketOptions.SO_REUSEADDR);
+        } else if (name == StandardSocketOptions.SO_REUSEPORT &&
+            supportedOptions().contains(name)) {
+            return (T)getOption(SocketOptions.SO_REUSEPORT);
         } else if (name == StandardSocketOptions.SO_LINGER &&
                 (getSocket() != null)) {
             return (T)getOption(SocketOptions.SO_LINGER);

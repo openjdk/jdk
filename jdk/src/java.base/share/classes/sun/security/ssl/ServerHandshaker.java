@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,10 +118,6 @@ final class ServerHandshaker extends Handshaker {
                     LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS,
                     new SSLAlgorithmDecomposer());
 
-    // To switch off the status_request[_v2] extensions
-    private static final boolean enableStatusRequestExtension =
-            Debug.getBooleanProperty(
-                    "jdk.tls.server.enableStatusRequestExtension", false);
     private boolean staplingActive = false;
     private long statusRespTimeout;
 
@@ -589,7 +585,7 @@ final class ServerHandshaker extends Handshaker {
                 (CertStatusReqListV2Extension)mesg.extensions.get(
                         ExtensionType.EXT_STATUS_REQUEST_V2);
         // Keep stapling active if at least one of the extensions has been set
-        staplingActive = enableStatusRequestExtension &&
+        staplingActive = sslContext.isStaplingEnabled(false) &&
                 (statReqExt != null || statReqExtV2 != null);
 
         /*
@@ -932,19 +928,32 @@ final class ServerHandshaker extends Handshaker {
             }
 
             if (statReqType != null && statReqData != null) {
-                // Next, attempt to obtain status responses
                 StatusResponseManager statRespMgr =
                         sslContext.getStatusResponseManager();
-                responseMap = statRespMgr.get(statReqType, statReqData, certs,
-                        statusRespTimeout, TimeUnit.MILLISECONDS);
-                if (!responseMap.isEmpty()) {
-                    // We now can safely assert status_request[_v2] in our
-                    // ServerHello, and know for certain that we can provide
-                    // responses back to this client for this connection.
-                    if (statusRespExt == ExtensionType.EXT_STATUS_REQUEST) {
-                        m1.extensions.add(new CertStatusReqExtension());
-                    } else if (statusRespExt == ExtensionType.EXT_STATUS_REQUEST_V2) {
-                        m1.extensions.add(new CertStatusReqListV2Extension());
+                if (statRespMgr != null) {
+                    responseMap = statRespMgr.get(statReqType, statReqData,
+                            certs, statusRespTimeout, TimeUnit.MILLISECONDS);
+                    if (!responseMap.isEmpty()) {
+                        // We now can safely assert status_request[_v2] in our
+                        // ServerHello, and know for certain that we can provide
+                        // responses back to this client for this connection.
+                        if (statusRespExt == ExtensionType.EXT_STATUS_REQUEST) {
+                            m1.extensions.add(new CertStatusReqExtension());
+                        } else if (statusRespExt ==
+                                ExtensionType.EXT_STATUS_REQUEST_V2) {
+                            m1.extensions.add(
+                                    new CertStatusReqListV2Extension());
+                        }
+                    }
+                } else {
+                    // This should not happen if stapling is active, but
+                    // if lazy initialization of the StatusResponseManager
+                    // doesn't occur we should turn off stapling.
+                    if (debug != null && Debug.isOn("handshake")) {
+                        System.out.println("Warning: lazy initialization " +
+                                "of the StatusResponseManager failed.  " +
+                                "Stapling has been disabled.");
+                        staplingActive = false;
                     }
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,11 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     // DTLS cookie exchange manager
     private volatile HelloCookieManager helloCookieManager;
 
-    private StatusResponseManager statusResponseManager;
+    private final boolean clientEnableStapling = Debug.getBooleanProperty(
+            "jdk.tls.client.enableStatusRequestExtension", true);
+    private final boolean serverEnableStapling = Debug.getBooleanProperty(
+            "jdk.tls.server.enableStatusRequestExtension", false);
+    private volatile StatusResponseManager statusResponseManager;
 
     SSLContextImpl() {
         ephemeralKeyManager = new EphemeralKeyManager();
@@ -80,7 +84,6 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             }
         }
         trustManager = chooseTrustManager(tm);
-        statusResponseManager = new StatusResponseManager();
 
         if (sr == null) {
             secureRandom = JsseJce.getSecureRandom();
@@ -258,6 +261,18 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     }
 
     StatusResponseManager getStatusResponseManager() {
+        if (serverEnableStapling && statusResponseManager == null) {
+            synchronized (this) {
+                if (statusResponseManager == null) {
+                    if (debug != null && Debug.isOn("sslctx")) {
+                        System.out.println(
+                                "Initializing StatusResponseManager");
+                    }
+                    statusResponseManager = new StatusResponseManager();
+                }
+            }
+        }
+
         return statusResponseManager;
     }
 
@@ -307,6 +322,18 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     boolean isDefaultCipherSuiteList(CipherSuiteList cipherSuites) {
         return (cipherSuites == getServerDefaultCipherSuiteList()) ||
                (cipherSuites == getClientDefaultCipherSuiteList());
+    }
+
+    /**
+     * Return whether client or server side stapling has been enabled
+     * for this SSLContextImpl
+     * @param isClient true if the caller is operating in a client side role,
+     * false if acting as a server.
+     * @return true if stapling has been enabled for the specified role, false
+     * otherwise.
+     */
+    boolean isStaplingEnabled(boolean isClient) {
+        return isClient ? clientEnableStapling : serverEnableStapling;
     }
 
     /*
