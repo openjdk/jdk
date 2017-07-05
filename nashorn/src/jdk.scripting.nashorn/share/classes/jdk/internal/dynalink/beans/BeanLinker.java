@@ -102,8 +102,6 @@ import jdk.internal.dynalink.support.TypeUtilities;
 /**
  * A class that provides linking capabilities for a single POJO class. Normally not used directly, but managed by
  * {@link BeansLinker}.
- *
- * @author Attila Szegedi
  */
 class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicLinker {
     BeanLinker(final Class<?> clazz) {
@@ -316,8 +314,6 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     /**
      * Contains methods to adapt an item getter/setter method handle to the requested type, optionally binding it to a
      * fixed key first.
-     * @author Attila Szegedi
-     * @version $Id: $
      */
     private static class Binder {
         private final LinkerServices linkerServices;

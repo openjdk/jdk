@@ -91,8 +91,6 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
  * {@link AbstractJavaLinker}. In addition to holding a guarded invocation, it holds semantic information about its
  * guard. All guards produced in the AbstractJavaLinker are either "Class.isInstance()" or "getClass() == clazz"
  * expressions. This allows choosing the most restrictive guard as the guard for the composition of two components.
- * @author Attila Szegedi
- * @version $Id: $
  */
 class GuardedInvocationComponent {
     enum ValidationType {

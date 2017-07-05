@@ -95,8 +95,6 @@ import jdk.internal.dynalink.linker.LinkerServices;
  * A {@link GuardingDynamicLinker} that delegates sequentially to a list of other guarding dynamic linkers. The first
  * value returned from a component linker other than null is returned. If no component linker returns an invocation,
  * null is returned.
- *
- * @author Attila Szegedi
  */
 public class CompositeGuardingDynamicLinker implements GuardingDynamicLinker, Serializable {
 
