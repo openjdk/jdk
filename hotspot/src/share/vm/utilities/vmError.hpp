@@ -87,10 +87,12 @@ class VMError : public StackObj {
   // accessor
   const char* message() const    { return _message; }
   const char* detail_msg() const { return _detail_msg; }
+  bool should_report_bug(unsigned int id) { return id != oom_error; }
 
 public:
   // Constructor for crashes
-  VMError(Thread* thread, int sig, address pc, void* siginfo, void* context);
+  VMError(Thread* thread, unsigned int sig, address pc, void* siginfo,
+          void* context);
   // Constructor for VM internal errors
   VMError(Thread* thread, const char* filename, int lineno,
           const char* message, const char * detail_msg);
