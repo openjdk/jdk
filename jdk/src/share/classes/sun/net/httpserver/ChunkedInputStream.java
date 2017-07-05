@@ -110,6 +110,7 @@ class ChunkedInputStream extends LeftOverInputStream {
             if (remaining == 0) {
                 eof = true;
                 consumeCRLF();
+                t.getServerImpl().requestCompleted (t.getConnection());
                 return -1;
             }
             needToReadHeader = false;

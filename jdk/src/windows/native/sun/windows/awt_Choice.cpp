@@ -86,6 +86,7 @@ static const UINT MINIMUM_NUMBER_OF_VISIBLE_ITEMS = 8;
 AwtChoice::AwtChoice() {
     m_hList = NULL;
     m_listDefWindowProc = NULL;
+    m_selectedItem = -1;
 }
 
 LPCTSTR AwtChoice::GetClassName() {
@@ -437,9 +438,10 @@ LRESULT CALLBACK AwtChoice::ListWindowProc(HWND hwnd, UINT message,
 MsgRouting AwtChoice::WmNotify(UINT notifyCode)
 {
     if (notifyCode == CBN_SELCHANGE) {
-        int itemSelect = (int)SendMessage(CB_GETCURSEL);
-        if (itemSelect != CB_ERR){
-            DoCallback("handleAction", "(I)V", itemSelect);
+        int selectedItem = (int)SendMessage(CB_GETCURSEL);
+        if (selectedItem != CB_ERR && m_selectedItem != selectedItem){
+            m_selectedItem = selectedItem;
+            DoCallback("handleAction", "(I)V", selectedItem);
         }
     } else if (notifyCode == CBN_DROPDOWN) {
 

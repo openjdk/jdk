@@ -94,7 +94,9 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
      * @see java.util.Locale#getDisplayScript(java.util.Locale)
      * @since 1.7
      */
-    public abstract String getDisplayScript(String scriptCode, Locale locale);
+    public String getDisplayScript(String scriptCode, Locale locale) {
+        return null;
+    }
 
     /**
      * Returns a localized name for the given <a href="http://www.rfc-editor.org/rfc/bcp/bcp47.txt">

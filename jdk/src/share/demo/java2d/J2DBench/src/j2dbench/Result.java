@@ -35,23 +35,199 @@ import java.util.Vector;
 import java.util.Hashtable;
 import java.util.Enumeration;
 import java.io.PrintWriter;
+import java.util.HashMap;
 
 public class Result {
-    public static final int UNITS_WHOLE      = 0;
-    public static final int UNITS_THOUSANDS  = 1;
-    public static final int UNITS_MILLIONS   = 2;
-    public static final int UNITS_AUTO       = 3;
+    public static final int RATE_UNKNOWN    = 0;
 
-    public static final int SECONDS_WHOLE = 0;
-    public static final int SECONDS_MILLIS = 1;
-    public static final int SECONDS_MICROS = 2;
-    public static final int SECONDS_NANOS  = 3;
-    public static final int SECONDS_AUTO  = 4;
+    public static final int WORK_OPS        = 1;
+    public static final int WORK_UNITS      = 2;
+    public static final int WORK_THOUSANDS  = 4;
+    public static final int WORK_MILLIONS   = 6;
+    public static final int WORK_AUTO       = 8;
 
-    public static int unitScale = UNITS_WHOLE;
-    public static int timeScale = SECONDS_WHOLE;
-    public static boolean useUnits = true;
-    public static boolean invertRate = false;
+    public static final int TIME_SECONDS    = 10;
+    public static final int TIME_MILLIS     = 11;
+    public static final int TIME_MICROS     = 12;
+    public static final int TIME_NANOS      = 13;
+    public static final int TIME_AUTO       = 14;
+
+    static Group resultoptroot;
+    static Option.ObjectChoice timeOpt;
+    static Option.ObjectChoice workOpt;
+    static Option.ObjectChoice rateOpt;
+
+    public static void init() {
+        resultoptroot = new Group(TestEnvironment.globaloptroot,
+                                  "results", "Result Options");
+
+        String workStrings[] = {
+            "units",
+            "kilounits",
+            "megaunits",
+            "autounits",
+            "ops",
+            "kiloops",
+            "megaops",
+            "autoops",
+        };
+        String workDescriptions[] = {
+            "Test Units",
+            "Thousands of Test Units",
+            "Millions of Test Units",
+            "Auto-scaled Test Units",
+            "Operations",
+            "Thousands of Operations",
+            "Millions of Operations",
+            "Auto-scaled Operations",
+        };
+        Integer workObjects[] = {
+            new Integer(WORK_UNITS),
+            new Integer(WORK_THOUSANDS),
+            new Integer(WORK_MILLIONS),
+            new Integer(WORK_AUTO),
+            new Integer(WORK_OPS | WORK_UNITS),
+            new Integer(WORK_OPS | WORK_THOUSANDS),
+            new Integer(WORK_OPS | WORK_MILLIONS),
+            new Integer(WORK_OPS | WORK_AUTO),
+        };
+        workOpt = new Option.ObjectChoice(resultoptroot,
+                                          "workunits", "Work Units",
+                                          workStrings, workObjects,
+                                          workStrings, workDescriptions,
+                                          0);
+        String timeStrings[] = {
+            "sec",
+            "msec",
+            "usec",
+            "nsec",
+            "autosec",
+        };
+        String timeDescriptions[] = {
+            "Seconds",
+            "Milliseconds",
+            "Microseconds",
+            "Nanoseconds",
+            "Auto-scaled seconds",
+        };
+        Integer timeObjects[] = {
+            new Integer(TIME_SECONDS),
+            new Integer(TIME_MILLIS),
+            new Integer(TIME_MICROS),
+            new Integer(TIME_NANOS),
+            new Integer(TIME_AUTO),
+        };
+        timeOpt = new Option.ObjectChoice(resultoptroot,
+                                          "timeunits", "Time Units",
+                                          timeStrings, timeObjects,
+                                          timeStrings, timeDescriptions,
+                                          0);
+        String rateStrings[] = {
+            "unitspersec",
+            "secsperunit",
+        };
+        String rateDescriptions[] = {
+            "Work units per Time",
+            "Time units per Work",
+        };
+        Boolean rateObjects[] = {
+            Boolean.FALSE,
+            Boolean.TRUE,
+        };
+        rateOpt = new Option.ObjectChoice(resultoptroot,
+                                          "ratio", "Rate Ratio",
+                                          rateStrings, rateObjects,
+                                          rateStrings, rateDescriptions,
+                                          0);
+    }
+
+    public static boolean isTimeUnit(int unit) {
+        return (unit >= TIME_SECONDS && unit <= TIME_AUTO);
+    }
+
+    public static boolean isWorkUnit(int unit) {
+        return (unit >= WORK_OPS && unit <= (WORK_AUTO | WORK_OPS));
+    }
+
+    public static String parseRateOpt(String opt) {
+        int timeScale = timeOpt.getIntValue();
+        int workScale = workOpt.getIntValue();
+        boolean invertRate = rateOpt.getBooleanValue();
+        int divindex = opt.indexOf('/');
+        if (divindex < 0) {
+            int unit = parseUnit(opt);
+            if (isTimeUnit(unit)) {
+                timeScale = unit;
+            } else if (isWorkUnit(unit)) {
+                workScale = unit;
+            } else {
+                return "Bad unit: "+opt;
+            }
+        } else {
+            int unit1 = parseUnit(opt.substring(0,divindex));
+            int unit2 = parseUnit(opt.substring(divindex+1));
+            if (isTimeUnit(unit1)) {
+                if (isWorkUnit(unit2)) {
+                    timeScale = unit1;
+                    workScale = unit2;
+                    invertRate = true;
+                } else if (isTimeUnit(unit2)) {
+                    return "Both time units: "+opt;
+                } else {
+                    return "Bad denominator: "+opt;
+                }
+            } else if (isWorkUnit(unit1)) {
+                if (isWorkUnit(unit2)) {
+                    return "Both work units: "+opt;
+                } else if (isTimeUnit(unit2)) {
+                    timeScale = unit2;
+                    workScale = unit1;
+                    invertRate = false;
+                } else {
+                    return "Bad denominator: "+opt;
+                }
+            } else {
+                return "Bad numerator: "+opt;
+            }
+        }
+        timeOpt.setValue(timeScale);
+        workOpt.setValue(workScale);
+        rateOpt.setValue(invertRate);
+        return null;
+    }
+
+    private static HashMap unitMap;
+
+    static {
+        unitMap = new HashMap();
+        unitMap.put("U",  new Integer(WORK_UNITS));
+        unitMap.put("M",  new Integer(WORK_MILLIONS));
+        unitMap.put("K",  new Integer(WORK_THOUSANDS));
+        unitMap.put("A",  new Integer(WORK_AUTO));
+        unitMap.put("MU", new Integer(WORK_MILLIONS));
+        unitMap.put("KU", new Integer(WORK_THOUSANDS));
+        unitMap.put("AU", new Integer(WORK_AUTO));
+
+        unitMap.put("O",  new Integer(WORK_UNITS | WORK_OPS));
+        unitMap.put("NO", new Integer(WORK_UNITS | WORK_OPS));
+        unitMap.put("MO", new Integer(WORK_MILLIONS | WORK_OPS));
+        unitMap.put("KO", new Integer(WORK_THOUSANDS | WORK_OPS));
+        unitMap.put("AO", new Integer(WORK_AUTO | WORK_OPS));
+
+        unitMap.put("s",  new Integer(TIME_SECONDS));
+        unitMap.put("m",  new Integer(TIME_MILLIS));
+        unitMap.put("u",  new Integer(TIME_MICROS));
+        unitMap.put("n",  new Integer(TIME_NANOS));
+        unitMap.put("a",  new Integer(TIME_AUTO));
+    }
+
+    public static int parseUnit(String c) {
+        Integer u = (Integer) unitMap.get(c);
+        if (u != null) {
+            return u.intValue();
+        }
+        return RATE_UNKNOWN;
+    }
 
     String unitname = "unit";
     Test test;
@@ -157,69 +333,76 @@ public class Result {
     }
 
     public String getAverageString() {
-        double units = (useUnits ? getTotalUnits() : getTotalReps());
+        int timeScale = timeOpt.getIntValue();
+        int workScale = workOpt.getIntValue();
+        boolean invertRate = rateOpt.getBooleanValue();
         double time = getTotalTime();
+        String timeprefix = "";
+        switch (timeScale) {
+        case TIME_AUTO:
+        case TIME_SECONDS:
+            time /= 1000;
+            break;
+        case TIME_MILLIS:
+            timeprefix = "m";
+            break;
+        case TIME_MICROS:
+            time *= 1000.0;
+            timeprefix = "u";
+            break;
+        case TIME_NANOS:
+            time *= 1000000.0;
+            timeprefix = "n";
+            break;
+        }
+
+        String workprefix = "";
+        boolean isOps = (workScale & WORK_OPS) != 0;
+        String workname = isOps ? "op" : unitname;
+        double work = isOps ? getTotalReps() : getTotalUnits();
+        switch (workScale & (~WORK_OPS)) {
+        case WORK_AUTO:
+        case WORK_UNITS:
+            break;
+        case WORK_THOUSANDS:
+            work /= 1000.0;
+            workprefix = "K";
+            break;
+        case WORK_MILLIONS:
+            work /= 1000000.0;
+            workprefix = "M";
+            break;
+        }
         if (invertRate) {
-            double rate = time / units;
-            String prefix = "";
-            switch (timeScale) {
-            case SECONDS_WHOLE:
-                rate /= 1000;
-                break;
-            case SECONDS_MILLIS:
-                prefix = "m";
-                break;
-            case SECONDS_MICROS:
-                rate *= 1000.0;
-                prefix = "u";
-                break;
-            case SECONDS_NANOS:
-                rate *= 1000000.0;
-                prefix = "n";
-                break;
-            case SECONDS_AUTO:
-                rate /= 1000.0;
+            double rate = time / work;
+            if (timeScale == TIME_AUTO) {
                 if (rate < 1.0) {
                     rate *= 1000.0;
-                    prefix = "m";
+                    timeprefix = "m";
                     if (rate < 1.0) {
                         rate *= 1000.0;
-                        prefix = "u";
+                        timeprefix = "u";
                         if (rate < 1.0) {
                             rate *= 1000.0;
-                            prefix = "n";
+                            timeprefix = "n";
                         }
                     }
                 }
-                break;
             }
-            return rate+" "+prefix+"secs/"+(useUnits ? unitname : "op");
+            return rate+" "+timeprefix+"secs/"+workprefix+workname;
         } else {
-            double rate = units / (time / 1000.0);
-            String prefix = "";
-            switch (unitScale) {
-            case UNITS_WHOLE:
-                break;
-            case UNITS_THOUSANDS:
-                rate /= 1000.0;
-                prefix = "K";
-                break;
-            case UNITS_MILLIONS:
-                rate /= 1000000.0;
-                prefix = "M";
-                break;
-            case UNITS_AUTO:
+            double rate = work / time;
+            if (workScale == WORK_AUTO) {
                 if (rate > 1000.0) {
                     rate /= 1000.0;
-                    prefix = "K";
+                    workprefix = "K";
                     if (rate > 1000.0) {
                         rate /= 1000.0;
-                        prefix = "M";
+                        workprefix = "M";
                     }
                 }
-                break;
             }
-            return rate+" "+prefix+(useUnits ? unitname : "op")+"s/sec";
+            return rate+" "+workprefix+workname+"s/"+timeprefix+"sec";
         }
     }
 

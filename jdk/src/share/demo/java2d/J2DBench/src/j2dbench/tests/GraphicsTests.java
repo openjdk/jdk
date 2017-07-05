@@ -38,6 +38,8 @@ import java.awt.RenderingHints;
 import java.awt.Polygon;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.geom.Point2D;
+import java.awt.geom.AffineTransform;
 import java.lang.reflect.Field;
 
 import j2dbench.Destinations;
@@ -74,6 +76,7 @@ public abstract class GraphicsTests extends Test {
     static Option animList;
     static Option sizeList;
     static Option compRules;
+    static Option transforms;
     static Option doExtraAlpha;
     static Option doXor;
     static Option doClipping;
@@ -167,6 +170,29 @@ public abstract class GraphicsTests extends Test {
                                       j, rulenames, rules, rulenames,
                                       ruledescs, (1 << defrule));
             ((Option.ObjectList) compRules).setNumRows(4);
+
+            Transform xforms[] = {
+                Identity.instance,
+                FTranslate.instance,
+                Scale2x2.instance,
+                Rotate15.instance,
+                ShearX.instance,
+                ShearY.instance,
+            };
+            String xformnames[] = new String[xforms.length];
+            String xformdescs[] = new String[xforms.length];
+            for (int i = 0; i < xforms.length; i++) {
+                xformnames[i] = xforms[i].getShortName();
+                xformdescs[i] = xforms[i].getDescription();
+            }
+            transforms =
+                new Option.ObjectList(groptroot, "transform",
+                                      "Affine Transform",
+                                      xforms.length,
+                                      xformnames, xforms, xformnames,
+                                      xformdescs, 0x1);
+            ((Option.ObjectList) transforms).setNumRows(3);
+
             doExtraAlpha =
                 new Option.Toggle(groptroot, "extraalpha",
                                   "Render with an \"extra alpha\" of 0.125",
@@ -200,6 +226,7 @@ public abstract class GraphicsTests extends Test {
         int orgX, orgY;
         int initX, initY;
         int maxX, maxY;
+        double pixscale;
     }
 
     public GraphicsTests(Group parent, String nodeName, String description) {
@@ -211,7 +238,7 @@ public abstract class GraphicsTests extends Test {
     public Object initTest(TestEnvironment env, Result result) {
         Context ctx = createContext();
         initContext(env, ctx);
-        result.setUnits(pixelsTouched(ctx));
+        result.setUnits((int) (ctx.pixscale * pixelsTouched(ctx)));
         result.setUnitName("pixel");
         return ctx;
     }
@@ -232,6 +259,9 @@ public abstract class GraphicsTests extends Test {
         ctx.graphics = env.getGraphics();
         int w = env.getWidth();
         int h = env.getHeight();
+        ctx.size = env.getIntValue(sizeList);
+        ctx.outdim = getOutputSize(ctx.size, ctx.size);
+        ctx.pixscale = 1.0;
         if (hasGraphics2D) {
             Graphics2D g2d = (Graphics2D) ctx.graphics;
             AlphaComposite ac = (AlphaComposite) env.getModifier(compRules);
@@ -251,11 +281,14 @@ public abstract class GraphicsTests extends Test {
                 p.addPoint(0, 0);
                 g2d.clip(p);
             }
+            Transform tx = (Transform) env.getModifier(transforms);
+            Dimension envdim = new Dimension(w, h);
+            tx.init(g2d, ctx, envdim);
+            w = envdim.width;
+            h = envdim.height;
             g2d.setRenderingHint(RenderingHints.KEY_RENDERING,
                                  env.getModifier(renderHint));
         }
-        ctx.size = env.getIntValue(sizeList);
-        ctx.outdim = getOutputSize(ctx.size, ctx.size);
         switch (env.getIntValue(animList)) {
         case 0:
             ctx.animate = false;
@@ -289,5 +322,202 @@ public abstract class GraphicsTests extends Test {
         Graphics graphics = ((Context) ctx).graphics;
         graphics.dispose();
         ((Context) ctx).graphics = null;
+    }
+
+    public abstract static class Transform {
+        public abstract String getShortName();
+        public abstract String getDescription();
+        public abstract void init(Graphics2D g2d, Context ctx, Dimension dim);
+
+        public static double scaleForPoint(AffineTransform at,
+                                           double xorig, double yorig,
+                                           double x, double y,
+                                           int w, int h)
+        {
+            Point2D.Double ptd = new Point2D.Double(x, y);
+            at.transform(ptd, ptd);
+            x = ptd.getX();
+            y = ptd.getY();
+            double scale = 1.0;
+            if (x < 0) {
+                scale = Math.min(scale, xorig / (xorig - x));
+            } else if (x > w) {
+                scale = Math.min(scale, (w - xorig) / (x - xorig));
+            }
+            if (y < 0) {
+                scale = Math.min(scale, yorig / (yorig - y));
+            } else if (y > h) {
+                scale = Math.min(scale, (h - yorig) / (y - yorig));
+            }
+            return scale;
+        }
+
+        public static Dimension scaleForTransform(AffineTransform at,
+                                                  Dimension dim)
+        {
+            int w = dim.width;
+            int h = dim.height;
+            Point2D.Double ptd = new Point2D.Double(0, 0);
+            at.transform(ptd, ptd);
+            double ox = ptd.getX();
+            double oy = ptd.getY();
+            if (ox < 0 || ox > w || oy < 0 || oy > h) {
+                throw new InternalError("origin outside destination");
+            }
+            double scalex = scaleForPoint(at, ox, oy, w, h, w, h);
+            double scaley = scalex;
+            scalex = Math.min(scaleForPoint(at, ox, oy, w, 0, w, h), scalex);
+            scaley = Math.min(scaleForPoint(at, ox, oy, 0, h, w, h), scaley);
+            if (scalex < 0 || scaley < 0) {
+                throw new InternalError("could not fit dims to transform");
+            }
+            return new Dimension((int) Math.floor(w * scalex),
+                                 (int) Math.floor(h * scaley));
+        }
+    }
+
+    public static class Identity extends Transform {
+        public static final Identity instance = new Identity();
+
+        private Identity() {}
+
+        public String getShortName() {
+            return "ident";
+        }
+
+        public String getDescription() {
+            return "Identity";
+        }
+
+        public void init(Graphics2D g2d, Context ctx, Dimension dim) {
+        }
+    }
+
+    public static class FTranslate extends Transform {
+        public static final FTranslate instance = new FTranslate();
+
+        private FTranslate() {}
+
+        public String getShortName() {
+            return "ftrans";
+        }
+
+        public String getDescription() {
+            return "FTranslate 1.5";
+        }
+
+        public void init(Graphics2D g2d, Context ctx, Dimension dim) {
+            int w = dim.width;
+            int h = dim.height;
+            AffineTransform at = new AffineTransform();
+            at.translate(1.5, 1.5);
+            g2d.transform(at);
+            dim.setSize(w-3, h-3);
+        }
+    }
+
+    public static class Scale2x2 extends Transform {
+        public static final Scale2x2 instance = new Scale2x2();
+
+        private Scale2x2() {}
+
+        public String getShortName() {
+            return "scale2x2";
+        }
+
+        public String getDescription() {
+            return "Scale 2x by 2x";
+        }
+
+        public void init(Graphics2D g2d, Context ctx, Dimension dim) {
+            int w = dim.width;
+            int h = dim.height;
+            AffineTransform at = new AffineTransform();
+            at.scale(2.0, 2.0);
+            g2d.transform(at);
+            dim.setSize(w/2, h/2);
+            ctx.pixscale = 4;
+        }
+    }
+
+    public static class Rotate15 extends Transform {
+        public static final Rotate15 instance = new Rotate15();
+
+        private Rotate15() {}
+
+        public String getShortName() {
+            return "rot15";
+        }
+
+        public String getDescription() {
+            return "Rotate 15 degrees";
+        }
+
+        public void init(Graphics2D g2d, Context ctx, Dimension dim) {
+            int w = dim.width;
+            int h = dim.height;
+            double theta = Math.toRadians(15);
+            double cos = Math.cos(theta);
+            double sin = Math.sin(theta);
+            double xsize = sin * h + cos * w;
+            double ysize = sin * w + cos * h;
+            double scale = Math.min(w / xsize, h / ysize);
+            xsize *= scale;
+            ysize *= scale;
+            AffineTransform at = new AffineTransform();
+            at.translate((w - xsize) / 2.0, (h - ysize) / 2.0);
+            at.translate(sin * h * scale, 0.0);
+            at.rotate(theta);
+            g2d.transform(at);
+            dim.setSize(scaleForTransform(at, dim));
+        }
+    }
+
+    public static class ShearX extends Transform {
+        public static final ShearX instance = new ShearX();
+
+        private ShearX() {}
+
+        public String getShortName() {
+            return "shearx";
+        }
+
+        public String getDescription() {
+            return "Shear X to the right";
+        }
+
+        public void init(Graphics2D g2d, Context ctx, Dimension dim) {
+            int w = dim.width;
+            int h = dim.height;
+            AffineTransform at = new AffineTransform();
+            at.translate(0.0, (h - (w*h)/(w + h*0.1)) / 2);
+            at.shear(0.1, 0.0);
+            g2d.transform(at);
+            dim.setSize(scaleForTransform(at, dim));
+        }
+    }
+
+    public static class ShearY extends Transform {
+        public static final ShearY instance = new ShearY();
+
+        private ShearY() {}
+
+        public String getShortName() {
+            return "sheary";
+        }
+
+        public String getDescription() {
+            return "Shear Y down";
+        }
+
+        public void init(Graphics2D g2d, Context ctx, Dimension dim) {
+            int w = dim.width;
+            int h = dim.height;
+            AffineTransform at = new AffineTransform();
+            at.translate((w - (w*h)/(h + w*0.1)) / 2, 0.0);
+            at.shear(0.0, 0.1);
+            g2d.transform(at);
+            dim.setSize(scaleForTransform(at, dim));
+        }
     }
 }
