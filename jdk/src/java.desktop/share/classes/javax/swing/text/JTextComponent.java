@@ -683,10 +683,14 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *        bound: false
      */
     public void setDragEnabled(boolean b) {
+        checkDragEnabled(b);
+        dragEnabled = b;
+    }
+
+    private static void checkDragEnabled(boolean b) {
         if (b && GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
-        dragEnabled = b;
     }
 
     /**
@@ -727,11 +731,15 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @since 1.6
      */
     public final void setDropMode(DropMode dropMode) {
+        checkDropMode(dropMode);
+        this.dropMode = dropMode;
+    }
+
+    private static void checkDropMode(DropMode dropMode) {
         if (dropMode != null) {
             switch (dropMode) {
                 case USE_SELECTION:
                 case INSERT:
-                    this.dropMode = dropMode;
                     return;
             }
         }
@@ -3747,7 +3755,34 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        model = (Document) f.get("model", null);
+        navigationFilter = (NavigationFilter) f.get("navigationFilter", null);
+        caretColor = (Color) f.get("caretColor", null);
+        selectionColor = (Color) f.get("selectionColor", null);
+        selectedTextColor = (Color) f.get("selectedTextColor", null);
+        disabledTextColor = (Color) f.get("disabledTextColor", null);
+        editable = f.get("editable", false);
+        margin = (Insets) f.get("margin", null);
+        focusAccelerator = f.get("focusAccelerator", '\0');
+        boolean newDragEnabled = f.get("dragEnabled", false);
+        checkDragEnabled(newDragEnabled);
+        dragEnabled = newDragEnabled;
+        DropMode newDropMode = (DropMode) f.get("dropMode",
+                DropMode.USE_SELECTION);
+        checkDropMode(newDropMode);
+        dropMode = newDropMode;
+        composedTextAttribute = (SimpleAttributeSet) f.get("composedTextAttribute", null);
+        composedTextContent = (String) f.get("composedTextContent", null);
+        composedTextStart = (Position) f.get("composedTextStart", null);
+        composedTextEnd = (Position) f.get("composedTextEnd", null);
+        latestCommittedTextStart = (Position) f.get("latestCommittedTextStart", null);
+        latestCommittedTextEnd = (Position) f.get("latestCommittedTextEnd", null);
+        composedTextCaret = (ComposedTextCaret) f.get("composedTextCaret", null);
+        checkedInputOverride = f.get("checkedInputOverride", false);
+        needToSendKeyTypedEvent = f.get("needToSendKeyTypedEvent", false);
+
         caretEvent = new MutableCaretEvent(this);
         addMouseListener(caretEvent);
         addFocusListener(caretEvent);

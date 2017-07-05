@@ -145,7 +145,7 @@ final class WInputMethod extends InputMethodAdapter
     }
 
     @Override
-    public final void dispose() {
+    public void dispose() {
         // Due to a memory management problem in Windows 98, we should retain
         // the native input context until this object is finalized. So do
         // nothing here.

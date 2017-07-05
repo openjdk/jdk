@@ -67,11 +67,11 @@ public final class CompositeGlyphMapper extends CharToGlyphMapper {
                       compFont.maxIndices != null;
     }
 
-    public final int compositeGlyphCode(int slot, int glyphCode) {
+    public int compositeGlyphCode(int slot, int glyphCode) {
         return (slot << 24 | (glyphCode & GLYPHMASK));
     }
 
-    private final void initMapper() {
+    private void initMapper() {
         if (missingGlyph == CharToGlyphMapper.UNINITIALIZED_GLYPH) {
             if (glyphMaps == null) {
                 glyphMaps = new int[NBLOCKS][];
@@ -108,7 +108,7 @@ public final class CompositeGlyphMapper extends CharToGlyphMapper {
         glyphMaps[index0][unicode & 0xff] = glyphCode;
     }
 
-    private final CharToGlyphMapper getSlotMapper(int slot) {
+    private CharToGlyphMapper getSlotMapper(int slot) {
         CharToGlyphMapper mapper = slotMappers[slot];
         if (mapper == null) {
             mapper = font.getSlotFont(slot).getMapper();
@@ -117,7 +117,7 @@ public final class CompositeGlyphMapper extends CharToGlyphMapper {
         return mapper;
     }
 
-    private final int convertToGlyph(int unicode) {
+    private int convertToGlyph(int unicode) {
 
         for (int slot = 0; slot < font.numSlots; slot++) {
             if (!hasExcludes || !font.isExcludedChar(slot, unicode)) {

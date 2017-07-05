@@ -314,7 +314,7 @@ static void * pathmap_dlopen(const char * name, int mode) {
     handle = dlopen(name, mode);
   }
   if (_libsaproc_debug) {
-    printf("libsaproc DEBUG: pathmap_dlopen %s return 0x%x\n", name, handle);
+    printf("libsaproc DEBUG: pathmap_dlopen %s return 0x%lx\n", name, (unsigned long) handle);
   }
   return handle;
 }
@@ -661,30 +661,30 @@ init_classsharing_workaround(void *cd, const prmap_t* pmap, const char* obj_name
   // read FileMapHeader
   size_t n = read(fd, pheader, sizeof(struct FileMapHeader));
   if (n != sizeof(struct FileMapHeader)) {
-    free(pheader);
-    close(fd);
     char errMsg[ERR_MSG_SIZE];
     sprintf(errMsg, "unable to read shared archive file map header from %s", classes_jsa);
+    close(fd);
+    free(pheader);
     THROW_NEW_DEBUGGER_EXCEPTION_(errMsg, 1);
   }
 
   // check file magic
   if (pheader->_magic != 0xf00baba2) {
-    free(pheader);
-    close(fd);
     char errMsg[ERR_MSG_SIZE];
     sprintf(errMsg, "%s has bad shared archive magic 0x%x, expecting 0xf00baba2",
                    classes_jsa, pheader->_magic);
+    close(fd);
+    free(pheader);
     THROW_NEW_DEBUGGER_EXCEPTION_(errMsg, 1);
   }
 
   // check version
   if (pheader->_version != CURRENT_ARCHIVE_VERSION) {
-    free(pheader);
-    close(fd);
     char errMsg[ERR_MSG_SIZE];
     sprintf(errMsg, "%s has wrong shared archive version %d, expecting %d",
                    classes_jsa, pheader->_version, CURRENT_ARCHIVE_VERSION);
+    close(fd);
+    free(pheader);
     THROW_NEW_DEBUGGER_EXCEPTION_(errMsg, 1);
   }
 

@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.util.List;
 
 /**
  * This is a subclass that represents a script function that may not be regenerated.
@@ -44,10 +45,10 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
      * @param functions precompiled code
      * @param flags     {@link ScriptFunctionData} flags
      */
-    FinalScriptFunctionData(final String name, final int arity, final CompiledFunctions functions, final int flags) {
+    FinalScriptFunctionData(final String name, final int arity, final List<CompiledFunction> functions, final int flags) {
         super(name, arity, flags);
-        assert !functions.needsCallee();
         code.addAll(functions);
+        assert !needsCallee();
     }
 
     /**
@@ -76,8 +77,19 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    boolean needsCallee() {
-        return code.needsCallee();
+    protected boolean needsCallee() {
+        final boolean needsCallee = code.getFirst().needsCallee();
+        assert allNeedCallee(needsCallee);
+        return needsCallee;
+    }
+
+    private boolean allNeedCallee(final boolean needCallee) {
+        for (final CompiledFunction inv : code) {
+            if(inv.needsCallee() != needCallee) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -86,7 +98,20 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
         // actually correct for lots of built-ins. E.g. ECMAScript 5.1 section 15.5.3.2 prescribes that
         // Script.fromCharCode([char0[, char1[, ...]]]) has a declared arity of 1 even though it's a variable arity
         // method.
-        return code.getFinalGenericType();
+        int max = 0;
+        for(final CompiledFunction fn: code) {
+            final MethodType t = fn.type();
+            if(ScriptFunctionData.isVarArg(t)) {
+                // 2 for (callee, this, args[])
+                return MethodType.genericMethodType(2, true);
+            }
+            final int paramCount = t.parameterCount() - (ScriptFunctionData.needsCallee(t) ? 1 : 0);
+            if(paramCount > max) {
+                max = paramCount;
+            }
+        }
+        // +1 for callee
+        return MethodType.genericMethodType(max + 1);
     }
 
     private void addInvoker(final MethodHandle mh) {

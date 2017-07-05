@@ -43,7 +43,7 @@ import sun.awt.image.PixelConverter;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 
-public class XWindow extends XBaseWindow implements X11ComponentPeer {
+class XWindow extends XBaseWindow implements X11ComponentPeer {
     private static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XWindow");
     private static PlatformLogger insLog = PlatformLogger.getLogger("sun.awt.X11.insets.XWindow");
     private static PlatformLogger eventLog = PlatformLogger.getLogger("sun.awt.X11.event.XWindow");
@@ -858,8 +858,10 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
 
 
     // REMIND: need to implement looking for disabled events
-    public native boolean x11inputMethodLookupString(long event, long [] keysymArray);
-    native boolean haveCurrentX11InputMethodInstance();
+    private native boolean x11inputMethodLookupString(long event,
+                                                      long[] keysymArray);
+
+    private native boolean haveCurrentX11InputMethodInstance();
 
     private boolean mouseAboveMe;
 

@@ -29,6 +29,7 @@
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/defaultStream.hpp"
 #include "vm_version_ppc.hpp"
@@ -108,7 +109,7 @@ void VM_Version::initialize() {
                (has_vand()    ? " vand"    : "")
                // Make sure number of %s matches num_features!
               );
-  _features_str = strdup(buf);
+  _features_str = os::strdup(buf);
   NOT_PRODUCT(if (Verbose) print_features(););
 
   // PPC64 supports 8-byte compare-exchange operations (see

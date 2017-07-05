@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,11 @@
   address generate_normal_entry(bool synchronized);
   address generate_native_entry(bool synchronized);
   address generate_abstract_entry(void);
-  address generate_math_entry(AbstractInterpreter::MethodKind kind);
-  address generate_empty_entry(void);
-  address generate_accessor_entry(void);
+  // there are no math intrinsics on sparc
+  address generate_math_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
+  address generate_jump_to_normal_entry(void);
+  address generate_accessor_entry(void) { return generate_jump_to_normal_entry(); }
+  address generate_empty_entry(void) { return generate_jump_to_normal_entry(); }
   address generate_Reference_get_entry(void);
   void lock_method(void);
   void save_native_result(void);
@@ -43,4 +45,7 @@
   void generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue);
   void generate_counter_overflow(Label& Lcontinue);
 
+  // Not supported
+  address generate_CRC32_update_entry() { return NULL; }
+  address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
 #endif // CPU_SPARC_VM_INTERPRETERGENERATOR_SPARC_HPP
