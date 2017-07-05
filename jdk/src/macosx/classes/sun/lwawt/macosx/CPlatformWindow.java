@@ -56,7 +56,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativePushNSWindowToBack(long nsWindowPtr);
     private static native void nativePushNSWindowToFront(long nsWindowPtr);
     private static native void nativeSetNSWindowTitle(long nsWindowPtr, String title);
-    private static native void nativeSetNSWindowAlpha(long nsWindowPtr, float alpha);
     private static native void nativeRevalidateNSWindowShadow(long nsWindowPtr);
     private static native void nativeSetNSWindowMinimizedIcon(long nsWindowPtr, long nsImage);
     private static native void nativeSetNSWindowRepresentedFilename(long nsWindowPtr, String representedFilename);
@@ -244,17 +243,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         // TODO: implement on top of JObjC bridged class
     //    NSWindow window = JObjC.getInstance().AppKit().NSWindow().getInstance(nativeWindowPtr, JObjCRuntime.getInstance());
 
-        // Since JDK7 we have standard way to set opacity, so we should not pick
-        // background's alpha.
-        // TODO: set appropriate opacity value
-        //        this.opacity = target.getOpacity();
-        //        this.setOpacity(this.opacity);
-
-        final float windowAlpha = target.getOpacity();
-        if (windowAlpha != 1.0f) {
-            nativeSetNSWindowAlpha(nativeWindowPtr, windowAlpha);
-        }
-
         if (target instanceof javax.swing.RootPaneContainer) {
             final javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer)target).getRootPane();
             if (rootpane != null) rootpane.addPropertyChangeListener("ancestor", new PropertyChangeListener() {
@@ -419,15 +407,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         if (owner != null) {
             CWrapper.NSWindow.removeChildWindow(owner.getNSWindowPtr(), getNSWindowPtr());
         }
-        // Make sure window is ordered out before it is disposed, we could order it out right here or
-        // we could postpone the disposal, I think postponing is probably better.
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                contentView.dispose();
-                nativeDispose(getNSWindowPtr());
-                CPlatformWindow.super.dispose();
-            }
-        });
+        contentView.dispose();
+        nativeDispose(getNSWindowPtr());
+        CPlatformWindow.super.dispose();
     }
 
     @Override // PlatformWindow

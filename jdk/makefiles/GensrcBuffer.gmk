@@ -198,6 +198,7 @@ define SetupGenBuffer
 	$(if $(12),$1_$(strip $(12)))
 	$(if $(13),$1_$(strip $(13)))
 	$(if $(14),$1_$(strip $(14)))
+	$(if $(15),$(error Internal makefile error: Too many arguments to SetupGenBuffer, please update GensrcBuffer.gmk))
 
 	$(call fixRw,$1,$$($1_RW))
 	$(call typesAndBits,$1,$$($1_type),$$($1_BO))

@@ -464,7 +464,7 @@ public:
                               int caretPos, int visiblePos);
     void InquireCandidatePosition();
     INLINE LPARAM GetCandidateType() { return m_bitsCandType; }
-    HIMC ImmGetContext();
+    HWND ImmGetHWnd();
     HIMC ImmAssociateContext(HIMC himc);
     HWND GetProxyFocusOwner();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,24 +111,23 @@ public class WorkQueueImpl implements WorkQueue
         return workqueueMonitoredObject;
     }
 
-    public void addWork(Work work) {
-        synchronized (this) {
+    public synchronized void addWork(Work work) {
             workItemsAdded++;
             work.setEnqueueTime(System.currentTimeMillis());
             theWorkQueue.addLast(work);
             ((ThreadPoolImpl)workerThreadPool).notifyForAvailableWork(this);
-        }
     }
 
-    Work requestWork(long waitTime)
-        throws TimeoutException, InterruptedException
+    synchronized Work requestWork(long waitTime) throws TimeoutException, InterruptedException
     {
         Work workItem;
-        synchronized (this) {
+        ((ThreadPoolImpl)workerThreadPool).incrementNumberOfAvailableThreads();
+
             if (theWorkQueue.size() != 0) {
                 workItem = (Work)theWorkQueue.removeFirst();
                 totalTimeInQueue += System.currentTimeMillis() - workItem.getEnqueueTime();
                 workItemsDequeued++;
+                ((ThreadPoolImpl)workerThreadPool).decrementNumberOfAvailableThreads();
                 return workItem;
             }
 
@@ -145,6 +144,7 @@ public class WorkQueueImpl implements WorkQueue
                         workItem = (Work)theWorkQueue.removeFirst();
                         totalTimeInQueue += System.currentTimeMillis() - workItem.getEnqueueTime();
                         workItemsDequeued++;
+                        ((ThreadPoolImpl)workerThreadPool).decrementNumberOfAvailableThreads();
                         return workItem;
                     }
 
@@ -152,12 +152,13 @@ public class WorkQueueImpl implements WorkQueue
 
                 } while (remainingWaitTime > 0);
 
+                ((ThreadPoolImpl)workerThreadPool).decrementNumberOfAvailableThreads();
                 throw new TimeoutException();
 
             } catch (InterruptedException ie) {
+                ((ThreadPoolImpl)workerThreadPool).decrementNumberOfAvailableThreads();
                 throw ie;
             }
-        }
     }
 
     public void setThreadPool(ThreadPool workerThreadPool) {

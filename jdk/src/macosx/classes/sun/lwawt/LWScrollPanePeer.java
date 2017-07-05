@@ -70,8 +70,8 @@ final class LWScrollPanePeer extends LWContainerPeer<ScrollPane, JScrollPane>
     }
 
     @Override
-    public void initialize() {
-        super.initialize();
+    void initializeImpl() {
+        super.initializeImpl();
         final int policy = getTarget().getScrollbarDisplayPolicy();
         synchronized (getDelegateLock()) {
             getDelegate().getViewport().setScrollMode(JViewport.SIMPLE_SCROLL_MODE);
