@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.beans.*;
 public class ColorEditor extends Panel implements PropertyEditor {
     private static final long serialVersionUID = 1781257185164716054L;
 
+    @SuppressWarnings("deprecation")
     public ColorEditor() {
         setLayout(null);
 
@@ -69,10 +70,12 @@ public class ColorEditor extends Panel implements PropertyEditor {
         changeColor(c);
     }
 
+    @SuppressWarnings("deprecation")
     public Dimension preferredSize() {
         return new Dimension(ourWidth, 40);
     }
 
+    @SuppressWarnings("deprecation")
     public boolean keyUp(Event e, int key) {
         if (e.target == text) {
             try {
@@ -107,6 +110,7 @@ public class ColorEditor extends Panel implements PropertyEditor {
 
     }
 
+    @SuppressWarnings("deprecation")
     public boolean action(Event e, Object arg) {
         if (e.target == choser) {
             changeColor(colors[choser.getSelectedIndex()]);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ inline void OopsInGenClosure::set_generation(Generation* gen) {
   _gen_boundary = _gen->reserved().start();
   // Barrier set for the heap, must be set after heap is initialized
   if (_rs == NULL) {
-    GenRemSet* rs = SharedHeap::heap()->rem_set();
+    GenRemSet* rs = GenCollectedHeap::heap()->rem_set();
     _rs = (CardTableRS*)rs;
   }
 }

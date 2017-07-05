@@ -46,14 +46,16 @@ class G1ParScanThreadState : public StackObj {
   G1SATBCardTableModRefBS* _ct_bs;
   G1RemSet* _g1_rem;
 
-  G1ParGCAllocator*   _g1_par_allocator;
+  G1ParGCAllocator* _g1_par_allocator;
 
-  ageTable            _age_table;
+  ageTable          _age_table;
+  InCSetState       _dest[InCSetState::Num];
+  // Local tenuring threshold.
+  uint              _tenuring_threshold;
+  G1ParScanClosure  _scanner;
 
-  G1ParScanClosure    _scanner;
-
-  size_t           _alloc_buffer_waste;
-  size_t           _undo_waste;
+  size_t            _alloc_buffer_waste;
+  size_t            _undo_waste;
 
   OopsInHeapRegionClosure*      _evac_failure_cl;
 
@@ -81,6 +83,14 @@ class G1ParScanThreadState : public StackObj {
 
   DirtyCardQueue& dirty_card_queue()             { return _dcq;  }
   G1SATBCardTableModRefBS* ctbs()                { return _ct_bs; }
+
+  InCSetState dest(InCSetState original) const {
+    assert(original.is_valid(),
+           err_msg("Original state invalid: " CSETSTATE_FORMAT, original.value()));
+    assert(_dest[original.value()].is_valid_gen(),
+           err_msg("Dest state is invalid: " CSETSTATE_FORMAT, _dest[original.value()].value()));
+    return _dest[original.value()];
+  }
 
  public:
   G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp);
@@ -112,7 +122,6 @@ class G1ParScanThreadState : public StackObj {
       }
     }
   }
- public:
 
   void set_evac_failure_closure(OopsInHeapRegionClosure* evac_failure_cl) {
     _evac_failure_cl = evac_failure_cl;
@@ -193,9 +202,20 @@ class G1ParScanThreadState : public StackObj {
   template <class T> inline void deal_with_reference(T* ref_to_scan);
 
   inline void dispatch_reference(StarTask ref);
+
+  // Tries to allocate word_sz in the PLAB of the next "generation" after trying to
+  // allocate into dest. State is the original (source) cset state for the object
+  // that is allocated for.
+  // Returns a non-NULL pointer if successful, and updates dest if required.
+  HeapWord* allocate_in_next_plab(InCSetState const state,
+                                  InCSetState* dest,
+                                  size_t word_sz,
+                                  AllocationContext_t const context);
+
+  inline InCSetState next_state(InCSetState const state, markOop const m, uint& age);
  public:
 
-  oop copy_to_survivor_space(oop const obj, markOop const old_mark);
+  oop copy_to_survivor_space(InCSetState const state, oop const obj, markOop const old_mark);
 
   void trim_queue();
 

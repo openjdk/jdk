@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -749,6 +749,7 @@ public class Dialog extends Window {
      * @see Component#isDisplayable
      * @see #removeNotify
      */
+    @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized (getTreeLock()) {
             if (parent != null && parent.getPeer() == null) {
@@ -897,6 +898,7 @@ public class Dialog extends Window {
     /**
      * @return true if we actually showed, false if we just called toFront()
      */
+    @SuppressWarnings("deprecation")
     private boolean conditionalShow(Component toFocus, AtomicLong time) {
         boolean retval;
 

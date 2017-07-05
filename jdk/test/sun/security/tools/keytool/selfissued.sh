@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,14 @@ case "$OS" in
     ;;
 esac
 
-KS=selfsigned.jks
+KS=selfsigned.ks
 KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit -keystore $KS -keyalg rsa"
 
 rm $KS
 
 $KT -alias ca -dname CN=CA -genkeypair
-$KT -alias ca1 -dname CN=CA -genkeypair
-$KT -alias ca2 -dname CN=CA -genkeypair
+$KT -alias ca1 -dname CN=CA1 -genkeypair
+$KT -alias ca2 -dname CN=CA2 -genkeypair
 $KT -alias e1 -dname CN=E1 -genkeypair
 
 # ca signs ca1, ca1 signs ca2, all self-issued

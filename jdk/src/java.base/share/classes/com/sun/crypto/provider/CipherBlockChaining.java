@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
+import java.security.ProviderException;
+
 
 /**
  * This class represents ciphers in cipher block chaining (CBC) mode.
@@ -122,31 +124,31 @@ class CipherBlockChaining extends FeedbackCipher  {
      *
      * <p>The input plain text <code>plain</code>, starting at
      * <code>plainOffset</code> and ending at
-     * <code>(plainOffset + len - 1)</code>, is encrypted.
+     * <code>(plainOffset + plainLen - 1)</code>, is encrypted.
      * The result is stored in <code>cipher</code>, starting at
      * <code>cipherOffset</code>.
-     *
-     * <p>It is the application's responsibility to make sure that
-     * <code>plainLen</code> is a multiple of the embedded cipher's block size,
-     * as any excess bytes are ignored.
      *
      * @param plain the buffer with the input data to be encrypted
      * @param plainOffset the offset in <code>plain</code>
      * @param plainLen the length of the input data
      * @param cipher the buffer for the result
      * @param cipherOffset the offset in <code>cipher</code>
+     * @exception ProviderException if <code>len</code> is not
+     * a multiple of the block size
      * @return the length of the encrypted data
      */
     int encrypt(byte[] plain, int plainOffset, int plainLen,
                 byte[] cipher, int cipherOffset)
     {
-        int i;
+        if ((plainLen % blockSize) != 0) {
+            throw new ProviderException("Internal error in input buffering");
+        }
         int endIndex = plainOffset + plainLen;
 
         for (; plainOffset < endIndex;
              plainOffset+=blockSize, cipherOffset += blockSize) {
-            for (i=0; i<blockSize; i++) {
-                k[i] = (byte)(plain[i+plainOffset] ^ r[i]);
+            for (int i = 0; i < blockSize; i++) {
+                k[i] = (byte)(plain[i + plainOffset] ^ r[i]);
             }
             embeddedCipher.encryptBlock(k, 0, cipher, cipherOffset);
             System.arraycopy(cipher, cipherOffset, r, 0, blockSize);
@@ -159,13 +161,9 @@ class CipherBlockChaining extends FeedbackCipher  {
      *
      * <p>The input cipher text <code>cipher</code>, starting at
      * <code>cipherOffset</code> and ending at
-     * <code>(cipherOffset + len - 1)</code>, is decrypted.
+     * <code>(cipherOffset + cipherLen - 1)</code>, is decrypted.
      * The result is stored in <code>plain</code>, starting at
      * <code>plainOffset</code>.
-     *
-     * <p>It is the application's responsibility to make sure that
-     * <code>cipherLen</code> is a multiple of the embedded cipher's block
-     * size, as any excess bytes are ignored.
      *
      * <p>It is also the application's responsibility to make sure that
      * <code>init</code> has been called before this method is called.
@@ -176,23 +174,23 @@ class CipherBlockChaining extends FeedbackCipher  {
      * @param cipherLen the length of the input data
      * @param plain the buffer for the result
      * @param plainOffset the offset in <code>plain</code>
+     * @exception ProviderException if <code>len</code> is not
+     * a multiple of the block size
      * @return the length of the decrypted data
-     *
-     * @exception IllegalBlockSizeException if input data whose length does
-     * not correspond to the embedded cipher's block size is passed to the
-     * embedded cipher
      */
     int decrypt(byte[] cipher, int cipherOffset, int cipherLen,
                 byte[] plain, int plainOffset)
     {
-        int i;
+        if ((cipherLen % blockSize) != 0) {
+            throw new ProviderException("Internal error in input buffering");
+        }
         int endIndex = cipherOffset + cipherLen;
 
         for (; cipherOffset < endIndex;
              cipherOffset += blockSize, plainOffset += blockSize) {
             embeddedCipher.decryptBlock(cipher, cipherOffset, k, 0);
-            for (i = 0; i < blockSize; i++) {
-                plain[i+plainOffset] = (byte)(k[i] ^ r[i]);
+            for (int i = 0; i < blockSize; i++) {
+                plain[i + plainOffset] = (byte)(k[i] ^ r[i]);
             }
             System.arraycopy(cipher, cipherOffset, r, 0, blockSize);
         }

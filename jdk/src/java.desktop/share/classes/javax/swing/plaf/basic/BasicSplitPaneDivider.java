@@ -441,6 +441,7 @@ public class BasicSplitPaneDivider extends Container
                 }
             }
             // Don't want the button to participate in focus traversable.
+            @SuppressWarnings("deprecation")
             public boolean isFocusTraversable() {
                 return false;
             }
@@ -497,6 +498,7 @@ public class BasicSplitPaneDivider extends Container
                 }
             }
             // Don't want the button to participate in focus traversable.
+            @SuppressWarnings("deprecation")
             public boolean isFocusTraversable() {
                 return false;
             }

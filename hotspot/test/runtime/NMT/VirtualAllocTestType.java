@@ -25,7 +25,7 @@
  * @test
  * @summary Test Reserve/Commit/Uncommit/Release of virtual memory and that we track it correctly
  * @key nmt jcmd
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build VirtualAllocTestType
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

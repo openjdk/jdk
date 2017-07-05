@@ -502,6 +502,7 @@ public class BasicFileChooserUI extends FileChooserUI {
         public void mouseReleased(MouseEvent evt) {
         }
 
+        @SuppressWarnings("deprecation")
         public void valueChanged(ListSelectionEvent evt) {
             if(!evt.getValueIsAdjusting()) {
                 JFileChooser chooser = getFileChooser();
@@ -1305,6 +1306,7 @@ public class BasicFileChooserUI extends FileChooserUI {
          * @return  The representation of the data to be transfered.
          *
          */
+        @SuppressWarnings("deprecation")
         protected Transferable createTransferable(JComponent c) {
             Object[] values = null;
             if (c instanceof JList) {
@@ -1330,8 +1332,8 @@ public class BasicFileChooserUI extends FileChooserUI {
 
             for (Object obj : values) {
                 String val = ((obj == null) ? "" : obj.toString());
-                plainBuf.append(val + "\n");
-                htmlBuf.append("  <li>" + val + "\n");
+                plainBuf.append(val).append('\n');
+                htmlBuf.append("  <li>").append(val).append('\n');
             }
 
             // remove the last newline

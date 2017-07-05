@@ -71,6 +71,7 @@ public abstract class InfoWindow extends Window {
     }
 
     // Must be executed on EDT.
+    @SuppressWarnings("deprecation")
     protected void show(Point corner, int indent) {
         assert SunToolkit.isDispatchThreadForAppContext(this);
 
@@ -98,6 +99,7 @@ public abstract class InfoWindow extends Window {
         closer.schedule();
     }
 
+    @SuppressWarnings("deprecation")
     public void hide() {
         closer.close();
     }
@@ -125,6 +127,7 @@ public abstract class InfoWindow extends Window {
         }
 
         // WARNING: this method may be executed on Toolkit thread.
+        @SuppressWarnings("deprecation")
         private void doClose() {
             SunToolkit.executeOnEventHandlerThread(InfoWindow.this, new Runnable() {
                 public void run() {
