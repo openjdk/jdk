@@ -58,7 +58,6 @@ import javax.xml.stream.events.XMLEvent;
  * @author Neeraj Bajaj, Sun Microsystems
  * @author Venugopal Rao K, Sun Microsystems
  * @author Elena Litani, IBM
- * @version $Id: XMLNSDocumentScannerImpl.java,v 1.11 2010-11-01 04:39:41 joehw Exp $
  */
 public class XMLNSDocumentScannerImpl
         extends XMLDocumentScannerImpl {

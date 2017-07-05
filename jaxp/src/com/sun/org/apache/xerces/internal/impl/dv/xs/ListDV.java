@@ -34,7 +34,6 @@ import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
  * @author Neeraj Bajaj, Sun Microsystems, inc.
  * @author Sandy Gao, IBM
  *
- * @version $Id: ListDV.java,v 1.7 2010-11-01 04:39:47 joehw Exp $
  */
 public class ListDV extends TypeValidator{
 

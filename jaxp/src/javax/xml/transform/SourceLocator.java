@@ -28,6 +28,8 @@ package javax.xml.transform;
 /**
  * This interface is primarily for the purposes of reporting where
  * an error occurred in the XML source or transformation instructions.
+ *
+ * @since 1.4
  */
 public interface SourceLocator {
 

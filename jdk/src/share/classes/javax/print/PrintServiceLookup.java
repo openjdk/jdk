@@ -69,8 +69,8 @@ import java.util.ServiceConfigurationError;
 public abstract class PrintServiceLookup {
 
     static class Services {
-        private ArrayList listOfLookupServices = null;
-        private ArrayList registeredServices = null;
+        private ArrayList<PrintServiceLookup> listOfLookupServices = null;
+        private ArrayList<PrintService> registeredServices = null;
     }
 
     private static Services getServicesForContext() {
@@ -83,23 +83,23 @@ public abstract class PrintServiceLookup {
         return services;
     }
 
-    private static ArrayList getListOfLookupServices() {
+    private static ArrayList<PrintServiceLookup> getListOfLookupServices() {
         return getServicesForContext().listOfLookupServices;
     }
 
-    private static ArrayList initListOfLookupServices() {
-        ArrayList listOfLookupServices = new ArrayList();
+    private static ArrayList<PrintServiceLookup> initListOfLookupServices() {
+        ArrayList<PrintServiceLookup> listOfLookupServices = new ArrayList<>();
         getServicesForContext().listOfLookupServices = listOfLookupServices;
         return listOfLookupServices;
     }
 
 
-    private static ArrayList getRegisteredServices() {
+    private static ArrayList<PrintService> getRegisteredServices() {
         return getServicesForContext().registeredServices;
     }
 
-    private static ArrayList initRegisteredServices() {
-        ArrayList registeredServices = new ArrayList();
+    private static ArrayList<PrintService> initRegisteredServices() {
+        ArrayList<PrintService> registeredServices = new ArrayList<>();
         getServicesForContext().registeredServices = registeredServices;
         return registeredServices;
     }
@@ -120,8 +120,8 @@ public abstract class PrintServiceLookup {
     public static final PrintService[]
         lookupPrintServices(DocFlavor flavor,
                             AttributeSet attributes) {
-        ArrayList list = getServices(flavor, attributes);
-        return (PrintService[])(list.toArray(new PrintService[list.size()]));
+        ArrayList<PrintService> list = getServices(flavor, attributes);
+        return list.toArray(new PrintService[list.size()]);
     }
 
 
@@ -148,9 +148,8 @@ public abstract class PrintServiceLookup {
     public static final MultiDocPrintService[]
         lookupMultiDocPrintServices(DocFlavor[] flavors,
                                     AttributeSet attributes) {
-        ArrayList list = getMultiDocServices(flavors, attributes);
-        return (MultiDocPrintService[])
-            list.toArray(new MultiDocPrintService[list.size()]);
+        ArrayList<MultiDocPrintService> list = getMultiDocServices(flavors, attributes);
+        return list.toArray(new MultiDocPrintService[list.size()]);
     }
 
 
@@ -177,10 +176,10 @@ public abstract class PrintServiceLookup {
 
     public static final PrintService lookupDefaultPrintService() {
 
-        Iterator psIterator = getAllLookupServices().iterator();
+        Iterator<PrintServiceLookup> psIterator = getAllLookupServices().iterator();
         while (psIterator.hasNext()) {
             try {
-                PrintServiceLookup lus = (PrintServiceLookup)psIterator.next();
+                PrintServiceLookup lus = psIterator.next();
                 PrintService service = lus.getDefaultPrintService();
                 if (service != null) {
                     return service;
@@ -208,7 +207,8 @@ public abstract class PrintServiceLookup {
      */
     public static boolean registerServiceProvider(PrintServiceLookup sp) {
         synchronized (PrintServiceLookup.class) {
-            Iterator psIterator = getAllLookupServices().iterator();
+            Iterator<PrintServiceLookup> psIterator =
+                getAllLookupServices().iterator();
             while (psIterator.hasNext()) {
                 try {
                     Object lus = psIterator.next();
@@ -249,7 +249,7 @@ public abstract class PrintServiceLookup {
             if (service instanceof StreamPrintService) {
                 return false;
             }
-            ArrayList registeredServices = getRegisteredServices();
+            ArrayList<PrintService> registeredServices = getRegisteredServices();
             if (registeredServices == null) {
                 registeredServices = initRegisteredServices();
             }
@@ -326,9 +326,9 @@ public abstract class PrintServiceLookup {
      */
     public abstract PrintService getDefaultPrintService();
 
-    private static ArrayList getAllLookupServices() {
+    private static ArrayList<PrintServiceLookup> getAllLookupServices() {
         synchronized (PrintServiceLookup.class) {
-            ArrayList listOfLookupServices = getListOfLookupServices();
+            ArrayList<PrintServiceLookup> listOfLookupServices = getListOfLookupServices();
             if (listOfLookupServices != null) {
                 return listOfLookupServices;
             } else {
@@ -336,12 +336,12 @@ public abstract class PrintServiceLookup {
             }
             try {
                 java.security.AccessController.doPrivileged(
-                     new java.security.PrivilegedExceptionAction() {
+                     new java.security.PrivilegedExceptionAction<Object>() {
                         public Object run() {
                             Iterator<PrintServiceLookup> iterator =
                                 ServiceLoader.load(PrintServiceLookup.class).
                                 iterator();
-                            ArrayList los = getListOfLookupServices();
+                            ArrayList<PrintServiceLookup> los = getListOfLookupServices();
                             while (iterator.hasNext()) {
                                 try {
                                     los.add(iterator.next());
@@ -364,14 +364,14 @@ public abstract class PrintServiceLookup {
         }
     }
 
-    private static ArrayList getServices(DocFlavor flavor,
-                                         AttributeSet attributes) {
+    private static ArrayList<PrintService> getServices(DocFlavor flavor,
+                                                       AttributeSet attributes) {
 
-        ArrayList listOfServices = new ArrayList();
-        Iterator psIterator = getAllLookupServices().iterator();
+        ArrayList<PrintService> listOfServices = new ArrayList<>();
+        Iterator<PrintServiceLookup> psIterator = getAllLookupServices().iterator();
         while (psIterator.hasNext()) {
             try {
-                PrintServiceLookup lus = (PrintServiceLookup)psIterator.next();
+                PrintServiceLookup lus = psIterator.next();
                 PrintService[] services=null;
                 if (flavor == null && attributes == null) {
                     try {
@@ -391,7 +391,7 @@ public abstract class PrintServiceLookup {
             }
         }
         /* add any directly registered services */
-        ArrayList registeredServices = null;
+        ArrayList<PrintService> registeredServices = null;
         try {
           SecurityManager security = System.getSecurityManager();
           if (security != null) {
@@ -401,8 +401,7 @@ public abstract class PrintServiceLookup {
         } catch (SecurityException se) {
         }
         if (registeredServices != null) {
-            PrintService[] services = (PrintService[])
-                registeredServices.toArray(
+            PrintService[] services = registeredServices.toArray(
                            new PrintService[registeredServices.size()]);
             for (int i=0; i<services.length; i++) {
                 if (!listOfServices.contains(services[i])) {
@@ -421,15 +420,15 @@ public abstract class PrintServiceLookup {
         return listOfServices;
     }
 
-    private static ArrayList getMultiDocServices(DocFlavor[] flavors,
-                                                 AttributeSet attributes) {
+    private static ArrayList<MultiDocPrintService> getMultiDocServices(DocFlavor[] flavors,
+                                                                       AttributeSet attributes) {
 
 
-        ArrayList listOfServices = new ArrayList();
-        Iterator psIterator = getAllLookupServices().iterator();
+        ArrayList<MultiDocPrintService> listOfServices = new ArrayList<>();
+        Iterator<PrintServiceLookup> psIterator = getAllLookupServices().iterator();
         while (psIterator.hasNext()) {
             try {
-                PrintServiceLookup lus = (PrintServiceLookup)psIterator.next();
+                PrintServiceLookup lus = psIterator.next();
                 MultiDocPrintService[] services  =
                     lus.getMultiDocPrintServices(flavors, attributes);
                 if (services == null) {
@@ -442,7 +441,7 @@ public abstract class PrintServiceLookup {
             }
         }
         /* add any directly registered services */
-        ArrayList registeredServices = null;
+        ArrayList<PrintService> registeredServices = null;
         try {
           SecurityManager security = System.getSecurityManager();
           if (security != null) {
@@ -452,14 +451,13 @@ public abstract class PrintServiceLookup {
         } catch (Exception e) {
         }
         if (registeredServices != null) {
-            PrintService[] services = (PrintService[])
-                registeredServices.toArray(
-                           new PrintService[registeredServices.size()]);
+            PrintService[] services =
+                registeredServices.toArray(new PrintService[registeredServices.size()]);
             for (int i=0; i<services.length; i++) {
                 if (services[i] instanceof MultiDocPrintService &&
                     !listOfServices.contains(services[i])) {
                     if (flavors == null || flavors.length == 0) {
-                        listOfServices.add(services[i]);
+                        listOfServices.add((MultiDocPrintService)services[i]);
                     } else {
                         boolean supported = true;
                         for (int f=0; f<flavors.length; f++) {
@@ -476,7 +474,7 @@ public abstract class PrintServiceLookup {
                             }
                         }
                         if (supported) {
-                            listOfServices.add(services[i]);
+                            listOfServices.add((MultiDocPrintService)services[i]);
                         }
                     }
                 }

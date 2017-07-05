@@ -235,13 +235,11 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     private SynthContext getContext(JComponent c, int state) {
-        return SynthContext.getContext(SynthContext.class, c,
-                    SynthLookAndFeel.getRegion(c),style, state);
+        return SynthContext.getContext(c, style, state);
     }
 
     private SynthContext getContext(JComponent c, Region subregion, int state){
         SynthStyle style = null;
-        Class klass = SynthContext.class;
 
         if (subregion == Region.TABBED_PANE_TAB) {
             style = tabStyle;
@@ -252,7 +250,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
         else if (subregion == Region.TABBED_PANE_CONTENT) {
             style = tabContentStyle;
         }
-        return SynthContext.getContext(klass, c, subregion, style, state);
+        return SynthContext.getContext(c, subregion, style, state);
     }
 
     /**

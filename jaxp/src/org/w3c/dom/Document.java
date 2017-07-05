@@ -73,7 +73,7 @@ public interface Document extends Node {
      * changing it afterwards is very unlikely to result in a change of the
      * features supported.
      *
-     * @since DOM Level 3
+     * @since 1.4, DOM Level 3
      */
     public DocumentType getDoctype();
 
@@ -337,7 +337,7 @@ public interface Document extends Node {
      *   <code>Document.xmlVersion</code> attribute. This may happen when
      *   importing an XML 1.1 [<a href='http://www.w3.org/TR/2004/REC-xml11-20040204/'>XML 1.1</a>] element
      *   into an XML 1.0 document, for instance.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Node importNode(Node importedNode,
                            boolean deep)
@@ -401,7 +401,7 @@ public interface Document extends Node {
      *   <br>NOT_SUPPORTED_ERR: Always thrown if the current document does not
      *   support the <code>"XML"</code> feature, since namespaces were
      *   defined by XML.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Element createElementNS(String namespaceURI,
                                    String qualifiedName)
@@ -470,7 +470,7 @@ public interface Document extends Node {
      *   <br>NOT_SUPPORTED_ERR: Always thrown if the current document does not
      *   support the <code>"XML"</code> feature, since namespaces were
      *   defined by XML.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Attr createAttributeNS(String namespaceURI,
                                   String qualifiedName)
@@ -485,7 +485,7 @@ public interface Document extends Node {
      *   special value "*" matches all local names.
      * @return A new <code>NodeList</code> object containing all the matched
      *   <code>Elements</code>.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public NodeList getElementsByTagNameNS(String namespaceURI,
                                            String localName);
@@ -501,7 +501,7 @@ public interface Document extends Node {
      * ID unless so defined.
      * @param elementId The unique <code>id</code> value for an element.
      * @return The matching element or <code>null</code> if there is none.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Element getElementById(String elementId);
 
@@ -509,7 +509,7 @@ public interface Document extends Node {
      * An attribute specifying the encoding used for this document at the time
      * of the parsing. This is <code>null</code> when it is not known, such
      * as when the <code>Document</code> was created in memory.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String getInputEncoding();
 
@@ -517,7 +517,7 @@ public interface Document extends Node {
      * An attribute specifying, as part of the <a href='http://www.w3.org/TR/2004/REC-xml-20040204#NT-XMLDecl'>XML declaration</a>, the encoding of this document. This is <code>null</code> when
      * unspecified or when it is not known, such as when the
      * <code>Document</code> was created in memory.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String getXmlEncoding();
 
@@ -529,7 +529,7 @@ public interface Document extends Node {
      * <code>Document.normalizeDocument()</code> with the "validate"
      * parameter to verify if the value matches the <a href='http://www.w3.org/TR/2004/REC-xml-20040204#sec-rmd'>validity
      * constraint for standalone document declaration</a> as defined in [<a href='http://www.w3.org/TR/2004/REC-xml-20040204'>XML 1.0</a>].
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public boolean getXmlStandalone();
     /**
@@ -543,7 +543,7 @@ public interface Document extends Node {
      * @exception DOMException
      *    NOT_SUPPORTED_ERR: Raised if this document does not support the
      *   "XML" feature.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public void setXmlStandalone(boolean xmlStandalone)
                                   throws DOMException;
@@ -570,7 +570,7 @@ public interface Document extends Node {
      *  objects supporting a version of the "XMLVersion" feature must not
      * raise a <code>NOT_SUPPORTED_ERR</code> exception for the same version
      * number when using <code>Document.xmlVersion</code>.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String getXmlVersion();
     /**
@@ -599,7 +599,7 @@ public interface Document extends Node {
      *    NOT_SUPPORTED_ERR: Raised if the version is set to a value that is
      *   not supported by this <code>Document</code> or if this document
      *   does not support the "XML" feature.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public void setXmlVersion(String xmlVersion)
                                   throws DOMException;
@@ -612,7 +612,7 @@ public interface Document extends Node {
      * errors while using <code>Document.normalizeDocument()</code>. In case
      * of error, the behavior is undefined. This attribute is
      * <code>true</code> by default.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public boolean getStrictErrorChecking();
     /**
@@ -623,7 +623,7 @@ public interface Document extends Node {
      * errors while using <code>Document.normalizeDocument()</code>. In case
      * of error, the behavior is undefined. This attribute is
      * <code>true</code> by default.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public void setStrictErrorChecking(boolean strictErrorChecking);
 
@@ -638,7 +638,7 @@ public interface Document extends Node {
      * "HTML" [<a href='http://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109'>DOM Level 2 HTML</a>]
      * , the href attribute of the HTML BASE element takes precedence over
      * this attribute when computing <code>Node.baseURI</code>.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String getDocumentURI();
     /**
@@ -652,7 +652,7 @@ public interface Document extends Node {
      * "HTML" [<a href='http://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109'>DOM Level 2 HTML</a>]
      * , the href attribute of the HTML BASE element takes precedence over
      * this attribute when computing <code>Node.baseURI</code>.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public void setDocumentURI(String documentURI);
 
@@ -723,7 +723,7 @@ public interface Document extends Node {
      *   <code>DOCUMENT</code>, <code>DOCUMENT_TYPE</code>.
      *   <br>NO_MODIFICATION_ALLOWED_ERR: Raised when the source node is
      *   readonly.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public Node adoptNode(Node source)
                           throws DOMException;
@@ -731,7 +731,7 @@ public interface Document extends Node {
     /**
      *  The configuration used when <code>Document.normalizeDocument()</code>
      * is invoked.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public DOMConfiguration getDomConfig();
 
@@ -765,7 +765,7 @@ public interface Document extends Node {
      * " parameter. Note this method might also report fatal errors (
      * <code>DOMError.SEVERITY_FATAL_ERROR</code>) if an implementation
      * cannot recover from an error.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public void normalizeDocument();
 
@@ -834,7 +834,7 @@ public interface Document extends Node {
      *   . Also raised, when the node being renamed is an attribute, if the
      *   <code>qualifiedName</code>, or its prefix, is "xmlns" and the
      *   <code>namespaceURI</code> is different from "<a href='http://www.w3.org/2000/xmlns/'>http://www.w3.org/2000/xmlns/</a>".
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public Node renameNode(Node n,
                            String namespaceURI,

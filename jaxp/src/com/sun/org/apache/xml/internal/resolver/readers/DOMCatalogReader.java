@@ -57,7 +57,6 @@ import sun.reflect.misc.ReflectUtil;
  * <p>The selection of CatalogParsers is made on the basis of the QName
  * of the root element of the document.</p>
  *
- * <p>This class requires the <a href="http://java.sun.com/aboutJava/communityprocess/final/jsr005/index.html">Java API for XML Parsing</a>.</p>
  *
  * @see Catalog
  * @see CatalogReader

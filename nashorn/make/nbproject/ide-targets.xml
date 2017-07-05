@@ -34,7 +34,7 @@
 	    <jvmarg line="-Dnashorn.optimistic"/>
             <jvmarg line="${ext.class.path}"/> 
             <jvmarg line="${run.test.jvmargs}"/>
-            <arg value="../make/str.js"/>
+            <arg value="../samples/test.js"/>
             <jvmarg value="-Xdebug"/>
             <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
         </java>

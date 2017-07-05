@@ -61,7 +61,14 @@ final class CWrapper {
 
         static native void setAlphaValue(long window, float alpha);
         static native void setOpaque(long window, boolean opaque);
-        static native void setBackgroundColor(long window, long color);
+
+        /**
+         * Sets background color of the NSWindow.
+         *
+         * @param window the pointer of the NSWindow
+         * @param color the color in argb format
+         */
+        static native void setBackgroundColor(long window, int color);
 
         static native void miniaturize(long window);
         static native void deminiaturize(long window);
@@ -81,9 +88,5 @@ final class CWrapper {
         static native void setHidden(long view, boolean hidden);
 
         static native void setToolTip(long view, String msg);
-    }
-
-    static final class NSColor {
-        static native long clearColor();
     }
 }

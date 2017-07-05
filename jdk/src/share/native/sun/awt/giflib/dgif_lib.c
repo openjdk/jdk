@@ -195,6 +195,11 @@ DGifOpen(void *userData,
     GifFileType *GifFile;
     GifFilePrivateType *Private;
 
+    if (!readFunc) {
+        _GifError = D_GIF_ERR_READ_FAILED;
+        return NULL;
+    }
+
     GifFile = (GifFileType *)malloc(sizeof(GifFileType));
     if (GifFile == NULL) {
         _GifError = D_GIF_ERR_NOT_ENOUGH_MEM;

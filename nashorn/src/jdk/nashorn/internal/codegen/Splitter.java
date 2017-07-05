@@ -307,7 +307,7 @@ final class Splitter extends NodeVisitor<LexicalContext> {
                 units.add(new ArrayUnit(unit, lo, postsets.length));
             }
 
-            arrayLiteralNode.setUnits(units);
+            return arrayLiteralNode.setUnits(lc, units);
         }
 
         return literal;

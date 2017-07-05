@@ -34,6 +34,8 @@ import org.xml.sax.ContentHandler;
  * parse events (parsing transformation instructions) into a Templates object.
  *
  * <p>Note that TemplatesHandler does not need to implement LexicalHandler.</p>
+ *
+ * @since 1.4
  */
 public interface TemplatesHandler extends ContentHandler {
 

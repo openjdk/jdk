@@ -34,7 +34,6 @@ import java.util.ArrayList;
  *
  * @author Sandy Gao, IBM
  * @author Elena Litani, IBM
- * @version $Id: XSCMValidator.java,v 1.6 2009/07/28 15:18:12 spericas Exp $
  */
 public interface XSCMValidator {
 

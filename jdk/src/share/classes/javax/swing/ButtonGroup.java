@@ -64,6 +64,7 @@ import java.io.Serializable;
  * Please see {@link java.beans.XMLEncoder}.
  *
  * @author Jeff Dinkins
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class ButtonGroup implements Serializable {

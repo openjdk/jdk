@@ -51,7 +51,7 @@ import org.xml.sax.Locator;
  * <p> XMLReader implementations are not required to support this
  * information, and it is not part of core-only SAX2 distributions.</p>
  *
- * @since SAX 2.0 (extensions 1.1 alpha)
+ * @since 1.5, SAX 2.0 (extensions 1.1 alpha)
  * @author David Brownell
  */
 public interface Locator2 extends Locator

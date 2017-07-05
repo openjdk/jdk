@@ -74,7 +74,7 @@ import java.io.InputStream;
  * so applications should not attempt to re-use such streams after they
  * have been handed to a parser.  </p>
  *
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @see org.xml.sax.XMLReader#parse(org.xml.sax.InputSource)
  * @see org.xml.sax.EntityResolver#resolveEntity

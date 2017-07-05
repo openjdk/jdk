@@ -31,6 +31,8 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * This class specifies an exceptional condition that occured
  * during the transformation process.
+ *
+ * @since 1.4
  */
 public class TransformerException extends Exception {
 

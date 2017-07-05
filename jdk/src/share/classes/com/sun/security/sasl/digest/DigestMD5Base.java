@@ -1460,7 +1460,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
                     if (logger.isLoggable(Level.INFO)) {
                         logger.log(Level.INFO,
                             "DIGEST39:Incorrect padding: {0}",
-                            new Byte(msgWithPadding[msgWithPadding.length - 1]));
+                            msgWithPadding[msgWithPadding.length - 1]);
                     }
                     return EMPTY_BYTE_ARRAY;
                 }

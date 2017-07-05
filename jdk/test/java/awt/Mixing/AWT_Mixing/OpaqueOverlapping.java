@@ -33,6 +33,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for opaque Swing components.
@@ -44,6 +45,8 @@ import javax.swing.SwingUtilities;
 @test
 @bug 6776743
 @summary Opaque overlapping test for each AWT component
+@library ../../regtesthelpers
+@build Util
 @run main OpaqueOverlapping
  */
 public class OpaqueOverlapping extends OverlappingTestBase {

@@ -41,7 +41,6 @@ import com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
  *
  * @author Elena Litani, IBM
  * @author Sandy Gao, IBM
- * @version $Id: XSAttributeDecl.java,v 1.7 2010-11-01 04:39:55 joehw Exp $
  */
 public class XSAttributeDecl implements XSAttributeDeclaration {
 

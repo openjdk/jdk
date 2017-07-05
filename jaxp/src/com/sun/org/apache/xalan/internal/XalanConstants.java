@@ -32,7 +32,6 @@ import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
  *
  * @author Huizhe Wang, Oracle
  *
- * @version $Id: Constants.java,v 1.14 2011-06-07 04:39:40 joehw Exp $
  */
 public final class XalanConstants {
 

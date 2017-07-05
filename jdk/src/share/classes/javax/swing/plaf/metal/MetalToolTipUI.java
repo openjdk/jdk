@@ -58,13 +58,26 @@ public class MetalToolTipUI extends BasicToolTipUI {
     private Font smallFont;
     // Refer to note in getAcceleratorString about this field.
     private JToolTip tip;
+
+    /**
+     * The space between strings.
+     */
     public static final int padSpaceBetweenStrings = 12;
     private String acceleratorDelimiter;
 
+    /**
+     * Constructs an instance of the {@code MetalToolTipUI}.
+     */
     public MetalToolTipUI() {
         super();
     }
 
+    /**
+     * Returns an instance of the {@code MetalToolTipUI}.
+     *
+     * @param c a component
+     * @return an instance of the {@code MetalToolTipUI}.
+     */
     public static ComponentUI createUI(JComponent c) {
         return sharedInstance;
     }
@@ -148,6 +161,12 @@ public class MetalToolTipUI extends BasicToolTipUI {
         return d;
     }
 
+    /**
+     * If the accelerator is hidden, the method returns {@code true},
+     * otherwise, returns {@code false}.
+     *
+     * @return {@code true} if the accelerator is hidden.
+     */
     protected boolean isAcceleratorHidden() {
         Boolean b = (Boolean)UIManager.get("ToolTip.hideAccelerator");
         return b != null && b.booleanValue();
@@ -162,6 +181,11 @@ public class MetalToolTipUI extends BasicToolTipUI {
         return retValue;
     }
 
+    /**
+     * Returns the accelerator string.
+     *
+     * @return the accelerator string.
+     */
     // NOTE: This requires the tip field to be set before this is invoked.
     // As MetalToolTipUI is shared between all JToolTips the tip field is
     // set appropriately before this is invoked. Unfortunately this means

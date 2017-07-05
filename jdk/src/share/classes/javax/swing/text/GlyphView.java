@@ -253,7 +253,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
                 // the classname should probably come from a property file.
                 String classname = "javax.swing.text.GlyphPainter1";
                 try {
-                    Class c;
+                    Class<?> c;
                     ClassLoader loader = getClass().getClassLoader();
                     if (loader != null) {
                         c = loader.loadClass(classname);

@@ -522,15 +522,17 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     };
 
     @SuppressWarnings("serial") // anonymous class
-    private static Action hideAction = new AbstractAction() {
+    private final Action hideAction = new AbstractAction() {
         @Override
         public void actionPerformed(final ActionEvent e) {
             final JComboBox comboBox = (JComboBox)e.getSource();
+            comboBox.firePopupMenuCanceled();
+            comboBox.setPopupVisible(false);
+        }
 
-            if (comboBox.isPopupVisible()) {
-                comboBox.firePopupMenuCanceled();
-                comboBox.setPopupVisible(false);
-            }
+        @Override
+        public boolean isEnabled() {
+            return comboBox.isPopupVisible() && super.isEnabled();
         }
     };
 

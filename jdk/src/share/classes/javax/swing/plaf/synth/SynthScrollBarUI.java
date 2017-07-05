@@ -185,8 +185,7 @@ public class SynthScrollBarUI extends BasicScrollBarUI
     }
 
     private SynthContext getContext(JComponent c, int state) {
-        return SynthContext.getContext(SynthContext.class, c,
-                    SynthLookAndFeel.getRegion(c), style, state);
+        return SynthContext.getContext(c, style, state);
     }
 
     private SynthContext getContext(JComponent c, Region region) {
@@ -199,8 +198,7 @@ public class SynthScrollBarUI extends BasicScrollBarUI
         if (region == Region.SCROLL_BAR_THUMB) {
             style = thumbStyle;
         }
-        return SynthContext.getContext(SynthContext.class, c, region, style,
-                                       state);
+        return SynthContext.getContext(c, region, style, state);
     }
 
     private int getComponentState(JComponent c, Region region) {

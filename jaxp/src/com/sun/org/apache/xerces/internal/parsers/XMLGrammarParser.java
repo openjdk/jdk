@@ -25,7 +25,6 @@ import com.sun.org.apache.xerces.internal.impl.dv.DTDDVFactory;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 
 /**
- * @version $Id: XMLGrammarParser.java,v 1.6 2010-11-01 04:40:10 joehw Exp $
  */
 public abstract class XMLGrammarParser
     extends XMLParser {

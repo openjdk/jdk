@@ -150,7 +150,7 @@ final class ByteBufferArrayData extends ArrayData {
 
     @Override
     public Object getObject(final int index) {
-        return (int)(0x0ff & buf.get(index));
+        return 0x0ff & buf.get(index);
     }
 
     @Override

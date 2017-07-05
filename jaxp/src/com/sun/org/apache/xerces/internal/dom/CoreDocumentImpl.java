@@ -79,7 +79,6 @@ import org.w3c.dom.ls.LSSerializer;
  * @author Joe Kesselman, IBM
  * @author Andy Clark, IBM
  * @author Ralf Pfeiffer, IBM
- * @version $Id: CoreDocumentImpl.java,v 1.9 2010-11-01 04:39:37 joehw Exp $
  * @since  PR-DOM-Level-1-19980818.
  */
 

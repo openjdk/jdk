@@ -62,7 +62,7 @@ package org.xml.sax;
  * @deprecated This interface has been replaced by the SAX2
  *             {@link org.xml.sax.ContentHandler ContentHandler}
  *             interface, which includes Namespace support.
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @see org.xml.sax.Parser#setDocumentHandler
  * @see org.xml.sax.Locator

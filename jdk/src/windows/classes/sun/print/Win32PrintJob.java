@@ -79,9 +79,9 @@ import java.awt.print.*;
 
 public class Win32PrintJob implements CancelablePrintJob {
 
-    transient private Vector jobListeners;
-    transient private Vector attrListeners;
-    transient private Vector listenedAttributeSets;
+    transient private Vector<PrintJobListener> jobListeners;
+    transient private Vector<PrintJobAttributeListener> attrListeners;
+    transient private Vector<PrintJobAttributeSet> listenedAttributeSets;
 
     private Win32PrintService service;
     private boolean fidelity;
@@ -139,7 +139,7 @@ public class Win32PrintJob implements CancelablePrintJob {
                 return;
             }
             if (jobListeners == null) {
-                jobListeners = new Vector();
+                jobListeners = new Vector<>();
             }
             jobListeners.add(listener);
         }
@@ -227,7 +227,7 @@ public class Win32PrintJob implements CancelablePrintJob {
                 PrintJobListener listener;
                 PrintJobEvent event = new PrintJobEvent(this, reason);
                 for (int i = 0; i < jobListeners.size(); i++) {
-                    listener = (PrintJobListener)(jobListeners.elementAt(i));
+                    listener = jobListeners.elementAt(i);
                     switch (reason) {
 
                         case PrintJobEvent.JOB_COMPLETE :
@@ -266,8 +266,8 @@ public class Win32PrintJob implements CancelablePrintJob {
                 return;
             }
             if (attrListeners == null) {
-                attrListeners = new Vector();
-                listenedAttributeSets = new Vector();
+                attrListeners = new Vector<>();
+                listenedAttributeSets = new Vector<>();
             }
             attrListeners.add(listener);
             if (attributes == null) {
@@ -670,7 +670,7 @@ public class Win32PrintJob implements CancelablePrintJob {
             fidelity = false;
         }
 
-        Class category;
+        Class<? extends Attribute> category;
         Attribute [] attrs = reqAttrSet.toArray();
         for (int i=0; i<attrs.length; i++) {
             Attribute attr = attrs[i];

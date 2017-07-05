@@ -167,6 +167,7 @@ import java.beans.Transient;
  *   description: A specialized container that manages a viewport, optional scrollbars and headers
  *
  * @author Hans Muller
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JScrollPane extends JComponent implements ScrollPaneConstants, Accessible

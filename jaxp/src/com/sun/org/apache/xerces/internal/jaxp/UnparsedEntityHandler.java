@@ -39,7 +39,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDSource;
  * Events are forwarded to the registered XMLDTDHandler without modification.</p>
  *
  * @author Michael Glavassevich, IBM
- * @version $Id: UnparsedEntityHandler.java,v 1.6 2010-11-01 04:40:07 joehw Exp $
  */
 final class UnparsedEntityHandler implements XMLDTDFilter, EntityState {
 

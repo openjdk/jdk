@@ -59,17 +59,42 @@ public class MetalScrollBarUI extends BasicScrollBarUI
     private static Color thumbShadow;
     private static Color thumbHighlightColor;
 
-
+    /**
+     * The metal bumps.
+     */
     protected MetalBumps bumps;
 
+    /**
+     * The increase button.
+     */
     protected MetalScrollButton increaseButton;
+
+    /**
+     * The decrease button.
+     */
     protected MetalScrollButton decreaseButton;
 
+    /**
+     * The width of the scroll bar.
+     */
     protected  int scrollBarWidth;
 
+    /**
+     * The property {@code JScrollBar.isFreeStanding}.
+     */
     public static final String FREE_STANDING_PROP = "JScrollBar.isFreeStanding";
+
+    /**
+     * The value of the property {@code JScrollBar.isFreeStanding}.
+     */
     protected boolean isFreeStanding = true;
 
+    /**
+     * Constructs a new {@code MetalScrollBarUI} instance.
+     *
+     * @param c a component
+     * @return a new {@code MetalScrollBarUI} instance
+     */
     public static ComponentUI createUI( JComponent c )
     {
         return new MetalScrollBarUI();

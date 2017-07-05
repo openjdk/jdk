@@ -50,19 +50,72 @@ import java.io.Serializable;
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalComboBoxButton extends JButton {
+
+    /**
+     * The instance of {@code JComboBox}.
+     */
     protected JComboBox comboBox;
+
+    /**
+     * The instance of {@code JList}.
+     */
     protected JList listBox;
+
+    /**
+     * The instance of {@code CellRendererPane}.
+     */
     protected CellRendererPane rendererPane;
+
+    /**
+     * The icon.
+     */
     protected Icon comboIcon;
+
+    /**
+     * The {@code iconOnly} value.
+     */
     protected boolean iconOnly = false;
 
+    /**
+     * Returns the {@code JComboBox}.
+     *
+     * @return the {@code JComboBox}
+     */
     public final JComboBox getComboBox() { return comboBox;}
+
+    /**
+     * Sets the {@code JComboBox}.
+     *
+     * @param cb the {@code JComboBox}
+     */
     public final void setComboBox( JComboBox cb ) { comboBox = cb;}
 
+    /**
+     * Returns the icon of the {@code JComboBox}.
+     *
+     * @return the icon of the {@code JComboBox}
+     */
     public final Icon getComboIcon() { return comboIcon;}
+
+    /**
+     * Sets the icon of the {@code JComboBox}.
+     *
+     * @param i the icon of the {@code JComboBox}
+     */
     public final void setComboIcon( Icon i ) { comboIcon = i;}
 
+    /**
+     * Returns the {@code isIconOnly} value.
+     *
+     * @return the {@code isIconOnly} value
+     */
     public final boolean isIconOnly() { return iconOnly;}
+
+    /**
+     * If {@code isIconOnly} is {@code true} then only icon is painted.
+     *
+     * @param isIconOnly if {@code true} then only icon is painted
+     */
     public final void setIconOnly( boolean isIconOnly ) { iconOnly = isIconOnly;}
 
     MetalComboBoxButton() {
@@ -75,6 +128,14 @@ public class MetalComboBoxButton extends JButton {
         setModel( model );
     }
 
+    /**
+     * Constructs a new instance of {@code MetalComboBoxButton}.
+     *
+     * @param cb an instance of {@code JComboBox}
+     * @param i an icon
+     * @param pane an instance of {@code CellRendererPane}
+     * @param list an instance of {@code JList}
+     */
     public MetalComboBoxButton( JComboBox cb, Icon i,
                                 CellRendererPane pane, JList list ) {
         this();
@@ -85,6 +146,15 @@ public class MetalComboBoxButton extends JButton {
         setEnabled( comboBox.isEnabled() );
     }
 
+    /**
+     * Constructs a new instance of {@code MetalComboBoxButton}.
+     *
+     * @param cb an instance of {@code JComboBox}
+     * @param i an icon
+     * @param onlyIcon if {@code true} only icon is painted
+     * @param pane an instance of {@code CellRendererPane}
+     * @param list an instance of {@code JList}
+     */
     public MetalComboBoxButton( JComboBox cb, Icon i, boolean onlyIcon,
                                 CellRendererPane pane, JList list ) {
         this( cb, i, pane, list );

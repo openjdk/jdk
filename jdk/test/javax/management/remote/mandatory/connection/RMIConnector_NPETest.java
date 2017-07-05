@@ -38,7 +38,7 @@ import javax.management.remote.rmi.*;
 public class RMIConnector_NPETest {
     public static void main(String argv[]) throws Exception {
         RMID rmid = RMID.createRMID();
-        rmid.start();
+        rmid.start(Long.MAX_VALUE);
         int rmidPort = rmid.getPort();
         Exception failureCause = null;
         RMIConnector agent = null;

@@ -38,7 +38,9 @@ import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.Symbol;
+import jdk.nashorn.internal.ir.Terminal;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Reference;
@@ -144,11 +146,11 @@ public final class ASTWriter {
 
         String status = "";
 
-        if (node.isTerminal()) {
+        if (node instanceof Terminal && ((Terminal)node).isTerminal()) {
             status += " Terminal";
         }
 
-        if (node.hasGoto()) {
+        if (node instanceof Statement && ((Statement)node).hasGoto()) {
             status += " Goto ";
         }
 

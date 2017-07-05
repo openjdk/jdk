@@ -80,7 +80,7 @@ import org.xml.sax.SAXException;
  *
  * @see org.xml.sax.XMLReader#setEntityResolver
  *
- * @since SAX 2.0 (extensions 1.1 alpha)
+ * @since 1.5, SAX 2.0 (extensions 1.1 alpha)
  * @author David Brownell
  */
 public interface EntityResolver2 extends EntityResolver

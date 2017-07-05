@@ -1809,7 +1809,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             if (getAttributeCount() > 0) {
                 out.println("");
                 // dump the attributes
-                Enumeration names = attributes.getAttributeNames();
+                Enumeration<?> names = attributes.getAttributeNames();
                 while (names.hasMoreElements()) {
                     Object name = names.nextElement();
                     indent(out, indentAmount + 1);
@@ -2193,7 +2193,7 @@ public abstract class AbstractDocument implements Document, Serializable {
          * <code>Enumeration</code>.
          * @return the children of the receiver as an <code>Enumeration</code>
          */
-        public abstract Enumeration children();
+        public abstract Enumeration<?> children();
 
 
         // --- serialization ---------------------------------------------
@@ -2456,7 +2456,7 @@ public abstract class AbstractDocument implements Document, Serializable {
          * <code>Enumeration</code>.
          * @return the children of the receiver
          */
-        public Enumeration children() {
+        public Enumeration<AbstractElement> children() {
             if(nchildren == 0)
                 return null;
 
@@ -2610,7 +2610,7 @@ public abstract class AbstractDocument implements Document, Serializable {
          * <code>Enumeration</code>.
          * @return the children of the receiver
          */
-        public Enumeration children() {
+        public Enumeration<?> children() {
             return null;
         }
 

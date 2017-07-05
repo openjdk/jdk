@@ -33,7 +33,6 @@ import com.sun.org.apache.xerces.internal.impl.dv.util.ByteListImpl;
  * @author Neeraj Bajaj, Sun Microsystems, inc.
  * @author Sandy Gao, IBM
  *
- * @version $Id: Base64BinaryDV.java,v 1.7 2010-11-01 04:39:46 joehw Exp $
  */
 public class Base64BinaryDV extends TypeValidator {
 

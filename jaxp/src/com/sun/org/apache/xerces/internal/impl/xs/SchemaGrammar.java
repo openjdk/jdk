@@ -75,7 +75,6 @@ import org.xml.sax.SAXException;
  * @author Sandy Gao, IBM
  * @author Elena Litani, IBM
  *
- * @version $Id: SchemaGrammar.java,v 1.7 2010-11-01 04:39:55 joehw Exp $
  */
 
 public class SchemaGrammar implements XSGrammar, XSNamespaceItem {

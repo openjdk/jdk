@@ -33,6 +33,7 @@ package javax.xml.transform;
  *
  * @see <a href="http://www.w3.org/TR/xslt#output">
  *  section 16 of the XSL Transformations (XSLT) W3C Recommendation</a>
+ * @since 1.4
  */
 public class OutputKeys {
 

@@ -73,7 +73,7 @@ package org.xml.sax;
  * anyway, so the user should consider this a feature rather than a
  * bug.</p>
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson
  * @see org.xml.sax.XMLReader
  * @see org.xml.sax.DTDHandler

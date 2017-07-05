@@ -28,7 +28,6 @@ import java.util.Hashtable;
  *
  * @xerces.internal
  *
- * @version $Id: Token.java,v 1.7 2010/07/27 05:02:34 joehw Exp $
  */
 class Token implements java.io.Serializable {
 

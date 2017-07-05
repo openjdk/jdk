@@ -39,6 +39,8 @@ import org.xml.sax.XMLFilter;
  * for an XMLReader used during a transformation, it should use a URIResolver
  * to return the SAXSource which provides (with getXMLReader) a reference to
  * the XMLReader.</p>
+ *
+ * @since 1.4
  */
 public abstract class SAXTransformerFactory extends TransformerFactory {
 

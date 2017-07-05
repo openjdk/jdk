@@ -36,8 +36,12 @@ import java.util.Deque;
 public final class ConsString implements CharSequence {
 
     private CharSequence left, right;
-    final private int length;
-    private boolean flat = false;
+    private final int length;
+    private volatile int state = STATE_NEW;
+
+    private final static int STATE_NEW       =  0;
+    private final static int STATE_THRESHOLD =  2;
+    private final static int STATE_FLATTENED = -1;
 
     /**
      * Constructor
@@ -53,11 +57,14 @@ public final class ConsString implements CharSequence {
         this.left = left;
         this.right = right;
         length = left.length() + right.length();
+        if (length < 0) {
+            throw new IllegalArgumentException("too big concatenated String");
+        }
     }
 
     @Override
     public String toString() {
-        return (String) flattened();
+        return (String) flattened(true);
     }
 
     @Override
@@ -67,22 +74,31 @@ public final class ConsString implements CharSequence {
 
     @Override
     public char charAt(final int index) {
-        return flattened().charAt(index);
+        return flattened(true).charAt(index);
     }
 
     @Override
     public CharSequence subSequence(final int start, final int end) {
-        return flattened().subSequence(start, end);
+        return flattened(true).subSequence(start, end);
     }
 
-    private CharSequence flattened() {
-        if (!flat) {
-            flatten();
+    /**
+     * Returns the components of this ConsString as a {@code CharSequence} array with two elements.
+     * The elements will be either {@code Strings} or other {@code ConsStrings}.
+     * @return CharSequence array of length 2
+     */
+    public synchronized CharSequence[] getComponents() {
+        return new CharSequence[] { left, right };
+    }
+
+    private CharSequence flattened(boolean flattenNested) {
+        if (state != STATE_FLATTENED) {
+            flatten(flattenNested);
         }
         return left;
     }
 
-    private void flatten() {
+    private synchronized void flatten(boolean flattenNested) {
         // We use iterative traversal as recursion may exceed the stack size limit.
         final char[] chars = new char[length];
         int pos = length;
@@ -97,8 +113,14 @@ public final class ConsString implements CharSequence {
         do {
             if (cs instanceof ConsString) {
                 final ConsString cons = (ConsString) cs;
-                stack.addFirst(cons.left);
-                cs = cons.right;
+                // Count the times a cons-string is traversed as part of other cons-strings being flattened.
+                // If it crosses a threshold we flatten the nested cons-string internally.
+                if (cons.state == STATE_FLATTENED || (flattenNested && ++cons.state >= STATE_THRESHOLD)) {
+                    cs = cons.flattened(false);
+                } else {
+                    stack.addFirst(cons.left);
+                    cs = cons.right;
+                }
             } else {
                 final String str = (String) cs;
                 pos -= str.length();
@@ -109,7 +131,7 @@ public final class ConsString implements CharSequence {
 
         left = new String(chars);
         right = "";
-        flat = true;
+        state = STATE_FLATTENED;
     }
 
 }

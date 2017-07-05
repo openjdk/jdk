@@ -35,7 +35,6 @@ import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
  * @xerces.internal
  *
  * @author Andy Clark, IBM
- * @version $Id: Selector.java,v 1.7 2010-11-01 04:39:57 joehw Exp $
  */
 public class Selector {
 
@@ -106,7 +105,6 @@ public class Selector {
      * Schema identity constraint selector XPath expression.
      *
      * @author Andy Clark, IBM
-     * @version $Id: Selector.java,v 1.7 2010-11-01 04:39:57 joehw Exp $
      */
     public static class XPath
     extends com.sun.org.apache.xerces.internal.impl.xpath.XPath {

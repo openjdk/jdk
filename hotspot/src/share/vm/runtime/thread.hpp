@@ -244,7 +244,7 @@ class Thread: public ThreadShadow {
   // The two classes No_Safepoint_Verifier and No_Allocation_Verifier are used to set these counters.
   //
   NOT_PRODUCT(int _allow_safepoint_count;)      // If 0, thread allow a safepoint to happen
-  debug_only (int _allow_allocation_count;)     // If 0, the thread is allowed to allocate oops.
+  debug_only(int _allow_allocation_count;)     // If 0, the thread is allowed to allocate oops.
 
   // Used by SkipGCALot class.
   NOT_PRODUCT(bool _skip_gcalot;)               // Should we elide gc-a-lot?
@@ -593,12 +593,12 @@ public:
   bool is_inside_jvmti_env_iteration()           { return _jvmti_env_iteration_count > 0; }
 
   // Code generation
-  static ByteSize exception_file_offset()        { return byte_offset_of(Thread, _exception_file   ); }
-  static ByteSize exception_line_offset()        { return byte_offset_of(Thread, _exception_line   ); }
-  static ByteSize active_handles_offset()        { return byte_offset_of(Thread, _active_handles   ); }
+  static ByteSize exception_file_offset()        { return byte_offset_of(Thread, _exception_file); }
+  static ByteSize exception_line_offset()        { return byte_offset_of(Thread, _exception_line); }
+  static ByteSize active_handles_offset()        { return byte_offset_of(Thread, _active_handles); }
 
-  static ByteSize stack_base_offset()            { return byte_offset_of(Thread, _stack_base ); }
-  static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size ); }
+  static ByteSize stack_base_offset()            { return byte_offset_of(Thread, _stack_base); }
+  static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size); }
 
 #define TLAB_FIELD_OFFSET(name) \
   static ByteSize tlab_##name##_offset()         { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::name##_offset(); }
@@ -615,35 +615,35 @@ public:
 
 #undef TLAB_FIELD_OFFSET
 
-  static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes ); }
+  static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes); }
 
  public:
-  volatile intptr_t _Stalled ;
-  volatile int _TypeTag ;
-  ParkEvent * _ParkEvent ;                     // for synchronized()
-  ParkEvent * _SleepEvent ;                    // for Thread.sleep
-  ParkEvent * _MutexEvent ;                    // for native internal Mutex/Monitor
-  ParkEvent * _MuxEvent ;                      // for low-level muxAcquire-muxRelease
-  int NativeSyncRecursion ;                    // diagnostic
+  volatile intptr_t _Stalled;
+  volatile int _TypeTag;
+  ParkEvent * _ParkEvent;                     // for synchronized()
+  ParkEvent * _SleepEvent;                    // for Thread.sleep
+  ParkEvent * _MutexEvent;                    // for native internal Mutex/Monitor
+  ParkEvent * _MuxEvent;                      // for low-level muxAcquire-muxRelease
+  int NativeSyncRecursion;                    // diagnostic
 
-  volatile int _OnTrap ;                       // Resume-at IP delta
-  jint _hashStateW ;                           // Marsaglia Shift-XOR thread-local RNG
-  jint _hashStateX ;                           // thread-specific hashCode generator state
-  jint _hashStateY ;
-  jint _hashStateZ ;
-  void * _schedctl ;
+  volatile int _OnTrap;                       // Resume-at IP delta
+  jint _hashStateW;                           // Marsaglia Shift-XOR thread-local RNG
+  jint _hashStateX;                           // thread-specific hashCode generator state
+  jint _hashStateY;
+  jint _hashStateZ;
+  void * _schedctl;
 
 
-  volatile jint rng [4] ;                      // RNG for spin loop
+  volatile jint rng[4];                      // RNG for spin loop
 
   // Low-level leaf-lock primitives used to implement synchronization
   // and native monitor-mutex infrastructure.
   // Not for general synchronization use.
-  static void SpinAcquire (volatile int * Lock, const char * Name) ;
-  static void SpinRelease (volatile int * Lock) ;
-  static void muxAcquire  (volatile intptr_t * Lock, const char * Name) ;
-  static void muxAcquireW (volatile intptr_t * Lock, ParkEvent * ev) ;
-  static void muxRelease  (volatile intptr_t * Lock) ;
+  static void SpinAcquire(volatile int * Lock, const char * Name);
+  static void SpinRelease(volatile int * Lock);
+  static void muxAcquire(volatile intptr_t * Lock, const char * Name);
+  static void muxAcquireW(volatile intptr_t * Lock, ParkEvent * ev);
+  static void muxRelease(volatile intptr_t * Lock);
 };
 
 // Inline implementation of Thread::current()
@@ -915,6 +915,9 @@ class JavaThread: public Thread {
   // support for JNI critical regions
   jint    _jni_active_critical;                  // count of entries into JNI critical region
 
+  // Checked JNI: function name requires exception check
+  char* _pending_jni_exception_check_fn;
+
   // For deadlock detection.
   int _depth_first_number;
 
@@ -930,7 +933,7 @@ class JavaThread: public Thread {
       intptr_t _instruction;
       const char*  _file;
       int _line;
-  }   _jmp_ring[ jump_ring_buffer_size ];
+  }   _jmp_ring[jump_ring_buffer_size];
 #endif /* PRODUCT */
 
 #if INCLUDE_ALL_GCS
@@ -1333,34 +1336,34 @@ class JavaThread: public Thread {
 #endif /* PRODUCT */
 
   // For assembly stub generation
-  static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj           ); }
+  static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }
 #ifndef PRODUCT
-  static ByteSize jmp_ring_index_offset()        { return byte_offset_of(JavaThread, _jmp_ring_index      ); }
-  static ByteSize jmp_ring_offset()              { return byte_offset_of(JavaThread, _jmp_ring            ); }
+  static ByteSize jmp_ring_index_offset()        { return byte_offset_of(JavaThread, _jmp_ring_index); }
+  static ByteSize jmp_ring_offset()              { return byte_offset_of(JavaThread, _jmp_ring); }
 #endif /* PRODUCT */
-  static ByteSize jni_environment_offset()       { return byte_offset_of(JavaThread, _jni_environment     ); }
-  static ByteSize last_Java_sp_offset()          {
+  static ByteSize jni_environment_offset()       { return byte_offset_of(JavaThread, _jni_environment); }
+  static ByteSize last_Java_sp_offset() {
     return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_sp_offset();
   }
-  static ByteSize last_Java_pc_offset()          {
+  static ByteSize last_Java_pc_offset() {
     return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_pc_offset();
   }
-  static ByteSize frame_anchor_offset()          {
+  static ByteSize frame_anchor_offset() {
     return byte_offset_of(JavaThread, _anchor);
   }
-  static ByteSize callee_target_offset()         { return byte_offset_of(JavaThread, _callee_target       ); }
-  static ByteSize vm_result_offset()             { return byte_offset_of(JavaThread, _vm_result           ); }
-  static ByteSize vm_result_2_offset()           { return byte_offset_of(JavaThread, _vm_result_2         ); }
-  static ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state        ); }
-  static ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc  ); }
-  static ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread            ); }
-  static ByteSize exception_oop_offset()         { return byte_offset_of(JavaThread, _exception_oop       ); }
-  static ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc        ); }
+  static ByteSize callee_target_offset()         { return byte_offset_of(JavaThread, _callee_target); }
+  static ByteSize vm_result_offset()             { return byte_offset_of(JavaThread, _vm_result); }
+  static ByteSize vm_result_2_offset()           { return byte_offset_of(JavaThread, _vm_result_2); }
+  static ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state); }
+  static ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc); }
+  static ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread); }
+  static ByteSize exception_oop_offset()         { return byte_offset_of(JavaThread, _exception_oop); }
+  static ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc); }
   static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
   static ByteSize stack_overflow_limit_offset()  { return byte_offset_of(JavaThread, _stack_overflow_limit); }
   static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
-  static ByteSize stack_guard_state_offset()     { return byte_offset_of(JavaThread, _stack_guard_state   ); }
-  static ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags       ); }
+  static ByteSize stack_guard_state_offset()     { return byte_offset_of(JavaThread, _stack_guard_state); }
+  static ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags); }
 
   static ByteSize do_not_unlock_if_synchronized_offset() { return byte_offset_of(JavaThread, _do_not_unlock_if_synchronized); }
   static ByteSize should_post_on_exceptions_flag_offset() {
@@ -1400,6 +1403,12 @@ class JavaThread: public Thread {
                           assert(_jni_active_critical >= 0,
                                  "JNI critical nesting problem?"); }
 
+  // Checked JNI, is the programmer required to check for exceptions, specify which function name
+  bool is_pending_jni_exception_check() const { return _pending_jni_exception_check_fn != NULL; }
+  void clear_pending_jni_exception_check() { _pending_jni_exception_check_fn = NULL; }
+  const char* get_pending_jni_exception_check() const { return _pending_jni_exception_check_fn; }
+  void set_pending_jni_exception_check(const char* fn_name) { _pending_jni_exception_check_fn = (char*) fn_name; }
+
   // For deadlock detection
   int depth_first_number() { return _depth_first_number; }
   void set_depth_first_number(int dfn) { _depth_first_number = dfn; }
@@ -1413,7 +1422,7 @@ class JavaThread: public Thread {
   void remove_monitor_chunk(MonitorChunk* chunk);
   bool in_deopt_handler() const                  { return _in_deopt_handler > 0; }
   void inc_in_deopt_handler()                    { _in_deopt_handler++; }
-  void dec_in_deopt_handler()                    {
+  void dec_in_deopt_handler() {
     assert(_in_deopt_handler > 0, "mismatched deopt nesting");
     if (_in_deopt_handler > 0) { // robustness
       _in_deopt_handler--;
@@ -1767,7 +1776,7 @@ private:
   uint _claimed_par_id;
 public:
   uint get_claimed_par_id() { return _claimed_par_id; }
-  void set_claimed_par_id(uint id) { _claimed_par_id = id;}
+  void set_claimed_par_id(uint id) { _claimed_par_id = id; }
 };
 
 // Inline implementation of JavaThread::current
@@ -1802,7 +1811,7 @@ inline bool JavaThread::stack_yellow_zone_enabled() {
 inline size_t JavaThread::stack_available(address cur_sp) {
   // This code assumes java stacks grow down
   address low_addr; // Limit on the address for deepest stack depth
-  if ( _stack_guard_state == stack_guard_unused) {
+  if (_stack_guard_state == stack_guard_unused) {
     low_addr =  stack_base() - stack_size();
   } else {
     low_addr = stack_yellow_zone_base();

@@ -59,7 +59,7 @@ package org.xml.sax;
  *             interface.  It has been replaced by the SAX2
  *             {@link org.xml.sax.helpers.DefaultHandler DefaultHandler}
  *             class.
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @see org.xml.sax.EntityResolver
  * @see org.xml.sax.DTDHandler

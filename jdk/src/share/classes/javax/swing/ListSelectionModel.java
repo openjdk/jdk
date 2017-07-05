@@ -41,6 +41,7 @@ import javax.swing.event.*;
  * @author Hans Muller
  * @author Philip Milne
  * @see DefaultListSelectionModel
+ * @since 1.2
  */
 
 public interface ListSelectionModel

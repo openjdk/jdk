@@ -817,7 +817,7 @@ gulong (*fp_g_signal_connect_data)(gpointer instance,
 void (*fp_gtk_widget_show)(GtkWidget *widget);
 void (*fp_gtk_main)(void);
 guint (*fp_gtk_main_level)(void);
-
+gchar* (*fp_g_path_get_dirname) (const gchar *file_name);
 
 /**
  * This function is available for GLIB > 2.20, so it MUST be

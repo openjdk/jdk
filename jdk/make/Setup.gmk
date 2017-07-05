@@ -27,7 +27,7 @@ DISABLE_WARNINGS := -Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-serial,-
 
 # To build with all warnings enabled, do the following:
 # make JAVAC_WARNINGS="-Xlint:all -Xmaxwarns 10000"
-JAVAC_WARNINGS := -Xlint:-unchecked,-deprecation,-overrides,auxiliaryclass,cast,classfile,dep-ann,divzero,empty,fallthrough,overloads,serial,static,try,varargs -Werror
+JAVAC_WARNINGS := -Xlint:all,-deprecation,-rawtypes,-unchecked -Werror
 
 # Any java code executed during a JDK build to build other parts of the JDK must be 
 # executed by the bootstrap JDK (probably with -Xbootclasspath/p: ) and for this 

@@ -935,7 +935,7 @@ class Commands {
             try {
                 methodInfo = loc.sourceName() +
                     MessageOutput.format("line number",
-                                         new Object [] {new Long(lineNumber)});
+                                         new Object [] {Long.valueOf(lineNumber)});
             } catch (AbsentInformationException e) {
                 methodInfo = MessageOutput.format("unknown");
             }
@@ -946,7 +946,7 @@ class Commands {
                                                  meth.declaringType().name(),
                                                  meth.name(),
                                                  methodInfo,
-                                                 new Long(pc)});
+                                                 Long.valueOf(pc)});
         } else {
             MessageOutput.println("stack frame dump",
                                   new Object [] {new Integer(frameNumber + 1),
@@ -1015,7 +1015,7 @@ class Commands {
                                     new Object [] {loc.declaringType().name(),
                                                    loc.method().name(),
                                                    new Integer (loc.lineNumber()),
-                                                   new Long (loc.codeIndex())});
+                                                   Long.valueOf(loc.codeIndex())});
     }
 
     void listBreakpoints() {

@@ -29,7 +29,6 @@ import java.util.Locale;
  * @xerces.internal
  *
  * @author Sandy Gao, IBM
- * @version $Id: ValidationContext.java,v 1.6 2010/07/23 02:09:29 joehw Exp $
  */
 public interface ValidationContext {
     // whether to validate against facets

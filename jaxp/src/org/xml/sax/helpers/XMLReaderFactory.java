@@ -67,7 +67,7 @@ import org.xml.sax.SAXException;
  * nothing bound its class name to <code>org.xml.sax.driver</code> so
  * those configuration mechanisms would see it.</p>
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson, David Brownell
  * @version 2.0.1 (sax2r2)
  */

@@ -26,7 +26,6 @@ import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
  * <p>A container for grammar pools which only contain schema grammars.</p>
  *
  * @author Michael Glavassevich, IBM
- * @version $Id: XSGrammarPoolContainer.java,v 1.6 2010-11-01 04:40:08 joehw Exp $
  */
 public interface XSGrammarPoolContainer {
 

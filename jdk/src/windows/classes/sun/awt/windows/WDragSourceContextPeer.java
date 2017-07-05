@@ -29,6 +29,7 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 
@@ -76,8 +77,9 @@ final class WDragSourceContextPeer extends SunDragSourceContextPeer {
         return theInstance;
     }
 
+    @Override
     protected void startDrag(Transferable trans,
-                             long[] formats, Map formatMap) {
+                             long[] formats, Map<Long, DataFlavor> formatMap) {
 
         long nativeCtxtLocal = 0;
 
@@ -153,7 +155,7 @@ final class WDragSourceContextPeer extends SunDragSourceContextPeer {
                                  InputEvent nativeTrigger,
                                  int actions,
                                  long[] formats,
-                                 Map formatMap);
+                                 Map<Long, DataFlavor> formatMap);
 
     /**
      * downcall into native code

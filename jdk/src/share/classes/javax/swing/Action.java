@@ -210,6 +210,7 @@ import java.beans.*;
  *
  * @author Georges Saab
  * @see AbstractAction
+ * @since 1.2
  */
 public interface Action extends ActionListener {
     /**
