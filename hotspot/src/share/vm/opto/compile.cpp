@@ -1711,11 +1711,22 @@ void Compile::Optimize() {
 
     if (failing())  return;
 
+    // Optimize out fields loads from scalar replaceable allocations.
     igvn.optimize();
     print_method("Iter GVN after EA", 2);
 
     if (failing())  return;
 
+    if (congraph() != NULL && macro_count() > 0) {
+      PhaseMacroExpand mexp(igvn);
+      mexp.eliminate_macro_nodes();
+      igvn.set_delay_transform(false);
+
+      igvn.optimize();
+      print_method("Iter GVN after eliminating allocations and locks", 2);
+
+      if (failing())  return;
+    }
   }
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
@@ -3052,24 +3063,13 @@ bool Compile::Constant::operator==(const Constant& other) {
   return false;
 }
 
-// Emit constants grouped in the following order:
-static BasicType type_order[] = {
-  T_FLOAT,    // 32-bit
-  T_OBJECT,   // 32 or 64-bit
-  T_ADDRESS,  // 32 or 64-bit
-  T_DOUBLE,   // 64-bit
-  T_LONG,     // 64-bit
-  T_VOID,     // 32 or 64-bit (jump-tables are at the end of the constant table for code emission reasons)
-  T_ILLEGAL
-};
-
 static int type_to_size_in_bytes(BasicType t) {
   switch (t) {
   case T_LONG:    return sizeof(jlong  );
   case T_FLOAT:   return sizeof(jfloat );
   case T_DOUBLE:  return sizeof(jdouble);
     // We use T_VOID as marker for jump-table entries (labels) which
-    // need an interal word relocation.
+    // need an internal word relocation.
   case T_VOID:
   case T_ADDRESS:
   case T_OBJECT:  return sizeof(jobject);
@@ -3079,87 +3079,92 @@ static int type_to_size_in_bytes(BasicType t) {
   return -1;
 }
 
+int Compile::ConstantTable::qsort_comparator(Constant* a, Constant* b) {
+  // sort descending
+  if (a->freq() > b->freq())  return -1;
+  if (a->freq() < b->freq())  return  1;
+  return 0;
+}
+
 void Compile::ConstantTable::calculate_offsets_and_size() {
-  int size = 0;
-  for (int t = 0; type_order[t] != T_ILLEGAL; t++) {
-    BasicType type = type_order[t];
+  // First, sort the array by frequencies.
+  _constants.sort(qsort_comparator);
 
-    for (int i = 0; i < _constants.length(); i++) {
-      Constant con = _constants.at(i);
-      if (con.type() != type)  continue;  // Skip other types.
+#ifdef ASSERT
+  // Make sure all jump-table entries were sorted to the end of the
+  // array (they have a negative frequency).
+  bool found_void = false;
+  for (int i = 0; i < _constants.length(); i++) {
+    Constant con = _constants.at(i);
+    if (con.type() == T_VOID)
+      found_void = true;  // jump-tables
+    else
+      assert(!found_void, "wrong sorting");
+  }
+#endif
 
-      // Align size for type.
-      int typesize = type_to_size_in_bytes(con.type());
-      size = align_size_up(size, typesize);
+  int offset = 0;
+  for (int i = 0; i < _constants.length(); i++) {
+    Constant* con = _constants.adr_at(i);
 
-      // Set offset.
-      con.set_offset(size);
-      _constants.at_put(i, con);
+    // Align offset for type.
+    int typesize = type_to_size_in_bytes(con->type());
+    offset = align_size_up(offset, typesize);
+    con->set_offset(offset);   // set constant's offset
 
-      // Add type size.
-      size = size + typesize;
+    if (con->type() == T_VOID) {
+      MachConstantNode* n = (MachConstantNode*) con->get_jobject();
+      offset = offset + typesize * n->outcnt();  // expand jump-table
+    } else {
+      offset = offset + typesize;
     }
   }
 
   // Align size up to the next section start (which is insts; see
   // CodeBuffer::align_at_start).
   assert(_size == -1, "already set?");
-  _size = align_size_up(size, CodeEntryAlignment);
-
-  if (Matcher::constant_table_absolute_addressing) {
-    set_table_base_offset(0);  // No table base offset required
-  } else {
-    if (UseRDPCForConstantTableBase) {
-      // table base offset is set in MachConstantBaseNode::emit
-    } else {
-      // When RDPC is not used, the table base is set into the middle of
-      // the constant table.
-      int half_size = _size / 2;
-      assert(half_size * 2 == _size, "sanity");
-      set_table_base_offset(-half_size);
-    }
-  }
+  _size = align_size_up(offset, CodeEntryAlignment);
 }
 
 void Compile::ConstantTable::emit(CodeBuffer& cb) {
   MacroAssembler _masm(&cb);
-  for (int t = 0; type_order[t] != T_ILLEGAL; t++) {
-    BasicType type = type_order[t];
-
-    for (int i = 0; i < _constants.length(); i++) {
-      Constant con = _constants.at(i);
-      if (con.type() != type)  continue;  // Skip other types.
-
-      address constant_addr;
-      switch (con.type()) {
-      case T_LONG:   constant_addr = _masm.long_constant(  con.get_jlong()  ); break;
-      case T_FLOAT:  constant_addr = _masm.float_constant( con.get_jfloat() ); break;
-      case T_DOUBLE: constant_addr = _masm.double_constant(con.get_jdouble()); break;
-      case T_OBJECT: {
-        jobject obj = con.get_jobject();
-        int oop_index = _masm.oop_recorder()->find_index(obj);
-        constant_addr = _masm.address_constant((address) obj, oop_Relocation::spec(oop_index));
-        break;
-      }
-      case T_ADDRESS: {
-        address addr = (address) con.get_jobject();
-        constant_addr = _masm.address_constant(addr);
-        break;
-      }
-      // We use T_VOID as marker for jump-table entries (labels) which
-      // need an interal word relocation.
-      case T_VOID: {
-        // Write a dummy word.  The real value is filled in later
-        // in fill_jump_table_in_constant_table.
-        address addr = (address) con.get_jobject();
-        constant_addr = _masm.address_constant(addr);
-        break;
-      }
-      default: ShouldNotReachHere();
-      }
-      assert(constant_addr != NULL, "consts section too small");
-      assert((constant_addr - _masm.code()->consts()->start()) == con.offset(), err_msg("must be: %d == %d", constant_addr - _masm.code()->consts()->start(), con.offset()));
+  for (int i = 0; i < _constants.length(); i++) {
+    Constant con = _constants.at(i);
+    address constant_addr;
+    switch (con.type()) {
+    case T_LONG:   constant_addr = _masm.long_constant(  con.get_jlong()  ); break;
+    case T_FLOAT:  constant_addr = _masm.float_constant( con.get_jfloat() ); break;
+    case T_DOUBLE: constant_addr = _masm.double_constant(con.get_jdouble()); break;
+    case T_OBJECT: {
+      jobject obj = con.get_jobject();
+      int oop_index = _masm.oop_recorder()->find_index(obj);
+      constant_addr = _masm.address_constant((address) obj, oop_Relocation::spec(oop_index));
+      break;
     }
+    case T_ADDRESS: {
+      address addr = (address) con.get_jobject();
+      constant_addr = _masm.address_constant(addr);
+      break;
+    }
+    // We use T_VOID as marker for jump-table entries (labels) which
+    // need an internal word relocation.
+    case T_VOID: {
+      MachConstantNode* n = (MachConstantNode*) con.get_jobject();
+      // Fill the jump-table with a dummy word.  The real value is
+      // filled in later in fill_jump_table.
+      address dummy = (address) n;
+      constant_addr = _masm.address_constant(dummy);
+      // Expand jump-table
+      for (uint i = 1; i < n->outcnt(); i++) {
+        address temp_addr = _masm.address_constant(dummy + i);
+        assert(temp_addr, "consts section too small");
+      }
+      break;
+    }
+    default: ShouldNotReachHere();
+    }
+    assert(constant_addr, "consts section too small");
+    assert((constant_addr - _masm.code()->consts()->start()) == con.offset(), err_msg("must be: %d == %d", constant_addr - _masm.code()->consts()->start(), con.offset()));
   }
 }
 
@@ -3175,19 +3180,21 @@ void Compile::ConstantTable::add(Constant& con) {
   if (con.can_be_reused()) {
     int idx = _constants.find(con);
     if (idx != -1 && _constants.at(idx).can_be_reused()) {
+      _constants.adr_at(idx)->inc_freq(con.freq());  // increase the frequency by the current value
       return;
     }
   }
   (void) _constants.append(con);
 }
 
-Compile::Constant Compile::ConstantTable::add(BasicType type, jvalue value) {
-  Constant con(type, value);
+Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, BasicType type, jvalue value) {
+  Block* b = Compile::current()->cfg()->_bbs[n->_idx];
+  Constant con(type, value, b->_freq);
   add(con);
   return con;
 }
 
-Compile::Constant Compile::ConstantTable::add(MachOper* oper) {
+Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, MachOper* oper) {
   jvalue value;
   BasicType type = oper->type()->basic_type();
   switch (type) {
@@ -3198,20 +3205,18 @@ Compile::Constant Compile::ConstantTable::add(MachOper* oper) {
   case T_ADDRESS: value.l = (jobject) oper->constant(); break;
   default: ShouldNotReachHere();
   }
-  return add(type, value);
+  return add(n, type, value);
 }
 
-Compile::Constant Compile::ConstantTable::allocate_jump_table(MachConstantNode* n) {
+Compile::Constant Compile::ConstantTable::add_jump_table(MachConstantNode* n) {
   jvalue value;
   // We can use the node pointer here to identify the right jump-table
   // as this method is called from Compile::Fill_buffer right before
   // the MachNodes are emitted and the jump-table is filled (means the
   // MachNode pointers do not change anymore).
   value.l = (jobject) n;
-  Constant con(T_VOID, value, false);  // Labels of a jump-table cannot be reused.
-  for (uint i = 0; i < n->outcnt(); i++) {
-    add(con);
-  }
+  Constant con(T_VOID, value, next_jump_table_freq(), false);  // Labels of a jump-table cannot be reused.
+  add(con);
   return con;
 }
 
@@ -3230,9 +3235,9 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
   MacroAssembler _masm(&cb);
   address* jump_table_base = (address*) (_masm.code()->consts()->start() + offset);
 
-  for (int i = 0; i < labels.length(); i++) {
+  for (uint i = 0; i < n->outcnt(); i++) {
     address* constant_addr = &jump_table_base[i];
-    assert(*constant_addr == (address) n, "all jump-table entries must contain node pointer");
+    assert(*constant_addr == (((address) n) + i), err_msg("all jump-table entries must contain adjusted node pointer: " INTPTR_FORMAT " == " INTPTR_FORMAT, *constant_addr, (((address) n) + i)));
     *constant_addr = cb.consts()->target(*labels.at(i), (address) constant_addr);
     cb.consts()->relocate((address) constant_addr, relocInfo::internal_word_type);
   }

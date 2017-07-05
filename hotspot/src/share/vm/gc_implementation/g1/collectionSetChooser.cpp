@@ -255,7 +255,18 @@ void
 CollectionSetChooser::
 prepareForAddMarkedHeapRegionsPar(size_t n_regions, size_t chunkSize) {
   _first_par_unreserved_idx = 0;
-  size_t max_waste = ParallelGCThreads * chunkSize;
+  int n_threads = ParallelGCThreads;
+  if (UseDynamicNumberOfGCThreads) {
+    assert(G1CollectedHeap::heap()->workers()->active_workers() > 0,
+      "Should have been set earlier");
+    // This is defensive code. As the assertion above says, the number
+    // of active threads should be > 0, but in case there is some path
+    // or some improperly initialized variable with leads to no
+    // active threads, protect against that in a product build.
+    n_threads = MAX2(G1CollectedHeap::heap()->workers()->active_workers(),
+                     1);
+  }
+  size_t max_waste = n_threads * chunkSize;
   // it should be aligned with respect to chunkSize
   size_t aligned_n_regions =
                      (n_regions + (chunkSize - 1)) / chunkSize * chunkSize;
@@ -265,6 +276,11 @@ prepareForAddMarkedHeapRegionsPar(size_t n_regions, size_t chunkSize) {
 
 jint
 CollectionSetChooser::getParMarkedHeapRegionChunk(jint n_regions) {
+  // Don't do this assert because this can be called at a point
+  // where the loop up stream will not execute again but might
+  // try to claim more chunks (loop test has not been done yet).
+  // assert(_markedRegions.length() > _first_par_unreserved_idx,
+  //  "Striding beyond the marked regions");
   jint res = Atomic::add(n_regions, &_first_par_unreserved_idx);
   assert(_markedRegions.length() > res + n_regions - 1,
          "Should already have been expanded");

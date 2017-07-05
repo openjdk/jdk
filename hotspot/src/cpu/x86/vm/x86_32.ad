@@ -507,8 +507,11 @@ void encode_CopyXD( CodeBuffer &cbuf, int dst_encoding, int src_encoding ) {
 
 
 //=============================================================================
-const bool Matcher::constant_table_absolute_addressing = true;
 const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::Empty;
+
+int Compile::ConstantTable::calculate_table_base_offset() const {
+  return 0;  // absolute addressing, no offset
+}
 
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   // Empty encoding
@@ -639,6 +642,12 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 #endif
 
+  if (C->has_mach_constant_base_node()) {
+    // NOTE: We set the table base offset here because users might be
+    // emitted before MachConstantBaseNode.
+    Compile::ConstantTable& constant_table = C->constant_table();
+    constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
+  }
 }
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
@@ -1515,12 +1524,12 @@ bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
 
 // Register for DIVI projection of divmodI
 RegMask Matcher::divI_proj_mask() {
-  return EAX_REG_mask;
+  return EAX_REG_mask();
 }
 
 // Register for MODI projection of divmodI
 RegMask Matcher::modI_proj_mask() {
-  return EDX_REG_mask;
+  return EDX_REG_mask();
 }
 
 // Register for DIVL projection of divmodL
@@ -1536,7 +1545,7 @@ RegMask Matcher::modL_proj_mask() {
 }
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return EBP_REG_mask;
+  return EBP_REG_mask();
 }
 
 // Returns true if the high 32 bits of the value is known to be zero.

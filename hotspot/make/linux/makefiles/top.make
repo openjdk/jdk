@@ -47,12 +47,10 @@ VM          = $(GAMMADIR)/src/share/vm
 Plat_File   = $(Platform_file)
 CDG         = cd $(GENERATED); 
 
-ifdef USE_PRECOMPILED_HEADER
-PrecompiledOption = -DUSE_PRECOMPILED_HEADER
-UpdatePCH         = $(MAKE) -f vm.make $(PRECOMPILED_HEADER) $(MFLAGS) 
+ifneq ($(USE_PRECOMPILED_HEADER),0)
+UpdatePCH = $(MAKE) -f vm.make $(PRECOMPILED_HEADER) $(MFLAGS) 
 else
-UpdatePCH         = \# precompiled header is not used
-PrecompiledOption = 
+UpdatePCH = \# precompiled header is not used
 endif
 
 Cached_plat = $(GENERATED)/platform.current

@@ -765,7 +765,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   add_debug_info_for_null_check_here(op->info());
   __ load_klass(O0, G3_scratch);
-  if (__ is_simm13(op->vtable_offset())) {
+  if (Assembler::is_simm13(op->vtable_offset())) {
     __ ld_ptr(G3_scratch, op->vtable_offset(), G5_method);
   } else {
     // This will generate 2 instructions

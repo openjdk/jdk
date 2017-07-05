@@ -1,8 +1,4 @@
 #
-# @(#)mapfile-vers	1.32 07/10/25 16:47:36
-#
-
-#
 # Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -221,6 +217,7 @@ SUNWprivate_1.1 {
 		JVM_SetArrayElement;
 		JVM_SetClassSigners;
 		JVM_SetLength;
+                JVM_SetNativeThreadName;
 		JVM_SetPrimitiveArrayElement;
 		JVM_SetProtectionDomain;
 		JVM_SetSockOpt;
