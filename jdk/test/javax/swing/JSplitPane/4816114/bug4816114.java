@@ -30,7 +30,6 @@
 import javax.swing.*;
 import java.awt.*;
 import java.lang.reflect.*;
-import sun.awt.SunToolkit;
 
 
 public class bug4816114 {
@@ -46,14 +45,14 @@ public class bug4816114 {
 
     static bug4816114 test = new bug4816114();
 
-    public static void main(String[] args) throws InterruptedException, InvocationTargetException {
+    public static void main(String[] args) throws InterruptedException, InvocationTargetException, AWTException {
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 test.createAndShowGUI();
             }
         });
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
+        Robot robot = new Robot();
+        robot.waitForIdle();
         Thread.sleep(1000);
         Thread.sleep(2000);
 

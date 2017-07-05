@@ -53,8 +53,8 @@ class CardTableExtension : public CardTableModRefBS {
     verify_card       = CardTableModRefBS::CT_MR_BS_last_reserved + 5
   };
 
-  CardTableExtension(MemRegion whole_heap, int max_covered_regions) :
-    CardTableModRefBS(whole_heap, max_covered_regions) { }
+  CardTableExtension(MemRegion whole_heap) :
+    CardTableModRefBS(whole_heap) { }
 
   // Too risky for the 4/10/02 putback
   // BarrierSet::Name kind() { return BarrierSet::CardTableExtension; }

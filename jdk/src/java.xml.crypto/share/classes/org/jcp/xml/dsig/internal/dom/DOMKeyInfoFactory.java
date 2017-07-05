@@ -34,6 +34,7 @@ import java.security.PublicKey;
 import java.util.List;
 import javax.xml.crypto.*;
 import javax.xml.crypto.dom.DOMCryptoContext;
+import javax.xml.crypto.dsig.Transform;
 import javax.xml.crypto.dsig.keyinfo.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -48,13 +49,11 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
 
     public DOMKeyInfoFactory() { }
 
-    @SuppressWarnings("rawtypes")
-    public KeyInfo newKeyInfo(List content) {
+    public KeyInfo newKeyInfo(List<? extends XMLStructure> content) {
         return newKeyInfo(content, null);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public KeyInfo newKeyInfo(List content, String id) {
+    public KeyInfo newKeyInfo(List<? extends XMLStructure> content, String id) {
         return new DOMKeyInfo(content, id);
     }
 
@@ -79,13 +78,13 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
         return newPGPData(keyId, null, null);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public PGPData newPGPData(byte[] keyId, byte[] keyPacket, List other) {
+    public PGPData newPGPData(byte[] keyId, byte[] keyPacket,
+        List<? extends XMLStructure> other) {
         return new DOMPGPData(keyId, keyPacket, other);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public PGPData newPGPData(byte[] keyPacket, List other) {
+    public PGPData newPGPData(byte[] keyPacket,
+        List<? extends XMLStructure> other) {
         return new DOMPGPData(keyPacket, other);
     }
 
@@ -93,17 +92,15 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
         return newRetrievalMethod(uri, null, null);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public RetrievalMethod newRetrievalMethod(String uri, String type,
-        List transforms) {
+        List<? extends Transform> transforms) {
         if (uri == null) {
             throw new NullPointerException("uri must not be null");
         }
         return new DOMRetrievalMethod(uri, type, transforms);
     }
 
-    @SuppressWarnings("rawtypes")
-    public X509Data newX509Data(List content) {
+    public X509Data newX509Data(List<?> content) {
         return new DOMX509Data(content);
     }
 

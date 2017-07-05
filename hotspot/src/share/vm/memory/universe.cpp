@@ -26,9 +26,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
-#if INCLUDE_CDS
-#include "classfile/sharedClassUtil.hpp"
-#endif
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -82,6 +79,9 @@
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #endif // INCLUDE_ALL_GCS
+#if INCLUDE_CDS
+#include "classfile/sharedClassUtil.hpp"
+#endif
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 

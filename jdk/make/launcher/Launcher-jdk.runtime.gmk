@@ -42,7 +42,7 @@ UNPACKEXE_SRC := $(JDK_TOPDIR)/src/jdk.runtime/share/native/common-unpack \
     $(JDK_TOPDIR)/src/jdk.runtime/share/native/unpack200
 UNPACKEXE_CFLAGS := -I$(JDK_TOPDIR)/src/jdk.runtime/share/native/common-unpack \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
-    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjava
+    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava
 
 ifeq ($(USE_EXTERNAL_LIBZ), true)
   UNPACKEXE_CFLAGS += -DSYSTEM_ZLIB
@@ -77,7 +77,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   EXE_OUT_OPTION := -Fe
   # With the current way unpack200 is built, debug symbols aren't supported
   # anyway.
-  UNPACKEXE_DEBUG_SYMBOLS :=
+  UNPACKEXE_DEBUG_SYMBOLS := false
 endif
 
 # The linker on older SuSE distros (e.g. on SLES 10) complains with:
@@ -102,7 +102,7 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
     MAPFILE := $(UNPACK_MAPFILE),\
     LDFLAGS := $(UNPACKEXE_ZIPOBJS), \
     LDFLAGS_windows := $(CXXFLAGS_JDKEXE), \
-    LDFLAGS_posix := $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
+    LDFLAGS_unix := $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX)) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_linux := -lc, \

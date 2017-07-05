@@ -32,7 +32,7 @@
 
 if ($#ARGV < 0) {
     &usage;
-    
+
     die;
 }
 
@@ -99,7 +99,7 @@ sub parse_file {
 
     # Skip directories
     return if -d;
-    
+
     # Skip SCCS files
     return if ($filename =~ /\/SCCS\//);
 
@@ -121,18 +121,18 @@ sub parse_file {
     chdir $dirname;
 
     open(FILE, $filename) or die "Failed while open $filename: $!\n";
-    
+
     # Read file
     my @content;
     my $line;
     my $emptylinescount = 0;
     my $modified = 0;
-    
+
     while ($line = <FILE>) {
         my $originalline = $line;
 
         # Process line
-        
+
         # Remove from the end of the line spaces and return character
         while ($line =~ /\s$/) {
             chop($line);
@@ -144,16 +144,16 @@ sub parse_file {
                 $line = substr($line, 0, $i) . $tabvalues[7 - ($i % 8)] . substr($line, $i + 1);
             }
         }
-        
+
         if (length($line) == 0) {
             $emptylinescount++;
         } else {
             while ($emptylinescount > 0) {
                 push(@content, "");
-                
+
                 $emptylinescount--;
             }
-            
+
             push(@content, $line);
         }
 
@@ -162,23 +162,23 @@ sub parse_file {
         }
 
     }
-    
+
     $allfiles++;
-    
+
     if ($emptylinescount > 0) {
         $modified = 1;
     }
 
     close(FILE);
-    
+
     if ($modified != 0) {
         # Write file
         open(FILE, ">$filename") or die "Failed while open $filename: $!\n";
-    
+
         for (my $i = 0; $i <= $#content; $i++) {
             print FILE "$content[$i]\n";
         }
-    
+
         close(FILE);
 
         # Print name from current dir
@@ -204,5 +204,3 @@ sub usage {
     print "Examples:\n";
     print "  normalizer.pl -e c,cpp,h,hpp .\n";
 }
-
-

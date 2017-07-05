@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4987374
+ * @bug 4987374 8062163
  * @summary Unit test for inversion methods:
  *
  *          AffineTransform.createInverse();
@@ -188,6 +188,8 @@ public class TestInvertMethods {
             double m11 = at.getScaleY();
             double m02 = at.getTranslateX();
             double m12 = at.getTranslateY();
+            if (Math.abs(m00-1.0) < 1E-10) m00 = 1.0;
+            if (Math.abs(m11-1.0) < 1E-10) m11 = 1.0;
             if (Math.abs(m02) < 1E-10) m02 = 0.0;
             if (Math.abs(m12) < 1E-10) m12 = 0.0;
             if (Math.abs(m01) < 1E-15) m01 = 0.0;
@@ -273,7 +275,7 @@ public class TestInvertMethods {
                 int inc = full ? 10 : 45;
                 for (int i = -720; i <= 720; i += inc) {
                     AffineTransform at2 = new AffineTransform(init);
-                    at2.rotate(Math.toRadians(i));
+                    at2.rotate(i / 180.0 * Math.PI);
                     if (verbose) System.out.println("*Rotate("+i+") = "+at2);
                     next.test(at2, full);
                 }

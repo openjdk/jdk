@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,9 +365,8 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if any of the <code>objects</code> are not of
      *    type <code>XMLObject</code>
      */
-    @SuppressWarnings("rawtypes")
     public abstract XMLSignature newXMLSignature(SignedInfo si, KeyInfo ki,
-        List objects, String id, String signatureValueId);
+        List<? extends XMLObject> objects, String id, String signatureValueId);
 
     /**
      * Creates a <code>Reference</code> with the specified URI and digest
@@ -399,9 +398,8 @@ public abstract class XMLSignatureFactory {
      *    compliant
      * @throws NullPointerException if <code>dm</code> is <code>null</code>
      */
-    @SuppressWarnings("rawtypes")
     public abstract Reference newReference(String uri, DigestMethod dm,
-        List transforms, String type, String id);
+        List<? extends Transform> transforms, String type, String id);
 
     /**
      * Creates a <code>Reference</code> with the specified parameters and
@@ -430,9 +428,9 @@ public abstract class XMLSignatureFactory {
      * @throws NullPointerException if <code>dm</code> or
      *    <code>digestValue</code> is <code>null</code>
      */
-    @SuppressWarnings("rawtypes")
     public abstract Reference newReference(String uri, DigestMethod dm,
-        List transforms, String type, String id, byte[] digestValue);
+        List<? extends Transform> transforms, String type, String id,
+        byte[] digestValue);
 
     /**
      * Creates a <code>Reference</code> with the specified parameters.
@@ -473,10 +471,9 @@ public abstract class XMLSignatureFactory {
      *    <code>appliedTransforms</code> or <code>result</code> is
      *    <code>null</code>
      */
-    @SuppressWarnings("rawtypes")
     public abstract Reference newReference(String uri, DigestMethod dm,
-        List appliedTransforms, Data result, List transforms, String type,
-        String id);
+        List<? extends Transform> appliedTransforms, Data result,
+        List<? extends Transform> transforms, String type, String id);
 
     /**
      * Creates a <code>SignedInfo</code> with the specified canonicalization
@@ -493,9 +490,8 @@ public abstract class XMLSignatureFactory {
      * @throws NullPointerException if any of the parameters
      *    are <code>null</code>
      */
-    @SuppressWarnings("rawtypes")
     public abstract SignedInfo newSignedInfo(CanonicalizationMethod cm,
-        SignatureMethod sm, List references);
+        SignatureMethod sm, List<? extends Reference> references);
 
     /**
      * Creates a <code>SignedInfo</code> with the specified parameters.
@@ -512,9 +508,8 @@ public abstract class XMLSignatureFactory {
      * @throws NullPointerException if <code>cm</code>, <code>sm</code>, or
      *    <code>references</code> are <code>null</code>
      */
-    @SuppressWarnings("rawtypes")
     public abstract SignedInfo newSignedInfo(CanonicalizationMethod cm,
-        SignatureMethod sm, List references, String id);
+        SignatureMethod sm, List<? extends Reference> references, String id);
 
     // Object factory methods
     /**
@@ -530,9 +525,8 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if <code>content</code> contains any
      *    entries that are not of type {@link XMLStructure}
      */
-    @SuppressWarnings("rawtypes")
-    public abstract XMLObject newXMLObject(List content, String id,
-        String mimeType, String encoding);
+    public abstract XMLObject newXMLObject(List<? extends XMLStructure> content,
+        String id, String mimeType, String encoding);
 
     /**
      * Creates a <code>Manifest</code> containing the specified
@@ -547,8 +541,7 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if <code>references</code> contains any
      *    entries that are not of type {@link Reference}
      */
-    @SuppressWarnings("rawtypes")
-    public abstract Manifest newManifest(List references);
+    public abstract Manifest newManifest(List<? extends Reference> references);
 
     /**
      * Creates a <code>Manifest</code> containing the specified
@@ -564,8 +557,8 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if <code>references</code> contains any
      *    entries that are not of type {@link Reference}
      */
-    @SuppressWarnings("rawtypes")
-    public abstract Manifest newManifest(List references, String id);
+    public abstract Manifest newManifest(List<? extends Reference> references,
+        String id);
 
     /**
      * Creates a <code>SignatureProperty</code> containing the specified
@@ -583,9 +576,8 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if <code>content</code> contains any
      *    entries that are not of type {@link XMLStructure}
      */
-    @SuppressWarnings("rawtypes")
     public abstract SignatureProperty newSignatureProperty
-        (List content, String target, String id);
+        (List<? extends XMLStructure> content, String target, String id);
 
     /**
      * Creates a <code>SignatureProperties</code> containing the specified
@@ -602,9 +594,8 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if <code>properties</code> contains any
      *    entries that are not of type {@link SignatureProperty}
      */
-    @SuppressWarnings("rawtypes")
     public abstract SignatureProperties newSignatureProperties
-        (List properties, String id);
+        (List<? extends SignatureProperty> properties, String id);
 
     // Algorithm factory methods
     /**

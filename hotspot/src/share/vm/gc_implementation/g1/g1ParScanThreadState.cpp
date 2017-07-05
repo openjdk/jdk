@@ -150,7 +150,8 @@ void G1ParScanThreadState::trim_queue() {
   } while (!_refs->is_empty());
 }
 
-oop G1ParScanThreadState::copy_to_survivor_space(oop const old) {
+oop G1ParScanThreadState::copy_to_survivor_space(oop const old,
+                                                 markOop const old_mark) {
   size_t word_sz = old->size();
   HeapRegion* from_region = _g1h->heap_region_containing_raw(old);
   // +1 to make the -1 indexes valid...
@@ -158,9 +159,8 @@ oop G1ParScanThreadState::copy_to_survivor_space(oop const old) {
   assert( (from_region->is_young() && young_index >  0) ||
          (!from_region->is_young() && young_index == 0), "invariant" );
   G1CollectorPolicy* g1p = _g1h->g1_policy();
-  markOop m = old->mark();
-  int age = m->has_displaced_mark_helper() ? m->displaced_mark_helper()->age()
-                                           : m->age();
+  uint age = old_mark->has_displaced_mark_helper() ? old_mark->displaced_mark_helper()->age()
+                                                   : old_mark->age();
   GCAllocPurpose alloc_purpose = g1p->evacuation_destination(from_region, age,
                                                              word_sz);
   AllocationContext_t context = from_region->allocation_context();
@@ -196,30 +196,22 @@ oop G1ParScanThreadState::copy_to_survivor_space(oop const old) {
     alloc_purpose = to_region->is_young() ? GCAllocForSurvived : GCAllocForTenured;
 
     if (g1p->track_object_age(alloc_purpose)) {
-      // We could simply do obj->incr_age(). However, this causes a
-      // performance issue. obj->incr_age() will first check whether
-      // the object has a displaced mark by checking its mark word;
-      // getting the mark word from the new location of the object
-      // stalls. So, given that we already have the mark word and we
-      // are about to install it anyway, it's better to increase the
-      // age on the mark word, when the object does not have a
-      // displaced mark word. We're not expecting many objects to have
-      // a displaced marked word, so that case is not optimized
-      // further (it could be...) and we simply call obj->incr_age().
-
-      if (m->has_displaced_mark_helper()) {
-        // in this case, we have to install the mark word first,
+      if (age < markOopDesc::max_age) {
+        age++;
+      }
+      if (old_mark->has_displaced_mark_helper()) {
+        // In this case, we have to install the mark word first,
         // otherwise obj looks to be forwarded (the old mark word,
         // which contains the forward pointer, was copied)
-        obj->set_mark(m);
-        obj->incr_age();
+        obj->set_mark(old_mark);
+        markOop new_mark = old_mark->displaced_mark_helper()->set_age(age);
+        old_mark->set_displaced_mark_helper(new_mark);
       } else {
-        m = m->incr_age();
-        obj->set_mark(m);
+        obj->set_mark(old_mark->set_age(age));
       }
-      age_table()->add(obj, word_sz);
+      age_table()->add(age, word_sz);
     } else {
-      obj->set_mark(m);
+      obj->set_mark(old_mark);
     }
 
     if (G1StringDedup::is_enabled()) {

@@ -28,9 +28,8 @@
    @run main bug7165725
 */
 
-import sun.awt.SunToolkit;
-
 import java.awt.BorderLayout;
+import java.awt.Robot;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -127,7 +126,8 @@ public class bug7165725 extends JFrame {
             }
         });
 
-        ((SunToolkit) SunToolkit.getDefaultToolkit()).realSync();
+        Robot robot = new Robot();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {

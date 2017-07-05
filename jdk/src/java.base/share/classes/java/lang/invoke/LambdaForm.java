@@ -125,7 +125,7 @@ class LambdaForm {
     MemberName vmentry;   // low-level behavior, or null if not yet prepared
     private boolean isCompiled;
 
-    Object transformCache;  // managed by LambdaFormEditor
+    volatile Object transformCache;  // managed by LambdaFormEditor
 
     public static final int VOID_RESULT = -1, LAST_RESULT = -2;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,27 +59,18 @@ public final class XPathFilter2ParameterSpec implements TransformParameterSpec {
      * @throws NullPointerException if <code>xPathList</code> is
      *    <code>null</code>
      */
-    @SuppressWarnings("rawtypes")
-    public XPathFilter2ParameterSpec(List xPathList) {
+    public XPathFilter2ParameterSpec(List<XPathType> xPathList) {
         if (xPathList == null) {
             throw new NullPointerException("xPathList cannot be null");
         }
-        List<?> xPathListCopy = new ArrayList<>((List<?>)xPathList);
-        if (xPathListCopy.isEmpty()) {
+        List<XPathType> tempList =
+            Collections.checkedList(new ArrayList<XPathType>(),
+                                    XPathType.class);
+        tempList.addAll(xPathList);
+        if (tempList.isEmpty()) {
             throw new IllegalArgumentException("xPathList cannot be empty");
         }
-        int size = xPathListCopy.size();
-        for (int i = 0; i < size; i++) {
-            if (!(xPathListCopy.get(i) instanceof XPathType)) {
-                throw new ClassCastException
-                    ("xPathList["+i+"] is not a valid type");
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        List<XPathType> temp = (List<XPathType>)xPathListCopy;
-
-        this.xPathList = Collections.unmodifiableList(temp);
+        this.xPathList = Collections.unmodifiableList(tempList);
     }
 
     /**
@@ -91,8 +82,7 @@ public final class XPathFilter2ParameterSpec implements TransformParameterSpec {
      * @return a <code>List</code> of <code>XPathType</code> objects
      *    (never <code>null</code> or empty)
      */
-    @SuppressWarnings("rawtypes")
-    public List getXPathList() {
+    public List<XPathType> getXPathList() {
         return xPathList;
     }
 }

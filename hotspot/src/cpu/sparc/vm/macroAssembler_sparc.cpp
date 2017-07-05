@@ -2734,12 +2734,12 @@ void MacroAssembler::biased_locking_exit (Address mark_addr, Register temp_reg, 
 // box->dhw disposition - post-conditions at DONE_LABEL.
 // -   Successful inflated lock:  box->dhw != 0.
 //     Any non-zero value suffices.
-//     Consider G2_thread, rsp, boxReg, or unused_mark()
+//     Consider G2_thread, rsp, boxReg, or markOopDesc::unused_mark()
 // -   Successful Stack-lock: box->dhw == mark.
 //     box->dhw must contain the displaced mark word value
 // -   Failure -- icc.ZFlag == 0 and box->dhw is undefined.
 //     The slow-path fast_enter() and slow_enter() operators
-//     are responsible for setting box->dhw = NonZero (typically ::unused_mark).
+//     are responsible for setting box->dhw = NonZero (typically markOopDesc::unused_mark()).
 // -   Biased: box->dhw is undefined
 //
 // SPARC refworkload performance - specifically jetstream and scimark - are
@@ -2855,7 +2855,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
          // If m->owner != null goto IsLocked
          // Pessimistic form: Test-and-CAS vs CAS
          // The optimistic form avoids RTS->RTO cache line upgrades.
-         ld_ptr(Rmark, ObjectMonitor::owner_offset_in_bytes() - 2, Rscratch);
+         ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rscratch);
          andcc(Rscratch, Rscratch, G0);
          brx(Assembler::notZero, false, Assembler::pn, done);
          delayed()->nop();
@@ -2864,7 +2864,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
 
       // Try to CAS m->owner from null to Self
       // Invariant: if we acquire the lock then _recursions should be 0.
-      add(Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark);
+      add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
       mov(G2_thread, Rscratch);
       cas_ptr(Rmark, G0, Rscratch);
       cmp(Rscratch, G0);
@@ -2948,7 +2948,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
          // Test-and-CAS vs CAS
          // Pessimistic form avoids futile (doomed) CAS attempts
          // The optimistic form avoids RTS->RTO cache line upgrades.
-         ld_ptr(Rmark, ObjectMonitor::owner_offset_in_bytes() - 2, Rscratch);
+         ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rscratch);
          andcc(Rscratch, Rscratch, G0);
          brx(Assembler::notZero, false, Assembler::pn, done);
          delayed()->nop();
@@ -2957,13 +2957,13 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
 
       // Try to CAS m->owner from null to Self
       // Invariant: if we acquire the lock then _recursions should be 0.
-      add(Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark);
+      add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
       mov(G2_thread, Rscratch);
       cas_ptr(Rmark, G0, Rscratch);
       cmp(Rscratch, G0);
       // ST box->displaced_header = NonZero.
       // Any non-zero value suffices:
-      //    unused_mark(), G2_thread, RBox, RScratch, rsp, etc.
+      //    markOopDesc::unused_mark(), G2_thread, RBox, RScratch, rsp, etc.
       st_ptr(Rbox, Rbox, BasicLock::displaced_header_offset_in_bytes());
       // Intentional fall-through into done
    }
@@ -3031,30 +3031,30 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
    // Note that we use 1-0 locking by default for the inflated case.  We
    // close the resultant (and rare) race by having contented threads in
    // monitorenter periodically poll _owner.
-   ld_ptr(Rmark, ObjectMonitor::owner_offset_in_bytes() - 2, Rscratch);
-   ld_ptr(Rmark, ObjectMonitor::recursions_offset_in_bytes() - 2, Rbox);
+   ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rscratch);
+   ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions), Rbox);
    xor3(Rscratch, G2_thread, Rscratch);
    orcc(Rbox, Rscratch, Rbox);
    brx(Assembler::notZero, false, Assembler::pn, done);
    delayed()->
-   ld_ptr(Rmark, ObjectMonitor::EntryList_offset_in_bytes() - 2, Rscratch);
-   ld_ptr(Rmark, ObjectMonitor::cxq_offset_in_bytes() - 2, Rbox);
+   ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList), Rscratch);
+   ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq), Rbox);
    orcc(Rbox, Rscratch, G0);
    if (EmitSync & 65536) {
       Label LSucc ;
       brx(Assembler::notZero, false, Assembler::pn, LSucc);
       delayed()->nop();
       ba(done);
-      delayed()->st_ptr(G0, Rmark, ObjectMonitor::owner_offset_in_bytes() - 2);
+      delayed()->st_ptr(G0, Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner));
 
       bind(LSucc);
-      st_ptr(G0, Rmark, ObjectMonitor::owner_offset_in_bytes() - 2);
+      st_ptr(G0, Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner));
       if (os::is_MP()) { membar (StoreLoad); }
-      ld_ptr(Rmark, ObjectMonitor::succ_offset_in_bytes() - 2, Rscratch);
+      ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ), Rscratch);
       andcc(Rscratch, Rscratch, G0);
       brx(Assembler::notZero, false, Assembler::pt, done);
       delayed()->andcc(G0, G0, G0);
-      add(Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark);
+      add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
       mov(G2_thread, Rscratch);
       cas_ptr(Rmark, G0, Rscratch);
       // invert icc.zf and goto done
@@ -3066,7 +3066,7 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
       brx(Assembler::notZero, false, Assembler::pn, done);
       delayed()->nop();
       ba(done);
-      delayed()->st_ptr(G0, Rmark, ObjectMonitor::owner_offset_in_bytes() - 2);
+      delayed()->st_ptr(G0, Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner));
    }
 
    bind   (LStacked);
@@ -3196,7 +3196,7 @@ void MacroAssembler::eden_allocate(
   assert(0 <= con_size_in_bytes && Assembler::is_simm13(con_size_in_bytes), "illegal object size");
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0, "object size is not multiple of alignment");
 
-  if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
+  if (!Universe::heap()->supports_inline_contig_alloc()) {
     // No allocation in the shared eden.
     ba(slow_case);
     delayed()->nop();
@@ -3331,7 +3331,7 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   assert_different_registers(top, t1, t2, t3, G4, G5 /* preserve G4 and G5 */);
   Label do_refill, discard_tlab;
 
-  if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
+  if (!Universe::heap()->supports_inline_contig_alloc()) {
     // No allocation in the shared eden.
     ba(slow_case);
     delayed()->nop();
