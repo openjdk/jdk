@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP
 
-#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc_implementation/g1/heapRegionSets.hpp"
 #include "utilities/taskqueue.hpp"
 
 class G1CollectedHeap;
@@ -369,13 +369,7 @@ protected:
   double                _cleanup_sleep_factor;
   double                _cleanup_task_overhead;
 
-  // Stuff related to age cohort processing.
-  struct ParCleanupThreadState {
-    char _pre[64];
-    UncleanRegionList list;
-    char _post[64];
-  };
-  ParCleanupThreadState** _par_cleanup_thread_state;
+  FreeRegionList        _cleanup_list;
 
   // CMS marking support structures
   CMBitMap                _markBitMap1;
@@ -483,6 +477,10 @@ protected:
 
   // prints all gathered CM-related statistics
   void print_stats();
+
+  bool cleanup_list_is_empty() {
+    return _cleanup_list.is_empty();
+  }
 
   // accessor methods
   size_t parallel_marking_threads() { return _parallel_marking_threads; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ protected:
 public:
   // Initialize this queue to contain a null buffer, and be part of the
   // given PtrQueueSet.
-  PtrQueue(PtrQueueSet*, bool perm = false, bool active = false);
+  PtrQueue(PtrQueueSet* qset, bool perm = false, bool active = false);
   // Release any contained resources.
   void flush();
   // Calls flush() when destroyed.
@@ -85,6 +85,14 @@ public:
     else enqueue_known_active(ptr);
   }
 
+  // This method is called when we're doing the zero index handling
+  // and gives a chance to the queues to do any pre-enqueueing
+  // processing they might want to do on the buffer. It should return
+  // true if the buffer should be enqueued, or false if enough
+  // entries were cleared from it so that it can be re-used. It should
+  // not return false if the buffer is still full (otherwise we can
+  // get into an infinite loop).
+  virtual bool should_enqueue_buffer() { return true; }
   void handle_zero_index();
   void locking_enqueue_completed_buffer(void** buf);
 

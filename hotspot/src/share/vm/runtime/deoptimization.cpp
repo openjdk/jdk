@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,8 +395,8 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   {
     HandleMark hm;
     methodHandle method(thread, array->element(0)->method());
-    Bytecode_invoke* invoke = Bytecode_invoke_at_check(method, array->element(0)->bci());
-    return_type = (invoke != NULL) ? invoke->result_type(thread) : T_ILLEGAL;
+    Bytecode_invoke invoke = Bytecode_invoke_check(method, array->element(0)->bci());
+    return_type = invoke.is_valid() ? invoke.result_type(thread) : T_ILLEGAL;
   }
 
   // Compute information for handling adapters and adjusting the frame size of the caller.
@@ -600,8 +600,8 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
           cur_code == Bytecodes::_invokespecial ||
           cur_code == Bytecodes::_invokestatic  ||
           cur_code == Bytecodes::_invokeinterface) {
-        Bytecode_invoke* invoke = Bytecode_invoke_at(mh, iframe->interpreter_frame_bci());
-        symbolHandle signature(thread, invoke->signature());
+        Bytecode_invoke invoke(mh, iframe->interpreter_frame_bci());
+        symbolHandle signature(thread, invoke.signature());
         ArgumentSizeComputer asc(signature);
         cur_invoke_parameter_size = asc.size();
         if (cur_code != Bytecodes::_invokestatic) {
@@ -963,7 +963,7 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
       if (bci == SynchronizationEntryBCI) {
         code_name = "sync entry";
       } else {
-        Bytecodes::Code code = Bytecodes::code_at(vf->method(), bci);
+        Bytecodes::Code code = vf->method()->code_at(bci);
         code_name = Bytecodes::name(code);
       }
       tty->print(" - %s", code_name);
@@ -1224,7 +1224,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     ScopeDesc*      trap_scope  = cvf->scope();
     methodHandle    trap_method = trap_scope->method();
     int             trap_bci    = trap_scope->bci();
-    Bytecodes::Code trap_bc     = Bytecode_at(trap_method->bcp_from(trap_bci))->java_code();
+    Bytecodes::Code trap_bc     = trap_method->java_code_at(trap_bci);
 
     // Record this event in the histogram.
     gather_statistics(reason, action, trap_bc);

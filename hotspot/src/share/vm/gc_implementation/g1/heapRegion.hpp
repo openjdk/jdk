@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,11 @@ class ContiguousSpace;
 class HeapRegionRemSet;
 class HeapRegionRemSetIterator;
 class HeapRegion;
+class HeapRegionSetBase;
+
+#define HR_FORMAT "%d:["PTR_FORMAT","PTR_FORMAT","PTR_FORMAT"]"
+#define HR_FORMAT_PARAMS(__hr) (__hr)->hrs_index(), (__hr)->bottom(), \
+                               (__hr)->top(), (__hr)->end()
 
 // A dirty card to oop closure for heap regions. It
 // knows how to get the G1 heap and how to use the bitmap
@@ -173,6 +178,19 @@ class G1OffsetTableContigSpace: public ContiguousSpace {
   virtual HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
 
   virtual void print() const;
+
+  void reset_bot() {
+    _offsets.zero_bottom_entry();
+    _offsets.initialize_threshold();
+  }
+
+  void update_bot_for_object(HeapWord* start, size_t word_size) {
+    _offsets.alloc_block(start, word_size);
+  }
+
+  void print_bot_on(outputStream* out) {
+    _offsets.print_on(out);
+  }
 };
 
 class HeapRegion: public G1OffsetTableContigSpace {
@@ -214,12 +232,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // True iff the region is in current collection_set.
   bool _in_collection_set;
 
-    // True iff the region is on the unclean list, waiting to be zero filled.
-  bool _is_on_unclean_list;
-
-  // True iff the region is on the free list, ready for allocation.
-  bool _is_on_free_list;
-
   // Is this or has it been an allocation region in the current collection
   // pause.
   bool _is_gc_alloc_region;
@@ -240,6 +252,13 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // Next region whose cards need cleaning
   HeapRegion* _next_dirty_cards_region;
+
+  // Fields used by the HeapRegionSetBase class and subclasses.
+  HeapRegion* _next;
+#ifdef ASSERT
+  HeapRegionSetBase* _containing_set;
+#endif // ASSERT
+  bool _pending_removal;
 
   // For parallel heapRegion traversal.
   jint _claimed;
@@ -291,10 +310,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
     _next_top_at_mark_start = bot;
     _top_at_conc_mark_count = bot;
   }
-
-  jint _zfs;  // A member of ZeroFillState.  Protected by ZF_lock.
-  Thread* _zero_filler; // If _zfs is ZeroFilling, the thread that (last)
-                        // made it so.
 
   void set_young_type(YoungType new_type) {
     //assert(_young_type != new_type, "setting the same type" );
@@ -349,15 +364,14 @@ class HeapRegion: public G1OffsetTableContigSpace {
     RebuildRSClaimValue   = 5
   };
 
-  // Concurrent refinement requires contiguous heap regions (in which TLABs
-  // might be allocated) to be zero-filled.  Each region therefore has a
-  // zero-fill-state.
-  enum ZeroFillState {
-    NotZeroFilled,
-    ZeroFilling,
-    ZeroFilled,
-    Allocated
-  };
+  inline HeapWord* par_allocate_no_bot_updates(size_t word_size) {
+    assert(is_young(), "we can only skip BOT updates on young regions");
+    return ContiguousSpace::par_allocate(word_size);
+  }
+  inline HeapWord* allocate_no_bot_updates(size_t word_size) {
+    assert(is_young(), "we can only skip BOT updates on young regions");
+    return ContiguousSpace::allocate(word_size);
+  }
 
   // If this region is a member of a HeapRegionSeq, the index in that
   // sequence, otherwise -1.
@@ -404,13 +418,38 @@ class HeapRegion: public G1OffsetTableContigSpace {
     return _humongous_start_region;
   }
 
-  // Causes the current region to represent a humongous object spanning "n"
-  // regions.
-  void set_startsHumongous(HeapWord* new_end);
+  // Makes the current region be a "starts humongous" region, i.e.,
+  // the first region in a series of one or more contiguous regions
+  // that will contain a single "humongous" object. The two parameters
+  // are as follows:
+  //
+  // new_top : The new value of the top field of this region which
+  // points to the end of the humongous object that's being
+  // allocated. If there is more than one region in the series, top
+  // will lie beyond this region's original end field and on the last
+  // region in the series.
+  //
+  // new_end : The new value of the end field of this region which
+  // points to the end of the last region in the series. If there is
+  // one region in the series (namely: this one) end will be the same
+  // as the original end of this region.
+  //
+  // Updating top and end as described above makes this region look as
+  // if it spans the entire space taken up by all the regions in the
+  // series and an single allocation moved its top to new_top. This
+  // ensures that the space (capacity / allocated) taken up by all
+  // humongous regions can be calculated by just looking at the
+  // "starts humongous" regions and by ignoring the "continues
+  // humongous" regions.
+  void set_startsHumongous(HeapWord* new_top, HeapWord* new_end);
 
-  // The regions that continue a humongous sequence should be added using
-  // this method, in increasing address order.
-  void set_continuesHumongous(HeapRegion* start);
+  // Makes the current region be a "continues humongous'
+  // region. first_hr is the "start humongous" region of the series
+  // which this region will be part of.
+  void set_continuesHumongous(HeapRegion* first_hr);
+
+  // Unsets the humongous-related fields on the region.
+  void set_notHumongous();
 
   // If the region has a remembered set, return a pointer to it.
   HeapRegionRemSet* rem_set() const {
@@ -458,44 +497,55 @@ class HeapRegion: public G1OffsetTableContigSpace {
     _next_in_special_set = r;
   }
 
-  bool is_on_free_list() {
-    return _is_on_free_list;
+  // Methods used by the HeapRegionSetBase class and subclasses.
+
+  // Getter and setter for the next field used to link regions into
+  // linked lists.
+  HeapRegion* next()              { return _next; }
+
+  void set_next(HeapRegion* next) { _next = next; }
+
+  // Every region added to a set is tagged with a reference to that
+  // set. This is used for doing consistency checking to make sure that
+  // the contents of a set are as they should be and it's only
+  // available in non-product builds.
+#ifdef ASSERT
+  void set_containing_set(HeapRegionSetBase* containing_set) {
+    assert((containing_set == NULL && _containing_set != NULL) ||
+           (containing_set != NULL && _containing_set == NULL),
+           err_msg("containing_set: "PTR_FORMAT" "
+                   "_containing_set: "PTR_FORMAT,
+                   containing_set, _containing_set));
+
+    _containing_set = containing_set;
+}
+
+  HeapRegionSetBase* containing_set() { return _containing_set; }
+#else // ASSERT
+  void set_containing_set(HeapRegionSetBase* containing_set) { }
+
+  // containing_set() is only used in asserts so there's not reason
+  // to provide a dummy version of it.
+#endif // ASSERT
+
+  // If we want to remove regions from a list in bulk we can simply tag
+  // them with the pending_removal tag and call the
+  // remove_all_pending() method on the list.
+
+  bool pending_removal() { return _pending_removal; }
+
+  void set_pending_removal(bool pending_removal) {
+    // We can only set pending_removal to true, if it's false and the
+    // region belongs to a set.
+    assert(!pending_removal ||
+           (!_pending_removal && containing_set() != NULL), "pre-condition");
+    // We can only set pending_removal to false, if it's true and the
+    // region does not belong to a set.
+    assert( pending_removal ||
+           ( _pending_removal && containing_set() == NULL), "pre-condition");
+
+    _pending_removal = pending_removal;
   }
-
-  void set_on_free_list(bool b) {
-    _is_on_free_list = b;
-  }
-
-  HeapRegion* next_from_free_list() {
-    assert(is_on_free_list(),
-           "Should only invoke on free space.");
-    assert(_next_in_special_set == NULL ||
-           _next_in_special_set->is_on_free_list(),
-           "Malformed Free List.");
-    return _next_in_special_set;
-  }
-
-  void set_next_on_free_list(HeapRegion* r) {
-    assert(r == NULL || r->is_on_free_list(), "Malformed free list.");
-    _next_in_special_set = r;
-  }
-
-  bool is_on_unclean_list() {
-    return _is_on_unclean_list;
-  }
-
-  void set_on_unclean_list(bool b);
-
-  HeapRegion* next_from_unclean_list() {
-    assert(is_on_unclean_list(),
-           "Should only invoke on unclean space.");
-    assert(_next_in_special_set == NULL ||
-           _next_in_special_set->is_on_unclean_list(),
-           "Malformed unclean List.");
-    return _next_in_special_set;
-  }
-
-  void set_next_on_unclean_list(HeapRegion* r);
 
   HeapRegion* get_next_young_region() { return _next_young_region; }
   void set_next_young_region(HeapRegion* hr) {
@@ -514,11 +564,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void hr_clear(bool par, bool clear_space);
 
   void initialize(MemRegion mr, bool clear_space, bool mangle_space);
-
-  // Ensure that "this" is zero-filled.
-  void ensure_zero_filled();
-  // This one requires that the calling thread holds ZF_mon.
-  void ensure_zero_filled_locked();
 
   // Get the start of the unmarked area in this region.
   HeapWord* prev_top_at_mark_start() const { return _prev_top_at_mark_start; }
@@ -754,36 +799,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // "end" of the region if there is no such block.
   HeapWord* next_block_start_careful(HeapWord* addr);
 
-  // Returns the zero-fill-state of the current region.
-  ZeroFillState zero_fill_state() { return (ZeroFillState)_zfs; }
-  bool zero_fill_is_allocated() { return _zfs == Allocated; }
-  Thread* zero_filler() { return _zero_filler; }
-
-  // Indicate that the contents of the region are unknown, and therefore
-  // might require zero-filling.
-  void set_zero_fill_needed() {
-    set_zero_fill_state_work(NotZeroFilled);
-  }
-  void set_zero_fill_in_progress(Thread* t) {
-    set_zero_fill_state_work(ZeroFilling);
-    _zero_filler = t;
-  }
-  void set_zero_fill_complete();
-  void set_zero_fill_allocated() {
-    set_zero_fill_state_work(Allocated);
-  }
-
-  void set_zero_fill_state_work(ZeroFillState zfs);
-
-  // This is called when a full collection shrinks the heap.
-  // We want to set the heap region to a value which says
-  // it is no longer part of the heap.  For now, we'll let "NotZF" fill
-  // that role.
-  void reset_zero_fill() {
-    set_zero_fill_state_work(NotZeroFilled);
-    _zero_filler = NULL;
-  }
-
   size_t recorded_rs_length() const        { return _recorded_rs_length; }
   double predicted_elapsed_time_ms() const { return _predicted_elapsed_time_ms; }
   size_t predicted_bytes_to_copy() const   { return _predicted_bytes_to_copy; }
@@ -822,10 +837,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // Override; it uses the "prev" marking information
   virtual void verify(bool allow_dirty) const;
-
-#ifdef DEBUG
-  HeapWord* allocate(size_t size);
-#endif
 };
 
 // HeapRegionClosure is used for iterating over regions.
@@ -847,113 +858,6 @@ class HeapRegionClosure : public StackObj {
   // and returned "false" in all cases.
   bool complete() { return _complete; }
 };
-
-// A linked lists of heap regions.  It leaves the "next" field
-// unspecified; that's up to subtypes.
-class RegionList VALUE_OBJ_CLASS_SPEC {
-protected:
-  virtual HeapRegion* get_next(HeapRegion* chr) = 0;
-  virtual void set_next(HeapRegion* chr,
-                        HeapRegion* new_next) = 0;
-
-  HeapRegion* _hd;
-  HeapRegion* _tl;
-  size_t _sz;
-
-  // Protected constructor because this type is only meaningful
-  // when the _get/_set next functions are defined.
-  RegionList() : _hd(NULL), _tl(NULL), _sz(0) {}
-public:
-  void reset() {
-    _hd = NULL;
-    _tl = NULL;
-    _sz = 0;
-  }
-  HeapRegion* hd() { return _hd; }
-  HeapRegion* tl() { return _tl; }
-  size_t sz() { return _sz; }
-  size_t length();
-
-  bool well_formed() {
-    return
-      ((hd() == NULL && tl() == NULL && sz() == 0)
-       || (hd() != NULL && tl() != NULL && sz() > 0))
-      && (sz() == length());
-  }
-  virtual void insert_before_head(HeapRegion* r);
-  void prepend_list(RegionList* new_list);
-  virtual HeapRegion* pop();
-  void dec_sz() { _sz--; }
-  // Requires that "r" is an element of the list, and is not the tail.
-  void delete_after(HeapRegion* r);
-};
-
-class EmptyNonHRegionList: public RegionList {
-protected:
-  // Protected constructor because this type is only meaningful
-  // when the _get/_set next functions are defined.
-  EmptyNonHRegionList() : RegionList() {}
-
-public:
-  void insert_before_head(HeapRegion* r) {
-    //    assert(r->is_empty(), "Better be empty");
-    assert(!r->isHumongous(), "Better not be humongous.");
-    RegionList::insert_before_head(r);
-  }
-  void prepend_list(EmptyNonHRegionList* new_list) {
-    //    assert(new_list->hd() == NULL || new_list->hd()->is_empty(),
-    //     "Better be empty");
-    assert(new_list->hd() == NULL || !new_list->hd()->isHumongous(),
-           "Better not be humongous.");
-    //    assert(new_list->tl() == NULL || new_list->tl()->is_empty(),
-    //     "Better be empty");
-    assert(new_list->tl() == NULL || !new_list->tl()->isHumongous(),
-           "Better not be humongous.");
-    RegionList::prepend_list(new_list);
-  }
-};
-
-class UncleanRegionList: public EmptyNonHRegionList {
-public:
-  HeapRegion* get_next(HeapRegion* hr) {
-    return hr->next_from_unclean_list();
-  }
-  void set_next(HeapRegion* hr, HeapRegion* new_next) {
-    hr->set_next_on_unclean_list(new_next);
-  }
-
-  UncleanRegionList() : EmptyNonHRegionList() {}
-
-  void insert_before_head(HeapRegion* r) {
-    assert(!r->is_on_free_list(),
-           "Better not already be on free list");
-    assert(!r->is_on_unclean_list(),
-           "Better not already be on unclean list");
-    r->set_zero_fill_needed();
-    r->set_on_unclean_list(true);
-    EmptyNonHRegionList::insert_before_head(r);
-  }
-  void prepend_list(UncleanRegionList* new_list) {
-    assert(new_list->tl() == NULL || !new_list->tl()->is_on_free_list(),
-           "Better not already be on free list");
-    assert(new_list->tl() == NULL || new_list->tl()->is_on_unclean_list(),
-           "Better already be marked as on unclean list");
-    assert(new_list->hd() == NULL || !new_list->hd()->is_on_free_list(),
-           "Better not already be on free list");
-    assert(new_list->hd() == NULL || new_list->hd()->is_on_unclean_list(),
-           "Better already be marked as on unclean list");
-    EmptyNonHRegionList::prepend_list(new_list);
-  }
-  HeapRegion* pop() {
-    HeapRegion* res = RegionList::pop();
-    if (res != NULL) res->set_on_unclean_list(false);
-    return res;
-  }
-};
-
-// Local Variables: ***
-// c-indentation-style: gnu ***
-// End: ***
 
 #endif // SERIALGC
 

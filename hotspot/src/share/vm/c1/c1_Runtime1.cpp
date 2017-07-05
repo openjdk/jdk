@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,7 +369,7 @@ static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, meth
   if (branch_bci != InvocationEntryBci) {
     // Compute desination bci
     address pc = method()->code_base() + branch_bci;
-    Bytecodes::Code branch = Bytecodes::code_at(pc, method());
+    Bytecodes::Code branch = Bytecodes::code_at(method(), pc);
     int offset = 0;
     switch (branch) {
       case Bytecodes::_if_icmplt: case Bytecodes::_iflt:
@@ -659,14 +659,14 @@ JRT_END
 
 
 static klassOop resolve_field_return_klass(methodHandle caller, int bci, TRAPS) {
-  Bytecode_field* field_access = Bytecode_field_at(caller, bci);
+  Bytecode_field field_access(caller, bci);
   // This can be static or non-static field access
-  Bytecodes::Code code       = field_access->code();
+  Bytecodes::Code code       = field_access.code();
 
   // We must load class, initialize class and resolvethe field
   FieldAccessInfo result; // initialize class if needed
   constantPoolHandle constants(THREAD, caller->constants());
-  LinkResolver::resolve_field(result, constants, field_access->index(), Bytecodes::java_code(code), false, CHECK_NULL);
+  LinkResolver::resolve_field(result, constants, field_access.index(), Bytecodes::java_code(code), false, CHECK_NULL);
   return result.klass()();
 }
 
@@ -767,7 +767,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
 
   Events::log("patch_code @ " INTPTR_FORMAT , caller_frame.pc());
 
-  Bytecodes::Code code = Bytecode_at(caller_method->bcp_from(bci))->java_code();
+  Bytecodes::Code code = caller_method()->java_code_at(bci);
 
 #ifndef PRODUCT
   // this is used by assertions in the access_field_patching_id
@@ -779,11 +779,11 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
   Handle load_klass(THREAD, NULL);                // oop needed by load_klass_patching code
   if (stub_id == Runtime1::access_field_patching_id) {
 
-    Bytecode_field* field_access = Bytecode_field_at(caller_method, bci);
+    Bytecode_field field_access(caller_method, bci);
     FieldAccessInfo result; // initialize class if needed
-    Bytecodes::Code code = field_access->code();
+    Bytecodes::Code code = field_access.code();
     constantPoolHandle constants(THREAD, caller_method->constants());
-    LinkResolver::resolve_field(result, constants, field_access->index(), Bytecodes::java_code(code), false, CHECK);
+    LinkResolver::resolve_field(result, constants, field_access.index(), Bytecodes::java_code(code), false, CHECK);
     patch_field_offset = result.field_offset();
 
     // If we're patching a field which is volatile then at compile it
@@ -811,36 +811,36 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         }
         break;
       case Bytecodes::_new:
-        { Bytecode_new* bnew = Bytecode_new_at(caller_method->bcp_from(bci));
-          k = caller_method->constants()->klass_at(bnew->index(), CHECK);
+        { Bytecode_new bnew(caller_method(), caller_method->bcp_from(bci));
+          k = caller_method->constants()->klass_at(bnew.index(), CHECK);
         }
         break;
       case Bytecodes::_multianewarray:
-        { Bytecode_multianewarray* mna = Bytecode_multianewarray_at(caller_method->bcp_from(bci));
-          k = caller_method->constants()->klass_at(mna->index(), CHECK);
+        { Bytecode_multianewarray mna(caller_method(), caller_method->bcp_from(bci));
+          k = caller_method->constants()->klass_at(mna.index(), CHECK);
         }
         break;
       case Bytecodes::_instanceof:
-        { Bytecode_instanceof* io = Bytecode_instanceof_at(caller_method->bcp_from(bci));
-          k = caller_method->constants()->klass_at(io->index(), CHECK);
+        { Bytecode_instanceof io(caller_method(), caller_method->bcp_from(bci));
+          k = caller_method->constants()->klass_at(io.index(), CHECK);
         }
         break;
       case Bytecodes::_checkcast:
-        { Bytecode_checkcast* cc = Bytecode_checkcast_at(caller_method->bcp_from(bci));
-          k = caller_method->constants()->klass_at(cc->index(), CHECK);
+        { Bytecode_checkcast cc(caller_method(), caller_method->bcp_from(bci));
+          k = caller_method->constants()->klass_at(cc.index(), CHECK);
         }
         break;
       case Bytecodes::_anewarray:
-        { Bytecode_anewarray* anew = Bytecode_anewarray_at(caller_method->bcp_from(bci));
-          klassOop ek = caller_method->constants()->klass_at(anew->index(), CHECK);
+        { Bytecode_anewarray anew(caller_method(), caller_method->bcp_from(bci));
+          klassOop ek = caller_method->constants()->klass_at(anew.index(), CHECK);
           k = Klass::cast(ek)->array_klass(CHECK);
         }
         break;
       case Bytecodes::_ldc:
       case Bytecodes::_ldc_w:
         {
-          Bytecode_loadconstant* cc = Bytecode_loadconstant_at(caller_method, bci);
-          k = cc->resolve_constant(CHECK);
+          Bytecode_loadconstant cc(caller_method, bci);
+          k = cc.resolve_constant(CHECK);
           assert(k != NULL && !k->is_klass(), "must be class mirror or other Java constant");
         }
         break;
