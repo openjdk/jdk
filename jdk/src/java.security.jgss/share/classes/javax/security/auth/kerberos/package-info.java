@@ -45,7 +45,7 @@
  * file. If none of these system properties are set, the {@code krb5.conf}
  * file is searched for in an implementation-specific manner. Typically,
  * an implementation will first look for a {@code krb5.conf} file in
- * {@code <java-home>/lib/security} and failing that, in an OS-specific
+ * {@code <java-home>/conf/security} and failing that, in an OS-specific
  * location.<p>
  *
  * The {@code krb5.conf} file is formatted in the Windows INI file style,

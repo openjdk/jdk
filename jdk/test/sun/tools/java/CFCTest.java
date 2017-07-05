@@ -91,7 +91,7 @@ public class CFCTest {
      */
     void exerciseClassDefinition() throws Exception {
         BatchEnvironment env = new BatchEnvironment(System.out,
-                BatchEnvironment.createClassPath(testClassPath, null, null),
+                BatchEnvironment.createClassPath(testClassPath, null),
                 null);
         try {
             ClassDeclaration decl = env.getClassDeclaration(

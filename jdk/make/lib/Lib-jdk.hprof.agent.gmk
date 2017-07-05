@@ -62,10 +62,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBHPROF, \
         -D "JDK_FNAME=hprof.dll" \
         -D "JDK_INTERNAL_NAME=hprof" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libhprof_jvmti, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libhprof_jvmti, \
     DEBUG_SYMBOLS := true))
 
-HPROF_LIBRARIES += $(BUILD_LIBHPROF)
+TARGETS += $(BUILD_LIBHPROF)
 
 ################################################################################
 
@@ -88,15 +88,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA_CRW_DEMO, \
         -D "JDK_FNAME=java_crw_demo.dll" \
         -D "JDK_INTERNAL_NAME=java_crw_demo" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjava_crw_demo, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava_crw_demo, \
     DEBUG_SYMBOLS := true))
 
-CRW_LIBRARIES += $(BUILD_LIBJAVA_CRW_DEMO)
+TARGETS += $(BUILD_LIBJAVA_CRW_DEMO)
 
 ################################################################################
-
-jdk.hprof.agent: $(HPROF_LIBRARIES) $(CRW_LIBRARIES)
-
-all: jdk.hprof.agent
-
-.PHONY: all jdk.hprof.agent

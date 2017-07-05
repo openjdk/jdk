@@ -103,8 +103,8 @@ diff_text() {
 	        -e '[0-9]\{2\}/[0-9]\{2\}/[0-9]\{4\}' \
 	        -e thePoint -e aPoint -e setItemsPtr \
                 -e 'lambda\$[a-zA-Z0-9]*\$[0-9]' ${THIS_FILE} > /dev/null; then
-            $JAVAP -c -constants -l -p ${OTHER_FILE} >  ${OTHER_FILE}.javap
-            $JAVAP -c -constants -l -p ${THIS_FILE} > ${THIS_FILE}.javap
+            $JAVAP -c -constants -l -p "${OTHER_FILE}" >  ${OTHER_FILE}.javap
+            $JAVAP -c -constants -l -p "${THIS_FILE}" > ${THIS_FILE}.javap
             TMP=$($DIFF ${OTHER_FILE}.javap ${THIS_FILE}.javap | \
                 $GREP '^[<>]' | \
                 $SED -e '/[<>].*[0-9]\{4\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}-b[0-9]\{2\}.*/d' \
@@ -298,7 +298,7 @@ compare_general_files() {
     WORK_DIR=$3
     
     GENERAL_FILES=$(cd $THIS_DIR && $FIND . -type f ! -name "*.so" ! -name "*.jar" ! -name "*.zip" \
-        ! -name "*.debuginfo" ! -name "*.dylib" ! -name "jexec" \
+        ! -name "*.debuginfo" ! -name "*.dylib" ! -name "jexec" ! -name "*.jimage" \
         ! -name "ct.sym" ! -name "*.diz" ! -name "*.dll" \
         ! -name "*.pdb" ! -name "*.exp" ! -name "*.ilk" \
         ! -name "*.lib" ! -name "*.war" ! -name "JavaControlPanel" \
@@ -395,8 +395,14 @@ compare_zip_file() {
     $RM -rf $THIS_UNZIPDIR $OTHER_UNZIPDIR
     $MKDIR -p $THIS_UNZIPDIR
     $MKDIR -p $OTHER_UNZIPDIR
-    (cd $THIS_UNZIPDIR && $UNARCHIVE $THIS_ZIP)
-    (cd $OTHER_UNZIPDIR && $UNARCHIVE $OTHER_ZIP)
+    if [ "$TYPE" = "jimage" ]
+    then
+        (cd $THIS_UNZIPDIR && $JIMAGE extract $THIS_ZIP)
+        (cd $OTHER_UNZIPDIR && $JIMAGE extract $OTHER_ZIP)
+    else
+        (cd $THIS_UNZIPDIR && $UNARCHIVE $THIS_ZIP)
+        (cd $OTHER_UNZIPDIR && $UNARCHIVE $OTHER_ZIP)
+    fi
 
     # Find all archives inside and unzip them as well to compare the contents rather than
     # the archives. pie.jar.pack.gz i app3.war is corrupt, skip it.
@@ -525,7 +531,7 @@ compare_all_jar_files() {
 
     # TODO filter?
     ZIPS=$(cd $THIS_DIR && $FIND . -type f -name "*.jar" -o -name "*.war" \
-        | $SORT | $FILTER)
+        -o -name "*.jimage" | $SORT | $FILTER)
 
     if [ -n "$ZIPS" ]; then
         echo Jar files...
@@ -633,7 +639,7 @@ compare_bin_file() {
         if cmp $OTHER_FILE $THIS_FILE > /dev/null; then
         # The files were bytewise identical.
             if [ -n "$VERBOSE" ]; then
-                echo "        :           :         :         :          : $BIN_FILE"
+                echo "        :           :         :         :          :          : $BIN_FILE"
             fi
             return 0
         fi
@@ -1136,17 +1142,8 @@ fi
 
 if [ "$SKIP_DEFAULT" != "true" ]; then
     if [ -z "$OTHER" ]; then
-        OTHER="$THIS/../$LEGACY_BUILD_DIR"
-        if [ -d "$OTHER" ]; then
-            OTHER="$( cd "$OTHER" && pwd )"
-        else
-            echo "Default old build directory does not exist:"
-            echo "$OTHER"
-            exit 1
-        fi
-        echo "Comparing to default old build:"
-        echo "$OTHER"
-        echo
+        echo "Nothing to compare to, set with -o"
+        exit 1
     else
         if [ ! -d "$OTHER" ]; then
             echo "Other build directory does not exist:"
@@ -1160,90 +1157,36 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
     fi
 
 
-    # Figure out the layout of the this build. Which kinds of images have been produced
-    if [ -d "$THIS/install/j2sdk-image" ]; then
-        THIS_J2SDK="$THIS/install/j2sdk-image"
-        THIS_J2RE="$THIS/install/j2re-image"
-        echo "Selecting install images in this build"
-    elif [ -d "$THIS/deploy/j2sdk-image" ]; then
-        THIS_J2SDK="$THIS/deploy/j2sdk-image"
-        THIS_J2RE="$THIS/deploy/j2re-image"
-        echo "Selecting deploy images in this build"
-    elif [ -d "$THIS/images/j2sdk-image" ]; then
-        THIS_J2SDK="$THIS/images/j2sdk-image"
-        THIS_J2RE="$THIS/images/j2re-image"
-        echo "Selecting jdk images in this build"
+    # Find the common images to compare, prioritizing later build stages
+    if [ -d "$THIS/install/jdk" ] && [ -d "$OTHER/install/jdk" ]; then
+        THIS_J2SDK="$THIS/install/jdk"
+        THIS_J2RE="$THIS/install/jre"
+        OTHER_J2SDK="$OTHER/install/jdk"
+        OTHER_J2RE="$OTHER/install/jre"
+        echo "Selecting install images for compare"
+    elif [ -d "$THIS/deploy/jdk" ] && [ -d "$OTHER/deploy/jdk" ]; then
+        THIS_J2SDK="$THIS/deploy/jdk"
+        THIS_J2RE="$THIS/deploy/jre"
+        OTHER_J2SDK="$OTHER/deploy/jdk"
+        OTHER_J2RE="$OTHER/deploy/jre"
+        echo "Selecting deploy images for compare"
+    elif [ -d "$THIS/images/jdk" ] && [ -d "$OTHER/images/jdk" ]; then
+        THIS_J2SDK="$THIS/images/jdk"
+        THIS_J2RE="$THIS/images/jre"
+        OTHER_J2SDK="$OTHER/images/jdk"
+        OTHER_J2RE="$OTHER/images/jre"
+        echo "Selecting jdk images for compare"
+    else
+	echo "No common images found."
+	exit 1
     fi
 
-    if [ -d "$THIS/images/j2sdk-overlay-image" ]; then
-        if [ -d "$THIS/install/j2sdk-image" ]; then
-            # If there is an install image, prefer that, it's also overlay
-            THIS_J2SDK_OVERLAY="$THIS/install/j2sdk-image"
-            THIS_J2RE_OVERLAY="$THIS/install/j2re-image"
-            echo "Selecting install overlay images in this build"
-        else
-            THIS_J2SDK_OVERLAY="$THIS/images/j2sdk-overlay-image"
-            THIS_J2RE_OVERLAY="$THIS/images/j2re-overlay-image"
-            echo "Selecting jdk overlay images in this build"
-        fi
-    fi
-
-    if [ -d "$THIS/images/j2sdk-bundle" ]; then
-        THIS_J2SDK_BUNDLE="$THIS/images/j2sdk-bundle"
-        THIS_J2RE_BUNDLE="$THIS/images/j2re-bundle"
-        echo "Selecting bundles in this build"
-    fi
-
-    # Figure out the layout of the other build (old or new, normal or overlay image)
-    if [ -d "$OTHER/j2sdk-image" ]; then
-        if [ -f "$OTHER/j2sdk-image/LICENSE" ]; then
-            OTHER_J2SDK="$OTHER/j2sdk-image"
-            OTHER_J2RE="$OTHER/j2re-image"
-            echo "Selecting old-style images in other build"
-        else
-            OTHER_J2SDK_OVERLAY="$OTHER/j2sdk-image"
-            OTHER_J2RE_OVERLAY="$OTHER/j2re-image"
-            echo "Selecting overlay images in other build"
-        fi
-    elif [ -d "$OTHER/install/j2sdk-image" ]; then
-        OTHER_J2SDK="$OTHER/install/j2sdk-image"
-        OTHER_J2RE="$OTHER/install/j2re-image"
-        echo "Selecting install images in other build"
-    elif [ -d "$OTHER/deploy/j2sdk-image" ]; then
-        OTHER_J2SDK="$OTHER/deploy/j2sdk-image"
-        OTHER_J2RE="$OTHER/deploy/j2re-image"
-        echo "Selecting deploy images in other build"
-    elif [ -d "$OTHER/images/j2sdk-image" ]; then
-        OTHER_J2SDK="$OTHER/images/j2sdk-image"
-        OTHER_J2RE="$OTHER/images/j2re-image"
-        echo "Selecting jdk images in other build"
-    fi
-
-    if [ -d "$OTHER/j2sdk-bundle" ]; then
-        OTHER_J2SDK_BUNDLE="$OTHER/j2sdk-bundle"
-        OTHER_J2RE_BUNDLE="$OTHER/j2re-bundle"
-        echo "Selecting bundles in other build"
-    elif [ -d "$OTHER/images/j2sdk-bundle" ]; then
-        OTHER_J2SDK_BUNDLE="$OTHER/images/j2sdk-bundle"
-        OTHER_J2RE_BUNDLE="$OTHER/images/j2re-bundle"
-        echo "Selecting jdk bundles in other build"
-    fi
-    
-    if [ -z "$THIS_J2SDK" ] || [ -z "$THIS_J2RE" ]; then
-        if [ -z "$THIS_J2SDK_OVERLAY" ]; then
-            echo "Cannot locate images for this build. Are you sure you have run 'make images'?"
-            exit 1
-        fi
-    fi
-
-    if [ -z "$OTHER_J2SDK" ] && [ -n "$OTHER_J2SDK_OVERLAY" ] && [ -z "$THIS_J2SDK_OVERLAY" ]; then
-        echo "OTHER build only has an overlay image while this build does not. Nothing to compare!"
-        exit 1
-    fi
-
-    if [ -z "$THIS_J2SDK_BUNDLE" ] && [ -n "$OTHER_J2SDK_BUNDLE" ]; then
-        echo "WARNING! OTHER build has bundles built while this build does not."
-        echo "Skipping bundle compare!"
+    if [ -d "$THIS/images/jdk-bundle" ] && [ -d "$OTHER/images/jdk-bundle" ]; then
+        THIS_J2SDK_BUNDLE="$THIS/images/jdk-bundle"
+        THIS_J2RE_BUNDLE="$THIS/images/jre-bundle"
+        OTHER_J2SDK_BUNDLE="$OTHER/images/jdk-bundle"
+        OTHER_J2RE_BUNDLE="$OTHER/images/jre-bundle"
+        echo "Also comparing macosx bundles"
     fi
 
     if [ -d "$OTHER/images" ]; then
@@ -1266,22 +1209,13 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         THIS_JGSS_WINDOWS_BIN="$THIS_SEC_DIR/$JGSS_WINDOWS_BIN"
     fi
 
-    if [ -d "$THIS/docs" ]; then
+    if [ -d "$THIS/docs" ] && [ -d "$OTHER/docs" ]; then
         THIS_DOCS="$THIS/docs"
-    fi
-
-    if [ -d "$OTHER/docs" ]; then
         OTHER_DOCS="$OTHER/docs"
-    fi
-
-    if [ -z "$THIS_DOCS" ]; then
+	echo "Also comparing docs"
+    else
         echo "WARNING! Docs haven't been built and won't be compared."
     fi
-
-    if [ -z "$OTHER_DOCS" ]; then
-        echo "WARNING! Other build doesn't contain docs, skipping doc compare."
-    fi
-
 fi
 
 ##########################################################################################
@@ -1299,27 +1233,16 @@ if [ "$CMP_NAMES" = "true" ]; then
         echo -n "J2RE  "
         compare_files $THIS_J2RE $OTHER_J2RE $COMPARE_ROOT/j2re
     fi
-    if [ -n "$THIS_J2SDK_OVERLAY" ] && [ -n "$OTHER_J2SDK_OVERLAY" ]; then
-        echo -n "J2SDK Overlay "
-        compare_dirs $THIS_J2SDK_OVERLAY $OTHER_J2SDK_OVERLAY $COMPARE_ROOT/j2sdk-overlay
-        echo -n "J2RE  Overlay "
-        compare_dirs $THIS_J2RE_OVERLAY $OTHER_J2RE_OVERLAY $COMPARE_ROOT/j2re-overlay
-        
-        echo -n "J2SDK Overlay "
-        compare_files $THIS_J2SDK_OVERLAY $OTHER_J2SDK_OVERLAY $COMPARE_ROOT/j2sdk-overlay
-        echo -n "J2RE  Overlay "
-        compare_files $THIS_J2RE_OVERLAY $OTHER_J2RE_OVERLAY $COMPARE_ROOT/j2re-overlay
-    fi
     if [ -n "$THIS_J2SDK_BUNDLE" ] && [ -n "$OTHER_J2SDK_BUNDLE" ]; then
         echo -n "J2SDK Bundle "
-        compare_dirs $THIS_J2SDK_BUNDLE $OTHER_J2SDK_BUNDLE $COMPARE_ROOT/j2sdk-bundle
+        compare_dirs $THIS_J2SDK_BUNDLE $OTHER_J2SDK_BUNDLE $COMPARE_ROOT/jdk-bundle
         echo -n "J2RE  Bundle "
-        compare_dirs $THIS_J2RE_BUNDLE $OTHER_J2RE_BUNDLE $COMPARE_ROOT/j2re-bundle
+        compare_dirs $THIS_J2RE_BUNDLE $OTHER_J2RE_BUNDLE $COMPARE_ROOT/jre-bundle
         
         echo -n "J2SDK Bundle "
-        compare_files $THIS_J2SDK_BUNDLE $OTHER_J2SDK_BUNDLE $COMPARE_ROOT/j2sdk-bundle
+        compare_files $THIS_J2SDK_BUNDLE $OTHER_J2SDK_BUNDLE $COMPARE_ROOT/jdk-bundle
         echo -n "J2RE  Bundle "
-        compare_files $THIS_J2RE_BUNDLE $OTHER_J2RE_BUNDLE $COMPARE_ROOT/j2re-bundle
+        compare_files $THIS_J2RE_BUNDLE $OTHER_J2RE_BUNDLE $COMPARE_ROOT/jre-bundle
     fi
     if [ -n "$THIS_DOCS" ] && [ -n "$OTHER_DOCS" ]; then
         echo -n "Docs "
@@ -1340,18 +1263,6 @@ if [ "$CMP_PERMS" = "true" ]; then
         echo -n "J2RE  "
         compare_permissions $THIS_J2RE $OTHER_J2RE $COMPARE_ROOT/j2re
     fi
-    if [ -n "$THIS_J2SDK_OVERLAY" ] && [ -n "$OTHER_J2SDK_OVERLAY" ]; then
-        echo -n "J2SDK Overlay "
-        compare_permissions $THIS_J2SDK_OVERLAY $OTHER_J2SDK_OVERLAY $COMPARE_ROOT/j2sdk-overlay
-        echo -n "J2RE  Overlay "
-        compare_permissions $THIS_J2RE_OVERLAY $OTHER_J2RE_OVERLAY $COMPARE_ROOT/j2re-overlay
-    fi
-    if [ -n "$THIS_J2SDK_BUNDLE" ] && [ -n "$OTHER_J2SDK_BUNDLE" ]; then
-        echo -n "J2SDK Bundle "
-        compare_permissions $THIS_J2SDK_BUNDLE $OTHER_J2SDK_BUNDLE $COMPARE_ROOT/j2sdk-bundle
-        echo -n "J2RE  Bundle "
-        compare_permissions $THIS_J2RE_BUNDLE $OTHER_J2RE_BUNDLE $COMPARE_ROOT/j2re-bundle
-    fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
         compare_permissions $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
@@ -1364,17 +1275,11 @@ if [ "$CMP_TYPES" = "true" ]; then
         echo -n "J2RE  "
         compare_file_types $THIS_J2RE $OTHER_J2RE $COMPARE_ROOT/j2re
     fi
-    if [ -n "$THIS_J2SDK_OVERLAY" ] && [ -n "$OTHER_J2SDK_OVERLAY" ]; then
-        echo -n "J2SDK Overlay "
-        compare_file_types $THIS_J2SDK_OVERLAY $OTHER_J2SDK_OVERLAY $COMPARE_ROOT/j2sdk-overlay
-        echo -n "J2RE  Overlay "
-        compare_file_types $THIS_J2RE_OVERLAY $OTHER_J2RE_OVERLAY $COMPARE_ROOT/j2re-overlay
-    fi
     if [ -n "$THIS_J2SDK_BUNDLE" ] && [ -n "$OTHER_J2SDK_BUNDLE" ]; then
         echo -n "J2SDK Bundle "
-        compare_file_types $THIS_J2SDK_BUNDLE $OTHER_J2SDK_BUNDLE $COMPARE_ROOT/j2sdk-bundle
+        compare_file_types $THIS_J2SDK_BUNDLE $OTHER_J2SDK_BUNDLE $COMPARE_ROOT/jdk-bundle
         echo -n "J2RE  Bundle "
-        compare_file_types $THIS_J2RE_BUNDLE $OTHER_J2RE_BUNDLE $COMPARE_ROOT/j2re-bundle
+        compare_file_types $THIS_J2RE_BUNDLE $OTHER_J2RE_BUNDLE $COMPARE_ROOT/jre-bundle
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
         compare_file_types $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
@@ -1388,17 +1293,11 @@ if [ "$CMP_GENERAL" = "true" ]; then
         echo -n "J2RE  "
         compare_general_files $THIS_J2RE $OTHER_J2RE $COMPARE_ROOT/j2re
     fi
-    if [ -n "$THIS_J2SDK_OVERLAY" ] && [ -n "$OTHER_J2SDK_OVERLAY" ]; then
-        echo -n "J2SDK Overlay "
-        compare_general_files $THIS_J2SDK_OVERLAY $OTHER_J2SDK_OVERLAY $COMPARE_ROOT/j2sdk-overlay
-        echo -n "J2RE  Overlay "
-        compare_general_files $THIS_J2RE_OVERLAY $OTHER_J2RE_OVERLAY $COMPARE_ROOT/j2re-overlay
-    fi
     if [ -n "$THIS_J2SDK_BUNDLE" ] && [ -n "$OTHER_J2SDK_BUNDLE" ]; then
         echo -n "J2SDK Bundle "
-        compare_general_files $THIS_J2SDK_BUNDLE $OTHER_J2SDK_BUNDLE $COMPARE_ROOT/j2sdk-bundle
+        compare_general_files $THIS_J2SDK_BUNDLE $OTHER_J2SDK_BUNDLE $COMPARE_ROOT/jdk-bundle
         echo -n "J2RE  Bundle "
-        compare_general_files $THIS_J2RE_BUNDLE $OTHER_J2RE_BUNDLE $COMPARE_ROOT/j2re-bundle
+        compare_general_files $THIS_J2RE_BUNDLE $OTHER_J2RE_BUNDLE $COMPARE_ROOT/jre-bundle
     fi
     if [ -n "$THIS_DOCS" ] && [ -n "$OTHER_DOCS" ]; then
         echo -n "Docs "
@@ -1454,10 +1353,6 @@ if [ "$CMP_LIBS" = "true" ]; then
             compare_all_libs $THIS_J2RE $OTHER_J2RE $COMPARE_ROOT/j2re
         fi
     fi
-    if [ -n "$THIS_J2SDK_OVERLAY" ] && [ -n "$OTHER_J2SDK_OVERLAY" ]; then
-        echo -n "Bundle   "
-        compare_all_libs $THIS_J2SDK_OVERLAY $OTHER_J2SDK_OVERLAY $COMPARE_ROOT/j2sdk-overlay
-    fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
         compare_all_libs $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
@@ -1466,10 +1361,6 @@ fi
 if [ "$CMP_EXECS" = "true" ]; then
     if [ -n "$THIS_J2SDK" ] && [ -n "$OTHER_J2SDK" ]; then
         compare_all_execs $THIS_J2SDK $OTHER_J2SDK $COMPARE_ROOT/j2sdk
-    fi
-    if [ -n "$THIS_J2SDK_OVERLAY" ] && [ -n "$OTHER_J2SDK_OVERLAY" ]; then
-        echo -n "Overlay "
-        compare_all_execs $THIS_J2SDK_OVERLAY $OTHER_J2SDK_OVERLAY $COMPARE_ROOT/j2sdk-overlay
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
         compare_all_execs $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
