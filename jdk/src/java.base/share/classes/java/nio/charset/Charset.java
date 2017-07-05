@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,8 +147,12 @@ import sun.security.action.GetPropertyAction;
  * implementation to see if any other charsets are supported.  The behavior
  * of such optional charsets may differ between implementations.
  *
- * <blockquote><table style="width:80%" summary="Description of standard charsets">
+ * <blockquote><table class="striped" style="width:80%">
+ * <caption style="display:none">Description of standard charsets</caption>
+ * <thead>
  * <tr><th style="text-align:left">Charset</th><th style="text-align:left">Description</th></tr>
+ * </thead>
+ * <tbody>
  * <tr><td style="vertical-align:top">{@code US-ASCII}</td>
  *     <td>Seven-bit ASCII, a.k.a. {@code ISO646-US},
  *         a.k.a. the Basic Latin block of the Unicode character set</td></tr>
@@ -165,6 +169,7 @@ import sun.security.action.GetPropertyAction;
  * <tr><td style="vertical-align:top">{@code UTF-16}</td>
  *     <td>Sixteen-bit UCS Transformation Format,
  *         byte&nbsp;order identified by an optional byte-order mark</td></tr>
+ * </tbody>
  * </table></blockquote>
  *
  * <p> The {@code UTF-8} charset is specified by <a

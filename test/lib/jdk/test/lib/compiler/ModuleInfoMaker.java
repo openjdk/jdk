@@ -21,6 +21,8 @@
  * questions.
  */
 
+package jdk.test.lib.compiler;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,21 +32,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static org.testng.Assert.assertTrue;
-
 /**
  * Utility class for creating test modules.
  */
 public class ModuleInfoMaker {
-    private static String MODULE_INFO_JAVA = "module-info.java";
-    private static Pattern MODULE_PATTERN =
+    private static final String MODULE_INFO_JAVA = "module-info.java";
+    private static final Pattern MODULE_PATTERN =
         Pattern.compile("module\\s+((?:\\w+\\.)*)");
-    private static Pattern PACKAGE_PATTERN =
+    private static final Pattern PACKAGE_PATTERN =
                        Pattern.compile("package\\s+(((?:\\w+\\.)*)(?:\\w+))");
-    private static Pattern CLASS_PATTERN =
+    private static final Pattern CLASS_PATTERN =
           Pattern.compile("(?:public\\s+)?(?:class|enum|interface)\\s+(\\w+)");
 
     private final Path dir;
+
     public ModuleInfoMaker(Path dir) {
         this.dir = dir;
     }
@@ -69,12 +70,13 @@ public class ModuleInfoMaker {
         throws IOException
     {
         Path msrc = dir.resolve(module);
-        Stream<String> args =
+        String[] args =
             Stream.concat(Arrays.stream(options),
                           Stream.of("--module-source-path",
-                                    dir.toString()));
-        assertTrue(CompilerUtils.compile(msrc, dest, args.toArray(String[]::new)),
-                   "Fail to compile " + module);
+                                    dir.toString())).toArray(String[]::new);
+        if (!CompilerUtils.compile(msrc, dest, args)) {
+            throw new Error("Fail to compile " + module);
+        }
     }
 
     static class JavaSource {

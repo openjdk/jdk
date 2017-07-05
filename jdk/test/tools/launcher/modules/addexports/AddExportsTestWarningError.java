@@ -25,9 +25,8 @@
  * @test
  * @bug 8168836
  * @summary Basic argument validation for --add-exports
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build AddExportsTestWarningError CompilerUtils ModuleInfoMaker
  * @build jdk.testlibrary.*
  * @run testng AddExportsTestWarningError
  */
@@ -40,6 +39,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.ModuleInfoMaker;
 import jdk.testlibrary.OutputAnalyzer;
 import static jdk.testlibrary.ProcessTools.*;
 
@@ -47,7 +47,6 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
-
 
 @Test
 public class AddExportsTestWarningError {

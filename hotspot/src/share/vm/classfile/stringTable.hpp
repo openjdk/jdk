@@ -61,9 +61,13 @@ private:
   // Apply the give oop closure to the entries to the buckets
   // in the range [start_idx, end_idx).
   static void buckets_oops_do(OopClosure* f, int start_idx, int end_idx);
+
+  typedef StringTable::BucketUnlinkContext BucketUnlinkContext;
   // Unlink or apply the give oop closure to the entries to the buckets
-  // in the range [start_idx, end_idx).
-  static void buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f, int start_idx, int end_idx, int* processed, int* removed);
+  // in the range [start_idx, end_idx). Unlinked bucket entries are collected in the given
+  // context to be freed later.
+  // This allows multiple threads to work on the table at once.
+  static void buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f, int start_idx, int end_idx, BucketUnlinkContext* context);
 
   // Hashing algorithm, used as the hash value used by the
   //     StringTable for bucket selection and comparison (stored in the

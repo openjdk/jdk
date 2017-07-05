@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import javax.net.ssl.*;
  * the {@link #configure(HttpsParameters)} method in order to change
  * the default configuration.
  * <p>
- * The following <a name="example">example</a> shows how this may be done:
+ * The following <a id="example">example</a> shows how this may be done:
  *
  * <blockquote><pre>
  * SSLContext sslContext = SSLContext.getInstance (....);

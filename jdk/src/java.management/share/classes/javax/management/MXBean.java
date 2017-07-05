@@ -93,7 +93,7 @@ import javax.management.openmbean.TabularType;
       Standard MBean concept.  Here is how a managed object might be
       represented as a Standard MBean, and as an MXBean:</p>
 
-    <table border="1" cellpadding="5">
+    <table class="plain">
     <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
@@ -134,7 +134,7 @@ public interface MemoryPool<b>MXBean</b> {
 
     <p>So, we might define <code>MemoryUsage</code> like this:</p>
 
-    <table border="1" cellpadding="5">
+    <table class="plain">
     <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
@@ -197,7 +197,7 @@ public class MemoryUsage {
     <p>This becomes clearer if we compare what the clients of the two
       models might look like:</p>
 
-    <table border="1" cellpadding="5">
+    <table class="plain">
     <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
@@ -235,7 +235,7 @@ String name = (String)
       managed objects when you know the model beforehand, regardless
       of whether you are using Standard MBeans or MXBeans:</p>
 
-    <table border="1" cellpadding="5">
+    <table class="plain">
     <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
@@ -269,7 +269,7 @@ long used = usage.getUsed();
     <p>Implementing the MemoryPool object works similarly for both
       Standard MBeans and MXBeans.</p>
 
-    <table border="1" cellpadding="5">
+    <table class="plain">
     <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
@@ -297,7 +297,7 @@ public class MemoryPool
     <p>Registering the MBean in the MBean Server works in the same way
       in both cases:</p>
 
-    <table border="1" cellpadding="5">
+    <table class="plain">
     <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
@@ -484,7 +484,7 @@ public class MemoryPool
 
     <p>The following table summarizes the type mapping rules.</p>
 
-    <table border="1" cellpadding="5">
+    <table class="striped">
     <caption style="display:none">Type Mapping Rules</caption>
       <tr>
         <th>Java type <em>J</em></th>

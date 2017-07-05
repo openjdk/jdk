@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static jdk.incubator.http.internal.common.Utils.dump;
 import static jdk.incubator.http.internal.websocket.StatusCodes.NO_STATUS_CODE;
-import static jdk.incubator.http.internal.websocket.StatusCodes.checkIncomingCode;
+import static jdk.incubator.http.internal.websocket.StatusCodes.isLegalToReceiveFromServer;
 
 /*
  * Consumes frame parts and notifies a message consumer, when there is
@@ -212,20 +212,20 @@ class FrameConsumer implements Frame.Consumer {
         }
         switch (opcode) {
             case CLOSE:
-                int statusCode = NO_STATUS_CODE;
+                char statusCode = NO_STATUS_CODE;
                 String reason = "";
                 if (payloadLen != 0) {
                     int len = binaryData.remaining();
                     assert 2 <= len && len <= 125 : dump(len, payloadLen);
-                    try {
-                        statusCode = checkIncomingCode(binaryData.getChar());
-                        reason = UTF_8.newDecoder().decode(binaryData).toString();
-                    } catch (CheckFailedException e) {
-                        throw new FailWebSocketException("Incorrect status code")
-                                .initCause(e);
-                    } catch (CharacterCodingException e) {
+                    statusCode = binaryData.getChar();
+                    if (!isLegalToReceiveFromServer(statusCode)) {
                         throw new FailWebSocketException(
-                                "Close reason is a malformed UTF-8 sequence")
+                                "Illegal status code: " + statusCode);
+                    }
+                    try {
+                        reason = UTF_8.newDecoder().decode(binaryData).toString();
+                    } catch (CharacterCodingException e) {
+                        throw new FailWebSocketException("Illegal close reason")
                                 .initCause(e);
                     }
                 }
