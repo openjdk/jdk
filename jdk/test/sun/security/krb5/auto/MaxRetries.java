@@ -60,7 +60,7 @@ public class MaxRetries {
         test1(5000, 2);         // 2 2
 
         // For tryLess
-        Security.setProperty("krb5.kdc.bad.policy", "tryless");
+        Security.setProperty("krb5.kdc.bad.policy", "tryless:1," + BadKdc.toReal(5000));
         rewriteMaxRetries(4);
         test1(4000, 7);         // 1 1 1 1 2 1 2
         test1(4000, 4);         // 1 2 1 2
@@ -94,7 +94,7 @@ public class MaxRetries {
      * @param count the expected total try
      */
     private static void test1(int timeout, int count) throws Exception {
-        String timeoutTag = "timeout=" + timeout;
+        String timeoutTag = "timeout=" + BadKdc.toReal(timeout);
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         PrintStream oldout = System.out;
         System.setOut(new PrintStream(bo));
@@ -192,12 +192,12 @@ public class MaxRetries {
             if (s.startsWith("[realms]")) {
                 // Reconfig global setting
                 fw.write("max_retries = 2\n");
-                fw.write("kdc_timeout = 5000\n");
+                fw.write("kdc_timeout = " + BadKdc.toReal(5000) + "\n");
             } else if (s.trim().startsWith("kdc = ")) {
                 if (value != -1) {
                     // Reconfig for realm
                     fw.write("    max_retries = " + value + "\n");
-                    fw.write("    kdc_timeout = " + (value*1000) + "\n");
+                    fw.write("    kdc_timeout = " + BadKdc.toReal(value*1000) + "\n");
                 }
                 // Add a bad KDC as the first candidate
                 fw.write("    kdc = localhost:33333\n");

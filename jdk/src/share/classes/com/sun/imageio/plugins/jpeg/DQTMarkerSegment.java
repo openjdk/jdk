@@ -44,7 +44,7 @@ import org.w3c.dom.NamedNodeMap;
  * A DQT (Define Quantization Table) marker segment.
  */
 class DQTMarkerSegment extends MarkerSegment {
-    List tables = new ArrayList();  // Could be 1 to 4
+    List<Qtable> tables = new ArrayList<>();  // Could be 1 to 4
 
     DQTMarkerSegment(float quality, boolean needTwo) {
         super(JPEG.DQT);
@@ -86,11 +86,11 @@ class DQTMarkerSegment extends MarkerSegment {
 
     protected Object clone() {
         DQTMarkerSegment newGuy = (DQTMarkerSegment) super.clone();
-        newGuy.tables = new ArrayList(tables.size());
-        Iterator iter = tables.iterator();
+        newGuy.tables = new ArrayList<>(tables.size());
+        Iterator<Qtable> iter = tables.iterator();
         while (iter.hasNext()) {
-            Qtable table = (Qtable) iter.next();
-            newGuy.tables.add(table.clone());
+            Qtable table = iter.next();
+            newGuy.tables.add((Qtable) table.clone());
         }
         return newGuy;
     }
@@ -98,7 +98,7 @@ class DQTMarkerSegment extends MarkerSegment {
     IIOMetadataNode getNativeNode() {
         IIOMetadataNode node = new IIOMetadataNode("dqt");
         for (int i= 0; i<tables.size(); i++) {
-            Qtable table = (Qtable) tables.get(i);
+            Qtable table = tables.get(i);
             node.appendChild(table.getNativeNode());
         }
         return node;
@@ -117,7 +117,7 @@ class DQTMarkerSegment extends MarkerSegment {
         System.out.println("Num tables: "
                            + Integer.toString(tables.size()));
         for (int i= 0; i<tables.size(); i++) {
-            Qtable table = (Qtable) tables.get(i);
+            Qtable table = tables.get(i);
             table.print();
         }
         System.out.println();

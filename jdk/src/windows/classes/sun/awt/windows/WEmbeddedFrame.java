@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,11 +203,11 @@ public class WEmbeddedFrame extends EmbeddedFrame {
     }
 
 
-    protected native boolean isPrinterDC(long hdc);
+    private native boolean isPrinterDC(long hdc);
 
-    protected native void printBand(long hdc, byte[] data, int offset,
-                                    int sx, int sy, int swidth, int sheight,
-                                    int dx, int dy, int dwidth, int dheight);
+    private native void printBand(long hdc, byte[] data, int offset, int sx,
+                                  int sy, int swidth, int sheight, int dx,
+                                  int dy, int dwidth, int dheight);
 
     /**
      * Initialize JNI field IDs

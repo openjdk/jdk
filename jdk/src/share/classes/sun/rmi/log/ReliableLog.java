@@ -30,8 +30,6 @@ import java.lang.reflect.Constructor;
 import java.rmi.server.RMIClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class is a simple implementation of a reliable Log.  The
@@ -141,7 +139,7 @@ public class ReliableLog {
     {
         super();
         this.Debug = AccessController.doPrivileged(
-            new GetBooleanAction("sun.rmi.log.debug")).booleanValue();
+            (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("sun.rmi.log.debug"));
         dir = new File(dirPath);
         if (!(dir.exists() && dir.isDirectory())) {
             // create directory
@@ -334,7 +332,7 @@ public class ReliableLog {
         getLogClassConstructor() {
 
         String logClassName = AccessController.doPrivileged(
-            new GetPropertyAction("sun.rmi.log.class"));
+            (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.log.class"));
         if (logClassName != null) {
             try {
                 ClassLoader loader =

@@ -834,12 +834,12 @@ JNU_ReleaseStringPlatformChars(JNIEnv *env, jstring jstr, const char *str)
 /*
  * Export the platform dependent path canonicalization so that
  * VM can find it when loading system classes.
- *
+ * This function is also used by the instrumentation agent.
  */
 extern int canonicalize(char *path, const char *out, int len);
 
 JNIEXPORT int
-Canonicalize(JNIEnv *env, char *orig, char *out, int len)
+Canonicalize(JNIEnv *unused, char *orig, char *out, int len)
 {
     /* canonicalize an already natived path */
     return canonicalize(orig, out, len);

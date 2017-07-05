@@ -99,13 +99,12 @@ common_tests() {
 # $2 - non-tiered comp_level 
 nontiered_tests() {
     level=`grep "^compile " $replay_data | awk '{print $6}'`
-    # is level available in non-tiere
+    # is level available in non-tiered
     if [ "$level" -eq $2 ]
     then
         positive_test $1 "NON-TIERED :: AVAILABLE COMP_LEVEL" \
                 -XX:-TieredCompilation
     else
-        negative_test `expr $1 + 1` "NON-TIERED :: UNAVAILABLE COMP_LEVEL" \
         negative_test `expr $1 + 1` "NON-TIERED :: UNAVAILABLE COMP_LEVEL" \
                 -XX:-TieredCompilation
     fi

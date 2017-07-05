@@ -736,16 +736,17 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     @LambdaForm.Hidden
     static Object guardWithCatch(MethodHandle target, Class<? extends Throwable> exType, MethodHandle catcher,
                                  Object... av) throws Throwable {
+        // Use asFixedArity() to avoid unnecessary boxing of last argument for VarargsCollector case.
         try {
-            return target.invokeWithArguments(av);
+            return target.asFixedArity().invokeWithArguments(av);
         } catch (Throwable t) {
             if (!exType.isInstance(t)) throw t;
-            Object[] args = prepend(t, av);
-            return catcher.invokeWithArguments(args);
+            return catcher.asFixedArity().invokeWithArguments(prepend(t, av));
         }
     }
 
     /** Prepend an element {@code elem} to an {@code array}. */
+    @LambdaForm.Hidden
     private static Object[] prepend(Object elem, Object[] array) {
         Object[] newArray = new Object[array.length+1];
         newArray[0] = elem;

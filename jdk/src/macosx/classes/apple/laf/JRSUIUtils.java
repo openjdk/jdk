@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package apple.laf;
 import com.apple.laf.AquaImageFactory.NineSliceMetrics;
 
 import apple.laf.JRSUIConstants.*;
+import sun.security.action.GetPropertyAction;
+
+import java.security.AccessController;
 
 public class JRSUIUtils {
     static boolean isLeopard = isMacOSXLeopard();
@@ -47,7 +50,7 @@ public class JRSUIUtils {
 
     static boolean currentMacOSXVersionMatchesGivenVersionRange(final int version, final boolean inclusive, final boolean matchBelow, final boolean matchAbove) {
         // split the "10.x.y" version number
-        String osVersion = System.getProperty("os.version");
+        String osVersion = AccessController.doPrivileged(new GetPropertyAction("os.version"));
         String[] fragments = osVersion.split("\\.");
 
         // sanity check the "10." part of the version

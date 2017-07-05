@@ -40,7 +40,7 @@ public class OutputStreamImageOutputStreamSpi extends ImageOutputStreamSpi {
 
     private static final String version = "1.0";
 
-    private static final Class outputClass = OutputStream.class;
+    private static final Class<?> outputClass = OutputStream.class;
 
     public OutputStreamImageOutputStreamSpi() {
         super(vendorName, version, outputClass);

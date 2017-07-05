@@ -698,7 +698,6 @@ public abstract class AbstractDocument implements Document, Serializable {
             return;
         }
         DocumentFilter filter = getDocumentFilter();
-        InsertStringResult insertStringResult = null;
 
         writeLock();
 
@@ -706,23 +705,21 @@ public abstract class AbstractDocument implements Document, Serializable {
             if (filter != null) {
                 filter.insertString(getFilterBypass(), offs, str, a);
             } else {
-                insertStringResult = handleInsertString(offs, str, a);
+                handleInsertString(offs, str, a);
             }
         } finally {
             writeUnlock();
         }
-
-        processInsertStringResult(insertStringResult);
     }
 
     /**
      * Performs the actual work of inserting the text; it is assumed the
      * caller has obtained a write lock before invoking this.
      */
-    private InsertStringResult handleInsertString(int offs, String str, AttributeSet a)
+    private void handleInsertString(int offs, String str, AttributeSet a)
             throws BadLocationException {
         if ((str == null) || (str.length() == 0)) {
-            return null;
+            return;
         }
         UndoableEdit u = data.insertString(offs, str);
         DefaultDocumentEvent e =
@@ -749,29 +746,11 @@ public abstract class AbstractDocument implements Document, Serializable {
         insertUpdate(e, a);
         // Mark the edit as done.
         e.end();
-
-        InsertStringResult result = new InsertStringResult();
-
-        result.documentEvent = e;
-
+        fireInsertUpdate(e);
         // only fire undo if Content implementation supports it
         // undo for the composed text is not supported for now
         if (u != null && (a == null || !a.isDefined(StyleConstants.ComposedTextAttribute))) {
-            result.undoableEditEvent = new UndoableEditEvent(this, e);
-        }
-
-        return result;
-    }
-
-    private void processInsertStringResult(InsertStringResult insertStringResult) {
-        if (insertStringResult == null) {
-            return;
-        }
-
-        fireInsertUpdate(insertStringResult.documentEvent);
-
-        if (insertStringResult.undoableEditEvent != null) {
-            fireUndoableEditUpdate(insertStringResult.undoableEditEvent);
+            fireUndoableEditUpdate(new UndoableEditEvent(this, e));
         }
     }
 
@@ -3129,23 +3108,13 @@ public abstract class AbstractDocument implements Document, Serializable {
         public void insertString(int offset, String string,
                                  AttributeSet attr) throws
                                         BadLocationException {
-            InsertStringResult insertStringResult = handleInsertString(offset, string, attr);
-
-            processInsertStringResult(insertStringResult);
+            handleInsertString(offset, string, attr);
         }
 
         public void replace(int offset, int length, String text,
                             AttributeSet attrs) throws BadLocationException {
             handleRemove(offset, length);
-
-            InsertStringResult insertStringResult = handleInsertString(offset, text, attrs);
-
-            processInsertStringResult(insertStringResult);
+            handleInsertString(offset, text, attrs);
         }
-    }
-
-    private static class InsertStringResult {
-        DefaultDocumentEvent documentEvent;
-        UndoableEditEvent undoableEditEvent;
     }
 }

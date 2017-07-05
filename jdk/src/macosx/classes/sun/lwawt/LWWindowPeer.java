@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -629,6 +629,7 @@ public class LWWindowPeer
         final boolean isNewDevice = updateGraphicsDevice();
         if (resized || isNewDevice) {
             replaceSurfaceData();
+            updateMinimumSize();
         }
 
         // Third, COMPONENT_MOVED/COMPONENT_RESIZED/PAINT events
@@ -1046,7 +1047,9 @@ public class LWWindowPeer
 
     @Override
     public final void displayChanged() {
-        updateGraphicsDevice();
+        if (updateGraphicsDevice()) {
+            updateMinimumSize();
+        }
         // Replace surface unconditionally, because internal state of the
         // GraphicsDevice could be changed.
         replaceSurfaceData();

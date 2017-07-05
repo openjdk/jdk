@@ -27,6 +27,7 @@ package sun.rmi.transport.tcp;
 import java.io.*;
 import java.util.*;
 import java.rmi.server.LogStream;
+import java.security.PrivilegedAction;
 
 import sun.rmi.runtime.Log;
 
@@ -51,7 +52,7 @@ final class ConnectionMultiplexer {
 
     private static String getLogLevel() {
         return java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.rmi.transport.tcp.multiplex.logLevel"));
+           (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.transport.tcp.multiplex.logLevel"));
     }
 
     /* multiplex system log */

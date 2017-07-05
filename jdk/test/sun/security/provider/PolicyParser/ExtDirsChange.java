@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,19 @@
  * @bug 4993819
  * @summary standard extensions path is hard-coded in default
  *      system policy file
- * @ignore run this by hand
- *
- *      javac ExtDirChange
- *      rm ExtDirsA*.class ExtDirsB*.class
- *      java    -Djava.security.manager \
- *              -Dtest.src=. \
- *              -Djava.security.policy=ExtDirsChange.policy \
- *              -Djava.security.debug=parser \
- *              -cp ExtDirsA/a.jar:ExtDirsB/b.jar:. \
- *              ExtDirsChange
+ * @run main/manual ExtDirsChange
+ */
+
+/*
+ * Run this test manually with:
+ * javac ExtDirChange
+ * rm ExtDirsA*.class ExtDirsB*.class
+ * java    -Djava.security.manager \
+ *         -Dtest.src=. \
+ *         -Djava.security.policy=ExtDirsChange.policy \
+ *         -Djava.security.debug=parser \
+ *         -cp ExtDirsA/a.jar:ExtDirsB/b.jar:. \
+ *         ExtDirsChange
  */
 
 import java.io.File;
