@@ -589,8 +589,14 @@ class CommandLineFlags {
   develop(bool, ZapJNIHandleArea, trueInDebug,                              \
           "Zap freed JNI handle space with 0xFEFEFEFE")                     \
                                                                             \
-  develop(bool, ZapUnusedHeapArea, false,                                   \
+  develop(bool, ZapUnusedHeapArea, trueInDebug,                             \
           "Zap unused heap space with 0xBAADBABE")                          \
+                                                                            \
+  develop(bool, TraceZapUnusedHeapArea, false,                              \
+          "Trace zapping of unused heap space")                             \
+                                                                            \
+  develop(bool, CheckZapUnusedHeapArea, false,                              \
+          "Check zapping of unused heap space")                             \
                                                                             \
   develop(bool, PrintVMMessages, true,                                      \
           "Print vm messages on console")                                   \

@@ -37,6 +37,7 @@ import java.util.HashMap;
 
 import javax.management.*;
 import javax.management.remote.*;
+import javax.management.remote.rmi.RMIConnectorServer;
 
 public class DeadLockTest {
     private static final String[] protocols = {"rmi", "iiop", "jmxmp"};
@@ -71,6 +72,9 @@ public class DeadLockTest {
 
         // disable the client ping
         env.put("jmx.remote.x.client.connection.check.period", "0");
+
+        // ensure we are not internally using the Event Service on the server
+        env.put(RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, "false");
 
         try {
             u = new JMXServiceURL(proto, null, 0);

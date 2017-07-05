@@ -3825,6 +3825,8 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ConvL2D")==0 ||
         strcmp(opType,"ConvL2F")==0 ||
         strcmp(opType,"ConvL2I")==0 ||
+        strcmp(opType,"DecodeN")==0 ||
+        strcmp(opType,"EncodeP")==0 ||
         strcmp(opType,"RoundDouble")==0 ||
         strcmp(opType,"RoundFloat")==0 ||
         strcmp(opType,"ReverseBytesI")==0 ||

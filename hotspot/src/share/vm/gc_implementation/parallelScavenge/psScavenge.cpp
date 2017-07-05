@@ -265,6 +265,11 @@ bool PSScavenge::invoke_no_policy() {
     young_gen->eden_space()->accumulate_statistics();
   }
 
+  if (ZapUnusedHeapArea) {
+    // Save information needed to minimize mangling
+    heap->record_gen_tops_before_GC();
+  }
+
   if (PrintHeapAtGC) {
     Universe::print_heap_before_gc();
   }
@@ -315,7 +320,7 @@ bool PSScavenge::invoke_no_policy() {
     if (!ScavengeWithObjectsInToSpace) {
       assert(young_gen->to_space()->is_empty(),
              "Attempt to scavenge with live objects in to_space");
-      young_gen->to_space()->clear();
+      young_gen->to_space()->clear(SpaceDecorator::Mangle);
     } else if (ZapUnusedHeapArea) {
       young_gen->to_space()->mangle_unused_area();
     }
@@ -437,8 +442,10 @@ bool PSScavenge::invoke_no_policy() {
 
     if (!promotion_failure_occurred) {
       // Swap the survivor spaces.
-      young_gen->eden_space()->clear();
-      young_gen->from_space()->clear();
+
+
+      young_gen->eden_space()->clear(SpaceDecorator::Mangle);
+      young_gen->from_space()->clear(SpaceDecorator::Mangle);
       young_gen->swap_spaces();
 
       size_t survived = young_gen->from_space()->used_in_bytes();
@@ -598,6 +605,12 @@ bool PSScavenge::invoke_no_policy() {
 
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
+  }
+
+  if (ZapUnusedHeapArea) {
+    young_gen->eden_space()->check_mangled_unused_area_complete();
+    young_gen->from_space()->check_mangled_unused_area_complete();
+    young_gen->to_space()->check_mangled_unused_area_complete();
   }
 
   scavenge_exit.update();

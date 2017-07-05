@@ -1123,7 +1123,7 @@ public class RequiredModelMBean
         if (tracing) {
             MODELMBEAN_LOGGER.logp(Level.FINER,
                 RequiredModelMBean.class.getName(),"resolveMethod",
-                  "resolving " + targetClass + "." + opMethodName);
+                  "resolving " + targetClass.getName() + "." + opMethodName);
         }
 
         final Class[] argClasses;
