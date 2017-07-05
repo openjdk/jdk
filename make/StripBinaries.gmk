@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,12 @@ endif
 NO_STRIP_CMDS_FILTER += %.cgi
 
 # Don't include debug info for executables.
+
+# OS X stores symbol information in a .dylib file inside a .dSYM directory -
+# that file should not be stripped, so we prune the tree at the .dSYM directory.
 ALL_CMDS_SRC := $(filter-out %.bc %.debuginfo %.diz %.map %.pdb, \
-    $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_cmds -type f -o -type l))
+    $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_cmds \( -type f -o -type l \) \
+    -print -o -name "*.dSYM" -prune))
 COPY_CMDS_SRC := $(filter $(NO_STRIP_CMDS_FILTER), $(ALL_CMDS_SRC))
 STRIP_CMDS_SRC := $(filter-out $(NO_STRIP_CMDS_FILTER), $(ALL_CMDS_SRC))
 
