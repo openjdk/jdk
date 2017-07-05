@@ -29,7 +29,7 @@
  *  @library /lib/testlibrary
  *  @modules jdk.management.agent/sun.management.jdp
  *  @build jdk.testlibrary.* ClientConnection JdpTestUtil JdpTestCase JdpJmxRemoteDynamicPortTestCase DynamicLauncher
- *  @run main JdpJmxRemoteDynamicPortTest
+ *  @run main/othervm JdpJmxRemoteDynamicPortTest
  */
 
 import java.lang.management.ManagementFactory;
@@ -40,7 +40,6 @@ public class JdpJmxRemoteDynamicPortTest  extends DynamicLauncher {
     public static void main(String[] args) throws Exception {
         DynamicLauncher launcher = new JdpJmxRemoteDynamicPortTest();
         launcher.run();
-        launcher.getProcessOutpoutAnalyzer().stderrShouldNotContain("java.lang.Exception:");
     }
 
     protected String[] options() {

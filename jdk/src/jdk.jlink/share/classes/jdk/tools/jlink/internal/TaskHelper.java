@@ -524,7 +524,7 @@ public final class TaskHelper {
             List<String> rest = collectUnhandled? new ArrayList<>() : null;
             // process options
             for (int i = 0; i < args.length; i++) {
-                if (args[i].charAt(0) == '-') {
+                if (args[i].startsWith("-")) {
                     String name = args[i];
                     PluginOption pluginOption = null;
                     Option<T> option = getOption(name);

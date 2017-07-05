@@ -249,27 +249,20 @@ public class BasicImageReader implements AutoCloseable {
         return stringsReader;
     }
 
-    public ImageLocation findLocation(String mn, String rn) {
-        Objects.requireNonNull(mn);
-        Objects.requireNonNull(rn);
-
-        return findLocation("/" + mn + "/" + rn);
-    }
-
-    public synchronized ImageLocation findLocation(String name) {
+    public synchronized ImageLocation findLocation(String module, String name) {
+        Objects.requireNonNull(module);
         Objects.requireNonNull(name);
         // Details of the algorithm used here can be found in
         // jdk.tools.jlink.internal.PerfectHashBuilder.
-        byte[] bytes = ImageStringsReader.mutf8FromString(name);
         int count = header.getTableLength();
-        int index = redirect.get(ImageStringsReader.hashCode(bytes) % count);
+        int index = redirect.get(ImageStringsReader.hashCode(module, name) % count);
 
         if (index < 0) {
             // index is twos complement of location attributes index.
             index = -index - 1;
         } else if (index > 0) {
             // index is hash seed needed to compute location attributes index.
-            index = ImageStringsReader.hashCode(bytes, index) % count;
+            index = ImageStringsReader.hashCode(module, name, index) % count;
         } else {
             // No entry.
             return null;
@@ -277,13 +270,36 @@ public class BasicImageReader implements AutoCloseable {
 
         long[] attributes = getAttributes(offsets.get(index));
 
-        ImageLocation imageLocation = new ImageLocation(attributes, stringsReader);
+        if (!ImageLocation.verify(module, name, attributes, stringsReader)) {
+            return null;
+        }
+        return new ImageLocation(attributes, stringsReader);
+    }
 
-        if (!imageLocation.verify(name)) {
+    public synchronized ImageLocation findLocation(String name) {
+        Objects.requireNonNull(name);
+        // Details of the algorithm used here can be found in
+        // jdk.tools.jlink.internal.PerfectHashBuilder.
+        int count = header.getTableLength();
+        int index = redirect.get(ImageStringsReader.hashCode(name) % count);
+
+        if (index < 0) {
+            // index is twos complement of location attributes index.
+            index = -index - 1;
+        } else if (index > 0) {
+            // index is hash seed needed to compute location attributes index.
+            index = ImageStringsReader.hashCode(name, index) % count;
+        } else {
+            // No entry.
             return null;
         }
 
-        return imageLocation;
+        long[] attributes = getAttributes(offsets.get(index));
+
+        if (!ImageLocation.verify(name, attributes, stringsReader)) {
+            return null;
+        }
+        return new ImageLocation(attributes, stringsReader);
     }
 
     public String[] getEntryNames() {

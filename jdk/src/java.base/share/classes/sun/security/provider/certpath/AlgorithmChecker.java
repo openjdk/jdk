@@ -106,9 +106,8 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
     private boolean trustedMatch = false;
 
     /**
-     * Create a new {@code AlgorithmChecker} with the algorithm
-     * constraints specified in security property
-     * "jdk.certpath.disabledAlgorithms".
+     * Create a new {@code AlgorithmChecker} with the given algorithm
+     * given {@code TrustAnchor} and {@code String} variant.
      *
      * @param anchor the trust anchor selected to validate the target
      *     certificate
@@ -116,13 +115,14 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      *                passed will set it to Validator.GENERIC.
      */
     public AlgorithmChecker(TrustAnchor anchor, String variant) {
-        this(anchor, certPathDefaultConstraints, null, variant);
+        this(anchor, certPathDefaultConstraints, null, null, variant);
     }
 
     /**
      * Create a new {@code AlgorithmChecker} with the given
-     * {@code AlgorithmConstraints}, {@code Timestamp}, and/or {@code Variant}.
-     * <p>
+     * {@code AlgorithmConstraints}, {@code Timestamp}, and {@code String}
+     * variant.
+     *
      * Note that this constructor can initialize a variation of situations where
      * the AlgorithmConstraints, Timestamp, or Variant maybe known.
      *
@@ -134,32 +134,28 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      */
     public AlgorithmChecker(AlgorithmConstraints constraints,
             Timestamp jarTimestamp, String variant) {
-        this.prevPubKey = null;
-        this.trustedPubKey = null;
-        this.constraints = (constraints == null ? certPathDefaultConstraints :
-                constraints);
-        this.pkixdate = (jarTimestamp != null ? jarTimestamp.getTimestamp() :
-                null);
-        this.jarTimestamp = jarTimestamp;
-        this.variant = (variant == null ? Validator.VAR_GENERIC : variant);
+        this(null, constraints, null, jarTimestamp, variant);
     }
 
     /**
      * Create a new {@code AlgorithmChecker} with the
-     * given {@code TrustAnchor} and {@code AlgorithmConstraints}.
+     * given {@code TrustAnchor}, {@code AlgorithmConstraints},
+     * {@code Timestamp}, and {@code String} variant.
      *
      * @param anchor the trust anchor selected to validate the target
      *     certificate
      * @param constraints the algorithm constraints (or null)
-     * @param pkixdate Date the constraints are checked against. The value is
-     *             either the PKIXParameter date or null for the current date.
+     * @param pkixdate The date specified by the PKIXParameters date.  If the
+     *                 PKIXParameters is null, the current date is used.  This
+     *                 should be null when jar files are being checked.
+     * @param jarTimestamp Timestamp passed for JAR timestamp constraint
+     *                     checking. Set to null if not applicable.
      * @param variant is the Validator variants of the operation. A null value
      *                passed will set it to Validator.GENERIC.
-     *
-     * @throws IllegalArgumentException if the {@code anchor} is null
      */
     public AlgorithmChecker(TrustAnchor anchor,
-            AlgorithmConstraints constraints, Date pkixdate, String variant) {
+            AlgorithmConstraints constraints, Date pkixdate,
+            Timestamp jarTimestamp, String variant) {
 
         if (anchor != null) {
             if (anchor.getTrustedCert() != null) {
@@ -179,28 +175,30 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             }
         }
 
-        this.prevPubKey = trustedPubKey;
-        this.constraints = constraints;
-        this.pkixdate = pkixdate;
-        this.jarTimestamp = null;
+        this.prevPubKey = this.trustedPubKey;
+        this.constraints = (constraints == null ? certPathDefaultConstraints :
+                constraints);
+        // If we are checking jar files, set pkixdate the same as the timestamp
+        // for certificate checking
+        this.pkixdate = (jarTimestamp != null ? jarTimestamp.getTimestamp() :
+                pkixdate);
+        this.jarTimestamp = jarTimestamp;
         this.variant = (variant == null ? Validator.VAR_GENERIC : variant);
     }
 
     /**
-     * Create a new {@code AlgorithmChecker} with the
-     * given {@code TrustAnchor} and {@code PKIXParameter} date.
+     * Create a new {@code AlgorithmChecker} with the given {@code TrustAnchor},
+     * {@code PKIXParameter} date, and {@code varient}
      *
      * @param anchor the trust anchor selected to validate the target
      *     certificate
      * @param pkixdate Date the constraints are checked against. The value is
-     *             either the PKIXParameter date or null for the current date.
+     *             either the PKIXParameters date or null for the current date.
      * @param variant is the Validator variants of the operation. A null value
      *                passed will set it to Validator.GENERIC.
-     *
-     * @throws IllegalArgumentException if the {@code anchor} is null
      */
     public AlgorithmChecker(TrustAnchor anchor, Date pkixdate, String variant) {
-        this(anchor, certPathDefaultConstraints, pkixdate, variant);
+        this(anchor, certPathDefaultConstraints, pkixdate, null, variant);
     }
 
     // Check this 'cert' for restrictions in the AnchorCertificates
@@ -214,10 +212,6 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             debug.println("AlgorithmChecker.contains: " + cert.getSigAlgName());
         }
         return AnchorCertificates.contains(cert);
-    }
-
-    Timestamp getJarTimestamp() {
-        return jarTimestamp;
     }
 
     @Override

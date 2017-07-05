@@ -172,12 +172,8 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
         List<PKIXCertPathChecker> certPathCheckers = new ArrayList<>();
         // add standard checkers that we will be using
         certPathCheckers.add(untrustedChecker);
-        if (params.timestamp() == null) {
-            certPathCheckers.add(new AlgorithmChecker(anchor, params.date(), null));
-        } else {
-            certPathCheckers.add(new AlgorithmChecker(null,
-                    params.timestamp(), params.variant()));
-        }
+        certPathCheckers.add(new AlgorithmChecker(anchor, null, params.date(),
+                params.timestamp(), params.variant()));
         certPathCheckers.add(new KeyChecker(certPathLen,
                                             params.targetCertConstraints()));
         certPathCheckers.add(new ConstraintsChecker(certPathLen));
@@ -195,13 +191,10 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
         certPathCheckers.add(pc);
         // default value for date is current time
         BasicChecker bc;
-        if (params.timestamp() == null) {
-            bc = new BasicChecker(anchor, params.date(), params.sigProvider(),
-                    false);
-        } else {
-            bc = new BasicChecker(anchor, params.timestamp().getTimestamp(),
-                    params.sigProvider(), false);
-        }
+        bc = new BasicChecker(anchor,
+                (params.timestamp() == null ? params.date() :
+                        params.timestamp().getTimestamp()),
+                params.sigProvider(), false);
         certPathCheckers.add(bc);
 
         boolean revCheckerAdded = false;
