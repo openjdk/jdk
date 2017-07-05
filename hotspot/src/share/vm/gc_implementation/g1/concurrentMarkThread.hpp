@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   double _vtime_accum;  // Accumulated virtual time.
 
   double _vtime_mark_accum;
-  double _vtime_count_accum;
 
  public:
   virtual void run();
@@ -69,8 +68,6 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   double vtime_accum();
   // Marking virtual time so far
   double vtime_mark_accum();
-  // Counting virtual time so far.
-  double vtime_count_accum() { return _vtime_count_accum; }
 
   ConcurrentMark* cm()     { return _cm; }
 
