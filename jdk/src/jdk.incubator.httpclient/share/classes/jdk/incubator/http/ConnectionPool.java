@@ -111,7 +111,8 @@ final class ConnectionPool {
     }
 
     static CacheKey cacheKey(InetSocketAddress destination,
-                             InetSocketAddress proxy) {
+                             InetSocketAddress proxy)
+    {
         return new CacheKey(destination, proxy);
     }
 

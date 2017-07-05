@@ -56,6 +56,7 @@ package javax.transaction.xa;
  * the transaction manager to prepare, commit, or rollback a transaction
  * according to the two-phase commit protocol.</p>
  *
+ * @since 1.4
  */
 public interface XAResource {
 

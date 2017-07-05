@@ -26,7 +26,7 @@
  * @bug 6204469
  * @summary Test ImmutableDescriptor serialization.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ImmutableDescriptorSerialTest
  * @run build ImmutableDescriptorSerialTest
  * @run main ImmutableDescriptorSerialTest

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.awt.image.*;
 import java.util.Arrays;
 import java.util.List;
 import java.awt.image.MultiResolutionImage;
+import java.util.concurrent.atomic.AtomicReference;
+
 import sun.awt.image.MultiResolutionCachedImage;
 
 import sun.awt.image.SunWritableRaster;
@@ -254,15 +256,26 @@ public class CImage extends CFRetainedResource {
 
     /** @return A MultiResolution image created from nsImagePtr, or null. */
     private Image toImage() {
-        if (ptr == 0) return null;
+        if (ptr == 0) {
+            return null;
+        }
 
-        final Dimension2D size = nativeGetNSImageSize(ptr);
+        AtomicReference<Dimension2D> sizeRef = new AtomicReference<>();
+        execute(ptr -> {
+            sizeRef.set(nativeGetNSImageSize(ptr));
+        });
+        final Dimension2D size = sizeRef.get();
+        if (size == null) {
+            return null;
+        }
         final int w = (int)size.getWidth();
         final int h = (int)size.getHeight();
-
-        Dimension2D[] sizes
-                = nativeGetNSImageRepresentationSizes(ptr,
-                        size.getWidth(), size.getHeight());
+        AtomicReference<Dimension2D[]> repRef = new AtomicReference<>();
+        execute(ptr -> {
+            repRef.set(nativeGetNSImageRepresentationSizes(ptr, size.getWidth(),
+                                                           size.getHeight()));
+        });
+        Dimension2D[] sizes = repRef.get();
 
         return sizes == null || sizes.length < 2 ?
                 new MultiResolutionCachedImage(w, h, (width, height)
@@ -275,18 +288,18 @@ public class CImage extends CFRetainedResource {
         final BufferedImage bimg = new BufferedImage(dstWidth, dstHeight, BufferedImage.TYPE_INT_ARGB_PRE);
         final DataBufferInt dbi = (DataBufferInt)bimg.getRaster().getDataBuffer();
         final int[] buffer = SunWritableRaster.stealData(dbi, 0);
-        nativeCopyNSImageIntoArray(ptr, buffer, srcWidth, srcHeight, dstWidth, dstHeight);
+        execute(ptr->nativeCopyNSImageIntoArray(ptr, buffer, srcWidth, srcHeight, dstWidth, dstHeight));
         SunWritableRaster.markDirty(dbi);
         return bimg;
     }
 
     /** If nsImagePtr != 0 then scale this NSImage. @return *this* */
     CImage resize(final double w, final double h) {
-        if (ptr != 0) nativeSetNSImageSize(ptr, w, h);
+        execute(ptr -> nativeSetNSImageSize(ptr, w, h));
         return this;
     }
 
     void resizeRepresentations(double w, double h) {
-        if (ptr != 0) nativeResizeNSImageRepresentations(ptr, w, h);
+        execute(ptr -> nativeResizeNSImageRepresentations(ptr, w, h));
     }
 }

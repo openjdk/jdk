@@ -29,6 +29,8 @@ package java.nio.file;
  * Unchecked exception thrown when path string cannot be converted into a
  * {@link Path} because the path string contains invalid characters, or
  * the path string is invalid for other file system specific reasons.
+ *
+ * @since 1.7
  */
 
 public class InvalidPathException

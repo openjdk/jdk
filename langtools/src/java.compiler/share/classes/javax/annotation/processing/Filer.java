@@ -28,6 +28,7 @@ package javax.annotation.processing;
 import javax.tools.JavaFileManager;
 import javax.tools.*;
 import javax.lang.model.element.Element;
+import javax.lang.model.util.Elements;
 import java.io.IOException;
 
 /**
@@ -157,6 +158,12 @@ public interface Filer {
      * example, to create a source file for type {@code a.B} in module
      * {@code foo}, use a {@code name} argument of {@code "foo/a.B"}.
      *
+     * <p>If no explicit module prefix is given and modules are supported
+     * in the environment, a suitable module is inferred. If a suitable
+     * module cannot be inferred {@link FilerException} is thrown.
+     * An implementation may use information about the configuration of
+     * the annotation processing tool as part of the inference.
+     *
      * <p>Creating a source file in or for an unnamed package in a named
      * module is <em>not</em> supported.
      *
@@ -176,6 +183,17 @@ public interface Filer {
      * ProcessingEnvironment#getSourceVersion source version} being used
      * for this run.
      *
+     * @implNote In the reference implementation, if the annotation
+     * processing tool is processing a single module <i>M</i>,
+     * then <i>M</i> is used as the module for files created without
+     * an explicit module prefix. If the tool is processing multiple
+     * modules, and {@link
+     * Elements#getPackageElement(java.lang.CharSequence)
+     * Elements.getPackageElement(package-of(name))}
+     * returns a package, the module that owns the returned package is used
+     * as the target module. A separate option may be used to provide the target
+     * module if it cannot be determined using the above rules.
+     *
      * @param name  canonical (fully qualified) name of the principal type
      *          being declared in this file or a package name followed by
      *          {@code ".package-info"} for a package information file
@@ -184,8 +202,11 @@ public interface Filer {
      * {@code null}
      * @return a {@code JavaFileObject} to write the new source file
      * @throws FilerException if the same pathname has already been
-     * created, the same type has already been created, or the name is
-     * otherwise not valid for the entity requested to being created
+     * created, the same type has already been created, the name is
+     * otherwise not valid for the entity requested to being created,
+     * if the target module cannot be determined, if the target
+     * module is not writable, or a module is specified when the environment
+     * doesn't support modules.
      * @throws IOException if the file cannot be created
      * @jls 7.3 Compilation Units
      */
@@ -213,6 +234,12 @@ public interface Filer {
      * example, to create a class file for type {@code a.B} in module
      * {@code foo}, use a {@code name} argument of {@code "foo/a.B"}.
      *
+     * <p>If no explicit module prefix is given and modules are supported
+     * in the environment, a suitable module is inferred. If a suitable
+     * module cannot be inferred {@link FilerException} is thrown.
+     * An implementation may use information about the configuration of
+     * the annotation processing tool as part of the inference.
+     *
      * <p>Creating a class file in or for an unnamed package in a named
      * module is <em>not</em> supported.
      *
@@ -221,6 +248,17 @@ public interface Filer {
      * ProcessingEnvironment#getSourceVersion source version} being
      * used for this run.
      *
+     * @implNote In the reference implementation, if the annotation
+     * processing tool is processing a single module <i>M</i>,
+     * then <i>M</i> is used as the module for files created without
+     * an explicit module prefix. If the tool is processing multiple
+     * modules, and {@link
+     * Elements#getPackageElement(java.lang.CharSequence)
+     * Elements.getPackageElement(package-of(name))}
+     * returns a package, the module that owns the returned package is used
+     * as the target module. A separate option may be used to provide the target
+     * module if it cannot be determined using the above rules.
+     *
      * @param name binary name of the type being written or a package name followed by
      *          {@code ".package-info"} for a package information file
      * @param originatingElements type or package or module elements causally
@@ -228,8 +266,10 @@ public interface Filer {
      * {@code null}
      * @return a {@code JavaFileObject} to write the new class file
      * @throws FilerException if the same pathname has already been
-     * created, the same type has already been created, or the name is
-     * not valid for a type
+     * created, the same type has already been created, the name is
+     * not valid for a type, if the target module cannot be determined,
+     * if the target module is not writable, or a module is specified when
+     * the environment doesn't support modules.
      * @throws IOException if the file cannot be created
      */
     JavaFileObject createClassFile(CharSequence name,
@@ -255,10 +295,36 @@ public interface Filer {
      * does not contain a "{@code /}" character, the entire argument
      * is interpreted as a package name.
      *
+     * <p>If the given location is neither a {@linkplain
+     * JavaFileManager.Location#isModuleOrientedLocation()
+     * module oriented location}, nor an {@linkplain
+     * JavaFileManager.Location#isOutputLocation()
+     * output location containing multiple modules}, and the explicit
+     * module prefix is given, {@link FilerException} is thrown.
+     *
+     * <p>If the given location is either a module oriented location,
+     * or an output location containing multiple modules, and no explicit
+     * modules prefix is given, a suitable module is
+     * inferred. If a suitable module cannot be inferred {@link
+     * FilerException} is thrown. An implementation may use information
+     * about the configuration of the annotation processing tool
+     * as part of the inference.
+     *
      * <p>Files created via this method are <em>not</em> registered for
      * annotation processing, even if the full pathname of the file
      * would correspond to the full pathname of a new source file
      * or new class file.
+     *
+     * @implNote In the reference implementation, if the annotation
+     * processing tool is processing a single module <i>M</i>,
+     * then <i>M</i> is used as the module for files created without
+     * an explicit module prefix. If the tool is processing multiple
+     * modules, and {@link
+     * Elements#getPackageElement(java.lang.CharSequence)
+     * Elements.getPackageElement(package-of(name))}
+     * returns a package, the module that owns the returned package is used
+     * as the target module. A separate option may be used to provide the target
+     * module if it cannot be determined using the above rules.
      *
      * @param location location of the new file
      * @param moduleAndPkg module and/or package relative to which the file
@@ -270,7 +336,9 @@ public interface Filer {
      * @return a {@code FileObject} to write the new resource
      * @throws IOException if the file cannot be created
      * @throws FilerException if the same pathname has already been
-     * created
+     * created, if the target module cannot be determined,
+     * or if the target module is not writable, or if an explicit
+     * target module is specified and the location does not support it.
      * @throws IllegalArgumentException for an unsupported location
      * @throws IllegalArgumentException if {@code moduleAndPkg} is ill-formed
      * @throws IllegalArgumentException if {@code relativeName} is not relative
@@ -294,13 +362,41 @@ public interface Filer {
      * does not contain a "{@code /}" character, the entire argument
      * is interpreted as a package name.
      *
+     * <p>If the given location is neither a {@linkplain
+     * JavaFileManager.Location#isModuleOrientedLocation()
+     * module oriented location}, nor an {@linkplain
+     * JavaFileManager.Location#isOutputLocation()
+     * output location containing multiple modules}, and the explicit
+     * module prefix is given, {@link FilerException} is thrown.
+     *
+     * <p>If the given location is either a module oriented location,
+     * or an output location containing multiple modules, and no explicit
+     * modules prefix is given, a suitable module is
+     * inferred. If a suitable module cannot be inferred {@link
+     * FilerException} is thrown. An implementation may use information
+     * about the configuration of the annotation processing tool
+     * as part of the inference.
+     *
+     * @implNote In the reference implementation, if the annotation
+     * processing tool is processing a single module <i>M</i>,
+     * then <i>M</i> is used as the module for files read without
+     * an explicit module prefix. If the tool is processing multiple
+     * modules, and {@link
+     * Elements#getPackageElement(java.lang.CharSequence)
+     * Elements.getPackageElement(package-of(name))}
+     * returns a package, the module that owns the returned package is used
+     * as the source module. A separate option may be used to provide the target
+     * module if it cannot be determined using the above rules.
+     *
      * @param location location of the file
      * @param moduleAndPkg module and/or package relative to which the file
      *          should be searched for, or the empty string if none
      * @param relativeName final pathname components of the file
      * @return an object to read the file
      * @throws FilerException if the same pathname has already been
-     * opened for writing
+     * opened for writing, if the source module cannot be determined,
+     * or if the target module is not writable, or if an explicit target
+     * module is specified and the location does not support it.
      * @throws IOException if the file cannot be opened
      * @throws IllegalArgumentException for an unsupported location
      * @throws IllegalArgumentException if {@code moduleAndPkg} is ill-formed

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class MissingEventsOnModalDialogTest {
 
         mouseDragAndDrop(robot, point, getCenterPoint(targetFrame));
 
-        long time = System.currentTimeMillis() + 200;
+        long time = System.currentTimeMillis() + 1000;
 
         while (!passed) {
             if (time < System.currentTimeMillis()) {
@@ -222,10 +222,12 @@ public class MissingEventsOnModalDialogTest {
                 }
                 Thread.sleep(10);
             }
-
-            Point point = getCenterPoint(dialog);
             Robot robot = new Robot();
             robot.setAutoDelay(50);
+            robot.waitForIdle();
+            robot.delay(200);
+
+            Point point = getCenterPoint(dialog);
 
             robot.mouseMove(point.x, point.y);
             robot.mousePress(InputEvent.BUTTON1_MASK);
