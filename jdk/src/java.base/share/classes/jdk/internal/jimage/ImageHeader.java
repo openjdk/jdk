@@ -27,6 +27,7 @@ package jdk.internal.jimage;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.Objects;
 
 /**
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -75,6 +76,8 @@ public final class ImageHeader {
     }
 
     static ImageHeader readFrom(IntBuffer buffer) {
+        Objects.requireNonNull(buffer);
+
         if (buffer.capacity() != HEADER_SLOTS) {
             throw new InternalError("jimage header not the correct size");
         }
@@ -94,11 +97,13 @@ public final class ImageHeader {
     }
 
     public void writeTo(ImageStream stream) {
+        Objects.requireNonNull(stream);
         stream.ensure(getHeaderSize());
         writeTo(stream.getBuffer());
     }
 
     public void writeTo(ByteBuffer buffer) {
+        Objects.requireNonNull(buffer);
         buffer.putInt(magic);
         buffer.putInt(majorVersion << 16 | minorVersion);
         buffer.putInt(flags);

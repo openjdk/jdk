@@ -31,4 +31,4 @@
 
 print("Hello World");
 var System = Java.type("java.lang.System");
-print(System.getProperty("jdk.launcher.patch.0"));
+print(System.getProperty("java.home"));

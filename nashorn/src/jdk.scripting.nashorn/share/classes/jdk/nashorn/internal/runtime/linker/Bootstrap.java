@@ -171,7 +171,9 @@ public final class Bootstrap {
             return ((JSObject)callable).isStrictFunction();
         } else if (callable instanceof BoundCallable) {
             return isStrictCallable(((BoundCallable)callable).getCallable());
-        } else if (BeansLinker.isDynamicMethod(callable) || callable instanceof StaticClass) {
+        } else if (BeansLinker.isDynamicMethod(callable) ||
+                callable instanceof StaticClass ||
+                isFunctionalInterfaceObject(callable)) {
             return false;
         }
         throw notFunction(callable);

@@ -475,6 +475,23 @@ public class VM {
      */
     public static native long getNanoTimeAdjustment(long offsetInSeconds);
 
+    /**
+     * Returns the VM arguments for this runtime environment.
+     *
+     * @implNote
+     * The HotSpot JVM processes the input arguments from multiple sources
+     * in the following order:
+     * 1. JAVA_TOOL_OPTIONS environment variable
+     * 2. Options from JNI Invocation API
+     * 3. _JAVA_OPTIONS environment variable
+     *
+     * If VM options file is specified via -XX:VMOptionsFile, the vm options
+     * file is read and expanded in place of -XX:VMOptionFile option.
+     *
+     * Open issue with -XX:Flags (see JDK-8157979)
+     */
+    public static native String[] getRuntimeArguments();
+
     static {
         initialize();
     }

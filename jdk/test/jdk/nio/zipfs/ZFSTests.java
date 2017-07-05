@@ -22,11 +22,12 @@
  */
 
 /* @test
- * @bug 7156873 8040059 8028480 8034773
+ * @bug 7156873 8040059 8028480 8034773 8153248
  * @summary ZipFileSystem regression tests
  *
  * @run main ZFSTests
  * @run main/othervm/java.security.policy=test.policy ZFSTests
+ * @modules jdk.zipfs
  */
 
 
@@ -42,7 +43,7 @@ public class ZFSTests {
 
     public static void main(String[] args) throws Throwable {
         test7156873();
-        testOpenOptions();
+        tests();
     }
 
     static void test7156873() throws Throwable {
@@ -61,7 +62,7 @@ public class ZFSTests {
         }
     }
 
-    static void testOpenOptions() throws Throwable {
+    static void tests() throws Throwable {
         Path path = Paths.get("file.zip");
         try {
             URI uri = URI.create("jar:" + path.toUri());
@@ -95,6 +96,18 @@ public class ZFSTests {
                 } catch (IllegalArgumentException x) {
                     // expected x.printStackTrace();
                 }
+
+                //8153248
+                Path dir = fs.getPath("/dir");
+                Path subdir = fs.getPath("/dir/subdir");
+                Files.createDirectory(dir);
+                Files.createDirectory(subdir);
+                Files.list(dir)
+                     .forEach( child -> {
+                             System.out.println("child:" + child);
+                             if (child.toString().endsWith("/"))
+                                 throw new RuntimeException("subdir names ends with /");
+                          });
             }
         } finally {
             Files.deleteIfExists(path);
