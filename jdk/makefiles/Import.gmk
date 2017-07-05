@@ -200,6 +200,46 @@ $(INSTALL_LIBRARIES_HERE)/minimal/%.diz : $(INSTALL_LIBRARIES_HERE)/%.diz
 	$(RM) $(basename $@).debuginfo
 	$(MV) $@.tmp $@
 
-#######
+##########################################################################################
+# Unpack the binary distributions of the crypto classes if they exist.
+SEC_FILES_ZIP:=$(JDK_TOPDIR)/make/tools/crypto/sec-bin.zip
+SEC_FILES_WIN_ZIP:=$(JDK_TOPDIR)/make/tools/crypto/sec-windows-bin.zip
+JGSS_WIN32_FILES_ZIP:=$(JDK_TOPDIR)/make/tools/crypto/jgss-windows-i586-bin.zip
+JGSS_WIN64_FILES_ZIP:=$(JDK_TOPDIR)/make/tools/crypto/jgss-windows-x64-bin.zip
+
+define unzip-sec-file
+	$(ECHO) Unzipping $(<F)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	($(CD) $(JDK_OUTPUTDIR) && $(UNZIP) $< > $@.tmp)
+	$(MV) $@.tmp $@
+endef
+
+$(JDK_OUTPUTDIR)/classes/_the.sec-bin.unzipped: $(SEC_FILES_ZIP)
+	$(call unzip-sec-file)
+
+$(JDK_OUTPUTDIR)/classes/_the.sec-windows-bin.unzipped: $(SEC_FILES_WIN_ZIP)
+	$(call unzip-sec-file)
+
+$(JDK_OUTPUTDIR)/classes/_the.jgss-windows-i586-bin.unzipped: $(JGSS_WIN32_FILES_ZIP)
+	$(call unzip-sec-file)
+
+$(JDK_OUTPUTDIR)/classes/_the.jgss-windows-x64-bin.unzipped: $(JGSS_WIN64_FILES_ZIP)
+	$(call unzip-sec-file)
+
+ifneq ($(wildcard $(SEC_FILES_ZIP)),)
+  IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.sec-bin.unzipped
+  ifeq ($(OPENJDK_TARGET_OS),windows)
+    IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.sec-windows-bin.unzipped
+    ifeq ($(OPENJDK_TARGET_CPU),x86)
+      IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.jgss-windows-i586-bin.unzipped
+    endif
+    ifeq ($(OPENJDK_TARGET_CPU),x86_64)
+      IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.jgss-windows-x64-bin.unzipped
+    endif
+  endif
+endif
+
+##########################################################################################
 
 all: $(IMPORT_TARGET_FILES)

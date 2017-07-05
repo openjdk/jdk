@@ -1512,6 +1512,17 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     }
 
     /**
+     * Delete a property from the ScriptObject.
+     * (to help ScriptObjectMirror implementation)
+     *
+     * @param key the key of the property
+     * @return if the delete was successful or not
+     */
+    public boolean delete(final Object key) {
+        return delete(key, getContext()._strict);
+    }
+
+    /**
      * Return the size of the ScriptObject - i.e. the number of properties
      * it contains
      * (java.util.Map-like method to help ScriptObjectMirror implementation)

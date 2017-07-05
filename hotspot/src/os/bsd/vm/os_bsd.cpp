@@ -626,8 +626,6 @@ void os::Bsd::hotspot_sigmask(Thread* thread) {
 //////////////////////////////////////////////////////////////////////////////
 // create new thread
 
-static address highest_vm_reserved_address();
-
 // check if it's safe to start a new thread
 static bool _thread_safety_check(Thread* thread) {
   return true;
@@ -935,10 +933,10 @@ jlong os::elapsed_frequency() {
   return (1000 * 1000);
 }
 
-// XXX: For now, code this as if BSD does not support vtime.
-bool os::supports_vtime() { return false; }
+bool os::supports_vtime() { return true; }
 bool os::enable_vtime()   { return false; }
 bool os::vtime_enabled()  { return false; }
+
 double os::elapsedVTime() {
   // better than nothing, but not much
   return elapsedTime();
@@ -2112,10 +2110,6 @@ bool os::pd_release_memory(char* addr, size_t size) {
   return anon_munmap(addr, size);
 }
 
-static address highest_vm_reserved_address() {
-  return _highest_vm_reserved_address;
-}
-
 static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // Bsd wants the mprotect address argument to be page aligned.
   char* bottom = (char*)align_size_down((intptr_t)addr, os::Bsd::page_size());
@@ -2157,43 +2151,6 @@ bool os::unguard_memory(char* addr, size_t size) {
 
 bool os::Bsd::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   return false;
-}
-
-/*
-* Set the coredump_filter bits to include largepages in core dump (bit 6)
-*
-* From the coredump_filter documentation:
-*
-* - (bit 0) anonymous private memory
-* - (bit 1) anonymous shared memory
-* - (bit 2) file-backed private memory
-* - (bit 3) file-backed shared memory
-* - (bit 4) ELF header pages in file-backed private memory areas (it is
-*           effective only if the bit 2 is cleared)
-* - (bit 5) hugetlb private memory
-* - (bit 6) hugetlb shared memory
-*/
-static void set_coredump_filter(void) {
-  FILE *f;
-  long cdm;
-
-  if ((f = fopen("/proc/self/coredump_filter", "r+")) == NULL) {
-    return;
-  }
-
-  if (fscanf(f, "%lx", &cdm) != 1) {
-    fclose(f);
-    return;
-  }
-
-  rewind(f);
-
-  if ((cdm & LARGEPAGES_BIT) == 0) {
-    cdm |= LARGEPAGES_BIT;
-    fprintf(f, "%#lx", cdm);
-  }
-
-  fclose(f);
 }
 
 // Large page support
@@ -3030,6 +2987,19 @@ void os::Bsd::set_signal_handler(int sig, bool set_installed) {
     sigAct.sa_sigaction = signalHandler;
     sigAct.sa_flags = SA_SIGINFO|SA_RESTART;
   }
+#if __APPLE__
+  // Needed for main thread as XNU (Mac OS X kernel) will only deliver SIGSEGV
+  // (which starts as SIGBUS) on main thread with faulting address inside "stack+guard pages"
+  // if the signal handler declares it will handle it on alternate stack.
+  // Notice we only declare we will handle it on alt stack, but we are not
+  // actually going to use real alt stack - this is just a workaround.
+  // Please see ux_exception.c, method catch_mach_exception_raise for details
+  // link http://www.opensource.apple.com/source/xnu/xnu-2050.18.24/bsd/uxkern/ux_exception.c
+  if (sig == SIGSEGV) {
+    sigAct.sa_flags |= SA_ONSTACK;
+  }
+#endif
+
   // Save flags, which are set by ours
   assert(sig > 0 && sig < MAXSIGNUM, "vm signal out of expected range");
   sigflags[sig] = sigAct.sa_flags;

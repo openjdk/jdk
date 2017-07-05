@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 7087021
- * @summary MacClone
+ * @bug 7087021 8013069
+ * @summary Clone tests for all MAC algorithms.
  * @author Jan Luehe
  */
+import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.*;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.*;
 
 public class MacClone {
 
@@ -39,18 +40,23 @@ public class MacClone {
         KeyGenerator kgen = KeyGenerator.getInstance("DES");
         SecretKey skey = kgen.generateKey();
         for (String algo : algos) {
-            doTest(algo, skey);
+            doTest(algo, skey, null);
         }
 
-        String[] algos2 = { "HmacPBESHA1" };
+        String[] algos2 = { "HmacPBESHA1", "PBEWithHmacSHA1",
+                            "PBEWithHmacSHA224", "PBEWithHmacSHA256",
+                            "PBEWithHmacSHA384", "PBEWithHmacSHA512" };
         skey = new SecretKeySpec("whatever".getBytes(), "PBE");
+        PBEParameterSpec params =
+            new PBEParameterSpec("1234567890".getBytes(), 500);
         for (String algo : algos2) {
-            doTest(algo, skey);
+            doTest(algo, skey, params);
         }
         System.out.println("Test Passed");
     }
 
-    private static void doTest(String algo, SecretKey skey) throws Exception {
+    private static void doTest(String algo, SecretKey skey,
+        AlgorithmParameterSpec params) throws Exception {
         //
         // Clone an uninitialized Mac object
         //
@@ -72,7 +78,7 @@ public class MacClone {
         // Clone an initialized Mac object
         //
         mac = Mac.getInstance(algo, "SunJCE");
-        mac.init(skey);
+        mac.init(skey, params);
         macClone = (Mac)mac.clone();
         System.out.println(macClone.getProvider().toString());
         System.out.println(macClone.getAlgorithm());

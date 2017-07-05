@@ -175,7 +175,7 @@ public class GrabTest {
 
         // 6. Check that press on the outside area causes ungrab
         Point loc = f.getLocationOnScreen();
-        robot.mouseMove(loc.x + 100, loc.y + f.getSize().height + 1);
+        robot.mouseMove(loc.x + 100, loc.y + f.getSize().height + 10);
         Util.waitForIdle(robot);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.delay(50);

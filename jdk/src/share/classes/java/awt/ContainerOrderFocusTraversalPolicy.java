@@ -42,7 +42,7 @@ import sun.util.logging.PlatformLogger;
  * Component to focus. This behavior can be disabled using the
  * <code>setImplicitDownCycleTraversal</code> method.
  * <p>
- * By default, methods of this class with return a Component only if it is
+ * By default, methods of this class will return a Component only if it is
  * visible, displayable, enabled, and focusable. Subclasses can modify this
  * behavior by overriding the <code>accept</code> method.
  * <p>

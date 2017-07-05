@@ -23,23 +23,23 @@ import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsOnOff;
 import static jdk.nashorn.internal.runtime.regexp.joni.Option.isDontCaptureGroup;
 import static jdk.nashorn.internal.runtime.regexp.joni.Option.isIgnoreCase;
 
-import jdk.nashorn.internal.runtime.regexp.joni.encoding.CharacterType;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.AnchorNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.AnyCharNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.BackRefNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.CClassNode;
+import jdk.nashorn.internal.runtime.regexp.joni.ast.CClassNode.CCStateArg;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.ConsAltNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.EncloseNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.Node;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.StringNode;
-import jdk.nashorn.internal.runtime.regexp.joni.ast.CClassNode.CCStateArg;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.AnchorType;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.CCSTATE;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.CCVALTYPE;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.EncloseType;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.NodeType;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.TokenType;
+import jdk.nashorn.internal.runtime.regexp.joni.encoding.CharacterType;
 
 class Parser extends Lexer {
 

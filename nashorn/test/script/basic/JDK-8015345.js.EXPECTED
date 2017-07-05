@@ -1,0 +1,15 @@
+SyntaxError: <function>:1:0 Expected eof but found }
+}),print('test'),({
+^
+SyntaxError: <function>:1:2 Expected an operand but found *
+x**y
+  ^
+SyntaxError: <function>:1:0 Expected an operand but found in
+in
+^
+SyntaxError: <function>:1:3 Expected ; but found y
+x--y
+   ^
+100
+55
+12
