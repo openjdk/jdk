@@ -172,7 +172,7 @@ static ISOTEMPERATURE isotempdata[] = {
 // Robertson's method
 cmsBool  CMSEXPORT cmsTempFromWhitePoint(cmsFloat64Number* TempK, const cmsCIExyY* WhitePoint)
 {
-    int j;
+    cmsUInt32Number j;
     cmsFloat64Number us,vs;
     cmsFloat64Number uj,vj,tj,di,dj,mi,mj;
     cmsFloat64Number xs, ys;
@@ -263,10 +263,10 @@ cmsBool ComputeChromaticAdaptation(cmsMAT3* Conversion,
 cmsBool  _cmsAdaptationMatrix(cmsMAT3* r, const cmsMAT3* ConeMatrix, const cmsCIEXYZ* FromIll, const cmsCIEXYZ* ToIll)
 {
     cmsMAT3 LamRigg   = {{ // Bradford matrix
-            {{  0.8951,  0.2664, -0.1614 }},
-            {{ -0.7502,  1.7135,  0.0367 }},
-            {{  0.0389, -0.0685,  1.0296 }}
-        }};
+        {{  0.8951,  0.2664, -0.1614 }},
+        {{ -0.7502,  1.7135,  0.0367 }},
+        {{  0.0389, -0.0685,  1.0296 }}
+      }};
 
     if (ConeMatrix == NULL)
         ConeMatrix = &LamRigg;
@@ -376,3 +376,5 @@ cmsBool CMSEXPORT cmsAdaptToIlluminant(cmsCIEXYZ* Result,
 
     return TRUE;
 }
+
+

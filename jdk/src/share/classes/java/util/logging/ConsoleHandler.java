@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,26 +35,39 @@ import java.net.*;
  * <p>
  * <b>Configuration:</b>
  * By default each <tt>ConsoleHandler</tt> is initialized using the following
- * <tt>LogManager</tt> configuration properties.  If properties are not defined
+ * <tt>LogManager</tt> configuration properties where <tt><handler-name></tt>
+ * refers to the fully-qualified class name of the handler.
+ * If properties are not defined
  * (or have invalid values) then the specified default values are used.
  * <ul>
- * <li>   java.util.logging.ConsoleHandler.level
+ * <li>   &lt;handler-name&gt;.level
  *        specifies the default level for the <tt>Handler</tt>
- *        (defaults to <tt>Level.INFO</tt>).
- * <li>   java.util.logging.ConsoleHandler.filter
+ *        (defaults to <tt>Level.INFO</tt>). </li>
+ * <li>   &lt;handler-name&gt;.filter
  *        specifies the name of a <tt>Filter</tt> class to use
- *        (defaults to no <tt>Filter</tt>).
- * <li>   java.util.logging.ConsoleHandler.formatter
+ *        (defaults to no <tt>Filter</tt>). </li>
+ * <li>   &lt;handler-name&gt;.formatter
  *        specifies the name of a <tt>Formatter</tt> class to use
- *        (defaults to <tt>java.util.logging.SimpleFormatter</tt>).
- * <li>   java.util.logging.ConsoleHandler.encoding
+ *        (defaults to <tt>java.util.logging.SimpleFormatter</tt>). </li>
+ * <li>   &lt;handler-name&gt;.encoding
  *        the name of the character set encoding to use (defaults to
- *        the default platform encoding).
+ *        the default platform encoding). </li>
+ * </ul>
+ * <p>
+ * For example, the properties for {@code ConsoleHandler} would be:
+ * <ul>
+ * <li>   java.util.logging.ConsoleHandler.level=INFO </li>
+ * <li>   java.util.logging.ConsoleHandler.formatter=java.util.logging.SimpleFormatter </li>
+ * </ul>
+ * <p>
+ * For a custom handler, e.g. com.foo.MyHandler, the properties would be:
+ * <ul>
+ * <li>   com.foo.MyHandler.level=INFO </li>
+ * <li>   com.foo.MyHandler.formatter=java.util.logging.SimpleFormatter </li>
  * </ul>
  * <p>
  * @since 1.4
  */
-
 public class ConsoleHandler extends StreamHandler {
     // Private method to configure a ConsoleHandler from LogManager
     // properties and/or default values as specified in the class

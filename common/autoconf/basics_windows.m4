@@ -172,6 +172,13 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_CYGWIN],
 
   # Now try to locate executable using which
   new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+           && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+           && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
   if test "x$new_path" = x; then
     # Oops. Which didn't find the executable.
     # The splitting of arguments from the executable at a space might have been incorrect,
@@ -181,6 +188,13 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_CYGWIN],
     arguments="EOL"
     new_path=`$CYGPATH -u "$path"`
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+             && test "x`$ECHO \"$path\" | $GREP -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+             && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.
       AC_MSG_NOTICE([The path of $1, which resolves as "$complete", is not found.])

@@ -35,6 +35,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
 #include "vmreg_zero.inline.hpp"
+
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -46,6 +47,12 @@
 #include "shark/sharkCompiler.hpp"
 #endif
 
+
+
+static address zero_null_code_stub() {
+  address start = ShouldNotCallThisStub();
+  return start;
+}
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
@@ -63,16 +70,14 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(
                         AdapterFingerPrint *fingerprint) {
   return AdapterHandlerLibrary::new_entry(
     fingerprint,
-    ShouldNotCallThisStub(),
-    ShouldNotCallThisStub(),
-    ShouldNotCallThisStub());
+    CAST_FROM_FN_PTR(address,zero_null_code_stub),
+    CAST_FROM_FN_PTR(address,zero_null_code_stub),
+    CAST_FROM_FN_PTR(address,zero_null_code_stub));
 }
 
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 methodHandle method,
                                                 int compile_id,
-                                                int total_args_passed,
-                                                int max_arg,
                                                 BasicType *sig_bt,
                                                 VMRegPair *regs,
                                                 BasicType ret_type) {
@@ -96,19 +101,20 @@ uint SharedRuntime::out_preserve_stack_slots() {
   ShouldNotCallThis();
 }
 
+JRT_LEAF(void, zero_stub())
+  ShouldNotCallThis();
+JRT_END
+
 static RuntimeStub* generate_empty_runtime_stub(const char* name) {
-  CodeBuffer buffer(name, 0, 0);
-  return RuntimeStub::new_runtime_stub(name, &buffer, 0, 0, NULL, false);
+  return CAST_FROM_FN_PTR(RuntimeStub*,zero_stub);
 }
 
 static SafepointBlob* generate_empty_safepoint_blob() {
-  CodeBuffer buffer("handler_blob", 0, 0);
-  return SafepointBlob::create(&buffer, NULL, 0);
+  return CAST_FROM_FN_PTR(SafepointBlob*,zero_stub);
 }
 
 static DeoptimizationBlob* generate_empty_deopt_blob() {
-  CodeBuffer buffer("handler_blob", 0, 0);
-  return DeoptimizationBlob::create(&buffer, NULL, 0, 0, 0, 0);
+  return CAST_FROM_FN_PTR(DeoptimizationBlob*,zero_stub);
 }
 
 
@@ -116,13 +122,14 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = generate_empty_deopt_blob();
 }
 
-SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, bool cause_return) {
+SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_type) {
   return generate_empty_safepoint_blob();
 }
 
 RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
   return generate_empty_runtime_stub("resolve_blob");
 }
+
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,

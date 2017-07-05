@@ -69,7 +69,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   enum {
     JDK15_JVMTI_VERSION = JVMTI_VERSION_1_0 +  33,  /* version: 1.0.33  */
     JDK16_JVMTI_VERSION = JVMTI_VERSION_1_1 + 102,  /* version: 1.1.102 */
-    JDK17_JVMTI_VERSION = JVMTI_VERSION_1_2 +   1   /* version: 1.2.1   */
+    JDK17_JVMTI_VERSION = JVMTI_VERSION_1_2 +   2   /* version: 1.2.2   */
   };
 
   static jvmtiPhase  get_phase()                    { return _phase; }

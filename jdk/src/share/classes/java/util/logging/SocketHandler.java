@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,25 +37,39 @@ import java.net.*;
  * <p>
  * <b>Configuration:</b>
  * By default each <tt>SocketHandler</tt> is initialized using the following
- * <tt>LogManager</tt> configuration properties.  If properties are not defined
+ * <tt>LogManager</tt> configuration properties where <tt>&lt;handler-name&gt;</tt>
+ * refers to the fully-qualified class name of the handler.
+ * If properties are not defined
  * (or have invalid values) then the specified default values are used.
  * <ul>
- * <li>   java.util.logging.SocketHandler.level
+ * <li>   &lt;handler-name&gt;.level
  *        specifies the default level for the <tt>Handler</tt>
- *        (defaults to <tt>Level.ALL</tt>).
- * <li>   java.util.logging.SocketHandler.filter
+ *        (defaults to <tt>Level.ALL</tt>). </li>
+ * <li>   &lt;handler-name&gt;.filter
  *        specifies the name of a <tt>Filter</tt> class to use
- *        (defaults to no <tt>Filter</tt>).
- * <li>   java.util.logging.SocketHandler.formatter
+ *        (defaults to no <tt>Filter</tt>). </li>
+ * <li>   &lt;handler-name&gt;.formatter
  *        specifies the name of a <tt>Formatter</tt> class to use
- *        (defaults to <tt>java.util.logging.XMLFormatter</tt>).
- * <li>   java.util.logging.SocketHandler.encoding
+ *        (defaults to <tt>java.util.logging.XMLFormatter</tt>). </li>
+ * <li>   &lt;handler-name&gt;.encoding
  *        the name of the character set encoding to use (defaults to
- *        the default platform encoding).
- * <li>   java.util.logging.SocketHandler.host
- *        specifies the target host name to connect to (no default).
- * <li>   java.util.logging.SocketHandler.port
- *        specifies the target TCP port to use (no default).
+ *        the default platform encoding). </li>
+ * <li>   &lt;handler-name&gt;.host
+ *        specifies the target host name to connect to (no default). </li>
+ * <li>   &lt;handler-name&gt;.port
+ *        specifies the target TCP port to use (no default). </li>
+ * </ul>
+ * <p>
+ * For example, the properties for {@code SocketHandler} would be:
+ * <ul>
+ * <li>   java.util.logging.SocketHandler.level=INFO </li>
+ * <li>   java.util.logging.SocketHandler.formatter=java.util.logging.SimpleFormatter </li>
+ * </ul>
+ * <p>
+ * For a custom handler, e.g. com.foo.MyHandler, the properties would be:
+ * <ul>
+ * <li>   com.foo.MyHandler.level=INFO </li>
+ * <li>   com.foo.MyHandler.formatter=java.util.logging.SimpleFormatter </li>
  * </ul>
  * <p>
  * The output IO stream is buffered, but is flushed after each

@@ -598,29 +598,21 @@ public class LWWindowPeer
     }
 
     /**
-     * Called by the delegate when any part of the window should be repainted.
+     * Called by the {@code PlatformWindow} when any part of the window should
+     * be repainted.
      */
-    public void notifyExpose(final int x, final int y, final int w, final int h) {
-        // TODO: there's a serious problem with Swing here: it handles
-        // the exposition internally, so SwingPaintEventDispatcher always
-        // return null from createPaintEvent(). However, we flush the
-        // back buffer here unconditionally, so some flickering may appear.
-        // A possible solution is to split postPaintEvent() into two parts,
-        // and override that part which is only called after if
-        // createPaintEvent() returned non-null value and flush the buffer
-        // from the overridden method
-        flushOnscreenGraphics();
-        repaintPeer(new Rectangle(x, y, w, h));
+    public final void notifyExpose(final Rectangle r) {
+        repaintPeer(r);
     }
 
     /**
-     * Called by the delegate when this window is moved/resized by user.
-     * There's no notifyReshape() in LWComponentPeer as the only
+     * Called by the {@code PlatformWindow} when this window is moved/resized by
+     * user. There's no notifyReshape() in LWComponentPeer as the only
      * components which could be resized by user are top-level windows.
      */
     public final void notifyReshape(int x, int y, int w, int h) {
-        boolean moved = false;
-        boolean resized = false;
+        final boolean moved;
+        final boolean resized;
         synchronized (getStateLock()) {
             moved = (x != sysX) || (y != sysY);
             resized = (w != sysW) || (h != sysH);
@@ -644,12 +636,13 @@ public class LWWindowPeer
             flushOnscreenGraphics();
         }
 
-        // Third, COMPONENT_MOVED/COMPONENT_RESIZED events
+        // Third, COMPONENT_MOVED/COMPONENT_RESIZED/PAINT events
         if (moved) {
             handleMove(x, y, true);
         }
         if (resized) {
-            handleResize(w, h,true);
+            handleResize(w, h, true);
+            repaintPeer();
         }
     }
 
@@ -682,8 +675,9 @@ public class LWWindowPeer
         getLWToolkit().getCursorManager().updateCursorLater(this);
     }
 
-    public void notifyActivation(boolean activation) {
-        changeFocusedWindow(activation);
+    public void notifyActivation(boolean activation, LWWindowPeer opposite) {
+        Window oppositeWindow = (opposite == null)? null : opposite.getTarget();
+        changeFocusedWindow(activation, oppositeWindow);
     }
 
     // MouseDown in non-client area
@@ -1158,6 +1152,9 @@ public class LWWindowPeer
         Window currentActive = KeyboardFocusManager.
             getCurrentKeyboardFocusManager().getActiveWindow();
 
+        Window opposite = LWKeyboardFocusManagerPeer.getInstance().
+            getCurrentFocusedWindow();
+
         // Make the owner active window.
         if (isSimpleWindow()) {
             LWWindowPeer owner = getOwnerFrameDialog(this);
@@ -1184,16 +1181,17 @@ public class LWWindowPeer
             }
 
             // DKFM will synthesize all the focus/activation events correctly.
-            changeFocusedWindow(true);
+            changeFocusedWindow(true, opposite);
             return true;
 
         // In case the toplevel is active but not focused, change focus directly,
         // as requesting native focus on it will not have effect.
         } else if (getTarget() == currentActive && !getTarget().hasFocus()) {
 
-            changeFocusedWindow(true);
+            changeFocusedWindow(true, opposite);
             return true;
         }
+
         return platformWindow.requestWindowFocus();
     }
 
@@ -1223,7 +1221,7 @@ public class LWWindowPeer
     /*
      * Changes focused window on java level.
      */
-    private void changeFocusedWindow(boolean becomesFocused) {
+    private void changeFocusedWindow(boolean becomesFocused, Window opposite) {
         if (focusLog.isLoggable(PlatformLogger.FINE)) {
             focusLog.fine((becomesFocused?"gaining":"loosing") + " focus window: " + this);
         }
@@ -1247,9 +1245,6 @@ public class LWWindowPeer
             }
         }
 
-        KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
-        Window oppositeWindow = becomesFocused ? kfmPeer.getCurrentFocusedWindow() : null;
-
         // Note, the method is not called:
         // - when the opposite (gaining focus) window is an owned/owner window.
         // - for a simple window in any case.
@@ -1261,10 +1256,11 @@ public class LWWindowPeer
             grabbingWindow.ungrab();
         }
 
+        KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
         kfmPeer.setCurrentFocusedWindow(becomesFocused ? getTarget() : null);
 
         int eventID = becomesFocused ? WindowEvent.WINDOW_GAINED_FOCUS : WindowEvent.WINDOW_LOST_FOCUS;
-        WindowEvent windowEvent = new TimedWindowEvent(getTarget(), eventID, oppositeWindow, System.currentTimeMillis());
+        WindowEvent windowEvent = new TimedWindowEvent(getTarget(), eventID, opposite, System.currentTimeMillis());
 
         // TODO: wrap in SequencedEvent
         postEvent(windowEvent);

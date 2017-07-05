@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.sql.rowset.serial;
 import java.sql.*;
 import java.io.*;
 import java.lang.reflect.*;
+import java.util.Arrays;
 
 
 /**
@@ -448,6 +449,97 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
     public void free() throws SQLException {
         throw new java.lang.UnsupportedOperationException("Not supported");
     }
+
+    /**
+     * Compares this SerialBlob to the specified object.  The result is {@code
+     * true} if and only if the argument is not {@code null} and is a {@code
+     * SerialBlob} object that represents the same sequence of bytes as this
+     * object.
+     *
+     * @param  obj The object to compare this {@code SerialBlob} against
+     *
+     * @return {@code true} if the given object represents a {@code SerialBlob}
+     *          equivalent to this SerialBlob, {@code false} otherwise
+     *
+     */
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof SerialBlob) {
+            SerialBlob sb = (SerialBlob)obj;
+            if (this.len == sb.len) {
+                return Arrays.equals(buf, sb.buf);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns a hash code for this {@code SerialBlob}.
+     * @return  a hash code value for this object.
+     */
+    public int hashCode() {
+       return ((31 + Arrays.hashCode(buf)) * 31 + (int)len) * 31 + (int)origLen;
+    }
+
+    /**
+     * Returns a clone of this {@code SerialBlob}. The copy will contain a
+     * reference to a clone of the internal byte array, not a reference
+     * to the original internal byte array of this {@code SerialBlob} object.
+     * The underlying {@code Blob} object will be set to null.
+     *
+     * @return  a clone of this SerialBlob
+     */
+    public Object clone() {
+        try {
+            SerialBlob sb = (SerialBlob) super.clone();
+            sb.buf = Arrays.copyOf(buf, (int)len);
+            sb.blob = null;
+            return sb;
+        } catch (CloneNotSupportedException ex) {
+            // this shouldn't happen, since we are Cloneable
+            throw new InternalError();
+        }
+
+    }
+
+    /**
+     * readObject is called to restore the state of the SerialBlob from
+     * a stream.
+     */
+    private void readObject(ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
+
+        ObjectInputStream.GetField fields = s.readFields();
+       byte[] tmp = (byte[])fields.get("buf", null);
+       if (tmp == null)
+           throw new InvalidObjectException("buf is null and should not be!");
+       buf = tmp.clone();
+       len = fields.get("len", 0L);
+       if (buf.length != len)
+           throw new InvalidObjectException("buf is not the expected size");
+       origLen = fields.get("origLen", 0L);
+       blob = (Blob) fields.get("blob", null);
+    }
+
+    /**
+     * writeObject is called to save the state of the SerialBlob
+     * to a stream.
+     */
+    private void writeObject(ObjectOutputStream s)
+            throws IOException, ClassNotFoundException {
+
+        ObjectOutputStream.PutField fields = s.putFields();
+        fields.put("buf", buf);
+        fields.put("len", len);
+        fields.put("origLen", origLen);
+        // Note: this check to see if it is an instance of Serializable
+        // is for backwards compatibiity
+        fields.put("blob", blob instanceof Serializable ? blob : null);
+        s.writeFields();
+    }
+
     /**
          * The identifier that assists in the serialization of this <code>SerialBlob</code>
      * object.

@@ -246,9 +246,9 @@ build-jar: $(UNSIGNED_DIR)/sunec.jar
 #
 # Build sunec.jar.
 #
-$(UNSIGNED_DIR)/sunec.jar: build
+$(UNSIGNED_DIR)/sunec.jar: build $(JCE_MANIFEST_FILE)
 	$(prep-target)
-	$(BOOT_JAR_CMD) cf $@ $(JAR_DIRS) \
+	$(BOOT_JAR_CMD) cmf $(JCE_MANIFEST_FILE) $@ $(JAR_DIRS) \
 	    $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 

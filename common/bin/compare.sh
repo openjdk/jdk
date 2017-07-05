@@ -352,6 +352,29 @@ compare_zip_file() {
     (cd $THIS_UNZIPDIR && $UNARCHIVE $THIS_ZIP)
     (cd $OTHER_UNZIPDIR && $UNARCHIVE $OTHER_ZIP)
 
+    # Find all archives inside and unzip them as well to compare the contents rather than
+    # the archives.
+    EXCEPTIONS=""
+    for pack in $($FIND $THIS_UNZIPDIR -name "*.pack" -o -name "*.pack.gz"); do
+        ($UNPACK200 $pack $pack.jar)
+        # Filter out the unzipped archives from the diff below.
+        EXCEPTIONS="$EXCEPTIONS $pack $pack.jar"
+    done
+    for pack in $($FIND $OTHER_UNZIPDIR -name "*.pack" -o -name "*.pack.gz"); do
+        ($UNPACK200 $pack $pack.jar)
+        EXCEPTIONS="$EXCEPTIONS $pack $pack.jar"
+    done
+    for zip in $($FIND $THIS_UNZIPDIR -name "*.jar" -o -name "*.zip"); do
+        $MKDIR $zip.unzip
+        (cd $zip.unzip && $UNARCHIVE $zip)
+        EXCEPTIONS="$EXCEPTIONS $zip"
+    done
+    for zip in $($FIND $OTHER_UNZIPDIR -name "*.jar" -o -name "*.zip"); do
+        $MKDIR $zip.unzip
+        (cd $zip.unzip && $UNARCHIVE $zip)
+        EXCEPTIONS="$EXCEPTIONS $zip"
+    done
+
     CONTENTS_DIFF_FILE=$WORK_DIR/$ZIP_FILE.diff
     # On solaris, there is no -q option.
     if [ "$OPENJDK_TARGET_OS" = "solaris" ]; then
@@ -389,7 +412,7 @@ compare_zip_file() {
 
     $RM -f $WORK_DIR/$ZIP_FILE.diffs
     for file in $DIFFING_FILES; do
-	if [[ "$ACCEPTED_JARZIP_CONTENTS" != *"$file"* ]]; then
+	if [[ "$ACCEPTED_JARZIP_CONTENTS $EXCEPTIONS" != *"$file"* ]]; then
             diff_text $OTHER_UNZIPDIR/$file $THIS_UNZIPDIR/$file >> $WORK_DIR/$ZIP_FILE.diffs
 	fi
     done
@@ -664,8 +687,8 @@ compare_bin_file() {
 
     # Check dependencies
     if [ -n "$LDD_CMD" ]; then
-	(cd $FILE_WORK_DIR && $CP $OTHER_FILE . && $LDD_CMD $NAME | $AWK '{ print $1;}' | $SORT | $TEE $WORK_FILE_BASE.deps.other | $UNIQ > $WORK_FILE_BASE.deps.other.uniq)
-	(cd $FILE_WORK_DIR && $CP $THIS_FILE . && $LDD_CMD $NAME | $AWK '{ print $1;}' | $SORT | $TEE $WORK_FILE_BASE.deps.this | $UNIQ > $WORK_FILE_BASE.deps.this.uniq)
+	(cd $FILE_WORK_DIR && $CP $OTHER_FILE . && $LDD_CMD $NAME 2>/dev/null | $AWK '{ print $1;}' | $SORT | $TEE $WORK_FILE_BASE.deps.other | $UNIQ > $WORK_FILE_BASE.deps.other.uniq)
+	(cd $FILE_WORK_DIR && $CP $THIS_FILE . && $LDD_CMD $NAME 2</dev/null | $AWK '{ print $1;}' | $SORT | $TEE $WORK_FILE_BASE.deps.this | $UNIQ > $WORK_FILE_BASE.deps.this.uniq)
 	(cd $FILE_WORK_DIR && $RM -f $NAME)
 	
 	LANG=C $DIFF $WORK_FILE_BASE.deps.other $WORK_FILE_BASE.deps.this > $WORK_FILE_BASE.deps.diff
@@ -846,7 +869,12 @@ compare_all_execs() {
     if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
         EXECS=$(cd $THIS_DIR && $FIND . -type f -name '*.exe' | $SORT | $FILTER)
     else
-        EXECS=$(cd $THIS_DIR && $FIND . -name db -prune -o -type f -perm -100 \! \( -name '*.so' -o -name '*.dylib' -o -name '*.dll' -o -name '*.cgi' -o -name '*.jar' -o -name '*.diz' \) | $SORT | $FILTER)
+        EXECS=$(cd $THIS_DIR && $FIND . -name db -prune -o -type f -perm -100 \! \
+            \( -name '*.so' -o -name '*.dylib' -o -name '*.dll' -o -name '*.cgi' \
+            -o -name '*.jar' -o -name '*.diz' -o -name 'jcontrol' -o -name '*.properties' \
+            -o -name '*.data' -o -name '*.bfc' -o -name '*.src' -o -name '*.txt' \
+            -o -name '*.cfg' -o -name 'meta-index' -o -name '*.properties.ja' \
+            -o -name 'classlist' \) | $SORT | $FILTER)
     fi
 
     if [ -n "$EXECS" ]; then
@@ -1022,6 +1050,7 @@ fi
 if [ -d "$THIS/deploy/j2sdk-image" ]; then
     THIS_J2SDK="$THIS/deploy/j2sdk-image"
     THIS_J2RE="$THIS/deploy/j2re-image"
+    echo "Comparing deploy images"
 elif [ -d "$THIS/images/j2sdk-image" ]; then
     THIS_J2SDK="$THIS/images/j2sdk-image"
     THIS_J2RE="$THIS/images/j2re-image"

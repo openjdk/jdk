@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,10 +126,10 @@ public abstract class CksumType {
         int cksumType = Checksum.CKSUMTYPE_RSA_MD5; // default
         try {
             Config c = Config.getInstance();
-            if ((cksumType = (c.getType(c.getDefault("ap_req_checksum_type",
-                                "libdefaults")))) == - 1) {
-                if ((cksumType = c.getType(c.getDefault("checksum_type",
-                                "libdefaults"))) == -1) {
+            if ((cksumType = (Config.getType(c.get("libdefaults",
+                    "ap_req_checksum_type")))) == - 1) {
+                if ((cksumType = Config.getType(c.get("libdefaults",
+                        "checksum_type"))) == -1) {
                     cksumType = Checksum.CKSUMTYPE_RSA_MD5; // default
                 }
             }
