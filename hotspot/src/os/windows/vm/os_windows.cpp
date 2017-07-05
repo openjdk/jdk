@@ -324,16 +324,6 @@ extern "C" void breakpoint() {
   os::breakpoint();
 }
 
-// Returns an estimate of the current stack pointer. Result must be guaranteed
-// to point into the calling threads stack, and be no lower than the current
-// stack pointer.
-
-address os::current_stack_pointer() {
-  int dummy;
-  address sp = (address)&dummy;
-  return sp;
-}
-
 // os::current_stack_base()
 //
 //   Returns the base of the stack, which is the stack's
