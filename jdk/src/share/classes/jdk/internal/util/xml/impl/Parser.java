@@ -2860,14 +2860,25 @@ public abstract class Parser {
             } else {
                 //              Get encoding from BOM or the xml text decl.
                 reader = bom(is.getByteStream(), ' ');
+                /**
+                 * [#4.3.3] requires BOM for UTF-16, however, it's not uncommon
+                 * that it may be missing. A mature technique exists in Xerces
+                 * to further check for possible UTF-16 encoding
+                 */
+                if (reader == null) {
+                    reader = utf16(is.getByteStream());
+                }
+
                 if (reader == null) {
                     //          Encoding is defined by the xml text decl.
                     reader = enc("UTF-8", is.getByteStream());
                     expenc = xml(reader);
-                    if (expenc.startsWith("UTF-16")) {
-                        panic(FAULT);  // UTF-16 must have BOM [#4.3.3]
+                    if (!expenc.equals("UTF-8")) {
+                        if (expenc.startsWith("UTF-16")) {
+                            panic(FAULT);  // UTF-16 must have BOM [#4.3.3]
+                        }
+                        reader = enc(expenc, is.getByteStream());
                     }
-                    reader = enc(expenc, is.getByteStream());
                 } else {
                     //          Encoding is defined by the BOM.
                     xml(reader);
@@ -2956,6 +2967,49 @@ public abstract class Parser {
         }
     }
 
+
+    /**
+     * Using a mature technique from Xerces, this method checks further after
+     * the bom method above to see if the encoding is UTF-16
+     *
+     * @param is A byte stream of the entity.
+     * @return a reader, may be null
+     * @exception Exception is parser specific exception form panic method.
+     * @exception IOException
+     */
+    private Reader utf16(InputStream is)
+            throws Exception {
+        if (mChIdx != 0) {
+            //The bom method has read ONE byte into the buffer.
+            byte b0 = (byte)mChars[0];
+            if (b0 == 0x00 || b0 == 0x3C) {
+                int b1 = is.read();
+                int b2 = is.read();
+                int b3 = is.read();
+                if (b0 == 0x00 && b1 == 0x3C && b2 == 0x00 && b3 == 0x3F) {
+                    // UTF-16, big-endian, no BOM
+                    mChars[0] = (char)(b1);
+                    mChars[mChIdx++] = (char)(b3);
+                    return new ReaderUTF16(is, 'b');
+                } else if (b0 == 0x3C && b1 == 0x00 && b2 == 0x3F && b3 == 0x00) {
+                    // UTF-16, little-endian, no BOM
+                    mChars[0] = (char)(b0);
+                    mChars[mChIdx++] = (char)(b2);
+                    return new ReaderUTF16(is, 'l');
+                } else {
+                    /**not every InputStream supports reset, so we have to remember
+                     * the state for further parsing
+                    **/
+                    mChars[0] = (char)(b0);
+                    mChars[mChIdx++] = (char)(b1);
+                    mChars[mChIdx++] = (char)(b2);
+                    mChars[mChIdx++] = (char)(b3);
+                }
+
+            }
+        }
+        return null;
+    }
     /**
      * Parses the xml text declaration.
      *
@@ -2974,17 +3028,17 @@ public abstract class Parser {
         String enc = "UTF-8";
         char ch;
         int val;
-        short st;
-        //              Read the xml text declaration into the buffer
-        if (mChIdx != 0) {
-            //          The bom method have read ONE char into the buffer.
-            st = (short) ((mChars[0] == '<') ? 1 : -1);
-        } else {
-            st = 0;
-        }
+        short st = 0;
+        int byteRead =  mChIdx; //number of bytes read prior to entering this method
+
         while (st >= 0 && mChIdx < mChars.length) {
-            ch = ((val = reader.read()) >= 0) ? (char) val : EOS;
-            mChars[mChIdx++] = ch;
+            if (st < byteRead) {
+                ch = mChars[st];
+            } else {
+                ch = ((val = reader.read()) >= 0) ? (char) val : EOS;
+                mChars[mChIdx++] = ch;
+            }
+
             switch (st) {
                 case 0:     // read '<' of xml declaration
                     switch (ch) {
