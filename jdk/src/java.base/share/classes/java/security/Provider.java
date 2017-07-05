@@ -1809,7 +1809,7 @@ public abstract class Provider extends Properties {
         }
 
         /**
-         * Return whether this service has its Supported* properties for
+         * Return whether this service has its supported properties for
          * keys defined. Parses the attributes if not yet initialized.
          */
         private boolean hasKeyAttributes() {

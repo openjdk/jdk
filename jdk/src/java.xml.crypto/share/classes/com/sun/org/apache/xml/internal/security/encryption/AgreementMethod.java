@@ -101,7 +101,7 @@ public interface AgreementMethod {
     /**
      * Adds additional {@code AgreementMethod} information.
      *
-     * @param info a {@code Element} that represents additional information
+     * @param info an {@code Element} that represents additional information
      * specified by
      *   <pre>{@code
      *     <any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
@@ -112,7 +112,7 @@ public interface AgreementMethod {
     /**
      * Removes additional {@code AgreementMethod} information.
      *
-     * @param info a {@code Element} that represents additional information
+     * @param info an {@code Element} that represents additional information
      * specified by
      *   <pre>{@code
      *     <any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>

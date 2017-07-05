@@ -115,7 +115,7 @@ public class HashDrbg extends AbstractHashDrbg {
 
     // This method is used by both instantiation and reseeding.
     @Override
-    protected final void hashReseedInternal(byte[] input) {
+    protected final synchronized void hashReseedInternal(byte[] input) {
 
         // 800-90Ar1 10.1.1.2: Instantiate Process.
         // 800-90Ar1 10.1.1.3: Reseed Process.

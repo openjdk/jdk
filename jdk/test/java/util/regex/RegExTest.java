@@ -33,6 +33,9 @@
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
  * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647 6559590
  * 8027645 8035076 8039124 8035975 8074678 6854417 8143854 8147531 7071819
+ * 8151481 4867170 7080302 6728861 6995635 6736245 4916384
+ * 6328855 6192895 6345469 6988218 6693451 7006761 8140212
+ *
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
  * @run main RegExTest
@@ -162,6 +165,7 @@ public class RegExTest {
         patternAsPredicate();
         invalidFlags();
         grapheme();
+        expoBacktracking();
 
         if (failure) {
             throw new
@@ -2659,51 +2663,101 @@ public class RegExTest {
         check(p, "test\u00e4\u0323\u0300", true);
         check(p, "test\u00e4\u0300\u0323", true);
 
-        /*
-         * The following canonical equivalence tests don't work. Bug id: 4916384.
-         *
-        // Decomposed hangul (jamos)
-        p = Pattern.compile("\u1100\u1161", Pattern.CANON_EQ);
-        m = p.matcher("\u1100\u1161");
-        if (!m.matches())
-            failCount++;
+        Object[][] data = new Object[][] {
 
-        m.reset("\uac00");
-        if (!m.matches())
-            failCount++;
+        // JDK-4867170
+        { "[\u1f80-\u1f82]", "ab\u1f80cd",             "f", true },
+        { "[\u1f80-\u1f82]", "ab\u1f81cd",             "f", true },
+        { "[\u1f80-\u1f82]", "ab\u1f82cd",             "f", true },
+        { "[\u1f80-\u1f82]", "ab\u03b1\u0314\u0345cd", "f", true },
+        { "[\u1f80-\u1f82]", "ab\u03b1\u0345\u0314cd", "f", true },
+        { "[\u1f80-\u1f82]", "ab\u1f01\u0345cd",       "f", true },
+        { "[\u1f80-\u1f82]", "ab\u1f00\u0345cd",       "f", true },
+
+        { "\\p{IsGreek}",    "ab\u1f80cd",             "f", true },
+        { "\\p{IsGreek}",    "ab\u1f81cd",             "f", true },
+        { "\\p{IsGreek}",    "ab\u1f82cd",             "f", true },
+        { "\\p{IsGreek}",    "ab\u03b1\u0314\u0345cd", "f", true },
+        { "\\p{IsGreek}",    "ab\u1f01\u0345cd",       "f", true },
+
+        // backtracking, force to match "\u1f80", instead of \u1f82"
+        { "ab\\p{IsGreek}\u0300cd", "ab\u03b1\u0313\u0345\u0300cd", "m", true },
+
+        { "[\\p{IsGreek}]",  "\u03b1\u0314\u0345",     "m", true },
+        { "\\p{IsGreek}",    "\u03b1\u0314\u0345",     "m", true },
+
+        { "[^\u1f80-\u1f82]","\u1f81",                 "m", false },
+        { "[^\u1f80-\u1f82]","\u03b1\u0314\u0345",     "m", false },
+        { "[^\u1f01\u0345]", "\u1f81",                 "f", false },
+
+        { "[^\u1f81]+",      "\u1f80\u1f82",           "f", true },
+        { "[\u1f80]",        "ab\u1f80cd",             "f", true },
+        { "\u1f80",          "ab\u1f80cd",             "f", true },
+        { "\u1f00\u0345\u0300",  "\u1f82", "m", true },
+        { "\u1f80",          "-\u1f00\u0345\u0300-",   "f", true },
+        { "\u1f82",          "\u1f00\u0345\u0300",     "m", true },
+        { "\u1f82",          "\u1f80\u0300",           "m", true },
+
+        // JDK-7080302       # compile failed
+        { "a(\u0041\u0301\u0328)", "a\u0041\u0301\u0328", "m", true},
+
+        // JDK-6728861, same cause as above one
+        { "\u00e9\u00e9n", "e\u0301e\u0301n", "m", true},
+
+        // JDK-6995635
+        { "(\u00e9)", "e\u0301", "m", true },
+
+        // JDK-6736245
+        // intereting special case, nfc(u2add+u0338) -> u2add+u0338) NOT u2adc
+        { "\u2ADC", "\u2ADC", "m", true},          // NFC
+        { "\u2ADC", "\u2ADD\u0338", "m", true},    // NFD
+
+        //  4916384.
+        // Decomposed hangul (jamos) works inside clazz
+        { "[\u1100\u1161]", "\u1100\u1161", "m", true},
+        { "[\u1100\u1161]", "\uac00", "m", true},
+
+        { "[\uac00]", "\u1100\u1161", "m", true},
+        { "[\uac00]", "\uac00", "m", true},
+
+        // Decomposed hangul (jamos)
+        { "\u1100\u1161", "\u1100\u1161", "m", true},
+        { "\u1100\u1161", "\uac00", "m", true},
 
         // Composed hangul
-        p = Pattern.compile("\uac00", Pattern.CANON_EQ);
-        m = p.matcher("\u1100\u1161");
-        if (!m.matches())
-            failCount++;
+        { "\uac00",  "\u1100\u1161", "m", true },
+        { "\uac00",  "\uac00", "m", true },
 
-        m.reset("\uac00");
-        if (!m.matches())
-            failCount++;
+        /* Need a NFDSlice to nfd the source to solve this issue
+           u+1d1c0 -> nfd: <u+1d1ba><u+1d165><u+1d16f>  -> nfc: <u+1d1ba><u+1d165><u+1d16f>
+           u+1d1bc -> nfd: <u+1d1ba><u+1d165>           -> nfc: <u+1d1ba><u+1d165>
+           <u+1d1bc><u+1d16f> -> nfd: <u+1d1ba><u+1d165><u+1d16f> -> nfc: <u+1d1ba><u+1d165><u+1d16f>
 
         // Decomposed supplementary outside char classes
-        p = Pattern.compile("test\ud834\uddbc\ud834\udd6f", Pattern.CANON_EQ);
-        m = p.matcher("test\ud834\uddc0");
-        if (!m.matches())
-            failCount++;
-
-        m.reset("test\ud834\uddbc\ud834\udd6f");
-        if (!m.matches())
-            failCount++;
-
+        // { "test\ud834\uddbc\ud834\udd6f", "test\ud834\uddc0", "m", true },
         // Composed supplementary outside char classes
-        p = Pattern.compile("test\ud834\uddc0", Pattern.CANON_EQ);
-        m.reset("test\ud834\uddbc\ud834\udd6f");
-        if (!m.matches())
-            failCount++;
-
-        m = p.matcher("test\ud834\uddc0");
-        if (!m.matches())
-            failCount++;
-
+        // { "test\ud834\uddc0", "test\ud834\uddbc\ud834\udd6f", "m", true },
         */
+        { "test\ud834\uddbc\ud834\udd6f", "test\ud834\uddbc\ud834\udd6f", "m", true },
+        { "test\ud834\uddc0",             "test\ud834\uddbc\ud834\udd6f", "m", true },
 
+        { "test\ud834\uddc0",             "test\ud834\uddc0",             "m", true },
+        { "test\ud834\uddbc\ud834\udd6f", "test\ud834\uddc0",             "m", true },
+        };
+
+        int failCount = 0;
+        for (Object[] d : data) {
+            String pn = (String)d[0];
+            String tt = (String)d[1];
+            boolean isFind = "f".equals(((String)d[2]));
+            boolean expected = (boolean)d[3];
+            boolean ret = isFind ? Pattern.compile(pn, Pattern.CANON_EQ).matcher(tt).find()
+                                 : Pattern.compile(pn, Pattern.CANON_EQ).matcher(tt).matches();
+            if (ret != expected) {
+                failCount++;
+                continue;
+            }
+        }
         report("Canonical Equivalence");
     }
 
@@ -3846,7 +3900,6 @@ public class RegExTest {
         if (!patternString.startsWith("'")) {
             return Pattern.compile(patternString);
         }
-
         int break1 = patternString.lastIndexOf("'");
         String flagString = patternString.substring(
                                           break1+1, patternString.length());
@@ -4092,10 +4145,11 @@ public class RegExTest {
         report("NamedGroupCapture");
     }
 
-    // This is for bug 6969132
+    // This is for bug 6919132
     private static void nonBmpClassComplementTest() throws Exception {
         Pattern p = Pattern.compile("\\P{Lu}");
         Matcher m = p.matcher(new String(new int[] {0x1d400}, 0, 1));
+
         if (m.find() && m.start() == 1)
             failCount++;
 
@@ -4110,6 +4164,11 @@ public class RegExTest {
         // block
         p = Pattern.compile("\\P{InMathematicalAlphanumericSymbols}");
         m = p.matcher(new String(new int[] {0x1d400}, 0, 1));
+        if (m.find() && m.start() == 1)
+            failCount++;
+
+        p = Pattern.compile("\\P{sc=GRANTHA}");
+        m = p.matcher(new String(new int[] {0x11350}, 0, 1));
         if (m.find() && m.start() == 1)
             failCount++;
 
@@ -4661,5 +4720,93 @@ public class RegExTest {
         if (!Pattern.compile("\\b{1}hello\\b{1} \\b{1}world\\b{1}").matcher("hello world").matches())
             failCount++;
         report("Unicode extended grapheme cluster");
+    }
+
+    // hangup/timeout if go into exponential backtracking
+    private static void expoBacktracking() throws Exception {
+
+        Object[][] patternMatchers = {
+            // 6328855
+            { "(.*\n*)*",
+              "this little fine string lets\r\njava.lang.String.matches\r\ncrash\r\n(We don't know why but adding \r* to the regex makes it work again)",
+              false },
+            // 6192895
+            { " *([a-zA-Z0-9/\\-\\?:\\(\\)\\.,'\\+\\{\\}]+ *)+",
+              "Hello World this is a test this is a test this is a test A",
+              true },
+            { " *([a-zA-Z0-9/\\-\\?:\\(\\)\\.,'\\+\\{\\}]+ *)+",
+              "Hello World this is a test this is a test this is a test \u4e00 ",
+              false },
+            { " *([a-z0-9]+ *)+",
+              "hello world this is a test this is a test this is a test A",
+              false },
+            // 4771934 [FIXED] #5013651?
+            { "^(\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,4})+[,;]?)+$",
+              "abc@efg.abc,efg@abc.abc,abc@xyz.mno;abc@sdfsd.com",
+              true },
+            // 4866249 [FIXED]
+            { "<\\s*" + "(meta|META)" + "(\\s|[^>])+" + "(CHARSET|charset)=" + "(\\s|[^>])+>",
+              "<META http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-5\">",
+              true },
+            { "^(\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,4})+[,;]?)+$",
+              "abc@efg.abc,efg@abc.abc,abc@xyz.mno;sdfsd.com",
+              false },
+            // 6345469
+            { "((<[^>]+>)?(((\\s)?)*(\\&nbsp;)?)*((\\s)?)*)+",
+              "&nbsp;&nbsp; < br/> &nbsp; < / p> <p> <html> <adfasfdasdf>&nbsp; </p>",
+              true }, // --> matched
+            { "((<[^>]+>)?(((\\s)?)*(\\&nbsp;)?)*((\\s)?)*)+",
+              "&nbsp;&nbsp; < br/> &nbsp; < / p> <p> <html> <adfasfdasdf>&nbsp; p </p>",
+              false },
+            // 5026912
+            { "^\\s*" + "(\\w|\\d|[\\xC0-\\xFF]|/)+" + "\\s+|$",
+              "156580451111112225588087755221111111566969655555555",
+              false},
+            // 6988218
+            { "^([+-]?((0[xX](\\p{XDigit}+))|(((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)))|[n|N]?'([^']*(?:'')*[^']*)*')",
+              "'%)) order by ANGEBOT.ID",
+              false},    // find
+            // 6693451
+            { "^(\\s*foo\\s*)*$",
+              "foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo",
+              true },
+            { "^(\\s*foo\\s*)*$",
+              "foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo foo fo",
+              false
+            },
+            // 7006761
+            { "(([0-9A-Z]+)([_]?+)*)*", "FOOOOO_BAAAR_FOOOOOOOOO_BA_", true},
+            { "(([0-9A-Z]+)([_]?+)*)*", "FOOOOO_BAAAR_FOOOOOOOOO_BA_ ", false},
+            // 8140212
+            { "(?<before>.*)\\{(?<reflection>\\w+):(?<innerMethod>\\w+(\\.?\\w+(\\(((?<args>(('[^']*')|((/|\\w)+))(,(('[^']*')|((/|\\w)+)))*))?\\))?)*)\\}(?<after>.*)",
+              "{CeGlobal:getSodCutoff.getGui.getAmqp.getSimpleModeEnabled()",
+              false
+            },
+            { "^(a+)+$", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true},
+            { "^(a+)+$", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!", false},
+
+            { "(x+)*y",  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy", true },
+            { "(x+)*y",  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxz", false},
+
+            { "(x+x+)+y", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy", true},
+            { "(x+x+)+y", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxz", false},
+
+            { "(([0-9A-Z]+)([_]?+)*)*", "--------------------------------------", false},
+
+            /* not fixed
+            //8132141   --->    second level exponential backtracking
+            { "(h|h|ih(((i|a|c|c|a|i|i|j|b|a|i|b|a|a|j))+h)ahbfhba|c|i)*",
+              "hchcchicihcchciiicichhcichcihcchiihichiciiiihhcchicchhcihchcihiihciichhccciccichcichiihcchcihhicchcciicchcccihiiihhihihihichicihhcciccchihhhcchichchciihiicihciihcccciciccicciiiiiiiiicihhhiiiihchccchchhhhiiihchihcccchhhiiiiiiiicicichicihcciciihichhhhchihciiihhiccccccciciihhichiccchhicchicihihccichicciihcichccihhiciccccccccichhhhihihhcchchihihiihhihihihicichihiiiihhhhihhhchhichiicihhiiiiihchccccchichci" },
+            */
+        };
+
+        for (Object[] pm : patternMatchers) {
+            String p = (String)pm[0];
+            String s = (String)pm[1];
+            boolean r = (Boolean)pm[2];
+            if (r != Pattern.compile(p).matcher(s).matches()) {
+                failCount++;
+            }
+        }
     }
 }

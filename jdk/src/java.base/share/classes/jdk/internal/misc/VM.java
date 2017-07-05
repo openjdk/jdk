@@ -390,10 +390,25 @@ public class VM {
     private static final int JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT = 0x0020;
 
     /*
-     * Returns the first non-null class loader up the execution stack,
-     * or null if only code from the null class loader is on the stack.
+     * Returns the first user-defined class loader up the execution stack,
+     * or the platform class loader if only code from the platform or
+     * bootstrap class loader is on the stack.
      */
-    public static native ClassLoader latestUserDefinedLoader();
+    public static ClassLoader latestUserDefinedLoader() {
+        ClassLoader loader = latestUserDefinedLoader0();
+        return loader != null ? loader : ClassLoader.getPlatformClassLoader();
+    }
+
+    /*
+     * Returns the first user-defined class loader up the execution stack,
+     * or null if only code from the platform or bootstrap class loader is
+     * on the stack.  VM does not keep a reference of platform loader and so
+     * it returns null.
+     *
+     * This method should be replaced with StackWalker::walk and then we can
+     * remove the logic in the VM.
+     */
+    private static native ClassLoader latestUserDefinedLoader0();
 
     /**
      * Returns {@code true} if we are in a set UID program.

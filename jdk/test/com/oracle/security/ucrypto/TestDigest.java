@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     7088989
+ * @bug     7088989 8000415
  * @summary Ensure the various message digests works correctly
  * @key randomness
  */
@@ -40,84 +40,106 @@ public class TestDigest extends UcryptoTest {
     private static final String[] MD_ALGOS = {
         "MD5",
         "SHA",
+        "SHA-224",
         "SHA-256",
         "SHA-384",
-        "SHA-512"
+        "SHA-512",
+        "SHA3-224",
+        "SHA3-256",
+        "SHA3-384",
+        "SHA3-512"
     };
 
     public static void main(String[] args) throws Exception {
         main(new TestDigest(), null);
     }
 
-    public void doTest(Provider p) {
+    public void doTest(Provider p) throws Exception {
         boolean testPassed = true;
         byte[] msg = new byte[200];
         (new SecureRandom()).nextBytes(msg);
         String interopProvName = "SUN";
 
+        MessageDigest md, md2;
+
         for (String a : MD_ALGOS) {
+            System.out.println("Testing " + a);
             try {
-                MessageDigest md, md2;
-                try {
-                    md = MessageDigest.getInstance(a, p);
-                } catch (NoSuchAlgorithmException nsae) {
-                    System.out.println("Skipping Unsupported MD algo: " + a);
-                    continue;
-                }
-                md2 = MessageDigest.getInstance(a, interopProvName);
-                // Test Interoperability for update+digest calls
-                for (int i = 0; i < 3; i++) {
-                    md.update(msg);
-                    byte[] digest = md.digest();
-                    md2.update(msg);
-                    byte[] digest2 = md2.digest();
-                    if (!Arrays.equals(digest, digest2)) {
-                        System.out.println("DIFF1 FAILED for: " + a + " at iter " + i);
-                        testPassed = false;
-                    }
-                }
-
-                // Test Interoperability for digest calls
                 md = MessageDigest.getInstance(a, p);
+            } catch (NoSuchAlgorithmException nsae) {
+                System.out.println("=> Skip, unsupported");
+                continue;
+            }
+            try {
                 md2 = MessageDigest.getInstance(a, interopProvName);
+            } catch (NoSuchAlgorithmException nsae) {
+                System.out.println("=> Skip, no interop provider found");
+                continue;
+            }
 
-                for (int i = 0; i < 3; i++) {
-                    byte[] digest = md.digest();
-                    byte[] digest2 = md2.digest();
-                    if (!Arrays.equals(digest, digest2)) {
-                        System.out.println("DIFF2 FAILED for: " + a + " at iter " + i);
-                        testPassed = false;
-                    }
+            // Test Interoperability for update+digest calls
+            for (int i = 0; i < 3; i++) {
+                md.update(msg);
+                byte[] digest = md.digest();
+                md2.update(msg);
+                byte[] digest2 = md2.digest();
+                if (!Arrays.equals(digest, digest2)) {
+                    System.out.println("DIFF1 FAILED at iter " + i);
+                    testPassed = false;
+                } else {
+                    System.out.println("...diff1 test passed");
                 }
+            }
 
-                // Test Cloning functionality
-                md = MessageDigest.getInstance(a, p);
-                md2 = (MessageDigest) md.clone(); // clone right after construction
+            // Test Interoperability for digest calls
+            md = MessageDigest.getInstance(a, p);
+            md2 = MessageDigest.getInstance(a, interopProvName);
+
+            for (int i = 0; i < 3; i++) {
                 byte[] digest = md.digest();
                 byte[] digest2 = md2.digest();
                 if (!Arrays.equals(digest, digest2)) {
-                    System.out.println("DIFF-3.1 FAILED for: " + a);
+                    System.out.println("DIFF2 FAILED at iter " + i);
                     testPassed = false;
+                } else {
+                    System.out.println("...diff2 test passed");
                 }
-                md.update(msg);
-                md2 = (MessageDigest) md.clone(); // clone again after update call
-                digest = md.digest();
-                digest2 = md2.digest();
-                if (!Arrays.equals(digest, digest2)) {
-                    System.out.println("DIFF-3.2 FAILED for: " + a);
-                    testPassed = false;
-                }
-                md2 = (MessageDigest) md.clone(); // clone after digest
-                digest = md.digest();
-                digest2 = md2.digest();
-                if (!Arrays.equals(digest, digest2)) {
-                    System.out.println("DIFF-3.3 FAILED for: " + a);
-                    testPassed = false;
-                }
-            } catch(Exception ex) {
-                System.out.println("Unexpected Exception: " + a);
-                ex.printStackTrace();
+            }
+
+            // Test Cloning functionality if supported
+            md = MessageDigest.getInstance(a, p);
+            try {
+                md2 = (MessageDigest) md.clone(); // clone right after construction
+            } catch (CloneNotSupportedException cnse) {
+                System.out.println("...no clone support");
+                continue;
+            }
+            byte[] digest = md.digest();
+            byte[] digest2 = md2.digest();
+            if (!Arrays.equals(digest, digest2)) {
+                System.out.println("DIFF-3.1 FAILED");
                 testPassed = false;
+            } else {
+                System.out.println("...diff3.1 tests passed");
+            }
+            md.update(msg);
+            md2 = (MessageDigest) md.clone(); // clone again after update call
+            digest = md.digest();
+            digest2 = md2.digest();
+            if (!Arrays.equals(digest, digest2)) {
+                System.out.println("DIFF-3.2 FAILED");
+                testPassed = false;
+            } else {
+                System.out.println("...diff3.2 tests passed");
+            }
+            md2 = (MessageDigest) md.clone(); // clone after digest
+            digest = md.digest();
+            digest2 = md2.digest();
+            if (!Arrays.equals(digest, digest2)) {
+                System.out.println("DIFF-3.3 FAILED");
+                testPassed = false;
+            } else {
+                System.out.println("...diff3.3 tests passed");
             }
         }
         if (!testPassed) {

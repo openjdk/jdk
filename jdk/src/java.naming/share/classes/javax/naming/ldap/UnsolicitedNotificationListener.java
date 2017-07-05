@@ -32,7 +32,7 @@ import javax.naming.event.NamingListener;
  * "Unsolicited notification" is defined in
  * <A HREF="http://www.ietf.org/rfc/rfc2251.txt">RFC 2251</A>.
  * It allows the server to send unsolicited notifications to the client.
- * A {@code UnsolicitedNotificationListener} must:
+ * An {@code UnsolicitedNotificationListener} must:
  *<ol>
  * <li>Implement this interface and its method
  * <li>Implement {@code NamingListener.namingExceptionThrown()} so
@@ -41,7 +41,7 @@ import javax.naming.event.NamingListener;
  * <li>Register with the context using one of the {@code addNamingListener()}
  * methods from {@code EventContext} or {@code EventDirContext}.
  * Only the {@code NamingListener} argument of these methods are applicable;
- * the rest are ignored for a {@code UnsolicitedNotificationListener}.
+ * the rest are ignored for an {@code UnsolicitedNotificationListener}.
  * (These arguments might be applicable to the listener if it implements
  * other listener interfaces).
  *</ol>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,18 @@
 extern "C" {
 #endif
 
-#undef com_oracle_security_ucrypto_NativeDigest_MECH_MD5
-#define com_oracle_security_ucrypto_NativeDigest_MECH_MD5 1L
-#undef com_oracle_security_ucrypto_NativeDigest_MECH_SHA1
-#define com_oracle_security_ucrypto_NativeDigest_MECH_SHA1 2L
-#undef com_oracle_security_ucrypto_NativeDigest_MECH_SHA256
-#define com_oracle_security_ucrypto_NativeDigest_MECH_SHA256 3L
-#undef com_oracle_security_ucrypto_NativeDigest_MECH_SHA224
-#define com_oracle_security_ucrypto_NativeDigest_MECH_SHA224 4L
-#undef com_oracle_security_ucrypto_NativeDigest_MECH_SHA384
-#define com_oracle_security_ucrypto_NativeDigest_MECH_SHA384 5L
-#undef com_oracle_security_ucrypto_NativeDigest_MECH_SHA512
-#define com_oracle_security_ucrypto_NativeDigest_MECH_SHA512 6L
+#undef com_oracle_security_ucrypto_NativeDigestMD_MECH_MD5
+#define com_oracle_security_ucrypto_NativeDigestMD_MECH_MD5 1L
+#undef com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA1
+#define com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA1 2L
+#undef com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA256
+#define com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA256 3L
+#undef com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA224
+#define com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA224 4L
+#undef com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA384
+#define com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA384 5L
+#undef com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA512
+#define com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA512 6L
 
 #define DEBUG 0
 

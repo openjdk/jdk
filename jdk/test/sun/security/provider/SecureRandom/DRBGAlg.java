@@ -47,7 +47,6 @@ public class DRBGAlg {
 
         check(null, "Hash_DRBG", "SHA-256", "reseed_only", ",128");
         check("", "Hash_DRBG", "SHA-256", "reseed_only", ",128");
-        check("sha-1", "Hash_DRBG", "SHA-1", "reseed_only", ",128");
         check("sha-256", "Hash_DRBG", "SHA-256", "reseed_only", ",128");
         check("SHA-3");
         check("hash_drbg", "Hash_DRBG", "SHA-256", "reseed_only", ",128");
@@ -61,20 +60,20 @@ public class DRBGAlg {
                 "Hash_DRBG", "SHA-512", "pr_and_reseed", ",192");
 
         check("Hash_DRBG,Hmac_DRBG");
-        check("SHA-1,SHA-256");
+        check("SHA-224,SHA-256");
         check("128,256");
         check("none,reseed_only");
         check("use_df,no_df");
-        check("Hash_DRBG,,SHA-1");
+        check("Hash_DRBG,,SHA-256");
 
         check(null, DrbgParameters.instantiation(112, PR_AND_RESEED, null),
                 "Hash_DRBG", "SHA-256", "pr_and_reseed", ",112");
         check(null, DrbgParameters.instantiation(256, PR_AND_RESEED, null),
                 "Hash_DRBG", "SHA-256", "pr_and_reseed", ",256");
         check(null, DrbgParameters.instantiation(384, PR_AND_RESEED, null));
-        check("sha-1", DrbgParameters.instantiation(112, PR_AND_RESEED, null),
-                "Hash_DRBG", "SHA-1", "pr_and_reseed", ",112");
-        check("sha-1", DrbgParameters.instantiation(192, PR_AND_RESEED, null));
+        check("sha-224", DrbgParameters.instantiation(112, PR_AND_RESEED, null),
+                "Hash_DRBG", "SHA-224", "pr_and_reseed", ",112");
+        check("sha-224", DrbgParameters.instantiation(256, PR_AND_RESEED, null));
         check("hash_drbg,sha-512,Pr_and_Reseed,192",
                 DrbgParameters.instantiation(112, NONE, null),
                 "Hash_DRBG", "SHA-512", "reseed_only", ",112");
@@ -86,23 +85,23 @@ public class DRBGAlg {
                 DrbgParameters.instantiation(192, PR_AND_RESEED, null),
                 "Hash_DRBG", "SHA-256", "pr_and_reseed", ",192");
 
-        check("hash_drbg,sha-1", new MoreDrbgParameters(
+        check("hash_drbg,sha-224", new MoreDrbgParameters(
                     null, null, "sha-512", null, false,
                     DrbgParameters.instantiation(-1, NONE, null)),
                 "Hash_DRBG", "SHA-512");
-        check("hash_drbg,sha-1", new MoreDrbgParameters(
+        check("hash_drbg,sha-224", new MoreDrbgParameters(
                     null, null, null, null, false,
                     DrbgParameters.instantiation(-1, NONE, null)),
-                "Hash_DRBG", "SHA-1");
+                "Hash_DRBG", "SHA-224");
         check("hash_drbg", new MoreDrbgParameters(
                     null, "hmac_drbg", null, null, false,
                     DrbgParameters.instantiation(-1, NONE, null)),
                 "HMAC_DRBG", "SHA-256");
 
-        check("hash_drbg,sha-1", new MoreDrbgParameters(
+        check("hash_drbg,sha-224", new MoreDrbgParameters(
                     null, null, "sha-3", null, false,
                     DrbgParameters.instantiation(-1, NONE, null)));
-        check("hash_drbg,sha-1", new MoreDrbgParameters(
+        check("hash_drbg,sha-224", new MoreDrbgParameters(
                     null, "Unknown_DRBG", null, null, false,
                     DrbgParameters.instantiation(-1, NONE, null)));
     }
