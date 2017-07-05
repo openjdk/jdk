@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.prefs.AbstractPreferences;
 import java.util.prefs.BackingStoreException;
 import java.util.regex.Matcher;
@@ -72,27 +74,27 @@ public class ReplToolTesting {
     final static List<String> START_UP_CMD_METHOD = Stream.<String>of()
                     .collect(toList());
     final static List<String> PRINTING_CMD_METHOD = Stream.of(
-            "|    print (boolean)void",
-            "|    print (char)void",
-            "|    print (int)void",
-            "|    print (long)void",
-            "|    print (float)void",
-            "|    print (double)void",
-            "|    print (char s[])void",
-            "|    print (String)void",
-            "|    print (Object)void",
-            "|    println ()void",
-            "|    println (boolean)void",
-            "|    println (char)void",
-            "|    println (int)void",
-            "|    println (long)void",
-            "|    println (float)void",
-            "|    println (double)void",
-            "|    println (char s[])void",
-            "|    println (String)void",
-            "|    println (Object)void",
-            "|    printf (Locale,String,Object...)void",
-            "|    printf (String,Object...)void")
+            "|    void print(boolean)",
+            "|    void print(char)",
+            "|    void print(int)",
+            "|    void print(long)",
+            "|    void print(float)",
+            "|    void print(double)",
+            "|    void print(char s[])",
+            "|    void print(String)",
+            "|    void print(Object)",
+            "|    void println()",
+            "|    void println(boolean)",
+            "|    void println(char)",
+            "|    void println(int)",
+            "|    void println(long)",
+            "|    void println(float)",
+            "|    void println(double)",
+            "|    void println(char s[])",
+            "|    void println(String)",
+            "|    void println(Object)",
+            "|    void printf(java.util.Locale,String,Object...)",
+            "|    void printf(String,Object...)")
             .collect(toList());
     final static List<String> START_UP = Collections.unmodifiableList(
             Stream.concat(START_UP_IMPORTS.stream(), START_UP_METHODS.stream())
@@ -152,6 +154,7 @@ public class ReplToolTesting {
         return s -> {
             List<String> lines = Stream.of(s.split("\n"))
                     .filter(l -> !l.isEmpty())
+                    .filter(l -> !l.startsWith("|     ")) // error/unresolved info
                     .collect(Collectors.toList());
             assertEquals(lines.size(), set.size(), message + " : expected: " + set.keySet() + "\ngot:\n" + lines);
             for (String line : lines) {
@@ -264,6 +267,8 @@ public class ReplToolTesting {
     }
 
     protected JavaShellToolBuilder builder(Locale locale) {
+        // turn on logging of launch failures
+        Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
         return JavaShellToolBuilder
                     .builder()
                     .in(cmdin, userin)
@@ -664,7 +669,12 @@ public class ReplToolTesting {
 
         @Override
         public String toString() {
-            return String.format("%s %s", name, signature);
+            int i = signature.lastIndexOf(")") + 1;
+            if (i <= 0) {
+                return String.format("%s", name);
+            } else {
+                return String.format("%s %s%s", signature.substring(i), name, signature.substring(0, i));
+            }
         }
     }
 

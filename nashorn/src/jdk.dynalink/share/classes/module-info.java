@@ -216,6 +216,9 @@
  * language runtime B gets passed to code from language runtime A, the linker
  * from B will get a chance to link the call site in A when it encounters the
  * object from B.
+ *
+ * @moduleGraph
+ * @since 9
  */
 module jdk.dynalink {
     requires java.logging;

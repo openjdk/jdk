@@ -93,7 +93,7 @@ package org.xml.sax;
  * @see org.xml.sax.DocumentHandler#startElement startElement
  * @see org.xml.sax.helpers.AttributeListImpl AttributeListImpl
  */
-@Deprecated(since="5")
+@Deprecated(since="1.5")
 public interface AttributeList {
 
 

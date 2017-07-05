@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+
 /**
  * @author WS Development Team
  */
@@ -42,13 +43,9 @@ public final class LocalizableMessage implements Localizable {
     private final String _key;
     private final Object[] _args;
 
+    @Deprecated
     public LocalizableMessage(String bundlename, String key, Object... args) {
-        _bundlename = bundlename;
-        _rbSupplier = null;
-        _key = key;
-        if(args==null)
-            args = new Object[0];
-        _args = args;
+        this(bundlename, null, key, args);
     }
 
     public LocalizableMessage(String bundlename, ResourceBundleSupplier rbSupplier,
@@ -61,15 +58,17 @@ public final class LocalizableMessage implements Localizable {
         _args = args;
     }
 
-
+    @Override
     public String getKey() {
         return _key;
     }
 
+    @Override
     public Object[] getArguments() {
         return Arrays.copyOf(_args, _args.length);
     }
 
+    @Override
     public String getResourceBundleName() {
         return _bundlename;
     }
