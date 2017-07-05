@@ -22,6 +22,7 @@ package jdk.nashorn.internal.runtime.regexp.joni.ast;
 import jdk.nashorn.internal.runtime.regexp.joni.EncodingHelper;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.StringType;
 
+@SuppressWarnings("javadoc")
 public final class StringNode extends Node implements StringType {
 
     private static final int NODE_STR_MARGIN = 16;

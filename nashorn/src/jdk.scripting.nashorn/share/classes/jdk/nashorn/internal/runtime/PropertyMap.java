@@ -84,7 +84,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     private transient WeakHashMap<Property, SoftReference<PropertyMap>> history;
 
     /** History of prototypes, used to limit map duplication. */
-    private transient WeakHashMap<PropertyMap, SoftReference<PropertyMap>> protoHistory;
+    private transient WeakHashMap<ScriptObject, SoftReference<PropertyMap>> protoHistory;
 
     /** property listeners */
     private transient PropertyListeners listeners;
@@ -677,14 +677,14 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     /**
      * Check prototype history for an existing property map with specified prototype.
      *
-     * @param parentMap New prototype object.
+     * @param proto New prototype object.
      *
      * @return Existing {@link PropertyMap} or {@code null} if not found.
      */
-    private PropertyMap checkProtoHistory(final PropertyMap parentMap) {
+    private PropertyMap checkProtoHistory(final ScriptObject proto) {
         final PropertyMap cachedMap;
         if (protoHistory != null) {
-            final SoftReference<PropertyMap> weakMap = protoHistory.get(parentMap);
+            final SoftReference<PropertyMap> weakMap = protoHistory.get(proto);
             cachedMap = (weakMap != null ? weakMap.get() : null);
         } else {
             cachedMap = null;
@@ -700,15 +700,15 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     /**
      * Add a map to the prototype history.
      *
-     * @param parentMap Prototype to add (key.)
+     * @param newProto Prototype to add (key.)
      * @param newMap   {@link PropertyMap} associated with prototype.
      */
-    private void addToProtoHistory(final PropertyMap parentMap, final PropertyMap newMap) {
+    private void addToProtoHistory(final ScriptObject newProto, final PropertyMap newMap) {
         if (protoHistory == null) {
             protoHistory = new WeakHashMap<>();
         }
 
-        protoHistory.put(parentMap, new SoftReference<>(newMap));
+        protoHistory.put(newProto, new SoftReference<>(newMap));
     }
 
     /**
@@ -883,8 +883,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      */
     public PropertyMap changeProto(final ScriptObject newProto) {
 
-        final PropertyMap parentMap = newProto == null ? null : newProto.getMap();
-        final PropertyMap nextMap = checkProtoHistory(parentMap);
+        final PropertyMap nextMap = checkProtoHistory(newProto);
         if (nextMap != null) {
             return nextMap;
         }
@@ -894,7 +893,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         }
 
         final PropertyMap newMap = new PropertyMap(this);
-        addToProtoHistory(parentMap, newMap);
+        addToProtoHistory(newProto, newMap);
 
         return newMap;
     }

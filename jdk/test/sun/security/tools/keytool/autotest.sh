@@ -118,13 +118,4 @@ echo | ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dnss \
    KeyToolTest
 status=$?
 
-rm -f p11-nss.txt
-rm -f cert8.db
-rm -f key3.db
-rm -f secmod.db
-
-rm HumanInputStream*.class
-rm KeyToolTest*.class
-rm TestException.class
-
 exit $status

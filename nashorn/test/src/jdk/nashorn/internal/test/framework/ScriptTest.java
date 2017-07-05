@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.test.framework;
 
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_INCLUDES;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +47,9 @@ public final class ScriptTest {
      * Creates a test factory for the set of .js source tests.
      *
      * @return a Object[] of test objects.
+     * @throws Exception upon failure
      */
+    @SuppressWarnings("static-method")
     @Factory
     public Object[] suite() throws Exception {
         Locale.setDefault(new Locale(""));

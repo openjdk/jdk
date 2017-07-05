@@ -97,6 +97,7 @@ import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
 import jdk.internal.dynalink.support.AutoDiscovery;
 import jdk.internal.dynalink.support.BottomGuardingDynamicLinker;
 import jdk.internal.dynalink.support.ClassLoaderGetterContextProvider;
@@ -105,6 +106,7 @@ import jdk.internal.dynalink.support.CompositeTypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.DefaultPrelinkFilter;
 import jdk.internal.dynalink.support.LinkerServicesImpl;
 import jdk.internal.dynalink.support.TypeConverterFactory;
+import jdk.internal.dynalink.support.TypeUtilities;
 
 /**
  * A factory class for creating {@link DynamicLinker}s. The most usual dynamic linker is a linker that is a composition
@@ -115,7 +117,6 @@ import jdk.internal.dynalink.support.TypeConverterFactory;
  * @author Attila Szegedi
  */
 public class DynamicLinkerFactory {
-
     /**
      * Default value for {@link #setUnstableRelinkThreshold(int) unstable relink threshold}.
      */
@@ -130,6 +131,7 @@ public class DynamicLinkerFactory {
     private boolean syncOnRelink = false;
     private int unstableRelinkThreshold = DEFAULT_UNSTABLE_RELINK_THRESHOLD;
     private GuardedInvocationFilter prelinkFilter;
+    private MethodTypeConversionStrategy autoConversionStrategy;
 
     /**
      * Sets the class loader for automatic discovery of available linkers. If not set explicitly, then the thread
@@ -259,6 +261,29 @@ public class DynamicLinkerFactory {
     }
 
     /**
+     * Sets an object representing the conversion strategy for automatic type conversions. After
+     * {@link TypeConverterFactory#asType(java.lang.invoke.MethodHandle, java.lang.invoke.MethodType)} has
+     * applied all custom conversions to a method handle, it still needs to effect
+     * {@link TypeUtilities#isMethodInvocationConvertible(Class, Class) method invocation conversions} that
+     * can usually be automatically applied as per
+     * {@link java.lang.invoke.MethodHandle#asType(java.lang.invoke.MethodType)}.
+     * However, sometimes language runtimes will want to customize even those conversions for their own call
+     * sites. A typical example is allowing unboxing of null return values, which is by default prohibited by
+     * ordinary {@code MethodHandles.asType}. In this case, a language runtime can install its own custom
+     * automatic conversion strategy, that can deal with null values. Note that when the strategy's
+     * {@link MethodTypeConversionStrategy#asType(java.lang.invoke.MethodHandle, java.lang.invoke.MethodType)}
+     * is invoked, the custom language conversions will already have been applied to the method handle, so by
+     * design the difference between the handle's current method type and the desired final type will always
+     * only be ones that can be subjected to method invocation conversions. The strategy also doesn't need to
+     * invoke a final {@code MethodHandle.asType()} as the converter factory will do that as the final step.
+     * @param autoConversionStrategy the strategy for applying method invocation conversions for the linker
+     * created by this factory.
+     */
+    public void setAutoConversionStrategy(final MethodTypeConversionStrategy autoConversionStrategy) {
+        this.autoConversionStrategy = autoConversionStrategy;
+    }
+
+    /**
      * Creates a new dynamic linker consisting of all the prioritized, autodiscovered, and fallback linkers as well as
      * the pre-link filter.
      *
@@ -324,8 +349,9 @@ public class DynamicLinkerFactory {
             prelinkFilter = new DefaultPrelinkFilter();
         }
 
-        return new DynamicLinker(new LinkerServicesImpl(new TypeConverterFactory(typeConverters), composite),
-                prelinkFilter, runtimeContextArgCount, syncOnRelink, unstableRelinkThreshold);
+        return new DynamicLinker(new LinkerServicesImpl(new TypeConverterFactory(typeConverters,
+                autoConversionStrategy), composite), prelinkFilter, runtimeContextArgCount, syncOnRelink,
+                unstableRelinkThreshold);
     }
 
     private static ClassLoader getThreadContextClassLoader() {

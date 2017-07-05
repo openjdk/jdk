@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni;
 
+@SuppressWarnings("javadoc")
 public interface Warnings {
     final String INVALID_BACKREFERENCE =            "invalid back reference";
     final String INVALID_SUBEXP_CALL =              "invalid subexp call";

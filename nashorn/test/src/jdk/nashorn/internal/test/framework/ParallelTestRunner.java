@@ -31,7 +31,6 @@ import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_EXCLUDES_FI
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_EXCLUDE_LIST;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_FRAMEWORK;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_ROOTS;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -73,6 +72,7 @@ import jdk.nashorn.internal.test.framework.TestFinder.TestFactory;
  * Parallel test runner runs tests in multiple threads - but avoids any dependency
  * on third-party test framework library such as TestNG.
  */
+@SuppressWarnings("javadoc")
 public class ParallelTestRunner {
 
     // ParallelTestRunner-specific
@@ -247,7 +247,7 @@ public class ParallelTestRunner {
             }
         }
 
-        private void compare(final String outputFileName, final String expected, final boolean compareCompilerMsg) throws IOException {
+        private void compare(final String fileName, final String expected, final boolean compareCompilerMsg) throws IOException {
             final File expectedFile = new File(expected);
 
             BufferedReader expectedReader;
@@ -257,7 +257,7 @@ public class ParallelTestRunner {
                 expectedReader = new BufferedReader(new StringReader(""));
             }
 
-            final BufferedReader actual = new BufferedReader(new InputStreamReader(new FileInputStream(outputFileName)));
+            final BufferedReader actual = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
 
             compare(actual, expectedReader, compareCompilerMsg);
         }
@@ -434,8 +434,8 @@ public class ParallelTestRunner {
     public static void main(final String[] args) throws Exception {
         parseArgs(args);
 
-        while(new ParallelTestRunner().run()) {
-            ;
+        while (new ParallelTestRunner().run()) {
+            //empty
         }
     }
 

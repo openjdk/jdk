@@ -26,27 +26,21 @@
 package java.lang;
 
 import java.lang.reflect.AnnotatedElement;
-import java.io.InputStream;
-import java.util.Enumeration;
 
-import java.util.StringTokenizer;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
-import java.util.jar.JarException;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
 
 import sun.net.www.ParseUtil;
 import sun.reflect.CallerSensitive;
@@ -538,17 +532,15 @@ public class Package implements java.lang.reflect.AnnotatedElement {
      * Returns the loaded system package for the specified name.
      */
     static Package getSystemPackage(String name) {
-        synchronized (pkgs) {
-            Package pkg = pkgs.get(name);
-            if (pkg == null) {
-                name = name.replace('.', '/').concat("/");
-                String fn = getSystemPackage0(name);
-                if (fn != null) {
-                    pkg = defineSystemPackage(name, fn);
-                }
+        Package pkg = pkgs.get(name);
+        if (pkg == null) {
+            name = name.replace('.', '/').concat("/");
+            String fn = getSystemPackage0(name);
+            if (fn != null) {
+                pkg = defineSystemPackage(name, fn);
             }
-            return pkg;
         }
+        return pkg;
     }
 
     /*
@@ -557,74 +549,98 @@ public class Package implements java.lang.reflect.AnnotatedElement {
     static Package[] getSystemPackages() {
         // First, update the system package map with new package names
         String[] names = getSystemPackages0();
-        synchronized (pkgs) {
-            for (String name : names) {
+        for (String name : names) {
+            if (!pkgs.containsKey(name)) {
                 defineSystemPackage(name, getSystemPackage0(name));
             }
-            return pkgs.values().toArray(new Package[pkgs.size()]);
         }
+        return pkgs.values().toArray(new Package[pkgs.size()]);
     }
 
     private static Package defineSystemPackage(final String iname,
                                                final String fn)
     {
-        return AccessController.doPrivileged(new PrivilegedAction<Package>() {
-            public Package run() {
-                String name = iname;
-                // Get the cached code source url for the file name
-                URL url = urls.get(fn);
-                if (url == null) {
-                    // URL not found, so create one
-                    File file = new File(fn);
-                    try {
-                        url = ParseUtil.fileToEncodedURL(file);
-                    } catch (MalformedURLException e) {
-                    }
-                    if (url != null) {
-                        urls.put(fn, url);
-                        // If loading a JAR file, then also cache the manifest
-                        if (file.isFile()) {
-                            mans.put(fn, loadManifest(fn));
-                        }
-                    }
-                }
-                // Convert to "."-separated package name
-                name = name.substring(0, name.length() - 1).replace('/', '.');
-                Package pkg;
-                Manifest man = mans.get(fn);
-                if (man != null) {
-                    pkg = new Package(name, man, url, null);
-                } else {
-                    pkg = new Package(name, null, null, null,
-                                      null, null, null, null, null);
-                }
-                pkgs.put(name, pkg);
-                return pkg;
-            }
-        });
+        // Convert to "."-separated package name
+        String name = iname.substring(0, iname.length() - 1).replace('/', '.');
+        // Creates a cached manifest for the file name, allowing
+        // only-once, lazy reads of manifest from jar files
+        CachedManifest cachedManifest = createCachedManifest(fn);
+        pkgs.putIfAbsent(name, new Package(name, cachedManifest.getManifest(),
+                                           cachedManifest.getURL(), null));
+        // Ensure we only expose one Package object
+        return pkgs.get(name);
     }
 
-    /*
-     * Returns the Manifest for the specified JAR file name.
-     */
-    private static Manifest loadManifest(String fn) {
-        try (FileInputStream fis = new FileInputStream(fn);
-             JarInputStream jis = new JarInputStream(fis, false))
-        {
-            return jis.getManifest();
-        } catch (IOException e) {
-            return null;
+    private static CachedManifest createCachedManifest(String fn) {
+        if (!manifests.containsKey(fn)) {
+            manifests.putIfAbsent(fn, new CachedManifest(fn));
         }
+        return manifests.get(fn);
     }
 
     // The map of loaded system packages
-    private static Map<String, Package> pkgs = new HashMap<>(31);
+    private static final ConcurrentHashMap<String, Package> pkgs
+            = new ConcurrentHashMap<>();
 
-    // Maps each directory or zip file name to its corresponding url
-    private static Map<String, URL> urls = new HashMap<>(10);
+    // Maps each directory or zip file name to its corresponding manifest, if
+    // it exists
+    private static final ConcurrentHashMap<String, CachedManifest> manifests
+            = new ConcurrentHashMap<>();
 
-    // Maps each code source url for a jar file to its manifest
-    private static Map<String, Manifest> mans = new HashMap<>(10);
+    private static class CachedManifest {
+        private static final Manifest EMPTY_MANIFEST = new Manifest();
+        private final String fileName;
+        private final URL url;
+        private volatile Manifest manifest;
+
+        CachedManifest(final String fileName) {
+            this.fileName = fileName;
+            this.url = AccessController.doPrivileged(new PrivilegedAction<URL>() {
+                public URL run() {
+                    final File file = new File(fileName);
+                    if (file.isFile()) {
+                        try {
+                            return ParseUtil.fileToEncodedURL(file);
+                        } catch (MalformedURLException e) {
+                        }
+                    }
+                    return null;
+                }
+            });
+        }
+
+        public URL getURL() {
+            return url;
+        }
+
+        public Manifest getManifest() {
+            if (url == null) {
+                return EMPTY_MANIFEST;
+            }
+            Manifest m = manifest;
+            if (m != null) {
+                return m;
+            }
+            synchronized (this) {
+                m = manifest;
+                if (m != null) {
+                    return m;
+                }
+                m = AccessController.doPrivileged(new PrivilegedAction<Manifest>() {
+                    public Manifest run() {
+                        try (FileInputStream fis = new FileInputStream(fileName);
+                             JarInputStream jis = new JarInputStream(fis, false)) {
+                            return jis.getManifest();
+                        } catch (IOException e) {
+                            return null;
+                        }
+                    }
+                });
+                manifest = m = (m == null ? EMPTY_MANIFEST : m);
+            }
+            return m;
+        }
+    }
 
     private static native String getSystemPackage0(String name);
     private static native String[] getSystemPackages0();

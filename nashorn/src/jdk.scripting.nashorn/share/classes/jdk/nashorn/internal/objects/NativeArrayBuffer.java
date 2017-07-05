@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-
 import java.nio.ByteBuffer;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
@@ -34,6 +33,7 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
+import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -135,6 +135,19 @@ public final class NativeArrayBuffer extends ScriptObject {
     @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_WRITABLE | Attribute.NOT_CONFIGURABLE)
     public static int byteLength(final Object self) {
         return ((NativeArrayBuffer)self).getByteLength();
+    }
+
+    /**
+     * Returns true if an object is an ArrayBufferView
+     *
+     * @param self self
+     * @param obj  object to check
+     *
+     * @return true if obj is an ArrayBufferView
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static boolean isView(final Object self, final Object obj) {
+        return obj instanceof ArrayBufferView;
     }
 
     /**

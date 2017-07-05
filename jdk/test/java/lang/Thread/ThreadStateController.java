@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
+
+import jdk.testlibrary.LockFreeLogManager;
 
 /**
  * ThreadStateController allows a thread to request this thread to transition
@@ -94,8 +96,12 @@ public class ThreadStateController extends Thread {
     private static final int S_TERMINATE = 8;
 
     // for debugging
-    private AtomicInteger iterations = new AtomicInteger();
-    private AtomicInteger interrupted = new AtomicInteger();
+    private final AtomicInteger iterations = new AtomicInteger();
+    private final AtomicInteger interrupted = new AtomicInteger();
+
+    private final LockFreeLogManager logManager = new LockFreeLogManager();
+
+    @Override
     public void run() {
         // this thread has started
         while (!done) {
@@ -119,13 +125,13 @@ public class ThreadStateController extends Thread {
                     break;
                 }
                 case S_BLOCKED: {
-                    System.out.format("%d: %s is going to block (interations %d)%n",
-                                      getId(), getName(), iterations.get());
+                    log("%d: %s is going to block (iterations %d)%n",
+                        getId(), getName(), iterations.get());
                     stateChange(nextState);
                     // going to block on lock
                     synchronized (lock) {
-                        System.out.format("%d:   %s acquired the lock (interations %d)%n",
-                                          getId(), getName(), iterations.get());
+                        log("%d:   %s acquired the lock (iterations %d)%n",
+                            getId(), getName(), iterations.get());
                         try {
                             // this thread has escaped the BLOCKED state
                             // release the lock and a short wait before continue
@@ -139,13 +145,13 @@ public class ThreadStateController extends Thread {
                 }
                 case S_WAITING: {
                     synchronized (lock) {
-                        System.out.format("%d: %s is going to waiting (interations %d interrupted %d)%n",
-                                          getId(), getName(), iterations.get(), interrupted.get());
+                        log("%d: %s is going to waiting (iterations %d interrupted %d)%n",
+                            getId(), getName(), iterations.get(), interrupted.get());
                         try {
                             stateChange(nextState);
                             lock.wait();
-                            System.out.format("%d:   %s wakes up from waiting (interations %d interrupted %d)%n",
-                                              getId(), getName(), iterations.get(), interrupted.get());
+                            log("%d:   %s wakes up from waiting (iterations %d interrupted %d)%n",
+                                getId(), getName(), iterations.get(), interrupted.get());
                         } catch (InterruptedException e) {
                             // ignore
                             interrupted.incrementAndGet();
@@ -155,13 +161,13 @@ public class ThreadStateController extends Thread {
                 }
                 case S_TIMED_WAITING: {
                     synchronized (lock) {
-                        System.out.format("%d: %s is going to timed waiting (interations %d interrupted %d)%n",
-                                          getId(), getName(), iterations.get(), interrupted.get());
+                        log("%d: %s is going to timed waiting (iterations %d interrupted %d)%n",
+                            getId(), getName(), iterations.get(), interrupted.get());
                         try {
                             stateChange(nextState);
                             lock.wait(10000);
-                            System.out.format("%d:   %s wakes up from timed waiting (interations %d interrupted %d)%n",
-                                              getId(), getName(), iterations.get(), interrupted.get());
+                            log("%d:   %s wakes up from timed waiting (iterations %d interrupted %d)%n",
+                                getId(), getName(), iterations.get(), interrupted.get());
                         } catch (InterruptedException e) {
                             // ignore
                             interrupted.incrementAndGet();
@@ -170,23 +176,23 @@ public class ThreadStateController extends Thread {
                     break;
                 }
                 case S_PARKED: {
-                    System.out.format("%d: %s is going to park (interations %d)%n",
-                                      getId(), getName(), iterations.get());
+                    log("%d: %s is going to park (iterations %d)%n",
+                        getId(), getName(), iterations.get());
                     stateChange(nextState);
                     LockSupport.park();
                     break;
                 }
                 case S_TIMED_PARKED: {
-                    System.out.format("%d: %s is going to timed park (interations %d)%n",
-                                      getId(), getName(), iterations.get());
+                    log("%d: %s is going to timed park (iterations %d)%n",
+                        getId(), getName(), iterations.get());
                     long deadline = System.currentTimeMillis() + 10000*1000;
                     stateChange(nextState);
                     LockSupport.parkUntil(deadline);
                     break;
                 }
                 case S_SLEEPING: {
-                    System.out.format("%d: %s is going to sleep (interations %d interrupted %d)%n",
-                                      getId(), getName(), iterations.get(), interrupted.get());
+                    log("%d: %s is going to sleep (iterations %d interrupted %d)%n",
+                        getId(), getName(), iterations.get(), interrupted.get());
                     try {
                         stateChange(nextState);
                         Thread.sleep(1000000);
@@ -219,8 +225,8 @@ public class ThreadStateController extends Thread {
         if (newState == nextState) {
             state = nextState;
             phaser.arrive();
-            System.out.format("%d:   state change: %s %s%n",
-                              getId(), toStateName(nextState), phaserToString(phaser));
+            log("%d:   state change: %s %s%n",
+                getId(), toStateName(nextState), phaserToString(phaser));
             return;
         }
 
@@ -270,12 +276,12 @@ public class ThreadStateController extends Thread {
 
     private void nextState(int s) throws InterruptedException {
         final long id = Thread.currentThread().getId();
-        System.out.format("%d: wait until the thread transitions to %s %s%n",
-                          id, toStateName(s), phaserToString(phaser));
+        log("%d: wait until the thread transitions to %s %s%n",
+            id, toStateName(s), phaserToString(phaser));
         this.newState = s;
         int phase = phaser.arrive();
-        System.out.format("%d:   awaiting party arrive %s %s%n",
-                           id, toStateName(s), phaserToString(phaser));
+        log("%d:   awaiting party arrive %s %s%n",
+            id, toStateName(s), phaserToString(phaser));
         for (;;) {
             // when this thread has changed its state before it waits or parks
             // on a lock, a potential race might happen if it misses the notify
@@ -301,20 +307,22 @@ public class ThreadStateController extends Thread {
             }
             try {
                 phaser.awaitAdvanceInterruptibly(phase, 100, TimeUnit.MILLISECONDS);
-                System.out.format("%d:   arrived at %s %s%n",
-                                  id, toStateName(s), phaserToString(phaser));
+                log("%d:   arrived at %s %s%n",
+                    id, toStateName(s), phaserToString(phaser));
                 return;
             } catch (TimeoutException ex) {
                 // this thread hasn't arrived at this phase
-                System.out.format("%d: Timeout: %s%n", id, phaser);
+                log("%d: Timeout: %s%n", id, phaser);
             }
         }
     }
+
     private String phaserToString(Phaser p) {
         return "[phase = " + p.getPhase() +
                " parties = " + p.getRegisteredParties() +
                " arrived = " + p.getArrivedParties() + "]";
     }
+
     private String toStateName(int state) {
         switch (state) {
             case S_RUNNABLE:
@@ -336,5 +344,21 @@ public class ThreadStateController extends Thread {
             default:
                 return "unknown " + state;
         }
+    }
+
+    private void log(String msg, Object ... params) {
+        logManager.log(msg, params);
+    }
+
+    /**
+     * Waits for the controller to complete the test run and returns the
+     * generated log
+     * @return The controller log
+     * @throws InterruptedException
+     */
+    public String getLog() throws InterruptedException {
+        this.join();
+
+        return logManager.toString();
     }
 }

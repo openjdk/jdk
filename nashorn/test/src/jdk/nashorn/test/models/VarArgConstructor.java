@@ -27,6 +27,7 @@ package jdk.nashorn.test.models;
 
 import java.util.List;
 
+@SuppressWarnings("javadoc")
 public class VarArgConstructor {
     private final String indicator;
 

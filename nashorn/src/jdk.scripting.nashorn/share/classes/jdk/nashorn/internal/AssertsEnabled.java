@@ -27,8 +27,8 @@ package jdk.nashorn.internal;
 
 /**
  * Class that exposes the current state of asserts.
- *
  */
+@SuppressWarnings("all")
 public final class AssertsEnabled {
     private static boolean assertsEnabled = false;
     static {

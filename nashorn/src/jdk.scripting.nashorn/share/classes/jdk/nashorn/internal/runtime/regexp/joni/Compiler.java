@@ -53,13 +53,17 @@ abstract class Compiler implements ErrorMessages {
     protected abstract void compileAltNode(ConsAltNode node);
 
     private void compileStringRawNode(final StringNode sn) {
-        if (sn.length() <= 0) return;
+        if (sn.length() <= 0) {
+            return;
+        }
         addCompileString(sn.chars, sn.p, sn.length(), false);
     }
 
     private void compileStringNode(final StringNode node) {
         final StringNode sn = node;
-        if (sn.length() <= 0) return;
+        if (sn.length() <= 0) {
+            return;
+        }
 
         final boolean ambig = sn.isAmbig();
 
@@ -145,7 +149,9 @@ abstract class Compiler implements ErrorMessages {
     }
 
     protected final void compileTreeNTimes(final Node node, final int n) {
-        for (int i=0; i<n; i++) compileTree(node);
+        for (int i=0; i<n; i++) {
+            compileTree(node);
+        }
     }
 
     protected void newSyntaxException(final String message) {

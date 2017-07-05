@@ -28,6 +28,7 @@ package jdk.nashorn.api.scripting;
 import java.util.Map;
 import javax.script.Bindings;
 
+@SuppressWarnings("javadoc")
 public class Window {
 
     private String location = "http://localhost:8080/window";
