@@ -154,6 +154,7 @@ TTGlyphID ContextualGlyphSubstitutionProcessor2::lookup(le_uint32 offset, LEGlyp
             TTGlyphID glyphCode = (TTGlyphID) LE_GET_GLYPH(gid);
             if ((glyphCode >= firstGlyph) && (glyphCode < lastGlyph)) {
               LEReferenceToArrayOf<LookupValue> valueArray(lookupTable8, success, &lookupTable8->valueArray[0], glyphCount);
+              if (LE_FAILURE(success)) { return newGlyph; }
               newGlyph = SWAPW(valueArray(glyphCode - firstGlyph, success));
             }
         }

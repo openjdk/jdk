@@ -903,6 +903,19 @@ address Method::make_adapters(methodHandle mh, TRAPS) {
   return adapter->get_c2i_entry();
 }
 
+void Method::restore_unshareable_info(TRAPS) {
+  // Since restore_unshareable_info can be called more than once for a method, don't
+  // redo any work.   If this field is restored, there is nothing to do.
+  if (_from_compiled_entry == NULL) {
+    // restore method's vtable by calling a virtual function
+    restore_vtable();
+
+    methodHandle mh(THREAD, this);
+    link_method(mh, CHECK);
+  }
+}
+
+
 // The verified_code_entry() must be called when a invoke is resolved
 // on this method.
 
