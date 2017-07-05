@@ -375,10 +375,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       Register O0_scratch = O0_argslot;
       int stackElementSize = Interpreter::stackElementSize;
 
-      // Make space on the stack for the arguments.
-      __ sub(SP,    4*stackElementSize, SP);
-      __ sub(Gargs, 3*stackElementSize, Gargs);
-      //__ sub(Lesp,  3*stackElementSize, Lesp);
+      // Make space on the stack for the arguments and set Gargs
+      // correctly.
+      __ sub(SP, 4*stackElementSize, SP);  // Keep stack aligned.
+      __ add(SP, (frame::varargs_offset)*wordSize - 1*Interpreter::stackElementSize + STACK_BIAS + BytesPerWord, Gargs);
 
       // void raiseException(int code, Object actual, Object required)
       __ st(    O1_scratch, Address(Gargs, 2*stackElementSize));  // code

@@ -34,32 +34,34 @@ import static java.dyn.MethodHandles.invokers;  // package-private API
 import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
 
 /**
- * A method handle is a typed reference to the entry point of a method.
+ * A method handle is a typed, directly executable reference to a method,
+ * constructor, field, or similar low-level operation, with optional
+ * conversion or substitution of arguments or return values.
  * <p>
  * Method handles are strongly typed according to signature.
  * They are not distinguished by method name or enclosing class.
  * A method handle must be invoked under a signature which exactly matches
- * the method handle's own type.
+ * the method handle's own {@link MethodType method type}.
  * <p>
- * Every method handle confesses its type via the <code>type</code> accessor.
+ * Every method handle confesses its type via the {@code type} accessor.
  * The structure of this type is a series of classes, one of which is
- * the return type of the method (or <code>void.class</code> if none).
+ * the return type of the method (or {@code void.class} if none).
  * <p>
  * Every method handle appears as an object containing a method named
- * <code>invoke</code>, whose signature exactly matches
+ * {@code invoke}, whose signature exactly matches
  * the method handle's type.
  * A Java method call expression, which compiles to an
- * <code>invokevirtual</code> instruction,
+ * {@code invokevirtual} instruction,
  * can invoke this method from Java source code.
  * <p>
  * Every call to a method handle specifies an intended method type,
  * which must exactly match the type of the method handle.
- * (The type is specified in the <code>invokevirtual</code> instruction,
+ * (The type is specified in the {@code invokevirtual} instruction,
  * via a {@code CONSTANT_NameAndType} constant pool entry.)
  * The call looks within the receiver object for a method
- * named <code>invoke</code> of the intended method type.
+ * named {@code invoke} of the intended method type.
  * The call fails with a {@link WrongMethodTypeException}
- * if the method does not exist, even if there is an <code>invoke</code>
+ * if the method does not exist, even if there is an {@code invoke}
  * method of a closely similar signature.
  * As with other kinds
  * of methods in the JVM, signature matching during method linkage
@@ -76,13 +78,13 @@ import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
  * They should not be passed to untrusted code.
  * <p>
  * Bytecode in an extended JVM can directly call a method handle's
- * <code>invoke</code> from an <code>invokevirtual</code> instruction.
- * The receiver class type must be <code>MethodHandle</code> and the method name
- * must be <code>invoke</code>.  The signature of the invocation
+ * {@code invoke} from an {@code invokevirtual} instruction.
+ * The receiver class type must be {@code MethodHandle} and the method name
+ * must be {@code invoke}.  The signature of the invocation
  * (after resolving symbolic type names) must exactly match the method type
  * of the target method.
  * <p>
- * Every <code>invoke</code> method always throws {@link Exception},
+ * Every {@code invoke} method always throws {@link Exception},
  * which is to say that there is no static restriction on what a method handle
  * can throw.  Since the JVM does not distinguish between checked
  * and unchecked exceptions (other than by their class, of course),
@@ -92,11 +94,11 @@ import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
  * throw {@code Exception}, or else must catch all checked exceptions locally.
  * <p>
  * Bytecode in an extended JVM can directly obtain a method handle
- * for any accessible method from a <code>ldc</code> instruction
- * which refers to a <code>CONSTANT_Methodref</code> or
- * <code>CONSTANT_InterfaceMethodref</code> constant pool entry.
+ * for any accessible method from a {@code ldc} instruction
+ * which refers to a {@code CONSTANT_Methodref} or
+ * {@code CONSTANT_InterfaceMethodref} constant pool entry.
  * <p>
- * All JVMs can also use a reflective API called <code>MethodHandles</code>
+ * All JVMs can also use a reflective API called {@code MethodHandles}
  * for creating and calling method handles.
  * <p>
  * A method reference may refer either to a static or non-static method.
@@ -104,7 +106,7 @@ import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
  * receiver argument, prepended before any other arguments.
  * In the method handle's type, the initial receiver argument is typed
  * according to the class under which the method was initially requested.
- * (E.g., if a non-static method handle is obtained via <code>ldc</code>,
+ * (E.g., if a non-static method handle is obtained via {@code ldc},
  * the type of the receiver is the class named in the constant pool entry.)
  * <p>
  * When a method handle to a virtual method is invoked, the method is
@@ -113,38 +115,38 @@ import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
  * A non-virtual method handles to a specific virtual method implementation
  * can also be created.  These do not perform virtual lookup based on
  * receiver type.  Such a method handle simulates the effect of
- * an <code>invokespecial</code> instruction to the same method.
+ * an {@code invokespecial} instruction to the same method.
  * <p>
  * Here are some examples of usage:
  * <p><blockquote><pre>
- * Object x, y; String s; int i;
- * MethodType mt; MethodHandle mh;
- * MethodHandles.Lookup lookup = MethodHandles.lookup();
- * // mt is {(char,char) =&gt; String}
- * mt = MethodType.make(String.class, char.class, char.class);
- * mh = lookup.findVirtual(String.class, "replace", mt);
- * // (Ljava/lang/String;CC)Ljava/lang/String;
- * s = mh.&lt;String&gt;invoke("daddy",'d','n');
- * assert(s.equals("nanny"));
- * // weakly typed invocation (using MHs.invoke)
- * s = (String) MethodHandles.invoke(mh, "sappy", 'p', 'v');
- * assert(s.equals("savvy"));
- * // mt is {Object[] =&gt; List}
- * mt = MethodType.make(java.util.List.class, Object[].class);
- * mh = lookup.findStatic(java.util.Arrays.class, "asList", mt);
- * // mt is {(Object,Object,Object) =&gt; Object}
- * mt = MethodType.makeGeneric(3);
- * mh = MethodHandles.collectArguments(mh, mt);
- * // mt is {(Object,Object,Object) =&gt; Object}
- * // (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
- * x = mh.invoke((Object)1, (Object)2, (Object)3);
- * assert(x.equals(java.util.Arrays.asList(1,2,3)));
- * // mt is { =&gt; int}
- * mt = MethodType.make(int.class);
- * mh = lookup.findVirtual(java.util.List.class, "size", mt);
- * // (Ljava/util/List;)I
- * i = mh.&lt;int&gt;invoke(java.util.Arrays.asList(1,2,3));
- * assert(i == 3);
+Object x, y; String s; int i;
+MethodType mt; MethodHandle mh;
+MethodHandles.Lookup lookup = MethodHandles.lookup();
+// mt is {(char,char) =&gt; String}
+mt = MethodType.methodType(String.class, char.class, char.class);
+mh = lookup.findVirtual(String.class, "replace", mt);
+// (Ljava/lang/String;CC)Ljava/lang/String;
+s = mh.&lt;String&gt;invokeExact("daddy",'d','n');
+assert(s.equals("nanny"));
+// weakly typed invocation (using MHs.invoke)
+s = (String) mh.invokeVarargs("sappy", 'p', 'v');
+assert(s.equals("savvy"));
+// mt is {Object[] =&gt; List}
+mt = MethodType.methodType(java.util.List.class, Object[].class);
+mh = lookup.findStatic(java.util.Arrays.class, "asList", mt);
+// mt is {(Object,Object,Object) =&gt; Object}
+mt = MethodType.genericMethodType(3);
+mh = MethodHandles.collectArguments(mh, mt);
+// mt is {(Object,Object,Object) =&gt; Object}
+// (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+x = mh.invokeExact((Object)1, (Object)2, (Object)3);
+assert(x.equals(java.util.Arrays.asList(1,2,3)));
+// mt is { =&gt; int}
+mt = MethodType.methodType(int.class);
+mh = lookup.findVirtual(java.util.List.class, "size", mt);
+// (Ljava/util/List;)I
+i = mh.&lt;int&gt;invokeExact(java.util.Arrays.asList(1,2,3));
+assert(i == 3);
  * </pre></blockquote>
  * Each of the above calls generates a single invokevirtual instruction
  * with the name {@code invoke} and the type descriptors indicated in the comments.
@@ -167,6 +169,14 @@ import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
  * those of multiple arities.  It is impossible to represent such
  * genericity with a Java type parameter.</li>
  * </ol>
+ * Signature polymorphic methods in this class appear to be documented
+ * as having type parameters for return types and a parameter, but that is
+ * merely a documentation convention.  These type parameters do
+ * not play a role in type-checking method handle invocations.
+ * <p>
+ * Note: Like classes and strings, method handles that correspond directly
+ * to fields and methods can be represented directly as constants to be
+ * loaded by {@code ldc} bytecodes.
  *
  * @see MethodType
  * @see MethodHandles
@@ -180,7 +190,15 @@ public abstract class MethodHandle
     private static Access IMPL_TOKEN = Access.getToken();
 
     // interface MethodHandle<R throws X extends Exception,A...>
-    // { MethodType<R throws X,A...> type(); public R invoke(A...) throws X; }
+    // { MethodType<R throws X,A...> type(); public R invokeExact(A...) throws X; }
+
+    /**
+     * Internal marker interface which distinguishes (to the Java compiler)
+     * those methods which are signature polymorphic.
+     */
+    @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD,java.lang.annotation.ElementType.TYPE})
+    @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS)
+    @interface PolymorphicSignature { }
 
     private MethodType type;
 
@@ -232,85 +250,38 @@ public abstract class MethodHandle
         return MethodHandleImpl.getNameString(IMPL_TOKEN, this);
     }
 
-    //// First draft of the "Method Handle Kernel API" discussed at the JVM Language Summit, 9/2009.
+    //// This is the "Method Handle Kernel API" discussed at the JVM Language Summit, 9/2009.
     //// Implementations here currently delegate to statics in MethodHandles.  Some of those statics
     //// will be deprecated.  Others will be kept as "algorithms" to supply degrees of freedom
     //// not present in the Kernel API.
 
     /**
      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
-     * Perform an exact invocation.  The signature at the call site of {@code invokeExact} must
+     * Invoke the method handle, allowing any caller signature, but requiring an exact signature match.
+     * The signature at the call site of {@code invokeExact} must
      * exactly match this method handle's {@code type}.
      * No conversions are allowed on arguments or return values.
-     * <em>This is not yet implemented, pending required compiler and JVM support.</em>
      */
-    public final <T> T invokeExact(Object... arguments) throws Throwable {
-        // This is an approximate implementation, which discards the caller's signature and refuses the call.
-        throw new InternalError("not yet implemented");
-    }
+    public final native @PolymorphicSignature <R,A> R invokeExact(A... args) throws Throwable;
+
+    // FIXME: remove this transitional form
+    /** @deprecated transitional form defined in EDR but removed in PFD */
+    public final native @PolymorphicSignature <R,A> R invoke(A... args) throws Throwable;
 
     /**
      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
-     * Perform a generic invocation.  The signature at the call site of {@code invokeExact} must
+     * Invoke the method handle, allowing any caller signature,
+     * and performing simple conversions for arguments and return types.
+     * The signature at the call site of {@code invokeGeneric} must
      * have the same arity as this method handle's {@code type}.
      * The same conversions are allowed on arguments or return values as are supported by
      * by {@link MethodHandles#convertArguments}.
      * If the call site signature exactly matches this method handle's {@code type},
      * the call proceeds as if by {@link #invokeExact}.
-     * <em>This is not fully implemented, pending required compiler and JVM support.</em>
      */
-    // This is an approximate implementation, which discards the caller's signature.
-    // When it is made signature polymorphic, the overloadings will disappear.
-    public final <T> T invokeGeneric() throws Throwable {
-        MethodHandle invoker = invokers(this.type()).genericInvoker();
-        return invoker.<T>invoke(this);
-    }
-    public final <T> T invokeGeneric(Object a0) throws Throwable {
-        MethodHandle invoker = invokers(this.type()).genericInvoker();
-        return invoker.<T>invoke(this, a0);
-    }
-    public final <T> T invokeGeneric(Object a0, Object a1) throws Throwable {
-        MethodHandle invoker = invokers(this.type()).genericInvoker();
-        return invoker.<T>invoke(this, a0, a1);
-    }
-    public final <T> T invokeGeneric(Object a0, Object a1, Object a2) throws Throwable {
-        MethodHandle invoker = invokers(this.type()).genericInvoker();
-        return invoker.<T>invoke(this, a0, a1, a2);
-    }
-    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3) throws Throwable {
-        MethodHandle invoker = invokers(this.type()).genericInvoker();
-        return invoker.<T>invoke(this, a0, a1, a2, a3);
-    }
-    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
-                  Object a4) throws Throwable {
-        MethodHandle invoker = invokers(this.type()).genericInvoker();
-        return invoker.<T>invoke(this, a0, a1, a2, a3, a4);
-    }
-    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
-                  Object a4, Object a5) throws Throwable {
-        MethodHandle invoker = invokers(this.type()).genericInvoker();
-        return invoker.<T>invoke(this, a0, a1, a2, a3, a4, a5);
-    }
-    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
-                  Object a4, Object a5, Object a6) throws Throwable {
-        MethodHandle invoker = invokers(this.type()).genericInvoker();
-        return invoker.<T>invoke(this, a0, a1, a2, a3, a4, a5, a6);
-    }
-    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
-                  Object a4, Object a5, Object a6, Object a7) throws Throwable {
-        MethodHandle invoker = invokers(this.type()).genericInvoker();
-        return invoker.<T>invoke(this, a0, a1, a2, a3, a4, a5, a6, a7);
-    }
-    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
-                  Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable {
-        MethodHandle invoker = invokers(this.type()).genericInvoker();
-        return invoker.<T>invoke(this, a0, a1, a2, a3, a4, a5, a6, a7, a8);
-    }
-    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
-                  Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable {
-        MethodHandle invoker = invokers(this.type()).genericInvoker();
-        return invoker.<T>invoke(this, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-    }
+    public final native @PolymorphicSignature <R,A> R invokeGeneric(A... args) throws Throwable;
+
+    // ?? public final native @PolymorphicSignature <R,A,V> R invokeVarargs(A args, V[] varargs) throws Throwable;
 
     /**
      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
@@ -341,47 +312,47 @@ public abstract class MethodHandle
      * This call is equivalent to the following code:
      * <p><blockquote><pre>
      *   MethodHandle invoker = MethodHandles.genericInvoker(this.type(), 0, true);
-     *   Object result = invoker.invoke(this, arguments);
+     *   Object result = invoker.invokeExact(this, arguments);
      * </pre></blockquote>
      * @param arguments the arguments to pass to the target
      * @return the result returned by the target
      * @see MethodHandles#genericInvoker
      */
-    public final Object invokeVarargs(Object[] arguments) throws Throwable {
+    public final Object invokeVarargs(Object... arguments) throws Throwable {
         int argc = arguments == null ? 0 : arguments.length;
         MethodType type = type();
         if (argc <= 10) {
             MethodHandle invoker = MethodHandles.invokers(type).genericInvoker();
             switch (argc) {
-                case 0:  return invoker.invoke(this);
-                case 1:  return invoker.invoke(this,
+                case 0:  return invoker.invokeExact(this);
+                case 1:  return invoker.invokeExact(this,
                                     arguments[0]);
-                case 2:  return invoker.invoke(this,
+                case 2:  return invoker.invokeExact(this,
                                     arguments[0], arguments[1]);
-                case 3:  return invoker.invoke(this,
+                case 3:  return invoker.invokeExact(this,
                                     arguments[0], arguments[1], arguments[2]);
-                case 4:  return invoker.invoke(this,
+                case 4:  return invoker.invokeExact(this,
                                     arguments[0], arguments[1], arguments[2],
                                     arguments[3]);
-                case 5:  return invoker.invoke(this,
+                case 5:  return invoker.invokeExact(this,
                                     arguments[0], arguments[1], arguments[2],
                                     arguments[3], arguments[4]);
-                case 6:  return invoker.invoke(this,
+                case 6:  return invoker.invokeExact(this,
                                     arguments[0], arguments[1], arguments[2],
                                     arguments[3], arguments[4], arguments[5]);
-                case 7:  return invoker.invoke(this,
+                case 7:  return invoker.invokeExact(this,
                                     arguments[0], arguments[1], arguments[2],
                                     arguments[3], arguments[4], arguments[5],
                                     arguments[6]);
-                case 8:  return invoker.invoke(this,
+                case 8:  return invoker.invokeExact(this,
                                     arguments[0], arguments[1], arguments[2],
                                     arguments[3], arguments[4], arguments[5],
                                     arguments[6], arguments[7]);
-                case 9:  return invoker.invoke(this,
+                case 9:  return invoker.invokeExact(this,
                                     arguments[0], arguments[1], arguments[2],
                                     arguments[3], arguments[4], arguments[5],
                                     arguments[6], arguments[7], arguments[8]);
-                case 10:  return invoker.invoke(this,
+                case 10:  return invoker.invokeExact(this,
                                     arguments[0], arguments[1], arguments[2],
                                     arguments[3], arguments[4], arguments[5],
                                     arguments[6], arguments[7], arguments[8],
@@ -391,7 +362,7 @@ public abstract class MethodHandle
 
         // more than ten arguments get boxed in a varargs list:
         MethodHandle invoker = MethodHandles.invokers(type).varargsInvoker(0);
-        return invoker.invoke(this, arguments);
+        return invoker.invokeExact(this, arguments);
     }
     /** Equivalent to {@code invokeVarargs(arguments.toArray())}. */
     public final Object invokeVarargs(java.util.List<?> arguments) throws Throwable {

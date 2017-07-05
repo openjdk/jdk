@@ -92,7 +92,7 @@ class arrayOopDesc : public oopDesc {
   static int header_size(BasicType type) {
     size_t typesize_in_bytes = header_size_in_bytes();
     return (int)(Universe::element_type_should_be_aligned(type)
-      ? align_object_size(typesize_in_bytes/HeapWordSize)
+      ? align_object_offset(typesize_in_bytes/HeapWordSize)
       : typesize_in_bytes/HeapWordSize);
   }
 

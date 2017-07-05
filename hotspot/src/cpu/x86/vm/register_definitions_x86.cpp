@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,3 +115,6 @@ REGISTER_DEFINITION(MMXRegister, mmx4 );
 REGISTER_DEFINITION(MMXRegister, mmx5 );
 REGISTER_DEFINITION(MMXRegister, mmx6 );
 REGISTER_DEFINITION(MMXRegister, mmx7 );
+
+// JSR 292
+REGISTER_DEFINITION(Register, rbp_mh_SP_save);

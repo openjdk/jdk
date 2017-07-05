@@ -71,8 +71,8 @@ c1_Compilation.cpp                      c1_LinearScan.hpp
 c1_Compilation.cpp                      c1_MacroAssembler.hpp
 c1_Compilation.cpp                      c1_ValueMap.hpp
 c1_Compilation.cpp                      c1_ValueStack.hpp
-c1_Compilation.cpp                      ciEnv.hpp
 c1_Compilation.cpp                      debugInfoRec.hpp
+c1_Compilation.hpp                      ciEnv.hpp
 c1_Compilation.hpp                      exceptionHandlerTable.hpp
 c1_Compilation.hpp                      resourceArea.hpp
 
@@ -82,6 +82,8 @@ c1_Compiler.cpp                         arguments.hpp
 c1_Compiler.cpp                         c1_Compilation.hpp
 c1_Compiler.cpp                         c1_Compiler.hpp
 c1_Compiler.cpp                         c1_FrameMap.hpp
+c1_Compiler.cpp                         c1_GraphBuilder.hpp
+c1_Compiler.cpp                         c1_LinearScan.hpp
 c1_Compiler.cpp                         c1_MacroAssembler.hpp
 c1_Compiler.cpp                         c1_Runtime1.hpp
 c1_Compiler.cpp                         c1_ValueType.hpp

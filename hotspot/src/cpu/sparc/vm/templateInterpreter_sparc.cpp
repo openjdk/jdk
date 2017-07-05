@@ -204,7 +204,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   // out of the main line of code...
   if (EnableInvokeDynamic) {
     __ bind(L_giant_index);
-    __ get_cache_and_index_at_bcp(cache, G1_scratch, 1, true);
+    __ get_cache_and_index_at_bcp(cache, G1_scratch, 1, sizeof(u4));
     __ ba(false, L_got_cache);
     __ delayed()->nop();
   }

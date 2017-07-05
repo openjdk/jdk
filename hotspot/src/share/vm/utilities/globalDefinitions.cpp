@@ -34,6 +34,18 @@ int LogBitsPerHeapOop  = 0;
 int BytesPerHeapOop    = 0;
 int BitsPerHeapOop     = 0;
 
+// Object alignment, in units of HeapWords.
+// Defaults are -1 so things will break badly if incorrectly initialized.
+int MinObjAlignment            = -1;
+int MinObjAlignmentInBytes     = -1;
+int MinObjAlignmentInBytesMask = 0;
+
+int LogMinObjAlignment         = -1;
+int LogMinObjAlignmentInBytes  = -1;
+
+// Oop encoding heap max
+uint64_t OopEncodingHeapMax = 0;
+
 void basic_fatal(const char* msg) {
   fatal(msg);
 }

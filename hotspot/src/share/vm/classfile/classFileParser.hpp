@@ -195,6 +195,9 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     if (!b) { classfile_parse_error(msg, index, name, CHECK); }
   }
 
+  void throwIllegalSignature(
+      const char* type, symbolHandle name, symbolHandle sig, TRAPS);
+
   bool is_supported_version(u2 major, u2 minor);
   bool has_illegal_visibility(jint flags);
 

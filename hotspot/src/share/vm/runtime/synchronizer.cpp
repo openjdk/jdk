@@ -185,6 +185,8 @@ struct SharedGlobals {
 } ;
 
 static SharedGlobals GVars ;
+static int MonitorScavengeThreshold = 1000000 ;
+static volatile int ForceMonitorScavenge = 0 ; // Scavenge required and pending
 
 
 // Tunables ...
@@ -746,7 +748,84 @@ void Thread::muxRelease (volatile intptr_t * Lock)  {
 ObjectMonitor * ObjectSynchronizer::gBlockList = NULL ;
 ObjectMonitor * volatile ObjectSynchronizer::gFreeList  = NULL ;
 static volatile intptr_t ListLock = 0 ;      // protects global monitor free-list cache
+static volatile int MonitorFreeCount  = 0 ;      // # on gFreeList
+static volatile int MonitorPopulation = 0 ;      // # Extant -- in circulation
 #define CHAINMARKER ((oop)-1)
+
+// Constraining monitor pool growth via MonitorBound ...
+//
+// The monitor pool is grow-only.  We scavenge at STW safepoint-time, but the
+// the rate of scavenging is driven primarily by GC.  As such,  we can find
+// an inordinate number of monitors in circulation.
+// To avoid that scenario we can artificially induce a STW safepoint
+// if the pool appears to be growing past some reasonable bound.
+// Generally we favor time in space-time tradeoffs, but as there's no
+// natural back-pressure on the # of extant monitors we need to impose some
+// type of limit.  Beware that if MonitorBound is set to too low a value
+// we could just loop. In addition, if MonitorBound is set to a low value
+// we'll incur more safepoints, which are harmful to performance.
+// See also: GuaranteedSafepointInterval
+//
+// As noted elsewhere, the correct long-term solution is to deflate at
+// monitorexit-time, in which case the number of inflated objects is bounded
+// by the number of threads.  That policy obviates the need for scavenging at
+// STW safepoint time.   As an aside, scavenging can be time-consuming when the
+// # of extant monitors is large.   Unfortunately there's a day-1 assumption baked
+// into much HotSpot code that the object::monitor relationship, once established
+// or observed, will remain stable except over potential safepoints.
+//
+// We can use either a blocking synchronous VM operation or an async VM operation.
+// -- If we use a blocking VM operation :
+//    Calls to ScavengeCheck() should be inserted only into 'safe' locations in paths
+//    that lead to ::inflate() or ::omAlloc().
+//    Even though the safepoint will not directly induce GC, a GC might
+//    piggyback on the safepoint operation, so the caller should hold no naked oops.
+//    Furthermore, monitor::object relationships are NOT necessarily stable over this call
+//    unless the caller has made provisions to "pin" the object to the monitor, say
+//    by incrementing the monitor's _count field.
+// -- If we use a non-blocking asynchronous VM operation :
+//    the constraints above don't apply.  The safepoint will fire in the future
+//    at a more convenient time.  On the other hand the latency between posting and
+//    running the safepoint introduces or admits "slop" or laxity during which the
+//    monitor population can climb further above the threshold.  The monitor population,
+//    however, tends to converge asymptotically over time to a count that's slightly
+//    above the target value specified by MonitorBound.   That is, we avoid unbounded
+//    growth, albeit with some imprecision.
+//
+// The current implementation uses asynchronous VM operations.
+//
+// Ideally we'd check if (MonitorPopulation > MonitorBound) in omAlloc()
+// immediately before trying to grow the global list via allocation.
+// If the predicate was true then we'd induce a synchronous safepoint, wait
+// for the safepoint to complete, and then again to allocate from the global
+// free list.  This approach is much simpler and precise, admitting no "slop".
+// Unfortunately we can't safely safepoint in the midst of omAlloc(), so
+// instead we use asynchronous safepoints.
+
+static void InduceScavenge (Thread * Self, const char * Whence) {
+  // Induce STW safepoint to trim monitors
+  // Ultimately, this results in a call to deflate_idle_monitors() in the near future.
+  // More precisely, trigger an asynchronous STW safepoint as the number
+  // of active monitors passes the specified threshold.
+  // TODO: assert thread state is reasonable
+
+  if (ForceMonitorScavenge == 0 && Atomic::xchg (1, &ForceMonitorScavenge) == 0) {
+    if (Knob_Verbose) {
+      ::printf ("Monitor scavenge - Induced STW @%s (%d)\n", Whence, ForceMonitorScavenge) ;
+      ::fflush(stdout) ;
+    }
+    // Induce a 'null' safepoint to scavenge monitors
+    // Must VM_Operation instance be heap allocated as the op will be enqueue and posted
+    // to the VMthread and have a lifespan longer than that of this activation record.
+    // The VMThread will delete the op when completed.
+    VMThread::execute (new VM_ForceAsyncSafepoint()) ;
+
+    if (Knob_Verbose) {
+      ::printf ("Monitor scavenge - STW posted @%s (%d)\n", Whence, ForceMonitorScavenge) ;
+      ::fflush(stdout) ;
+    }
+  }
+}
 
 ObjectMonitor * ATTR ObjectSynchronizer::omAlloc (Thread * Self) {
     // A large MAXPRIVATE value reduces both list lock contention
@@ -770,6 +849,11 @@ ObjectMonitor * ATTR ObjectSynchronizer::omAlloc (Thread * Self) {
            Self->omFreeCount -- ;
            // CONSIDER: set m->FreeNext = BAD -- diagnostic hygiene
            guarantee (m->object() == NULL, "invariant") ;
+           if (MonitorInUseLists) {
+             m->FreeNext = Self->omInUseList;
+             Self->omInUseList = m;
+             Self->omInUseCount ++;
+           }
            return m ;
         }
 
@@ -784,6 +868,7 @@ ObjectMonitor * ATTR ObjectSynchronizer::omAlloc (Thread * Self) {
             // on various locks.
             Thread::muxAcquire (&ListLock, "omAlloc") ;
             for (int i = Self->omFreeProvision; --i >= 0 && gFreeList != NULL; ) {
+                MonitorFreeCount --;
                 ObjectMonitor * take = gFreeList ;
                 gFreeList = take->FreeNext ;
                 guarantee (take->object() == NULL, "invariant") ;
@@ -796,6 +881,15 @@ ObjectMonitor * ATTR ObjectSynchronizer::omAlloc (Thread * Self) {
             if (Self->omFreeProvision > MAXPRIVATE ) Self->omFreeProvision = MAXPRIVATE ;
             TEVENT (omFirst - reprovision) ;
             continue ;
+
+            const int mx = MonitorBound ;
+            if (mx > 0 && (MonitorPopulation-MonitorFreeCount) > mx) {
+              // We can't safely induce a STW safepoint from omAlloc() as our thread
+              // state may not be appropriate for such activities and callers may hold
+              // naked oops, so instead we defer the action.
+              InduceScavenge (Self, "omAlloc") ;
+            }
+            continue;
         }
 
         // 3: allocate a block of new ObjectMonitors
@@ -836,6 +930,8 @@ ObjectMonitor * ATTR ObjectSynchronizer::omAlloc (Thread * Self) {
         // Acquire the ListLock to manipulate BlockList and FreeList.
         // An Oyama-Taura-Yonezawa scheme might be more efficient.
         Thread::muxAcquire (&ListLock, "omAlloc [2]") ;
+        MonitorPopulation += _BLOCKSIZE-1;
+        MonitorFreeCount += _BLOCKSIZE-1;
 
         // Add the new block to the list of extant blocks (gBlockList).
         // The very first objectMonitor in a block is reserved and dedicated.
@@ -894,7 +990,9 @@ void ObjectSynchronizer::omFlush (Thread * Self) {
     if (List == NULL) return ;
     ObjectMonitor * Tail = NULL ;
     ObjectMonitor * s ;
+    int Tally = 0;
     for (s = List ; s != NULL ; s = s->FreeNext) {
+        Tally ++ ;
         Tail = s ;
         guarantee (s->object() == NULL, "invariant") ;
         guarantee (!s->is_busy(), "invariant") ;
@@ -906,6 +1004,7 @@ void ObjectSynchronizer::omFlush (Thread * Self) {
     Thread::muxAcquire (&ListLock, "omFlush") ;
     Tail->FreeNext = gFreeList ;
     gFreeList = List ;
+    MonitorFreeCount += Tally;
     Thread::muxRelease (&ListLock) ;
     TEVENT (omFlush) ;
 }
@@ -1747,16 +1846,15 @@ void ObjectSynchronizer::oops_do(OopClosure* f) {
 // Having a large number of monitors in-circulation negatively
 // impacts the performance of some applications (e.g., PointBase).
 // Broadly, we want to minimize the # of monitors in circulation.
-// Alternately, we could partition the active monitors into sub-lists
-// of those that need scanning and those that do not.
-// Specifically, we would add a new sub-list of objectmonitors
-// that are in-circulation and potentially active.  deflate_idle_monitors()
-// would scan only that list.  Other monitors could reside on a quiescent
-// list.  Such sequestered monitors wouldn't need to be scanned by
-// deflate_idle_monitors().  omAlloc() would first check the global free list,
-// then the quiescent list, and, failing those, would allocate a new block.
-// Deflate_idle_monitors() would scavenge and move monitors to the
-// quiescent list.
+//
+// We have added a flag, MonitorInUseLists, which creates a list
+// of active monitors for each thread. deflate_idle_monitors()
+// only scans the per-thread inuse lists. omAlloc() puts all
+// assigned monitors on the per-thread list. deflate_idle_monitors()
+// returns the non-busy monitors to the global free list.
+// An alternative could have used a single global inuse list. The
+// downside would have been the additional cost of acquiring the global list lock
+// for every omAlloc().
 //
 // Perversely, the heap size -- and thus the STW safepoint rate --
 // typically drives the scavenge rate.  Large heaps can mean infrequent GC,
@@ -1769,18 +1867,100 @@ void ObjectSynchronizer::oops_do(OopClosure* f) {
 // An even better solution would be to deflate on-the-fly, aggressively,
 // at monitorexit-time as is done in EVM's metalock or Relaxed Locks.
 
+
+// Deflate a single monitor if not in use
+// Return true if deflated, false if in use
+bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
+                                         ObjectMonitor** FreeHeadp, ObjectMonitor** FreeTailp) {
+  bool deflated;
+  // Normal case ... The monitor is associated with obj.
+  guarantee (obj->mark() == markOopDesc::encode(mid), "invariant") ;
+  guarantee (mid == obj->mark()->monitor(), "invariant");
+  guarantee (mid->header()->is_neutral(), "invariant");
+
+  if (mid->is_busy()) {
+     if (ClearResponsibleAtSTW) mid->_Responsible = NULL ;
+     deflated = false;
+  } else {
+     // Deflate the monitor if it is no longer being used
+     // It's idle - scavenge and return to the global free list
+     // plain old deflation ...
+     TEVENT (deflate_idle_monitors - scavenge1) ;
+     if (TraceMonitorInflation) {
+       if (obj->is_instance()) {
+         ResourceMark rm;
+           tty->print_cr("Deflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
+                (intptr_t) obj, (intptr_t) obj->mark(), Klass::cast(obj->klass())->external_name());
+       }
+     }
+
+     // Restore the header back to obj
+     obj->release_set_mark(mid->header());
+     mid->clear();
+
+     assert (mid->object() == NULL, "invariant") ;
+
+     // Move the object to the working free list defined by FreeHead,FreeTail.
+     if (*FreeHeadp == NULL) *FreeHeadp = mid;
+     if (*FreeTailp != NULL) {
+       ObjectMonitor * prevtail = *FreeTailp;
+       prevtail->FreeNext = mid;
+      }
+     *FreeTailp = mid;
+     deflated = true;
+  }
+  return deflated;
+}
+
 void ObjectSynchronizer::deflate_idle_monitors() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   int nInuse = 0 ;              // currently associated with objects
   int nInCirculation = 0 ;      // extant
   int nScavenged = 0 ;          // reclaimed
+  bool deflated = false;
 
   ObjectMonitor * FreeHead = NULL ;  // Local SLL of scavenged monitors
   ObjectMonitor * FreeTail = NULL ;
 
-  // Iterate over all extant monitors - Scavenge all idle monitors.
   TEVENT (deflate_idle_monitors) ;
-  for (ObjectMonitor* block = gBlockList; block != NULL; block = next(block)) {
+  // Prevent omFlush from changing mids in Thread dtor's during deflation
+  // And in case the vm thread is acquiring a lock during a safepoint
+  // See e.g. 6320749
+  Thread::muxAcquire (&ListLock, "scavenge - return") ;
+
+  if (MonitorInUseLists) {
+    ObjectMonitor* mid;
+    ObjectMonitor* next;
+    ObjectMonitor* curmidinuse;
+    for (JavaThread* cur = Threads::first(); cur != NULL; cur = cur->next()) {
+      curmidinuse = NULL;
+      for (mid = cur->omInUseList; mid != NULL; ) {
+        oop obj = (oop) mid->object();
+        deflated = false;
+        if (obj != NULL) {
+          deflated = deflate_monitor(mid, obj, &FreeHead, &FreeTail);
+        }
+        if (deflated) {
+          // extract from per-thread in-use-list
+          if (mid == cur->omInUseList) {
+            cur->omInUseList = mid->FreeNext;
+          } else if (curmidinuse != NULL) {
+            curmidinuse->FreeNext = mid->FreeNext; // maintain the current thread inuselist
+          }
+          next = mid->FreeNext;
+          mid->FreeNext = NULL;  // This mid is current tail in the FreeHead list
+          mid = next;
+          cur->omInUseCount--;
+          nScavenged ++ ;
+        } else {
+          curmidinuse = mid;
+          mid = mid->FreeNext;
+          nInuse ++;
+        }
+     }
+   }
+  } else for (ObjectMonitor* block = gBlockList; block != NULL; block = next(block)) {
+  // Iterate over all extant monitors - Scavenge all idle monitors.
     assert(block->object() == CHAINMARKER, "must be a block header");
     nInCirculation += _BLOCKSIZE ;
     for (int i = 1 ; i < _BLOCKSIZE; i++) {
@@ -1795,61 +1975,39 @@ void ObjectSynchronizer::deflate_idle_monitors() {
         guarantee (!mid->is_busy(), "invariant") ;
         continue ;
       }
+      deflated = deflate_monitor(mid, obj, &FreeHead, &FreeTail);
 
-      // Normal case ... The monitor is associated with obj.
-      guarantee (obj->mark() == markOopDesc::encode(mid), "invariant") ;
-      guarantee (mid == obj->mark()->monitor(), "invariant");
-      guarantee (mid->header()->is_neutral(), "invariant");
-
-      if (mid->is_busy()) {
-         if (ClearResponsibleAtSTW) mid->_Responsible = NULL ;
-         nInuse ++ ;
+      if (deflated) {
+        mid->FreeNext = NULL ;
+        nScavenged ++ ;
       } else {
-         // Deflate the monitor if it is no longer being used
-         // It's idle - scavenge and return to the global free list
-         // plain old deflation ...
-         TEVENT (deflate_idle_monitors - scavenge1) ;
-         if (TraceMonitorInflation) {
-           if (obj->is_instance()) {
-             ResourceMark rm;
-               tty->print_cr("Deflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-                    (intptr_t) obj, (intptr_t) obj->mark(), Klass::cast(obj->klass())->external_name());
-           }
-         }
-
-         // Restore the header back to obj
-         obj->release_set_mark(mid->header());
-         mid->clear();
-
-         assert (mid->object() == NULL, "invariant") ;
-
-         // Move the object to the working free list defined by FreeHead,FreeTail.
-         mid->FreeNext = NULL ;
-         if (FreeHead == NULL) FreeHead = mid ;
-         if (FreeTail != NULL) FreeTail->FreeNext = mid ;
-         FreeTail = mid ;
-         nScavenged ++ ;
+        nInuse ++;
       }
     }
   }
 
+  MonitorFreeCount += nScavenged;
+
+  // Consider: audit gFreeList to ensure that MonitorFreeCount and list agree.
+
+  if (Knob_Verbose) {
+    ::printf ("Deflate: InCirc=%d InUse=%d Scavenged=%d ForceMonitorScavenge=%d : pop=%d free=%d\n",
+        nInCirculation, nInuse, nScavenged, ForceMonitorScavenge,
+        MonitorPopulation, MonitorFreeCount) ;
+    ::fflush(stdout) ;
+  }
+
+  ForceMonitorScavenge = 0;    // Reset
+
   // Move the scavenged monitors back to the global free list.
-  // In theory we don't need the freelist lock as we're at a STW safepoint.
-  // omAlloc() and omFree() can only be called while a thread is _not in safepoint state.
-  // But it's remotely possible that omFlush() or release_monitors_owned_by_thread()
-  // might be called while not at a global STW safepoint.  In the interest of
-  // safety we protect the following access with ListLock.
-  // An even more conservative and prudent approach would be to guard
-  // the main loop in scavenge_idle_monitors() with ListLock.
   if (FreeHead != NULL) {
      guarantee (FreeTail != NULL && nScavenged > 0, "invariant") ;
      assert (FreeTail->FreeNext == NULL, "invariant") ;
      // constant-time list splice - prepend scavenged segment to gFreeList
-     Thread::muxAcquire (&ListLock, "scavenge - return") ;
      FreeTail->FreeNext = gFreeList ;
      gFreeList = FreeHead ;
-     Thread::muxRelease (&ListLock) ;
   }
+  Thread::muxRelease (&ListLock) ;
 
   if (_sync_Deflations != NULL) _sync_Deflations->inc(nScavenged) ;
   if (_sync_MonExtant  != NULL) _sync_MonExtant ->set_value(nInCirculation);

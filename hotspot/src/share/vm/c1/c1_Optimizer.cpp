@@ -437,11 +437,8 @@ public:
 // Because of a static contained within (for the purpose of iteration
 // over instructions), it is only valid to have one of these active at
 // a time
-class NullCheckEliminator {
+class NullCheckEliminator: public ValueVisitor {
  private:
-  static NullCheckEliminator* _static_nce;
-  static void                 do_value(Value* vp);
-
   Optimizer*        _opt;
 
   ValueSet*         _visitable_instructions;        // Visit each instruction only once per basic block
@@ -503,6 +500,8 @@ class NullCheckEliminator {
 
   // Process a graph
   void iterate(BlockBegin* root);
+
+  void visit(Value* f);
 
   // In some situations (like NullCheck(x); getfield(x)) the debug
   // information from the explicit NullCheck can be used to populate
@@ -602,14 +601,11 @@ void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_las
 void NullCheckVisitor::do_ProfileCounter (ProfileCounter*  x) {}
 
 
-NullCheckEliminator* NullCheckEliminator::_static_nce = NULL;
-
-
-void NullCheckEliminator::do_value(Value* p) {
+void NullCheckEliminator::visit(Value* p) {
   assert(*p != NULL, "should not find NULL instructions");
-  if (_static_nce->visitable(*p)) {
-    _static_nce->mark_visited(*p);
-    (*p)->visit(&_static_nce->_visitor);
+  if (visitable(*p)) {
+    mark_visited(*p);
+    (*p)->visit(&_visitor);
   }
 }
 
@@ -637,7 +633,6 @@ void NullCheckEliminator::iterate_all() {
 
 
 void NullCheckEliminator::iterate_one(BlockBegin* block) {
-  _static_nce = this;
   clear_visitable_state();
   // clear out an old explicit null checks
   set_last_explicit_null_check(NULL);
@@ -712,7 +707,7 @@ void NullCheckEliminator::iterate_one(BlockBegin* block) {
     mark_visitable(instr);
     if (instr->is_root() || instr->can_trap() || (instr->as_NullCheck() != NULL)) {
       mark_visited(instr);
-      instr->input_values_do(&NullCheckEliminator::do_value);
+      instr->input_values_do(this);
       instr->visit(&_visitor);
     }
   }
