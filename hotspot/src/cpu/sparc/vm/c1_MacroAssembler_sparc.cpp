@@ -55,9 +55,9 @@ void C1_MacroAssembler::explicit_null_check(Register base) {
 }
 
 
-void C1_MacroAssembler::build_frame(int frame_size_in_bytes) {
-
-  generate_stack_overflow_check(frame_size_in_bytes);
+void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
+  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
+  generate_stack_overflow_check(bang_size_in_bytes);
   // Create the frame.
   save_frame_c1(frame_size_in_bytes);
 }

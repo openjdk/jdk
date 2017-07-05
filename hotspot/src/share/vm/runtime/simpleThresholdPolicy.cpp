@@ -142,7 +142,8 @@ void SimpleThresholdPolicy::initialize() {
     count = MAX2(log2_intptr(os::active_processor_count()), 1) * 3 / 2;
   }
   set_c1_count(MAX2(count / 3, 1));
-  set_c2_count(MAX2(count - count / 3, 1));
+  set_c2_count(MAX2(count - c1_count(), 1));
+  FLAG_SET_ERGO(intx, CICompilerCount, c1_count() + c2_count());
 }
 
 void SimpleThresholdPolicy::set_carry_if_necessary(InvocationCounter *counter) {

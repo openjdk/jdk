@@ -237,3 +237,9 @@ void ciKlass::print_impl(outputStream* st) {
 void ciKlass::print_name_on(outputStream* st) {
   name()->print_symbol_on(st);
 }
+
+const char* ciKlass::external_name() const {
+  GUARDED_VM_ENTRY(
+    return get_Klass()->external_name();
+  )
+}

@@ -35,7 +35,7 @@ import java.util.zip.ZipFile;
  * @since 1.5
  * @author Vincent Ryan
  */
-
+@jdk.Exported
 public interface ContentSignerParameters {
 
     /**
@@ -64,7 +64,20 @@ public interface ContentSignerParameters {
      *
      * @return The TSAPolicyID. May be null.
      */
-    public String getTSAPolicyID();
+    public default String getTSAPolicyID() {
+        return null;
+    }
+
+    /**
+     * Retreives the message digest algorithm that is used to generate
+     * the message imprint to be sent to the TSA server.
+     *
+     * @since 1.9
+     * @return The non-null string of the message digest algorithm name.
+     */
+    public default String getTSADigestAlg() {
+        return "SHA-256";
+    }
 
     /**
      * Retrieves the JAR file's signature.

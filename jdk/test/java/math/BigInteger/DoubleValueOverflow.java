@@ -22,7 +22,7 @@
  */
 
 /*
- * @ test
+ * @test
  * @bug 8021203
  * @summary Test that doubleValue() doesn't overflow
  * @author Dmitry Nadezhin
@@ -32,18 +32,15 @@ import java.math.BigInteger;
 public class DoubleValueOverflow {
 
     public static void main(String[] args) {
-
         try {
             BigInteger x = BigInteger.valueOf(2).shiftLeft(Integer.MAX_VALUE); // x = pow(2,pow(2,31))
-            if (x.doubleValue() != Double.POSITIVE_INFINITY)
+            if (x.doubleValue() != Double.POSITIVE_INFINITY) {
                 throw new RuntimeException("Incorrect doubleValue() " + x.doubleValue());
+            }
             System.out.println("Passed with correct result");
         } catch (ArithmeticException e) {
             // expected
             System.out.println("Overflow is reported by ArithmeticException, as expected");
-        } catch (OutOfMemoryError e) {
-            // possible
-            System.out.println("OutOfMemoryError");
         }
     }
 }
