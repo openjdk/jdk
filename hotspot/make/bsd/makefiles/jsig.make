@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Rules to build signal interposition library, used by vm.make
@@ -47,8 +47,8 @@ DEST_JSIG_DIZ       = $(JDK_LIBDIR)/$(LIBJSIG_DIZ)
 
 LIBJSIG_MAPFILE = $(MAKEFILES_DIR)/mapfile-vers-jsig
 
-# On Bsd we really dont want a mapfile, as this library is small 
-# and preloaded using LD_PRELOAD, making functions private will 
+# On Bsd we really dont want a mapfile, as this library is small
+# and preloaded using LD_PRELOAD, making functions private will
 # cause problems with interposing. See CR: 6466665
 # LFLAGS_JSIG += $(MAPFLAG:FILENAME=$(LIBJSIG_MAPFILE))
 
@@ -92,13 +92,13 @@ install_jsig: $(LIBJSIG)
 	@echo "Copying $(LIBJSIG) to $(DEST_JSIG)"
 ifeq ($(OS_VENDOR), Darwin)
 	$(QUIETLY) test ! -d $(LIBJSIG_DEBUGINFO) || \
-	    cp -f -r $(LIBJSIG_DEBUGINFO) $(DEST_JSIG_DEBUGINFO)
+	    $(CP) -f -r $(LIBJSIG_DEBUGINFO) $(DEST_JSIG_DEBUGINFO)
 else
 	$(QUIETLY) test ! -f $(LIBJSIG_DEBUGINFO) || \
-	    cp -f $(LIBJSIG_DEBUGINFO) $(DEST_JSIG_DEBUGINFO)
+	    $(CP) -f $(LIBJSIG_DEBUGINFO) $(DEST_JSIG_DEBUGINFO)
 endif
 	$(QUIETLY) test ! -f $(LIBJSIG_DIZ) || \
-	    cp -f $(LIBJSIG_DIZ) $(DEST_JSIG_DIZ)
-	$(QUIETLY) cp -f $(LIBJSIG) $(DEST_JSIG) && echo "Done"
+	    $(CP) -f $(LIBJSIG_DIZ) $(DEST_JSIG_DIZ)
+	$(QUIETLY) $(CP) -f $(LIBJSIG) $(DEST_JSIG) && echo "Done"
 
 .PHONY: install_jsig

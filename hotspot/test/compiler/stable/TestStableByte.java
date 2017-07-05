@@ -26,9 +26,11 @@
 /*
  * @test TestStableByte
  * @summary tests on stable fields and arrays
- * @library /testlibrary
- * @compile -XDignore.symbol.file TestStableByte.java
+ * @library /testlibrary /testlibrary/whitebox
+ * @build TestStableByte StableConfiguration sun.hotspot.WhiteBox
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main ClassFileInstaller
+ *           java/lang/invoke/StableConfiguration
  *           java/lang/invoke/TestStableByte
  *           java/lang/invoke/TestStableByte$ByteStable
  *           java/lang/invoke/TestStableByte$StaticByteStable
@@ -48,46 +50,60 @@
  *           java/lang/invoke/TestStableByte$NestedStableField3
  *           java/lang/invoke/TestStableByte$NestedStableField3$A
  *           java/lang/invoke/TestStableByte$DefaultValue
+ *           java/lang/invoke/TestStableByte$DefaultStaticValue
  *           java/lang/invoke/TestStableByte$ObjectArrayLowerDim2
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+FoldStableValues -XX:+UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:-TieredCompilation
+ *                   -XX:+FoldStableValues
+ *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                   java.lang.invoke.TestStableByte
+ * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:-TieredCompilation
+ *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableByte
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+FoldStableValues -XX:-UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:+FoldStableValues
+ *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                   java.lang.invoke.TestStableByte
+ * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableByte
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:-FoldStableValues -XX:+UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -client -XX:-TieredCompilation
+ *                   -XX:+FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableByte
- *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:-FoldStableValues -XX:-UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -client -XX:-TieredCompilation
+ *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableByte
  */
 package java.lang.invoke;
 
-import com.sun.management.HotSpotDiagnosticMXBean;
-import com.sun.management.VMOption;
-import sun.management.ManagementFactoryHelper;
 import java.lang.reflect.InvocationTargetException;
 
 public class TestStableByte {
-    public static void main(String[] args) throws Exception {
-        System.out.println("@Stable enabled: "+isStableEnabled);
-        System.out.println();
+    static final boolean isStableEnabled    = StableConfiguration.isStableEnabled;
+    static final boolean isServerWithStable = StableConfiguration.isServerWithStable;
 
+    public static void main(String[] args) throws Exception {
         run(DefaultValue.class);
         run(ByteStable.class);
+        run(DefaultStaticValue.class);
         run(StaticByteStable.class);
         run(VolatileByteStable.class);
 
@@ -145,6 +161,21 @@ public class TestStableByte {
 
     /* ==================================================== */
 
+    static class DefaultStaticValue {
+        public static @Stable byte v;
+
+        public static final DefaultStaticValue c = new DefaultStaticValue();
+        public static byte get() { return c.v; }
+        public static void test() throws Exception {
+                     byte val1 = get();
+            c.v = 1; byte val2 = get();
+            assertEquals(val1, 0);
+            assertEquals(val2, 1);
+        }
+    }
+
+    /* ==================================================== */
+
     static class StaticByteStable {
         public static @Stable byte v;
 
@@ -188,20 +219,22 @@ public class TestStableByte {
                 c.v = new byte[1]; c.v[0] = 1; byte val1 = get();
                                    c.v[0] = 2; byte val2 = get();
                 assertEquals(val1, 1);
-                assertEquals(val2, (isStableEnabled ? 1 : 2));
+                assertEquals(val2, (isServerWithStable ? 1 : 2));
 
                 c.v = new byte[1]; c.v[0] = 3; byte val3 = get();
-                assertEquals(val3, (isStableEnabled ? 1 : 3));
+                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                                                    : 3));
             }
 
             {
                 c.v = new byte[20]; c.v[10] = 1; byte val1 = get1();
                                     c.v[10] = 2; byte val2 = get1();
                 assertEquals(val1, 1);
-                assertEquals(val2, (isStableEnabled ? 1 : 2));
+                assertEquals(val2, (isServerWithStable ? 1 : 2));
 
                 c.v = new byte[20]; c.v[10] = 3; byte val3 = get1();
-                assertEquals(val3, (isStableEnabled ? 1 : 3));
+                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                                                    : 3));
             }
 
             {
@@ -226,19 +259,21 @@ public class TestStableByte {
                 c.v = new byte[1][1]; c.v[0][0] = 1; byte val1 = get();
                                       c.v[0][0] = 2; byte val2 = get();
                 assertEquals(val1, 1);
-                assertEquals(val2, (isStableEnabled ? 1 : 2));
+                assertEquals(val2, (isServerWithStable ? 1 : 2));
 
                 c.v = new byte[1][1]; c.v[0][0] = 3; byte val3 = get();
-                assertEquals(val3, (isStableEnabled ? 1 : 3));
+                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                                                    : 3));
 
                 c.v[0] = new byte[1]; c.v[0][0] = 4; byte val4 = get();
-                assertEquals(val4, (isStableEnabled ? 1 : 4));
+                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                                                    : 4));
             }
 
             {
                 c.v = new byte[1][1]; byte[] val1 = get1();
                 c.v[0] = new byte[1]; byte[] val2 = get1();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -264,28 +299,31 @@ public class TestStableByte {
                 c.v = new byte[1][1][1]; c.v[0][0][0] = 1; byte val1 = get();
                                          c.v[0][0][0] = 2; byte val2 = get();
                 assertEquals(val1, 1);
-                assertEquals(val2, (isStableEnabled ? 1 : 2));
+                assertEquals(val2, (isServerWithStable ? 1 : 2));
 
                 c.v = new byte[1][1][1]; c.v[0][0][0] = 3; byte val3 = get();
-                assertEquals(val3, (isStableEnabled ? 1 : 3));
+                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                                                    : 3));
 
                 c.v[0] = new byte[1][1]; c.v[0][0][0] = 4; byte val4 = get();
-                assertEquals(val4, (isStableEnabled ? 1 : 4));
+                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                                                    : 4));
 
                 c.v[0][0] = new byte[1]; c.v[0][0][0] = 5; byte val5 = get();
-                assertEquals(val5, (isStableEnabled ? 1 : 5));
+                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                                                    : 5));
             }
 
             {
                 c.v = new byte[1][1][1]; byte[] val1 = get1();
                 c.v[0][0] = new byte[1]; byte[] val2 = get1();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new byte[1][1][1]; byte[][] val1 = get2();
                 c.v[0] = new byte[1][1]; byte[][] val2 = get2();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -312,37 +350,41 @@ public class TestStableByte {
                 c.v = new byte[1][1][1][1]; c.v[0][0][0][0] = 1; byte val1 = get();
                                             c.v[0][0][0][0] = 2; byte val2 = get();
                 assertEquals(val1, 1);
-                assertEquals(val2, (isStableEnabled ? 1 : 2));
+                assertEquals(val2, (isServerWithStable ? 1 : 2));
 
                 c.v = new byte[1][1][1][1]; c.v[0][0][0][0] = 3; byte val3 = get();
-                assertEquals(val3, (isStableEnabled ? 1 : 3));
+                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                                                    : 3));
 
                 c.v[0] = new byte[1][1][1]; c.v[0][0][0][0] = 4; byte val4 = get();
-                assertEquals(val4, (isStableEnabled ? 1 : 4));
+                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                                                    : 4));
 
                 c.v[0][0] = new byte[1][1]; c.v[0][0][0][0] = 5; byte val5 = get();
-                assertEquals(val5, (isStableEnabled ? 1 : 5));
+                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                                                    : 5));
 
                 c.v[0][0][0] = new byte[1]; c.v[0][0][0][0] = 6; byte val6 = get();
-                assertEquals(val6, (isStableEnabled ? 1 : 6));
+                assertEquals(val6, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                                                    : 6));
             }
 
             {
                 c.v = new byte[1][1][1][1]; byte[] val1 = get1();
                 c.v[0][0][0] = new byte[1]; byte[] val2 = get1();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new byte[1][1][1][1]; byte[][] val1 = get2();
                 c.v[0][0] = new byte[1][1]; byte[][] val2 = get2();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new byte[1][1][1][1]; byte[][][] val1 = get3();
                 c.v[0] = new byte[1][1][1]; byte[][][] val2 = get3();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -404,7 +446,7 @@ public class TestStableByte {
                 c.v = new byte[1][1]; c.v[0] = new byte[0]; byte[] val1 = get1();
                                      c.v[0] = new byte[0]; byte[] val2 = get1();
 
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -440,14 +482,14 @@ public class TestStableByte {
                 c.v = new byte[1][1][1]; c.v[0][0] = new byte[0]; byte[] val1 = get1();
                                          c.v[0][0] = new byte[0]; byte[] val2 = get1();
 
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new byte[1][1][1]; c.v[0] = new byte[0][0]; byte[][] val1 = get2();
                                          c.v[0] = new byte[0][0]; byte[][] val2 = get2();
 
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -582,7 +624,7 @@ public class TestStableByte {
                                elem.a = 2; byte val3 = get(); byte val4 = get1();
 
                 assertEquals(val1, 1);
-                assertEquals(val3, (isStableEnabled ? 1 : 2));
+                assertEquals(val3, (isServerWithStable ? 1 : 2));
 
                 assertEquals(val2, 1);
                 assertEquals(val4, 2);
@@ -615,18 +657,5 @@ public class TestStableByte {
                 ex.printStackTrace(System.out);
             }
         }
-    }
-
-    static final boolean isStableEnabled;
-    static {
-        HotSpotDiagnosticMXBean diagnostic
-                = ManagementFactoryHelper.getDiagnosticMXBean();
-        VMOption tmp;
-        try {
-            tmp = diagnostic.getVMOption("FoldStableValues");
-        } catch (IllegalArgumentException e) {
-            tmp = null;
-        }
-        isStableEnabled = (tmp == null ? false : Boolean.parseBoolean(tmp.getValue()));
     }
 }

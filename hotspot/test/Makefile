@@ -23,14 +23,36 @@
 #
 
 #
-# Makefile to run various jdk tests
+# Makefile to run various hotspot tests
 #
 
 GETMIXEDPATH=echo
 
-# Get OS/ARCH specifics
-OSNAME = $(shell uname -s)
-ifeq ($(OSNAME), SunOS)
+# Utilities used
+AWK       = awk
+CAT       = cat
+CD        = cd
+CHMOD     = chmod
+CP        = cp
+CUT       = cut
+DIRNAME   = dirname
+ECHO      = echo
+EGREP     = egrep
+EXPAND    = expand
+FIND      = find
+MKDIR     = mkdir
+PWD       = pwd
+SED       = sed
+SORT      = sort
+TEE       = tee
+UNAME     = uname
+UNIQ      = uniq
+WC        = wc
+ZIP       = zip
+
+# Get OS name from uname (Cygwin inexplicably adds _NT-5.1)
+UNAME_S := $(shell $(UNAME) -s | $(CUT) -f1 -d_)
+ifeq ($(UNAME_S), SunOS)
   PLATFORM = solaris
   SLASH_JAVA = /java
   ARCH = $(shell uname -p)
@@ -38,7 +60,7 @@ ifeq ($(OSNAME), SunOS)
     ARCH=i586
   endif
 endif
-ifeq ($(OSNAME), Linux)
+ifeq ($(UNAME_S), Linux)
   PLATFORM = linux
   SLASH_JAVA = /java
   ARCH = $(shell uname -m)
@@ -46,7 +68,7 @@ ifeq ($(OSNAME), Linux)
     ARCH = i586
   endif
 endif
-ifeq ($(OSNAME), Darwin)
+ifeq ($(UNAME_S), Darwin)
   PLATFORM = bsd
   SLASH_JAVA = /java
   ARCH = $(shell uname -m)
@@ -54,7 +76,7 @@ ifeq ($(OSNAME), Darwin)
     ARCH = i586
   endif
 endif
-ifeq ($(findstring BSD,$(OSNAME)), BSD)
+ifeq ($(findstring BSD,$(UNAME_S)), BSD)
   PLATFORM = bsd
   SLASH_JAVA = /java
   ARCH = $(shell uname -m)
@@ -63,12 +85,12 @@ ifeq ($(findstring BSD,$(OSNAME)), BSD)
   endif
 endif
 ifeq ($(PLATFORM),)
-  # detect wether we're running in MKS or cygwin
-  ifeq ($(OSNAME), Windows_NT) # MKS
+  # detect whether we're running in MKS or cygwin
+  ifeq ($(UNAME_S), Windows_NT) # MKS
     GETMIXEDPATH=dosname -s
   endif
-  ifeq ($(findstring CYGWIN,$(OSNAME)), CYGWIN)
-    GETMIXEDPATH=cygpath -m -s
+  ifeq ($(findstring CYGWIN,$(UNAME_S)), CYGWIN)
+    GETMIXEDPATH=cygpath -m
   endif
   PLATFORM = windows
   SLASH_JAVA = J:
@@ -91,13 +113,6 @@ endif
 ifdef ALT_SLASH_JAVA
   SLASH_JAVA = $(ALT_SLASH_JAVA)
 endif
-
-# Utilities used
-CD    = cd
-CP    = cp
-ECHO  = echo
-MKDIR = mkdir
-ZIP   = zip
 
 # Root of this test area (important to use full paths in some places)
 TEST_ROOT := $(shell pwd)
@@ -136,21 +151,82 @@ ifdef JPRT_ARCHIVE_BUNDLE
 endif
 
 # How to create the test bundle (pass or fail, we want to create this)
-BUNDLE_UP = ( $(MKDIR) -p `dirname $(ARCHIVE_BUNDLE)`     \
-	      && $(CD) $(ABS_TEST_OUTPUT_DIR)             \
-	      && $(ZIP) -q -r $(ARCHIVE_BUNDLE) . )
-BUNDLE_UP_FAILED = ( exitCode=$$? && $(BUNDLE_UP) && exit $${exitCode} )
+#   Follow command with ";$(BUNDLE_UP_AND_EXIT)", so it always gets executed.
+ZIP_UP_RESULTS = ( $(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`     \
+	           && $(CD) $(ABS_TEST_OUTPUT_DIR)             \
+	           && $(CHMOD) -R a+r . \
+	           && $(ZIP) -q -r $(ARCHIVE_BUNDLE) . )
+
+# important results files
+SUMMARY_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport/text/summary.txt")
+STATS_TXT_NAME = Stats.txt
+STATS_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/$(STATS_TXT_NAME)")
+RUNLIST   = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/runlist.txt")
+PASSLIST  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/passlist.txt")
+FAILLIST  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/faillist.txt")
+EXITCODE  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/exitcode.txt")
+
+TESTEXIT = \
+  if [ ! -s $(EXITCODE) ] ; then \
+    $(ECHO) "ERROR: EXITCODE file not filled in."; \
+    $(ECHO) "1" > $(EXITCODE); \
+  fi ; \
+  testExitCode=`$(CAT) $(EXITCODE)`; \
+  $(ECHO) "EXIT CODE: $${testExitCode}"; \
+  exit $${testExitCode}
+
+BUNDLE_UP_AND_EXIT = \
+( \
+  jtregExitCode=$$? && \
+  _summary="$(SUMMARY_TXT)"; \
+  $(RM) -f $(STATS_TXT) $(RUNLIST) $(PASSLIST) $(FAILLIST) $(EXITCODE); \
+  $(ECHO) "$${jtregExitCode}" > $(EXITCODE); \
+  if [ -r "$${_summary}" ] ; then \
+    $(ECHO) "Summary: $(UNIQUE_DIR)" > $(STATS_TXT); \
+    $(EXPAND) $${_summary} | $(EGREP) -v ' Not run\.' > $(RUNLIST); \
+    $(EGREP) ' Passed\.' $(RUNLIST) \
+      | $(EGREP) -v ' Error\.' \
+      | $(EGREP) -v ' Failed\.' > $(PASSLIST); \
+    ( $(EGREP) ' Failed\.' $(RUNLIST); \
+      $(EGREP) ' Error\.' $(RUNLIST); \
+      $(EGREP) -v ' Passed\.' $(RUNLIST) ) \
+      | $(SORT) | $(UNIQ) > $(FAILLIST); \
+    if [ $${jtregExitCode} != 0 -o -s $(FAILLIST) ] ; then \
+      $(EXPAND) $(FAILLIST) \
+        | $(CUT) -d' ' -f1 \
+        | $(SED) -e 's@^@FAILED: @' >> $(STATS_TXT); \
+      if [ $${jtregExitCode} = 0 ] ; then \
+        jtregExitCode=1; \
+      fi; \
+    fi; \
+    runc="`$(CAT) $(RUNLIST)      | $(WC) -l | $(AWK) '{print $$1;}'`"; \
+    passc="`$(CAT) $(PASSLIST)    | $(WC) -l | $(AWK) '{print $$1;}'`"; \
+    failc="`$(CAT) $(FAILLIST)    | $(WC) -l | $(AWK) '{print $$1;}'`"; \
+    exclc="FIXME CODETOOLS-7900176"; \
+    $(ECHO) "TEST STATS: name=$(UNIQUE_DIR)  run=$${runc}  pass=$${passc}  fail=$${failc}" \
+      >> $(STATS_TXT); \
+  else \
+    $(ECHO) "Missing file: $${_summary}" >> $(STATS_TXT); \
+  fi; \
+  if [ -f $(STATS_TXT) ] ; then \
+    $(CAT) $(STATS_TXT); \
+  fi; \
+  $(ZIP_UP_RESULTS) ; \
+  $(TESTEXIT) \
+)
 
 ################################################################
 
 # Default make rule (runs jtreg_tests)
-all: jtreg_tests
+all: hotspot_all
 	@$(ECHO) "Testing completed successfully"
 
-# Support "hotspot_" prefixed test make targets too
-# The hotspot_% targets are for example invoked by the top level Makefile
+# Support "hotspot_" prefixed test make targets (too)
+# The hotspot_% targets are used by the top level Makefile
+# Unless explicitly defined below, hotspot_<x> is interpreted as a jtreg test group name
 hotspot_%:
-	$(MAKE) $*
+	$(ECHO) "Running tests: $@"
+	$(MAKE) -j 1 TEST_SELECTION=":$@" UNIQUE_DIR=$@ jtreg_tests;
 
 # Prep for output
 prep: clean
@@ -168,20 +244,37 @@ clean:
 
 # Expect JT_HOME to be set for jtreg tests. (home for jtreg)
 ifndef JT_HOME
-  JT_HOME = $(SLASH_JAVA)/re/jtreg/4.0/promoted/latest/binaries/jtreg
-endif
-ifdef JPRT_JTREG_HOME
-  JT_HOME = $(JPRT_JTREG_HOME)
+  JT_HOME = $(SLASH_JAVA)/re/jtreg/4.1/promoted/latest/binaries/jtreg
+  ifdef JPRT_JTREG_HOME
+    JT_HOME = $(JPRT_JTREG_HOME)
+  endif
 endif
 
-# Expect JPRT to set TESTDIRS to the jtreg test dirs
-JTREG_TESTDIRS = demo/jvmti/gctest demo/jvmti/hprof
+# When called from JPRT the TESTDIRS variable is set to the jtreg tests to run
 ifdef TESTDIRS
-  JTREG_TESTDIRS = $(TESTDIRS)
+  TEST_SELECTION = $(TESTDIRS)
+endif
+
+ifdef CONCURRENCY
+  EXTRA_JTREG_OPTIONS += -concurrency:$(CONCURRENCY)
 endif
 
 # Default JTREG to run (win32 script works for everybody)
 JTREG = $(JT_HOME)/win32/bin/jtreg
+
+# Only run automatic tests
+JTREG_BASIC_OPTIONS += -a
+# Report details on all failed or error tests, times too
+JTREG_BASIC_OPTIONS += -v:fail,error,time
+# Retain all files for failing tests
+JTREG_BASIC_OPTIONS += -retain:fail,error
+# Ignore tests are not run and completely silent about it
+JTREG_IGNORE_OPTION = -ignore:quiet
+JTREG_BASIC_OPTIONS += $(JTREG_IGNORE_OPTION)
+# Add any extra options
+JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
+# Set other vm and test options
+JTREG_TEST_OPTIONS = $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_OPTIONS:%=-vmoption:%) $(JAVA_VM_ARGS:%=-vmoption:%)
 
 # Option to tell jtreg to not run tests marked with "ignore"
 ifeq ($(PLATFORM), windows)
@@ -189,20 +282,26 @@ ifeq ($(PLATFORM), windows)
 else
   JTREG_KEY_OPTION = -k:\!ignore
 endif
+JTREG_BASIC_OPTIONS += $(JTREG_KEY_OPTION)
 
-#EXTRA_JTREG_OPTIONS =
+# Make sure jtreg exists
+$(JTREG): $(JT_HOME)
 
-jtreg_tests: prep $(JT_HOME) $(PRODUCT_HOME) $(JTREG)
-	$(JTREG) -a -v:fail,error               \
-          $(JTREG_KEY_OPTION)                   \
-          $(EXTRA_JTREG_OPTIONS)                \
-          -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTreport    \
-          -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTwork      \
-          -jdk:$(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")                  \
-          $(JAVA_OPTIONS:%=-vmoption:%)         \
-          $(JTREG_TESTDIRS)                     \
-	  || $(BUNDLE_UP_FAILED)
-	$(BUNDLE_UP)
+jtreg_tests: prep $(PRODUCT_HOME) $(JTREG)
+	(                                                                    \
+	  ( JT_HOME=$(shell $(GETMIXEDPATH) "$(JT_HOME)");                   \
+            export JT_HOME;                                                  \
+            $(shell $(GETMIXEDPATH) "$(JTREG)")                              \
+              $(JTREG_BASIC_OPTIONS)                                         \
+              -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport")  \
+              -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTwork")    \
+              -jdk:$(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")                \
+              $(JTREG_EXCLUSIONS)                                            \
+              $(JTREG_TEST_OPTIONS)                                          \
+              $(TEST_SELECTION)                                              \
+	  ) ;                                                                \
+	  $(BUNDLE_UP_AND_EXIT)                                              \
+	) 2>&1 | $(TEE) $(ABS_TEST_OUTPUT_DIR)/output.txt ; $(TESTEXIT)
 
 PHONY_LIST += jtreg_tests
 
@@ -210,7 +309,7 @@ PHONY_LIST += jtreg_tests
 
 # clienttest (make sure various basic java client options work)
 
-clienttest: prep $(PRODUCT_HOME)
+hotspot_clienttest clienttest: prep $(PRODUCT_HOME)
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -version
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -help
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -X
@@ -218,73 +317,27 @@ clienttest: prep $(PRODUCT_HOME)
 	$(RM) $(PRODUCT_HOME)/jre/bin/client/classes.jsa
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -Xshare:dump
 
-PHONY_LIST += clienttest
+PHONY_LIST += hotspot_clienttest clienttest
 
 ################################################################
 
 # servertest (make sure various basic java server options work)
 
-servertest: prep $(PRODUCT_HOME)
+hotspot_servertest servertest: prep $(PRODUCT_HOME)
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -version
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -help
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -X
 
-PHONY_LIST += servertest
+PHONY_LIST += hotspot_servertest servertest
 
 ################################################################
 
 # internalvmtests (run internal unit tests inside the VM)
 
-internalvmtests: prep $(PRODUCT_HOME)
+hotspot_internalvmtests internalvmtests: prep $(PRODUCT_HOME)
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -XX:+ExecuteInternalVMTests -version
 
-PHONY_LIST += internalvmtests
-
-################################################################
-
-# wbapitest (make sure the whitebox testing api classes work
-
-wbapitest: prep $(JT_HOME) $(PRODUCT_HOME) $(JTREG)
-	$(JTREG) -a -v:fail,error               \
-          $(JTREG_KEY_OPTION)                   \
-          $(EXTRA_JTREG_OPTIONS)                \
-          -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTreport    \
-          -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTwork      \
-          -jdk:$(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")                  \
-          $(JAVA_OPTIONS:%=-vmoption:%)         \
-          $(shell $(GETMIXEDPATH) "$(TEST_ROOT)")/sanity                   \
-	  || $(BUNDLE_UP_FAILED)
-	$(BUNDLE_UP)
-
-PHONY_LIST += wbapitest
-
-################################################################
-
-# packtest
-
-# Expect JPRT to set JPRT_PACKTEST_HOME.
-PACKTEST_HOME = /net/jprt-web.sfbay.sun.com/jprt/allproducts/packtest
-ifdef JPRT_PACKTEST_HOME
-  PACKTEST_HOME = $(JPRT_PACKTEST_HOME)
-endif
-
-#EXTRA_PACKTEST_OPTIONS =
-
-packtest: prep $(PACKTEST_HOME)/ptest $(PRODUCT_HOME)
-	( $(CD) $(PACKTEST_HOME) &&            \
-	    $(PACKTEST_HOME)/ptest             \
-		 -t "$(PRODUCT_HOME)"          \
-	         $(PACKTEST_STRESS_OPTION)     \
-		 $(EXTRA_PACKTEST_OPTIONS)     \
-		 -W $(ABS_TEST_OUTPUT_DIR)     \
-                 $(JAVA_OPTIONS:%=-J %)        \
-	 ) || $(BUNDLE_UP_FAILED)
-	$(BUNDLE_UP)
-
-packtest_stress: PACKTEST_STRESS_OPTION=-s
-packtest_stress: packtest
-
-PHONY_LIST += packtest packtest_stress
+PHONY_LIST += hotspot_internalvmtests internalvmtests
 
 ################################################################
 
@@ -292,4 +345,3 @@ PHONY_LIST += packtest packtest_stress
 .PHONY: all clean prep $(PHONY_LIST)
 
 ################################################################
-
