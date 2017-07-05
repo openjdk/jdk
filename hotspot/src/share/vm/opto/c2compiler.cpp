@@ -104,7 +104,9 @@ void C2Compiler::compile_method(ciEnv* env,
     initialize();
   }
   bool subsume_loads = true;
-  bool do_escape_analysis = DoEscapeAnalysis;
+  bool do_escape_analysis = DoEscapeAnalysis &&
+                            !(env->jvmti_can_hotswap_or_post_breakpoint() ||
+                              env->jvmti_can_examine_or_deopt_anywhere());
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
     Compile C(env, this, target, entry_bci, subsume_loads, do_escape_analysis);

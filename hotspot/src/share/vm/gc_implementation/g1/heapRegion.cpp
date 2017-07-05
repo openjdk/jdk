@@ -703,7 +703,7 @@ void HeapRegion::verify(bool allow_dirty, bool use_prev_marking) const {
   }
   if (vl_cl.failures()) {
     gclog_or_tty->print_cr("Heap:");
-    G1CollectedHeap::heap()->print();
+    G1CollectedHeap::heap()->print_on(gclog_or_tty, true /* extended */);
     gclog_or_tty->print_cr("");
   }
   if (VerifyDuringGC &&
