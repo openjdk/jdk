@@ -26,7 +26,7 @@
  * @bug 4716807
  * @summary Test wildcards in ObjectName key properties value part.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean ValueWildcardTest
  * @run build ValueWildcardTest
  * @run main ValueWildcardTest
