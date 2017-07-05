@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ gai_strerror_f gai_strerror_ptr = NULL;
 getnameinfo_f getnameinfo_ptr = NULL;
 
 /*
- * EXCLBIND socket options only on Solaris 8 & 9.
+ * EXCLBIND socket options only on Solaris
  */
 #if defined(__solaris__) && !defined(TCP_EXCLBIND)
 #define TCP_EXCLBIND            0x21
@@ -131,6 +131,7 @@ int getDefaultScopeID(JNIEnv *env) {
 static int init_tcp_max_buf, init_udp_max_buf;
 static int tcp_max_buf;
 static int udp_max_buf;
+static int useExclBind = 0;
 
 /*
  * Get the specified parameter from the specified driver. The value
@@ -764,6 +765,26 @@ void initLocalAddrTable () {
 void initLocalAddrTable () {}
 
 #endif
+
+void parseExclusiveBindProperty(JNIEnv *env) {
+#ifdef __solaris__
+    jstring s, flagSet;
+    jclass iCls;
+    jmethodID mid;
+
+    s = (*env)->NewStringUTF(env, "sun.net.useExclusiveBind");
+    CHECK_NULL(s);
+    iCls = (*env)->FindClass(env, "java/lang/System");
+    CHECK_NULL(iCls);
+    mid = (*env)->GetStaticMethodID(env, iCls, "getProperty",
+                "(Ljava/lang/String;)Ljava/lang/String;");
+    CHECK_NULL(mid);
+    flagSet = (*env)->CallStaticObjectMethod(env, iCls, mid, s);
+    if (flagSet != NULL) {
+        useExclBind = 1;
+    }
+#endif
+}
 
 /* In the case of an IPv4 Inetaddress this method will return an
  * IPv4 mapped address where IPv6 is available and v4MappedAddress is TRUE.
@@ -1478,8 +1499,8 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
  * Linux allows a socket to bind to 127.0.0.255 which must be
  * caught.
  *
- * On Solaris 8/9 with IPv6 enabled we must use an exclusive
- * bind to guaranteed a unique port number across the IPv4 and
+ * On Solaris with IPv6 enabled we must use an exclusive
+ * bind to guarantee a unique port number across the IPv4 and
  * IPv6 port spaces.
  *
  */
@@ -1509,10 +1530,10 @@ NET_Bind(int fd, struct sockaddr *him, int len)
 
 #if defined(__solaris__) && defined(AF_INET6)
     /*
-     * Solaris 8/9 have seperate IPv4 and IPv6 port spaces so we
+     * Solaris has separate IPv4 and IPv6 port spaces so we
      * use an exclusive bind when SO_REUSEADDR is not used to
      * give the illusion of a unified port space.
-     * This also avoid problems with IPv6 sockets connecting
+     * This also avoids problems with IPv6 sockets connecting
      * to IPv4 mapped addresses whereby the socket conversion
      * results in a late bind that fails because the
      * corresponding IPv4 port is in use.
@@ -1521,11 +1542,12 @@ NET_Bind(int fd, struct sockaddr *him, int len)
         int arg, len;
 
         len = sizeof(arg);
-        if (getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&arg,
-                       &len) == 0) {
-            if (arg == 0) {
+        if (useExclBind || getsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
+                       (char *)&arg, &len) == 0) {
+            if (useExclBind || arg == 0) {
                 /*
-                 * SO_REUSEADDR is disabled so enable TCP_EXCLBIND or
+                 * SO_REUSEADDR is disabled or sun.net.useExclusiveBind
+                 * property is true so enable TCP_EXCLBIND or
                  * UDP_EXCLBIND
                  */
                 len = sizeof(arg);

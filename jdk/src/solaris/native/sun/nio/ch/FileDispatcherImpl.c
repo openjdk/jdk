@@ -94,9 +94,6 @@ Java_sun_nio_ch_FileDispatcherImpl_readv0(JNIEnv *env, jclass clazz,
 {
     jint fd = fdval(env, fdo);
     struct iovec *iov = (struct iovec *)jlong_to_ptr(address);
-    if (len > 16) {
-        len = 16;
-    }
     return convertLongReturnVal(env, readv(fd, iov, len), JNI_TRUE);
 }
 
@@ -126,9 +123,6 @@ Java_sun_nio_ch_FileDispatcherImpl_writev0(JNIEnv *env, jclass clazz,
 {
     jint fd = fdval(env, fdo);
     struct iovec *iov = (struct iovec *)jlong_to_ptr(address);
-    if (len > 16) {
-        len = 16;
-    }
     return convertLongReturnVal(env, writev(fd, iov, len), JNI_FALSE);
 }
 
