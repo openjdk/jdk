@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7122740
+ * @bug 7187618 7122740
  * @summary Tests just a benchmark of PropertyDescriptor(String, Class) performance
  * @author Sergey Malenkov
  * @run main/manual Test7122740

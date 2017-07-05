@@ -27,19 +27,19 @@
     @author mcherkas
     @run main InternalFrameIsNotCollectedTest
  */
-
 import sun.awt.SunToolkit;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.beans.PropertyVetoException;
 import java.util.Date;
 
 public class InternalFrameIsNotCollectedTest {
 
-    public static final int waitTime = 10000;
+    public static final int maxWaitTime = 100000;
+    public static final int waitTime = 5000;
     private static Robot robot;
+    private static CustomInternalFrame iFrame;
 
     public static void sync() {
 
@@ -62,12 +62,13 @@ public class InternalFrameIsNotCollectedTest {
         });
         sync();
         invokeGC();
+        System.runFinalization();
         Thread.sleep(1000); // it's better to wait 1 sec now then 10 sec later
         Date startWaiting = new Date();
         synchronized (CustomInternalFrame.waiter) {
             // Sync with finalization thread.
             Date now = new Date();
-            while (now.getTime() - startWaiting.getTime() < waitTime && !CustomInternalFrame.finalized) {
+            while (now.getTime() - startWaiting.getTime() < maxWaitTime && !CustomInternalFrame.finalized) {
                 CustomInternalFrame.waiter.wait(waitTime);
                 now = new Date();
             }
@@ -83,10 +84,8 @@ public class InternalFrameIsNotCollectedTest {
     }
 
     private static void closeInternalFrame() throws PropertyVetoException {
-        robot.keyPress(KeyEvent.VK_CONTROL);
-        robot.keyPress(KeyEvent.VK_F4);
-        robot.keyRelease(KeyEvent.VK_F4);
-        robot.keyRelease(KeyEvent.VK_CONTROL);
+        iFrame.setClosed(true);
+        iFrame = null;
     }
 
     private static void initUI() {
@@ -96,7 +95,7 @@ public class InternalFrameIsNotCollectedTest {
         desktopPane.setDesktopManager(new DefaultDesktopManager());
         frame.getContentPane().add(desktopPane, BorderLayout.CENTER);
 
-        CustomInternalFrame iFrame = new CustomInternalFrame("Dummy Frame");
+        iFrame = new CustomInternalFrame("Dummy Frame");
 
         iFrame.setSize(200, 200);
         iFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

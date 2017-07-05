@@ -42,7 +42,7 @@ public abstract class TextUI extends ComponentUI
      * Converts the given location in the model to a place in
      * the view coordinate system.
      *
-     * @param pos  the local location in the model to translate >= 0
+     * @param pos  the local location in the model to translate &gt;= 0
      * @return the coordinates as a rectangle
      * @exception BadLocationException  if the given position does not
      *   represent a valid location in the associated document
@@ -53,7 +53,7 @@ public abstract class TextUI extends ComponentUI
      * Converts the given location in the model to a place in
      * the view coordinate system.
      *
-     * @param pos  the local location in the model to translate >= 0
+     * @param pos  the local location in the model to translate &gt;= 0
      * @return the coordinates as a rectangle
      * @exception BadLocationException  if the given position does not
      *   represent a valid location in the associated document
@@ -67,7 +67,7 @@ public abstract class TextUI extends ComponentUI
      * @param pt  the location in the view to translate.  This
      *   should be in the same coordinate system as the mouse
      *   events.
-     * @return the offset from the start of the document >= 0
+     * @return the offset from the start of the document &gt;= 0
      */
     public abstract int viewToModel(JTextComponent t, Point pt);
 
@@ -84,7 +84,7 @@ public abstract class TextUI extends ComponentUI
      *           character in the model
      *
      * @return the location within the model that best represents the
-     *         given point in the view >= 0
+     *         given point in the view &gt;= 0
      */
     public abstract int viewToModel(JTextComponent t, Point pt,
                                     Position.Bias[] biasReturn);
@@ -96,7 +96,7 @@ public abstract class TextUI extends ComponentUI
      * might not allow access to some of the locations in the model.
      *
      * @param t the text component for which this UI is installed
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param b the bias for the position
      * @param direction the direction from the current position that can
      *  be thought of as the arrow keys typically found on a keyboard.
@@ -117,8 +117,8 @@ public abstract class TextUI extends ComponentUI
      * Causes the portion of the view responsible for the
      * given part of the model to be repainted.
      *
-     * @param p0 the beginning of the range >= 0
-     * @param p1 the end of the range >= p0
+     * @param p0 the beginning of the range &gt;= 0
+     * @param p1 the end of the range &gt;= p0
      */
     public abstract void damageRange(JTextComponent t, int p0, int p1);
 
@@ -126,8 +126,8 @@ public abstract class TextUI extends ComponentUI
      * Causes the portion of the view responsible for the
      * given part of the model to be repainted.
      *
-     * @param p0 the beginning of the range >= 0
-     * @param p1 the end of the range >= p0
+     * @param p0 the beginning of the range &gt;= 0
+     * @param p1 the end of the range &gt;= p0
      */
     public abstract void damageRange(JTextComponent t, int p0, int p1,
                                      Position.Bias firstBias,

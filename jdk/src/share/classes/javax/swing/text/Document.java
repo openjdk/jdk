@@ -58,9 +58,9 @@ import javax.swing.event.*;
  * <p>The following methods give access to the character data
  * that makes up the content.
  * <ul>
- * <li><a href="#getLength()">getLength()</a>
- * <li><a href="#getText(int, int)">getText(int, int)</a>
- * <li><a href="#getText(int, int, javax.swing.text.Segment)">getText(int, int, Segment)</a>
+ * <li>{@link #getLength()}
+ * <li>{@link #getText(int, int)}
+ * <li>{@link #getText(int, int, javax.swing.text.Segment)}
  * </ul>
  * <p><b><font size=+1>Structure</font></b>
  * <p>
@@ -79,8 +79,8 @@ import javax.swing.event.*;
  * <a href="AttributeSet.html">AttributeSet</a> interface.
  * <p>The following methods give access to the document structure.
  * <ul>
- * <li><a href="#getDefaultRootElement()">getDefaultRootElement</a>
- * <li><a href="#getRootElements()">getRootElements</a>
+ * <li>{@link #getDefaultRootElement()}
+ * <li>{@link #getRootElements()}
  * </ul>
  *
  * <p><b><font size=+1>Mutations</font></b>
@@ -93,9 +93,9 @@ import javax.swing.event.*;
  * <p>The following methods are related to mutation of the
  * document content:
  * <ul>
- * <li><a href="#insertString(int, java.lang.String, javax.swing.text.AttributeSet)">insertString(int, String, AttributeSet)</a>
- * <li><a href="#remove(int, int)">remove(int, int)</a>
- * <li><a href="#createPosition(int)">createPosition(int)</a>
+ * <li>{@link #insertString(int, java.lang.String, javax.swing.text.AttributeSet)}
+ * <li>{@link #remove(int, int)}
+ * <li>{@link #createPosition(int)}
  * </ul>
  *
  * <p><b><font size=+1>Notification</font></b>
@@ -161,8 +161,8 @@ import javax.swing.event.*;
  * and the <a href="#TitleProperty">TitleProperty</a>, which can be used to
  * name the <code>Document</code>.  The methods related to the properties are:
  * <ul>
- * <li><a href="#getProperty(java.lang.Object)">getProperty(Object)</a>
- * <li><a href="#putProperty(java.lang.Object, java.lang.Object)">putProperty(Object, Object)</a>
+ * <li>{@link #getProperty(java.lang.Object)}
+ * <li>{@link #putProperty(java.lang.Object, java.lang.Object)}
  * </ul>
  *
  * <p>For more information on the <code>Document</code> class, see

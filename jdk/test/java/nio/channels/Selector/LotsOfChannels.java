@@ -22,9 +22,10 @@
  */
 
 /* @test
- * @bug 4503092
+ * @bug 4503092 8024883
  * @summary Tests that Windows Selector can use more than 63 channels
- * @run main/timeout=300 LotsOfChannels
+ * @run main LotsOfChannels
+ * @run main/othervm -Dsun.nio.ch.maxUpdateArraySize=64 LotsOfChannels
  * @author kladko
  */
 

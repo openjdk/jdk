@@ -44,16 +44,16 @@ import java.security.PrivilegedAction;
  * {@code JLayer} is a universal decorator for Swing components
  * which enables you to implement various advanced painting effects as well as
  * receive notifications of all {@code AWTEvent}s generated within its borders.
- * <p/>
+ * <p>
  * {@code JLayer} delegates the handling of painting and input events to a
  * {@link javax.swing.plaf.LayerUI} object, which performs the actual decoration.
- * <p/>
+ * <p>
  * The custom painting implemented in the {@code LayerUI} and events notification
  * work for the JLayer itself and all its subcomponents.
  * This combination enables you to enrich existing components
  * by adding new advanced functionality such as temporary locking of a hierarchy,
  * data tips for compound components, enhanced mouse scrolling etc and so on.
- * <p/>
+ * <p>
  * {@code JLayer} is a good solution if you only need to do custom painting
  * over compound component or catch input events from its subcomponents.
  * <pre>
@@ -202,7 +202,7 @@ public final class JLayer<V extends Component>
 
     /**
      * Returns the {@code JLayer}'s view component or {@code null}.
-     * <br/>This is a bound property.
+     * <br>This is a bound property.
      *
      * @return the {@code JLayer}'s view component
      *         or {@code null} if none exists
@@ -215,7 +215,7 @@ public final class JLayer<V extends Component>
 
     /**
      * Sets the {@code JLayer}'s view component, which can be {@code null}.
-     * <br/>This is a bound property.
+     * <br>This is a bound property.
      *
      * @param view the view component for this {@code JLayer}
      *
@@ -257,7 +257,7 @@ public final class JLayer<V extends Component>
 
     /**
      * Returns the {@code JLayer}'s glassPane component or {@code null}.
-     * <br/>This is a bound property.
+     * <br>This is a bound property.
      *
      * @return the {@code JLayer}'s glassPane component
      *         or {@code null} if none exists
@@ -270,7 +270,7 @@ public final class JLayer<V extends Component>
 
     /**
      * Sets the {@code JLayer}'s glassPane component, which can be {@code null}.
-     * <br/>This is a bound property.
+     * <br>This is a bound property.
      *
      * @param glassPane the glassPane component of this {@code JLayer}
      *
@@ -309,7 +309,7 @@ public final class JLayer<V extends Component>
     /**
      * Sets the layout manager for this container.  This method is
      * overridden to prevent the layout manager from being set.
-     * <p/>Note:  If {@code mgr} is non-{@code null}, this
+     * <p>Note:  If {@code mgr} is non-{@code null}, this
      * method will throw an exception as layout managers are not supported on
      * a {@code JLayer}.
      *
@@ -327,7 +327,7 @@ public final class JLayer<V extends Component>
      * of this component from becoming complex enough to inhibit
      * subclassing of {@code LayerUI} class.  To create a {@code JLayer} with a border,
      * add it to a {@code JPanel} that has a border.
-     * <p/>Note:  If {@code border} is non-{@code null}, this
+     * <p>Note:  If {@code border} is non-{@code null}, this
      * method will throw an exception as borders are not supported on
      * a {@code JLayer}.
      *
@@ -471,11 +471,11 @@ public final class JLayer<V extends Component>
      * defined by the specified event mask parameter
      * to be delivered to the
      * {@link LayerUI#eventDispatched(AWTEvent, JLayer)} method.
-     * <p/>
+     * <p>
      * Events are delivered provided that {@code LayerUI} is set
      * for this {@code JLayer} and the {@code JLayer}
      * is displayable.
-     * <p/>
+     * <p>
      * The following example shows how to correctly use this method
      * in the {@code LayerUI} implementations:
      * <pre>
@@ -519,10 +519,10 @@ public final class JLayer<V extends Component>
     /**
      * Returns the bitmap of event mask to receive by this {@code JLayer}
      * and its {@code LayerUI}.
-     * <p/>
+     * <p>
      * It means that {@link javax.swing.plaf.LayerUI#eventDispatched(AWTEvent, JLayer)} method
      * will only receive events that match the event mask.
-     * <p/>
+     * <p>
      * By default {@code JLayer} receives no events.
      *
      * @return the bitmask of event types to receive for this {@code JLayer}
@@ -543,7 +543,7 @@ public final class JLayer<V extends Component>
 
     /**
      * Returns the preferred size of the viewport for a view component.
-     * <p/>
+     * <p>
      * If the view component of this layer implements {@link Scrollable}, this method delegates its
      * implementation to the view component.
      *
@@ -562,7 +562,7 @@ public final class JLayer<V extends Component>
      * Returns a scroll increment, which is required for components
      * that display logical rows or columns in order to completely expose
      * one block of rows or columns, depending on the value of orientation.
-     * <p/>
+     * <p>
      * If the view component of this layer implements {@link Scrollable}, this method delegates its
      * implementation to the view component.
      *
@@ -584,7 +584,7 @@ public final class JLayer<V extends Component>
      * Returns {@code false} to indicate that the height of the viewport does not
      * determine the height of the layer, unless the preferred height
      * of the layer is smaller than the height of the viewport.
-     * <p/>
+     * <p>
      * If the view component of this layer implements {@link Scrollable}, this method delegates its
      * implementation to the view component.
      *
@@ -603,7 +603,7 @@ public final class JLayer<V extends Component>
      * Returns {@code false} to indicate that the width of the viewport does not
      * determine the width of the layer, unless the preferred width
      * of the layer is smaller than the width of the viewport.
-     * <p/>
+     * <p>
      * If the view component of this layer implements {@link Scrollable}, this method delegates its
      * implementation to the view component.
      *
@@ -624,10 +624,10 @@ public final class JLayer<V extends Component>
      * one new row or column, depending on the value of orientation.
      * Ideally, components should handle a partially exposed row or column
      * by returning the distance required to completely expose the item.
-     * <p/>
+     * <p>
      * Scrolling containers, like {@code JScrollPane}, will use this method
      * each time the user requests a unit scroll.
-     * <p/>
+     * <p>
      * If the view component of this layer implements {@link Scrollable}, this method delegates its
      * implementation to the view component.
      *

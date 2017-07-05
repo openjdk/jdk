@@ -807,9 +807,11 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                     type = Type.OBJECT;
                 }
 
-                type = Type.widest(type, newCaseNode.getTest().getType());
-                if (type.isBoolean()) {
+                final Type newCaseType = newCaseNode.getTest().getType();
+                if (newCaseType.isBoolean()) {
                     type = Type.OBJECT; //booleans and integers aren't assignment compatible
+                } else {
+                    type = Type.widest(type, newCaseType);
                 }
             }
 

@@ -171,7 +171,7 @@ public class JSpinner extends JComponent implements Accessible
 
 
     /**
-     * Returns the look and feel (L&F) object that renders this component.
+     * Returns the look and feel (L&amp;F) object that renders this component.
      *
      * @return the <code>SpinnerUI</code> object that renders this component
      */
@@ -181,9 +181,9 @@ public class JSpinner extends JComponent implements Accessible
 
 
     /**
-     * Sets the look and feel (L&F) object that renders this component.
+     * Sets the look and feel (L&amp;F) object that renders this component.
      *
-     * @param ui  the <code>SpinnerUI</code> L&F object
+     * @param ui  the <code>SpinnerUI</code> L&amp;F object
      * @see UIDefaults#getUI
      */
     public void setUI(SpinnerUI ui) {
@@ -193,7 +193,7 @@ public class JSpinner extends JComponent implements Accessible
 
     /**
      * Returns the suffix used to construct the name of the look and feel
-     * (L&F) class used to render this component.
+     * (L&amp;F) class used to render this component.
      *
      * @return the string "SpinnerUI"
      * @see JComponent#getUIClassID

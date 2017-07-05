@@ -21,33 +21,14 @@ uname := $(shell uname)
 ifeq ($(uname), SunOS)
   PLATFORM = solaris
   ISAINFO = isainfo
-  ifndef ARCH_DATA_MODEL
-    ARCH_DATA_MODEL=32
-  endif
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    archExpr = case "`$(UNAME) -p`" in  \
-		i386) \
-		    $(ECHO) i586 \
-		    ;; \
-		sparc*)	 \
-		    $(ECHO) sparc \
-		    ;; \
-		*) \
-		    $(UNAME) -p	 \
-		    ;; \
-	     esac
-    ARCH		:= $(shell $(archExpr) )
-  else
-    ARCH := $(shell $(ISAINFO) -n)
-  endif
+  ARCH_DATA_MODEL=64
+  ARCH := $(shell $(ISAINFO) -n)
   CC = cc
   LD = ld
   CFLAGS = -D_REENTRANT -D__solaris__
   LDFLAGS_COMMON = -G
   EXTRA_LIBS = -lc
-  ifeq ($(ARCH_DATA_MODEL), 64)
-      CC += -xarch=v9
-  endif
+  CC += -m64 -Kpic
 endif
 
 ifeq ($(uname), Linux)

@@ -1126,21 +1126,11 @@ class BreakpointInfo;
 
 
 // A collection point for interesting information about the previous
-// version(s) of an InstanceKlass. This class uses weak references to
-// the information so that the information may be collected as needed
-// by the system. If the information is shared, then a regular
-// reference must be used because a weak reference would be seen as
-// collectible. A GrowableArray of PreviousVersionNodes is attached
-// to the InstanceKlass as needed. See PreviousVersionWalker below.
+// version(s) of an InstanceKlass.  A GrowableArray of PreviousVersionNodes
+// is attached to the InstanceKlass as needed. See PreviousVersionWalker below.
 class PreviousVersionNode : public CHeapObj<mtClass> {
  private:
-  // A shared ConstantPool is never collected so we'll always have
-  // a reference to it so we can update items in the cache. We'll
-  // have a weak reference to a non-shared ConstantPool until all
-  // of the methods (EMCP or obsolete) have been collected; the
-  // non-shared ConstantPool becomes collectible at that point.
-  ConstantPool*    _prev_constant_pool;  // regular or weak reference
-  bool    _prev_cp_is_weak;     // true if not a shared ConstantPool
+  ConstantPool*    _prev_constant_pool;
 
   // If the previous version of the InstanceKlass doesn't have any
   // EMCP methods, then _prev_EMCP_methods will be NULL. If all the
@@ -1149,8 +1139,8 @@ class PreviousVersionNode : public CHeapObj<mtClass> {
   GrowableArray<Method*>* _prev_EMCP_methods;
 
 public:
-  PreviousVersionNode(ConstantPool* prev_constant_pool, bool prev_cp_is_weak,
-    GrowableArray<Method*>* prev_EMCP_methods);
+  PreviousVersionNode(ConstantPool* prev_constant_pool,
+                      GrowableArray<Method*>* prev_EMCP_methods);
   ~PreviousVersionNode();
   ConstantPool* prev_constant_pool() const {
     return _prev_constant_pool;
@@ -1161,59 +1151,26 @@ public:
 };
 
 
-// A Handle-ized version of PreviousVersionNode.
-class PreviousVersionInfo : public ResourceObj {
- private:
-  constantPoolHandle   _prev_constant_pool_handle;
-  // If the previous version of the InstanceKlass doesn't have any
-  // EMCP methods, then _prev_EMCP_methods will be NULL. Since the
-  // methods cannot be collected while we hold a handle,
-  // _prev_EMCP_methods should never have a length of zero.
-  GrowableArray<methodHandle>* _prev_EMCP_method_handles;
-
-public:
-  PreviousVersionInfo(PreviousVersionNode *pv_node);
-  ~PreviousVersionInfo();
-  constantPoolHandle prev_constant_pool_handle() const {
-    return _prev_constant_pool_handle;
-  }
-  GrowableArray<methodHandle>* prev_EMCP_method_handles() const {
-    return _prev_EMCP_method_handles;
-  }
-};
-
-
-// Helper object for walking previous versions. This helper cleans up
-// the Handles that it allocates when the helper object is destroyed.
-// The PreviousVersionInfo object returned by next_previous_version()
-// is only valid until a subsequent call to next_previous_version() or
-// the helper object is destroyed.
+// Helper object for walking previous versions.
 class PreviousVersionWalker : public StackObj {
  private:
+  Thread*                               _thread;
   GrowableArray<PreviousVersionNode *>* _previous_versions;
   int                                   _current_index;
-  // Fields for cleaning up when we are done walking the previous versions:
-  // A HandleMark for the PreviousVersionInfo handles:
-  HandleMark                            _hm;
 
-  // It would be nice to have a ResourceMark field in this helper also,
-  // but the ResourceMark code says to be careful to delete handles held
-  // in GrowableArrays _before_ deleting the GrowableArray. Since we
-  // can't guarantee the order in which the fields are destroyed, we
-  // have to let the creator of the PreviousVersionWalker object do
-  // the right thing. Also, adding a ResourceMark here causes an
-  // include loop.
+  // A pointer to the current node object so we can handle the deletes.
+  PreviousVersionNode*                  _current_p;
 
-  // A pointer to the current info object so we can handle the deletes.
-  PreviousVersionInfo *                 _current_p;
+  // The constant pool handle keeps all the methods in this class from being
+  // deallocated from the metaspace during class unloading.
+  constantPoolHandle                    _current_constant_pool_handle;
 
  public:
-  PreviousVersionWalker(InstanceKlass *ik);
-  ~PreviousVersionWalker();
+  PreviousVersionWalker(Thread* thread, InstanceKlass *ik);
 
   // Return the interesting information for the next previous version
   // of the klass. Returns NULL if there are no more previous versions.
-  PreviousVersionInfo* next_previous_version();
+  PreviousVersionNode* next_previous_version();
 };
 
 
