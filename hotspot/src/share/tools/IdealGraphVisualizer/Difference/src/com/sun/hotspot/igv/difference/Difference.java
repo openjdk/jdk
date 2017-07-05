@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.data.InputEdge;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Property;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -124,8 +125,8 @@ public class Difference {
             inputNodeMap.put(n, n2);
         }
 
-        Set<InputEdge> edgesA = a.getEdges();
-        Set<InputEdge> edgesB = b.getEdges();
+        Collection<InputEdge> edgesA = a.getEdges();
+        Collection<InputEdge> edgesB = b.getEdges();
 
         Set<InputEdge> newEdges = new HashSet<InputEdge>();
 
@@ -182,7 +183,7 @@ public class Difference {
         public double getValue() {
 
             double result = 0.0;
-            for (Property p : n1.getProperties().getProperties()) {
+            for (Property p : n1.getProperties()) {
                 double faktor = 1.0;
                 for (String forbidden : IGNORE_PROPERTIES) {
                     if (p.getName().equals(forbidden)) {
@@ -287,34 +288,34 @@ public class Difference {
     private static void markAsChanged(InputNode n, InputNode firstNode, InputNode otherNode) {
 
         boolean difference = false;
-        for (Property p : otherNode.getProperties().getProperties()) {
-            String s = firstNode.getProperties().getProperty(p.getName());
+        for (Property p : otherNode.getProperties()) {
+            String s = firstNode.getProperties().get(p.getName());
             if (!p.getValue().equals(s)) {
                 difference = true;
-                n.getProperties().add(new Property(OLD_PREFIX + p.getName(), p.getValue()));
+                n.getProperties().setProperty(OLD_PREFIX + p.getName(), p.getValue());
             }
         }
 
-        for (Property p : firstNode.getProperties().getProperties()) {
-            String s = otherNode.getProperties().getProperty(p.getName());
+        for (Property p : firstNode.getProperties()) {
+            String s = otherNode.getProperties().get(p.getName());
             if (s == null && p.getValue().length() > 0) {
                 difference = true;
-                n.getProperties().add(new Property(OLD_PREFIX + p.getName(), ""));
+                n.getProperties().setProperty(OLD_PREFIX + p.getName(), "");
             }
         }
 
         if (difference) {
-            n.getProperties().add(new Property(PROPERTY_STATE, VALUE_CHANGED));
+            n.getProperties().setProperty(PROPERTY_STATE, VALUE_CHANGED);
         } else {
-            n.getProperties().add(new Property(PROPERTY_STATE, VALUE_SAME));
+            n.getProperties().setProperty(PROPERTY_STATE, VALUE_SAME);
         }
     }
 
     private static void markAsDeleted(InputNode n) {
-        n.getProperties().add(new Property(PROPERTY_STATE, VALUE_DELETED));
+        n.getProperties().setProperty(PROPERTY_STATE, VALUE_DELETED);
     }
 
     private static void markAsNew(InputNode n) {
-        n.getProperties().add(new Property(PROPERTY_STATE, VALUE_NEW));
+        n.getProperties().setProperty(PROPERTY_STATE, VALUE_NEW);
     }
 }

@@ -26,24 +26,22 @@ package com.sun.hotspot.igv.data;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public class Properties implements Serializable {
+public class Properties implements Serializable, Iterable<Property> {
 
     public static final long serialVersionUID = 1L;
-    private Map<String, Property> map;
+    private String[] map = new String[4];
 
     public Properties() {
-        map = new HashMap<String, Property>(5);
     }
 
     @Override
@@ -54,10 +52,7 @@ public class Properties implements Serializable {
 
         Properties p = (Properties) o;
 
-        if (getProperties().size() != p.getProperties().size()) {
-            return false;
-        }
-        for (Property prop : getProperties()) {
+        for (Property prop : this) {
             String value = p.get(prop.getName());
             if (value == null || !value.equals(prop.getValue())) {
                 return false;
@@ -75,38 +70,47 @@ public class Properties implements Serializable {
 
     public Properties(String name, String value) {
         this();
-        this.add(new Property(name, value));
+        this.setProperty(name, value);
     }
 
     public Properties(String name, String value, String name1, String value1) {
         this(name, value);
-        this.add(new Property(name1, value1));
+        this.setProperty(name1, value1);
     }
 
     public Properties(String name, String value, String name1, String value1, String name2, String value2) {
         this(name, value, name1, value1);
-        this.add(new Property(name2, value2));
+        this.setProperty(name2, value2);
     }
 
     public Properties(Properties p) {
-        map = new HashMap<String, Property>(p.map);
+        map = new String[p.map.length];
+        System.arraycopy(map, 0, p.map, 0, p.map.length);
     }
 
-    public static class Object implements Provider {
+    public static class Entity implements Provider {
 
         private Properties properties;
 
-        public Object() {
+        public Entity() {
             properties = new Properties();
         }
 
-        public Object(Properties.Object object) {
+        public Entity(Properties.Entity object) {
             properties = new Properties(object.getProperties());
         }
 
         public Properties getProperties() {
             return properties;
         }
+    }
+
+    private String getProperty(String key) {
+        for (int i = 0; i < map.length; i += 2)
+            if (map[i] != null && map[i].equals(key)) {
+                return map[i + 1];
+            }
+        return null;
     }
 
     public interface PropertyMatcher {
@@ -173,13 +177,15 @@ public class Properties implements Serializable {
     }
 
     public Property selectSingle(PropertyMatcher matcher) {
-
-        Property p = this.map.get(matcher.getName());
-        if (p == null) {
-            return null;
+        String value = null;
+        for (int i = 0; i < map.length; i += 2) {
+            if (map[i] != null && matcher.getName().equals(map[i]))  {
+                value = map[i + 1];
+                break;
+            }
         }
-        if (matcher.match(p.getValue())) {
-            return p;
+        if (value != null && matcher.match(value)) {
+            return new Property(matcher.getName(), value);
         } else {
             return null;
         }
@@ -194,8 +200,11 @@ public class Properties implements Serializable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
-        for (Property p : map.values()) {
-            sb.append(p.toString());
+        for (int i = 0; i < map.length; i += 2) {
+            if (map[i + 1] != null) {
+                String p = map[i + 1];
+                sb.append(map[i] + " = " + map[i + 1] + "; ");
+            }
         }
         return sb.append("]").toString();
     }
@@ -241,41 +250,51 @@ public class Properties implements Serializable {
     }
 
     public String get(String key) {
-        Property p = map.get(key);
-        if (p == null) {
-            return null;
-        } else {
-            return p.getValue();
-        }
-    }
-
-    public String getProperty(String string) {
-        return get(string);
-    }
-
-    public Property setProperty(String name, String value) {
-
-        if (value == null) {
-            // remove this property
-            return map.remove(name);
-        } else {
-            Property p = map.get(name);
-            if (p == null) {
-                p = new Property(name, value);
-                map.put(name, p);
-            } else {
-                p.setValue(value);
+        for (int i = 0; i < map.length; i += 2) {
+            if (map[i] != null && map[i].equals(key)) {
+                return map[i + 1];
             }
-            return p;
         }
+        return null;
     }
 
-    public Collection<Property> getProperties() {
-        return Collections.unmodifiableCollection(map.values());
+    public void setProperty(String name, String value) {
+        for (int i = 0; i < map.length; i += 2) {
+            if (map[i] != null && map[i].equals(name)) {
+                String p = map[i + 1];
+                if (value == null) {
+                    // remove this property
+                    map[i] = null;
+                    map[i + 1] = null;
+                } else {
+                    map[i + 1] = value;
+                }
+                return;
+            }
+        }
+        if (value == null) {
+            return;
+        }
+        for (int i = 0; i < map.length; i += 2) {
+            if (map[i] == null) {
+                map[i] = name;
+                map[i + 1] = value;
+                return;
+            }
+        }
+        String[] newMap = new String[map.length + 4];
+        System.arraycopy(map, 0, newMap, 0, map.length);
+        newMap[map.length] = name;
+        newMap[map.length + 1] = value;
+        map = newMap;
+    }
+
+    public  Iterator<Property> getProperties() {
+        return iterator();
     }
 
     public void add(Properties properties) {
-        for (Property p : properties.getProperties()) {
+        for (Property p : properties) {
             add(p);
         }
     }
@@ -283,6 +302,35 @@ public class Properties implements Serializable {
     public void add(Property property) {
         assert property.getName() != null;
         assert property.getValue() != null;
-        map.put(property.getName(), property);
+        setProperty(property.getName(), property.getValue());
+    }
+    class PropertiesIterator implements Iterator<Property>, Iterable<Property> {
+        public Iterator<Property> iterator() {
+                return this;
+        }
+
+        int index;
+
+        public boolean hasNext() {
+            while (index < map.length && map[index + 1] == null)
+                index += 2;
+            return index < map.length;
+        }
+
+        public Property next() {
+            if (index < map.length) {
+                index += 2;
+                return new Property(map[index - 2], map[index - 1]);
+            }
+            return null;
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+    }
+    public Iterator<Property> iterator() {
+        return new PropertiesIterator();
     }
 }

@@ -31,7 +31,7 @@ import java.util.List;
  *
  * @author Thomas Wuerthinger
  */
-public class GraphDocument extends Properties.Object implements ChangedEventProvider<GraphDocument> {
+public class GraphDocument extends Properties.Entity implements ChangedEventProvider<GraphDocument> {
 
     private List<Group> groups;
     private ChangedEvent<GraphDocument> changedEvent;
