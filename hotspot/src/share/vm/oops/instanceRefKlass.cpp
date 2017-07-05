@@ -78,9 +78,9 @@ void instanceRefKlass::oop_follow_contents(oop obj) {
 
 #ifndef SERIALGC
 template <class T>
-static void specialized_oop_follow_contents(instanceRefKlass* ref,
-                                            ParCompactionManager* cm,
-                                            oop obj) {
+void specialized_oop_follow_contents(instanceRefKlass* ref,
+                                     ParCompactionManager* cm,
+                                     oop obj) {
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
   T heap_oop = oopDesc::load_heap_oop(referent_addr);
   debug_only(

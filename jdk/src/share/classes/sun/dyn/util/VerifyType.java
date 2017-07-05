@@ -26,6 +26,7 @@
 package sun.dyn.util;
 
 import java.dyn.MethodType;
+import sun.dyn.empty.Empty;
 
 /**
  * This class centralizes information about the JVM verifier
@@ -73,29 +74,28 @@ public class VerifyType {
     }
 
     /**
-     * Is the given type either java.lang.Void or java.lang.Null?
-     * These types serve as markers for bare nulls and therefore
-     * may be promoted to any type.  This is secure, since
+     * Is the given type java.lang.Null or an equivalent null-only type?
      */
     public static boolean isNullType(Class<?> type) {
         if (type == null)  return false;
-        return type == NULL_CLASS_1 || type == NULL_CLASS_2;
+        return type == NULL_CLASS
+            // This one may also be used as a null type.
+            // TO DO: Decide if we really want to legitimize it here.
+            // Probably we do, unless java.lang.Null really makes it into Java 7
+            //|| type == Void.class
+            // Locally known null-only class:
+            || type == Empty.class
+            ;
     }
-    private static final Class<?> NULL_CLASS_1, NULL_CLASS_2;
+    private static final Class<?> NULL_CLASS;
     static {
-        Class<?> nullClass1 = null, nullClass2 = null;
+        Class<?> nullClass = null;
         try {
-            nullClass1 = Class.forName("java.lang.Null");
+            nullClass = Class.forName("java.lang.Null");
         } catch (ClassNotFoundException ex) {
             // OK, we'll cope
         }
-        NULL_CLASS_1 = nullClass1;
-
-        // This one may also be used as a null type.
-        // TO DO: Decide if we really want to legitimize it here.
-        // Probably we do, unless java.lang.Null really makes it into Java 7
-        nullClass2 = Void.class;
-        NULL_CLASS_2 = nullClass2;
+        NULL_CLASS = nullClass;
     }
 
     /**
@@ -191,6 +191,11 @@ public class VerifyType {
                 // to be captured as a garbage int.
                 // Caller promises that the actual value will be disregarded.
                 return dst == int.class ? 1 : 0;
+            if (isNullType(src))
+                // Special permission for raw conversions: allow a null
+                // to be reinterpreted as anything.  For objects, it is safe,
+                // and for primitives you get a garbage value (probably zero).
+                return 1;
             if (!src.isPrimitive())
                 return 0;
             Wrapper sw = Wrapper.forPrimitiveType(src);

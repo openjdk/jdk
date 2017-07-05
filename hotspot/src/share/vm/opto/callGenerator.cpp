@@ -98,12 +98,21 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
 //---------------------------DirectCallGenerator------------------------------
 // Internal class which handles all out-of-line calls w/o receiver type checks.
 class DirectCallGenerator : public CallGenerator {
-public:
-  DirectCallGenerator(ciMethod* method)
-    : CallGenerator(method)
+ private:
+  CallStaticJavaNode* _call_node;
+  // Force separate memory and I/O projections for the exceptional
+  // paths to facilitate late inlinig.
+  bool                _separate_io_proj;
+
+ public:
+  DirectCallGenerator(ciMethod* method, bool separate_io_proj)
+    : CallGenerator(method),
+      _separate_io_proj(separate_io_proj)
   {
   }
   virtual JVMState* generate(JVMState* jvms);
+
+  CallStaticJavaNode* call_node() const { return _call_node; }
 };
 
 JVMState* DirectCallGenerator::generate(JVMState* jvms) {
@@ -129,9 +138,10 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     call->set_optimized_virtual(true);
   }
   kit.set_arguments_for_java_call(call);
-  kit.set_edges_for_java_call(call);
-  Node* ret = kit.set_results_for_java_call(call);
+  kit.set_edges_for_java_call(call, false, _separate_io_proj);
+  Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
   kit.push_node(method()->return_type()->basic_type(), ret);
+  _call_node = call;  // Save the call node in case we need it later
   return kit.transfer_exceptions_into_jvms();
 }
 
@@ -238,14 +248,116 @@ CallGenerator* CallGenerator::for_osr(ciMethod* m, int osr_bci) {
   return new ParseGenerator(m, expected_uses, true);
 }
 
-CallGenerator* CallGenerator::for_direct_call(ciMethod* m) {
+CallGenerator* CallGenerator::for_direct_call(ciMethod* m, bool separate_io_proj) {
   assert(!m->is_abstract(), "for_direct_call mismatch");
-  return new DirectCallGenerator(m);
+  return new DirectCallGenerator(m, separate_io_proj);
 }
 
 CallGenerator* CallGenerator::for_virtual_call(ciMethod* m, int vtable_index) {
   assert(!m->is_static(), "for_virtual_call mismatch");
   return new VirtualCallGenerator(m, vtable_index);
+}
+
+// Allow inlining decisions to be delayed
+class LateInlineCallGenerator : public DirectCallGenerator {
+  CallGenerator* _inline_cg;
+
+ public:
+  LateInlineCallGenerator(ciMethod* method, CallGenerator* inline_cg) :
+    DirectCallGenerator(method, true), _inline_cg(inline_cg) {}
+
+  virtual bool      is_late_inline() const { return true; }
+
+  // Convert the CallStaticJava into an inline
+  virtual void do_late_inline();
+
+  JVMState* generate(JVMState* jvms) {
+    // Record that this call site should be revisited once the main
+    // parse is finished.
+    Compile::current()->add_late_inline(this);
+
+    // Emit the CallStaticJava and request separate projections so
+    // that the late inlining logic can distinguish between fall
+    // through and exceptional uses of the memory and io projections
+    // as is done for allocations and macro expansion.
+    return DirectCallGenerator::generate(jvms);
+  }
+
+};
+
+
+void LateInlineCallGenerator::do_late_inline() {
+  // Can't inline it
+  if (call_node() == NULL || call_node()->outcnt() == 0 ||
+      call_node()->in(0) == NULL || call_node()->in(0)->is_top())
+    return;
+
+  CallStaticJavaNode* call = call_node();
+
+  // Make a clone of the JVMState that appropriate to use for driving a parse
+  Compile* C = Compile::current();
+  JVMState* jvms     = call->jvms()->clone_shallow(C);
+  uint size = call->req();
+  SafePointNode* map = new (C, size) SafePointNode(size, jvms);
+  for (uint i1 = 0; i1 < size; i1++) {
+    map->init_req(i1, call->in(i1));
+  }
+
+  // Make sure the state is a MergeMem for parsing.
+  if (!map->in(TypeFunc::Memory)->is_MergeMem()) {
+    map->set_req(TypeFunc::Memory, MergeMemNode::make(C, map->in(TypeFunc::Memory)));
+  }
+
+  // Make enough space for the expression stack and transfer the incoming arguments
+  int nargs    = method()->arg_size();
+  jvms->set_map(map);
+  map->ensure_stack(jvms, jvms->method()->max_stack());
+  if (nargs > 0) {
+    for (int i1 = 0; i1 < nargs; i1++) {
+      map->set_req(i1 + jvms->argoff(), call->in(TypeFunc::Parms + i1));
+    }
+  }
+
+  CompileLog* log = C->log();
+  if (log != NULL) {
+    log->head("late_inline method='%d'", log->identify(method()));
+    JVMState* p = jvms;
+    while (p != NULL) {
+      log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
+      p = p->caller();
+    }
+    log->tail("late_inline");
+  }
+
+  // Setup default node notes to be picked up by the inlining
+  Node_Notes* old_nn = C->default_node_notes();
+  if (old_nn != NULL) {
+    Node_Notes* entry_nn = old_nn->clone(C);
+    entry_nn->set_jvms(jvms);
+    C->set_default_node_notes(entry_nn);
+  }
+
+  // Now perform the inling using the synthesized JVMState
+  JVMState* new_jvms = _inline_cg->generate(jvms);
+  if (new_jvms == NULL)  return;  // no change
+  if (C->failing())      return;
+
+  // Capture any exceptional control flow
+  GraphKit kit(new_jvms);
+
+  // Find the result object
+  Node* result = C->top();
+  int   result_size = method()->return_type()->size();
+  if (result_size != 0 && !kit.stopped()) {
+    result = (result_size == 1) ? kit.pop() : kit.pop_pair();
+  }
+
+  kit.replace_call(call, result);
+}
+
+
+CallGenerator* CallGenerator::for_late_inline(ciMethod* method, CallGenerator* inline_cg) {
+  return new LateInlineCallGenerator(method, inline_cg);
 }
 
 
@@ -315,70 +427,7 @@ JVMState* WarmCallGenerator::generate(JVMState* jvms) {
 }
 
 void WarmCallInfo::make_hot() {
-  Compile* C = Compile::current();
-  // Replace the callnode with something better.
-  CallJavaNode* call = this->call()->as_CallJava();
-  ciMethod* method   = call->method();
-  int       nargs    = method->arg_size();
-  JVMState* jvms     = call->jvms()->clone_shallow(C);
-  uint size = TypeFunc::Parms + MAX2(2, nargs);
-  SafePointNode* map = new (C, size) SafePointNode(size, jvms);
-  for (uint i1 = 0; i1 < (uint)(TypeFunc::Parms + nargs); i1++) {
-    map->init_req(i1, call->in(i1));
-  }
-  jvms->set_map(map);
-  jvms->set_offsets(map->req());
-  jvms->set_locoff(TypeFunc::Parms);
-  jvms->set_stkoff(TypeFunc::Parms);
-  GraphKit kit(jvms);
-
-  JVMState* new_jvms = _hot_cg->generate(kit.jvms());
-  if (new_jvms == NULL)  return;  // no change
-  if (C->failing())      return;
-
-  kit.set_jvms(new_jvms);
-  Node* res = C->top();
-  int   res_size = method->return_type()->size();
-  if (res_size != 0) {
-    kit.inc_sp(-res_size);
-    res = kit.argument(0);
-  }
-  GraphKit ekit(kit.combine_and_pop_all_exception_states()->jvms());
-
-  // Replace the call:
-  for (DUIterator i = call->outs(); call->has_out(i); i++) {
-    Node* n = call->out(i);
-    Node* nn = NULL;  // replacement
-    if (n->is_Proj()) {
-      ProjNode* nproj = n->as_Proj();
-      assert(nproj->_con < (uint)(TypeFunc::Parms + (res_size ? 1 : 0)), "sane proj");
-      if (nproj->_con == TypeFunc::Parms) {
-        nn = res;
-      } else {
-        nn = kit.map()->in(nproj->_con);
-      }
-      if (nproj->_con == TypeFunc::I_O) {
-        for (DUIterator j = nproj->outs(); nproj->has_out(j); j++) {
-          Node* e = nproj->out(j);
-          if (e->Opcode() == Op_CreateEx) {
-            e->replace_by(ekit.argument(0));
-          } else if (e->Opcode() == Op_Catch) {
-            for (DUIterator k = e->outs(); e->has_out(k); k++) {
-              CatchProjNode* p = e->out(j)->as_CatchProj();
-              if (p->is_handler_proj()) {
-                p->replace_by(ekit.control());
-              } else {
-                p->replace_by(kit.control());
-              }
-            }
-          }
-        }
-      }
-    }
-    NOT_PRODUCT(if (!nn)  n->dump(2));
-    assert(nn != NULL, "don't know what to do with this user");
-    n->replace_by(nn);
-  }
+  Unimplemented();
 }
 
 void WarmCallInfo::make_cold() {

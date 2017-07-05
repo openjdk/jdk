@@ -296,7 +296,7 @@ public abstract class AccessibleContext {
      *
      * @see #getAccessibleText
      * @see #addPropertyChangeListener
-     * @see #AccessibleText.AccessibleTextSequence
+     * @see AccessibleTextSequence
      */
     public static final String ACCESSIBLE_TEXT_PROPERTY
         = "AccessibleText";
@@ -311,7 +311,7 @@ public abstract class AccessibleContext {
      *
      * @see #getAccessibleText
      * @see #addPropertyChangeListener
-     * @see #AccessibleText.AccessibleTextSequence
+     * @see AccessibleTextSequence
      *
      * @since 1.5
      */
@@ -334,7 +334,7 @@ public abstract class AccessibleContext {
      *
      * @see #getAccessibleText
      * @see #addPropertyChangeListener
-     * @see #AccessibleText.AccessibleAttributeSequence
+     * @see AccessibleAttributeSequence
      *
      * @since 1.5
      */

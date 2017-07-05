@@ -149,6 +149,7 @@ class Compile : public Phase {
   bool                  _has_loops;             // True if the method _may_ have some loops
   bool                  _has_split_ifs;         // True if the method _may_ have some split-if
   bool                  _has_unsafe_access;     // True if the method _may_ produce faults in unsafe loads or stores.
+  bool                  _has_stringbuilder;     // True StringBuffers or StringBuilders are allocated
   uint                  _trap_hist[trapHistLength];  // Cumulative traps
   bool                  _trap_can_recompile;    // Have we emitted a recompiling trap?
   uint                  _decompile_count;       // Cumulative decompilation counts.
@@ -218,6 +219,9 @@ class Compile : public Phase {
   PhaseGVN*             _initial_gvn;           // Results of parse-time PhaseGVN
   Unique_Node_List*     _for_igvn;              // Initial work-list for next round of Iterative GVN
   WarmCallInfo*         _warm_calls;            // Sorted work-list for heat-based inlining.
+
+  GrowableArray<CallGenerator*> _late_inlines;  // List of CallGenerators to be revisited after
+                                                // main parsing has finished.
 
   // Matching, CFG layout, allocation, code generation
   PhaseCFG*             _cfg;                   // Results of CFG finding
@@ -298,6 +302,8 @@ class Compile : public Phase {
   void          set_has_split_ifs(bool z)       { _has_split_ifs = z; }
   bool              has_unsafe_access() const   { return _has_unsafe_access; }
   void          set_has_unsafe_access(bool z)   { _has_unsafe_access = z; }
+  bool              has_stringbuilder() const   { return _has_stringbuilder; }
+  void          set_has_stringbuilder(bool z)   { _has_stringbuilder = z; }
   void          set_trap_count(uint r, uint c)  { assert(r < trapHistLength, "oob");        _trap_hist[r] = c; }
   uint              trap_count(uint r) const    { assert(r < trapHistLength, "oob"); return _trap_hist[r]; }
   bool              trap_can_recompile() const  { return _trap_can_recompile; }
@@ -475,6 +481,7 @@ class Compile : public Phase {
   // Decide how to build a call.
   // The profile factor is a discount to apply to this site's interp. profile.
   CallGenerator*    call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual, JVMState* jvms, bool allow_inline, float profile_factor);
+  bool should_delay_inlining(ciMethod* call_method, JVMState* jvms);
 
   // Report if there were too many traps at a current method and bci.
   // Report if a trap was recorded, and/or PerMethodTrapLimit was exceeded.
@@ -495,12 +502,20 @@ class Compile : public Phase {
   void          set_initial_gvn(PhaseGVN *gvn)           { _initial_gvn = gvn; }
   void          set_for_igvn(Unique_Node_List *for_igvn) { _for_igvn = for_igvn; }
 
+  // Replace n by nn using initial_gvn, calling hash_delete and
+  // record_for_igvn as needed.
+  void gvn_replace_by(Node* n, Node* nn);
+
+
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              remove_useless_nodes  (Unique_Node_List &useful);
 
   WarmCallInfo*     warm_calls() const          { return _warm_calls; }
   void          set_warm_calls(WarmCallInfo* l) { _warm_calls = l; }
   WarmCallInfo* pop_warm_call();
+
+  // Record this CallGenerator for inlining at the end of parsing.
+  void              add_late_inline(CallGenerator* cg) { _late_inlines.push(cg); }
 
   // Matching, CFG layout, allocation, code generation
   PhaseCFG*         cfg()                       { return _cfg; }
