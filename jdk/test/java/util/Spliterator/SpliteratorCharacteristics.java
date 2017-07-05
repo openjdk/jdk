@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8020156 8020009 8022326
+ * @bug 8020156 8020009 8022326 8012913
  * @run testng SpliteratorCharacteristics
  */
 
@@ -32,6 +32,10 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -47,7 +51,27 @@ import static org.testng.Assert.*;
 @Test
 public class SpliteratorCharacteristics {
 
-    // TreeMap
+    public void testHashMap() {
+        assertMapCharacteristics(new HashMap<>(),
+                                 Spliterator.SIZED | Spliterator.DISTINCT);
+    }
+
+    public void testHashSet() {
+        assertSetCharacteristics(new HashSet<>(),
+                                 Spliterator.SIZED | Spliterator.DISTINCT);
+    }
+
+    public void testLinkedHashMap() {
+        assertMapCharacteristics(new LinkedHashMap<>(),
+                                 Spliterator.SIZED | Spliterator.DISTINCT |
+                                 Spliterator.ORDERED);
+    }
+
+    public void testLinkedHashSet() {
+        assertSetCharacteristics(new LinkedHashSet<>(),
+                                 Spliterator.SIZED | Spliterator.DISTINCT |
+                                 Spliterator.ORDERED);
+    }
 
     public void testTreeMap() {
         assertSortedMapCharacteristics(new TreeMap<>(),
@@ -61,9 +85,6 @@ public class SpliteratorCharacteristics {
                                        Spliterator.SORTED | Spliterator.ORDERED);
     }
 
-
-    // TreeSet
-
     public void testTreeSet() {
         assertSortedSetCharacteristics(new TreeSet<>(),
                                        Spliterator.SIZED | Spliterator.DISTINCT |
@@ -75,9 +96,6 @@ public class SpliteratorCharacteristics {
                                        Spliterator.SIZED | Spliterator.DISTINCT |
                                        Spliterator.SORTED | Spliterator.ORDERED);
     }
-
-
-    // ConcurrentSkipListMap
 
     public void testConcurrentSkipListMap() {
         assertSortedMapCharacteristics(new ConcurrentSkipListMap<>(),
@@ -92,9 +110,6 @@ public class SpliteratorCharacteristics {
                                        Spliterator.DISTINCT | Spliterator.SORTED |
                                        Spliterator.ORDERED);
     }
-
-
-    // ConcurrentSkipListSet
 
     public void testConcurrentSkipListSet() {
         assertSortedSetCharacteristics(new ConcurrentSkipListSet<>(),
@@ -113,35 +128,58 @@ public class SpliteratorCharacteristics {
 
     //
 
-    void assertSortedMapCharacteristics(SortedMap<Integer, String> m, int keyCharacteristics) {
+
+    void assertMapCharacteristics(Map<Integer, String> m, int keyCharacteristics) {
+        assertMapCharacteristics(m, keyCharacteristics, 0);
+    }
+
+    void assertMapCharacteristics(Map<Integer, String> m, int keyCharacteristics, int notValueCharacteristics) {
         initMap(m);
 
-        boolean hasComparator = m.comparator() != null;
+        assertCharacteristics(m.keySet(), keyCharacteristics);
+
+        assertCharacteristics(m.values(),
+                              keyCharacteristics & ~(Spliterator.DISTINCT | notValueCharacteristics));
+
+        assertCharacteristics(m.entrySet(), keyCharacteristics);
+
+        if ((keyCharacteristics & Spliterator.SORTED) == 0) {
+            assertISEComparator(m.keySet());
+            assertISEComparator(m.values());
+            assertISEComparator(m.entrySet());
+        }
+    }
+
+    void assertSetCharacteristics(Set<Integer> s, int keyCharacteristics) {
+        initSet(s);
+
+        assertCharacteristics(s, keyCharacteristics);
+
+        if ((keyCharacteristics & Spliterator.SORTED) == 0) {
+            assertISEComparator(s);
+        }
+    }
+
+    void assertSortedMapCharacteristics(SortedMap<Integer, String> m, int keyCharacteristics) {
+        assertMapCharacteristics(m, keyCharacteristics, Spliterator.SORTED);
 
         Set<Integer> keys = m.keySet();
-        assertCharacteristics(keys, keyCharacteristics);
-        if (hasComparator) {
+        if (m.comparator() != null) {
             assertNotNullComparator(keys);
         }
         else {
             assertNullComparator(keys);
         }
 
-        assertCharacteristics(m.values(),
-                              keyCharacteristics & ~(Spliterator.DISTINCT | Spliterator.SORTED));
         assertISEComparator(m.values());
 
-        assertCharacteristics(m.entrySet(), keyCharacteristics);
         assertNotNullComparator(m.entrySet());
     }
 
     void assertSortedSetCharacteristics(SortedSet<Integer> s, int keyCharacteristics) {
-        initSet(s);
+        assertSetCharacteristics(s, keyCharacteristics);
 
-        boolean hasComparator = s.comparator() != null;
-
-        assertCharacteristics(s, keyCharacteristics);
-        if (hasComparator) {
+        if (s.comparator() != null) {
             assertNotNullComparator(s);
         }
         else {
@@ -161,27 +199,18 @@ public class SpliteratorCharacteristics {
     }
 
     void assertCharacteristics(Collection<?> c, int expectedCharacteristics) {
-        assertCharacteristics(c.spliterator(), expectedCharacteristics);
-    }
-
-    void assertCharacteristics(Spliterator<?> s, int expectedCharacteristics) {
-        assertTrue(s.hasCharacteristics(expectedCharacteristics));
+        assertTrue(c.spliterator().hasCharacteristics(expectedCharacteristics),
+                   "Spliterator characteristics");
     }
 
     void assertNullComparator(Collection<?> c) {
-        assertNullComparator(c.spliterator());
-    }
-
-    void assertNullComparator(Spliterator<?> s) {
-        assertNull(s.getComparator());
+        assertNull(c.spliterator().getComparator(),
+                   "Comparator of Spliterator of Collection");
     }
 
     void assertNotNullComparator(Collection<?> c) {
-        assertNotNullComparator(c.spliterator());
-    }
-
-    void assertNotNullComparator(Spliterator<?> s) {
-        assertNotNull(s.getComparator());
+        assertNotNull(c.spliterator().getComparator(),
+                      "Comparator of Spliterator of Collection");
     }
 
     void assertISEComparator(Collection<?> c) {
@@ -196,6 +225,6 @@ public class SpliteratorCharacteristics {
         catch (IllegalStateException e) {
             caught = true;
         }
-        assertTrue(caught);
+        assertTrue(caught, "Throwing IllegalStateException");
     }
 }

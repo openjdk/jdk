@@ -225,6 +225,9 @@ class XRPMScaledBlit extends ScaledBlit {
  * @author Clemens Eisserer
  */
 class XRPMTransformedBlit extends TransformBlit {
+    final Rectangle compositeBounds = new Rectangle();
+    final double[] srcCoords = new double[8];
+    final double[] dstCoords = new double[8];
 
     public XRPMTransformedBlit(SurfaceType srcType, SurfaceType dstType) {
         super(srcType, CompositeType.AnyAlpha, dstType);
@@ -235,61 +238,68 @@ class XRPMTransformedBlit extends TransformBlit {
      * method is functionally equal to: Shape shp =
      * xform.createTransformedShape(rect); Rectangle bounds = shp.getBounds();
      * but performs significantly better.
+     * Returns true if the destination shape is parallel to x/y axis
      */
-    public Rectangle getCompositeBounds(AffineTransform tr, int dstx, int dsty, int width, int height) {
-        double[] compBounds = new double[8];
-        compBounds[0] = dstx;
-        compBounds[1] = dsty;
-        compBounds[2] = dstx + width;
-        compBounds[3] = dsty;
-        compBounds[4] = dstx + width;
-        compBounds[5] = dsty + height;
-        compBounds[6] = dstx;
-        compBounds[7] = dsty + height;
+    protected boolean adjustCompositeBounds(AffineTransform tr, int dstx, int dsty, int width, int height) {
+        srcCoords[0] = dstx;
+        srcCoords[1] = dsty;
+        srcCoords[2] = dstx + width;
+        srcCoords[3] = dsty;
+        srcCoords[4] = dstx + width;
+        srcCoords[5] = dsty + height;
+        srcCoords[6] = dstx;
+        srcCoords[7] = dsty + height;
 
-        tr.transform(compBounds, 0, compBounds, 0, 4);
+        tr.transform(srcCoords, 0, dstCoords, 0, 4);
 
-        double minX = Math.min(compBounds[0], Math.min(compBounds[2], Math.min(compBounds[4], compBounds[6])));
-        double minY = Math.min(compBounds[1], Math.min(compBounds[3], Math.min(compBounds[5], compBounds[7])));
-        double maxX = Math.max(compBounds[0], Math.max(compBounds[2], Math.max(compBounds[4], compBounds[6])));
-        double maxY = Math.max(compBounds[1], Math.max(compBounds[3], Math.max(compBounds[5], compBounds[7])));
+        double minX = Math.min(dstCoords[0], Math.min(dstCoords[2], Math.min(dstCoords[4], dstCoords[6])));
+        double minY = Math.min(dstCoords[1], Math.min(dstCoords[3], Math.min(dstCoords[5], dstCoords[7])));
+        double maxX = Math.max(dstCoords[0], Math.max(dstCoords[2], Math.max(dstCoords[4], dstCoords[6])));
+        double maxY = Math.max(dstCoords[1], Math.max(dstCoords[3], Math.max(dstCoords[5], dstCoords[7])));
 
-        minX = Math.floor(minX);
-        minY = Math.floor(minY);
-        maxX = Math.ceil(maxX);
-        maxY = Math.ceil(maxY);
+        minX = Math.round(minX);
+        minY = Math.round(minY);
+        maxX = Math.round(maxX);
+        maxY = Math.round(maxY);
 
-        return new Rectangle((int) minX, (int) minY, (int) (maxX - minX), (int) (maxY - minY));
+        compositeBounds.x = (int) minX;
+        compositeBounds.y = (int) minY;
+        compositeBounds.width = (int) (maxX - minX);
+        compositeBounds.height = (int) (maxY - minY);
+
+        boolean is0or180 = (dstCoords[1] == dstCoords[3]) && (dstCoords[2] == dstCoords[4]);
+        boolean is90or270 = (dstCoords[0] == dstCoords[2]) && (dstCoords[3] == dstCoords[5]);
+
+        return is0or180 || is90or270;
     }
 
-    public void Transform(SurfaceData src, SurfaceData dst, Composite comp, Region clip, AffineTransform xform, int hint, int srcx, int srcy,
-            int dstx, int dsty, int width, int height) {
+    public void Transform(SurfaceData src, SurfaceData dst, Composite comp, Region clip, AffineTransform xform,
+            int hint, int srcx, int srcy, int dstx, int dsty, int width, int height) {
         try {
             SunToolkit.awtLock();
 
-            int filter = XRUtils.ATransOpToXRQuality(hint);
-
             XRSurfaceData x11sdDst = (XRSurfaceData) dst;
-            x11sdDst.validateAsDestination(null, clip);
             XRSurfaceData x11sdSrc = (XRSurfaceData) src;
+
+            int filter = XRUtils.ATransOpToXRQuality(hint);
+            boolean isAxisAligned = adjustCompositeBounds(xform, dstx, dsty, width, height);
+
+            x11sdDst.validateAsDestination(null, clip);
             x11sdDst.maskBuffer.validateCompositeState(comp, null, null, null);
 
-            Rectangle bounds = getCompositeBounds(xform, dstx, dsty, width, height);
-
-            AffineTransform trx = AffineTransform.getTranslateInstance((-bounds.x), (-bounds.y));
+            AffineTransform trx = AffineTransform.getTranslateInstance(-compositeBounds.x, -compositeBounds.y);
             trx.concatenate(xform);
             AffineTransform maskTX = (AffineTransform) trx.clone();
-
             trx.translate(-srcx, -srcy);
 
             try {
                 trx.invert();
             } catch (NoninvertibleTransformException ex) {
                 trx.setToIdentity();
-                System.err.println("Reseted to identity!");
             }
 
-            boolean omitMask = isMaskOmittable(trx, comp, filter);
+            boolean omitMask = (filter == XRUtils.FAST)
+                    || (isAxisAligned && ((AlphaComposite) comp).getAlpha() == 1.0f);
 
             if (!omitMask) {
                 XRMaskImage mask = x11sdSrc.maskBuffer.getMaskImage();
@@ -297,32 +307,16 @@ class XRPMTransformedBlit extends TransformBlit {
                 x11sdSrc.validateAsSource(trx, XRUtils.RepeatPad, filter);
                 int maskPicture = mask.prepareBlitMask(x11sdDst, maskTX, width, height);
                 x11sdDst.maskBuffer.con.renderComposite(XRCompositeManager.getInstance(x11sdSrc).getCompRule(), x11sdSrc.picture, maskPicture, x11sdDst.picture,
-                        0, 0, 0, 0, bounds.x, bounds.y, bounds.width, bounds.height);
+                        0, 0, 0, 0, compositeBounds.x, compositeBounds.y, compositeBounds.width, compositeBounds.height);
             } else {
                 int repeat = filter == XRUtils.FAST ? XRUtils.RepeatNone : XRUtils.RepeatPad;
 
                 x11sdSrc.validateAsSource(trx, repeat, filter);
-                x11sdDst.maskBuffer.compositeBlit(x11sdSrc, x11sdDst, 0, 0, bounds.x, bounds.y, bounds.width, bounds.height);
+                x11sdDst.maskBuffer.compositeBlit(x11sdSrc, x11sdDst, 0, 0, compositeBounds.x, compositeBounds.y, compositeBounds.width, compositeBounds.height);
             }
         } finally {
             SunToolkit.awtUnlock();
         }
-    }
-
-    /* TODO: Is mask ever omitable??? ... should be for 90 degree rotation and no shear, but we always need to use RepeatPad */
-    protected static boolean isMaskOmittable(AffineTransform trx, Composite comp, int filter) {
-        return (filter == XRUtils.FAST || trx.getTranslateX() == (int) trx.getTranslateX() /*
-                                                                                            * If
-                                                                                            * translate
-                                                                                            * is
-                                                                                            * integer
-                                                                                            * only
-                                                                                            */
-                && trx.getTranslateY() == (int) trx.getTranslateY() && (trx.getShearX() == 0 && trx.getShearY() == 0 // Only
-                // 90 degree
-                // rotation
-                || trx.getShearX() == -trx.getShearY())) && ((AlphaComposite) comp).getAlpha() == 1.0f; // No
-        // ExtraAlpha!=1
     }
 }
 

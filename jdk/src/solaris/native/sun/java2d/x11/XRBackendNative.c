@@ -911,8 +911,9 @@ Java_sun_java2d_xr_XRBackendNative_XRenderCreateGlyphSetNative
 
 JNIEXPORT void JNICALL
 Java_sun_java2d_xr_XRBackendNative_XRenderCompositeTextNative
- (JNIEnv *env, jclass cls, jint op, jint src, jint dst, jlong maskFmt,
-  jintArray eltArray, jintArray  glyphIDArray, jint eltCnt, jint glyphCnt) {
+ (JNIEnv *env, jclass cls, jint op, jint src, jint dst,
+  jint sx, jint sy, jlong maskFmt, jintArray eltArray,
+  jintArray  glyphIDArray, jint eltCnt, jint glyphCnt) {
     jint i;
     jint *ids;
     jint *elts;
@@ -991,7 +992,7 @@ Java_sun_java2d_xr_XRBackendNative_XRenderCompositeTextNative
 
     XRenderCompositeText32(awt_display, op, (Picture) src, (Picture) dst,
                            (XRenderPictFormat *) jlong_to_ptr(maskFmt),
-                            0, 0, 0, 0, xelts, eltCnt);
+                            sx, sy, 0, 0, xelts, eltCnt);
 
     (*env)->ReleasePrimitiveArrayCritical(env, glyphIDArray, ids, JNI_ABORT);
     (*env)->ReleasePrimitiveArrayCritical(env, eltArray, elts, JNI_ABORT);

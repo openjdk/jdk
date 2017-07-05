@@ -31,6 +31,7 @@
 #include <Security/AuthSession.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <SystemConfiguration/SystemConfiguration.h>
+#include <Foundation/Foundation.h>
 
 #include "java_props_macosx.h"
 
@@ -271,9 +272,20 @@ static char * createConvertedException(CFStringRef cf_original) {
     return c_exception;
 }
 
+/*
+ * Method for fetching the user.home path and storing it in the property list.
+ * For signed .apps running in the Mac App Sandbox, user.home is set to the
+ * app's sandbox container.
+ */
+void setUserHome(java_props_t *sprops) {
+    if (sprops == NULL) { return; }
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    sprops->user_home = createUTF8CString((CFStringRef)NSHomeDirectory());
+    [pool drain];
+}
 
 /*
- * Method for fetching proxy info and storing it in the propery list.
+ * Method for fetching proxy info and storing it in the property list.
  */
 void setProxyProperties(java_props_t *sProps) {
     if (sProps == NULL) return;

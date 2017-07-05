@@ -33,7 +33,7 @@
  * @build Barrier
  * @build SynchronizerLockingThread
  * @build ThreadDump
- * @run main LockedSynchronizers
+ * @run main/othervm LockedSynchronizers
  */
 
 import java.lang.management.*;

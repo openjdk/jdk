@@ -329,6 +329,156 @@ static int CALLBACK fontEnumProcA(ENUMLOGFONTEXA  *logfont,
 static int embolden(int currentWeight);
 static BOOL getPrintableArea(HDC pdc, HANDLE hDevMode, RectDouble *margin);
 
+
+
+/************************************************************************
+ * DocumentProperties native support
+ */
+
+/* Values must match those defined in WPrinterJob.java */
+static const DWORD SET_COLOR = 0x00000200;
+static const DWORD SET_ORIENTATION = 0x00004000;
+static const DWORD SET_COLLATED    = 0x00008000;
+static const DWORD SET_DUP_VERTICAL = 0x00000010;
+static const DWORD SET_DUP_HORIZONTAL = 0x00000020;
+static const DWORD SET_RES_HIGH = 0x00000040;
+static const DWORD SET_RES_LOW = 0x00000080;
+
+/*
+ * Copy DEVMODE state back into JobAttributes.
+ */
+
+static void UpdateJobAttributes(JNIEnv *env,
+                                jobject wJob,
+                                jobject attrSet,
+                                DEVMODE *devmode) {
+
+    DWORD dmValues = 0;
+    int xRes = 0, yRes = 0;
+
+    if (devmode->dmFields & DM_COLOR) {
+        if (devmode->dmColor == DMCOLOR_COLOR) {
+            dmValues |= SET_COLOR;
+        }
+    }
+
+    if (devmode->dmFields & DM_ORIENTATION) {
+        if (devmode->dmOrientation == DMORIENT_LANDSCAPE) {
+            dmValues |= SET_ORIENTATION;
+        }
+    }
+
+    if (devmode->dmFields & DM_COLLATE &&
+        devmode->dmCollate == DMCOLLATE_TRUE) {
+            dmValues |= SET_COLLATED;
+    }
+
+    if (devmode->dmFields & DM_PRINTQUALITY) {
+        /* value < 0 indicates quality setting.
+         * value > 0 indicates X resolution. In that case
+         * hopefully we will also find y-resolution specified.
+         * If its not, assume its the same as x-res.
+         * Maybe Java code should try to reconcile this against
+          * the printers claimed set of supported resolutions.
+         */
+        if (devmode->dmPrintQuality < 0) {
+            if (devmode->dmPrintQuality == DMRES_HIGH) {
+                dmValues |= SET_RES_HIGH;
+            } else if ((devmode->dmPrintQuality == DMRES_LOW) ||
+                       (devmode->dmPrintQuality == DMRES_DRAFT)) {
+                dmValues |= SET_RES_LOW;
+            }
+            /* else if (devmode->dmPrintQuality == DMRES_MEDIUM)
+             * will set to NORMAL.
+             */
+        } else {
+            xRes = devmode->dmPrintQuality;
+            yRes = (devmode->dmFields & DM_YRESOLUTION) ?
+                devmode->dmYResolution : devmode->dmPrintQuality;
+        }
+    }
+
+    if (devmode->dmFields & DM_DUPLEX) {
+        if (devmode->dmDuplex == DMDUP_HORIZONTAL) {
+            dmValues |= SET_DUP_HORIZONTAL;
+        } else if (devmode->dmDuplex == DMDUP_VERTICAL) {
+            dmValues |= SET_DUP_VERTICAL;
+        }
+    }
+
+    env->CallVoidMethod(wJob, AwtPrintControl::setJobAttributesID, attrSet,
+                        devmode->dmFields, dmValues, devmode->dmCopies,
+                        devmode->dmPaperSize, devmode->dmPaperWidth,
+                        devmode->dmPaperLength, devmode->dmDefaultSource,
+                        xRes, yRes);
+
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_awt_windows_WPrinterJob_showDocProperties(JNIEnv *env,
+                                                   jobject wJob,
+                                                   jlong hWndParent,
+                                                   jobject attrSet,
+                                                   jint dmFields,
+                                                   jshort copies,
+                                                   jshort collate,
+                                                   jshort color,
+                                                   jshort duplex,
+                                                   jshort orient,
+                                                   jshort paper,
+                                                   jshort bin,
+                                                   jshort xres_quality,
+                                                   jshort yres)
+{
+    TRY;
+
+    HGLOBAL hDevMode = AwtPrintControl::getPrintHDMode(env, wJob);
+    HGLOBAL hDevNames = AwtPrintControl::getPrintHDName(env, wJob);
+    DEVMODE *devmode = NULL;
+    DEVNAMES *devnames = NULL;
+    LONG rval = IDCANCEL;
+    jboolean ret = JNI_FALSE;
+
+    if (hDevMode != NULL && hDevNames != NULL) {
+        devmode = (DEVMODE *)::GlobalLock(hDevMode);
+        devnames = (DEVNAMES *)::GlobalLock(hDevNames);
+
+        LPTSTR lpdevnames = (LPTSTR)devnames;
+        // No need to call _tcsdup as we won't unlock until we are done.
+        LPTSTR printerName = lpdevnames+devnames->wDeviceOffset;
+        LPTSTR portName = lpdevnames+devnames->wOutputOffset;
+
+        HANDLE hPrinter;
+        if (::OpenPrinter(printerName, &hPrinter, NULL) == TRUE) {
+            devmode->dmFields |= dmFields;
+            devmode->dmCopies = copies;
+            devmode->dmCollate = collate;
+            devmode->dmColor = color;
+            devmode->dmDuplex = duplex;
+            devmode->dmOrientation = orient;
+            devmode->dmPrintQuality = xres_quality;
+            devmode->dmYResolution = yres;
+            devmode->dmPaperSize = paper;
+            devmode->dmDefaultSource = bin;
+
+            rval = ::DocumentProperties((HWND)hWndParent,
+                           hPrinter, printerName, devmode, devmode,
+                           DM_IN_BUFFER | DM_OUT_BUFFER | DM_IN_PROMPT);
+            if (rval == IDOK) {
+                UpdateJobAttributes(env, wJob, attrSet, devmode);
+                ret = JNI_TRUE;
+            }
+            VERIFY(::ClosePrinter(hPrinter));
+        }
+        ::GlobalUnlock(hDevNames);
+        ::GlobalUnlock(hDevMode);
+    }
+
+    return ret;
+
+    CATCH_BAD_ALLOC_RET(0);
+}
+
 /************************************************************************
  * WPageDialog native methods
  */
@@ -732,7 +882,6 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
         memset(&pd, 0, sizeof(PRINTDLG));
         pd.lStructSize = sizeof(PRINTDLG);
         pd.Flags = PD_RETURNDEFAULT | PD_RETURNDC;
-
         if (::PrintDlg(&pd)) {
             printDC = pd.hDC;
             hDevMode = pd.hDevMode;
@@ -792,8 +941,19 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
     jint imgPixelWid = GetDeviceCaps(printDC, HORZRES);
     jint imgPixelHgt = GetDeviceCaps(printDC, VERTRES);
 
+    // The DC may be obtained when we first selected the printer as a
+    // result of a call to setNativePrintService.
+    // If the Devmode was obtained later on from the DocumentProperties dialog
+    // the DC won't have been updated and its settings may be for PORTRAIT.
+    // This may happen in other cases too, but was observed for the above.
+    // To get a DC compatible with this devmode we should really call
+    // CreateDC() again to get a DC for the devmode we are using.
+    // The changes for that are a lot more risk, so to minimise that
+    // risk, assume its not LANDSCAPE unless width > height, even if the
+    // devmode says its LANDSCAPE.
     // if the values were obtained from a rotated device, swap.
-    if (getOrientationFromDevMode2(hDevMode) == DMORIENT_LANDSCAPE) {
+    if ((getOrientationFromDevMode2(hDevMode) == DMORIENT_LANDSCAPE) &&
+        (imgPixelWid > imgPixelHgt)) {
       jint tmp;
       tmp = xPixelRes;
       xPixelRes = yPixelRes;
@@ -941,6 +1101,9 @@ Java_sun_awt_windows_WPrinterJob_initPrinter(JNIEnv *env, jobject self) {
             setBooleanField(env, self, DRIVER_COLLATE_STR, JNI_FALSE);
         }
 
+        if (dmFields & DM_COPIES) {
+            setBooleanField(env, self, DRIVER_COPIES_STR, JNI_TRUE);
+        }
     }
 
     CATCH_BAD_ALLOC;

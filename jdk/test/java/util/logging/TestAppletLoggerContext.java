@@ -38,7 +38,7 @@ import sun.misc.SharedSecrets;
 
 /*
  * @test
- * @bug 8017174 8010727
+ * @bug 8017174 8010727 8019945
  * @summary  NPE when using Logger.getAnonymousLogger or
  *           LogManager.getLogManager().getLogger
  *
@@ -110,28 +110,19 @@ public class TestAppletLoggerContext {
             }
 
             TestExc exc;
-            TestExc global = new TestExc();
 
             @Override
-            public Object getContext() { return active ? global : null; }
+            public Object getAppletContext() { return active ? exc : null; }
             @Override
-            public Object getExecutionContext() { return active ? exc : null; }
+            public Object get(Object o) { return exc.get(o); }
             @Override
-            public Object get(Object o, Object o1) { return TestExc.exc(o).get(o1); }
+            public void put(Object o, Object o1) { exc.put(o, o1); }
             @Override
-            public void put(Object o, Object o1, Object o2) { TestExc.exc(o).put(o1, o2); }
-            @Override
-            public void remove(Object o, Object o1) { TestExc.exc(o).remove(o1); }
-            @Override
-            public Object get(Object o) { return global.get(o); }
-            @Override
-            public void put(Object o, Object o1) { global.put(o, o1); }
-            @Override
-            public void remove(Object o) { global.remove(o); }
+            public void remove(Object o) { exc.remove(o); }
             @Override
             public boolean isDisposed() { return false; }
             @Override
-            public boolean isMainAppContext() { return exc == null; }
+            public boolean isMainAppContext() { return !active || exc == null; }
         }
 
         final static JavaAWTAccessStub javaAwtAccess = new JavaAWTAccessStub();
@@ -441,45 +432,36 @@ public class TestAppletLoggerContext {
             assertNull(manager.getLogger(""));
             assertNull(manager.getLogger(""));
 
-            Bridge.changeContext();
+            for (int j = 0; j<3; j++) {
+                Bridge.changeContext();
 
-            // this is not a supported configuration:
-            // We are in an applet context with several log managers.
-            // We however need to check our assumptions...
+                // this is not a supported configuration:
+                // We are in an applet context with several log managers.
+                // We however need to check our assumptions...
 
-            // Applet context => root logger and global logger are not null.
-            //   root == LogManager.getLogManager().rootLogger
-            //   global == Logger.global
+                // Applet context => root logger and global logger should also be null.
 
-            Logger logger3 = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
-            Logger logger3b = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
-            assertNotNull(logger3);
-            assertNotNull(logger3b);
-            Logger expected = (System.getSecurityManager() != null
-                  ? Logger.getGlobal()
-                  : global);
-            assertEquals(logger3, expected); // in applet context, we will not see
-                  // the LogManager's custom global logger added above...
-            assertEquals(logger3b, expected); // in applet context, we will not see
-                  // the LogManager's custom global logger added above...
-            Logger global2 = new Bridge.CustomLogger(Logger.GLOBAL_LOGGER_NAME);
-            manager.addLogger(global2); // adding a global logger will not work in applet context
-               // we will always get back the global logger.
-               // this could be considered as a bug...
-            Logger logger4 = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
-            Logger logger4b = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
-            assertNotNull(logger4);
-            assertNotNull(logger4b);
-            assertEquals(logger4,  expected); // adding a global logger will not work in applet context
-            assertEquals(logger4b, expected); // adding a global logger will not work in applet context
+                Logger expected = (System.getSecurityManager() == null ? global : null);
+                Logger logger3 = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
+                Logger logger3b = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
+                assertEquals(expected, logger3);
+                assertEquals(expected, logger3b);
+                Logger global2 = new Bridge.CustomLogger(Logger.GLOBAL_LOGGER_NAME);
+                manager.addLogger(global2);
+                Logger logger4 = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
+                Logger logger4b = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
+                assertNotNull(logger4);
+                assertNotNull(logger4b);
+                expected = (System.getSecurityManager() == null ? global : global2);;
+                assertEquals(logger4,  expected);
+                assertEquals(logger4b, expected);
 
-            Logger logger5 = manager.getLogger("");
-            Logger logger5b = manager.getLogger("");
-            Logger expectedRoot = (System.getSecurityManager() != null
-                  ? LogManager.getLogManager().getLogger("")
-                  : null);
-            assertEquals(logger5, expectedRoot);
-            assertEquals(logger5b, expectedRoot);
+                Logger logger5 = manager.getLogger("");
+                Logger logger5b = manager.getLogger("");
+                Logger expectedRoot = null;
+                assertEquals(logger5, expectedRoot);
+                assertEquals(logger5b, expectedRoot);
+            }
 
         }
     }
@@ -520,57 +502,53 @@ public class TestAppletLoggerContext {
             assertEquals(logger4, root);
             assertEquals(logger4b, root);
 
-            Bridge.changeContext();
+            for (int j = 0 ; j < 3 ; j++) {
+                Bridge.changeContext();
 
-            // this is not a supported configuration:
-            // We are in an applet context with several log managers.
-            // We haowever need to check our assumptions...
+                // this is not a supported configuration:
+                // We are in an applet context with several log managers.
+                // We however need to check our assumptions...
 
-            // Applet context => root logger and global logger are not null.
-            //   root == LogManager.getLogManager().rootLogger
-            //   global == Logger.global
+                // Applet context => root logger and global logger should also be null.
 
-            Logger logger5 = manager.getLogger("");
-            Logger logger5b = manager.getLogger("");
-            Logger expectedRoot = (System.getSecurityManager() != null
-                  ? LogManager.getLogManager().getLogger("")
-                  : root);
+                Logger logger5 = manager.getLogger("");
+                Logger logger5b = manager.getLogger("");
+                Logger expectedRoot = (System.getSecurityManager() == null ? root : null);
+                assertEquals(logger5, expectedRoot);
+                assertEquals(logger5b, expectedRoot);
 
-            assertNotNull(logger5);
-            assertNotNull(logger5b);
-            assertEquals(logger5, expectedRoot);
-            assertEquals(logger5b, expectedRoot);
-            if (System.getSecurityManager() != null) {
-                assertNotEquals(logger5, root);
-                assertNotEquals(logger5b, root);
+                if (System.getSecurityManager() != null) {
+                    assertNull(manager.getLogger(Logger.GLOBAL_LOGGER_NAME));
+                } else {
+                    assertEquals(global, manager.getLogger(Logger.GLOBAL_LOGGER_NAME));
+                }
+
+                Logger global2 = new Bridge.CustomLogger(Logger.GLOBAL_LOGGER_NAME);
+                manager.addLogger(global2);
+                Logger logger6 = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
+                Logger logger6b = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
+                Logger expectedGlobal = (System.getSecurityManager() == null ? global : global2);
+
+                assertNotNull(logger6);
+                assertNotNull(logger6b);
+                assertEquals(logger6, expectedGlobal);
+                assertEquals(logger6b, expectedGlobal);
+                if (System.getSecurityManager() != null) {
+                    assertNull(manager.getLogger(""));
+                } else {
+                    assertEquals(root, manager.getLogger(""));
+                }
+
+                Logger root2 = new Bridge.CustomLogger("");
+                manager.addLogger(root2);
+                expectedRoot = (System.getSecurityManager() == null ? root : root2);
+                Logger logger7 = manager.getLogger("");
+                Logger logger7b = manager.getLogger("");
+                assertNotNull(logger7);
+                assertNotNull(logger7b);
+                assertEquals(logger7, expectedRoot);
+                assertEquals(logger7b, expectedRoot);
             }
-
-            Logger global2 = new Bridge.CustomLogger(Logger.GLOBAL_LOGGER_NAME);
-            manager.addLogger(global2); // adding a global logger will not work in applet context
-               // we will always get back the global logger.
-               // this could be considered as a bug...
-            Logger logger6 = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
-            Logger logger6b = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
-            Logger expectedGlobal = (System.getSecurityManager() != null
-                  ? Logger.getGlobal()
-                  : global);
-            assertNotNull(logger6);
-            assertNotNull(logger6b);
-            assertEquals(logger6, expectedGlobal); // adding a global logger will not work in applet context
-            assertEquals(logger6b, expectedGlobal); // adding a global logger will not work in applet context
-
-            Logger root2 = new Bridge.CustomLogger("");
-            manager.addLogger(root2); // adding a root logger will not work in applet context
-               // we will always get back the default manager's root logger.
-               // this could be considered as a bug...
-            Logger logger7 = manager.getLogger("");
-            Logger logger7b = manager.getLogger("");
-            assertNotNull(logger7);
-            assertNotNull(logger7b);
-            assertEquals(logger7, expectedRoot); // adding a global logger will not work in applet context
-            assertEquals(logger7b, expectedRoot); // adding a global logger will not work in applet context
-            assertNotEquals(logger7, root2);
-            assertNotEquals(logger7b, root2);
         }
     }
 

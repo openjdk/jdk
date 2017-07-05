@@ -219,9 +219,4 @@ else
   echo configure exiting with result code $conf_result_code
 fi
 
-# Move the log file to the output root, if this was successfully created
-if test -d "$OUTPUT_ROOT"; then
-  mv -f config.log "$OUTPUT_ROOT" 2> /dev/null
-fi
-
 exit $conf_result_code

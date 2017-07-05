@@ -104,7 +104,7 @@ public final class JapaneseEra
     static final sun.util.calendar.Era[] ERA_CONFIG;
 
     /**
-     * The singleton instance for the 'Meiji' era (1868-09-08 - 1912-07-29)
+     * The singleton instance for the 'Meiji' era (1868-01-01 - 1912-07-29)
      * which has the value -1.
      */
     public static final JapaneseEra MEIJI = new JapaneseEra(-1, LocalDate.of(1868, 1, 1));
@@ -155,7 +155,7 @@ public final class JapaneseEra
      * The era value.
      * @serial
      */
-    private final int eraValue;
+    private final transient int eraValue;
 
     // the first day of the era
     private final transient LocalDate since;
@@ -371,6 +371,17 @@ public final class JapaneseEra
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Writes the object using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(5);        // identifies a JapaneseEra
+     *  out.writeInt(getValue());
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
     private Object writeReplace() {
         return new Ser(Ser.JAPANESE_ERA_TYPE, this);
     }
