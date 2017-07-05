@@ -25,6 +25,7 @@
 # @bug 8077931
 # @summary This case tests if the properties FILES, DEFER, PREFER, RESOLVE in
 #          jaxp.properties and system properties could be used.
+# @key intermittent
 # @library ../../libs/
 # @build catalog.CatalogTestUtils
 # @build PropertiesTest

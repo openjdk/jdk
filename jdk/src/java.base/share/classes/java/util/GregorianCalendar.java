@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1189,37 +1189,33 @@ public class GregorianCalendar extends Calendar {
         case HOUR:
         case HOUR_OF_DAY:
             {
-                int unit = max + 1; // 12 or 24 hours
-                int h = internalGet(field);
-                int nh = (h + amount) % unit;
-                if (nh < 0) {
-                    nh += unit;
+                int rolledValue = getRolledValue(internalGet(field), amount, min, max);
+                int hourOfDay = rolledValue;
+                if (field == HOUR && internalGet(AM_PM) == PM) {
+                    hourOfDay += 12;
                 }
-                time += ONE_HOUR * (nh - h);
 
-                // The day might have changed, which could happen if
-                // the daylight saving time transition brings it to
-                // the next day, although it's very unlikely. But we
-                // have to make sure not to change the larger fields.
+                // Create the current date/time value to perform wall-clock-based
+                // roll.
                 CalendarDate d = calsys.getCalendarDate(time, getZone());
-                if (internalGet(DAY_OF_MONTH) != d.getDayOfMonth()) {
-                    d.setDate(internalGet(YEAR),
-                              internalGet(MONTH) + 1,
-                              internalGet(DAY_OF_MONTH));
-                    if (field == HOUR) {
-                        assert (internalGet(AM_PM) == PM);
-                        d.addHours(+12); // restore PM
+                d.setHours(hourOfDay);
+                time = calsys.getTime(d);
+
+                // If we stay on the same wall-clock time, try the next or previous hour.
+                if (internalGet(HOUR_OF_DAY) == d.getHours()) {
+                    hourOfDay = getRolledValue(rolledValue, amount > 0 ? +1 : -1, min, max);
+                    if (field == HOUR && internalGet(AM_PM) == PM) {
+                        hourOfDay += 12;
                     }
+                    d.setHours(hourOfDay);
                     time = calsys.getTime(d);
                 }
-                int hourOfDay = d.getHours();
-                internalSet(field, hourOfDay % unit);
-                if (field == HOUR) {
-                    internalSet(HOUR_OF_DAY, hourOfDay);
-                } else {
-                    internalSet(AM_PM, hourOfDay / 12);
-                    internalSet(HOUR, hourOfDay % 12);
-                }
+                // Get the new hourOfDay value which might have changed due to a DST transition.
+                hourOfDay = d.getHours();
+                // Update the hour related fields
+                internalSet(HOUR_OF_DAY, hourOfDay);
+                internalSet(AM_PM, hourOfDay / 12);
+                internalSet(HOUR, hourOfDay % 12);
 
                 // Time zone offset and/or daylight saving might have changed.
                 int zoneOffset = d.getZoneOffset();

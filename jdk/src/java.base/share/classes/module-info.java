@@ -180,6 +180,8 @@ module java.base {
         jdk.jvmstat;
     exports jdk.internal.ref to
         java.desktop;
+    exports jdk.internal.util.jar to
+        jdk.jartool;
     exports sun.net to
         java.httpclient;
     exports sun.net.dns to
