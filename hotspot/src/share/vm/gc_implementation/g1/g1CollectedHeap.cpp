@@ -902,6 +902,10 @@ public:
 
 void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
                                     size_t word_size) {
+  if (GC_locker::check_active_before_gc()) {
+    return; // GC is disabled (e.g. JNI GetXXXCritical operation)
+  }
+
   ResourceMark rm;
 
   if (PrintHeapAtGC) {
@@ -915,10 +919,6 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
 
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == VMThread::vm_thread(), "should be in vm thread");
-
-  if (GC_locker::is_active()) {
-    return; // GC is disabled (e.g. JNI GetXXXCritical operation)
-  }
 
   {
     IsGCActiveMark x;
@@ -2658,12 +2658,21 @@ struct PrepareForRSScanningClosure : public HeapRegionClosure {
 
 void
 G1CollectedHeap::do_collection_pause_at_safepoint() {
+  if (GC_locker::check_active_before_gc()) {
+    return; // GC is disabled (e.g. JNI GetXXXCritical operation)
+  }
+
   if (PrintHeapAtGC) {
     Universe::print_heap_before_gc();
   }
 
   {
     ResourceMark rm;
+
+    // This call will decide whether this pause is an initial-mark
+    // pause. If it is, during_initial_mark_pause() will return true
+    // for the duration of this pause.
+    g1_policy()->decide_on_conc_mark_initiation();
 
     char verbose_str[128];
     sprintf(verbose_str, "GC pause ");
@@ -2673,7 +2682,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       else
         strcat(verbose_str, "(partial)");
     }
-    if (g1_policy()->should_initiate_conc_mark())
+    if (g1_policy()->during_initial_mark_pause())
       strcat(verbose_str, " (initial-mark)");
 
     // if PrintGCDetails is on, we'll print long statistics information
@@ -2695,10 +2704,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
     if (g1_policy()->in_young_gc_mode()) {
       assert(check_young_list_well_formed(),
              "young list should be well formed");
-    }
-
-    if (GC_locker::is_active()) {
-      return; // GC is disabled (e.g. JNI GetXXXCritical operation)
     }
 
     bool abandoned = false;
@@ -2756,7 +2761,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       _young_list->print();
 #endif // SCAN_ONLY_VERBOSE
 
-      if (g1_policy()->should_initiate_conc_mark()) {
+      if (g1_policy()->during_initial_mark_pause()) {
         concurrent_mark()->checkpointRootsInitialPre();
       }
       save_marks();
@@ -2858,7 +2863,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       }
 
       if (g1_policy()->in_young_gc_mode() &&
-          g1_policy()->should_initiate_conc_mark()) {
+          g1_policy()->during_initial_mark_pause()) {
         concurrent_mark()->checkpointRootsInitialPost();
         set_marking_started();
         // CAUTION: after the doConcurrentMark() call below,
@@ -2937,6 +2942,9 @@ void G1CollectedHeap::set_gc_alloc_region(int purpose, HeapRegion* r) {
   // the same region
   assert(r == NULL || !r->is_gc_alloc_region(),
          "shouldn't already be a GC alloc region");
+  assert(r == NULL || !r->isHumongous(),
+         "humongous regions shouldn't be used as GC alloc regions");
+
   HeapWord* original_top = NULL;
   if (r != NULL)
     original_top = r->top();
@@ -3079,12 +3087,17 @@ void G1CollectedHeap::get_gc_alloc_regions() {
 
       if (alloc_region->in_collection_set() ||
           alloc_region->top() == alloc_region->end() ||
-          alloc_region->top() == alloc_region->bottom()) {
-        // we will discard the current GC alloc region if it's in the
-        // collection set (it can happen!), if it's already full (no
-        // point in using it), or if it's empty (this means that it
-        // was emptied during a cleanup and it should be on the free
-        // list now).
+          alloc_region->top() == alloc_region->bottom() ||
+          alloc_region->isHumongous()) {
+        // we will discard the current GC alloc region if
+        // * it's in the collection set (it can happen!),
+        // * it's already full (no point in using it),
+        // * it's empty (this means that it was emptied during
+        // a cleanup and it should be on the free list now), or
+        // * it's humongous (this means that it was emptied
+        // during a cleanup and was added to the free list, but
+        // has been subseqently used to allocate a humongous
+        // object that may be less than the region size).
 
         alloc_region = NULL;
       }
@@ -3977,7 +3990,7 @@ public:
     OopsInHeapRegionClosure        *scan_perm_cl;
     OopsInHeapRegionClosure        *scan_so_cl;
 
-    if (_g1h->g1_policy()->should_initiate_conc_mark()) {
+    if (_g1h->g1_policy()->during_initial_mark_pause()) {
       scan_root_cl = &scan_mark_root_cl;
       scan_perm_cl = &scan_mark_perm_cl;
       scan_so_cl   = &scan_mark_heap_rs_cl;
@@ -4140,7 +4153,7 @@ G1CollectedHeap::scan_scan_only_set(OopsInHeapRegionClosure* oc,
   FilterAndMarkInHeapRegionAndIntoCSClosure scan_and_mark(this, &boc, concurrent_mark());
 
   OopsInHeapRegionClosure *foc;
-  if (g1_policy()->should_initiate_conc_mark())
+  if (g1_policy()->during_initial_mark_pause())
     foc = &scan_and_mark;
   else
     foc = &scan_only;
