@@ -1,0 +1,22 @@
+<html>
+<!--
+  @test
+  @bug        6426132
+  @summary    Modal blocked window shouldn't steal focus when shown, or brought to front.
+  @author     anton.tarasov@...: area=awt.focus
+  @library    ../../regtesthelpers        
+  @build      Util   
+  @run        applet ModalBlockedStealsFocusTest.html
+  -->
+<head>
+<title>ModalBlockedStealsFocusTest</title>
+</head>
+<body>
+ 
+<h1>ModalBlockedStealsFocusTest<br>Bug ID: 6426132</h1>
+ 
+<p>See the dialog box (usually in upper left corner) for instructions</p>
+ 
+<APPLET CODE=ModalBlockedStealsFocusTest.class WIDTH=200 HEIGHT=200></APPLET>
+</body>
+</html>

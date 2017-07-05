@@ -1,0 +1,68 @@
+data = R0x2000;
+text = LOAD ?RXO;
+# Test Null
+text: .text%ZIP_Open;
+text: .text%ZIP_Open_Generic;
+text: .text%InitializeZip;
+text: .text%allocZip;
+text: .text%readCEN: OUTPUTDIR/tmp/sun/java.util.zip/zip/obj64/zip_util.o;
+text: .text%findEND: OUTPUTDIR/tmp/sun/java.util.zip/zip/obj64/zip_util.o;
+text: .text%hash: OUTPUTDIR/tmp/sun/java.util.zip/zip/obj64/zip_util.o;
+text: .text%isMetaName: OUTPUTDIR/tmp/sun/java.util.zip/zip/obj64/zip_util.o;
+text: .text%addMetaName: OUTPUTDIR/tmp/sun/java.util.zip/zip/obj64/zip_util.o;
+text: .text%ZIP_FindEntry;
+text: .text%ZIP_GetEntry;
+text: .text%ZIP_Lock;
+text: .text%readLOC: OUTPUTDIR/tmp/sun/java.util.zip/zip/obj64/zip_util.o;
+text: .text%ZIP_Unlock;
+text: .text%ZIP_FreeEntry;
+text: .text%Java_java_util_zip_ZipFile_initIDs;
+text: .text%Java_java_util_zip_ZipFile_open;
+text: .text%Java_java_util_zip_ZipFile_getTotal;
+text: .text%Java_java_util_zip_ZipFile_getEntry;
+text: .text%Java_java_util_zip_ZipEntry_initIDs;
+text: .text%Java_java_util_zip_ZipEntry_initFields;
+text: .text%Java_java_util_zip_ZipFile_freeEntry;
+text: .text%Java_java_util_zip_ZipFile_getCSize;
+text: .text%Java_java_util_zip_ZipFile_getSize;
+text: .text%Java_java_util_zip_ZipFile_getMethod;
+text: .text%Java_java_util_zip_Inflater_initIDs;
+text: .text%Java_java_util_zip_Inflater_init;
+text: .text%inflateInit2_;
+text: .text%zcalloc;
+text: .text%inflate_blocks_new;
+text: .text%inflate_blocks_reset;
+text: .text%inflateReset;
+text: .text%Java_java_util_zip_Inflater_inflateBytes;
+text: .text%inflate;
+text: .text%inflate_blocks;
+text: .text%inflate_flush;
+text: .text%Java_java_util_zip_ZipFile_read;
+text: .text%ZIP_Read;
+text: .text%inflate_trees_bits;
+text: .text%huft_build: OUTPUTDIR/tmp/sun/java.util.zip/zip/obj64/inftrees.o;
+text: .text%zcfree;
+text: .text%inflate_trees_dynamic;
+text: .text%inflate_codes_new;
+text: .text%inflate_codes;
+text: .text%inflate_fast;
+text: .text%inflate_codes_free;
+text: .text%inflate_trees_fixed;
+# Test Exit
+# Test Hello
+# Test Sleep
+# Test IntToString
+# Test LoadToolkit
+text: .text%Java_java_util_jar_JarFile_getMetaInfEntryNames;
+text: .text%ZIP_ReadEntry;
+text: .text%InflateFully;
+text: .text%inflateEnd;
+text: .text%inflate_blocks_free;
+# Test LoadFrame
+# Test LoadJFrame
+# Test JHello
+# SwingSet
+text: .text%Java_java_util_zip_Inflater_reset;
+text: .text%Java_java_util_zip_ZipFile_close;
+text: .text%ZIP_Close;
+text: .text%Java_java_util_zip_Inflater_end;

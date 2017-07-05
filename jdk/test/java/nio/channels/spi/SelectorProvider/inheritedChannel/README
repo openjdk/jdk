@@ -1,0 +1,35 @@
+
+The unit tests in this directory depend on a native launcher library
+(libLauncher.so). This native library is built off-line and the
+resulting libLauncher.so for each processor/OS combination is checked
+into the workspace. The reason for this is because the test environment
+may not have the required compilers/build environment.
+
+In order to rebuild libLauncher.so the following is required :-
+
+1. Check-out each of the shared libraries (sccs edit)
+
+2. Edit Launcher.c with the appropriate changes
+
+3. Execute the make script (gnumake all) on each processor/OS so
+that the appropriate lib/<platform>/libLauncher.so is built.
+
+4. Test the changes
+
+5. Check-in each of the shared library (sccs delget)
+
+
+For step 4 (re-building libLauncher.so) the following environment is required:
+
+(a) JAVA_HOME needs to be set to J2SE directory, eg:-
+	export JAVA_HOME=/usr/local/java/jdk1.5/solaris-sparc
+
+(b) For Solaris the SOS8 'cc' needs to be on the PATH, check using:
+	# cc -V
+	cc: Sun C 5.5 2003/03/12
+
+(c) Execute the make script :-
+	Solaris:	gnumake all
+	Linux:		gmake all
+
+

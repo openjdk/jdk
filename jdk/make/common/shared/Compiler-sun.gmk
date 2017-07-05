@@ -1,0 +1,76 @@
+#
+# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+#
+# Sun Studio Compiler settings
+#
+
+COMPILER_NAME=Sun Studio
+
+# Sun Studio Compiler settings specific to Solaris
+ifeq ($(PLATFORM), solaris)
+  COMPILER_VERSION=SS11
+  REQUIRED_CC_VER=5.8
+  CC             = $(COMPILER_PATH)cc
+  CPP            = $(COMPILER_PATH)cc -E
+  CXX            = $(COMPILER_PATH)CC
+  LINT           = $(COMPILER_PATH)lint
+  # Option used to create a shared library
+  SHARED_LIBRARY_FLAG = -G
+  # But gcc is still needed no matter what on 32bit
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    REQUIRED_GCC_VER = 2.95
+    GCC =$(GCC_COMPILER_PATH)gcc
+    _GCC_VER :=$(shell $(GCC) -dumpversion 2>&1 )
+    GCC_VER  :=$(call GetVersion,"$(_GCC_VER)")
+  endif
+endif
+
+# Sun Studio Compiler settings specific to Linux
+ifeq ($(PLATFORM), linux)
+  # This has not been tested
+  COMPILER_VERSION=SS11
+  REQUIRED_CC_VER=5.8
+  CC             = $(COMPILER_PATH)cc
+  CPP            = $(COMPILER_PATH)cc -E
+  CXX            = $(COMPILER_PATH)CC
+  LINT           = $(COMPILER_PATH)lint
+  # statically link libstdc++ before C++ ABI is stablized on Linux
+  STATIC_CXX     = true
+  ifeq ($(STATIC_CXX),true)
+    # CC always dynamically links libstdc++, even we use "-Wl,-Bstatic -lstdc++"
+    # We need to use cc to statically link the C++ runtime.
+    CXX            = $(COMPILER_PATH)cc
+  else
+    CXX            = $(COMPILER_PATH)CC
+  endif
+  # Option used to create a shared library
+  SHARED_LIBRARY_FLAG = -G
+endif
+
+# Get compiler version
+_CC_VER :=$(shell $(CC) -V 2>&1 | $(HEAD) -n 1)
+CC_VER  :=$(call GetVersion,"$(_CC_VER)")
+

@@ -1,0 +1,809 @@
+<!--
+Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.  Sun designates this
+particular file as subject to the "Classpath" exception as provided
+by Sun in the LICENSE file that accompanied this code.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+CA 95054 USA or visit www.sun.com if you need additional information or
+have any questions.
+-->
+
+<html>
+<head>
+<style>
+.key  { color: red; font-weight: bold }
+</style>
+<title>
+Object Query Language (OQL)
+</title>
+</head>
+<body>
+<h1>Object Query Language (OQL)</h1>
+
+<p>
+OQL is SQL-like query language to query Java heap. OQL allows to filter/select information
+wanted from Java heap. While pre-defined queries such as "show all instances of class X"
+are already supported by HAT, OQL adds more flexibility. OQL is based on JavaScript expression
+language.
+</p>
+
+<p>
+OQL query is of the form
+
+<pre>
+<code>
+         <span class="key">select</span> &lt;JavaScript expression to select&gt;
+         [ <span class="key">from</span> [<span class="key">instanceof</span>] &lt;class name&gt; &lt;identifier&gt;
+         [ <span class="key">where</span> &lt;JavaScript boolean expression to filter&gt; ] ]
+</code>
+</pre>
+where class name is fully qualified Java class name (example: java.net.URL) or array class name.
+[C is char array name, [Ljava.io.File; is name of java.io.File[] and so on. 
+Note that fully qualified class name does not always uniquely identify a 
+Java class at runtime. There may be more than one Java class with the same 
+name but loaded by different loaders. So, class name is permitted to be
+id string of the class object.
+
+If <span class="key">instanceof</span> keyword is used, subtype objects are selected. If this 
+keyword is not specified, only the instances of exact class specified are selected. Both
+<span class="key">from</span> and <span class="key">where</span> clauses are optional.
+</p>
+
+
+<p>
+In <span class="key">select</span> and (optional) <span class="key">where</span> clauses, the expression 
+used in JavaScript expression. Java heap objects are wrapped as convenient script objects so that 
+fields may be accessed in natural syntax. For example, Java fields can be accessed with obj.field_name 
+syntax and array elements can be accessed with array[index] syntax. Each Java object selected is 
+bound to a JavaScript variable of the identifier name specified in <span class="key">from</span> clause.
+</p>
+
+<h2>OQL Examples</h2>
+
+<ul>
+<li>select all Strings of length 100 or more
+<pre>
+<code>
+    select s from java.lang.String s where s.count >= 100
+</code>
+</pre>
+<li>select all int arrays of length 256 or more
+<pre>
+<code>
+    select a from [I a where a.length >= 256
+</code>
+</pre>
+<li>show content of Strings that match a regular expression
+<pre>
+<code>
+    select s.value.toString() from java.lang.String s 
+    where /java/(s.value.toString())
+</code>
+</pre>
+<li>show path value of all File objects
+<pre>
+<code</b>
+    select file.path.value.toString() from java.io.File file
+</code>
+</pre>
+<li>show names of all ClassLoader classes
+<pre>
+<code>
+    select <a href="#classof">classof</a>(cl).name 
+    from instanceof java.lang.ClassLoader cl
+</code>
+</pre>
+<li>show instances of the Class identified by given id string
+<pre>
+<code>
+    select o from instanceof 0xd404b198 o
+</code>
+</pre>
+Note that 0xd404b198 is id of a Class (in a session). This is found by
+looking at the id shown in that class's page.
+</ul>
+
+<h2>OQL built-in objects, functions</h2>
+
+<h3>heap object</h3>
+
+The <b>heap</b> built-in object supports the following methods:
+
+<ul> 
+<li><b>heap.forEachClass</b> -- calls a callback function for each Java Class
+<pre>
+<code>
+    heap.forEachClass(callback);
+</code>
+</pre>
+<li><b>heap.forEachObject</b> -- calls a callback function for each Java object
+<pre>
+<code>
+    heap.forEachObject(callback, clazz, includeSubtypes);
+</code>
+</pre>
+<code>clazz</code> is the class whose instances are selected. If not specified, defaults to java.lang.Object. <code>includeSubtypes</code> is a boolean flag 
+that specifies whether to include subtype instances or not. Default value of 
+this flag is true.
+<a name="findClass"></a>
+<li><b>heap.findClass</b> -- finds Java Class of given name
+<pre>
+<code>
+    heap.findClass(className);
+</code>
+</pre>
+where <code>className</code> is name of the class to find. The resulting Class 
+object has following properties:
+<ul>
+<li>name - name of the class.
+<li>superclass - Class object for super class (or null if java.lang.Object).
+<li>statics - name, value pairs for static fields of the Class.
+<li>fields - array of field objects. field object has name, signature
+properties.
+<li>loader - ClassLoader object that loaded this class.
+<li>signers - signers that signed this class.
+<li>protectionDomain - protection domain to which this class belongs.
+</ul>
+Class objects have the following methods:
+<ul>
+<li>isSubclassOf - tests whether given class is direct or indirect 
+subclass of this class or not.
+<li>isSuperclassOf - tests whether given Class is direct or indirect
+superclass of this class or not.
+<li>subclasses - returns array of direct and indirect subclasses.
+<li>superclasses - returns array of direct and indirect superclasses.
+</ul>
+<a name="findObject"></a>
+<li><b>heap.findObject</b> -- finds object from given object id
+<pre>
+<code>
+    heap.findObject(stringIdOfObject);
+</code>
+</pre>
+<a name="classes"></a>
+<li><b>heap.classes</b> -- returns an enumeration of all Java classes
+<a name="objects"></a>
+<li><b>heap.objects</b> -- returns an enumeration of Java objects 
+<pre>
+<code>
+    heap.objects(clazz, [includeSubtypes], [filter])
+</code>
+</pre>
+<code>clazz</code> is the class whose instances are selected. If not specified, defaults to java.lang.Object. <code>includeSubtypes</code> is a boolean flag 
+that specifies whether to include subtype instances or not. Default value of 
+this flag is true. This method accepts an optional filter expression to filter
+the result set of objects.
+<a name="finalizables"></a>
+<li><b>heap.finalizables</b> -- returns an enumeration of Java objects that are
+pending to be finalized.
+<li><b>heap.livepaths</b> -- return an array of paths by which a given object 
+is alive. This method accepts optional second parameter that is a boolean
+flag. This flag tells whether to include paths with weak reference(s) or not.
+By default, paths with weak reference(s) are not included.
+<pre>
+<code>
+    select heap.livepaths(s) from java.lang.String s
+</code>
+</pre>
+Each element of this array itself is another array. The later array is 
+contains an objects that are in the 'reference chain' of the path.
+<li><b>heap.roots</b> -- returns an Enumeration of Roots of the heap. 
+<a name="rootobj"></a>
+Each Root object has the following properties:
+<ul>
+<li>id - String id of the object that is referred by this root
+<li>type - descriptive type of Root (JNI Global, JNI Local, Java Static etc)
+<li>description - String description of the Root
+<li>referrer - Thread Object or Class object that is responsible for this root or null
+</ul>
+</ul>
+
+Examples:
+<ul>
+<li>access static field 'props' of class java.lang.System
+<pre>
+<code>
+    select heap.findClass("java.lang.System").statics.props
+    select heap.findClass("java.lang.System").props
+</code>
+</pre>
+<li>get number of fields of java.lang.String class 
+<pre>
+<code>
+    select heap.findClass("java.lang.String").fields.length
+</code>
+</pre>
+<li> find the object whose object id is given
+<pre>
+<code>
+    select heap.findObject("0xf3800b58")
+</code>
+</pre>
+<li>select all classes that have name pattern java.net.*
+<pre>
+<code>
+    select <a href="#filter">filter</a>(heap.classes(), "/java.net./(it.name)")
+</code>
+</pre>
+</ul>
+
+<h3>functions on individual objects</h3>
+
+<ul>
+<li><a href="#allocTrace">allocTrace(jobject)</a>
+<li><a href="#classof">classof(jobject)</a>
+<li><a href="#forEachReferrer">forEachReferrer(callback, jobject)</a>
+<li><a href="#identical">identical(o1, o2)</a>
+<li><a href="#objectid">objectid(jobject)</a>
+<li><a href="#reachables">reachables(jobject, excludedFields)</a>
+<li><a href="#referrers">referrers(jobject)</a>
+<li><a href="#referees">referees(jobject)</a>
+<li><a href="#refers">refers(jobject)</a>
+<li><a href="#root">root(jobject)</a>
+<li><a href="#sizeof">sizeof(jobject)</a>
+<li><a href="#toHtml">toHtml(obj)</a>
+</ul>
+
+<a name="allocTrace"></a>
+<h4>allocTrace function</h4>
+
+This returns allocation site trace of a given Java object if available.
+allocTrace returns array of frame objects. Each frame object has the following
+properties:
+<ul>
+<li>className - name of the Java class whose method is running in the frame.
+<li>methodName - name of the Java method running in the frame.
+<li>methodSignature - signature of the Java method running in the frame.
+<li>sourceFileName - name of source file of the Java class running in the frame.
+<li>lineNumber - source line number within the method.
+</ul>
+
+<a name="classof"></a>
+<h4>classof function</h4>
+
+Returns Class object of a given Java Object. The result object supports the
+following properties:
+<ul>
+<li>name - name of the class.
+<li>superclass - Class object for super class (or null if java.lang.Object).
+<li>statics - name, value pairs for static fields of the Class.
+<li>fields - array of field objects. Field objects have name, signature
+properties.
+<li>loader - ClassLoader object that loaded this class.
+<li>signers - signers that signed this class.
+<li>protectionDomain - protection domain to which this class belongs.
+</ul>
+Class objects have the following methods:
+<ul>
+<li>isSubclassOf - tests whether given class is direct or indirect 
+subclass of this class or not.
+<li>isSuperclassOf - tests whether given Class is direct or indirect
+superclass of this class or not.
+<li>subclasses - returns array of direct and indirect subclasses.
+<li>superclasses - returns array of direct and indirect superclasses.
+</ul>
+
+Examples:
+<ul>
+<li>show class name of each Reference type object
+<pre>
+<code>
+    select classof(o).name from instanceof java.lang.ref.Reference o
+</code>
+<li>show all subclasses of java.io.InputStream
+<pre>
+<code>
+    select heap.findClass("java.io.InputStream").subclasses()
+</code>
+<li>show all superclasses of java.io.BufferedInputStream
+<pre>
+<code>
+    select heap.findClass("java.io.BufferedInputStream").superclasses()
+</code>
+</pre>
+</ul>
+
+<a name="forEachReferrer"></a>
+<h4>forEachReferrer function</h4>
+
+calls a callback function for each referrer of a given Java object.
+
+<a name="identical"></a>
+<h4>identical function</h4>
+<p>
+Returns whether two given Java objects are identical or not.
+</p>
+Example:
+<pre>
+<code>
+    select identical(heap.findClass("Foo").statics.bar, heap.findClass("AnotherClass").statics.bar)
+</code>
+</pre>
+
+<a name="objectid"></a>
+<h4>objectid function</h4>
+
+<p>
+Returns String id of a given Java object. This id can be passed to
+<a href="#findObject">heap.findObject</a> and may also be used to compare
+objects for identity.
+</p>
+Example:
+<pre>
+<code>
+    select objectid(o) from java.lang.Object o
+</code>
+</pre>
+
+<a name="reachables"></a>
+<h4>reachables function</h4>
+<p>
+Returns an array of Java objects that are transitively referred from the
+given Java object. Optionally accepts a second parameter that is comma
+separated field names to be excluded from reachability computation.
+Fields are written in class_name.field_name pattern.
+</p>
+Examples: 
+<ul>
+<li>print all reachable objects from each Properties instance.
+<pre>
+<code>
+    select reachables(p) from java.util.Properties p
+</code>
+</pre>
+<li>print all reachables from each java.net.URL but omit the objects reachable
+via the fields specified.
+<pre>
+<code>
+    select reachables(u, 'java.net.URL.handler') from java.net.URL u
+</code>
+</pre>
+</ul>
+
+<a name="referrers"></a>
+<h4>referrers function</h4>
+<p>
+Returns an enumeration of Java objects that hold reference to a given Java
+object.
+</p>
+Examples:
+<ul>
+<li> print number of referrers for each java.lang.Object instance
+<pre>
+<code>
+    select count(referrers(o)) from java.lang.Object o
+</code>
+</pre>
+<li>print referrers for each java.io.File object
+<pre>
+<code>
+    select referrers(f) from java.io.File f
+</code>
+</pre>
+<li>print URL objects only if referred by 2 or more 
+<pre>
+<code>
+    select u from java.net.URL u where count(referrers(u)) > 2
+</code>
+</pre>
+</ul>
+
+<a name="referees"></a>
+<h4>referees function</h4>
+<p>
+Returns an array of Java objects to which the given Java
+object directly refers to.
+</p>
+Example: to print all static reference fields of java.io.File class
+<pre>
+<code>
+    select referees(<a href="#findClass">heap.findClass</a>("java.io.File"))
+</code>
+</pre>
+
+<a name="refers"></a>
+<h4>refers function</h4>
+<p>
+Returns whether first Java object refers to second Java object or not.
+</p>
+
+<a name="root"></a>
+<h4>root function</h4>
+<p>
+If given object is a member of root set of objects, this function returns
+a descriptive <a href="#rootobj">Root object</a> describing why it is so.
+If given object is not a root, then this function returns null.
+</p>
+
+<a name="sizeof"></a>
+<h4>sizeof function</h4>
+
+Returns size of the given Java object in bytes
+Example: 
+<pre>
+<code>
+    select sizeof(o) from [I o
+</code>
+</pre>
+
+<a name="toHtml"></a>
+<h4>toHtml function</h4>
+
+Returns HTML string for the given Java object. Note that this is called
+automatically for objects selected by select expression. But, it may be useful
+to print more complex output.
+
+Example: print hyperlink in bold font weight
+<pre>
+<code>
+    select "&lt;b&gt;" + toHtml(o) + "&lt;/b&gt;" from java.lang.Object o
+</code>
+</pre>
+
+<h3>Selecting multiple values</h3>
+<p>
+Multiple values can be selected using JavaScript object literals or arrays.
+</p>
+
+Example: show name and thread for each thread object
+<pre>
+<code>
+    select { name: t.name? t.name.toString() : "null", thread: t } 
+    from instanceof java.lang.Thread t
+</code>
+</pre>
+
+<h3>array/iterator/enumeration manipulation functions</h3>
+
+<p>
+These functions accept an array/iterator/enumeration and an 
+expression string [or a callback function] as input. These functions iterate 
+the array/iterator/enumeration and apply the expression (or function) on 
+each element. Note that JavaScript objects are associative arrays. So, 
+these functions may also be used with arbitrary JavaScript objects.
+</p>
+
+<ul>
+<li><a href="#concat">concat(array1/enumeration1, array2/enumeration2)</a>
+<li><a href="#contains">contains(array/enumeration, expression)</a>
+<li><a href="#count">count(array/enumeration, expression)</a>
+<li><a href="#filter">filter(array/enumeration, expression)</a>
+<li><a href="#length">length(array/enumeration)</a>
+<li><a href="#map">map(array/enumeration, expression)</a>
+<li><a href="#max">max(array/enumeration, [expression])</a>
+<li><a href="#min">min(array/enumeration, [expression])</a>
+<li><a href="#sort">sort(array/enumeration, [expression])</a>
+<li><a href="#sum">sum(array/enumeration, [expression])</a>
+<li><a href="#toArray">toArray(array/enumeration)</a>
+<li><a href="#unique">unique(array/enumeration, [expression])</a>
+</ul>
+
+<a name="concat"></a>
+<h4>concat function</h4>
+<p>
+Concatenates two arrays or enumerations (i.e., returns composite
+enumeration).
+</p>
+
+<a name="contains"></a>
+<h4>contains function</h4>
+<p>
+Returns whether the given array/enumeration contains an element
+the given boolean expression specified in code. The code evaluated
+can refer to the following built-in variables.
+</p>
+<ul>
+<li>it -> currently visited element
+<li>index -> index of the current element
+<li>array -> array/enumeration that is being iterated
+</ul>
+Example: select all Properties objects that are referred by 
+some static field some class.
+<pre>
+<code>
+    select p from java.util.Properties p
+    where contains(<a href="#referrers">referrers</a>(p), "<a href="#classof">classof</a>(it).name == 'java.lang.Class'")
+</code>
+</pre>
+
+<a name="count"></a>
+<h4>count function</h4>
+<p>
+count function returns the count of elements of the input array/enumeration 
+that satisfy the given boolean expression. The boolean expression code can 
+refer to the following built-in variables.
+</p>
+<ul>
+<li>it -> currently visited element
+<li>index -> index of the current element
+<li>array -> array/enumeration that is being iterated
+</ul>
+Example: print number of classes that have specific name pattern
+<pre>
+<code>
+    select count(<a href="#classes">heap.classes()</a>, "/java.io./(it.name)")
+</code>
+</pre>
+
+<a name="filter"></a>
+<h4>filter function</h4>
+<p>
+filter function returns an array/enumeration that contains elements 
+of the input array/enumeration that satisfy the given boolean 
+expression. The boolean expression code can refer to the following built-in
+variables.
+</p>
+<ul>
+<li>it -> currently visited element
+<li>index -> index of the current element
+<li>array -> array/enumeration that is being iterated
+<li>result -> result array/enumeration
+</ul>
+Examples:
+<ul>
+<li>show all classes that have java.io.* name pattern
+<pre>
+<code>
+    select filter(<a href="#classes">heap.classes</a>(), "/java.io./(it.name)")
+</code>
+</pre>
+<li> show all referrers of URL object where the referrer is not from
+java.net package
+<pre>
+<code>
+    select filter(<a href="#referrers">referrers</a>(u), "! /java.net./(<a href="#classof">classof</a>(it).name)")
+    from java.net.URL u
+</code>
+</pre>
+</ul>
+
+<a name="length"></a>
+<h4>length function</h4>
+<p>
+length function returns number of elements of an array/enumeration.
+</p>
+
+<a name="map"></a>
+<h4>map function</h4>
+<p>
+Transforms the given array/enumeration by evaluating given code
+on each element. The code evaluated can refer to the following built-in 
+variables.
+</p>
+<ul>
+<li>it -> currently visited element
+<li>index -> index of the current element
+<li>array -> array/enumeration that is being iterated
+<li>result -> result array/enumeration
+</ul>
+<p>
+map function returns an array/enumeration of values created by repeatedly
+calling code on each element of input array/enumeration.
+</p>
+Example: show all static fields of java.io.File with name and value
+<pre>
+<code>
+    select map(<a href="#findClass">heap.findClass</a>("java.io.File").statics, "index + '=' + <a href="#toHtml">toHtml</a>(it)")
+</code>
+</pre>
+
+<a name="max"></a>
+<h4>max function</h4>
+<p>
+returns the maximum element of the  given array/enumeration. 
+Optionally accepts code expression to compare elements of the array. 
+By default numerical comparison is used. The comparison expression can 
+use the following built-in variables:
+</p>
+<ul>
+<li>lhs -> left side element for comparison
+<li>rhs -> right side element for comparison
+</ul>
+Examples:
+<ul>
+<li>find the maximum length of any String instance
+<pre>
+<code>
+    select max(map(heap.objects('java.lang.String', false), 'it.count'))
+</code>
+</pre>
+<li>find string instance that has the maximum length
+<pre>
+<code>
+    select max(heap.objects('java.lang.String'), 'lhs.count > rhs.count')
+</code>
+</pre>
+</ul>
+
+<a name="min"></a>
+<h4>min function</h4>
+<p>
+returns the minimum element of the  given array/enumeration. Optionally 
+accepts code expression to compare elements of the array. By default numerical
+comparison is used. The comparison expression can use the following built-in 
+variables:
+</p>
+<ul>
+<li>lhs -> left side element for comparison
+<li>rhs -> right side element for comparison
+</ul>
+Examples:
+<ul>
+<li>find the minimum size of any Vector instance
+<pre>
+<code>
+    select min(map(heap.objects('java.util.Vector', false), 'it.elementData.length'))
+</code>
+</pre>
+<li>find Vector instance that has the maximum length
+<pre>
+<code>
+    select min(heap.objects('java.util.Vector'), 'lhs.elementData.length < rhs.elementData.length')
+</code>
+</ul>
+
+<a name="sort"></a>
+<h4>sort function</h4>
+<p>
+sorts given array/enumeration. Optionally accepts code expression to
+compare elements of the array. By default numerical comparison is used.
+The comparison expression can use the following built-in variables:
+</p>
+<ul>
+<li>lhs -> left side element for comparison
+<li>rhs -> right side element for comparison
+</ul>
+Examples:
+<ul>
+<li> print all char[] objects in the order of size.
+<pre>
+<code>
+    select sort(<a href="#objects">heap.objects</a>('[C'), '<a href="#sizeof">sizeof</a>(lhs) - sizeof(rhs)')
+</code>
+</pre>
+<li> print all char[] objects in the order of size but print
+size as well.
+<pre>
+<code>
+    select <a href="#map">map</a>(sort(<a href="#objects">heap.objects</a>('[C'), '<a href="#sizeof">sizeof</a>(lhs) - sizeof(rhs)'), '{ size: sizeof(it), obj: it }')
+</code>
+</pre>
+</ul>
+
+<a name="sum"></a>
+<h4>sum function</h4>
+<p>
+This function returns the sum of all the elements of the given input array or
+enumeration. Optionally, accepts an expression as second param. This is used
+to map the input elements before summing those.
+</p>
+Example: return sum of sizes of the reachable objects from each Properties object
+<pre>
+<code>
+    select sum(<a href="#map">map</a>(<a href="#reachables">reachables</a>(p), '<a href="#sizeof">sizeof</a>(it)')) 
+    from java.util.Properties p
+
+    // or omit the map as in ...
+    select sum(<a href="#reachables">reachables</a>(p), '<a href="#sizeof">sizeof</a>(it)') 
+    from java.util.Properties p
+</code>
+</code>
+</pre>
+
+<a name="toArray"></a>
+<h4>toArray function</h4>
+<p>
+This function returns an array that contains elements of the input
+array/enumeration.
+</p>
+
+<a name="unique"></a>
+<h4>unique function</h4>
+<p>
+This function returns an array/enumeration containing unique elements of the 
+given input array/enumeration
+</p>
+Example: select unique char[] instances referenced from Strings. Note that
+more than one String instance can share the same char[] for the content.
+<pre>
+<code>
+   // number of unique char[] instances referenced from any String
+   select count(unique(map(heap.objects('java.lang.String'), 'it.value')))
+
+   // total number of Strings
+   select count(heap.objects('java.lang.String'))
+</code>
+</pre>
+    
+<h3>More complex examples</h3>
+
+<h4>Print histogram of each class loader and number of classes loaded by it</h4>
+
+<pre>
+<code>
+   select <a href="#map">map</a>(<a href="#sort">sort</a>(map(heap.objects('java.lang.ClassLoader'), 
+   '{ loader: it, count: it.classes.elementCount }'), 'lhs.count < rhs.count'),
+   'toHtml(it) + "&lt;br&gt;"')
+</code>
+</pre>
+<p>
+The above query uses the fact that, <b>java.lang.ClassLoader</b> has a private 
+field called <b>classes</b> of type <b>java.util.Vector</b> and Vector has a 
+private field named <b>elementCount</b> that is number of elements in the 
+vector. We select multiple values (loader, count) using JavaScript object 
+literal and map function. We sort the result by count (i.e., number of classes 
+loaded) using sort function with comparison expression.
+</p>
+
+<h4>Show parent-child chain for each class loader instance</h4>
+
+<pre>
+<code>
+   select <a href="#map">map</a>(heap.objects('java.lang.ClassLoader'),
+      function (it) {
+         var res = '';
+         while (it != null) {
+            res += toHtml(it) + "-&gt;";
+            it = it.parent;
+         }
+         res += "null";
+         return res + "&lt;br&gt;";
+      })
+</code>
+</pre>
+<p>
+Note that we use <b>parent</b> field of <b>java.lang.ClassLoader</b> class
+and walk until parent is null using the callback function to map call.
+</p>
+
+<h4>Printing value of all System properties</h4>
+
+<pre>
+<code>
+   select <a href="#map">map</a>(<a href="#filter">filter(<a href="#findClass">heap.findClass</a>('java.lang.System').props.table, 'it != null'), 
+            function (it) {
+                var res = "";
+                while (it != null) {
+                    res += it.key.value.toString() + '=' +
+                           it.value.value.toString() + '&lt;br&gt;';
+                    it = it.next;
+                }
+                return res;
+            });
+</code>
+</pre>
+<p>
+The above query uses the following facts:
+<ul>
+<li>java.lang.System has static field by name 'props' of type java.util.Properties.
+<li>java.util.Properties has field by 'table' of type java.util.Hashtable$Entry
+(this field is inherited from java.util.Hashtable). This is the hashtable
+buckets array.
+<li>java.util.Hashtable$Entry has 'key', 'value' and 'next' fields. Each
+entry points the next entry (or null) in the same hashtable bucket.
+<li>java.lang.String class has 'value' field of type char[].
+</ul>
+<p>
+<b>Note that this query (and many other queries) may not be stable - because
+private fields of Java platform classes may be modified/removed without any
+notification! (implementation detail)</b>. But, using such queries on user 
+classes may be safe - given that user has the control over the classes.
+</p>
+
+</body>
+</html>

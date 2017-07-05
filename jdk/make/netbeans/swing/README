@@ -1,0 +1,62 @@
+Working on Swing Using the NetBeans IDE
+
+This Swing NetBeans project allows a developer interested in making changes to
+and/or fixing bugs in swing to modify, build, run and test swing in a
+standalone manner as well as generating the javadoc for the swing classes.
+
+README FIRST
+
+  make/netbeans/README to get started with NetBeans IDE and OpenJDK, and
+  working with the OpenJDK NetBeans projects.
+
+WORKING WITH SWING
+
+Swing doesn't contain native code; it's pure java. You don't need to
+have all the Java SE sources to work on Swing but just the following subset:
+
+            make/netbeans/ 
+            javax/swing/
+            com/sun/swing/
+            com/sun/java/swing/
+            sun/swing/
+
+The set of actions supported by this project are:
+
+* Build Project:
+
+  - Compiles Swing's source files and puts the class files under
+    build/${platform}-${arch}/classes.
+
+  - Generates swing.jar file under dist/lib/swing.jar
+
+    This new jar file could be used to patch an existing JDK installation
+    by using -Xbootclasspath/p:$MYSRC/dist/lib/swing.jar
+
+* Generate Javadoc for Project
+
+  - Generates the javadoc for the Swing source files,
+
+  - The javadoc is generated under build/${platform}-${arch}/javadoc/swing.
+
+* Run Project
+
+  - Builds and runs the SampleTree demo.
+
+* Debug Project
+
+  - Builds and then runs the debugger on the SampleTree demo.
+
+* Clean Project
+
+  - Cleans the files created by this project under build, dist, and demo.
+
+IMPORTANT NOTE
+
+  Please make sure to follow carefully the governance rules documented at
+  http://openjdk.dev.java.net/
+
+KNOWN ISSUES
+
+  When debugging the project, breakpoints set in SampleTree's code will be
+  stopped at, but the editor display will not update correctly.  Breakpoints
+  outside of the constructor work as expected.

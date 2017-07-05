@@ -1,0 +1,108 @@
+/*
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+
+/*
+ * The contents of this file are subject to the Sun Public License
+ * Version 1.0 (the "License"); you may not use this file except in
+ * compliance with the License. A copy of the License is available at
+ * http://www.sun.com/, and in the file LICENSE.html in the
+ * doc directory.
+ *
+ * The Original Code is HAT. The Initial Developer of the
+ * Original Code is Bill Foote, with contributions from others
+ * at JavaSoft/Sun. Portions created by Bill Foote and others
+ * at Javasoft/Sun are Copyright (C) 1997-2004. All Rights Reserved.
+ *
+ * In addition to the formal license, I ask that you don't
+ * change the history or donations files without permission.
+ *
+ */
+
+package com.sun.tools.hat.internal.model;
+
+import com.sun.tools.hat.internal.util.Misc;
+
+/**
+ * A forward reference to an object.  This is an intermediate representation
+ * for a JavaThing, when we have the thing's ID, but we might not have read
+ * the thing yet.
+ *
+ * @author      Bill Foote
+ */
+public class JavaObjectRef extends JavaThing {
+    private long id;
+
+    public JavaObjectRef(long id) {
+        this.id = id;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public boolean isHeapAllocated() {
+        return true;
+    }
+
+    public JavaThing dereference(Snapshot snapshot, JavaField field) {
+        return dereference(snapshot, field, true);
+    }
+
+    public JavaThing dereference(Snapshot snapshot, JavaField field, boolean verbose) {
+        if (field != null && !field.hasId()) {
+            // If this happens, we must be a field that represents an int.
+            // (This only happens with .bod-style files)
+            return new JavaLong(id);
+        }
+        if (id == 0) {
+            return snapshot.getNullThing();
+        }
+        JavaThing result = snapshot.findThing(id);
+        if (result == null) {
+            if (!snapshot.getUnresolvedObjectsOK() && verbose) {
+                String msg = "WARNING:  Failed to resolve object id "
+                                + Misc.toHex(id);
+                if (field != null) {
+                    msg += " for field " + field.getName()
+                            + " (signature " + field.getSignature() + ")";
+                }
+                System.out.println(msg);
+                // Thread.dumpStack();
+            }
+            result = new HackJavaValue("Unresolved object "
+                                        + Misc.toHex(id), 0);
+        }
+        return result;
+    }
+
+    public int getSize() {
+        return 0;
+    }
+
+    public String toString() {
+        return "Unresolved object " + Misc.toHex(id);
+    }
+}

@@ -1,0 +1,9 @@
+grant codeBase "file:${java.home}/lib/ext/*" {
+    permission java.security.AllPermission;
+};
+
+grant {
+    permission java.net.SocketPermission "*:1024-", "accept,connect,listen";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport.proxy";
+    permission java.lang.RuntimePermission "setFactory";
+};

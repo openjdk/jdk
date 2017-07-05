@@ -1,0 +1,75 @@
+URL: null
+spec: jar:http://www.foo.com/dir1/jar.jar!/dir2/entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/dir2/entry.txt
+
+URL: null
+spec: jar:http://www.foo.com/dir1/jar.jar!/
+expected: jar:http://www.foo.com/dir1/jar.jar!/
+
+URL: null
+spec: jar:http://www.foo.com/dir1/jar.jar!/
+expected: jar:http://www.foo.com/dir1/jar.jar!/
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/
+spec: entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/entry.txt
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/
+spec: /entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/entry.txt
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/
+spec: dir1/entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/dir1/entry.txt
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/
+spec: /dir1/entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/dir1/entry.txt
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/
+spec: entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/entry.txt
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/
+spec: /entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/entry.txt
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/
+spec: /entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/entry.txt
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/dir1/
+spec: entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/dir1/entry.txt
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/dir2/dir3/entry2.txt
+spec: /dir1/entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/dir1/entry.txt
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/
+spec: /dir1/foo/entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/dir1/foo/entry.txt
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/dir1/dir2/dir3/
+spec: dir4/foo/entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/dir1/dir2/dir3/dir4/foo/entry.txt
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/
+spec: /dir1/foo/entry.txt
+expected: jar:http://www.foo.com/dir1/jar.jar!/dir1/foo/entry.txt
+
+URL: null
+spec: jar:http://www.foo.com/dir1/jar.jar!/foo.txt#anchor
+expected: jar:http://www.foo.com/dir1/jar.jar!/foo.txt#anchor
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/foo.txt
+spec: #anchor
+expected: jar:http://www.foo.com/dir1/jar.jar!/foo.txt#anchor
+
+URL: jar:http://www.foo.com/dir1/jar.jar!/foo/bar/
+spec: baz/quux#anchor
+expected: jar:http://www.foo.com/dir1/jar.jar!/foo/bar/baz/quux#anchor
+
+URL: jar:http://balloo.com/olle.jar!/
+spec: p2
+expected: jar:http://balloo.com/olle.jar!/p2

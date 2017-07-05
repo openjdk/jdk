@@ -1,0 +1,43 @@
+URL: http://a/b/c/d;p?q
+spec: ../../../g
+expected: http://a/../g
+
+URL: http://a/b/c/d;p?q
+spec: ../../../../g
+expected: http://a/../../g
+
+URL: http://a/b/c/d;p?q
+spec: /./g
+expected: http://a/./g
+
+URL: http://a/b/c/d;p?q
+spec: /../g
+expected: http://a/../g
+
+URL: http://a/b/c/d;p?q
+spec: .g
+expected: http://a/b/c/.g
+
+URL: http://a/b/c/d;p?q
+spec: g.
+expected: http://a/b/c/g.
+
+URL: http://a/b/c/d;p?q
+spec: ./../g
+expected: http://a/b/g
+
+URL: http://a/b/c/d;p?q
+spec: ./g/.
+expected: http://a/b/c/g/
+
+URL: http://a/b/c/d;p?q
+spec: g/./h
+expected: http://a/b/c/g/h
+
+URL: http://a/b/c/d;p?q
+spec: g;x=1/./y
+expected: http://a/b/c/g;x=1/y
+
+URL: http://a/b/c/d;p?q
+spec: g;x=1/../y
+expected: http://a/b/c/y
