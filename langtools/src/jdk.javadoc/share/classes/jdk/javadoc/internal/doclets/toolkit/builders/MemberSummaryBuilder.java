@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,12 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.SimpleTypeVisitor9;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
@@ -440,16 +446,10 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
 
             if (null != setter) {
                 VariableElement param = setter.getParameters().get(0);
-                String typeName = utils.getTypeName(param.asType(), false);
-                // Removal of type parameters and package information.
-                typeName = typeName.split("<")[0];
-                if (typeName.contains(".")) {
-                    typeName = typeName.substring(typeName.lastIndexOf(".") + 1);
-                }
                 StringBuilder sb = new StringBuilder("#");
                 sb.append(utils.getSimpleName(setter));
                 if (!utils.isTypeVariable(param.asType())) {
-                    sb.append("(").append(typeName).append(")");
+                    sb.append("(").append(utils.getTypeSignature(param.asType(), false, true)).append(")");
                 }
                 blockTags.add(cmtutils.makeSeeTree(sb.toString(), setter));
             }
