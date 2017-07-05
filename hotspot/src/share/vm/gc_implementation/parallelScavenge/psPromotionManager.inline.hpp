@@ -42,7 +42,7 @@ inline void PSPromotionManager::claim_or_forward_internal_depth(T* p) {
     if (o->is_forwarded()) {
       o = o->forwardee();
       // Card mark
-      if (PSScavenge::is_obj_in_young((HeapWord*) o)) {
+      if (PSScavenge::is_obj_in_young(o)) {
         PSScavenge::card_table()->inline_write_ref_field_gc(p, o);
       }
       oopDesc::encode_store_heap_oop_not_null(p, o);

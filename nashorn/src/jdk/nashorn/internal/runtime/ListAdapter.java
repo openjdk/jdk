@@ -15,10 +15,11 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
  * as dequeues, it's still slightly more efficient to be able to translate dequeue operations into pushes, pops, shifts,
  * and unshifts, than to blindly translate all list's add/remove operations into splices. Also, it is conceivable that a
  * custom script object that implements an Array-like API can have a background data representation that is optimized
- * for dequeue-like access. Note that with ECMAScript arrays, {@code push} and {@pop} operate at the end of the array,
- * while in Java {@code Deque} they operate on the front of the queue and as such the Java dequeue {@link #push(Object)}
- * and {@link #pop()} operations will translate to {@code unshift} and {@code shift} script operations respectively,
- * while {@link #addLast(Object)} and {@link #removeLast()} will translate to {@code push} and {@code pop}.
+ * for dequeue-like access. Note that with ECMAScript arrays, {@code push} and {@code pop} operate at the end of the
+ * array, while in Java {@code Deque} they operate on the front of the queue and as such the Java dequeue
+ * {@link #push(Object)} and {@link #pop()} operations will translate to {@code unshift} and {@code shift} script
+ * operations respectively, while {@link #addLast(Object)} and {@link #removeLast()} will translate to {@code push} and
+ * {@code pop}.
  */
 public class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
     // These add to the back and front of the list

@@ -128,6 +128,14 @@ import java.util.Locale;
  * installed SPI providers, and "JRE" represents the locale sensitive services
  * in the Java Runtime Environment, the locale sensitive services in the SPI
  * providers are looked up first.
+ * <p>
+ * There are two other possible locale sensitive service providers, i.e., "CLDR"
+ * which is a provider based on Unicode Consortium's
+ * <a href="http://cldr.unicode.org/">CLDR Project</a>, and "HOST" which is a
+ * provider that reflects the user's custom settings in the underlying operating
+ * system. These two providers may not be available, depending on the Java Runtime
+ * Environment implementation. Specifying "JRE,SPI" is identical to the default
+ * behavior, which is compatibile with the prior releases.
  *
  * @since        1.6
  */

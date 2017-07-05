@@ -364,10 +364,15 @@ public final class XMLSchemaFactory extends SchemaFactory {
                         SAXMessageFormatter.formatMessage(null,
                         "jaxp-secureprocessing-feature", null));
             }
-            fSecurityManager = value ? new SecurityManager() : null;
+            if (value) {
+                fSecurityManager = new SecurityManager();
+                fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+            } else {
+                fSecurityManager = null;
+            }
+
             fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
-            fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
-            fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
             return;
         } else if (name.equals(Constants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
             //in secure mode, let _useServicesMechanism be determined by the constructor

@@ -55,7 +55,7 @@ ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, T
   // the resolved_references array, which is recreated at startup time.
   // But that could be moved to InstanceKlass (although a pain to access from
   // assembly code).  Maybe it could be moved to the cpCache which is RW.
-  return new (loader_data, size, false, THREAD) ConstantPool(tags);
+  return new (loader_data, size, false, MetaspaceObj::ConstantPoolType, THREAD) ConstantPool(tags);
 }
 
 ConstantPool::ConstantPool(Array<u1>* tags) {
@@ -1063,9 +1063,10 @@ bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
     int k2 = cp2->invoke_dynamic_name_and_type_ref_index_at(index2);
     int i1 = invoke_dynamic_bootstrap_specifier_index(index1);
     int i2 = cp2->invoke_dynamic_bootstrap_specifier_index(index2);
-    bool match = compare_entry_to(k1, cp2, k2, CHECK_false) &&
-                 compare_operand_to(i1, cp2, i2, CHECK_false);
-    return match;
+    // separate statements and variables because CHECK_false is used
+    bool match_entry = compare_entry_to(k1, cp2, k2, CHECK_false);
+    bool match_operand = compare_operand_to(i1, cp2, i2, CHECK_false);
+    return (match_entry && match_operand);
   } break;
 
   case JVM_CONSTANT_String:
