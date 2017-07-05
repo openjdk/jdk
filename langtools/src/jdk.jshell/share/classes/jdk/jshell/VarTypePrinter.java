@@ -36,7 +36,7 @@ import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type.CapturedType;
-import com.sun.tools.javac.code.Type.TypeMapping;
+import com.sun.tools.javac.code.Type.StructuralTypeMapping;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Type.WildcardType;
 import com.sun.tools.javac.code.Types;
@@ -158,7 +158,7 @@ class VarTypePrinter extends TypePrinter {
         }
     }
 
-    class TypeProjection extends TypeMapping<Boolean> {
+    class TypeProjection extends StructuralTypeMapping<Boolean> {
 
         List<Type> vars;
         Set<Type> seen = new HashSet<>();

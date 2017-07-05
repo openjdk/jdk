@@ -26,7 +26,7 @@
  * @bug 4927217
  * @summary test to reconnect
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean ReconnectTest
  * @run build ReconnectTest
  * @run main ReconnectTest

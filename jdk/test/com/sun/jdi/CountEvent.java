@@ -22,17 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4315352
- *  @summary disabling EventRequest expired with addCountFilter() throws
- *   InternalException.
+ * @test
+ * @bug 4315352
+ * @summary disabling EventRequest expired with addCountFilter() throws
+ * InternalException.
+ * @author Robert Field
  *
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetAdapter TargetListener
- *  @run compile -g CountEvent.java
- *  @run driver CountEvent
+ * @run build TestScaffold VMConnection TargetAdapter TargetListener
+ * @run compile -g CountEvent.java
+ * @run driver CountEvent
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
