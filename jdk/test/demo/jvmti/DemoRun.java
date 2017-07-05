@@ -115,10 +115,7 @@ public class DemoRun {
      */
     public void runit(String class_name, String vm_options[])
     {
-        String jre_home  = System.getProperty("java.home");
-        String sdk_home  = (jre_home.endsWith("jre") ?
-                            (jre_home + File.separator + "..") :
-                            jre_home );
+        String sdk_home  = System.getProperty("java.home");
         String cdir      = System.getProperty("test.classes", ".");
         String os_arch   = System.getProperty("os.arch");
         String os_name   = System.getProperty("os.name");
@@ -126,7 +123,7 @@ public class DemoRun {
         String libsuffix = os_name.contains("Windows")?".dll":
                                 os_name.contains("OS X")?".dylib":".so";
         boolean hprof    = demo_name.equals("hprof");
-        String java      = jre_home
+        String java      = sdk_home
                              + File.separator + "bin"
                              + File.separator + "java";
         /* Array of strings to be passed in for exec:

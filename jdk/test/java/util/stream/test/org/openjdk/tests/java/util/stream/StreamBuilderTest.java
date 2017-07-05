@@ -55,8 +55,30 @@ public class StreamBuilderTest extends OpTestCase {
 
 
     @Test
+    public void testOfNullableWithNonNull() {
+        TestData.OfRef<Integer> data = TestData.Factory.ofSupplier("{1}",
+                                                                   () -> Stream.ofNullable(1));
+
+        withData(data).
+                stream(s -> s).
+                expectedResult(Collections.singletonList(1)).
+                exercise();
+    }
+
+    @Test
+    public void testOfNullableWithNull() {
+        TestData.OfRef<Integer> data = TestData.Factory.ofSupplier("{null})",
+                                                                   () -> Stream.ofNullable(null));
+
+        withData(data).
+                stream(s -> s).
+                expectedResult(Collections.emptyList()).
+                exercise();
+    }
+
+    @Test
     public void testSingleton() {
-        TestData.OfRef<Integer> data = TestData.Factory.ofSupplier("[0, 1)",
+        TestData.OfRef<Integer> data = TestData.Factory.ofSupplier("{1}",
                                                                    () -> Stream.of(1));
 
         withData(data).
@@ -118,7 +140,7 @@ public class StreamBuilderTest extends OpTestCase {
 
     @Test
     public void testIntSingleton() {
-        TestData.OfInt data = TestData.Factory.ofIntSupplier("[0, 1)",
+        TestData.OfInt data = TestData.Factory.ofIntSupplier("{1}",
                                                              () -> IntStream.of(1));
 
         withData(data).
@@ -180,7 +202,7 @@ public class StreamBuilderTest extends OpTestCase {
 
     @Test
     public void testLongSingleton() {
-        TestData.OfLong data = TestData.Factory.ofLongSupplier("[0, 1)",
+        TestData.OfLong data = TestData.Factory.ofLongSupplier("{1}",
                                                                () -> LongStream.of(1));
 
         withData(data).
@@ -242,7 +264,7 @@ public class StreamBuilderTest extends OpTestCase {
 
     @Test
     public void testDoubleSingleton() {
-        TestData.OfDouble data = TestData.Factory.ofDoubleSupplier("[0, 1)", () -> DoubleStream.of(1));
+        TestData.OfDouble data = TestData.Factory.ofDoubleSupplier("{1}", () -> DoubleStream.of(1));
 
         withData(data).
                 stream(s -> s).

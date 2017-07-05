@@ -40,8 +40,9 @@ if test "x$BASH" = x; then
   echo "Error: This script must be run using bash." 1>&2
   exit 1
 fi
-# Force autoconf to use bash
+# Force autoconf to use bash. This also means we must disable autoconf re-exec.
 export CONFIG_SHELL=$BASH
+export _as_can_reexec=no
 
 conf_script_dir="$TOPDIR/common/autoconf"
 

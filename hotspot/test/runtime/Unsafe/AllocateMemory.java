@@ -25,7 +25,7 @@
  * @test
  * @summary Verifies behaviour of Unsafe.allocateMemory
  * @library /testlibrary
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:MallocMaxTestWords=20m AllocateMemory
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:MallocMaxTestWords=100m AllocateMemory
  */
 
 import com.oracle.java.testlibrary.*;
@@ -56,7 +56,7 @@ public class AllocateMemory {
         // allocateMemory() should throw an OutOfMemoryError when the underlying malloc fails,
         // we test this by limiting the malloc using -XX:MallocMaxTestWords
         try {
-            address = unsafe.allocateMemory(20 * 1024 * 1024 * 8);
+            address = unsafe.allocateMemory(100 * 1024 * 1024 * 8);
         } catch (OutOfMemoryError e) {
             // Expected
             return;
