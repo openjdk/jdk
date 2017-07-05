@@ -25,7 +25,6 @@
 
 package sun.security.provider;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.DigestException;
 import java.security.MessageDigest;
@@ -36,15 +35,13 @@ import java.util.Arrays;
 
 public class HashDrbg extends AbstractHashDrbg {
 
-    private static final long serialVersionUID = 9L;
-
     private static final byte[] ZERO = new byte[1];
     private static final byte[] ONE = new byte[]{1};
 
-    private transient MessageDigest digest;
+    private MessageDigest digest;
 
-    private transient byte[] v;
-    private transient byte[] c;
+    private byte[] v;
+    private byte[] c;
 
     public HashDrbg(SecureRandomParameters params) {
         mechName = "Hash_DRBG";
@@ -266,11 +263,5 @@ public class HashDrbg extends AbstractHashDrbg {
 
         // Step 5: No need to truncate
         // Step 6: Return
-    }
-
-    private void readObject(java.io.ObjectInputStream s)
-            throws IOException, ClassNotFoundException {
-        s.defaultReadObject ();
-        initEngine();
     }
 }

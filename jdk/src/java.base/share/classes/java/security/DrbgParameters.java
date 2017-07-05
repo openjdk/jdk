@@ -383,6 +383,10 @@ public class DrbgParameters {
 
         private Instantiation(int strength, Capability capability,
                               byte[] personalizationString) {
+            if (strength < -1) {
+                throw new IllegalArgumentException(
+                        "Illegal security strength: " + strength);
+            }
             this.strength = strength;
             this.capability = capability;
             this.personalizationString = (personalizationString == null) ?
@@ -446,6 +450,10 @@ public class DrbgParameters {
 
         private NextBytes(int strength, boolean predictionResistance,
                           byte[] additionalInput) {
+            if (strength < -1) {
+                throw new IllegalArgumentException(
+                        "Illegal security strength: " + strength);
+            }
             this.strength = strength;
             this.predictionResistance = predictionResistance;
             this.additionalInput = (additionalInput == null) ?
@@ -502,6 +510,7 @@ public class DrbgParameters {
      *                              byte array will be copied.
      * @return a new {@code Instantiation} object
      * @throws NullPointerException if {@code capability} is {@code null}
+     * @throws IllegalArgumentException if {@code strength} is less than -1
      */
     public static Instantiation instantiation(int strength,
                                               Capability capability,
@@ -518,6 +527,7 @@ public class DrbgParameters {
      * @param predictionResistance prediction resistance requested
      * @param additionalInput additional input, can be {@code null}.
      *                        The content of this byte array will be copied.
+     * @throws IllegalArgumentException if {@code strength} is less than -1
      * @return a new {@code NextBytes} object
      */
     public static NextBytes nextBytes(int strength,

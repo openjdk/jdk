@@ -26,7 +26,9 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,6 +49,8 @@ import jdk.tools.jlink.internal.Utils;
  */
 public final class OrderResourcesPlugin implements TransformerPlugin {
     public static final String NAME = "order-resources";
+    private static final FileSystem JRT_FILE_SYSTEM = Utils.jrtFileSystem();
+
     private final List<ToIntFunction<String>> filters;
     private final Map<String, Integer> orderedPaths;
 
@@ -187,27 +191,11 @@ public final class OrderResourcesPlugin implements TransformerPlugin {
                     }
                 }
             } else {
-                boolean endsWith = pattern.startsWith("*");
-                boolean startsWith = pattern.endsWith("*");
-                ToIntFunction<String> function;
                 final int result = ordinal++;
-
-                if (startsWith && endsWith) {
-                    final String string = pattern.substring(1, pattern.length() - 1);
-                    function = (path)-> path.contains(string) ? result : Integer.MAX_VALUE;
-                } else if (startsWith) {
-                    final String string = pattern.substring(0, pattern.length() - 1);
-                    function = (path)-> path.startsWith(string) ? result : Integer.MAX_VALUE;
-                } else if (endsWith) {
-                    final String string = pattern.substring(1);
-                    function = (path)-> path.endsWith(string) ? result : Integer.MAX_VALUE;
-                } else {
-                    final String string = pattern;
-                    function = (path)-> path.equals(string) ? result : Integer.MAX_VALUE;
-                }
-
+                final PathMatcher matcher = Utils.getPathMatcher(JRT_FILE_SYSTEM, pattern);
+                ToIntFunction<String> function = (path)-> matcher.matches(JRT_FILE_SYSTEM.getPath(path)) ? result : Integer.MAX_VALUE;
                 filters.add(function);
-            }
+             }
         }
     }
 }
