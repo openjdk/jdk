@@ -30,7 +30,7 @@
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux ) ;;
+  SunOS | Linux | Darwin) ;;
   Windows* | CYGWIN* )
     echo "Passed"; exit 0 ;;
   * ) echo "Unrecognized system!" ;  exit 1 ;;
@@ -63,7 +63,7 @@ cat ${TESTSRC}/locales.txt machine_locales.txt | sort | uniq > locale_union.txt
 for i in `xargs < locale_union.txt` ; do
   runTest ${i}
 done
-  
+
 # random strings
 for i in FOO 1234 ZZ; do
   runTest ${i}

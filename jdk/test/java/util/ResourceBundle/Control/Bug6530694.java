@@ -24,7 +24,7 @@
  * @bug 6530694
  * @summary Checks that sun.util.CoreResourceBundleControl does not apply
  *     to the application provided Swing resources.
- * @run main/othervm Bug6530694
+ * @run main/othervm -Djava.awt.headless=true Bug6530694
  */
 
 import java.util.Locale;

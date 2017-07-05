@@ -991,8 +991,7 @@ public class PathOps {
         String osname = System.getProperty("os.name");
         if (osname.startsWith("Windows")) {
             doWindowsTests();
-        }
-        if (osname.equals("SunOS") || osname.equals("Linux")) {
+        } else {
             doUnixTests();
         }
 

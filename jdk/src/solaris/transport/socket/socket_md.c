@@ -36,7 +36,7 @@
 #ifdef __solaris__
 #include <thread.h>
 #endif
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
 #include <pthread.h>
 #include <sys/poll.h>
 #endif
@@ -52,7 +52,7 @@ dbgsysListen(int fd, int backlog) {
 int
 dbgsysConnect(int fd, struct sockaddr *name, int namelen) {
     int rv = connect(fd, name, namelen);
-    if (rv < 0 && errno == EINPROGRESS) {
+    if (rv < 0 && (errno == EINPROGRESS || errno == EINTR)) {
         return DBG_EINPROGRESS;
     } else {
         return rv;
@@ -79,7 +79,7 @@ dbgsysAccept(int fd, struct sockaddr *name, int *namelen) {
         if (rv >= 0) {
             return rv;
         }
-        if (errno != ECONNABORTED) {
+        if (errno != ECONNABORTED && errno != EINTR) {
             return rv;
         }
     }
@@ -88,23 +88,43 @@ dbgsysAccept(int fd, struct sockaddr *name, int *namelen) {
 int
 dbgsysRecvFrom(int fd, char *buf, int nBytes,
                   int flags, struct sockaddr *from, int *fromlen) {
-    return recvfrom(fd, buf, nBytes, flags, from, fromlen);
+    int rv;
+    do {
+        rv = recvfrom(fd, buf, nBytes, flags, from, fromlen);
+    } while (rv == -1 && errno == EINTR);
+
+    return rv;
 }
 
 int
 dbgsysSendTo(int fd, char *buf, int len,
                 int flags, struct sockaddr *to, int tolen) {
-    return sendto(fd, buf, len, flags, to, tolen);
+    int rv;
+    do {
+        rv = sendto(fd, buf, len, flags, to, tolen);
+    } while (rv == -1 && errno == EINTR);
+
+    return rv;
 }
 
 int
 dbgsysRecv(int fd, char *buf, int nBytes, int flags) {
-    return recv(fd, buf, nBytes, flags);
+    int rv;
+    do {
+        rv = recv(fd, buf, nBytes, flags);
+    } while (rv == -1 && errno == EINTR);
+
+    return rv;
 }
 
 int
 dbgsysSend(int fd, char *buf, int nBytes, int flags) {
-    return send(fd, buf, nBytes, flags);
+    int rv;
+    do {
+        rv = send(fd, buf, nBytes, flags);
+    } while (rv == -1 && errno == EINTR);
+
+    return rv;
 }
 
 struct hostent *
@@ -123,7 +143,12 @@ dbgsysSocket(int domain, int type, int protocol) {
 }
 
 int dbgsysSocketClose(int fd) {
-    return close(fd);
+    int rv;
+    do {
+        rv = close(fd);
+    } while (rv == -1 && errno == EINTR);
+
+    return rv;
 }
 
 int
@@ -283,7 +308,7 @@ dbgsysTlsGet(int index) {
 
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
 int
 dbgsysTlsAlloc() {
     pthread_key_t key;

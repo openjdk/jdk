@@ -381,6 +381,10 @@ public enum LauncherHelper {
         PrintStream ostream =  (printToStderr) ? System.err : System.out;
         ostream.println(getLocalizedMessage("java.launcher.X.usage",
                 File.pathSeparator));
+        if (System.getProperty("os.name").startsWith("Mac OS")) {
+            ostream.println(getLocalizedMessage("java.launcher.X.macosx.usage",
+                        File.pathSeparator));
+        }
     }
 
     static String getMainClassFromJar(PrintStream ostream, String jarname) {

@@ -53,9 +53,10 @@ public final class Target {
     /** stub for remote object */
     private final Remote stub;
     /** set of clients that hold references to this target */
-    private final Vector refSet = new Vector();
+    private final Vector<VMID> refSet = new Vector<>();
     /** table that maps client endpoints to sequence numbers */
-    private final Hashtable sequenceTable = new Hashtable(5);
+    private final Hashtable<VMID, SequenceEntry> sequenceTable =
+        new Hashtable<>(5);
     /** access control context in which target was created */
     private final AccessControlContext acc;
     /** context class loader in which target was created */
@@ -241,7 +242,7 @@ public final class Target {
      */
     synchronized void referenced(long sequenceNum, VMID vmid) {
         // check sequence number for vmid
-        SequenceEntry entry = (SequenceEntry) sequenceTable.get(vmid);
+        SequenceEntry entry = sequenceTable.get(vmid);
         if (entry == null) {
             sequenceTable.put(vmid, new SequenceEntry(sequenceNum));
         } else if (entry.sequenceNum < sequenceNum) {
@@ -280,7 +281,7 @@ public final class Target {
     synchronized void unreferenced(long sequenceNum, VMID vmid, boolean strong)
     {
         // check sequence number for vmid
-        SequenceEntry entry = (SequenceEntry) sequenceTable.get(vmid);
+        SequenceEntry entry = sequenceTable.get(vmid);
         if (entry == null || entry.sequenceNum > sequenceNum) {
             // late clean call; ignore
             return;
@@ -366,9 +367,9 @@ public final class Target {
              */
             unpinImpl();
             DGCImpl dgc = DGCImpl.getDGCImpl();
-            Enumeration enum_ = refSet.elements();
+            Enumeration<VMID> enum_ = refSet.elements();
             while (enum_.hasMoreElements()) {
-                VMID vmid = (VMID) enum_.nextElement();
+                VMID vmid = enum_.nextElement();
                 dgc.unregisterTarget(vmid, this);
             }
             return true;

@@ -43,6 +43,11 @@ FILES_java += \
 	sun/tools/attach/LinuxAttachProvider.java
 endif
 
+ifeq ($(PLATFORM), macosx)
+FILES_java += \
+	sun/tools/attach/BsdAttachProvider.java
+endif
+
 #
 # Files that need to be copied
 #

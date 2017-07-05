@@ -79,6 +79,15 @@ ifeq ($(UNAME_S), Linux)
   endif
   OS_VERSION := $(shell $(UNAME) -r)
 endif
+ifeq ($(UNAME_S), Darwin)
+  OS_NAME     = macosx
+  OS_ARCH    := $(shell $(UNAME) -m)
+  # Check for unknown arch, try uname -p if uname -m says unknown
+  ifeq ($(OS_ARCH),unknown)
+    OS_ARCH    := $(shell $(UNAME) -p)
+  endif
+  OS_VERSION := $(shell $(UNAME) -r)
+endif
 ifeq ($(OS_NAME),)
   OS_NAME = windows
   # GNU Make or MKS overrides $(PROCESSOR_ARCHITECTURE) to always

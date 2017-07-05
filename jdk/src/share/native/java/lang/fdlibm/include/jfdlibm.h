@@ -61,7 +61,7 @@
 #define log1p   jlog1p
 #define expm1   jexpm1
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
 #define __ieee754_sqrt          __j__ieee754_sqrt
 #define __ieee754_acos          __j__ieee754_acos
 #define __ieee754_log           __j__ieee754_log

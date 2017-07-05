@@ -62,9 +62,9 @@ public final class ObjectTable {
 
     /** tables mapping to Target, keyed from ObjectEndpoint and impl object */
     private static final Map<ObjectEndpoint,Target> objTable =
-        new HashMap<ObjectEndpoint,Target>();
+        new HashMap<>();
     private static final Map<WeakRef,Target> implTable =
-        new HashMap<WeakRef,Target>();
+        new HashMap<>();
 
     /**
      * lock guarding keepAliveCount, reaper, and gcLatencyRequest.
@@ -79,7 +79,7 @@ public final class ObjectTable {
     private static Thread reaper = null;
 
     /** queue notified when weak refs in the table are cleared */
-    static final ReferenceQueue reapQueue = new ReferenceQueue();
+    static final ReferenceQueue<Object> reapQueue = new ReferenceQueue<>();
 
     /** handle for GC latency request (for future cancellation) */
     private static GC.LatencyRequest gcLatencyRequest = null;

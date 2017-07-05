@@ -93,7 +93,11 @@ res.clean:
 	$(RM) $(OBJDIR)/cmm.h
 
 else
-OTHER_LDLIBS = $(LIBM) -lawt -L$(LIBDIR)/$(LIBARCH)/xawt 
+ifeq ($(PLATFORM), macosx)
+OTHER_LDLIBS = $(LIBM) -lawt -L$(LIBDIR)/xawt
+else
+OTHER_LDLIBS = $(LIBM) -lawt -L$(LIBDIR)/$(LIBARCH)/xawt
+endif
 CPPFLAGS += -I$(SHARE_SRC)/native/sun/java2d \
             -I$(SHARE_SRC)/native/sun/awt/debug
 endif

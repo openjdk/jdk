@@ -5,3 +5,4 @@
 ^webrev/
 /nbproject/private/
 ^.hgtip
+.DS_Store
