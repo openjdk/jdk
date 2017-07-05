@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,40 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/os.hpp"
-#include "vm_version_sparc.hpp"
+#include "runtime/arguments.hpp"
 
-static bool detect_niagara() {
-  char cpu[128];
-  bool rv = false;
-
-  FILE* fp = fopen("/proc/cpuinfo", "r");
-  if (fp == NULL) {
-    return rv;
-  }
-
-  while (!feof(fp)) {
-    if (fscanf(fp, "cpu\t\t: %100[^\n]", cpu) == 1) {
-      if (strstr(cpu, "Niagara") != NULL) {
-        rv = true;
-      }
-      break;
-    }
-  }
-
-  fclose(fp);
-
-  return rv;
-}
-
-int VM_Version::platform_features(int features) {
-  // Default to generic v9
-  features = generic_v9_m;
-
-  if (detect_niagara()) {
-    NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Detected Linux on Niagara");)
-    features = niagara1_m | T_family_m;
-  }
-
-  return features;
+bool Arguments::check_vm_args_consistency_ext() {
+  return true;
 }
