@@ -197,6 +197,7 @@ class InstanceKlass: public Klass {
   // _is_marked_dependent can be set concurrently, thus cannot be part of the
   // _misc_flags.
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
+  bool            _has_unloaded_dependent;
 
   enum {
     _misc_rewritten            = 1 << 0, // methods rewritten.
@@ -443,6 +444,9 @@ class InstanceKlass: public Klass {
   // marking
   bool is_marked_dependent() const         { return _is_marked_dependent; }
   void set_is_marked_dependent(bool value) { _is_marked_dependent = value; }
+
+  bool has_unloaded_dependent() const         { return _has_unloaded_dependent; }
+  void set_has_unloaded_dependent(bool value) { _has_unloaded_dependent = value; }
 
   // initialization (virtuals from Klass)
   bool should_be_initialized() const;  // means that initialize should be called
@@ -922,6 +926,7 @@ class InstanceKlass: public Klass {
 
   void clean_implementors_list(BoolObjectClosure* is_alive);
   void clean_method_data(BoolObjectClosure* is_alive);
+  void clean_dependent_nmethods();
 
   // Explicit metaspace deallocation of fields
   // For RedefineClasses and class file parsing errors, we need to deallocate
@@ -1210,7 +1215,7 @@ class nmethodBucket: public CHeapObj<mtClass> {
   }
   int count()                             { return _count; }
   int increment()                         { _count += 1; return _count; }
-  int decrement()                         { _count -= 1; assert(_count >= 0, "don't underflow"); return _count; }
+  int decrement();
   nmethodBucket* next()                   { return _next; }
   void set_next(nmethodBucket* b)         { _next = b; }
   nmethod* get_nmethod()                  { return _nmethod; }

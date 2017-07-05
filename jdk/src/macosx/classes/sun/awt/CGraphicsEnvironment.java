@@ -40,9 +40,6 @@ import sun.java2d.*;
  */
 public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
 
-    // Global initialization of the Cocoa runtime.
-    private static native void initCocoa();
-
     /**
      * Fetch an array of all valid CoreGraphics display identifiers.
      */
@@ -60,21 +57,8 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
     public static void init() { }
 
     static {
-        java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<Void>() {
-            public Void run() {
-                System.loadLibrary("awt");
-                return null;
-            }
-        });
-
-        java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<Void>() {
-            public Void run() {
-                if (isHeadless()) return null;
-                initCocoa();
-                return null;
-            }
-        });
-
+        // Load libraries and initialize the Toolkit.
+        Toolkit.getDefaultToolkit();
         // Install the correct surface manager factory.
         SurfaceManagerFactory.setInstance(new MacosxSurfaceManagerFactory());
     }

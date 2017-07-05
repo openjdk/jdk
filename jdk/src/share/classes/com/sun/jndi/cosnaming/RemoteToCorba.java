@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,17 +71,10 @@ public class RemoteToCorba implements StateFactory {
 
         if (orig instanceof Remote) {
             // Turn remote object into org.omg.CORBA.Object
-            try {
-                // Returns null if JRMP; let next factory try
-                // CNCtx will eventually throw IllegalArgumentException if
-                // no CORBA object gotten
-                return
-                    CorbaUtils.remoteToCorba((Remote)orig, ((CNCtx)ctx)._orb);
-            } catch (ClassNotFoundException e) {
-                // RMI-IIOP library not available
-                throw new ConfigurationException(
-                    "javax.rmi packages not available");
-            }
+            // Returns null if JRMP; let next factory try
+            // CNCtx will eventually throw IllegalArgumentException if
+            // no CORBA object gotten
+            return CorbaUtils.remoteToCorba((Remote)orig, ((CNCtx)ctx)._orb);
         }
         return null; // pass and let next state factory try
     }

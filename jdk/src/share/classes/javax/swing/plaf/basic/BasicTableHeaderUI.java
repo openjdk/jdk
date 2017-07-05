@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
             if (e.getClickCount() % 2 == 1 &&
                     SwingUtilities.isLeftMouseButton(e)) {
                 JTable table = header.getTable();
-                RowSorter sorter;
+                RowSorter<?> sorter;
                 if (table != null && (sorter = table.getRowSorter()) != null) {
                     int columnIndex = header.columnAtPoint(e.getPoint());
                     if (columnIndex != -1) {
@@ -772,9 +772,9 @@ public class BasicTableHeaderUI extends TableHeaderUI {
      */
     public Dimension getMinimumSize(JComponent c) {
         long width = 0;
-        Enumeration enumeration = header.getColumnModel().getColumns();
+        Enumeration<TableColumn> enumeration = header.getColumnModel().getColumns();
         while (enumeration.hasMoreElements()) {
-            TableColumn aColumn = (TableColumn)enumeration.nextElement();
+            TableColumn aColumn = enumeration.nextElement();
             width = width + aColumn.getMinWidth();
         }
         return createHeaderSize(width);
@@ -788,9 +788,9 @@ public class BasicTableHeaderUI extends TableHeaderUI {
      */
     public Dimension getPreferredSize(JComponent c) {
         long width = 0;
-        Enumeration enumeration = header.getColumnModel().getColumns();
+        Enumeration<TableColumn> enumeration = header.getColumnModel().getColumns();
         while (enumeration.hasMoreElements()) {
-            TableColumn aColumn = (TableColumn)enumeration.nextElement();
+            TableColumn aColumn = enumeration.nextElement();
             width = width + aColumn.getPreferredWidth();
         }
         return createHeaderSize(width);
@@ -802,9 +802,9 @@ public class BasicTableHeaderUI extends TableHeaderUI {
      */
     public Dimension getMaximumSize(JComponent c) {
         long width = 0;
-        Enumeration enumeration = header.getColumnModel().getColumns();
+        Enumeration<TableColumn> enumeration = header.getColumnModel().getColumns();
         while (enumeration.hasMoreElements()) {
-            TableColumn aColumn = (TableColumn)enumeration.nextElement();
+            TableColumn aColumn = enumeration.nextElement();
             width = width + aColumn.getMaxWidth();
         }
         return createHeaderSize(width);
@@ -875,7 +875,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
             String name = getName();
             if (TOGGLE_SORT_ORDER == name) {
                 JTable table = th.getTable();
-                RowSorter sorter = table == null ? null : table.getRowSorter();
+                RowSorter<?> sorter = table == null ? null : table.getRowSorter();
                 if (sorter != null) {
                     int columnIndex = ui.getSelectedColumnIndex();
                     columnIndex = table.convertColumnIndexToModel(

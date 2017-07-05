@@ -820,7 +820,9 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                 doSubmit = new DoSubmitAccumulativeRunnable();
                 appContext.put(DO_SUBMIT_KEY, doSubmit);
             }
-            return (AccumulativeRunnable<Runnable>) doSubmit;
+            @SuppressWarnings("unchecked")
+            AccumulativeRunnable<Runnable> tmp = (AccumulativeRunnable<Runnable>) doSubmit;
+            return tmp;
         }
     }
     private static class DoSubmitAccumulativeRunnable

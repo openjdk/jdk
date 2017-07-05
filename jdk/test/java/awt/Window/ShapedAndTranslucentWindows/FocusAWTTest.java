@@ -35,6 +35,19 @@ import java.util.HashMap;
  * @bug 8013450
  * @summary Check if the window events (Focus and Activation) are triggered correctly
  *          when clicked on visible and clipped areas.
+ *
+ * Test Description: Check if PERPIXEL_TRANSPARENT Translucency type is supported
+ *      by the current platform. Proceed if it is supported. Apply different
+ *      types of shapes on a Window. Make it appear with a known background.
+ *      Check if mouse events which result in window-activated events are
+ *      triggered only within the window's shape and not outside. Repeat this
+ *      for Window, Dialog and Frame.
+ * Expected Result: If PERPIXEL_TRANSPARENT Translucency type is supported, window should
+ *      gain focus and should trigger activated events only when it is clicked on the
+ *      visible areas. Events should be delivered to the background window if clicked
+ *      on the clipped areas.
+ *
+ * @author mrkam
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @library ../../../../lib/testlibrary
  * @build Common ExtendedRobot
@@ -149,6 +162,7 @@ public class FocusAWTTest extends Common {
         window.setVisible(true);
     }
 
+    @Override
     public void doTest() throws Exception {
         super.doTest();
         final Point wls = new Point();

@@ -207,13 +207,14 @@ void GenMarkSweep::mark_sweep_phase1(int level,
   // Need new claim bits before marking starts.
   ClassLoaderDataGraph::clear_claimed_marks();
 
-  gch->gen_process_strong_roots(level,
-                                false, // Younger gens are not roots.
-                                true,  // activate StrongRootsScope
-                                SharedHeap::SO_SystemClasses,
-                                &follow_root_closure,
-                                &follow_root_closure,
-                                &follow_klass_closure);
+  gch->gen_process_roots(level,
+                         false, // Younger gens are not roots.
+                         true,  // activate StrongRootsScope
+                         SharedHeap::SO_None,
+                         GenCollectedHeap::StrongRootsOnly,
+                         &follow_root_closure,
+                         &follow_root_closure,
+                         &follow_cld_closure);
 
   // Process reference objects found during marking
   {
@@ -291,13 +292,14 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
   // are run.
   adjust_pointer_closure.set_orig_generation(gch->get_gen(level));
 
-  gch->gen_process_strong_roots(level,
-                                false, // Younger gens are not roots.
-                                true,  // activate StrongRootsScope
-                                SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_AllCodeCache,
-                                &adjust_pointer_closure,
-                                &adjust_pointer_closure,
-                                &adjust_klass_closure);
+  gch->gen_process_roots(level,
+                         false, // Younger gens are not roots.
+                         true,  // activate StrongRootsScope
+                         SharedHeap::SO_AllCodeCache,
+                         GenCollectedHeap::StrongAndWeakRoots,
+                         &adjust_pointer_closure,
+                         &adjust_pointer_closure,
+                         &adjust_cld_closure);
 
   gch->gen_process_weak_roots(&adjust_pointer_closure);
 

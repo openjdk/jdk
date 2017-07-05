@@ -140,6 +140,9 @@ public class CUPSPrinter  {
         return cupsCustomMediaSNames;
     }
 
+    public int getDefaultMediaIndex() {
+        return ((pageSizes.length >1) ? (int)(pageSizes[pageSizes.length -1]) : 0);
+    }
 
     /**
      * Returns array of MediaPrintableArea derived from PPD.
@@ -201,8 +204,15 @@ public class CUPSPrinter  {
 
                 // add this new custom msn to MediaSize array
                 if ((width > 0.0) && (length > 0.0)) {
+                    try {
                     new MediaSize(width, length,
                                   Size2DSyntax.INCH, msn);
+                    } catch (IllegalArgumentException e) {
+                        /* PDF printer in Linux for Ledger paper causes
+                        "IllegalArgumentException: X dimension > Y dimension".
+                        We rotate based on IPP spec. */
+                        new MediaSize(length, width, Size2DSyntax.INCH, msn);
+                    }
                 }
             }
 

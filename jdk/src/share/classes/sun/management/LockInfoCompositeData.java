@@ -61,7 +61,7 @@ public class LockInfoCompositeData extends LazyCompositeData {
         // lockInfoItemNames!
         final Object[] lockInfoItemValues = {
             new String(lock.getClassName()),
-            new Integer(lock.getIdentityHashCode()),
+            lock.getIdentityHashCode(),
         };
 
         try {

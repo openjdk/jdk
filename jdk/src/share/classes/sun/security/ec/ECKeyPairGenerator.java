@@ -125,19 +125,18 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
 
         try {
 
-            long[] handles = generateECKeyPair(keySize, encodedParams, seed);
+            Object[] keyBytes = generateECKeyPair(keySize, encodedParams, seed);
 
             // The 'params' object supplied above is equivalent to the native
             // one so there is no need to fetch it.
-
-            // handles[0] points to the native private key
-            BigInteger s = new BigInteger(1, getEncodedBytes(handles[0]));
+            // keyBytes[0] is the encoding of the native private key
+            BigInteger s = new BigInteger(1, (byte[])keyBytes[0]);
 
             PrivateKey privateKey =
                 new ECPrivateKeyImpl(s, (ECParameterSpec)params);
 
-            // handles[1] points to the native public key
-            ECPoint w = ECUtil.decodePoint(getEncodedBytes(handles[1]),
+            // keyBytes[1] is the encoding of the native public key
+            ECPoint w = ECUtil.decodePoint((byte[])keyBytes[1],
                 ((ECParameterSpec)params).getCurve());
             PublicKey publicKey =
                 new ECPublicKeyImpl(w, (ECParameterSpec)params);
@@ -162,14 +161,9 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
     }
 
     /*
-     * Generates the keypair and returns a 2-element array of handles.
-     * The first handle points to the private key, the second to the public key.
+     * Generates the keypair and returns a 2-element array of encoding bytes.
+     * The first one is for the private key, the second for the public key.
      */
-    private static native long[] generateECKeyPair(int keySize,
+    private static native Object[] generateECKeyPair(int keySize,
         byte[] encodedParams, byte[] seed) throws GeneralSecurityException;
-
-    /*
-     * Extracts the encoded key data using the supplied handle.
-     */
-    private static native byte[] getEncodedBytes(long handle);
 }

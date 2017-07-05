@@ -297,7 +297,7 @@ public class KeyTab implements KeyTabConstants {
                 if (EType.isSupported(entry.keyType)) {
                     key = new EncryptionKey(entry.keyblock,
                                         entry.keyType,
-                                        new Integer(entry.keyVersion));
+                                        entry.keyVersion);
                     keys.add(key);
                     if (DEBUG) {
                         System.out.println("Added key: " + entry.keyType +

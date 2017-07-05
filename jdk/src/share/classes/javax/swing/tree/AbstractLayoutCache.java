@@ -228,10 +228,10 @@ public abstract class AbstractLayoutCache implements RowMapper {
                 endY = bounds.height + bounds.y;
             }
 
-            Enumeration   paths = getVisiblePathsFrom(firstPath);
+            Enumeration<TreePath> paths = getVisiblePathsFrom(firstPath);
 
             if(paths != null && paths.hasMoreElements()) {
-                Rectangle   pBounds = getBounds((TreePath)paths.nextElement(),
+                Rectangle   pBounds = getBounds(paths.nextElement(),
                                                 null);
                 int         width;
 
@@ -244,7 +244,7 @@ public abstract class AbstractLayoutCache implements RowMapper {
                 else
                     width = 0;
                 while (pBounds != null && paths.hasMoreElements()) {
-                    pBounds = getBounds((TreePath)paths.nextElement(),
+                    pBounds = getBounds(paths.nextElement(),
                                         pBounds);
                     if (pBounds != null && pBounds.y < endY) {
                         width = Math.max(width, pBounds.x + pBounds.width);

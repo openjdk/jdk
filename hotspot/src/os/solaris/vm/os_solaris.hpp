@@ -332,7 +332,6 @@ class PlatformEvent : public CHeapObj<mtInternal> {
     int  fired() { return _Event; }
     void park();
     int  park(jlong millis);
-    int  TryPark();
     void unpark();
 };
 

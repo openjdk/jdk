@@ -207,7 +207,7 @@ public class SynthListUI extends BasicListUI
             }
         }
 
-        @Override public Component getListCellRendererComponent(JList list, Object value,
+        @Override public Component getListCellRendererComponent(JList<?> list, Object value,
                   int index, boolean isSelected, boolean cellHasFocus) {
             if (!useListColors && (isSelected || cellHasFocus)) {
                 SynthLookAndFeel.setSelectedUI((SynthLabelUI)SynthLookAndFeel.

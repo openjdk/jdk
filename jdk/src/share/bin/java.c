@@ -1816,20 +1816,48 @@ ShowSplashScreen()
     const char *jar_name = getenv(SPLASH_JAR_ENV_ENTRY);
     const char *file_name = getenv(SPLASH_FILE_ENV_ENTRY);
     int data_size;
-    void *image_data;
+    void *image_data = NULL;
+    float scale_factor = 1;
+    char *scaled_splash_name = NULL;
+
+    if (file_name == NULL){
+        return;
+    }
+
+    scaled_splash_name = DoSplashGetScaledImageName(
+                        jar_name, file_name, &scale_factor);
     if (jar_name) {
-        image_data = JLI_JarUnpackFile(jar_name, file_name, &data_size);
+
+        if (scaled_splash_name) {
+            image_data = JLI_JarUnpackFile(
+                    jar_name, scaled_splash_name, &data_size);
+        }
+
+        if (!image_data) {
+            scale_factor = 1;
+            image_data = JLI_JarUnpackFile(
+                            jar_name, file_name, &data_size);
+        }
         if (image_data) {
             DoSplashInit();
+            DoSplashSetScaleFactor(scale_factor);
             DoSplashLoadMemory(image_data, data_size);
             JLI_MemFree(image_data);
         }
-    } else if (file_name) {
-        DoSplashInit();
-        DoSplashLoadFile(file_name);
     } else {
-        return;
+        DoSplashInit();
+        if (scaled_splash_name) {
+            DoSplashSetScaleFactor(scale_factor);
+            DoSplashLoadFile(scaled_splash_name);
+        } else {
+            DoSplashLoadFile(file_name);
+        }
     }
+
+    if (scaled_splash_name) {
+        JLI_MemFree(scaled_splash_name);
+    }
+
     DoSplashSetFileJarName(file_name, jar_name);
 
     /*
