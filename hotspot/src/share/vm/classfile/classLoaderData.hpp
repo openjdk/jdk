@@ -234,6 +234,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void add_to_deallocate_list(Metadata* m);
 
   static ClassLoaderData* class_loader_data(oop loader);
+  static ClassLoaderData* class_loader_data_or_null(oop loader);
   static ClassLoaderData* anonymous_class_loader_data(oop loader, TRAPS);
   static void print_loader(ClassLoaderData *loader_data, outputStream *out);
 

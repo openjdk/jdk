@@ -347,6 +347,7 @@ void Dictionary::add_klass(Symbol* class_name, ClassLoaderData* loader_data,
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(obj() != NULL, "adding NULL obj");
   assert(obj()->name() == class_name, "sanity check on name");
+  assert(loader_data != NULL, "Must be non-NULL");
 
   unsigned int hash = compute_hash(class_name, loader_data);
   int index = hash_to_index(hash);

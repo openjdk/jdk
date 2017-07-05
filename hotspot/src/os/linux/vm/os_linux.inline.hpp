@@ -25,7 +25,6 @@
 #ifndef OS_LINUX_VM_OS_LINUX_INLINE_HPP
 #define OS_LINUX_VM_OS_LINUX_INLINE_HPP
 
-#include "runtime/atomic.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
 
@@ -288,4 +287,21 @@ inline int os::set_sock_opt(int fd, int level, int optname,
                             const char* optval, socklen_t optlen) {
   return ::setsockopt(fd, level, optname, optval, optlen);
 }
+
+inline void os::Linux::SuspendResume::set_suspended() {
+  jint temp, temp2;
+  do {
+    temp = _state;
+    temp2 = Atomic::cmpxchg(temp | SR_SUSPENDED, &_state, temp);
+  } while (temp2 != temp);
+}
+
+inline void os::Linux::SuspendResume::clear_suspended()        {
+  jint temp, temp2;
+  do {
+    temp = _state;
+    temp2 = Atomic::cmpxchg(temp & ~SR_SUSPENDED, &_state, temp);
+  } while (temp2 != temp);
+}
+
 #endif // OS_LINUX_VM_OS_LINUX_INLINE_HPP
