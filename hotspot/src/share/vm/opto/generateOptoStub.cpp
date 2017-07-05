@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,19 +118,14 @@ void GraphKit::gen_stub(address C_function,
   // The C routines gets the base of thread-local storage passed in as an
   // extra argument.  Not all calls need it, but its cheap to add here.
   for (uint pcnt = cnt; pcnt < parm_cnt; pcnt++, cnt++) {
-    // Convert ints to longs if required.
-    if (CCallingConventionRequiresIntsAsLongs && jdomain->field_at(pcnt)->isa_int()) {
-      fields[cnt++] = TypeLong::LONG;
-      fields[cnt]   = Type::HALF; // must add an additional half for a long
-    } else {
-      fields[cnt] = jdomain->field_at(pcnt);
-    }
+    fields[cnt] = jdomain->field_at(pcnt);
   }
 
   fields[cnt++] = TypeRawPtr::BOTTOM; // Thread-local storage
   // Also pass in the caller's PC, if asked for.
-  if( return_pc )
+  if (return_pc) {
     fields[cnt++] = TypeRawPtr::BOTTOM; // Return PC
+  }
 
   const TypeTuple* domain = TypeTuple::make(cnt,fields);
   // The C routine we are about to call cannot return an oop; it can block on
@@ -143,21 +138,22 @@ void GraphKit::gen_stub(address C_function,
   const Type **rfields = TypeTuple::fields(jrange->cnt() - TypeFunc::Parms);
   // Fixup oop returns
   int retval_ptr = retval->isa_oop_ptr();
-  if( retval_ptr ) {
+  if (retval_ptr) {
     assert( pass_tls, "Oop must be returned thru TLS" );
     // Fancy-jumps return address; others return void
     rfields[TypeFunc::Parms] = is_fancy_jump ? TypeRawPtr::BOTTOM : Type::TOP;
 
-  } else if( retval->isa_int() ) { // Returning any integer subtype?
+  } else if (retval->isa_int()) { // Returning any integer subtype?
     // "Fatten" byte, char & short return types to 'int' to show that
     // the native C code can return values with junk high order bits.
     // We'll sign-extend it below later.
     rfields[TypeFunc::Parms] = TypeInt::INT; // It's "dirty" and needs sign-ext
 
-  } else if( jrange->cnt() >= TypeFunc::Parms+1 ) { // Else copy other types
+  } else if (jrange->cnt() >= TypeFunc::Parms+1) { // Else copy other types
     rfields[TypeFunc::Parms] = jrange->field_at(TypeFunc::Parms);
-    if( jrange->cnt() == TypeFunc::Parms+2 )
+    if (jrange->cnt() == TypeFunc::Parms+2) {
       rfields[TypeFunc::Parms+1] = jrange->field_at(TypeFunc::Parms+1);
+    }
   }
   const TypeTuple* range = TypeTuple::make(jrange->cnt(),rfields);
 
@@ -181,14 +177,7 @@ void GraphKit::gen_stub(address C_function,
   // A little too aggressive on the parm copy; return address is not an input
   call->set_req(TypeFunc::ReturnAdr, top());
   for (; i < parm_cnt; i++) { // Regular input arguments
-    // Convert ints to longs if required.
-    if (CCallingConventionRequiresIntsAsLongs && jdomain->field_at(i)->isa_int()) {
-      Node* int_as_long = _gvn.transform(new ConvI2LNode(map()->in(i)));
-      call->init_req(cnt++, int_as_long); // long
-      call->init_req(cnt++, top());       // half
-    } else {
-      call->init_req(cnt++, map()->in(i));
-    }
+    call->init_req(cnt++, map()->in(i));
   }
 
   call->init_req( cnt++, thread );

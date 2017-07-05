@@ -3157,6 +3157,9 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       // code for the inlined version will be different than the root
       // compiled version which could lead to monotonicity problems on
       // intel.
+      if (CheckIntrinsics && !scope->method()->intrinsic_candidate()) {
+        BAILOUT("failed to inline intrinsic, method not annotated");
+      }
 
       // Set up a stream so that appending instructions works properly.
       ciBytecodeStream s(scope->method());
@@ -3197,6 +3200,9 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
         // result in the referent being marked live and the reference
         // object removed from the list of discovered references during
         // reference processing.
+        if (CheckIntrinsics && !scope->method()->intrinsic_candidate()) {
+          BAILOUT("failed to inline intrinsic, method not annotated");
+        }
 
         // Also we need intrinsic to prevent commoning reads from this field
         // across safepoint since GC can change its value.
@@ -3317,7 +3323,8 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Bytecodes::Co
   }
 
   // handle intrinsics
-  if (callee->intrinsic_id() != vmIntrinsics::_none) {
+  if (callee->intrinsic_id() != vmIntrinsics::_none &&
+      (CheckIntrinsics ? callee->intrinsic_candidate() : true)) {
     if (try_inline_intrinsics(callee)) {
       print_inlining(callee, "intrinsic");
       return true;
@@ -4278,7 +4285,7 @@ void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
   assert(result_type->is_int(), "int result");
   Values* args = state()->pop_arguments(callee->arg_size());
 
-  // Pop off some args to speically handle, then push back
+  // Pop off some args to specially handle, then push back
   Value newval = args->pop();
   Value cmpval = args->pop();
   Value offset = args->pop();
