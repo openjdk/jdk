@@ -85,7 +85,7 @@ class MemTracker : AllStatic {
     NMT_shutdown                         // shutdown
   };
 
-
+ public:
   // native memory tracking level
   enum NMTLevel {
     NMT_off,              // native memory tracking is off
@@ -93,7 +93,6 @@ class MemTracker : AllStatic {
     NMT_detail            // track callsite also
   };
 
- public:
    enum ShutdownReason {
      NMT_shutdown_none,     // no shutdown requested
      NMT_shutdown_user,     // user requested shutdown
@@ -115,6 +114,10 @@ class MemTracker : AllStatic {
   static inline bool is_on() {
     return (_tracking_level >= NMT_summary &&
       _state >= NMT_bootstrapping_single_thread);
+  }
+
+  static inline enum NMTLevel tracking_level() {
+    return _tracking_level;
   }
 
   // user readable reason for shutting down NMT
@@ -185,6 +188,7 @@ class MemTracker : AllStatic {
   static inline void record_malloc(address addr, size_t size, MEMFLAGS flags,
                             address pc = 0, Thread* thread = NULL) {
     if (NMT_CAN_TRACK(flags)) {
+      assert(size > 0, "Sanity check");
       create_memory_record(addr, (flags|MemPointerRecord::malloc_tag()), size, pc, thread);
     }
   }
@@ -198,6 +202,7 @@ class MemTracker : AllStatic {
   static inline void record_realloc(address old_addr, address new_addr, size_t size,
        MEMFLAGS flags, address pc = 0, Thread* thread = NULL) {
     if (is_on()) {
+      assert(size > 0, "Sanity check");
       record_free(old_addr, flags, thread);
       record_malloc(new_addr, size, flags, pc, thread);
     }
@@ -208,6 +213,7 @@ class MemTracker : AllStatic {
     // we add a positive offset to arena address, so we can have arena size record
     // sorted after arena record
     if (is_on() && !UseMallocOnly) {
+      assert(addr != NULL, "Sanity check");
       create_memory_record((addr + sizeof(void*)), MemPointerRecord::arena_size_tag(), size,
         0, NULL);
     }
@@ -217,7 +223,7 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_reserve(address addr, size_t size,
                             address pc = 0, Thread* thread = NULL) {
     if (is_on()) {
-      assert(size > 0, "reserve szero size");
+      assert(size > 0, "Sanity check");
       create_memory_record(addr, MemPointerRecord::virtual_memory_reserve_tag(),
                            size, pc, thread);
     }
@@ -248,6 +254,7 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_commit(address addr, size_t size,
                             address pc = 0, Thread* thread = NULL) {
     if (is_on()) {
+      assert(size > 0, "Sanity check");
       create_memory_record(addr, MemPointerRecord::virtual_memory_commit_tag(),
                            size, DEBUG_CALLER_PC, thread);
     }
@@ -257,6 +264,7 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_uncommit(address addr, size_t size,
                             Thread* thread = NULL) {
     if (is_on()) {
+      assert(size > 0, "Sanity check");
       create_memory_record(addr, MemPointerRecord::virtual_memory_uncommit_tag(),
                            size, DEBUG_CALLER_PC, thread);
     }
@@ -266,6 +274,7 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_release(address addr, size_t size,
                             Thread* thread = NULL) {
     if (is_on()) {
+      assert(size > 0, "Sanity check");
       create_memory_record(addr, MemPointerRecord::virtual_memory_release_tag(),
                            size, DEBUG_CALLER_PC, thread);
     }

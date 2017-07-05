@@ -351,6 +351,82 @@ public class NMethod extends CodeBlob {
     return bestGuessPCDesc;
   }
 
+  PCDesc find_pc_desc(long pc, boolean approximate) {
+    return find_pc_desc_internal(pc, approximate);
+  }
+
+  // Finds a PcDesc with real-pc equal to "pc"
+  PCDesc find_pc_desc_internal(long pc, boolean approximate) {
+    long base_address = VM.getAddressValue(codeBegin());
+    int pc_offset = (int) (pc - base_address);
+
+    // Fallback algorithm: quasi-linear search for the PcDesc
+    // Find the last pc_offset less than the given offset.
+    // The successor must be the required match, if there is a match at all.
+    // (Use a fixed radix to avoid expensive affine pointer arithmetic.)
+    Address lower = scopesPCsBegin();
+    Address upper = scopesPCsEnd();
+    upper = upper.addOffsetTo(-pcDescSize); // exclude final sentinel
+    if (lower.greaterThan(upper))  return null;  // native method; no PcDescs at all
+
+    // Take giant steps at first (4096, then 256, then 16, then 1)
+    int LOG2_RADIX = 4;
+    int RADIX = (1 << LOG2_RADIX);
+    Address mid;
+    for (int step = (1 << (LOG2_RADIX*3)); step > 1; step >>= LOG2_RADIX) {
+      while ((mid = lower.addOffsetTo(step * pcDescSize)).lessThan(upper)) {
+        PCDesc m = new PCDesc(mid);
+        if (m.getPCOffset() < pc_offset) {
+          lower = mid;
+        } else {
+          upper = mid;
+          break;
+        }
+      }
+    }
+    // Sneak up on the value with a linear search of length ~16.
+    while (true) {
+      mid = lower.addOffsetTo(pcDescSize);
+      PCDesc m = new PCDesc(mid);
+      if (m.getPCOffset() < pc_offset) {
+        lower = mid;
+      } else {
+        upper = mid;
+        break;
+      }
+    }
+
+    PCDesc u = new PCDesc(upper);
+    if (match_desc(u, pc_offset, approximate)) {
+      return u;
+    } else {
+      return null;
+    }
+  }
+
+  // ScopeDesc retrieval operation
+  PCDesc pc_desc_at(long pc)   { return find_pc_desc(pc, false); }
+  // pc_desc_near returns the first PCDesc at or after the givne pc.
+  PCDesc pc_desc_near(long pc) { return find_pc_desc(pc, true); }
+
+  // Return a the last scope in (begin..end]
+  public ScopeDesc scope_desc_in(long begin, long end) {
+    PCDesc p = pc_desc_near(begin+1);
+    if (p != null && VM.getAddressValue(p.getRealPC(this)) <= end) {
+      return new ScopeDesc(this, p.getScopeDecodeOffset(), p.getObjDecodeOffset(), p.getReexecute());
+    }
+    return null;
+  }
+
+  static boolean match_desc(PCDesc pc, int pc_offset, boolean approximate) {
+    if (!approximate) {
+      return pc.getPCOffset() == pc_offset;
+    } else {
+      PCDesc prev = new PCDesc(pc.getAddress().addOffsetTo(-pcDescSize));
+       return prev.getPCOffset() < pc_offset && pc_offset <= pc.getPCOffset();
+    }
+  }
+
   /** This is only for use by the debugging system, and is only
       intended for use in the topmost frame, where we are not
       guaranteed to be at a PC for which we have a PCDesc. It finds

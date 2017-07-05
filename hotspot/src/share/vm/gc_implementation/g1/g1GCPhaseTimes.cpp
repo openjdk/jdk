@@ -129,7 +129,7 @@ void WorkerDataArray<T>::print(int level, const char* title) {
   buf.append_and_print_cr("]");
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 
 template <class T>
 void WorkerDataArray<T>::reset() {

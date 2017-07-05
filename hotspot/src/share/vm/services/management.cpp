@@ -1804,31 +1804,37 @@ JVM_END
 
 class ThreadTimesClosure: public ThreadClosure {
  private:
-  objArrayOop _names;
+  objArrayHandle _names_strings;
+  char **_names_chars;
   typeArrayOop _times;
   int _names_len;
   int _times_len;
   int _count;
 
  public:
-  ThreadTimesClosure(objArrayOop names, typeArrayOop times);
+  ThreadTimesClosure(objArrayHandle names, typeArrayOop times);
+  ~ThreadTimesClosure();
   virtual void do_thread(Thread* thread);
+  void do_unlocked();
   int count() { return _count; }
 };
 
-ThreadTimesClosure::ThreadTimesClosure(objArrayOop names,
+ThreadTimesClosure::ThreadTimesClosure(objArrayHandle names,
                                        typeArrayOop times) {
-  assert(names != NULL, "names was NULL");
+  assert(names() != NULL, "names was NULL");
   assert(times != NULL, "times was NULL");
-  _names = names;
+  _names_strings = names;
   _names_len = names->length();
+  _names_chars = NEW_C_HEAP_ARRAY(char*, _names_len, mtInternal);
   _times = times;
   _times_len = times->length();
   _count = 0;
 }
 
+//
+// Called with Threads_lock held
+//
 void ThreadTimesClosure::do_thread(Thread* thread) {
-  Handle s;
   assert(thread != NULL, "thread was NULL");
 
   // exclude externally visible JavaThreads
@@ -1842,14 +1848,30 @@ void ThreadTimesClosure::do_thread(Thread* thread) {
   }
 
   EXCEPTION_MARK;
+  ResourceMark rm(THREAD); // thread->name() uses ResourceArea
 
   assert(thread->name() != NULL, "All threads should have a name");
-  s = java_lang_String::create_from_str(thread->name(), CHECK);
-  _names->obj_at_put(_count, s());
-
+  _names_chars[_count] = strdup(thread->name());
   _times->long_at_put(_count, os::is_thread_cpu_time_supported() ?
                         os::thread_cpu_time(thread) : -1);
   _count++;
+}
+
+// Called without Threads_lock, we can allocate String objects.
+void ThreadTimesClosure::do_unlocked() {
+
+  EXCEPTION_MARK;
+  for (int i = 0; i < _count; i++) {
+    Handle s = java_lang_String::create_from_str(_names_chars[i],  CHECK);
+    _names_strings->obj_at_put(i, s());
+  }
+}
+
+ThreadTimesClosure::~ThreadTimesClosure() {
+  for (int i = 0; i < _count; i++) {
+    free(_names_chars[i]);
+  }
+  FREE_C_HEAP_ARRAY(char *, _names_chars, mtInternal);
 }
 
 // Fills names with VM internal thread names and times with the corresponding
@@ -1878,12 +1900,12 @@ JVM_ENTRY(jint, jmm_GetInternalThreadTimes(JNIEnv *env,
   typeArrayOop ta = typeArrayOop(JNIHandles::resolve_non_null(times));
   typeArrayHandle times_ah(THREAD, ta);
 
-  ThreadTimesClosure ttc(names_ah(), times_ah());
+  ThreadTimesClosure ttc(names_ah, times_ah());
   {
     MutexLockerEx ml(Threads_lock);
     Threads::threads_do(&ttc);
   }
-
+  ttc.do_unlocked();
   return ttc.count();
 JVM_END
 

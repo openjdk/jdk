@@ -151,9 +151,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 
   // Follow code cache roots (has to be done after system dictionary,
   // assumes all live klasses are marked)
-  CodeCache::do_unloading(&GenMarkSweep::is_alive,
-                                   &GenMarkSweep::keep_alive,
-                                   purged_class);
+  CodeCache::do_unloading(&GenMarkSweep::is_alive, purged_class);
   GenMarkSweep::follow_stack();
 
   // Update subklass/sibling/implementor links of live klasses

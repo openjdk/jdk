@@ -29,12 +29,11 @@
 # HOTSPOTRELEASEBINDEST, or HOTSPOTDEBUGBINDEST environment variables.
 
 ProjectCreatorSources=\
-        $(WorkSpace)\src\share\tools\ProjectCreator\DirectoryTree.java \
-        $(WorkSpace)\src\share\tools\ProjectCreator\DirectoryTreeNode.java \
-        $(WorkSpace)\src\share\tools\ProjectCreator\FileFormatException.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\ProjectCreator.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\FileTreeCreator.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\FileTreeCreatorVC7.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\FileTreeCreatorVC10.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatform.java \
-        $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC6.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC7.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC8.java \
         $(WorkSpace)\src\share\tools\ProjectCreator\WinGammaPlatformVC9.java \
@@ -57,10 +56,24 @@ ProjectCreatorIncludesPRIVATE=\
         -relativeInclude src\os_cpu\windows_$(Platform_arch)\vm \
         -relativeInclude src\cpu\$(Platform_arch)\vm \
         -absoluteInclude $(HOTSPOTBUILDSPACE)/%f/generated \
-        -ignorePath $(HOTSPOTBUILDSPACE)/%f/generated \
-        -ignorePath src\share\vm\adlc \
-        -ignorePath src\share\vm\shark \
-        -ignorePath posix
+        -relativeSrcInclude src \
+        -absoluteSrcInclude $(HOTSPOTBUILDSPACE) \
+        -ignorePath $(HOTSPOTBUILDSPACE) \
+        -ignorePath launcher \
+        -ignorePath share\vm\adlc \
+        -ignorePath share\vm\shark \
+        -ignorePath share\tools \
+        -ignorePath solaris \
+        -ignorePath posix \
+        -ignorePath sparc \
+        -ignorePath linux \
+        -ignorePath bsd \
+        -ignorePath osx \
+        -ignorePath arm \
+        -ignorePath ppc \
+        -ignorePath zero \
+        -hidePath .hg
+	
 
 # This is referenced externally by both the IDE and batch builds
 ProjectCreatorOptions=
@@ -84,6 +97,7 @@ ProjectCreatorIDEOptions=\
         $(ProjectCreatorIDEOptions) \
         -sourceBase $(HOTSPOTWORKSPACE) \
         -buildBase $(HOTSPOTBUILDSPACE)\%f\%b \
+        -buildSpace $(HOTSPOTBUILDSPACE) \
         -startAt src \
         -compiler $(VcVersion) \
         -projectFileName $(HOTSPOTBUILDSPACE)\$(ProjectFile) \
@@ -103,6 +117,7 @@ ProjectCreatorIDEOptions=\
         -define TARGET_OS_ARCH_windows_x86 \
         -define TARGET_OS_FAMILY_windows \
         -define TARGET_COMPILER_visCPP \
+        -define INCLUDE_TRACE \
        $(ProjectCreatorIncludesPRIVATE)
 
 # Add in build-specific options
@@ -125,9 +140,13 @@ ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
 !endif
 
 ProjectCreatorIDEOptionsIgnoreCompiler1=\
+ -ignorePath_TARGET compiler1 \
+ -ignorePath_TARGET tiered \
  -ignorePath_TARGET c1_
 
 ProjectCreatorIDEOptionsIgnoreCompiler2=\
+ -ignorePath_TARGET compiler2 \
+ -ignorePath_TARGET tiered \
  -ignorePath_TARGET src/share/vm/opto \
  -ignorePath_TARGET src/share/vm/libadt \
  -ignorePath_TARGET adfiles \
@@ -209,6 +228,7 @@ $(ProjectCreatorIDEOptionsIgnoreCompiler2:TARGET=kernel) \
 ##################################################
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
  -define_compiler1 COMPILER1 \
+ -ignorePath_compiler1 core \
 $(ProjectCreatorIDEOptionsIgnoreCompiler2:TARGET=compiler1)
 
 ##################################################
@@ -217,18 +237,19 @@ $(ProjectCreatorIDEOptionsIgnoreCompiler2:TARGET=compiler1)
 #NOTE! This list must be kept in sync with GENERATED_NAMES in adlc.make.
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
  -define_compiler2 COMPILER2 \
+ -ignorePath_compiler2 core \
  -additionalFile_compiler2 $(Platform_arch_model).ad \
- -additionalGeneratedFile_compiler2 $(HOTSPOTBUILDSPACE)/%f/generated/adfiles ad_$(Platform_arch_model).cpp \
- -additionalGeneratedFile_compiler2 $(HOTSPOTBUILDSPACE)/%f/generated/adfiles ad_$(Platform_arch_model).hpp \
- -additionalGeneratedFile_compiler2 $(HOTSPOTBUILDSPACE)/%f/generated/adfiles ad_$(Platform_arch_model)_clone.cpp \
- -additionalGeneratedFile_compiler2 $(HOTSPOTBUILDSPACE)/%f/generated/adfiles ad_$(Platform_arch_model)_expand.cpp \
- -additionalGeneratedFile_compiler2 $(HOTSPOTBUILDSPACE)/%f/generated/adfiles ad_$(Platform_arch_model)_format.cpp \
- -additionalGeneratedFile_compiler2 $(HOTSPOTBUILDSPACE)/%f/generated/adfiles ad_$(Platform_arch_model)_gen.cpp \
- -additionalGeneratedFile_compiler2 $(HOTSPOTBUILDSPACE)/%f/generated/adfiles ad_$(Platform_arch_model)_misc.cpp \
- -additionalGeneratedFile_compiler2 $(HOTSPOTBUILDSPACE)/%f/generated/adfiles ad_$(Platform_arch_model)_peephole.cpp \
- -additionalGeneratedFile_compiler2 $(HOTSPOTBUILDSPACE)/%f/generated/adfiles ad_$(Platform_arch_model)_pipeline.cpp \
- -additionalGeneratedFile_compiler2 $(HOTSPOTBUILDSPACE)/%f/generated/adfiles adGlobals_$(Platform_arch_model).hpp \
- -additionalGeneratedFile_compiler2 $(HOTSPOTBUILDSPACE)/%f/generated/adfiles dfa_$(Platform_arch_model).cpp \
+ -additionalFile_compiler2 ad_$(Platform_arch_model).cpp \
+ -additionalFile_compiler2 ad_$(Platform_arch_model).hpp \
+ -additionalFile_compiler2 ad_$(Platform_arch_model)_clone.cpp \
+ -additionalFile_compiler2 ad_$(Platform_arch_model)_expand.cpp \
+ -additionalFile_compiler2 ad_$(Platform_arch_model)_format.cpp \
+ -additionalFile_compiler2 ad_$(Platform_arch_model)_gen.cpp \
+ -additionalFile_compiler2 ad_$(Platform_arch_model)_misc.cpp \
+ -additionalFile_compiler2 ad_$(Platform_arch_model)_peephole.cpp \
+ -additionalFile_compiler2 ad_$(Platform_arch_model)_pipeline.cpp \
+ -additionalFile_compiler2 adGlobals_$(Platform_arch_model).hpp \
+ -additionalFile_compiler2 dfa_$(Platform_arch_model).cpp \
  $(ProjectCreatorIDEOptionsIgnoreCompiler1:TARGET=compiler2)
 
 # Add in the jvmti (JSR-163) options
@@ -237,8 +258,8 @@ ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
 #       code merge was done correctly (@see jvmti.make and jvmtiEnvFill.java).
 #       If so, they would then check it in as a new version of jvmtiEnv.cpp.
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
- -additionalGeneratedFile $(HOTSPOTBUILDSPACE)/%f/generated/jvmtifiles jvmtiEnv.hpp \
- -additionalGeneratedFile $(HOTSPOTBUILDSPACE)/%f/generated/jvmtifiles jvmtiEnter.cpp \
- -additionalGeneratedFile $(HOTSPOTBUILDSPACE)/%f/generated/jvmtifiles jvmtiEnterTrace.cpp \
- -additionalGeneratedFile $(HOTSPOTBUILDSPACE)/%f/generated/jvmtifiles jvmti.h \
- -additionalGeneratedFile $(HOTSPOTBUILDSPACE)/%f/generated/jvmtifiles bytecodeInterpreterWithChecks.cpp
+ -additionalFile jvmtiEnv.hpp \
+ -additionalFile jvmtiEnter.cpp \
+ -additionalFile jvmtiEnterTrace.cpp \
+ -additionalFile jvmti.h \
+ -additionalFile bytecodeInterpreterWithChecks.cpp
