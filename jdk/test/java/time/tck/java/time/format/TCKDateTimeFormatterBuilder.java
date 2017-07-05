@@ -59,24 +59,23 @@
  */
 package tck.java.time.format;
 
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.format.*;
-
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 import static org.testng.Assert.assertEquals;
 
-import java.text.ParsePosition;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.SignStyle;
+import java.time.format.TextStyle;
+import java.time.temporal.Temporal;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
-import java.time.format.DateTimeBuilder;
-import java.time.temporal.Temporal;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -90,238 +89,116 @@ public class TCKDateTimeFormatterBuilder {
 
     private DateTimeFormatterBuilder builder;
 
-    @BeforeMethod(groups={"tck"})
+    @BeforeMethod
     public void setUp() {
         builder = new DateTimeFormatterBuilder();
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_toFormatter_empty() throws Exception {
         DateTimeFormatter f = builder.toFormatter();
         assertEquals(f.toString(), "");
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_parseCaseSensitive() throws Exception {
-        builder.parseCaseSensitive();
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ParseCaseSensitive(true)");
-    }
-
-    @Test(groups={"tck"})
-    public void test_parseCaseInsensitive() throws Exception {
-        builder.parseCaseInsensitive();
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ParseCaseSensitive(false)");
-    }
-
-    //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_parseStrict() throws Exception {
-        builder.parseStrict();
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ParseStrict(true)");
-    }
-
-    @Test(groups={"tck"})
-    public void test_parseLenient() throws Exception {
-        builder.parseLenient();
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ParseStrict(false)");
-    }
-
-    //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_appendValue_1arg() throws Exception {
-        builder.appendValue(DAY_OF_MONTH);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(DayOfMonth)");
-    }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendValue_1arg_null() throws Exception {
         builder.appendValue(null);
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_appendValue_2arg() throws Exception {
-        builder.appendValue(DAY_OF_MONTH, 3);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(DayOfMonth,3)");
-    }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendValue_2arg_null() throws Exception {
         builder.appendValue(null, 3);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendValue_2arg_widthTooSmall() throws Exception {
         builder.appendValue(DAY_OF_MONTH, 0);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendValue_2arg_widthTooBig() throws Exception {
         builder.appendValue(DAY_OF_MONTH, 20);
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_appendValue_3arg() throws Exception {
-        builder.appendValue(DAY_OF_MONTH, 2, 3, SignStyle.NORMAL);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(DayOfMonth,2,3,NORMAL)");
-    }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendValue_3arg_nullField() throws Exception {
         builder.appendValue(null, 2, 3, SignStyle.NORMAL);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendValue_3arg_minWidthTooSmall() throws Exception {
         builder.appendValue(DAY_OF_MONTH, 0, 2, SignStyle.NORMAL);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendValue_3arg_minWidthTooBig() throws Exception {
         builder.appendValue(DAY_OF_MONTH, 20, 2, SignStyle.NORMAL);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendValue_3arg_maxWidthTooSmall() throws Exception {
         builder.appendValue(DAY_OF_MONTH, 2, 0, SignStyle.NORMAL);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendValue_3arg_maxWidthTooBig() throws Exception {
         builder.appendValue(DAY_OF_MONTH, 2, 20, SignStyle.NORMAL);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendValue_3arg_maxWidthMinWidth() throws Exception {
         builder.appendValue(DAY_OF_MONTH, 4, 2, SignStyle.NORMAL);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendValue_3arg_nullSignStyle() throws Exception {
         builder.appendValue(DAY_OF_MONTH, 2, 3, null);
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_appendValue_subsequent2_parse3() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL).appendValue(DAY_OF_MONTH, 2);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear,1,2,NORMAL)Value(DayOfMonth,2)");
-        DateTimeBuilder cal = f.parseToBuilder("123", new ParsePosition(0));
-        assertEquals(cal.getFieldValueMap().get(MONTH_OF_YEAR), Long.valueOf(1));
-        assertEquals(cal.getFieldValueMap().get(DAY_OF_MONTH), Long.valueOf(23));
-    }
-
-    @Test(groups={"tck"})
-    public void test_appendValue_subsequent2_parse4() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL).appendValue(DAY_OF_MONTH, 2);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear,1,2,NORMAL)Value(DayOfMonth,2)");
-        DateTimeBuilder cal = f.parseToBuilder("0123", new ParsePosition(0));
-        assertEquals(cal.getFieldValueMap().get(MONTH_OF_YEAR), Long.valueOf(1));
-        assertEquals(cal.getFieldValueMap().get(DAY_OF_MONTH), Long.valueOf(23));
-    }
-
-    @Test(groups={"tck"})
-    public void test_appendValue_subsequent2_parse5() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL).appendValue(DAY_OF_MONTH, 2).appendLiteral('4');
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear,1,2,NORMAL)Value(DayOfMonth,2)'4'");
-        DateTimeBuilder cal = f.parseToBuilder("01234", new ParsePosition(0));
-        assertEquals(cal.getFieldValueMap().get(MONTH_OF_YEAR), Long.valueOf(1));
-        assertEquals(cal.getFieldValueMap().get(DAY_OF_MONTH), Long.valueOf(23));
-    }
-
-    @Test(groups={"tck"})
-    public void test_appendValue_subsequent3_parse6() throws Exception {
-        builder
-            .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
-            .appendValue(MONTH_OF_YEAR, 2)
-            .appendValue(DAY_OF_MONTH, 2);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(Year,4,10,EXCEEDS_PAD)Value(MonthOfYear,2)Value(DayOfMonth,2)");
-        DateTimeBuilder cal = f.parseToBuilder("20090630", new ParsePosition(0));
-        assertEquals(cal.getFieldValueMap().get(YEAR), Long.valueOf(2009));
-        assertEquals(cal.getFieldValueMap().get(MONTH_OF_YEAR), Long.valueOf(6));
-        assertEquals(cal.getFieldValueMap().get(DAY_OF_MONTH), Long.valueOf(30));
-    }
-
-    //-----------------------------------------------------------------------
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendValueReduced_null() throws Exception {
         builder.appendValueReduced(null, 2, 2000);
     }
 
-    @Test(groups={"tck"})
-    public void test_appendValueReduced() throws Exception {
-        builder.appendValueReduced(YEAR, 2, 2000);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ReducedValue(Year,2,2000)");
-        DateTimeBuilder cal = f.parseToBuilder("12", new ParsePosition(0));
-        assertEquals(cal.getFieldValueMap().get(YEAR), Long.valueOf(2012));
-    }
-
-    @Test(groups={"tck"})
-    public void test_appendValueReduced_subsequent_parse() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL).appendValueReduced(YEAR, 2, 2000);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear,1,2,NORMAL)ReducedValue(Year,2,2000)");
-        DateTimeBuilder cal = f.parseToBuilder("123", new ParsePosition(0));
-        assertEquals(cal.getFieldValueMap().get(MONTH_OF_YEAR), Long.valueOf(1));
-        assertEquals(cal.getFieldValueMap().get(YEAR), Long.valueOf(2023));
-    }
-
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_appendFraction_4arg() throws Exception {
-        builder.appendFraction(MINUTE_OF_HOUR, 1, 9, false);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Fraction(MinuteOfHour,1,9)");
-    }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendFraction_4arg_nullRule() throws Exception {
         builder.appendFraction(null, 1, 9, false);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendFraction_4arg_invalidRuleNotFixedSet() throws Exception {
         builder.appendFraction(DAY_OF_MONTH, 1, 9, false);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendFraction_4arg_minTooSmall() throws Exception {
         builder.appendFraction(MINUTE_OF_HOUR, -1, 9, false);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendFraction_4arg_minTooBig() throws Exception {
         builder.appendFraction(MINUTE_OF_HOUR, 10, 9, false);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendFraction_4arg_maxTooSmall() throws Exception {
         builder.appendFraction(MINUTE_OF_HOUR, 0, -1, false);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendFraction_4arg_maxTooBig() throws Exception {
         builder.appendFraction(MINUTE_OF_HOUR, 1, 10, false);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_appendFraction_4arg_maxWidthMinWidth() throws Exception {
         builder.appendFraction(MINUTE_OF_HOUR, 9, 3, false);
     }
@@ -329,63 +206,29 @@ public class TCKDateTimeFormatterBuilder {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_appendText_1arg() throws Exception {
-        builder.appendText(MONTH_OF_YEAR);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Text(MonthOfYear)");
-    }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendText_1arg_null() throws Exception {
         builder.appendText(null);
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_appendText_2arg() throws Exception {
-        builder.appendText(MONTH_OF_YEAR, TextStyle.SHORT);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Text(MonthOfYear,SHORT)");
-    }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendText_2arg_nullRule() throws Exception {
         builder.appendText(null, TextStyle.SHORT);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendText_2arg_nullStyle() throws Exception {
         builder.appendText(MONTH_OF_YEAR, (TextStyle) null);
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_appendTextMap() throws Exception {
-        Map<Long, String> map = new HashMap<Long, String>();
-        map.put(1L, "JNY");
-        map.put(2L, "FBY");
-        map.put(3L, "MCH");
-        map.put(4L, "APL");
-        map.put(5L, "MAY");
-        map.put(6L, "JUN");
-        map.put(7L, "JLY");
-        map.put(8L, "AGT");
-        map.put(9L, "SPT");
-        map.put(10L, "OBR");
-        map.put(11L, "NVR");
-        map.put(12L, "DBR");
-        builder.appendText(MONTH_OF_YEAR, map);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Text(MonthOfYear)");  // TODO: toString should be different?
-    }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendTextMap_nullRule() throws Exception {
-        builder.appendText(null, new HashMap<Long, String>());
+        builder.appendText(null, new HashMap<>());
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendTextMap_nullStyle() throws Exception {
         builder.appendText(MONTH_OF_YEAR, (Map<Long, String>) null);
     }
@@ -393,13 +236,6 @@ public class TCKDateTimeFormatterBuilder {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_appendOffsetId() throws Exception {
-        builder.appendOffsetId();
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Offset('Z',+HH:MM:ss)");
-    }
-
     @DataProvider(name="offsetPatterns")
     Object[][] data_offsetPatterns() {
         return new Object[][] {
@@ -447,21 +283,20 @@ public class TCKDateTimeFormatterBuilder {
         };
     }
 
-    @Test(dataProvider="offsetPatterns", groups={"tck"})
-    public void test_appendOffset_print(String pattern, int h, int m, int s, String expected) throws Exception {
+    @Test(dataProvider="offsetPatterns")
+    public void test_appendOffset_format(String pattern, int h, int m, int s, String expected) throws Exception {
         builder.appendOffset(pattern, "Z");
         DateTimeFormatter f = builder.toFormatter();
         ZoneOffset offset = ZoneOffset.ofHoursMinutesSeconds(h, m, s);
-        assertEquals(f.print(offset), expected);
+        assertEquals(f.format(offset), expected);
     }
 
-    @Test(dataProvider="offsetPatterns", groups={"tck"})
+    @Test(dataProvider="offsetPatterns")
     public void test_appendOffset_parse(String pattern, int h, int m, int s, String expected) throws Exception {
         builder.appendOffset(pattern, "Z");
         DateTimeFormatter f = builder.toFormatter();
-        ZoneOffset offset = ZoneOffset.ofHoursMinutesSeconds(h, m, s);
         ZoneOffset parsed = f.parse(expected, ZoneOffset::from);
-        assertEquals(f.print(parsed), expected);
+        assertEquals(f.format(parsed), expected);
     }
 
     @DataProvider(name="badOffsetPatterns")
@@ -481,17 +316,17 @@ public class TCKDateTimeFormatterBuilder {
         };
     }
 
-    @Test(dataProvider="badOffsetPatterns", expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(dataProvider="badOffsetPatterns", expectedExceptions=IllegalArgumentException.class)
     public void test_appendOffset_badPattern(String pattern) throws Exception {
         builder.appendOffset(pattern, "Z");
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendOffset_3arg_nullText() throws Exception {
         builder.appendOffset("+HH:MM", null);
     }
 
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendOffset_3arg_nullPattern() throws Exception {
         builder.appendOffset(null, "Z");
     }
@@ -499,21 +334,7 @@ public class TCKDateTimeFormatterBuilder {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_appendZoneId() throws Exception {
-        builder.appendZoneId();
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ZoneId()");
-    }
-
-    @Test(groups={"tck"})
-    public void test_appendZoneText_1arg() throws Exception {
-        builder.appendZoneText(TextStyle.FULL);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "ZoneText(FULL)");
-    }
-
-    @Test(expectedExceptions=NullPointerException.class, groups={"tck"})
+    @Test(expectedExceptions=NullPointerException.class)
     public void test_appendZoneText_1arg_nullText() throws Exception {
         builder.appendZoneText(null);
     }
@@ -521,101 +342,43 @@ public class TCKDateTimeFormatterBuilder {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_padNext_1arg() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR).padNext(2).appendValue(DAY_OF_MONTH).appendValue(DAY_OF_WEEK);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)Pad(Value(DayOfMonth),2)Value(DayOfWeek)");
+    @Test
+    public void test_padNext_1arg() {
+        builder.appendValue(MONTH_OF_YEAR).appendLiteral(':').padNext(2).appendValue(DAY_OF_MONTH);
+        assertEquals(builder.toFormatter().format(LocalDate.of(2013, 2, 1)), "2: 1");
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_padNext_1arg_invalidWidth() throws Exception {
         builder.padNext(0);
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_padNext_2arg_dash() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR).padNext(2, '-').appendValue(DAY_OF_MONTH).appendValue(DAY_OF_WEEK);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)Pad(Value(DayOfMonth),2,'-')Value(DayOfWeek)");
+        builder.appendValue(MONTH_OF_YEAR).appendLiteral(':').padNext(2, '-').appendValue(DAY_OF_MONTH);
+        assertEquals(builder.toFormatter().format(LocalDate.of(2013, 2, 1)), "2:-1");
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_padNext_2arg_invalidWidth() throws Exception {
         builder.padNext(0, '-');
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void test_padOptional() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR).padNext(5).optionalStart().appendValue(DAY_OF_MONTH).optionalEnd().appendValue(DAY_OF_WEEK);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)Pad([Value(DayOfMonth)],5)Value(DayOfWeek)");
+        builder.appendValue(MONTH_OF_YEAR).appendLiteral(':')
+                .padNext(5).optionalStart().appendValue(DAY_OF_MONTH).optionalEnd()
+                .appendLiteral(':').appendValue(YEAR);
+        assertEquals(builder.toFormatter().format(LocalDate.of(2013, 2, 1)), "2:    1:2013");
+        assertEquals(builder.toFormatter().format(YearMonth.of(2013, 2)), "2:     :2013");
     }
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_optionalStart_noEnd() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR).optionalStart().appendValue(DAY_OF_MONTH).appendValue(DAY_OF_WEEK);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[Value(DayOfMonth)Value(DayOfWeek)]");
-    }
-
-    @Test(groups={"tck"})
-    public void test_optionalStart2_noEnd() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR).optionalStart().appendValue(DAY_OF_MONTH).optionalStart().appendValue(DAY_OF_WEEK);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[Value(DayOfMonth)[Value(DayOfWeek)]]");
-    }
-
-    @Test(groups={"tck"})
-    public void test_optionalStart_doubleStart() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR).optionalStart().optionalStart().appendValue(DAY_OF_MONTH);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[[Value(DayOfMonth)]]");
-    }
-
-    //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
-    public void test_optionalEnd() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR).optionalStart().appendValue(DAY_OF_MONTH).optionalEnd().appendValue(DAY_OF_WEEK);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[Value(DayOfMonth)]Value(DayOfWeek)");
-    }
-
-    @Test(groups={"tck"})
-    public void test_optionalEnd2() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR).optionalStart().appendValue(DAY_OF_MONTH)
-            .optionalStart().appendValue(DAY_OF_WEEK).optionalEnd().appendValue(DAY_OF_MONTH).optionalEnd();
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[Value(DayOfMonth)[Value(DayOfWeek)]Value(DayOfMonth)]");
-    }
-
-    @Test(groups={"tck"})
-    public void test_optionalEnd_doubleStartSingleEnd() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR).optionalStart().optionalStart().appendValue(DAY_OF_MONTH).optionalEnd();
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[[Value(DayOfMonth)]]");
-    }
-
-    @Test(groups={"tck"})
-    public void test_optionalEnd_doubleStartDoubleEnd() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR).optionalStart().optionalStart().appendValue(DAY_OF_MONTH).optionalEnd().optionalEnd();
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)[[Value(DayOfMonth)]]");
-    }
-
-    @Test(groups={"tck"})
-    public void test_optionalStartEnd_immediateStartEnd() throws Exception {
-        builder.appendValue(MONTH_OF_YEAR).optionalStart().optionalEnd().appendValue(DAY_OF_MONTH);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Value(MonthOfYear)Value(DayOfMonth)");
-    }
-
-    @Test(expectedExceptions=IllegalStateException.class, groups={"tck"})
+    @Test(expectedExceptions=IllegalStateException.class)
     public void test_optionalEnd_noStart() throws Exception {
         builder.optionalEnd();
     }
@@ -626,157 +389,149 @@ public class TCKDateTimeFormatterBuilder {
     @DataProvider(name="validPatterns")
     Object[][] dataValid() {
         return new Object[][] {
-            {"'a'", "'a'"},
-            {"''", "''"},
-            {"'!'", "'!'"},
-            {"!", "'!'"},
+            {"'a'"},
+            {"''"},
+            {"'!'"},
+            {"!"},
 
-            {"'hello_people,][)('", "'hello_people,][)('"},
-            {"'hi'", "'hi'"},
-            {"'yyyy'", "'yyyy'"},
-            {"''''", "''"},
-            {"'o''clock'", "'o''clock'"},
+            {"'hello_people,][)('"},
+            {"'hi'"},
+            {"'yyyy'"},
+            {"''''"},
+            {"'o''clock'"},
 
-            {"G", "Value(Era)"},
-            {"GG", "Value(Era,2)"},
-            {"GGG", "Text(Era,SHORT)"},
-            {"GGGG", "Text(Era)"},
-            {"GGGGG", "Text(Era,NARROW)"},
+            {"G"},
+            {"GG"},
+            {"GGG"},
+            {"GGGG"},
+            {"GGGGG"},
 
-            {"y", "Value(Year)"},
-            {"yy", "ReducedValue(Year,2,2000)"},
-            {"yyy", "Value(Year,3,19,NORMAL)"},
-            {"yyyy", "Value(Year,4,19,EXCEEDS_PAD)"},
-            {"yyyyy", "Value(Year,5,19,EXCEEDS_PAD)"},
+            {"y"},
+            {"yy"},
+            {"yyy"},
+            {"yyyy"},
+            {"yyyyy"},
 
-//            {"Y", "Value(WeekBasedYear)"},
-//            {"YY", "ReducedValue(WeekBasedYear,2,2000)"},
-//            {"YYY", "Value(WeekBasedYear,3,19,NORMAL)"},
-//            {"YYYY", "Value(WeekBasedYear,4,19,EXCEEDS_PAD)"},
-//            {"YYYYY", "Value(WeekBasedYear,5,19,EXCEEDS_PAD)"},
+            {"M"},
+            {"MM"},
+            {"MMM"},
+            {"MMMM"},
+            {"MMMMM"},
 
-            {"M", "Value(MonthOfYear)"},
-            {"MM", "Value(MonthOfYear,2)"},
-            {"MMM", "Text(MonthOfYear,SHORT)"},
-            {"MMMM", "Text(MonthOfYear)"},
-            {"MMMMM", "Text(MonthOfYear,NARROW)"},
+            {"D"},
+            {"DD"},
+            {"DDD"},
 
-            {"D", "Value(DayOfYear)"},
-            {"DD", "Value(DayOfYear,2)"},
-            {"DDD", "Value(DayOfYear,3)"},
+            {"d"},
+            {"dd"},
+            {"ddd"},
 
-            {"d", "Value(DayOfMonth)"},
-            {"dd", "Value(DayOfMonth,2)"},
-            {"ddd", "Value(DayOfMonth,3)"},
+            {"F"},
+            {"FF"},
+            {"FFF"},
 
-            {"F", "Value(AlignedWeekOfMonth)"},
-            {"FF", "Value(AlignedWeekOfMonth,2)"},
-            {"FFF", "Value(AlignedWeekOfMonth,3)"},
+            {"Q"},
+            {"QQ"},
+            {"QQQ"},
+            {"QQQQ"},
+            {"QQQQQ"},
 
-            {"Q", "Value(QuarterOfYear)"},
-            {"QQ", "Value(QuarterOfYear,2)"},
-            {"QQQ", "Text(QuarterOfYear,SHORT)"},
-            {"QQQQ", "Text(QuarterOfYear)"},
-            {"QQQQQ", "Text(QuarterOfYear,NARROW)"},
+            {"E"},
+            {"EE"},
+            {"EEE"},
+            {"EEEE"},
+            {"EEEEE"},
 
-            {"E", "Value(DayOfWeek)"},
-            {"EE", "Value(DayOfWeek,2)"},
-            {"EEE", "Text(DayOfWeek,SHORT)"},
-            {"EEEE", "Text(DayOfWeek)"},
-            {"EEEEE", "Text(DayOfWeek,NARROW)"},
+            {"a"},
+            {"aa"},
+            {"aaa"},
+            {"aaaa"},
+            {"aaaaa"},
 
-            {"a", "Text(AmPmOfDay,SHORT)"},
-            {"aa", "Text(AmPmOfDay,SHORT)"},
-            {"aaa", "Text(AmPmOfDay,SHORT)"},
-            {"aaaa", "Text(AmPmOfDay)"},
-            {"aaaaa", "Text(AmPmOfDay,NARROW)"},
+            {"H"},
+            {"HH"},
+            {"HHH"},
 
-            {"H", "Value(HourOfDay)"},
-            {"HH", "Value(HourOfDay,2)"},
-            {"HHH", "Value(HourOfDay,3)"},
+            {"K"},
+            {"KK"},
+            {"KKK"},
 
-            {"K", "Value(HourOfAmPm)"},
-            {"KK", "Value(HourOfAmPm,2)"},
-            {"KKK", "Value(HourOfAmPm,3)"},
+            {"k"},
+            {"kk"},
+            {"kkk"},
 
-            {"k", "Value(ClockHourOfDay)"},
-            {"kk", "Value(ClockHourOfDay,2)"},
-            {"kkk", "Value(ClockHourOfDay,3)"},
+            {"h"},
+            {"hh"},
+            {"hhh"},
 
-            {"h", "Value(ClockHourOfAmPm)"},
-            {"hh", "Value(ClockHourOfAmPm,2)"},
-            {"hhh", "Value(ClockHourOfAmPm,3)"},
+            {"m"},
+            {"mm"},
+            {"mmm"},
 
-            {"m", "Value(MinuteOfHour)"},
-            {"mm", "Value(MinuteOfHour,2)"},
-            {"mmm", "Value(MinuteOfHour,3)"},
+            {"s"},
+            {"ss"},
+            {"sss"},
 
-            {"s", "Value(SecondOfMinute)"},
-            {"ss", "Value(SecondOfMinute,2)"},
-            {"sss", "Value(SecondOfMinute,3)"},
+            {"S"},
+            {"SS"},
+            {"SSS"},
+            {"SSSSSSSSS"},
 
-            {"S", "Fraction(NanoOfSecond,1,1)"},
-            {"SS", "Fraction(NanoOfSecond,2,2)"},
-            {"SSS", "Fraction(NanoOfSecond,3,3)"},
-            {"SSSSSSSSS", "Fraction(NanoOfSecond,9,9)"},
+            {"A"},
+            {"AA"},
+            {"AAA"},
 
-            {"A", "Value(MilliOfDay)"},
-            {"AA", "Value(MilliOfDay,2)"},
-            {"AAA", "Value(MilliOfDay,3)"},
+            {"n"},
+            {"nn"},
+            {"nnn"},
 
-            {"n", "Value(NanoOfSecond)"},
-            {"nn", "Value(NanoOfSecond,2)"},
-            {"nnn", "Value(NanoOfSecond,3)"},
+            {"N"},
+            {"NN"},
+            {"NNN"},
 
-            {"N", "Value(NanoOfDay)"},
-            {"NN", "Value(NanoOfDay,2)"},
-            {"NNN", "Value(NanoOfDay,3)"},
+            {"z"},
+            {"zz"},
+            {"zzz"},
+            {"zzzz"},
 
-            {"z", "ZoneText(SHORT)"},
-            {"zz", "ZoneText(SHORT)"},
-            {"zzz", "ZoneText(SHORT)"},
-            {"zzzz", "ZoneText(FULL)"},
-            {"zzzzz", "ZoneText(FULL)"},
+            {"VV"},
 
-            {"I", "ZoneId()"},
-            {"II", "ZoneId()"},
-            {"III", "ZoneId()"},
-            {"IIII", "ZoneId()"},
-            {"IIIII", "ZoneId()"},
+            {"Z"},
+            {"ZZ"},
+            {"ZZZ"},
 
-            {"Z", "Offset('+0000',+HHMM)"},  // SimpleDateFormat compatible
-            {"ZZ", "Offset('+0000',+HHMM)"},
-            {"ZZZ", "Offset('+00:00',+HH:MM)"},
+            {"X"},
+            {"XX"},
+            {"XXX"},
+            {"XXXX"},
+            {"XXXXX"},
 
-            {"X", "Offset('Z',+HH)"},
-            {"XX", "Offset('Z',+HHMM)"},
-            {"XXX", "Offset('Z',+HH:MM)"},
-            {"XXXX", "Offset('Z',+HHMMss)"},
-            {"XXXXX", "Offset('Z',+HH:MM:ss)"},
+            {"x"},
+            {"xx"},
+            {"xxx"},
+            {"xxxx"},
+            {"xxxxx"},
 
-            {"ppH", "Pad(Value(HourOfDay),2)"},
-            {"pppDD", "Pad(Value(DayOfYear,2),3)"},
+            {"ppH"},
+            {"pppDD"},
 
-            {"yyyy[-MM[-dd", "Value(Year,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)['-'Value(DayOfMonth,2)]]"},
-            {"yyyy[-MM[-dd]]", "Value(Year,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)['-'Value(DayOfMonth,2)]]"},
-            {"yyyy[-MM[]-dd]", "Value(Year,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)'-'Value(DayOfMonth,2)]"},
+            {"yyyy[-MM[-dd"},
+            {"yyyy[-MM[-dd]]"},
+            {"yyyy[-MM[]-dd]"},
 
-            {"yyyy-MM-dd'T'HH:mm:ss.SSS", "Value(Year,4,19,EXCEEDS_PAD)'-'Value(MonthOfYear,2)'-'Value(DayOfMonth,2)" +
-                "'T'Value(HourOfDay,2)':'Value(MinuteOfHour,2)':'Value(SecondOfMinute,2)'.'Fraction(NanoOfSecond,3,3)"},
+            {"yyyy-MM-dd'T'HH:mm:ss.SSS"},
 
-            {"e", "WeekBased(e1)"},
-            {"w", "WeekBased(w1)"},
-            {"W", "WeekBased(W1)"},
-            {"WW", "WeekBased(W2)"},
+            {"e"},
+            {"w"},
+            {"W"},
+            {"WW"},
 
         };
     }
 
-    @Test(dataProvider="validPatterns", groups={"implementation"})
-    public void test_appendPattern_valid(String input, String expected) throws Exception {
-        builder.appendPattern(input);
-        DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), expected);
+    @Test(dataProvider="validPatterns")
+    public void test_appendPattern_valid(String input) throws Exception {
+        builder.appendPattern(input);  // test is for no error here
     }
 
     //-----------------------------------------------------------------------
@@ -801,6 +556,7 @@ public class TCKDateTimeFormatterBuilder {
             {"aaaaaa"},
             {"ZZZZ"},
             {"XXXXXX"},
+            {"zzzzz"},
 
             {"RO"},
 
@@ -821,13 +577,9 @@ public class TCKDateTimeFormatterBuilder {
         };
     }
 
-    @Test(dataProvider="invalidPatterns", expectedExceptions=IllegalArgumentException.class, groups={"tck"})
+    @Test(dataProvider="invalidPatterns", expectedExceptions=IllegalArgumentException.class)
     public void test_appendPattern_invalid(String input) throws Exception {
-        try {
-            builder.appendPattern(input);
-        } catch (IllegalArgumentException ex) {
-            throw ex;
-        }
+        builder.appendPattern(input);  // test is for error here
     }
 
     //-----------------------------------------------------------------------
@@ -842,10 +594,10 @@ public class TCKDateTimeFormatterBuilder {
         };
     }
 
-    @Test(dataProvider="patternPrint", groups={"tck"})
+    @Test(dataProvider="patternPrint")
     public void test_appendPattern_patternPrint(String input, Temporal temporal, String expected) throws Exception {
         DateTimeFormatter f = builder.appendPattern(input).toFormatter(Locale.UK);
-        String test = f.print(temporal);
+        String test = f.format(temporal);
         assertEquals(test, expected);
     }
 

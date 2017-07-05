@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.io.IOException;
  *
  * @since 1.5
  */
-
+@FunctionalInterface
 public interface Readable {
 
     /**
@@ -51,5 +51,4 @@ public interface Readable {
      * @throws java.nio.ReadOnlyBufferException if cb is a read only buffer
      */
     public int read(java.nio.CharBuffer cb) throws IOException;
-
 }

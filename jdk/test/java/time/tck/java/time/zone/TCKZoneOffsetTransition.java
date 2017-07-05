@@ -59,19 +59,15 @@
  */
 package tck.java.time.zone;
 
-import java.time.temporal.Year;
-import java.time.zone.*;
-
 import static java.time.temporal.ChronoUnit.HOURS;
 import static org.testng.Assert.assertEquals;
-
-import java.io.IOException;
 
 import tck.java.time.AbstractTCKTest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-
+import java.time.Year;
+import java.time.zone.ZoneOffsetTransition;
 import org.testng.annotations.Test;
 
 /**

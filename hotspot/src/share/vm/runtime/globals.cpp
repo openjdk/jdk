@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,10 @@ bool Flag::is_unlocker() const {
 }
 
 bool Flag::is_unlocked() const {
-  if (strcmp(kind, "{diagnostic}") == 0) {
+  if (strcmp(kind, "{diagnostic}") == 0 ||
+      strcmp(kind, "{C2 diagnostic}") == 0 ||
+      strcmp(kind, "{ARCH diagnostic}") == 0 ||
+      strcmp(kind, "{Shark diagnostic}") == 0) {
     if (strcmp(name, "EnableInvokeDynamic") == 0 && UnlockExperimentalVMOptions && !UnlockDiagnosticVMOptions) {
       // transitional logic to allow tests to run until they are changed
       static int warned;
@@ -78,7 +81,9 @@ bool Flag::is_unlocked() const {
     }
     return UnlockDiagnosticVMOptions;
   } else if (strcmp(kind, "{experimental}") == 0 ||
-             strcmp(kind, "{C2 experimental}") == 0) {
+             strcmp(kind, "{C2 experimental}") == 0 ||
+             strcmp(kind, "{ARCH experimental}") == 0 ||
+             strcmp(kind, "{Shark experimental}") == 0) {
     return UnlockExperimentalVMOptions;
   } else {
     return is_unlocked_ext();

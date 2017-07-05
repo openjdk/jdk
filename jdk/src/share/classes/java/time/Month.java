@@ -64,11 +64,11 @@ package java.time;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoUnit.MONTHS;
 
+import java.time.chrono.Chronology;
+import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
-import java.time.temporal.Chrono;
 import java.time.temporal.ChronoField;
-import java.time.temporal.ISOChrono;
 import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
@@ -192,8 +192,9 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
     /**
      * Obtains an instance of {@code Month} from a temporal object.
      * <p>
-     * A {@code TemporalAccessor} represents some form of date and time information.
-     * This factory converts the arbitrary temporal object to an instance of {@code Month}.
+     * This obtains a month based on the specified temporal.
+     * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
+     * which this factory converts to an instance of {@code Month}.
      * <p>
      * The conversion extracts the {@link ChronoField#MONTH_OF_YEAR MONTH_OF_YEAR} field.
      * The extraction is only permitted if the temporal object has an ISO
@@ -211,7 +212,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
             return (Month) temporal;
         }
         try {
-            if (ISOChrono.INSTANCE.equals(Chrono.from(temporal)) == false) {
+            if (IsoChronology.INSTANCE.equals(Chronology.from(temporal)) == false) {
                 temporal = LocalDate.from(temporal);
             }
             return of(temporal.get(MONTH_OF_YEAR));
@@ -237,8 +238,9 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
     /**
      * Gets the textual representation, such as 'Jan' or 'December'.
      * <p>
-     * This returns the textual name used to identify the month-of-year.
-     * The parameters control the length of the returned text and the locale.
+     * This returns the textual name used to identify the month-of-year,
+     * suitable for presentation to the user.
+     * The parameters control the style of the returned text and the locale.
      * <p>
      * If no textual mapping is found then the {@link #getValue() numeric value} is returned.
      *
@@ -246,8 +248,8 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
      * @param locale  the locale to use, not null
      * @return the text value of the month-of-year, not null
      */
-    public String getText(TextStyle style, Locale locale) {
-        return new DateTimeFormatterBuilder().appendText(MONTH_OF_YEAR, style).toFormatter(locale).print(this);
+    public String getDisplayName(TextStyle style, Locale locale) {
+        return new DateTimeFormatterBuilder().appendText(MONTH_OF_YEAR, style).toFormatter(locale).format(this);
     }
 
     //-----------------------------------------------------------------------
@@ -263,7 +265,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
      * All other {@code ChronoField} instances will return false.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doIsSupported(TemporalAccessor)}
+     * is obtained by invoking {@code TemporalField.isSupportedBy(TemporalAccessor)}
      * passing {@code this} as the argument.
      * Whether the field is supported is determined by the field.
      *
@@ -275,7 +277,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
         if (field instanceof ChronoField) {
             return field == MONTH_OF_YEAR;
         }
-        return field != null && field.doIsSupported(this);
+        return field != null && field.isSupportedBy(this);
     }
 
     /**
@@ -291,7 +293,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
      * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doRange(TemporalAccessor)}
+     * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessor)}
      * passing {@code this} as the argument.
      * Whether the range can be obtained is determined by the field.
      *
@@ -320,15 +322,13 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
      * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doGet(TemporalAccessor)}
+     * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
      * passing {@code this} as the argument. Whether the value can be obtained,
      * and what the value represents, is determined by the field.
      *
      * @param field  the field to get, not null
      * @return the value for the field, within the valid range of values
      * @throws DateTimeException if a value for the field cannot be obtained
-     * @throws DateTimeException if the range of valid values for the field exceeds an {@code int}
-     * @throws DateTimeException if the value is outside the range of valid values for the field
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -351,7 +351,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
      * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doGet(TemporalAccessor)}
+     * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
      * passing {@code this} as the argument. Whether the value can be obtained,
      * and what the value represents, is determined by the field.
      *
@@ -367,7 +367,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
         } else if (field instanceof ChronoField) {
             throw new DateTimeException("Unsupported field: " + field.getName());
         }
-        return field.doGet(this);
+        return field.getFrom(this);
     }
 
     //-----------------------------------------------------------------------
@@ -554,8 +554,8 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.chrono()) {
-            return (R) ISOChrono.INSTANCE;
+        if (query == Queries.chronology()) {
+            return (R) IsoChronology.INSTANCE;
         } else if (query == Queries.precision()) {
             return (R) MONTHS;
         }
@@ -599,7 +599,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
      */
     @Override
     public Temporal adjustInto(Temporal temporal) {
-        if (Chrono.from(temporal).equals(ISOChrono.INSTANCE) == false) {
+        if (Chronology.from(temporal).equals(IsoChronology.INSTANCE) == false) {
             throw new DateTimeException("Adjustment only supported on ISO date-time");
         }
         return temporal.with(MONTH_OF_YEAR, getValue());

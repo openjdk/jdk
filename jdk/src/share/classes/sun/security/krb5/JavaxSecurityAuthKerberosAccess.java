@@ -35,9 +35,8 @@ import sun.security.krb5.PrincipalName;
  */
 public interface JavaxSecurityAuthKerberosAccess {
     /**
-     * Returns keys for a principal in a keytab.
-     * @return the keys, never null, can be empty.
+     * Returns a snapshot to the backing keytab
      */
-    public EncryptionKey[] keyTabGetEncryptionKeys(
-            KeyTab ktab, PrincipalName principal);
+    public sun.security.krb5.internal.ktab.KeyTab keyTabTakeSnapshot(
+            KeyTab ktab);
 }

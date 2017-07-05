@@ -64,6 +64,7 @@ import java.time.format.*;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.ERA;
 import static org.testng.Assert.assertEquals;
 
 import java.util.Locale;
@@ -71,6 +72,7 @@ import java.util.Locale;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.temporal.TemporalField;
+import java.time.chrono.JapaneseChronology;
 import test.java.time.temporal.MockFieldValue;
 
 import org.testng.annotations.DataProvider;
@@ -85,12 +87,12 @@ public class TestTextPrinter extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     @Test(expectedExceptions=DateTimeException.class)
     public void test_print_emptyCalendrical() throws Exception {
-        getFormatter(DAY_OF_WEEK, TextStyle.FULL).printTo(EMPTY_DTA, buf);
+        getFormatter(DAY_OF_WEEK, TextStyle.FULL).formatTo(EMPTY_DTA, buf);
     }
 
     public void test_print_append() throws Exception {
         buf.append("EXISTING");
-        getFormatter(DAY_OF_WEEK, TextStyle.FULL).printTo(LocalDate.of(2012, 4, 18), buf);
+        getFormatter(DAY_OF_WEEK, TextStyle.FULL).formatTo(LocalDate.of(2012, 4, 18), buf);
         assertEquals(buf.toString(), "EXISTINGWednesday");
     }
 
@@ -163,23 +165,46 @@ public class TestTextPrinter extends AbstractTestPrinterParser {
             {MONTH_OF_YEAR, TextStyle.SHORT, 10, "Oct"},
             {MONTH_OF_YEAR, TextStyle.SHORT, 11, "Nov"},
             {MONTH_OF_YEAR, TextStyle.SHORT, 12, "Dec"},
+
+            {ERA,           TextStyle.FULL, 0, "Before Christ"},
+            {ERA,           TextStyle.FULL, 1, "Anno Domini"},
+            {ERA,           TextStyle.SHORT, 0, "BC"},
+            {ERA,           TextStyle.SHORT, 1, "AD"},
+            {ERA,           TextStyle.NARROW, 0, "B"},
+            {ERA,           TextStyle.NARROW, 1, "A"},
        };
     }
 
+    @DataProvider(name="print_JapaneseChronology")
+    Object[][] provider_japaneseEra() {
+       return new Object[][] {
+            {ERA,           TextStyle.FULL, 2, "Heisei"}, // Note: CLDR doesn't define "wide" Japanese era names.
+            {ERA,           TextStyle.SHORT, 2, "Heisei"},
+            {ERA,           TextStyle.NARROW, 2, "H"},
+       };
+    };
+
     @Test(dataProvider="print")
-    public void test_print(TemporalField field, TextStyle style, int value, String expected) throws Exception {
-        getFormatter(field, style).printTo(new MockFieldValue(field, value), buf);
+    public void test_format(TemporalField field, TextStyle style, int value, String expected) throws Exception {
+        getFormatter(field, style).formatTo(new MockFieldValue(field, value), buf);
+        assertEquals(buf.toString(), expected);
+    }
+
+    @Test(dataProvider="print_JapaneseChronology")
+    public void test_formatJapaneseEra(TemporalField field, TextStyle style, int value, String expected) throws Exception {
+        LocalDate ld = LocalDate.of(2013, 1, 31);
+        getFormatter(field, style).withChronology(JapaneseChronology.INSTANCE).formatTo(ld, buf);
         assertEquals(buf.toString(), expected);
     }
 
     //-----------------------------------------------------------------------
     public void test_print_french_long() throws Exception {
-        getFormatter(MONTH_OF_YEAR, TextStyle.FULL).withLocale(Locale.FRENCH).printTo(LocalDate.of(2012, 1, 1), buf);
+        getFormatter(MONTH_OF_YEAR, TextStyle.FULL).withLocale(Locale.FRENCH).formatTo(LocalDate.of(2012, 1, 1), buf);
         assertEquals(buf.toString(), "janvier");
     }
 
     public void test_print_french_short() throws Exception {
-        getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).withLocale(Locale.FRENCH).printTo(LocalDate.of(2012, 1, 1), buf);
+        getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).withLocale(Locale.FRENCH).formatTo(LocalDate.of(2012, 1, 1), buf);
         assertEquals(buf.toString(), "janv.");
     }
 

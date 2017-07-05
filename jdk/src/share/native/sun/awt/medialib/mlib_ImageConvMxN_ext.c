@@ -253,8 +253,10 @@ mlib_status mlib_convMxNext_s32(mlib_image       *dst,
   if (mn > 256) {
     dkernel = mlib_malloc(mn * sizeof(mlib_d64));
 
-    if (dkernel == NULL)
+    if (dkernel == NULL) {
+      if (dsa != dspace) mlib_free(dsa);
       return MLIB_FAILURE;
+    }
   }
 
   while (scale > 30) {
