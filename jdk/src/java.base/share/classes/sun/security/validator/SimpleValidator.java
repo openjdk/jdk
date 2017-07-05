@@ -59,23 +59,23 @@ public final class SimpleValidator extends Validator {
 
     // Constants for the OIDs we need
 
-    final static String OID_BASIC_CONSTRAINTS = "2.5.29.19";
+    static final String OID_BASIC_CONSTRAINTS = "2.5.29.19";
 
-    final static String OID_NETSCAPE_CERT_TYPE = "2.16.840.1.113730.1.1";
+    static final String OID_NETSCAPE_CERT_TYPE = "2.16.840.1.113730.1.1";
 
-    final static String OID_KEY_USAGE = "2.5.29.15";
+    static final String OID_KEY_USAGE = "2.5.29.15";
 
-    final static String OID_EXTENDED_KEY_USAGE = "2.5.29.37";
+    static final String OID_EXTENDED_KEY_USAGE = "2.5.29.37";
 
-    final static String OID_EKU_ANY_USAGE = "2.5.29.37.0";
+    static final String OID_EKU_ANY_USAGE = "2.5.29.37.0";
 
-    final static ObjectIdentifier OBJID_NETSCAPE_CERT_TYPE =
+    static final ObjectIdentifier OBJID_NETSCAPE_CERT_TYPE =
         NetscapeCertTypeExtension.NetscapeCertType_Id;
 
-    private final static String NSCT_SSL_CA =
+    private static final String NSCT_SSL_CA =
                                 NetscapeCertTypeExtension.SSL_CA;
 
-    private final static String NSCT_CODE_SIGNING_CA =
+    private static final String NSCT_CODE_SIGNING_CA =
                                 NetscapeCertTypeExtension.OBJECT_SIGNING_CA;
 
     /**

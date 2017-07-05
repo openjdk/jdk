@@ -102,7 +102,7 @@ import static sun.nio.cs.CharsetMapping.*;
 
 public class DoubleByte {
 
-    public final static char[] B2C_UNMAPPABLE;
+    public static final char[] B2C_UNMAPPABLE;
     static {
         B2C_UNMAPPABLE = new char[0x100];
         Arrays.fill(B2C_UNMAPPABLE, UNMAPPABLE_DECODING);

@@ -336,8 +336,8 @@ public class KeyAgreement {
         }
     }
 
-    private final static int I_NO_PARAMS = 1;
-    private final static int I_PARAMS    = 2;
+    private static final int I_NO_PARAMS = 1;
+    private static final int I_PARAMS    = 2;
 
     private void implInit(KeyAgreementSpi spi, int type, Key key,
             AlgorithmParameterSpec params, SecureRandom random)

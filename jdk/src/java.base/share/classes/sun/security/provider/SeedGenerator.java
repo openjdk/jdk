@@ -141,7 +141,7 @@ abstract class SeedGenerator {
     /**
      * Fill result with bytes from the queue. Wait for it if it isn't ready.
      */
-    static public void generateSeed(byte[] result) {
+    public static void generateSeed(byte[] result) {
         instance.getSeedBytes(result);
     }
 
@@ -322,7 +322,7 @@ abstract class SeedGenerator {
          * pushes them into the queue.
          */
         @Override
-        final public void run() {
+        public final void run() {
             try {
                 while (true) {
                     // Queue full? Wait till there's room.
@@ -466,7 +466,7 @@ abstract class SeedGenerator {
          */
         private static class BogusThread implements Runnable {
             @Override
-            final public void run() {
+            public final void run() {
                 try {
                     for (int i = 0; i < 5; i++) {
                         Thread.sleep(50);

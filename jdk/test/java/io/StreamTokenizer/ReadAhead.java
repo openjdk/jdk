@@ -39,7 +39,7 @@ public class ReadAhead {
 
 
     /* An InputStream subclass that cannot read past a given limit */
-    static private class LimitedInputStream extends InputStream {
+    private static class LimitedInputStream extends InputStream {
 
         private String input;
         private int limit;      /* Do not allow input[limit] to be read */
@@ -60,7 +60,7 @@ public class ReadAhead {
 
 
     /* A Reader subclass that cannot read past a given limit */
-    static private class LimitedReader extends Reader {
+    private static class LimitedReader extends Reader {
 
         private String input;
         private int limit;      /* Do not allow input[limit] to be read */
@@ -95,11 +95,11 @@ public class ReadAhead {
 
     /* Interface for objects that can create new StreamTokenizers
        with a given limited input */
-    static private interface StreamTokenizerMaker {
+    private static interface StreamTokenizerMaker {
         public StreamTokenizer create(String input, int limit);
     }
 
-    static private void fail(String why) throws Exception {
+    private static void fail(String why) throws Exception {
         throw new Exception(why);
     }
 

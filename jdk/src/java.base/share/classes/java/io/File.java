@@ -2204,7 +2204,7 @@ public class File
 
     // -- Integration with java.nio.file --
 
-    private volatile transient Path filePath;
+    private transient volatile Path filePath;
 
     /**
      * Returns a {@link Path java.nio.file.Path} object constructed from the

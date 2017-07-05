@@ -180,7 +180,7 @@ public abstract class ListResourceBundle extends ResourceBundle {
      * @return an array of an <code>Object</code> array representing a
      * key-value pair.
      */
-    abstract protected Object[][] getContents();
+    protected abstract Object[][] getContents();
 
     // ==================privates====================
 

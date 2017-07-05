@@ -32,8 +32,8 @@ import java.util.function.*;
 import java.io.*;
 
 public class Basic {
-    final static Random rnd = new Random(666);
-    final static Integer nil = new Integer(0);
+    static final Random rnd = new Random(666);
+    static final Integer nil = new Integer(0);
 
     public static void main(String[] args)  throws Exception {
         int numItr =  500;

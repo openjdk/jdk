@@ -45,7 +45,7 @@ import java.util.logging.Logger;
  */
 public class TestGetGlobalByName {
 
-    final static String[] messages = {
+    static final String[] messages = {
         "1. This message should not appear on the console.",
         "2. This message should appear on the console.",
         "3. This message should now appear on the console too."

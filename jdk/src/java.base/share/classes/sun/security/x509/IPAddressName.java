@@ -183,7 +183,7 @@ public class IPAddressName implements GeneralNameInterface {
      *             be 32 bytes long, otherwise 16.
      * @throws IOException on error
      */
-    private final static int MASKSIZE = 16;
+    private static final int MASKSIZE = 16;
     private void parseIPv6(String name) throws IOException {
 
         int slashNdx = name.indexOf('/');

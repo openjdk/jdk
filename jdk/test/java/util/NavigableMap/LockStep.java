@@ -534,8 +534,8 @@ public class LockStep {
         }
     }
 
-    static abstract class MapFrobber { abstract void frob(NavigableMap m); }
-    static abstract class SetFrobber { abstract void frob(NavigableSet m); }
+    abstract static class MapFrobber { abstract void frob(NavigableMap m); }
+    abstract static class SetFrobber { abstract void frob(NavigableSet m); }
 
     static MapFrobber randomAdder(NavigableMap m) {
         final Integer k = unusedKey(m);

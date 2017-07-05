@@ -38,17 +38,17 @@ import java.util.logging.Logger;
 
 
 public class LoggerResourceBundleRace extends RacingThreadsTest {
-    private final static int N_LOOPS   = 500000;   // # of race loops
-    private final static int N_SECS    = 15;       // # of secs to run test
+    private static final int N_LOOPS   = 500000;   // # of race loops
+    private static final int N_SECS    = 15;       // # of secs to run test
     // # of parallel threads; must match number of MyResources inner classes
-    private final static int N_THREADS = 3;
+    private static final int N_THREADS = 3;
 
-    private final static String LOGGER_PREFIX = "myLogger-";
-    private final static String RESOURCE_PREFIX
+    private static final String LOGGER_PREFIX = "myLogger-";
+    private static final String RESOURCE_PREFIX
         = "LoggerResourceBundleRace$MyResources";
     // these counters are AtomicInteger since any worker thread can increment
-    private final static AtomicInteger iaeCnt = new AtomicInteger();
-    private final static AtomicInteger worksCnt = new AtomicInteger();
+    private static final AtomicInteger iaeCnt = new AtomicInteger();
+    private static final AtomicInteger worksCnt = new AtomicInteger();
 
     Logger dummy;   // dummy Logger
 
@@ -156,7 +156,7 @@ public class LoggerResourceBundleRace extends RacingThreadsTest {
     // N_THREADS above must match number of MyResources inner classes
     //
     public static class MyResources0 extends ListResourceBundle {
-        final static Object[][] contents = {
+        static final Object[][] contents = {
             {"sample1", "translation #1 for sample1"},
             {"sample2", "translation #1 for sample2"},
         };
@@ -167,7 +167,7 @@ public class LoggerResourceBundleRace extends RacingThreadsTest {
     }
 
     public static class MyResources1 extends ListResourceBundle {
-        final static Object[][] contents = {
+        static final Object[][] contents = {
             {"sample1", "translation #2 for sample1"},
             {"sample2", "translation #2 for sample2"},
         };
@@ -178,7 +178,7 @@ public class LoggerResourceBundleRace extends RacingThreadsTest {
     }
 
     public static class MyResources2 extends ListResourceBundle {
-        final static Object[][] contents = {
+        static final Object[][] contents = {
             {"sample1", "translation #3 for sample1"},
             {"sample2", "translation #3 for sample2"},
         };

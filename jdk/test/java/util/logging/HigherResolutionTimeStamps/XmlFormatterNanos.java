@@ -121,7 +121,7 @@ public class XmlFormatterNanos {
         }
     }
 
-    final static List<Properties> properties;
+    static final List<Properties> properties;
     static {
         Properties props1 = new Properties();
         props1.setProperty("test.name", "with XML nano element (default)");

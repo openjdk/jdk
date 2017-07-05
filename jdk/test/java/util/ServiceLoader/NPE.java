@@ -30,7 +30,7 @@ import java.util.ServiceLoader;
 import java.util.Arrays;
 
 public final class NPE {
-    static abstract class Test {
+    abstract static class Test {
         String name;
 
         Test(String name) { this.name = name; }

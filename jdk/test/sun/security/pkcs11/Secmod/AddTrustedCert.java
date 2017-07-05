@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,29 +44,47 @@ public class AddTrustedCert extends SecmodTest {
             return;
         }
 
-        InputStream in = new FileInputStream(BASE + SEP + "anchor.cer");
-        CertificateFactory factory = CertificateFactory.getInstance("X.509");
-        X509Certificate cert = (X509Certificate)factory.generateCertificate(in);
-        in.close();
-//      System.out.println(cert);
+        X509Certificate cert;
+        try (InputStream in = new FileInputStream(BASE + SEP + "anchor.cer")) {
+            CertificateFactory factory =
+                    CertificateFactory.getInstance("X.509");
+            cert = (X509Certificate)factory.generateCertificate(in);
+        }
 
         String configName = BASE + SEP + "nss.cfg";
         Provider p = getSunPKCS11(configName);
 
         System.out.println(p);
         Security.addProvider(p);
-        KeyStore ks = KeyStore.getInstance("PKCS11", p);
+        KeyStore ks = KeyStore.getInstance(PKCS11, p);
         ks.load(null, password);
-        Collection<String> aliases = new TreeSet<String>(Collections.list(ks.aliases()));
+        Collection<String> aliases = new TreeSet<>(Collections.list(
+                ks.aliases()));
         System.out.println("entries: " + aliases.size());
         System.out.println(aliases);
         int size1 = aliases.size();
 
         String alias = "anchor";
-        ks.setCertificateEntry(alias, cert);
-        ks.setCertificateEntry(alias, cert);
+        if (ks.containsAlias(alias)) {
+            throw new Exception("Alias exists: " + alias);
+        }
 
-        aliases = new TreeSet<String>(Collections.list(ks.aliases()));
+        ks.setCertificateEntry(alias, cert);
+        KeyStore.Entry first = ks.getEntry(alias, null);
+        System.out.println("first entry = " + first);
+        if (!ks.entryInstanceOf(alias, TrustedCertificateEntry.class)) {
+            throw new Exception("Unexpected first entry type: " + first);
+        }
+
+        ks.setCertificateEntry(alias, cert);
+        KeyStore.Entry second = ks.getEntry(alias, null);
+        System.out.println("second entry = " + second);
+        if (!ks.entryInstanceOf(alias, TrustedCertificateEntry.class)) {
+            throw new Exception("Unexpected second entry type: "
+                    + second);
+        }
+
+        aliases = new TreeSet<>(Collections.list(ks.aliases()));
         System.out.println("entries: " + aliases.size());
         System.out.println(aliases);
         int size2 = aliases.size();
@@ -79,8 +97,12 @@ public class AddTrustedCert extends SecmodTest {
             throw new Exception("KeyStore returned incorrect certificate");
         }
 
-        System.out.println("OK");
+        ks.deleteEntry(alias);
+        if (ks.containsAlias(alias)) {
+            throw new Exception("Alias still exists: " + alias);
+        }
 
+        System.out.println("OK");
     }
 
 }

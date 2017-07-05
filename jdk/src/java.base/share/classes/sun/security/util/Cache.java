@@ -202,7 +202,7 @@ public abstract class Cache<K,V> {
 
 class NullCache<K,V> extends Cache<K,V> {
 
-    final static Cache<Object,Object> INSTANCE = new NullCache<>();
+    static final Cache<Object,Object> INSTANCE = new NullCache<>();
 
     private NullCache() {
         // empty
@@ -244,10 +244,10 @@ class NullCache<K,V> extends Cache<K,V> {
 
 class MemoryCache<K,V> extends Cache<K,V> {
 
-    private final static float LOAD_FACTOR = 0.75f;
+    private static final float LOAD_FACTOR = 0.75f;
 
     // XXXX
-    private final static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
     private final Map<K, CacheEntry<K,V>> cacheMap;
     private int maxSize;

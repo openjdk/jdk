@@ -88,7 +88,7 @@ public enum LauncherHelper {
 
     // sync with java.c and sun.misc.VM
     private static final String diagprop = "sun.java.launcher.diag";
-    final static boolean trace = sun.misc.VM.getSavedProperty(diagprop) != null;
+    static final boolean trace = sun.misc.VM.getSavedProperty(diagprop) != null;
 
     private static final String defaultBundleName =
             "sun.launcher.resources.launcher";

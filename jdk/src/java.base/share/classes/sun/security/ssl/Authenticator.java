@@ -244,7 +244,7 @@ class Authenticator {
         return copy;
     }
 
-    final static long toLong(byte[] recordEnS) {
+    static final long toLong(byte[] recordEnS) {
         if (recordEnS != null && recordEnS.length == 8) {
             return ((recordEnS[0] & 0xFFL) << 56) |
                    ((recordEnS[1] & 0xFFL) << 48) |

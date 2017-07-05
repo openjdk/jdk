@@ -85,7 +85,7 @@ class JNIHandles : AllStatic {
   // Traversal of regular global handles
   static void oops_do(OopClosure* f);
   // Traversal of weak global handles. Unreachable oops are cleared.
-  static void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
+  static size_t weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
 };
 
 
@@ -153,7 +153,7 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   // Traversal of regular handles
   void oops_do(OopClosure* f);
   // Traversal of weak handles. Unreachable oops are cleared.
-  void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
+  size_t weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
 
   // Checked JNI support
   void set_planned_capacity(size_t planned_capacity) { _planned_capacity = planned_capacity; }

@@ -64,7 +64,7 @@ class TestClass1 {
         int field1;
 
     @ExpectedString("private static java.lang.String TestClass1.field2")
-        static private String field2;
+        private static String field2;
 }
 
 class TestClass2<E> {

@@ -1447,7 +1447,6 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
 
     if (methodData() == NULL)
       return;
-    bool printit = _method->should_print_assembly();
     if (methodData()->has_escape_info()) {
       TRACE_BCEA(2, tty->print_cr("[EA] Reading previous results for %s.%s",
                                   method->holder()->name()->as_utf8(),

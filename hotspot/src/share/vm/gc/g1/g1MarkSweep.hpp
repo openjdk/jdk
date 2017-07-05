@@ -58,8 +58,8 @@ class G1MarkSweep : AllStatic {
   // Create the _archive_region_map which is used to identify archive objects.
   static void enable_archive_object_check();
 
-  // Mark the regions containing the specified address range as archive regions.
-  static void mark_range_archive(MemRegion range);
+  // Set the regions containing the specified address range as archive/non-archive.
+  static void set_range_archive(MemRegion range, bool is_archive);
 
   // Check if an object is in an archive region using the _archive_region_map.
   static bool in_archive_range(oop object);

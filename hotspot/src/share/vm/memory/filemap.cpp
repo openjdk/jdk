@@ -707,12 +707,16 @@ bool FileMapInfo::map_string_regions() {
                                     addr, string_ranges[i].byte_size(), si->_read_only,
                                     si->_allow_exec);
         if (base == NULL || base != addr) {
+          // dealloc the string regions from java heap
+          dealloc_string_regions();
           fail_continue("Unable to map shared string space at required address.");
           return false;
         }
       }
 
       if (!verify_string_regions()) {
+        // dealloc the string regions from java heap
+        dealloc_string_regions();
         fail_continue("Shared string regions are corrupt");
         return false;
       }
@@ -745,12 +749,14 @@ bool FileMapInfo::verify_string_regions() {
 }
 
 void FileMapInfo::fixup_string_regions() {
+#if INCLUDE_ALL_GCS
   // If any string regions were found, call the fill routine to make them parseable.
   // Note that string_ranges may be non-NULL even if no ranges were found.
   if (num_ranges != 0) {
     assert(string_ranges != NULL, "Null string_ranges array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(string_ranges, num_ranges);
   }
+#endif
 }
 
 bool FileMapInfo::verify_region_checksum(int i) {
@@ -793,20 +799,14 @@ void FileMapInfo::unmap_region(int i) {
   }
 }
 
-void FileMapInfo::unmap_string_regions() {
-  for (int i = MetaspaceShared::first_string;
-           i < MetaspaceShared::first_string + MetaspaceShared::max_strings; i++) {
-    struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
-    size_t used = si->_used;
-    if (used > 0) {
-      size_t size = align_size_up(used, os::vm_allocation_granularity());
-      char* addr = (char*)((void*)oopDesc::decode_heap_oop_not_null(
-                                             (narrowOop)si->_addr._offset));
-      if (!os::unmap_memory(addr, size)) {
-        fail_stop("Unable to unmap shared space.");
-      }
-    }
+// dealloc the archived string region from java heap
+void FileMapInfo::dealloc_string_regions() {
+#if INCLUDE_ALL_GCS
+  if (num_ranges > 0) {
+    assert(string_ranges != NULL, "Null string_ranges array with non-zero count");
+    G1CollectedHeap::heap()->dealloc_archive_regions(string_ranges, num_ranges);
   }
+#endif
 }
 
 void FileMapInfo::assert_mark(bool check) {
@@ -967,7 +967,9 @@ void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
         map_info->_header->_space[i]._addr._base = NULL;
       }
     }
-    map_info->unmap_string_regions();
+    // Dealloc the string regions only without unmapping. The string regions are part
+    // of the java heap. Unmapping of the heap regions are managed by GC.
+    map_info->dealloc_string_regions();
   } else if (DumpSharedSpaces) {
     fail_stop("%s", msg);
   }

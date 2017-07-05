@@ -2268,14 +2268,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * digit prior to a nonzero discarded fraction.  Note that this rounding
      * mode never decreases the magnitude of the calculated value.
      */
-    public final static int ROUND_UP =           0;
+    public static final int ROUND_UP =           0;
 
     /**
      * Rounding mode to round towards zero.  Never increments the digit
      * prior to a discarded fraction (i.e., truncates).  Note that this
      * rounding mode never increases the magnitude of the calculated value.
      */
-    public final static int ROUND_DOWN =         1;
+    public static final int ROUND_DOWN =         1;
 
     /**
      * Rounding mode to round towards positive infinity.  If the
@@ -2284,7 +2284,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code ROUND_DOWN}.  Note that this rounding mode never
      * decreases the calculated value.
      */
-    public final static int ROUND_CEILING =      2;
+    public static final int ROUND_CEILING =      2;
 
     /**
      * Rounding mode to round towards negative infinity.  If the
@@ -2293,7 +2293,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code ROUND_UP}.  Note that this rounding mode never
      * increases the calculated value.
      */
-    public final static int ROUND_FLOOR =        3;
+    public static final int ROUND_FLOOR =        3;
 
     /**
      * Rounding mode to round towards {@literal "nearest neighbor"}
@@ -2303,7 +2303,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * that this is the rounding mode that most of us were taught in
      * grade school.
      */
-    public final static int ROUND_HALF_UP =      4;
+    public static final int ROUND_HALF_UP =      4;
 
     /**
      * Rounding mode to round towards {@literal "nearest neighbor"}
@@ -2312,7 +2312,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * fraction is {@literal >} 0.5; otherwise, behaves as for
      * {@code ROUND_DOWN}.
      */
-    public final static int ROUND_HALF_DOWN =    5;
+    public static final int ROUND_HALF_DOWN =    5;
 
     /**
      * Rounding mode to round towards the {@literal "nearest neighbor"}
@@ -2324,7 +2324,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * rounding mode that minimizes cumulative error when applied
      * repeatedly over a sequence of calculations.
      */
-    public final static int ROUND_HALF_EVEN =    6;
+    public static final int ROUND_HALF_EVEN =    6;
 
     /**
      * Rounding mode to assert that the requested operation has an exact
@@ -2332,7 +2332,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * specified on an operation that yields an inexact result, an
      * {@code ArithmeticException} is thrown.
      */
-    public final static int ROUND_UNNECESSARY =  7;
+    public static final int ROUND_UNNECESSARY =  7;
 
 
     // Scaling/Rounding Operations
@@ -3398,7 +3398,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return charPos;
         }
 
-        final static char[] DIGIT_TENS = {
+        static final char[] DIGIT_TENS = {
             '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
             '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
             '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
@@ -3411,7 +3411,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
         };
 
-        final static char[] DIGIT_ONES = {
+        static final char[] DIGIT_ONES = {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',

@@ -84,11 +84,11 @@ public final class HttpCookie implements Cloneable {
 
     // Since the positive and zero max-age have their meanings,
     // this value serves as a hint as 'not specify max-age'
-    private final static long MAX_AGE_UNSPECIFIED = -1;
+    private static final long MAX_AGE_UNSPECIFIED = -1;
 
     // date formats used by Netscape's cookie draft
     // as well as formats seen on various sites
-    private final static String[] COOKIE_DATE_FORMATS = {
+    private static final String[] COOKIE_DATE_FORMATS = {
         "EEE',' dd-MMM-yyyy HH:mm:ss 'GMT'",
         "EEE',' dd MMM yyyy HH:mm:ss 'GMT'",
         "EEE MMM dd yyyy HH:mm:ss 'GMT'Z",
@@ -98,8 +98,8 @@ public final class HttpCookie implements Cloneable {
     };
 
     // constant strings represent set-cookie header token
-    private final static String SET_COOKIE = "set-cookie:";
-    private final static String SET_COOKIE2 = "set-cookie2:";
+    private static final String SET_COOKIE = "set-cookie:";
+    private static final String SET_COOKIE2 = "set-cookie2:";
 
     // ---------------- Ctors --------------
 

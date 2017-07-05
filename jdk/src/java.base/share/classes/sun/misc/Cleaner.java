@@ -69,7 +69,7 @@ public class Cleaner
     // Doubly-linked list of live cleaners, which prevents the cleaners
     // themselves from being GC'd before their referents
     //
-    static private Cleaner first = null;
+    private static Cleaner first = null;
 
     private Cleaner
         next = null,

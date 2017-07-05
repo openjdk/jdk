@@ -1139,7 +1139,7 @@ class CodingChooser {
         }
     }
 
-    static private
+    private static
     String pct(double num, double den) {
         return (Math.round((num / den)*10000)/100.0)+"%";
     }

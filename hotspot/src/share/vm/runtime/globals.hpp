@@ -638,10 +638,6 @@ public:
   experimental(bool, AlwaysSafeConstructors, false,                         \
           "Force safe construction, as if all fields are final.")           \
                                                                             \
-  /* Temporary: See 6948537 */                                              \
-  experimental(bool, UseMemSetInBOT, true,                                  \
-          "(Unstable) uses memset in BOT updates in GC code")               \
-                                                                            \
   diagnostic(bool, UnlockDiagnosticVMOptions, trueInDebug,                  \
           "Enable normal processing of flags relating to field diagnostics")\
                                                                             \
@@ -820,7 +816,7 @@ public:
                                                                             \
   product(bool, UseSHA1Intrinsics, false,                                   \
           "Use intrinsics for SHA-1 crypto hash function. "                 \
-          "Requires that UseSHA is enabled.")                                \
+          "Requires that UseSHA is enabled.")                               \
                                                                             \
   product(bool, UseSHA256Intrinsics, false,                                 \
           "Use intrinsics for SHA-224 and SHA-256 crypto hash functions. "  \
@@ -835,6 +831,9 @@ public:
                                                                             \
   product(bool, UseCRC32CIntrinsics, false,                                 \
           "use intrinsics for java.util.zip.CRC32C")                        \
+                                                                            \
+  product(bool, UseAdler32Intrinsics, false,                                \
+          "use intrinsics for java.util.zip.Adler32")                       \
                                                                             \
   diagnostic(ccstrlist, DisableIntrinsic, "",                               \
          "do not expand intrinsics whose (internal) names appear here")     \
@@ -1090,9 +1089,6 @@ public:
                                                                             \
   product(bool, AlwaysRestoreFPU, false,                                    \
           "Restore the FPU control word after every JNI call (expensive)")  \
-                                                                            \
-  product(bool, MemoryMapImage, false,                                      \
-          "Memory map entire runtime image")                                \
                                                                             \
   diagnostic(bool, PrintCompilation2, false,                                \
           "Print additional statistics per compilation")                    \
@@ -1603,7 +1599,7 @@ public:
           "(ParallelGC only)")                                              \
                                                                             \
   product(bool, ScavengeBeforeFullGC, true,                                 \
-          "Scavenge youngest generation before each full GC.")              \
+          "Scavenge young generation before each full GC.")                 \
                                                                             \
   develop(bool, ScavengeWithObjectsInToSpace, false,                        \
           "Allow scavenges to occur when to-space contains objects")        \
@@ -2101,11 +2097,11 @@ public:
           "promotion failure")                                              \
                                                                             \
   notproduct(bool, PromotionFailureALot, false,                             \
-          "Use promotion failure handling on every youngest generation "    \
+          "Use promotion failure handling on every young generation "       \
           "collection")                                                     \
                                                                             \
   develop(uintx, PromotionFailureALotCount, 1000,                           \
-          "Number of promotion failures occurring at PLAB "     \
+          "Number of promotion failures occurring at PLAB "                 \
           "refill attempts (ParNew) or promotion attempts "                 \
           "(other young collectors)")                                       \
                                                                             \

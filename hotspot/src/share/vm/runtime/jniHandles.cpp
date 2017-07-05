@@ -124,8 +124,8 @@ void JNIHandles::oops_do(OopClosure* f) {
 }
 
 
-void JNIHandles::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
-  _weak_global_handles->weak_oops_do(is_alive, f);
+size_t JNIHandles::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
+  return _weak_global_handles->weak_oops_do(is_alive, f);
 }
 
 
@@ -380,8 +380,9 @@ void JNIHandleBlock::oops_do(OopClosure* f) {
 }
 
 
-void JNIHandleBlock::weak_oops_do(BoolObjectClosure* is_alive,
-                                  OopClosure* f) {
+size_t JNIHandleBlock::weak_oops_do(BoolObjectClosure* is_alive,
+                                    OopClosure* f) {
+  size_t count = 0;
   for (JNIHandleBlock* current = this; current != NULL; current = current->_next) {
     assert(current->pop_frame_link() == NULL,
       "blocks holding weak global JNI handles should not have pop frame link set");
@@ -390,6 +391,7 @@ void JNIHandleBlock::weak_oops_do(BoolObjectClosure* is_alive,
       oop value = *root;
       // traverse heap pointers only, not deleted handles or free list pointers
       if (value != NULL && Universe::heap()->is_in_reserved(value)) {
+        count++;
         if (is_alive->do_object_b(value)) {
           // The weakly referenced object is alive, update pointer
           f->do_oop(root);
@@ -412,7 +414,9 @@ void JNIHandleBlock::weak_oops_do(BoolObjectClosure* is_alive,
    * JVMTI data structures may also contain weak oops.  The iteration of them
    * is placed here so that we don't need to add it to each of the collectors.
    */
-  JvmtiExport::weak_oops_do(is_alive, f);
+  count += JvmtiExport::weak_oops_do(is_alive, f);
+
+  return count;
 }
 
 
