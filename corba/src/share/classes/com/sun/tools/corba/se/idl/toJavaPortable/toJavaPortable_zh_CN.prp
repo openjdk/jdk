@@ -1,0 +1,86 @@
+#
+# COMPONENT_NAME: idl.toJava
+#
+# ORIGINS: 27
+#
+# Licensed Materials - Property of IBM
+# 5639-D57 (C) COPYRIGHT International Business Machines Corp. 1997, 1999
+# RMI-IIOP v1.0
+#
+#
+# Translator:  Each line below is of the form "<key>=<message>".
+#              The keys are NOT to be translated.
+#              The messages ARE to be translated.
+#
+#              DO NOT translate the following:
+#               IBM
+#               IDL
+#               Java
+#
+#              %0 is a parameter to the message.  Do not translate it.
+#
+#              A backslash (\) at the end of a line is a line continuation
+#              character.  A backslash at the beginning of a line means don't
+#              ignore leading blanks (they normally are).  These backslashes
+#              should remain in the message.
+#
+# Translator:  Start Translating
+#
+toJavaProlog1=\u7531 %0 \u751f\u6210
+toJavaProlog2=\u6765\u81ea %0
+PreEmit.indeterminateTypeInfo=\u65e0\u6cd5\u786e\u5b9a %0 \u7684\u7c7b\u578b\u4fe1\u606f\u3002
+InterfaceGen.noImpl=\u672a\u627e\u5230 %0 \u7684\u672c\u5730\u5b9e\u73b0\u3002
+Version.product=IDL-to-Java \u7f16\u8bd1\u5668\uff08\u53ef\u79fb\u690d\uff09\uff0c\u7248\u672c "%0"
+Version.number=3.2
+NameModifier.TooManyPercent=\u6a21\u5f0f\u5305\u542b\u591a\u4e2a\u767e\u5206\u6bd4\u5b57\u7b26
+NameModifier.NoPercent=\u6a21\u5f0f\u4e0d\u5305\u542b\u4efb\u4f55\u767e\u5206\u6bd4\u5b57\u7b26
+NameModifier.InvalidChar=\u6a21\u5f0f\u5305\u542b\u65e0\u6548\u5b57\u7b26 %0
+#
+# Translator: In the list of options below, do not translate:
+#             -d, -emitAll, -f, -i, -keep, -m, -sep, -pkgPrefix, -td, -v, -verbose, -version, -implbase
+#             Do not translate the string "java com.sun.tools.corba.se.idl.toJavaPortable.Compile"
+#
+usage=\u7f16\u8bd1\u5668\u7528\u6cd5\uff1a\n\
+\n\
+\    java com.sun.tools.corba.se.idl.toJavaPortable.Compile [\u9009\u9879] <idl \u6587\u4ef6>\n\
+\n\
+\u5176\u4e2d\uff0c<idl \u6587\u4ef6> \u662f\u5305\u542b IDL \u5b9a\u4e49\u7684\u6587\u4ef6\u7684\u540d\u79f0\uff0c\u800c\n\
+[\u9009\u9879] \u662f\u4ee5\u4e0b\u6240\u5217\u9009\u9879\u7684\u4efb\u4e00\u7ec4\u5408\u3002\u8fd9\u4e9b\u9009\u9879\u662f\u53ef\u9009\u7684\n\
+\u5e76\u4e14\u53ef\u4ee5\u4ee5\u4efb\u610f\u987a\u5e8f\u663e\u793a\uff1b<idl \u6587\u4ef6> \u662f\u5fc5\u987b\u7684\u5e76\u4e14\n\
+\u5fc5\u987b\u663e\u793a\u5728\u6700\u540e\u3002\n\
+\ \n\
+\u9009\u9879\uff1a\n\
+-d <\u7b26\u53f7>                 \u7b49\u4ef7\u4e8e IDL \u6587\u4ef6\u4e2d\u7684\u4ee5\u4e0b\u884c\uff1a\n\
+\                            #define <\u7b26\u53f7>\n\
+-emitAll                  \u53d1\u51fa\u6240\u6709\u7c7b\u578b\uff0c\u5305\u62ec\u5728 #included \u6587\u4ef6\u4e2d\u627e\u5230\u7684\u90a3\u4e9b\u7c7b\u578b\u3002\n\
+-f<\u7aef>                    \u5b9a\u4e49\u8981\u53d1\u51fa\u7684\u7ed1\u5b9a\u3002  <\u7aef> \u662f client\u3001\n\
+\                          server\u3001all\u3001serverTIE \u548c allTIE \u4e2d\u4e4b\u4e00\u3002  serverTIE \u548c allTIE\n\
+\                          \u5c06\u5bfc\u81f4\u53d1\u51fa\u59d4\u6258\u6a21\u578b\u6846\u67b6\u3002\u5982\u679c\u672a\u4f7f\u7528\u6b64\n\
+\                          \u6807\u5fd7\uff0c\u5219\u5047\u8bbe\u4e3a -fclient\u3002\n\
+-i <\u5305\u62ec\u8def\u5f84>             \u9ed8\u8ba4\u60c5\u51b5\u4e0b\uff0c\u641c\u7d22\u5f53\u524d\u76ee\u5f55\u4ee5\u83b7\u5f97\u5176\u6240\u5305\u542b\u7684\u6587\u4ef6\u3002\n\
+\                          \u6b64\u9009\u9879\u5c06\u6dfb\u52a0\u5176\u4ed6\u76ee\u5f55\u3002\n\
+-keep                     \u5982\u679c\u8981\u751f\u6210\u7684\u6587\u4ef6\u5df2\u5b58\u5728\uff0c\u5219\u4e0d\n\
+\                          \u8986\u76d6\u5b83\u3002\u9ed8\u8ba4\u60c5\u51b5\u4e0b\u4f1a\u8986\u76d6\u8be5\u6587\u4ef6\u3002\n\
+-noWarn                   \u6291\u5236\u8b66\u544a\u3002\n\
+-oldImplBase              \u751f\u6210\u4e0e\u65e7\uff081.4 \u7248\u4e4b\u524d\uff09JDK ORB \u517c\u5bb9\u7684\u6846\u67b6\u3002\n\
+-pkgPrefix <t> <\u524d\u7f00>     \u5728\u6587\u4ef6\u8303\u56f4\u5185\u9047\u5230\u7c7b\u578b\u6216\u6a21\u5757\u540d\u79f0 <t> \u65f6\uff0c\n\
+\                          \u5c06\u4e3a\u9488\u5bf9 <t> \u6240\u751f\u6210\u7684\u6240\u6709\u6587\u4ef6\u7684 Java \u8f6f\u4ef6\u5305\u540d\u79f0\n\
+\                          \u9644\u52a0 <\u524d\u7f00>\u3002\n\
+-pkgTranslate <t> <pkg>   \u5728\u9047\u5230\u7c7b\u578b\u6216\u6a21\u5757\u540d\u79f0 <t> \u65f6\uff0c\n\
+\                          \u5219\u5728\u751f\u6210\u7684 java \u8f6f\u4ef6\u5305\u4e2d\u4ee5 <pkg> \u5c06\u5176\u66ff\u6362\u3002\u8bf7\u6ce8\u610f\uff0c\n\
+\                          \u9996\u5148\u8fdb\u884c pkgPrefix \u66f4\u6539\u3002  <t> \u5fc5\u987b\u4e0e\u5b8c\u6574\u7684\n\
+\                          \u7684\u8f6f\u4ef6\u5305\u540d\u79f0\u5b8c\u5168\u4e00\u81f4\u3002\u53e6\u5916\uff0c<t> \u4e0d\u80fd\u4e3a\n\
+\                          org\u3001org.omg \u6216 org.omg \u7684\u4efb\u4f55\u5b50\u5305\u3002\n\
+-skeletonName <xxx%yyy>   \u6839\u636e\u6a21\u5f0f\u547d\u540d\u6846\u67b6\u3002\n\
+\                          \u9ed8\u8ba4\u503c\u4e3a\uff1a\n\
+\                          \u9002\u7528\u4e8e POA \u57fa\u7c7b\uff08-fserver \u6216 -fall\uff09\u7684 %POA\n\
+\                          \u9002\u7528\u4e8e oldImplBase \u57fa\u7c7b\n\
+\                          \uff08-oldImplBase \u548c [-fserver \u6216 -fall]\uff09\u7684 \uff05ImplBase\u3002\n\
+-td <\u76ee\u5f55>                \u5c06 <\u76ee\u5f55> \u800c\u975e\n\
+\                          \u5f53\u524d\u76ee\u5f55\u7528\u4f5c\u8f93\u51fa\u76ee\u5f55\u3002\n\
+-tieName <xxx%yyy>        \u6839\u636e\u6a21\u5f0f\u547d\u540d tie\u3002\u9ed8\u8ba4\u503c\u4e3a\uff1a\n\
+\                          \u9002\u7528\u4e8e POA tie\uff08-fserverTie \u6216 -fallTie\uff09\u7684 %POATie\n\
+\                          \u9002\u7528\u4e8e oldImplBase tie\n\
+\                          \uff08-oldImplBase \u548c [-fserverTie \u6216 -fallTie]\uff09\u7684 \uff05_Tie\u3002\n\
+-v, -verbose              \u8be6\u7ec6\u6a21\u5f0f\u3002\n\
+-version                  \u663e\u793a\u7248\u672c\u53f7\u5e76\u9000\u51fa\u3002\n

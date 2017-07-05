@@ -1,0 +1,317 @@
+Notes on IOR implementation
+
+1. Writeable is an interface that can write itself to an OutputStream.
+
+2. IdEncapsulation is  a particular kind of Writeable that has an Id and
+   an Encapsulation (a sequence of bytes) representing some other structure
+   in a CDR encapsulation.
+
+3. ContainerBase is a base class for containers of IdEncapsulations.
+
+4. An IOR is a ContainerBase.
+
+5. A TaggedComponent is not a ContainerBase.
+
+6. Some (not all) Profiles are ContainerBases.
+
+7. IIOPAddress contains (host, port)
+    IIOPServerLocation contains:
+	- A primary IIOPAddress
+	- 0 or more secondary IIOPAddresses (these get placed in 
+	  TAG_ALTERNATE_IIOP_ADDRESS components)
+
+8. IIOPProfileTemplate:
+    - major, minor version
+    - 0 or more TaggedComponents
+    - ObjectKeyTemplate
+
+9. ObjectKeyTemplate:
+    - contains only wire data, not internal structures
+
+    write( object id, output stream ): write the object key out 
+	to the output stream with the given object id
+	
+10. Significant problem: must of the dispatch path code is written in terms of
+    IORs when it should be based on profiles.  Only a single profile is used in 
+    a request, and that is what should be passed around.  This needs fixing soon
+    to accommodate the eventual implementation of CORBA FT, and also to work
+    properly with the new IOR.
+
+11. Another question: since profile contains key which contains scid, what if 
+    we have multiple profiles with different scids?
+    One answer: create a cluster subcontract that invokes the individual 
+    profiles for FT.  This may not mesh well with the FT spec.
+
+12. Uses of IORs in the ORB:
+
+Activation/ServerManagerImpl.java
+    - Construct IOR for bad ID handler location forward
+corba/ClientDelegate.java
+    - marshal, getIOR, unmarshal are all questionable and make
+      poor use of IOR.
+    - gets forwarded IOR from response
+    - IORs handled in some service contexts
+    - createRequest needs to parse IOR
+	- gets the (one) IIOP profile that we care about
+	- gets the object key
+corba/InitialNamingClient.java
+    - constructs IOR from address info, object key
+    - current implementation should use AlternateIIOPAddress components
+    - constructs IOR with key "INIT" for old bootstrap
+corba/ORB.java
+    - stringify and destringify IOR
+corba/ServerDelegate.java
+    - access IOR from sending context service context
+    - destroyObjref directly access transient key from a known offset.
+    - creation sets up key inline with known offsets
+core/IOR.java
+    - IOR sometimes stores a servant
+    - IOR contains the following
+	- Object servant
+	- Endpoint ep
+	- String codebase
+	- boolean cachedCodebase
+	- TaggedComponent localCodeBaseTC
+	- InternetIOPTag
+    - The two constructors that take full args also
+      construct tagged components
+    - will need alternate address components for INS
+core/SendingContextServiceContext.java
+    - reads IOR from input stream
+iiop/CDRInputStream.java
+    - needs type id, code base from IOR
+iiop/IIOPOutputStream.java
+    - needs to access objkey as a sequence of bytes to realing requests.
+POA/GenericPOAClientSC.java
+    - needs to pull POA ID out of object key
+    - needs to created a new IOR that has an updated scid
+POA/GenericPOAServerSC.java
+    - creates IORs
+TransactionalPOA/TransactionalServerSC.java
+    - inline access to known offset in object key to
+      determine whether transactional
+
+Guide to the files:
+
+Basic Interfaces:
+    Identifiable.java (Object has an Id)
+    Writeable.java (Object can write to OutputStream)
+    IdEncapsulation.java (Writeable, Identifiable interface)
+    IdEncapsulationFactory.java (Factory interface for IdEncapsulation)
+    IdEncapsulationFactoryFinder.java (Finder interface for IdEncapsulationFactoryFinder)
+
+    IIOPAddress.java (class containing host and port for IIOP)
+
+Basic support for IdEncapsulations (shared for components and profiles):
+    GenericIdEncapsulation.java (Has id, octet sequence: used for generic
+	TaggedComponent and TaggedProfile objects)
+    FreezableList.java (Delegated implementation of List that can be made 
+	immutable after construction)
+    IdentifiableContainerBase.java (extends FreezableList: container of Identifiable: 
+	supports iteratorById.)
+    IdEncapsulationContainerBase.java (extends IdenitifableContainerBase:
+	container of IdEncapsulation: supports read/write IdEncapsulationSequence)
+
+Object Keys:
+    ObjectKeyFactory.java
+    ObjectKeyTemplate.java (interface for the following:)
+	JIDLObjectKeyTemplate.java (object key used in *Delegate)
+	POAObjectKeyTemplate.java (object key used in GenericPOA*SC)
+	WireObjectKeyTemplate.java (used for non-Sun ORB IORs)
+    ObjectId.java (a simple wrapper for byte[])
+    ObjectKey.java (contains ObjectId and ObjectKeyTemplate)
+
+Components:
+    TaggedComponentFactories.java (contains method for registering factories)
+    TaggedComponentFactoryFinder.java (contains registered factories)
+    TaggedComponent.java (interface of all tagged components)
+	AlternateIIOPAddressComponent.java
+	CodeSetsComponent.java
+	JavaCodebaseComponent.java
+	ORBTypeComponent.java
+	PoliciesComponent.java
+
+Profiles:
+    IIOPProfile.java (IIOPProfileTemplate and ObjectId)
+    IIOPProfileTemplate.java (contains version, address, ObjectKeyTemplate, 
+	list of TaggedComponent)
+    TaggedProfile.java (interface for all TaggedProfiles)
+    TaggedProfileFactoryFinder.java
+    TaggedProfileTemplate.java
+
+IOR:
+    IOR.java
+    IORTemplate.java (List of IIOPProfileTemplate
+    ObjectIds.java (List of ObjectId: needed for an IOR constructor)
+
+Notes from integration code review:
+
+General:
+    - Look at making IOR API public, or
+      move everything into com.sun.corba.se.impl.ior
+      (don't hold up putback for this)
+    Making public:
+	- Writeable needs getBytes() as well as write()
+	  methods.
+	- codec can be used with an Any to convert between
+	  IDL data type and sequence of bytes.
+	- write() needs to use getBytes, then write id, length,
+	  octets to output stream.
+	- getBytes() method needs to get typecode from IDL
+	  then create Any.
+	- IdEncapsulations need to have constructor that takes
+	  byte[] (encapsulation of value).
+    Why not?
+	- Unencapsulated object keys can't be made portable
+	- Lots of dependencies on ORB code in ObjectKey support
+    Conclusion: 
+	- move to internal (DONE)
+    - JAVA_MAGIC should move to ObjectKeyTemplates (DONE)
+    - check for intToBytes/bytesToInt related to object key
+	corba/ServerDelegate (DONE)
+	POA/GenericPOAServerSC (DONE)
+	POA/SubcontractResponseHandler (DONE)
+	TransactionalPOA/TransactionalClientSC.java (DONE)
+	TransactionalPOA/TransactionalServerSC.java (DONE)
+
+./com/sun/corba/se/impl/cosnaming/BootstrapServer.java
+    - remove sc_init_key_* (DONE)
+
+./com/sun/corba/se/impl/poa/POAImpl.java
+    - remove line 130: comment on other endpoints, e.g. SSL (DONE)
+    - add revisit comment on line 133: use multiple server port API (DONE)
+
+./com/sun/corba/se/impl/corba/ORB.java
+    - object_to_string: add comment that connect only takes place in
+      non-POA cases. (DONE)
+
+./com/sun/corba/se/impl/corba/ServerDelegate.java
+    - chase down the object key offsets  (DONE)
+      (search for bytesToInt and intToBytes)
+
+./com/sun/corba/se/impl/core/SubcontractRegistry.java
+    - getServerSubcontract: add b-e l-e comment and history on INIT, TINI (DONE)
+    - getServerSubcontract: reference to constants (May not do this?)
+    - getServerSubcontract: return null at end IS reachable, in the
+      case where we have essentially a name in the key that isn't
+      one of the ones we support.  Throw an exception? (DONE)
+    - add minor code for INTERNAL (and string) (DONE)
+    - remove setId calls in callers to getClientSubcontract (DONE)
+    - throw INTERNAL exception for temp.size() != 1 case (DONE)
+      Think about INST corbaloc problems (multi-profile IORs)
+      both return nulls should throw exceptions (DONE)
+
+./com/sun/corba/se/impl/core/IOR.java
+    - Add some comments to getIORfromString about 4/2 constants (DONE)
+    - fix name: should be getIORFromString (DONE)
+    - IOR( InputStream ) has a problem with cachedCodeBase:
+      is should not call getCodeBase: must refactor to 
+      an internal implementation method. (DONE)
+    - isEquivalent and isLocal should assert failure 
+      if multiple profiles (through exception in getProfile) (DONE)
+      (add comments about multi case)
+
+./com/sun/corba/se/impl/iiop/CDRInputStream_1_0.java
+    - read_Object: add assert in case servant is not Tie or objref (DONE)
+
+./com/sun/corba/se/internal/TransactionalPOA/TransactionalPOAImpl.java
+    - add comment about transactionalIortemplate: goes away after
+      we get to OTS 1.2 transactional policy. (DONE)
+    - change transactionalClone( ObjectKeyTemplate ) so that
+      we get an error (INTERNAL) if NOT POAObjectKeyTemplate (DONE)
+    - line 138: get string constant from 
+      org.omg.CosTransactions.TransactionalObject (DONE)
+    - remove Delegate d decl. (DONE)
+
+We need to assign minor codes for all exceptions!
+
+We need to clean up the minor code base usage! (DONE)
+
+Add equals/toString to:
+    Do not try to develop a reflective universal equals: too slow!
+    Do we really want equals on lists?  
+	If we do, define collectionEqual on FreezableList
+
+CodeSetsComponent: toString
+FreezableList: basic toString, equals methods
+IIOPProfile: toString
+IIOPProfileTemplate: toString
+IOR: toString
+IORTemplate.java: toString, equals (inherit?)
+IdEncapsulationContainerBase.java: make abstract, but provide base toString/equals
+IdentifiableContainerBase.java: make abstract (no other changes)
+    (ContainerBase classes need some explanation)
+ObjectIds.java needs toString, equals (use FreezableList?)
+ObjectKey: toString
+ObjectKeyFactory.java: singleton: don't add toString or equals
+PoliciesComponent.java: should finish this sometime (after we figure out
+    exactly what to do with it)
+TaggedComponentBase.java: should be abstract
+TaggedComponentFactories.java: a singelton
+TaggedComponentFactoryFinder.java: a singleton
+TaggedProfileFactoryFinder.java: a singleton
+JIDLObjectKeyTemplate: toString
+POAObjectKeyTemplate: toString
+WireObjectKeyTemplate: toString uninteresting: no data, equals not useful
+
+use util/Utility.objectToString to implement toString methods.
+
+Other changes:
+
+    IIOPAddress.toString should include class name (DONE)
+
+    New tests needed:
+	IIOPProfile.getIOPComponents 
+	IIOPProfile.getIOPProfile
+	GenericTaggedProfile.getIOPComponents
+	GenericTaggedProfile.getIOPProfile
+	GenericTaggedComponent.getIOPComponent
+	ObjectKeyTemplate.getAdapterId
+
+    Plus, do a read/write test for IOP stuff:
+	construct profile
+	convert to IOP.TaggedProfile
+	write to stream
+	get input stream
+	construct profile
+	check for equal
+
+    do some tests on IOR.toString() just to see what gets printed.
+
+    Add getAdapterId to *ObjectKeyTemplate.java (DONE)
+    Add some tests for this:
+	- WireObjectKeyTemplate throws an exception
+	- Identically constructed ObjectKeyTemplates produce identical Adapter Ids.
+	- Different OKTs produce different adapter IDs.
+
+New tests for versioning support:
+
+ORBVersionFactory:
+    - for create array methods (DONE)
+	- returns expected values for version encodings
+	- throws INTERNAL for negative version
+    - test one case for create stream method (DONE)
+    - getORBVersion returns correct version (DONE)
+ORBVersionImpl:
+    - check equals on some ORBVersions (DONE)
+    - check that each ORBVersion returns correct orbtype (DONE)
+JIDLObjectKeyTemplate:
+    - non-key constructor gives NEWER version (DONE)
+POAObjectKeyTemplate:
+    - non-key constructor gives NEWER version (DONE)
+OldJIDLObjectKeyTemplate: (DONE)
+    - non-key constructor with OLD, NEW MAGIC and check version
+    - other values throw exception
+OldPOAObjectKeyTemplate: (DONE)
+    - non-key constructor with OLD, NEW MAGIC and check version (DONE)
+    - other values throw exception (DONE)
+WireObjectKeyTemplate (DONE)
+    - version is FOREIGN
+ObjectKeyFactory (DONE)
+    create the following keys and check results:
+	JIDL OLD	OldJIDL with correct magic, version
+	JIDL NEW	OldJIDL
+	JIDL NEWER	JIDL
+	POA OLD		OldPOA
+	POA NEW		OldPOA
+	POA NEWER	POA

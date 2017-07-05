@@ -1,0 +1,16 @@
+keystore "file:${test.src}/${keystore}";
+
+grant {
+    permission javax.security.auth.AuthPermission "doAsPrivileged";
+    permission java.util.PropertyPermission "keystore", "read";
+};
+
+grant principal "Tim" {
+    permission java.util.PropertyPermission "foo", "read";
+};
+
+// Standard extensions get all permissions
+grant codeBase "file:${java.home}/lib/ext/*" {
+        permission java.security.AllPermission;
+};
+

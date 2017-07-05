@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<!--
+Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.  Sun designates this
+particular file as subject to the "Classpath" exception as provided
+by Sun in the LICENSE file that accompanied this code.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+CA 95054 USA or visit www.sun.com if you need additional information or
+have any questions.
+-->
+</head>
+<body bgcolor="white">
+
+Provides a portability layer, that is, a set of ORB APIs
+that makes it possible for code generated
+by one vendor to run on another vendor's ORB. 
+Stubs and other code, generated either from IDL or 
+interfaces written in the Java programming language, 
+can call into these ORB APIs.
+
+
+
+<p>
+<a name="unimpl"></a>
+<hr>
+<h1>CORBA Features Throwing NO_IMPLEMENT() Exceptions</h1>
+<hr>
+Some methods throw NO_IMPLEMENT() exceptions by default, but ORB vendors
+can override them to provide real implementations.  The ORB included in
+Sun's release of the Java[tm] Platform, Standard Edition 6, includes 
+implementations for the following methods.
+<p>
+<h2>List of Unimplemented Features in Package
+<code>org.omg.CORBA.portable</code></h2>
+<p>
+<h3>Unimplemented Interfaces in package <code>org.omg.CORBA.portable</code></h3>
+  <ul>
+<code>
+    <li>InvokeHandler
+    <li>ResponseHandler
+</code>
+  </ul>
+<p>
+<h3>Unimplemented Methods in package <code>org.omg.CORBA.portable</code></h3>
+<ul>
+<code>
+<li>InputStream
+  <ul>
+    <li>public int read()
+    <li>public.math.BigDecimal read_fixed()
+    <li>public org.omg.CORBA.Context read_Context() 
+    <li>public  org.omg.CORBA.Object read_Object(java.lang.Class clz)
+    <li>public org.omg.CORBA.ORB orb() 
+  </ul>
+<li>OutputStream
+  <ul>
+    <li>public org.omg.CORBA.ORB orb()
+    <li>public void write_Context(org.omg.CORBA.Context ctx,
+			      org.omg.CORBA.ContextList contexts) 
+    <li>public void write_fixed(java.math.BigDecimal value) 
+    <li>public void write(int b) 
+  </ul>
+<li>Delegate
+  <ul>
+    <li>public void releaseReply(org.omg.CORBA.Object self, InputStream input)
+    <li>public InputStream invoke(org.omg.CORBA.Object self, OutputStream output)
+    <li>public OutputStream request(org.omg.CORBA.Object self, String operation,
+				 boolean responseExpected)
+    <li>public org.omg.CORBA.Object set_policy_override(org.omg.CORBA.Object self,
+                                        org.omg.CORBA.Policy[] policies,
+                                        org.omg.CORBA.SetOverrideType set_add)
+    <li>public org.omg.CORBA.DomainManager[] get_domain_managers(
+                                                org.omg.CORBA.Object
+						self)
+    <li>public org.omg.CORBA.Policy get_policy(org.omg.CORBA.Object self,
+                                         int policy_type)
+  </ul>
+</code>
+</ul>
+
+@since JDK1.2
+@serial exclude
+</body>
+</html>
+

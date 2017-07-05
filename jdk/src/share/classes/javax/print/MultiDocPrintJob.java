@@ -1,0 +1,67 @@
+/*
+ * Copyright 2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package javax.print;
+
+import javax.print.attribute.PrintRequestAttributeSet;
+
+/**
+ *
+ * Obtained from a MultiDocPrintService, a MultiDocPrintJob can print a
+ * specified collection of documents as a single print job with a set of
+ * job attributes.
+ * <P>
+ */
+
+public interface MultiDocPrintJob extends DocPrintJob {
+
+   /**
+     * Print a MultiDoc with the specified job attributes.
+     * This method should only be called once for a given print job.
+     * Calling it again will not result in a new job being spooled to
+     * the printer. The service implementation will define policy
+     * for service interruption and recovery. Application clients which
+     * want to monitor the success or failure should register a
+     * PrintJobListener.
+     *
+     * @param multiDoc The documents to be printed. ALL must be a flavor
+     *                          supported by the PrintJob & PrintService.
+     *
+     * @param attributes The job attributes to be applied to this print job.
+     *        If this parameter is null then the default attributes are used.
+     *
+     * @throws PrintException The exception additionally may implement
+     * an interfaces which more precisely describes the cause of the exception
+     * <ul>
+     * <li>FlavorException.
+     *  If the document has a flavor not supported by this print job.
+     * <li>AttributeException.
+     *  If one or more of the attributes are not valid for this print job.
+     * </ul>
+     */
+    public void print(MultiDoc multiDoc, PrintRequestAttributeSet attributes)
+                throws PrintException;
+
+}

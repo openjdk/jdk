@@ -1,0 +1,227 @@
+/*
+ * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+ /*
+ * @test
+ * @bug 4417734
+ * @summary Test that we get a BindException in all expected combinations
+ */
+import java.net.*;
+import java.util.Enumeration;
+
+public class Test {
+
+    static Object[][] getTestCombinations() {
+        return new Object[][]  {
+            { "ServerSocket",   "Socket" },
+            { "Socket",         "Socket" },
+            { "DatagramSocket", "DatagramSocket" },
+        };
+    }
+
+    static InetAddress ia4_this;
+    static InetAddress ia6_this;
+
+    static int count;
+    static int failures;
+
+    static void doTest(Object test[], InetAddress ia1, InetAddress ia2,
+                       boolean silent) {
+        String s1_type = (String)test[0];
+        String s2_type = (String)test[1];
+        int port = 0;
+
+        /*
+         * Increment test count
+         */
+        count++;
+
+        /*
+         * Do the test
+         */
+
+        boolean gotBindException = false;
+        boolean failed = false;
+        Exception failed_exc = null;
+
+        try {
+            Socket sock1, sock2;
+            ServerSocket ss;
+            DatagramSocket dsock1, dsock2;
+
+            /* bind the first socket */
+
+            if (s1_type.equals("Socket")) {
+                sock1 = new Socket();
+                sock1.bind( new InetSocketAddress(ia1, 0));
+                port = sock1.getLocalPort();
+            }
+
+            if (s1_type.equals("ServerSocket")) {
+                ss = new ServerSocket(0, 0, ia1);
+                port = ss.getLocalPort();
+            }
+
+            if (s1_type.equals("DatagramSocket")) {
+                dsock1 = new DatagramSocket( new InetSocketAddress(ia1, 0) );
+                port = dsock1.getLocalPort();
+            }
+
+            /* bind the second socket */
+
+            if (s2_type.equals("Socket")) {
+                sock2 = new Socket();
+                sock2.bind( new InetSocketAddress(ia2, port));
+            }
+
+            if (s2_type.equals("ServerSocket")) {
+                ss = new ServerSocket(port, 0, ia2);
+            }
+
+            if (s2_type.equals("DatagramSocket")) {
+                dsock2 = new DatagramSocket( new InetSocketAddress(ia2, port) );
+            }
+
+        } catch (BindException be) {
+            gotBindException = true;
+        } catch (Exception e) {
+            failed = true;
+            failed_exc = e;
+        }
+
+        /*
+         * Did we expect a BindException?
+         */
+        boolean expectedBindException = true;
+        if (ia1 == ia4_this && ia2 == ia6_this) {
+            expectedBindException = false;
+        }
+        if (ia1 == ia6_this && ia2 == ia4_this) {
+            expectedBindException = false;
+        }
+
+        /*
+         * Did it fail?
+         */
+
+        if (!failed && gotBindException != expectedBindException) {
+            failed = true;
+        }
+
+        /*
+         * If test passed and running in silent mode then exit
+         */
+        if (!failed && silent) {
+            return;
+        }
+
+        if (failed || !silent) {
+            System.out.println("");
+            System.out.println("**************************");
+            System.out.println("Test " + count);
+
+            System.out.println(s1_type + " binds: " + ia1 + " port: " + port);
+            System.out.println(s2_type + " binds: " + ia2);
+
+            if (!failed) {
+                if (gotBindException) {
+                    System.out.println("Got expected BindException - test passed!");
+                } else {
+                    System.out.println("No BindException as expected - test passed!");
+                }
+                return;
+            }
+        }
+        if (gotBindException) {
+            System.out.println("BindException unexpected - test failed!!!");
+        } else {
+            System.out.println("No bind failure as expected - test failed!!!");
+        }
+        failures++;
+    }
+
+    public static void main(String args[]) throws Exception {
+
+        boolean silent = true;
+        if (args.length > 0) {
+            if (args[0].equals("-d")) {
+                silent = false;
+            }
+        }
+
+        /*
+         * Test needs an IPv4 and IPv6 address to run.
+         */
+        Enumeration nifs = NetworkInterface.getNetworkInterfaces();
+        while (nifs.hasMoreElements()) {
+            NetworkInterface ni = (NetworkInterface)nifs.nextElement();
+
+            Enumeration addrs = ni.getInetAddresses();
+            while (addrs.hasMoreElements()) {
+                InetAddress ia = (InetAddress)addrs.nextElement();
+
+                if (ia.isLoopbackAddress()) {
+                    continue;
+                }
+
+                if ((ia instanceof Inet4Address) && (ia4_this == null)) {
+                    ia4_this = ia;
+                }
+
+                if ((ia instanceof Inet6Address) && (ia6_this == null)) {
+                    ia6_this = ia;
+                }
+            }
+        }
+
+        /*
+         * Perform tests on all combinations of IPv4 and IPv6
+         * addresses.
+         */
+        InetAddress addrs[] = { ia4_this, ia6_this };
+
+        Object tests[][] = getTestCombinations();
+
+        for (int i=0; i<tests.length; i++) {
+            Object test[] = tests[i];
+
+            for (int j=0; j<addrs.length; j++) {
+                for (int k=0; k<addrs.length; k++) {
+
+                    if (addrs[j] == null || addrs[k] == null) {
+                        continue;
+                    }
+
+                    doTest( test, addrs[j], addrs[k], silent);
+                }
+            }
+        }
+
+        System.out.println("");
+        System.out.println(count + " test(s) executed. " + failures + " failure(s).");
+
+        if (failures > 0) {
+            throw new Exception(failures + " tests(s) failed - see log");
+        }
+    }
+}

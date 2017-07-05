@@ -1,0 +1,194 @@
+Parsing
+
+- primtive types
+- lists of various sorts
+
+    Basic models
+
+	prefix		A,BCDF	    scans left-to-right
+	suffix		ABCD:F	    scans right-to-left
+
+    Model 1:
+    data is sep,op,next,combine
+
+	if (sep found in data)
+	    split data into prefix, rest
+	    return combine( op(prefix), next(rest) )
+	else
+	    return combine( default, next(data) )
+
+    pop = suffix1( ":", op3, op4, ++ )
+    op = prefix1( ",", op2, pop, ++ )
+
+    op( A,BDF.FGH:Z ) =
+
+	op2(A) ++ pop( BDF.FGH:Z ) =
+	op2(A) ++ op4( BDF.FGH ) ++ op3( Z )
+    
+    Model 2:
+    data is sep,op,next,combine
+
+	if (sep found in data)
+	    split data into prefix, rest
+	    return combine( op(prefix), next(rest) )
+	else
+	    return op(data)
+
+    example
+	op = prefix2( ":", op2, null, ++ ) 
+	op.setNext( op ) ;
+
+	op( A:B:C:D ) =
+
+	op2(A) ++ op2(B) ++ op2(C) ++ op2(D)
+
+
+
+reduce( sep, initial, op, combine )
+
+    operate( data )
+	if (sep in data)
+	    split data into prefix, rest
+	    return combine( op(prefix), operate( rest ))
+	else
+	    return combine( op(data), initial ) 
+
+reduce( sep, op1, op2, initial, combine )
+
+    operate(data)
+	if (sep in data)	// either first from left orfirst from right
+	    split data into prefix, rest
+	    return combine( op1( prefix ), op2( rest ) )
+	else
+	    return opx( data )
+
+type<X,Y>
+    class combine
+	init : X
+	add( X, Y )  : X
+    op1( String ) : X
+    op2( String ) : Y
+
+    reduce( sep, op1, op2, comb ) ( String ) : X 
+
+    operate(data)
+	if (sep in data)	// either first from left orfirst from right
+	    split data into prefix, rest
+	    return comb.add( op2.operate( rest ), op1.operate( prefix ) )
+	else
+	    return comb.add( comb.init(), op1.operate( data ) )
+
+    example
+
+	op = reduce( ":", op1, null, comb )
+	op.setop2( op ) 
+
+	op.operate( "A:B:C" ) =
+	comb.add( op.operate( "B:C" ), op1.operate( "A" ) ) = 
+	comb.add( comb.add( op.operate("C"), op1.operate("B") ), op1.operate( "A" ) =
+	comb.add( comb.add( comb.add( comb.init(), op1.operate("C") ), op1.operate("B") ),
+	    op1.operate("A") )
+
+
+Splitter interface
+
+interface Splitter {
+    List split( String str ) 
+}
+    
+variations:
+    - separated list		    SL
+    - first sep rest		    FSR
+	- fail if not present	    one arg
+	- default value		    two args
+    - rest sep last		    RSL
+	- fail if not present	    one arg
+	- default value		    two args
+
+Have we just pushed the real problem off a level?
+
+How do we combine:
+    op1 = FSR("@",v12)
+    op2 = LSR(":",9090)
+
+    str = 1.2@myhost:2345
+
+    op1(str) = ( "1.2" "myhost:2345" )
+
+    define splice( int index, Operator op ) on a list of strings, with op( String ) : (String)
+    to replace the indexth element of a list of strings with the list returned
+    from op( element ).
+
+    compose( op1, splice( 1, op2 )) is the correct parser.
+
+
+A grammar for parsers?
+
+parser	:	    simple_parser
+	|	    parser ":" simple_parser ;
+
+simple_parser :	    ident
+	      |	    ident "(" param_list ")" ;
+
+param_list    :	    param
+	      |	    param_list "," param ;
+
+param	      :	    constant
+	      |	    parser ;
+   
+constant is a Java constant
+ident x is interpreted as either a public static method on OperationFactory
+named xAction which takes as arguments the types of the param list, or as
+the fully qualified class name of a class that implements Operation and has
+a constructor which takes as arguments the types of the param list.
+
+From parser table:
+
+debugFlags		string
+ORBInitialHost		string
+ORBInitialPort		integer
+ORBServerHost		string
+ORBServerPort		integer
+orbId			string
+highWaterMark		integer
+lowWaterMark		integer
+etc.
+
+giopVersion		construct(GIOPVersion.class):map(integer):list('.')
+giopFragmentSize	mod(ORBConstants.GIOP_FRAGMENT_DIVISOR):min(ORBConstants.GIOP_FRAGMENT_SIZE):integer
+
+Lisp notation:
+    parse((mod ORBConstants.GIOP_FRAGMENT_DIVISOR) (min ...) (integer))
+
+giop11BuffMgr		makeMap(map) where map is constructed in java with
+			map.get("GROW") = Integer(0)
+			map.get("CLCT") = Integer(1)
+			map.get("STRM") = Integer(2)
+
+giopTargetAddressPreference	intToShort:integerRange(0,3)
+giopAddressDisposition		another map variant
+
+charData		construct(CodeSetComponentInfo.class):string
+
+
+What about corbaloc:?
+
+v12 = GIOPVersion.v12 ;
+
+giopVersion = construct( GIOPVersion.class ):mapSequence( [integer,integer] ):FSR(".") 
+
+iiopAddress =  mapSequence( [giopVersion,identity,integer] ):
+	       splice( 1, LSR( ":" 9090 )):
+	       FSR( "@", v12 )
+
+addressHandler = choice( 
+    "iiop:",	iiopAddress
+    ":",	iiopAddress 
+)
+
+addressList = map(addressHandler):SL(",")
+
+choice( 
+    "corbaloc:", mapSequence( [addressList,string] ):RSL("/", "NameService"),
+    "corbaname:", ...
+)

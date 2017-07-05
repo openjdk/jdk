@@ -1,0 +1,64 @@
+/*
+ * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+
+
+package java.awt.dnd;
+
+import java.util.EventListener;
+
+/**
+ * The listener interface for receiving drag gesture events.
+ * This interface is intended for a drag gesture recognition
+ * implementation. See a specification for {@code DragGestureRecognizer}
+ * for details on how to register the listener interface.
+ * Upon recognition of a drag gesture the {@code
+ * DragGestureRecognizer} calls this interface's
+ * {@link #dragGestureRecognized dragGestureRecognized()}
+ * method and passes a {@code DragGestureEvent}.
+
+ *
+ * @see java.awt.dnd.DragGestureRecognizer
+ * @see java.awt.dnd.DragGestureEvent
+ * @see java.awt.dnd.DragSource
+ */
+
+ public interface DragGestureListener extends EventListener {
+
+    /**
+     * This method is invoked by the {@code DragGestureRecognizer}
+     * when the {@code DragGestureRecognizer} detects a platform-dependent
+     * drag initiating gesture. To intiate the drag and drop operation,
+     * if approtiate, {@link DragGestureEvent#startDrag startDrag()} method on
+     * the {@code DragGestureEvent} has to be invoked.
+     * <P>
+     * @see java.awt.dnd.DragGestureRecognizer
+     * @see java.awt.dnd.DragGestureEvent
+     * @param dge the <code>DragGestureEvent</code> describing
+     * the gesture that has just occurred
+     */
+
+     void dragGestureRecognized(DragGestureEvent dge);
+}

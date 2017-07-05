@@ -1,0 +1,101 @@
+/*
+ * Copyright 1997-2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+
+// minimal definitions to keep idltojava happy while compiling poa.idl
+#pragma prefix "omg.org" 
+
+module CORBA {   
+
+	typedef string Identifier;
+	typedef string RepositoryId;
+
+        // basic Policy definition 
+	typedef unsigned long PolicyType ;
+
+	/** The Policy interface provides a mechanism for ORBs and Object
+	* Services to allow access to certain choices that affect their 
+	* operation.  This information is accessed in a structured manner
+	* using interfaces derived from the org.omg.CORBA.Policy interface.
+	*/
+        interface Policy { 
+		/** Return the constant value that corresponds to the 
+		* type of the policy object.  The values of 
+		* the polivy objectys are allocated by the OMG.
+		* New values for PolicyType should be obtained from the OMG by
+		* sending mail to request@omg.org.  In general the constant
+		* values that are allocated are defined in conjunction with
+		* the definition of the corresponding policy object.
+		* @return the constant value that corresponds to the type of
+		* the policy object.
+		*/
+		readonly attribute PolicyType policy_type;
+
+		/** Copies the policy object. The copy does not retain any
+		* relationships that the policy had with any domain or object.
+		* @return the copy of the policy object.
+		*/
+                Policy copy( ); 
+
+		/** Destroys the policy object.  It is the responsibility of
+		* the policy object to determine whether it can be destroyed.
+		*/
+                void destroy( ); 
+        }; 
+
+        typedef sequence <Policy> PolicyList; 
+
+	/**
+	 * An interface that makes it possible to access information
+	 * associated with a particular thread of execution, such as
+	 * security information or a transaction identifier.
+	 * <P>
+	 * An ORB or CORBA service that needs its own thread-specific
+	 * state extends the CORBA package's <code>Current</code>.
+	 * Users of the service can obtain an instance of the appropriate
+	 * <code>Current</code> interface by invoking
+	 * <code>ORB.resolve_initial_references</code>.
+	 * For example, the Security service obtains the <code>Current</code>
+	 * relevant to it by invoking
+	 * <PRE>
+	 *    ORB.resolve_initial_references("SecurityCurrent");
+	 * </PRE>
+	 * <P>
+	 * A CORBA service does not have to use this method of keeping context
+	 * but may choose to do so.
+	 * <P>
+	 * Methods on classes that implement from <code>Current</code> access state
+	 * associated with the thread in which they are invoked, not state associated
+	 * with the thread from which the <code>Current</code> was obtained.
+	 *  Current objects must not be exported to other processes, or externalized
+	 *  with ORB.object_to_string. If any attempt is made to do so, the offending
+	 *  operation will raise a MARSHAL system exception.
+	 * @see <a href="package-summary.html#unimpl"><code>portable</code>
+	 * package comments for unimplemented features</a>
+	 */
+        interface Current { };
+};
+
+

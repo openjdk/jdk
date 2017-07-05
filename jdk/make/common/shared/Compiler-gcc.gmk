@@ -1,0 +1,125 @@
+#
+# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+#
+# GCC Compiler settings
+#
+
+COMPILER_NAME=GCC
+
+ifeq ($(PLATFORM), windows)
+
+  # Settings specific to Windows, pretty stale, hasn't been used
+  CC           = $(COMPILER_PATH)gcc
+  CPP          = $(COMPILER_PATH)gcc -E
+  CXX          = $(COMPILER_PATH)g++
+  CCC          = $(COMPILER_PATH)g++
+  LIBEXE       = $(COMPILER_PATH)lib
+  LINK         = $(COMPILER_PATH)link
+  RC           = $(MSDEVTOOLS_PATH)link
+  LINK32       = $(LINK)
+  RSC          = $(RC)
+  # unset any GNU Make settings of MFLAGS and MAKEFLAGS which may mess up nmake
+  NMAKE          = MFLAGS= MAKEFLAGS= $(COMPILER_PATH)nmake -nologo
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    CC_VER  = UNKNOWN
+    CC_TYPE = UNKNOWN
+  else
+    CC_VER  = UNKNOWN
+    CC_TYPE = UNKNOWN
+  endif
+  _LINK_VER :=$(shell $(LINK) 2>&1 | $(HEAD) -n 1)
+  LINK_VER  :=$(call GetVersion,"$(_LINK_VER)")
+
+endif
+
+ifeq ($(PLATFORM), linux)
+
+  # Settings specific to Linux
+  CC             = $(COMPILER_PATH)gcc
+  CPP            = $(COMPILER_PATH)gcc -E
+  # statically link libstdc++ before C++ ABI is stablized on Linux
+  STATIC_CXX     = true
+  ifeq ($(STATIC_CXX),true)
+    # g++ always dynamically links libstdc++, even we use "-Wl,-Bstatic -lstdc++"
+    # We need to use gcc to statically link the C++ runtime. gcc and g++ use
+    # the same subprocess to compile C++ files, so it is OK to build using gcc.
+    CXX            = $(COMPILER_PATH)gcc
+  else
+    CXX            = $(COMPILER_PATH)g++
+  endif
+  ifneq ("$(findstring sparc,$(ARCH))", "")
+    # sparc or sparcv9
+    REQUIRED_CC_VER = 4.0
+    REQUIRED_GCC_VER = 4.0.*
+  else
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    # i586
+    REQUIRED_CC_VER = 3.2
+    REQUIRED_GCC_VER = 3.2.1*
+    REQUIRED_GCC_VER_INT = 3.2.1-7a
+  else
+  ifeq ($(ARCH), amd64)
+    # amd64
+    REQUIRED_CC_VER = 3.2
+    REQUIRED_GCC_VER = 3.2.*
+  endif
+  ifeq ($(ARCH), ia64)
+    # ia64
+    REQUIRED_CC_VER = 3.2
+    REQUIRED_GCC_VER = 2.9[56789].*
+  endif
+  endif
+  endif
+  # Option used to create a shared library
+  SHARED_LIBRARY_FLAG = -shared -mimpure-text
+  SUN_COMP_VER := $(shell $(CC) --verbose 2>&1 )
+
+endif
+
+ifeq ($(PLATFORM), solaris)
+
+  # Settings specific to Solaris
+  CC             = $(COMPILER_PATH)gcc
+  CPP            = $(COMPILER_PATH)gcc -E
+  CXX            = $(COMPILER_PATH)g++
+  REQUIRED_CC_VER = 3.2
+
+  # Option used to create a shared library
+  SHARED_LIBRARY_FLAG = -G
+  # But gcc is still needed no matter what on 32bit
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    REQUIRED_GCC_VER = 2.95
+    GCC =$(GCC_COMPILER_PATH)gcc
+    _GCC_VER :=$(shell $(GCC) -dumpversion 2>&1 )
+    GCC_VER  :=$(call GetVersion,"$(_GCC_VER)")
+  endif
+
+endif
+
+# Get gcc version
+_CC_VER :=$(shell $(CC) -dumpversion 2>&1 )
+CC_VER  :=$(call GetVersion,"$(_CC_VER)")
+

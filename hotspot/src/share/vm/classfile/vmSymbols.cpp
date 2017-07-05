@@ -1,0 +1,492 @@
+/*
+ * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ *
+ */
+
+# include "incls/_precompiled.incl"
+# include "incls/_vmSymbols.cpp.incl"
+
+
+symbolOop vmSymbols::_symbols[vmSymbols::SID_LIMIT];
+
+symbolOop vmSymbols::_type_signatures[T_VOID+1] = { NULL /*, NULL...*/ };
+
+inline int compare_symbol(symbolOop a, symbolOop b) {
+  if (a == b)  return 0;
+  // follow the natural address order:
+  return (address)a > (address)b ? +1 : -1;
+}
+
+static vmSymbols::SID vm_symbol_index[vmSymbols::SID_LIMIT];
+extern "C" {
+  static int compare_vmsymbol_sid(const void* void_a, const void* void_b) {
+    symbolOop a = vmSymbols::symbol_at(*((vmSymbols::SID*) void_a));
+    symbolOop b = vmSymbols::symbol_at(*((vmSymbols::SID*) void_b));
+    return compare_symbol(a, b);
+  }
+}
+
+#ifndef PRODUCT
+#define VM_SYMBOL_ENUM_NAME_BODY(name, string) #name "\0"
+static const char* vm_symbol_enum_names =
+  VM_SYMBOLS_DO(VM_SYMBOL_ENUM_NAME_BODY, VM_ALIAS_IGNORE)
+  "\0";
+static const char* vm_symbol_enum_name(vmSymbols::SID sid) {
+  const char* string = &vm_symbol_enum_names[0];
+  int skip = (int)sid - (int)vmSymbols::FIRST_SID;
+  for (; skip != 0; skip--) {
+    size_t skiplen = strlen(string);
+    if (skiplen == 0)  return "<unknown>";  // overflow
+    string += skiplen+1;
+  }
+  return string;
+}
+#endif //PRODUCT
+
+// Put all the VM symbol strings in one place.
+// Makes for a more compact libjvm.
+#define VM_SYMBOL_BODY(name, string) string "\0"
+static const char* vm_symbol_bodies = VM_SYMBOLS_DO(VM_SYMBOL_BODY, VM_ALIAS_IGNORE);
+
+void vmSymbols::initialize(TRAPS) {
+  assert((int)SID_LIMIT <= (1<<log2_SID_LIMIT), "must fit in this bitfield");
+  assert((int)SID_LIMIT*5 > (1<<log2_SID_LIMIT), "make the bitfield smaller, please");
+
+  if (!UseSharedSpaces) {
+    const char* string = &vm_symbol_bodies[0];
+    for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
+      symbolOop sym = oopFactory::new_symbol(string, CHECK);
+      _symbols[index] = sym;
+      string += strlen(string); // skip string body
+      string += 1;              // skip trailing null
+    }
+
+    _type_signatures[T_BYTE]    = byte_signature();
+    _type_signatures[T_CHAR]    = char_signature();
+    _type_signatures[T_DOUBLE]  = double_signature();
+    _type_signatures[T_FLOAT]   = float_signature();
+    _type_signatures[T_INT]     = int_signature();
+    _type_signatures[T_LONG]    = long_signature();
+    _type_signatures[T_SHORT]   = short_signature();
+    _type_signatures[T_BOOLEAN] = bool_signature();
+    _type_signatures[T_VOID]    = void_signature();
+    // no single signatures for T_OBJECT or T_ARRAY
+  }
+
+#ifdef ASSERT
+  // Check for duplicates:
+  for (int i1 = (int)FIRST_SID; i1 < (int)SID_LIMIT; i1++) {
+    symbolOop sym = symbol_at((SID)i1);
+    for (int i2 = (int)FIRST_SID; i2 < i1; i2++) {
+      if (symbol_at((SID)i2) == sym) {
+        tty->print("*** Duplicate VM symbol SIDs %s(%d) and %s(%d): \"",
+                   vm_symbol_enum_name((SID)i2), i2,
+                   vm_symbol_enum_name((SID)i1), i1);
+        sym->print_symbol_on(tty);
+        tty->print_cr("\"");
+      }
+    }
+  }
+#endif //ASSERT
+
+  // Create an index for find_id:
+  {
+    for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
+      vm_symbol_index[index] = (SID)index;
+    }
+    int num_sids = SID_LIMIT-FIRST_SID;
+    qsort(&vm_symbol_index[FIRST_SID], num_sids, sizeof(vm_symbol_index[0]),
+          compare_vmsymbol_sid);
+  }
+
+#ifdef ASSERT
+  {
+    // Spot-check correspondence between strings, symbols, and enums:
+    assert(_symbols[NO_SID] == NULL, "must be");
+    const char* str = "java/lang/Object";
+    symbolOop sym = oopFactory::new_symbol(str, CHECK);
+    assert(strcmp(str, (char*)sym->base()) == 0, "");
+    assert(sym == java_lang_Object(), "");
+    SID sid = VM_SYMBOL_ENUM_NAME(java_lang_Object);
+    assert(find_sid(sym) == sid, "");
+    assert(symbol_at(sid) == sym, "");
+
+    // Make sure find_sid produces the right answer in each case.
+    for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
+      sym = symbol_at((SID)index);
+      sid = find_sid(sym);
+      assert(sid == (SID)index, "symbol index works");
+      // Note:  If there are duplicates, this assert will fail.
+      // A "Duplicate VM symbol" message will have already been printed.
+    }
+
+    // The string "format" happens (at the moment) not to be a vmSymbol,
+    // though it is a method name in java.lang.String.
+    str = "format";
+    sym = oopFactory::new_symbol(str, CHECK);
+    sid = find_sid(sym);
+    assert(sid == NO_SID, "symbol index works (negative test)");
+  }
+#endif
+}
+
+
+#ifndef PRODUCT
+const char* vmSymbols::name_for(vmSymbols::SID sid) {
+  if (sid == NO_SID)
+    return "NO_SID";
+  const char* string = &vm_symbol_bodies[0];
+  for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
+    if (index == (int)sid)
+      return string;
+    string += strlen(string); // skip string body
+    string += 1;              // skip trailing null
+  }
+  return "BAD_SID";
+}
+#endif
+
+
+
+void vmSymbols::oops_do(OopClosure* f, bool do_all) {
+  for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
+    f->do_oop((oop*) &_symbols[index]);
+  }
+  for (int i = 0; i < T_VOID+1; i++) {
+    if (_type_signatures[i] != NULL) {
+      assert(i >= T_BOOLEAN, "checking");
+      f->do_oop((oop*)&_type_signatures[i]);
+    } else if (do_all) {
+      f->do_oop((oop*)&_type_signatures[i]);
+    }
+  }
+}
+
+
+BasicType vmSymbols::signature_type(symbolOop s) {
+  assert(s != NULL, "checking");
+  for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+    if (s == _type_signatures[i]) {
+      return (BasicType)i;
+    }
+  }
+  return T_OBJECT;
+}
+
+
+static int mid_hint = (int)vmSymbols::FIRST_SID+1;
+
+#ifndef PRODUCT
+static int find_sid_calls, find_sid_probes;
+// (Typical counts are calls=7000 and probes=17000.)
+#endif
+
+vmSymbols::SID vmSymbols::find_sid(symbolOop symbol) {
+  // Handle the majority of misses by a bounds check.
+  // Then, use a binary search over the index.
+  // Expected trip count is less than log2_SID_LIMIT, about eight.
+  // This is slow but acceptable, given that calls are not
+  // dynamically common.  (methodOop::intrinsic_id has a cache.)
+  NOT_PRODUCT(find_sid_calls++);
+  int min = (int)FIRST_SID, max = (int)SID_LIMIT - 1;
+  SID sid = NO_SID, sid1;
+  int cmp1;
+  sid1 = vm_symbol_index[min];
+  cmp1 = compare_symbol(symbol, symbol_at(sid1));
+  if (cmp1 <= 0) {              // before the first
+    if (cmp1 == 0)  sid = sid1;
+  } else {
+    sid1 = vm_symbol_index[max];
+    cmp1 = compare_symbol(symbol, symbol_at(sid1));
+    if (cmp1 >= 0) {            // after the last
+      if (cmp1 == 0)  sid = sid1;
+    } else {
+      // After checking the extremes, do a binary search.
+      ++min; --max;             // endpoints are done
+      int mid = mid_hint;       // start at previous success
+      while (max >= min) {
+        assert(mid >= min && mid <= max, "");
+        NOT_PRODUCT(find_sid_probes++);
+        sid1 = vm_symbol_index[mid];
+        cmp1 = compare_symbol(symbol, symbol_at(sid1));
+        if (cmp1 == 0) {
+          mid_hint = mid;
+          sid = sid1;
+          break;
+        }
+        if (cmp1 < 0)
+          max = mid - 1;        // symbol < symbol_at(sid)
+        else
+          min = mid + 1;
+
+        // Pick a new probe point:
+        mid = (max + min) / 2;
+      }
+    }
+  }
+
+#ifdef ASSERT
+  // Perform the exhaustive self-check the first 1000 calls,
+  // and every 100 calls thereafter.
+  static int find_sid_check_count = -2000;
+  if ((uint)++find_sid_check_count > (uint)100) {
+    if (find_sid_check_count > 0)  find_sid_check_count = 0;
+
+    // Make sure this is the right answer, using linear search.
+    // (We have already proven that there are no duplicates in the list.)
+    SID sid2 = NO_SID;
+    for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
+      symbolOop sym2 = symbol_at((SID)index);
+      if (sym2 == symbol) {
+        sid2 = (SID)index;
+        break;
+      }
+    }
+    // Unless it's a duplicate, assert that the sids are the same.
+    if (_symbols[sid] != _symbols[sid2]) {
+      assert(sid == sid2, "binary same as linear search");
+    }
+  }
+#endif //ASSERT
+
+  return sid;
+}
+
+
+#define VM_INTRINSIC_INITIALIZE(id, klass, name, sig, flags) #id "\0"
+static const char* vm_intrinsic_name_bodies =
+  VM_INTRINSICS_DO(VM_INTRINSIC_INITIALIZE,
+                   VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
+
+static const char* vm_intrinsic_name_table[vmIntrinsics::ID_LIMIT];
+
+const char* vmIntrinsics::name_at(vmIntrinsics::ID id) {
+  const char** nt = &vm_intrinsic_name_table[0];
+  if (nt[_none] == NULL) {
+    char* string = (char*) &vm_intrinsic_name_bodies[0];
+    for (int index = FIRST_ID; index < ID_LIMIT; index++) {
+      nt[index] = string;
+      string += strlen(string); // skip string body
+      string += 1;              // skip trailing null
+    }
+    assert(!strcmp(nt[_hashCode], "_hashCode"), "lined up");
+    nt[_none] = "_none";
+  }
+  if ((uint)id < (uint)ID_LIMIT)
+    return vm_intrinsic_name_table[(uint)id];
+  else
+    return "(unknown intrinsic)";
+}
+
+// These are flag-matching functions:
+inline bool match_F_R(jshort flags) {
+  const int req = 0;
+  const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED;
+  return (flags & (req | neg)) == req;
+}
+inline bool match_F_RN(jshort flags) {
+  const int req = JVM_ACC_NATIVE;
+  const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED;
+  return (flags & (req | neg)) == req;
+}
+inline bool match_F_S(jshort flags) {
+  const int req = JVM_ACC_STATIC;
+  const int neg = JVM_ACC_SYNCHRONIZED;
+  return (flags & (req | neg)) == req;
+}
+inline bool match_F_SN(jshort flags) {
+  const int req = JVM_ACC_STATIC | JVM_ACC_NATIVE;
+  const int neg = JVM_ACC_SYNCHRONIZED;
+  return (flags & (req | neg)) == req;
+}
+
+// These are for forming case labels:
+#define ID3(x, y, z) (( jint)(z) +                                  \
+                      ((jint)(y) <<    vmSymbols::log2_SID_LIMIT) + \
+                      ((jint)(x) << (2*vmSymbols::log2_SID_LIMIT))  )
+#define SID_ENUM(n) vmSymbols::VM_SYMBOL_ENUM_NAME(n)
+
+vmIntrinsics::ID vmIntrinsics::find_id(vmSymbols::SID holder,
+                                       vmSymbols::SID name,
+                                       vmSymbols::SID sig,
+                                       jshort flags) {
+  assert((int)vmSymbols::SID_LIMIT <= (1<<vmSymbols::log2_SID_LIMIT), "must fit");
+
+  // Let the C compiler build the decision tree.
+
+#define VM_INTRINSIC_CASE(id, klass, name, sig, fcode) \
+  case ID3(SID_ENUM(klass), SID_ENUM(name), SID_ENUM(sig)): \
+    if (!match_##fcode(flags))  break; \
+    return id;
+
+  switch (ID3(holder, name, sig)) {
+    VM_INTRINSICS_DO(VM_INTRINSIC_CASE,
+                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
+  }
+  return vmIntrinsics::_none;
+
+#undef VM_INTRINSIC_CASE
+}
+
+
+const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf, int buflen) {
+  const char* str = name_at(id);
+#ifndef PRODUCT
+  const char* kname = vmSymbols::name_for(class_for(id));
+  const char* mname = vmSymbols::name_for(name_for(id));
+  const char* sname = vmSymbols::name_for(signature_for(id));
+  const char* fname = "";
+  switch (flags_for(id)) {
+  case F_RN: fname = "native ";        break;
+  case F_SN: fname = "native static "; break;
+  case F_S:  fname = "static ";        break;
+  }
+  const char* kptr = strrchr(kname, '/');
+  if (kptr != NULL)  kname = kptr + 1;
+  int len = jio_snprintf(buf, buflen, "%s: %s%s.%s%s",
+                         str, fname, kname, mname, sname);
+  if (len < buflen)
+    str = buf;
+#endif //PRODUCT
+  return str;
+}
+
+
+// These are for friendly printouts of intrinsics:
+
+vmSymbols::SID vmIntrinsics::class_for(vmIntrinsics::ID id) {
+#ifndef PRODUCT
+#define VM_INTRINSIC_CASE(id, klass, name, sig, fcode) \
+  case id: return SID_ENUM(klass);
+
+  switch (id) {
+    VM_INTRINSICS_DO(VM_INTRINSIC_CASE,
+                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
+  }
+#undef VM_INTRINSIC_CASE
+#endif //PRODUCT
+  return vmSymbols::NO_SID;
+}
+
+vmSymbols::SID vmIntrinsics::name_for(vmIntrinsics::ID id) {
+#ifndef PRODUCT
+#define VM_INTRINSIC_CASE(id, klass, name, sig, fcode) \
+  case id: return SID_ENUM(name);
+
+  switch (id) {
+    VM_INTRINSICS_DO(VM_INTRINSIC_CASE,
+                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
+  }
+#undef VM_INTRINSIC_CASE
+#endif //PRODUCT
+  return vmSymbols::NO_SID;
+}
+
+vmSymbols::SID vmIntrinsics::signature_for(vmIntrinsics::ID id) {
+#ifndef PRODUCT
+#define VM_INTRINSIC_CASE(id, klass, name, sig, fcode) \
+  case id: return SID_ENUM(sig);
+
+  switch (id) {
+    VM_INTRINSICS_DO(VM_INTRINSIC_CASE,
+                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
+  }
+#undef VM_INTRINSIC_CASE
+#endif //PRODUCT
+  return vmSymbols::NO_SID;
+}
+
+vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {
+#ifndef PRODUCT
+#define VM_INTRINSIC_CASE(id, klass, name, sig, fcode) \
+  case id: return fcode;
+
+  switch (id) {
+    VM_INTRINSICS_DO(VM_INTRINSIC_CASE,
+                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
+  }
+#undef VM_INTRINSIC_CASE
+#endif //PRODUCT
+  return F_none;
+}
+
+
+#ifndef PRODUCT
+// verify_method performs an extra check on a matched intrinsic method
+
+static bool match_method(methodOop m, symbolOop n, symbolOop s) {
+  return (m->name() == n &&
+          m->signature() == s);
+}
+
+static vmIntrinsics::ID match_method_with_klass(methodOop m, symbolOop mk) {
+#define VM_INTRINSIC_MATCH(id, klassname, namepart, sigpart, flags) \
+  { symbolOop k = vmSymbols::klassname(); \
+    if (mk == k) { \
+      symbolOop n = vmSymbols::namepart(); \
+      symbolOop s = vmSymbols::sigpart(); \
+      if (match_method(m, n, s)) \
+        return vmIntrinsics::id; \
+    } }
+  VM_INTRINSICS_DO(VM_INTRINSIC_MATCH,
+                   VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
+  return vmIntrinsics::_none;
+#undef VM_INTRINSIC_MATCH
+}
+
+void vmIntrinsics::verify_method(ID actual_id, methodOop m) {
+  symbolOop mk = Klass::cast(m->method_holder())->name();
+  ID declared_id = match_method_with_klass(m, mk);
+
+  if (declared_id == actual_id)  return; // success
+
+  if (declared_id == _none && actual_id != _none && mk == vmSymbols::java_lang_StrictMath()) {
+    // Here are a few special cases in StrictMath not declared in vmSymbols.hpp.
+    switch (actual_id) {
+    case _min:
+    case _max:
+    case _dsqrt:
+      declared_id = match_method_with_klass(m, vmSymbols::java_lang_Math());
+      if (declared_id == actual_id)  return; // acceptable alias
+      break;
+    }
+  }
+
+  const char* declared_name = name_at(declared_id);
+  const char* actual_name   = name_at(actual_id);
+  methodHandle mh = m;
+  m = NULL;
+  ttyLocker ttyl;
+  if (xtty != NULL) {
+    xtty->begin_elem("intrinsic_misdeclared actual='%s' declared='%s'",
+                     actual_name, declared_name);
+    xtty->method(mh);
+    xtty->end_elem("");
+  }
+  if (PrintMiscellaneous && (WizardMode || Verbose)) {
+    tty->print_cr("*** misidentified method; %s(%d) should be %s(%d):",
+                  declared_name, declared_id, actual_name, actual_id);
+    m->print_short_name(tty);
+    tty->cr();
+  }
+}
+#endif //PRODUCT

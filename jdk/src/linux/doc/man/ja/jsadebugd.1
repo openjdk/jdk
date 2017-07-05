@@ -1,0 +1,110 @@
+'\" t
+.\"
+.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+.TH jsadebugd 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド" 
+.SH 名前
+jsadebugd \- サービスエージェントデバッグデーモン
+.\"
+.SH 形式
+.B jsadebugd 
+.I pid [ server-id ]
+.br
+.B jsadebugd
+.I executable core [ server-id ]
+.SH パラメータ
+.if t .TP 20
+.if n .TP 15
+.I pid
+デバッグサーバがアタッチするプロセスのプロセス ID。プロセスは Java プロセスでなければなりません。マシン上で実行している Java プロセスのリストを取得するには、
+.B jps 
+を使用します。1 つのプロセスにアタッチできるのは、1 つのデバッグサーバだけです。
+.if t .TP 20
+.if n .TP 15
+.I executable
+コアダンプが生成された Java 実行可能ファイル。
+.if t .TP 20
+.if n .TP 15
+.I core
+デバッグサーバがアタッチするコアファイル。
+.if t .TP 20
+.if n .TP 15
+.I server-id
+同じマシン上で複数のデバッグサーバを起動する場合に必要な、オプションの一意 ID。リモートクライアントがアタッチする特定のデバッグサーバを識別するには、この ID を使用する必要があります。1 つのマシン内で、この ID は一意でなければなりません。
+.SH 機能説明
+.B jsadebugd 
+は、Java プロセスまたはコアファイルにアタッチして、デバッグサーバとして機能します。
+.B jstack
+、
+.B jmap
+、
+.B jinfo 
+などのリモートクライアントは、Java Remote Method Invocation (RMI) を使用してサーバにアタッチできます。
+.B jsadebugd 
+を起動する前に、次のように指定して 
+.B rmiregistry 
+を起動する必要があります。
+.LP
+.RS
+.ft 3
+.nf
+rmiregistry -J-Xbootclasspath/p:$JAVA_HOME/lib/sajdi.jar
+.fi
+.ft 1
+.RE
+.LP
+$JAVA_HOME は、JDK のインストールディレクトリです。
+.B rmiregistry 
+が起動していなかった場合、
+.B jsadebugd 
+は標準 (1099) ポートで内部的に 
+.B rmiregistry 
+を起動します。デバッグサーバを停止するには、SIGINT を送信します (Ctrl-C を押す) 。
+.LP
+注 - このユーティリティはサポートされていないため、JDK の将来のバージョンでは使用できない可能性があります。
+.B jsadebugd 
+は、現時点では、Windows プラットフォームでは使用できません。
+.SH 関連項目
+.LP
+.RS 3
+.TP 2
+*
+jinfo 
+.TP 2
+*
+jmap 
+.TP 2
+*
+jps 
+.TP 2
+*
+jstack 
+.TP 2
+*
+rmiregistry 
+.RE
+
+.LP
+
+.LP
+ 

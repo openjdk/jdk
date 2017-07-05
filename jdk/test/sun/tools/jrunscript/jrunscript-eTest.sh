@@ -1,0 +1,62 @@
+#!/bin/sh
+
+#
+# Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+
+# @test
+# @bug 6265810
+# @run shell jrunscript-eTest.sh
+# @summary Test that output of 'jrunscript -e' matches the dash-e.out file
+
+. ${TESTSRC-.}/common.sh
+
+setup
+
+rm -f jrunscript-eTest.out 2>/dev/null
+${JRUNSCRIPT} -e "println('hello')" > jrunscript-eTest.out 2>&1
+
+diff jrunscript-eTest.out ${TESTSRC}/dash-e.out
+if [ $? != 0 ]
+then
+  echo "Output of jrunscript -e differ from expected output. Failed."
+  rm -f jrunscript-eTest.out 2>/dev/null
+  exit 1
+fi
+
+# -e option with JavaScript explicitly choosen as language
+
+rm -f jrunscript-eTest.out 2>/dev/null
+${JRUNSCRIPT} -l js -e "println('hello')" > jrunscript-eTest.out 2>&1
+
+diff jrunscript-eTest.out ${TESTSRC}/dash-e.out
+if [ $? != 0 ]
+then
+  echo "Output of jrunscript -e differ from expected output. Failed."
+  rm -f jrunscript-eTest.out 2>/dev/null
+  exit 1
+fi
+
+rm -f jrunscript-eTest.out
+echo "Passed"
+exit 0

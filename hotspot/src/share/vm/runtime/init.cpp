@@ -1,0 +1,160 @@
+/*
+ * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ *
+ */
+
+# include "incls/_precompiled.incl"
+# include "incls/_init.cpp.incl"
+
+// Initialization done by VM thread in vm_init_globals()
+void check_ThreadShadow();
+void check_basic_types();
+void eventlog_init();
+void mutex_init();
+void chunkpool_init();
+void perfMemory_init();
+
+// Initialization done by Java thread in init_globals()
+void management_init();
+void vtune_init();
+void bytecodes_init();
+void classLoader_init();
+void codeCache_init();
+void VM_Version_init();
+void JDK_Version_init();
+void stubRoutines_init1();
+jint universe_init();  // dependent on codeCache_init and stubRoutines_init
+void interpreter_init();  // before any methods loaded
+void invocationCounter_init();  // before any methods loaded
+void marksweep_init();
+void accessFlags_init();
+void templateTable_init();
+void InterfaceSupport_init();
+void universe2_init();  // dependent on codeCache_init and stubRoutines_init
+void referenceProcessor_init();
+void jni_handles_init();
+void vmStructs_init();
+
+void vtableStubs_init();
+void InlineCacheBuffer_init();
+void compilerOracle_init();
+void compilationPolicy_init();
+
+
+// Initialization after compiler initialization
+bool universe_post_init();  // must happen after compiler_init
+void javaClasses_init();  // must happen after vtable initialization
+void stubRoutines_init2(); // note: StubRoutines need 2-phase init
+
+// Do not disable thread-local-storage, as it is important for some
+// JNI/JVM/JVMTI functions and signal handlers to work properly
+// during VM shutdown
+void perfMemory_exit();
+void ostream_exit();
+
+void vm_init_globals() {
+  check_ThreadShadow();
+  check_basic_types();
+  eventlog_init();
+  mutex_init();
+  chunkpool_init();
+  perfMemory_init();
+}
+
+
+jint init_globals() {
+  HandleMark hm;
+  management_init();
+  vtune_init();
+  bytecodes_init();
+  classLoader_init();
+  codeCache_init();
+  VM_Version_init();
+  JDK_Version_init();
+  stubRoutines_init1();
+  jint status = universe_init();  // dependent on codeCache_init and stubRoutines_init
+  if (status != JNI_OK)
+    return status;
+
+  interpreter_init();  // before any methods loaded
+  invocationCounter_init();  // before any methods loaded
+  marksweep_init();
+  accessFlags_init();
+  templateTable_init();
+  InterfaceSupport_init();
+  SharedRuntime::generate_stubs();
+  universe2_init();  // dependent on codeCache_init and stubRoutines_init
+  referenceProcessor_init();
+  jni_handles_init();
+#ifndef VM_STRUCTS_KERNEL
+  vmStructs_init();
+#endif // VM_STRUCTS_KERNEL
+
+  vtableStubs_init();
+  InlineCacheBuffer_init();
+  compilerOracle_init();
+  compilationPolicy_init();
+  VMRegImpl::set_regName();
+
+  if (!universe_post_init()) {
+    return JNI_ERR;
+  }
+  javaClasses_init();  // must happen after vtable initialization
+  stubRoutines_init2(); // note: StubRoutines need 2-phase init
+
+  // Although we'd like to, we can't easily do a heap verify
+  // here because the main thread isn't yet a JavaThread, so
+  // its TLAB may not be made parseable from the usual interfaces.
+  if (VerifyBeforeGC && !UseTLAB &&
+      Universe::heap()->total_collections() >= VerifyGCStartAt) {
+    Universe::heap()->prepare_for_verify();
+    Universe::verify();   // make sure we're starting with a clean slate
+  }
+
+  return JNI_OK;
+}
+
+
+void exit_globals() {
+  static bool destructorsCalled = false;
+  if (!destructorsCalled) {
+    destructorsCalled = true;
+    perfMemory_exit();
+    if (PrintSafepointStatistics) {
+      // Print the collected safepoint statistics.
+      SafepointSynchronize::print_stat_on_exit();
+    }
+    ostream_exit();
+  }
+}
+
+
+static bool _init_completed = false;
+
+bool is_init_completed() {
+  return _init_completed;
+}
+
+
+void set_init_completed() {
+  _init_completed = true;
+}

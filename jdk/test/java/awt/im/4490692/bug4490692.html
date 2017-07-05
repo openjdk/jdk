@@ -1,0 +1,40 @@
+<html>
+<!--  
+  @test
+  @bug 4490692
+  @author Naoto Sato
+  @ignore The fix for this problem was backed out for 5057184.  Remove this "ignore" tag when it is fixed again.
+  @run applet/manual=yesno bug4490692.html
+-->
+  <head>
+    <title>Test for KEY_PRESS event for accented characters</title>
+  </head>
+
+  <body>
+      <h1>Test for KEY_PRESS event for accented characters: Bug id 4490692</h1>
+
+This test is for unix platforms only. Press OK if you are not
+testing on those platforms.
+
+Before the test, you need to modify the keyboard mapping for X by issueing
+the following command:
+
+xmodmap -e 'keycode 60 = aacute'  (this is for Solaris Sparc keyboard)
+xmodmap -e 'keycode 23 = aacute'  (this is for Linux PC keyboard)
+
+This command lets you type 'a with acute' character when you press 'Tab' keytop. <b>Please
+do not fail to restore the original key mapping by doing the following after the test</b>
+
+xmodmap -e 'keycode 60 = Tab'  (this is for Solaris Sparc keyboard)
+xmodmap -e 'keycode 23 = Tab'  (this is for Linux PC keyboard)
+
+Confirm the following two behaviors:
+
+    "KEYPRESS received for aacute" is displayed when you press 'Tab' keytop.
+    On Solaris Sparc keyboard, The key sequence ("Compose", "a", "'") generates a-acute character in en_US locale
+
+<APPLET CODE="bug4490692.class" WIDTH=0 HEIGHT=0></APPLET>
+</body>
+</html>
+
+

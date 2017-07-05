@@ -1,0 +1,67 @@
+<!--
+Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.  Sun designates this
+particular file as subject to the "Classpath" exception as provided
+by Sun in the LICENSE file that accompanied this code.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+CA 95054 USA or visit www.sun.com if you need additional information or
+have any questions.
+-->
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+
+<body bgcolor="white">
+
+Provides the classes and interfaces for cryptographic operations. The
+cryptographic operations defined in this package include encryption,
+key generation and key agreement, and Message Authentication Code
+(MAC) generation.
+
+<p>Support for encryption includes symmetric, asymmetric, block, and
+stream ciphers. This package also supports secure streams and sealed
+objects.
+
+<p>Many of the classes provided in this package are provider-based.  The
+class itself defines a programming interface to which applications may
+write.  The implementations themselves may then be written by
+independent third-party vendors and plugged in seamlessly as needed.
+Therefore application developers may take advantage of any number of
+provider-based implementations without having to add or rewrite code.
+
+<h2>Related Documentation</h2>
+
+For further documentation, please see:
+<ul>
+  <li>
+    <a href=
+      "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html">
+      <b>Java<FONT SIZE=-2><SUP>TM</SUP></FONT>
+       Cryptography Architecture API Specification and Reference
+      </b></a></li>
+  <li>
+    <a href=
+      "{@docRoot}/../technotes/guides/security/crypto/HowToImplAProvider.html">
+      <b>How to Implement a Provider for the
+      Java<FONT SIZE=-2><SUP>TM</SUP></FONT> Cryptography Architecture
+      </b></a></li>
+</ul>
+
+@since 1.4
+</body>
+</html>

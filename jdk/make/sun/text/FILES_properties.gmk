@@ -1,0 +1,73 @@
+#
+# Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+FILES_compiled_properties = \
+        sun/util/resources/LocaleNames_ar.properties \
+        sun/util/resources/LocaleNames_hi.properties \
+        sun/util/resources/LocaleNames_iw.properties \
+        sun/util/resources/LocaleNames_ja.properties \
+        sun/util/resources/LocaleNames_ko.properties \
+        sun/util/resources/LocaleNames_th.properties \
+        sun/util/resources/LocaleNames_vi.properties \
+        sun/util/resources/LocaleNames_zh.properties \
+        sun/util/resources/LocaleNames_zh_SG.properties \
+        sun/util/resources/LocaleNames_zh_TW.properties \
+	\
+        sun/util/resources/CalendarData_ar.properties \
+        sun/util/resources/CalendarData_hi.properties \
+        sun/util/resources/CalendarData_iw.properties \
+        sun/util/resources/CalendarData_ja.properties \
+        sun/util/resources/CalendarData_ko.properties \
+        sun/util/resources/CalendarData_th.properties \
+        sun/util/resources/CalendarData_vi.properties \
+        sun/util/resources/CalendarData_zh.properties \
+	\
+        sun/util/resources/CurrencyNames_ar_AE.properties \
+        sun/util/resources/CurrencyNames_ar_BH.properties \
+        sun/util/resources/CurrencyNames_ar_DZ.properties \
+        sun/util/resources/CurrencyNames_ar_EG.properties \
+        sun/util/resources/CurrencyNames_ar_IQ.properties \
+        sun/util/resources/CurrencyNames_ar_JO.properties \
+        sun/util/resources/CurrencyNames_ar_KW.properties \
+        sun/util/resources/CurrencyNames_ar_LB.properties \
+        sun/util/resources/CurrencyNames_ar_LY.properties \
+        sun/util/resources/CurrencyNames_ar_MA.properties \
+        sun/util/resources/CurrencyNames_ar_OM.properties \
+        sun/util/resources/CurrencyNames_ar_QA.properties \
+        sun/util/resources/CurrencyNames_ar_SA.properties \
+        sun/util/resources/CurrencyNames_ar_SD.properties \
+        sun/util/resources/CurrencyNames_ar_SY.properties \
+        sun/util/resources/CurrencyNames_ar_TN.properties \
+        sun/util/resources/CurrencyNames_ar_YE.properties \
+        sun/util/resources/CurrencyNames_hi_IN.properties \
+        sun/util/resources/CurrencyNames_iw_IL.properties \
+        sun/util/resources/CurrencyNames_ja.properties \
+        sun/util/resources/CurrencyNames_ja_JP.properties \
+        sun/util/resources/CurrencyNames_ko.properties \
+        sun/util/resources/CurrencyNames_ko_KR.properties \
+        sun/util/resources/CurrencyNames_th_TH.properties \
+        sun/util/resources/CurrencyNames_vi_VN.properties \
+        sun/util/resources/CurrencyNames_zh_CN.properties \
+        sun/util/resources/CurrencyNames_zh_TW.properties

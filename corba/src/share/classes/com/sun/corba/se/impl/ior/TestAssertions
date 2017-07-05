@@ -1,0 +1,136 @@
+Remaining work
+- Look at the relation between TaggedComponents and Codecs.
+- Add TaggedComponentFactories to ORB init
+- look at PI and codecs
+- Implement PoliciesComponent
+
+=====================
+Testing:
+Tagged Components: (DONE)
+    General:
+	- Constructed data can be retrieved
+	- read and written correctly as part of IOR
+	  (test this first in IdEncapsulationContainerBase test)
+    AlternateIIOPAddressComponent:
+	- can correctly write out TCP port >32K
+    CodeSetsComponent
+	- none additional
+    JavaCodebaseComponent
+	- none additional
+    ORBTypeComponent
+	- none additional
+    PoliciesComponent
+	- none additional
+
+IdentifiableContainerBase (DONE)
+    - Test iteratorById on Identifiables (DONE)
+	- Iterator on id not present is empty (hasNext() == false)
+	- Iterator on id present returns all ids in sequence
+IdEncapsulationContainerBase  (DONE)
+    - Test read sequence of TaggedComponents
+    - Test writing sequence of TaggedComponents
+GenericIdEncapsulation (DONE)
+    - Test by using for tagged profile and tagged component
+    - write out and read back test
+IIOPAddress (DONE)
+    - Constructed object returns correct values
+    - equals:
+	- false for non-IIOPAddress value
+	- true iff ports and hosts match
+IIOPProfile (DONE)
+    - construct from id, template; check that correct values are returned
+    - write out and read back
+	- no components for 1.0
+	- components for >1.0
+    - getObjectKey returns value constructed correctly
+    - isEquivalent iff ids equal and templates equivalent
+IIOPProfileTemplate (DONE)
+    - Constructed object contains correct values
+    - isEquivalent iff address and template are equal
+    - cannot have new components added after makeImmutable call
+IOR (DONE)
+    - Constructed object contains correct values
+	- IOR() has null typeid and no profiles (DONE)
+	- IOR( String ) has given typeid and no profiles (DONE)
+	- IOR( String, IIOPProfileTemplate, ObjectId ) has given typeid and
+          one IIOPProfile corresponding to template and objectid
+	- IOR( String, IORTemplate, ObjectId ) has profiles corresponding to
+	  IORTemplate and ObjectIds. (DONE)
+	- IORTemplate( String, IORTemplate, ObjectIds ) has profiles
+	  corresponding to IORTemplate and ObjectIds (DONE)
+	- IOR( IORTemplate, ObjectIds ) usual test (DONE)
+    - write out/read back test (DONE)
+	- Construct IOR with 2 IIOPProfiles, each with several components,
+	  and 2 GenericIdEncapsulation profiles, write out, read back,
+	  check for equals directly and by calling equals
+    - cannot have new profiles added after makeImmutable call (DONE)
+    - contained IIOPProfiles cannot have added components after
+      makeImmutable call. (DONE)
+IORTemplate (DONE)
+    - Constructed object contains correct value
+JIDLObjectKeyTemplate (DONE)
+    - test that IDs match expected values when created from
+      byte[] in ObjectKeyFactory.create
+    - Constructed object contains correct values
+    - write out and read back test
+    - getId correctly extract id from key
+FreezableList (DONE)
+    - ASSUME that it acts like a linked list: don't test entire interface
+    - all modification operations throw UnsupportedOperationException
+      after makeImmutable call
+    - all iterators (whether created before or after makeImmutable call)
+      throw U.O.E. after makeImmutable
+ObjectId (DONE)
+    - constructed object returns same id
+    - test cases in equals
+ObjectKey (DONE)
+    - constructed object returns same id, template
+    - write/read test
+    - getBytes returns correct value (test by using factory and
+      comparing)
+ObjectKeyFactory (DONE)
+    - test create with hand created keys
+	- key length < 4
+	- key length >= 4
+	    - magic is JAVAMAGIC
+		- scid is POA scid
+		- scid is JIDL scid
+		- other scid
+	    - magic is not JAVAMAGIC
+    - test with error cases on length
+POAObjectKeyTemplate (DONE)
+    - test that IDs match expected values when created from
+      byte[] in ObjectKeyFactory.create
+    - test that IDs match when created with explicit values
+    - write out and read back test
+    - getId correctly extracts id from key
+TaggedComponentFactories (DONE)
+    - only tested inditectly by reading and writing IIOPProfileTemplate
+      that contains all components
+TaggedComponentFactoryFinder (DONE)
+    - registered factory can be looked up
+    - lookup of unregistered factory returns null
+    - reads tagged component from stream as correct type if registered
+    - reads tagged component from stream as generic if not registered
+TaggedProfileFactoryFinder (DONE)
+    - reads IIOP profile as IIOPProfile
+    - reads others as Generic
+WireObjectTemplate (DONE)
+    - getId returns entire key as id
+    - serverId is -1
+    - write out and read back test
+
+Interfaces (no tests):
+    IdEncapsulation
+    IdEncapsulationFactory
+    IdEncapsulationFactoryFinder
+    Identifiable
+    ObjectKeyTemplateo
+    ObjectKeyTemplate
+    TaggedComponent
+    TaggedProfile
+    TaggedProfileTemplate
+    Writeable
+    
+Trivial classes:
+    ObjectIds 

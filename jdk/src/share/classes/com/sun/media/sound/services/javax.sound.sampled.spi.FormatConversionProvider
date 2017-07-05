@@ -1,0 +1,4 @@
+# Providers for FormatConversion
+com.sun.media.sound.UlawCodec
+com.sun.media.sound.AlawCodec
+com.sun.media.sound.PCMtoPCMCodec
