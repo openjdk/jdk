@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ final public class CNNameParser implements NameParser {
     * @return a non-null CompoundName
     */
     public Name parse(String name) throws NamingException {
-        Vector comps = insStringToStringifiedComps(name);
+        Vector<String> comps = insStringToStringifiedComps(name);
         return new CNCompoundName(comps.elements());
     }
 
@@ -128,11 +128,11 @@ final public class CNNameParser implements NameParser {
      * each element of the vector contains a stringified form of
      * a NameComponent.
      */
-    private static Vector insStringToStringifiedComps(String str)
+    private static Vector<String> insStringToStringifiedComps(String str)
         throws InvalidNameException {
 
         int len = str.length();
-        Vector components = new Vector(10);
+        Vector<String> components = new Vector<>(10);
         char[] id = new char[len];
         char[] kind = new char[len];
         int idCount, kindCount;
@@ -306,7 +306,7 @@ final public class CNNameParser implements NameParser {
      * and stringifying code of the default CompoundName.
      */
     static final class CNCompoundName extends CompoundName {
-        CNCompoundName(Enumeration enum_) {
+        CNCompoundName(Enumeration<String> enum_) {
             super(enum_, CNNameParser.mySyntax);
         }
 
@@ -315,12 +315,12 @@ final public class CNNameParser implements NameParser {
         }
 
         public Name getPrefix(int posn) {
-            Enumeration comps = super.getPrefix(posn).getAll();
+            Enumeration<String> comps = super.getPrefix(posn).getAll();
             return new CNCompoundName(comps);
         }
 
         public Name getSuffix(int posn) {
-            Enumeration comps = super.getSuffix(posn).getAll();
+            Enumeration<String> comps = super.getSuffix(posn).getAll();
             return new CNCompoundName(comps);
         }
 

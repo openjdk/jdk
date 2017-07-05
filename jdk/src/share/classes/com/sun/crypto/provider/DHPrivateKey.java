@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.security.KeyRep;
 import java.security.PrivateKey;
 import java.security.InvalidKeyException;
 import java.security.ProviderException;
-import javax.crypto.*;
 import javax.crypto.spec.DHParameterSpec;
 import sun.security.util.*;
 
@@ -182,7 +181,7 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
 
             // ignore OPTIONAL attributes
 
-            this.encodedKey = (byte[])encodedKey.clone();
+            this.encodedKey = encodedKey.clone();
 
         } catch (NumberFormatException e) {
             InvalidKeyException ike = new InvalidKeyException(
@@ -256,7 +255,7 @@ javax.crypto.interfaces.DHPrivateKey, Serializable {
                 return null;
             }
         }
-        return (byte[])this.encodedKey.clone();
+        return this.encodedKey.clone();
     }
 
     /**

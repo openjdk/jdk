@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,11 +193,11 @@ public class SealedObject implements Serializable {
      * @exception NullPointerException if the given sealed object is null.
      */
     protected SealedObject(SealedObject so) {
-        this.encryptedContent = (byte[]) so.encryptedContent.clone();
+        this.encryptedContent = so.encryptedContent.clone();
         this.sealAlg = so.sealAlg;
         this.paramsAlg = so.paramsAlg;
         if (so.encodedParams != null) {
-            this.encodedParams = (byte[]) so.encodedParams.clone();
+            this.encodedParams = so.encodedParams.clone();
         } else {
             this.encodedParams = null;
         }
@@ -353,10 +353,8 @@ public class SealedObject implements Serializable {
 
         try {
             return unseal(key, provider);
-        } catch (IllegalBlockSizeException ibse) {
-            throw new InvalidKeyException(ibse.getMessage());
-        } catch (BadPaddingException bpe) {
-            throw new InvalidKeyException(bpe.getMessage());
+        } catch (IllegalBlockSizeException | BadPaddingException ex) {
+            throw new InvalidKeyException(ex.getMessage());
         }
     }
 
@@ -450,9 +448,9 @@ public class SealedObject implements Serializable {
     {
         s.defaultReadObject();
         if (encryptedContent != null)
-            encryptedContent = (byte[])encryptedContent.clone();
+            encryptedContent = encryptedContent.clone();
         if (encodedParams != null)
-            encodedParams = (byte[])encodedParams.clone();
+            encodedParams = encodedParams.clone();
     }
 }
 
@@ -465,7 +463,7 @@ final class extObjectInputStream extends ObjectInputStream {
         super(in);
     }
 
-    protected Class resolveClass(ObjectStreamClass v)
+    protected Class<?> resolveClass(ObjectStreamClass v)
         throws IOException, ClassNotFoundException
     {
 

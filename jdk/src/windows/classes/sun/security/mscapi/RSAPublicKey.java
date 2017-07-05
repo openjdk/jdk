@@ -26,11 +26,9 @@
 package sun.security.mscapi;
 
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
 import java.security.KeyException;
 import java.security.KeyRep;
 import java.security.ProviderException;
-import java.security.PublicKey;
 
 import sun.security.rsa.RSAPublicKeyImpl;
 
@@ -41,6 +39,8 @@ import sun.security.rsa.RSAPublicKeyImpl;
  */
 class RSAPublicKey extends Key implements java.security.interfaces.RSAPublicKey
 {
+    private static final long serialVersionUID = -2289561342425825391L;
+
     private byte[] publicKeyBlob = null;
     private byte[] encoding = null;
     private BigInteger modulus = null;

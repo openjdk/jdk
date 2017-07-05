@@ -78,20 +78,11 @@ public final class FontManagerFactory {
                     ClassLoader cl = ClassLoader.getSystemClassLoader();
                     Class fmClass = Class.forName(fmClassName, true, cl);
                     instance = (FontManager) fmClass.newInstance();
-                } catch (ClassNotFoundException ex) {
-                    InternalError err = new InternalError();
-                    err.initCause(ex);
-                    throw err;
+                } catch (ClassNotFoundException |
+                         InstantiationException |
+                         IllegalAccessException ex) {
+                    throw new InternalError(ex);
 
-                } catch (InstantiationException ex) {
-                    InternalError err = new InternalError();
-                    err.initCause(ex);
-                    throw err;
-
-                } catch (IllegalAccessException ex) {
-                    InternalError err = new InternalError();
-                    err.initCause(ex);
-                    throw err;
                 }
                 return null;
             }

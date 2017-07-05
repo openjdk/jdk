@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.provider.certpath;
 
 import java.io.*;
-import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
@@ -206,7 +205,7 @@ public final class OCSPResponse {
         // responseType
         derIn = tmp.data;
         ObjectIdentifier responseType = derIn.getOID();
-        if (responseType.equals(OCSP_BASIC_RESPONSE_OID)) {
+        if (responseType.equals((Object)OCSP_BASIC_RESPONSE_OID)) {
             if (DEBUG != null) {
                 DEBUG.println("OCSP response type: basic");
             }
@@ -301,7 +300,7 @@ public final class OCSPResponse {
                     if (DEBUG != null) {
                         DEBUG.println("OCSP extension: " + responseExtension);
                     }
-                    if (responseExtension.getExtensionId().equals(
+                    if (responseExtension.getExtensionId().equals((Object)
                         OCSP_NONCE_EXTENSION_OID)) {
                         /*
                         ocspNonce =

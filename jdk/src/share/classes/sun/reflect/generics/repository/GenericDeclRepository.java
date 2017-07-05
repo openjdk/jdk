@@ -69,7 +69,7 @@ public abstract class GenericDeclRepository<S extends Signature>
             // first, extract type parameter subtree(s) from AST
             FormalTypeParameter[] ftps = getTree().getFormalTypeParameters();
             // create array to store reified subtree(s)
-            TypeVariable[] tps = new TypeVariable[ftps.length];
+            TypeVariable<?>[] tps = new TypeVariable<?>[ftps.length];
             // reify all subtrees
             for (int i = 0; i < ftps.length; i++) {
                 Reifier r = getReifier(); // obtain visitor

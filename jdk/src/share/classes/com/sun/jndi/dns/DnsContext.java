@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class DnsContext extends ComponentDirContext {
 
     DnsName domain;             // fully-qualified domain name of this context,
                                 // with a root (empty) label at position 0
-    Hashtable environment;
+    Hashtable<Object,Object> environment;
     private boolean envShared;  // true if environment is possibly shared
                                 // and so must be copied on write
     private boolean parentIsDns;        // was this DnsContext created by
@@ -95,14 +95,15 @@ public class DnsContext extends ComponentDirContext {
      * There must be at least one server.
      * The environment must not be null; it is cloned before being stored.
      */
-    public DnsContext(String domain, String[] servers, Hashtable environment)
+    @SuppressWarnings("unchecked")
+    public DnsContext(String domain, String[] servers, Hashtable<?,?> environment)
             throws NamingException {
 
         this.domain = new DnsName(domain.endsWith(".")
                                   ? domain
                                   : domain + ".");
         this.servers = servers;
-        this.environment = (Hashtable) environment.clone();
+        this.environment = (Hashtable<Object,Object>) environment.clone();
         envShared = false;
         parentIsDns = false;
         resolver = null;
@@ -154,14 +155,15 @@ public class DnsContext extends ComponentDirContext {
     /*
      * Override default with a noncloning version.
      */
-    protected Hashtable p_getEnvironment() {
+    protected Hashtable<?,?> p_getEnvironment() {
         return environment;
     }
 
-    public Hashtable getEnvironment() throws NamingException {
-        return (Hashtable) environment.clone();
+    public Hashtable<?,?> getEnvironment() throws NamingException {
+        return (Hashtable<?,?>) environment.clone();
     }
 
+    @SuppressWarnings("unchecked")
     public Object addToEnvironment(String propName, Object propVal)
             throws NamingException {
 
@@ -189,7 +191,7 @@ public class DnsContext extends ComponentDirContext {
             return environment.put(propName, propVal);
         } else if (environment.get(propName) != propVal) {
             // copy on write
-            environment = (Hashtable) environment.clone();
+            environment = (Hashtable<Object,Object>) environment.clone();
             envShared = false;
             return environment.put(propName, propVal);
         } else {
@@ -197,6 +199,7 @@ public class DnsContext extends ComponentDirContext {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public Object removeFromEnvironment(String propName)
             throws NamingException {
 
@@ -222,7 +225,7 @@ public class DnsContext extends ComponentDirContext {
             return environment.remove(propName);
         } else if (environment.get(propName) != null) {
             // copy-on-write
-            environment = (Hashtable) environment.clone();
+            environment = (Hashtable<Object,Object>) environment.clone();
             envShared = false;
             return environment.remove(propName);
         } else {
@@ -307,7 +310,7 @@ public class DnsContext extends ComponentDirContext {
         return c_lookup(name, cont);
     }
 
-    public NamingEnumeration c_list(Name name, Continuation cont)
+    public NamingEnumeration<NameClassPair> c_list(Name name, Continuation cont)
             throws NamingException {
         cont.setSuccess();
         try {
@@ -322,7 +325,7 @@ public class DnsContext extends ComponentDirContext {
         }
     }
 
-    public NamingEnumeration c_listBindings(Name name, Continuation cont)
+    public NamingEnumeration<Binding> c_listBindings(Name name, Continuation cont)
             throws NamingException {
         cont.setSuccess();
         try {
@@ -457,7 +460,7 @@ public class DnsContext extends ComponentDirContext {
                 new OperationNotSupportedException());
     }
 
-    public NamingEnumeration c_search(Name name,
+    public NamingEnumeration<SearchResult> c_search(Name name,
                                       Attributes matchingAttributes,
                                       String[] attributesToReturn,
                                       Continuation cont)
@@ -465,7 +468,7 @@ public class DnsContext extends ComponentDirContext {
         throw new OperationNotSupportedException();
     }
 
-    public NamingEnumeration c_search(Name name,
+    public NamingEnumeration<SearchResult> c_search(Name name,
                                       String filter,
                                       SearchControls cons,
                                       Continuation cont)
@@ -473,7 +476,7 @@ public class DnsContext extends ComponentDirContext {
         throw new OperationNotSupportedException();
     }
 
-    public NamingEnumeration c_search(Name name,
+    public NamingEnumeration<SearchResult> c_search(Name name,
                                       String filterExpr,
                                       Object[] filterArgs,
                                       SearchControls cons,
@@ -608,7 +611,7 @@ public class DnsContext extends ComponentDirContext {
         BasicAttributes attrs = new BasicAttributes(true);
 
         for (int i = 0; i < rrs.answer.size(); i++) {
-            ResourceRecord rr = (ResourceRecord) rrs.answer.elementAt(i);
+            ResourceRecord rr = rrs.answer.elementAt(i);
             int rrtype  = rr.getType();
             int rrclass = rr.getRrclass();
 
@@ -952,19 +955,14 @@ class CT {
 //----------
 
 /*
- * An enumeration of name/classname pairs.
- *
- * Nodes that have children or that are zone cuts are returned with
- * classname DirContext.  Other nodes are returned with classname
- * Object even though they are DirContexts as well, since this might
- * make the namespace easier to browse.
+ * Common base class for NameClassPairEnumeration and BindingEnumeration.
  */
-class NameClassPairEnumeration implements NamingEnumeration {
+abstract class BaseNameClassPairEnumeration<T> implements NamingEnumeration<T> {
 
-    protected Enumeration nodes;    // nodes to be enumerated, or null if none
+    protected Enumeration<NameNode> nodes;    // nodes to be enumerated, or null if none
     protected DnsContext ctx;       // context being enumerated
 
-    NameClassPairEnumeration(DnsContext ctx, Hashtable nodes) {
+    BaseNameClassPairEnumeration(DnsContext ctx, Hashtable<String,NameNode> nodes) {
         this.ctx = ctx;
         this.nodes = (nodes != null)
             ? nodes.elements()
@@ -974,12 +972,12 @@ class NameClassPairEnumeration implements NamingEnumeration {
     /*
      * ctx will be set to null when no longer needed by the enumeration.
      */
-    public void close() {
+    public final void close() {
         nodes = null;
         ctx = null;
     }
 
-    public boolean hasMore() {
+    public final boolean hasMore() {
         boolean more = ((nodes != null) && nodes.hasMoreElements());
         if (!more) {
             close();
@@ -987,11 +985,46 @@ class NameClassPairEnumeration implements NamingEnumeration {
         return more;
     }
 
-    public Object next() throws NamingException {
+    public final boolean hasMoreElements() {
+        return hasMore();
+    }
+
+    abstract public T next() throws NamingException;
+
+    public final T nextElement() {
+        try {
+            return next();
+        } catch (NamingException e) {
+            java.util.NoSuchElementException nsee =
+                    new java.util.NoSuchElementException();
+            nsee.initCause(e);
+            throw nsee;
+        }
+    }
+}
+
+/*
+ * An enumeration of name/classname pairs.
+ *
+ * Nodes that have children or that are zone cuts are returned with
+ * classname DirContext.  Other nodes are returned with classname
+ * Object even though they are DirContexts as well, since this might
+ * make the namespace easier to browse.
+ */
+final class NameClassPairEnumeration
+        extends BaseNameClassPairEnumeration<NameClassPair>
+        implements NamingEnumeration<NameClassPair> {
+
+    NameClassPairEnumeration(DnsContext ctx, Hashtable<String,NameNode> nodes) {
+        super(ctx, nodes);
+    }
+
+    @Override
+    public NameClassPair next() throws NamingException {
         if (!hasMore()) {
             throw new java.util.NoSuchElementException();
         }
-        NameNode nnode = (NameNode) nodes.nextElement();
+        NameNode nnode = nodes.nextElement();
         String className = (nnode.isZoneCut() ||
                             (nnode.getChildren() != null))
             ? "javax.naming.directory.DirContext"
@@ -1005,28 +1038,15 @@ class NameClassPairEnumeration implements NamingEnumeration {
         ncp.setNameInNamespace(ctx.fullyQualify(cname).toString());
         return ncp;
     }
-
-    public boolean hasMoreElements() {
-        return hasMore();
-    }
-
-    public Object nextElement() {
-        try {
-            return next();
-        } catch (NamingException e) {
-            throw (new java.util.NoSuchElementException(
-                    "javax.naming.NamingException was thrown: " +
-                    e.getMessage()));
-        }
-    }
 }
 
 /*
  * An enumeration of Bindings.
  */
-class BindingEnumeration extends NameClassPairEnumeration {
+final class BindingEnumeration extends BaseNameClassPairEnumeration<Binding>
+                         implements NamingEnumeration<Binding> {
 
-    BindingEnumeration(DnsContext ctx, Hashtable nodes) {
+    BindingEnumeration(DnsContext ctx, Hashtable<String,NameNode> nodes) {
         super(ctx, nodes);
     }
 
@@ -1035,11 +1055,12 @@ class BindingEnumeration extends NameClassPairEnumeration {
 //      close();
 //  }
 
-    public Object next() throws NamingException {
+    @Override
+    public Binding next() throws NamingException {
         if (!hasMore()) {
             throw (new java.util.NoSuchElementException());
         }
-        NameNode nnode = (NameNode) nodes.nextElement();
+        NameNode nnode = nodes.nextElement();
 
         String label = nnode.getLabel();
         Name compName = (new DnsName()).add(label);

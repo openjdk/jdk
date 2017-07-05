@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,16 +77,16 @@ public abstract class PartialCompositeContext implements Context, Resolver {
 
     /* Equivalent to method in  Resolver interface */
     protected abstract ResolveResult p_resolveToClass(Name name,
-        Class contextType, Continuation cont) throws NamingException;
+        Class<?> contextType, Continuation cont) throws NamingException;
 
     /* Equivalent to methods in Context interface */
     protected abstract Object p_lookup(Name name, Continuation cont)
         throws NamingException;
     protected abstract Object p_lookupLink(Name name, Continuation cont)
         throws NamingException;
-    protected abstract NamingEnumeration p_list(Name name,
+    protected abstract NamingEnumeration<NameClassPair> p_list(Name name,
         Continuation cont) throws NamingException;
-    protected abstract NamingEnumeration p_listBindings(Name name,
+    protected abstract NamingEnumeration<Binding> p_listBindings(Name name,
         Continuation cont) throws NamingException;
     protected abstract void p_bind(Name name, Object obj, Continuation cont)
         throws NamingException;
@@ -115,7 +115,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
      * The toolkit knows to clone when necessary.
      * @return The possibly null environment of the context.
      */
-    protected Hashtable p_getEnvironment() throws NamingException {
+    protected Hashtable<?,?> p_getEnvironment() throws NamingException {
         return getEnvironment();
     }
 
@@ -137,7 +137,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
         throws NamingException
     {
         PartialCompositeContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
         ResolveResult answer;
         Name nm = name;
@@ -168,7 +168,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
 
     public Object lookup(Name name) throws NamingException {
         PartialCompositeContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
         Object answer;
         Name nm = name;
@@ -194,7 +194,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
     public void bind(Name name, Object newObj) throws NamingException {
         PartialCompositeContext ctx = this;
         Name nm = name;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
 
         try {
@@ -216,7 +216,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
     public void rebind(Name name, Object newObj) throws NamingException {
         PartialCompositeContext ctx = this;
         Name nm = name;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
 
         try {
@@ -238,7 +238,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
     public void unbind(Name name) throws NamingException {
         PartialCompositeContext ctx = this;
         Name nm = name;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
 
         try {
@@ -262,7 +262,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
     {
         PartialCompositeContext ctx = this;
         Name nm = oldName;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(oldName, env);
 
         try {
@@ -293,8 +293,8 @@ public abstract class PartialCompositeContext implements Context, Resolver {
     {
         PartialCompositeContext ctx = this;
         Name nm = name;
-        NamingEnumeration answer;
-        Hashtable env = p_getEnvironment();
+        NamingEnumeration<NameClassPair> answer;
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
 
         try {
@@ -322,8 +322,8 @@ public abstract class PartialCompositeContext implements Context, Resolver {
     {
         PartialCompositeContext ctx = this;
         Name nm = name;
-        NamingEnumeration answer;
-        Hashtable env = p_getEnvironment();
+        NamingEnumeration<Binding> answer;
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
 
         try {
@@ -347,7 +347,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
     public void destroySubcontext(Name name) throws NamingException {
         PartialCompositeContext ctx = this;
         Name nm = name;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
 
         try {
@@ -371,7 +371,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
         PartialCompositeContext ctx = this;
         Name nm = name;
         Context answer;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
 
         try {
@@ -394,7 +394,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
 
     public Object lookupLink(Name name) throws NamingException {
         PartialCompositeContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
         Object answer;
         Name nm = name;
@@ -421,7 +421,7 @@ public abstract class PartialCompositeContext implements Context, Resolver {
         PartialCompositeContext ctx = this;
         Name nm = name;
         NameParser answer;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
 
         try {

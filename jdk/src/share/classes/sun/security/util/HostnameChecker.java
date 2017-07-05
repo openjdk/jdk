@@ -266,8 +266,8 @@ public class HostnameChecker {
      */
     private static boolean matchAllWildcards(String name,
          String template) {
-        name = name.toLowerCase();
-        template = template.toLowerCase();
+        name = name.toLowerCase(Locale.ENGLISH);
+        template = template.toLowerCase(Locale.ENGLISH);
         StringTokenizer nameSt = new StringTokenizer(name, ".");
         StringTokenizer templateSt = new StringTokenizer(template, ".");
 
@@ -296,8 +296,8 @@ public class HostnameChecker {
      */
     private static boolean matchLeftmostWildcard(String name,
                          String template) {
-        name = name.toLowerCase();
-        template = template.toLowerCase();
+        name = name.toLowerCase(Locale.ENGLISH);
+        template = template.toLowerCase(Locale.ENGLISH);
 
         // Retreive leftmost component
         int templateIdx = template.indexOf(".");

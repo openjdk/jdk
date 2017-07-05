@@ -84,7 +84,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      *
      * Map: String(keyType) -> String[](alias)
      */
-    private Map<String,String[]> serverAliasCache;
+    private final Map<String,String[]> serverAliasCache;
 
     /*
      * Basic container for credentials implemented as an inner class.
@@ -113,11 +113,13 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
         }
     }
 
-    SunX509KeyManagerImpl(KeyStore ks, char[] password) throws KeyStoreException,
+    SunX509KeyManagerImpl(KeyStore ks, char[] password)
+            throws KeyStoreException,
             NoSuchAlgorithmException, UnrecoverableKeyException {
 
         credentialsMap = new HashMap<String,X509Credentials>();
-        serverAliasCache = new HashMap<String,String[]>();
+        serverAliasCache = Collections.synchronizedMap(
+                            new HashMap<String,String[]>());
         if (ks == null) {
             return;
         }
@@ -352,15 +354,17 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
             if (sigType != null) {
                 if (certs.length > 1) {
                     // if possible, check the public key in the issuer cert
-                    if (!sigType.equals(certs[1].getPublicKey().getAlgorithm())) {
+                    if (!sigType.equals(
+                            certs[1].getPublicKey().getAlgorithm())) {
                         continue;
                     }
                 } else {
                     // Check the signature algorithm of the certificate itself.
                     // Look for the "withRSA" in "SHA1withRSA", etc.
                     String sigAlgName =
-                            certs[0].getSigAlgName().toUpperCase(Locale.ENGLISH);
-                    String pattern = "WITH" + sigType.toUpperCase(Locale.ENGLISH);
+                        certs[0].getSigAlgName().toUpperCase(Locale.ENGLISH);
+                    String pattern = "WITH" +
+                        sigType.toUpperCase(Locale.ENGLISH);
                     if (sigAlgName.contains(pattern) == false) {
                         continue;
                     }
@@ -412,5 +416,4 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
         }
         return list.toArray(new X500Principal[list.size()]);
     }
-
 }

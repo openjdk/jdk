@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,8 +212,8 @@ final class P11DHKeyFactory extends P11KeyFactory {
         }
     }
 
-    KeySpec implGetPublicKeySpec(P11Key key, Class keySpec, Session[] session)
-            throws PKCS11Exception, InvalidKeySpecException {
+    <T extends KeySpec> T implGetPublicKeySpec(P11Key key, Class<T> keySpec,
+            Session[] session) throws PKCS11Exception, InvalidKeySpecException {
         if (DHPublicKeySpec.class.isAssignableFrom(keySpec)) {
             session[0] = token.getObjSession();
             CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
@@ -227,15 +227,15 @@ final class P11DHKeyFactory extends P11KeyFactory {
                 attributes[1].getBigInteger(),
                 attributes[2].getBigInteger()
             );
-            return spec;
+            return keySpec.cast(spec);
         } else { // X.509 handled in superclass
             throw new InvalidKeySpecException("Only DHPublicKeySpec and "
                 + "X509EncodedKeySpec supported for DH public keys");
         }
     }
 
-    KeySpec implGetPrivateKeySpec(P11Key key, Class keySpec, Session[] session)
-            throws PKCS11Exception, InvalidKeySpecException {
+    <T extends KeySpec> T implGetPrivateKeySpec(P11Key key, Class<T> keySpec,
+            Session[] session) throws PKCS11Exception, InvalidKeySpecException {
         if (DHPrivateKeySpec.class.isAssignableFrom(keySpec)) {
             session[0] = token.getObjSession();
             CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
@@ -249,7 +249,7 @@ final class P11DHKeyFactory extends P11KeyFactory {
                 attributes[1].getBigInteger(),
                 attributes[2].getBigInteger()
             );
-            return spec;
+            return keySpec.cast(spec);
         } else { // PKCS#8 handled in superclass
             throw new InvalidKeySpecException("Only DHPrivateKeySpec "
                 + "and PKCS8EncodedKeySpec supported for DH private keys");

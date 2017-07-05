@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,6 @@ package com.sun.jndi.ldap;
 
 import javax.naming.NamingEnumeration;
 
-interface ReferralEnumeration extends NamingEnumeration {
+interface ReferralEnumeration<T> extends NamingEnumeration<T> {
     void appendUnprocessedReferrals(LdapReferralException ex);
 }
