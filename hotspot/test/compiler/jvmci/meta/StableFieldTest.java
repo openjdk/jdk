@@ -34,7 +34,7 @@
  *
  * @compile StableFieldTest.java
  * @run driver ClassFileInstaller compiler.jvmci.meta.StableFieldTest
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Xbootclasspath/a:. compiler.jvmci.meta.StableFieldTest
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Djvmci.Compiler=null -Xbootclasspath/a:. compiler.jvmci.meta.StableFieldTest
  */
 
 package compiler.jvmci.meta;

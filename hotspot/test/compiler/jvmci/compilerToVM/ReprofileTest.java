@@ -40,7 +40,7 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *                   -Xmixed -Xbatch
+ *                   -Xmixed -Xbatch -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.ReprofileTest
  */
 
