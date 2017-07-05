@@ -641,7 +641,8 @@ public:
     Flag_is_dead_loop_safe   = Flag_is_cisc_alternate << 1,
     Flag_may_be_short_branch = Flag_is_dead_loop_safe << 1,
     Flag_avoid_back_to_back  = Flag_may_be_short_branch << 1,
-    _max_flags = (Flag_avoid_back_to_back << 1) - 1 // allow flags combination
+    Flag_has_call            = Flag_avoid_back_to_back << 1,
+    _max_flags = (Flag_has_call << 1) - 1 // allow flags combination
   };
 
 private:

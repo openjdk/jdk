@@ -800,6 +800,7 @@ public:
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *Value(PhaseTransform *phase) const;
 };
 
 //------------------------------StrComp-------------------------------------

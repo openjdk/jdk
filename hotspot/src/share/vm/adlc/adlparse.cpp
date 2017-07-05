@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -982,27 +982,9 @@ void ADLParser::frame_parse(void) {
       }
       if (strcmp(token,"interpreter_frame_pointer")==0) {
         interpreter_frame_pointer_parse(frame, false);
-        // Add  reg_class interpreter_frame_pointer_reg
-        if( _AD._register != NULL ) {
-          RegClass *reg_class = _AD._register->addRegClass("interpreter_frame_pointer_reg");
-          char *interpreter_frame_pointer_reg = frame->_interpreter_frame_pointer_reg;
-          if( interpreter_frame_pointer_reg != NULL ) {
-            RegDef *regDef = _AD._register->getRegDef(interpreter_frame_pointer_reg);
-            reg_class->addReg(regDef);     // add regDef to regClass
-          }
-        }
       }
       if (strcmp(token,"inline_cache_reg")==0) {
         inline_cache_parse(frame, false);
-        // Add  reg_class inline_cache_reg
-        if( _AD._register != NULL ) {
-          RegClass *reg_class = _AD._register->addRegClass("inline_cache_reg");
-          char *inline_cache_reg = frame->_inline_cache_reg;
-          if( inline_cache_reg != NULL ) {
-            RegDef *regDef = _AD._register->getRegDef(inline_cache_reg);
-            reg_class->addReg(regDef);     // add regDef to regClass
-          }
-        }
       }
       if (strcmp(token,"compiler_method_oop_reg")==0) {
         parse_err(WARN, "Using obsolete Token, compiler_method_oop_reg");
@@ -1010,15 +992,6 @@ void ADLParser::frame_parse(void) {
       }
       if (strcmp(token,"interpreter_method_oop_reg")==0) {
         interpreter_method_oop_parse(frame, false);
-        // Add  reg_class interpreter_method_oop_reg
-        if( _AD._register != NULL ) {
-          RegClass *reg_class = _AD._register->addRegClass("interpreter_method_oop_reg");
-          char *method_oop_reg = frame->_interpreter_method_oop_reg;
-          if( method_oop_reg != NULL ) {
-            RegDef *regDef = _AD._register->getRegDef(method_oop_reg);
-            reg_class->addReg(regDef);     // add regDef to regClass
-          }
-        }
       }
       if (strcmp(token,"cisc_spilling_operand_name")==0) {
         cisc_spilling_operand_name_parse(frame, false);
@@ -2363,6 +2336,14 @@ void ADLParser::reg_class_parse(void) {
       }
     }
     next_char();                  // Skip closing ')'
+  } else if (_curchar == '%') {
+    char *code = find_cpp_block("reg class");
+    if (code == NULL) {
+      parse_err(SYNERR, "missing code declaration for reg class.\n");
+      return;
+    }
+    reg_class->_user_defined = code;
+    return;
   }
 
   // Check for terminating ';'
@@ -3115,7 +3096,7 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
   encoding->add_code("    _constant = C->constant_table().add");
 
   // Parse everything in ( ) expression.
-  encoding->add_code("(");
+  encoding->add_code("(this, ");
   next_char();  // Skip '('
   int parens_depth = 1;
 
@@ -3130,7 +3111,8 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
     }
     else if (_curchar == ')') {
       parens_depth--;
-      encoding->add_code(")");
+      if (parens_depth > 0)
+        encoding->add_code(")");
       next_char();
     }
     else {
@@ -3157,7 +3139,7 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
   }
 
   // Finish code line.
-  encoding->add_code(";");
+  encoding->add_code(");");
 
   if (_AD._adlocation_debug) {
     encoding->add_code(end_line_marker());
@@ -3817,7 +3799,7 @@ void ADLParser::effect_parse(InstructForm *instr) {
     return;
   }
   // Get list of effect-operand pairs and insert into dictionary
-  else get_effectlist(instr->_effects, instr->_localNames);
+  else get_effectlist(instr->_effects, instr->_localNames, instr->_has_call);
 
   // Debug Stuff
   if (_AD._adl_debug > 1) fprintf(stderr,"Effect description: %s\n", desc);
@@ -4595,7 +4577,7 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands) {
 // effect, and the second must be the name of an operand defined in the
 // operand list of this instruction.  Stores the names with a pointer to the
 // effect form in a local effects table.
-void ADLParser::get_effectlist(FormDict &effects, FormDict &operands) {
+void ADLParser::get_effectlist(FormDict &effects, FormDict &operands, bool& has_call) {
   OperandForm *opForm;
   Effect      *eForm;
   char        *ident;
@@ -4628,26 +4610,31 @@ void ADLParser::get_effectlist(FormDict &effects, FormDict &operands) {
       // Debugging Stuff
     if (_AD._adl_debug > 1) fprintf(stderr, "\tEffect Type: %s\t", ident);
     skipws();
-    // Get name of operand and check that it is in the local name table
-    if( (ident = get_unique_ident(effects, "effect")) == NULL) {
-      parse_err(SYNERR, "missing operand identifier in effect list\n");
-      return;
-    }
-    const Form *form = operands[ident];
-    opForm = form ? form->is_operand() : NULL;
-    if( opForm == NULL ) {
-      if( form && form->is_opclass() ) {
-        const char* cname = form->is_opclass()->_ident;
-        parse_err(SYNERR, "operand classes are illegal in effect lists (found %s %s)\n", cname, ident);
-      } else {
-        parse_err(SYNERR, "undefined operand %s in effect list\n", ident);
+    if (eForm->is(Component::CALL)) {
+      if (_AD._adl_debug > 1) fprintf(stderr, "\n");
+      has_call = true;
+    } else {
+      // Get name of operand and check that it is in the local name table
+      if( (ident = get_unique_ident(effects, "effect")) == NULL) {
+        parse_err(SYNERR, "missing operand identifier in effect list\n");
+        return;
       }
-      return;
+      const Form *form = operands[ident];
+      opForm = form ? form->is_operand() : NULL;
+      if( opForm == NULL ) {
+        if( form && form->is_opclass() ) {
+          const char* cname = form->is_opclass()->_ident;
+          parse_err(SYNERR, "operand classes are illegal in effect lists (found %s %s)\n", cname, ident);
+        } else {
+          parse_err(SYNERR, "undefined operand %s in effect list\n", ident);
+        }
+        return;
+      }
+      // Add the pair to the effects table
+      effects.Insert(ident, eForm);
+      // Debugging Stuff
+      if (_AD._adl_debug > 1) fprintf(stderr, "\tOperand Name: %s\n", ident);
     }
-    // Add the pair to the effects table
-    effects.Insert(ident, eForm);
-    // Debugging Stuff
-    if (_AD._adl_debug > 1) fprintf(stderr, "\tOperand Name: %s\n", ident);
     skipws();
   } while(_curchar == ',');
 
