@@ -650,28 +650,28 @@ inline intptr_t MacroAssembler::load_pc_address( Register reg, int bytes_to_skip
 }
 
 
-inline void MacroAssembler::load_contents(AddressLiteral& addrlit, Register d, int offset) {
+inline void MacroAssembler::load_contents(const AddressLiteral& addrlit, Register d, int offset) {
   assert_not_delayed();
   sethi(addrlit, d);
   ld(d, addrlit.low10() + offset, d);
 }
 
 
-inline void MacroAssembler::load_ptr_contents(AddressLiteral& addrlit, Register d, int offset) {
+inline void MacroAssembler::load_ptr_contents(const AddressLiteral& addrlit, Register d, int offset) {
   assert_not_delayed();
   sethi(addrlit, d);
   ld_ptr(d, addrlit.low10() + offset, d);
 }
 
 
-inline void MacroAssembler::store_contents(Register s, AddressLiteral& addrlit, Register temp, int offset) {
+inline void MacroAssembler::store_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset) {
   assert_not_delayed();
   sethi(addrlit, temp);
   st(s, temp, addrlit.low10() + offset);
 }
 
 
-inline void MacroAssembler::store_ptr_contents(Register s, AddressLiteral& addrlit, Register temp, int offset) {
+inline void MacroAssembler::store_ptr_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset) {
   assert_not_delayed();
   sethi(addrlit, temp);
   st_ptr(s, temp, addrlit.low10() + offset);
@@ -679,7 +679,7 @@ inline void MacroAssembler::store_ptr_contents(Register s, AddressLiteral& addrl
 
 
 // This code sequence is relocatable to any address, even on LP64.
-inline void MacroAssembler::jumpl_to(AddressLiteral& addrlit, Register temp, Register d, int offset) {
+inline void MacroAssembler::jumpl_to(const AddressLiteral& addrlit, Register temp, Register d, int offset) {
   assert_not_delayed();
   // Force fixed length sethi because NativeJump and NativeFarCall don't handle
   // variable length instruction streams.
@@ -688,7 +688,7 @@ inline void MacroAssembler::jumpl_to(AddressLiteral& addrlit, Register temp, Reg
 }
 
 
-inline void MacroAssembler::jump_to(AddressLiteral& addrlit, Register temp, int offset) {
+inline void MacroAssembler::jump_to(const AddressLiteral& addrlit, Register temp, int offset) {
   jumpl_to(addrlit, temp, G0, offset);
 }
 

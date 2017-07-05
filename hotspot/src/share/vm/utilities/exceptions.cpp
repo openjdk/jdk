@@ -117,7 +117,7 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
                   (address)h_exception(), file, line, thread);
   }
   // for AbortVMOnException flag
-  NOT_PRODUCT(Exceptions::debug_check_abort(h_exception));
+  NOT_PRODUCT(Exceptions::debug_check_abort(h_exception, message));
 
   // Check for special boot-strapping/vm-thread handling
   if (special_exception(thread, file, line, h_exception)) return;
@@ -375,17 +375,26 @@ ExceptionMark::~ExceptionMark() {
 
 #ifndef PRODUCT
 // caller frees value_string if necessary
-void Exceptions::debug_check_abort(const char *value_string) {
+void Exceptions::debug_check_abort(const char *value_string, const char* message) {
   if (AbortVMOnException != NULL && value_string != NULL &&
       strstr(value_string, AbortVMOnException)) {
-    fatal(err_msg("Saw %s, aborting", value_string));
+    if (AbortVMOnExceptionMessage == NULL || message == NULL ||
+        strcmp(message, AbortVMOnExceptionMessage) == 0) {
+      fatal(err_msg("Saw %s, aborting", value_string));
+    }
   }
 }
 
-void Exceptions::debug_check_abort(Handle exception) {
+void Exceptions::debug_check_abort(Handle exception, const char* message) {
   if (AbortVMOnException != NULL) {
     ResourceMark rm;
-    debug_check_abort(instanceKlass::cast(exception()->klass())->external_name());
+    if (message == NULL && exception->is_a(SystemDictionary::Throwable_klass())) {
+      oop msg = java_lang_Throwable::message(exception);
+      if (msg != NULL) {
+        message = java_lang_String::as_utf8_string(msg);
+      }
+    }
+    debug_check_abort(instanceKlass::cast(exception()->klass())->external_name(), message);
   }
 }
 #endif

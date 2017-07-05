@@ -163,8 +163,9 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
 
   // Debugging
   virtual void verify();
-  virtual void print() const                     PRODUCT_RETURN;
-  virtual void print_value_on(outputStream* st) const PRODUCT_RETURN;
+  void print() const                             { print_on(tty); }
+  virtual void print_on(outputStream* st) const;
+  virtual void print_value_on(outputStream* st) const;
 
   // Print the comment associated with offset on stream, if there is one
   virtual void print_block_comment(outputStream* stream, address block_begin) {
@@ -209,8 +210,8 @@ class BufferBlob: public CodeBlob {
   bool is_alive() const                          { return true; }
 
   void verify();
-  void print() const                             PRODUCT_RETURN;
-  void print_value_on(outputStream* st) const    PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
 };
 
 
@@ -292,8 +293,8 @@ class RuntimeStub: public CodeBlob {
   bool is_alive() const                          { return true; }
 
   void verify();
-  void print() const                             PRODUCT_RETURN;
-  void print_value_on(outputStream* st) const    PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
 };
 
 
@@ -317,8 +318,8 @@ class SingletonBlob: public CodeBlob {
    bool is_alive() const                         { return true; }
 
    void verify(); // does nothing
-   void print() const                            PRODUCT_RETURN;
-   void print_value_on(outputStream* st) const   PRODUCT_RETURN;
+   void print_on(outputStream* st) const;
+   void print_value_on(outputStream* st) const;
 };
 
 
@@ -373,7 +374,7 @@ class DeoptimizationBlob: public SingletonBlob {
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) { /* Nothing to do */ }
 
   // Printing
-  void print_value_on(outputStream* st) const PRODUCT_RETURN;
+  void print_value_on(outputStream* st) const;
 
   address unpack() const                         { return instructions_begin() + _unpack_offset;           }
   address unpack_with_exception() const          { return instructions_begin() + _unpack_with_exception;   }

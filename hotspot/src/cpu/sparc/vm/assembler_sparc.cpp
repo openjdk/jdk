@@ -626,7 +626,7 @@ void MacroAssembler::jmp(Register r1, int offset, const char* file, int line ) {
 }
 
 // This code sequence is relocatable to any address, even on LP64.
-void MacroAssembler::jumpl(AddressLiteral& addrlit, Register temp, Register d, int offset, const char* file, int line) {
+void MacroAssembler::jumpl(const AddressLiteral& addrlit, Register temp, Register d, int offset, const char* file, int line) {
   assert_not_delayed();
   // Force fixed length sethi because NativeJump and NativeFarCall don't handle
   // variable length instruction streams.
@@ -672,7 +672,7 @@ void MacroAssembler::jumpl(AddressLiteral& addrlit, Register temp, Register d, i
   }
 }
 
-void MacroAssembler::jump(AddressLiteral& addrlit, Register temp, int offset, const char* file, int line) {
+void MacroAssembler::jump(const AddressLiteral& addrlit, Register temp, int offset, const char* file, int line) {
   jumpl(addrlit, temp, G0, offset, file, line);
 }
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ CFLAGS += $(CFLAGS/NOEX)
 
 # Extra flags from gnumake's invocation or environment
 CFLAGS += $(EXTRA_CFLAGS)
+LFLAGS += $(EXTRA_CFLAGS)
 
 LIBS += -lm -ldl -lpthread
 
@@ -136,10 +137,14 @@ mapfile_reorder : mapfile $(REORDERFILE)
 vm.def: $(Res_Files) $(Obj_Files)
 	sh $(GAMMADIR)/make/linux/makefiles/build_vm_def.sh *.o > $@
 
-ifeq ($(ZERO_LIBARCH), ppc64)
+ifeq ($(SHARK_BUILD), true)
   STATIC_CXX = false
 else
-  STATIC_CXX = true
+  ifeq ($(ZERO_LIBARCH), ppc64)
+    STATIC_CXX = false
+  else
+    STATIC_CXX = true
+  endif
 endif
 
 ifeq ($(LINK_INTO),AOUT)
@@ -166,6 +171,10 @@ else
 endif
 ifeq ($(ZERO_BUILD), true)
   LIBS_VM += $(LIBFFI_LIBS)
+endif
+ifeq ($(SHARK_BUILD), true)
+  LFLAGS_VM += $(LLVM_LDFLAGS)
+  LIBS_VM   += $(LLVM_LIBS)
 endif
 
 LINK_VM = $(LINK_LIB.c)
@@ -210,15 +219,17 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	    $(LINK_LIB.CC/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
 	    [ -f $(LIBJVM_G) ] || { ln -s $@ $(LIBJVM_G); ln -s $@.1 $(LIBJVM_G).1; }; \
-	    if [ -x /usr/sbin/selinuxenabled ] ; then                   \
-	      /usr/sbin/selinuxenabled;                                 \
-              if [ $$? = 0 ] ; then					\
-		/usr/bin/chcon -t textrel_shlib_t $@;                   \
-		if [ $$? != 0 ]; then                                   \
-		  echo "ERROR: Cannot chcon $@";			\
-		fi							\
-	      fi							\
-	    fi                                                          \
+            if [ \"$(CROSS_COMPILE_ARCH)\" = \"\" ] ; then                    \
+	      if [ -x /usr/sbin/selinuxenabled ] ; then                 \
+	        /usr/sbin/selinuxenabled;                               \
+                if [ $$? = 0 ] ; then					\
+		  /usr/bin/chcon -t textrel_shlib_t $@;                 \
+		  if [ $$? != 0 ]; then                                 \
+		    echo "ERROR: Cannot chcon $@";			\
+		  fi							\
+	        fi							\
+	      fi                                                        \
+            fi 								\
 	}
 
 DEST_JVM = $(JDK_LIBDIR)/$(VM_SUBDIR)/$(LIBJVM)

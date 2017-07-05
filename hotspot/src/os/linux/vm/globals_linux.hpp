@@ -29,9 +29,10 @@
   product(bool, UseOprofile, false,                                 \
         "enable support for Oprofile profiler")                     \
                                                                     \
-  product(bool, UseLinuxPosixThreadCPUClocks, false,                \
-          "enable fast Linux Posix clocks where available")         \
-
+  product(bool, UseLinuxPosixThreadCPUClocks, true,                 \
+          "enable fast Linux Posix clocks where available")
+// NB: The default value of UseLinuxPosixThreadCPUClocks may be
+// overridden in Arguments::parse_each_vm_init_arg.
 
 //
 // Defines Linux-specific default values. The flags are available on all

@@ -86,7 +86,9 @@ class VtableStub {
   bool is_abstract_method_error(address epc)     { return epc == code_begin()+_ame_offset; }
   bool is_null_pointer_exception(address epc)    { return epc == code_begin()+_npe_offset; }
 
-  void print();
+  void print_on(outputStream* st) const;
+  void print() const                             { print_on(tty); }
+
 };
 
 

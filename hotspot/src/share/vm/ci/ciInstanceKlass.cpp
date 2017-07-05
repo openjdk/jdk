@@ -403,8 +403,9 @@ GrowableArray<ciField*>* ciInstanceKlass::non_static_fields() {
     instanceKlass* ik = get_instanceKlass();
     int max_n_fields = ik->fields()->length()/instanceKlass::next_offset;
 
+    Arena* arena = curEnv->arena();
     _non_static_fields =
-      new (curEnv->arena()) GrowableArray<ciField*>(max_n_fields);
+      new (arena) GrowableArray<ciField*>(arena, max_n_fields, 0, NULL);
     NonStaticFieldFiller filler(curEnv, _non_static_fields);
     ik->do_nonstatic_fields(&filler);
   }

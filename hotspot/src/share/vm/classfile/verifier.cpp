@@ -1847,12 +1847,8 @@ void ClassVerifier::verify_invoke_init(
   if (type == VerificationType::uninitialized_this_type()) {
     // The method must be an <init> method of either this class, or one of its
     // superclasses
-    klassOop oop = current_class()();
-    Klass* klass = oop->klass_part();
-    while (klass != NULL && ref_class_type.name() != klass->name()) {
-      klass = klass->super()->klass_part();
-    }
-    if (klass == NULL) {
+    if (ref_class_type.name() != current_class()->name() &&
+        !name_in_supers(ref_class_type.name(), current_class())) {
       verify_error(bci, "Bad <init> method call");
       return;
     }

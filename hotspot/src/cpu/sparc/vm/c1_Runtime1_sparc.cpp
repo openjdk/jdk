@@ -1031,3 +1031,7 @@ void Runtime1::generate_handle_exception(StubAssembler* sasm, OopMapSet* oop_map
 #undef __
 
 #define __ masm->
+
+const char *Runtime1::pd_name_for_address(address entry) {
+  return "<unknown function>";
+}
