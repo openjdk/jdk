@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -468,11 +467,7 @@ public class RuntimeNode extends Expression implements Optimistic {
     @Override
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterRuntimeNode(this)) {
-            final List<Expression> newArgs = new ArrayList<>();
-            for (final Node arg : args) {
-                newArgs.add((Expression)arg.accept(visitor));
-            }
-            return visitor.leaveRuntimeNode(setArgs(newArgs));
+            return visitor.leaveRuntimeNode(setArgs(Node.accept(visitor, args)));
         }
 
         return this;

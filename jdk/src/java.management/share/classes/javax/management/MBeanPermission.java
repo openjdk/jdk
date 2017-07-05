@@ -455,11 +455,11 @@ public class MBeanPermission extends Permission {
         name.append(className);
         if (member == null)
             member = "-";
-        name.append("#" + member);
+        name.append('#').append(member);
         if (objectName == null)
             name.append("[-]");
         else
-            name.append("[").append(objectName.getCanonicalName()).append("]");
+            name.append('[').append(objectName.getCanonicalName()).append(']');
 
         /* In the interests of legibility for Permission.toString(), we
            transform the empty string into "*".  */

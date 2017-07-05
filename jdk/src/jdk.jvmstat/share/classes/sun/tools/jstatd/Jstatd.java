@@ -76,6 +76,7 @@ public class Jstatd {
         }
     }
 
+    @SuppressWarnings("deprecation") // Use of RMISecurityManager
     public static void main(String[] args) {
         String rminame = null;
         int argc = 0;

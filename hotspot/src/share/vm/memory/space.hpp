@@ -70,15 +70,13 @@ class Space: public CHeapObj<mtGC> {
   // Used in support of save_marks()
   HeapWord* _saved_mark_word;
 
-  MemRegionClosure* _preconsumptionDirtyCardClosure;
-
   // A sequential tasks done structure. This supports
   // parallel GC, where we have threads dynamically
   // claiming sub-tasks from a larger parallel task.
   SequentialSubTasksDone _par_seq_tasks;
 
   Space():
-    _bottom(NULL), _end(NULL), _preconsumptionDirtyCardClosure(NULL) { }
+    _bottom(NULL), _end(NULL) { }
 
  public:
   // Accessors
@@ -97,11 +95,8 @@ class Space: public CHeapObj<mtGC> {
     return (HeapWord*)obj >= saved_mark_word();
   }
 
-  MemRegionClosure* preconsumptionDirtyCardClosure() const {
-    return _preconsumptionDirtyCardClosure;
-  }
-  void setPreconsumptionDirtyCardClosure(MemRegionClosure* cl) {
-    _preconsumptionDirtyCardClosure = cl;
+  virtual MemRegionClosure* preconsumptionDirtyCardClosure() const {
+    return NULL;
   }
 
   // Returns a subregion of the space containing only the allocated objects in
@@ -500,7 +495,6 @@ class GenSpaceMangler;
 // A space in which the free area is contiguous.  It therefore supports
 // faster allocation, and compaction.
 class ContiguousSpace: public CompactibleSpace {
-  friend class OneContigSpaceCardGeneration;
   friend class VMStructs;
   // Allow scan_and_forward function to call (private) overrides for auxiliary functions on this class
   template <typename SpaceType>

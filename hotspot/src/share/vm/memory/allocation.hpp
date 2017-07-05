@@ -101,7 +101,7 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 //   NEW_RESOURCE_OBJ(type)
 //   NEW_C_HEAP_ARRAY(type, size)
 //   NEW_C_HEAP_OBJ(type, memflags)
-//   FREE_C_HEAP_ARRAY(type, old, memflags)
+//   FREE_C_HEAP_ARRAY(type, old)
 //   FREE_C_HEAP_OBJ(objname, type, memflags)
 //   char* AllocateHeap(size_t size, const char* name);
 //   void  FreeHeap(void* p);
@@ -669,8 +669,8 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 #define REALLOC_C_HEAP_ARRAY_RETURN_NULL(type, old, size, memflags)\
   (type*) (ReallocateHeap((char*)(old), (size) * sizeof(type), memflags, AllocFailStrategy::RETURN_NULL))
 
-#define FREE_C_HEAP_ARRAY(type, old, memflags) \
-  FreeHeap((char*)(old), memflags)
+#define FREE_C_HEAP_ARRAY(type, old) \
+  FreeHeap((char*)(old))
 
 // allocate type in heap without calling ctor
 #define NEW_C_HEAP_OBJ(type, memflags)\
@@ -680,8 +680,8 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   NEW_C_HEAP_ARRAY_RETURN_NULL(type, 1, memflags)
 
 // deallocate obj of type in heap without calling dtor
-#define FREE_C_HEAP_OBJ(objname, memflags)\
-  FreeHeap((char*)objname, memflags);
+#define FREE_C_HEAP_OBJ(objname)\
+  FreeHeap((char*)objname);
 
 // for statistics
 #ifndef PRODUCT

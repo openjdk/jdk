@@ -96,13 +96,14 @@ public class KrbException extends Exception {
 
 
     public String krbErrorMessage() {
-        StringBuilder strbuf = new StringBuilder("krb_error " + returnCode);
+        StringBuilder sb = new StringBuilder();
+        sb.append("krb_error ").append(returnCode);
         String msg =  getMessage();
         if (msg != null) {
-            strbuf.append(" ");
-            strbuf.append(msg);
+            sb.append(" ");
+            sb.append(msg);
         }
-        return strbuf.toString();
+        return sb.toString();
     }
 
     /**

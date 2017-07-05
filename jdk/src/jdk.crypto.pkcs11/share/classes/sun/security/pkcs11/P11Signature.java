@@ -765,12 +765,14 @@ final class P11Signature extends SignatureSpi {
     }
 
     // see JCA spec
+    @SuppressWarnings("deprecation")
     protected void engineSetParameter(String param, Object value)
             throws InvalidParameterException {
         throw new UnsupportedOperationException("setParameter() not supported");
     }
 
     // see JCA spec
+    @SuppressWarnings("deprecation")
     protected Object engineGetParameter(String param)
             throws InvalidParameterException {
         throw new UnsupportedOperationException("getParameter() not supported");

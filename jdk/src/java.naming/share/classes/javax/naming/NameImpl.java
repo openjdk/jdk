@@ -170,7 +170,7 @@ class NameImpl {
                 endQuote = one ? syntaxEndQuote1 : syntaxEndQuote2;
 
                 i += syntaxTypevalSeparator.length();
-                answer.append(syntaxTypevalSeparator+beginQuote); // add back
+                answer.append(syntaxTypevalSeparator).append(beginQuote); // add back
 
                 // consume string until matching quote
                 for (i += beginQuote.length();
