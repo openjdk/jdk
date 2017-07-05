@@ -155,7 +155,7 @@ IRT_ENTRY(address,
 
   intptr_t *buf = (intptr_t *) stack->alloc(required_words * wordSize);
   SlowSignatureHandlerGenerator sshg(methodHandle(thread, method), buf);
-  sshg.generate(UCONST64(-1));
+  sshg.generate((uint64_t)CONST64(-1));
 
   SignatureHandler *handler = sshg.handler();
   handler->finalize();

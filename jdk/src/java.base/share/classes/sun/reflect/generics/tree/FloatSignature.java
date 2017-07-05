@@ -29,7 +29,7 @@ import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 /** AST that represents the type float. */
 public class FloatSignature implements BaseType {
-    private static FloatSignature singleton = new FloatSignature();
+    private static final FloatSignature singleton = new FloatSignature();
 
     private FloatSignature(){}
 

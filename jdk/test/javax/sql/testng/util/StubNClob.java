@@ -20,31 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package util;
 
-/*
- * @test
- * @bug 8055289
- * @library /testlibrary
- * @build UnsafeMallocLimit
- * @run main/othervm -Xmx32m -XX:NativeMemoryTracking=summary UnsafeMallocLimit
- */
+import java.sql.NClob;
 
-import com.oracle.java.testlibrary.*;
-import sun.misc.Unsafe;
+public class StubNClob extends StubClob  implements NClob {
 
-public class UnsafeMallocLimit {
-
-    public static void main(String args[]) throws Exception {
-        if (Platform.is32bit()) {
-            Unsafe unsafe = Utils.getUnsafe();
-            try {
-                unsafe.allocateMemory(1 << 30);
-                throw new RuntimeException("Did not get expected OOME");
-            } catch (OutOfMemoryError e) {
-                // Expected exception
-            }
-        } else {
-            System.out.println("Test only valid on 32-bit platforms");
-        }
-    }
 }

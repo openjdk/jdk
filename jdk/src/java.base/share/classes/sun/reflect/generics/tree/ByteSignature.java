@@ -29,7 +29,7 @@ import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 /** AST that represents the type byte. */
 public class ByteSignature implements BaseType {
-    private static ByteSignature singleton = new ByteSignature();
+    private static final ByteSignature singleton = new ByteSignature();
 
     private ByteSignature(){}
 

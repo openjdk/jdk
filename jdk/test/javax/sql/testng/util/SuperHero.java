@@ -32,9 +32,13 @@ public class SuperHero implements SQLData, Serializable {
 
     private String first;
     private String last;
-    private final String type;
+    private String type = "SUPERHERO";
     private Integer firstYear;
     private String secretIdentity;
+
+    public SuperHero() {
+
+    }
 
     public SuperHero(String sqlType, String fname, String lname, Integer year,
             String identity) {

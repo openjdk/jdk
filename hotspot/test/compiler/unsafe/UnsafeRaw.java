@@ -80,7 +80,7 @@ public class UnsafeRaw {
     final int element_size = 4;
     final int magic = 0x12345678;
 
-    Random rnd = new Random();
+    Random rnd = Utils.getRandomInstance();
 
     long array = unsafe.allocateMemory(array_size * element_size); // 128 ints
     long addr = array + array_size * element_size / 2; // something in the middle to work with

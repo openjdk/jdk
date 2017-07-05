@@ -2583,7 +2583,14 @@ ATTRIBUTE_PRINTF(3, 0)
 int jio_vsnprintf(char *str, size_t count, const char *fmt, va_list args) {
   // see bug 4399518, 4417214
   if ((intptr_t)count <= 0) return -1;
-  return vsnprintf(str, count, fmt, args);
+
+  int result = vsnprintf(str, count, fmt, args);
+  if ((result > 0 && (size_t)result >= count) || result == -1) {
+    str[count - 1] = '\0';
+    result = -1;
+  }
+
+  return result;
 }
 
 ATTRIBUTE_PRINTF(3, 0)
@@ -3271,8 +3278,10 @@ static inline arrayOop check_array(JNIEnv *env, jobject arr, bool type_array_onl
     THROW_0(vmSymbols::java_lang_NullPointerException());
   }
   oop a = JNIHandles::resolve_non_null(arr);
-  if (!a->is_array() || (type_array_only && !a->is_typeArray())) {
+  if (!a->is_array()) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Argument is not an array");
+  } else if (type_array_only && !a->is_typeArray()) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Argument is not an array of primitive type");
   }
   return arrayOop(a);
 }

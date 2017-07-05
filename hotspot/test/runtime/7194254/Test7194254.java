@@ -27,6 +27,7 @@
  * @summary Creates several threads with different java priorities and checks
  *      whether jstack reports correct priorities for them.
  *
+ * @ignore 8060219
  * @run main Test7194254
  */
 

@@ -41,7 +41,7 @@ import java.lang.reflect.TypeVariable;
 public abstract class AbstractScope<D extends GenericDeclaration>
     implements Scope {
 
-    private D recvr; // the declaration whose scope this instance represents
+    private final D recvr; // the declaration whose scope this instance represents
     private Scope enclosingScope; // the enclosing scope of this scope
 
     /**

@@ -120,6 +120,7 @@ public class Threads {
         virtualConstructor.addMapping("JavaThread", JavaThread.class);
         if (!VM.getVM().isCore()) {
             virtualConstructor.addMapping("CompilerThread", CompilerThread.class);
+            virtualConstructor.addMapping("CodeCacheSweeperThread", CodeCacheSweeperThread.class);
         }
         // for now, use JavaThread itself. fix it later with appropriate class if needed
         virtualConstructor.addMapping("SurrogateLockerThread", JavaThread.class);
@@ -164,7 +165,7 @@ public class Threads {
             return thread;
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
-            " (expected type JavaThread, CompilerThread, ServiceThread, JvmtiAgentThread, or SurrogateLockerThread)", e);
+            " (expected type JavaThread, CompilerThread, ServiceThread, JvmtiAgentThread, SurrogateLockerThread, or CodeCacheSweeperThread)", e);
         }
     }
 
@@ -201,7 +202,7 @@ public class Threads {
     public List getPendingThreads(ObjectMonitor monitor) {
         List pendingThreads = new ArrayList();
         for (JavaThread thread = first(); thread != null; thread = thread.next()) {
-            if (thread.isCompilerThread()) {
+            if (thread.isCompilerThread() || thread.isCodeCacheSweeperThread()) {
                 continue;
             }
             ObjectMonitor pending = thread.getCurrentPendingMonitor();

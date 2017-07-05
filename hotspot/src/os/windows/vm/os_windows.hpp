@@ -210,7 +210,6 @@ public:
   static BOOL Module32First(HANDLE,LPMODULEENTRY32);
   static BOOL Module32Next(HANDLE,LPMODULEENTRY32);
 
-  static BOOL GetNativeSystemInfoAvailable();
   static void GetNativeSystemInfo(LPSYSTEM_INFO);
 
   // NUMA calls
