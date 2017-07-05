@@ -167,16 +167,19 @@ public class KeyFactory {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
-     * @return the new KeyFactory object.
+     * @return the new {@code KeyFactory} object
      *
-     * @exception NoSuchAlgorithmException if no Provider supports a
-     *          KeyFactorySpi implementation for the
-     *          specified algorithm.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code KeyFactorySpi} implementation for the
+     *         specified algorithm
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      */
     public static KeyFactory getInstance(String algorithm)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         return new KeyFactory(algorithm);
     }
 
@@ -200,22 +203,25 @@ public class KeyFactory {
      *
      * @param provider the name of the provider.
      *
-     * @return the new KeyFactory object.
+     * @return the new {@code KeyFactory} object
      *
-     * @exception NoSuchAlgorithmException if a KeyFactorySpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the provider name is {@code null}
+     *         or empty
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws NoSuchAlgorithmException if a {@code KeyFactorySpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
-     * @exception IllegalArgumentException if the provider name is null
-     *          or empty.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      */
     public static KeyFactory getInstance(String algorithm, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = GetInstance.getInstance("KeyFactory",
             KeyFactorySpi.class, algorithm, provider);
         return new KeyFactory((KeyFactorySpi)instance.impl,
@@ -239,13 +245,16 @@ public class KeyFactory {
      *
      * @param provider the provider.
      *
-     * @return the new KeyFactory object.
+     * @return the new {@code KeyFactory} object
      *
-     * @exception NoSuchAlgorithmException if a KeyFactorySpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws IllegalArgumentException if the specified provider is
+     *         {@code null}
      *
-     * @exception IllegalArgumentException if the specified provider is null.
+     * @throws NoSuchAlgorithmException if a {@code KeyFactorySpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified {@code Provider} object
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      *
@@ -253,6 +262,7 @@ public class KeyFactory {
      */
     public static KeyFactory getInstance(String algorithm, Provider provider)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = GetInstance.getInstance("KeyFactory",
             KeyFactorySpi.class, algorithm, provider);
         return new KeyFactory((KeyFactorySpi)instance.impl,

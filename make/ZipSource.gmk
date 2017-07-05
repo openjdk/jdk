@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,61 +28,68 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
+include Modules.gmk
+
+SRC_ZIP_WORK_DIR := $(SUPPORT_OUTPUTDIR)/src
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , ZipSource.gmk))
 
 ################################################################################
+# Create the directory structure for src.zip using symlinks.
+# <module>/<package>/<file>.java
 
-# Use ?= to enable override in custom makefile
-SRC_ZIP_INCLUDES ?= \
-    com \
-    java \
-    javax \
-    jdk \
-    org \
-    sun \
-    #
+# Find extra source dirs for a module that are not part of normal compilation
+# but should be included in src.zip.
+# $1: Module to find dirs for
+ExtraSrcDirs = \
+    $(wildcard $(SUPPORT_OUTPUTDIR)/rmic/$(strip $1))
 
-SRC_ZIP_EXCLUDES ?=
+ALL_MODULES := $(FindAllModules)
 
-SRC_ZIP_SRCS += $(wildcard \
-    $(JDK_TOPDIR)/src/*/share/classes \
-    $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS)/classes \
-    $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_API_DIR)/classes \
-    $(LANGTOOLS_TOPDIR)/src/*/share/classes \
-    $(CORBA_TOPDIR)/src/*/share/classes \
-    $(JAXP_TOPDIR)/src/*/share/classes \
-    $(JAXWS_TOPDIR)/src/*/share/classes \
-    $(SUPPORT_OUTPUTDIR)/gensrc/j* \
-    $(SUPPORT_OUTPUTDIR)/rmic/j* \
+# Generate the src dirs in the first make invocation and then call this makefile
+# again to create src.zip.
+$(foreach m, $(ALL_MODULES), \
+  $(foreach d, $(call FindModuleSrcDirs, $m) $(call ExtraSrcDirs, $m), \
+    $(eval $d_TARGET := $(SRC_ZIP_WORK_DIR)/$(patsubst $(TOPDIR)/%,%,$d)/$m) \
+    $(if $(SRC_GENERATED), , \
+      $(eval $$($d_TARGET): $d ; \
+          $$(if $(filter $(TOPDIR)/%, $d), $$(link-file-relative), $$(link-file-absolute)) \
+      ) \
     ) \
-    #
+    $(eval SRC_ZIP_SRCS += $$($d_TARGET)) \
+    $(eval SRC_ZIP_SRCS_$m += $$($d_TARGET)) \
+  ) \
+)
 
-# Need to copy launcher src files into desired directory structure
-# before zipping the sources.
-$(eval $(call SetupCopyFiles,COPY_LAUNCHER_SRC, \
-    SRC := $(JDK_TOPDIR)/src/java.base, \
-    DEST := $(SUPPORT_OUTPUTDIR)/src/launcher, \
-    FLATTEN := true, \
-    FILES := $(wildcard \
-        $(JDK_TOPDIR)/src/java.base/share/native/launcher/* \
-        $(JDK_TOPDIR)/src/java.base/share/native/libjli/* \
-        $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjli/java_md*)))
+TARGETS += $(SRC_ZIP_SRCS)
 
-# This dir needs to exist before macro is evaluated to avoid warning from find.
-$(call MakeDir, $(SUPPORT_OUTPUTDIR)/src)
-$(eval $(call SetupZipArchive,BUILD_SRC_ZIP, \
-    SRC := $(SRC_ZIP_SRCS) $(SUPPORT_OUTPUTDIR)/src, \
-    INCLUDES := $(SRC_ZIP_INCLUDES) launcher, \
-    EXCLUDES := $(SRC_ZIP_EXCLUDES), \
-    EXCLUDE_FILES := $(SRC_ZIP_EXCLUDE_FILES), \
-    SUFFIXES := .java .c .h, \
-    ZIP := $(SUPPORT_OUTPUTDIR)/src.zip, \
-    EXTRA_DEPS := $(COPY_LAUNCHER_SRC)))
+################################################################################
+# Only evaluate the creation of src.zip in a sub make call when the symlinked
+# src directory structure has been generated.
+ifeq ($(SRC_GENERATED), true)
+  $(eval $(call SetupZipArchive, BUILD_SRC_ZIP, \
+      SRC := $(dir $(SRC_ZIP_SRCS)), \
+      INCLUDES := $(SRC_ZIP_INCLUDES), \
+      INCLUDE_FILES := $(SRC_ZIP_INCLUDE_FILES), \
+      EXCLUDES := $(SRC_ZIP_EXCLUDES), \
+      EXCLUDE_FILES := $(SRC_ZIP_EXCLUDE_FILES), \
+      SUFFIXES := .java, \
+      ZIP := $(SUPPORT_OUTPUTDIR)/src.zip, \
+  ))
+
+  do-zip: $(BUILD_SRC_ZIP)
+
+  .PHONY: do-zip
+endif
+
+zip: $(SRC_ZIP_SRCS)
+	+$(MAKE) $(MAKE_ARGS) -f ZipSource.gmk do-zip SRC_GENERATED=true
+
+TARGETS += zip
 
 ################################################################################
 
-all: $(BUILD_SRC_ZIP)
+all: $(TARGETS)
 
-.PHONY: default all
+.PHONY: default all zip

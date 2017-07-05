@@ -97,7 +97,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         int absY = locationOnScreen.y + y;
 
         responder.handleScrollEvent(x, y, absX, absY, modifierFlags, deltaX,
-                                    deltaY);
+                                    deltaY, NSEvent.SCROLL_PHASE_UNSUPPORTED);
     }
 
     public void handleKeyEvent(int eventType, int modifierFlags, String characters,

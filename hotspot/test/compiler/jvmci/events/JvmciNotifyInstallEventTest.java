@@ -38,9 +38,8 @@
  *
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.common.JVMCIHelpers
- * @run driver jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
  * @run driver jdk.test.lib.FileInstaller ./JvmciNotifyInstallEventTest.config
- *     ./META-INF/services/jdk.vm.ci.hotspot.services.HotSpotVMEventListener
+ *     ./META-INF/services/jdk.vm.ci.services.JVMCIServiceLocator
  * @run driver ClassFileInstaller
  *      compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
  *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
@@ -73,6 +72,7 @@ import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.SimpleClass;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
+import jdk.vm.ci.services.JVMCIServiceLocator;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.site.DataPatch;
@@ -82,13 +82,13 @@ import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
+import jdk.vm.ci.hotspot.HotSpotVMEventListener;
 import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 import java.lang.reflect.Method;
 
-public class JvmciNotifyInstallEventTest extends HotSpotVMEventListener {
+public class JvmciNotifyInstallEventTest extends JVMCIServiceLocator implements HotSpotVMEventListener {
     private static final String METHOD_NAME = "testMethod";
     private static final boolean FAIL_ON_INIT = !Boolean.getBoolean(
             "compiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit");
@@ -96,6 +96,14 @@ public class JvmciNotifyInstallEventTest extends HotSpotVMEventListener {
 
     public static void main(String args[]) {
         new JvmciNotifyInstallEventTest().runTest();
+    }
+
+    @Override
+    public <S> S getProvider(Class<S> service) {
+        if (service == HotSpotVMEventListener.class) {
+            return service.cast(this);
+        }
+        return null;
     }
 
     private void runTest() {

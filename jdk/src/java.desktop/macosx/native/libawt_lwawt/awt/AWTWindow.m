@@ -317,7 +317,7 @@ AWT_ASSERT_APPKIT_THREAD;
     [self setPropertiesForStyleBits:styleBits mask:MASK(_METHOD_PROP_BITMASK)];
 
     if (IS(self.styleBits, IS_POPUP)) {
-        [self.nsWindow setCollectionBehavior:(1 << 8) /*NSWindowCollectionBehaviorFullScreenAuxiliary*/]; 
+        [self.nsWindow setCollectionBehavior:(1 << 8) /*NSWindowCollectionBehaviorFullScreenAuxiliary*/];
     }
 
     return self;
@@ -330,7 +330,7 @@ AWT_ASSERT_APPKIT_THREAD;
 // returns id for the topmost window under mouse
 + (NSInteger) getTopmostWindowUnderMouseID {
     NSInteger result = -1;
-    
+
     NSRect screenRect = [[NSScreen mainScreen] frame];
     NSPoint nsMouseLocation = [NSEvent mouseLocation];
     CGPoint cgMouseLocation = CGPointMake(nsMouseLocation.x, screenRect.size.height - nsMouseLocation.y);
@@ -433,18 +433,18 @@ AWT_ASSERT_APPKIT_THREAD;
 // Tests wheather the corresponding Java paltform window is visible or not
 + (BOOL) isJavaPlatformWindowVisible:(NSWindow *)window {
     BOOL isVisible = NO;
-    
+
     if ([AWTWindow isAWTWindow:window] && [window delegate] != nil) {
         AWTWindow *awtWindow = (AWTWindow *)[window delegate];
         [AWTToolkit eventCountPlusPlus];
-        
+
         JNIEnv *env = [ThreadUtilities getJNIEnv];
         jobject platformWindow = [awtWindow.javaPlatformWindow jObjectWithEnv:env];
         if (platformWindow != NULL) {
             static JNF_MEMBER_CACHE(jm_isVisible, jc_CPlatformWindow, "isVisible", "()Z");
             isVisible = JNFCallBooleanMethod(env, platformWindow, jm_isVisible) == JNI_TRUE ? YES : NO;
             (*env)->DeleteLocalRef(env, platformWindow);
-            
+
         }
     }
     return isVisible;
@@ -577,7 +577,9 @@ AWT_ASSERT_APPKIT_THREAD;
 - (NSRect)windowWillUseStandardFrame:(NSWindow *)window
                         defaultFrame:(NSRect)newFrame {
 
-    return [self standardFrame];
+    return NSEqualSizes(NSZeroSize, [self standardFrame].size)
+                ? newFrame
+                : [self standardFrame];
 }
 
 // Hides/shows window's childs during iconify/de-iconify operation
@@ -1085,17 +1087,17 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowSt
      jdouble width, jdouble height)
 {
     JNF_COCOA_ENTER(env);
-    
+
     NSRect jrect = NSMakeRect(originX, originY, width, height);
-    
+
     NSWindow *nsWindow = OBJC(windowPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
-        
+
         NSRect rect = ConvertNSScreenRect(NULL, jrect);
         AWTWindow *window = (AWTWindow*)[nsWindow delegate];
         window.standardFrame = rect;
     }];
-    
+
     JNF_COCOA_EXIT(env);
 }
 
@@ -1366,7 +1368,7 @@ JNF_COCOA_ENTER(env);
     } else {
         [JNFException raise:env as:kIllegalArgumentException reason:"unknown event type"];
     }
-    
+
 JNF_COCOA_EXIT(env);
 }
 
@@ -1476,7 +1478,7 @@ JNF_COCOA_ENTER(env);
 
         if (CGDisplayRelease(aID) == kCGErrorSuccess) {
             NSUInteger styleMask = [AWTWindow styleMaskForStyleBits:window.styleBits];
-            [nsWindow setStyleMask:styleMask]; 
+            [nsWindow setStyleMask:styleMask];
             [nsWindow setLevel: window.preFullScreenLevel];
 
             // GraphicsDevice takes care of restoring pre full screen bounds

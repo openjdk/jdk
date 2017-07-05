@@ -32,8 +32,22 @@ grant codeBase "jrt:/java.smartcardio" {
     permission javax.smartcardio.CardPermission "*", "*";
     permission java.lang.RuntimePermission "loadLibrary.j2pcsc";
     permission java.lang.RuntimePermission
-                   "accessClassInPackage.sun.security.*";
-    permission java.util.PropertyPermission "*", "read";
+                   "accessClassInPackage.sun.security.jca";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.sun.security.util";
+    permission java.util.PropertyPermission
+                   "javax.smartcardio.TerminalFactory.DefaultType", "read";
+    permission java.util.PropertyPermission "os.name", "read";
+    permission java.util.PropertyPermission "os.arch", "read";
+    permission java.util.PropertyPermission "sun.arch.data.model", "read";
+    permission java.util.PropertyPermission
+                   "sun.security.smartcardio.library", "read";
+    permission java.util.PropertyPermission
+                   "sun.security.smartcardio.t0GetResponse", "read";
+    permission java.util.PropertyPermission
+                   "sun.security.smartcardio.t1GetResponse", "read";
+    permission java.util.PropertyPermission
+                   "sun.security.smartcardio.t1StripLe", "read";
     // needed for looking up native PC/SC library
     permission java.io.FilePermission "<<ALL FILES>>","read";
     permission java.security.SecurityPermission "putProviderProperty.SunPCSC";

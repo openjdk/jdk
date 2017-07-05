@@ -44,7 +44,7 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 
 /**
- * @test @bug 8145174
+ * @test @bug 8145174 8151787
  * @summary HiDPI splash screen support on Linux
  * @modules java.desktop/sun.java2d
  * @run main UnixMultiResolutionSplashTest
@@ -55,9 +55,9 @@ public class UnixMultiResolutionSplashTest {
     private static final int IMAGE_HEIGHT = 200;
     private static int inx = 0;
     private static final ImageInfo[] tests = {
-        new ImageInfo("splash1.png", "splash1.java-scale2x.png", Color.BLUE, Color.GREEN),
-        new ImageInfo("splash2", "splash2.java-scale2x", Color.WHITE, Color.BLACK),
-        new ImageInfo("splash3.", "splash3.java-scale2x.", Color.YELLOW, Color.RED)
+        new ImageInfo("splash1.png", "splash1@200pct.png", Color.BLUE, Color.GREEN),
+        new ImageInfo("splash2", "splash2@2x", Color.WHITE, Color.BLACK),
+        new ImageInfo("splash3.", "splash3@200pct.", Color.YELLOW, Color.RED)
     };
 
     public static void main(String[] args) throws Exception {
@@ -96,8 +96,6 @@ public class UnixMultiResolutionSplashTest {
         Rectangle splashBounds = splashScreen.getBounds();
         int screenX = (int) splashBounds.getCenterX();
         int screenY = (int) splashBounds.getCenterY();
-        System.out.println(screenX);
-        System.out.println(screenY);
         Robot robot = new Robot();
         Color splashScreenColor = robot.getPixelColor(screenX, screenY);
 

@@ -851,8 +851,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
             {
                 comp.setGraphicsConfiguration(gc);
             }
-            public boolean requestFocus(Component comp, FocusEvent.Cause cause) {
-                return comp.requestFocus(cause);
+            public void requestFocus(Component comp, FocusEvent.Cause cause) {
+                comp.requestFocus(cause);
             }
             public boolean canBeFocusOwner(Component comp) {
                 return comp.canBeFocusOwner();
@@ -7511,8 +7511,51 @@ public abstract class Component implements ImageObserver, MenuContainer,
         requestFocusHelper(false, true);
     }
 
-    boolean requestFocus(FocusEvent.Cause cause) {
-        return requestFocusHelper(false, true, cause);
+
+    /**
+     * Requests by the reason of {@code cause} that this Component get the input
+     * focus, and that this Component's top-level ancestor become the
+     * focused Window. This component must be displayable, focusable, visible
+     * and all of its ancestors (with the exception of the top-level Window)
+     * must be visible for the request to be granted. Every effort will be
+     * made to honor the request; however, in some cases it may be
+     * impossible to do so. Developers must never assume that this
+     * Component is the focus owner until this Component receives a
+     * FOCUS_GAINED event.
+     * <p>
+     * The focus request effect may also depend on the provided
+     * cause value. If this request is succeed the {@code FocusEvent}
+     * generated in the result will receive the cause value specified as the
+     * argument of method. If this request is denied because this Component's
+     * top-level Window cannot become the focused Window, the request will be
+     * remembered and will be granted when the Window is later focused by the
+     * user.
+     * <p>
+     * This method cannot be used to set the focus owner to no Component at
+     * all. Use {@code KeyboardFocusManager.clearGlobalFocusOwner()}
+     * instead.
+     * <p>
+     * Because the focus behavior of this method is platform-dependent,
+     * developers are strongly encouraged to use
+     * {@code requestFocusInWindow(FocusEvent.Cause)} when possible.
+     *
+     * <p>Note: Not all focus transfers result from invoking this method. As
+     * such, a component may receive focus without this or any of the other
+     * {@code requestFocus} methods of {@code Component} being invoked.
+     *
+     * @param  cause the cause why the focus is requested
+     * @see FocusEvent
+     * @see FocusEvent.Cause
+     * @see #requestFocusInWindow(FocusEvent.Cause)
+     * @see java.awt.event.FocusEvent
+     * @see #addFocusListener
+     * @see #isFocusable
+     * @see #isDisplayable
+     * @see KeyboardFocusManager#clearGlobalFocusOwner
+     * @since 9
+     */
+    public void requestFocus(FocusEvent.Cause cause) {
+        requestFocusHelper(false, true, cause);
     }
 
     /**
@@ -7578,9 +7621,77 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return requestFocusHelper(temporary, true);
     }
 
-    boolean requestFocus(boolean temporary, FocusEvent.Cause cause) {
+    /**
+     * Requests by the reason of {@code cause} that this {@code Component} get
+     * the input focus, and that this {@code Component}'s top-level ancestor
+     * become the focused {@code Window}. This component must be
+     * displayable, focusable, visible and all of its ancestors (with
+     * the exception of the top-level Window) must be visible for the
+     * request to be granted. Every effort will be made to honor the
+     * request; however, in some cases it may be impossible to do
+     * so. Developers must never assume that this component is the
+     * focus owner until this component receives a FOCUS_GAINED
+     * event. If this request is denied because this component's
+     * top-level window cannot become the focused window, the request
+     * will be remembered and will be granted when the window is later
+     * focused by the user.
+     * <p>
+     * This method returns a boolean value. If {@code false} is returned,
+     * the request is <b>guaranteed to fail</b>. If {@code true} is
+     * returned, the request will succeed <b>unless</b> it is vetoed, or an
+     * extraordinary event, such as disposal of the component's peer, occurs
+     * before the request can be granted by the native windowing system. Again,
+     * while a return value of {@code true} indicates that the request is
+     * likely to succeed, developers must never assume that this component is
+     * the focus owner until this component receives a FOCUS_GAINED event.
+     * <p>
+     * The focus request effect may also depend on the provided
+     * cause value. If this request is succeed the {FocusEvent}
+     * generated in the result will receive the cause value specified as the
+     * argument of the method.
+     * <p>
+     * This method cannot be used to set the focus owner to no component at
+     * all. Use {@code KeyboardFocusManager.clearGlobalFocusOwner}
+     * instead.
+     * <p>
+     * Because the focus behavior of this method is platform-dependent,
+     * developers are strongly encouraged to use
+     * {@code requestFocusInWindow} when possible.
+     * <p>
+     * Every effort will be made to ensure that {@code FocusEvent}s
+     * generated as a
+     * result of this request will have the specified temporary value. However,
+     * because specifying an arbitrary temporary state may not be implementable
+     * on all native windowing systems, correct behavior for this method can be
+     * guaranteed only for lightweight {@code Component}s.
+     * This method is not intended
+     * for general use, but exists instead as a hook for lightweight component
+     * libraries, such as Swing.
+     * <p>
+     * Note: Not all focus transfers result from invoking this method. As
+     * such, a component may receive focus without this or any of the other
+     * {@code requestFocus} methods of {@code Component} being invoked.
+     *
+     * @param temporary true if the focus change is temporary,
+     *        such as when the window loses the focus; for
+     *        more information on temporary focus changes see the
+     *<a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+     *
+     * @param  cause the cause why the focus is requested
+     * @return {@code false} if the focus change request is guaranteed to
+     *         fail; {@code true} if it is likely to succeed
+     * @see FocusEvent
+     * @see FocusEvent.Cause
+     * @see #addFocusListener
+     * @see #isFocusable
+     * @see #isDisplayable
+     * @see KeyboardFocusManager#clearGlobalFocusOwner
+     * @since 9
+     */
+    protected boolean requestFocus(boolean temporary, FocusEvent.Cause cause) {
         return requestFocusHelper(temporary, true, cause);
     }
+
     /**
      * Requests that this Component get the input focus, if this
      * Component's top-level ancestor is already the focused
@@ -7629,7 +7740,59 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return requestFocusHelper(false, false);
     }
 
-    boolean requestFocusInWindow(FocusEvent.Cause cause) {
+    /**
+     * Requests by the reason of {@code cause} that this Component get the input
+     * focus, if this Component's top-level ancestor is already the focused
+     * Window. This component must be displayable, focusable, visible
+     * and all of its ancestors (with the exception of the top-level
+     * Window) must be visible for the request to be granted. Every
+     * effort will be made to honor the request; however, in some
+     * cases it may be impossible to do so. Developers must never
+     * assume that this Component is the focus owner until this
+     * Component receives a FOCUS_GAINED event.
+     * <p>
+     * This method returns a boolean value. If {@code false} is returned,
+     * the request is <b>guaranteed to fail</b>. If {@code true} is
+     * returned, the request will succeed <b>unless</b> it is vetoed, or an
+     * extraordinary event, such as disposal of the Component's peer, occurs
+     * before the request can be granted by the native windowing system. Again,
+     * while a return value of {@code true} indicates that the request is
+     * likely to succeed, developers must never assume that this Component is
+     * the focus owner until this Component receives a FOCUS_GAINED event.
+     * <p>
+     * The focus request effect may also depend on the provided
+     * cause value. If this request is succeed the {@code FocusEvent}
+     * generated in the result will receive the cause value specified as the
+     * argument of the method.
+     * <p>
+     * This method cannot be used to set the focus owner to no Component at
+     * all. Use {@code KeyboardFocusManager.clearGlobalFocusOwner()}
+     * instead.
+     * <p>
+     * The focus behavior of this method can be implemented uniformly across
+     * platforms, and thus developers are strongly encouraged to use this
+     * method over {@code requestFocus(FocusEvent.Cause)} when possible.
+     * Code which relies on {@code requestFocus(FocusEvent.Cause)} may exhibit
+     * different focus behavior on different platforms.
+     *
+     * <p>Note: Not all focus transfers result from invoking this method. As
+     * such, a component may receive focus without this or any of the other
+     * {@code requestFocus} methods of {@code Component} being invoked.
+     *
+     * @param  cause the cause why the focus is requested
+     * @return {@code false} if the focus change request is guaranteed to
+     *         fail; {@code true} if it is likely to succeed
+     * @see #requestFocus(FocusEvent.Cause)
+     * @see FocusEvent
+     * @see FocusEvent.Cause
+     * @see java.awt.event.FocusEvent
+     * @see #addFocusListener
+     * @see #isFocusable
+     * @see #isDisplayable
+     * @see KeyboardFocusManager#clearGlobalFocusOwner
+     * @since 9
+     */
+    public boolean requestFocusInWindow(FocusEvent.Cause cause) {
         return requestFocusHelper(false, false, cause);
     }
 

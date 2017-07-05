@@ -35,7 +35,6 @@ import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObject
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.dynalink.linker.LinkerServices;
@@ -91,24 +90,17 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
             inv = null;
         }
 
-        final StandardOperation op = NashornCallSiteDescriptor.getFirstStandardOperation(desc);
-        if (op == null) {
-            return inv;
-        }
         final String name = NashornCallSiteDescriptor.getOperand(desc);
-        switch (op) {
-        case GET_PROPERTY:
-        case GET_ELEMENT:
-        case GET_METHOD:
+        switch (NashornCallSiteDescriptor.getStandardOperation(desc)) {
+        case GET:
             return name != null ? findGetMethod(name, inv) : findGetIndexMethod(inv);
-        case SET_PROPERTY:
-        case SET_ELEMENT:
+        case SET:
             return name != null ? findSetMethod(name, inv) : findSetIndexMethod();
         case CALL:
             return findCallMethod(desc);
         default:
+            return null;
         }
-        return null;
     }
 
     private static GuardedInvocation findGetMethod(final String name, final GuardedInvocation inv) {

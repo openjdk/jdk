@@ -575,25 +575,21 @@ RelativePath = \
     $($(strip $1)_dotdots)/$($(strip $1)_suffix)
 
 ################################################################################
-# link-file-* works similarly to install file but creates a symlink instead on
-# platforms that support it. There are two versions, either creating a relative
-# or an absolute link.
-ifeq ($(OPENJDK_BUILD_OS), windows)
-  link-file-absolute = $(install-file)
-  link-file-relative = $(install-file)
-else
-  define link-file-relative
+# link-file-* works similarly to install-file but creates a symlink instead.
+# There are two versions, either creating a relative or an absolute link. Be
+# careful when using this on Windows since the symlink created is only valid in
+# the unix emulation environment.
+define link-file-relative
 	$(call MakeDir, $(@D))
 	$(RM) $@
 	$(LN) -s $(call RelativePath, $<, $(@D)) $@
-  endef
+endef
 
-  define link-file-absolute
+define link-file-absolute
 	$(call MakeDir, $(@D))
 	$(RM) $@
 	$(LN) -s $< $@
-  endef
-endif
+endef
 
 ################################################################################
 # Filter out duplicate sub strings while preserving order. Keeps the first occurance.
