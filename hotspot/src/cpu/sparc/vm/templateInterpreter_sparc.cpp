@@ -434,7 +434,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
 
   // the frame is greater than one page in size, so check against
   // the bottom of the stack
-  __ cmp_and_brx_short(SP, Rscratch, Assembler::greater, Assembler::pt, after_frame_check);
+  __ cmp_and_brx_short(SP, Rscratch, Assembler::greaterUnsigned, Assembler::pt, after_frame_check);
 
   // the stack will overflow, throw an exception
 
