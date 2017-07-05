@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,10 @@
  */
 package javax.xml.catalog;
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 import jdk.xml.internal.SecuritySupport;
 
 /**
@@ -380,10 +384,7 @@ public class CatalogFeatures {
      */
     CatalogFeatures(Builder builder) {
         init();
-        setProperty(Feature.FILES.ordinal(), State.APIPROPERTY, builder.files);
-        setProperty(Feature.PREFER.ordinal(), State.APIPROPERTY, builder.prefer);
-        setProperty(Feature.DEFER.ordinal(), State.APIPROPERTY, builder.defer);
-        setProperty(Feature.RESOLVE.ordinal(), State.APIPROPERTY, builder.resolve);
+        setProperties(builder);
     }
 
     /**
@@ -410,6 +411,15 @@ public class CatalogFeatures {
     }
 
     /**
+     * Sets properties by the Builder.
+     * @param builder the CatalogFeatures builder
+     */
+    private void setProperties(Builder builder) {
+        builder.values.entrySet().stream().forEach((entry) -> {
+            setProperty(entry.getKey().ordinal(), State.APIPROPERTY, entry.getValue());
+        });
+    }
+    /**
      * Sets the value of a property by its index, updates only if it shall override.
      *
      * @param index the index of the property
@@ -432,10 +442,23 @@ public class CatalogFeatures {
                          && !value.equals(RESOLVE_IGNORE)) {
                     CatalogMessages.reportIAE(new Object[]{value, Feature.RESOLVE.name()}, null);
                 }
+            } else if (index == Feature.FILES.ordinal()) {
+                try {
+                    if (Util.verifyAndGetURI(value, null) == null) {
+                        CatalogMessages.reportIAE(new Object[]{value, Feature.FILES.name()}, null);
+                    }
+                }catch (MalformedURLException | URISyntaxException | IllegalArgumentException ex) {
+                    CatalogMessages.reportIAE(new Object[]{value, Feature.FILES.name()}, ex);
+                }
+
             }
             if (states[index] == null || state.compareTo(states[index]) >= 0) {
                 values[index] = value;
                 states[index] = state;
+            }
+        } else {
+            if (state == State.SYSTEMPROPERTY || state == State.JAXPDOTPROPERTIES) {
+                CatalogMessages.reportIAE(new Object[]{value, Feature.values()[index].name()}, null);
             }
         }
     }
@@ -486,9 +509,9 @@ public class CatalogFeatures {
      */
     public static class Builder {
         /**
-         * Variables for the features supported by CatalogFeatures.
+         * Values of the features supported by CatalogFeatures.
          */
-        String files, prefer, defer, resolve;
+        Map<Feature, String> values = new HashMap<>();
 
         /**
          * Instantiation of Builder is not allowed.
@@ -505,20 +528,10 @@ public class CatalogFeatures {
          * property
          */
         public Builder with(Feature feature, String value) {
-            switch (feature) {
-                case FILES :
-                    files = value;
-                    break;
-                case PREFER :
-                    prefer = value;
-                    break;
-                case DEFER :
-                    defer = value;
-                    break;
-                case RESOLVE :
-                    resolve = value;
-                    break;
+            if (value == null || value.length() == 0) {
+                CatalogMessages.reportIAE(new Object[]{value, feature.name()}, null);
             }
+            values.put(feature, value);
             return this;
         }
 

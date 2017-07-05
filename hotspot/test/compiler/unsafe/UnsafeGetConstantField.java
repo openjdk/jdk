@@ -58,6 +58,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.vm.annotation.Stable;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.internal.misc.Unsafe;
 
 import java.io.IOException;
@@ -73,9 +74,11 @@ public class UnsafeGetConstantField {
     static final Unsafe U = Unsafe.getUnsafe();
 
     public static void main(String[] args) {
-        testUnsafeGetAddress();
-        testUnsafeGetField();
-        testUnsafeGetFieldUnaligned();
+        if (Platform.isServer()) {
+            testUnsafeGetAddress();
+            testUnsafeGetField();
+            testUnsafeGetFieldUnaligned();
+        }
         System.out.println("TEST PASSED");
     }
 

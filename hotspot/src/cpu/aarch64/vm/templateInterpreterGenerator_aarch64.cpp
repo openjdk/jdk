@@ -1984,6 +1984,7 @@ void TemplateInterpreterGenerator::count_bytecode() {
   __ push(rscratch3);
   Label L;
   __ mov(rscratch2, (address) &BytecodeCounter::_counter_value);
+  __ prfm(Address(rscratch2), PSTL1STRM);
   __ bind(L);
   __ ldxr(rscratch1, rscratch2);
   __ add(rscratch1, rscratch1, 1);

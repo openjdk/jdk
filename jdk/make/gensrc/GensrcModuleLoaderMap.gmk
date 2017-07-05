@@ -25,103 +25,7 @@
 
 include Modules.gmk
 
-BOOT_MODULES :=
-UPGRADEABLE_MDOULES :=
-AGGREGATOR_MDOULES :=
-OTHER_PLATFORM_MODULES :=
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, jdk, gensrc/GensrcModuleLoaderMap.gmk))
-
-BOOT_MODULES += \
-    java.base \
-    java.datatransfer \
-    java.desktop \
-    java.httpclient \
-    java.instrument \
-    java.logging \
-    java.management \
-    java.naming \
-    java.prefs \
-    java.rmi \
-    java.security.jgss \
-    java.security.sasl \
-    java.sql \
-    java.xml \
-    java.xml.crypto \
-    jdk.httpserver \
-    jdk.management \
-    jdk.sctp \
-    jdk.security.auth \
-    jdk.security.jgss \
-    #
-
-# to be deprivileged
-BOOT_MODULES += \
-    java.compiler \
-    java.scripting \
-    java.sql.rowset \
-    java.smartcardio \
-    jdk.charsets \
-    jdk.naming.rmi \
-    #
-
-UPGRADEABLE_MODULES += \
-    java.activation \
-    java.annotations.common \
-    java.corba \
-    java.transaction \
-    java.xml.bind \
-    java.xml.ws \
-    #
-
-AGGREGATOR_MODULES += \
-    java.compact1 \
-    java.compact2 \
-    java.compact3 \
-    java.se \
-    java.se.ee \
-    #
-
-OTHER_PLATFORM_MODULES += \
-    jdk.accessibility \
-    jdk.crypto.ec \
-    jdk.crypto.pkcs11 \
-    jdk.dynalink \
-    jdk.jsobject \
-    jdk.xml.dom \
-    jdk.localedata \
-    jdk.naming.dns \
-    jdk.scripting.nashorn \
-    jdk.zipfs \
-    #
-
-ifeq ($(OPENJDK_TARGET_OS), macsox)
-  BOOT_MODULES += jdk.deploy.osx
-endif
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  OTHER_PLATFORM_MODULES += jdk.crypto.mscapi
-endif
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  OTHER_PLATFORM_MODULES += jdk.crypto.ucrypto
-endif
-
-# Param 1 - Name of module
-define ReadImportMetaData
-  ifneq ($$(wildcard $(IMPORT_MODULES_MAKE)/$$(strip $1)/build.properties), )
-    classloader :=
-    include $(IMPORT_MODULES_MAKE)/$$(strip $1)/build.properties
-    ifeq ($$(classloader), boot)
-      BOOT_MODULES += $1
-    else ifeq ($$(classloader), ext)
-      OTHER_PLATFORM_MODULES += $1
-    endif
-  endif
-endef
-
-IMPORTED_MODULES := $(call FindImportedModules)
-$(foreach m, $(IMPORTED_MODULES), $(eval $(call ReadImportMetaData, $m)))
-
+$(eval $(call ReadImportMetaData))
 
 # Replacing double-comma with a single comma is to workaround the issue
 # with some version of make on windows that doesn't substitute spaces
@@ -132,7 +36,7 @@ $(strip \
 )
 endef
 BOOT_MODULES_LIST := $(call SubstComma, $(BOOT_MODULES))
-PLATFORM_MODULES_LIST := $(call SubstComma, $(UPGRADEABLE_MODULES) $(AGGREGATOR_MODULES) $(OTHER_PLATFORM_MODULES))
+PLATFORM_MODULES_LIST := $(call SubstComma, $(PLATFORM_MODULES))
 
 VARDEPS_VALUE := $(BOOT_MODULES_LIST) $(PLATFORM_MODULES_LIST)
 VARDEPS_FILE := $(call DependOnVariable, VARDEPS_VALUE)

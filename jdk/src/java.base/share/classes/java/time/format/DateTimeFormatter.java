@@ -619,6 +619,9 @@ public final class DateTimeFormatter {
      * The returned formatter has a chronology of ISO set to ensure dates in
      * other calendar systems are correctly converted.
      * It has no override zone and uses the {@link ResolverStyle#SMART SMART} resolver style.
+     * The {@code FULL} and {@code LONG} styles typically require a time-zone.
+     * When formatting using these styles, a {@code ZoneId} must be available,
+     * either by using {@code ZonedDateTime} or {@link DateTimeFormatter#withZone}.
      *
      * @param timeStyle  the formatter style to obtain, not null
      * @return the time formatter, not null
@@ -647,6 +650,9 @@ public final class DateTimeFormatter {
      * The returned formatter has a chronology of ISO set to ensure dates in
      * other calendar systems are correctly converted.
      * It has no override zone and uses the {@link ResolverStyle#SMART SMART} resolver style.
+     * The {@code FULL} and {@code LONG} styles typically require a time-zone.
+     * When formatting using these styles, a {@code ZoneId} must be available,
+     * either by using {@code ZonedDateTime} or {@link DateTimeFormatter#withZone}.
      *
      * @param dateTimeStyle  the formatter style to obtain, not null
      * @return the date-time formatter, not null
@@ -675,6 +681,9 @@ public final class DateTimeFormatter {
      * The returned formatter has a chronology of ISO set to ensure dates in
      * other calendar systems are correctly converted.
      * It has no override zone and uses the {@link ResolverStyle#SMART SMART} resolver style.
+     * The {@code FULL} and {@code LONG} styles typically require a time-zone.
+     * When formatting using these styles, a {@code ZoneId} must be available,
+     * either by using {@code ZonedDateTime} or {@link DateTimeFormatter#withZone}.
      *
      * @param dateStyle  the date formatter style to obtain, not null
      * @param timeStyle  the time formatter style to obtain, not null
@@ -923,6 +932,7 @@ public final class DateTimeFormatter {
      * <li>The {@link #ISO_LOCAL_DATE_TIME}
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
+     *  The offset parsing is lenient, which allows the minutes and seconds to be optional.
      *  Parsing is case insensitive.
      * </ul>
      * <p>
@@ -935,7 +945,9 @@ public final class DateTimeFormatter {
         ISO_OFFSET_DATE_TIME = new DateTimeFormatterBuilder()
                 .parseCaseInsensitive()
                 .append(ISO_LOCAL_DATE_TIME)
+                .parseLenient()
                 .appendOffsetId()
+                .parseStrict()
                 .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
@@ -1160,6 +1172,7 @@ public final class DateTimeFormatter {
      * <li>If the offset is not available to format or parse then the format is complete.
      * <li>The {@link ZoneOffset#getId() offset ID} without colons. If the offset has
      *  seconds then they will be handled even though this is not part of the ISO-8601 standard.
+     *  The offset parsing is lenient, which allows the minutes and seconds to be optional.
      *  Parsing is case insensitive.
      * </ul>
      * <p>
@@ -1178,7 +1191,9 @@ public final class DateTimeFormatter {
                 .appendValue(MONTH_OF_YEAR, 2)
                 .appendValue(DAY_OF_MONTH, 2)
                 .optionalStart()
+                .parseLenient()
                 .appendOffset("+HHMMss", "Z")
+                .parseStrict()
                 .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 

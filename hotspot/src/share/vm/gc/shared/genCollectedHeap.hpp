@@ -399,7 +399,7 @@ public:
                      OopClosure* weak_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
-                     CodeBlobClosure* code_roots);
+                     CodeBlobToOopClosure* code_roots);
 
  public:
   static const bool StrongAndWeakRoots = false;

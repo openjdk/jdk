@@ -67,8 +67,10 @@ import jdk.internal.org.objectweb.asm.TypePath;
 /**
  * A {@link FieldVisitor} adapter for type remapping.
  *
+ * @deprecated use {@link FieldRemapper} instead.
  * @author Eugene Kuleshov
  */
+@Deprecated
 public class RemappingFieldAdapter extends FieldVisitor {
 
     private final Remapper remapper;

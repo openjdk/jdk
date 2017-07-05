@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,9 @@
  */
 package javax.xml.catalog;
 
-import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Objects;
-import jdk.xml.internal.SecuritySupport;
 
 /**
  * Represents a general Catalog entry.
@@ -238,18 +234,6 @@ abstract class BaseEntry {
     }
 
     /**
-     * Replace backslashes with forward slashes. (URLs always use forward
-     * slashes.)
-     *
-     * @param sysid The input system identifier.
-     * @return The same system identifier with backslashes turned into forward
-     * slashes.
-     */
-    protected String fixSlashes(String sysid) {
-        return sysid.replace('\\', '/');
-    }
-
-    /**
      * Construct an absolute URI from a relative one, using the current base
      * URI.
      *
@@ -260,7 +244,7 @@ abstract class BaseEntry {
     protected String makeAbsolute(String sysid) {
         URL local = null;
 
-        sysid = fixSlashes(sysid);
+        sysid = Util.fixSlashes(sysid);
         /**
          * try { local = new URL(base, sysid); } catch (MalformedURLException e)
          * { catalogManager.debug.message(1, "Malformed URL on system
