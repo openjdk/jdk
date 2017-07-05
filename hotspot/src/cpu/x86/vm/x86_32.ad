@@ -2536,45 +2536,6 @@ encode %{
     __ fld_d(Address(rsp, 0));
   %}
 
-  // Compute X^Y using Intel's fast hardware instructions, if possible.
-  // Otherwise return a NaN.
-  enc_class pow_exp_core_encoding %{
-    // FPR1 holds Y*ln2(X).  Compute FPR1 = 2^(Y*ln2(X))
-    emit_opcode(cbuf,0xD9); emit_opcode(cbuf,0xC0);  // fdup = fld st(0)          Q       Q
-    emit_opcode(cbuf,0xD9); emit_opcode(cbuf,0xFC);  // frndint               int(Q)      Q
-    emit_opcode(cbuf,0xDC); emit_opcode(cbuf,0xE9);  // fsub st(1) -= st(0);  int(Q) frac(Q)
-    emit_opcode(cbuf,0xDB);                          // FISTP [ESP]           frac(Q)
-    emit_opcode(cbuf,0x1C);
-    emit_d8(cbuf,0x24);
-    emit_opcode(cbuf,0xD9); emit_opcode(cbuf,0xF0);  // f2xm1                 2^frac(Q)-1
-    emit_opcode(cbuf,0xD9); emit_opcode(cbuf,0xE8);  // fld1                  1 2^frac(Q)-1
-    emit_opcode(cbuf,0xDE); emit_opcode(cbuf,0xC1);  // faddp                 2^frac(Q)
-    emit_opcode(cbuf,0x8B);                          // mov rax,[esp+0]=int(Q)
-    encode_RegMem(cbuf, EAX_enc, ESP_enc, 0x4, 0, 0, false);
-    emit_opcode(cbuf,0xC7);                          // mov rcx,0xFFFFF800 - overflow mask
-    emit_rm(cbuf, 0x3, 0x0, ECX_enc);
-    emit_d32(cbuf,0xFFFFF800);
-    emit_opcode(cbuf,0x81);                          // add rax,1023 - the double exponent bias
-    emit_rm(cbuf, 0x3, 0x0, EAX_enc);
-    emit_d32(cbuf,1023);
-    emit_opcode(cbuf,0x8B);                          // mov rbx,eax
-    emit_rm(cbuf, 0x3, EBX_enc, EAX_enc);
-    emit_opcode(cbuf,0xC1);                          // shl rax,20 - Slide to exponent position
-    emit_rm(cbuf,0x3,0x4,EAX_enc);
-    emit_d8(cbuf,20);
-    emit_opcode(cbuf,0x85);                          // test rbx,ecx - check for overflow
-    emit_rm(cbuf, 0x3, EBX_enc, ECX_enc);
-    emit_opcode(cbuf,0x0F); emit_opcode(cbuf,0x45);  // CMOVne rax,ecx - overflow; stuff NAN into EAX
-    emit_rm(cbuf, 0x3, EAX_enc, ECX_enc);
-    emit_opcode(cbuf,0x89);                          // mov [esp+4],eax - Store as part of double word
-    encode_RegMem(cbuf, EAX_enc, ESP_enc, 0x4, 0, 4, false);
-    emit_opcode(cbuf,0xC7);                          // mov [esp+0],0   - [ESP] = (double)(1<<int(Q)) = 2^int(Q)
-    encode_RegMem(cbuf, 0x0, ESP_enc, 0x4, 0, 0, false);
-    emit_d32(cbuf,0);
-    emit_opcode(cbuf,0xDC);                          // fmul dword st(0),[esp+0]; FPR1 = 2^int(Q)*2^frac(Q) = 2^Q
-    encode_RegMem(cbuf, 0x1, ESP_enc, 0x4, 0, 0, false);
-  %}
-
   enc_class Push_Result_Mod_DPR( regDPR src) %{
     if ($src$$reg != FPR1L_enc) {
       // fincstp
@@ -10100,161 +10061,67 @@ instruct sqrtDPR_reg(regDPR dst, regDPR src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct powDPR_reg(regDPR X, regDPR1 Y, eAXRegI rax, eBXRegI rbx, eCXRegI rcx) %{
+instruct powDPR_reg(regDPR X, regDPR1 Y, eAXRegI rax, eDXRegI rdx, eCXRegI rcx, eFlagsReg cr) %{
   predicate (UseSSE<=1);
   match(Set Y (PowD X Y));  // Raise X to the Yth power
-  effect(KILL rax, KILL rbx, KILL rcx);
-  format %{ "SUB    ESP,8\t\t# Fast-path POW encoding\n\t"
-            "FLD_D  $X\n\t"
-            "FYL2X  \t\t\t# Q=Y*ln2(X)\n\t"
-
-            "FDUP   \t\t\t# Q Q\n\t"
-            "FRNDINT\t\t\t# int(Q) Q\n\t"
-            "FSUB   ST(1),ST(0)\t# int(Q) frac(Q)\n\t"
-            "FISTP  dword [ESP]\n\t"
-            "F2XM1  \t\t\t# 2^frac(Q)-1 int(Q)\n\t"
-            "FLD1   \t\t\t# 1 2^frac(Q)-1 int(Q)\n\t"
-            "FADDP  \t\t\t# 2^frac(Q) int(Q)\n\t" // could use FADD [1.000] instead
-            "MOV    EAX,[ESP]\t# Pick up int(Q)\n\t"
-            "MOV    ECX,0xFFFFF800\t# Overflow mask\n\t"
-            "ADD    EAX,1023\t\t# Double exponent bias\n\t"
-            "MOV    EBX,EAX\t\t# Preshifted biased expo\n\t"
-            "SHL    EAX,20\t\t# Shift exponent into place\n\t"
-            "TEST   EBX,ECX\t\t# Check for overflow\n\t"
-            "CMOVne EAX,ECX\t\t# If overflow, stuff NaN into EAX\n\t"
-            "MOV    [ESP+4],EAX\t# Marshal 64-bit scaling double\n\t"
-            "MOV    [ESP+0],0\n\t"
-            "FMUL   ST(0),[ESP+0]\t# Scale\n\t"
-
-            "ADD    ESP,8"
-             %}
-  ins_encode( push_stack_temp_qword,
-              Push_Reg_DPR(X),
-              Opcode(0xD9), Opcode(0xF1),   // fyl2x
-              pow_exp_core_encoding,
-              pop_stack_temp_qword);
+  effect(KILL rax, KILL rdx, KILL rcx, KILL cr);
+  format %{ "fast_pow $X $Y -> $Y  // KILL $rax, $rcx, $rdx" %}
+  ins_encode %{
+    __ subptr(rsp, 8);
+    __ fld_s($X$$reg - 1);
+    __ fast_pow();
+    __ addptr(rsp, 8);
+  %}
   ins_pipe( pipe_slow );
 %}
 
-instruct powD_reg(regD dst, regD src0, regD src1, regDPR1 tmp1, eAXRegI rax, eBXRegI rbx, eCXRegI rcx ) %{
+instruct powD_reg(regD dst, regD src0, regD src1, eAXRegI rax, eDXRegI rdx, eCXRegI rcx, eFlagsReg cr) %{
   predicate (UseSSE>=2);
   match(Set dst (PowD src0 src1));  // Raise src0 to the src1'th power
-  effect(KILL tmp1, KILL rax, KILL rbx, KILL rcx );
-  format %{ "SUB    ESP,8\t\t# Fast-path POW encoding\n\t"
-            "MOVSD  [ESP],$src1\n\t"
-            "FLD    FPR1,$src1\n\t"
-            "MOVSD  [ESP],$src0\n\t"
-            "FLD    FPR1,$src0\n\t"
-            "FYL2X  \t\t\t# Q=Y*ln2(X)\n\t"
-
-            "FDUP   \t\t\t# Q Q\n\t"
-            "FRNDINT\t\t\t# int(Q) Q\n\t"
-            "FSUB   ST(1),ST(0)\t# int(Q) frac(Q)\n\t"
-            "FISTP  dword [ESP]\n\t"
-            "F2XM1  \t\t\t# 2^frac(Q)-1 int(Q)\n\t"
-            "FLD1   \t\t\t# 1 2^frac(Q)-1 int(Q)\n\t"
-            "FADDP  \t\t\t# 2^frac(Q) int(Q)\n\t" // could use FADD [1.000] instead
-            "MOV    EAX,[ESP]\t# Pick up int(Q)\n\t"
-            "MOV    ECX,0xFFFFF800\t# Overflow mask\n\t"
-            "ADD    EAX,1023\t\t# Double exponent bias\n\t"
-            "MOV    EBX,EAX\t\t# Preshifted biased expo\n\t"
-            "SHL    EAX,20\t\t# Shift exponent into place\n\t"
-            "TEST   EBX,ECX\t\t# Check for overflow\n\t"
-            "CMOVne EAX,ECX\t\t# If overflow, stuff NaN into EAX\n\t"
-            "MOV    [ESP+4],EAX\t# Marshal 64-bit scaling double\n\t"
-            "MOV    [ESP+0],0\n\t"
-            "FMUL   ST(0),[ESP+0]\t# Scale\n\t"
-
-            "FST_D  [ESP]\n\t"
-            "MOVSD  $dst,[ESP]\n\t"
-            "ADD    ESP,8"
-             %}
-  ins_encode( push_stack_temp_qword,
-              push_xmm_to_fpr1(src1),
-              push_xmm_to_fpr1(src0),
-              Opcode(0xD9), Opcode(0xF1),   // fyl2x
-              pow_exp_core_encoding,
-              Push_ResultD(dst) );
+  effect(KILL rax, KILL rdx, KILL rcx, KILL cr);
+  format %{ "fast_pow $src0 $src1 -> $dst  // KILL $rax, $rcx, $rdx" %}
+  ins_encode %{
+    __ subptr(rsp, 8);
+    __ movdbl(Address(rsp, 0), $src1$$XMMRegister);
+    __ fld_d(Address(rsp, 0));
+    __ movdbl(Address(rsp, 0), $src0$$XMMRegister);
+    __ fld_d(Address(rsp, 0));
+    __ fast_pow();
+    __ fstp_d(Address(rsp, 0));
+    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
+    __ addptr(rsp, 8);
+  %}
   ins_pipe( pipe_slow );
 %}
 
 
-instruct expDPR_reg(regDPR1 dpr1, eAXRegI rax, eBXRegI rbx, eCXRegI rcx) %{
+instruct expDPR_reg(regDPR1 dpr1, eAXRegI rax, eDXRegI rdx, eCXRegI rcx, eFlagsReg cr) %{
   predicate (UseSSE<=1);
   match(Set dpr1 (ExpD dpr1));
-  effect(KILL rax, KILL rbx, KILL rcx);
-  format %{ "SUB    ESP,8\t\t# Fast-path EXP encoding"
-            "FLDL2E \t\t\t# Ld log2(e) X\n\t"
-            "FMULP  \t\t\t# Q=X*log2(e)\n\t"
-
-            "FDUP   \t\t\t# Q Q\n\t"
-            "FRNDINT\t\t\t# int(Q) Q\n\t"
-            "FSUB   ST(1),ST(0)\t# int(Q) frac(Q)\n\t"
-            "FISTP  dword [ESP]\n\t"
-            "F2XM1  \t\t\t# 2^frac(Q)-1 int(Q)\n\t"
-            "FLD1   \t\t\t# 1 2^frac(Q)-1 int(Q)\n\t"
-            "FADDP  \t\t\t# 2^frac(Q) int(Q)\n\t" // could use FADD [1.000] instead
-            "MOV    EAX,[ESP]\t# Pick up int(Q)\n\t"
-            "MOV    ECX,0xFFFFF800\t# Overflow mask\n\t"
-            "ADD    EAX,1023\t\t# Double exponent bias\n\t"
-            "MOV    EBX,EAX\t\t# Preshifted biased expo\n\t"
-            "SHL    EAX,20\t\t# Shift exponent into place\n\t"
-            "TEST   EBX,ECX\t\t# Check for overflow\n\t"
-            "CMOVne EAX,ECX\t\t# If overflow, stuff NaN into EAX\n\t"
-            "MOV    [ESP+4],EAX\t# Marshal 64-bit scaling double\n\t"
-            "MOV    [ESP+0],0\n\t"
-            "FMUL   ST(0),[ESP+0]\t# Scale\n\t"
-
-            "ADD    ESP,8"
-             %}
-  ins_encode( push_stack_temp_qword,
-              Opcode(0xD9), Opcode(0xEA),   // fldl2e
-              Opcode(0xDE), Opcode(0xC9),   // fmulp
-              pow_exp_core_encoding,
-              pop_stack_temp_qword);
+  effect(KILL rax, KILL rcx, KILL rdx, KILL cr);
+  format %{ "fast_exp $dpr1 -> $dpr1  // KILL $rax, $rcx, $rdx" %}
+  ins_encode %{
+    __ fast_exp();
+  %}
   ins_pipe( pipe_slow );
 %}
 
-instruct expD_reg(regD dst, regD src, regDPR1 tmp1, eAXRegI rax, eBXRegI rbx, eCXRegI rcx) %{
+instruct expD_reg(regD dst, regD src, eAXRegI rax, eDXRegI rdx, eCXRegI rcx, eFlagsReg cr) %{
   predicate (UseSSE>=2);
   match(Set dst (ExpD src));
-  effect(KILL tmp1, KILL rax, KILL rbx, KILL rcx);
-  format %{ "SUB    ESP,8\t\t# Fast-path EXP encoding\n\t"
-            "MOVSD  [ESP],$src\n\t"
-            "FLDL2E \t\t\t# Ld log2(e) X\n\t"
-            "FMULP  \t\t\t# Q=X*log2(e) X\n\t"
-
-            "FDUP   \t\t\t# Q Q\n\t"
-            "FRNDINT\t\t\t# int(Q) Q\n\t"
-            "FSUB   ST(1),ST(0)\t# int(Q) frac(Q)\n\t"
-            "FISTP  dword [ESP]\n\t"
-            "F2XM1  \t\t\t# 2^frac(Q)-1 int(Q)\n\t"
-            "FLD1   \t\t\t# 1 2^frac(Q)-1 int(Q)\n\t"
-            "FADDP  \t\t\t# 2^frac(Q) int(Q)\n\t" // could use FADD [1.000] instead
-            "MOV    EAX,[ESP]\t# Pick up int(Q)\n\t"
-            "MOV    ECX,0xFFFFF800\t# Overflow mask\n\t"
-            "ADD    EAX,1023\t\t# Double exponent bias\n\t"
-            "MOV    EBX,EAX\t\t# Preshifted biased expo\n\t"
-            "SHL    EAX,20\t\t# Shift exponent into place\n\t"
-            "TEST   EBX,ECX\t\t# Check for overflow\n\t"
-            "CMOVne EAX,ECX\t\t# If overflow, stuff NaN into EAX\n\t"
-            "MOV    [ESP+4],EAX\t# Marshal 64-bit scaling double\n\t"
-            "MOV    [ESP+0],0\n\t"
-            "FMUL   ST(0),[ESP+0]\t# Scale\n\t"
-
-            "FST_D  [ESP]\n\t"
-            "MOVSD  $dst,[ESP]\n\t"
-            "ADD    ESP,8"
-             %}
-  ins_encode( Push_SrcD(src),
-              Opcode(0xD9), Opcode(0xEA),   // fldl2e
-              Opcode(0xDE), Opcode(0xC9),   // fmulp
-              pow_exp_core_encoding,
-              Push_ResultD(dst) );
+  effect(KILL rax, KILL rcx, KILL rdx, KILL cr);
+  format %{ "fast_exp $dst -> $src  // KILL $rax, $rcx, $rdx" %}
+  ins_encode %{
+    __ subptr(rsp, 8);
+    __ movdbl(Address(rsp, 0), $src$$XMMRegister);
+    __ fld_d(Address(rsp, 0));
+    __ fast_exp();
+    __ fstp_d(Address(rsp, 0));
+    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
+    __ addptr(rsp, 8);
+  %}
   ins_pipe( pipe_slow );
 %}
-
-
 
 instruct log10DPR_reg(regDPR1 dst, regDPR1 src) %{
   predicate (UseSSE<=1);

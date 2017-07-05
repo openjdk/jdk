@@ -762,10 +762,10 @@ public class BugSpotAgent {
 
         if (cpu.equals("x86")) {
             machDesc = new MachineDescriptionIntelX86();
-        } else if (cpu.equals("amd64")) {
+        } else if (cpu.equals("amd64") || (cpu.equals("x86_64"))) {
             machDesc = new MachineDescriptionAMD64();
         } else {
-            throw new DebuggerException("Bsd only supported on x86/amd64");
+            throw new DebuggerException("Bsd only supported on x86/x86_64. Current arch: " + cpu);
         }
 
         // Note we do not use a cache for the local debugger in server
