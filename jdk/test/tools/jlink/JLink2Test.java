@@ -101,7 +101,7 @@ public class JLink2Test {
                 .addJmods(helper.getStdJmodsDir())
                 .addJmods(jar.getParent())
                 .addMods("bad")
-                .call().assertFailure("(\n|\r|.)*Error: jdk.tools.jlink.plugin.PluginException: module-info.class not found for bad module(\n|\r|.)*");
+                .call().assertFailure("(\n|\r|.)*Error: module-info.class not found for bad module(\n|\r|.)*");
         try (JarOutputStream out = new JarOutputStream(new FileOutputStream(jar.toFile()))) {
             JarEntry entry = new JarEntry("classes");
             out.putNextEntry(entry);
@@ -118,7 +118,7 @@ public class JLink2Test {
                 .addJmods(jar.getParent())
                 .addJars(helper.getStdJmodsDir())
                 .addMods("bad")
-                .call().assertFailure("(\n|\r|.)*Error: jdk.tools.jlink.plugin.PluginException: module-info.class not found for bad module(\n|\r|.)*");
+                .call().assertFailure("(\n|\r|.)*Error: module-info.class not found for bad module(\n|\r|.)*");
     }
 
     private static void testSameNames(Helper helper) throws Exception {
