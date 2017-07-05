@@ -43,7 +43,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   Monitor*     _lock;
   uint         _compile_id;
   Method*      _method;
-  jobject      _method_loader;
+  jobject      _method_holder;
   int          _osr_bci;
   bool         _is_complete;
   bool         _is_success;
@@ -56,7 +56,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   // Fields used for logging why the compilation was initiated:
   jlong        _time_queued;  // in units of os::elapsed_counter()
   Method*      _hot_method;   // which method actually triggered this task
-  jobject      _hot_method_loader;
+  jobject      _hot_method_holder;
   int          _hot_count;    // information about its invocation counter
   const char*  _comment;      // more info about the task
 

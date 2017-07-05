@@ -65,11 +65,17 @@
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = NULL;
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader) : _class_loader(h_class_loader()),
-  _metaspace(NULL), _unloading(false), _klasses(NULL),
-  _claimed(0), _jmethod_ids(NULL), _handles(NULL),
-  _deallocate_list(NULL), _next(NULL),
+  _metaspace(NULL), _unloading(false), _keep_alive(false), _klasses(NULL),
+  _claimed(0), _jmethod_ids(NULL), _handles(NULL), _deallocate_list(NULL),
+  _next(NULL), _dependencies(NULL),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true)) {
     // empty
+}
+
+void ClassLoaderData::init_dependencies(TRAPS) {
+  // Create empty dependencies array to add to. CMS requires this to be
+  // an oop so that it can track additions via card marks.  We think.
+  _dependencies = (oop)oopFactory::new_objectArray(2, CHECK);
 }
 
 bool ClassLoaderData::claim() {
@@ -86,6 +92,7 @@ void ClassLoaderData::oops_do(OopClosure* f, KlassClosure* klass_closure, bool m
   }
 
   f->do_oop(&_class_loader);
+  f->do_oop(&_dependencies);
   _handles->oops_do(f);
   if (klass_closure != NULL) {
     classes_do(klass_closure);
@@ -110,69 +117,99 @@ void ClassLoaderData::record_dependency(Klass* k, TRAPS) {
   ClassLoaderData * const from_cld = this;
   ClassLoaderData * const to_cld = k->class_loader_data();
 
-  // Records dependency between non-null class loaders only.
-  if (to_cld->is_the_null_class_loader_data() || from_cld->is_the_null_class_loader_data()) {
+  // Dependency to the null class loader data doesn't need to be recorded
+  // because the null class loader data never goes away.
+  if (to_cld->is_the_null_class_loader_data()) {
     return;
   }
 
-  // Check that this dependency isn't from the same or parent class_loader
-  oop to = to_cld->class_loader();
-  oop from = from_cld->class_loader();
+  oop to;
+  if (to_cld->is_anonymous()) {
+    // Anonymous class dependencies are through the mirror.
+    to = k->java_mirror();
+  } else {
+    to = to_cld->class_loader();
 
-  oop curr = from;
-  while (curr != NULL) {
-    if (curr == to) {
-      return; // this class loader is in the parent list, no need to add it.
+    // If from_cld is anonymous, even if it's class_loader is a parent of 'to'
+    // we still have to add it.  The class_loader won't keep from_cld alive.
+    if (!from_cld->is_anonymous()) {
+      // Check that this dependency isn't from the same or parent class_loader
+      oop from = from_cld->class_loader();
+
+      oop curr = from;
+      while (curr != NULL) {
+        if (curr == to) {
+          return; // this class loader is in the parent list, no need to add it.
+        }
+        curr = java_lang_ClassLoader::parent(curr);
+      }
     }
-    curr = java_lang_ClassLoader::parent(curr);
   }
 
   // It's a dependency we won't find through GC, add it. This is relatively rare
-  from_cld->add_dependency(to_cld, CHECK);
+  // Must handle over GC point.
+  Handle dependency(THREAD, to);
+  from_cld->add_dependency(dependency, CHECK);
 }
 
-bool ClassLoaderData::has_dependency(ClassLoaderData* dependency) {
-  oop loader = dependency->class_loader();
 
-  // Get objArrayOop out of the class_loader oop and see if this dependency
-  // is there.  Don't safepoint!  These are all oops.
-  // Dependency list is (oop class_loader, objArrayOop next)
-  objArrayOop ok = (objArrayOop)java_lang_ClassLoader::dependencies(class_loader());
+void ClassLoaderData::add_dependency(Handle dependency, TRAPS) {
+  // Check first if this dependency is already in the list.
+  // Save a pointer to the last to add to under the lock.
+  objArrayOop ok = (objArrayOop)_dependencies;
+  objArrayOop last = NULL;
   while (ok != NULL) {
-    if (ok->obj_at(0) == loader) {
-      return true;
+    last = ok;
+    if (ok->obj_at(0) == dependency()) {
+      // Don't need to add it
+      return;
     }
     ok = (objArrayOop)ok->obj_at(1);
   }
-  return false;
-}
 
-void ClassLoaderData::add_dependency(ClassLoaderData* dependency, TRAPS) {
-  // Minimize the number of duplicates in the list.
-  if (has_dependency(dependency)) {
-    return;
-  }
-
-  // Create a new dependency node with fields for (class_loader, next)
+  // Create a new dependency node with fields for (class_loader or mirror, next)
   objArrayOop deps = oopFactory::new_objectArray(2, CHECK);
-  deps->obj_at_put(0, dependency->class_loader());
+  deps->obj_at_put(0, dependency());
 
-  // Add this lock free, using compare and exchange, need barriers for GC
-  // Do the barrier first.
-  HeapWord* addr = java_lang_ClassLoader::dependencies_addr(class_loader());
-  while (true) {
-    oop old_dependency = java_lang_ClassLoader::dependencies(class_loader());
-    deps->obj_at_put(1, old_dependency);
+  // Must handle over more GC points
+  objArrayHandle new_dependency(THREAD, deps);
 
-    oop newold = oopDesc::atomic_compare_exchange_oop((oop)deps, addr, old_dependency, true);
-    if (newold == old_dependency) {
-      update_barrier_set((void*)addr, (oop)deps);
-      // we won the race to add this dependency
-      break;
-    }
-  }
+  // Add the dependency under lock
+  assert (last != NULL, "dependencies should be initialized");
+  objArrayHandle last_handle(THREAD, last);
+  locked_add_dependency(last_handle, new_dependency);
 }
 
+void ClassLoaderData::locked_add_dependency(objArrayHandle last_handle,
+                                            objArrayHandle new_dependency) {
+
+  // Have to lock and put the new dependency on the end of the dependency
+  // array so the card mark for CMS sees that this dependency is new.
+  // Can probably do this lock free with some effort.
+  MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+
+  oop loader_or_mirror = new_dependency->obj_at(0);
+
+  // Since the dependencies are only added, add to the end.
+  objArrayOop end = last_handle();
+  objArrayOop last = NULL;
+  while (end != NULL) {
+    last = end;
+    // check again if another thread added it to the end.
+    if (end->obj_at(0) == loader_or_mirror) {
+      // Don't need to add it
+      return;
+    }
+    end = (objArrayOop)end->obj_at(1);
+  }
+  assert (last != NULL, "dependencies should be initialized");
+  // fill in the first element with the oop in new_dependency.
+  if (last->obj_at(0) == NULL) {
+    last->obj_at_put(0, new_dependency->obj_at(0));
+  } else {
+    last->obj_at_put(1, new_dependency());
+  }
+}
 
 void ClassLoaderDataGraph::clear_claimed_marks() {
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
@@ -187,7 +224,7 @@ void ClassLoaderData::add_class(Klass* k) {
   // link the new item into the list
   _klasses = k;
 
-  if (TraceClassLoaderData && k->class_loader_data() != NULL) {
+  if (TraceClassLoaderData && Verbose && k->class_loader_data() != NULL) {
     ResourceMark rm;
     tty->print_cr("[TraceClassLoaderData] Adding k: " PTR_FORMAT " %s to CLD: "
                   PTR_FORMAT " loader: " PTR_FORMAT " %s",
@@ -195,8 +232,7 @@ void ClassLoaderData::add_class(Klass* k) {
                   k->external_name(),
                   k->class_loader_data(),
                   k->class_loader(),
-                  k->class_loader() != NULL ? k->class_loader()->klass()->external_name() : "NULL"
-      );
+                  loader_name());
   }
 }
 
@@ -220,6 +256,38 @@ void ClassLoaderData::remove_class(Klass* scratch_class) {
   }
   ShouldNotReachHere();   // should have found this class!!
 }
+
+
+bool ClassLoaderData::is_anonymous() const {
+  Klass* k = _klasses;
+  return (_keep_alive || (k != NULL && k->oop_is_instance() &&
+          InstanceKlass::cast(k)->is_anonymous()));
+}
+
+void ClassLoaderData::unload() {
+  _unloading = true;
+
+  if (TraceClassLoaderData) {
+    ResourceMark rm;
+    tty->print("[ClassLoaderData: unload loader data "PTR_FORMAT, this);
+    tty->print(" for instance "PTR_FORMAT" of %s", class_loader(),
+               loader_name());
+    if (is_anonymous()) {
+      tty->print(" for anonymous class  "PTR_FORMAT " ", _klasses);
+    }
+    tty->print_cr("]");
+  }
+}
+
+bool ClassLoaderData::is_alive(BoolObjectClosure* is_alive_closure) const {
+  bool alive =
+    is_anonymous() ?
+       is_alive_closure->do_object_b(_klasses->java_mirror()) :
+       class_loader() == NULL || is_alive_closure->do_object_b(class_loader());
+  assert(!alive || claimed(), "must be claimed");
+  return alive;
+}
+
 
 ClassLoaderData::~ClassLoaderData() {
   Metaspace *m = _metaspace;
@@ -263,8 +331,8 @@ Metaspace* ClassLoaderData::metaspace_non_null() {
     if (_metaspace != NULL) {
       return _metaspace;
     }
-    if (class_loader() == NULL) {
-      assert(this == the_null_class_loader_data(), "Must be");
+    if (this == the_null_class_loader_data()) {
+      assert (class_loader() == NULL, "Must be");
       size_t word_size = Metaspace::first_chunk_word_size();
       set_metaspace(new Metaspace(_metaspace_lock, word_size));
     } else {
@@ -325,12 +393,19 @@ void ClassLoaderData::free_deallocate_list() {
   }
 }
 
-#ifndef PRODUCT
-void ClassLoaderData::print_loader(ClassLoaderData *loader_data, outputStream* out) {
-  oop class_loader = loader_data->class_loader();
-  out->print("%s", SystemDictionary::loader_name(class_loader));
+// These anonymous class loaders are to contain classes used for JSR292
+ClassLoaderData* ClassLoaderData::anonymous_class_loader_data(oop loader, TRAPS) {
+  // Add a new class loader data to the graph.
+  ClassLoaderData* cld = ClassLoaderDataGraph::add(NULL, loader, CHECK_NULL);
+  return cld;
 }
 
+const char* ClassLoaderData::loader_name() {
+  // Handles null class loader
+  return SystemDictionary::loader_name(class_loader());
+}
+
+#ifndef PRODUCT
 // Define to dump klasses
 #undef CLD_DUMP_KLASSES
 
@@ -338,8 +413,7 @@ void ClassLoaderData::dump(outputStream * const out) {
   ResourceMark rm;
   out->print("ClassLoaderData CLD: "PTR_FORMAT", loader: "PTR_FORMAT", loader_klass: "PTR_FORMAT" %s {",
       this, class_loader(),
-      class_loader() != NULL ? class_loader()->klass() : NULL,
-      class_loader() != NULL ? class_loader()->klass()->external_name() : "NULL");
+      class_loader() != NULL ? class_loader()->klass() : NULL, loader_name());
   if (claimed()) out->print(" claimed ");
   if (is_unloading()) out->print(" unloading ");
   out->print(" handles " INTPTR_FORMAT, handles());
@@ -373,8 +447,8 @@ void ClassLoaderData::dump(outputStream * const out) {
 void ClassLoaderData::verify() {
   oop cl = class_loader();
 
-  guarantee(this == class_loader_data(cl), "Must be the same");
-  guarantee(cl != NULL || this == ClassLoaderData::the_null_class_loader_data(), "must be");
+  guarantee(this == class_loader_data(cl) || is_anonymous(), "Must be the same");
+  guarantee(cl != NULL || this == ClassLoaderData::the_null_class_loader_data() || is_anonymous(), "must be");
 
   // Verify the integrity of the allocated space.
   if (metaspace_or_null() != NULL) {
@@ -387,6 +461,7 @@ void ClassLoaderData::verify() {
   }
 }
 
+
 // GC root of class loader data created.
 ClassLoaderData* ClassLoaderDataGraph::_head = NULL;
 ClassLoaderData* ClassLoaderDataGraph::_unloading = NULL;
@@ -395,19 +470,25 @@ ClassLoaderData* ClassLoaderDataGraph::_saved_head = NULL;
 
 // Add a new class loader data node to the list.  Assign the newly created
 // ClassLoaderData into the java/lang/ClassLoader object as a hidden field
-ClassLoaderData* ClassLoaderDataGraph::add(ClassLoaderData** cld_addr, Handle loader_data) {
+ClassLoaderData* ClassLoaderDataGraph::add(ClassLoaderData** cld_addr, Handle loader, TRAPS) {
   // Not assigned a class loader data yet.
   // Create one.
   ClassLoaderData* *list_head = &_head;
   ClassLoaderData* next = _head;
-  ClassLoaderData* cld = new ClassLoaderData(loader_data);
+  ClassLoaderData* cld = new ClassLoaderData(loader);
 
-  // First, Atomically set it.
-  ClassLoaderData* old = (ClassLoaderData*) Atomic::cmpxchg_ptr(cld, cld_addr, NULL);
-  if (old != NULL) {
-    delete cld;
-    // Returns the data.
-    return old;
+  if (cld_addr != NULL) {
+    // First, Atomically set it
+    ClassLoaderData* old = (ClassLoaderData*) Atomic::cmpxchg_ptr(cld, cld_addr, NULL);
+    if (old != NULL) {
+      delete cld;
+      // Returns the data.
+      return old;
+    }
+  } else {
+    // Disallow unloading for this CLD during initialization if there is no
+    // class_loader oop to link this to.
+    cld->set_keep_alive(true);
   }
 
   // We won the race, and therefore the task of adding the data to the list of
@@ -417,16 +498,22 @@ ClassLoaderData* ClassLoaderDataGraph::add(ClassLoaderData** cld_addr, Handle lo
     ClassLoaderData* exchanged = (ClassLoaderData*)Atomic::cmpxchg_ptr(cld, list_head, next);
     if (exchanged == next) {
       if (TraceClassLoaderData) {
+        ResourceMark rm;
         tty->print("[ClassLoaderData: ");
         tty->print("create class loader data "PTR_FORMAT, cld);
-        tty->print(" for instance "PTR_FORMAT" of ", cld->class_loader());
-        loader_data->klass()->name()->print_symbol_on(tty);
+        tty->print(" for instance "PTR_FORMAT" of %s", cld->class_loader(),
+                   cld->loader_name());
         tty->print_cr("]");
       }
+      // Create dependencies after the CLD is added to the list.  Otherwise,
+      // the GC GC will not find the CLD and the _class_loader field will
+      // not be updated.
+      cld->init_dependencies(CHECK_NULL);
       return cld;
     }
     next = exchanged;
   } while (true);
+
 }
 
 void ClassLoaderDataGraph::oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {
@@ -435,9 +522,19 @@ void ClassLoaderDataGraph::oops_do(OopClosure* f, KlassClosure* klass_closure, b
   }
 }
 
+void ClassLoaderDataGraph::keep_alive_oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {
+  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    if (cld->keep_alive()) {
+      cld->oops_do(f, klass_closure, must_claim);
+    }
+  }
+}
+
 void ClassLoaderDataGraph::always_strong_oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {
   if (ClassUnloading) {
     ClassLoaderData::the_null_class_loader_data()->oops_do(f, klass_closure, must_claim);
+    // keep any special CLDs alive.
+    ClassLoaderDataGraph::keep_alive_oops_do(f, klass_closure, must_claim);
   } else {
     ClassLoaderDataGraph::oops_do(f, klass_closure, must_claim);
   }
@@ -516,9 +613,10 @@ bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
 }
 #endif // PRODUCT
 
+
 // Move class loader data from main list to the unloaded list for unloading
 // and deallocation later.
-bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive) {
+bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
   ClassLoaderData* data = _head;
   ClassLoaderData* prev = NULL;
   bool seen_dead_loader = false;
@@ -527,8 +625,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive) {
   bool has_redefined_a_class = JvmtiExport::has_redefined_a_class();
   MetadataOnStackMark md_on_stack;
   while (data != NULL) {
-    if (data->class_loader() == NULL || is_alive->do_object_b(data->class_loader())) {
-      assert(data->claimed(), "class loader data must have been claimed");
+    if (data->keep_alive() || data->is_alive(is_alive_closure)) {
       if (has_redefined_a_class) {
         data->classes_do(InstanceKlass::purge_previous_versions);
       }
@@ -539,13 +636,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive) {
     }
     seen_dead_loader = true;
     ClassLoaderData* dead = data;
-    dead->mark_for_unload();
-    if (TraceClassLoaderData) {
-      tty->print("[ClassLoaderData: unload loader data "PTR_FORMAT, dead);
-      tty->print(" for instance "PTR_FORMAT" of ", dead->class_loader());
-      dead->class_loader()->klass()->name()->print_symbol_on(tty);
-      tty->print_cr("]");
-    }
+    dead->unload();
     data = data->next();
     // Remove from loader list.
     if (prev != NULL) {

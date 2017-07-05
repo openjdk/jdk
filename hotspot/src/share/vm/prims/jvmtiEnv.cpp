@@ -53,24 +53,12 @@
 #include "runtime/osThread.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/preserveException.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
-#endif
-
 
 
 #define FIXLATER 0 // REMOVE this when completed.

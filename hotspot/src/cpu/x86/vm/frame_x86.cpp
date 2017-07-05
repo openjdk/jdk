@@ -534,7 +534,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   Method* m = *interpreter_frame_method_addr();
 
   // validate the method we'd find in this potential sender
-  if (!Universe::heap()->is_valid_method(m)) return false;
+  if (!m->is_valid_method()) return false;
 
   // stack frames shouldn't be much larger than max_stack elements
 

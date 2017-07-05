@@ -290,7 +290,7 @@ void TreeList<Chunk_t, FreeList_t>::return_chunk_at_tail(TreeChunk<Chunk_t, Free
   assert(chunk->list() == this, "list should be set for chunk");
   assert(tail() != NULL, "The tree list is embedded in the first chunk");
   // which means that the list can never be empty.
-  assert(!verify_chunk_in_free_list(chunk), "Double entry");
+  assert(!this->verify_chunk_in_free_list(chunk), "Double entry");
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
 
@@ -300,7 +300,7 @@ void TreeList<Chunk_t, FreeList_t>::return_chunk_at_tail(TreeChunk<Chunk_t, Free
 
   assert(!tail() || size() == tail()->size(), "Wrong sized chunk in list");
   FreeList_t<Chunk_t>::increment_count();
-  debug_only(increment_returned_bytes_by(chunk->size()*sizeof(HeapWord));)
+  debug_only(this->increment_returned_bytes_by(chunk->size()*sizeof(HeapWord));)
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
 }
@@ -314,7 +314,7 @@ void TreeList<Chunk_t, FreeList_t>::return_chunk_at_head(TreeChunk<Chunk_t, Free
   assert(chunk->list() == this, "list should be set for chunk");
   assert(head() != NULL, "The tree list is embedded in the first chunk");
   assert(chunk != NULL, "returning NULL chunk");
-  assert(!verify_chunk_in_free_list(chunk), "Double entry");
+  assert(!this->verify_chunk_in_free_list(chunk), "Double entry");
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
 
@@ -328,7 +328,7 @@ void TreeList<Chunk_t, FreeList_t>::return_chunk_at_head(TreeChunk<Chunk_t, Free
   head()->link_after(chunk);
   assert(!head() || size() == head()->size(), "Wrong sized chunk in list");
   FreeList_t<Chunk_t>::increment_count();
-  debug_only(increment_returned_bytes_by(chunk->size()*sizeof(HeapWord));)
+  debug_only(this->increment_returned_bytes_by(chunk->size()*sizeof(HeapWord));)
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
 }
