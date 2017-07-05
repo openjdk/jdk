@@ -43,7 +43,7 @@ import sun.nio.ch.FileChannelImpl;
  * @see     java.io.FileDescriptor
  * @see     java.io.FileOutputStream
  * @see     java.nio.file.Files#newInputStream
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class FileInputStream extends InputStream

@@ -39,7 +39,7 @@ import javax.accessibility.*;
  * in order to perform custom graphics on the canvas.
  *
  * @author      Sami Shaio
- * @since       JDK1.0
+ * @since       1.0
  */
 public class Canvas extends Component implements Accessible {
 

@@ -34,7 +34,7 @@ package java.net;
  * @author  Arthur van Hoff
  * @see     java.net.Socket
  * @see     java.net.ServerSocket
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 interface SocketImplFactory {

@@ -29,7 +29,7 @@ package java.io;
  * Superclass of all exceptions specific to Object Stream classes.
  *
  * @author  unascribed
- * @since   JDK1.1
+ * @since   1.1
  */
 public abstract class ObjectStreamException extends IOException {
 

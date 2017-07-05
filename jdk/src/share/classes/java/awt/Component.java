@@ -1018,7 +1018,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Gets the name of the component.
      * @return this component's name
      * @see    #setName
-     * @since JDK1.1
+     * @since 1.1
      */
     public String getName() {
         if (name == null && !nameExplicitlySet) {
@@ -1035,7 +1035,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param name  the string that is to be this
      *           component's name
      * @see #getName
-     * @since JDK1.1
+     * @since 1.1
      */
     public void setName(String name) {
         String oldName;
@@ -1050,7 +1050,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Gets the parent of this component.
      * @return the parent container of this component
-     * @since JDK1.0
+     * @since 1.0
      */
     public Container getParent() {
         return getParent_NoClientCode();
@@ -1221,7 +1221,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * toolkit is used by that component. Therefore if the component
      * is moved from one frame to another, the toolkit it uses may change.
      * @return  the toolkit of this component
-     * @since JDK1.0
+     * @since 1.0
      */
     public Toolkit getToolkit() {
         return getToolkitImpl();
@@ -1250,7 +1250,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * otherwise
      * @see #validate
      * @see #invalidate
-     * @since JDK1.0
+     * @since 1.0
      */
     public boolean isValid() {
         return (peer != null) && valid;
@@ -1292,7 +1292,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @return <code>true</code> if the component is visible,
      * <code>false</code> otherwise
      * @see #setVisible
-     * @since JDK1.0
+     * @since 1.0
      */
     @Transient
     public boolean isVisible() {
@@ -1419,7 +1419,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @return <code>true</code> if the component is showing,
      *          <code>false</code> otherwise
      * @see #setVisible
-     * @since JDK1.0
+     * @since 1.0
      */
     public boolean isShowing() {
         if (visible && (peer != null)) {
@@ -1437,7 +1437,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @return <code>true</code> if the component is enabled,
      *          <code>false</code> otherwise
      * @see #setEnabled
-     * @since JDK1.0
+     * @since 1.0
      */
     public boolean isEnabled() {
         return isEnabledImpl();
@@ -1466,7 +1466,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *            enabled; otherwise this component is disabled
      * @see #isEnabled
      * @see #isLightweight
-     * @since JDK1.1
+     * @since 1.1
      */
     public void setEnabled(boolean b) {
         enable(b);
@@ -1611,7 +1611,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * otherwise, hides this component
      * @see #isVisible
      * @see #invalidate
-     * @since JDK1.1
+     * @since 1.1
      */
     public void setVisible(boolean b) {
         show(b);
@@ -1739,7 +1739,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * not have a foreground color, the foreground color of its parent
      * is returned
      * @see #setForeground
-     * @since JDK1.0
+     * @since 1.0
      * @beaninfo
      *       bound: true
      */
@@ -1760,7 +1760,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *          then this component will inherit
      *          the foreground color of its parent
      * @see #getForeground
-     * @since JDK1.0
+     * @since 1.0
      */
     public void setForeground(Color c) {
         Color oldColor = foreground;
@@ -1796,7 +1796,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *          not have a background color,
      *          the background color of its parent is returned
      * @see #setBackground
-     * @since JDK1.0
+     * @since 1.0
      */
     @Transient
     public Color getBackground() {
@@ -1819,7 +1819,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *          if this parameter is <code>null</code>, then this
      *          component will inherit the background color of its parent
      * @see #getBackground
-     * @since JDK1.0
+     * @since 1.0
      * @beaninfo
      *       bound: true
      */
@@ -1856,7 +1856,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @return this component's font; if a font has not been set
      * for this component, the font of its parent is returned
      * @see #setFont
-     * @since JDK1.0
+     * @since 1.0
      */
     @Transient
     public Font getFont() {
@@ -1887,7 +1887,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *          component will inherit the font of its parent
      * @see #getFont
      * @see #invalidate
-     * @since JDK1.0
+     * @since 1.0
      * @beaninfo
      *       bound: true
      */
@@ -1940,7 +1940,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *          does not have its own locale and has not yet been added to
      *          a containment hierarchy such that the locale can be determined
      *          from the containing parent
-     * @since  JDK1.1
+     * @since  1.1
      */
     public Locale getLocale() {
         Locale locale = this.locale;
@@ -1965,7 +1965,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param l the locale to become this component's locale
      * @see #getLocale
      * @see #invalidate
-     * @since JDK1.1
+     * @since 1.1
      */
     public void setLocale(Locale l) {
         Locale oldValue = locale;
@@ -1986,7 +1986,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see java.awt.image.ColorModel
      * @see java.awt.peer.ComponentPeer#getColorModel()
      * @see Toolkit#getColorModel()
-     * @since JDK1.0
+     * @since 1.0
      */
     public ColorModel getColorModel() {
         ComponentPeer peer = this.peer;
@@ -2016,7 +2016,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *          the coordinate space of the component's parent
      * @see #setLocation
      * @see #getLocationOnScreen
-     * @since JDK1.1
+     * @since 1.1
      */
     public Point getLocation() {
         return location();
@@ -2095,7 +2095,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getLocation
      * @see #setBounds
      * @see #invalidate
-     * @since JDK1.1
+     * @since 1.1
      */
     public void setLocation(int x, int y) {
         move(x, y);
@@ -2127,7 +2127,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getLocation
      * @see #setBounds
      * @see #invalidate
-     * @since JDK1.1
+     * @since 1.1
      */
     public void setLocation(Point p) {
         setLocation(p.x, p.y);
@@ -2143,7 +2143,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @return a <code>Dimension</code> object that indicates the
      *          size of this component
      * @see #setSize
-     * @since JDK1.1
+     * @since 1.1
      */
     public Dimension getSize() {
         return size();
@@ -2170,7 +2170,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getSize
      * @see #setBounds
      * @see #invalidate
-     * @since JDK1.1
+     * @since 1.1
      */
     public void setSize(int width, int height) {
         resize(width, height);
@@ -2201,7 +2201,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #setSize
      * @see #setBounds
      * @see #invalidate
-     * @since JDK1.1
+     * @since 1.1
      */
     public void setSize(Dimension d) {
         resize(d);
@@ -2258,7 +2258,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #setSize(int, int)
      * @see #setSize(Dimension)
      * @see #invalidate
-     * @since JDK1.1
+     * @since 1.1
      */
     public void setBounds(int x, int y, int width, int height) {
         reshape(x, y, width, height);
@@ -2402,7 +2402,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see       #setSize(int, int)
      * @see       #setSize(Dimension)
      * @see #invalidate
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void setBounds(Rectangle r) {
         setBounds(r.x, r.y, r.width, r.height);
@@ -2883,7 +2883,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see       #doLayout()
      * @see       LayoutManager
      * @see       Container#validate
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void validate() {
         synchronized (getTreeLock()) {
@@ -2926,7 +2926,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see       #doLayout
      * @see       LayoutManager
      * @see       java.awt.Container#isValidateRoot
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void invalidate() {
         synchronized (getTreeLock()) {
@@ -3021,7 +3021,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @return a graphics context for this component, or <code>null</code>
      *             if it has none
      * @see       #paint
-     * @since     JDK1.0
+     * @since     1.0
      */
     public Graphics getGraphics() {
         if (peer instanceof LightweightPeer) {
@@ -3085,7 +3085,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see       #getPeer
      * @see       java.awt.peer.ComponentPeer#getFontMetrics(Font)
      * @see       Toolkit#getFontMetrics(Font)
-     * @since     JDK1.0
+     * @since     1.0
      */
     public FontMetrics getFontMetrics(Font font) {
         // This is an unsupported hack, but left in for a customer.
@@ -3125,7 +3125,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see       #contains
      * @see       Toolkit#createCustomCursor
      * @see       Cursor
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void setCursor(Cursor cursor) {
         this.cursor = cursor;
@@ -3158,7 +3158,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * If no cursor is set in the entire hierarchy,
      * <code>Cursor.DEFAULT_CURSOR</code> is returned.
      * @see #setCursor
-     * @since      JDK1.1
+     * @since      1.1
      */
     public Cursor getCursor() {
         return getCursor_NoClientCode();
@@ -3212,7 +3212,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * @param g the graphics context to use for painting
      * @see       #update
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void paint(Graphics g) {
     }
@@ -3248,7 +3248,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param g the specified context to use for updating
      * @see       #paint
      * @see       #repaint()
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void update(Graphics g) {
         paint(g);
@@ -3264,7 +3264,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * @param     g   the graphics context to use for painting
      * @see       #paint
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void paintAll(Graphics g) {
         if (isShowing()) {
@@ -3308,7 +3308,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
      *
      * @see       #update(Graphics)
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void repaint() {
         repaint(0, 0, 0, width, height);
@@ -3327,7 +3327,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param tm maximum time in milliseconds before update
      * @see #paint
      * @see #update(Graphics)
-     * @since JDK1.0
+     * @since 1.0
      */
     public void repaint(long tm) {
         repaint(tm, 0, 0, width, height);
@@ -3351,7 +3351,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param     width   the width
      * @param     height  the height
      * @see       #update(Graphics)
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void repaint(int x, int y, int width, int height) {
         repaint(0, x, y, width, height);
@@ -3377,7 +3377,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param     width    the width
      * @param     height   the height
      * @see       #update(Graphics)
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void repaint(long tm, int x, int y, int width, int height) {
         if (this.peer instanceof LightweightPeer) {
@@ -3430,7 +3430,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * graphics context is the bounding rectangle of this component.
      * @param     g   the graphics context to use for printing
      * @see       #paint(Graphics)
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void print(Graphics g) {
         paint(g);
@@ -3445,7 +3445,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * graphics context is the bounding rectangle of this component.
      * @param     g   the graphics context to use for printing
      * @see       #print(Graphics)
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void printAll(Graphics g) {
         if (isShowing()) {
@@ -3525,7 +3525,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see     Graphics#drawImage(Image, int, int, int, int, Color, java.awt.image.ImageObserver)
      * @see     Graphics#drawImage(Image, int, int, int, int, java.awt.image.ImageObserver)
      * @see     java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since   JDK1.0
+     * @since   1.0
      */
     public boolean imageUpdate(Image img, int infoflags,
                                int x, int y, int w, int h) {
@@ -3550,7 +3550,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Creates an image from the specified image producer.
      * @param     producer  the image producer
      * @return    the image produced
-     * @since     JDK1.0
+     * @since     1.0
      */
     public Image createImage(ImageProducer producer) {
         ComponentPeer peer = this.peer;
@@ -3572,7 +3572,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *    <code>true</code>.
      * @see #isDisplayable
      * @see GraphicsEnvironment#isHeadless
-     * @since     JDK1.0
+     * @since     1.0
      */
     public Image createImage(int width, int height) {
         ComponentPeer peer = this.peer;
@@ -3643,7 +3643,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *                       to be notified as the image is being prepared
      * @return    <code>true</code> if the image has already been fully
      *           prepared; <code>false</code> otherwise
-     * @since     JDK1.0
+     * @since     1.0
      */
     public boolean prepareImage(Image image, ImageObserver observer) {
         return prepareImage(image, -1, -1, observer);
@@ -3665,7 +3665,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @return    <code>true</code> if the image has already been fully
      *          prepared; <code>false</code> otherwise
      * @see       java.awt.image.ImageObserver
-     * @since     JDK1.0
+     * @since     1.0
      */
     public boolean prepareImage(Image image, int width, int height,
                                 ImageObserver observer) {
@@ -3701,7 +3701,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      #prepareImage(Image, int, int, java.awt.image.ImageObserver)
      * @see      Toolkit#checkImage(Image, int, int, java.awt.image.ImageObserver)
      * @see      java.awt.image.ImageObserver
-     * @since    JDK1.0
+     * @since    1.0
      */
     public int checkImage(Image image, ImageObserver observer) {
         return checkImage(image, -1, -1, observer);
@@ -3737,7 +3737,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      #prepareImage(Image, int, int, java.awt.image.ImageObserver)
      * @see      Toolkit#checkImage(Image, int, int, java.awt.image.ImageObserver)
      * @see      java.awt.image.ImageObserver
-     * @since    JDK1.0
+     * @since    1.0
      */
     public int checkImage(Image image, int width, int height,
                           ImageObserver observer) {
@@ -4622,7 +4622,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param     x   the <i>x</i> coordinate of the point
      * @param     y   the <i>y</i> coordinate of the point
      * @see       #getComponentAt(int, int)
-     * @since     JDK1.1
+     * @since     1.1
      */
     public boolean contains(int x, int y) {
         return inside(x, y);
@@ -4644,7 +4644,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param     p     the point
      * @throws    NullPointerException if {@code p} is {@code null}
      * @see       #getComponentAt(Point)
-     * @since     JDK1.1
+     * @since     1.1
      */
     public boolean contains(Point p) {
         return contains(p.x, p.y);
@@ -4669,7 +4669,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *                <code>null</code> if the location
      *                is outside this component
      * @see       #contains(int, int)
-     * @since     JDK1.0
+     * @since     1.0
      */
     public Component getComponentAt(int x, int y) {
         return locate(x, y);
@@ -4689,7 +4689,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * specified point.
      * @param     p   the point
      * @see       java.awt.Component#contains
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Component getComponentAt(Point p) {
         return getComponentAt(p.x, p.y);
@@ -5224,7 +5224,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.awt.event.ComponentListener
      * @see      #removeComponentListener
      * @see      #getComponentListeners
-     * @since    JDK1.1
+     * @since    1.1
      */
     public synchronized void addComponentListener(ComponentListener l) {
         if (l == null) {
@@ -5248,7 +5248,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.awt.event.ComponentListener
      * @see      #addComponentListener
      * @see      #getComponentListeners
-     * @since    JDK1.1
+     * @since    1.1
      */
     public synchronized void removeComponentListener(ComponentListener l) {
         if (l == null) {
@@ -5286,7 +5286,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.awt.event.FocusListener
      * @see      #removeFocusListener
      * @see      #getFocusListeners
-     * @since    JDK1.1
+     * @since    1.1
      */
     public synchronized void addFocusListener(FocusListener l) {
         if (l == null) {
@@ -5317,7 +5317,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.awt.event.FocusListener
      * @see      #addFocusListener
      * @see      #getFocusListeners
-     * @since    JDK1.1
+     * @since    1.1
      */
     public synchronized void removeFocusListener(FocusListener l) {
         if (l == null) {
@@ -5618,7 +5618,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.awt.event.KeyListener
      * @see      #removeKeyListener
      * @see      #getKeyListeners
-     * @since    JDK1.1
+     * @since    1.1
      */
     public synchronized void addKeyListener(KeyListener l) {
         if (l == null) {
@@ -5649,7 +5649,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.awt.event.KeyListener
      * @see      #addKeyListener
      * @see      #getKeyListeners
-     * @since    JDK1.1
+     * @since    1.1
      */
     public synchronized void removeKeyListener(KeyListener l) {
         if (l == null) {
@@ -5687,7 +5687,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.awt.event.MouseListener
      * @see      #removeMouseListener
      * @see      #getMouseListeners
-     * @since    JDK1.1
+     * @since    1.1
      */
     public synchronized void addMouseListener(MouseListener l) {
         if (l == null) {
@@ -5718,7 +5718,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.awt.event.MouseListener
      * @see      #addMouseListener
      * @see      #getMouseListeners
-     * @since    JDK1.1
+     * @since    1.1
      */
     public synchronized void removeMouseListener(MouseListener l) {
         if (l == null) {
@@ -5756,7 +5756,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.awt.event.MouseMotionListener
      * @see      #removeMouseMotionListener
      * @see      #getMouseMotionListeners
-     * @since    JDK1.1
+     * @since    1.1
      */
     public synchronized void addMouseMotionListener(MouseMotionListener l) {
         if (l == null) {
@@ -5787,7 +5787,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see      java.awt.event.MouseMotionListener
      * @see      #addMouseMotionListener
      * @see      #getMouseMotionListeners
-     * @since    JDK1.1
+     * @since    1.1
      */
     public synchronized void removeMouseMotionListener(MouseMotionListener l) {
         if (l == null) {
@@ -6072,7 +6072,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see        #processEvent
      * @see        #disableEvents
      * @see        AWTEvent
-     * @since      JDK1.1
+     * @since      1.1
      */
     protected final void enableEvents(long eventsToEnable) {
         long notifyAncestors = 0;
@@ -6108,7 +6108,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * from being delivered to this component.
      * @param      eventsToDisable   the event mask defining the event types
      * @see        #enableEvents
-     * @since      JDK1.1
+     * @since      1.1
      */
     protected final void disableEvents(long eventsToDisable) {
         long notifyAncestors = 0;
@@ -6285,7 +6285,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see       #processInputMethodEvent
      * @see       #processHierarchyEvent
      * @see       #processMouseWheelEvent
-     * @since     JDK1.1
+     * @since     1.1
      */
     protected void processEvent(AWTEvent e) {
         if (e instanceof FocusEvent) {
@@ -6351,7 +6351,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see         java.awt.event.ComponentListener
      * @see         #addComponentListener
      * @see         #enableEvents
-     * @since       JDK1.1
+     * @since       1.1
      */
     protected void processComponentEvent(ComponentEvent e) {
         ComponentListener listener = componentListener;
@@ -6414,7 +6414,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see         #addFocusListener
      * @see         #enableEvents
      * @see         #dispatchEvent
-     * @since       JDK1.1
+     * @since       1.1
      */
     protected void processFocusEvent(FocusEvent e) {
         FocusListener listener = focusListener;
@@ -6480,7 +6480,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see         #addKeyListener
      * @see         #enableEvents
      * @see         #isShowing
-     * @since       JDK1.1
+     * @since       1.1
      */
     protected void processKeyEvent(KeyEvent e) {
         KeyListener listener = keyListener;
@@ -6522,7 +6522,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see         java.awt.event.MouseListener
      * @see         #addMouseListener
      * @see         #enableEvents
-     * @since       JDK1.1
+     * @since       1.1
      */
     protected void processMouseEvent(MouseEvent e) {
         MouseListener listener = mouseListener;
@@ -6570,7 +6570,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see         java.awt.event.MouseMotionListener
      * @see         #addMouseMotionListener
      * @see         #enableEvents
-     * @since       JDK1.1
+     * @since       1.1
      */
     protected void processMouseMotionEvent(MouseEvent e) {
         MouseMotionListener listener = mouseMotionListener;
@@ -6882,7 +6882,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see       #isDisplayable
      * @see       #removeNotify
      * @see #invalidate
-     * @since JDK1.0
+     * @since 1.0
      */
     public void addNotify() {
         synchronized (getTreeLock()) {
@@ -6985,7 +6985,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * @see       #isDisplayable
      * @see       #addNotify
-     * @since JDK1.0
+     * @since 1.0
      */
     public void removeNotify() {
         KeyboardFocusManager.clearMostRecentFocusOwner(this);
@@ -7094,7 +7094,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @return <code>true</code> if this <code>Component</code> is
      * focusable; <code>false</code> otherwise
      * @see #setFocusable
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated As of 1.4, replaced by <code>isFocusable()</code>.
      */
     @Deprecated
@@ -7433,7 +7433,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #isFocusable
      * @see #isDisplayable
      * @see KeyboardFocusManager#clearGlobalFocusOwner
-     * @since JDK1.0
+     * @since 1.0
      */
     public void requestFocus() {
         requestFocusHelper(false, true);
@@ -7862,7 +7862,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Transfers the focus to the next component, as though this Component were
      * the focus owner.
      * @see       #requestFocus()
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void transferFocus() {
         nextFocus();
@@ -8070,7 +8070,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param     popup the popup menu to be added to the component.
      * @see       #remove(MenuComponent)
      * @exception NullPointerException if {@code popup} is {@code null}
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void add(PopupMenu popup) {
         synchronized (getTreeLock()) {
@@ -8095,7 +8095,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Removes the specified popup menu from the component.
      * @param     popup the popup menu to be removed
      * @see       #add(PopupMenu)
-     * @since     JDK1.1
+     * @since     1.1
      */
     @SuppressWarnings("unchecked")
     public void remove(MenuComponent popup) {
@@ -8126,7 +8126,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * <code>null</code>.
      *
      * @return  a string representation of this component's state
-     * @since     JDK1.0
+     * @since     1.0
      */
     protected String paramString() {
         final String thisName = Objects.toString(getName(), "");
@@ -8140,7 +8140,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Returns a string representation of this component and its values.
      * @return    a string representation of this component
-     * @since     JDK1.0
+     * @since     1.0
      */
     public String toString() {
         return getClass().getName() + '[' + paramString() + ']';
@@ -8150,7 +8150,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Prints a listing of this component to the standard system output
      * stream <code>System.out</code>.
      * @see       java.lang.System#out
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void list() {
         list(System.out, 0);
@@ -8161,7 +8161,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * stream.
      * @param    out   a print stream
      * @throws   NullPointerException if {@code out} is {@code null}
-     * @since    JDK1.0
+     * @since    1.0
      */
     public void list(PrintStream out) {
         list(out, 0);
@@ -8174,7 +8174,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param     indent   number of spaces to indent
      * @see       java.io.PrintStream#println(java.lang.Object)
      * @throws    NullPointerException if {@code out} is {@code null}
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void list(PrintStream out, int indent) {
         for (int i = 0 ; i < indent ; i++) {
@@ -8187,7 +8187,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Prints a listing to the specified print writer.
      * @param  out  the print writer to print to
      * @throws NullPointerException if {@code out} is {@code null}
-     * @since JDK1.1
+     * @since 1.1
      */
     public void list(PrintWriter out) {
         list(out, 0);
@@ -8200,7 +8200,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param indent the number of spaces to indent
      * @throws NullPointerException if {@code out} is {@code null}
      * @see       java.io.PrintStream#println(java.lang.Object)
-     * @since JDK1.1
+     * @since 1.1
      */
     public void list(PrintWriter out, int indent) {
         for (int i = 0 ; i < indent ; i++) {

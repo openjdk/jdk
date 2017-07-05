@@ -40,7 +40,7 @@ import java.util.Vector;
  * on the last of the contained input streams.
  *
  * @author  Author van Hoff
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class SequenceInputStream extends InputStream {
@@ -132,7 +132,7 @@ class SequenceInputStream extends InputStream {
      *         has been closed by invoking its {@link #close()} method
      * @exception  IOException  if an I/O error occurs.
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     public int available() throws IOException {
         if (in == null) {

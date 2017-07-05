@@ -37,7 +37,7 @@ import java.util.Locale;
  * to enable selection and loading of that input method.
  * The input method itself is only loaded when it is actually used.
  *
- * @since JDK1.3
+ * @since 1.3
  */
 
 final class WInputMethodDescriptor implements InputMethodDescriptor {

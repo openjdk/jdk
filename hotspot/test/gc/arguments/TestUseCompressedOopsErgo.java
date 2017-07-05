@@ -22,6 +22,7 @@
 */
 
 /*
+ * @ignore 8025645
  * @test TestUseCompressedOopsErgo
  * @key gc
  * @bug 8010722

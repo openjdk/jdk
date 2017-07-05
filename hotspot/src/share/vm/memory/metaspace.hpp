@@ -208,6 +208,7 @@ class Metaspace : public CHeapObj<mtClass> {
 
   static void ergo_initialize();
   static void global_initialize();
+  static void post_initialize();
 
   static size_t first_chunk_word_size() { return _first_chunk_word_size; }
   static size_t first_class_chunk_word_size() { return _first_class_chunk_word_size; }
@@ -398,7 +399,8 @@ class MetaspaceGC : AllStatic {
 
  public:
 
-  static void initialize() { _capacity_until_GC = MetaspaceSize; }
+  static void initialize();
+  static void post_initialize();
 
   static size_t capacity_until_GC();
   static size_t inc_capacity_until_GC(size_t v);

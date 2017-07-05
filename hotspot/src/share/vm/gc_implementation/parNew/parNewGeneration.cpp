@@ -1636,8 +1636,7 @@ void ParNewGeneration::ref_processor_init() {
                              refs_discovery_is_mt(),     // mt discovery
                              (int) ParallelGCThreads,    // mt discovery degree
                              refs_discovery_is_atomic(), // atomic_discovery
-                             NULL,                       // is_alive_non_header
-                             false);                     // write barrier for next field updates
+                             NULL);                      // is_alive_non_header
   }
 }
 

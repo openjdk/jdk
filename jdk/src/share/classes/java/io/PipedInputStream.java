@@ -45,7 +45,7 @@ package java.io;
  *
  * @author  James Gosling
  * @see     java.io.PipedOutputStream
- * @since   JDK1.0
+ * @since   1.0
  */
 public class PipedInputStream extends InputStream {
     boolean closedByWriter = false;
@@ -63,7 +63,7 @@ public class PipedInputStream extends InputStream {
 
     /**
      * The default size of the pipe's circular input buffer.
-     * @since   JDK1.1
+     * @since   1.1
      */
     // This used to be a constant before the pipe size was allowed
     // to change. This field will continue to be maintained
@@ -72,7 +72,7 @@ public class PipedInputStream extends InputStream {
 
     /**
      * The circular buffer into which incoming data is placed.
-     * @since   JDK1.1
+     * @since   1.1
      */
     protected byte buffer[];
 
@@ -81,14 +81,14 @@ public class PipedInputStream extends InputStream {
      * next byte of data will be stored when received from the connected
      * piped output stream. <code>in&lt;0</code> implies the buffer is empty,
      * <code>in==out</code> implies the buffer is full
-     * @since   JDK1.1
+     * @since   1.1
      */
     protected int in = -1;
 
     /**
      * The index of the position in the circular buffer at which the next
      * byte of data will be read by this piped input stream.
-     * @since   JDK1.1
+     * @since   1.1
      */
     protected int out = 0;
 
@@ -195,7 +195,7 @@ public class PipedInputStream extends InputStream {
      * @exception IOException If the pipe is <a href="#BROKEN"> <code>broken</code></a>,
      *          {@link #connect(java.io.PipedOutputStream) unconnected},
      *          closed, or if an I/O error occurs.
-     * @since     JDK1.1
+     * @since     1.1
      */
     protected synchronized void receive(int b) throws IOException {
         checkStateForReceive();
@@ -421,7 +421,7 @@ public class PipedInputStream extends InputStream {
      *          <a href="#BROKEN"> <code>broken</code></a>.
      *
      * @exception  IOException  if an I/O error occurs.
-     * @since   JDK1.0.2
+     * @since   1.0.2
      */
     public synchronized int available() throws IOException {
         if(in < 0)

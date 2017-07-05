@@ -43,7 +43,7 @@ import java.util.Iterator;
  * information about its environment.
  *
  * @author      Arthur van Hoff
- * @since       JDK1.0
+ * @since       1.0
  */
 public interface AppletContext {
     /**

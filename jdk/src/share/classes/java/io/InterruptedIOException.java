@@ -37,7 +37,7 @@ package java.io;
  * @see     java.io.InputStream
  * @see     java.io.OutputStream
  * @see     java.lang.Thread#interrupt()
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class InterruptedIOException extends IOException {

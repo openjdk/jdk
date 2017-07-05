@@ -32,7 +32,7 @@ import java.rmi.*;
  * implementation.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  * @deprecated No replacement. This interface is unused and is obsolete.
  */
 @Deprecated
@@ -50,7 +50,7 @@ public interface ServerRef extends RemoteRef {
      * @return the stub for the remote object
      * @exception RemoteException if an exception occurs attempting
      * to export the object (e.g., stub class could not be found)
-     * @since JDK1.1
+     * @since 1.1
      */
     RemoteStub exportObject(Remote obj, Object data)
         throws RemoteException;
@@ -62,7 +62,7 @@ public interface ServerRef extends RemoteRef {
      * @return the client's host name
      * @exception ServerNotActiveException if called outside of servicing
      * a remote method invocation
-     * @since JDK1.1
+     * @since 1.1
      */
     String getClientHost() throws ServerNotActiveException;
 }

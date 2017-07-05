@@ -523,7 +523,7 @@ public final class LWCToolkit extends LWToolkit {
      *                 that is used for menu shortcuts on this toolkit.
      * @see       java.awt.MenuBar
      * @see       java.awt.MenuShortcut
-     * @since     JDK1.1
+     * @since     1.1
      */
     @Override
     public int getMenuShortcutKeyMask() {

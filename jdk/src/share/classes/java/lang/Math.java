@@ -99,7 +99,7 @@ import sun.misc.DoubleConsts;
  *
  * @author  unascribed
  * @author  Joseph D. Darcy
- * @since   JDK1.0
+ * @since   1.0
  */
 
 public final class Math {

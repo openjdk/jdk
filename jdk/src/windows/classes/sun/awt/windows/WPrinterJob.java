@@ -419,7 +419,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
-     * @since     JDK1.2
+     * @since     1.2
      */
     @Override
     public PageFormat pageDialog(PageFormat page) throws HeadlessException {

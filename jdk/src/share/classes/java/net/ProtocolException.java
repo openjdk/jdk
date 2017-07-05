@@ -32,7 +32,7 @@ import java.io.IOException;
  * protocol, such as a TCP error.
  *
  * @author  Chris Warth
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class ProtocolException extends IOException {

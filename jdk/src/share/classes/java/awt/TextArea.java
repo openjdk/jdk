@@ -51,7 +51,7 @@ import javax.accessibility.*;
  * </pre></blockquote><hr>
  *
  * @author      Sami Shaio
- * @since       JDK1.0
+ * @since       1.0
  */
 public class TextArea extends TextComponent {
 
@@ -84,25 +84,25 @@ public class TextArea extends TextComponent {
 
     /**
      * Create and display both vertical and horizontal scrollbars.
-     * @since JDK1.1
+     * @since 1.1
      */
     public static final int SCROLLBARS_BOTH = 0;
 
     /**
      * Create and display vertical scrollbar only.
-     * @since JDK1.1
+     * @since 1.1
      */
     public static final int SCROLLBARS_VERTICAL_ONLY = 1;
 
     /**
      * Create and display horizontal scrollbar only.
-     * @since JDK1.1
+     * @since 1.1
      */
     public static final int SCROLLBARS_HORIZONTAL_ONLY = 2;
 
     /**
      * Do not create or display any scrollbars for the text area.
-     * @since JDK1.1
+     * @since 1.1
      */
     public static final int SCROLLBARS_NONE = 3;
 
@@ -248,7 +248,7 @@ public class TextArea extends TextComponent {
      *             <code>columns</code> is set to <code>0</code>
      * @param      scrollbars  a constant that determines what
      *             scrollbars are created to view the text area
-     * @since      JDK1.1
+     * @since      1.1
      * @exception HeadlessException if
      *    <code>GraphicsEnvironment.isHeadless</code> returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
@@ -307,7 +307,7 @@ public class TextArea extends TextComponent {
      * @see        java.awt.TextComponent#setText
      * @see        java.awt.TextArea#replaceRange
      * @see        java.awt.TextArea#append
-     * @since      JDK1.1
+     * @since      1.1
      */
     public void insert(String str, int pos) {
         insertText(str, pos);
@@ -335,7 +335,7 @@ public class TextArea extends TextComponent {
      *
      * @param     str the non-<code>null</code> text to append
      * @see       java.awt.TextArea#insert
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void append(String str) {
         appendText(str);
@@ -371,7 +371,7 @@ public class TextArea extends TextComponent {
      * @param     start    the start position
      * @param     end      the end position
      * @see       java.awt.TextArea#insert
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void replaceRange(String str, int start, int end) {
         replaceText(str, start, end);
@@ -396,7 +396,7 @@ public class TextArea extends TextComponent {
      * @return    the number of rows in the text area
      * @see       #setRows(int)
      * @see       #getColumns()
-     * @since     JDK1
+     * @since     1.0
      */
     public int getRows() {
         return rows;
@@ -410,7 +410,7 @@ public class TextArea extends TextComponent {
      * @exception   IllegalArgumentException   if the value
      *                 supplied for <code>rows</code>
      *                 is less than <code>0</code>
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void setRows(int rows) {
         int oldVal = this.rows;
@@ -441,7 +441,7 @@ public class TextArea extends TextComponent {
      * @exception   IllegalArgumentException   if the value
      *                 supplied for <code>columns</code>
      *                 is less than <code>0</code>
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void setColumns(int columns) {
         int oldVal = this.columns;
@@ -469,7 +469,7 @@ public class TextArea extends TextComponent {
      * @see        java.awt.TextArea#SCROLLBARS_HORIZONTAL_ONLY
      * @see        java.awt.TextArea#SCROLLBARS_NONE
      * @see        java.awt.TextArea#TextArea(java.lang.String, int, int, int)
-     * @since      JDK1.1
+     * @since      1.1
      */
     public int getScrollbarVisibility() {
         return scrollbarVisibility;
@@ -485,7 +485,7 @@ public class TextArea extends TextComponent {
      *                       the text area with the specified
      *                       number of rows and columns
      * @see       java.awt.Component#getPreferredSize
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Dimension getPreferredSize(int rows, int columns) {
         return preferredSize(rows, columns);
@@ -509,7 +509,7 @@ public class TextArea extends TextComponent {
      * Determines the preferred size of this text area.
      * @return    the preferred dimensions needed for this text area
      * @see       java.awt.Component#getPreferredSize
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Dimension getPreferredSize() {
         return preferredSize();
@@ -537,7 +537,7 @@ public class TextArea extends TextComponent {
      *                       the text area with the specified
      *                       number of rows and columns
      * @see       java.awt.Component#getMinimumSize
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Dimension getMinimumSize(int rows, int columns) {
         return minimumSize(rows, columns);
@@ -561,7 +561,7 @@ public class TextArea extends TextComponent {
      * Determines the minimum size of this text area.
      * @return    the preferred dimensions needed for this text area
      * @see       java.awt.Component#getPreferredSize
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Dimension getMinimumSize() {
         return minimumSize();

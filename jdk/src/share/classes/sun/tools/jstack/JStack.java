@@ -133,7 +133,7 @@ public class JStack {
             args = prepend("-l", args);
         }
 
-        Class[] argTypes = { String[].class };
+        Class<?>[] argTypes = { String[].class };
         Method m = cl.getDeclaredMethod("main", argTypes);
 
         Object[] invokeArgs = { args };
