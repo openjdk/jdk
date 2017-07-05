@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.Arrays;
  * Instances of this class represent a server name in a Server Name
  * Indication (SNI) extension.
  * <P>
- * The SNI extension is a feature that extends the SSL/TLS protocols to
+ * The SNI extension is a feature that extends the SSL/TLS/DTLS protocols to
  * indicate what server name the client is attempting to connect to during
  * handshaking.  See section 3, "Server Name Indication", of <A
  * HREF="http://www.ietf.org/rfc/rfc6066.txt">TLS Extensions (RFC 6066)</A>.

@@ -39,6 +39,7 @@
 
 var Class = Java.type("java.lang.Class");
 var System = Java.type("java.lang.System");
+var Thread = Java.type("java.lang.Thread");
 var File = Java.type("java.io.File");
 var JarFile = Java.type("java.util.jar.JarFile");
 var Modifier = Java.type("java.lang.reflect.Modifier");
@@ -58,6 +59,10 @@ function findNashorn() {
 function analyzeClass(cls) {
     var methods = cls.getDeclaredMethods();
     for each (var method in methods) {
+        var methodModifiers = method.modifiers;
+        if (Modifier.isAbstract(methodModifiers) || Modifier.isNative(methodModifiers)) {
+            continue;
+        }
         // this requires -parameters option when compiling java sources
         var params = method.parameters;
         for each (var p in params) {
@@ -73,6 +78,8 @@ function analyzeClass(cls) {
 }
 
 var jarFile = findNashorn();
+var ctxtLoader = Thread.currentThread().contextClassLoader;
+
 // load each class and use reflection to analyze each Class
 new JarFile(jarFile).stream().forEach(
     function(entry) {
@@ -80,8 +87,15 @@ new JarFile(jarFile).stream().forEach(
         if (name.endsWith(".class")) {
             var clsName = name.substring(0, name.lastIndexOf('.class'));
             clsName = clsName.replace(/\//g, '.');
-            var cls = Class.forName(clsName);
-            analyzeClass(cls);
+            try {
+                // don't initialize to avoid for possible initialization errors 
+                var cls = Class.forName(clsName, false, ctxtLoader);
+                analyzeClass(cls);
+            } catch (e) {
+                // print exception and continue analysis for other classes
+                print("Failed to analyze " + clsName);
+                e.printStackTrace();
+            }
         }
     }
 )

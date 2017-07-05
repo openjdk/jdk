@@ -741,7 +741,7 @@ inline int oopDesc::oop_iterate(OopClosureType* blk) {                \
 }                                                                     \
                                                                       \
 inline int oopDesc::oop_iterate(OopClosureType* blk, MemRegion mr) {  \
-  return klass()->oop_oop_iterate##nv_suffix##_m(this, blk, mr);      \
+  return klass()->oop_oop_iterate_bounded##nv_suffix(this, blk, mr);  \
 }
 
 

@@ -28,7 +28,6 @@
  *
  *  @author Robert Field
  *
- *  @library scaffold
  *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection
  *  @run compile -g ExceptionEvents.java

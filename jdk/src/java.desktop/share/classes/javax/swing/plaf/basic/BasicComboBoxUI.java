@@ -150,6 +150,8 @@ public class BasicComboBoxUI extends ComboBoxUI {
      */
     protected KeyListener popupKeyListener;
 
+    private MouseWheelListener mouseWheelListener;
+
     // This is used for knowing when to cache the minimum preferred size.
     // If the data in the list changes, the cached value get marked for recalc.
     // Added to the current JComboBox model
@@ -413,6 +415,10 @@ public class BasicComboBoxUI extends ComboBoxUI {
                 comboBox.getModel().addListDataListener( listDataListener );
             }
         }
+
+        if ((mouseWheelListener = createMouseWheelListener()) != null) {
+            comboBox.addMouseWheelListener(mouseWheelListener);
+        }
     }
 
     /**
@@ -458,6 +464,9 @@ public class BasicComboBoxUI extends ComboBoxUI {
             if ( listDataListener != null ) {
                 comboBox.getModel().removeListDataListener( listDataListener );
             }
+        }
+        if (mouseWheelListener != null) {
+            comboBox.removeMouseWheelListener(mouseWheelListener);
         }
     }
 
@@ -570,6 +579,10 @@ public class BasicComboBoxUI extends ComboBoxUI {
             handler = new Handler();
         }
         return handler;
+    }
+
+    private MouseWheelListener createMouseWheelListener() {
+        return getHandler();
     }
 
     //
@@ -1723,7 +1736,8 @@ public class BasicComboBoxUI extends ComboBoxUI {
     //
     private class Handler implements ActionListener, FocusListener,
                                      KeyListener, LayoutManager,
-                                     ListDataListener, PropertyChangeListener {
+                                     ListDataListener, PropertyChangeListener,
+                                     MouseWheelListener {
         //
         // PropertyChangeListener
         //
@@ -1997,21 +2011,25 @@ public class BasicComboBoxUI extends ComboBoxUI {
         public void actionPerformed(ActionEvent evt) {
             Object item = comboBox.getEditor().getItem();
             if (item != null) {
-             if(!comboBox.isPopupVisible() && !item.equals(comboBox.getSelectedItem())) {
-              comboBox.setSelectedItem(comboBox.getEditor().getItem());
-             }
-             ActionMap am = comboBox.getActionMap();
-             if (am != null) {
-                Action action = am.get("enterPressed");
-                if (action != null) {
-                    action.actionPerformed(new ActionEvent(comboBox, evt.getID(),
-                                           evt.getActionCommand(),
-                                           evt.getModifiers()));
+                if (!comboBox.isPopupVisible() && !item.equals(comboBox.getSelectedItem())) {
+                    comboBox.setSelectedItem(comboBox.getEditor().getItem());
+                }
+                ActionMap am = comboBox.getActionMap();
+                if (am != null) {
+                    Action action = am.get("enterPressed");
+                    if (action != null) {
+                        action.actionPerformed(new ActionEvent(comboBox, evt.getID(),
+                                evt.getActionCommand(),
+                                evt.getModifiers()));
+                    }
                 }
             }
-       }
+        }
+
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            e.consume();
+        }
    }
-  }
 
     class DefaultKeySelectionManager implements JComboBox.KeySelectionManager, UIResource {
         private String prefix = "";

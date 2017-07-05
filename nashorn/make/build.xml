@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
- Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -396,7 +396,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   </target>
 
   <target name="check-testng" unless="testng.available">
-    <echo message="WARNING: TestNG not available, will not run tests. Please copy testng.jar under test/lib directory."/>
+    <echo message="WARNING: TestNG not available, will not run tests. Please copy testng.jar under ${test.lib} directory."/>
   </target>
 
   <!-- only to be invoked as dependency of "test" target -->
@@ -469,7 +469,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </testng>
   </target>
 
-  <target name="test" depends="javadoc, test-pessimistic, test-optimistic"/>
+  <target name="test" depends="get-testng, javadoc, test-pessimistic, test-optimistic"/>
 
   <target name="test-optimistic" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <echo message="Running test suite in OPTIMISTIC mode..."/>
@@ -499,7 +499,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <echo message="WARNING: Jemmy or JavaFX or TestNG not available, will not run tests. Please copy testng.jar, JemmyCore.jar, JemmyFX.jar, JemmyAWTInput.jar under test${file.separator}lib directory. And make sure you have jfxrt.jar in ${java.home}${file.separator}lib${file.separator}ext dir."/>
   </target>
 
-  <target name="testjfx" depends="jar, check-jemmy.jfx.testng, compile-test" if="jemmy.jfx.testng.available">
+  <target name="testjfx" depends="jar, get-testng, check-jemmy.jfx.testng, compile-test" if="jemmy.jfx.testng.available">
     <fileset id="test.classes" dir="${build.test.classes.dir}">
        <include name="**/framework/*Test.class"/>
     </fileset>
@@ -527,7 +527,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </testng>
   </target>
 
-  <target name="testmarkdown" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+  <target name="testmarkdown" depends="jar, get-testng, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <fileset id="test.classes" dir="${build.test.classes.dir}">
        <include name="**/framework/*Test.class"/>
     </fileset>
@@ -546,7 +546,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </testng>
   </target>
 
-  <target name="test262" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+  <target name="test262" depends="jar, get-testng, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <fileset id="test.classes" dir="${build.test.classes.dir}">
        <include name="**/framework/*Test.class"/>
     </fileset>
@@ -570,7 +570,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
   <target name="test262parallel" depends="test262-parallel"/>
 
-  <target name="test262-parallel" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+  <target name="test262-parallel" depends="jar, get-testng, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <!-- use just build.test.classes.dir to avoid referring to TestNG -->
     <java classname="${parallel.test.runner}" dir="${basedir}" fork="true">
       <jvmarg line="${boot.class.path}"/>
@@ -589,7 +589,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
   <target name="testparallel" depends="test-parallel"/>
 
-  <target name="test-parallel" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+  <target name="test-parallel" depends="jar, get-testng, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
       <!-- use just build.test.classes.dir to avoid referring to TestNG -->
       <java classname="${parallel.test.runner}" dir="${basedir}"
         failonerror="true"
@@ -694,7 +694,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   </target>
 
   <!-- get all external test scripts -->
-  <target name="externals" depends="init, check-external-tests, get-test262, get-octane, get-sunspider">
+  <target name="externals" depends="init, check-external-tests, get-test262, get-octane, get-sunspider, get-testng">
     <!-- make external test dir -->
     <mkdir dir="${test.external.dir}"/>
 
@@ -719,8 +719,8 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
     <!-- showdown -->
     <mkdir dir="${test.external.dir}/showdown"/>
-    <get src="https://raw.github.com/coreyti/showdown/master/src/showdown.js" dest="${test.external.dir}/showdown" skipexisting="true" ignoreerrors="true"/>
-    <get src="https://raw.github.com/coreyti/showdown/master/src/extensions/table.js" dest="${test.external.dir}/showdown" skipexisting="true" ignoreerrors="true"/>
+    <get src="https://raw.githubusercontent.com/showdownjs/showdown/0.5.4/src/showdown.js" dest="${test.external.dir}/showdown" skipexisting="true" ignoreerrors="true"/>
+    <get src="https://raw.githubusercontent.com/showdownjs/showdown/0.5.4/src/extensions/table.js" dest="${test.external.dir}/showdown" skipexisting="true" ignoreerrors="true"/>
 
   </target>
 
@@ -730,12 +730,20 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   <!-- run all perf tests -->
   <target name="perf" depends="externals, update-externals, sunspider, octane"/>
 
-  <!-- run all tests -->
-  <target name="exit-if-no-testng" depends="init, check-testng" unless="${testng.available}">
-     <fail message="Exiting.."/>
+  <!-- download and install testng.jar -->
+  <target name="get-testng" depends="prepare" unless="testng.available">
+    <get src="http://testng.org/testng-6.8.zip" dest="${test.lib}" skipexisting="true" ignoreerrors="true"/>
+    <unzip src="${test.lib}${file.separator}testng-6.8.zip" dest="${test.lib}">
+      <patternset>
+        <include name="testng-6.8/testng-6.8.jar"/>
+      </patternset>
+    </unzip>
+    <move file="${test.lib}${file.separator}testng-6.8${file.separator}testng-6.8.jar" tofile="${test.lib}${file.separator}testng.jar"/>
+    <delete dir="${test.lib}${file.separator}testng-6.8"/>
   </target>
 
-  <target name="alltests" depends="exit-if-no-testng, externals, update-externals, test, test262parallel, perf"/>
+  <!-- run all tests -->
+  <target name="alltests" depends="get-testng, externals, update-externals, test, test262parallel, testmarkdown, perf"/>
 
   <import file="build-benchmark.xml"/>
 

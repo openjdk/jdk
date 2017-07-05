@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8036979
+ * @bug 8036979 8072384
  * @run main/othervm -Xcheck:jni OptionsTest
+ * @run main/othervm -Xcheck:jni -Djava.net.preferIPv4Stack=true OptionsTest
  */
 
 import java.net.*;
@@ -59,7 +60,8 @@ public class OptionsTest {
 
     static Test[] serverSocketTests = new Test[] {
         Test.create(StandardSocketOptions.SO_RCVBUF, Integer.valueOf(8 * 100)),
-        Test.create(StandardSocketOptions.SO_REUSEADDR, Boolean.FALSE)
+        Test.create(StandardSocketOptions.SO_REUSEADDR, Boolean.FALSE),
+        Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(100))
     };
 
     static Test[] dgSocketTests = new Test[] {
@@ -193,6 +195,9 @@ public class OptionsTest {
                 return Integer.valueOf(socket.getReceiveBufferSize());
             } else if (option.equals(StandardSocketOptions.SO_REUSEADDR)) {
                 return Boolean.valueOf(socket.getReuseAddress());
+            } else if (option.equals(StandardSocketOptions.IP_TOS)) {
+                return Integer.valueOf(jdk.net.Sockets.getOption(
+                    socket, StandardSocketOptions.IP_TOS));
             } else {
                 throw new RuntimeException("unexecpted socket option");
             }

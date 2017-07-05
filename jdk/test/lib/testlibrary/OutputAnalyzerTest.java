@@ -25,7 +25,6 @@ package jdk.testlibrary;
 /*
  * @test
  * @summary Test the OutputAnalyzer utility class
- * @library /testlibrary
  * @modules java.management
  * @build jdk.testlibrary.*
  * @run main jdk.testlibrary.OutputAnalyzerTest
