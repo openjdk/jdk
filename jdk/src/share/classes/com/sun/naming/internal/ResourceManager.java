@@ -25,11 +25,12 @@
 
 package com.sun.naming.internal;
 
-import java.applet.Applet;
 import java.io.InputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -112,6 +113,52 @@ public final class ResourceManager {
     private static final WeakHashMap urlFactoryCache = new WeakHashMap(11);
     private static final WeakReference NO_FACTORY = new WeakReference(null);
 
+    /**
+     * A class to allow JNDI properties be specified as applet parameters
+     * without creating a static dependency on java.applet.
+     */
+    private static class AppletParameter {
+        private static final Class<?> clazz = getClass("java.applet.Applet");
+        private static final Method getMethod =
+            getMethod(clazz, "getParameter", String.class);
+        private static Class<?> getClass(String name) {
+            try {
+                return Class.forName(name, true, null);
+            } catch (ClassNotFoundException e) {
+                return null;
+            }
+        }
+        private static Method getMethod(Class<?> clazz,
+                                        String name,
+                                        Class<?>... paramTypes)
+        {
+            if (clazz != null) {
+                try {
+                    return clazz.getMethod(name, paramTypes);
+                } catch (NoSuchMethodException e) {
+                    throw new AssertionError(e);
+                }
+            } else {
+                return null;
+            }
+        }
+
+        /**
+         * Returns the value of the applet's named parameter.
+         */
+        static Object get(Object applet, String name) {
+            // if clazz is null then applet cannot be an Applet.
+            if (clazz == null || !clazz.isInstance(applet))
+                throw new ClassCastException(applet.getClass().getName());
+            try {
+                return getMethod.invoke(applet, name);
+            } catch (InvocationTargetException e) {
+                throw new AssertionError(e);
+            } catch (IllegalAccessException iae) {
+                throw new AssertionError(iae);
+            }
+        }
+    }
 
     // There should be no instances of this class.
     private ResourceManager() {
@@ -143,7 +190,7 @@ public final class ResourceManager {
         if (env == null) {
             env = new Hashtable(11);
         }
-        Applet applet = (Applet)env.get(Context.APPLET);
+        Object applet = env.get(Context.APPLET);
 
         // Merge property values from env param, applet params, and system
         // properties.  The first value wins:  there's no concatenation of
@@ -157,7 +204,7 @@ public final class ResourceManager {
             Object val = env.get(props[i]);
             if (val == null) {
                 if (applet != null) {
-                    val = applet.getParameter(props[i]);
+                    val = AppletParameter.get(applet, props[i]);
                 }
                 if (val == null) {
                     // Read system property.

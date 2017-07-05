@@ -684,8 +684,13 @@ class JavaThread: public Thread {
   methodOop     _callee_target;
 
   // Oop results of VM runtime calls
-  oop           _vm_result;                      // Used to pass back an oop result into Java code, GC-preserved
-  oop           _vm_result_2;                    // Used to pass back an oop result into Java code, GC-preserved
+  oop           _vm_result;    // Used to pass back an oop result into Java code, GC-preserved
+  oop           _vm_result_2;  // Used to pass back an oop result into Java code, GC-preserved
+
+  // See ReduceInitialCardMarks: this holds the precise space interval of
+  // the most recent slow path allocation for which compiled code has
+  // elided card-marks for performance along the fast-path.
+  MemRegion     _deferred_card_mark;
 
   MonitorChunk* _monitor_chunks;                 // Contains the off stack monitors
                                                  // allocated during deoptimization
@@ -1081,6 +1086,9 @@ class JavaThread: public Thread {
 
   oop  vm_result_2() const                       { return _vm_result_2; }
   void set_vm_result_2  (oop x)                  { _vm_result_2   = x; }
+
+  MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
+  void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
 
   // Exception handling for compiled methods
   oop      exception_oop() const                 { return _exception_oop; }
