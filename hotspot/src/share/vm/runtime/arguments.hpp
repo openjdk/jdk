@@ -364,6 +364,8 @@ class Arguments : AllStatic {
   // Aggressive optimization flags.
   static jint set_aggressive_opts_flags();
 
+  static jint set_aggressive_heap_flags();
+
   // Argument parsing
   static void do_pd_flag_adjustments();
   static bool parse_argument(const char* arg, Flag::Flags origin);
@@ -427,11 +429,24 @@ class Arguments : AllStatic {
     short* methodsNum, short* methodsMax, char*** methods, bool** allClasses
   );
 
-  // Returns true if the string s is in the list of flags that have recently
-  // been made obsolete.  If we detect one of these flags on the command
-  // line, instead of failing we print a warning message and ignore the
-  // flag.  This gives the user a release or so to stop using the flag.
-  static bool is_newly_obsolete(const char* s, JDK_Version* buffer);
+  // Returns true if the flag is obsolete (and not yet expired).
+  // In this case the 'version' buffer is filled in with
+  // the version number when the flag became obsolete.
+  static bool is_obsolete_flag(const char* flag_name, JDK_Version* version);
+
+  // Returns 1 if the flag is deprecated (and not yet obsolete or expired).
+  //     In this case the 'version' buffer is filled in with the version number when
+  //     the flag became deprecated.
+  // Returns -1 if the flag is expired or obsolete.
+  // Returns 0 otherwise.
+  static int is_deprecated_flag(const char* flag_name, JDK_Version* version);
+
+  // Return the real name for the flag passed on the command line (either an alias name or "flag_name").
+  static const char* real_flag_name(const char *flag_name);
+
+  // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
+  // Return NULL if the arg has expired.
+  static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
 
   static short  CompileOnlyClassesNum;
   static short  CompileOnlyClassesMax;
@@ -478,7 +493,6 @@ class Arguments : AllStatic {
 
   // Check for consistency in the selection of the garbage collector.
   static bool check_gc_consistency();        // Check user-selected gc
-  static void check_deprecated_gc_flags();
   // Check consistency or otherwise of VM argument settings
   static bool check_vm_args_consistency();
   // Used by os_solaris

@@ -34,8 +34,6 @@
 #   STUB_CLASSES_DIR:=Directory in where to put stub classes
 #   RUN_V11:=Set to run rmic with -v1.1
 #   RUN_V12:=Set to run rmic with -v1.2
-#   RUN_IIOP:=Set to run rmic with -iiop
-#   RUN_IIOP_STDPKG:=Set to run rmic with -iiop -standardPackage
 #   KEEP_GENERATED:=Set to keep generated sources around
 SetupRMICompilation = $(NamedParamsMacroTemplate)
 define SetupRMICompilationBody
@@ -59,15 +57,6 @@ define SetupRMICompilationBody
   $1_TIE_BASE_FILES := $$(foreach f,$$($1_CLASSES_SLASH),$$(dir $$f)_$$(notdir $$f))
   $1_TIE_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/org/omg/stub/,$$(addsuffix _Tie.class,$$($1_TIE_BASE_FILES)))
   $1_TIE_STDPKG_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/,$$(addsuffix _Tie.class,$$($1_TIE_BASE_FILES)))
-
-  ifneq (,$$($1_RUN_IIOP))
-    $1_TARGETS += $$($1_TIE_FILES)
-    $1_ARGS += -iiop -emitPermissionCheck
-  endif
-  ifneq (,$$($1_RUN_IIOP_STDPKG))
-    $1_TARGETS += $$($1_TIE_STDPKG_FILES)
-    $1_ARGS2 := -iiop -emitPermissionCheck -standardPackage
-  endif
 
   ifneq (,$$($1_KEEP_GENERATED))
     $1_ARGS += -keepgenerated
