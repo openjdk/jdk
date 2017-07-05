@@ -7006,3 +7006,7 @@ CurrencyNames/zh_CN/zwl=\u6d25\u5df4\u5e03\u97e6\u5143 (2009)
 CurrencyNames/zh_TW/cuc=\u53e4\u5df4\u53ef\u8f49\u63db\u62ab\u7d22
 CurrencyNames/zh_TW/tmt=\u571f\u5eab\u66fc\u65b0\u99ac\u7d0d\u7279
 CurrencyNames/zh_TW/zwl=\u8f9b\u5df4\u5a01\u5143 (2009)
+
+# bug 7101495
+CalendarData/lv/firstDayOfWeek=2
+CalendarData/lv/minimalDaysInFirstWeek=4
