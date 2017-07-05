@@ -89,7 +89,7 @@ install_jib() {
     fi
 
     if command -v curl > /dev/null; then
-        getcmd="curl -s"
+        getcmd="curl -s -L --retry 3 --retry-delay 5"
     elif command -v wget > /dev/null; then
         getcmd="wget --quiet -O -"
     else
