@@ -443,8 +443,8 @@ class CommandLineFlags {
             "Use 32-bit object references in 64-bit VM  "                   \
             "lp64_product means flag is always constant in 32 bit VM")      \
                                                                             \
-  lp64_product(bool, UseCompressedKlassPointers, false,                     \
-            "Use 32-bit klass pointers in 64-bit VM  "                      \
+  lp64_product(bool, UseCompressedClassPointers, false,                     \
+            "Use 32-bit class pointers in 64-bit VM  "                      \
             "lp64_product means flag is always constant in 32 bit VM")      \
                                                                             \
   notproduct(bool, CheckCompressedOops, true,                               \
@@ -880,7 +880,7 @@ class CommandLineFlags {
           "stay alive at the expense of JVM performance")                   \
                                                                             \
   diagnostic(bool, LogCompilation, false,                                   \
-          "Log compilation activity in detail to hotspot.log or LogFile")   \
+          "Log compilation activity in detail to LogFile")                  \
                                                                             \
   product(bool, PrintCompilation, false,                                    \
           "Print compilations")                                             \
@@ -2498,16 +2498,17 @@ class CommandLineFlags {
          "Print all VM flags with default values and descriptions and exit")\
                                                                             \
   diagnostic(bool, SerializeVMOutput, true,                                 \
-         "Use a mutex to serialize output to tty and hotspot.log")          \
+         "Use a mutex to serialize output to tty and LogFile")              \
                                                                             \
   diagnostic(bool, DisplayVMOutput, true,                                   \
          "Display all VM output on the tty, independently of LogVMOutput")  \
                                                                             \
-  diagnostic(bool, LogVMOutput, trueInDebug,                                \
-         "Save VM output to hotspot.log, or to LogFile")                    \
+  diagnostic(bool, LogVMOutput, false,                                      \
+         "Save VM output to LogFile")                                       \
                                                                             \
   diagnostic(ccstr, LogFile, NULL,                                          \
-         "If LogVMOutput is on, save VM output to this file [hotspot.log]") \
+         "If LogVMOutput or LogCompilation is on, save VM output to "       \
+         "this file [default: ./hotspot_pid%p.log] (%p replaced with pid)") \
                                                                             \
   product(ccstr, ErrorFile, NULL,                                           \
          "If an error occurs, save the error data to this file "            \
@@ -3039,9 +3040,9 @@ class CommandLineFlags {
   product(uintx, MaxMetaspaceSize, max_uintx,                               \
           "Maximum size of Metaspaces (in bytes)")                          \
                                                                             \
-  product(uintx, ClassMetaspaceSize, 1*G,                                   \
-          "Maximum size of InstanceKlass area in Metaspace used for "       \
-          "UseCompressedKlassPointers")                                     \
+  product(uintx, CompressedClassSpaceSize, 1*G,                             \
+          "Maximum size of class area in Metaspace when compressed "        \
+          "class pointers are used")                                        \
                                                                             \
   product(uintx, MinHeapFreeRatio,    40,                                   \
           "Min percentage of heap free after GC to avoid expansion")        \

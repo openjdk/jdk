@@ -1319,6 +1319,25 @@ static void clear_pending_exception_if_not_oom(TRAPS) {
   // The CHECK at the caller will propagate the exception out
 }
 
+/**
+ * Returns if the given method should be compiled when doing compile-the-world.
+ *
+ * TODO:  This should be a private method in a CompileTheWorld class.
+ */
+static bool can_be_compiled(methodHandle m, int comp_level) {
+  assert(CompileTheWorld, "must be");
+
+  // It's not valid to compile a native wrapper for MethodHandle methods
+  // that take a MemberName appendix since the bytecode signature is not
+  // correct.
+  vmIntrinsics::ID iid = m->intrinsic_id();
+  if (MethodHandles::is_signature_polymorphic(iid) && MethodHandles::has_member_arg(iid)) {
+    return false;
+  }
+
+  return CompilationPolicy::can_be_compiled(m, comp_level);
+}
+
 void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
   int len = (int)strlen(name);
   if (len > 6 && strcmp(".class", name + len - 6) == 0) {
@@ -1362,8 +1381,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
           int comp_level = CompilationPolicy::policy()->initial_compile_level();
           for (int n = 0; n < k->methods()->length(); n++) {
             methodHandle m (THREAD, k->methods()->at(n));
-            if (CompilationPolicy::can_be_compiled(m, comp_level)) {
-
+            if (can_be_compiled(m, comp_level)) {
               if (++_codecache_sweep_counter == CompileTheWorldSafepointInterval) {
                 // Give sweeper a chance to keep up with CTW
                 VM_ForceSafepoint op;
@@ -1375,7 +1393,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                                             methodHandle(), 0, "CTW", THREAD);
               if (HAS_PENDING_EXCEPTION) {
                 clear_pending_exception_if_not_oom(CHECK);
-                tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name()->as_C_string());
+                tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());
               } else {
                 _compile_the_world_method_counter++;
               }
@@ -1391,11 +1409,13 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                                               methodHandle(), 0, "CTW", THREAD);
                 if (HAS_PENDING_EXCEPTION) {
                   clear_pending_exception_if_not_oom(CHECK);
-                  tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name()->as_C_string());
+                  tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());
                 } else {
                   _compile_the_world_method_counter++;
                 }
               }
+            } else {
+              tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());
             }
 
             nmethod* nm = m->code();

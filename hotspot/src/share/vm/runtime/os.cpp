@@ -314,6 +314,11 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
   }
 }
 
+void os::init_before_ergo() {
+  // We need to initialize large page support here because ergonomics takes some
+  // decisions depending on large page support and the calculated large page size.
+  large_page_init();
+}
 
 void os::signal_init() {
   if (!ReduceSignalUsage) {
@@ -454,6 +459,7 @@ void* os::native_java_library() {
  */
 void* os::find_agent_function(AgentLibrary *agent_lib, bool check_lib,
                               const char *syms[], size_t syms_len) {
+  assert(agent_lib != NULL, "sanity check");
   const char *lib_name;
   void *handle = agent_lib->os_lib();
   void *entryName = NULL;
@@ -484,6 +490,7 @@ bool os::find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
   void *proc_handle;
   void *save_handle;
 
+  assert(agent_lib != NULL, "sanity check");
   if (agent_lib->name() == NULL) {
     return false;
   }
@@ -493,14 +500,13 @@ bool os::find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
   // We want to look in this process' symbol table.
   agent_lib->set_os_lib(proc_handle);
   ret = find_agent_function(agent_lib, true, syms, syms_len);
-  agent_lib->set_os_lib(save_handle);
   if (ret != NULL) {
     // Found an entry point like Agent_OnLoad_lib_name so we have a static agent
-    agent_lib->set_os_lib(proc_handle);
     agent_lib->set_valid();
     agent_lib->set_static_lib(true);
     return true;
   }
+  agent_lib->set_os_lib(save_handle);
   return false;
 }
 

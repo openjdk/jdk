@@ -2191,6 +2191,10 @@ jint G1CollectedHeap::initialize() {
   return JNI_OK;
 }
 
+size_t G1CollectedHeap::conservative_max_heap_alignment() {
+  return HeapRegion::max_region_size();
+}
+
 void G1CollectedHeap::ref_processing_init() {
   // Reference processing in G1 currently works as follows:
   //
