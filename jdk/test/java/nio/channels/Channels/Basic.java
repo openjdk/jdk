@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,13 @@
  */
 
 /* @test
- * @bug 4417152 4481572 6248930
+ * @bug 4417152 4481572 6248930 6725399
  * @summary Test Channels basic functionality
  */
 
 import java.io.*;
 import java.nio.*;
+import java.nio.charset.*;
 import java.nio.channels.*;
 
 
@@ -50,22 +51,106 @@ public class Basic {
         test();
     }
 
+    static void failNpeExpected() {
+        throw new RuntimeException("Did not get the expected NullPointerException.");
+    }
+
     private static void test() throws Exception {
+        //Test if methods of Channels throw NPE with null argument(s)
+        try {
+            Channels.newInputStream((ReadableByteChannel)null);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newOutputStream((WritableByteChannel)null);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
         try {
             ReadableByteChannel channel = Channels.newChannel((InputStream)null);
-
-            throw new RuntimeException("Did not get the expected NullPointerException.");
-        } catch (NullPointerException ne) {
-            // OK. As expected.
-        }
+            failNpeExpected();
+        } catch (NullPointerException ne) {}  // OK. As expected.
 
         try {
             WritableByteChannel channel = Channels.newChannel((OutputStream)null);
+            failNpeExpected();
+        } catch (NullPointerException ne) {}  // OK. As expected.
 
-            throw new RuntimeException("Did not get the expected NullPointerException.");
-        } catch (NullPointerException ne) {
-            // OK. As expected.
-        }
+        WritableByteChannel wbc = new WritableByteChannel() {
+            public int write(ByteBuffer src) { return 0; }
+            public void close() throws IOException { }
+            public boolean isOpen() { return true; }
+        };
+
+        ReadableByteChannel rbc = new ReadableByteChannel() {
+            public int read(ByteBuffer dst) { return 0; }
+            public void close() {}
+            public boolean isOpen() { return true; }
+        };
+
+        try {
+            Channels.newReader((ReadableByteChannel)null,
+                               Charset.defaultCharset().newDecoder(),
+                               -1);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newReader(rbc, (CharsetDecoder)null, -1);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newReader((ReadableByteChannel)null,
+                               Charset.defaultCharset().name());
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newReader(rbc, null);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+
+        try {
+            Channels.newReader(null, null);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newWriter((WritableByteChannel)null,
+                               Charset.defaultCharset().newEncoder(),
+                               -1);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newWriter(null, null, -1);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newWriter(wbc, null, -1);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newWriter((WritableByteChannel)null,
+                               Charset.defaultCharset().name());
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newWriter(wbc, null);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
+        try {
+            Channels.newWriter(null, null);
+            failNpeExpected();
+        } catch (NullPointerException npe) {}
+
 
         try {
             blah = File.createTempFile("blah", null);

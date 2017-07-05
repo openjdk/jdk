@@ -26,6 +26,7 @@
 package javax.management;
 
 import com.sun.jmx.mbeanserver.MBeanInjector;
+import com.sun.jmx.mbeanserver.MBeanIntrospector;
 import static javax.management.JMX.MBeanOptions;
 
 /**
@@ -195,10 +196,12 @@ public class StandardEmitterMBean extends StandardMBean
                                     MBeanOptions options,
                                     NotificationEmitter emitter) {
         super(implementation, mbeanInterface, options);
+        MBeanNotificationInfo[] defaultMBNIs = defaultMBNIs(implementation);
         if (emitter == null)
-            emitter = defaultEmitter();
+            emitter = defaultEmitter(defaultMBNIs);
         this.emitter = emitter;
-        this.notificationInfo = emitter.getNotificationInfo();
+        this.notificationInfo =
+                firstNonEmpty(emitter.getNotificationInfo(), defaultMBNIs);
         injectEmitter();
     }
 
@@ -320,20 +323,36 @@ public class StandardEmitterMBean extends StandardMBean
     protected StandardEmitterMBean(Class<?> mbeanInterface, MBeanOptions options,
                                    NotificationEmitter emitter) {
         super(mbeanInterface, options);
+        MBeanNotificationInfo[] defaultMBNIs = defaultMBNIs(this);
         if (emitter == null)
-            emitter = defaultEmitter();
+            emitter = defaultEmitter(defaultMBNIs);
         this.emitter = emitter;
-        this.notificationInfo = emitter.getNotificationInfo();
+        this.notificationInfo =
+                firstNonEmpty(emitter.getNotificationInfo(), defaultMBNIs);
         injectEmitter();
     }
 
-    private NotificationEmitter defaultEmitter() {
-        MBeanNotificationInfo[] mbnis = getNotificationInfo();
+    private static MBeanNotificationInfo[] defaultMBNIs(Object mbean) {
+        return MBeanIntrospector.findNotificationsFromAnnotations(
+                mbean.getClass());
+    }
+
+    private NotificationEmitter defaultEmitter(MBeanNotificationInfo[] defaultMBNIs) {
+        MBeanNotificationInfo[] mbnis =
+                firstNonEmpty(getNotificationInfo(), defaultMBNIs);
         // Will be null unless getNotificationInfo() is overridden,
         // since the notificationInfo field has not been set at this point.
         if (mbnis == null)
             mbnis = getMBeanInfo().getNotifications();
         return new NotificationBroadcasterSupport(mbnis);
+    }
+
+    private static <T> T[] firstNonEmpty(T[]... items) {
+        for (T[] t : items) {
+            if (t != null && t.length != 0)
+                return t;
+        }
+        return null;
     }
 
     private void injectEmitter() {

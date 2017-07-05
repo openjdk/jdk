@@ -325,24 +325,30 @@ class Par_PushOrMarkClosure: public OopClosure {
 // For objects in CMS generation, this closure marks
 // given objects (transitively) as being reachable/live.
 // This is currently used during the (weak) reference object
-// processing phase of the CMS final checkpoint step.
+// processing phase of the CMS final checkpoint step, as
+// well as during the concurrent precleaning of the discovered
+// reference lists.
 class CMSKeepAliveClosure: public OopClosure {
  private:
   CMSCollector* _collector;
   const MemRegion _span;
   CMSMarkStack* _mark_stack;
   CMSBitMap*    _bit_map;
+  bool          _concurrent_precleaning;
  protected:
   DO_OOP_WORK_DEFN
  public:
   CMSKeepAliveClosure(CMSCollector* collector, MemRegion span,
-                      CMSBitMap* bit_map, CMSMarkStack* mark_stack):
+                      CMSBitMap* bit_map, CMSMarkStack* mark_stack,
+                      bool cpc):
     _collector(collector),
     _span(span),
     _bit_map(bit_map),
-    _mark_stack(mark_stack) {
+    _mark_stack(mark_stack),
+    _concurrent_precleaning(cpc) {
     assert(!_span.is_empty(), "Empty span could spell trouble");
   }
+  bool    concurrent_precleaning() const { return _concurrent_precleaning; }
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { CMSKeepAliveClosure::do_oop_work(p); }
