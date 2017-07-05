@@ -615,6 +615,14 @@ public abstract class WComponentPeer extends WObjectPeer
         _dispose();
     }
 
+    public void disposeLater() {
+        postEvent(new InvocationEvent(Toolkit.getDefaultToolkit(), new Runnable() {
+            public void run() {
+                dispose();
+            }
+        }));
+    }
+
     public synchronized void setForeground(Color c) {
         foreground = c;
         _setForeground(c.getRGB());

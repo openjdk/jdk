@@ -24,20 +24,17 @@
  */
 package javax.swing;
 
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import java.lang.reflect.*;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
 import java.util.*;
 
 import com.sun.java.swing.SwingUtilities3;
 
 import sun.awt.SubRegionShowable;
 import sun.java2d.SunGraphics2D;
-import sun.security.action.GetPropertyAction;
 import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
 import sun.awt.SunToolkit;
 import sun.util.logging.PlatformLogger;
@@ -119,10 +116,6 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
      * Farthest JComponent ancestor for the current paint/copyArea.
      */
     private JComponent rootJ;
-    /**
-     * Parent Applet/Window for the current paint/copyArea
-     */
-    private Container root;
     /**
      * Location of component being painted relative to root.
      */
@@ -278,7 +271,9 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
     public boolean paint(JComponent paintingComponent,
                          JComponent bufferComponent, Graphics g,
                          int x, int y, int w, int h) {
-        if (prepare(paintingComponent, true, x, y, w, h)) {
+        Container root = fetchRoot(paintingComponent);
+
+        if (prepare(paintingComponent, root, true, x, y, w, h)) {
             if ((g instanceof SunGraphics2D) &&
                     ((SunGraphics2D)g).getDestination() == root) {
                 // BufferStrategy may have already constrained the Graphics. To
@@ -319,7 +314,9 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
         //
         // If the buffer isn't in sync there is no point in doing a copyArea,
         // it has garbage.
-        if (prepare(c, false, 0, 0, 0, 0) && bufferInfo.isInSync()) {
+        Container root = fetchRoot(c);
+
+        if (prepare(c, root, false, 0, 0, 0, 0) && bufferInfo.isInSync()) {
             if (clip) {
                 Rectangle cBounds = c.getVisibleRect();
                 int relX = xOffset + x;
@@ -500,14 +497,14 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
      *
      * @return true if should use buffering per window in painting.
      */
-    private boolean prepare(JComponent c, boolean isPaint, int x, int y,
+    private boolean prepare(JComponent c, Container root, boolean isPaint, int x, int y,
                             int w, int h) {
         if (bsg != null) {
             bsg.dispose();
             bsg = null;
         }
         bufferStrategy = null;
-        if (fetchRoot(c)) {
+        if (root != null) {
             boolean contentsLost = false;
             BufferInfo bufferInfo = getBufferInfo(root);
             if (bufferInfo == null) {
@@ -567,10 +564,10 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
         return false;
     }
 
-    private boolean fetchRoot(JComponent c) {
+    private Container fetchRoot(JComponent c) {
         boolean encounteredHW = false;
         rootJ = c;
-        root = c;
+        Container root = c;
         xOffset = yOffset = 0;
         while (root != null &&
                (!(root instanceof Window) &&
@@ -597,7 +594,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                         // heavyweights.  If we didn't do this when we
                         // went to show the descendants of the nested hw
                         // you would see nothing, so, we bail out here.
-                        return false;
+                        return null;
                     }
                 }
             }
@@ -613,11 +610,11 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 // bit tricky with Swing. This gives a good approximation
                 // of the various ways to turn on double buffering for
                 // components.
-                return true;
+                return root;
             }
         }
         // Don't do true double buffering.
-        return false;
+        return null;
     }
 
     /**

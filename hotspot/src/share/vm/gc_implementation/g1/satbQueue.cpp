@@ -29,6 +29,7 @@
 #include "memory/sharedHeap.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/vmThread.hpp"
 
 // This method removes entries from an SATB buffer that will not be
 // useful to the concurrent marking threads. An entry is removed if it
@@ -252,9 +253,18 @@ void SATBMarkQueueSet::par_iterate_closure_all_threads(int worker) {
       t->satb_mark_queue().apply_closure(_par_closures[worker]);
     }
   }
-  // We'll have worker 0 do this one.
-  if (worker == 0) {
-    shared_satb_queue()->apply_closure(_par_closures[0]);
+
+  // We also need to claim the VMThread so that its parity is updated
+  // otherwise the next call to Thread::possibly_parallel_oops_do inside
+  // a StrongRootsScope might skip the VMThread because it has a stale
+  // parity that matches the parity set by the StrongRootsScope
+  //
+  // Whichever worker succeeds in claiming the VMThread gets to do
+  // the shared queue.
+
+  VMThread* vmt = VMThread::vm_thread();
+  if (vmt->claim_oops_do(true, parity)) {
+    shared_satb_queue()->apply_closure(_par_closures[worker]);
   }
 }
 

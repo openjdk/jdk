@@ -70,7 +70,7 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         fd1 = new FileDescriptor();
         try {
             super.create();
-        } catch (IOException e) {
+        } catch (SocketException e) {
             fd1 = null;
             throw e;
         }
@@ -99,10 +99,11 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         }
 
         if (optID == SO_BINDADDR) {
-            if (fd != null && fd1 != null) {
+            if ((fd != null && fd1 != null) && !connected) {
                 return anyLocalBoundAddr;
             }
-            return socketGetOption(optID);
+            int family = connectedAddress == null ? -1 : connectedAddress.family;
+            return socketLocalAddress(family);
         } else
             return super.getOption(optID);
     }
@@ -160,6 +161,8 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     protected native Object socketGetOption(int opt) throws SocketException;
 
     protected native void connect0(InetAddress address, int port) throws SocketException;
+
+    protected native Object socketLocalAddress(int family) throws SocketException;
 
     protected native void disconnect0(int family);
 

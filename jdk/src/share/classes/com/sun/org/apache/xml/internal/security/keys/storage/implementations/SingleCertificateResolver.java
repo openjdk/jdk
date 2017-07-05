@@ -38,7 +38,7 @@ public class SingleCertificateResolver extends StorageResolverSpi {
    X509Certificate _certificate = null;
 
    /** Field _iterator */
-   Iterator _iterator = null;
+   Iterator<X509Certificate> _iterator = null;
 
    /**
     *
@@ -51,7 +51,7 @@ public class SingleCertificateResolver extends StorageResolverSpi {
    }
 
    /** @inheritDoc */
-   public Iterator getIterator() {
+   public Iterator<X509Certificate> getIterator() {
       return this._iterator;
    }
 
@@ -61,7 +61,7 @@ public class SingleCertificateResolver extends StorageResolverSpi {
     * @author $Author: mullan $
     * @version $Revision: 1.5 $
     */
-   static class InternalIterator implements Iterator {
+   static class InternalIterator implements Iterator<X509Certificate> {
 
       /** Field _alreadyReturned */
       boolean _alreadyReturned = false;
@@ -84,7 +84,7 @@ public class SingleCertificateResolver extends StorageResolverSpi {
       }
 
       /** @inheritDoc */
-      public Object next() {
+      public X509Certificate next() {
 
          this._alreadyReturned = true;
 

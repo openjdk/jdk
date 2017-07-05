@@ -373,6 +373,7 @@ endif
 override LIBPOSIX4               =
 override LIBSOCKET               =
 override LIBNSL                  =
+override LIBSCF                  =
 override LIBTHREAD               =
 override MOOT_PRIORITIES         = true
 override NO_INTERRUPTIBLE_IO     = true
