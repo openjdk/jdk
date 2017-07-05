@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 4429043 8002180
  * @summary Test file mapping with FileChannel
  * @run main/othervm MapTest
  */
@@ -29,7 +30,10 @@
 import java.io.*;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.*;
-import java.nio.channels.FileChannel;
+import java.nio.channels.FileChannel.MapMode;
+import java.nio.file.Files;
+import static java.nio.file.StandardOpenOption.*;
+import static java.nio.charset.StandardCharsets.*;
 import java.util.Random;
 
 
@@ -39,6 +43,7 @@ import java.util.Random;
 
 public class MapTest {
 
+    private static PrintStream out = System.out;
     private static PrintStream err = System.err;
 
     private static Random generator = new Random();
@@ -51,15 +56,21 @@ public class MapTest {
         blah = File.createTempFile("blah", null);
         blah.deleteOnExit();
         initTestFile(blah);
-        err.println("Test file " + blah + " initialized");
-        testZero();
-        err.println("Zero size: OK");
-        testRead();
-        err.println("Read: OK");
-        testWrite();
-        err.println("Write: OK");
-        testHighOffset();
-        err.println("High offset: OK");
+        try {
+            out.println("Test file " + blah + " initialized");
+            testZero();
+            out.println("Zero size: OK");
+            testRead();
+            out.println("Read: OK");
+            testWrite();
+            out.println("Write: OK");
+            testHighOffset();
+            out.println("High offset: OK");
+            testExceptions();
+            out.println("Exceptions: OK");
+        } finally {
+            blah.delete();
+        }
     }
 
     /**
@@ -77,30 +88,25 @@ public class MapTest {
      * ability to index into a file of multiple pages is tested.
      */
     private static void initTestFile(File blah) throws Exception {
-        FileOutputStream fos = new FileOutputStream(blah);
-        BufferedWriter awriter
-            = new BufferedWriter(new OutputStreamWriter(fos, "8859_1"));
-
-        for(int i=0; i<4000; i++) {
-            String number = new Integer(i).toString();
-            for (int h=0; h<4-number.length(); h++)
-                awriter.write("0");
-            awriter.write(""+i);
-            awriter.newLine();
+        try (BufferedWriter writer = Files.newBufferedWriter(blah.toPath(), ISO_8859_1)) {
+            for (int i=0; i<4000; i++) {
+                String number = new Integer(i).toString();
+                for (int h=0; h<4-number.length(); h++)
+                    writer.write("0");
+                writer.write(""+i);
+                writer.newLine();
+            }
         }
-       awriter.flush();
-       awriter.close();
     }
 
     /**
      * Tests zero size file mapping
      */
     private static void testZero() throws Exception {
-        FileInputStream fis = new FileInputStream(blah);
-        FileChannel c = fis.getChannel();
-        MappedByteBuffer b = c.map(FileChannel.MapMode.READ_ONLY, 0, 0);
-        c.close();
-        fis.close();
+        try (FileInputStream fis = new FileInputStream(blah)) {
+            FileChannel fc = fis.getChannel();
+            MappedByteBuffer b = fc.map(MapMode.READ_ONLY, 0, 0);
+        }
     }
 
     /**
@@ -108,33 +114,32 @@ public class MapTest {
      * from the ByteBuffer gets the right line number
      */
     private static void testRead() throws Exception {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.setLength(4);
 
         for (int x=0; x<1000; x++) {
-            FileInputStream fis = new FileInputStream(blah);
-            FileChannel c = fis.getChannel();
+            try (FileInputStream fis = new FileInputStream(blah)) {
+                FileChannel fc = fis.getChannel();
 
-            long offset = generator.nextInt(10000);
-            long expectedResult = offset / CHARS_PER_LINE;
-            offset = expectedResult * CHARS_PER_LINE;
+                long offset = generator.nextInt(10000);
+                long expectedResult = offset / CHARS_PER_LINE;
+                offset = expectedResult * CHARS_PER_LINE;
 
-            MappedByteBuffer b = c.map(FileChannel.MapMode.READ_ONLY,
-                                       offset, 100);
+                MappedByteBuffer b = fc.map(MapMode.READ_ONLY,
+                                            offset, 100);
 
-            for (int i=0; i<4; i++) {
-                byte aByte = b.get(i);
-                sb.setCharAt(i, (char)aByte);
+                for (int i=0; i<4; i++) {
+                    byte aByte = b.get(i);
+                    sb.setCharAt(i, (char)aByte);
+                }
+
+                int result = Integer.parseInt(sb.toString());
+                if (result != expectedResult) {
+                    err.println("I expected "+expectedResult);
+                    err.println("I got "+result);
+                    throw new Exception("Read test failed");
+                }
             }
-
-            int result = Integer.parseInt(sb.toString());
-            if (result != expectedResult) {
-                err.println("I expected "+expectedResult);
-                err.println("I got "+result);
-                throw new Exception("Read test failed");
-            }
-            c.close();
-            fis.close();
         }
     }
 
@@ -143,46 +148,159 @@ public class MapTest {
      * written out to the file can be read back in
      */
     private static void testWrite() throws Exception {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.setLength(4);
 
         for (int x=0; x<1000; x++) {
-            RandomAccessFile raf = new RandomAccessFile(blah, "rw");
-            FileChannel c = raf.getChannel();
+            try (RandomAccessFile raf = new RandomAccessFile(blah, "rw")) {
+                FileChannel fc = raf.getChannel();
 
-            long offset = generator.nextInt(1000);
-            MappedByteBuffer b = c.map(FileChannel.MapMode.READ_WRITE,
-                                       offset, 100);
+                long offset = generator.nextInt(1000);
+                MappedByteBuffer b = fc.map(MapMode.READ_WRITE,
+                                            offset, 100);
 
-            for (int i=0; i<4; i++) {
-                b.put(i, (byte)('0' + i));
+                for (int i=0; i<4; i++) {
+                    b.put(i, (byte)('0' + i));
+                }
+
+                for (int i=0; i<4; i++) {
+                    byte aByte = b.get(i);
+                    sb.setCharAt(i, (char)aByte);
+                }
+                if (!sb.toString().equals("0123"))
+                    throw new Exception("Write test failed");
             }
-
-            for (int i=0; i<4; i++) {
-                byte aByte = b.get(i);
-                sb.setCharAt(i, (char)aByte);
-            }
-            if (!sb.toString().equals("0123"))
-                throw new Exception("Write test failed");
-            c.close();
-            raf.close();
         }
     }
 
     private static void testHighOffset() throws Exception {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.setLength(4);
 
         for (int x=0; x<1000; x++) {
-            RandomAccessFile raf = new RandomAccessFile(blah, "rw");
-            FileChannel fc = raf.getChannel();
-            long offset = 66000;
-            MappedByteBuffer b = fc.map(FileChannel.MapMode.READ_WRITE,
-                                        offset, 100);
-
-            fc.close();
-            raf.close();
+            try (RandomAccessFile raf = new RandomAccessFile(blah, "rw")) {
+                FileChannel fc = raf.getChannel();
+                long offset = 66000;
+                MappedByteBuffer b = fc.map(MapMode.READ_WRITE,
+                                            offset, 100);
+            }
         }
     }
 
+    /**
+     * Test exceptions specified by map method
+     */
+    private static void testExceptions() throws Exception {
+        // check exceptions when channel opened for read access
+        try (FileChannel fc = FileChannel.open(blah.toPath(), READ)) {
+            testExceptions(fc);
+
+            checkException(fc, MapMode.READ_WRITE, 0L, fc.size(),
+                           NonWritableChannelException.class);
+
+            checkException(fc, MapMode.READ_WRITE, -1L, fc.size(),
+                           NonWritableChannelException.class, IllegalArgumentException.class);
+
+            checkException(fc, MapMode.READ_WRITE, 0L, -1L,
+                           NonWritableChannelException.class, IllegalArgumentException.class);
+
+            checkException(fc, MapMode.PRIVATE, 0L, fc.size(),
+                           NonWritableChannelException.class);
+
+            checkException(fc, MapMode.PRIVATE, -1L, fc.size(),
+                           NonWritableChannelException.class, IllegalArgumentException.class);
+
+            checkException(fc, MapMode.PRIVATE, 0L, -1L,
+                           NonWritableChannelException.class, IllegalArgumentException.class);
+        }
+
+        // check exceptions when channel opened for write access
+        try (FileChannel fc = FileChannel.open(blah.toPath(), WRITE)) {
+            testExceptions(fc);
+
+            checkException(fc, MapMode.READ_ONLY, 0L, fc.size(),
+                           NonReadableChannelException.class);
+
+            checkException(fc, MapMode.READ_ONLY, -1L, fc.size(),
+                           NonReadableChannelException.class, IllegalArgumentException.class);
+
+            /*
+             * implementation/spec mismatch, these tests disabled for now
+             */
+            //checkException(fc, MapMode.READ_WRITE, 0L, fc.size(),
+            //               NonWritableChannelException.class);
+            //checkException(fc, MapMode.PRIVATE, 0L, fc.size(),
+            //               NonWritableChannelException.class);
+        }
+
+        // check exceptions when channel opened for read and write access
+        try (FileChannel fc = FileChannel.open(blah.toPath(), READ, WRITE)) {
+            testExceptions(fc);
+        }
+    }
+
+    private static void testExceptions(FileChannel fc) throws IOException {
+        checkException(fc, null, 0L, fc.size(),
+                       NullPointerException.class);
+
+        checkException(fc, MapMode.READ_ONLY, -1L, fc.size(),
+                       IllegalArgumentException.class);
+
+        checkException(fc, null, -1L, fc.size(),
+                       IllegalArgumentException.class, NullPointerException.class);
+
+        checkException(fc, MapMode.READ_ONLY, 0L, -1L,
+                       IllegalArgumentException.class);
+
+        checkException(fc, null, 0L, -1L,
+                       IllegalArgumentException.class, NullPointerException.class);
+
+        checkException(fc, MapMode.READ_ONLY, 0L, Integer.MAX_VALUE + 1L,
+                       IllegalArgumentException.class);
+
+        checkException(fc, null, 0L, Integer.MAX_VALUE + 1L,
+                       IllegalArgumentException.class, NullPointerException.class);
+
+        checkException(fc, MapMode.READ_ONLY, Long.MAX_VALUE, 1L,
+                       IllegalArgumentException.class);
+
+        checkException(fc, null, Long.MAX_VALUE, 1L,
+                       IllegalArgumentException.class, NullPointerException.class);
+
+    }
+
+    /**
+     * Checks that FileChannel map throws one of the expected exceptions
+     * when invoked with the given inputs.
+     */
+    private static void checkException(FileChannel fc,
+                                       MapMode mode,
+                                       long position,
+                                       long size,
+                                       Class<?>... expected)
+        throws IOException
+    {
+        Exception exc = null;
+        try {
+            fc.map(mode, position, size);
+        } catch (Exception actual) {
+            exc = actual;
+        }
+        if (exc != null) {
+            for (Class<?> clazz: expected) {
+                if (clazz.isInstance(exc)) {
+                    return;
+                }
+            }
+        }
+        System.err.println("Expected one of");
+        for (Class<?> clazz: expected) {
+            System.out.println(clazz);
+        }
+        if (exc == null) {
+            throw new RuntimeException("No expection thrown");
+        } else {
+            throw new RuntimeException("Unexpected exception thrown", exc);
+        }
+    }
 }

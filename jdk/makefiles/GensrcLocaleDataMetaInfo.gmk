@@ -68,8 +68,9 @@ define CaptureLocale
     ALL_US_LOCALES += $$($1_US_LOCALES)
     ALL_NON_US_LOCALES += $$($1_NON_US_LOCALES)
 
-    SED_ARGS+= -e 's/$$(HASH)$1_USLocales$$(HASH)/ $$($1_US_LOCALES)/g'
-    SED_ARGS+= -e 's/$$(HASH)$1_NonUSLocales$$(HASH)/ $$($1_NON_US_LOCALES)/g'
+    # Don't sed in a space if there are no locales.
+    SED_ARGS+= -e 's/$$(HASH)$1_USLocales$$(HASH)/$$(if $$($1_US_LOCALES),$$(SPACE)$$($1_US_LOCALES),)/g'
+    SED_ARGS+= -e 's/$$(HASH)$1_NonUSLocales$$(HASH)/$$(if $$($1_NON_US_LOCALES),$$(SPACE)$$($1_NON_US_LOCALES),)/g'
 endef
 
 #sun.text.resources.FormatData

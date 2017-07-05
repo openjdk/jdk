@@ -160,8 +160,6 @@ public class EncryptedData implements Cloneable {
         kvno = key.getKeyVersionNumber();
     }
     */
-
-    // currently destructive on cipher
     public byte[] decrypt(
                           EncryptionKey key, int usage)
         throws KdcErrException, KrbApErrException, KrbCryptoException {
@@ -175,7 +173,9 @@ public class EncryptedData implements Cloneable {
 
             EType etypeEngine = EType.getInstance(eType);
             plain = etypeEngine.decrypt(cipher, key.getBytes(), usage);
-            cipher = null;
+            // The service ticket will be used in S4U2proxy request. Therefore
+            // the raw ticket is still needed.
+            //cipher = null;
             return etypeEngine.decryptedData(plain);
         }
 

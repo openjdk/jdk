@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,9 @@ ABS_TEMP_DIR = $(ABS_OUTPUTDIR)/tmp
 dummy := $(shell $(MKDIR) -p $(TEMP_DIR))
 
 # The language version we want for this jdk build
-SOURCE_LANGUAGE_VERSION=7
+SOURCE_LANGUAGE_VERSION=8
 # The class version we want for this jdk build
-TARGET_CLASS_VERSION=7
+TARGET_CLASS_VERSION=8
 
 # The MESSAGE, WARNING and ERROR files are used to store sanity check and 
 # source check messages, warnings and errors. 

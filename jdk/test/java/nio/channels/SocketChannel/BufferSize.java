@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,10 @@
  */
 
 import java.nio.channels.*;
-import java.net.*;
 
 public class BufferSize {
 
-    static final int DAYTIME_PORT = 13;
-    static final String DAYTIME_HOST = TestUtil.HOST;
-
     public static void main(String[] args) throws Exception {
-        InetSocketAddress isa
-            = new InetSocketAddress(InetAddress.getByName(DAYTIME_HOST),
-                                    DAYTIME_PORT);
         ServerSocketChannel sc = ServerSocketChannel.open();
         try {
             sc.socket().setReceiveBufferSize(-1);

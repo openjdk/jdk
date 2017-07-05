@@ -1145,7 +1145,7 @@ public final class Main {
         X509CertInfo signerCertInfo = (X509CertInfo)signerCertImpl.get(
                 X509CertImpl.NAME + "." + X509CertImpl.INFO);
         X500Name issuer = (X500Name)signerCertInfo.get(X509CertInfo.SUBJECT + "." +
-                                           CertificateSubjectName.DN_NAME);
+                                           X509CertInfo.DN_NAME);
 
         Date firstDate = getStartDate(startDate);
         Date lastDate = new Date();
@@ -1170,7 +1170,7 @@ public final class Main {
         info.set(X509CertInfo.ALGORITHM_ID,
                     new CertificateAlgorithmId(
                         AlgorithmId.get(sigAlgName)));
-        info.set(X509CertInfo.ISSUER, new CertificateIssuerName(issuer));
+        info.set(X509CertInfo.ISSUER, issuer);
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         boolean canRead = false;
@@ -1193,8 +1193,8 @@ public final class Main {
         PKCS10 req = new PKCS10(rawReq);
 
         info.set(X509CertInfo.KEY, new CertificateX509Key(req.getSubjectPublicKeyInfo()));
-        info.set(X509CertInfo.SUBJECT, new CertificateSubjectName(
-                dname==null?req.getSubjectName():new X500Name(dname)));
+        info.set(X509CertInfo.SUBJECT,
+                    dname==null?req.getSubjectName():new X500Name(dname));
         CertificateExtensions reqex = null;
         Iterator<PKCS10Attribute> attrs = req.getAttributes().getAttributes().iterator();
         while (attrs.hasNext()) {
@@ -1234,7 +1234,7 @@ public final class Main {
         X509CertInfo signerCertInfo = (X509CertInfo)signerCertImpl.get(
                 X509CertImpl.NAME + "." + X509CertImpl.INFO);
         X500Name owner = (X500Name)signerCertInfo.get(X509CertInfo.SUBJECT + "." +
-                                           CertificateSubjectName.DN_NAME);
+                                                      X509CertInfo.DN_NAME);
 
         Date firstDate = getStartDate(startDate);
         Date lastDate = (Date) firstDate.clone();
@@ -2405,16 +2405,16 @@ public final class Main {
         if (dname == null) {
             // Get the owner name from the certificate
             owner = (X500Name)certInfo.get(X509CertInfo.SUBJECT + "." +
-                                           CertificateSubjectName.DN_NAME);
+                                           X509CertInfo.DN_NAME);
         } else {
             // Use the owner name specified at the command line
             owner = new X500Name(dname);
             certInfo.set(X509CertInfo.SUBJECT + "." +
-                         CertificateSubjectName.DN_NAME, owner);
+                         X509CertInfo.DN_NAME, owner);
         }
         // Make issuer same as owner (self-signed!)
         certInfo.set(X509CertInfo.ISSUER + "." +
-                     CertificateIssuerName.DN_NAME, owner);
+                     X509CertInfo.DN_NAME, owner);
 
         // The inner and outer signature algorithms have to match.
         // The way we achieve that is really ugly, but there seems to be no

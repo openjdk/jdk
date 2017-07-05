@@ -312,6 +312,9 @@ public class PAData {
                     }
                 }
                 break;
+            case Krb5.PA_FOR_USER:
+                sb.append("\t PA-FOR-USER\n");
+                break;
             default:
                 // Unknown Pre-auth type
                 break;
