@@ -25,6 +25,8 @@
 
 /**
  * Defines the foundational APIs of the Java SE Platform.
+ *
+ * @since 9
  */
 module java.base {
 
@@ -134,7 +136,7 @@ module java.base {
         jdk.jartool,
         jdk.jlink,
         jdk.scripting.nashorn,
-        jdk.vm.ci;
+        jdk.internal.vm.ci;
     exports jdk.internal.org.objectweb.asm.tree to
         jdk.jlink;
     exports jdk.internal.org.objectweb.asm.util to
@@ -173,7 +175,7 @@ module java.base {
         jdk.scripting.nashorn,
         jdk.scripting.nashorn.shell,
         jdk.unsupported,
-        jdk.vm.ci;
+        jdk.internal.vm.ci;
     exports jdk.internal.perf to
         java.desktop,
         java.management,
@@ -191,7 +193,7 @@ module java.base {
         jdk.unsupported;
     exports jdk.internal.vm.annotation to
         jdk.unsupported,
-        jdk.vm.ci;
+        jdk.internal.vm.ci;
     exports jdk.internal.util.jar to
         jdk.jartool,
         jdk.jdeps,
@@ -237,8 +239,7 @@ module java.base {
         java.management.rmi,
         java.rmi,
         java.sql.rowset,
-        java.xml,
-        java.xml.ws;
+        java.xml;
     exports sun.security.action to
         java.desktop,
         java.security.jgss;

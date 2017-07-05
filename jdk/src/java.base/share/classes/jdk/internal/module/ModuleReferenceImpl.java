@@ -163,7 +163,14 @@ public class ModuleReferenceImpl extends ModuleReference {
 
     @Override
     public String toString() {
-        return super.toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append("[module ");
+        sb.append(descriptor().name());
+        sb.append(", location=");
+        sb.append(location().orElseThrow(() -> new InternalError()));
+        if (isPatched()) sb.append(" (patched)");
+        sb.append("]");
+        return sb.toString();
     }
 
 }
