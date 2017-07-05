@@ -22,13 +22,28 @@
 
 /*
  * @test
- * @bug 8049429
+ * @bug 8049429 8172273
  * @modules java.management
  *          jdk.crypto.ec/sun.security.ec
  * @summary Test that all cipher suites work in all versions and all client
  *          authentication types. The way this is setup the server is stateless
  *          and all checking is done on the client side.
  * @compile CipherTestUtils.java JSSEClient.java JSSEServer.java
+ * @run main/othervm
+ *              -DSERVER_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2
+ *              -DCLIENT_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2
+ *              -DCIPHER=SSL_RSA_WITH_RC4_128_MD5
+ *          TestJSSE
+ * @run main/othervm
+ *              -DSERVER_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2
+ *              -DCLIENT_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2
+ *              -DCIPHER=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+ *          TestJSSE
+ * @run main/othervm
+ *              -DSERVER_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2
+ *              -DCLIENT_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2
+ *              -DCIPHER=TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+ *          TestJSSE
  * @run main/othervm
  *              -DSERVER_PROTOCOL=SSLv3
  *              -DCLIENT_PROTOCOL=SSLv3

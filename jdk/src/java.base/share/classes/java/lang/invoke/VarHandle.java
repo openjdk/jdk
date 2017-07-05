@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1786,10 +1786,6 @@ public abstract class VarHandle {
         AccessMode(final String methodName, AccessType at) {
             this.methodName = methodName;
             this.at = at;
-
-            // Assert that return type is correct
-            // Otherwise, when disabled avoid using reflection
-            assert at.returnType == getReturnType(methodName);
         }
 
         /**
@@ -1819,16 +1815,6 @@ public abstract class VarHandle {
             AccessMode am = methodNameToAccessMode.get(methodName);
             if (am != null) return am;
             throw new IllegalArgumentException("No AccessMode value for method name " + methodName);
-        }
-
-        private static Class<?> getReturnType(String name) {
-            try {
-                Method m = VarHandle.class.getMethod(name, Object[].class);
-                return m.getReturnType();
-            }
-            catch (Exception e) {
-                throw newInternalError(e);
-            }
         }
 
         @ForceInline
