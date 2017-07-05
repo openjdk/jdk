@@ -87,6 +87,15 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
 
   MemRegion cmr((HeapWord*)virtual_space()->low(),
                 (HeapWord*)virtual_space()->high());
+  if (ZapUnusedHeapArea) {
+    // Mangle newly committed space immediately rather than
+    // waiting for the initialization of the space even though
+    // mangling is related to spaces.  Doing it here eliminates
+    // the need to carry along information that a complete mangling
+    // (bottom to end) needs to be done.
+    SpaceMangler::mangle_region(cmr);
+  }
+
   Universe::heap()->barrier_set()->resize_covered_region(cmr);
 
   CardTableModRefBS* _ct = (CardTableModRefBS*)Universe::heap()->barrier_set();
@@ -112,7 +121,9 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
   if (_object_space == NULL)
     vm_exit_during_initialization("Could not allocate an old gen space");
 
-  object_space()->initialize(cmr, true);
+  object_space()->initialize(cmr,
+                             SpaceDecorator::Clear,
+                             SpaceDecorator::Mangle);
 
   _object_mark_sweep = new PSMarkSweepDecorator(_object_space, start_array(), MarkSweepDeadRatio);
 
@@ -204,10 +215,22 @@ HeapWord* PSOldGen::expand_and_cas_allocate(size_t word_size) {
 }
 
 void PSOldGen::expand(size_t bytes) {
+  if (bytes == 0) {
+    return;
+  }
   MutexLocker x(ExpandHeap_lock);
   const size_t alignment = virtual_space()->alignment();
   size_t aligned_bytes  = align_size_up(bytes, alignment);
   size_t aligned_expand_bytes = align_size_up(MinHeapDeltaBytes, alignment);
+  if (aligned_bytes == 0){
+    // The alignment caused the number of bytes to wrap.  An expand_by(0) will
+    // return true with the implication that and expansion was done when it
+    // was not.  A call to expand implies a best effort to expand by "bytes"
+    // but not a guarantee.  Align down to give a best effort.  This is likely
+    // the most that the generation can expand since it has some capacity to
+    // start with.
+    aligned_bytes = align_size_down(bytes, alignment);
+  }
 
   bool success = false;
   if (aligned_expand_bytes > aligned_bytes) {
@@ -220,8 +243,8 @@ void PSOldGen::expand(size_t bytes) {
     success = expand_to_reserved();
   }
 
-  if (GC_locker::is_active()) {
-    if (PrintGC && Verbose) {
+  if (PrintGC && Verbose) {
+    if (success && GC_locker::is_active()) {
       gclog_or_tty->print_cr("Garbage collection disabled, expanded heap instead");
     }
   }
@@ -230,8 +253,24 @@ void PSOldGen::expand(size_t bytes) {
 bool PSOldGen::expand_by(size_t bytes) {
   assert_lock_strong(ExpandHeap_lock);
   assert_locked_or_safepoint(Heap_lock);
+  if (bytes == 0) {
+    return true;  // That's what virtual_space()->expand_by(0) would return
+  }
   bool result = virtual_space()->expand_by(bytes);
   if (result) {
+    if (ZapUnusedHeapArea) {
+      // We need to mangle the newly expanded area. The memregion spans
+      // end -> new_end, we assume that top -> end is already mangled.
+      // Do the mangling before post_resize() is called because
+      // the space is available for allocation after post_resize();
+      HeapWord* const virtual_space_high = (HeapWord*) virtual_space()->high();
+      assert(object_space()->end() < virtual_space_high,
+        "Should be true before post_resize()");
+      MemRegion mangle_region(object_space()->end(), virtual_space_high);
+      // Note that the object space has not yet been updated to
+      // coincede with the new underlying virtual space.
+      SpaceMangler::mangle_region(mangle_region);
+    }
     post_resize();
     if (UsePerfData) {
       _space_counters->update_capacity();
@@ -348,16 +387,7 @@ void PSOldGen::post_resize() {
   start_array()->set_covered_region(new_memregion);
   Universe::heap()->barrier_set()->resize_covered_region(new_memregion);
 
-  // Did we expand?
   HeapWord* const virtual_space_high = (HeapWord*) virtual_space()->high();
-  if (object_space()->end() < virtual_space_high) {
-    // We need to mangle the newly expanded area. The memregion spans
-    // end -> new_end, we assume that top -> end is already mangled.
-    // This cannot be safely tested for, as allocation may be taking
-    // place.
-    MemRegion mangle_region(object_space()->end(), virtual_space_high);
-    object_space()->mangle_region(mangle_region);
-  }
 
   // ALWAYS do this last!!
   object_space()->set_end(virtual_space_high);
@@ -462,3 +492,10 @@ void PSOldGen::verify_object_start_array() {
   VerifyObjectStartArrayClosure check( this, &_start_array );
   object_iterate(&check);
 }
+
+#ifndef PRODUCT
+void PSOldGen::record_spaces_top() {
+  assert(ZapUnusedHeapArea, "Not mangling unused space");
+  object_space()->set_top_for_allocations();
+}
+#endif

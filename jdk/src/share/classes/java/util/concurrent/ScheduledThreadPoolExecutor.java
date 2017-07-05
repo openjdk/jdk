@@ -223,8 +223,7 @@ public class ScheduledThreadPoolExecutor
         }
 
         public long getDelay(TimeUnit unit) {
-            long d = unit.convert(time - now(), TimeUnit.NANOSECONDS);
-            return d;
+            return unit.convert(time - now(), TimeUnit.NANOSECONDS);
         }
 
         public int compareTo(Delayed other) {
@@ -264,7 +263,7 @@ public class ScheduledThreadPoolExecutor
             if (p > 0)
                 time += p;
             else
-                time = now() - p;
+                time = triggerTime(-p);
         }
 
         public boolean cancel(boolean mayInterruptIfRunning) {
@@ -473,6 +472,38 @@ public class ScheduledThreadPoolExecutor
     }
 
     /**
+     * Returns the trigger time of a delayed action.
+     */
+    private long triggerTime(long delay, TimeUnit unit) {
+        return triggerTime(unit.toNanos((delay < 0) ? 0 : delay));
+    }
+
+    /**
+     * Returns the trigger time of a delayed action.
+     */
+    long triggerTime(long delay) {
+        return now() +
+            ((delay < (Long.MAX_VALUE >> 1)) ? delay : overflowFree(delay));
+    }
+
+    /**
+     * Constrains the values of all delays in the queue to be within
+     * Long.MAX_VALUE of each other, to avoid overflow in compareTo.
+     * This may occur if a task is eligible to be dequeued, but has
+     * not yet been, while some other task is added with a delay of
+     * Long.MAX_VALUE.
+     */
+    private long overflowFree(long delay) {
+        Delayed head = (Delayed) super.getQueue().peek();
+        if (head != null) {
+            long headDelay = head.getDelay(TimeUnit.NANOSECONDS);
+            if (headDelay < 0 && (delay - headDelay < 0))
+                delay = Long.MAX_VALUE + headDelay;
+        }
+        return delay;
+    }
+
+    /**
      * @throws RejectedExecutionException {@inheritDoc}
      * @throws NullPointerException       {@inheritDoc}
      */
@@ -481,10 +512,9 @@ public class ScheduledThreadPoolExecutor
                                        TimeUnit unit) {
         if (command == null || unit == null)
             throw new NullPointerException();
-        if (delay < 0) delay = 0;
-        long triggerTime = now() + unit.toNanos(delay);
         RunnableScheduledFuture<?> t = decorateTask(command,
-            new ScheduledFutureTask<Void>(command, null, triggerTime));
+            new ScheduledFutureTask<Void>(command, null,
+                                          triggerTime(delay, unit)));
         delayedExecute(t);
         return t;
     }
@@ -498,10 +528,9 @@ public class ScheduledThreadPoolExecutor
                                            TimeUnit unit) {
         if (callable == null || unit == null)
             throw new NullPointerException();
-        if (delay < 0) delay = 0;
-        long triggerTime = now() + unit.toNanos(delay);
         RunnableScheduledFuture<V> t = decorateTask(callable,
-            new ScheduledFutureTask<V>(callable, triggerTime));
+            new ScheduledFutureTask<V>(callable,
+                                       triggerTime(delay, unit)));
         delayedExecute(t);
         return t;
     }
@@ -519,12 +548,10 @@ public class ScheduledThreadPoolExecutor
             throw new NullPointerException();
         if (period <= 0)
             throw new IllegalArgumentException();
-        if (initialDelay < 0) initialDelay = 0;
-        long triggerTime = now() + unit.toNanos(initialDelay);
         ScheduledFutureTask<Void> sft =
             new ScheduledFutureTask<Void>(command,
                                           null,
-                                          triggerTime,
+                                          triggerTime(initialDelay, unit),
                                           unit.toNanos(period));
         RunnableScheduledFuture<Void> t = decorateTask(command, sft);
         sft.outerTask = t;
@@ -545,12 +572,10 @@ public class ScheduledThreadPoolExecutor
             throw new NullPointerException();
         if (delay <= 0)
             throw new IllegalArgumentException();
-        if (initialDelay < 0) initialDelay = 0;
-        long triggerTime = now() + unit.toNanos(initialDelay);
         ScheduledFutureTask<Void> sft =
             new ScheduledFutureTask<Void>(command,
                                           null,
-                                          triggerTime,
+                                          triggerTime(initialDelay, unit),
                                           unit.toNanos(-delay));
         RunnableScheduledFuture<Void> t = decorateTask(command, sft);
         sft.outerTask = t;

@@ -25,10 +25,13 @@
 
 package sun.tools.jconsole.inspector;
 
-import javax.swing.*;
-import javax.swing.table.*;
-import java.awt.*;
-import java.io.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Font;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 
 public abstract class XTable extends JTable {
     static final int NAME_COLUMN = 0;
@@ -38,8 +41,9 @@ public abstract class XTable extends JTable {
 
     public XTable () {
         super();
-        TableSorter sorter;
-        setModel(sorter = new TableSorter());
+        @SuppressWarnings("serial")
+        final TableSorter sorter = new TableSorter();
+        setModel(sorter);
         sorter.addMouseListenerToHeaderInTable(this);
         setRowSelectionAllowed(false);
         setColumnSelectionAllowed(false);
@@ -55,6 +59,14 @@ public abstract class XTable extends JTable {
     }
 
     /**
+     * Called by TableSorter if a mouse event requests to sort the rows.
+     * @param column the column against which the rows are sorted
+     */
+    void sortRequested(int column) {
+        // This is a hook for subclasses
+    }
+
+    /**
      * This returns the select index as the table was at initialization
      */
     public int getSelectedIndex() {
@@ -67,7 +79,7 @@ public abstract class XTable extends JTable {
     public int convertRowToIndex(int row) {
         if (row == -1) return row;
         if (getModel() instanceof TableSorter) {
-            return (((TableSorter) getModel()).getInvertedIndex()[row]);
+            return ((TableSorter) getModel()).getIndexOfRow(row);
         } else {
             return row;
         }
@@ -97,6 +109,7 @@ public abstract class XTable extends JTable {
     //JTable re-implementation
 
     //attribute can be editable even if unavailable
+    @Override
     public boolean isCellEditable(int row, int col) {
         return ((isTableEditable() && isColumnEditable(col)
                  &&  isWritable(row)
@@ -118,6 +131,7 @@ public abstract class XTable extends JTable {
      * This method sets read write rows to be blue, and other rows to be their
      * default rendered colour.
      */
+    @Override
     public TableCellRenderer getCellRenderer(int row, int column) {
         DefaultTableCellRenderer tcr =
             (DefaultTableCellRenderer) super.getCellRenderer(row,column);
@@ -146,6 +160,7 @@ public abstract class XTable extends JTable {
         return tcr;
     }
 
+    @Override
     public Component prepareRenderer(TableCellRenderer renderer,
                                      int row, int column) {
         Component comp = super.prepareRenderer(renderer, row, column);

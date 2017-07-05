@@ -85,6 +85,7 @@ public class StringValueExp implements ValueExp   {
     /* There is no need for this method, because if a query is being
        evaluated a StringValueExp can only appear inside a QueryExp,
        and that QueryExp will itself have done setMBeanServer.  */
+    @Deprecated
     public void setMBeanServer(MBeanServer s)  { }
 
     /**

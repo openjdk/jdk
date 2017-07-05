@@ -30,14 +30,23 @@
 // Invariant: (ImmutableSpace +) bottom() <= top() <= end()
 // top() is inclusive and end() is exclusive.
 
+class MutableSpaceMangler;
+
 class MutableSpace: public ImmutableSpace {
   friend class VMStructs;
+
+  // Helper for mangling unused space in debug builds
+  MutableSpaceMangler* _mangler;
+
  protected:
   HeapWord* _top;
 
+  MutableSpaceMangler* mangler() { return _mangler; }
+
  public:
-  virtual ~MutableSpace()                  {}
-  MutableSpace()                           { _top = NULL;    }
+  virtual ~MutableSpace();
+  MutableSpace();
+
   // Accessors
   HeapWord* top() const                    { return _top;    }
   virtual void set_top(HeapWord* value)    { _top = value;   }
@@ -52,21 +61,30 @@ class MutableSpace: public ImmutableSpace {
   MemRegion used_region() { return MemRegion(bottom(), top()); }
 
   // Initialization
-  virtual void initialize(MemRegion mr, bool clear_space);
-  virtual void clear();
+  virtual void initialize(MemRegion mr,
+                          bool clear_space,
+                          bool mangle_space);
+  virtual void clear(bool mangle_space);
+  // Does the usual initialization but optionally resets top to bottom.
+#if 0  // MANGLE_SPACE
+  void initialize(MemRegion mr, bool clear_space, bool reset_top);
+#endif
   virtual void update() { }
   virtual void accumulate_statistics() { }
 
-  // Overwrites the unused portion of this space. Note that some collectors
-  // may use this "scratch" space during collections.
-  virtual void mangle_unused_area() {
-    mangle_region(MemRegion(_top, _end));
-  }
+  // Methods used in mangling.  See descriptions under SpaceMangler.
+  virtual void mangle_unused_area() PRODUCT_RETURN;
+  virtual void mangle_unused_area_complete() PRODUCT_RETURN;
+  virtual void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
+  virtual void check_mangled_unused_area_complete() PRODUCT_RETURN;
+  virtual void set_top_for_allocations(HeapWord* v) PRODUCT_RETURN;
+
+  // Used to save the space's current top for later use during mangling.
+  virtual void set_top_for_allocations() PRODUCT_RETURN;
+
   virtual void ensure_parsability() { }
 
-  void mangle_region(MemRegion mr) {
-    debug_only(Copy::fill_to_words(mr.start(), mr.word_size(), badHeapWord));
-  }
+  virtual void mangle_region(MemRegion mr) PRODUCT_RETURN;
 
   // Boolean querries.
   bool is_empty() const              { return used_in_words() == 0; }

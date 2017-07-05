@@ -266,45 +266,51 @@ public class PermStat extends Tool {
       out.println();
    }
 
+   private static long objectSize(Oop oop) {
+      return oop == null ? 0L : oop.getObjectSize();
+   }
+
+   // Don't count the shared empty arrays
+   private static long arraySize(Array arr) {
+     return arr.getLength() != 0L ? arr.getObjectSize() : 0L;
+   }
+
    private long computeSize(InstanceKlass k) {
       long size = 0L;
-      // InstanceKlass object size
+      // the InstanceKlass object itself
       size += k.getObjectSize();
 
-      // add ConstantPool size
-      size += k.getConstants().getObjectSize();
+      // Constant pool
+      ConstantPool cp = k.getConstants();
+      size += cp.getObjectSize();
+      size += objectSize(cp.getCache());
+      size += objectSize(cp.getTags());
 
-      // add ConstantPoolCache, if any
-      ConstantPoolCache cpCache = k.getConstants().getCache();
-      if (cpCache != null) {
-         size += cpCache.getObjectSize();
-      }
+      // Interfaces
+      size += arraySize(k.getLocalInterfaces());
+      size += arraySize(k.getTransitiveInterfaces());
 
-      // add interfaces size
-      ObjArray interfaces = k.getLocalInterfaces();
-      size +=  (interfaces.getLength() != 0L)? interfaces.getObjectSize() : 0L;
-      ObjArray transitiveInterfaces = k.getTransitiveInterfaces();
-      size += (transitiveInterfaces.getLength() != 0L)? transitiveInterfaces.getObjectSize() : 0L;
+      // Inner classes
+      size += objectSize(k.getInnerClasses());
 
-      // add inner classes size
-      TypeArray innerClasses = k.getInnerClasses();
-      size += innerClasses.getObjectSize();
+      // Fields
+      size += objectSize(k.getFields());
 
-      // add fields size
-      size += k.getFields().getObjectSize();
-
-      // add methods size
+      // Methods
       ObjArray methods = k.getMethods();
-      size += (methods.getLength() != 0L)? methods.getObjectSize() : 0L;
-      TypeArray methodOrdering = k.getMethodOrdering();
-      size += (methodOrdering.getLength() != 0L)? methodOrdering.getObjectSize() : 0;
-
-      // add each method's size
-      int numMethods = (int) methods.getLength();
-      for (int i = 0; i < numMethods; i++) {
-         Method m = (Method) methods.getObjAt(i);
-         size += m.getObjectSize();
+      int nmethods = (int) methods.getLength();
+      if (nmethods != 0L) {
+         size += methods.getObjectSize();
+         for (int i = 0; i < nmethods; ++i) {
+            Method m = (Method) methods.getObjAt(i);
+            size += m.getObjectSize();
+            size += objectSize(m.getConstMethod());
+         }
       }
+
+      // MethodOrdering - an int array that records the original
+      // ordering of methods in the class file
+      size += arraySize(k.getMethodOrdering());
 
       return size;
    }

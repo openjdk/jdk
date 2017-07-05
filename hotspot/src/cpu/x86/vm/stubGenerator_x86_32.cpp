@@ -779,9 +779,9 @@ class StubGenerator: public StubCodeGenerator {
           __ shrl(end,   CardTableModRefBS::card_shift);
           __ subl(end, start); // end --> count
         __ BIND(L_loop);
-          ExternalAddress base((address)ct->byte_map_base);
-          Address index(start, count, Address::times_1, 0);
-          __ movbyte(ArrayAddress(base, index), 0);
+          intptr_t disp = (intptr_t) ct->byte_map_base;
+          Address cardtable(start, count, Address::times_1, disp);
+          __ movb(cardtable, 0);
           __ decrement(count);
           __ jcc(Assembler::greaterEqual, L_loop);
         }

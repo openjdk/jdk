@@ -376,6 +376,9 @@ class Generation: public CHeapObj {
   // The default is to do nothing.
   virtual void gc_epilogue(bool full) {};
 
+  // Save the high water marks for the used space in a generation.
+  virtual void record_spaces_top() {};
+
   // Some generations may need to be "fixed-up" after some allocation
   // activity to make them parsable again. The default is to do nothing.
   virtual void ensure_parsability() {};
@@ -475,6 +478,10 @@ class Generation: public CHeapObj {
   // augmented list.  The default is to offer no space.
   virtual void contribute_scratch(ScratchBlock*& list, Generation* requestor,
                                   size_t max_alloc_words) {}
+
+  // Give each generation an opportunity to do clean up for any
+  // contributed scratch.
+  virtual void reset_scratch() {};
 
   // When an older generation has been collected, and perhaps resized,
   // this method will be invoked on all younger generations (from older to
@@ -599,11 +606,21 @@ class CardGeneration: public Generation {
 
  public:
 
+  // Attempt to expand the generation by "bytes".  Expand by at a
+  // minimum "expand_bytes".  Return true if some amount (not
+  // necessarily the full "bytes") was done.
+  virtual bool expand(size_t bytes, size_t expand_bytes);
+
   virtual void clear_remembered_set();
 
   virtual void invalidate_remembered_set();
 
   virtual void prepare_for_verify();
+
+  // Grow generation with specified size (returns false if unable to grow)
+  virtual bool grow_by(size_t bytes) = 0;
+  // Grow generation to reserved size.
+  virtual bool grow_to_reserved() = 0;
 };
 
 // OneContigSpaceCardGeneration models a heap of old objects contained in a single
@@ -624,14 +641,14 @@ class OneContigSpaceCardGeneration: public CardGeneration {
                                       // and after last GC.
 
   // Grow generation with specified size (returns false if unable to grow)
-  bool grow_by(size_t bytes);
+  virtual bool grow_by(size_t bytes);
   // Grow generation to reserved size.
-  bool grow_to_reserved();
+  virtual bool grow_to_reserved();
   // Shrink generation with specified size (returns false if unable to shrink)
   void shrink_by(size_t bytes);
 
   // Allocation failure
-  void expand(size_t bytes, size_t expand_bytes);
+  virtual bool expand(size_t bytes, size_t expand_bytes);
   void shrink(size_t bytes);
 
   // Accessing spaces
@@ -698,6 +715,8 @@ class OneContigSpaceCardGeneration: public CardGeneration {
   virtual void prepare_for_verify();
 
   virtual void gc_epilogue(bool full);
+
+  virtual void record_spaces_top();
 
   virtual void verify(bool allow_dirty);
   virtual void print_on(outputStream* st) const;
