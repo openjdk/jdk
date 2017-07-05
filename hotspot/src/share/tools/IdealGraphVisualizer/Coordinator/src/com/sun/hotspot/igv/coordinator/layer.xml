@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
+<filesystem>
+    <attr name="Actions\Edit\com-sun-hotspot-igv-bytecodes-SelectBytecodesAction.instance\position" intvalue="200"/>
+    <attr name="Actions\Edit\org-netbeans-core-ui-sysopen-SystemOpenAction.instance\position" intvalue="100"/>
+    <attr name="Actions\Edit\org-openide-actions-CopyAction.instance\position" intvalue="1300"/>
+    <attr name="Actions\Edit\org-openide-actions-CutAction.instance\position" intvalue="1400"/>
+    <attr name="Actions\Edit\org-openide-actions-DeleteAction.instance\position" intvalue="1500"/>
+    <attr name="Actions\Edit\org-openide-actions-FindAction.instance\position" intvalue="1600"/>
+    <attr name="Actions\Edit\org-openide-actions-GotoAction.instance\position" intvalue="1700"/>
+    <attr name="Actions\Edit\org-openide-actions-PasteAction.instance\position" intvalue="1800"/>
+    <attr name="Actions\Edit\org-openide-actions-RedoAction.instance\position" intvalue="1900"/>
+    <attr name="Actions\Edit\org-openide-actions-ReplaceAction.instance\position" intvalue="2000"/>
+    <attr name="Actions\Edit\org-openide-actions-UndoAction.instance\position" intvalue="2100"/>
+
+    <folder name="Actions">
+        <folder name="File">
+            <file name="com-sun-hotspot-igv-coordinator-actions-SaveAsAction.instance">
+                <attr name="position" intvalue="700"/>
+            </file>
+            <file name="com-sun-hotspot-igv-coordinator-actions-SaveAllAction.instance">
+                <attr name="position" intvalue="800"/>
+            </file>
+            <file name="com-sun-hotspot-igv-coordinator-actions-ImportAction.instance">
+                <attr name="position" intvalue="1000"/>
+            </file>
+        </folder>
+        <folder name="Edit">
+
+            <file name="com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance">
+                <attr name="position" intvalue="1200"/>
+            </file>
+        </folder>
+        <folder name="Window">
+            <file name="com-sun-hotspot-igv-coordinator-actions-OutlineAction.instance"/>
+        </folder>
+    </folder>
+    <folder name="Menu">
+        <folder name="File">
+            <file name="com-sun-hotspot-igv-coordinator-actions-ImportAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-ImportAction.instance"/>
+                <attr name="position" intvalue="100"/>
+            </file>
+            <file name="MySeparator2.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+                <attr name="position" intvalue="300"/>
+            </file>
+            <file name="com-sun-hotspot-igv-coordinator-actions-SaveAsAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-SaveAsAction.instance"/>
+                <attr name="position" intvalue="300"/>
+            </file>
+            <file name="com-sun-hotspot-igv-coordinator-actions-SaveAllAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-SaveAllAction.instance"/>
+                <attr name="position" intvalue="400"/>
+            </file>
+            <file name="MySeparator3.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+                <attr name="position" intvalue="500"/>
+            </file>
+
+            <file name="org-netbeans-modules-openfile-OpenFileAction.instance_hidden"/>
+            <file name="org-openide-actions-PageSetupAction.instance_hidden"/>
+            <file name="org-openide-actions-PrintAction.instance_hidden"/>
+            <file name="org-openide-actions-SaveAction.instance_hidden"/>
+            <file name="org-openide-actions-SaveAllAction.instance_hidden"/>
+            <file name="org-openide-actions-SaveAsAction.shadow_hidden"/>
+        </folder>
+        <folder name="Edit">
+            <file name="com-sun-hotspot-igv-coordinator-actions-SaveFilterSettingsAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/com-sun-hotspot-igv-coordinator-actions-SaveFilterSettingsAction.instance"/>
+            </file>
+            <file name="com-sun-hotspot-igv-coordinator-actions-RemoveAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
+            </file>
+            <file name="org-netbeans-core-actions-JumpNextAction.shadow_hidden"/>
+            <file name="org-netbeans-core-actions-JumpPrevAction.shadow_hidden"/>
+            <file name="org-openide-actions-CutAction.instance_hidden"/>
+            <file name="org-openide-actions-CopyAction.instance_hidden"/>
+            <file name="org-openide-actions-PasteAction.instance_hidden"/>
+            <file name="org-openide-actions-DeleteAction.instance_hidden"/>
+            <file name="org-openide-actions-FindAction.instance_hidden"/>
+            <file name="org-openide-actions-ReplaceAction.instance_hidden"/>
+            <file name="org-openide-actions-JumpNextAction.shadow_hidden"/>
+            <file name="org-openide-actions-JumpPrevAction.shadow_hidden"/>
+        </folder>
+        <file name="GoTo_hidden"/>
+        <folder name="View">
+            <file name="Separator1.instance_hidden"/>
+            <file name="Separator2.instance_hidden"/>
+            <file name="org-netbeans-core-actions-HTMLViewAction.instance_hidden"/>
+            <file name="org-netbeans-core-actions-LogAction.instance_hidden"/>
+            <file name="org-netbeans-core-windows-actions-ToolbarsListAction.instance_hidden"/>
+        </folder>
+        <folder name="Window">
+            <file name="OutlineAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Window/com-sun-hotspot-igv-coordinator-actions-OutlineAction.instance"/>
+            </file>
+        </folder>
+    </folder>
+    <folder name="Toolbars">
+        <file name="Standard.xml" url="StandardConfiguration.xml"/>
+    </folder>
+    <folder name="Windows2">
+        <folder name="Components">
+            <file name="OutlineTopComponent.settings" url="OutlineTopComponentSettings.xml"/>
+        </folder>
+        <folder name="Modes">
+            <file name="customLeft.wsmode" url="customLeftWsmode.xml"/>
+            <folder name="customLeft">
+                <file name="OutlineTopComponent.wstcref" url="OutlineTopComponentWstcref.xml"/>
+            </folder>
+        </folder>
+    </folder>
+</filesystem>

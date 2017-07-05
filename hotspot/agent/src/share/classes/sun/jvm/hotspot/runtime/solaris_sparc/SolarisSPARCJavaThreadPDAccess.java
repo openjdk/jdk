@@ -121,6 +121,13 @@ public class SolarisSPARCJavaThreadPDAccess implements JavaThreadPDAccess {
   }
 
   public Frame getCurrentFrameGuess(JavaThread thread, Address addr) {
+
+    // If java stack is walkable then both last_Java_sp and last_Java_pc are
+    // non null and we can start stack walk from this frame.
+    if (thread.getLastJavaSP() != null && thread.getLastJavaPC() != null) {
+      return new SPARCFrame(SPARCFrame.biasSP(thread.getLastJavaSP()), thread.getLastJavaPC());
+    }
+
     ThreadProxy t = getThreadProxy(addr);
     SPARCThreadContext context = (SPARCThreadContext) t.getContext();
     // For now, let's see what happens if we do a similar thing to

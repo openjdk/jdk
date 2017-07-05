@@ -87,12 +87,13 @@ public class PStack extends Tool {
                while (f != null) {
                   ClosestSymbol sym = f.closestSymbolToPC();
                   Address pc = f.pc();
+                  out.print(pc + "\t");
                   if (sym != null) {
                      String name = sym.getName();
                      if (cdbgCanDemangle) {
                         name = cdbg.demangle(name);
                      }
-                     out.print(pc + "\t" + name);
+                     out.print(name);
                      long diff = sym.getOffset();
                      if (diff != 0L) {
                         out.print(" + 0x" + Long.toHexString(diff));
@@ -120,7 +121,6 @@ public class PStack extends Tool {
                            // look for known code blobs
                            CodeCache c = VM.getVM().getCodeCache();
                            if (c.contains(pc)) {
-                              out.print(pc + "\t");
                               CodeBlob cb = c.findBlobUnsafe(pc);
                               if (cb.isNMethod()) {
                                  names = getJavaNames(th, f.localVariableBase());
@@ -144,18 +144,18 @@ public class PStack extends Tool {
                                  out.println("<Unknown code blob>");
                               }
                            } else {
-                              printUnknown(out,pc);
+                              printUnknown(out);
                            }
                         }
                         // print java frames, if any
                         if (names != null && names.length != 0) {
                            // print java frame(s)
                            for (int i = 0; i < names.length; i++) {
-                               out.println(pc + "\t" + names[i]);
+                               out.println(names[i]);
                            }
                         }
                      } else {
-                        printUnknown(out,pc);
+                        printUnknown(out);
                      }
                   }
                   f = f.sender();
@@ -220,8 +220,8 @@ public class PStack extends Tool {
       }
    }
 
-   private void printUnknown(PrintStream out, Address pc) {
-      out.println(pc + "\t????????");
+   private void printUnknown(PrintStream out) {
+      out.println("\t????????");
    }
 
    private String[] getJavaNames(ThreadProxy th, Address fp) {

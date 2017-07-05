@@ -208,7 +208,9 @@ void report_vm_out_of_memory(const char* file_name, int line_no, size_t size, co
     Thread* thread = ThreadLocalStorage::get_thread_slow();
     VMError(thread, size, message, file_name, line_no).report_and_die();
   }
-  vm_abort();
+
+  // Dump core and abort
+  vm_abort(true);
 }
 
 void report_vm_out_of_memory_vararg(const char* file_name, int line_no, size_t size, const char* format, ...) {

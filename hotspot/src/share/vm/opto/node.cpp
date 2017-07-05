@@ -1387,7 +1387,7 @@ static void find_recur( Node* &result, Node *n, int idx, bool only_ctrl,
   }
 #ifdef ASSERT
   // Search along debug_orig edges last:
-  for (Node* orig = n->debug_orig(); orig != NULL; orig = orig->debug_orig()) {
+  for (Node* orig = n->debug_orig(); orig != NULL && n != orig; orig = orig->debug_orig()) {
     if (NotANode(orig))  break;
     find_recur( result, orig, idx, only_ctrl, old_space, new_space );
   }
