@@ -305,7 +305,7 @@ public class ScriptFunctionImpl extends ScriptFunction {
         final ScriptFunction typeErrorThrower = global.getTypeErrorThrower();
         if (findProperty("arguments", true) != null) {
             initUserAccessors("arguments", Property.NOT_CONFIGURABLE | Property.NOT_ENUMERABLE, typeErrorThrower, typeErrorThrower);
-       }
+        }
         if (findProperty("caller", true) != null) {
             initUserAccessors("caller", Property.NOT_CONFIGURABLE | Property.NOT_ENUMERABLE, typeErrorThrower, typeErrorThrower);
        }

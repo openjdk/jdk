@@ -640,3 +640,41 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   AC_SUBST(ENABLE_DEBUG_SYMBOLS)
   AC_SUBST(ZIP_DEBUGINFO_FILES)
 ])
+
+################################################################################
+#
+# Gcov coverage data for hotspot
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
+[
+  AC_ARG_ENABLE(native-coverage, [AS_HELP_STRING([--enable-native-coverage],
+      [enable native compilation with code coverage data@<:@disabled@:>@])])
+  GCOV_ENABLED="false"
+  if test "x$enable_native_coverage" = "xyes"; then
+    if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+      AC_MSG_CHECKING([if native coverage is enabled])
+      AC_MSG_RESULT([yes])
+      GCOV_CFLAGS="-fprofile-arcs -ftest-coverage -fno-inline"
+      GCOV_LDFLAGS="-fprofile-arcs"
+      LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $GCOV_CFLAGS"
+      LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $GCOV_CFLAGS"
+      LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $GCOV_LDFLAGS"
+      CFLAGS_JDKLIB="$CFLAGS_JDKLIB $GCOV_CFLAGS"
+      CFLAGS_JDKEXE="$CFLAGS_JDKEXE $GCOV_CFLAGS"
+      CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $GCOV_CFLAGS"
+      CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $GCOV_CFLAGS"
+      LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $GCOV_LDFLAGS"
+      LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $GCOV_LDFLAGS"
+      GCOV_ENABLED="true"
+    else
+      AC_MSG_ERROR([--enable-native-coverage only works with toolchain type gcc])
+    fi
+  elif test "x$enable_native_coverage" = "xno"; then
+    AC_MSG_CHECKING([if native coverage is enabled])
+    AC_MSG_RESULT([no])
+  elif test "x$enable_native_coverage" != "x"; then
+    AC_MSG_ERROR([--enable-native-coverage can only be assigned "yes" or "no"])
+  fi
+
+  AC_SUBST(GCOV_ENABLED)
+])

@@ -37,15 +37,8 @@
 #   RUN_IIOP:=Set to run rmic with -iiop
 #   RUN_IIOP_STDPKG:=Set to run rmic with -iiop -standardPackage
 #   KEEP_GENERATED:=Set to keep generated sources around
-define SetupRMICompilation
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupRMICompilation, please update RMICompilation.gmk))
-  $(call EvalDebugWrapper,$(strip $1),$(call SetupRMICompilationInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15)))
-endef
-
-define SetupRMICompilationInner
-  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
-  $(call LogSetupMacroEntry,SetupRMICompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupRMICompilation, please update RMICompilation.gmk))
+SetupRMICompilation = $(NamedParamsMacroTemplate)
+define SetupRMICompilationBody
 
   $1_DEP_FILE := $$($1_STUB_CLASSES_DIR)/_the.$1_rmic.generated
 

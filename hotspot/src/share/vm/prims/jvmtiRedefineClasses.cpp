@@ -782,9 +782,13 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           Method* idnum_owner = scratch_class->method_with_idnum(old_num);
           if (idnum_owner != NULL) {
             // There is already a method assigned this idnum -- switch them
+            // Take current and original idnum from the new_method
             idnum_owner->set_method_idnum(new_num);
+            idnum_owner->set_orig_method_idnum(k_new_method->orig_method_idnum());
           }
+          // Take current and original idnum from the old_method
           k_new_method->set_method_idnum(old_num);
+          k_new_method->set_orig_method_idnum(k_old_method->orig_method_idnum());
           if (thread->has_pending_exception()) {
             return JVMTI_ERROR_OUT_OF_MEMORY;
           }
@@ -817,9 +821,12 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
         Method* idnum_owner = scratch_class->method_with_idnum(num);
         if (idnum_owner != NULL) {
           // There is already a method assigned this idnum -- switch them
+          // Take current and original idnum from the new_method
           idnum_owner->set_method_idnum(new_num);
+          idnum_owner->set_orig_method_idnum(k_new_method->orig_method_idnum());
         }
         k_new_method->set_method_idnum(num);
+        k_new_method->set_orig_method_idnum(num);
         if (thread->has_pending_exception()) {
           return JVMTI_ERROR_OUT_OF_MEMORY;
         }
@@ -3327,6 +3334,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
   // This is a very busy routine. We don't want too much tracing
   // printed out.
   bool trace_name_printed = false;
+  InstanceKlass *the_class = InstanceKlass::cast(_the_class_oop);
 
   // Very noisy: only enable this call if you are trying to determine
   // that a specific class gets found by this routine.
@@ -3338,10 +3346,8 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
   // If the class being redefined is java.lang.Object, we need to fix all
   // array class vtables also
   if (k->oop_is_array() && _the_class_oop == SystemDictionary::Object_klass()) {
-    k->vtable()->adjust_method_entries(_matching_old_methods,
-                                       _matching_new_methods,
-                                       _matching_methods_length,
-                                       &trace_name_printed);
+    k->vtable()->adjust_method_entries(the_class, &trace_name_printed);
+
   } else if (k->oop_is_instance()) {
     HandleMark hm(_thread);
     InstanceKlass *ik = InstanceKlass::cast(k);
@@ -3383,14 +3389,9 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
         || ik->is_subtype_of(_the_class_oop))) {
       // ik->vtable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
-      ik->vtable()->adjust_method_entries(_matching_old_methods,
-                                          _matching_new_methods,
-                                          _matching_methods_length,
-                                          &trace_name_printed);
-      ik->adjust_default_methods(_matching_old_methods,
-                                 _matching_new_methods,
-                                 _matching_methods_length,
-                                 &trace_name_printed);
+
+      ik->vtable()->adjust_method_entries(the_class, &trace_name_printed);
+      ik->adjust_default_methods(the_class, &trace_name_printed);
     }
 
     // If the current class has an itable and we are either redefining an
@@ -3405,10 +3406,8 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
         || ik->is_subclass_of(_the_class_oop))) {
       // ik->itable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
-      ik->itable()->adjust_method_entries(_matching_old_methods,
-                                          _matching_new_methods,
-                                          _matching_methods_length,
-                                          &trace_name_printed);
+
+      ik->itable()->adjust_method_entries(the_class, &trace_name_printed);
     }
 
     // The constant pools in other classes (other_cp) can refer to
@@ -3432,10 +3431,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
       other_cp = constantPoolHandle(ik->constants());
       cp_cache = other_cp->cache();
       if (cp_cache != NULL) {
-        cp_cache->adjust_method_entries(_matching_old_methods,
-                                        _matching_new_methods,
-                                        _matching_methods_length,
-                                        &trace_name_printed);
+        cp_cache->adjust_method_entries(the_class, &trace_name_printed);
       }
     }
 
@@ -3578,6 +3574,7 @@ int VM_RedefineClasses::check_methods_and_mark_as_obsolete() {
 
       // obsolete methods need a unique idnum so they become new entries in
       // the jmethodID cache in InstanceKlass
+      assert(old_method->method_idnum() == new_method->method_idnum(), "must match");
       u2 num = InstanceKlass::cast(_the_class_oop)->next_method_idnum();
       if (num != ConstMethod::UNSET_IDNUM) {
         old_method->set_method_idnum(num);

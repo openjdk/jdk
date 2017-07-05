@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(BUILD_LIBMLIB_CFLAGS), \
+    DISABLED_WARNINGS_gcc := parentheses, \
+    DISABLED_WARNINGS_clang := parentheses, \
+    DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     MAPFILE := $(BUILD_LIBMLIB_IMAGE_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -127,6 +130,7 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
       CFLAGS := -xarch=sparcvis \
           $(LIBMLIB_IMAGE_V_CFLAGS) \
           $(CFLAGS_JDKLIB), \
+      DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
       MAPFILE := $(BUILD_LIBMLIB_IMAGE_MAPFILE), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(BUILD_LIBMLIB_LDLIBS) -ljava -ljvm \
@@ -174,9 +178,6 @@ LIBAWT_CFLAGS += -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
     #
 
 LIBAWT_CFLAGS += -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES $(X_CFLAGS)
-
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-endif
 
 ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
   LIBAWT_CFLAGS += -DMLIB_ADD_SUFF
@@ -253,6 +254,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
     LANG := $(LIBAWT_LANG), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
+    DISABLED_WARNINGS_gcc := sign-compare unused-result maybe-uninitialized \
+        format-nonliteral parentheses, \
+    DISABLED_WARNINGS_clang := logical-op-parentheses, \
+    DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE, \
+    DISABLED_WARNINGS_microsoft := 4297 4244 4267, \
     ASFLAGS := $(LIBAWT_ASFLAGS), \
     MAPFILE := $(LIBAWT_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -361,6 +367,11 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_XAWT_CFLAGS) \
             $(X_CFLAGS), \
+        DISABLED_WARNINGS_gcc := type-limits pointer-to-int-cast \
+            deprecated-declarations unused-result maybe-uninitialized format \
+            format-security int-to-pointer-cast parentheses, \
+        DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE \
+            E_ASSIGNMENT_TYPE_MISMATCH E_NON_CONST_INIT, \
         MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libawt_xawt/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(X_LIBS) $(LIBAWT_XAWT_LDFLAGS) \
@@ -417,6 +428,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS, \
         $(LCMS_CFLAGS), \
     CFLAGS_solaris := -xc99=no_lib, \
     CFLAGS_windows := -DCMS_IS_WINDOWS_, \
+    DISABLED_WARNINGS_gcc := format-nonliteral, \
+    DISABLED_WARNINGS_clang := tautological-compare, \
+    DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/liblcms/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -495,6 +509,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVAJPEG, \
     CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJAVAJPEG_SRC)) \
         $(LIBJAVA_HEADER_FLAGS) \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop, \
+    DISABLED_WARNINGS_gcc := clobbered parentheses, \
+    DISABLED_WARNINGS_clang := logical-op-parentheses, \
+    DISABLED_WARNINGS_microsoft := 4267, \
     MAPFILE := $(BUILD_LIBJAVAJPEG_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LIBJPEG_LIBS) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -563,6 +580,9 @@ ifeq ($(BUILD_HEADLESS), true)
             $(CUPS_CFLAGS) \
             $(X_CFLAGS) \
             $(LIBAWT_HEADLESS_CFLAGS), \
+        DISABLED_WARNINGS_gcc := maybe-uninitialized int-to-pointer-cast, \
+        DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE \
+            E_EMPTY_TRANSLATION_UNIT, \
         MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libawt_headless/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -644,6 +664,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBFONTMANAGER_CFLAGS), \
     OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \
     CFLAGS_windows = -DCC_NOEX, \
+    DISABLED_WARNINGS_gcc := sign-compare int-to-pointer-cast reorder \
+        delete-non-virtual-dtor, \
+    DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types, \
+    DISABLED_WARNINGS_solstudio := truncwarn, \
+    DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090, \
     MAPFILE := $(BUILD_LIBFONTMANAGER_MAPFILE), \
     LDFLAGS := $(subst -Xlinker -z -Xlinker defs,,$(LDFLAGS_JDKLIB)) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -876,6 +901,10 @@ ifndef BUILD_HEADLESS_ONLY
       OPTIMIZATION := LOW, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB) \
                 $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS), \
+      DISABLED_WARNINGS_gcc := type-limits unused-result maybe-uninitialized, \
+      DISABLED_WARNINGS_clang := incompatible-pointer-types, \
+      DISABLED_WARNINGS_solstudio := E_NEWLINE_NOT_LAST, \
+      DISABLED_WARNINGS_microsoft := 4244 4267, \
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsplashscreen/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -946,6 +975,9 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           $(X_CFLAGS) \
           $(X_LIBS) \
           $(LIBAWT_LWAWT_CFLAGS), \
+      DISABLED_WARNINGS_clang := incomplete-implementation \
+          deprecated-declarations objc-method-access bitwise-op-parentheses \
+          incompatible-pointer-types parentheses-equality extra-tokens, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
           -L$(INSTALL_LIBRARIES_HERE), \

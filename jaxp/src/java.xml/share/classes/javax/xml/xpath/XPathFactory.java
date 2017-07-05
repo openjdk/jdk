@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package javax.xml.xpath;
 
 /**
- * <p>An <code>XPathFactory</code> instance can be used to create
+ * <p>An {@code XPathFactory} instance can be used to create
  * {@link javax.xml.xpath.XPath} objects.</p>
  *
  *<p>See {@link #newInstance(String uri)} for lookup mechanism.</p>
@@ -68,13 +68,13 @@ public abstract class XPathFactory {
     /**
      * <p>Protected constructor as {@link #newInstance()} or {@link #newInstance(String uri)}
      * or {@link #newInstance(String uri, String factoryClassName, ClassLoader classLoader)}
-     * should be used to create a new instance of an <code>XPathFactory</code>.</p>
+     * should be used to create a new instance of an {@code XPathFactory}.</p>
      */
     protected XPathFactory() {
     }
 
     /**
-     * <p>Get a new <code>XPathFactory</code> instance using the default object model,
+     * <p>Get a new {@code XPathFactory} instance using the default object model,
      * {@link #DEFAULT_OBJECT_MODEL_URI},
      * the W3C DOM.</p>
      *
@@ -85,10 +85,10 @@ public abstract class XPathFactory {
      *
      * <p>Since the implementation for the W3C DOM is always available, this method will never fail.</p>
      *
-     * @return Instance of an <code>XPathFactory</code>.
+     * @return Instance of an {@code XPathFactory}.
      *
      * @throws RuntimeException When there is a failure in creating an
-     *   <code>XPathFactory</code> for the default object model.
+     *   {@code XPathFactory} for the default object model.
      */
     public static XPathFactory newInstance() {
 
@@ -105,23 +105,35 @@ public abstract class XPathFactory {
     }
 
     /**
-    * <p>Get a new <code>XPathFactory</code> instance using the specified object model.</p>
+    * <p>Get a new {@code XPathFactory} instance using the specified object model.</p>
     *
-    * <p>To find a <code>XPathFactory</code> object,
+    * <p>To find a {@code XPathFactory} object,
     * this method looks the following places in the following order where "the class loader" refers to the context class loader:</p>
     * <ol>
     *   <li>
+    *     <p>
     *     If the system property {@link #DEFAULT_PROPERTY_NAME} + ":uri" is present,
     *     where uri is the parameter to this method, then its value is read as a class name.
     *     The method will try to create a new instance of this class by using the class loader,
     *     and returns it if it is successfully created.
     *   </li>
     *   <li>
-    *     ${java.home}/lib/jaxp.properties is read and the value associated with the key being the system property above is looked for.
-    *     If present, the value is processed just like above.
+    *     <p>
+    *     Use the configuration file "jaxp.properties". The file is in standard
+    *     {@link java.util.Properties} format and typically located in the
+    *     conf directory of the Java installation. It contains the fully qualified
+    *     name of the implementation class with the key being the system property
+    *     defined above.
+    *     <p>
+    *     The jaxp.properties file is read only once by the JAXP implementation
+    *     and its values are then cached for future use.  If the file does not exist
+    *     when the first attempt is made to read from it, no further attempts are
+    *     made to check for its existence.  It is not possible to change the value
+    *     of any property in jaxp.properties after it has been read for the first time.
     *   </li>
     *   <li>
-    *     Use the service-provider loading facilities, defined by the
+    *     <p>
+    *     Use the service-provider loading facility, defined by the
     *     {@link java.util.ServiceLoader} class, to attempt to locate and load an
     *     implementation of the service using the {@linkplain
     *     java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}:
@@ -140,16 +152,17 @@ public abstract class XPathFactory {
     *     {@link XPathFactoryConfigurationException} will be thrown.
     *   </li>
     *   <li>
-    *     Platform default <code>XPathFactory</code> is located in a platform specific way.
+    *     <p>
+    *     Platform default {@code XPathFactory} is located in a platform specific way.
     *     There must be a platform default XPathFactory for the W3C DOM, i.e. {@link #DEFAULT_OBJECT_MODEL_URI}.
     *   </li>
     * </ol>
-    * <p>If everything fails, an <code>XPathFactoryConfigurationException</code> will be thrown.</p>
+    * <p>If everything fails, an {@code XPathFactoryConfigurationException} will be thrown.
     *
-    * <p>Tip for Trouble-shooting:</p>
+    * <p>Tip for Trouble-shooting:
     * <p>See {@link java.util.Properties#load(java.io.InputStream)} for exactly how a property file is parsed.
     * In particular, colons ':' need to be escaped in a property file, so make sure the URIs are properly escaped in it.
-    * For example:</p>
+    * For example:
     * <pre>
     *   http\://java.sun.com/jaxp/xpath/dom=org.acme.DomXPathFactory
     * </pre>
@@ -159,7 +172,7 @@ public abstract class XPathFactory {
     *   <code>http://java.sun.com/jaxp/xpath/dom</code> for the W3C DOM,
     *   the org.w3c.dom package, and implementations are free to introduce other URIs for other object models.
     *
-    * @return Instance of an <code>XPathFactory</code>.
+    * @return Instance of an {@code XPathFactory}.
     *
     * @throws XPathFactoryConfigurationException If the specified object model
     *      is unavailable, or if there is a configuration error.
@@ -199,7 +212,7 @@ public abstract class XPathFactory {
     }
 
     /**
-     * <p>Obtain a new instance of a <code>XPathFactory</code> from a factory class name. <code>XPathFactory</code>
+     * <p>Obtain a new instance of a {@code XPathFactory} from a factory class name. {@code XPathFactory}
      * is returned if specified factory class supports the specified object model.
      * This function is useful when there are multiple providers in the classpath.
      * It gives more control to the application as it can specify which provider
@@ -227,7 +240,7 @@ public abstract class XPathFactory {
      *                     current <code>Thread</code>'s context classLoader is used to load the factory class.
      *
      *
-     * @return New instance of a <code>XPathFactory</code>
+     * @return New instance of a {@code XPathFactory}
      *
      * @throws XPathFactoryConfigurationException
      *                   if <code>factoryClassName</code> is <code>null</code>, or
@@ -281,11 +294,11 @@ public abstract class XPathFactory {
     }
 
     /**
-     * <p>Is specified object model supported by this <code>XPathFactory</code>?</p>
+     * <p>Is specified object model supported by this {@code XPathFactory}?</p>
      *
-     * @param objectModel Specifies the object model which the returned <code>XPathFactory</code> will understand.
+     * @param objectModel Specifies the object model which the returned {@code XPathFactory} will understand.
      *
-     * @return <code>true</code> if <code>XPathFactory</code> supports <code>objectModel</code>, else <code>false</code>.
+     * @return <code>true</code> if {@code XPathFactory} supports <code>objectModel</code>, else <code>false</code>.
      *
      * @throws NullPointerException If <code>objectModel</code> is <code>null</code>.
      * @throws IllegalArgumentException If <code>objectModel.length() == 0</code>.
@@ -293,16 +306,16 @@ public abstract class XPathFactory {
     public abstract boolean isObjectModelSupported(String objectModel);
 
     /**
-     * <p>Set a feature for this <code>XPathFactory</code> and
+     * <p>Set a feature for this {@code XPathFactory} and
      * <code>XPath</code>s created by this factory.</p>
      *
      * <p>
      * Feature names are fully qualified {@link java.net.URI}s.
      * Implementations may define their own features.
      * An {@link XPathFactoryConfigurationException} is thrown if this
-     * <code>XPathFactory</code> or the <code>XPath</code>s
+     * {@code XPathFactory} or the <code>XPath</code>s
      * it creates cannot support the feature.
-     * It is possible for an <code>XPathFactory</code> to expose a feature value
+     * It is possible for an {@code XPathFactory} to expose a feature value
      * but be unable to change its state.
      * </p>
      *
@@ -316,7 +329,7 @@ public abstract class XPathFactory {
      * @param name Feature name.
      * @param value Is feature state <code>true</code> or <code>false</code>.
      *
-     * @throws XPathFactoryConfigurationException if this <code>XPathFactory</code> or the <code>XPath</code>s
+     * @throws XPathFactoryConfigurationException if this {@code XPathFactory} or the <code>XPath</code>s
      *   it creates cannot support this feature.
      * @throws NullPointerException if <code>name</code> is <code>null</code>.
      */
@@ -330,9 +343,9 @@ public abstract class XPathFactory {
      * Feature names are fully qualified {@link java.net.URI}s.
      * Implementations may define their own features.
      * An {@link XPathFactoryConfigurationException} is thrown if this
-     * <code>XPathFactory</code> or the <code>XPath</code>s
+     * {@code XPathFactory} or the <code>XPath</code>s
      * it creates cannot support the feature.
-     * It is possible for an <code>XPathFactory</code> to expose a feature value
+     * It is possible for an {@code XPathFactory} to expose a feature value
      * but be unable to change its state.
      * </p>
      *
@@ -341,7 +354,7 @@ public abstract class XPathFactory {
      * @return State of the named feature.
      *
      * @throws XPathFactoryConfigurationException if this
-     *   <code>XPathFactory</code> or the <code>XPath</code>s
+     *   {@code XPathFactory} or the <code>XPath</code>s
      *   it creates cannot support this feature.
      * @throws NullPointerException if <code>name</code> is <code>null</code>.
      */
@@ -382,7 +395,7 @@ public abstract class XPathFactory {
 
     /**
     * <p>Return a new <code>XPath</code> using the underlying object
-    * model determined when the <code>XPathFactory</code> was instantiated.</p>
+    * model determined when the {@code XPathFactory} was instantiated.</p>
     *
     * @return New instance of an <code>XPath</code>.
     */

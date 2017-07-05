@@ -171,6 +171,11 @@ import java.util.Map;
  * variables, first call {@link java.util.Map#clear() Map.clear()}
  * before adding environment variables.
  *
+ * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
+ *
  * @author Martin Buchholz
  * @since 1.5
  */
@@ -193,7 +198,6 @@ public final class ProcessBuilder
      * command.
      *
      * @param  command the list containing the program and its arguments
-     * @throws NullPointerException if the argument is null
      */
     public ProcessBuilder(List<String> command) {
         if (command == null)
@@ -228,8 +232,6 @@ public final class ProcessBuilder
      *
      * @param  command the list containing the program and its arguments
      * @return this process builder
-     *
-     * @throws NullPointerException if the argument is null
      */
     public ProcessBuilder command(List<String> command) {
         if (command == null)
@@ -554,7 +556,6 @@ public final class ProcessBuilder
          * }</pre>
          *
          * @param file The {@code File} for the {@code Redirect}.
-         * @throws NullPointerException if the specified file is null
          * @return a redirect to read from the specified file
          */
         public static Redirect from(final File file) {
@@ -581,7 +582,6 @@ public final class ProcessBuilder
          * }</pre>
          *
          * @param file The {@code File} for the {@code Redirect}.
-         * @throws NullPointerException if the specified file is null
          * @return a redirect to write to the specified file
          */
         public static Redirect to(final File file) {
@@ -612,7 +612,6 @@ public final class ProcessBuilder
          * }</pre>
          *
          * @param file The {@code File} for the {@code Redirect}.
-         * @throws NullPointerException if the specified file is null
          * @return a redirect to append to the specified file
          */
         public static Redirect appendTo(final File file) {

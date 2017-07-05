@@ -25,7 +25,7 @@
  * @subtest
  */
 
-// utilitity for parser tests
+// utility for parser tests
 
 load("nashorn:parser.js");
 function printParse(code) {

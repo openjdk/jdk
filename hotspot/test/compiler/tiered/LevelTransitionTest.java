@@ -29,6 +29,7 @@ import java.util.concurrent.Callable;
 /**
  * @test LevelTransitionTest
  * @library /testlibrary /../../test/lib /compiler/whitebox
+ * @ignore 8067651
  * @build TransitionsTestExecutor LevelTransitionTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
