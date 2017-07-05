@@ -87,15 +87,6 @@ public class ToolProviderTest extends StartOptionTest {
     }
 
     @Override
-    public void testStartupFailedOption() throws Exception {
-        if (runShellServiceLoader("-R-hoge-foo-bar") == 0) {
-            fail("Expected tool failure");
-        } else {
-            check(cmderr, s -> s.startsWith("Launching JShell execution engine threw: Failed remote"), "cmderr");
-        }
-    }
-
-    @Override
     public void testShowVersion() throws Exception {
         start(
                 s -> {
