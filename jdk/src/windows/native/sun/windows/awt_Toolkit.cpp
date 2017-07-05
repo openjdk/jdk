@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,24 +288,6 @@ jmethodID AwtToolkit::displayChangeMID;
 jmethodID AwtToolkit::getDefaultToolkitMID;
 jmethodID AwtToolkit::getFontMetricsMID;
 jmethodID AwtToolkit::insetsMID;
-
-/************************************************************************
- * JavaStringBuffer method
- */
-
-JavaStringBuffer::JavaStringBuffer(JNIEnv *env, jstring jstr) {
-    if (jstr != NULL) {
-        int length = env->GetStringLength(jstr);
-        buffer = new TCHAR[length + 1];
-        LPCTSTR tmp = JNU_GetStringPlatformChars(env, jstr, NULL);
-        _tcscpy(buffer, tmp);
-        JNU_ReleaseStringPlatformChars(env, jstr, tmp);
-    } else {
-        buffer = new TCHAR[1];
-        buffer[0] = _T('\0');
-    }
-}
-
 
 /************************************************************************
  * AwtToolkit methods

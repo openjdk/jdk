@@ -124,6 +124,7 @@ struct my_group_source_req {
  * Copy IPv6 group, interface index, and IPv6 source address
  * into group_source_req structure.
  */
+#ifdef AF_INET6
 static void initGroupSourceReq(JNIEnv* env, jbyteArray group, jint index,
                                jbyteArray source, struct my_group_source_req* req)
 {
@@ -139,7 +140,7 @@ static void initGroupSourceReq(JNIEnv* env, jbyteArray group, jint index,
     sin6->sin6_family = AF_INET6;
     COPY_INET6_ADDRESS(env, source, (jbyte*)&(sin6->sin6_addr));
 }
-
+#endif
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_initIDs(JNIEnv *env, jclass clazz)
@@ -159,7 +160,11 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
 {
     int fd;
     int type = (stream ? SOCK_STREAM : SOCK_DGRAM);
+#ifdef AF_INET6
     int domain = (ipv6_available() && preferIPv6) ? AF_INET6 : AF_INET;
+#else
+    int domain = AF_INET;
+#endif
 
     fd = socket(domain, type, 0);
     if (fd < 0) {
@@ -176,7 +181,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
             return -1;
         }
     }
-#ifdef __linux__
+#if defined(__linux__) && defined(AF_INET6)
     /* By default, Linux uses the route default */
     if (domain == AF_INET6 && type == SOCK_DGRAM) {
         int arg = 1;
@@ -424,6 +429,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobject fdo,
                                 jbyteArray group, jint index, jbyteArray source)
 {
+#ifdef AF_INET6
     struct ipv6_mreq mreq6;
     struct my_group_source_req req;
     int opt, n, optlen;
@@ -454,12 +460,17 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
         handleSocketError(env, errno);
     }
     return 0;
+#else
+    JNU_ThrowInternalError(env, "Should not get here");
+    return IOS_THROWN;
+#endif  /* AF_INET6 */
 }
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, jobject fdo,
                                     jbyteArray group, jint index, jbyteArray source)
 {
+#ifdef AF_INET6
     struct my_group_source_req req;
     int n;
     int opt = (block) ? MCAST_BLOCK_SOURCE : MCAST_UNBLOCK_SOURCE;
@@ -474,6 +485,10 @@ Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, j
         handleSocketError(env, errno);
     }
     return 0;
+#else
+    JNU_ThrowInternalError(env, "Should not get here");
+    return IOS_THROWN;
+#endif
 }
 
 JNIEXPORT void JNICALL

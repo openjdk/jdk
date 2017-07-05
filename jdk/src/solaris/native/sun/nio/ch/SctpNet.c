@@ -168,14 +168,18 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpNet_socket0
   (JNIEnv *env, jclass klass, jboolean oneToOne) {
     int fd;
     struct sctp_event_subscribe event;
+#ifdef AF_INET6
+    int domain = ipv6_available() ? AF_INET6 : AF_INET;
+#else
+    int domain = AF_INET;
+#endif
 
     /* Try to load the socket API extension functions */
     if (!funcsLoaded && !loadSocketExtensionFuncs(env)) {
         return 0;
     }
 
-    fd = socket(ipv6_available() ? AF_INET6 : AF_INET,
-            (oneToOne ? SOCK_STREAM : SOCK_SEQPACKET), IPPROTO_SCTP);
+    fd = socket(domain, (oneToOne ? SOCK_STREAM : SOCK_SEQPACKET), IPPROTO_SCTP);
 
     if (fd < 0) {
         return handleSocketError(env, errno);

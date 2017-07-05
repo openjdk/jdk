@@ -40,6 +40,8 @@ import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
+import sun.security.util.DerValue;
+
 /**
  * EC KeyFactory implemenation.
  *
@@ -201,7 +203,16 @@ final class P11ECKeyFactory extends P11KeyFactory {
 
     private PublicKey generatePublic(ECPoint point, ECParameterSpec params) throws PKCS11Exception {
         byte[] encodedParams = ECParameters.encodeParameters(params);
-        byte[] encodedPoint = ECParameters.encodePoint(point, params.getCurve());
+        byte[] encodedPoint = null;
+        DerValue pkECPoint = new DerValue(DerValue.tag_OctetString,
+            ECParameters.encodePoint(point, params.getCurve()));
+
+        try {
+            encodedPoint = pkECPoint.toByteArray();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not DER encode point", e);
+        }
+
         CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
             new CK_ATTRIBUTE(CKA_CLASS, CKO_PUBLIC_KEY),
             new CK_ATTRIBUTE(CKA_KEY_TYPE, CKK_EC),
