@@ -108,16 +108,6 @@ typedef uint64_t julong;
 
 
 //----------------------------------------------------------------------------------------------------
-// Constant for jlong (specifying a long long constant is C++ compiler specific)
-
-// Build a 64bit integer constant
-#define CONST64(x)  (x ## LL)
-#define UCONST64(x) (x ## ULL)
-
-const jlong min_jlong = CONST64(0x8000000000000000);
-const jlong max_jlong = CONST64(0x7fffffffffffffff);
-
-//----------------------------------------------------------------------------------------------------
 // Debugging
 
 #define DEBUG_EXCEPTION ::abort();
@@ -162,23 +152,6 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 // _cells[index]) in DataLayout::cell_offset() .  Therefore we define
 // offset_of as it is defined for gcc.
 #define offset_of(klass,field) (size_t)((intx)&(((klass*)16)->field) - 16)
-
-// Some constant sizes used throughout the AIX port
-#define SIZE_1K   ((uint64_t) UCONST64(        0x400))
-#define SIZE_4K   ((uint64_t) UCONST64(       0x1000))
-#define SIZE_64K  ((uint64_t) UCONST64(      0x10000))
-#define SIZE_1M   ((uint64_t) UCONST64(     0x100000))
-#define SIZE_4M   ((uint64_t) UCONST64(     0x400000))
-#define SIZE_8M   ((uint64_t) UCONST64(     0x800000))
-#define SIZE_16M  ((uint64_t) UCONST64(    0x1000000))
-#define SIZE_256M ((uint64_t) UCONST64(   0x10000000))
-#define SIZE_1G   ((uint64_t) UCONST64(   0x40000000))
-#define SIZE_2G   ((uint64_t) UCONST64(   0x80000000))
-#define SIZE_4G   ((uint64_t) UCONST64(  0x100000000))
-#define SIZE_16G  ((uint64_t) UCONST64(  0x400000000))
-#define SIZE_32G  ((uint64_t) UCONST64(  0x800000000))
-#define SIZE_64G  ((uint64_t) UCONST64( 0x1000000000))
-#define SIZE_1T   ((uint64_t) UCONST64(0x10000000000))
 
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
 #define THREAD_LOCAL_DECL __thread

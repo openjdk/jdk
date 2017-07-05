@@ -204,44 +204,85 @@ public final class JpsHelper {
                 "The ouput should contain all content of " + path.toAbsolutePath());
     }
 
-    private static File getManifest(String className) throws IOException {
-        if (manifestFile == null) {
-            manifestFile = new File(className + ".mf");
-            try (BufferedWriter output = new BufferedWriter(new FileWriter(manifestFile))) {
-                output.write("Main-Class: " + className + Utils.NEW_LINE);
+    public static void runJpsVariants(Long pid, String processName, String fullProcessName, String argument) throws Exception {
+        System.out.printf("INFO: user.dir:  '%s''\n", System.getProperty("user.dir"));
+        List<List<JpsHelper.JpsArg>> combinations = JpsHelper.JpsArg.generateCombinations();
+        for (List<JpsHelper.JpsArg> combination : combinations) {
+            OutputAnalyzer output = JpsHelper.jps(JpsHelper.JpsArg.asCmdArray(combination));
+            output.shouldHaveExitValue(0);
+
+            boolean isQuiet = false;
+            boolean isFull = false;
+            String pattern;
+            for (JpsHelper.JpsArg jpsArg : combination) {
+                switch (jpsArg) {
+                case q:
+                    // If '-q' is specified output should contain only a list of local VM identifiers:
+                    // 30673
+                    isQuiet = true;
+                    JpsHelper.verifyJpsOutput(output, "^\\d+$");
+                    output.shouldContain(Long.toString(pid));
+                    break;
+                case l:
+                    // If '-l' is specified output should contain the full package name for the application's main class
+                    // or the full path name to the application's JAR file:
+                    // 30673 /tmp/jtreg/jtreg-workdir/scratch/LingeredAppForJps.jar ...
+                    isFull = true;
+                    pattern = "^" + pid + "\\s+" + replaceSpecialChars(fullProcessName) + ".*";
+                    output.shouldMatch(pattern);
+                    break;
+                case m:
+                    // If '-m' is specified output should contain the arguments passed to the main method:
+                    // 30673 LingeredAppForJps lockfilename ...
+                    pattern = "^" + pid + ".*" + replaceSpecialChars(argument) + ".*";
+                    output.shouldMatch(pattern);
+                    break;
+                case v:
+                    // If '-v' is specified output should contain VM arguments:
+                    // 30673 LingeredAppForJps -Xmx512m -XX:+UseParallelGC -XX:Flags=/tmp/jtreg/jtreg-workdir/scratch/vmflags ...
+                    for (String vmArg : JpsHelper.getVmArgs()) {
+                        pattern = "^" + pid + ".*" + replaceSpecialChars(vmArg) + ".*";
+                        output.shouldMatch(pattern);
+                    }
+                    break;
+                case V:
+                    // If '-V' is specified output should contain VM flags:
+                    // 30673 LingeredAppForJps +DisableExplicitGC ...
+                    pattern = "^" + pid + ".*" + replaceSpecialChars(JpsHelper.VM_FLAG) + ".*";
+                    output.shouldMatch(pattern);
+                    break;
+                }
+
+                if (isQuiet) {
+                    break;
+                }
+            }
+
+            if (!isQuiet) {
+                // Verify output line by line.
+                // Output should only contain lines with pids after the first line with pid.
+                JpsHelper.verifyJpsOutput(output, "^\\d+\\s+.*");
+                if (!isFull) {
+                    pattern = "^" + pid + "\\s+" + replaceSpecialChars(processName);
+                    if (combination.isEmpty()) {
+                        // If no arguments are specified output should only contain
+                        // pid and process name
+                        pattern += "$";
+                    } else {
+                        pattern += ".*";
+                    }
+                    output.shouldMatch(pattern);
+                }
             }
         }
-        return manifestFile;
     }
 
-    /**
-     * Build a jar of test classes in runtime
-     */
-    public static File buildJar(String className) throws Exception {
-        File jar = new File(className + ".jar");
-
-        List<String> jarArgs = new ArrayList<>();
-        jarArgs.add("-cfm");
-        jarArgs.add(jar.getAbsolutePath());
-        File manifestFile = getManifest(className);
-        jarArgs.add(manifestFile.getAbsolutePath());
-        String testClassPath = System.getProperty("test.class.path", "?");
-        for (String path : testClassPath.split(File.pathSeparator)) {
-            jarArgs.add("-C");
-            jarArgs.add(path);
-            jarArgs.add(".");
-        }
-
-        System.out.println("Running jar " + jarArgs.toString());
-        sun.tools.jar.Main jarTool = new sun.tools.jar.Main(System.out, System.err, "jar");
-        if (!jarTool.run(jarArgs.toArray(new String[jarArgs.size()]))) {
-            throw new Exception("jar failed: args=" + jarArgs.toString());
-        }
-
-        manifestFile.delete();
-        jar.deleteOnExit();
-
-        return jar;
+    private static String replaceSpecialChars(String str) {
+        String tmp = str.replace("\\", "\\\\");
+        tmp = tmp.replace("+", "\\+");
+        tmp = tmp.replace(".", "\\.");
+        tmp = tmp.replace("\n", "\\\\n");
+        tmp = tmp.replace("\r", "\\\\r");
+        return tmp;
     }
-
 }

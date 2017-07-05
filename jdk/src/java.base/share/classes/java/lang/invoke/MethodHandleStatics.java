@@ -107,10 +107,10 @@ import java.util.Properties;
     /*non-public*/ static InternalError newInternalError(String message) {
         return new InternalError(message);
     }
-    /*non-public*/ static InternalError newInternalError(String message, Throwable cause) {
+    /*non-public*/ static InternalError newInternalError(String message, Exception cause) {
         return new InternalError(message, cause);
     }
-    /*non-public*/ static InternalError newInternalError(Throwable cause) {
+    /*non-public*/ static InternalError newInternalError(Exception cause) {
         return new InternalError(cause);
     }
     /*non-public*/ static RuntimeException newIllegalStateException(String message) {
@@ -132,7 +132,7 @@ import java.util.Properties;
     /*non-public*/ static Error uncaughtException(Throwable ex) {
         if (ex instanceof Error)  throw (Error) ex;
         if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
-        throw newInternalError("uncaught exception", ex);
+        throw new InternalError("uncaught exception", ex);
     }
     private static String message(String message, Object obj) {
         if (obj != null)  message = message + ": " + obj;
