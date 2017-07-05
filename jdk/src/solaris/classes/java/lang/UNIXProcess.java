@@ -97,6 +97,7 @@ final class UNIXProcess extends Process {
                 EnumSet.copyOf(Arrays.asList(launchMechanisms));
         }
 
+        @SuppressWarnings("fallthrough")
         private String helperPath(String javahome, String osArch) {
             switch (this) {
                 case SOLARIS:
