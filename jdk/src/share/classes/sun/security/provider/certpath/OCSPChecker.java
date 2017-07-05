@@ -102,7 +102,7 @@ class OCSPChecker extends PKIXCertPathChecker {
      */
     public void init(boolean forward) throws CertPathValidatorException {
         if (!forward) {
-            remainingCerts = certs.length;
+            remainingCerts = certs.length + 1;
         } else {
             throw new CertPathValidatorException(
                 "Forward checking not supported");
@@ -131,13 +131,21 @@ class OCSPChecker extends PKIXCertPathChecker {
 
         InputStream in = null;
         OutputStream out = null;
+
+        // Decrement the certificate counter
+        remainingCerts--;
+
         try {
-            // Examine OCSP properties
             X509Certificate responderCert = null;
             boolean seekResponderCert = false;
             X500Principal responderSubjectName = null;
             X500Principal responderIssuerName = null;
             BigInteger responderSerialNumber = null;
+
+            boolean seekIssuerCert = true;
+            X509CertImpl issuerCertImpl = null;
+            X509CertImpl currCertImpl =
+                X509CertImpl.toImpl((X509Certificate)cert);
 
             /*
              * OCSP security property values, in the following order:
@@ -147,6 +155,9 @@ class OCSPChecker extends PKIXCertPathChecker {
              *   4. ocsp.responderCertSerialNumber
              */
             String[] properties = getOCSPProperties();
+
+            // Check whether OCSP is feasible before seeking cert information
+            URL url = getOCSPServerURL(currCertImpl, properties);
 
             // When responder's subject name is set then the issuer/serial
             // properties are ignored
@@ -172,14 +183,9 @@ class OCSPChecker extends PKIXCertPathChecker {
                 seekResponderCert = true;
             }
 
-            boolean seekIssuerCert = true;
-            X509CertImpl issuerCertImpl = null;
-            X509CertImpl currCertImpl =
-                X509CertImpl.toImpl((X509Certificate)cert);
-            remainingCerts--;
-
-            // Set the issuer certificate
-            if (remainingCerts != 0) {
+            // Set the issuer certificate to the next cert in the chain
+            // (unless we're processing the final cert).
+            if (remainingCerts < certs.length) {
                 issuerCertImpl = X509CertImpl.toImpl(certs[remainingCerts]);
                 seekIssuerCert = false; // done
 
@@ -312,7 +318,8 @@ class OCSPChecker extends PKIXCertPathChecker {
             // Construct an OCSP Request
             OCSPRequest ocspRequest =
                 new OCSPRequest(currCertImpl, issuerCertImpl);
-            URL url = getOCSPServerURL(currCertImpl, properties);
+
+            // Use the URL to the OCSP service that was created earlier
             HttpURLConnection con = (HttpURLConnection)url.openConnection();
             if (DEBUG != null) {
                 DEBUG.println("connecting to OCSP service at: " + url);

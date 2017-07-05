@@ -311,8 +311,18 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_RegFlags] = TypeInt::CC;
 
   TypeAryPtr::RANGE   = TypeAryPtr::make( TypePtr::BotPTR, TypeAry::make(Type::BOTTOM,TypeInt::POS), current->env()->Object_klass(), false, arrayOopDesc::length_offset_in_bytes());
-  // There is no shared klass for Object[].  See note in TypeAryPtr::klass().
-  TypeAryPtr::OOPS    = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::BOTTOM,TypeInt::POS), NULL /*ciArrayKlass::make(o)*/,  false,  Type::OffsetBot);
+
+  TypeAryPtr::NARROWOOPS = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeNarrowOop::BOTTOM, TypeInt::POS), NULL /*ciArrayKlass::make(o)*/,  false,  Type::OffsetBot);
+
+#ifdef _LP64
+  if (UseCompressedOops) {
+    TypeAryPtr::OOPS  = TypeAryPtr::NARROWOOPS;
+  } else
+#endif
+  {
+    // There is no shared klass for Object[].  See note in TypeAryPtr::klass().
+    TypeAryPtr::OOPS  = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInstPtr::BOTTOM,TypeInt::POS), NULL /*ciArrayKlass::make(o)*/,  false,  Type::OffsetBot);
+  }
   TypeAryPtr::BYTES   = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInt::BYTE      ,TypeInt::POS), ciTypeArrayKlass::make(T_BYTE),   true,  Type::OffsetBot);
   TypeAryPtr::SHORTS  = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInt::SHORT     ,TypeInt::POS), ciTypeArrayKlass::make(T_SHORT),  true,  Type::OffsetBot);
   TypeAryPtr::CHARS   = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeInt::CHAR      ,TypeInt::POS), ciTypeArrayKlass::make(T_CHAR),   true,  Type::OffsetBot);
@@ -321,9 +331,10 @@ void Type::Initialize_shared(Compile* current) {
   TypeAryPtr::FLOATS  = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(Type::FLOAT        ,TypeInt::POS), ciTypeArrayKlass::make(T_FLOAT),  true,  Type::OffsetBot);
   TypeAryPtr::DOUBLES = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(Type::DOUBLE       ,TypeInt::POS), ciTypeArrayKlass::make(T_DOUBLE), true,  Type::OffsetBot);
 
-  TypeAryPtr::_array_body_type[T_NARROWOOP] = NULL; // what should this be?
+  // Nobody should ask _array_body_type[T_NARROWOOP]. Use NULL as assert.
+  TypeAryPtr::_array_body_type[T_NARROWOOP] = NULL;
   TypeAryPtr::_array_body_type[T_OBJECT]  = TypeAryPtr::OOPS;
-  TypeAryPtr::_array_body_type[T_ARRAY]   = TypeAryPtr::OOPS;   // arrays are stored in oop arrays
+  TypeAryPtr::_array_body_type[T_ARRAY]   = TypeAryPtr::OOPS; // arrays are stored in oop arrays
   TypeAryPtr::_array_body_type[T_BYTE]    = TypeAryPtr::BYTES;
   TypeAryPtr::_array_body_type[T_BOOLEAN] = TypeAryPtr::BYTES;  // boolean[] is a byte array
   TypeAryPtr::_array_body_type[T_SHORT]   = TypeAryPtr::SHORTS;
@@ -696,7 +707,7 @@ void Type::dump_on(outputStream *st) const {
   ResourceMark rm;
   Dict d(cmpkey,hashkey);       // Stop recursive type dumping
   dump2(d,1, st);
-  if (isa_ptr() && is_ptr()->is_narrow()) {
+  if (is_ptr_to_narrowoop()) {
     st->print(" [narrow]");
   }
 }
@@ -929,6 +940,7 @@ const Type *TypeD::xmeet( const Type *t ) const {
   case InstPtr:
   case KlassPtr:
   case AryPtr:
+  case NarrowOop:
   case Int:
   case Long:
   case FloatTop:
@@ -1075,6 +1087,7 @@ const Type *TypeInt::xmeet( const Type *t ) const {
   case InstPtr:
   case KlassPtr:
   case AryPtr:
+  case NarrowOop:
   case Long:
   case FloatTop:
   case FloatCon:
@@ -1082,7 +1095,6 @@ const Type *TypeInt::xmeet( const Type *t ) const {
   case DoubleTop:
   case DoubleCon:
   case DoubleBot:
-  case NarrowOop:
   case Bottom:                  // Ye Olde Default
     return Type::BOTTOM;
   default:                      // All else is a mistake
@@ -1317,6 +1329,7 @@ const Type *TypeLong::xmeet( const Type *t ) const {
   case InstPtr:
   case KlassPtr:
   case AryPtr:
+  case NarrowOop:
   case Int:
   case FloatTop:
   case FloatCon:
@@ -2146,6 +2159,67 @@ void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 // Convenience common pre-built type.
 const TypeOopPtr *TypeOopPtr::BOTTOM;
 
+//------------------------------TypeOopPtr-------------------------------------
+TypeOopPtr::TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id )
+  : TypePtr(t, ptr, offset),
+    _const_oop(o), _klass(k),
+    _klass_is_exact(xk),
+    _is_ptr_to_narrowoop(false),
+    _instance_id(instance_id) {
+#ifdef _LP64
+  if (UseCompressedOops && _offset != 0) {
+    if (klass() == NULL) {
+      assert(this->isa_aryptr(), "only arrays without klass");
+      _is_ptr_to_narrowoop = true;
+    } else if (_offset == oopDesc::klass_offset_in_bytes()) {
+      _is_ptr_to_narrowoop = true;
+    } else if (this->isa_aryptr()) {
+      _is_ptr_to_narrowoop = (klass()->is_obj_array_klass() &&
+                             _offset != arrayOopDesc::length_offset_in_bytes());
+    } else if (klass() == ciEnv::current()->Class_klass() &&
+               (_offset == java_lang_Class::klass_offset_in_bytes() ||
+                _offset == java_lang_Class::array_klass_offset_in_bytes())) {
+      // Special hidden fields from the Class.
+      assert(this->isa_instptr(), "must be an instance ptr.");
+      _is_ptr_to_narrowoop = true;
+    } else if (klass()->is_instance_klass()) {
+      ciInstanceKlass* ik = klass()->as_instance_klass();
+      ciField* field = NULL;
+      if (this->isa_klassptr()) {
+        // Perm objects don't use compressed references, except for
+        // static fields which are currently compressed.
+        field = ik->get_field_by_offset(_offset, true);
+        if (field != NULL) {
+          BasicType basic_elem_type = field->layout_type();
+          _is_ptr_to_narrowoop = (basic_elem_type == T_OBJECT ||
+                                  basic_elem_type == T_ARRAY);
+        }
+      } else if (_offset == OffsetBot || _offset == OffsetTop) {
+        // unsafe access
+        _is_ptr_to_narrowoop = true;
+      } else { // exclude unsafe ops
+        assert(this->isa_instptr(), "must be an instance ptr.");
+        // Field which contains a compressed oop references.
+        field = ik->get_field_by_offset(_offset, false);
+        if (field != NULL) {
+          BasicType basic_elem_type = field->layout_type();
+          _is_ptr_to_narrowoop = (basic_elem_type == T_OBJECT ||
+                                  basic_elem_type == T_ARRAY);
+        } else if (klass()->equals(ciEnv::current()->Object_klass())) {
+          // Compile::find_alias_type() cast exactness on all types to verify
+          // that it does not affect alias type.
+          _is_ptr_to_narrowoop = true;
+        } else {
+          // Type for the copy start in LibraryCallKit::inline_native_clone().
+          assert(!klass_is_exact(), "only non-exact klass");
+          _is_ptr_to_narrowoop = true;
+        }
+      }
+    }
+  }
+#endif
+}
+
 //------------------------------make-------------------------------------------
 const TypeOopPtr *TypeOopPtr::make(PTR ptr,
                                    int offset) {
@@ -2593,9 +2667,13 @@ const Type *TypeInstPtr::cast_to_exactness(bool klass_is_exact) const {
 //-----------------------------cast_to_instance-------------------------------
 const TypeOopPtr *TypeInstPtr::cast_to_instance(int instance_id) const {
   if( instance_id == _instance_id) return this;
-  bool exact = (instance_id == UNKNOWN_INSTANCE) ? _klass_is_exact : true;
-
-  return make(ptr(), klass(), exact, const_oop(), _offset, instance_id);
+  bool exact = true;
+  PTR  ptr_t = NotNull;
+  if (instance_id == UNKNOWN_INSTANCE) {
+    exact = _klass_is_exact;
+    ptr_t = _ptr;
+  }
+  return make(ptr_t, klass(), exact, const_oop(), _offset, instance_id);
 }
 
 //------------------------------xmeet_unloaded---------------------------------
@@ -3014,6 +3092,7 @@ const TypePtr *TypeInstPtr::add_offset( int offset ) const {
 // Convenience common pre-built types.
 const TypeAryPtr *TypeAryPtr::RANGE;
 const TypeAryPtr *TypeAryPtr::OOPS;
+const TypeAryPtr *TypeAryPtr::NARROWOOPS;
 const TypeAryPtr *TypeAryPtr::BYTES;
 const TypeAryPtr *TypeAryPtr::SHORTS;
 const TypeAryPtr *TypeAryPtr::CHARS;
@@ -3063,8 +3142,13 @@ const Type *TypeAryPtr::cast_to_exactness(bool klass_is_exact) const {
 //-----------------------------cast_to_instance-------------------------------
 const TypeOopPtr *TypeAryPtr::cast_to_instance(int instance_id) const {
   if( instance_id == _instance_id) return this;
-  bool exact = (instance_id == UNKNOWN_INSTANCE) ? _klass_is_exact : true;
-  return make(ptr(), const_oop(), _ary, klass(), exact, _offset, instance_id);
+  bool exact = true;
+  PTR  ptr_t = NotNull;
+  if (instance_id == UNKNOWN_INSTANCE) {
+    exact = _klass_is_exact;
+    ptr_t = _ptr;
+  }
+  return make(ptr_t, const_oop(), _ary, klass(), exact, _offset, instance_id);
 }
 
 //-----------------------------narrow_size_type-------------------------------
@@ -3547,7 +3631,7 @@ ciKlass* TypeAryPtr::klass() const {
     k_ary = ciTypeArrayKlass::make(el->basic_type());
   }
 
-  if( this != TypeAryPtr::OOPS )
+  if( this != TypeAryPtr::OOPS ) {
     // The _klass field acts as a cache of the underlying
     // ciKlass for this array type.  In order to set the field,
     // we need to cast away const-ness.
@@ -3562,6 +3646,11 @@ ciKlass* TypeAryPtr::klass() const {
     // a bit less efficient than caching, but calls to
     // TypeAryPtr::OOPS->klass() are not common enough to matter.
     ((TypeAryPtr*)this)->_klass = k_ary;
+    if (UseCompressedOops && k_ary != NULL && k_ary->is_obj_array_klass() &&
+        _offset != 0 && _offset != arrayOopDesc::length_offset_in_bytes()) {
+      ((TypeAryPtr*)this)->_is_ptr_to_narrowoop = true;
+    }
+  }
   return k_ary;
 }
 

@@ -35,16 +35,16 @@ uint ConNode::hash() const {
 
 //------------------------------make-------------------------------------------
 ConNode *ConNode::make( Compile* C, const Type *t ) {
-  if (t->isa_narrowoop()) return new (C, 1) ConNNode( t->is_narrowoop() );
   switch( t->basic_type() ) {
   case T_INT:       return new (C, 1) ConINode( t->is_int() );
-  case T_ARRAY:     return new (C, 1) ConPNode( t->is_aryptr() );
   case T_LONG:      return new (C, 1) ConLNode( t->is_long() );
   case T_FLOAT:     return new (C, 1) ConFNode( t->is_float_constant() );
   case T_DOUBLE:    return new (C, 1) ConDNode( t->is_double_constant() );
   case T_VOID:      return new (C, 1) ConNode ( Type::TOP );
   case T_OBJECT:    return new (C, 1) ConPNode( t->is_oopptr() );
+  case T_ARRAY:     return new (C, 1) ConPNode( t->is_aryptr() );
   case T_ADDRESS:   return new (C, 1) ConPNode( t->is_ptr() );
+  case T_NARROWOOP: return new (C, 1) ConNNode( t->is_narrowoop() );
     // Expected cases:  TypePtr::NULL_PTR, any is_rawptr()
     // Also seen: AnyPtr(TopPTR *+top); from command line:
     //   r -XX:+PrintOpto -XX:CIStart=285 -XX:+CompileTheWorld -XX:CompileTheWorldStartAt=660
@@ -185,6 +185,7 @@ CMoveNode *CMoveNode::make( Compile *C, Node *c, Node *bol, Node *left, Node *ri
   case T_LONG:    return new (C, 4) CMoveLNode( bol, left, right, t->is_long() );
   case T_OBJECT:  return new (C, 4) CMovePNode( c, bol, left, right, t->is_oopptr() );
   case T_ADDRESS: return new (C, 4) CMovePNode( c, bol, left, right, t->is_ptr() );
+  case T_NARROWOOP: return new (C, 4) CMoveNNode( c, bol, left, right, t );
   default:
     ShouldNotReachHere();
     return NULL;
@@ -556,7 +557,7 @@ Node* DecodeNNode::Identity(PhaseTransform* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);
 
-  if (in(1)->Opcode() == Op_EncodeP) {
+  if (in(1)->is_EncodeP()) {
     // (DecodeN (EncodeP p)) -> p
     return in(1)->in(1);
   }
@@ -570,16 +571,19 @@ const Type *DecodeNNode::Value( PhaseTransform *phase ) const {
   return bottom_type();
 }
 
-Node* DecodeNNode::decode(PhaseGVN* phase, Node* value) {
-  if (value->Opcode() == Op_EncodeP) {
+Node* DecodeNNode::decode(PhaseTransform* phase, Node* value) {
+  if (value->is_EncodeP()) {
     // (DecodeN (EncodeP p)) -> p
     return value->in(1);
   }
   const Type* newtype = value->bottom_type();
   if (newtype == TypeNarrowOop::NULL_PTR) {
     return phase->transform(new (phase->C, 1) ConPNode(TypePtr::NULL_PTR));
-  } else {
+  } else if (newtype->isa_narrowoop()) {
     return phase->transform(new (phase->C, 2) DecodeNNode(value, newtype->is_narrowoop()->make_oopptr()));
+  } else {
+    ShouldNotReachHere();
+    return NULL; // to make C++ compiler happy.
   }
 }
 
@@ -587,7 +591,7 @@ Node* EncodePNode::Identity(PhaseTransform* phase) {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return in(1);
 
-  if (in(1)->Opcode() == Op_DecodeN) {
+  if (in(1)->is_DecodeN()) {
     // (EncodeP (DecodeN p)) -> p
     return in(1)->in(1);
   }
@@ -601,8 +605,8 @@ const Type *EncodePNode::Value( PhaseTransform *phase ) const {
   return bottom_type();
 }
 
-Node* EncodePNode::encode(PhaseGVN* phase, Node* value) {
-  if (value->Opcode() == Op_DecodeN) {
+Node* EncodePNode::encode(PhaseTransform* phase, Node* value) {
+  if (value->is_DecodeN()) {
     // (EncodeP (DecodeN p)) -> p
     return value->in(1);
   }
@@ -617,6 +621,9 @@ Node* EncodePNode::encode(PhaseGVN* phase, Node* value) {
   }
 }
 
+Node *EncodePNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
+  return MemNode::Ideal_common_DU_postCCP(ccp, this, in(1));
+}
 
 //=============================================================================
 //------------------------------Identity---------------------------------------

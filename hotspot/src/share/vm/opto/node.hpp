@@ -53,6 +53,8 @@ class ConstraintCastNode;
 class ConNode;
 class CountedLoopNode;
 class CountedLoopEndNode;
+class DecodeNNode;
+class EncodePNode;
 class FastLockNode;
 class FastUnlockNode;
 class IfNode;
@@ -438,6 +440,12 @@ private:
 public:
   // Globally replace this node by a given new node, updating all uses.
   void replace_by(Node* new_node);
+  // Globally replace this node by a given new node, updating all uses
+  // and cutting input edges of old node.
+  void subsume_by(Node* new_node) {
+    replace_by(new_node);
+    disconnect_inputs(NULL);
+  }
   void set_req_X( uint i, Node *n, PhaseIterGVN *igvn );
   // Find the one non-null required input.  RegionNode only
   Node *nonnull_req() const;
@@ -577,6 +585,8 @@ public:
       DEFINE_CLASS_ID(CheckCastPP, Type, 2)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
+      DEFINE_CLASS_ID(DecodeN, Type, 5)
+      DEFINE_CLASS_ID(EncodeP, Type, 6)
 
     DEFINE_CLASS_ID(Mem,   Node, 6)
       DEFINE_CLASS_ID(Load,  Mem, 0)
@@ -685,6 +695,8 @@ public:
   DEFINE_CLASS_QUERY(Cmp)
   DEFINE_CLASS_QUERY(CountedLoop)
   DEFINE_CLASS_QUERY(CountedLoopEnd)
+  DEFINE_CLASS_QUERY(DecodeN)
+  DEFINE_CLASS_QUERY(EncodeP)
   DEFINE_CLASS_QUERY(FastLock)
   DEFINE_CLASS_QUERY(FastUnlock)
   DEFINE_CLASS_QUERY(If)
