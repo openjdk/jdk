@@ -239,25 +239,6 @@ bool Compiler::is_intrinsic_supported(methodHandle method) {
   return true;
 }
 
-bool Compiler::is_intrinsic_disabled_by_flag(methodHandle method) {
-  vmIntrinsics::ID id = method->intrinsic_id();
-  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
-
-  if (vmIntrinsics::is_disabled_by_flags(id)) {
-    return true;
-  }
-
-  if (!InlineNatives && id != vmIntrinsics::_Reference_get) {
-    return true;
-  }
-
-  if (!InlineClassNatives && id == vmIntrinsics::_getClass) {
-    return true;
-  }
-
-  return false;
-}
-
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci) {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
   assert(buffer_blob != NULL, "Must exist");
@@ -274,8 +255,4 @@ void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci) {
 
 void Compiler::print_timers() {
   Compilation::print_timers();
-}
-
-bool Compiler::is_intrinsic_available(methodHandle method, methodHandle compilation_context) {
-  return is_intrinsic_supported(method) && !is_intrinsic_disabled_by_flag(method);
 }

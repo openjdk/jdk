@@ -83,8 +83,6 @@ class Linux {
   static void set_glibc_version(const char *s)      { _glibc_version = s; }
   static void set_libpthread_version(const char *s) { _libpthread_version = s; }
 
-  static bool supports_variable_stack_size();
-
   static void rebuild_cpu_to_node_map();
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
 
