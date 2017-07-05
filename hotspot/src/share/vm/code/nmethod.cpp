@@ -618,21 +618,18 @@ nmethod* nmethod::new_nmethod(methodHandle method,
         // record this nmethod as dependent on this klass
         InstanceKlass::cast(klass)->add_dependent_nmethod(nm);
       }
-    }
-    NOT_PRODUCT(if (nm != NULL)  nmethod_stats.note_nmethod(nm));
-    if (PrintAssembly && nm != NULL) {
-      Disassembler::decode(nm);
+      NOT_PRODUCT(nmethod_stats.note_nmethod(nm));
+      if (PrintAssembly) {
+        Disassembler::decode(nm);
+      }
     }
   }
-
-  // verify nmethod
-  debug_only(if (nm) nm->verify();) // might block
-
+  // Do verification and logging outside CodeCache_lock.
   if (nm != NULL) {
+    // Safepoints in nmethod::verify aren't allowed because nm hasn't been installed yet.
+    DEBUG_ONLY(nm->verify();)
     nm->log_new_nmethod();
   }
-
-  // done
   return nm;
 }
 
@@ -1262,7 +1259,7 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
 
   set_osr_link(NULL);
   //set_scavenge_root_link(NULL); // done by prune_scavenge_root_nmethods
-  NMethodSweeper::notify();
+  NMethodSweeper::report_state_change(this);
 }
 
 void nmethod::invalidate_osr_method() {
@@ -1296,7 +1293,9 @@ void nmethod::log_state_change() const {
   }
 }
 
-// Common functionality for both make_not_entrant and make_zombie
+/**
+ * Common functionality for both make_not_entrant and make_zombie
+ */
 bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
   assert(!is_zombie(), "should not already be a zombie");
@@ -1420,9 +1419,7 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     tty->print_cr("nmethod <" INTPTR_FORMAT "> code made %s", this, (state == not_entrant) ? "not entrant" : "zombie");
   }
 
-  // Make sweeper aware that there is a zombie method that needs to be removed
-  NMethodSweeper::notify();
-
+  NMethodSweeper::report_state_change(this);
   return true;
 }
 
@@ -2395,20 +2392,23 @@ void nmethod::verify() {
 
 
 void nmethod::verify_interrupt_point(address call_site) {
-  // This code does not work in release mode since
-  // owns_lock only is available in debug mode.
-  CompiledIC* ic = NULL;
-  Thread *cur = Thread::current();
-  if (CompiledIC_lock->owner() == cur ||
-      ((cur->is_VM_thread() || cur->is_ConcurrentGC_thread()) &&
-       SafepointSynchronize::is_at_safepoint())) {
-    ic = CompiledIC_at(this, call_site);
-    CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
-  } else {
-    MutexLocker ml_verify (CompiledIC_lock);
-    ic = CompiledIC_at(this, call_site);
+  // Verify IC only when nmethod installation is finished.
+  bool is_installed = (method()->code() == this) // nmethod is in state 'alive' and installed
+                      || !this->is_in_use();     // nmethod is installed, but not in 'alive' state
+  if (is_installed) {
+    Thread *cur = Thread::current();
+    if (CompiledIC_lock->owner() == cur ||
+        ((cur->is_VM_thread() || cur->is_ConcurrentGC_thread()) &&
+         SafepointSynchronize::is_at_safepoint())) {
+      CompiledIC_at(this, call_site);
+      CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
+    } else {
+      MutexLocker ml_verify (CompiledIC_lock);
+      CompiledIC_at(this, call_site);
+    }
   }
-  PcDesc* pd = pc_desc_at(ic->end_of_call());
+
+  PcDesc* pd = pc_desc_at(nativeCall_at(call_site)->return_address());
   assert(pd != NULL, "PcDesc must exist");
   for (ScopeDesc* sd = new ScopeDesc(this, pd->scope_decode_offset(),
                                      pd->obj_decode_offset(), pd->should_reexecute(),

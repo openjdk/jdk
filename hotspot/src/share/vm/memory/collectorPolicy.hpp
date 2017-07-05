@@ -61,17 +61,23 @@ class CollectorPolicy : public CHeapObj<mtGC> {
  protected:
   GCPolicyCounters* _gc_policy_counters;
 
-  // Requires that the concrete subclass sets the alignment constraints
-  // before calling.
+  virtual void initialize_alignments() = 0;
   virtual void initialize_flags();
   virtual void initialize_size_info();
+
+  DEBUG_ONLY(virtual void assert_flags();)
+  DEBUG_ONLY(virtual void assert_size_info();)
 
   size_t _initial_heap_byte_size;
   size_t _max_heap_byte_size;
   size_t _min_heap_byte_size;
 
-  size_t _min_alignment;
-  size_t _max_alignment;
+  size_t _space_alignment;
+  size_t _heap_alignment;
+
+  // Needed to keep information if MaxHeapSize was set on the command line
+  // when the flag value is aligned etc by ergonomics
+  bool _max_heap_size_cmdline;
 
   // The sizing of the heap are controlled by a sizing policy.
   AdaptiveSizePolicy* _size_policy;
@@ -79,6 +85,7 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   // Set to true when policy wants soft refs cleared.
   // Reset to false by gc after it clears all soft refs.
   bool _should_clear_all_soft_refs;
+
   // Set to true by the GC if the just-completed gc cleared all
   // softrefs.  This is set to true whenever a gc clears all softrefs, and
   // set to false each time gc returns to the mutator.  For example, in the
@@ -86,23 +93,20 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   // mem_allocate() where it returns op.result()
   bool _all_soft_refs_clear;
 
-  CollectorPolicy() :
-    _min_alignment(1),
-    _max_alignment(1),
-    _initial_heap_byte_size(0),
-    _max_heap_byte_size(0),
-    _min_heap_byte_size(0),
-    _size_policy(NULL),
-    _should_clear_all_soft_refs(false),
-    _all_soft_refs_clear(false)
-  {}
+  CollectorPolicy();
 
  public:
-  // Return maximum heap alignment that may be imposed by the policy
-  static size_t compute_max_alignment();
+  virtual void initialize_all() {
+    initialize_alignments();
+    initialize_flags();
+    initialize_size_info();
+  }
 
-  size_t min_alignment()                       { return _min_alignment; }
-  size_t max_alignment()                       { return _max_alignment; }
+  // Return maximum heap alignment that may be imposed by the policy
+  static size_t compute_heap_alignment();
+
+  size_t space_alignment()        { return _space_alignment; }
+  size_t heap_alignment()         { return _heap_alignment; }
 
   size_t initial_heap_byte_size() { return _initial_heap_byte_size; }
   size_t max_heap_byte_size()     { return _max_heap_byte_size; }
@@ -151,7 +155,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 
 
   virtual BarrierSet::Name barrier_set_name() = 0;
-  virtual GenRemSet::Name  rem_set_name() = 0;
 
   // Create the remembered set (to cover the given reserved region,
   // allowing breaking up into at most "max_covered_regions").
@@ -195,6 +198,9 @@ class CollectorPolicy : public CHeapObj<mtGC> {
     return false;
   }
 
+  // Do any updates required to global flags that are due to heap initialization
+  // changes
+  virtual void post_heap_initialize() = 0;
 };
 
 class ClearedAllSoftRefs : public StackObj {
@@ -219,6 +225,10 @@ class GenCollectorPolicy : public CollectorPolicy {
   size_t _initial_gen0_size;
   size_t _max_gen0_size;
 
+  // _gen_alignment and _space_alignment will have the same value most of the
+  // time. When using large pages they can differ.
+  size_t _gen_alignment;
+
   GenerationSpec **_generations;
 
   // Return true if an allocation should be attempted in the older
@@ -229,40 +239,49 @@ class GenCollectorPolicy : public CollectorPolicy {
   void initialize_flags();
   void initialize_size_info();
 
+  DEBUG_ONLY(void assert_flags();)
+  DEBUG_ONLY(void assert_size_info();)
+
   // Try to allocate space by expanding the heap.
   virtual HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
- // Scale the base_size by NewRation according to
+  // Compute max heap alignment
+  size_t compute_max_alignment();
+
+ // Scale the base_size by NewRatio according to
  //     result = base_size / (NewRatio + 1)
  // and align by min_alignment()
  size_t scale_by_NewRatio_aligned(size_t base_size);
 
- // Bound the value by the given maximum minus the
- // min_alignment.
+ // Bound the value by the given maximum minus the min_alignment
  size_t bound_minus_alignment(size_t desired_size, size_t maximum_size);
 
  public:
+  GenCollectorPolicy();
+
   // Accessors
   size_t min_gen0_size()     { return _min_gen0_size; }
   size_t initial_gen0_size() { return _initial_gen0_size; }
   size_t max_gen0_size()     { return _max_gen0_size; }
+  size_t gen_alignment()     { return _gen_alignment; }
 
   virtual int number_of_generations() = 0;
 
-  virtual GenerationSpec **generations()       {
+  virtual GenerationSpec **generations() {
     assert(_generations != NULL, "Sanity check");
     return _generations;
   }
 
   virtual GenCollectorPolicy* as_generation_policy() { return this; }
 
-  virtual void initialize_generations() = 0;
+  virtual void initialize_generations() { };
 
   virtual void initialize_all() {
-    initialize_flags();
-    initialize_size_info();
+    CollectorPolicy::initialize_all();
     initialize_generations();
   }
+
+  size_t young_gen_size_lower_bound();
 
   HeapWord* mem_allocate_work(size_t size,
                               bool is_tlab,
@@ -274,6 +293,10 @@ class GenCollectorPolicy : public CollectorPolicy {
   virtual void initialize_size_policy(size_t init_eden_size,
                                       size_t init_promo_size,
                                       size_t init_survivor_size);
+
+  virtual void post_heap_initialize() {
+    assert(_max_gen0_size == MaxNewSize, "Should be taken care of by initialize_size_info");
+  }
 };
 
 // All of hotspot's current collectors are subtypes of this
@@ -290,9 +313,14 @@ class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
 
   void initialize_flags();
   void initialize_size_info();
-  void initialize_generations()                { ShouldNotReachHere(); }
+
+  DEBUG_ONLY(void assert_flags();)
+  DEBUG_ONLY(void assert_size_info();)
 
  public:
+  TwoGenerationCollectorPolicy() : GenCollectorPolicy(), _min_gen1_size(0),
+    _initial_gen1_size(0), _max_gen1_size(0) {}
+
   // Accessors
   size_t min_gen1_size()     { return _min_gen1_size; }
   size_t initial_gen1_size() { return _initial_gen1_size; }
@@ -301,25 +329,25 @@ class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
   // Inherited methods
   TwoGenerationCollectorPolicy* as_two_generation_policy() { return this; }
 
-  int number_of_generations()                  { return 2; }
-  BarrierSet::Name barrier_set_name()          { return BarrierSet::CardTableModRef; }
-  GenRemSet::Name rem_set_name()               { return GenRemSet::CardTable; }
+  int number_of_generations()          { return 2; }
+  BarrierSet::Name barrier_set_name()  { return BarrierSet::CardTableModRef; }
 
   virtual CollectorPolicy::Name kind() {
     return CollectorPolicy::TwoGenerationCollectorPolicyKind;
   }
 
-  // Returns true is gen0 sizes were adjusted
+  // Returns true if gen0 sizes were adjusted
   bool adjust_gen0_sizes(size_t* gen0_size_ptr, size_t* gen1_size_ptr,
-                         const size_t heap_size, const size_t min_gen1_size);
+                         const size_t heap_size);
 };
 
 class MarkSweepPolicy : public TwoGenerationCollectorPolicy {
  protected:
+  void initialize_alignments();
   void initialize_generations();
 
  public:
-  MarkSweepPolicy();
+  MarkSweepPolicy() {}
 
   MarkSweepPolicy* as_mark_sweep_policy() { return this; }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GENERATIONSIZER_HPP
-#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GENERATIONSIZER_HPP
+/*
+ * @test
+ * @summary Stress test that expands/shrinks VirtualSpace
+ * @library /testlibrary /testlibrary/whitebox
+ * @build StressVirtualSpaceResize
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI StressVirtualSpaceResize
+ */
 
-#include "memory/collectorPolicy.hpp"
+import sun.hotspot.WhiteBox;
 
-// There is a nice batch of tested generation sizing code in
-// TwoGenerationCollectorPolicy. Lets reuse it!
+public class StressVirtualSpaceResize {
 
-class GenerationSizer : public TwoGenerationCollectorPolicy {
- private:
-
-  void trace_gen_sizes(const char* const str);
-
-  // The alignment used for boundary between young gen and old gen
-  static size_t default_gen_alignment() { return 64 * K * HeapWordSize; }
-
- protected:
-
-  void initialize_alignments();
-  void initialize_flags();
-  void initialize_size_info();
-};
-#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_GENERATIONSIZER_HPP
+  public static void main(String args[]) throws Exception {
+    if (WhiteBox.getWhiteBox().stressVirtualSpaceResize(1000, 0xffffL, 0xffffL) != 0)
+      throw new RuntimeException("Whitebox method stressVirtualSpaceResize returned non zero exit code");
+  }
+}

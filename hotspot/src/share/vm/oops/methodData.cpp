@@ -275,23 +275,23 @@ void VirtualCallTypeData::post_initialize(BytecodeStream* stream, MethodData* md
 }
 
 bool TypeEntries::is_loader_alive(BoolObjectClosure* is_alive_cl, intptr_t p) {
-  return !is_type_none(p) &&
-    !((Klass*)klass_part(p))->is_loader_alive(is_alive_cl);
+  Klass* k = (Klass*)klass_part(p);
+  return k != NULL && k->is_loader_alive(is_alive_cl);
 }
 
 void TypeStackSlotEntries::clean_weak_klass_links(BoolObjectClosure* is_alive_cl) {
   for (int i = 0; i < _number_of_entries; i++) {
     intptr_t p = type(i);
-    if (is_loader_alive(is_alive_cl, p)) {
-      set_type(i, type_none());
+    if (!is_loader_alive(is_alive_cl, p)) {
+      set_type(i, with_status((Klass*)NULL, p));
     }
   }
 }
 
 void ReturnTypeEntry::clean_weak_klass_links(BoolObjectClosure* is_alive_cl) {
   intptr_t p = type();
-  if (is_loader_alive(is_alive_cl, p)) {
-    set_type(type_none());
+  if (!is_loader_alive(is_alive_cl, p)) {
+    set_type(with_status((Klass*)NULL, p));
   }
 }
 
