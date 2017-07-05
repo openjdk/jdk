@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,10 @@ class CardTableRS: public GenRemSet {
 
   static jbyte clean_card_val() {
     return CardTableModRefBS::clean_card;
+  }
+
+  static intptr_t clean_card_row() {
+    return CardTableModRefBS::clean_card_row;
   }
 
   static bool
@@ -176,6 +180,8 @@ private:
   // Work methods called by the clear_card()
   inline bool clear_card_serial(jbyte* entry);
   inline bool clear_card_parallel(jbyte* entry);
+  // check alignment of pointer
+  bool is_word_aligned(jbyte* entry);
 
 public:
   ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct);
